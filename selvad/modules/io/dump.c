@@ -4,6 +4,9 @@
  */
 #define _GNU_SOURCE
 #include <assert.h>
+#if defined(__linux__)
+#include <sched.h>
+#endif
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -273,6 +276,39 @@ static int dump_load(struct selva_io *io)
     return err;
 }
 
+static void deprio_myself(void)
+{
+    const int nice_incr = 10;
+    int res = -1;
+
+    /*
+     * Lower the CPU priority (bigger number) to avoid hogging the resources
+     * from the main process while dumping. This shouldn't actually reduce
+     * the available CPU time, as long as we are assigned on our own
+     * core/CPU, which might not be 100% if replication is enabled.
+     */
+#if __linux__
+    cpu_set_t cpuset;
+    struct sched_param param = {
+        .sched_priority = 0,
+    };
+
+    CPU_ZERO(&cpuset);
+    CPU_SET(1, &cpuset); /* We assume that we have at least two CPUs available. */
+    (void)sched_setaffinity(0, sizeof(cpuset), &cpuset);
+
+    res = sched_setscheduler(0, SCHED_BATCH, &param);
+#endif
+    if (res == -1) {
+        /* Failed to set sched, the next best thing is to just use nice(). */
+        res = nice(nice_incr);
+    }
+
+    if (res == -1) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Failed to deprioritize the dump process");
+    }
+}
+
 /**
  * Save a hierarchy dump asynchronously in a child process.
  */
@@ -297,6 +333,7 @@ static int dump_save_async(const char *filename)
         struct selva_io io;
 
         selva_db_dump_state = SELVA_DB_DUMP_IS_CHILD;
+        deprio_myself();
 
         err = selva_io_init(&io, filename, flags);
         if (err) {

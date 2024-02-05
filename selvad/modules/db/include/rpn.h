@@ -96,7 +96,13 @@ struct rpn_expression {
 };
 
 enum rpn_set_reg_flags {
-    RPN_SET_REG_FLAG_SELVA_FREE = 0x01, /*!< Free register values after unref using selva_free. */
+    /**
+     * Free the register pointer automatically after unref in rpn.
+     * - sp, rpn_set_reg_slvobj() = selva_free()
+     * - obj, rpn_set_reg_slvobj() = SelvaObject_Destroy()
+     * - set, rpn_set_reg_slvset() = SelvaSet_Destroy()
+     */
+    RPN_SET_REG_FLAG_AUTO_FREE  = 0x01, /*!< Free register values after unref using selva_free. */
     RPN_SET_REG_FLAG_IS_NAN     = 0x02, /*!< The numeric value of a reg should be NaN when set with rpn_set_reg(). */
 };
 
