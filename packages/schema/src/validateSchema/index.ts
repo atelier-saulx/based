@@ -170,24 +170,6 @@ export const validateSchema = async (
     return { errors }
   }
 
-  // for (const key in newSchema) {
-  //   if (newSchema.hasOwnProperty(key)) {
-  //     if (basedSchemaValidator[key]) {
-  //       if (basedSchemaValidator[key].validator) {
-  //         const result = basedSchemaValidator[key].validator(
-  //           newSchema[key],
-  //           newSchema,
-  //           oldSchema
-  //         )
-  //         if (typeof result === 'number') {
-  //           errors.push({ code: result, path: [key] })
-  //         }
-  //       }
-  //     } else {
-  //       errors.push({ code: ParseError.invalidProperty, path: [key] })
-  //     }
-  //   }
-  // }
   errors.push(
     ...validate(basedSchemaValidator, newSchema, [], newSchema, oldSchema)
   )
