@@ -31,25 +31,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
       - name: Restore selvad build cache
         id: cache-selvad-try
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             packages/server/selvad/local
           key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
       - name: Restore node_modules
         id: cache-npm-try
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: '**/node_modules'
           key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
         run: npm ci
+      - run: ls -la ./node_modules
       - name: Build based-db
         run: npm run build
       - name: Run tests
