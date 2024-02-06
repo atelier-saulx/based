@@ -25,6 +25,7 @@ import {
   BasedSchemaPartial,
   BasedSchemaStringShared,
   basedSchemaFieldTypes,
+  basedSchemaStringFormatValues,
   languages,
 } from '../types.js'
 import { ValidateSchemaError, Validator, validate } from './index.js'
@@ -262,7 +263,7 @@ export const basedSchemaStringSharedValidator: Validator<BasedSchemaStringShared
     },
     format: {
       validator: (value, path) =>
-        basedSchemaFieldTypes.includes(value)
+        basedSchemaStringFormatValues.includes(value)
           ? []
           : [{ code: ParseError.incorrectFormat, path }],
       optional: true,
