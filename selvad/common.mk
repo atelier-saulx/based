@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 # Anything defined here will generally shared by all build goals except
@@ -18,9 +18,11 @@ CC += -fdiagnostics-color=always
 
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
-CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes
+CFLAGS := -std=gnu2x -pthread -O2 -MMD -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes
 CFLAGS += -DDCACHE_LINESIZE=64
 CFLAGS += -fstack-protector
+
+LDFLAGS += -pthread
 
 # Add these for valgrind
 #CFLAGS += $(EN_VALGRIND_CFLAGS)
