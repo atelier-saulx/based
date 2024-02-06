@@ -1,6 +1,6 @@
 export * from './types.js'
 
-export * from './validateSchema.js'
+export * from './validateSchema/index.js'
 
 export * from './walker/index.js'
 
