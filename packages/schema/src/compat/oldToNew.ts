@@ -108,6 +108,11 @@ const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
       }
 
     case 'url':
+      return {
+        ...metaParser(oldField.meta),
+        format: 'URL',
+        type: 'string',
+      }
     case 'email':
       return {
         ...metaParser(oldField.meta),
@@ -178,11 +183,10 @@ const migrateTypes = (oldSchema: any): any => {
 export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
   const tempSchema = migrateTypes(oldSchema)
 
-  delete tempSchema.sha
   tempSchema.$defs = {}
   tempSchema.root = tempSchema.rootType ?? {}
   delete tempSchema.rootType
+  delete tempSchema.sha
 
   return tempSchema
-  // return tempSchema
 }
