@@ -75,7 +75,7 @@ jobs:
       #     fail-on-cache-miss: true
       - name: Restore node_modules
         id: cache-npm-try
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: '**/node_modules'
           key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
