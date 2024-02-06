@@ -1,6 +1,47 @@
 import { BasedSchema } from '../types.js'
 import { BasedOldSchema } from './oldSchemaType.js'
 
+const oldConverter = (field) => {
+  return field === 'id'
+    ? 'string'
+    : field === 'type'
+    ? 'string'
+    : field === 'url'
+    ? 'string'
+    : field === 'email'
+    ? 'string'
+    : field === 'digest'
+    ? 'string'
+    : field === 'int'
+    ? 'integer'
+    : field === 'float'
+    ? 'number'
+    : field
+}
+
+const converter = (source, target, i) => {
+  switch (source.type) {
+    case 'url':
+      return { ...target, type: 'string', format: 'URL' }
+    case 'id':
+      return { ...target, type: 'string', format: 'basedId' }
+    case 'type':
+      return { ...target, type: 'string' }
+    case 'email':
+      return { ...target, type: 'string', format: 'email' }
+    case 'digest':
+      return { ...target, type: 'string', format: 'strongPassword' }
+    case 'int':
+      return { ...target, type: 'integer' }
+    case 'float':
+      return { ...target, type: 'number' }
+    case 'array':
+      return { ...target, type: 'array', values: source.items }
+    default:
+      return { ...source }
+  }
+}
+
 export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
   const tempSchema = {} as any
 
@@ -17,6 +58,8 @@ export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
           for (const j in source[i]) {
             if (j === 'name') {
               target.title = source[i][j]
+            } else if (j === 'validation') {
+              target.format = source[i][j] === 'url' ? 'URL' : null
             } else {
               target[j] = source[i][j]
             }
@@ -26,18 +69,28 @@ export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
           walker(source[i], target[i])
         }
       } else if (i !== 'meta') {
-        if (source[i] === 'int') {
-          target[i] = 'integer'
-        }
-        target[i] = source[i]
+        target[i] = converter(source, target, i)
       }
     }
   }
 
+  // const fixer = (source) => {
+  //   for (const i in source) {
+  //     if (source[i] === 'array') {
+  //       source.values = source.items
+  //       delete source.items
+  //     } else if (typeof source[i] === 'object') {
+  //       fixer(source[i])
+  //     }
+  //   }
+  // }
+
   walker(oldSchema, tempSchema)
+  // fixer(tempSchema)
+
   delete tempSchema.sha
   tempSchema.$defs = {}
-  tempSchema.root = oldSchema.rootType ?? {}
+  tempSchema.root = tempSchema.rootType ?? {}
   delete tempSchema.rootType
 
   return tempSchema
