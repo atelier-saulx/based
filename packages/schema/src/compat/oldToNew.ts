@@ -1,92 +1,182 @@
-import { BasedSchema } from '../types.js'
+import {
+  BasedSchema,
+  BasedSchemaField,
+  BasedSchemaFieldPartial,
+} from '../types.js'
 import { BasedOldSchema } from './oldSchemaType.js'
 
-const oldConverter = (field) => {
-  return field === 'id'
-    ? 'string'
-    : field === 'type'
-    ? 'string'
-    : field === 'url'
-    ? 'string'
-    : field === 'email'
-    ? 'string'
-    : field === 'digest'
-    ? 'string'
-    : field === 'int'
-    ? 'integer'
-    : field === 'float'
-    ? 'number'
-    : field
+const DEFAULT_FIELDS: any = {
+  id: { type: 'string' },
+  createdAt: { type: 'timestamp' },
+  updatedAt: { type: 'timestamp' },
+  type: { type: 'string' },
+  parents: { type: 'references' },
+  children: { type: 'references' },
+  ancestors: { type: 'references' },
+  descendants: { type: 'references' },
+  aliases: {
+    type: 'set',
+    items: { type: 'string' },
+  },
 }
 
-const converter = (source, target, i) => {
-  switch (source.type) {
-    case 'url':
-      return { ...target, type: 'string', format: 'URL' }
-    case 'id':
-      return { ...target, type: 'string', format: 'basedId' }
-    case 'type':
-      return { ...target, type: 'string' }
-    case 'email':
-      return { ...target, type: 'string', format: 'email' }
-    case 'digest':
-      return { ...target, type: 'string', format: 'strongPassword' }
-    case 'int':
-      return { ...target, type: 'integer' }
-    case 'float':
-      return { ...target, type: 'number' }
+const metaParser = (metaObj) => {
+  const tmp = {} as BasedSchemaFieldPartial | any
+  for (const i in metaObj) {
+    if (i === 'name') {
+      tmp.title = metaObj[i]
+    } else if (
+      i === 'validation' ||
+      i === 'progress' ||
+      i === 'format' ||
+      i === 'ui'
+    ) {
+      if (metaObj[i] === 'url') {
+        tmp.format = 'URL'
+      }
+    } else {
+      tmp[i] = metaObj[i]
+    }
+  }
+  return tmp
+}
+
+const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
+  switch (oldField.type) {
+    case 'object':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'object',
+        properties: migrateFields(oldField.properties, true),
+      }
+    case 'json':
+      return {
+        ...oldField,
+        ...metaParser(oldField.meta),
+        type: 'json',
+      }
     case 'array':
-      return { ...target, type: 'array', values: source.items }
+      const values = migrateField(oldField.items)
+      if (!values) {
+        return null
+      }
+      return {
+        ...metaParser(oldField.meta),
+        type: 'array',
+        values,
+      }
+    case 'set':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'set',
+        items: migrateField(oldField.items) as BasedSchemaFieldPartial,
+      }
+    case 'record':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'record',
+        values: migrateField(oldField.values) as BasedSchemaFieldPartial,
+      }
+    case 'reference':
+    case 'references':
+      return {
+        ...metaParser(oldField.meta),
+        type: oldField.type,
+        ...(oldField.bidirectional
+          ? { bidirectional: oldField.bidirectional }
+          : null),
+      }
+    case 'float':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'number',
+      }
+    case 'int':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'integer',
+      }
+    case 'digest':
+      return {
+        format: 'strongPassword',
+        type: 'string',
+      }
+    case 'id':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'string',
+      }
+
+    case 'url':
+    case 'email':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'string',
+      }
+    case 'phone':
+      return {
+        format: 'mobilePhone',
+        type: 'string',
+      }
+    case 'geo':
+      return {
+        format: 'latLong',
+        type: 'string',
+      }
+    case 'type':
+      return {
+        ...metaParser(oldField.meta),
+        type: 'string',
+      }
     default:
-      return { ...source }
+      return {
+        ...metaParser(oldField.meta),
+        type: oldField.type,
+      }
   }
 }
 
-export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
-  const tempSchema = {} as any
-
-  const walker = (source: BasedOldSchema, target: any) => {
-    for (const i in source) {
-      if (i === 'languages' && source[i].length) {
-        target.language = source[i][0]
-        target.translations = source[i].filter((_, i) => i !== 0)
-      } else if (typeof source[i] === 'object' && i in target === false) {
-        if (
-          i === 'meta' &&
-          !Object.keys(source[i]).includes('properties' || 'type')
-        ) {
-          for (const j in source[i]) {
-            if (j === 'name') {
-              target.title = source[i][j]
-            } else if (j === 'validation') {
-              target.format = source[i][j] === 'url' ? 'URL' : null
-            } else {
-              target[j] = source[i][j]
-            }
-          }
-        } else {
-          target[i] = source[i].length ? [] : {}
-          walker(source[i], target[i])
+const migrateFields = (
+  oldFields: any,
+  recursing = false
+): { [key: string]: any } => {
+  const result: { [key: string]: any } = {}
+  if (oldFields) {
+    for (const key in oldFields) {
+      if (oldFields.hasOwnProperty(key)) {
+        if (!recursing && Object.keys(DEFAULT_FIELDS).includes(key)) {
+          continue
         }
-      } else if (i !== 'meta') {
-        target[i] = converter(source, target, i)
+        const field = migrateField(oldFields[key])
+        if (!field) {
+          continue
+        }
+        result[key] = field
+      }
+    }
+  }
+  return result
+}
+
+const migrateTypes = (oldSchema: any): any => {
+  const result = {
+    types: {},
+  }
+  for (const key in oldSchema.types) {
+    if (oldSchema.types.hasOwnProperty(key)) {
+      const type = oldSchema.types[key]
+      result.types[key] = {
+        prefix: type.prefix,
+        fields: migrateFields(type.fields),
       }
     }
   }
 
-  // const fixer = (source) => {
-  //   for (const i in source) {
-  //     if (source[i] === 'array') {
-  //       source.values = source.items
-  //       delete source.items
-  //     } else if (typeof source[i] === 'object') {
-  //       fixer(source[i])
-  //     }
-  //   }
-  // }
+  return result
+}
 
-  walker(oldSchema, tempSchema)
-  // fixer(tempSchema)
+export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
+  const tempSchema = migrateTypes(oldSchema)
 
   delete tempSchema.sha
   tempSchema.$defs = {}
@@ -94,4 +184,5 @@ export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
   delete tempSchema.rootType
 
   return tempSchema
+  // return tempSchema
 }

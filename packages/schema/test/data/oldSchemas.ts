@@ -928,9 +928,6 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'id',
           },
           progress: {
-            meta: {
-              format: 'progress',
-            },
             type: 'number',
           },
           ancestors: {
@@ -938,7 +935,6 @@ export const oldSchemas: BasedOldSchema[] = [
           },
           src: {
             meta: {
-              ui: 'file',
               description: 'Transformed source of the file',
               name: 'Source',
               validation: 'url',
