@@ -4,12 +4,11 @@ export const oldSchemas: BasedOldSchema[] = [
   {
     languages: ['en', 'nl'],
     prefixToTypeMapping: {},
-    rootType: {},
+    // rootType: {},
     types: {
       thing1: {
         meta: {
           name: 'name',
-          index: 0,
           description: 'bla',
         },
         prefix: 'ti',

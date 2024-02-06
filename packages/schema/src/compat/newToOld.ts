@@ -53,6 +53,9 @@ export const convertNewToOld = (
         target[i] = source[i].length ? [] : {}
         walker(target[i], source[i])
       } else if (!metaChecker(i)) {
+        if (i === 'integer') {
+          target.int = source[i]
+        }
         target[i] = source[i]
       } else {
         target.meta = {}
@@ -71,6 +74,7 @@ export const convertNewToOld = (
   }
 
   walker(tmpSchema, schema)
+
   if ((tmpSchema.meta = {})) delete tmpSchema.meta
   for (const i in tmpSchema) {
     if (excludedFields(i)) {
@@ -79,6 +83,8 @@ export const convertNewToOld = (
   }
 
   tmpSchema.languages = [schema.language, ...schema?.translations]
+  tmpSchema.rootType = tmpSchema.root
+  delete tmpSchema.root
 
   return tmpSchema
 }

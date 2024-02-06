@@ -26,13 +26,19 @@ export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
           walker(source[i], target[i])
         }
       } else if (i !== 'meta') {
+        if (source[i] === 'int') {
+          target[i] = 'integer'
+        }
         target[i] = source[i]
       }
     }
   }
 
   walker(oldSchema, tempSchema)
+  delete tempSchema.sha
   tempSchema.$defs = {}
+  tempSchema.root = oldSchema.rootType ?? {}
+  delete tempSchema.rootType
 
   return tempSchema
 }
