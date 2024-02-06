@@ -34,7 +34,7 @@ jobs:
       - name: Try selvad build cache
         if: ${{ !inputs.force-build }}
         id: cache-selvad-try
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           lookup-only: true
           path: |
@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
       - name: Use Node.js
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
       - name: Build selva
@@ -59,7 +59,7 @@ jobs:
       - name: Save selvad build cache
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         id: cache-selvad-save
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             packages/server/selvad/local
