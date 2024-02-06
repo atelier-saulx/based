@@ -50,7 +50,6 @@ jobs:
       - name: Install dependencies
         if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
         run: npm ci
-      - run: ls -la ./node_modules
       - name: Build based-db
         run: npm run build
       - name: Run tests
