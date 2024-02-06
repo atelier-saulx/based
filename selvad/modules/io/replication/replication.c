@@ -535,6 +535,13 @@ void replication_init(void)
             SELVA_LOG(SELVA_LOGL_INFO, "\"AUTO_SAVE_INTERVAL\" is recommended with the \"%s\" replication mode", replication_mode_str[replication_mode]);
         }
 
+        /*
+         * When replication is enabled we modify the CPU affinities in the
+         * following manner:
+         * - main thread: CPU0
+         * - async dump process: CPU1
+         * - replication threads: CPU1 + CPU2,..
+         */
         replication_origin_init();
         break;
     case SELVA_REPLICATION_MODE_REPLICA:

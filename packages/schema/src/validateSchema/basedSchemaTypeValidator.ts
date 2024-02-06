@@ -3,6 +3,7 @@ import { ParseError } from '../error.js'
 import { BasedSchemaType } from '../types.js'
 import { Validator } from './index.js'
 import { mustBeBoolean, mustBeString, mustBeStringArray } from './utils.js'
+import { mustBeFields } from './fieldValidators.js'
 
 export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
   directory: {
@@ -10,16 +11,7 @@ export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
     optional: true,
   },
   fields: {
-    validator: (value, path, newSchema, oldSchema) => {
-      if (!(typeof value === 'object' && !Array.isArray(value))) {
-        return [
-          {
-            code: ParseError.incorrectFormat,
-            path,
-          },
-        ]
-      }
-    },
+    validator: mustBeFields,
   },
   title: {
     validator: mustBeString,
@@ -33,11 +25,11 @@ export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
     validator: (value, path) => {
       if (deepEqual(path, ['root', 'prefix'])) {
         return value === 'ro'
-          ? true
+          ? []
           : [{ code: ParseError.incorrectFormat, path }]
       }
       return /^[a-z]{2}$/.test(value)
-        ? true
+        ? []
         : [{ code: ParseError.incorrectFormat, path }]
     },
     optional: true,

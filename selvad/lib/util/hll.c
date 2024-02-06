@@ -2,7 +2,7 @@
  * hyperloglog.c - Redis HyperLogLog probabilistic cardinality approximation.
  * This file implements the algorithm and the exported Redis commands.
  *
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * Copyright (c) 2014, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
  *
@@ -1214,7 +1214,7 @@ static uint64_t hllCount(struct hllhdr *hdr, int *invalid)
           * Unknown HyperLogLog encoding in hllCount().
           * exit() is ok here because it should do a proper dump and cleanup.
           */
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -947,7 +947,7 @@ int Edge_DeleteAll(
             }
         }
     } else if (any.type == SELVA_OBJECT_ARRAY) {
-        /* An array of edges, huh? I don't think we support this kind of heresy. */
+        /* An array of edges is not supported and shouldn't be here. */
         return SELVA_EINTYPE;
     } else {
         /* Shouldn't happen? */

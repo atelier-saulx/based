@@ -185,13 +185,14 @@ export type BasedSchemaStringShared = {
   multiline?: boolean
 }
 
-type NumberDefaults = {
+export type BasedSchemaNumberDefaults = {
   multipleOf?: number
   minimum?: number
   maximum?: number
   exclusiveMaximum?: boolean
   exclusiveMinimum?: boolean
 }
+export type NumberDefaults = BasedSchemaNumberDefaults // deprecated
 
 export type BasedNumberDisplay = NumberFormat
 

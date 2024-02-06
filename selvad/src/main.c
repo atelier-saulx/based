@@ -2,10 +2,13 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <errno.h>
 #include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
@@ -28,6 +31,35 @@ static const char *modules[] = {
     "mod_db.so",
     "mod_piper.so",
 };
+
+static void set_nofile_limit(void)
+{
+    struct rlimit limit;
+    rlim_t newlim = EVENT_LOOP_MAX_FDS + 3;
+
+    if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
+        int e = errno;
+
+        SELVA_LOG(SELVA_LOGL_CRIT, "Unable to obtain RLIMIT_NOFILE: %s", strerror(e));
+        exit(EXIT_FAILURE);
+    }
+
+    if (limit.rlim_max < newlim) {
+        SELVA_LOG(SELVA_LOGL_WARN, "RLIMIT_NOFILE will be lower than required (%ju < %ju)",
+                  (uintmax_t)limit.rlim_max, (uintmax_t)newlim);
+    }
+
+    if (limit.rlim_cur != newlim) {
+        limit.rlim_cur = min(limit.rlim_max, (rlim_t)newlim);
+
+        if (setrlimit(RLIMIT_NOFILE, &limit) == -1) {
+            int e = errno;
+
+            SELVA_LOG(SELVA_LOGL_CRIT, "Unable to set RLIMIT_NOFILE: %s", strerror(e));
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 int main(void)
 {
@@ -53,6 +85,8 @@ int main(void)
      * Safer umask to disallow creating executables or world readable dumps.
      */
     umask((S_IRUSR | S_IWUSR | S_IRGRP) ^ 0777);
+
+    set_nofile_limit();
 
     /*
      * In case the caller gave us something that's actually readable, we'll
