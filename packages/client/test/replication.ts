@@ -256,6 +256,7 @@ test.serial('replica restart', async (t) => {
   await restartReplica(t)
   // FIXME sometimes the client gets stuck here and this command is never executed
   // TODO We could also test the case where the restart is practically delayed by delaying this function call
+  await wait(500) // FIXME This seems to fix the suckness issues most of the time
   await t.context.replicaClient.command('replicaof', [
     t.context.originPort,
     '127.0.0.1',
@@ -274,6 +275,7 @@ test.serial('origin restart', async (t) => {
 
   await restartOrigin(t)
   // FIXME sometimes the client gets stuck here and this command is never executed
+  await wait(500) // FIXME This seems to fix the suckness issues most of the time
   await t.context.originClient.command('replicawait', [])
 
   let replicaState = await wait_for_replication_state(
@@ -296,6 +298,7 @@ test.serial('origin restart with a new db', async (t) => {
   // Here we also delete the dump so that the origin will start with a fresh db
   await restartOrigin(t, true)
   // FIXME sometimes the client gets stuck here and this command is never executed
+  await wait(500) // FIXME This seems to fix the suckness issues most of the time
   await t.context.originClient.command('replicawait', [])
 
   let replicaState = await wait_for_replication_state(
