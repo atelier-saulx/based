@@ -2,6 +2,7 @@ import {
   BasedSchema,
   BasedSchemaField,
   BasedSchemaFieldPartial,
+  BasedSchemaPartial,
 } from '../types.js'
 import { BasedOldSchema } from './oldSchemaType.js'
 
@@ -32,7 +33,7 @@ const metaParser = (metaObj) => {
       i === 'ui'
     ) {
       if (metaObj[i] === 'url') {
-        tmp.format = 'URL'
+        // tmp.format = 'URL'
       }
     } else {
       tmp[i] = metaObj[i]
@@ -98,11 +99,13 @@ const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
       }
     case 'digest':
       return {
+        ...metaParser(oldField.meta),
         format: 'strongPassword',
         type: 'string',
       }
     case 'id':
       return {
+        format: 'basedId',
         ...metaParser(oldField.meta),
         type: 'string',
       }
@@ -115,6 +118,7 @@ const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
       }
     case 'email':
       return {
+        format: 'email',
         ...metaParser(oldField.meta),
         type: 'string',
       }
@@ -171,9 +175,29 @@ const migrateTypes = (oldSchema: any): any => {
     if (oldSchema.types.hasOwnProperty(key)) {
       const type = oldSchema.types[key]
       result.types[key] = {
+        ...metaParser(type.meta),
         prefix: type.prefix,
         fields: migrateFields(type.fields),
       }
+    }
+  }
+
+  return result
+}
+
+const convertRoot = (oldSchema: BasedOldSchema) => {
+  const result = {
+    fields: {},
+    ...metaParser(oldSchema.rootType?.meta),
+    prefix: oldSchema.rootType?.prefix,
+  }
+
+  for (const i in oldSchema.rootType?.fields) {
+    const field = oldSchema.rootType?.fields[i]
+
+    result.fields[i] = {
+      ...metaParser(field?.meta),
+      ...migrateField(field),
     }
   }
 
@@ -184,7 +208,11 @@ export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
   const tempSchema = migrateTypes(oldSchema)
 
   tempSchema.$defs = {}
-  tempSchema.root = tempSchema.rootType ?? {}
+  tempSchema.language = oldSchema.languages[0]
+  tempSchema.prefixToTypeMapping = oldSchema.prefixToTypeMapping
+  tempSchema.translations = oldSchema.languages.filter((_, i) => i !== 0)
+
+  tempSchema.root = convertRoot(oldSchema)
   delete tempSchema.rootType
   delete tempSchema.sha
 

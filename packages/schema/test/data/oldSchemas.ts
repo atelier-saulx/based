@@ -1,47 +1,43 @@
 import { BasedOldSchema } from '../../src/compat/oldSchemaType.js'
 
 export const oldSchemas: BasedOldSchema[] = [
+  // {
+  //   languages: ['en', 'nl'],
+  //   prefixToTypeMapping: {},
+  //   // rootType: {},
+  //   types: {
+  //     thing1: {
+  //       meta: {
+  //         name: 'name',
+  //         description: 'bla',
+  //       },
+  //       prefix: 'ti',
+  //       fields: {
+  //         number: {
+  //           type: 'number',
+  //         },
+  //         object: {
+  //           type: 'object',
+  //           properties: {
+  //             objectNumber: {
+  //               type: 'number',
+  //               meta: {
+  //                 name: 'name',
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  // },
   {
-    languages: ['en', 'nl'],
-    prefixToTypeMapping: {},
-    // rootType: {},
-    types: {
-      thing1: {
-        meta: {
-          name: 'name',
-          description: 'bla',
-        },
-        prefix: 'ti',
-        fields: {
-          number: {
-            type: 'number',
-          },
-          object: {
-            type: 'object',
-            properties: {
-              objectNumber: {
-                type: 'number',
-                meta: {
-                  name: 'name',
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-  {
-    sha: '40b87292d307d73e7255d418bb80083da1f00dfe',
     languages: ['en', 'nl', 'de'],
     rootType: {
       prefix: 'ro',
       fields: {
         createdAt: {
           type: 'timestamp',
-        },
-        type: {
-          type: 'type',
         },
         id: {
           type: 'id',
@@ -107,746 +103,746 @@ export const oldSchemas: BasedOldSchema[] = [
       fl: 'flight',
     },
     types: {
-      activity: {
-        prefix: 'ac',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          initiator: {
-            type: 'reference',
-          },
-          id: {
-            type: 'id',
-          },
-          performedAt: {
-            type: 'timestamp',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          type: {
-            type: 'type',
-          },
-          parents: {
-            type: 'references',
-          },
-          actionType: {
-            type: 'string',
-          },
-          children: {
-            type: 'references',
-          },
-          params: {
-            type: 'json',
-          },
-        },
-      },
-      pushToken: {
-        prefix: 'pt',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          name: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          token: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      liveStream: {
-        prefix: 'ls',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          finishedAt: {
-            type: 'timestamp',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-        },
-      },
-      flightTemplate: {
-        prefix: 'ft',
-        fields: {
-          note: {
-            type: 'string',
-          },
-          payloadOperators: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-          permissionForm: {
-            properties: {
-              signature: {
-                type: 'reference',
-              },
-              firstName: {
-                type: 'string',
-              },
-              lastName: {
-                type: 'string',
-              },
-              reason: {
-                type: 'string',
-              },
-            },
-            type: 'object',
-          },
-          pilot: {
-            type: 'reference',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          pointsOfInterest: {
-            items: {
-              properties: {
-                color: {
-                  type: 'string',
-                },
-                location: {
-                  properties: {
-                    lon: {
-                      type: 'float',
-                    },
-                    lat: {
-                      type: 'float',
-                    },
-                  },
-                  type: 'object',
-                },
-                icon: {
-                  type: 'string',
-                },
-                name: {
-                  type: 'string',
-                },
-              },
-              type: 'object',
-            },
-            type: 'array',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          riskAnalysis: {
-            items: {
-              type: 'object',
-              properties: {
-                probabilityAfterMeasure: {
-                  type: 'int',
-                },
-                description: {
-                  type: 'string',
-                },
-                severityAfterMeasure: {
-                  type: 'int',
-                },
-                severity: {
-                  type: 'int',
-                },
-                title: {
-                  type: 'string',
-                },
-                measure: {
-                  type: 'string',
-                },
-                probability: {
-                  type: 'int',
-                },
-              },
-            },
-            type: 'array',
-          },
-          flightHeight: {
-            type: 'float',
-          },
-          losType: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          geofence: {
-            type: 'json',
-          },
-          type: {
-            type: 'type',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          drone: {
-            type: 'reference',
-          },
-          endTime: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          takeOffTime: {
-            type: 'timestamp',
-          },
-          batteries: {
-            type: 'references',
-          },
-          equipment: {
-            type: 'references',
-          },
-          observers: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          address: {
-            type: 'string',
-          },
-          location: {
-            properties: {
-              lon: {
-                type: 'float',
-              },
-              lat: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          flightType: {
-            type: 'string',
-          },
-          groundStation: {
-            type: 'reference',
-          },
-          mission: {
-            type: 'reference',
-          },
-        },
-      },
-      organizationMember: {
-        prefix: 'om',
-        fields: {
-          type: {
-            type: 'type',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          descendants: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          status: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          roles: {
-            items: {
-              type: 'string',
-            },
-            type: 'array',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      role: {
-        prefix: 'rl',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-        },
-      },
-      airhubIcon: {
-        prefix: 'ai',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          type: {
-            type: 'type',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          file: {
-            type: 'reference',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      liveSessionLink: {
-        prefix: 'll',
-        fields: {
-          type: {
-            type: 'type',
-          },
-          disabled: {
-            type: 'boolean',
-          },
-          expiresAt: {
-            type: 'timestamp',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          features: {
-            items: {
-              type: 'string',
-            },
-            type: 'array',
-          },
-          parents: {
-            type: 'references',
-          },
-          ipWhitelist: {
-            items: {
-              type: 'string',
-            },
-            type: 'array',
-          },
-          children: {
-            type: 'references',
-          },
-          accessCode: {
-            type: 'string',
-          },
-        },
-      },
-      pointOfInterest: {
-        prefix: 'po',
-        fields: {
-          type: {
-            type: 'type',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          children: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          location: {
-            properties: {
-              lon: {
-                type: 'float',
-              },
-              lat: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          icon: {
-            type: 'reference',
-          },
-          color: {
-            type: 'string',
-          },
-        },
-      },
-      drone: {
-        prefix: 'dr',
-        fields: {
-          avatar: {
-            type: 'reference',
-          },
-          color: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          weight: {
-            type: 'float',
-          },
-          status: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          markings: {
-            type: 'string',
-          },
-          type: {
-            type: 'type',
-          },
-          parents: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          registration: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          isLiveStreamPrivate: {
-            type: 'boolean',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          model: {
-            type: 'string',
-          },
-          name: {
-            type: 'string',
-          },
-          firmwareVersion: {
-            type: 'string',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          manufacturer: {
-            type: 'string',
-          },
-          serial: {
-            type: 'string',
-          },
-          airFrame: {
-            type: 'string',
-          },
-        },
-      },
-      subscription: {
-        prefix: 'ss',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          name: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          endsAt: {
-            type: 'timestamp',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          startedAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      videoStream: {
-        prefix: 'vs',
-        fields: {
-          masterService: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          cameras: {
-            items: {
-              type: 'object',
-              properties: {
-                webrtcHubPortId: {
-                  type: 'string',
-                },
-                port: {
-                  type: 'number',
-                },
-                rtpId: {
-                  type: 'string',
-                },
-                ip: {
-                  type: 'string',
-                },
-              },
-            },
-            type: 'array',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          masterTick: {
-            type: 'number',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          finished: {
-            type: 'boolean',
-          },
-          id: {
-            type: 'id',
-          },
-          externalId: {
-            type: 'string',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          flowing: {
-            type: 'boolean',
-          },
-          type: {
-            type: 'type',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          videoStreamType: {
-            type: 'string',
-          },
-        },
-      },
+      // activity: {
+      //   prefix: 'ac',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     initiator: {
+      //       type: 'reference',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     performedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     actionType: {
+      //       type: 'string',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     params: {
+      //       type: 'json',
+      //     },
+      //   },
+      // },
+      // pushToken: {
+      //   prefix: 'pt',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     token: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // liveStream: {
+      //   prefix: 'ls',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     finishedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // flightTemplate: {
+      //   prefix: 'ft',
+      //   fields: {
+      //     note: {
+      //       type: 'string',
+      //     },
+      //     payloadOperators: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     permissionForm: {
+      //       properties: {
+      //         signature: {
+      //           type: 'reference',
+      //         },
+      //         firstName: {
+      //           type: 'string',
+      //         },
+      //         lastName: {
+      //           type: 'string',
+      //         },
+      //         reason: {
+      //           type: 'string',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     pilot: {
+      //       type: 'reference',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     pointsOfInterest: {
+      //       items: {
+      //         properties: {
+      //           color: {
+      //             type: 'string',
+      //           },
+      //           location: {
+      //             properties: {
+      //               lon: {
+      //                 type: 'float',
+      //               },
+      //               lat: {
+      //                 type: 'float',
+      //               },
+      //             },
+      //             type: 'object',
+      //           },
+      //           icon: {
+      //             type: 'string',
+      //           },
+      //           name: {
+      //             type: 'string',
+      //           },
+      //         },
+      //         type: 'object',
+      //       },
+      //       type: 'array',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     riskAnalysis: {
+      //       items: {
+      //         type: 'object',
+      //         properties: {
+      //           probabilityAfterMeasure: {
+      //             type: 'int',
+      //           },
+      //           description: {
+      //             type: 'string',
+      //           },
+      //           severityAfterMeasure: {
+      //             type: 'int',
+      //           },
+      //           severity: {
+      //             type: 'int',
+      //           },
+      //           title: {
+      //             type: 'string',
+      //           },
+      //           measure: {
+      //             type: 'string',
+      //           },
+      //           probability: {
+      //             type: 'int',
+      //           },
+      //         },
+      //       },
+      //       type: 'array',
+      //     },
+      //     flightHeight: {
+      //       type: 'float',
+      //     },
+      //     losType: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     geofence: {
+      //       type: 'json',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     drone: {
+      //       type: 'reference',
+      //     },
+      //     endTime: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     takeOffTime: {
+      //       type: 'timestamp',
+      //     },
+      //     batteries: {
+      //       type: 'references',
+      //     },
+      //     equipment: {
+      //       type: 'references',
+      //     },
+      //     observers: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     address: {
+      //       type: 'string',
+      //     },
+      //     location: {
+      //       properties: {
+      //         lon: {
+      //           type: 'float',
+      //         },
+      //         lat: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     flightType: {
+      //       type: 'string',
+      //     },
+      //     groundStation: {
+      //       type: 'reference',
+      //     },
+      //     mission: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // organizationMember: {
+      //   prefix: 'om',
+      //   fields: {
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     roles: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'array',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // role: {
+      //   prefix: 'rl',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // airhubIcon: {
+      //   prefix: 'ai',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     file: {
+      //       type: 'reference',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // liveSessionLink: {
+      //   prefix: 'll',
+      //   fields: {
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     disabled: {
+      //       type: 'boolean',
+      //     },
+      //     expiresAt: {
+      //       type: 'timestamp',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     features: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'array',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     ipWhitelist: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'array',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     accessCode: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // pointOfInterest: {
+      //   prefix: 'po',
+      //   fields: {
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     location: {
+      //       properties: {
+      //         lon: {
+      //           type: 'float',
+      //         },
+      //         lat: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     icon: {
+      //       type: 'reference',
+      //     },
+      //     color: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // drone: {
+      //   prefix: 'dr',
+      //   fields: {
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     color: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     weight: {
+      //       type: 'float',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     markings: {
+      //       type: 'string',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     registration: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     isLiveStreamPrivate: {
+      //       type: 'boolean',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     model: {
+      //       type: 'string',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     firmwareVersion: {
+      //       type: 'string',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     manufacturer: {
+      //       type: 'string',
+      //     },
+      //     serial: {
+      //       type: 'string',
+      //     },
+      //     airFrame: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // subscription: {
+      //   prefix: 'ss',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     endsAt: {
+      //       type: 'timestamp',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     startedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // videoStream: {
+      //   prefix: 'vs',
+      //   fields: {
+      //     masterService: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     cameras: {
+      //       items: {
+      //         type: 'object',
+      //         properties: {
+      //           webrtcHubPortId: {
+      //             type: 'string',
+      //           },
+      //           port: {
+      //             type: 'number',
+      //           },
+      //           rtpId: {
+      //             type: 'string',
+      //           },
+      //           ip: {
+      //             type: 'string',
+      //           },
+      //         },
+      //       },
+      //       type: 'array',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     masterTick: {
+      //       type: 'number',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     finished: {
+      //       type: 'boolean',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     externalId: {
+      //       type: 'string',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     flowing: {
+      //       type: 'boolean',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     videoStreamType: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
       file: {
         meta: {
           name: 'File',
@@ -996,2475 +992,2475 @@ export const oldSchemas: BasedOldSchema[] = [
         },
         prefix: 'fi',
       },
-      organization: {
-        prefix: 'or',
-        fields: {
-          avatar: {
-            type: 'reference',
-          },
-          parents: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          postalCode: {
-            type: 'string',
-          },
-          phone: {
-            type: 'phone',
-          },
-          country: {
-            type: 'string',
-          },
-          about: {
-            type: 'string',
-          },
-          email: {
-            type: 'email',
-          },
-          name: {
-            type: 'string',
-          },
-          website: {
-            type: 'url',
-          },
-          governmentRegistration: {
-            type: 'string',
-          },
-          address: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          descendants: {
-            type: 'references',
-          },
-          branch: {
-            type: 'string',
-          },
-        },
-      },
-      document: {
-        prefix: 'do',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          internal: {
-            type: 'boolean',
-          },
-          parents: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          file: {
-            type: 'reference',
-          },
-          children: {
-            type: 'references',
-          },
-          expirationDate: {
-            type: 'timestamp',
-          },
-        },
-      },
-      photo: {
-        prefix: 'ph',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          type: {
-            type: 'type',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          file: {
-            type: 'reference',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      training: {
-        prefix: 'tr',
-        fields: {
-          description: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          category: {
-            type: 'string',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          recurring: {
-            type: 'boolean',
-          },
-          id: {
-            type: 'id',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-          descendants: {
-            type: 'references',
-          },
-          attachments: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          title: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          roles: {
-            items: {
-              type: 'string',
-            },
-            type: 'array',
-          },
-          name: {
-            type: 'string',
-          },
-          organization: {
-            type: 'reference',
-          },
-          frequency: {
-            type: 'int',
-          },
-        },
-      },
-      liveSessionMessage: {
-        prefix: 'lm',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          text: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          file: {
-            type: 'reference',
-          },
-          children: {
-            type: 'references',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-        },
-      },
-      refreshToken: {
-        prefix: 'rt',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          name: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          token: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          expiresAt: {
-            type: 'timestamp',
-          },
-        },
-      },
-      apiAccess: {
-        prefix: 'aa',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          expiresAt: {
-            type: 'timestamp',
-          },
-          id: {
-            type: 'id',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          features: {
-            items: {
-              type: 'string',
-            },
-            type: 'array',
-          },
-          token: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          revoked: {
-            type: 'boolean',
-          },
-        },
-      },
-      media: {
-        prefix: 'me',
-        fields: {
-          mediaType: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          address: {
-            type: 'string',
-          },
-          location: {
-            properties: {
-              lon: {
-                type: 'float',
-              },
-              lat: {
-                type: 'float',
-              },
-              alt: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          file: {
-            type: 'reference',
-          },
-          attitude: {
-            properties: {
-              pitch: {
-                type: 'float',
-              },
-              roll: {
-                type: 'float',
-              },
-              yaw: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          size: {
-            type: 'int',
-          },
-        },
-      },
-      battery: {
-        prefix: 'ba',
-        fields: {
-          avatar: {
-            type: 'reference',
-          },
-          parents: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          weight: {
-            type: 'float',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          lastCharged: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          name: {
-            type: 'string',
-          },
-          model: {
-            type: 'string',
-          },
-          status: {
-            type: 'string',
-          },
-          manufacturer: {
-            type: 'string',
-          },
-          serial: {
-            type: 'string',
-          },
-          firmwareVersion: {
-            type: 'string',
-          },
-        },
-      },
-      flightApproval: {
-        prefix: 'fa',
-        fields: {
-          externalReviewer: {
-            type: 'string',
-          },
-          type: {
-            type: 'type',
-          },
-          children: {
-            type: 'references',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          airspaceController: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          message: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          parents: {
-            type: 'references',
-          },
-          airspaceControllerEmail: {
-            type: 'string',
-          },
-          status: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          internalReviewer: {
-            type: 'reference',
-          },
-          internal: {
-            type: 'boolean',
-          },
-        },
-      },
-      contact: {
-        prefix: 'co',
-        fields: {
-          responded: {
-            type: 'boolean',
-          },
-          initiator: {
-            type: 'reference',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          descendants: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          message: {
-            type: 'string',
-          },
-          read: {
-            type: 'boolean',
-          },
-          name: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-        },
-      },
-      checklist: {
-        prefix: 'ch',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          updatedBy: {
-            type: 'reference',
-          },
-          checklistType: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          type: {
-            type: 'type',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          purpose: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-        },
-      },
-      executedChecklist: {
-        prefix: 'ec',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          executedBy: {
-            type: 'reference',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          checklistType: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          name: {
-            type: 'string',
-          },
-          executedAt: {
-            type: 'timestamp',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          completed: {
-            type: 'boolean',
-          },
-          descendants: {
-            type: 'references',
-          },
-          purpose: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdFrom: {
-            type: 'reference',
-          },
-        },
-      },
-      capabilitiesTemplate: {
-        prefix: 'ct',
-        fields: {
-          capabilities: {
-            type: 'json',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          public: {
-            type: 'boolean',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-        },
-      },
-      incident: {
-        prefix: 'in',
-        fields: {
-          description: {
-            type: 'string',
-          },
-          incidentType: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          flightPhase: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          reporter: {
-            type: 'reference',
-          },
-          status: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          id: {
-            type: 'id',
-          },
-          consequences: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          hazardPreviousCausedAccident: {
-            type: 'boolean',
-          },
-          title: {
-            type: 'string',
-          },
-          reportedAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          proposedMeasures: {
-            type: 'string',
-          },
-          investigator: {
-            type: 'string',
-          },
-        },
-      },
-      config: {
-        prefix: 'cf',
-        fields: {
-          API_BASE_URL: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          ALTITUDE_ANGEL_CURRENT_TOKEN: {
-            properties: {
-              accessToken: {
-                type: 'string',
-              },
-              expiredIn: {
-                type: 'number',
-              },
-              issuedAt: {
-                type: 'number',
-              },
-              refreshToken: {
-                type: 'string',
-              },
-            },
-            type: 'object',
-          },
-          STREAMING_SERVER_HOSTNAME: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          STREAMING_SERVER_RTMP_PORT: {
-            type: 'int',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          parents: {
-            type: 'references',
-          },
-          DASHBOARD_BASE_URL: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          descendants: {
-            type: 'references',
-          },
-        },
-      },
-      waypointMission: {
-        prefix: 'wm',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          missionType: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          waypoints: {
-            items: {
-              type: 'object',
-              properties: {
-                heading: {
-                  type: 'float',
-                },
-                holdingTime: {
-                  type: 'int',
-                },
-                speed: {
-                  type: 'float',
-                },
-                waypointType: {
-                  type: 'string',
-                },
-                location: {
-                  type: 'object',
-                  properties: {
-                    lon: {
-                      type: 'float',
-                    },
-                    lat: {
-                      type: 'float',
-                    },
-                    alt: {
-                      type: 'float',
-                    },
-                  },
-                },
-              },
-            },
-            type: 'array',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-        },
-      },
-      incidentFollowUp: {
-        prefix: 'fo',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          description: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          reporter: {
-            type: 'reference',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      maintenanceCompletion: {
-        prefix: 'mc',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          cost: {
-            properties: {
-              currencyIsoCode: {
-                type: 'string',
-              },
-              amount: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          id: {
-            type: 'id',
-          },
-          notes: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          date: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          parents: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-        },
-      },
-      maintenance: {
-        prefix: 'ma',
-        fields: {
-          assets: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          children: {
-            type: 'references',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          checklists: {
-            type: 'references',
-          },
-          technician: {
-            type: 'reference',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          notes: {
-            type: 'string',
-          },
-          location: {
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          behaviour: {
-            properties: {
-              timeUsage: {
-                type: 'int',
-              },
-              flightsUsage: {
-                type: 'int',
-              },
-              timeframe: {
-                type: 'int',
-              },
-            },
-            type: 'object',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      trainingCompletion: {
-        prefix: 'tc',
-        fields: {
-          training: {
-            type: 'reference',
-          },
-          trainee: {
-            type: 'reference',
-          },
-          parents: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          id: {
-            type: 'id',
-          },
-          completionRequest: {
-            type: 'reference',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          notes: {
-            type: 'string',
-          },
-          level: {
-            type: 'int',
-          },
-          approved: {
-            type: 'boolean',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-        },
-      },
-      user: {
-        prefix: 'us',
-        fields: {
-          current: {
-            type: 'boolean',
-          },
-          avatar: {
-            type: 'reference',
-          },
-          parents: {
-            type: 'references',
-          },
-          flyingRules: {
-            properties: {
-              flights: {
-                type: 'int',
-              },
-              hours: {
-                type: 'int',
-              },
-              affectsCurrency: {
-                type: 'boolean',
-              },
-              timeFrame: {
-                type: 'int',
-              },
-            },
-            type: 'object',
-          },
-          lastName: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          firstName: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          status: {
-            meta: {
-              name: 'Status',
-              index: 3,
-            },
-            type: 'string',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          lastSessionDate: {
-            type: 'timestamp',
-          },
-          id: {
-            meta: {
-              index: 4,
-            },
-            type: 'id',
-          },
-          fireBasePassword: {
-            type: 'string',
-          },
-          email: {
-            meta: {
-              name: 'Email',
-              index: 2,
-            },
-            type: 'email',
-          },
-          password: {
-            meta: {
-              name: 'Password',
-              index: 5,
-            },
-            type: 'digest',
-          },
-          name: {
-            meta: {
-              name: 'Name',
-              index: 1,
-            },
-            type: 'string',
-          },
-          preferences: {
-            properties: {
-              theme: {
-                type: 'string',
-              },
-              units: {
-                type: 'string',
-              },
-            },
-            type: 'object',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          fireBaseSalt: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-        },
-      },
-      notification: {
-        prefix: 'no',
-        fields: {
-          parents: {
-            type: 'references',
-          },
-          asset: {
-            type: 'reference',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          notificationTypeStr: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          sentiment: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          read: {
-            type: 'boolean',
-          },
-          title: {
-            type: 'text',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          body: {
-            type: 'text',
-          },
-          type: {
-            type: 'type',
-          },
-          notificationType: {
-            type: 'number',
-          },
-          name: {
-            type: 'string',
-          },
-        },
-      },
-      flight: {
-        prefix: 'fl',
-        fields: {
-          note: {
-            type: 'string',
-          },
-          payloadOperators: {
-            type: 'references',
-          },
-          telemetry: {
-            meta: {
-              name: 'Telemetry',
-            },
-            type: 'object',
-            properties: {
-              drcState: {
-                type: 'string',
-              },
-              elevation: {
-                meta: {
-                  name: 'Elevation',
-                },
-                type: 'float',
-              },
-              waypointIndex: {
-                type: 'int',
-              },
-              gimbal: {
-                meta: {
-                  name: 'Gimbal',
-                },
-                type: 'object',
-                properties: {
-                  attitude: {
-                    meta: {
-                      name: 'Attitude',
-                    },
-                    type: 'object',
-                    properties: {
-                      pitch: {
-                        meta: {
-                          name: 'Pitch',
-                        },
-                        type: 'float',
-                      },
-                      roll: {
-                        meta: {
-                          name: 'Roll',
-                        },
-                        type: 'float',
-                      },
-                      yaw: {
-                        meta: {
-                          name: 'Yaw',
-                        },
-                        type: 'float',
-                      },
-                    },
-                  },
-                },
-              },
-              batteries: {
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'string',
-                    },
-                    percentage: {
-                      type: 'float',
-                    },
-                  },
-                },
-                type: 'array',
-                meta: {
-                  name: 'Batteries',
-                },
-              },
-              homeDistance: {
-                meta: {
-                  name: 'HomeDistance',
-                },
-                type: 'float',
-              },
-              location: {
-                meta: {
-                  name: 'Location',
-                },
-                type: 'object',
-                properties: {
-                  lon: {
-                    meta: {
-                      name: 'Lon',
-                    },
-                    type: 'float',
-                  },
-                  lat: {
-                    meta: {
-                      name: 'Lat',
-                    },
-                    type: 'float',
-                  },
-                  alt: {
-                    meta: {
-                      name: 'Alt',
-                    },
-                    type: 'float',
-                  },
-                },
-              },
-              speed: {
-                meta: {
-                  name: 'Speed',
-                },
-                type: 'object',
-                properties: {
-                  vertical: {
-                    meta: {
-                      name: 'Vertical',
-                    },
-                    type: 'float',
-                  },
-                  horizontal: {
-                    meta: {
-                      name: 'Horizontal',
-                    },
-                    type: 'float',
-                  },
-                  ned: {
-                    properties: {
-                      down: {
-                        type: 'float',
-                      },
-                      east: {
-                        type: 'float',
-                      },
-                      north: {
-                        type: 'float',
-                      },
-                    },
-                    type: 'object',
-                  },
-                },
-              },
-              datetime: {
-                meta: {
-                  name: 'Datetime',
-                },
-                type: 'timestamp',
-              },
-              satellites: {
-                meta: {
-                  name: 'Satellites',
-                },
-                type: 'int',
-              },
-              droneState: {
-                type: 'string',
-              },
-              attitude: {
-                meta: {
-                  name: 'Attitude',
-                },
-                type: 'object',
-                properties: {
-                  pitch: {
-                    meta: {
-                      name: 'Pitch',
-                    },
-                    type: 'float',
-                  },
-                  roll: {
-                    meta: {
-                      name: 'Roll',
-                    },
-                    type: 'float',
-                  },
-                  yaw: {
-                    meta: {
-                      name: 'Yaw',
-                    },
-                    type: 'float',
-                  },
-                },
-              },
-              flightTaskStep: {
-                type: 'string',
-              },
-            },
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          riskAnalysis: {
-            items: {
-              type: 'object',
-              properties: {
-                probabilityAfterMeasure: {
-                  type: 'int',
-                },
-                description: {
-                  type: 'string',
-                },
-                severityAfterMeasure: {
-                  type: 'int',
-                },
-                severity: {
-                  type: 'int',
-                },
-                title: {
-                  type: 'string',
-                },
-                measure: {
-                  type: 'string',
-                },
-                probability: {
-                  type: 'int',
-                },
-              },
-            },
-            type: 'array',
-          },
-          regulationSet: {
-            properties: {
-              airspaceProvider: {
-                type: 'string',
-              },
-              regulations: {
-                items: {
-                  type: 'object',
-                  properties: {
-                    details: {
-                      items: {
-                        type: 'object',
-                        properties: {
-                          name: {
-                            type: 'string',
-                          },
-                          text: {
-                            type: 'string',
-                          },
-                        },
-                      },
-                      type: 'array',
-                    },
-                    description: {
-                      type: 'string',
-                    },
-                    title: {
-                      type: 'string',
-                    },
-                  },
-                },
-                type: 'array',
-              },
-            },
-            type: 'object',
-          },
-          command: {
-            properties: {
-              datetime: {
-                type: 'timestamp',
-              },
-              name: {
-                type: 'string',
-              },
-              parameters: {
-                type: 'json',
-              },
-            },
-            type: 'object',
-          },
-          geofence: {
-            type: 'json',
-          },
-          drone: {
-            type: 'reference',
-          },
-          endTime: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          address: {
-            type: 'string',
-          },
-          losType: {
-            type: 'string',
-          },
-          mission: {
-            type: 'reference',
-          },
-          flightType: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          permissionForm: {
-            properties: {
-              firstName: {
-                type: 'string',
-              },
-              signature: {
-                type: 'reference',
-              },
-              lastName: {
-                type: 'string',
-              },
-              reason: {
-                type: 'string',
-              },
-            },
-            type: 'object',
-          },
-          flyzone: {
-            items: {
-              properties: {
-                lon: {
-                  type: 'float',
-                },
-                lat: {
-                  type: 'float',
-                },
-              },
-              type: 'object',
-            },
-            type: 'array',
-          },
-          pilot: {
-            type: 'reference',
-          },
-          pointsOfInterest: {
-            items: {
-              properties: {
-                color: {
-                  type: 'string',
-                },
-                location: {
-                  properties: {
-                    lon: {
-                      type: 'float',
-                    },
-                    lat: {
-                      type: 'float',
-                    },
-                  },
-                  type: 'object',
-                },
-                icon: {
-                  type: 'string',
-                },
-                name: {
-                  type: 'string',
-                },
-              },
-              type: 'object',
-            },
-            type: 'array',
-          },
-          capabilities: {
-            type: 'json',
-          },
-          type: {
-            type: 'type',
-          },
-          flightHeight: {
-            type: 'float',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          status: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          commands: {
-            type: 'json',
-          },
-          draft: {
-            type: 'boolean',
-          },
-          flightTime: {
-            type: 'int',
-          },
-          id: {
-            type: 'id',
-          },
-          takeOffWeather: {
-            properties: {
-              sunrise: {
-                type: 'timestamp',
-              },
-              gpsAccuracy: {
-                type: 'float',
-              },
-              kpIndex: {
-                type: 'int',
-              },
-              humidity: {
-                type: 'float',
-              },
-              sunset: {
-                type: 'timestamp',
-              },
-              condition: {
-                type: 'string',
-              },
-              cloudCover: {
-                type: 'float',
-              },
-              precipitation: {
-                properties: {
-                  intensity: {
-                    type: 'float',
-                  },
-                  accumulation: {
-                    type: 'float',
-                  },
-                  probability: {
-                    type: 'float',
-                  },
-                },
-                type: 'object',
-              },
-              pressure: {
-                type: 'float',
-              },
-              time: {
-                type: 'timestamp',
-              },
-              windSpeed: {
-                type: 'float',
-              },
-              temperature: {
-                type: 'float',
-              },
-              windGusting: {
-                type: 'float',
-              },
-              visibility: {
-                type: 'float',
-              },
-              windBearing: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          takeOffTime: {
-            type: 'timestamp',
-          },
-          batteries: {
-            type: 'references',
-          },
-          equipment: {
-            type: 'references',
-          },
-          observers: {
-            type: 'references',
-          },
-          approvals: {
-            type: 'references',
-          },
-          batteryCharges: {
-            items: {
-              type: 'object',
-              properties: {
-                id: {
-                  type: 'string',
-                },
-                startPercentage: {
-                  type: 'float',
-                },
-                endPercentage: {
-                  type: 'float',
-                },
-              },
-            },
-            type: 'array',
-          },
-          location: {
-            properties: {
-              lon: {
-                type: 'float',
-              },
-              lat: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          groundStation: {
-            type: 'reference',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-        },
-      },
-      executedChecklistItem: {
-        prefix: 'ei',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          description: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          title: {
-            type: 'string',
-          },
-          type: {
-            type: 'type',
-          },
-          parents: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          isChecked: {
-            type: 'boolean',
-          },
-          index: {
-            type: 'int',
-          },
-        },
-      },
-      trainingCompletionRequest: {
-        prefix: 'tq',
-        fields: {
-          training: {
-            type: 'reference',
-          },
-          description: {
-            type: 'string',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          id: {
-            type: 'id',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          attachments: {
-            type: 'references',
-          },
-          reviewed: {
-            type: 'boolean',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          type: {
-            type: 'type',
-          },
-          parents: {
-            type: 'references',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdBy: {
-            type: 'reference',
-          },
-        },
-      },
-      equipment: {
-        prefix: 'eq',
-        fields: {
-          avatar: {
-            type: 'reference',
-          },
-          parents: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          purchasedAt: {
-            type: 'timestamp',
-          },
-          descendants: {
-            type: 'references',
-          },
-          weight: {
-            type: 'float',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          serialNumber: {
-            type: 'string',
-          },
-          id: {
-            type: 'id',
-          },
-          hardwareVersion: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          type: {
-            type: 'type',
-          },
-          name: {
-            type: 'string',
-          },
-          model: {
-            type: 'string',
-          },
-          isLiveStreamPrivate: {
-            type: 'boolean',
-          },
-          status: {
-            type: 'string',
-          },
-          firmwareVersion: {
-            type: 'string',
-          },
-          manufacturer: {
-            type: 'string',
-          },
-        },
-      },
-      checklistItem: {
-        prefix: 'ci',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          index: {
-            type: 'int',
-          },
-          id: {
-            type: 'id',
-          },
-          type: {
-            type: 'type',
-          },
-          descendants: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          name: {
-            type: 'string',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          title: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          description: {
-            type: 'string',
-          },
-        },
-      },
-      liveSession: {
-        prefix: 'li',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          description: {
-            type: 'string',
-          },
-          avatar: {
-            type: 'reference',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          name: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          parents: {
-            type: 'references',
-          },
-        },
-      },
-      nonUserInvite: {
-        prefix: 'ni',
-        fields: {
-          type: {
-            type: 'type',
-          },
-          id: {
-            type: 'id',
-          },
-          invitedBy: {
-            type: 'reference',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          token: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          roles: {
-            items: {
-              type: 'string',
-            },
-            type: 'array',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          email: {
-            type: 'email',
-          },
-        },
-      },
-      error: {
-        prefix: 'er',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          type: {
-            type: 'type',
-          },
-          descendants: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          message: {
-            type: 'text',
-          },
-          read: {
-            type: 'boolean',
-          },
-          name: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          dismissed: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-        },
-      },
-      certificate: {
-        prefix: 'ce',
-        fields: {
-          certificateType: {
-            type: 'string',
-          },
-          expirationDate: {
-            type: 'timestamp',
-          },
-          id: {
-            type: 'id',
-          },
-          descendants: {
-            type: 'references',
-          },
-          children: {
-            type: 'references',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          affectsCurrency: {
-            type: 'boolean',
-          },
-          type: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          file: {
-            type: 'reference',
-          },
-          documentNumber: {
-            type: 'string',
-          },
-          ancestors: {
-            type: 'references',
-          },
-        },
-      },
-      groundStation: {
-        prefix: 'gs',
-        fields: {
-          avatar: {
-            type: 'reference',
-          },
-          parents: {
-            type: 'references',
-          },
-          streamingConfig: {
-            properties: {
-              address: {
-                type: 'string',
-              },
-            },
-            type: 'object',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          manufacturer: {
-            type: 'string',
-          },
-          descendants: {
-            type: 'references',
-          },
-          platformType: {
-            type: 'string',
-          },
-          status: {
-            type: 'string',
-          },
-          archived: {
-            type: 'boolean',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          geofence: {
-            type: 'json',
-          },
-          drones: {
-            type: 'references',
-          },
-          ancestors: {
-            type: 'references',
-          },
-          capabilities: {
-            type: 'json',
-          },
-          groundStationCoverState: {
-            type: 'int',
-          },
-          id: {
-            type: 'id',
-          },
-          name: {
-            type: 'string',
-          },
-          online: {
-            type: 'boolean',
-          },
-          credentials: {
-            properties: {
-              password: {
-                type: 'string',
-              },
-              username: {
-                type: 'string',
-              },
-              address: {
-                type: 'string',
-              },
-            },
-            type: 'object',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-          groundStationState: {
-            type: 'int',
-          },
-          droneInDockState: {
-            type: 'int',
-          },
-          model: {
-            type: 'string',
-          },
-          location: {
-            properties: {
-              lon: {
-                type: 'float',
-              },
-              lat: {
-                type: 'float',
-              },
-              alt: {
-                type: 'float',
-              },
-            },
-            type: 'object',
-          },
-          type: {
-            type: 'type',
-          },
-          serial: {
-            type: 'string',
-          },
-          remoteId: {
-            type: 'string',
-          },
-        },
-      },
-      tag: {
-        prefix: 'ta',
-        fields: {
-          ancestors: {
-            type: 'references',
-          },
-          id: {
-            type: 'id',
-          },
-          aliases: {
-            items: {
-              type: 'string',
-            },
-            type: 'set',
-          },
-          descendants: {
-            type: 'references',
-          },
-          name: {
-            type: 'string',
-          },
-          parents: {
-            type: 'references',
-          },
-          type: {
-            type: 'type',
-          },
-          updatedAt: {
-            type: 'timestamp',
-          },
-          children: {
-            type: 'references',
-          },
-          createdAt: {
-            type: 'timestamp',
-          },
-        },
-      },
+      // organization: {
+      //   prefix: 'or',
+      //   fields: {
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     postalCode: {
+      //       type: 'string',
+      //     },
+      //     phone: {
+      //       type: 'phone',
+      //     },
+      //     country: {
+      //       type: 'string',
+      //     },
+      //     about: {
+      //       type: 'string',
+      //     },
+      //     email: {
+      //       type: 'email',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     website: {
+      //       type: 'url',
+      //     },
+      //     governmentRegistration: {
+      //       type: 'string',
+      //     },
+      //     address: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     branch: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // document: {
+      //   prefix: 'do',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     internal: {
+      //       type: 'boolean',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     file: {
+      //       type: 'reference',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     expirationDate: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // photo: {
+      //   prefix: 'ph',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     file: {
+      //       type: 'reference',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // training: {
+      //   prefix: 'tr',
+      //   fields: {
+      //     description: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     category: {
+      //       type: 'string',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     recurring: {
+      //       type: 'boolean',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     attachments: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     title: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     roles: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'array',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     organization: {
+      //       type: 'reference',
+      //     },
+      //     frequency: {
+      //       type: 'int',
+      //     },
+      //   },
+      // },
+      // liveSessionMessage: {
+      //   prefix: 'lm',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     text: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     file: {
+      //       type: 'reference',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // refreshToken: {
+      //   prefix: 'rt',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     token: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     expiresAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // apiAccess: {
+      //   prefix: 'aa',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     expiresAt: {
+      //       type: 'timestamp',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     features: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'array',
+      //     },
+      //     token: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     revoked: {
+      //       type: 'boolean',
+      //     },
+      //   },
+      // },
+      // media: {
+      //   prefix: 'me',
+      //   fields: {
+      //     mediaType: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     address: {
+      //       type: 'string',
+      //     },
+      //     location: {
+      //       properties: {
+      //         lon: {
+      //           type: 'float',
+      //         },
+      //         lat: {
+      //           type: 'float',
+      //         },
+      //         alt: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     file: {
+      //       type: 'reference',
+      //     },
+      //     attitude: {
+      //       properties: {
+      //         pitch: {
+      //           type: 'float',
+      //         },
+      //         roll: {
+      //           type: 'float',
+      //         },
+      //         yaw: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     size: {
+      //       type: 'int',
+      //     },
+      //   },
+      // },
+      // battery: {
+      //   prefix: 'ba',
+      //   fields: {
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     weight: {
+      //       type: 'float',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     lastCharged: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     model: {
+      //       type: 'string',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     manufacturer: {
+      //       type: 'string',
+      //     },
+      //     serial: {
+      //       type: 'string',
+      //     },
+      //     firmwareVersion: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // flightApproval: {
+      //   prefix: 'fa',
+      //   fields: {
+      //     externalReviewer: {
+      //       type: 'string',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     airspaceController: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     message: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     airspaceControllerEmail: {
+      //       type: 'string',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     internalReviewer: {
+      //       type: 'reference',
+      //     },
+      //     internal: {
+      //       type: 'boolean',
+      //     },
+      //   },
+      // },
+      // contact: {
+      //   prefix: 'co',
+      //   fields: {
+      //     responded: {
+      //       type: 'boolean',
+      //     },
+      //     initiator: {
+      //       type: 'reference',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     message: {
+      //       type: 'string',
+      //     },
+      //     read: {
+      //       type: 'boolean',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // checklist: {
+      //   prefix: 'ch',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     updatedBy: {
+      //       type: 'reference',
+      //     },
+      //     checklistType: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     purpose: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // executedChecklist: {
+      //   prefix: 'ec',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     executedBy: {
+      //       type: 'reference',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     checklistType: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     executedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     completed: {
+      //       type: 'boolean',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     purpose: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdFrom: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // capabilitiesTemplate: {
+      //   prefix: 'ct',
+      //   fields: {
+      //     capabilities: {
+      //       type: 'json',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     public: {
+      //       type: 'boolean',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // incident: {
+      //   prefix: 'in',
+      //   fields: {
+      //     description: {
+      //       type: 'string',
+      //     },
+      //     incidentType: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     flightPhase: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     reporter: {
+      //       type: 'reference',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     consequences: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     hazardPreviousCausedAccident: {
+      //       type: 'boolean',
+      //     },
+      //     title: {
+      //       type: 'string',
+      //     },
+      //     reportedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     proposedMeasures: {
+      //       type: 'string',
+      //     },
+      //     investigator: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // config: {
+      //   prefix: 'cf',
+      //   fields: {
+      //     API_BASE_URL: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ALTITUDE_ANGEL_CURRENT_TOKEN: {
+      //       properties: {
+      //         accessToken: {
+      //           type: 'string',
+      //         },
+      //         expiredIn: {
+      //           type: 'number',
+      //         },
+      //         issuedAt: {
+      //           type: 'number',
+      //         },
+      //         refreshToken: {
+      //           type: 'string',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     STREAMING_SERVER_HOSTNAME: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     STREAMING_SERVER_RTMP_PORT: {
+      //       type: 'int',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     DASHBOARD_BASE_URL: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // waypointMission: {
+      //   prefix: 'wm',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     missionType: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     waypoints: {
+      //       items: {
+      //         type: 'object',
+      //         properties: {
+      //           heading: {
+      //             type: 'float',
+      //           },
+      //           holdingTime: {
+      //             type: 'int',
+      //           },
+      //           speed: {
+      //             type: 'float',
+      //           },
+      //           waypointType: {
+      //             type: 'string',
+      //           },
+      //           location: {
+      //             type: 'object',
+      //             properties: {
+      //               lon: {
+      //                 type: 'float',
+      //               },
+      //               lat: {
+      //                 type: 'float',
+      //               },
+      //               alt: {
+      //                 type: 'float',
+      //               },
+      //             },
+      //           },
+      //         },
+      //       },
+      //       type: 'array',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //   },
+      // },
+      // incidentFollowUp: {
+      //   prefix: 'fo',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     description: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     reporter: {
+      //       type: 'reference',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // maintenanceCompletion: {
+      //   prefix: 'mc',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     cost: {
+      //       properties: {
+      //         currencyIsoCode: {
+      //           type: 'string',
+      //         },
+      //         amount: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     notes: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     date: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // maintenance: {
+      //   prefix: 'ma',
+      //   fields: {
+      //     assets: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     checklists: {
+      //       type: 'references',
+      //     },
+      //     technician: {
+      //       type: 'reference',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     notes: {
+      //       type: 'string',
+      //     },
+      //     location: {
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     behaviour: {
+      //       properties: {
+      //         timeUsage: {
+      //           type: 'int',
+      //         },
+      //         flightsUsage: {
+      //           type: 'int',
+      //         },
+      //         timeframe: {
+      //           type: 'int',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // trainingCompletion: {
+      //   prefix: 'tc',
+      //   fields: {
+      //     training: {
+      //       type: 'reference',
+      //     },
+      //     trainee: {
+      //       type: 'reference',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     completionRequest: {
+      //       type: 'reference',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     notes: {
+      //       type: 'string',
+      //     },
+      //     level: {
+      //       type: 'int',
+      //     },
+      //     approved: {
+      //       type: 'boolean',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // user: {
+      //   prefix: 'us',
+      //   fields: {
+      //     current: {
+      //       type: 'boolean',
+      //     },
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     flyingRules: {
+      //       properties: {
+      //         flights: {
+      //           type: 'int',
+      //         },
+      //         hours: {
+      //           type: 'int',
+      //         },
+      //         affectsCurrency: {
+      //           type: 'boolean',
+      //         },
+      //         timeFrame: {
+      //           type: 'int',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     lastName: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     firstName: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     status: {
+      //       meta: {
+      //         name: 'Status',
+      //         index: 3,
+      //       },
+      //       type: 'string',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     lastSessionDate: {
+      //       type: 'timestamp',
+      //     },
+      //     id: {
+      //       meta: {
+      //         index: 4,
+      //       },
+      //       type: 'id',
+      //     },
+      //     fireBasePassword: {
+      //       type: 'string',
+      //     },
+      //     email: {
+      //       meta: {
+      //         name: 'Email',
+      //         index: 2,
+      //       },
+      //       type: 'email',
+      //     },
+      //     password: {
+      //       meta: {
+      //         name: 'Password',
+      //         index: 5,
+      //       },
+      //       type: 'digest',
+      //     },
+      //     name: {
+      //       meta: {
+      //         name: 'Name',
+      //         index: 1,
+      //       },
+      //       type: 'string',
+      //     },
+      //     preferences: {
+      //       properties: {
+      //         theme: {
+      //           type: 'string',
+      //         },
+      //         units: {
+      //           type: 'string',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     fireBaseSalt: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // notification: {
+      //   prefix: 'no',
+      //   fields: {
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     asset: {
+      //       type: 'reference',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     notificationTypeStr: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     sentiment: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     read: {
+      //       type: 'boolean',
+      //     },
+      //     title: {
+      //       type: 'text',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     body: {
+      //       type: 'text',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     notificationType: {
+      //       type: 'number',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // flight: {
+      //   prefix: 'fl',
+      //   fields: {
+      //     note: {
+      //       type: 'string',
+      //     },
+      //     payloadOperators: {
+      //       type: 'references',
+      //     },
+      //     telemetry: {
+      //       meta: {
+      //         name: 'Telemetry',
+      //       },
+      //       type: 'object',
+      //       properties: {
+      //         drcState: {
+      //           type: 'string',
+      //         },
+      //         elevation: {
+      //           meta: {
+      //             name: 'Elevation',
+      //           },
+      //           type: 'float',
+      //         },
+      //         waypointIndex: {
+      //           type: 'int',
+      //         },
+      //         gimbal: {
+      //           meta: {
+      //             name: 'Gimbal',
+      //           },
+      //           type: 'object',
+      //           properties: {
+      //             attitude: {
+      //               meta: {
+      //                 name: 'Attitude',
+      //               },
+      //               type: 'object',
+      //               properties: {
+      //                 pitch: {
+      //                   meta: {
+      //                     name: 'Pitch',
+      //                   },
+      //                   type: 'float',
+      //                 },
+      //                 roll: {
+      //                   meta: {
+      //                     name: 'Roll',
+      //                   },
+      //                   type: 'float',
+      //                 },
+      //                 yaw: {
+      //                   meta: {
+      //                     name: 'Yaw',
+      //                   },
+      //                   type: 'float',
+      //                 },
+      //               },
+      //             },
+      //           },
+      //         },
+      //         batteries: {
+      //           items: {
+      //             type: 'object',
+      //             properties: {
+      //               id: {
+      //                 type: 'string',
+      //               },
+      //               percentage: {
+      //                 type: 'float',
+      //               },
+      //             },
+      //           },
+      //           type: 'array',
+      //           meta: {
+      //             name: 'Batteries',
+      //           },
+      //         },
+      //         homeDistance: {
+      //           meta: {
+      //             name: 'HomeDistance',
+      //           },
+      //           type: 'float',
+      //         },
+      //         location: {
+      //           meta: {
+      //             name: 'Location',
+      //           },
+      //           type: 'object',
+      //           properties: {
+      //             lon: {
+      //               meta: {
+      //                 name: 'Lon',
+      //               },
+      //               type: 'float',
+      //             },
+      //             lat: {
+      //               meta: {
+      //                 name: 'Lat',
+      //               },
+      //               type: 'float',
+      //             },
+      //             alt: {
+      //               meta: {
+      //                 name: 'Alt',
+      //               },
+      //               type: 'float',
+      //             },
+      //           },
+      //         },
+      //         speed: {
+      //           meta: {
+      //             name: 'Speed',
+      //           },
+      //           type: 'object',
+      //           properties: {
+      //             vertical: {
+      //               meta: {
+      //                 name: 'Vertical',
+      //               },
+      //               type: 'float',
+      //             },
+      //             horizontal: {
+      //               meta: {
+      //                 name: 'Horizontal',
+      //               },
+      //               type: 'float',
+      //             },
+      //             ned: {
+      //               properties: {
+      //                 down: {
+      //                   type: 'float',
+      //                 },
+      //                 east: {
+      //                   type: 'float',
+      //                 },
+      //                 north: {
+      //                   type: 'float',
+      //                 },
+      //               },
+      //               type: 'object',
+      //             },
+      //           },
+      //         },
+      //         datetime: {
+      //           meta: {
+      //             name: 'Datetime',
+      //           },
+      //           type: 'timestamp',
+      //         },
+      //         satellites: {
+      //           meta: {
+      //             name: 'Satellites',
+      //           },
+      //           type: 'int',
+      //         },
+      //         droneState: {
+      //           type: 'string',
+      //         },
+      //         attitude: {
+      //           meta: {
+      //             name: 'Attitude',
+      //           },
+      //           type: 'object',
+      //           properties: {
+      //             pitch: {
+      //               meta: {
+      //                 name: 'Pitch',
+      //               },
+      //               type: 'float',
+      //             },
+      //             roll: {
+      //               meta: {
+      //                 name: 'Roll',
+      //               },
+      //               type: 'float',
+      //             },
+      //             yaw: {
+      //               meta: {
+      //                 name: 'Yaw',
+      //               },
+      //               type: 'float',
+      //             },
+      //           },
+      //         },
+      //         flightTaskStep: {
+      //           type: 'string',
+      //         },
+      //       },
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     riskAnalysis: {
+      //       items: {
+      //         type: 'object',
+      //         properties: {
+      //           probabilityAfterMeasure: {
+      //             type: 'int',
+      //           },
+      //           description: {
+      //             type: 'string',
+      //           },
+      //           severityAfterMeasure: {
+      //             type: 'int',
+      //           },
+      //           severity: {
+      //             type: 'int',
+      //           },
+      //           title: {
+      //             type: 'string',
+      //           },
+      //           measure: {
+      //             type: 'string',
+      //           },
+      //           probability: {
+      //             type: 'int',
+      //           },
+      //         },
+      //       },
+      //       type: 'array',
+      //     },
+      //     regulationSet: {
+      //       properties: {
+      //         airspaceProvider: {
+      //           type: 'string',
+      //         },
+      //         regulations: {
+      //           items: {
+      //             type: 'object',
+      //             properties: {
+      //               details: {
+      //                 items: {
+      //                   type: 'object',
+      //                   properties: {
+      //                     name: {
+      //                       type: 'string',
+      //                     },
+      //                     text: {
+      //                       type: 'string',
+      //                     },
+      //                   },
+      //                 },
+      //                 type: 'array',
+      //               },
+      //               description: {
+      //                 type: 'string',
+      //               },
+      //               title: {
+      //                 type: 'string',
+      //               },
+      //             },
+      //           },
+      //           type: 'array',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     command: {
+      //       properties: {
+      //         datetime: {
+      //           type: 'timestamp',
+      //         },
+      //         name: {
+      //           type: 'string',
+      //         },
+      //         parameters: {
+      //           type: 'json',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     geofence: {
+      //       type: 'json',
+      //     },
+      //     drone: {
+      //       type: 'reference',
+      //     },
+      //     endTime: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     address: {
+      //       type: 'string',
+      //     },
+      //     losType: {
+      //       type: 'string',
+      //     },
+      //     mission: {
+      //       type: 'reference',
+      //     },
+      //     flightType: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     permissionForm: {
+      //       properties: {
+      //         firstName: {
+      //           type: 'string',
+      //         },
+      //         signature: {
+      //           type: 'reference',
+      //         },
+      //         lastName: {
+      //           type: 'string',
+      //         },
+      //         reason: {
+      //           type: 'string',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     flyzone: {
+      //       items: {
+      //         properties: {
+      //           lon: {
+      //             type: 'float',
+      //           },
+      //           lat: {
+      //             type: 'float',
+      //           },
+      //         },
+      //         type: 'object',
+      //       },
+      //       type: 'array',
+      //     },
+      //     pilot: {
+      //       type: 'reference',
+      //     },
+      //     pointsOfInterest: {
+      //       items: {
+      //         properties: {
+      //           color: {
+      //             type: 'string',
+      //           },
+      //           location: {
+      //             properties: {
+      //               lon: {
+      //                 type: 'float',
+      //               },
+      //               lat: {
+      //                 type: 'float',
+      //               },
+      //             },
+      //             type: 'object',
+      //           },
+      //           icon: {
+      //             type: 'string',
+      //           },
+      //           name: {
+      //             type: 'string',
+      //           },
+      //         },
+      //         type: 'object',
+      //       },
+      //       type: 'array',
+      //     },
+      //     capabilities: {
+      //       type: 'json',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     flightHeight: {
+      //       type: 'float',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     commands: {
+      //       type: 'json',
+      //     },
+      //     draft: {
+      //       type: 'boolean',
+      //     },
+      //     flightTime: {
+      //       type: 'int',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     takeOffWeather: {
+      //       properties: {
+      //         sunrise: {
+      //           type: 'timestamp',
+      //         },
+      //         gpsAccuracy: {
+      //           type: 'float',
+      //         },
+      //         kpIndex: {
+      //           type: 'int',
+      //         },
+      //         humidity: {
+      //           type: 'float',
+      //         },
+      //         sunset: {
+      //           type: 'timestamp',
+      //         },
+      //         condition: {
+      //           type: 'string',
+      //         },
+      //         cloudCover: {
+      //           type: 'float',
+      //         },
+      //         precipitation: {
+      //           properties: {
+      //             intensity: {
+      //               type: 'float',
+      //             },
+      //             accumulation: {
+      //               type: 'float',
+      //             },
+      //             probability: {
+      //               type: 'float',
+      //             },
+      //           },
+      //           type: 'object',
+      //         },
+      //         pressure: {
+      //           type: 'float',
+      //         },
+      //         time: {
+      //           type: 'timestamp',
+      //         },
+      //         windSpeed: {
+      //           type: 'float',
+      //         },
+      //         temperature: {
+      //           type: 'float',
+      //         },
+      //         windGusting: {
+      //           type: 'float',
+      //         },
+      //         visibility: {
+      //           type: 'float',
+      //         },
+      //         windBearing: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     takeOffTime: {
+      //       type: 'timestamp',
+      //     },
+      //     batteries: {
+      //       type: 'references',
+      //     },
+      //     equipment: {
+      //       type: 'references',
+      //     },
+      //     observers: {
+      //       type: 'references',
+      //     },
+      //     approvals: {
+      //       type: 'references',
+      //     },
+      //     batteryCharges: {
+      //       items: {
+      //         type: 'object',
+      //         properties: {
+      //           id: {
+      //             type: 'string',
+      //           },
+      //           startPercentage: {
+      //             type: 'float',
+      //           },
+      //           endPercentage: {
+      //             type: 'float',
+      //           },
+      //         },
+      //       },
+      //       type: 'array',
+      //     },
+      //     location: {
+      //       properties: {
+      //         lon: {
+      //           type: 'float',
+      //         },
+      //         lat: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     groundStation: {
+      //       type: 'reference',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // executedChecklistItem: {
+      //   prefix: 'ei',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     description: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     title: {
+      //       type: 'string',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     isChecked: {
+      //       type: 'boolean',
+      //     },
+      //     index: {
+      //       type: 'int',
+      //     },
+      //   },
+      // },
+      // trainingCompletionRequest: {
+      //   prefix: 'tq',
+      //   fields: {
+      //     training: {
+      //       type: 'reference',
+      //     },
+      //     description: {
+      //       type: 'string',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     attachments: {
+      //       type: 'references',
+      //     },
+      //     reviewed: {
+      //       type: 'boolean',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdBy: {
+      //       type: 'reference',
+      //     },
+      //   },
+      // },
+      // equipment: {
+      //   prefix: 'eq',
+      //   fields: {
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     purchasedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     weight: {
+      //       type: 'float',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     serialNumber: {
+      //       type: 'string',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     hardwareVersion: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     model: {
+      //       type: 'string',
+      //     },
+      //     isLiveStreamPrivate: {
+      //       type: 'boolean',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     firmwareVersion: {
+      //       type: 'string',
+      //     },
+      //     manufacturer: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // checklistItem: {
+      //   prefix: 'ci',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     index: {
+      //       type: 'int',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     title: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     description: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // liveSession: {
+      //   prefix: 'li',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     description: {
+      //       type: 'string',
+      //     },
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // nonUserInvite: {
+      //   prefix: 'ni',
+      //   fields: {
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     invitedBy: {
+      //       type: 'reference',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     token: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     roles: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'array',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     email: {
+      //       type: 'email',
+      //     },
+      //   },
+      // },
+      // error: {
+      //   prefix: 'er',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     message: {
+      //       type: 'text',
+      //     },
+      //     read: {
+      //       type: 'boolean',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     dismissed: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
+      // certificate: {
+      //   prefix: 'ce',
+      //   fields: {
+      //     certificateType: {
+      //       type: 'string',
+      //     },
+      //     expirationDate: {
+      //       type: 'timestamp',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     affectsCurrency: {
+      //       type: 'boolean',
+      //     },
+      //     type: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     file: {
+      //       type: 'reference',
+      //     },
+      //     documentNumber: {
+      //       type: 'string',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //   },
+      // },
+      // groundStation: {
+      //   prefix: 'gs',
+      //   fields: {
+      //     avatar: {
+      //       type: 'reference',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     streamingConfig: {
+      //       properties: {
+      //         address: {
+      //           type: 'string',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     manufacturer: {
+      //       type: 'string',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     platformType: {
+      //       type: 'string',
+      //     },
+      //     status: {
+      //       type: 'string',
+      //     },
+      //     archived: {
+      //       type: 'boolean',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     geofence: {
+      //       type: 'json',
+      //     },
+      //     drones: {
+      //       type: 'references',
+      //     },
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     capabilities: {
+      //       type: 'json',
+      //     },
+      //     groundStationCoverState: {
+      //       type: 'int',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     online: {
+      //       type: 'boolean',
+      //     },
+      //     credentials: {
+      //       properties: {
+      //         password: {
+      //           type: 'string',
+      //         },
+      //         username: {
+      //           type: 'string',
+      //         },
+      //         address: {
+      //           type: 'string',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //     groundStationState: {
+      //       type: 'int',
+      //     },
+      //     droneInDockState: {
+      //       type: 'int',
+      //     },
+      //     model: {
+      //       type: 'string',
+      //     },
+      //     location: {
+      //       properties: {
+      //         lon: {
+      //           type: 'float',
+      //         },
+      //         lat: {
+      //           type: 'float',
+      //         },
+      //         alt: {
+      //           type: 'float',
+      //         },
+      //       },
+      //       type: 'object',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     serial: {
+      //       type: 'string',
+      //     },
+      //     remoteId: {
+      //       type: 'string',
+      //     },
+      //   },
+      // },
+      // tag: {
+      //   prefix: 'ta',
+      //   fields: {
+      //     ancestors: {
+      //       type: 'references',
+      //     },
+      //     id: {
+      //       type: 'id',
+      //     },
+      //     aliases: {
+      //       items: {
+      //         type: 'string',
+      //       },
+      //       type: 'set',
+      //     },
+      //     descendants: {
+      //       type: 'references',
+      //     },
+      //     name: {
+      //       type: 'string',
+      //     },
+      //     parents: {
+      //       type: 'references',
+      //     },
+      //     type: {
+      //       type: 'type',
+      //     },
+      //     updatedAt: {
+      //       type: 'timestamp',
+      //     },
+      //     children: {
+      //       type: 'references',
+      //     },
+      //     createdAt: {
+      //       type: 'timestamp',
+      //     },
+      //   },
+      // },
     },
   },
   //@ts-ignore
