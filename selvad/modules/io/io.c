@@ -38,9 +38,9 @@
 static const char last_good_name[] = "dump.sdb";
 
 static const struct config cfg_map[] = {
-    { "SELVA_REPLICATION_MODE", CONFIG_INT, &replication_mode },
-    { "SAVE_AT_EXIT",           CONFIG_INT, &save_at_exit },
-    { "AUTO_SAVE_INTERVAL",     CONFIG_INT, &auto_save_interval },
+    { "SELVA_REPLICATION_MODE", CONFIG_INT,     &replication_mode },
+    { "SAVE_AT_EXIT",           CONFIG_BOOL,    &save_at_exit },
+    { "AUTO_SAVE_INTERVAL",     CONFIG_INT,     &auto_save_interval },
 };
 
 /**

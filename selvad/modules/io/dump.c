@@ -46,7 +46,7 @@ static struct selva_io_serializer serializers[NR_SELVA_IO_ORD];
 /**
  * Save db at exit.
  */
-int save_at_exit = 1;
+bool save_at_exit = true;
 
 /**
  * [sec] Load the default SDB on startup and save a dump on interval.

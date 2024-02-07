@@ -35,7 +35,7 @@
 static int selva_port = 3000;
 static int server_backlog_size = 4096;
 static int max_clients = EVENT_LOOP_MAX_FDS - 16; /* minus few because we need some fds for other purposes */
-static int so_reuse;
+static bool so_reuse;
 static int server_sockfd;
 static int readonly_server;
 static struct command {
@@ -49,7 +49,7 @@ static const struct config server_cfg_map[] = {
     { "SELVA_PORT",             CONFIG_INT, &selva_port },
     { "SERVER_BACKLOG_SIZE",    CONFIG_INT, &server_backlog_size },
     { "SERVER_MAX_CLIENTS",     CONFIG_INT, &max_clients },
-    { "SERVER_SO_REUSE",        CONFIG_INT, &so_reuse },
+    { "SERVER_SO_REUSE",        CONFIG_BOOL, &so_reuse },
 };
 
 void selva_server_set_readonly(void)
@@ -317,7 +317,7 @@ static void config(struct selva_server_response_out *resp, const void *buf __unu
                 selva_send_ll(resp, *(int *)cfg->dp);
                 break;
             case CONFIG_BOOL:
-                selva_send_ll(resp, *(bool *)cfg->dp);
+                selva_send_strf(resp, "%s", (*(bool *)cfg->dp) ? "true" : "false");
                 break;
             case CONFIG_SIZE_T:
                 selva_send_ll(resp, *(size_t *)cfg->dp);

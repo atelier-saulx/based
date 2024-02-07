@@ -9,7 +9,7 @@ void dump_init(void);
 /**
  * Save db at exit.
  */
-extern int save_at_exit;
+extern bool save_at_exit;
 
 /**
  * [sec] Load the default SDB on startup and save a dump on interval.
