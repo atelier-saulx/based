@@ -7,21 +7,22 @@ import {
 import { BasedOldSchema } from './oldSchemaType.js'
 
 const DEFAULT_FIELDS: any = {
-  id: { type: 'string' },
-  createdAt: { type: 'timestamp' },
-  updatedAt: { type: 'timestamp' },
-  type: { type: 'string' },
-  parents: { type: 'references' },
-  children: { type: 'references' },
-  ancestors: { type: 'references' },
-  descendants: { type: 'references' },
-  aliases: {
-    type: 'set',
-    items: { type: 'string' },
-  },
+  // id: { type: 'string' },
+  // createdAt: { type: 'timestamp' },
+  // updatedAt: { type: 'timestamp' },
+  // type: { type: 'string' },
+  // parents: { type: 'references' },
+  // children: { type: 'references' },
+  // ancestors: { type: 'references' },
+  // descendants: { type: 'references' },
+  // aliases: {
+  //   type: 'set',
+  //   items: { type: 'string' },
+  // },
 }
 
-const metaParser = (metaObj) => {
+const metaParser = (obj) => {
+  const metaObj = obj?.meta
   const tmp = {} as BasedSchemaFieldPartial | any
   for (const i in metaObj) {
     if (i === 'name') {
@@ -35,6 +36,12 @@ const metaParser = (metaObj) => {
       if (metaObj[i] === 'url') {
         // tmp.format = 'URL'
       }
+      if (
+        (metaObj[i] === 'bytes' && obj.type === 'number') ||
+        metaObj.type === 'float'
+      ) {
+        tmp.display = 'bytes'
+      }
     } else {
       tmp[i] = metaObj[i]
     }
@@ -46,14 +53,14 @@ const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
   switch (oldField.type) {
     case 'object':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'object',
         properties: migrateFields(oldField.properties, true),
       }
     case 'json':
       return {
         ...oldField,
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'json',
       }
     case 'array':
@@ -62,26 +69,26 @@ const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
         return null
       }
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'array',
         values,
       }
     case 'set':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'set',
         items: migrateField(oldField.items) as BasedSchemaFieldPartial,
       }
     case 'record':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'record',
         values: migrateField(oldField.values) as BasedSchemaFieldPartial,
       }
     case 'reference':
     case 'references':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: oldField.type,
         ...(oldField.bidirectional
           ? { bidirectional: oldField.bidirectional }
@@ -89,57 +96,64 @@ const migrateField = (oldField: any): BasedSchemaFieldPartial | null => {
       }
     case 'float':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'number',
       }
     case 'int':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'integer',
       }
     case 'digest':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         format: 'strongPassword',
         type: 'string',
       }
     case 'id':
       return {
         format: 'basedId',
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'string',
       }
 
     case 'url':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         format: 'URL',
         type: 'string',
       }
     case 'email':
       return {
         format: 'email',
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'string',
       }
     case 'phone':
       return {
+        ...metaParser(oldField),
         format: 'mobilePhone',
         type: 'string',
       }
     case 'geo':
       return {
+        ...metaParser(oldField),
         format: 'latLong',
         type: 'string',
       }
     case 'type':
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: 'string',
+      }
+    case 'number':
+      return {
+        ...metaParser(oldField),
+        type: 'number',
       }
     default:
       return {
-        ...metaParser(oldField.meta),
+        ...metaParser(oldField),
         type: oldField.type,
       }
   }
@@ -152,7 +166,7 @@ const migrateFields = (
   const result: { [key: string]: any } = {}
   if (oldFields) {
     for (const key in oldFields) {
-      if (oldFields.hasOwnProperty(key)) {
+      if (true) {
         if (!recursing && Object.keys(DEFAULT_FIELDS).includes(key)) {
           continue
         }
@@ -160,6 +174,7 @@ const migrateFields = (
         if (!field) {
           continue
         }
+
         result[key] = field
       }
     }
@@ -174,8 +189,9 @@ const migrateTypes = (oldSchema: any): any => {
   for (const key in oldSchema.types) {
     if (oldSchema.types.hasOwnProperty(key)) {
       const type = oldSchema.types[key]
+
       result.types[key] = {
-        ...metaParser(type.meta),
+        ...metaParser(type),
         prefix: type.prefix,
         fields: migrateFields(type.fields),
       }

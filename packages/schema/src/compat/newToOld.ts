@@ -124,7 +124,8 @@ const metaChecker = (field: string) => {
     field === 'maximum' ||
     field === 'exclusiveMaximum' ||
     field === 'exclusiveMinimum' ||
-    field === '$delete'
+    field === '$delete' ||
+    field === 'display'
   )
 }
 
@@ -139,18 +140,18 @@ import {
 } from '../types.js'
 
 const DEFAULT_FIELDS: any = {
-  id: { type: 'string' },
-  createdAt: { type: 'timestamp' },
-  updatedAt: { type: 'timestamp' },
-  type: { type: 'string' },
-  parents: { type: 'references' },
-  children: { type: 'references' },
-  ancestors: { type: 'references' },
-  descendants: { type: 'references' },
-  aliases: {
-    type: 'set',
-    items: { type: 'string' },
-  },
+  // id: { type: 'string' },
+  // createdAt: { type: 'timestamp' },
+  // updatedAt: { type: 'timestamp' },
+  // type: { type: 'string' },
+  // parents: { type: 'references' },
+  // children: { type: 'references' },
+  // ancestors: { type: 'references' },
+  // descendants: { type: 'references' },
+  // aliases: {
+  //   type: 'set',
+  //   items: { type: 'string' },
+  // },
 }
 
 const metaParser = (obj) => {
@@ -159,6 +160,8 @@ const metaParser = (obj) => {
     if (metaChecker(i)) {
       if (i === 'title') {
         tmp.name = obj[i]
+      } else if (obj[i] === 'bytes') {
+        tmp.format = obj[i]
       } else {
         tmp[i] = obj[i]
       }
