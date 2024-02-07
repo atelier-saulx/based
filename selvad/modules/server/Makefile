@@ -9,7 +9,8 @@ OBJ := \
 	   pubsub.o \
 	   selva_send.o \
 	   server.o \
-	   server_recv_message.o
+	   server_recv_message.o \
+	   xsi_strerror_r.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_SERVER_MAIN=1
 LDFLAGS += -lutil -ljemalloc_selva

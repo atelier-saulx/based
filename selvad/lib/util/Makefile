@@ -28,6 +28,7 @@ OBJ := \
 	mempool.o \
 	poptop.o \
 	queue_r.o \
+	selva_cpu.o \
 	selva_error.o \
 	selva_lang/selva_lang.o \
 	selva_lang/selva_mbscmp.o \
@@ -47,10 +48,14 @@ OBJ := \
 	trx.o
 
 ifeq ($(uname_S),Linux)
+	OBJ += \
+		selva_cpu_linux.o
 	LDFLAGS += -shared -fPIC -z nodelete
 endif
 ifeq ($(uname_S),Darwin)
-	OBJ += memrchr.o
+	OBJ += \
+		memrchr.o \
+		selva_cpu_darwin.o
 	LDFLAGS += -shared -Wl,-install_name,@rpath/libutil$(LIB_SUFFIX)
 	LDFLAGS += -ljemalloc_selva -ldeflate
 endif

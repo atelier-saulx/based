@@ -19,6 +19,7 @@
 #include "sha3iuf/sha3.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
+#include "util/selva_cpu.h"
 #include "util/selva_rusage.h"
 #include "util/selva_string.h"
 #include "util/sigstr.h"
@@ -276,10 +277,20 @@ static int dump_load(struct selva_io *io)
     return err;
 }
 
+static void set_dump_affinity(void)
+{
+    cpu_set_t cur_set;
+    cpu_set_t new_set;
+
+    selva_cpu_get_main_affinity(&cur_set);
+    CPU_FILL(&new_set);
+    CPU_XOR(&new_set, &new_set, &cur_set);
+    selva_cpu_set_main_affinity(&new_set);
+}
+
 static void deprio_myself(void)
 {
-    const int nice_incr = 10;
-    int res = -1;
+    int err;
 
     /*
      * Lower the CPU priority (bigger number) to avoid hogging the resources
@@ -287,25 +298,16 @@ static void deprio_myself(void)
      * the available CPU time, as long as we are assigned on our own
      * core/CPU, which might not be 100% if replication is enabled.
      */
-#if __linux__
-    cpu_set_t cpuset;
-    struct sched_param param = {
-        .sched_priority = 0,
-    };
-
-    CPU_ZERO(&cpuset);
-    CPU_SET(1, &cpuset); /* We assume that we have at least two CPUs available. */
-    (void)sched_setaffinity(0, sizeof(cpuset), &cpuset);
-
-    res = sched_setscheduler(0, SCHED_BATCH, &param);
-#endif
-    if (res == -1) {
+    err = selva_cpu_set_sched_batch();
+    if (err) {
         /* Failed to set sched, the next best thing is to just use nice(). */
-        res = nice(nice_incr);
-    }
+        const int nice_incr = 10;
+        int res;
 
-    if (res == -1) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to deprioritize the dump process");
+        res = nice(nice_incr);
+        if (res == -1) {
+            SELVA_LOG(SELVA_LOGL_WARN, "Failed to deprioritize the dump process");
+        }
     }
 }
 
@@ -333,6 +335,7 @@ static int dump_save_async(const char *filename)
         struct selva_io io;
 
         selva_db_dump_state = SELVA_DB_DUMP_IS_CHILD;
+        set_dump_affinity();
         deprio_myself();
 
         err = selva_io_init(&io, filename, flags);

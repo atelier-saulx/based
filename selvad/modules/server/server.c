@@ -2,6 +2,7 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -27,6 +28,7 @@
 #include "selva_proto.h"
 #include "selva_server.h"
 #include "../../tunables.h"
+#include "xsi_strerror_r.h"
 #include "server.h"
 
 #define ENV_PORT_NAME "SELVA_PORT"
@@ -507,7 +509,7 @@ static int new_server(int port)
     if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
         char buf[80];
 
-        strerror_r(errno, buf, sizeof(buf));
+        xsi_strerror_r(errno, buf, sizeof(buf));
         SELVA_LOG(SELVA_LOGL_CRIT, "bind failed: %s", buf);
         exit(EXIT_FAILURE);
     }
