@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-202 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <string.h>
@@ -27,6 +27,7 @@ int SelvaHierarchy_InitInactiveNodes(struct SelvaHierarchy *hierarchy, size_t nr
 void SelvaHierarchy_DeinitInactiveNodes(struct SelvaHierarchy *hierarchy) {
     if (hierarchy->inactive.nodes) {
         munmap(hierarchy->inactive.nodes, hierarchy->inactive.nr_nodes * SELVA_NODE_ID_SIZE);
+        hierarchy->inactive.nr_nodes = 0;
         hierarchy->inactive.nodes = NULL;
     }
 }

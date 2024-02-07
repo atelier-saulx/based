@@ -257,6 +257,8 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to setup a timer for auto compression: %s",
                       selva_strerror(hierarchy->inactive.auto_compress_timer));
         }
+    } else {
+        hierarchy->inactive.auto_compress_timer = SELVA_ENOENT;
     }
 
     SVector_Init(&hierarchy->expiring.list, 0, SVector_HierarchyNode_expire_compare);
@@ -265,6 +267,13 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
 
 fail:
     return hierarchy;
+}
+
+static void end_auto_compress(SelvaHierarchy *hierarchy) {
+    if (hierarchy->inactive.auto_compress_timer >= 0) {
+        evl_clear_timeout(hierarchy->inactive.auto_compress_timer, NULL);
+    }
+    SelvaHierarchy_DeinitInactiveNodes(hierarchy);
 }
 
 void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy) {
@@ -292,10 +301,7 @@ void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy) {
     Edge_DeinitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
     SVector_Destroy(&hierarchy->heads);
 
-    if (hierarchy->inactive.nr_nodes) {
-        evl_clear_timeout(hierarchy->inactive.auto_compress_timer, NULL);
-    }
-    SelvaHierarchy_DeinitInactiveNodes(hierarchy);
+    end_auto_compress(hierarchy);
     mempool_destroy(&hierarchy->node_pool);
 
     memset(hierarchy, 0, sizeof(*hierarchy));
@@ -2000,6 +2006,21 @@ out:
 }
 
 /**
+ * Returns true if calling SelvaHierarchy_AddInactiveNodeId() is safe.
+ * I.e. true if we should track inactive nodes for auto compression.
+ */
+static bool SelvaHierarchy_CanTrackInactiveNodes(struct SelvaHierarchy *hierarchy)
+{
+    return
+        /* No need to track if auto compression is disabled. */
+        selva_glob_config.hierarchy_auto_compress_period_ms > 0 &&
+        /*
+         * Track only in the dump process.
+         */
+        hierarchy->flag_isSaving;
+}
+
+/**
  * Traverse through all nodes of the hierarchy from heads to leaves.
  */
 static int full_dfs(
@@ -2024,10 +2045,7 @@ static int full_dfs(
     int err = 0;
     struct SVectorIterator it;
 
-    /**
-     * Set if we should track inactive nodes for auto compression.
-     */
-    const int enAutoCompression = selva_glob_config.hierarchy_auto_compress_period_ms > 0 && hierarchy->flag_isSaving;
+    const bool track_auto_compression = SelvaHierarchy_CanTrackInactiveNodes(hierarchy);
     const long long old_age_threshold = selva_glob_config.hierarchy_auto_compress_old_age_lim;
 
     SVector_ForeachBegin(&it, &hierarchy->heads);
@@ -2075,7 +2093,7 @@ static int full_dfs(
              * in the parent process (separate address space), therefore old
              * nodes will generally stay old if they are otherwise untouched.
              */
-            if (enAutoCompression && !compressionCandidate &&
+            if (track_auto_compression && !compressionCandidate &&
                 memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
                 if (Trx_LabelAge(&hierarchy->trx_state, &node->trx_label) >= old_age_threshold &&
                     !(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
@@ -2105,7 +2123,7 @@ static int full_dfs(
 
                 /*
                  * Reset the compressionCandidate tracking and save the current candidate.
-                 * No need to test enAutoCompression as compressionCandidate
+                 * No need to test track_auto_compression as compressionCandidate
                  * would be NULL on false case.
                  */
                 if (compressionCandidate && SVector_Size(&node->children) == 0) {
@@ -3274,15 +3292,9 @@ static void auto_compress_proc(struct event *, void *data) {
      * inactive nodes data structure with the backup process.
      */
     if (selva_io_get_dump_state() == SELVA_DB_DUMP_NONE) {
-        const size_t n = hierarchy->inactive.nr_nodes;
-
-        for (size_t i = 0; i < n; i++) {
-            const char *node_id = hierarchy->inactive.nodes[i];
+        HIERARCHY_INACTIVE_FOREACH(hierarchy) {
+            const char *node_id = HIERARCHY_INACTIVE_FOREACH_NODE_ID;
             struct SelvaHierarchyNode *node;
-
-            if (node_id[0] == '\0') {
-                break;
-            }
 
             node = find_node_index(hierarchy, node_id);
             if (!node || node->flags & SELVA_NODE_FLAGS_DETACHED) {

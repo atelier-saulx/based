@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022, 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -37,5 +37,16 @@ void SelvaHierarchy_AddInactiveNodeId(struct SelvaHierarchy *hierarchy, const Se
  * @param hierarchy is a pointer to the hierarchy.
  */
 void SelvaHierarchy_ClearInactiveNodeIds(struct SelvaHierarchy *hierarchy);
+
+#define HIERARCHY_INACTIVE_FOREACH(H) \
+        for (struct { size_t i; size_t n; Selva_NodeId *nodes; const char *node_id; } _infor = { \
+                .n = (H)->inactive.nr_nodes, \
+                .nodes = (H)->inactive.nodes, \
+                .node_id = (H)->inactive.nodes ? (H)->inactive.nodes[0] : NULL, }; \
+             _infor.i < _infor.i && _infor.node_id[0] != '\0'; \
+             _infor.node_id = _infor.nodes[++_infor.i])
+
+#define HIERARCHY_INACTIVE_FOREACH_NODE_ID \
+    (_infor.node_id)
 
 #endif /* _SELVA_HIERARCHY_INACTIVE_H_ */
