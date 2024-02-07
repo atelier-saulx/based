@@ -31,7 +31,6 @@
 #include "xsi_strerror_r.h"
 #include "server.h"
 
-#define ENV_PORT_NAME "SELVA_PORT"
 static int selva_port = 3000;
 static int server_backlog_size = 4096;
 static int max_clients = EVENT_LOOP_MAX_FDS - 16; /* minus few because we need some fds for other purposes */
