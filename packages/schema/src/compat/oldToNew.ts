@@ -205,7 +205,9 @@ const convertRoot = (oldSchema: BasedOldSchema) => {
   const result = {
     fields: {},
     ...metaParser(oldSchema.rootType?.meta),
-    prefix: oldSchema.rootType?.prefix,
+    ...(oldSchema.rootType?.prefix
+      ? { prefix: oldSchema.rootType.prefix }
+      : null),
   }
 
   for (const i in oldSchema.rootType?.fields) {

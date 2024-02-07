@@ -287,7 +287,7 @@ const convertRoot = (schema: BasedSchemaPartial) => {
   const result = {
     fields: {},
     ...metaParser(schema.root),
-    prefix: schema.root?.prefix,
+    ...(schema.root?.prefix ? { prefix: schema.root.prefix } : null),
   }
 
   for (const i in schema.root?.fields) {
@@ -309,7 +309,6 @@ export const convertNewToOld = (
   tmpSchema.languages = [schema.language, ...schema?.translations]
 
   tmpSchema.rootType = convertRoot(schema)
-  // console.log(convertRoot(schema))
 
   delete tmpSchema.root
 
