@@ -10,6 +10,7 @@ OBJ := \
 	   langs.o \
 	   main.o \
 	   module.o \
+	   proc_init.o \
 	   promise.o \
 	   selva_log.o \
 	   timers.o

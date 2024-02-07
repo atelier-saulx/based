@@ -8,15 +8,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/resource.h>
-#include <sys/stat.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
-#include "selva_log.h"
+#include "config.h"
 #include "event_loop.h"
 #include "module.h"
 #include "selva_langs.h"
+#include "selva_log.h"
+#include "proc_init.h"
 #include "../tunables.h"
+
+static int main_cpu = 0;
+
+static const struct config main_cfg_map[] = {
+    { "SELVA_MAIN_CPU",     CONFIG_INT, &main_cpu },
+};
 
 static const char *modules[] = {
     "mod_signal.so",
@@ -32,39 +38,16 @@ static const char *modules[] = {
     "mod_piper.so",
 };
 
-static void set_nofile_limit(void)
-{
-    struct rlimit limit;
-    rlim_t newlim = EVENT_LOOP_MAX_FDS + 3;
-
-    if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
-        int e = errno;
-
-        SELVA_LOG(SELVA_LOGL_CRIT, "Unable to obtain RLIMIT_NOFILE: %s", strerror(e));
-        exit(EXIT_FAILURE);
-    }
-
-    if (limit.rlim_max < newlim) {
-        SELVA_LOG(SELVA_LOGL_WARN, "RLIMIT_NOFILE will be lower than required (%ju < %ju)",
-                  (uintmax_t)limit.rlim_max, (uintmax_t)newlim);
-    }
-
-    if (limit.rlim_cur != newlim) {
-        limit.rlim_cur = min(limit.rlim_max, (rlim_t)newlim);
-
-        if (setrlimit(RLIMIT_NOFILE, &limit) == -1) {
-            int e = errno;
-
-            SELVA_LOG(SELVA_LOGL_CRIT, "Unable to set RLIMIT_NOFILE: %s", strerror(e));
-            exit(EXIT_FAILURE);
-        }
-    }
-}
-
 int main(void)
 {
     evl_module_init("main");
     evl_init();
+
+    if (config_resolve("main", main_cfg_map, num_elem(main_cfg_map))) {
+        exit(EXIT_FAILURE);
+    }
+
+    proc_init(main_cpu);
 
     /*
      * This should probably always be en_GB or en_US to avoid any unforeseen
@@ -80,19 +63,6 @@ int main(void)
         SELVA_LOG(SELVA_LOGL_CRIT, "selva_langs init failed");
         exit(EXIT_FAILURE);
     }
-
-    /*
-     * Safer umask to disallow creating executables or world readable dumps.
-     */
-    umask((S_IRUSR | S_IWUSR | S_IRGRP) ^ 0777);
-
-    set_nofile_limit();
-
-    /*
-     * In case the caller gave us something that's actually readable, we'll
-     * get rid of it now.
-     */
-    freopen("/dev/null", "r", stdin);
 
     for (size_t i = 0; i < num_elem(modules); i++) {
         if (!evl_load_module(modules[i])) {
