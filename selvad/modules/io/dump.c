@@ -36,7 +36,7 @@
 #include "replication/replication.h"
 #include "dump.h"
 
-static int selva_db_is_dirty;
+static bool selva_db_is_dirty;
 static enum selva_io_dump_state selva_db_dump_state;
 static pid_t save_pid;
 static uint64_t save_sdb_eid;
@@ -56,7 +56,7 @@ int auto_save_interval = 0;
 
 void selva_io_set_dirty(void)
 {
-    selva_db_is_dirty = 1;
+    selva_db_is_dirty = true;
 }
 
 void selva_io_register_serializer(enum selva_io_load_order ord, const struct selva_io_serializer *serializer)
@@ -180,7 +180,7 @@ static void handle_signal(struct event *ev, void *arg __unused)
                      * an incomplete SDB to be left? Yes.
                      */
                     saved = handle_last_good_async();
-                    selva_db_is_dirty = 0;
+                    selva_db_is_dirty = false;
                 }
 
                 selva_db_dump_state = SELVA_DB_DUMP_NONE;
@@ -393,7 +393,7 @@ static int dump_save_sync(const char *filename)
     selva_io_end(&io);
 
     handle_last_good_sync();
-    selva_db_is_dirty = 0;
+    selva_db_is_dirty = false;
 
     ts_monotime(&ts_end);
     print_ready(__func__, &ts_start, &ts_end);
