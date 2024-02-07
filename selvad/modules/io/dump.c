@@ -7,7 +7,6 @@
 #if defined(__linux__)
 #include <sched.h>
 #endif
-#include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -22,15 +21,14 @@
 #include "util/selva_cpu.h"
 #include "util/selva_rusage.h"
 #include "util/selva_string.h"
-#include "util/sigstr.h"
 #include "util/timestamp.h"
 #include "event_loop.h"
-#include "evl_signal.h"
+#include "selva_db_types.h"
 #include "selva_error.h"
 #include "selva_io.h"
 #include "selva_log.h"
-#include "selva_db_types.h"
 #include "selva_proto.h"
+#include "selva_reaper.h"
 #include "selva_server.h"
 #include "sdb_name.h"
 #include "replication/replication.h"
@@ -112,120 +110,45 @@ static int handle_last_good_async(void)
 }
 
 /**
- * Translate child exit status into a selva_error and log messages.
- */
-static int handle_child_status(pid_t pid, int status, const char *name)
-{
-    if (WIFEXITED(status)) {
-        int code = WEXITSTATUS(status);
-
-        if (code != 0) {
-            SELVA_LOG(SELVA_LOGL_ERR,
-                      "%s child %d terminated with exit code: %d",
-                      name, (int)pid, code);
-
-            return SELVA_EGENERAL;
-        }
-    } else if (WIFSIGNALED(status)) {
-        int termsig = WTERMSIG(status);
-
-        SELVA_LOG(SELVA_LOGL_ERR,
-                  "%s child %d killed by signal SIG%s (%s)%s",
-                  name, (int)pid, sigstr_abbrev(termsig), sigstr_descr(termsig),
-                  (WCOREDUMP(status)) ? " (core dumped)" : NULL);
-
-        return SELVA_EGENERAL;
-    } else {
-        SELVA_LOG(SELVA_LOGL_ERR,
-                  "%s child %d terminated abnormally",
-                  name, pid);
-
-        return SELVA_EGENERAL;
-    }
-
-    return 0;
-}
-
-/**
- * Handle registered signals.
  * A SIGCHLD should mean that either a new dump is ready or the child crashed
  * while dumping.
  */
-static void handle_signal(struct event *ev, void *arg __unused)
+static int handle_child_status(pid_t pid, int status __unused, int selva_err)
 {
-    struct evl_siginfo esig;
-    int err, signo, status;
+    int saved;
 
-    err = evl_read_sigfd(&esig, ev->fd);
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to read sigfd. fd: %d err: \"%s\"",
-                  ev->fd,
-                  selva_strerror(err));
-        return;
+    if (pid != save_pid) {
+        return 0;
     }
 
-    signo = esig.esi_signo;
+    if (!selva_err) {
+        /*
+         * last_good isn't necessarily the same file the child saved
+         * but it's the last good so we report it. Could this result
+         * an incomplete SDB to be left? Yes.
+         */
+        saved = handle_last_good_async();
+        selva_db_is_dirty = false;
+    }
 
-    switch (signo) {
-    case SIGCHLD:
-        if (waitpid(esig.esi_pid, &status, 0) != -1) {
-            if (esig.esi_pid == save_pid) {
-                int err, saved;
+    selva_db_dump_state = SELVA_DB_DUMP_NONE;
+    save_pid = 0;
+    save_sdb_eid = 0;
 
-                err = handle_child_status(esig.esi_pid, status, "SDB");
-                if (!err) {
-                    /*
-                     * last_good isn't necessarily the same file the child saved
-                     * but it's the last good so we report it. Could this result
-                     * an incomplete SDB to be left? Yes.
-                     */
-                    saved = handle_last_good_async();
-                    selva_db_is_dirty = false;
-                }
-
-                selva_db_dump_state = SELVA_DB_DUMP_NONE;
-                save_pid = 0;
-                save_sdb_eid = 0;
-
-                /*
-                 * E.g. auto-save doesn't have a response stream.
-                 */
-                if (save_stream_resp) {
-                    if (err) {
-                        selva_send_errorf(save_stream_resp, err, "Save failed");
-                    } else {
-                        selva_send_ll(save_stream_resp, saved);
-                    }
-                    selva_send_end(save_stream_resp);
-                    save_stream_resp = NULL;
-                }
-            } else {
-                (void)handle_child_status(esig.esi_pid, status, "Unknown");
-            }
+    /*
+     * E.g. auto-save doesn't have a response stream.
+     */
+    if (save_stream_resp) {
+        if (selva_err) {
+            selva_send_errorf(save_stream_resp, selva_err, "Save failed");
+        } else {
+            selva_send_ll(save_stream_resp, saved);
         }
-        break;
-    default:
-        SELVA_LOG(SELVA_LOGL_WARN, "Received unexpected signal (%d): %s", signo, strsignal(esig.esi_signo));
+        selva_send_end(save_stream_resp);
+        save_stream_resp = NULL;
     }
-}
 
-/**
- * Setup catching SIGCHLD with the event_loop.
- * We want to catch SIGCHLD here as we use a child process to make hierarchy
- * dumps asynchronously. Hopefully no other module will need the same signal.
- */
-static void setup_sigchld(void)
-{
-    sigset_t mask;
-    int sfd;
-
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGCHLD);
-
-    sfd = evl_create_sigfd(&mask);
-    if (sfd >= 0) {
-        evl_wait_fd(sfd, handle_signal, NULL, NULL, NULL);
-    }
+    return 1;
 }
 
 static void print_ready(const char * restrict msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
@@ -638,7 +561,7 @@ void dump_init(void)
         exit(EXIT_FAILURE);
     }
 
-    setup_sigchld();
+    selva_reaper_register_hook(handle_child_status, 0);
 
     if (save_at_exit) {
 #ifdef __GLIBC__

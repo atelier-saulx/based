@@ -19,11 +19,11 @@
 #include "config.h"
 #include "module.h"
 #include "event_loop.h"
-#include "evl_signal.h"
 #include "selva_error.h"
+#include "selva_io.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_io.h"
+#include "selva_reaper.h"
 #include "selva_server.h"
 #include "myreadlink.h"
 #include "dump.h"
@@ -506,11 +506,11 @@ struct selva_string *selva_io_load_string(struct selva_io *io)
 }
 
 IMPORT() {
-	evl_import_signal();
     evl_import_event_loop();
     evl_import_main(config_resolve);
     evl_import_main(evl_set_timeout);
     evl_import_main(selva_log);
+    import_selva_reaper();
     import_selva_server();
 }
 
