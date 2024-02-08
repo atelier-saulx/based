@@ -4,12 +4,13 @@ export const oldSchemas: BasedOldSchema[] = [
   {
     languages: ['en', 'nl'],
     prefixToTypeMapping: {},
-    rootType: {},
+    rootType: {
+      fields: {},
+    },
     types: {
       thing1: {
         meta: {
           name: 'name',
-          index: 0,
           description: 'bla',
         },
         prefix: 'ti',
@@ -33,7 +34,6 @@ export const oldSchemas: BasedOldSchema[] = [
     },
   },
   {
-    sha: '40b87292d307d73e7255d418bb80083da1f00dfe',
     languages: ['en', 'nl', 'de'],
     rootType: {
       prefix: 'ro',
@@ -42,7 +42,7 @@ export const oldSchemas: BasedOldSchema[] = [
           type: 'timestamp',
         },
         type: {
-          type: 'type',
+          type: 'string',
         },
         id: {
           type: 'id',
@@ -142,7 +142,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'string',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           parents: {
             type: 'references',
@@ -186,7 +186,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -224,7 +224,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -284,10 +284,10 @@ export const oldSchemas: BasedOldSchema[] = [
                 location: {
                   properties: {
                     lon: {
-                      type: 'float',
+                      type: 'number',
                     },
                     lat: {
-                      type: 'float',
+                      type: 'number',
                     },
                   },
                   type: 'object',
@@ -336,7 +336,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'array',
           },
           flightHeight: {
-            type: 'float',
+            type: 'number',
           },
           losType: {
             type: 'string',
@@ -351,7 +351,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'json',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           ancestors: {
             type: 'references',
@@ -389,10 +389,10 @@ export const oldSchemas: BasedOldSchema[] = [
           location: {
             properties: {
               lon: {
-                type: 'float',
+                type: 'number',
               },
               lat: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -412,7 +412,7 @@ export const oldSchemas: BasedOldSchema[] = [
         prefix: 'om',
         fields: {
           type: {
-            type: 'type',
+            type: 'string',
           },
           id: {
             type: 'id',
@@ -483,7 +483,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -512,7 +512,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'set',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           createdAt: {
             type: 'timestamp',
@@ -541,7 +541,7 @@ export const oldSchemas: BasedOldSchema[] = [
         prefix: 'll',
         fields: {
           type: {
-            type: 'type',
+            type: 'string',
           },
           disabled: {
             type: 'boolean',
@@ -600,7 +600,7 @@ export const oldSchemas: BasedOldSchema[] = [
         prefix: 'po',
         fields: {
           type: {
-            type: 'type',
+            type: 'string',
           },
           id: {
             type: 'id',
@@ -632,10 +632,10 @@ export const oldSchemas: BasedOldSchema[] = [
           location: {
             properties: {
               lon: {
-                type: 'float',
+                type: 'number',
               },
               lat: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -670,7 +670,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           weight: {
-            type: 'float',
+            type: 'number',
           },
           status: {
             type: 'string',
@@ -685,7 +685,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'string',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           parents: {
             type: 'references',
@@ -759,7 +759,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -838,7 +838,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'boolean',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           ancestors: {
             type: 'references',
@@ -864,7 +864,7 @@ export const oldSchemas: BasedOldSchema[] = [
           },
           origin: {
             meta: {
-              validation: 'url',
+              // validation: 'url',
               description: 'Original file',
               name: 'Origin',
             },
@@ -920,7 +920,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'number',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           id: {
             meta: {
@@ -929,9 +929,6 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'id',
           },
           progress: {
-            meta: {
-              format: 'progress',
-            },
             type: 'number',
           },
           ancestors: {
@@ -939,10 +936,9 @@ export const oldSchemas: BasedOldSchema[] = [
           },
           src: {
             meta: {
-              ui: 'file',
               description: 'Transformed source of the file',
               name: 'Source',
-              validation: 'url',
+              // validation: 'url',
             },
             type: 'string',
           },
@@ -968,7 +964,7 @@ export const oldSchemas: BasedOldSchema[] = [
           },
           thumb: {
             meta: {
-              format: 'bytes',
+              // format: 'bytes',
               index: 10,
               name: 'Thumbnail',
             },
@@ -1026,7 +1022,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           postalCode: {
             type: 'string',
@@ -1103,7 +1099,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           file: {
             type: 'reference',
@@ -1132,7 +1128,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'set',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           createdAt: {
             type: 'timestamp',
@@ -1203,7 +1199,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           title: {
             type: 'string',
@@ -1259,7 +1255,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           file: {
             type: 'reference',
@@ -1303,7 +1299,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -1332,7 +1328,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           aliases: {
             items: {
@@ -1391,7 +1387,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           aliases: {
             items: {
@@ -1414,13 +1410,13 @@ export const oldSchemas: BasedOldSchema[] = [
           location: {
             properties: {
               lon: {
-                type: 'float',
+                type: 'number',
               },
               lat: {
-                type: 'float',
+                type: 'number',
               },
               alt: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -1431,13 +1427,13 @@ export const oldSchemas: BasedOldSchema[] = [
           attitude: {
             properties: {
               pitch: {
-                type: 'float',
+                type: 'number',
               },
               roll: {
-                type: 'float',
+                type: 'number',
               },
               yaw: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -1466,7 +1462,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           weight: {
-            type: 'float',
+            type: 'number',
           },
           archived: {
             type: 'boolean',
@@ -1490,7 +1486,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           name: {
             type: 'string',
@@ -1519,7 +1515,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'string',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           children: {
             type: 'references',
@@ -1605,7 +1601,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -1634,7 +1630,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'id',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           createdAt: {
             type: 'timestamp',
@@ -1714,7 +1710,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -1758,7 +1754,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -1808,7 +1804,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           id: {
             type: 'id',
@@ -1887,7 +1883,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           parents: {
             type: 'references',
@@ -1935,13 +1931,13 @@ export const oldSchemas: BasedOldSchema[] = [
               type: 'object',
               properties: {
                 heading: {
-                  type: 'float',
+                  type: 'number',
                 },
                 holdingTime: {
                   type: 'int',
                 },
                 speed: {
-                  type: 'float',
+                  type: 'number',
                 },
                 waypointType: {
                   type: 'string',
@@ -1950,13 +1946,13 @@ export const oldSchemas: BasedOldSchema[] = [
                   type: 'object',
                   properties: {
                     lon: {
-                      type: 'float',
+                      type: 'number',
                     },
                     lat: {
-                      type: 'float',
+                      type: 'number',
                     },
                     alt: {
-                      type: 'float',
+                      type: 'number',
                     },
                   },
                 },
@@ -1965,7 +1961,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'array',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -2012,7 +2008,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'reference',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -2037,7 +2033,7 @@ export const oldSchemas: BasedOldSchema[] = [
                 type: 'string',
               },
               amount: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -2064,7 +2060,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           parents: {
             type: 'references',
@@ -2087,7 +2083,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           children: {
             type: 'references',
@@ -2175,7 +2171,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           id: {
             type: 'id',
@@ -2264,7 +2260,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           lastSessionDate: {
             type: 'timestamp',
@@ -2370,7 +2366,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'text',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           notificationType: {
             type: 'number',
@@ -2402,7 +2398,7 @@ export const oldSchemas: BasedOldSchema[] = [
                 meta: {
                   name: 'Elevation',
                 },
-                type: 'float',
+                type: 'number',
               },
               waypointIndex: {
                 type: 'int',
@@ -2423,19 +2419,19 @@ export const oldSchemas: BasedOldSchema[] = [
                         meta: {
                           name: 'Pitch',
                         },
-                        type: 'float',
+                        type: 'number',
                       },
                       roll: {
                         meta: {
                           name: 'Roll',
                         },
-                        type: 'float',
+                        type: 'number',
                       },
                       yaw: {
                         meta: {
                           name: 'Yaw',
                         },
-                        type: 'float',
+                        type: 'number',
                       },
                     },
                   },
@@ -2449,7 +2445,7 @@ export const oldSchemas: BasedOldSchema[] = [
                       type: 'string',
                     },
                     percentage: {
-                      type: 'float',
+                      type: 'number',
                     },
                   },
                 },
@@ -2462,7 +2458,7 @@ export const oldSchemas: BasedOldSchema[] = [
                 meta: {
                   name: 'HomeDistance',
                 },
-                type: 'float',
+                type: 'number',
               },
               location: {
                 meta: {
@@ -2474,19 +2470,19 @@ export const oldSchemas: BasedOldSchema[] = [
                     meta: {
                       name: 'Lon',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                   lat: {
                     meta: {
                       name: 'Lat',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                   alt: {
                     meta: {
                       name: 'Alt',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                 },
               },
@@ -2500,24 +2496,24 @@ export const oldSchemas: BasedOldSchema[] = [
                     meta: {
                       name: 'Vertical',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                   horizontal: {
                     meta: {
                       name: 'Horizontal',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                   ned: {
                     properties: {
                       down: {
-                        type: 'float',
+                        type: 'number',
                       },
                       east: {
-                        type: 'float',
+                        type: 'number',
                       },
                       north: {
-                        type: 'float',
+                        type: 'number',
                       },
                     },
                     type: 'object',
@@ -2549,19 +2545,19 @@ export const oldSchemas: BasedOldSchema[] = [
                     meta: {
                       name: 'Pitch',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                   roll: {
                     meta: {
                       name: 'Roll',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                   yaw: {
                     meta: {
                       name: 'Yaw',
                     },
-                    type: 'float',
+                    type: 'number',
                   },
                 },
               },
@@ -2706,10 +2702,10 @@ export const oldSchemas: BasedOldSchema[] = [
             items: {
               properties: {
                 lon: {
-                  type: 'float',
+                  type: 'number',
                 },
                 lat: {
-                  type: 'float',
+                  type: 'number',
                 },
               },
               type: 'object',
@@ -2728,10 +2724,10 @@ export const oldSchemas: BasedOldSchema[] = [
                 location: {
                   properties: {
                     lon: {
-                      type: 'float',
+                      type: 'number',
                     },
                     lat: {
-                      type: 'float',
+                      type: 'number',
                     },
                   },
                   type: 'object',
@@ -2751,10 +2747,10 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'json',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           flightHeight: {
-            type: 'float',
+            type: 'number',
           },
           archived: {
             type: 'boolean',
@@ -2789,13 +2785,13 @@ export const oldSchemas: BasedOldSchema[] = [
                 type: 'timestamp',
               },
               gpsAccuracy: {
-                type: 'float',
+                type: 'number',
               },
               kpIndex: {
                 type: 'int',
               },
               humidity: {
-                type: 'float',
+                type: 'number',
               },
               sunset: {
                 type: 'timestamp',
@@ -2804,42 +2800,42 @@ export const oldSchemas: BasedOldSchema[] = [
                 type: 'string',
               },
               cloudCover: {
-                type: 'float',
+                type: 'number',
               },
               precipitation: {
                 properties: {
                   intensity: {
-                    type: 'float',
+                    type: 'number',
                   },
                   accumulation: {
-                    type: 'float',
+                    type: 'number',
                   },
                   probability: {
-                    type: 'float',
+                    type: 'number',
                   },
                 },
                 type: 'object',
               },
               pressure: {
-                type: 'float',
+                type: 'number',
               },
               time: {
                 type: 'timestamp',
               },
               windSpeed: {
-                type: 'float',
+                type: 'number',
               },
               temperature: {
-                type: 'float',
+                type: 'number',
               },
               windGusting: {
-                type: 'float',
+                type: 'number',
               },
               visibility: {
-                type: 'float',
+                type: 'number',
               },
               windBearing: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -2867,10 +2863,10 @@ export const oldSchemas: BasedOldSchema[] = [
                   type: 'string',
                 },
                 startPercentage: {
-                  type: 'float',
+                  type: 'number',
                 },
                 endPercentage: {
-                  type: 'float',
+                  type: 'number',
                 },
               },
             },
@@ -2879,10 +2875,10 @@ export const oldSchemas: BasedOldSchema[] = [
           location: {
             properties: {
               lon: {
-                type: 'float',
+                type: 'number',
               },
               lat: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
@@ -2932,7 +2928,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'string',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           parents: {
             type: 'references',
@@ -2985,7 +2981,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'string',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           parents: {
             type: 'references',
@@ -3023,7 +3019,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           weight: {
-            type: 'float',
+            type: 'number',
           },
           archived: {
             type: 'boolean',
@@ -3050,7 +3046,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'timestamp',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           name: {
             type: 'string',
@@ -3085,7 +3081,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'id',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           descendants: {
             type: 'references',
@@ -3153,7 +3149,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -3170,7 +3166,7 @@ export const oldSchemas: BasedOldSchema[] = [
         prefix: 'ni',
         fields: {
           type: {
-            type: 'type',
+            type: 'string',
           },
           id: {
             type: 'id',
@@ -3226,7 +3222,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'id',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           descendants: {
             type: 'references',
@@ -3410,19 +3406,19 @@ export const oldSchemas: BasedOldSchema[] = [
           location: {
             properties: {
               lon: {
-                type: 'float',
+                type: 'number',
               },
               lat: {
-                type: 'float',
+                type: 'number',
               },
               alt: {
-                type: 'float',
+                type: 'number',
               },
             },
             type: 'object',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           serial: {
             type: 'string',
@@ -3457,7 +3453,7 @@ export const oldSchemas: BasedOldSchema[] = [
             type: 'references',
           },
           type: {
-            type: 'type',
+            type: 'string',
           },
           updatedAt: {
             type: 'timestamp',
@@ -3474,6 +3470,10 @@ export const oldSchemas: BasedOldSchema[] = [
   },
   //@ts-ignore
   {
+    rootType: {
+      fields: {},
+    },
+    prefixToTypeMapping: {},
     languages: [
       'en',
       'de',
@@ -3743,7 +3743,7 @@ export const oldSchemas: BasedOldSchema[] = [
                   fontSize: { type: 'int' },
                   x: { type: 'string' },
                   y: { type: 'string' },
-                  sizeMultiplier: { type: 'float' },
+                  sizeMultiplier: { type: 'number' },
                   activeMinColor: { type: 'string' },
                   activeMaxColor: { type: 'string' },
                   inactiveColor: { type: 'string' },
@@ -4049,7 +4049,7 @@ export const oldSchemas: BasedOldSchema[] = [
                   fontSize: { type: 'int' },
                   x: { type: 'string' },
                   y: { type: 'string' },
-                  sizeMultiplier: { type: 'float' },
+                  sizeMultiplier: { type: 'number' },
                   activeMinColor: { type: 'string' },
                   activeMaxColor: { type: 'string' },
                   inactiveColor: { type: 'string' },

@@ -1,11 +1,15 @@
+export const basedSchemaNumberFormats = [
+  ,
+  'short',
+  'human',
+  'ratio',
+  'bytes',
+  'euro',
+  'dollar',
+  'pound',
+] as const
 export type NumberFormat =
-  | 'short'
-  | 'human'
-  | 'ratio'
-  | 'bytes'
-  | 'euro'
-  | 'dollar'
-  | 'pound'
+  | (typeof basedSchemaNumberFormats)[number]
   | `round-${number}`
 
 const parseNumber = (
