@@ -21,6 +21,8 @@ export const registerStream: BinaryMessageHandler = (
     return false
   }
 
+  const infoLen = 14
+
   const reqId = readUint8(arr, start + 5, 3)
 
   if (reqId === undefined) {
@@ -36,8 +38,24 @@ export const registerStream: BinaryMessageHandler = (
   const nameLen = readUint8(arr, start + 12, 1)
   const mimeLen = readUint8(arr, start + 13, 1)
 
-  const name = decodeName(arr, start + 14, nameLen)
-  const mime = decodeName(arr, start + 14 + nameLen, mimeLen)
+  const name = decodeName(arr, start + 14, start + 14 + nameLen)
+  const mime = decodeName(
+    arr,
+    start + infoLen + nameLen,
+    start + infoLen + nameLen + mimeLen
+  )
+
+  const payload =
+    len === nameLen + infoLen + mimeLen
+      ? undefined
+      : parsePayload(
+          decodePayload(
+            new Uint8Array(
+              arr.slice(start + infoLen + nameLen + mimeLen, start + len)
+            ),
+            isDeflate
+          )
+        )
 
   console.log('HELLO', {
     isDeflate,
@@ -47,6 +65,8 @@ export const registerStream: BinaryMessageHandler = (
     mimeLen,
     name,
     mime,
+    len,
+    payload,
   })
 
   return true
