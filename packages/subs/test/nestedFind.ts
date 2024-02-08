@@ -1,6 +1,6 @@
 import { basicTest } from './assertions/index.js'
 import { deepCopy, wait } from '@saulx/utils'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -145,4 +145,5 @@ test('get - correct order', async (t) => {
   t.is(results[2].children.length, 3)
 
   t.pass()
+  destroySubscriber(client)
 })

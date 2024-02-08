@@ -1,6 +1,6 @@
 import { deepCopy, wait } from '@saulx/utils'
 import { basicTest } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { BasedSchemaPartial } from '@based/schema'
 
 const schema: BasedSchemaPartial = {
@@ -186,6 +186,7 @@ test('subscription array', async (t) => {
   t.deepEqual(lastResult2.ary[lastResult2.ary.length - 1], {
     title: 'Flapdrollll',
   })
+  destroySubscriber(client)
 })
 
 test('subscription num array', async (t) => {
@@ -239,6 +240,7 @@ test('subscription num array', async (t) => {
 
   await wait(1000)
   t.is(cnt, 2)
+  destroySubscriber(client)
 })
 
 test('subscription array in object array', async (t) => {
@@ -316,4 +318,5 @@ test('subscription array in object array', async (t) => {
   await wait(1000)
 
   t.is(cnt, 3)
+  destroySubscriber(client)
 })

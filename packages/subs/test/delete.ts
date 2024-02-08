@@ -1,5 +1,5 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -70,6 +70,7 @@ test('subscribe and delete', async (t) => {
   t.is(cnt, 3)
 
   await wait(1000)
+  destroySubscriber(client)
 })
 
 test('subscribe and delete a descendant', async (t) => {
@@ -132,6 +133,7 @@ test('subscribe and delete a descendant', async (t) => {
   await wait(500)
   await client.delete({ $id: 'th2' })
   await wait(500)
+  destroySubscriber(client)
 })
 
 test('subscribe and delete over a reference field', async (t) => {
@@ -191,6 +193,7 @@ test('subscribe and delete over a reference field', async (t) => {
   await wait(500)
   await client.delete({ $id: 'th2' })
   await wait(500)
+  destroySubscriber(client)
 })
 
 test('subscribe and delete over references field', async (t) => {
@@ -257,6 +260,7 @@ test('subscribe and delete over references field', async (t) => {
   await wait(500)
   await client.delete({ $id: 'th2' })
   await wait(500)
+  destroySubscriber(client)
 })
 
 test('subscribe and delete one item', async (t) => {
@@ -308,6 +312,7 @@ test('subscribe and delete one item', async (t) => {
   t.is(cnt, 3)
 
   await wait(1000)
+  destroySubscriber(client)
 })
 
 test('subscribe and delete one item: root', async (t) => {
@@ -350,4 +355,5 @@ test('subscribe and delete one item: root', async (t) => {
   t.is(cnt, 3)
 
   await wait(1000)
+  destroySubscriber(client)
 })

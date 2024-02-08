@@ -267,3 +267,10 @@ export const subscribe = async (client: BasedDbClient, payload, update) => {
   }
   return subscriber.subscribe(payload, update, false)
 }
+
+export const destroySubscriber = (client: BasedDbClient) => {
+  let subscriber = subscribers.get(client)
+  if (subscriber) {
+    subscriber.destroy()
+  }
+}

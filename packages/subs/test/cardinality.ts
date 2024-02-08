@@ -1,5 +1,5 @@
 import { basicTest } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -53,4 +53,5 @@ test('record with cardinality', async (t) => {
       }
     )
   )
+  destroySubscriber(client)
 })

@@ -1,5 +1,5 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -1034,4 +1034,5 @@ test('subs layout', async (t) => {
   })
   deepEqualIgnoreOrder(t, otherResult3.components[0].children.length, 100)
   deepEqualIgnoreOrder(t, otherResult3.components[1].children.length, 0)
+  destroySubscriber(client)
 })

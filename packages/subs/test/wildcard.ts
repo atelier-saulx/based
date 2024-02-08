@@ -1,5 +1,5 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -194,6 +194,7 @@ test('sub find - list with wildcard', async (t) => {
   await wait(1e3)
 
   t.deepEqual(cnt, 2)
+  destroySubscriber(client)
 })
 
 test('sub find - single with wildcard', async (t) => {
@@ -278,4 +279,5 @@ test('sub find - single with wildcard', async (t) => {
   await wait(1e3)
 
   t.deepEqual(cnt, 2)
+  destroySubscriber(client)
 })

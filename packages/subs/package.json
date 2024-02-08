@@ -7,8 +7,8 @@
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "FORCE_COLOR=1 ava --color --timeout 3m --verbose",
-    "test-ci": "FORCE_COLOR=1 ava --color --concurrency 1 --timeout 3m"
+    "test": "FORCE_COLOR=1 ava --color --verbose",
+    "test-ci": "FORCE_COLOR=1 ava --color --concurrency 1"
   },
   "files": [
     "dist/src",
@@ -18,7 +18,7 @@
   "type": "module",
   "ava": {
     "concurrency": 1,
-    "timeout": "2m",
+    "timeout": "30s",
     "files": [
       "./dist/test/*.js"
     ]

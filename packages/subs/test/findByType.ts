@@ -1,5 +1,5 @@
 import { basicTest } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -189,4 +189,5 @@ test('subscription find by type', async (t) => {
   ])
 
   await wait(2e3)
+  destroySubscriber(client)
 })

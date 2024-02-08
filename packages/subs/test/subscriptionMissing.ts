@@ -1,3 +1,4 @@
+import { destroySubscriber } from '../src/index.js'
 import { basicTest } from './assertions/index.js'
 // import { subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
@@ -62,4 +63,5 @@ test.serial.skip('verify missing markers', async (t) => {
   //t.deepEqual(res, { id: 'ma1', value: 5 })
   console.log(await client.get({ $id: 'ma1', id: true, value: true }))
   console.log(await client.command('object.get', ['', 'ma1']))
+  destroySubscriber(client)
 })

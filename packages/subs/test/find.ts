@@ -1,6 +1,6 @@
 import { wait } from '@saulx/utils'
 import { basicTest } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -248,4 +248,5 @@ test.serial.skip('subscription find', async (t) => {
 
   t.is(cnt3, 3, 'check for count')
   await wait(2000)
+  destroySubscriber(client)
 })

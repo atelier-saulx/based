@@ -1,6 +1,6 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
 import { wait } from '@saulx/utils'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -60,4 +60,5 @@ test('changing alias to another node fires subscription', async (t) => {
   })
 
   await wait(500 * 2)
+  destroySubscriber(client)
 })

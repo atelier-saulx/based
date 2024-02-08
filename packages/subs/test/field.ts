@@ -1,6 +1,6 @@
 import { deepCopy, wait } from '@saulx/utils'
 import { basicTest } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -162,4 +162,5 @@ test('subscribe - simple alias', async (t) => {
       value: 25,
     },
   ])
+  destroySubscriber(client)
 })

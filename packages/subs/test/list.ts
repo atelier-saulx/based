@@ -1,6 +1,6 @@
 import { basicTest } from './assertions/index.js'
 import { wait } from '@saulx/utils'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -108,4 +108,5 @@ test('subscription list', async (t) => {
   await wait(2000)
   t.is(cnt3, 2)
   t.is(cnt2, 2)
+  destroySubscriber(client)
 })

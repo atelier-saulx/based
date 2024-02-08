@@ -1,6 +1,6 @@
 import { wait } from '@saulx/utils'
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -108,6 +108,7 @@ test('basic id based subscriptions', async (t) => {
   // sub2.unsubscribe()
 
   await wait(500 * 2)
+  destroySubscriber(client)
 })
 
 test('basic id based nested query subscriptions', async (t) => {
@@ -170,6 +171,7 @@ test('basic id based nested query subscriptions', async (t) => {
   })
 
   await wait(500 * 2)
+  destroySubscriber(client)
 })
 
 test('using $field works', async (t) => {
@@ -208,6 +210,7 @@ test('using $field works', async (t) => {
   })
 
   await wait(1000 * 1)
+  destroySubscriber(client)
 })
 
 test('basic $inherit when ancestors change', async (t) => {
@@ -253,6 +256,7 @@ test('basic $inherit when ancestors change', async (t) => {
   })
 
   await wait(1000 * 1)
+  destroySubscriber(client)
 })
 
 test('basic id based reference subscriptions', async (t) => {
@@ -354,6 +358,7 @@ test('basic id based reference subscriptions', async (t) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
+  destroySubscriber(client)
 })
 
 test('subscribe with timeout right away record', async (t) => {
@@ -397,6 +402,7 @@ test('subscribe with timeout right away record', async (t) => {
   })
 
   await wait(1000)
+  destroySubscriber(client)
 })
 
 test('subscribe to descendants: true in list', async (t) => {
@@ -451,4 +457,5 @@ test('subscribe to descendants: true in list', async (t) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
+  destroySubscriber(client)
 })

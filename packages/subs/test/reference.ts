@@ -1,5 +1,5 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -146,4 +146,5 @@ test.skip('subscription to a reference', async (t) => {
   })
   await wait(1e3)
   t.deepEqual(n, 4, 'All change events received')
+  destroySubscriber(client)
 })

@@ -1,5 +1,5 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -133,6 +133,7 @@ test('simple count aggregate sub', async (t) => {
   ])
 
   await wait(2e3)
+  destroySubscriber(client)
 })
 
 test('simple sum aggregate sub', async (t) => {
@@ -250,6 +251,7 @@ test('simple sum aggregate sub', async (t) => {
     value: 75,
   })
   await wait(2e3)
+  destroySubscriber(client)
 })
 
 test('list avg aggregate sub', async (t) => {
@@ -285,7 +287,7 @@ test('list avg aggregate sub', async (t) => {
   })
 
   let i = 0
-  subscribe(
+  await subscribe(
     client,
     {
       $id: 'root',
@@ -411,8 +413,8 @@ test('list avg aggregate sub', async (t) => {
     name: 'match 13',
     value: 75,
   })
-
   await wait(1e3)
+  destroySubscriber(client)
 })
 
 test('simple nested find avg aggregate sub', async (t) => {
@@ -542,6 +544,7 @@ test('simple nested find avg aggregate sub', async (t) => {
   })
 
   await wait(1e3)
+  destroySubscriber(client)
 })
 
 test('simple max aggregate sub', async (t) => {
@@ -651,4 +654,5 @@ test('simple max aggregate sub', async (t) => {
   ])
 
   await wait(3e3)
+  destroySubscriber(client)
 })

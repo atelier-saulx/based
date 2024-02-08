@@ -1,6 +1,6 @@
 import { deepCopy, wait } from '@saulx/utils'
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -84,6 +84,7 @@ test('inherit object nested field from root youzi', async (t) => {
   ])
 
   t.true(true)
+  destroySubscriber(client)
 })
 
 test('inherit object youzi', async (t) => {
@@ -126,6 +127,7 @@ test('inherit object youzi', async (t) => {
     { flapper: { snurk: 'hello', bob: 'xxx' } },
     { flapper: { snurk: 'snurkels', bob: 'xxx' } },
   ])
+  destroySubscriber(client)
 })
 
 test('basic inherit subscription', async (t) => {
@@ -189,6 +191,7 @@ test('basic inherit subscription', async (t) => {
     { yesh: 'yesh a!' },
     { yesh: 'yesh b' },
   ])
+  destroySubscriber(client)
 })
 
 test('inherit object', async (t) => {
@@ -264,6 +267,7 @@ test('inherit object', async (t) => {
     { flapper: { snurk: 'snurkels' } },
     { flapper: { snurk: 'power bro' } },
   ])
+  destroySubscriber(client)
 })
 
 test('list inherit subscription', async (t) => {
@@ -362,6 +366,7 @@ test('list inherit subscription', async (t) => {
       ],
     },
   ])
+  destroySubscriber(client)
 })
 
 test('list inherit + field subscription', async (t) => {
@@ -483,4 +488,5 @@ test('list inherit + field subscription', async (t) => {
       ],
     },
   ])
+  destroySubscriber(client)
 })

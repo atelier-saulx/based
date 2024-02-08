@@ -1,5 +1,5 @@
 import { basicTest } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest()
@@ -103,4 +103,5 @@ test('subscribing to all fields', async (t) => {
     'my sallz',
     'my sallzzzz',
   ])
+  destroySubscriber(client)
 })

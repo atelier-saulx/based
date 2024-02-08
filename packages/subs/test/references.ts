@@ -1,5 +1,5 @@
 import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
-import { subscribe } from '../src/index.js'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import { deepCopy, wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -134,6 +134,7 @@ test('add new reference', async (t) => {
   await client.delete({ $id: 'ma2' })
   await wait(200)
   t.deepEqual(res, { ongoing: [{ id: 'ma1' }, { id: 'ma3' }] })
+  destroySubscriber(client)
 })
 
 test('add new reference reverse', async (t) => {
@@ -166,6 +167,7 @@ test('add new reference reverse', async (t) => {
 
   // console.log(await client.command('subscriptions.debug', [league]))
   t.deepEqual(res, { id: league, matches: [match] })
+  destroySubscriber(client)
 })
 
 test('find references recursive', async (t) => {
@@ -302,4 +304,5 @@ test('find references recursive', async (t) => {
       ],
     },
   ])
+  destroySubscriber(client)
 })
