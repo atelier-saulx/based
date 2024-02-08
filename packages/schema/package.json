@@ -26,7 +26,8 @@
   "ava": {
     "timeout": "2m",
     "files": [
-      "./dist/test/*.js"
+      "./dist/test/*.js",
+      "./dist/test/validateSchema/*.js"
     ]
   },
   "devDependencies": {
