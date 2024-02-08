@@ -57,6 +57,7 @@ static struct query_fork_ctrl {
      */
     __attribute__((aligned(DCACHE_LINESIZE))) pid_t pids[MAX_QUERY_FORKS];
 } query_fork;
+static bool hierarchy_auto_compress_period_ms; /* Only used to check that this is not enabled when query_fork is enabled. */
 static struct command {
     selva_cmd_function cmd_fn;
     selva_cmd_query_fork_test query_fork_eligible;
@@ -66,11 +67,12 @@ static struct command {
 struct message_handlers_vtable message_handlers[3];
 
 static const struct config server_cfg_map[] = {
-    { "SELVA_PORT",                 CONFIG_INT, &selva_port },
-    { "SERVER_BACKLOG_SIZE",        CONFIG_INT, &server_backlog_size },
-    { "SERVER_MAX_CLIENTS",         CONFIG_INT, &max_clients },
-    { "SERVER_SO_REUSE",            CONFIG_BOOL, &so_reuse },
-    { "SERVER_DISABLE_QUERY_FORK",  CONFIG_INT, &query_fork.disabled },
+    { "SELVA_PORT",                         CONFIG_INT, &selva_port },
+    { "SERVER_BACKLOG_SIZE",                CONFIG_INT, &server_backlog_size },
+    { "SERVER_MAX_CLIENTS",                 CONFIG_INT, &max_clients },
+    { "SERVER_SO_REUSE",                    CONFIG_BOOL, &so_reuse },
+    { "SERVER_DISABLE_QUERY_FORK",          CONFIG_INT, &query_fork.disabled },
+    { "HIERARCHY_AUTO_COMPRESS_PERIOD_MS",  CONFIG_INT, &hierarchy_auto_compress_period_ms },
 };
 
 void selva_server_set_readonly(void)
@@ -866,6 +868,9 @@ __constructor static void init(void)
 
 #ifdef USE_QUERY_FORK
     if (!query_fork.disabled) {
+        if (hierarchy_auto_compress_period_ms > 0) {
+            SELVA_LOG(SELVA_LOGL_CRIT, "query_fork and auto compression are mutually exclusive");
+        }
         selva_reaper_register_hook(handle_query_fork_exit, 1);
     }
 #endif
