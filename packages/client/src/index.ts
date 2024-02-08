@@ -454,9 +454,13 @@ export class BasedClient extends Emitter {
   ): Promise<any> {
     console.info('Yo', name, stream)
 
-    addStreamRegister(this, 1, 666, 'bla.jpgblablablablabla', 'flap/flap', {
-      snurp: true,
-    })
+    const bla: any = []
+
+    for (let i = 0; i < 1e3; i++) {
+      bla.push({ bla: i })
+    }
+
+    addStreamRegister(this, 1, 666, 'bla.jpgblablablablabla', 'flap/flap', bla)
 
     // return startStream(this, name, stream, progressListener)
   }
