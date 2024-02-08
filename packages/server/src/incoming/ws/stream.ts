@@ -14,8 +14,6 @@ export const registerStream: BinaryMessageHandler = (
   ctx,
   server
 ) => {
-  console.info('doink register stream', isDeflate, len)
-
   // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | name | mime | payload
   if (!ctx.session) {
     return false
@@ -57,12 +55,12 @@ export const registerStream: BinaryMessageHandler = (
           )
         )
 
-  console.log('HELLO', {
+  // active streams on session
+
+  console.log('HELLO REGISTER STREAM', {
     isDeflate,
     contentSize,
     reqId,
-    nameLen,
-    mimeLen,
     name,
     mime,
     len,
