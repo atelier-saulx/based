@@ -1034,43 +1034,56 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     }
 }
 
+static bool query_fork_eligible_is_complex_traversal(const char *query_opts_str, size_t query_opts_len)
+{
+    struct SelvaFind_QueryOpts query_opts;
+
+    if (!query_opts_str || query_opts_len == 0) {
+        return false;
+    }
+
+    /*
+     * query_opts was read.
+     */
+    int err;
+
+    /* TODO It would be faster to check against some "finterprints" i.e. bit masks or so. */
+    memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+    err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+
+    return !err &&
+           !!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
+                                SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+                                SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
+                                SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD));
+}
+
 static bool query_fork_eligible(const void *buf, size_t len)
 {
     const char *lang_str;
     size_t lang_len;
     const char *query_opts_str = NULL;
     size_t query_opts_len = 0;
-    struct SelvaFind_QueryOpts query_opts;
+    const char *ids_str;
+    size_t ids_len;
+    const char *filter_str;
+    size_t filter_len = 0;
     int argc;
 
-    argc = selva_proto_scanf(NULL, buf, len, "%.*s, %.*s",
-                             &lang_str, &lang_len,
-                             &query_opts_len, &query_opts_str
+    argc = selva_proto_scanf(NULL, buf, len, "%.*s, %.*s, %.*s, %.*s",
+                             &lang_len, &lang_str,
+                             &query_opts_len, &query_opts_str,
+                             &ids_len, &ids_str,
+                             &filter_len, &filter_str
                             );
 
-    if (argc == SELVA_PROTO_EINVAL && /* TODO We might want an unique error code for this one. */
-        query_opts_str && query_opts_len) {
-        /*
-         * query_opts was read.
-         */
-        int err;
-
-        /* TODO It would be faster to check against some "finterprints" i.e. bit masks or so. */
-        memcpy(&query_opts, query_opts_str, sizeof(query_opts));
-        err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
-
-        return !err &&
-               !!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-                                    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-                                    SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
-                                    SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
-                                    SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
-                                    SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-                                    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                                    SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD));
-    }
-
-    return false;
+    return (argc > 0 || argc == SELVA_PROTO_EINVAL) && /* TODO We might want an unique error code for this one. */
+           filter_len > 0 &&
+           query_fork_eligible_is_complex_traversal(query_opts_str, query_opts_len);
 }
 
 static int Find_OnLoad(void) {
