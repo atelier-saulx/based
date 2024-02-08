@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022, 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _FIND_INDEX_PICK_ICB_
-#define _FIND_INDEX_PICK_ICB_
 
 /**
  * Pick an ICB.
@@ -15,10 +13,8 @@
  *               necessarily a valid index..
  * @returns a pointer to a potentially valid ICB.
  */
-struct SelvaFindIndexControlBlock *SelvaFindIndexICB_Pick(
+struct SelvaIndexControlBlock *SelvaIndexICB_Pick(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id,
         const struct icb_descriptor *desc,
-        struct SelvaFindIndexControlBlock *first);
-
-#endif /* _FIND_INDEX_PICK_ICB_ */
+        struct SelvaIndexControlBlock *first);

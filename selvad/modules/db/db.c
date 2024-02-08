@@ -29,11 +29,11 @@ struct selva_glob_config selva_glob_config = {
     .hierarchy_compression_level = 6,
     .hierarchy_auto_compress_period_ms = 0,
     .hierarchy_auto_compress_old_age_lim = 100,
-    .find_indices_max = 0,
-    .find_indexing_threshold = 100,
-    .find_indexing_icb_update_interval = 5000,
-    .find_indexing_interval = 60000,
-    .find_indexing_popularity_ave_period = 216000,
+    .index_max = 0,
+    .index_threshold = 100,
+    .index_icb_update_interval = 5000,
+    .index_interval = 60000,
+    .index_popularity_ave_period = 216000,
 };
 
 static const struct config cfg_map[] = {
@@ -43,11 +43,11 @@ static const struct config cfg_map[] = {
     { "HIERARCHY_COMPRESSION_LEVEL",            CONFIG_INT,     &selva_glob_config.hierarchy_compression_level },
     { "HIERARCHY_AUTO_COMPRESS_PERIOD_MS",      CONFIG_INT,     &selva_glob_config.hierarchy_auto_compress_period_ms },
     { "HIERARCHY_AUTO_COMPRESS_OLD_AGE_LIM",    CONFIG_INT,     &selva_glob_config.hierarchy_auto_compress_old_age_lim },
-    { "FIND_INDICES_MAX",                       CONFIG_INT,     &selva_glob_config.find_indices_max },
-    { "FIND_INDEXING_THRESHOLD",                CONFIG_INT,     &selva_glob_config.find_indexing_threshold },
-    { "FIND_INDEXING_ICB_UPDATE_INTERVAL",      CONFIG_INT,     &selva_glob_config.find_indexing_icb_update_interval },
-    { "FIND_INDEXING_INTERVAL",                 CONFIG_INT,     &selva_glob_config.find_indexing_interval },
-    { "FIND_INDEXING_POPULARITY_AVE_PERIOD",    CONFIG_INT,     &selva_glob_config.find_indexing_popularity_ave_period },
+    { "SELVA_INDEX_MAX",                        CONFIG_INT,     &selva_glob_config.index_max },
+    { "SELVA_INDEX_THRESHOLD",                  CONFIG_INT,     &selva_glob_config.index_threshold },
+    { "SELVA_INDEX_ICB_UPDATE_INTERVAL",        CONFIG_INT,     &selva_glob_config.index_icb_update_interval },
+    { "SELVA_INDEX_INTERVAL",                   CONFIG_INT,     &selva_glob_config.index_interval },
+    { "SELVA_INDEX_POPULARITY_AVE_PERIOD",      CONFIG_INT,     &selva_glob_config.index_popularity_ave_period },
 };
 
 SET_DECLARE(selva_onload, Selva_Onload);

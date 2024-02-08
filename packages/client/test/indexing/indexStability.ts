@@ -19,10 +19,10 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     name: 'default',
     env: {
-      FIND_INDICES_MAX: '2',
-      FIND_INDEXING_INTERVAL: '1000',
-      FIND_INDEXING_ICB_UPDATE_INTERVAL: '500',
-      FIND_INDEXING_POPULARITY_AVE_PERIOD: '6',
+      SELVA_INDEX_MAX: '2',
+      SELVA_INDEX_INTERVAL: '1000',
+      SELVA_INDEX_ICB_UPDATE_INTERVAL: '500',
+      SELVA_INDEX_POPULARITY_AVE_PERIOD: '6',
     },
   })
 

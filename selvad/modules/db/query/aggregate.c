@@ -23,10 +23,10 @@
 #include "selva_server.h"
 #include "selva_db.h"
 #include "db_config.h"
-#include "find_index.h"
 #include "hierarchy.h"
 #include "parsers.h"
 #include "rpn.h"
+#include "selva_index.h"
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"
@@ -692,7 +692,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
 
     struct selva_string **index_hints = NULL;
     int nr_index_hints = 0;
-    if (query_opts.index_hints_len && selva_glob_config.find_indices_max > 0) {
+    if (query_opts.index_hints_len && selva_glob_config.index_max > 0) {
         index_hints = parse_index_hints(&fin, query_opts.index_hints_str, query_opts.index_hints_len, &nr_index_hints);
     }
 
@@ -782,16 +782,16 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
         }
 
         const size_t nr_ind_icb = max(nr_index_hints, 1);
-        struct SelvaFindIndexControlBlock *ind_icb[nr_ind_icb];
+        struct SelvaIndexControlBlock *ind_icb[nr_ind_icb];
         int ind_select = -1; /* Selected index. The smallest of all found. */
 
-        memset(ind_icb, 0, nr_ind_icb * sizeof(struct SelvaFindIndexControlBlock *));
+        memset(ind_icb, 0, nr_ind_icb * sizeof(struct SelvaIndexControlBlock *));
 
         if (nr_index_hints > 0) {
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
+            ind_select = SelvaIndex_AutoMulti(hierarchy, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
 
             /*
              * If the index is already ordered then we don't need to sort the
@@ -801,7 +801,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
              */
             if (ind_select >= 0 &&
                 ids_len == SELVA_NODE_ID_SIZE &&
-                SelvaFindIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
+                SelvaIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
                 query_opts.order = SELVA_RESULT_ORDER_NONE;
                 order_by_field = NULL; /* This controls sorting in the callback. */
             }
@@ -840,7 +840,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
                 args.find_args.filter = NULL;
             }
 
-            err = SelvaFindIndex_Traverse(hierarchy, ind_icb[ind_select], AggregateCommand_NodeCb, &args);
+            err = SelvaIndex_Traverse(hierarchy, ind_icb[ind_select], AggregateCommand_NodeCb, &args);
         } else {
             struct query_traverse qt = {
                 .dir = query_opts.dir,
@@ -873,7 +873,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
         /*
          * Do index accounting.
          */
-        SelvaFindIndex_AccMulti(ind_icb, nr_index_hints, ind_select, args.find_args.acc_take, args.find_args.acc_tot);
+        SelvaIndex_AccMulti(ind_icb, nr_index_hints, ind_select, args.find_args.acc_take, args.find_args.acc_tot);
     }
 
     /*

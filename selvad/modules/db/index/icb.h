@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2022, 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _FIND_INDEX_ICB_
-#define _FIND_INDEX_ICB_
 
 /*
  * Manage ICB map: name -> ICB.
@@ -39,7 +37,7 @@ struct icb_descriptor {
 /**
  * Indexing hint accounting and indices.
  */
-struct SelvaFindIndexControlBlock {
+struct SelvaIndexControlBlock {
     struct {
         /**
          * Permanently created by the user.
@@ -120,7 +118,7 @@ struct SelvaFindIndexControlBlock {
      */
     struct {
         int cur; /*!< Times the hint has been seen during the current period. */
-        float ave; /*!< Average times seen over a period of time (FIND_INDEXING_POPULARITY_AVE_PERIOD). */
+        float ave; /*!< Average times seen over a period of time (INDEXING_POPULARITY_AVE_PERIOD). */
     } pop_count;
 
     /**
@@ -164,28 +162,26 @@ struct SelvaFindIndexControlBlock {
 /**
  * Calculate the length of an index name.
  */
-__purefn size_t SelvaFindIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct icb_descriptor *desc);
+__purefn size_t SelvaIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct icb_descriptor *desc);
 
 /**
  * Create a deterministic name for an index.
  * node_id.<direction>[.<dir expression>][.<sort order>.<order field>].H(<indexing clause>)
- * @param buf is a buffer that has at least the length given by SelvaFindIndexICB_CalcNameLen().
+ * @param buf is a buffer that has at least the length given by SelvaIndexICB_CalcNameLen().
  */
-void SelvaFindIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc);
+void SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc);
 
 /**
  * Get an ICB from the index map.
  */
-int SelvaFindIndexICB_Get(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaFindIndexControlBlock **icb);
+int SelvaIndexICB_Get(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaIndexControlBlock **icb);
 
 /**
  * Add an ICB to the index map.
  */
-int SelvaFindIndexICB_Set(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaFindIndexControlBlock *icb);
+int SelvaIndexICB_Set(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaIndexControlBlock *icb);
 
 /**
  * Remove an ICB from the index map.
  */
-int SelvaFindIndexICB_Del(struct SelvaHierarchy *hierarchy, const struct SelvaFindIndexControlBlock *icb);
-
-#endif /* _FIND_INDEX_ICB_ */
+int SelvaIndexICB_Del(struct SelvaHierarchy *hierarchy, const struct SelvaIndexControlBlock *icb);

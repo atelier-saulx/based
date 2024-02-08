@@ -42,23 +42,23 @@ struct selva_glob_config {
      * Maximum number of indices.
      * 0 = disable indexing.
      */
-    int find_indices_max;
+    int index_max;
     /**
      * A candidate for indexing must have at least this many visits per traversal.
      */
-    int find_indexing_threshold;
+    int index_threshold;
     /**
      * [ms] ICB refresh interval.
      */
-    int find_indexing_icb_update_interval;
+    int index_icb_update_interval;
     /**
      * How often the set of active indices is decided.
      */
-    int find_indexing_interval;
+    int index_interval;
     /**
      * [sec] Averaging period for indexing hint demand count. After this period the original value is reduced to 1/e * n.
      */
-    int find_indexing_popularity_ave_period;
+    int index_popularity_ave_period;
 };
 
 extern struct selva_glob_config selva_glob_config;

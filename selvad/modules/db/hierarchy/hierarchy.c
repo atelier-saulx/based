@@ -32,10 +32,10 @@
 #include "db_config.h"
 #include "edge.h"
 #include "field_lookup.h"
-#include "find_index.h"
 #include "modify.h"
 #include "parsers.h"
 #include "rpn.h"
+#include "selva_index.h"
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"
@@ -230,7 +230,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     SelvaObject_Init(hierarchy->aliases._obj_data);
     Edge_InitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
     SelvaSubscriptions_InitHierarchy(hierarchy);
-    SelvaFindIndex_Init(hierarchy);
+    SelvaIndex_Init(hierarchy);
 
     if (SelvaModify_SetHierarchy(hierarchy, ROOT_NODE_ID, 0, NULL, 0, NULL, 0, NULL) < 0) {
         SelvaModify_DestroyHierarchy(hierarchy);
@@ -297,7 +297,7 @@ void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy) {
      * If SelvaSubscriptions_DestroyAll() is ran first then we don't need to
      * bother about cleaning up subscriptions used by the indexing.
      */
-    SelvaFindIndex_Deinit(hierarchy);
+    SelvaIndex_Deinit(hierarchy);
     Edge_DeinitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
     SVector_Destroy(&hierarchy->heads);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 SAULX
+ * Copyright (c) 2021-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -31,14 +31,14 @@
 #include "selva_trace.h"
 #include "icb.h"
 #include "pick_icb.h"
-#include "find_index.h"
+#include "selva_index.h"
 
 #if 0
 #define DISABLE_ORDERED_INDICES 1
 #endif
 
 #define INDEX_ERR_MSG_DISABLED "Indexing disabled"
-#define FIND_INDEX_SUB_ID (Selva_SubscriptionId)0
+#define INDEX_SUB_ID (Selva_SubscriptionId)0
 #define ALLOWED_DIRS \
     ((enum SelvaTraversal) \
     SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS | \
@@ -56,7 +56,7 @@ SELVA_TRACE_HANDLE(FindIndex_icb_proc);
 SELVA_TRACE_HANDLE(FindIndex_make_indexing_decission_proc);
 SELVA_TRACE_HANDLE(FindIndex_refresh);
 
-static void create_icb_timer(struct SelvaFindIndexControlBlock *icb);
+static void create_icb_timer(struct SelvaIndexControlBlock *icb);
 static void create_indexing_timer(struct SelvaHierarchy *hierarchy);
 
 static int is_indexing_active(const struct SelvaHierarchy *hierarchy) {
@@ -66,7 +66,7 @@ static int is_indexing_active(const struct SelvaHierarchy *hierarchy) {
 /**
  * Set a new unique marker_id to the given icb.
  */
-static int set_marker_id(struct SelvaHierarchy *hierarchy, struct SelvaFindIndexControlBlock *icb) {
+static int set_marker_id(struct SelvaHierarchy *hierarchy, struct SelvaIndexControlBlock *icb) {
     const int next = ida_alloc(hierarchy->dyn_index.ida);
 
     if (next < 0) {
@@ -85,14 +85,14 @@ static int set_marker_id(struct SelvaHierarchy *hierarchy, struct SelvaFindIndex
  * command, meaning that the resulting index set will look similar to a
  * find result with the same arguments.
  */
-static int skip_node(const struct SelvaFindIndexControlBlock *icb, const struct SelvaHierarchyNode *node) {
+static int skip_node(const struct SelvaIndexControlBlock *icb, const struct SelvaHierarchyNode *node) {
     Selva_NodeId node_id;
 
     SelvaHierarchy_GetNodeId(node_id, node);
     return SelvaTraversal_GetSkip(icb->traversal.dir, 0) && !memcmp(node_id, icb->node_id, SELVA_NODE_ID_SIZE);
 }
 
-static void icb_res_init(struct SelvaFindIndexControlBlock *icb) {
+static void icb_res_init(struct SelvaIndexControlBlock *icb) {
     if (icb->flags.ordered) {
         const size_t initial_len = (size_t)icb->find_acc.take_max_ave;
 
@@ -102,11 +102,11 @@ static void icb_res_init(struct SelvaFindIndexControlBlock *icb) {
     }
 }
 
-static void icb_clear_acc(struct SelvaFindIndexControlBlock *icb) {
+static void icb_clear_acc(struct SelvaIndexControlBlock *icb) {
     memset(&icb->find_acc, 0, sizeof(icb->find_acc));
 }
 
-static void icb_res_destroy(struct SelvaFindIndexControlBlock *icb) {
+static void icb_res_destroy(struct SelvaIndexControlBlock *icb) {
     if (icb->flags.valid) {
         icb->flags.valid = 0;
 
@@ -118,7 +118,7 @@ static void icb_res_destroy(struct SelvaFindIndexControlBlock *icb) {
     }
 }
 
-static int icb_res_add(struct SelvaFindIndexControlBlock *icb, struct SelvaHierarchyNode *node) {
+static int icb_res_add(struct SelvaIndexControlBlock *icb, struct SelvaHierarchyNode *node) {
     if (icb->flags.ordered) {
         struct TraversalOrderItem *item;
         /*
@@ -146,7 +146,7 @@ static int icb_res_add(struct SelvaFindIndexControlBlock *icb, struct SelvaHiera
     return 0;
 }
 
-size_t SelvaFindIndex_IcbCard(const struct SelvaFindIndexControlBlock *icb) {
+size_t SelvaIndex_IcbCard(const struct SelvaIndexControlBlock *icb) {
     if (icb->flags.ordered) {
         return SVector_Size(&icb->res.ord);
     } else {
@@ -164,13 +164,13 @@ static void update_index(
         const char *field_str,
         size_t field_len,
         struct SelvaHierarchyNode *node) {
-    struct SelvaFindIndexControlBlock *icb;
+    struct SelvaIndexControlBlock *icb;
 
     /*
      * Presumably as long as this function is called the owner_ctx pointer
      * should be always point to a valid icb too.
      */
-    icb = (struct SelvaFindIndexControlBlock *)marker->action.owner_ctx;
+    icb = (struct SelvaIndexControlBlock *)marker->action.owner_ctx;
 
     if (event_flags & SELVA_SUBSCRIPTION_FLAG_CL_HIERARCHY) {
         /*
@@ -269,7 +269,7 @@ static void update_index(
  */
 static int start_index(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaFindIndexControlBlock *icb) {
+        struct SelvaIndexControlBlock *icb) {
     const enum SelvaSubscriptionsMarkerFlags marker_flags =
         SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY |
         SELVA_SUBSCRIPTION_FLAG_CH_FIELD |
@@ -291,7 +291,7 @@ static int start_index(
     }
 
     err = SelvaSubscriptions_AddCallbackMarker(
-            hierarchy, FIND_INDEX_SUB_ID, icb->marker_id, marker_flags,
+            hierarchy, INDEX_SUB_ID, icb->marker_id, marker_flags,
             icb->node_id, icb->traversal.dir, dir_field, dir_expression, selva_string_to_str(icb->traversal.filter, NULL),
             update_index,
             icb);
@@ -316,7 +316,7 @@ static int start_index(
  */
 static int refresh_index(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaFindIndexControlBlock *icb) {
+        struct SelvaIndexControlBlock *icb) {
     int err;
 
     if (unlikely(!icb->flags.active)) {
@@ -328,7 +328,7 @@ static int refresh_index(
     }
 
     SELVA_TRACE_BEGIN(FindIndex_refresh);
-    err = SelvaSubscriptions_RefreshByMarkerId(hierarchy, FIND_INDEX_SUB_ID, icb->marker_id);
+    err = SelvaSubscriptions_RefreshByMarkerId(hierarchy, INDEX_SUB_ID, icb->marker_id);
     SELVA_TRACE_END(FindIndex_refresh);
 
     return err;
@@ -340,14 +340,14 @@ static int refresh_index(
  */
 static int discard_index(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaFindIndexControlBlock *icb) {
+        struct SelvaIndexControlBlock *icb) {
     int err;
 
     poptop_remove(&hierarchy->dyn_index.top_indices, icb);
 
     if (hierarchy) {
         if (icb->flags.valid_marked_id) {
-            err = SelvaSubscriptions_DeleteMarker(hierarchy, FIND_INDEX_SUB_ID, icb->marker_id);
+            err = SelvaSubscriptions_DeleteMarker(hierarchy, INDEX_SUB_ID, icb->marker_id);
             if (err && err != SELVA_ENOENT && err != SELVA_SUBSCRIPTIONS_ENOENT) {
                 return err;
             }
@@ -371,7 +371,7 @@ static int discard_index(
  */
 __attribute__((nonnull (1, 2))) static int destroy_icb(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaFindIndexControlBlock *icb) {
+        struct SelvaIndexControlBlock *icb) {
     int err;
 
     SELVA_LOG(SELVA_LOGL_DBG, "Destroying icb for %.*s",
@@ -385,7 +385,7 @@ __attribute__((nonnull (1, 2))) static int destroy_icb(
         return err;
     }
 
-    err = SelvaFindIndexICB_Del(hierarchy, icb);
+    err = SelvaIndexICB_Del(hierarchy, icb);
     if (err && err != SELVA_ENOENT) {
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to destroy an index for \"%.*s\". err: \"%s\"",
                   (int)icb->name_len, icb->name_str,
@@ -442,7 +442,7 @@ static void make_indexing_decission_proc(struct event *e __unused, void *data) {
      * whether current indices will require actions.
      */
     if (poptop_maintenance(&hierarchy->dyn_index.top_indices)) {
-        struct SelvaFindIndexControlBlock *icb;
+        struct SelvaIndexControlBlock *icb;
 
         /*
          * First discard indices that are no longer relevant.
@@ -494,7 +494,7 @@ static void make_indexing_decission_proc(struct event *e __unused, void *data) {
      * Finally make sure the top most ICBs are indexed.
      */
     POPTOP_FOREACH(el, &hierarchy->dyn_index.top_indices) {
-        struct SelvaFindIndexControlBlock *icb = (struct SelvaFindIndexControlBlock *)el->p;
+        struct SelvaIndexControlBlock *icb = (struct SelvaIndexControlBlock *)el->p;
         int err;
 
         /* POPTOP_FOREACH can return NULLs. */
@@ -514,7 +514,7 @@ static void make_indexing_decission_proc(struct event *e __unused, void *data) {
              * The maximum number of indices has been reached but we may still
              * need to refresh other indices.
              */
-            if (hierarchy->dyn_index.nr_indices >= selva_glob_config.find_indices_max) {
+            if (hierarchy->dyn_index.nr_indices >= selva_glob_config.index_max) {
                 continue;
             }
 
@@ -562,7 +562,7 @@ static void make_indexing_decission_proc(struct event *e __unused, void *data) {
 /**
  * Calculate new score for a given ICB to be used with the top_indices poptop.
  */
-static float calc_icb_score(const struct SelvaFindIndexControlBlock *icb) {
+static float calc_icb_score(const struct SelvaIndexControlBlock *icb) {
     const float pop_count = icb->pop_count.ave;
     const float take = (icb->flags.valid) ? icb->find_acc.ind_take_max_ave : icb->find_acc.take_max_ave;
 
@@ -578,7 +578,7 @@ static float calc_icb_score(const struct SelvaFindIndexControlBlock *icb) {
  */
 static void icb_proc(struct event *e __unused, void *data) {
     SELVA_TRACE_BEGIN_AUTO(FindIndex_icb_proc);
-    struct SelvaFindIndexControlBlock *icb = (struct SelvaFindIndexControlBlock *)data;
+    struct SelvaIndexControlBlock *icb = (struct SelvaIndexControlBlock *)data;
 
 #if 0
     SELVA_LOG(SELVA_LOGL_DBG, "TICK");
@@ -611,7 +611,7 @@ static void icb_proc(struct event *e __unused, void *data) {
      * Consider the index hint for indexing if take exceeds the threshold.
      */
     if (icb->flags.active || icb->flags.permanent ||
-        icb->find_acc.tot_max_ave >= (float)selva_glob_config.find_indexing_threshold) {
+        icb->find_acc.tot_max_ave >= (float)selva_glob_config.index_threshold) {
         float score;
 
         if (icb->flags.permanent) {
@@ -640,23 +640,23 @@ static void icb_proc(struct event *e __unused, void *data) {
 /**
  * Get or create an indexing control block.
  */
-static struct SelvaFindIndexControlBlock *upsert_icb(
+static struct SelvaIndexControlBlock *upsert_icb(
         struct finalizer *fin,
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id,
         struct icb_descriptor *desc) {
-    struct SelvaFindIndexControlBlock *icb;
+    struct SelvaIndexControlBlock *icb;
     int err;
 
     /*
      * Get a deterministic name for indexing this find query.
      */
-    const size_t name_len = SelvaFindIndexICB_CalcNameLen(node_id, desc);
+    const size_t name_len = SelvaIndexICB_CalcNameLen(node_id, desc);
     char name_str[name_len];
 
-    SelvaFindIndexICB_BuildName(name_str, node_id, desc);
+    SelvaIndexICB_BuildName(name_str, node_id, desc);
 
-    err = SelvaFindIndexICB_Get(hierarchy, name_str, name_len, &icb);
+    err = SelvaIndexICB_Get(hierarchy, name_str, name_len, &icb);
     if (err == SELVA_ENOENT) {
         /*
          * ICB not found, so we create one.
@@ -675,7 +675,7 @@ static struct SelvaFindIndexControlBlock *upsert_icb(
         if (err) {
             if (err == SELVA_ENOBUFS) {
                 SELVA_LOG(SELVA_LOGL_DBG,
-                          "FIND_INDICES_MAX_HINTS reached. Destroying \"%.*s\": %s\n",
+                          "max hints reached. Destroying \"%.*s\": %s\n",
                           (int)icb->name_len, icb->name_str,
                           selva_strerror(err));
             } else {
@@ -697,7 +697,7 @@ static struct SelvaFindIndexControlBlock *upsert_icb(
          * The multiplier here could be a tunable but I'm not sure if anybody
          * wants to really tune it.
          */
-        icb->pop_count.ave = 2.0f * (float)(selva_glob_config.find_indexing_interval / selva_glob_config.find_indexing_icb_update_interval) * (1.0f / lpf_a);
+        icb->pop_count.ave = 2.0f * (float)(selva_glob_config.index_interval / selva_glob_config.index_icb_update_interval) * (1.0f / lpf_a);
 
         /*
          * Set traversal params.
@@ -719,7 +719,7 @@ static struct SelvaFindIndexControlBlock *upsert_icb(
         /*
          * Map the newly created icb into the dyn_index SelvaObject.
          */
-        err = SelvaFindIndexICB_Set(hierarchy, name_str, name_len, icb);
+        err = SelvaIndexICB_Set(hierarchy, name_str, name_len, icb);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to insert a new ICB at \"%.*s\". err: \"%s\"",
                       (int)name_len, name_str,
@@ -746,8 +746,8 @@ static struct SelvaFindIndexControlBlock *upsert_icb(
  * Create a timer for an ICB.
  * Generally every ICB has a timer.
  */
-static void create_icb_timer(struct SelvaFindIndexControlBlock *icb) {
-    const struct timespec period = MSEC2TIMESPEC(selva_glob_config.find_indexing_icb_update_interval);
+static void create_icb_timer(struct SelvaIndexControlBlock *icb) {
+    const struct timespec period = MSEC2TIMESPEC(selva_glob_config.index_icb_update_interval);
 
     assert(icb->flags.valid_timer_id == 0);
     icb->timer_id = evl_set_timeout(&period, icb_proc, icb);
@@ -763,7 +763,7 @@ static void create_icb_timer(struct SelvaFindIndexControlBlock *icb) {
  * Only one timer per hierarchy should be created.
  */
 static void create_indexing_timer(struct SelvaHierarchy *hierarchy) {
-    const struct timespec period = MSEC2TIMESPEC(selva_glob_config.find_indexing_interval);
+    const struct timespec period = MSEC2TIMESPEC(selva_glob_config.index_interval);
 
     assert(hierarchy->dyn_index.proc_timer_active == 0);
     hierarchy->dyn_index.proc_timer_id = evl_set_timeout(&period, make_indexing_decission_proc, hierarchy);
@@ -774,21 +774,21 @@ static void create_indexing_timer(struct SelvaHierarchy *hierarchy) {
     }
 }
 
-void SelvaFindIndex_Init(SelvaHierarchy *hierarchy) {
-    if (selva_glob_config.find_indices_max == 0) {
+void SelvaIndex_Init(SelvaHierarchy *hierarchy) {
+    if (selva_glob_config.index_max == 0) {
         return; /* Indexing disabled. */
     }
 
     hierarchy->dyn_index.index_map = SelvaObject_New();
-    hierarchy->dyn_index.ida = ida_init(FIND_INDICES_MAX_HINTS);
+    hierarchy->dyn_index.ida = ida_init(SELVA_INDEX_MAX_HINTS); /* What if index_max is greater than this? */
 
     /*
-     * We allow a max of 2 * FIND_INDICES_MAX so we always have more to choose
+     * We allow a max of 2 * INDEX_MAX so we always have more to choose
      * from than we'll be able to create, and knowing that poptop will
      * periodically drop about half of the list, we want to avoid oscillating
      * too much.
      */
-    poptop_init(&hierarchy->dyn_index.top_indices, 2 * selva_glob_config.find_indices_max, 0.0f);
+    poptop_init(&hierarchy->dyn_index.top_indices, 2 * selva_glob_config.index_max, 0.0f);
 
     create_indexing_timer(hierarchy);
 }
@@ -801,15 +801,15 @@ static void deinit_index_obj(struct SelvaHierarchy *hierarchy, struct SelvaObjec
     it = SelvaObject_ForeachBegin(obj);
     while ((p = SelvaObject_ForeachValueType(obj, &it, NULL, &type))) {
         if (type == SELVA_OBJECT_POINTER) {
-            (void)destroy_icb(hierarchy, (struct SelvaFindIndexControlBlock *)p);
+            (void)destroy_icb(hierarchy, (struct SelvaIndexControlBlock *)p);
         } else if (type == SELVA_OBJECT_OBJECT) {
             deinit_index_obj(hierarchy, (struct SelvaObject *)p);
         }
     }
 }
 
-void SelvaFindIndex_Deinit(struct SelvaHierarchy *hierarchy) {
-    if (selva_glob_config.find_indices_max == 0) {
+void SelvaIndex_Deinit(struct SelvaHierarchy *hierarchy) {
+    if (selva_glob_config.index_max == 0) {
         return; /* Indexing disabled. */
     }
 
@@ -828,18 +828,18 @@ void SelvaFindIndex_Deinit(struct SelvaHierarchy *hierarchy) {
     memset(&hierarchy->dyn_index, 0, sizeof(hierarchy->dyn_index));
 }
 
-int SelvaFindIndex_Auto(
+int SelvaIndex_Auto(
         struct SelvaHierarchy *hierarchy,
         enum SelvaTraversal dir, const char *dir_opt_str, size_t dir_opt_len,
         const Selva_NodeId node_id,
         enum SelvaResultOrder order,
         struct selva_string *order_field,
         struct selva_string *filter,
-        struct SelvaFindIndexControlBlock **icb_out) {
+        struct SelvaIndexControlBlock **icb_out) {
     SELVA_TRACE_BEGIN_AUTO(FindIndex_AutoIndex);
 
     if (!(dir & ALLOWED_DIRS) || __builtin_popcount(dir) > 1 ||
-        selva_glob_config.find_indices_max == 0) {
+        selva_glob_config.index_max == 0) {
         /*
          * Only index some traversals.
          */
@@ -851,7 +851,7 @@ int SelvaFindIndex_Auto(
 
     __auto_finalizer struct finalizer fin;
     struct selva_string *dir_opt = NULL;
-    struct SelvaFindIndexControlBlock *icb;
+    struct SelvaIndexControlBlock *icb;
 
     finalizer_init(&fin);
 
@@ -879,7 +879,7 @@ int SelvaFindIndex_Auto(
         },
     };
 
-    icb = SelvaFindIndexICB_Pick(hierarchy, node_id, &icb_desc, upsert_icb(&fin, hierarchy, node_id, &icb_desc));
+    icb = SelvaIndexICB_Pick(hierarchy, node_id, &icb_desc, upsert_icb(&fin, hierarchy, node_id, &icb_desc));
     *icb_out = icb;
 
     if (!icb || !icb->flags.valid) {
@@ -889,7 +889,7 @@ int SelvaFindIndex_Auto(
     return 0;
 }
 
-int SelvaFindIndex_AutoMulti(
+int SelvaIndex_AutoMulti(
         struct SelvaHierarchy *hierarchy,
         enum SelvaTraversal dir, const char *dir_opt_str, size_t dir_opt_len,
         const Selva_NodeId node_id,
@@ -897,11 +897,11 @@ int SelvaFindIndex_AutoMulti(
         struct selva_string *order_field,
         size_t nr_index_hints,
         struct selva_string *index_hints[static restrict nr_index_hints],
-        struct SelvaFindIndexControlBlock *ind_icb_out[static restrict nr_index_hints]) {
+        struct SelvaIndexControlBlock *ind_icb_out[static restrict nr_index_hints]) {
     int ind_select = -1;
 
     for (size_t i = 0; i < nr_index_hints; i++) {
-        struct SelvaFindIndexControlBlock *icb = NULL;
+        struct SelvaIndexControlBlock *icb = NULL;
         int err;
 
         /*
@@ -911,12 +911,12 @@ int SelvaFindIndex_AutoMulti(
 #if DISABLE_ORDERED_INDICES
         order = SELVA_RESULT_ORDER_NONE
 #endif
-        err = SelvaFindIndex_Auto(hierarchy, dir, dir_opt_str, dir_opt_len, node_id, order, order_field, index_hints[i], &icb);
+        err = SelvaIndex_Auto(hierarchy, dir, dir_opt_str, dir_opt_len, node_id, order, order_field, index_hints[i], &icb);
         ind_icb_out[i] = icb;
         if (!err) {
             if (icb &&
                 (ind_select < 0 ||
-                 SelvaFindIndex_IcbCard(icb) < SelvaFindIndex_IcbCard(ind_icb_out[ind_select]))) {
+                 SelvaIndex_IcbCard(icb) < SelvaIndex_IcbCard(ind_icb_out[ind_select]))) {
                 ind_select = i; /* Select the smallest index res set for fastest lookup. */
             }
         } else if (err != SELVA_ENOENT && err != SELVA_ENOTSUP) {
@@ -928,8 +928,8 @@ int SelvaFindIndex_AutoMulti(
     return ind_select;
 }
 
-int SelvaFindIndex_IsOrdered(
-        struct SelvaFindIndexControlBlock *icb,
+int SelvaIndex_IsOrdered(
+        struct SelvaIndexControlBlock *icb,
         enum SelvaResultOrder order,
         struct selva_string *order_field) {
     return order != SELVA_RESULT_ORDER_NONE &&
@@ -938,9 +938,9 @@ int SelvaFindIndex_IsOrdered(
            !selva_string_cmp(icb->traversal.sort.order_field, order_field);
 }
 
-int SelvaFindIndex_Traverse(
+int SelvaIndex_Traverse(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaFindIndexControlBlock *icb,
+        struct SelvaIndexControlBlock *icb,
         SelvaHierarchyNodeCallback node_cb,
         void * node_arg) {
     const struct SelvaHierarchyTraversalMetadata metadata = {};
@@ -990,8 +990,8 @@ int SelvaFindIndex_Traverse(
     return 0;
 }
 
-void SelvaFindIndex_Acc(struct SelvaFindIndexControlBlock * restrict icb, size_t acc_take, size_t acc_tot) {
-    if (selva_glob_config.find_indices_max == 0) {
+void SelvaIndex_Acc(struct SelvaIndexControlBlock * restrict icb, size_t acc_take, size_t acc_tot) {
+    if (selva_glob_config.index_max == 0) {
         /* If indexing is disabled then the rest of the function will be optimized out. */
         return;
     }
@@ -1016,27 +1016,27 @@ void SelvaFindIndex_Acc(struct SelvaFindIndexControlBlock * restrict icb, size_t
     }
 }
 
-void SelvaFindIndex_AccMulti(
-        struct SelvaFindIndexControlBlock *ind_icb[],
+void SelvaIndex_AccMulti(
+        struct SelvaIndexControlBlock *ind_icb[],
         size_t nr_index_hints,
         int ind_select,
         size_t acc_take,
         size_t acc_tot) {
     for (int i = 0; i < (int)nr_index_hints; i++) {
-        struct SelvaFindIndexControlBlock *icb = ind_icb[i];
+        struct SelvaIndexControlBlock *icb = ind_icb[i];
 
         if (!icb) {
             continue;
         }
 
         if (i == ind_select) {
-            SelvaFindIndex_Acc(icb, acc_take, acc_tot);
+            SelvaIndex_Acc(icb, acc_take, acc_tot);
         } else if (ind_select == -1) {
             /* No index was selected so all will get the same take. */
-            SelvaFindIndex_Acc(icb, acc_take, acc_tot);
+            SelvaIndex_Acc(icb, acc_take, acc_tot);
         } else {
             /* Nothing taken from this index. */
-            SelvaFindIndex_Acc(icb, 0, acc_tot);
+            SelvaIndex_Acc(icb, 0, acc_tot);
         }
     }
 }
@@ -1050,7 +1050,7 @@ static int list_index(struct selva_server_response_out *resp, struct SelvaObject
     it = SelvaObject_ForeachBegin(obj);
     while ((p = SelvaObject_ForeachValueType(obj, &it, NULL, &type))) {
         if (type == SELVA_OBJECT_POINTER) {
-            const struct SelvaFindIndexControlBlock *icb = (const struct SelvaFindIndexControlBlock *)p;
+            const struct SelvaIndexControlBlock *icb = (const struct SelvaIndexControlBlock *)p;
 
             /*
              * index_name, [ take, total, ind_take, ind_size ]
@@ -1066,7 +1066,7 @@ static int list_index(struct selva_server_response_out *resp, struct SelvaObject
             } else if (!icb->flags.valid) {
                 selva_send_str(resp, "not_valid", 9);
             } else {
-                selva_send_double(resp, (double)SelvaFindIndex_IcbCard(icb));
+                selva_send_double(resp, (double)SelvaIndex_IcbCard(icb));
             }
         } else if (type == SELVA_OBJECT_OBJECT) {
             n += list_index(resp, (struct SelvaObject *)p);
@@ -1091,12 +1091,12 @@ static int _debug_index(struct selva_server_response_out *resp, struct SelvaHier
     it = SelvaObject_ForeachBegin(obj);
     while ((p = SelvaObject_ForeachValueType(obj, &it, NULL, &type))) {
         if (type == SELVA_OBJECT_POINTER) {
-            const struct SelvaFindIndexControlBlock *icb = (const struct SelvaFindIndexControlBlock *)p;
+            const struct SelvaIndexControlBlock *icb = (const struct SelvaIndexControlBlock *)p;
 
             if (n++ == i) {
                 struct Selva_SubscriptionMarker *marker;
 
-                marker = SelvaSubscriptions_GetMarker(hierarchy, FIND_INDEX_SUB_ID, icb->marker_id);
+                marker = SelvaSubscriptions_GetMarker(hierarchy, INDEX_SUB_ID, icb->marker_id);
                 if (marker) {
                     SelvaSubscriptions_ReplyWithMarker(resp, marker);
                 } else {
@@ -1126,7 +1126,7 @@ static void debug_index(struct selva_server_response_out *resp, struct SelvaHier
     }
 }
 
-static void SelvaFindIndex_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+static void SelvaIndex_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy;
 
     if (len != 0) {
@@ -1146,7 +1146,7 @@ static void SelvaFindIndex_ListCommand(struct selva_server_response_out *resp, c
     /* Sent 2 * res */
 }
 
-static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaIndex_NewCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     enum SelvaTraversal dir;
@@ -1201,8 +1201,8 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
     /*
      * Create the index.
      */
-    struct SelvaFindIndexControlBlock *icb = NULL;
-    err = SelvaFindIndex_Auto(
+    struct SelvaIndexControlBlock *icb = NULL;
+    err = SelvaIndex_Auto(
             hierarchy,
             dir, dir_opt_str, dir_opt_len, node_id,
             order_ord, order_ord != SELVA_RESULT_ORDER_NONE ? order_field : NULL,
@@ -1217,7 +1217,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
      * The first three parameters will make sure we have a coefficient of 1.
      * The last two are a lazy attempt to get this ICB on the top of the list.
      */
-    float v = (float)selva_glob_config.find_indexing_threshold + 1.0f;
+    float v = (float)selva_glob_config.index_threshold + 1.0f;
     icb->find_acc.tot_max = v;
     icb->find_acc.tot_max_ave = v;
     icb->find_acc.take_max = v;
@@ -1231,11 +1231,11 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
     selva_send_ll(resp, 1);
 }
 
-static void SelvaFindIndex_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaIndex_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     const char *index_name_str;
     size_t index_name_len;
-    struct SelvaFindIndexControlBlock *icb;
+    struct SelvaIndexControlBlock *icb;
     int discard = 0, argc, err;
 
     argc = selva_proto_scanf(NULL, buf, len, "%.*s, %d",
@@ -1254,7 +1254,7 @@ static void SelvaFindIndex_DelCommand(struct selva_server_response_out *resp, co
         return;
     }
 
-    err = SelvaFindIndexICB_Get(hierarchy, index_name_str, index_name_len, &icb);
+    err = SelvaIndexICB_Get(hierarchy, index_name_str, index_name_len, &icb);
     if (err == SELVA_ENOENT) {
         selva_send_ll(resp, 0);
         return;
@@ -1276,7 +1276,7 @@ static void SelvaFindIndex_DelCommand(struct selva_server_response_out *resp, co
     selva_send_ll(resp, 1);
 }
 
-static void SelvaFindIndex_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaIndex_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     int i = -1;
     int argc;
@@ -1299,7 +1299,7 @@ static void SelvaFindIndex_DebugCommand(struct selva_server_response_out *resp, 
     debug_index(resp, hierarchy, (i - 1) / 2);
 }
 
-static void SelvaFindIndex_InfoCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+static void SelvaIndex_InfoCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     if (len) {
         selva_send_error_arity(resp);
         return;
@@ -1311,13 +1311,13 @@ static void SelvaFindIndex_InfoCommand(struct selva_server_response_out *resp, c
 }
 
 static int FindIndex_OnLoad(void) {
-    lpf_a = lpf_geta((float)selva_glob_config.find_indexing_popularity_ave_period, (float)selva_glob_config.find_indexing_icb_update_interval / 1000.0f);
+    lpf_a = lpf_geta((float)selva_glob_config.index_popularity_ave_period, (float)selva_glob_config.index_icb_update_interval / 1000.0f);
 
-    selva_mk_command(CMD_ID_INDEX_LIST, SELVA_CMD_MODE_PURE, "index.list", SelvaFindIndex_ListCommand);
-    selva_mk_command(CMD_ID_INDEX_NEW, SELVA_CMD_MODE_PURE, "index.new", SelvaFindIndex_NewCommand);
-    selva_mk_command(CMD_ID_INDEX_DEL, SELVA_CMD_MODE_PURE, "index.del", SelvaFindIndex_DelCommand);
-    selva_mk_command(CMD_ID_INDEX_DEBUG, SELVA_CMD_MODE_PURE, "index.debug", SelvaFindIndex_DebugCommand);
-    selva_mk_command(CMD_ID_INDEX_INFO, SELVA_CMD_MODE_PURE, "index.info", SelvaFindIndex_InfoCommand);
+    selva_mk_command(CMD_ID_INDEX_LIST, SELVA_CMD_MODE_PURE, "index.list", SelvaIndex_ListCommand);
+    selva_mk_command(CMD_ID_INDEX_NEW, SELVA_CMD_MODE_PURE, "index.new", SelvaIndex_NewCommand);
+    selva_mk_command(CMD_ID_INDEX_DEL, SELVA_CMD_MODE_PURE, "index.del", SelvaIndex_DelCommand);
+    selva_mk_command(CMD_ID_INDEX_DEBUG, SELVA_CMD_MODE_PURE, "index.debug", SelvaIndex_DebugCommand);
+    selva_mk_command(CMD_ID_INDEX_INFO, SELVA_CMD_MODE_PURE, "index.info", SelvaIndex_InfoCommand);
 
     return 0;
 }

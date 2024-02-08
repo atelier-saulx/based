@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -18,20 +18,20 @@
 /**
  * Pick a valid unordered ICB.
  */
-static struct SelvaFindIndexControlBlock *pick_unordered(struct SelvaHierarchy *hierarchy, const Selva_NodeId node_id, const struct icb_descriptor *desc) {
+static struct SelvaIndexControlBlock *pick_unordered(struct SelvaHierarchy *hierarchy, const Selva_NodeId node_id, const struct icb_descriptor *desc) {
     struct icb_descriptor icb_desc;
-    struct SelvaFindIndexControlBlock *icb_unord = NULL;
+    struct SelvaIndexControlBlock *icb_unord = NULL;
     int err;
 
     memcpy(&icb_desc, desc, sizeof(icb_desc));
     icb_desc.sort.order = SELVA_RESULT_ORDER_NONE;
     icb_desc.sort.order_field = NULL;
 
-    const size_t name_len = SelvaFindIndexICB_CalcNameLen(node_id, &icb_desc);
+    const size_t name_len = SelvaIndexICB_CalcNameLen(node_id, &icb_desc);
     char name_str[name_len];
 
-    SelvaFindIndexICB_BuildName(name_str, node_id, &icb_desc);
-    err = SelvaFindIndexICB_Get(hierarchy, name_str, name_len, &icb_unord);
+    SelvaIndexICB_BuildName(name_str, node_id, &icb_desc);
+    err = SelvaIndexICB_Get(hierarchy, name_str, name_len, &icb_unord);
 
     return err ? NULL : icb_unord;
 }
@@ -43,7 +43,7 @@ static void pick_any_order_recursive(
         struct SelvaObject *obj,
         const char *base64_filter_str,
         size_t base64_filter_len,
-        struct SelvaFindIndexControlBlock **out) {
+        struct SelvaIndexControlBlock **out) {
     SelvaObject_Iterator *it;
     const char *name_str;
     enum SelvaObjectType type;
@@ -52,7 +52,7 @@ static void pick_any_order_recursive(
     it = SelvaObject_ForeachBegin(obj);
     while ((p = SelvaObject_ForeachValueType(obj, &it, &name_str, &type))) {
         if (type == SELVA_OBJECT_POINTER) {
-            struct SelvaFindIndexControlBlock *icb = (struct SelvaFindIndexControlBlock *)p;
+            struct SelvaIndexControlBlock *icb = (struct SelvaIndexControlBlock *)p;
             const size_t name_len = strlen(name_str);
 
             if (base64_filter_len == name_len &&
@@ -78,7 +78,7 @@ static void pick_any_order_recursive(
  * - filter matches to `desc`,
  * - and finally, the index is valid.
  */
-static struct SelvaFindIndexControlBlock *pick_any_order(
+static struct SelvaIndexControlBlock *pick_any_order(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id,
         const struct icb_descriptor *desc) {
@@ -90,10 +90,10 @@ static struct SelvaFindIndexControlBlock *pick_any_order(
     icb_desc.sort.order_field = NULL;
     icb_desc.filter = NULL; /* build a name without the filter part. */
 
-    const size_t name_len = SelvaFindIndexICB_CalcNameLen(node_id, &icb_desc);
+    const size_t name_len = SelvaIndexICB_CalcNameLen(node_id, &icb_desc);
     char name_str[name_len];
 
-    SelvaFindIndexICB_BuildName(name_str, node_id, &icb_desc);
+    SelvaIndexICB_BuildName(name_str, node_id, &icb_desc);
 
     struct SelvaObject *root;
 
@@ -107,7 +107,7 @@ static struct SelvaFindIndexControlBlock *pick_any_order(
     const char *filter_str = selva_string_to_str(desc->filter, &filter_len);
     const size_t base64_filter_len = base64_out_len(filter_len, 0);
     char base64_filter_str[base64_filter_len];
-    struct SelvaFindIndexControlBlock *out = NULL;
+    struct SelvaIndexControlBlock *out = NULL;
 
     /* This kinda should be in icb.c */
     base64_encode_s(base64_filter_str, filter_str, filter_len, 0);
@@ -117,12 +117,12 @@ static struct SelvaFindIndexControlBlock *pick_any_order(
     return out;
 }
 
-struct SelvaFindIndexControlBlock *SelvaFindIndexICB_Pick(
+struct SelvaIndexControlBlock *SelvaIndexICB_Pick(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id,
         const struct icb_descriptor *desc,
-        struct SelvaFindIndexControlBlock *first) {
-    struct SelvaFindIndexControlBlock *icb = first;
+        struct SelvaIndexControlBlock *first) {
+    struct SelvaIndexControlBlock *icb = first;
 
     if (icb && icb->flags.valid) {
         /* First prefer requested index if it's valid. */
@@ -132,7 +132,7 @@ struct SelvaFindIndexControlBlock *SelvaFindIndexICB_Pick(
     const enum SelvaResultOrder order = desc->sort.order;
     if (order != SELVA_RESULT_ORDER_NONE) {
         /* Fallback to an unordered index. */
-        struct SelvaFindIndexControlBlock *alt_icb;
+        struct SelvaIndexControlBlock *alt_icb;
 
         alt_icb = pick_unordered(hierarchy, node_id, desc);
         if (!icb || (alt_icb && alt_icb->flags.valid)) {

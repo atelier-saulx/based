@@ -124,5 +124,5 @@
  * Dynamic Find Query Index Tunables.
  */
 
-#define FIND_INDICES_MAX_HINTS_CMD             20 /*!< Maximum number of indexing hints per find command. */
-#define FIND_INDICES_MAX_HINTS                 500 /*!< Maximum number of indexing hints tracked. */
+#define SELVA_INDEX_MAX_HINTS_CMD       20 /*!< Maximum number of indexing hints per find command. */
+#define SELVA_INDEX_MAX_HINTS           500 /*!< Maximum number of indexing hints tracked. */

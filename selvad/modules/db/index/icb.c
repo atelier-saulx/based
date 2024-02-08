@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 SAULX
+ * Copyright (c) 2021-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -15,7 +15,7 @@
 #include "hierarchy.h"
 #include "icb.h"
 
-size_t SelvaFindIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct icb_descriptor *desc) {
+size_t SelvaIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct icb_descriptor *desc) {
     const size_t filter_len = desc->filter ? selva_string_get_len(desc->filter) : 0;
     size_t n;
 
@@ -32,7 +32,7 @@ size_t SelvaFindIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct ic
     return n;
 }
 
-void SelvaFindIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc) {
+void SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc) {
     size_t filter_len = 0;
     const char *filter_str = desc->filter ? selva_string_to_str(desc->filter, &filter_len) : NULL;
     char *s = buf;
@@ -76,7 +76,7 @@ void SelvaFindIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const st
     }
 }
 
-int SelvaFindIndexICB_Get(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaFindIndexControlBlock **icb) {
+int SelvaIndexICB_Get(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaIndexControlBlock **icb) {
     struct SelvaObject *dyn_index = hierarchy->dyn_index.index_map;
     void *p;
     int err;
@@ -87,13 +87,13 @@ int SelvaFindIndexICB_Get(struct SelvaHierarchy *hierarchy, const char *name_str
     return err;
 }
 
-int SelvaFindIndexICB_Set(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaFindIndexControlBlock *icb) {
+int SelvaIndexICB_Set(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaIndexControlBlock *icb) {
     struct SelvaObject *dyn_index = hierarchy->dyn_index.index_map;
 
     return SelvaObject_SetPointerStr(dyn_index, name_str, name_len, icb, NULL);
 }
 
-int SelvaFindIndexICB_Del(struct SelvaHierarchy *hierarchy, const struct SelvaFindIndexControlBlock *icb) {
+int SelvaIndexICB_Del(struct SelvaHierarchy *hierarchy, const struct SelvaIndexControlBlock *icb) {
     /*
      * Just ignore if the index_map is already destroyed.
      */
