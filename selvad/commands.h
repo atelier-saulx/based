@@ -283,6 +283,13 @@
 #define CMD_ID_INDEX_DEL 41
 
 /**
+ * Update indexing accounting.
+ * module: db
+ * cmd: index.acc
+ */
+#define CMD_ID_INDEX_ACC 91
+
+/**
  * Describe a find index.
  * module: db
  * cmd: index.debug

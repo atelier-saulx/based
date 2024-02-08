@@ -1276,6 +1276,42 @@ static void SelvaIndex_DelCommand(struct selva_server_response_out *resp, const 
     selva_send_ll(resp, 1);
 }
 
+static void SelvaIndex_AccCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+    SelvaHierarchy *hierarchy = main_hierarchy;
+    const char *icb_name_str;
+    size_t icb_name_len, acc_take, acc_tot;
+    int argc;
+
+    argc = selva_proto_scanf(NULL, buf, len, "%.*s, %zu, %zu",
+                             &icb_name_len, &icb_name_str,
+                             &acc_take,
+                             &acc_tot
+                            );
+    if (argc != 3) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
+        return;
+    }
+
+    struct SelvaIndexControlBlock *icb;
+    int err;
+
+    err = SelvaIndexICB_Get(hierarchy, icb_name_str, icb_name_len, &icb);
+    if (err == SELVA_ENOENT) {
+        selva_send_ll(resp, 0);
+        return;
+    } else if (err) {
+        selva_send_errorf(resp, err, "Failed to find the ICB");
+    }
+
+    SelvaIndex_Acc(icb, acc_take, acc_tot);
+
+    selva_send_ll(resp, 1);
+}
+
 static void SelvaIndex_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     int i = -1;
@@ -1316,6 +1352,7 @@ static int FindIndex_OnLoad(void) {
     selva_mk_command(CMD_ID_INDEX_LIST, SELVA_CMD_MODE_PURE, "index.list", SelvaIndex_ListCommand);
     selva_mk_command(CMD_ID_INDEX_NEW, SELVA_CMD_MODE_PURE, "index.new", SelvaIndex_NewCommand);
     selva_mk_command(CMD_ID_INDEX_DEL, SELVA_CMD_MODE_PURE, "index.del", SelvaIndex_DelCommand);
+    selva_mk_command(CMD_ID_INDEX_ACC, SELVA_CMD_MODE_PURE, "index.acc", SelvaIndex_AccCommand);
     selva_mk_command(CMD_ID_INDEX_DEBUG, SELVA_CMD_MODE_PURE, "index.debug", SelvaIndex_DebugCommand);
     selva_mk_command(CMD_ID_INDEX_INFO, SELVA_CMD_MODE_PURE, "index.info", SelvaIndex_InfoCommand);
 
