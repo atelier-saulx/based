@@ -197,12 +197,12 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
   ctx,
   server
 ) => {
-  // | 4 header | 8 id |
+  // | 4 header | 1 subType | 8 id |
   if (!ctx.session) {
     return false
   }
 
-  const id = readUint8(arr, start + 4, 8)
+  const id = readUint8(arr, start + 5, 8)
 
   if (!id) {
     return false

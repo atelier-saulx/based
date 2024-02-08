@@ -11,6 +11,7 @@ import {
   unsubscribeChannelMessage,
 } from './channelSubscribe.js'
 import { channelPublishMessage } from './channelPublish.js'
+import { registerStream } from './stream.js'
 
 const reader = (
   server: BasedServer,
@@ -65,12 +66,29 @@ const reader = (
     return next
   }
 
-  // type 7 = channelUnsubscribe
-  if (
-    type === 7 &&
-    unsubscribeChannelMessage(arr, start, len, isDeflate, ctx, server)
-  ) {
-    return next
+  // type 7.x = subType
+  if (type === 7) {
+    const subType = readUint8(arr, start + 4, 1)
+
+    // type 7.0 = channelUnsubscribe
+    if (subType === 0) {
+      if (unsubscribeChannelMessage(arr, start, len, isDeflate, ctx, server)) {
+        return next
+      }
+    }
+
+    // type 7.1 = register stream
+    if (subType === 1) {
+      if (registerStream(arr, start, len, isDeflate, ctx, server)) {
+        return next
+      }
+    }
+
+    // type 7.2 = chunk
+    if (subType === 2) {
+      console.info('doink chunk')
+      return next
+    }
   }
 
   return next

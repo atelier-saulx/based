@@ -6,6 +6,7 @@ import {
   FunctionQueueItem,
   GetObserveQueue,
   ObserveQueue,
+  StreamQueueItem,
 } from '../types/index.js'
 
 const encoder = new TextEncoder()
@@ -37,7 +38,9 @@ const encodeHeader = (
   //   4 = auth
   //   5 = subscribeChannel
   //   6 = publishChannel
-  //   7 = unsubscribeChannel
+  //   7.0 = unsubscribeChannel
+  //   7.1 = register stream
+  //   7.2 = chunk
   // isDeflate (1 bit)
   // len (28 bits)
 
@@ -124,13 +127,14 @@ export const encodeSubscribeChannelMessage = (
   // | 4 header | 8 id | 1 name length | * name | * payload |
 
   // Type 7 = unsubscribe
-  // | 4 header | 8 id |
-
+  // | 4 header | 1    = 0 | 8 id |
   if (type === 7) {
-    const buff = createBuffer(type, false, 12)
-    storeUint8(buff, id, 4, 8)
-    return { buffers: [buff], len: 12 }
+    const buff = createBuffer(type, false, 13)
+    storeUint8(buff, 0, 4, 1)
+    storeUint8(buff, id, 5, 8)
+    return { buffers: [buff], len: 13 }
   }
+
   const n = encoder.encode(name)
   len += 1 + n.length
   const isRequestSubscriber = type === 6
@@ -234,4 +238,53 @@ export const encodeAuthMessage = (authState: AuthState) => {
     buff.set(payload, 4)
   }
   return buff
+}
+
+export const encodeStreamMessage = (
+  f: StreamQueueItem
+): { buffers: Uint8Array[]; len: number } => {
+  // stream start
+  // can also use a call for the start?
+
+  const [subType, reqId] = f
+
+  // Type 7.1 Start stream
+  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | name | mime | payload
+  if (subType === 1) {
+    const [, , contentSize, name, mimeType, payload] = f
+
+    let sLen = 4 + 1 + 3 + 4 + 1 + 1
+
+    let len = sLen
+
+    const n = encoder.encode(name)
+    len += n.length
+
+    const [isDeflate, p] = encodePayload(payload)
+
+    if (p) {
+      len += p.length
+    }
+
+    const m = encoder.encode(mimeType)
+    len += m.length
+
+    const buff = createBuffer(7, isDeflate, len, sLen)
+
+    storeUint8(buff, 1, 4, 1)
+    storeUint8(buff, reqId, 5, 3)
+    storeUint8(buff, contentSize, 8, 4)
+    storeUint8(buff, n.length, 12, 1)
+    storeUint8(buff, m.length, 13, 1)
+
+    if (p) {
+      return { buffers: [buff, n, m, p], len }
+    }
+    return { buffers: [buff, n, m], len }
+  }
+
+  // Type 7.2 Chunk
+  // | 4 header | 1 subType = 2 | 3 reqId | content
+  // const [, , seqId, contents] = f
+  return { buffers: [], len: 0 }
 }

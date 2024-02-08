@@ -1,0 +1,53 @@
+import { BinaryMessageHandler } from './types.js'
+import {
+  decodePayload,
+  decodeName,
+  readUint8,
+  parsePayload,
+} from '../../protocol.js'
+
+export const registerStream: BinaryMessageHandler = (
+  arr,
+  start,
+  len,
+  isDeflate,
+  ctx,
+  server
+) => {
+  console.info('doink register stream', isDeflate, len)
+
+  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | name | mime | payload
+  if (!ctx.session) {
+    return false
+  }
+
+  const reqId = readUint8(arr, start + 5, 3)
+
+  if (reqId === undefined) {
+    return false
+  }
+
+  const contentSize = readUint8(arr, start + 8, 4)
+
+  if (!contentSize) {
+    return false
+  }
+
+  const nameLen = readUint8(arr, start + 12, 1)
+  const mimeLen = readUint8(arr, start + 13, 1)
+
+  const name = decodeName(arr, start + 14, nameLen)
+  const mime = decodeName(arr, start + 14 + nameLen, mimeLen)
+
+  console.log('HELLO', {
+    isDeflate,
+    contentSize,
+    reqId,
+    nameLen,
+    mimeLen,
+    name,
+    mime,
+  })
+
+  return true
+}

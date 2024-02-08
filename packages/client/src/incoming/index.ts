@@ -333,11 +333,12 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.connection.ws.send(buffer)
       }
-    } // ----------- Channel message
+    } // ----------- SubType 7
     else if (type === 7) {
       // | 4 header | 1 subType |
       const subType = readUint8(buffer, 4, 1)
 
+      // channel
       if (subType === 0) {
         // | 4 header | 1 subType | 8 id | * payload |
         const id = readUint8(buffer, 5, 8)
@@ -362,6 +363,9 @@ export const incoming = async (client: BasedClient, data: any) => {
             handlers.onMessage(payload)
           }
         }
+      } else if (subType === 1) {
+        // register stream id
+        console.log('lullz stream id', buffer)
       }
     }
     // ---------------------------------

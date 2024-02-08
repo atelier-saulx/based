@@ -7,6 +7,7 @@ import {
   encodeGetObserveMessage,
   encodeObserveMessage,
   encodePublishMessage,
+  encodeStreamMessage,
   encodeSubscribeChannelMessage,
 } from './protocol.js'
 import { deepEqual } from '@saulx/utils'
@@ -33,7 +34,8 @@ const hasQueue = (client: BasedClient): boolean => {
     client.oQ.size ||
     client.gQ.size ||
     client.cQ.size ||
-    client.pQ.length
+    client.pQ.length ||
+    client.sQ.length
   )
 }
 
@@ -53,6 +55,7 @@ export const drainQueue = (client: BasedClient) => {
         const fn = client.fQ
         const obs = client.oQ
         const get = client.gQ
+        const stream = client.sQ
 
         const buffs = []
         let l = 0
@@ -92,6 +95,13 @@ export const drainQueue = (client: BasedClient) => {
           l += len
         }
 
+        // ------- Stream
+        for (const s of stream) {
+          const { buffers, len } = encodeStreamMessage(s)
+          buffs.push(...buffers)
+          l += len
+        }
+
         const n = new Uint8Array(l)
         let c = 0
         for (const b of buffs) {
@@ -101,6 +111,8 @@ export const drainQueue = (client: BasedClient) => {
 
         client.fQ = []
         client.pQ = []
+        client.sQ = []
+
         client.oQ.clear()
         client.gQ.clear()
         client.cQ.clear()
@@ -280,4 +292,18 @@ export const sendAuth = async (
     client.authRequest.inProgress = false
   })
   return client.authRequest.promise
+}
+
+// ------------ Stream ---------------
+export const addStreamRegister = (
+  client: BasedClient,
+  reqId: number,
+  contentSize: number,
+  name: string,
+  mimeType: string,
+  payload: any
+) => {
+  client.sQ.push([1, reqId, contentSize, name, mimeType, payload])
+  console.info('blurp')
+  drainQueue(client)
 }

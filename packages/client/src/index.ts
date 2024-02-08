@@ -14,6 +14,7 @@ import {
   ChannelState,
   CallOptions,
   QueryOptions,
+  StreamQueue,
 } from './types/index.js'
 import { Connection } from './websocket/types.js'
 import connectWebsocket from './websocket/index.js'
@@ -22,6 +23,7 @@ import {
   addChannelPublishIdentifier,
   addChannelSubscribeToQueue,
   addObsToQueue,
+  addStreamRegister,
   addToFunctionQueue,
   drainQueue,
   sendAuth,
@@ -92,6 +94,7 @@ export class BasedClient extends Emitter {
   maxPublishQueue: number = 1000
   pQ: ChannelPublishQueue = []
   fQ: FunctionQueue = []
+  sQ: StreamQueue = []
   oQ: ObserveQueue = new Map()
   cQ: ChannelQueue = new Map()
   gQ: GetObserveQueue = new Map()
@@ -434,6 +437,28 @@ export class BasedClient extends Emitter {
   */
   saveStorage(): Promise<void> {
     return updateStorage(this)
+  }
+
+  // -------- Stream NEW
+  /**
+  Stream large payload to a `stream-function`
+  
+  ```javascript
+  await client.stream('db:file', file)
+  ```
+  */
+  async streamNew(
+    name: string,
+    stream: StreamFunctionOpts,
+    progressListener?: (progress: number) => void
+  ): Promise<any> {
+    console.info('Yo', name, stream)
+
+    addStreamRegister(this, 1, 666, 'bla.jpgblablablablabla', 'flap/flap', {
+      snurp: true,
+    })
+
+    // return startStream(this, name, stream, progressListener)
   }
 }
 
