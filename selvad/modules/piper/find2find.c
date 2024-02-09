@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -64,7 +64,7 @@ static void build_query(
 
     ids_str = make_ids_str(fin, ids, nr_ids, &ids_len);
 
-    selva_proto_builder_init(msg);
+    selva_proto_builder_init(msg, true);
     selva_proto_builder_insert_string(msg, lang_str, lang_len);
     selva_proto_builder_insert_string(msg, query_opts_str, query_opts_len);
     selva_proto_builder_insert_string(msg, ids_str, ids_len);

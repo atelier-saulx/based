@@ -1727,7 +1727,7 @@ static void replicate_modify(struct selva_server_response_out *resp, const struc
         return; /* Skip. */
     }
 
-    selva_proto_builder_init(&msg);
+    selva_proto_builder_init(&msg, true);
 
     /*
      * Insert the leading args.

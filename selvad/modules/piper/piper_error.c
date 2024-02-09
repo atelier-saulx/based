@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -13,7 +13,7 @@ void piper_error(struct selva_string *out_buf, int err, const char *err_msg_str,
 {
     struct selva_proto_builder_msg msg;
 
-    selva_proto_builder_init(&msg);
+    selva_proto_builder_init(&msg, true);
     selva_proto_builder_insert_error(&msg, err, err_msg_str, err_msg_len);
     selva_proto_builder_end(&msg);
     selva_string_append(out_buf, (const void *)msg.buf, msg.bsize);

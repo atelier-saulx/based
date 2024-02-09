@@ -1857,7 +1857,7 @@ static void hierarchy_expire_tim_proc(struct event *e __unused, void *data) {
                     if (expire_node(hierarchy, node, now.tv_sec)) {
                         struct selva_proto_builder_msg msg;
 
-                        selva_proto_builder_init(&msg);
+                        selva_proto_builder_init(&msg, true);
                         selva_proto_builder_insert_string(&msg, NULL, 0);
                         selva_proto_builder_insert_string(&msg, node_id, SELVA_NODE_ID_SIZE);
                         selva_proto_builder_end(&msg);
