@@ -75,6 +75,15 @@ export const useQueries = <T = any>(
   return Array(payloads.length).fill({ loading: true })
 }
 
+/**
+  Hook to observe data
+  
+  ```javascript
+  const { data, error, loading } = useQuery('db', {
+    children: { $list: true, id: true, name: true },
+  })
+  ```
+*/
 export const useQuery = <N extends keyof QueryMap>(
   name: N,
   payload?: QueryMap[N]['payload'],

@@ -36,18 +36,21 @@ import {
   updateStorage,
 } from './persistentStorage/index.js'
 import { BasedChannel } from './channel/index.js'
-
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-
 import { deepEqual } from '@saulx/utils'
-
 import parseOpts from '@based/opts'
+import { freeCacheMemory } from './cache.js'
 
 export * from './authState/parseAuthState.js'
 
 export * from './types/error.js'
 
 export { AuthState, BasedQuery }
+
+// global polyfill
+if (typeof window !== 'undefined' && typeof global === 'undefined') {
+  window.global = window
+}
 
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
@@ -98,8 +101,9 @@ export class BasedClient extends Emitter {
   drainTimeout?: ReturnType<typeof setTimeout>
   idlePing?: ReturnType<typeof setTimeout>
   // --------- Cache State
+  cacheSize: number = 0
   localStorage: boolean = false
-  maxCacheSize: number = 4e6 // in bytes
+  maxCacheSize: number = 5e7 // 50MB
   cache: Cache = new Map()
   // --------- Function State
   functionResponseListeners: FunctionResponseListeners = new Map()
@@ -126,6 +130,11 @@ export class BasedClient extends Emitter {
     resolve: null,
     reject: null,
     inProgress: false,
+  }
+
+  // cache
+  clearUnusedCache() {
+    freeCacheMemory(this)
   }
 
   // --------- Internal Events

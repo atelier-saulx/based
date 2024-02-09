@@ -13,7 +13,7 @@ import { BasedFunctions, FunctionConfig } from './functions/index.js'
 import { BasedAuth, AuthConfig } from './auth/index.js'
 import { BasedErrorCode, BasedErrorData } from './error/index.js'
 import { wait } from '@saulx/utils'
-import picocolors = require('picocolors')
+import picocolors from 'picocolors'
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi/index.js'
 import { ActiveChannel } from './channel/index.js'
 import util from 'node:util'

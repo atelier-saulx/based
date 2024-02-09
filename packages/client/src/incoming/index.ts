@@ -14,6 +14,7 @@ import {
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue, convertDataToBasedError } from '../types/index.js'
+import { freeCacheMemory } from '../cache.js'
 
 const decodeAndDeflate = (
   start: number,
@@ -91,13 +92,23 @@ export const incoming = async (client: BasedClient, data: any) => {
       const start = 28
       const end = len + 4
       let diff: any
+      let size = 0
 
-      // if not empty response, parse it
       if (len !== 24) {
-        diff = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        const inflatedBuffer = isDeflate
+          ? inflateSync(buffer.slice(start, end))
+          : buffer.slice(start, end)
+        size = inflatedBuffer.byteLength
+        diff = JSON.parse(new TextDecoder().decode(inflatedBuffer))
       }
 
       try {
+        // bit weird...
+        if (size > cachedData.s) {
+          client.cacheSize -= cachedData.s
+          client.cacheSize += size
+          cachedData.s = size
+        }
         cachedData.v = applyPatch(cachedData.v, diff)
         cachedData.c = checksum
       } catch (err) {
@@ -137,18 +148,40 @@ export const incoming = async (client: BasedClient, data: any) => {
       const end = len + 4
       let payload: any
 
+      let size = 0
+
       // If not empty response, parse it
       if (len !== 16) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        const inflatedBuffer = isDeflate
+          ? inflateSync(buffer.slice(start, end))
+          : buffer.slice(start, end)
+
+        size = inflatedBuffer.byteLength
+
+        payload = JSON.parse(new TextDecoder().decode(inflatedBuffer))
       }
 
-      const noChange = client.cache.get(id)?.c === checksum
+      const cached = client.cache.get(id)
+
+      const noChange = cached?.c === checksum
 
       if (!noChange) {
+        client.cacheSize += size
+
+        if (cached && cached.s) {
+          client.cacheSize -= cached.s
+        }
+
+        if (client.cacheSize > client.maxCacheSize) {
+          freeCacheMemory(client)
+        }
+
         const cacheData: CacheValue = {
           v: payload,
           c: checksum,
+          s: size,
         }
+
         client.cache.set(id, cacheData)
         if (client.observeState.has(id)) {
           const observable = client.observeState.get(id)

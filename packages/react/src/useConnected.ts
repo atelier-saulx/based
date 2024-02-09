@@ -2,6 +2,13 @@ import { useContext, useState, useEffect } from 'react'
 import { BasedClient } from '@based/client'
 import { Ctx } from './Ctx.js'
 
+/**
+  Observes the connected state of the based client
+  
+  ```javascript
+  const isConnected = useConnected()
+  ```
+*/
 export const useConnected = () => {
   const client: BasedClient = useContext(Ctx)
   const [connected, setConnected] = useState(client.connected)
