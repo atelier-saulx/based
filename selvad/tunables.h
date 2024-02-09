@@ -56,6 +56,11 @@
  */
 #define MAX_QUERY_FORKS 16
 
+/**
+ * Maximum number of bytes for the query_fork command return channel.
+ */
+#define QUERY_FORK_CMD_BUF_SIZE (1024 - sizeof(size_t))
+
 /*
  * Replication tunables.
  */

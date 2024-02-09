@@ -15,6 +15,7 @@
 #include "util/ida.h"
 #include "util/lpf.h"
 #include "util/poptop.h"
+#include "util/selva_proto_builder.h"
 #include "util/selva_string.h"
 #include "event_loop.h"
 #include "selva_error.h"
@@ -637,6 +638,28 @@ static void icb_proc(struct event *e __unused, void *data) {
     }
 }
 
+static void upsert_remote(const Selva_NodeId node_id, const struct icb_descriptor *desc) {
+    struct selva_proto_builder_msg msg;
+    size_t dir_opt_len;
+    const char *dir_opt_str = selva_string_to_str(desc->dir_opt, &dir_opt_len);
+    size_t order_field_len;
+    const char *order_field_str = selva_string_to_str(desc->sort.order_field, &order_field_len);
+    size_t filter_len;
+    const char *filter_str = selva_string_to_str(desc->filter, &filter_len);
+
+    selva_server_query_fork_init_ret_msg(&msg, CMD_ID_INDEX_NEW);
+    selva_proto_builder_insert_longlong(&msg, desc->dir);
+    selva_proto_builder_insert_string(&msg, dir_opt_str, dir_opt_len);
+    selva_proto_builder_insert_longlong(&msg, desc->sort.order);
+    selva_proto_builder_insert_string(&msg, order_field_str, order_field_len);
+    selva_proto_builder_insert_string(&msg, node_id, SELVA_NODE_ID_SIZE);
+    selva_proto_builder_insert_string(&msg, filter_str, filter_len);
+    selva_proto_builder_insert_longlong(&msg, 0); /* permanent. */
+    selva_proto_builder_end(&msg);
+    selva_server_query_fork_send_ret_msg(&msg);
+    selva_proto_builder_deinit(&msg);
+}
+
 /**
  * Get or create an indexing control block.
  */
@@ -647,6 +670,14 @@ static struct SelvaIndexControlBlock *upsert_icb(
         struct icb_descriptor *desc) {
     struct SelvaIndexControlBlock *icb;
     int err;
+
+    if (selva_server_is_query_fork()) {
+        /*
+         * A query_fork must to upsert on the main process too or othwerwise
+         * future acc calls wouldn't be able to find the ICB..
+         */
+        upsert_remote(node_id, desc);
+    }
 
     /*
      * Get a deterministic name for indexing this find query.
@@ -858,11 +889,11 @@ int SelvaIndex_Auto(
     /*
      * Copy the strings.
      */
-    if (dir_opt_str) {
+    if (dir_opt_str && dir_opt_len > 0) {
         dir_opt = selva_string_create(dir_opt_str, dir_opt_len, 0);
         selva_string_auto_finalize(&fin, dir_opt);
     }
-    if (order_field) {
+    if (order_field && selva_string_get_len(order_field) > 0) {
         order_field = selva_string_dup(order_field, 0);
         selva_string_auto_finalize(&fin, order_field);
     }
@@ -990,29 +1021,58 @@ int SelvaIndex_Traverse(
     return 0;
 }
 
-void SelvaIndex_Acc(struct SelvaIndexControlBlock * restrict icb, size_t acc_take, size_t acc_tot) {
+static void acc_remote(
+        struct SelvaIndexControlBlock * restrict icb,
+        size_t acc_take,
+        size_t acc_tot) {
+        struct selva_proto_builder_msg msg;
+
+        selva_server_query_fork_init_ret_msg(&msg, CMD_ID_INDEX_ACC);
+        selva_proto_builder_insert_string(&msg, icb->name_str, icb->name_len);
+        selva_proto_builder_insert_longlong(&msg, acc_take);
+        selva_proto_builder_insert_longlong(&msg, acc_tot);
+        selva_proto_builder_end(&msg);
+        selva_server_query_fork_send_ret_msg(&msg);
+        selva_proto_builder_deinit(&msg);
+}
+
+static void acc_local(struct SelvaIndexControlBlock * restrict icb, size_t acc_take, size_t acc_tot) {
+        /* Increment popularity counter. */
+        if (icb->pop_count.cur < INT_MAX) {
+            icb->pop_count.cur++;
+        }
+
+        /*
+         * Result set size accounting.
+         */
+        if (icb->flags.valid) {
+            if ((float)acc_take > icb->find_acc.ind_take_max) {
+                icb->find_acc.ind_take_max = (float)acc_take;
+            }
+        } else {
+            if ((float)acc_take > icb->find_acc.take_max || (float)acc_tot > icb->find_acc.tot_max) {
+                icb->find_acc.take_max = (float)acc_take;
+                icb->find_acc.tot_max = (float)acc_tot;
+            }
+        }
+}
+
+void SelvaIndex_Acc(
+        struct SelvaIndexControlBlock * restrict icb,
+        size_t acc_take,
+        size_t acc_tot) {
     if (selva_glob_config.index_max == 0) {
         /* If indexing is disabled then the rest of the function will be optimized out. */
         return;
     }
 
-    /* Increment popularity counter. */
-    if (icb->pop_count.cur < INT_MAX) {
-        icb->pop_count.cur++;
-    }
-
-    /*
-     * Result set size accounting.
-     */
-    if (icb->flags.valid) {
-        if ((float)acc_take > icb->find_acc.ind_take_max) {
-            icb->find_acc.ind_take_max = (float)acc_take;
-        }
+    if (selva_server_is_query_fork()) {
+        /*
+         * A query_fork must to propagate the information to the main process.
+         */
+        acc_remote(icb, acc_take, acc_tot);
     } else {
-        if ((float)acc_take > icb->find_acc.take_max || (float)acc_tot > icb->find_acc.tot_max) {
-            icb->find_acc.take_max = (float)acc_take;
-            icb->find_acc.tot_max = (float)acc_tot;
-        }
+        acc_local(icb, acc_take, acc_tot);
     }
 }
 
@@ -1155,6 +1215,7 @@ static void SelvaIndex_NewCommand(struct selva_server_response_out *resp, const 
     struct selva_string *order_field;
     Selva_NodeId node_id;
     struct selva_string *filter;
+    int permanent = 1;
     int argc, err;
 
     finalizer_init(&fin);
@@ -1164,14 +1225,15 @@ static void SelvaIndex_NewCommand(struct selva_server_response_out *resp, const 
         return;
     }
 
-    argc = selva_proto_scanf(&fin, buf, len, "%d, %p, %d, %p, %" SELVA_SCA_NODE_ID ", %p",
+    argc = selva_proto_scanf(&fin, buf, len, "%d, %p, %d, %p, %" SELVA_SCA_NODE_ID ", %p, %d",
                              &dir,
                              &dir_opt,
                              &order_ord,
                              &order_field,
                              node_id,
-                             &filter);
-    if (argc != 6) {
+                             &filter,
+                             &permanent);
+    if (argc != 6 && argc != 7) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
         } else {
@@ -1212,21 +1274,23 @@ static void SelvaIndex_NewCommand(struct selva_server_response_out *resp, const 
         return;
     }
 
-    /*
-     * Make sure that an index will be created.
-     * The first three parameters will make sure we have a coefficient of 1.
-     * The last two are a lazy attempt to get this ICB on the top of the list.
-     */
-    float v = (float)selva_glob_config.index_threshold + 1.0f;
-    icb->find_acc.tot_max = v;
-    icb->find_acc.tot_max_ave = v;
-    icb->find_acc.take_max = v;
-    icb->find_acc.take_max_ave = v;
-    icb->find_acc.ind_take_max = v;
-    icb->find_acc.ind_take_max_ave = v;
-    icb->pop_count.cur = 1000;
-    icb->pop_count.ave = 1000.0f;
-    icb->flags.permanent = 1;
+    if (permanent) {
+        /*
+         * Make sure that an index will be created.
+         * The first three parameters will make sure we have a coefficient of 1.
+         * The last two are a lazy attempt to get this ICB on the top of the list.
+         */
+        float v = (float)selva_glob_config.index_threshold + 1.0f;
+        icb->find_acc.tot_max = v;
+        icb->find_acc.tot_max_ave = v;
+        icb->find_acc.take_max = v;
+        icb->find_acc.take_max_ave = v;
+        icb->find_acc.ind_take_max = v;
+        icb->find_acc.ind_take_max_ave = v;
+        icb->pop_count.cur = 1000;
+        icb->pop_count.ave = 1000.0f;
+        icb->flags.permanent = 1;
+    }
 
     selva_send_ll(resp, 1);
 }
@@ -1302,14 +1366,12 @@ static void SelvaIndex_AccCommand(struct selva_server_response_out *resp, const 
     err = SelvaIndexICB_Get(hierarchy, icb_name_str, icb_name_len, &icb);
     if (err == SELVA_ENOENT) {
         selva_send_ll(resp, 0);
-        return;
     } else if (err) {
         selva_send_errorf(resp, err, "Failed to find the ICB");
+    } else {
+        SelvaIndex_Acc(icb, acc_take, acc_tot);
+        selva_send_ll(resp, 1);
     }
-
-    SelvaIndex_Acc(icb, acc_take, acc_tot);
-
-    selva_send_ll(resp, 1);
 }
 
 static void SelvaIndex_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {

@@ -10,6 +10,7 @@ struct SelvaHierarchy;
 struct SelvaIndexControlBlock;
 struct SelvaSet;
 struct indexing_timer_args;
+struct selva_server_response_out;
 struct selva_string;
 
 /**

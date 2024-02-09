@@ -48,7 +48,7 @@ static int cmd_resolve_nodeid_req(const struct cmd *cmd, int sock, int seqno, in
 static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_hierarchy_compress(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
-
+static int cmd_index_acc_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
@@ -124,6 +124,12 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_HIERARCHY_COMPRESS,
         .cmd_name = "hierarchy.compress",
         .cmd_req = cmd_hierarchy_compress,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_INDEX_ACC] = {
+        .cmd_id = CMD_ID_INDEX_ACC,
+        .cmd_name = "index.acc",
+        .cmd_req = cmd_index_acc_req,
         .cmd_res = generic_res,
     },
     [CMD_ID_PUBLISH] = {
@@ -622,6 +628,67 @@ static int cmd_hierarchy_compress(const struct cmd *cmd, int sock, int seqno, in
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
     if (send_message(sock, &buf, sizeof(buf), 0)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int cmd_index_acc_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc != 4) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    const size_t icb_len = strlen(argv[1]);
+    size_t buf_size = sizeof(struct selva_proto_header) +
+             sizeof(struct selva_proto_string) + icb_len +
+             sizeof(struct selva_proto_longlong) +
+             sizeof(struct selva_proto_longlong);
+    uint8_t buf[buf_size];
+    uint8_t *p = buf;
+
+    memset(buf, 0, buf_size);
+
+    memcpy(p, &(struct selva_proto_header){
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(buf_size),
+            .msg_bsize = 0,
+        },
+        sizeof(struct selva_proto_header));
+    p += sizeof(struct selva_proto_header);
+
+    memcpy(p, &(struct selva_proto_string){
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(icb_len),
+        },
+        sizeof(struct selva_proto_string));
+    p += sizeof(struct selva_proto_string);
+    memcpy((char *)p, argv[1], icb_len);
+    p += icb_len;
+
+    memcpy(p, &(struct selva_proto_longlong){
+            .type = SELVA_PROTO_LONGLONG,
+            .flags = 0,
+            .v = htole64(argc == 4 ? strtol(argv[2], NULL, 10) : 1),
+        },
+        sizeof(struct selva_proto_longlong));
+    p += sizeof(struct selva_proto_longlong);
+
+    memcpy(p, &(struct selva_proto_longlong){
+            .type = SELVA_PROTO_LONGLONG,
+            .flags = 0,
+            .v = htole64(argc == 4 ? strtol(argv[3], NULL, 10) : 1),
+        },
+        sizeof(struct selva_proto_longlong));
+    p += sizeof(struct selva_proto_longlong);
+
+    memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(0, buf, buf_size))}, sizeof(CHK_T));
+    if (send_message(sock, buf, buf_size, 0)) {
         return -1;
     }
 

@@ -14,6 +14,7 @@
 #endif
 
 enum selva_proto_data_type;
+struct selva_proto_builder_msg;
 struct selva_server_response_out;
 struct selva_string;
 
@@ -81,6 +82,18 @@ SELVA_SERVER_EXPORT(bool, selva_server_is_query_fork, void);
 SELVA_SERVER_EXPORT(int, selva_mk_command, int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd, ...);
 #define SELVA_MK_COMMAND(nr, mode, cmd, ...) \
     selva_mk_command(nr, mode, #cmd, cmd __VA_OPT__(,) __VA_ARGS__)
+
+/**
+ * Initialize a message for query_fork return channel use.
+ * for a message initialized by this function.
+ * selva_proto_builder_deinit() must be called after use.
+ */
+SELVA_SERVER_EXPORT(void, selva_server_query_fork_init_ret_msg, struct selva_proto_builder_msg *msg, int8_t cmd);
+
+/**
+ * Send a message initialized by selva_server_query_fork_init_ret_msg().
+ */
+SELVA_SERVER_EXPORT(void, selva_server_query_fork_send_ret_msg, struct selva_proto_builder_msg *msg);
 
 /**
  * Describe the connection related to this response as a string.
@@ -312,6 +325,8 @@ SELVA_SERVER_EXPORT(int, selva_pubsub_publish, unsigned ch_id, const void *messa
     apply(selva_server_set_readonly) \
     apply(selva_server_is_query_fork) \
     apply(selva_mk_command) \
+    apply(selva_server_query_fork_init_ret_msg) \
+    apply(selva_server_query_fork_send_ret_msg) \
     apply(selva_resp_to_str) \
     apply(selva_resp_cmp_conn) \
     apply(selva_resp_to_cmd_id) \

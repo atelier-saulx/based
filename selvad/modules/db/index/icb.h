@@ -156,7 +156,7 @@ struct SelvaIndexControlBlock {
     /**
      * The name of this ICB in the index for reverse lookup.
      */
-    char name_str[0];
+    char name_str[] __counted_by(name_len);
 };
 
 /**
