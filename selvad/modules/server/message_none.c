@@ -1,5 +1,7 @@
 /*
  * Message encapsulation handling functions.
+ * Send to none.
+ * Recv from none.
  * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */

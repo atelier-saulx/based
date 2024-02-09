@@ -1,5 +1,7 @@
 /*
  * Message encapsulation handling functions.
+ * Send to a sock.
+ * Recv from a sock.
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
@@ -107,7 +109,10 @@ retry:
     return 0;
 }
 
-static void start_resp_frame_buf(struct selva_server_response_out *resp)
+/**
+ * Start a new frame in resp.
+ */
+static void resp_frame_start(struct selva_server_response_out *resp)
 {
     struct selva_proto_header *hdr = (struct selva_proto_header *)resp->buf;
 
@@ -121,14 +126,20 @@ static void start_resp_frame_buf(struct selva_server_response_out *resp)
     resp->frame_flags &= ~SELVA_PROTO_HDR_FFMASK;
 }
 
-static void set_resp_msg_len(struct selva_server_response_out *resp, size_t bsize)
+/**
+ * Set message length in resp frame.
+ */
+static void resp_frame_set_msg_len(struct selva_server_response_out *resp, size_t bsize)
 {
     struct selva_proto_header *hdr = (struct selva_proto_header *)resp->buf;
 
     hdr->msg_bsize = bsize;
 }
 
-static void finalize_frame(void *buf, size_t bsize, int last_frame)
+/**
+ * Finalize the frame header in resp.
+ */
+static void resp_frame_finalize(void *buf, size_t bsize, int last_frame)
 {
     struct selva_proto_header *hdr = (struct selva_proto_header *)buf;
 
@@ -148,7 +159,7 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, bool las
 
     if (resp->buf_i == 0) {
         if (last_frame) {
-            start_resp_frame_buf(resp);
+            resp_frame_start(resp);
         } else {
             /*
              * Nothing to flush.
@@ -158,7 +169,7 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, bool las
         }
     }
 
-    finalize_frame(resp->buf, resp->buf_i, last_frame);
+    resp_frame_finalize(resp->buf, resp->buf_i, last_frame);
     err = send_frame(resp->ctx->fd, resp->buf, resp->buf_i, 0);
     resp->buf_i = 0;
 
@@ -190,7 +201,7 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
             }
         }
         if (resp->buf_i == 0) {
-            start_resp_frame_buf(resp);
+            resp_frame_start(resp);
         }
 
         const size_t wr = min(sizeof(resp->buf) - resp->buf_i, len - i);
@@ -216,8 +227,8 @@ static ssize_t sock_send_file(struct selva_server_response_out *resp, int fd, si
      * Create and send a new frame header with no payload and msg_bsize set.
      */
     sock_flush_frame_buf(resp, false);
-    start_resp_frame_buf(resp);
-    set_resp_msg_len(resp, size);
+    resp_frame_start(resp);
+    resp_frame_set_msg_len(resp, size);
     sock_flush_frame_buf(resp, false);
 
     off_t bytes_sent = tcp_sendfile(resp->ctx->fd, fd, &(off_t){0}, size);

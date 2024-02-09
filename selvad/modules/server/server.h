@@ -85,7 +85,11 @@ struct conn_ctx {
     typeof_field(struct selva_proto_header, seqno) cur_seqno; /*!< Currently incoming sequence. */
 
     alignas(uint64_t) struct selva_proto_header recv_frame_hdr_buf;
-    char *recv_msg_buf; /*!< Buffer for the currently incoming message. */
+
+    /**
+     * Buffer for the currently incoming message.
+     */
+    char *recv_msg_buf __counted_by(recv_msg_buf_size);
     size_t recv_msg_buf_size;
     size_t recv_msg_buf_i;
 

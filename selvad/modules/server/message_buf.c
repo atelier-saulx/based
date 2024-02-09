@@ -1,5 +1,7 @@
 /*
  * Message encapsulation handling functions.
+ * Send to a buffer (selva_string).
+ * Recv not supported.
  * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
