@@ -1,0 +1,9 @@
+{
+  "extends": "@saulx/tsconfig/default.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*", "src/**/*.json"],
+  "exclude": ["node_modules", "test", "dist", "tmp", "examples"]
+}
