@@ -23,6 +23,7 @@ import {
   addChannelPublishIdentifier,
   addChannelSubscribeToQueue,
   addObsToQueue,
+  addStreamChunk,
   addStreamRegister,
   addToFunctionQueue,
   drainQueue,
@@ -31,7 +32,7 @@ import {
 import { incoming } from './incoming/index.js'
 import { BasedQuery } from './query/index.js'
 import startStream from './stream/index.js'
-import { StreamFunctionOpts } from './stream/types.js'
+import { StreamFunctionOpts, isStreamFunctionPath } from './stream/types.js'
 import {
   initStorage,
   clearStorage,
@@ -42,6 +43,8 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 import parseOpts from '@based/opts'
 import { freeCacheMemory } from './cache.js'
+import { isStream } from './stream/nodeStream.js'
+import { StreamFunctionStream, isStreamFunctionOpts } from '@based/functions'
 
 export * from './authState/parseAuthState.js'
 
@@ -53,6 +56,8 @@ export { AuthState, BasedQuery }
 if (typeof window !== 'undefined' && typeof global === 'undefined') {
   window.global = window
 }
+
+let streamCnt = 0
 
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
@@ -450,20 +455,28 @@ export class BasedClient extends Emitter {
   */
   async streamNew(
     name: string,
-    stream: StreamFunctionOpts,
+    opts: StreamFunctionOpts,
     progressListener?: (progress: number) => void
   ): Promise<any> {
-    console.info('Yo', name, stream)
+    // @ts-ignore
+    if (isStreamFunctionOpts(opts)) {
+      let reqId = ++streamCnt
+      let seqId = 0
 
-    const bla: any = []
+      addStreamRegister(
+        this,
+        reqId,
+        opts.size,
+        opts.fileName,
+        opts.mimeType,
+        name,
+        opts.payload
+      )
 
-    for (let i = 0; i < 1e3; i++) {
-      bla.push({ bla: i })
+      opts.contents.on('data', (chunk) => {
+        addStreamChunk(this, reqId, ++seqId, chunk)
+      })
     }
-
-    addStreamRegister(this, 1, 666, 'bla.jpgblablablablabla', 'flap/flap', bla)
-
-    // return startStream(this, name, stream, progressListener)
   }
 }
 

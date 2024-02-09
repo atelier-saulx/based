@@ -243,22 +243,19 @@ export const encodeAuthMessage = (authState: AuthState) => {
 export const encodeStreamMessage = (
   f: StreamQueueItem
 ): { buffers: Uint8Array[]; len: number } => {
-  // stream start
-  // can also use a call for the start?
-
   const [subType, reqId] = f
 
   // Type 7.1 Start stream
-  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | name | mime | payload
+  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | name | mime | fnName | payload
   if (subType === 1) {
-    const [, , contentSize, name, mimeType, payload] = f
+    const [, , contentSize, name, mimeType, fnName, payload] = f
 
-    let sLen = 4 + 1 + 3 + 4 + 1 + 1
+    let sLen = 15
 
     let len = sLen
 
-    const n = encoder.encode(name)
-    len += n.length
+    const nameEncoded = encoder.encode(name)
+    len += nameEncoded.length
 
     const [isDeflate, p] = encodePayload(payload)
 
@@ -266,25 +263,47 @@ export const encodeStreamMessage = (
       len += p.length
     }
 
-    const m = encoder.encode(mimeType)
-    len += m.length
+    const mimeTypeEncoded = encoder.encode(mimeType)
+    len += mimeTypeEncoded.length
+
+    const fnNameEncoded = encoder.encode(fnName)
+    len += fnNameEncoded.length
 
     const buff = createBuffer(7, isDeflate, len, sLen)
 
     storeUint8(buff, 1, 4, 1)
     storeUint8(buff, reqId, 5, 3)
     storeUint8(buff, contentSize, 8, 4)
-    storeUint8(buff, n.length, 12, 1)
-    storeUint8(buff, m.length, 13, 1)
+    storeUint8(buff, nameEncoded.length, 12, 1)
+    storeUint8(buff, mimeTypeEncoded.length, 13, 1)
+    storeUint8(buff, fnNameEncoded.length, 14, 1)
 
     if (p) {
-      return { buffers: [buff, n, m, p], len }
+      return {
+        buffers: [buff, nameEncoded, mimeTypeEncoded, fnNameEncoded, p],
+        len,
+      }
     }
-    return { buffers: [buff, n, m], len }
+    return { buffers: [buff, nameEncoded, mimeTypeEncoded, fnNameEncoded], len }
+  } else if (subType === 2) {
+    // Type 7.2 Chunk
+    // | 4 header | 1 subType = 2 | 3 reqId | 1 seqId | content
+
+    let sLen = 9
+    let len = sLen
+
+    const [, , seqId, chunk] = f
+
+    len += chunk.length
+
+    const buff = createBuffer(7, false, len, sLen)
+
+    storeUint8(buff, 2, 4, 1)
+    storeUint8(buff, reqId, 5, 3)
+    storeUint8(buff, seqId, 8, 1)
+
+    return { buffers: [buff, chunk], len }
   }
 
-  // Type 7.2 Chunk
-  // | 4 header | 1 subType = 2 | 3 reqId | content
-  // const [, , seqId, contents] = f
   return { buffers: [], len: 0 }
 }

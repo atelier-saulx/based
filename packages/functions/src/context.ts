@@ -2,6 +2,7 @@ import { parseQuery } from '@saulx/utils'
 import { AuthState } from './auth.js'
 import { WebSocket, HttpRequest, HttpResponse } from './uws.js'
 import { BasedFunctionClient } from './client.js'
+import { StreamPayload } from './functions.js'
 
 export type WebSocketSession = {
   // State can be used for anything - for us the based class instance
@@ -20,6 +21,7 @@ export type WebSocketSession = {
     name: string
     payload: any
   }>
+  streams?: { [reqId: string]: StreamPayload }
   headers: { [key: string]: string }
   unauthorizedChannels?: Set<{
     id: number

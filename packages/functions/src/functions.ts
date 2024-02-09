@@ -67,6 +67,8 @@ export type StreamPayload<P = any> = {
   stream: BasedDataStream
   fileName?: string
   extension?: string
+  fn?: string
+  seqId?: number
 }
 
 export type BasedStreamFunction<P = any, K = any> = BasedFunction<

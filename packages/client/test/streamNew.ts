@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
-// import { Duplex } from 'node:stream'
+import { Duplex } from 'node:stream'
 // import { readFileSync } from 'node:fs'
 // import { dirname, join } from 'node:path'
 // import { fileURLToPath } from 'url'
@@ -30,11 +30,18 @@ test('stream new', async (t: T) => {
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
           fn: async (_, { stream, payload }) => {
-            console.log('blargf1', payload)
+            console.log('blargf1', payload, stream, stream.size)
             stream.on('progress', (d) => {
+              console.info('PROGRESS', d)
               progressEvents.push(d)
             })
-            await readStream(stream)
+            const x = await readStream(stream)
+            console.log('DONE! WITH HELLO WOW', x)
+
+            const y = new TextDecoder().decode(x)
+
+            console.log(JSON.parse(y))
+
             return payload
           },
         },
@@ -49,10 +56,41 @@ test('stream new', async (t: T) => {
 
   // prob want to send contents in register if its small enough
 
+  const bigBod: any[] = []
+  for (let i = 0; i < 1000; i++) {
+    bigBod.push({ flap: 'snurp', i })
+  }
+  const payload = new Uint8Array(Buffer.from(JSON.stringify(bigBod)))
+  const stream = new Duplex({
+    read() {},
+    write(x) {
+      this.push(x)
+    },
+  })
+  let index = 0
+  const streamBits = () => {
+    const readBytes = 1000
+    const end = (index + 1) * readBytes
+    if (end > payload.byteLength) {
+      stream.push(payload.slice(index * readBytes, end))
+      stream.push(null)
+    } else {
+      stream.push(payload.slice(index * readBytes, end))
+      setTimeout(() => {
+        index++
+        streamBits()
+      }, 100)
+    }
+  }
+  console.log('BLAP')
   const s = await client.streamNew('hello', {
     payload: { power: true },
-    contents: 'flap',
+    size: payload.byteLength,
+    mimeType: 'pipo',
+    contents: stream,
   })
+
+  streamBits()
 
   console.log(s)
 

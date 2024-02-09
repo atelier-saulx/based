@@ -301,9 +301,19 @@ export const addStreamRegister = (
   contentSize: number,
   name: string,
   mimeType: string,
+  fnName: string,
   payload: any
 ) => {
-  client.sQ.push([1, reqId, contentSize, name, mimeType, payload])
-  console.info('blurp')
+  client.sQ.push([1, reqId, contentSize, name, mimeType, fnName, payload])
+  drainQueue(client)
+}
+
+export const addStreamChunk = (
+  client: BasedClient,
+  reqId: number,
+  seqId: number,
+  chunk: Uint8Array
+) => {
+  client.sQ.push([2, reqId, seqId, chunk])
   drainQueue(client)
 }

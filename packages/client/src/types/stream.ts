@@ -5,13 +5,14 @@ export type StreamQueueItem =
       number, // contentSize
       string, // name
       string, // mimeType
+      string, // fnName
       any // payload
     ]
   | [
       2, // chunk
       number, // reqId,
       number, // seq,
-      ArrayBuffer // contents
+      Uint8Array // contents
     ]
 
 export type StreamQueue = StreamQueueItem[]

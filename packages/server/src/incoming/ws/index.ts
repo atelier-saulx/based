@@ -11,7 +11,7 @@ import {
   unsubscribeChannelMessage,
 } from './channelSubscribe.js'
 import { channelPublishMessage } from './channelPublish.js'
-import { registerStream } from './stream.js'
+import { receiveChunkStream, registerStream } from './stream.js'
 
 const reader = (
   server: BasedServer,
@@ -86,8 +86,9 @@ const reader = (
 
     // type 7.2 = chunk
     if (subType === 2) {
-      console.info('doink chunk')
-      return next
+      if (receiveChunkStream(arr, start, len, isDeflate, ctx, server)) {
+        return next
+      }
     }
   }
 
