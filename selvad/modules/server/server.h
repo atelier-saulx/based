@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "../../tunables.h"
+
 struct conn_ctx;
 struct selva_server_response_out;
 struct selva_string;

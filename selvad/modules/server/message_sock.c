@@ -19,7 +19,6 @@
 #include "selva_log.h"
 #endif
 #include "selva_proto.h"
-#include "../../tunables.h"
 #include "server.h"
 
 #define MAX_RETRIES 3

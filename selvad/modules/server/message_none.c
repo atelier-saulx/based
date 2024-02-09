@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include "selva_error.h"
 #include "selva_proto.h"
-#include "../../tunables.h"
 #include "server.h"
 
 static ssize_t none_recv_frame(struct conn_ctx *ctx __unused)
