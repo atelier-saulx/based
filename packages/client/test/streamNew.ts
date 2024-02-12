@@ -36,12 +36,8 @@ test('stream new', async (t: T) => {
               progressEvents.push(d)
             })
             const x = await readStream(stream)
-            console.log('DONE! WITH HELLO WOW', x)
-
             const y = new TextDecoder().decode(x)
-
             console.log('received', JSON.parse(y).length, 'things')
-
             return payload
           },
         },
