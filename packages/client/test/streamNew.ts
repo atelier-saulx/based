@@ -32,7 +32,7 @@ test('stream new', async (t: T) => {
           fn: async (_, { stream, payload }) => {
             console.log('blargf1', payload, stream, stream.size)
             stream.on('progress', (d) => {
-              console.info('PROGRESS', d)
+              console.info(stream)
               progressEvents.push(d)
             })
             const x = await readStream(stream)
@@ -66,7 +66,7 @@ test('stream new', async (t: T) => {
 
   let index = 0
   const streamBits = () => {
-    const readBytes = 10000
+    const readBytes = 100000
     const end = (index + 1) * readBytes
     if (end > payload.byteLength) {
       stream.push(payload.slice(index * readBytes, end))
@@ -82,6 +82,7 @@ test('stream new', async (t: T) => {
 
   streamBits()
 
+  // deflate as option ? e.g. for videos bit unnsecary
   const s = await client.streamNew('hello', {
     payload: { power: true },
     size: payload.byteLength,
