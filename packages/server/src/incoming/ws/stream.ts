@@ -209,7 +209,7 @@ export const receiveChunkStream: BinaryMessageHandler = (
   //   return false
   // }
 
-  if (seqId !== streamPayload.seqId - 1) {
+  if (seqId - 1 !== streamPayload.seqId) {
     console.info(
       'INCORRECT SEQ ID',
       'prev:',

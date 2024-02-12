@@ -292,6 +292,8 @@ export const encodeStreamMessage = (
     let sLen = 9
     let len = sLen
 
+    console.info('go go go', subType)
+
     const [, , seqId, chunk] = f
 
     len += chunk.length

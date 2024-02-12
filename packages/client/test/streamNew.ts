@@ -82,7 +82,11 @@ test('stream new', async (t: T) => {
       }, 100)
     }
   }
+
   console.log('BLAP')
+
+  streamBits()
+
   const s = await client.streamNew('hello', {
     payload: { power: true },
     size: payload.byteLength,
@@ -90,9 +94,7 @@ test('stream new', async (t: T) => {
     contents: stream,
   })
 
-  streamBits()
-
-  console.log(s)
+  console.log('???', s)
 
   // cycles of 3 secs
   await wait(6e3)
