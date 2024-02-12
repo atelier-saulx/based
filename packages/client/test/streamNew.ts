@@ -51,7 +51,7 @@ test('stream new', async (t: T) => {
   })
 
   const bigBod: any[] = []
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 1000000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
 
@@ -66,7 +66,7 @@ test('stream new', async (t: T) => {
 
   let index = 0
   const streamBits = () => {
-    const readBytes = 1000
+    const readBytes = 10000
     const end = (index + 1) * readBytes
     if (end > payload.byteLength) {
       stream.push(payload.slice(index * readBytes, end))

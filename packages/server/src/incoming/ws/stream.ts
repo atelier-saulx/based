@@ -223,7 +223,7 @@ export const receiveChunkStream: BinaryMessageHandler = (
     // send Error
   }
 
-  streamPayload.seqId = seqId
+  streamPayload.seqId = seqId === 255 ? -1 : seqId
 
   if (!isDeflate) {
     streamPayload.stream.write(arr.slice(infoLen + start, start + len))
