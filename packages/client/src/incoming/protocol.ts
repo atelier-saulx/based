@@ -11,9 +11,10 @@ export const decodeHeader = (
   //   2 = subscriptionDiffData
   //   3 = get
   //   4 = authData
-  //   5 = errorData // TODO: make this 7.0 and channelMessage 5
+  //   5 = errorData
   //   6 = publish requesChannelName
   //   7.0 = channelMessage
+  //   7.1 = stream reply
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4

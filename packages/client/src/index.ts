@@ -57,8 +57,6 @@ if (typeof window !== 'undefined' && typeof global === 'undefined') {
   window.global = window
 }
 
-let streamCnt = 0
-
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
@@ -139,6 +137,9 @@ export class BasedClient extends Emitter {
     reject: null,
     inProgress: false,
   }
+  // --------- Function State
+  streamFunctionResponseListeners: FunctionResponseListeners = new Map()
+  streamRequestId: number = 0 // max 3 bytes (0 to 16777215)
 
   // cache
   clearUnusedCache() {
@@ -460,7 +461,10 @@ export class BasedClient extends Emitter {
   ): Promise<any> {
     // @ts-ignore
     if (isStreamFunctionOpts(opts)) {
-      let reqId = ++streamCnt
+      let reqId = ++this.streamRequestId
+      if (reqId > 16777215) {
+        reqId = 0
+      }
       let seqId = 0
 
       addStreamRegister(
@@ -475,6 +479,10 @@ export class BasedClient extends Emitter {
 
       opts.contents.on('data', (chunk) => {
         addStreamChunk(this, reqId, ++seqId, chunk)
+      })
+
+      return new Promise((resolve, reject) => {
+        this.streamFunctionResponseListeners.set(reqId, [resolve, reject])
       })
     }
   }

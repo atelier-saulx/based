@@ -17,7 +17,7 @@ import { BasedErrorCode } from '../../error/index.js'
 const startStream: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'stream'>
-> = (route, spec, server, ctx, payload, requestId) => {
+> = (route, spec, server, ctx, payload, streamRequestId) => {
   spec
     .fn(server.client, payload, ctx)
     .then(async (v) => {
@@ -30,7 +30,7 @@ const startStream: IsAuthorizedHandler<
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.FunctionError, {
         route,
-        requestId,
+        streamRequestId,
         err,
       })
     })
@@ -218,6 +218,7 @@ export const receiveChunkStream: BinaryMessageHandler = (
       seqId,
       len
     )
+    // send Error
   }
 
   streamPayload.seqId = seqId
@@ -225,7 +226,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   streamPayload.stream.write(arr.slice(infoLen + start, start + len))
 
   if (streamPayload.stream.receivedBytes === streamPayload.size) {
-    // console.log('DONE!')
     streamPayload.stream.end()
   }
 }

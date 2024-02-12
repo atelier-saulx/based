@@ -246,6 +246,18 @@ export const incoming = async (client: BasedClient, data: any) => {
         payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
+      if (payload.streamRequestId) {
+        if (
+          client.streamFunctionResponseListeners.has(payload.streamRequestId)
+        ) {
+          const [, reject, stack] = client.streamFunctionResponseListeners.get(
+            payload.streamRequestId
+          )
+          reject(convertDataToBasedError(payload, stack))
+          client.streamFunctionResponseListeners.delete(payload.streamRequestId)
+        }
+      }
+
       if (payload.requestId) {
         if (client.functionResponseListeners.has(payload.requestId)) {
           const [, reject, stack] = client.functionResponseListeners.get(
@@ -366,6 +378,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       } else if (subType === 1) {
         // register stream id
         console.log('lullz stream id', buffer)
+        // do some stuff
       }
     }
     // ---------------------------------

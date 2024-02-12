@@ -30,6 +30,7 @@ export enum BasedErrorCode {
 type FunctionErrorProps = {
   err: Error | string
   requestId?: number
+  streamRequestId?: number
   route: BasedRoute
 }
 
@@ -106,6 +107,7 @@ export type BasedErrorData<T extends BasedErrorCode = BasedErrorCode> = {
   statusCode: number
   statusMessage: string
   requestId?: number
+  streamRequestId?: number
   observableId?: number
   channelId?: number
 }
