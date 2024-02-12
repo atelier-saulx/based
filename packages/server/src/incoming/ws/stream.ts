@@ -15,6 +15,7 @@ import { rateLimitRequest } from '../../security.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '../../error/index.js'
+import zlib from 'node:zlib'
 
 const startStream: IsAuthorizedHandler<
   WebSocketSession,
@@ -217,15 +218,21 @@ export const receiveChunkStream: BinaryMessageHandler = (
       'prev:',
       streamPayload.seqId,
       'next:',
-      seqId,
-      len
+      seqId
     )
     // send Error
   }
 
   streamPayload.seqId = seqId
 
-  streamPayload.stream.write(arr.slice(infoLen + start, start + len))
+  if (!isDeflate) {
+    streamPayload.stream.write(arr.slice(infoLen + start, start + len))
+  } else {
+    // try catch
+    streamPayload.stream.write(
+      zlib.inflateRawSync(arr.slice(infoLen + start, start + len))
+    )
+  }
 
   if (streamPayload.stream.receivedBytes === streamPayload.size) {
     streamPayload.stream.end()

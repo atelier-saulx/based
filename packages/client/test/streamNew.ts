@@ -50,19 +50,20 @@ test('stream new', async (t: T) => {
     url: async () => t.context.ws,
   })
 
-  // prob want to send contents in register if its small enough
-
   const bigBod: any[] = []
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 10000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
+
   const payload = new Uint8Array(Buffer.from(JSON.stringify(bigBod)))
+
   const stream = new Duplex({
     read() {},
     write(x) {
       this.push(x)
     },
   })
+
   let index = 0
   const streamBits = () => {
     const readBytes = 1000
@@ -75,11 +76,9 @@ test('stream new', async (t: T) => {
       setTimeout(() => {
         index++
         streamBits()
-      }, 100)
+      }, 5)
     }
   }
-
-  console.log('BLAP')
 
   streamBits()
 

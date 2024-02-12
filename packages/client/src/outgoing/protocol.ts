@@ -294,15 +294,23 @@ export const encodeStreamMessage = (
 
     const [, , seqId, chunk] = f
 
-    len += chunk.length
+    let isDeflate = false
+    let processed = chunk
+    if (chunk.length > 150) {
+      processed = deflateSync(chunk)
+      len += processed.length
+      isDeflate = true
+    } else {
+      len += chunk.length
+    }
 
-    const buff = createBuffer(7, false, len, sLen)
+    const buff = createBuffer(7, isDeflate, len, sLen)
 
     storeUint8(buff, 2, 4, 1)
     storeUint8(buff, reqId, 5, 3)
     storeUint8(buff, seqId, 8, 1)
 
-    return { buffers: [buff, chunk], len }
+    return { buffers: [buff, processed], len }
   }
 
   return { buffers: [], len: 0 }
