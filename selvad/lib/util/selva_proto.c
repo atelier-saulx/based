@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -275,7 +275,7 @@ int selva_proto_parse_replication_cmd(const void *buf, size_t bsize, size_t i, u
     *eid = le64toh(hdr.eid);
     *ts = le64toh(hdr.ts);
     *cmd_id = hdr.cmd;
-    *compressed = !!(hdr.flags & SElVA_PROTO_REPLICATION_CMD_FDEFLATE);
+    *compressed = !!(hdr.flags & SELVA_PROTO_REPLICATION_CMD_FDEFLATE);
     *data_size = le64toh(hdr.bsize);
     return 0;
 }

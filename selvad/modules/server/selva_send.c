@@ -298,7 +298,7 @@ int selva_send_replication_cmd_s(struct selva_server_response_out *resp, uint64_
     const char *data = selva_string_to_str(s, &bsize);
     struct selva_proto_replication_cmd buf = {
         .type = SELVA_PROTO_REPLICATION_CMD,
-        .flags = (s && (selva_string_get_flags(s) & SELVA_STRING_COMPRESS)) ? SElVA_PROTO_REPLICATION_CMD_FDEFLATE : 0,
+        .flags = (s && (selva_string_get_flags(s) & SELVA_STRING_COMPRESS)) ? SELVA_PROTO_REPLICATION_CMD_FDEFLATE : 0,
         .cmd = cmd,
         .eid = htole64(eid),
         .ts = htole64(ts),
