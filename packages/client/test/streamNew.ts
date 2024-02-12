@@ -40,7 +40,7 @@ test('stream new', async (t: T) => {
 
             const y = new TextDecoder().decode(x)
 
-            console.log(JSON.parse(y))
+            console.log('received', JSON.parse(y).length, 'things')
 
             return payload
           },
@@ -94,10 +94,9 @@ test('stream new', async (t: T) => {
     contents: stream,
   })
 
-  console.log('???', s)
+  console.log('GO RESULT!', s)
 
   // cycles of 3 secs
-  await wait(6e3)
   client.disconnect()
   await server.destroy()
 

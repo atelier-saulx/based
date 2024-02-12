@@ -4,6 +4,8 @@ import {
   decodeName,
   readUint8,
   parsePayload,
+  encodeStreamFunctionResponse,
+  valueToBuffer,
 } from '../../protocol.js'
 import { BasedDataStream } from '@based/functions'
 import mimeTypes from 'mime-types'
@@ -21,11 +23,11 @@ const startStream: IsAuthorizedHandler<
   spec
     .fn(server.client, payload, ctx)
     .then(async (v) => {
-      // do something here...
-      // ctx.session?.ws.send(
-      //   true,
-      //   false
-      // )
+      ctx.session?.ws.send(
+        encodeStreamFunctionResponse(streamRequestId, valueToBuffer(v)),
+        true,
+        false
+      )
     })
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.FunctionError, {

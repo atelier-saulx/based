@@ -376,9 +376,19 @@ export const incoming = async (client: BasedClient, data: any) => {
           }
         }
       } else if (subType === 1) {
-        // register stream id
-        console.log('lullz stream id', buffer)
-        // do some stuff
+        // | 4 header | 1 subType | 3 id | * payload |
+        const id = readUint8(buffer, 5, 3)
+        const start = 8
+        const end = len + 4
+        let payload: any
+        // if not empty response, parse it
+        if (len !== 4) {
+          payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        }
+        if (client.streamFunctionResponseListeners.has(id)) {
+          client.streamFunctionResponseListeners.get(id)[0](payload)
+          client.streamFunctionResponseListeners.delete(id)
+        }
       }
     }
     // ---------------------------------
