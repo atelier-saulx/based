@@ -15,6 +15,7 @@ import {
   CallOptions,
   QueryOptions,
   StreamQueue,
+  StreamFunctionResponseListeners,
 } from './types/index.js'
 import { Connection } from './websocket/types.js'
 import connectWebsocket from './websocket/index.js'
@@ -138,7 +139,7 @@ export class BasedClient extends Emitter {
     inProgress: false,
   }
   // --------- Function State
-  streamFunctionResponseListeners: FunctionResponseListeners = new Map()
+  streamFunctionResponseListeners: StreamFunctionResponseListeners = new Map()
   streamRequestId: number = 0 // max 3 bytes (0 to 16777215)
 
   // cache

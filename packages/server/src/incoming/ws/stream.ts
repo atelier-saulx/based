@@ -6,6 +6,7 @@ import {
   parsePayload,
   encodeStreamFunctionResponse,
   valueToBuffer,
+  encodeStreamFunctionChunkResponse,
 } from '../../protocol.js'
 import { BasedDataStream } from '@based/functions'
 import mimeTypes from 'mime-types'
@@ -173,8 +174,6 @@ export const registerStream: BinaryMessageHandler = (
   return true
 }
 
-// make reqId more random so its harder to geuss
-
 export const receiveChunkStream: BinaryMessageHandler = (
   arr,
   start,
@@ -236,9 +235,18 @@ export const receiveChunkStream: BinaryMessageHandler = (
     )
   }
 
+  // handle stream throughput!!!
+  // check if it being consumed correctly!
+
   if (streamPayload.stream.receivedBytes === streamPayload.size) {
     streamPayload.stream.end()
   }
+
+  ctx.session.ws.send(
+    encodeStreamFunctionChunkResponse(reqId, seqId, 0),
+    true,
+    false
+  )
 
   return true
 }

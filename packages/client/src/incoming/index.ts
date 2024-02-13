@@ -250,10 +250,10 @@ export const incoming = async (client: BasedClient, data: any) => {
         if (
           client.streamFunctionResponseListeners.has(payload.streamRequestId)
         ) {
-          const [, reject, stack] = client.streamFunctionResponseListeners.get(
+          const [, reject] = client.streamFunctionResponseListeners.get(
             payload.streamRequestId
           )
-          reject(convertDataToBasedError(payload, stack))
+          reject(convertDataToBasedError(payload))
           client.streamFunctionResponseListeners.delete(payload.streamRequestId)
         }
       }
@@ -388,6 +388,16 @@ export const incoming = async (client: BasedClient, data: any) => {
         if (client.streamFunctionResponseListeners.has(id)) {
           client.streamFunctionResponseListeners.get(id)[0](payload)
           client.streamFunctionResponseListeners.delete(id)
+        }
+      } else if (subType === 2) {
+        // | 4 header | 1 subType | 3 id | 1 seqId | 1 code
+        const id = readUint8(buffer, 5, 3)
+        const seqId = readUint8(buffer, 8, 1)
+        const code = readUint8(buffer, 9, 1)
+
+        // if len is smaller its an error OR use 0 as error (1 - 255)
+        if (client.streamFunctionResponseListeners.has(id)) {
+          client.streamFunctionResponseListeners.get(id)[2](seqId)
         }
       }
     }

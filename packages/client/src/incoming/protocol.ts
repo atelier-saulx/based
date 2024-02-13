@@ -15,6 +15,7 @@ export const decodeHeader = (
   //   6 = publish requesChannelName
   //   7.0 = channelMessage
   //   7.1 = stream reply
+  //   7.2 = stream chunk reply
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4

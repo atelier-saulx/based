@@ -12,14 +12,14 @@ export default async (
   client: BasedClient,
   name: string,
   options: StreamFunctionOpts,
-  _progressListener?: (progress: number) => void
+  progressListener?: (progress: number) => void
 ): Promise<any> => {
   if (isStreamFunctionPath(options)) {
-    return uploadFilePath(client, name, options)
+    return uploadFilePath(client, name, options, progressListener)
   }
 
   if (isStreamFunctionStream(options)) {
-    return uploadFileStream(client, name, options)
+    return uploadFileStream(client, name, options, progressListener)
   }
 
   if (options.contents instanceof ArrayBuffer) {

@@ -16,3 +16,8 @@ export type StreamQueueItem =
     ]
 
 export type StreamQueue = StreamQueueItem[]
+
+export type StreamFunctionResponseListeners = Map<
+  number,
+  [(val?: any) => void, (err: Error) => void, (seqId: number) => void]
+>

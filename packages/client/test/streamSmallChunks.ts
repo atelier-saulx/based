@@ -1,11 +1,8 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
-import { wait, readStream } from '@saulx/utils'
+import { readStream } from '@saulx/utils'
 import { Readable } from 'node:stream'
-// import { readFileSync } from 'node:fs'
-// import { dirname, join } from 'node:path'
-// import { fileURLToPath } from 'url'
 import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
@@ -94,10 +91,9 @@ test('stream small chunks', async (t: T) => {
   const payload = new Uint8Array(Buffer.from(JSON.stringify(bigBod)))
 
   async function* generate() {
-    const readBytes = 1000000
+    const readBytes = 1000
     let index = 0
     while (index * readBytes < payload.byteLength) {
-      await wait(5)
       const buf = payload.slice(
         index * readBytes,
         Math.min(payload.byteLength, (index + 1) * readBytes)
@@ -106,15 +102,20 @@ test('stream small chunks', async (t: T) => {
       yield buf
     }
     console.log('END')
-    // return null
   }
 
-  const result = await client.stream('hello', {
-    payload: { power: true },
-    size: payload.byteLength,
-    mimeType: 'pipo',
-    contents: Readable.from(generate()),
-  })
+  const result = await client.stream(
+    'hello',
+    {
+      payload: { power: true },
+      size: payload.byteLength,
+      mimeType: 'application/json',
+      contents: Readable.from(generate()),
+    },
+    (p) => {
+      console.log('PROGRESS', Math.round(p * 100), '%')
+    }
+  )
 
   console.info('DERP', result)
 

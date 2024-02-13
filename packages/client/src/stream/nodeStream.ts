@@ -23,18 +23,24 @@ export const isStream = (contents: any): contents is Readable => {
 export const uploadFilePath = async (
   client: BasedClient,
   name: string,
-  options: StreamFunctionPath
+  options: StreamFunctionPath,
+  progressListener?: (p: number) => void
 ) => {
   const info = await checkFile(options.path)
   if (info) {
-    return uploadFileStream(client, name, {
-      contents: fs.createReadStream(options.path),
-      mimeType: options.mimeType,
-      extension: options.path.match(/\.(.*?)$/)?.[1],
-      size: info.size,
-      payload: options.payload,
-      serverKey: options.serverKey,
-    })
+    return uploadFileStream(
+      client,
+      name,
+      {
+        contents: fs.createReadStream(options.path),
+        mimeType: options.mimeType,
+        extension: options.path.match(/\.(.*?)$/)?.[1],
+        size: info.size,
+        payload: options.payload,
+        serverKey: options.serverKey,
+      },
+      progressListener
+    )
   } else {
     throw new Error(`File does not exist ${options.path}`)
   }
@@ -43,7 +49,8 @@ export const uploadFilePath = async (
 export const uploadFileStream = async (
   client: BasedClient,
   name: string,
-  options: StreamFunctionStream
+  options: StreamFunctionStream,
+  progressListener?: (p: number) => void
 ): Promise<any> => {
   if (!(options.contents instanceof Readable)) {
     throw new Error('File Contents has to be an instance of "Readable"')
@@ -113,12 +120,20 @@ process.nextTick(() => stream.uncork());
 
   let totalHandler = 0
 
+  let sHandler
+
   const wr = new Writable({
     write: function (c, encoding, next) {
+      if (progressListener && totalHandler === 0 && bufferSize === 0) {
+        progressListener(0)
+      }
+
       bufferSize += c.byteLength
       chunks.push(c)
 
       if (totalHandler + bufferSize === options.size) {
+        sHandler[2] = () => {}
+
         const n = new Uint8Array(bufferSize)
         let c = 0
         for (const b of chunks) {
@@ -129,11 +144,18 @@ process.nextTick(() => stream.uncork());
         addStreamChunk(client, reqId, ++seqId, n)
         bufferSize = 0
         chunks = []
+
+        if (progressListener) {
+          progressListener(1)
+        }
+
         next()
 
         // END
       } else if (bufferSize >= readSize) {
-        setTimeout(() => {
+        const cb = (sID?) => {
+          // console.log('INCOMING', sID, seqId)
+
           const n = new Uint8Array(bufferSize)
           let c = 0
           for (const b of chunks) {
@@ -141,13 +163,27 @@ process.nextTick(() => stream.uncork());
             c += b.length
           }
           totalHandler += bufferSize
+
+          if (progressListener) {
+            progressListener(totalHandler / options.size)
+          }
+
           addStreamChunk(client, reqId, ++seqId, n)
           bufferSize = 0
           chunks = []
+          // sHandler[2] = () => {}
+
           next()
 
           // here we are going to wait for a reply
-        }, 0)
+        }
+
+        if (seqId > 0) {
+          sHandler[2] = cb
+        } else {
+          // start
+          setTimeout(cb, 0)
+        }
       } else {
         next()
       }
@@ -177,6 +213,13 @@ process.nextTick(() => stream.uncork());
   options.contents.pipe(wr)
 
   return new Promise((resolve, reject) => {
-    client.streamFunctionResponseListeners.set(reqId, [resolve, reject])
+    sHandler = [
+      resolve,
+      reject,
+      () => {
+        console.log('DUMMY CHUNKY')
+      },
+    ]
+    client.streamFunctionResponseListeners.set(reqId, sHandler)
   })
 }
