@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unicode 14.0.0 support
 - `$caseInsensitive: false|true` for `=` and `!=` filters
 - Optional EdgeField array mode (in contrast to the set mode)
+- query\_fork multithreading for complex find queries (Linux-only)
 
 ### Changed
 
