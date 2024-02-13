@@ -24,7 +24,7 @@ export const uploadFilePath = async (
   client: BasedClient,
   name: string,
   options: StreamFunctionPath,
-  progressListener?: (p: number) => void
+  progressListener?: (p: number, bytes: number) => void
 ) => {
   const info = await checkFile(options.path)
   if (info) {
@@ -50,7 +50,7 @@ export const uploadFileStream = async (
   client: BasedClient,
   name: string,
   options: StreamFunctionStream,
-  progressListener?: (p: number) => void
+  progressListener?: (p: number, bytes: number) => void
 ): Promise<any> => {
   if (!(options.contents instanceof Readable)) {
     throw new Error('File Contents has to be an instance of "Readable"')
@@ -113,7 +113,7 @@ export const uploadFileStream = async (
       ) {
         const cb = (_, code: number) => {
           if (code === 1) {
-            progressListener(1)
+            progressListener(1, options.size)
           } else {
             const n = new Uint8Array(bufferSize)
             let c = 0
@@ -122,7 +122,7 @@ export const uploadFileStream = async (
               c += b.length
             }
             if (progressListener) {
-              progressListener(totalHandler / options.size)
+              progressListener(totalHandler / options.size, totalHandler)
             }
             totalHandler += bufferSize
             addStreamChunk(client, reqId, ++seqId, n)

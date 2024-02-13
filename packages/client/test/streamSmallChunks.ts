@@ -70,8 +70,15 @@ test('stream small chunks', async (t: T) => {
         mimeType: 'application/json',
         contents: Readable.from(generate()),
       },
-      (p) => {
-        console.log('PROGRESS', Math.round(p * 100), '%')
+      (p, bytes) => {
+        console.log(
+          'PROGRESS',
+          Math.round(p * 100),
+          '%',
+          ' ',
+          Math.round(bytes / 1024),
+          'kb'
+        )
       }
     )
     t.deepEqual(result.payload, { power: true })

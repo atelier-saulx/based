@@ -391,7 +391,7 @@ export class BasedClient extends Emitter {
   stream(
     name: string,
     stream: StreamFunctionOpts,
-    progressListener?: (progress: number) => void
+    progressListener?: (progress: number, bytes: number) => void
   ): Promise<any> {
     return startStream(this, name, stream, progressListener)
   }
