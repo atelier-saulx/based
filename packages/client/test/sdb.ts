@@ -30,6 +30,9 @@ async function restartServer(t: ExecutionContext<Context>) {
     port,
     name: 'default',
     dir,
+    env: {
+      SERVER_DISABLE_QUERY_FORK: '1',
+    },
   })
 
   // FIXME sometimes the client gets stuck after the server restarts, so we reconnect just in case
