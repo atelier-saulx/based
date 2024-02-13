@@ -78,11 +78,21 @@ export const uploadFileStream = async (
     options.payload
   )
 
+  // 100kb
+  const smallest = 100000
+
+  // 5mb
+  const largest = 1000000 * 5
+
+  // 1mb
+  const ideal = 1000000
+
   // will determine max size based on troughput (troughput is limited by end point consumer YESH)
   // 1MB 1000000
-  const readSize = Math.min(1000000, options.size)
+  let readSize = Math.min(ideal, options.size)
 
   let bufferSize = 0
+
   let chunks: any[] = []
 
   let totalHandler = 0
@@ -92,16 +102,16 @@ export const uploadFileStream = async (
   // time spend (do smaller chunks if takes long)
   // split chunks
 
+  // also add kb / sec as measure
+
+  let lastIncoming = 0
+  let lastDiff = 0
+
   const wr = new Writable({
     write: function (c, encoding, next) {
-      if (totalHandler === options.size) {
-        console.info('all written done!')
-        return
-      }
-
       bufferSize += c.byteLength
 
-      // handle encoding?
+      // TODO: handle encoding?
       // console.info(encoding)
 
       chunks.push(c)
@@ -133,7 +143,11 @@ export const uploadFileStream = async (
           }
         }
 
+        // sHandler[2] = cb
+
         if (seqId > 0) {
+          lastIncoming = Date.now()
+          lastDiff = 0
           sHandler[2] = cb
         } else {
           // start
