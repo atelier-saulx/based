@@ -1,5 +1,5 @@
 import { BasedServer } from '../server.js'
-import { Context, isAnyBasedRoute } from '@based/functions'
+import { Context } from '@based/functions'
 import {
   BasedErrorCode,
   ErrorPayload,
