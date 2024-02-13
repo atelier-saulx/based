@@ -1,7 +1,8 @@
 import { ActiveObservable, ObservableError } from '../types.js'
 import { BasedServer } from '../../server.js'
-import { createError, BasedErrorCode } from '../../error/index.js'
+import { createError } from '../../error/index.js'
 import { encodeErrorResponse, valueToBuffer } from '../../protocol.js'
+import { BasedErrorCode } from '@based/errors'
 
 export const errorListener = (
   server: BasedServer,
@@ -19,23 +20,23 @@ export const errorListener = (
   obs.error =
     err instanceof Error
       ? createError(
-          server,
-          {
-            session: { type: 'query', id: obs.id, name: obs.name, headers: {} },
+        server,
+        {
+          session: { type: 'query', id: obs.id, name: obs.name, headers: {} },
+        },
+        BasedErrorCode.FunctionError,
+        {
+          err,
+          observableId: obs.id,
+          route: {
+            name: obs.name,
+            type: 'query',
           },
-          BasedErrorCode.FunctionError,
-          {
-            err,
-            observableId: obs.id,
-            route: {
-              name: obs.name,
-              type: 'query',
-            },
-          }
-        )
+        }
+      )
       : err.observableId !== obs.id
-      ? { ...err, observableId: obs.id }
-      : err
+        ? { ...err, observableId: obs.id }
+        : err
 
   if (obs.clients.size) {
     server.uwsApp.publish(

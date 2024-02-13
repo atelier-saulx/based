@@ -1,5 +1,4 @@
-import { BasedRoute, Context, isAnyBasedRoute } from '@based/functions'
-import { BasedServer } from '@based/server'
+import { BasedRoute, isAnyBasedRoute } from '@based/functions'
 
 export type BasedError = {
   code: BasedErrorCode

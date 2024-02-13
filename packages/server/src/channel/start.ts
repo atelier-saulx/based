@@ -5,8 +5,9 @@ import {
   encodeChannelMessage,
   encodeErrorResponse,
 } from '../protocol.js'
-import { BasedErrorData, BasedErrorCode, createError } from '../error/index.js'
+import { createError } from '../error/index.js'
 import { isBasedFunctionConfig } from '@based/functions'
+import { BasedErrorCode, BasedErrorData } from '@based/errors'
 
 const updateChannelListener = (
   server: BasedServer,
@@ -32,28 +33,28 @@ const errorChannelListener = (
   err =
     err instanceof Error
       ? createError(
-          server,
-          {
-            session: {
-              type: 'channel',
-              id: channel.id,
-              name: channel.name,
-              headers: {},
-            },
+        server,
+        {
+          session: {
+            type: 'channel',
+            id: channel.id,
+            name: channel.name,
+            headers: {},
           },
-          BasedErrorCode.FunctionError,
-          {
-            err,
-            channelId: channel.id,
-            route: {
-              name: channel.name,
-              type: 'channel',
-            },
-          }
-        )
+        },
+        BasedErrorCode.FunctionError,
+        {
+          err,
+          channelId: channel.id,
+          route: {
+            name: channel.name,
+            type: 'channel',
+          },
+        }
+      )
       : err.observableId !== channel.id
-      ? { ...err, channelId: channel.id }
-      : err
+        ? { ...err, channelId: channel.id }
+        : err
 
   if (channel.clients.size) {
     server.uwsApp.publish(

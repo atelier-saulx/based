@@ -4,7 +4,7 @@ import { HttpSession, Context, AuthState, isBasedRoute } from '@based/functions'
 import { httpFunction } from './function.js'
 import { httpStreamFunction } from './streamFunction/index.js'
 import { httpGet } from './query.js'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import {
   blockIncomingRequest,

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "./dist/src/index.js",
   "scripts": {
     "build": "rm -rf ./dist && tsc",
     "watch": "npx tsc --watch",

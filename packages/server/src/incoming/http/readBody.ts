@@ -1,6 +1,6 @@
 import { HttpSession, Context, BasedRoute } from '@based/functions'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { BasedServer } from '../../server.js'
 import { sendError } from '../../sendError.js'
 
