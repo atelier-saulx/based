@@ -78,18 +78,22 @@ export const uploadFileStream = async (
     options.payload
   )
 
-  // 100kb
+  // // 100kb
   const smallest = 100000
 
-  // 5mb
-  const largest = 1000000 * 5
+  // // 3mb
+  const maxSize = 1000000 * 3 // 3 mb
 
   // 1mb
   const ideal = 1000000
 
   // will determine max size based on troughput (troughput is limited by end point consumer YESH)
   // 1MB 1000000
+
   let readSize = Math.min(ideal, options.size)
+  if (options.size < ideal * 10) {
+    readSize = Math.min(smallest, options.size)
+  }
 
   let bufferSize = 0
 
