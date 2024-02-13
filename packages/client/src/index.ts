@@ -43,8 +43,6 @@ import { freeCacheMemory } from './cache.js'
 
 export * from './authState/parseAuthState.js'
 
-export * from './types/error.js'
-
 export { AuthState, BasedQuery }
 
 // global polyfill
@@ -125,12 +123,12 @@ export class BasedClient extends Emitter {
     reject: ((err: Error) => void) | null
     inProgress: boolean
   } = {
-    authState: null,
-    promise: null,
-    resolve: null,
-    reject: null,
-    inProgress: false,
-  }
+      authState: null,
+      promise: null,
+      resolve: null,
+      reject: null,
+      inProgress: false,
+    }
 
   // cache
   clearUnusedCache() {

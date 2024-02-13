@@ -1,5 +1,5 @@
 import { BasedServer } from '../server.js'
-import { BasedErrorCode, createError } from '../error/index.js'
+import { createError } from '../error/index.js'
 import { Context } from '@based/functions'
 import { verifyRoute } from '../verifyRoute.js'
 import {
@@ -12,6 +12,7 @@ import {
   unsubscribeFunction,
 } from '../query/index.js'
 import { installFn } from '../installFn.js'
+import { BasedErrorCode } from '@based/errors'
 
 export const observe = (
   server: BasedServer,

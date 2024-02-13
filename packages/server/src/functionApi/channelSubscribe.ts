@@ -8,7 +8,8 @@ import {
   createChannel,
 } from '../channel/index.js'
 import { installFn } from '../installFn.js'
-import { createError, BasedErrorCode } from '../error/index.js'
+import { createError, } from '../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 
 export const subscribeChannel = (
   server: BasedServer,

@@ -18,7 +18,7 @@ import {
   sendObsGetError,
 } from '../../query/index.js'
 import { WebSocketSession, Context, BasedRoute } from '@based/functions'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
@@ -182,11 +182,11 @@ export const getMessage: BinaryMessageHandler = (
     len === nameLen + 21
       ? undefined
       : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-            isDeflate
-          )
+        decodePayload(
+          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+          isDeflate
         )
+      )
 
   authorize(
     route,

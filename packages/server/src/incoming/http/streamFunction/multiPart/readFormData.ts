@@ -5,7 +5,7 @@ import {
   BasedDataStream,
   BasedRoute,
 } from '@based/functions'
-import { BasedErrorCode } from '../../../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../../../sendError.js'
 import getExtension from '../getExtension.js'
 import { BasedServer } from '../../../../server.js'

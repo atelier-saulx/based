@@ -10,8 +10,8 @@ import {
 } from './types.js'
 import { BasedClient, encodeAuthState } from '../index.js'
 import parseOpts from '@based/opts'
-import { convertDataToBasedError } from '../types/index.js'
 import { serializeQuery } from '@saulx/utils'
+import { convertDataToBasedError } from '@based/errors'
 
 const stat = promisify(fs.stat)
 
@@ -21,7 +21,7 @@ const checkFile = async (path: string): Promise<{ size: number } | null> => {
     return {
       size: s.size,
     }
-  } catch (err) {}
+  } catch (err) { }
 }
 
 export const isStream = (contents: any): contents is Readable => {
@@ -87,7 +87,7 @@ const streamRequest = (
             return
           }
           resolve(parsed)
-        } catch (err) {}
+        } catch (err) { }
         resolve(result)
       })
     }

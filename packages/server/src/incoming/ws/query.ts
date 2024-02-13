@@ -10,7 +10,7 @@ import {
   subscribeWs,
   hasObs,
 } from '../../query/index.js'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { rateLimitRequest } from '../../security.js'
@@ -115,11 +115,11 @@ export const subscribeMessage: BinaryMessageHandler = (
     len === nameLen + 21
       ? undefined
       : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-            isDeflate
-          )
+        decodePayload(
+          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+          isDeflate
         )
+      )
 
   session.obs.add(id)
 

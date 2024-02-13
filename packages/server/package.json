@@ -24,7 +24,8 @@
     "jsonexport": "^3.2.0",
     "jsonwebtoken": "^8.5.1",
     "mime-types": "^2.1.31",
-    "@based/functions": "^3.0.0"
+    "@based/functions": "^3.0.0",
+    "@based/errors": "^1.0.0"
   },
   "devDependencies": {
     "@types/mime-types": "2.1.1",

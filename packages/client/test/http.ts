@@ -163,7 +163,7 @@ test.serial('functions (over http)', async (t: T) => {
 
   const x = await (await fetch(t.context.http + '/gurk')).text()
 
-  t.is(x, `{"error":"[gurk] Function not found","code":40401}`)
+  t.is(x, `{"error":"[gurk] Function not found.","code":40401}`)
 
   await wait(10e3)
 
@@ -226,7 +226,7 @@ test.serial('get (over http)', async (t: T) => {
           },
         })
 
-        return () => {}
+        return () => { }
       },
     },
   }
