@@ -42,7 +42,7 @@ test('stream small chunks', async (t: T) => {
     url: async () => t.context.ws,
   })
 
-  const len = 1000
+  const len = 10000
   const bigBod: any[] = []
   for (let i = 0; i < len; i++) {
     bigBod.push({ flap: 'snurp', i })
