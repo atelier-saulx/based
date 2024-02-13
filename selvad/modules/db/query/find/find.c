@@ -1082,7 +1082,7 @@ static bool query_fork_eligible(const void *buf, size_t len)
                             );
 
     return (argc > 0 || argc == SELVA_PROTO_EINVAL) && /* TODO We might want an unique error code for this one. */
-           filter_len > 0 &&
+           filter_len > 3 && /* We often have filters like: '#1 ' */
            query_fork_eligible_is_complex_traversal(query_opts_str, query_opts_len);
 }
 
