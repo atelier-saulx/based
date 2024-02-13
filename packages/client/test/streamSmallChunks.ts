@@ -25,7 +25,7 @@ test('stream small chunks', async (t: T) => {
           fn: async (_, { stream, payload }) => {
             const x = await readStream(stream, {
               throttle: 10,
-              maxCunkSize: 1000,
+              maxCunkSize: 100000,
             })
             const y = new TextDecoder().decode(x)
             const len = JSON.parse(y).length
@@ -42,7 +42,7 @@ test('stream small chunks', async (t: T) => {
     url: async () => t.context.ws,
   })
 
-  const len = 10000
+  const len = 1000000
   const bigBod: any[] = []
   for (let i = 0; i < len; i++) {
     bigBod.push({ flap: 'snurp', i })
