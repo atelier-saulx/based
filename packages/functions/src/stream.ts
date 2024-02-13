@@ -13,7 +13,19 @@ export class BasedDataStream extends Duplex {
     this.emit('progress', 0)
   }
 
-  override _read() {}
+  override _read(size) {
+    // console.log('READ', size)
+  }
+
+  // override pause(): this {
+  //   console.log('PAUSE')
+  //   return this
+  // }
+
+  // override resume(): this {
+  //   console.log('RESUME')
+  //   return this
+  // }
 
   override _write(chunk, encoding, callback) {
     this.receivedBytes += chunk.byteLength

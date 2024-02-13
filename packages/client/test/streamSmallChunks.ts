@@ -4,6 +4,8 @@ import { BasedClient } from '../src/index.js'
 import { readStream } from '@saulx/utils'
 import { Readable } from 'node:stream'
 import getPort from 'get-port'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -65,10 +67,19 @@ test('stream small chunks', async (t: T) => {
               console.info(stream)
               progressEvents.push(d)
             })
-            const x = await readStream(stream)
+            stream.on('data', (c) => {
+              console.log('CHUNK', c.length)
+            })
+
+            const x = await readStream(stream, {
+              throttle: 100,
+              maxCunkSize: 10000,
+            })
+            console.log(x)
+
             const y = new TextDecoder().decode(x)
-            const len = JSON.parse(y).length
-            return len
+            // const len = JSON.parse(y).length
+            return y
           },
         },
       },
@@ -91,7 +102,7 @@ test('stream small chunks', async (t: T) => {
   const payload = new Uint8Array(Buffer.from(JSON.stringify(bigBod)))
 
   async function* generate() {
-    const readBytes = 1000
+    const readBytes = 10000
     let index = 0
     while (index * readBytes < payload.byteLength) {
       const buf = payload.slice(
@@ -101,7 +112,6 @@ test('stream small chunks', async (t: T) => {
       index++
       yield buf
     }
-    console.log('END')
   }
 
   const result = await client.stream(

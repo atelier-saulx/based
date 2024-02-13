@@ -151,6 +151,18 @@ export const registerStream: BinaryMessageHandler = (
     seqId: 0,
   }
 
+  streamPayload.stream.on('pause', () => {
+    console.info('ITS PAUSED!')
+    // @ts-ignore
+    streamPayload.stream.isPaused = true
+  })
+
+  streamPayload.stream.on('resume', () => {
+    console.info('RESUME')
+    // @ts-ignore
+    streamPayload.stream.isPaused = false
+  })
+
   ctx.session.streams[reqId] = streamPayload
 
   authorize(
@@ -227,26 +239,48 @@ export const receiveChunkStream: BinaryMessageHandler = (
 
   streamPayload.seqId = seqId === 255 ? -1 : seqId
 
-  if (!isDeflate) {
-    streamPayload.stream.write(arr.slice(infoLen + start, start + len))
+  // console.log('hallo write', seqId)
+
+  const chunk = !isDeflate
+    ? arr.slice(infoLen + start, start + len)
+    : zlib.inflateRawSync(arr.slice(infoLen + start, start + len))
+
+  // console.log('WRITE')
+
+  // @ts-ignore
+  if (streamPayload.stream.isPaused) {
+    streamPayload.stream.once('resume', () => {
+      console.info('ITS resu,es!')
+
+      streamPayload.stream.write(chunk)
+
+      // console.log(streamPayload.stream.)
+
+      ctx.session.ws.send(
+        encodeStreamFunctionChunkResponse(reqId, seqId, 0),
+        true,
+        false
+      )
+
+      if (streamPayload.stream.receivedBytes === streamPayload.size) {
+        streamPayload.stream.end()
+      }
+    })
   } else {
-    streamPayload.stream.write(
-      zlib.inflateRawSync(arr.slice(infoLen + start, start + len))
+    streamPayload.stream.write(chunk)
+
+    // console.log(streamPayload.stream.)
+
+    ctx.session.ws.send(
+      encodeStreamFunctionChunkResponse(reqId, seqId, 0),
+      true,
+      false
     )
+
+    if (streamPayload.stream.receivedBytes === streamPayload.size) {
+      streamPayload.stream.end()
+    }
   }
-
-  // handle stream throughput!!!
-  // check if it being consumed correctly!
-
-  if (streamPayload.stream.receivedBytes === streamPayload.size) {
-    streamPayload.stream.end()
-  }
-
-  ctx.session.ws.send(
-    encodeStreamFunctionChunkResponse(reqId, seqId, 0),
-    true,
-    false
-  )
 
   return true
 }
