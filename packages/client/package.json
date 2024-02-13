@@ -38,7 +38,7 @@
   "dependencies": {
     "@saulx/diff": "^2.0.1",
     "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^4.3.0",
+    "@saulx/utils": "^4.3.1",
     "@based/fetch": "^2.0.3",
     "@based/opts": "^1.0.0",
     "fflate": "0.8.1",
