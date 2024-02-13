@@ -79,41 +79,7 @@ export const uploadFileStream = async (
   )
 
   // 1MB 1000000
-
   const readSize = Math.min(1000000, options.size)
-  let totalRead = 0
-
-  // while (totalRead !== options.size) {
-  //   const r = options.contents.read(readSize)
-
-  //   console.log(r)
-
-  //   // addStreamChunk(this, reqId, ++seqId, chunk)
-
-  //   totalRead += readSize
-  // }
-
-  // const wr = new WritableStream(
-  //   {
-  //     write: () => {
-  //       console.log('bla')
-  //     },
-  //     close() {},
-  //     abort(err) {},
-  //   },
-  //   new CountQueuingStrategy({ highWaterMark: 1 })
-  // )
-
-  /*
-stream.cork();
-stream.write('some ');
-stream.write('data ');
-process.nextTick(() => stream.uncork()); 
-    */
-
-  let isCorked = false
-
-  let r = 0
 
   let bufferSize = 0
   let chunks: any[] = []
@@ -124,6 +90,11 @@ process.nextTick(() => stream.uncork());
 
   const wr = new Writable({
     write: function (c, encoding, next) {
+      if (totalHandler === options.size) {
+        console.info('all written done!')
+        return
+      }
+
       if (progressListener && totalHandler === 0 && bufferSize === 0) {
         progressListener(0)
       }
@@ -131,51 +102,31 @@ process.nextTick(() => stream.uncork());
       bufferSize += c.byteLength
       chunks.push(c)
 
-      if (totalHandler + bufferSize === options.size) {
-        sHandler[2] = () => {}
+      // keep them smaller then max size as well (now 1 mb min only)
 
-        const n = new Uint8Array(bufferSize)
-        let c = 0
-        for (const b of chunks) {
-          n.set(b, c)
-          c += b.length
-        }
-        totalHandler += bufferSize
-        addStreamChunk(client, reqId, ++seqId, n)
-        bufferSize = 0
-        chunks = []
-
-        if (progressListener) {
-          progressListener(1)
-        }
-
-        next()
-
-        // END
-      } else if (bufferSize >= readSize) {
-        const cb = (sID?) => {
-          // console.log('INCOMING', sID, seqId)
-
-          const n = new Uint8Array(bufferSize)
-          let c = 0
-          for (const b of chunks) {
-            n.set(b, c)
-            c += b.length
+      if (
+        bufferSize >= readSize ||
+        totalHandler + bufferSize === options.size
+      ) {
+        const cb = (_, code: number) => {
+          if (code === 1) {
+            progressListener(1)
+          } else {
+            const n = new Uint8Array(bufferSize)
+            let c = 0
+            for (const b of chunks) {
+              n.set(b, c)
+              c += b.length
+            }
+            if (progressListener) {
+              progressListener(totalHandler / options.size)
+            }
+            totalHandler += bufferSize
+            addStreamChunk(client, reqId, ++seqId, n)
+            bufferSize = 0
+            chunks = []
+            next()
           }
-          totalHandler += bufferSize
-
-          if (progressListener) {
-            progressListener(totalHandler / options.size)
-          }
-
-          addStreamChunk(client, reqId, ++seqId, n)
-          bufferSize = 0
-          chunks = []
-          // sHandler[2] = () => {}
-
-          next()
-
-          // here we are going to wait for a reply
         }
 
         if (seqId > 0) {
@@ -190,36 +141,10 @@ process.nextTick(() => stream.uncork());
     },
   })
 
-  // wr.on('drain', () => {
-  //   console.log('DRAIN')
-  // })
-
-  // wr.on('pipe', () => {
-  //   console.log('flap pipe')
-  // })
-
-  // wr.on('unpipe', () => {
-  //   console.log('flap pipe stop')
-  // })
-
-  // wr.on('error', (err) => {
-  //   console.log(err)
-  // })
-
-  // wr.on('end', () => {
-  //   console.log('END')
-  // })
-
   options.contents.pipe(wr)
 
   return new Promise((resolve, reject) => {
-    sHandler = [
-      resolve,
-      reject,
-      () => {
-        console.log('DUMMY CHUNKY')
-      },
-    ]
+    sHandler = [resolve, reject, () => {}]
     client.streamFunctionResponseListeners.set(reqId, sHandler)
   })
 }

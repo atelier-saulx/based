@@ -151,18 +151,6 @@ export const registerStream: BinaryMessageHandler = (
     seqId: 0,
   }
 
-  streamPayload.stream.on('pause', () => {
-    console.info('ITS PAUSED!')
-    // @ts-ignore
-    streamPayload.stream.isPaused = true
-  })
-
-  streamPayload.stream.on('resume', () => {
-    console.info('RESUME')
-    // @ts-ignore
-    streamPayload.stream.isPaused = false
-  })
-
   ctx.session.streams[reqId] = streamPayload
 
   authorize(
@@ -216,69 +204,67 @@ export const receiveChunkStream: BinaryMessageHandler = (
     return false
   }
 
-  // think about this
-  // if (rateLimitRequest(server, ctx, 1, server.rateLimit.ws)) {
-  //   ctx.session.ws.close()
-  //   return false
-  // }
-
   if (seqId - 1 !== streamPayload.seqId) {
     const sRoute: BasedRoute<'stream'> = {
       name: 'stream-chunk',
       type: 'stream',
     }
-
     sendError(server, ctx, BasedErrorCode.FunctionError, {
       route: sRoute,
       streamRequestId: reqId,
       err: `SeqId out of current seq ${seqId} prev seq ${streamPayload.seqId}`,
     })
-
     return true
   }
 
   streamPayload.seqId = seqId === 255 ? -1 : seqId
 
-  // console.log('hallo write', seqId)
-
   const chunk = !isDeflate
     ? arr.slice(infoLen + start, start + len)
     : zlib.inflateRawSync(arr.slice(infoLen + start, start + len))
 
-  // console.log('WRITE')
-
-  // @ts-ignore
-  if (streamPayload.stream.isPaused) {
+  if (streamPayload.stream.paused) {
     streamPayload.stream.once('resume', () => {
-      console.info('ITS resu,es!')
+      if (!ctx.session) {
+        delete ctx.session.streams?.[reqId]
+        streamPayload.stream.destroy()
+        return false
+      }
+      if (
+        streamPayload.stream.receivedBytes + chunk.byteLength ===
+        streamPayload.size
+      ) {
+        streamPayload.stream.end(chunk)
 
-      streamPayload.stream.write(chunk)
-
-      // console.log(streamPayload.stream.)
-
+        ctx.session.ws.send(
+          encodeStreamFunctionChunkResponse(reqId, seqId, 1),
+          true,
+          false
+        )
+      } else {
+        streamPayload.stream.write(chunk)
+        ctx.session.ws.send(
+          encodeStreamFunctionChunkResponse(reqId, seqId, 0),
+          true,
+          false
+        )
+      }
+    })
+  } else {
+    streamPayload.stream.write(chunk)
+    if (streamPayload.stream.receivedBytes === streamPayload.size) {
+      ctx.session.ws.send(
+        encodeStreamFunctionChunkResponse(reqId, seqId, 1),
+        true,
+        false
+      )
+      streamPayload.stream.end()
+    } else {
       ctx.session.ws.send(
         encodeStreamFunctionChunkResponse(reqId, seqId, 0),
         true,
         false
       )
-
-      if (streamPayload.stream.receivedBytes === streamPayload.size) {
-        streamPayload.stream.end()
-      }
-    })
-  } else {
-    streamPayload.stream.write(chunk)
-
-    // console.log(streamPayload.stream.)
-
-    ctx.session.ws.send(
-      encodeStreamFunctionChunkResponse(reqId, seqId, 0),
-      true,
-      false
-    )
-
-    if (streamPayload.stream.receivedBytes === streamPayload.size) {
-      streamPayload.stream.end()
     }
   }
 

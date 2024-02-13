@@ -43,7 +43,10 @@ export function createError<T extends BasedErrorCode>(
   payload: ErrorPayload[T]
 ): BasedErrorData<T> {
   const errorData: BasedErrorData<T> = createErrorData(code, payload)
-  if ('requestId' in payload) {
+
+  if ('streamRequestId' in payload) {
+    errorData.streamRequestId = payload.streamRequestId
+  } else if ('requestId' in payload) {
     errorData.requestId = payload.requestId
   } else if ('observableId' in payload) {
     errorData.observableId = payload.observableId

@@ -74,6 +74,14 @@ export default (
       },
       close: (ws: BasedWebSocket) => {
         const session = ws.getUserData()
+
+        if (session.streams) {
+          for (const key in session.streams) {
+            session.streams[key].stream.destroy()
+            delete session.streams[key]
+          }
+        }
+
         session.obs.forEach((id) => {
           if (unsubscribeWsIgnoreClient(server, id, session.c)) {
             // This is here for channels so we do not need to keep a seperate obs set on clients

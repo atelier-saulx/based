@@ -397,7 +397,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         // if len is smaller its an error OR use 0 as error (1 - 255)
         if (client.streamFunctionResponseListeners.has(id)) {
-          client.streamFunctionResponseListeners.get(id)[2](seqId)
+          client.streamFunctionResponseListeners.get(id)[2](seqId, code)
         }
       }
     }

@@ -4,28 +4,28 @@ import util from 'node:util'
 // prob want to move this to based functions
 export class BasedDataStream extends Duplex {
   public size: number = 0
+  public paused: boolean = false
   public receivedBytes: number = 0
   public progessTimer: NodeJS.Timeout
 
   constructor(size: number) {
     super()
     this.size = size
+
+    this.on('pause', () => {
+      this.paused = true
+    })
+
+    this.on('resume', () => {
+      this.paused = false
+    })
+
     this.emit('progress', 0)
   }
 
   override _read(size) {
     // console.log('READ', size)
   }
-
-  // override pause(): this {
-  //   console.log('PAUSE')
-  //   return this
-  // }
-
-  // override resume(): this {
-  //   console.log('RESUME')
-  //   return this
-  // }
 
   override _write(chunk, encoding, callback) {
     this.receivedBytes += chunk.byteLength

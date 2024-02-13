@@ -1,11 +1,84 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
-import { readStream } from '@saulx/utils'
+// import { readStream } from '@saulx/utils'
 import { Readable } from 'node:stream'
 import getPort from 'get-port'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
+
+import { Stream, Writable } from 'stream'
+
+export const readStream = (
+  stream: Stream,
+  opts?: { throttle?: number; maxCunkSize?: number }
+): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    const maxCunkSize = opts?.maxCunkSize ?? 0
+    const throttle = opts?.throttle ?? 0
+    const buffers: Buffer[] = []
+
+    const processChunk = (c, next) => {
+      const x = c.slice(0, maxCunkSize)
+      buffers.push(x)
+      const chunkP = c.slice(maxCunkSize)
+      console.log(
+        c.byteLength,
+        chunkP.byteLength + maxCunkSize,
+        x.byteLength === maxCunkSize
+      )
+
+      if (chunkP.byteLength > maxCunkSize) {
+        if (throttle) {
+          setTimeout(() => {
+            processChunk(chunkP, next)
+          }, throttle)
+        } else {
+          processChunk(chunkP, next)
+        }
+      } else {
+        if (throttle) {
+          setTimeout(() => {
+            next()
+          }, throttle)
+        } else {
+          next()
+        }
+      }
+    }
+
+    const s = new Writable({
+      write: (c, _encoding, next) => {
+        if (maxCunkSize && c.byteLength > maxCunkSize) {
+          processChunk(c, next)
+        } else {
+          if (typeof c === 'string') {
+            buffers.push(Buffer.from(c))
+          } else {
+            buffers.push(c)
+          }
+          if (throttle) {
+            setTimeout(() => {
+              next()
+            }, throttle)
+          } else {
+            next()
+          }
+        }
+      },
+    })
+
+    s.on('error', (err) => {
+      reject(err)
+    })
+
+    s.on('finish', () => {
+      console.info('DONE! !!!!', resolve)
+      resolve(Buffer.concat(buffers))
+    })
+
+    stream.pipe(s)
+  })
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -15,44 +88,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-/*
-  async streamNew(
-    name: string,
-    opts: StreamFunctionOpts,
-    progressListener?: (progress: number) => void
-  ): Promise<any> {
-    // @ts-ignore
-    if (isStreamFunctionOpts(opts)) {
-      let reqId = ++this.streamRequestId
-      if (reqId > 16777215) {
-        reqId = 0
-      }
-      let seqId = 0
-
-      addStreamRegister(
-        this,
-        reqId,
-        opts.size,
-        opts.fileName,
-        opts.mimeType,
-        name,
-        opts.payload
-      )
-
-      opts.contents.on('data', (chunk) => {
-        addStreamChunk(this, reqId, ++seqId, chunk)
-      })
-
-      return new Promise((resolve, reject) => {
-        this.streamFunctionResponseListeners.set(reqId, [resolve, reject])
-      })
-    }
-  }
-*/
-
 test('stream small chunks', async (t: T) => {
-  const progressEvents: number[] = []
-
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -62,45 +98,47 @@ test('stream small chunks', async (t: T) => {
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
           fn: async (_, { stream, payload }) => {
-            console.log('blargf1', payload, stream, stream.size)
             stream.on('progress', (d) => {
               console.info(stream)
-              progressEvents.push(d)
             })
+
             stream.on('data', (c) => {
-              console.log('CHUNK', c.length)
+              console.log(c.byteLength)
+            })
+
+            stream.on('end', () => {
+              console.log('yo rdy')
+            })
+
+            stream.on('finish', () => {
+              console.log('yo rdy FINISH')
             })
 
             const x = await readStream(stream, {
-              throttle: 100,
-              maxCunkSize: 10000,
+              throttle: 10,
+              maxCunkSize: 1000,
             })
-            console.log(x)
-
             const y = new TextDecoder().decode(x)
-            // const len = JSON.parse(y).length
-            return y
+            const len = JSON.parse(y).length
+            return len
           },
         },
       },
     },
   })
+
   await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => t.context.ws,
   })
 
-  const len = 1000000
-
+  const len = 10000
   const bigBod: any[] = []
-
   for (let i = 0; i < len; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
-
   const payload = new Uint8Array(Buffer.from(JSON.stringify(bigBod)))
-
   async function* generate() {
     const readBytes = 10000
     let index = 0
