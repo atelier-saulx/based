@@ -5,8 +5,8 @@ import {
   isStreamFunctionPath,
   isStreamFunctionStream,
 } from './types.js'
-import uploadFileBrowser from './uploadFileBrowser.js'
-import fetch from './fetch.js'
+
+export const isStreaming = { streaming: false }
 
 export default async (
   client: BasedClient,
@@ -27,11 +27,11 @@ export default async (
       type: options.mimeType || 'text/plain',
     })
     // want to stream this XHR browser / stream + http nodejs
-    return fetch(client, name, options)
+    // return fetch(client, name, options)
   }
 
   if (isFileContents(options)) {
-    return uploadFileBrowser(client, name, options, progressListener)
+    // return uploadFileBrowser(client, name, options, progressListener)
   }
 
   if (options.contents instanceof global.Blob) {
@@ -40,12 +40,12 @@ export default async (
     }
 
     // want to stream this XHR browser / stream + http nodejs
-    return fetch(client, name, options)
+    // return fetch(client, name, options)
   }
 
   if (typeof options.contents === 'string') {
     // want to stream this XHR browser / stream + http nodejs
-    return fetch(client, name, options)
+    // return fetch(client, name, options)
   }
 
   throw new Error(

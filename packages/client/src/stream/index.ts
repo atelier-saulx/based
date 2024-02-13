@@ -4,8 +4,9 @@ import {
   isStreamFunctionPath,
   isStreamFunctionStream,
 } from './types.js'
-import fetch from './fetch.js'
 import { uploadFilePath, uploadFileStream } from './nodeStream.js'
+
+export const isStreaming = { streaming: false }
 
 export default async (
   client: BasedClient,
@@ -23,14 +24,14 @@ export default async (
 
   if (options.contents instanceof ArrayBuffer) {
     options.contents = global.Buffer.from(options.contents)
-    return fetch(client, name, options)
+    // return fetch(client, name, options)
   }
 
   if (
     typeof options.contents === 'string' ||
     options.contents instanceof global.Buffer
   ) {
-    return fetch(client, name, options)
+    // return fetch(client, name, options)
   }
 
   throw new Error(

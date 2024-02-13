@@ -202,7 +202,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   const streamPayload = ctx.session.streams?.[reqId]
 
   if (!streamPayload) {
-    // block user ?
     return false
   }
 
@@ -213,14 +212,18 @@ export const receiveChunkStream: BinaryMessageHandler = (
   // }
 
   if (seqId - 1 !== streamPayload.seqId) {
-    console.info(
-      'INCORRECT SEQ ID',
-      'prev:',
-      streamPayload.seqId,
-      'next:',
-      seqId
-    )
-    // send Error
+    const sRoute: BasedRoute<'stream'> = {
+      name: 'stream-chunk',
+      type: 'stream',
+    }
+
+    sendError(server, ctx, BasedErrorCode.FunctionError, {
+      route: sRoute,
+      streamRequestId: reqId,
+      err: `SeqId out of current seq ${seqId} prev seq ${streamPayload.seqId}`,
+    })
+
+    return true
   }
 
   streamPayload.seqId = seqId === 255 ? -1 : seqId
@@ -228,7 +231,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   if (!isDeflate) {
     streamPayload.stream.write(arr.slice(infoLen + start, start + len))
   } else {
-    // try catch
     streamPayload.stream.write(
       zlib.inflateRawSync(arr.slice(infoLen + start, start + len))
     )
@@ -237,4 +239,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   if (streamPayload.stream.receivedBytes === streamPayload.size) {
     streamPayload.stream.end()
   }
+
+  return true
 }

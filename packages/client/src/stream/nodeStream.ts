@@ -28,8 +28,6 @@ export const isStream = (contents: any): contents is Readable => {
   return contents instanceof Readable
 }
 
-const parseUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/
-
 export const uploadFilePath = async (
   client: BasedClient,
   name: string,
@@ -50,57 +48,6 @@ export const uploadFilePath = async (
   }
 }
 
-const streamRequest = (
-  stream: Readable,
-  name: string,
-  url: string,
-  headers: StreamHeaders,
-  query: string
-) => {
-  const [, protocol, host, port] = parseUrlRe.exec(url)
-  // query
-  const httpOptions = {
-    port,
-    host: host,
-    path: '/' + name + query,
-    method: 'POST',
-    headers,
-  }
-
-  return new Promise((resolve, reject) => {
-    const incomingReady = (incomingReq: IncomingMessage) => {
-      const s: string[] = []
-      incomingReq.on('data', (c) => {
-        s.push(c.toString())
-      })
-      incomingReq.once('end', () => {
-        const result = s.join('')
-        try {
-          const parsed = JSON.parse(result)
-          if ('code' in parsed && 'error' in parsed) {
-            reject(
-              convertDataToBasedError({
-                code: parsed.code,
-                message: parsed.error,
-              })
-            )
-            return
-          }
-          resolve(parsed)
-        } catch (err) {}
-        resolve(result)
-      })
-    }
-
-    const req =
-      protocol === 'wss' || protocol === 'https'
-        ? sslRequest(httpOptions, incomingReady)
-        : request(httpOptions, incomingReady)
-
-    stream.pipe(req)
-  })
-}
-
 export const uploadFileStream = async (
   client: BasedClient,
   name: string,
@@ -117,24 +64,8 @@ export const uploadFileStream = async (
   // key is something special
   const url = await parseOpts(client.opts, true)
 
-  const headers: StreamHeaders = {
-    'Content-Length': String(options.size),
-    'Content-Type': options.mimeType || 'text/plain',
-    Authorization: encodeAuthState(client.authState),
-  }
-
-  if (options.fileName) {
-    headers['Content-Name'] = options.fileName
-  }
-
-  if (!options.mimeType && options.extension) {
-    headers['Content-Extension'] = options.extension
-  }
-
   let q = ''
   if (options.payload) {
     q = '?' + serializeQuery(options.payload)
   }
-
-  return streamRequest(options.contents, name, url, headers, q)
 }

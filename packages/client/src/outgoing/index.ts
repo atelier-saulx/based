@@ -314,6 +314,27 @@ export const addStreamChunk = (
   seqId: number,
   chunk: Uint8Array
 ) => {
-  client.sQ.push([2, reqId, seqId, chunk])
-  drainQueue(client)
+  // lets send the chunks of streams directly
+  // also need to keep the amount we push in here to a minimum
+  // dc for streams will not resend them
+  // client.sQ.push([2, reqId, seqId, chunk])
+
+  // TODO: Add progress listener (send seqId back or multiple)
+
+  if (client.connected) {
+    // how to get progress
+    const { len, buffers } = encodeStreamMessage([2, reqId, seqId, chunk])
+    const n = new Uint8Array(len)
+    let c = 0
+    for (const b of buffers) {
+      n.set(b, c)
+      c += b.length
+    }
+    client.connection.ws.send(n)
+    idleTimeout(client)
+  } else {
+    // console.info('for streams you need to be connected', this can other wiser overflow)
+    // prob
+    client.sQ.push([2, reqId, seqId, chunk])
+  }
 }
