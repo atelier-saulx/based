@@ -53,8 +53,6 @@
     "@aws-sdk/client-s3": "^3.304.0",
     "@based/functions": "^3.0.0",
     "ava": "5.3.1",
-    "@saulx/tsconfig": "^1.0.6",
-    "@saulx/prettier-config": "^1.0.0",
     "typescript": "^5.2.2",
     "rimraf": "^3.0.2"
   }
