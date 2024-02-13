@@ -23,22 +23,6 @@ test('stream small chunks', async (t: T) => {
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
           fn: async (_, { stream, payload }) => {
-            stream.on('progress', (d) => {
-              console.info(stream)
-            })
-
-            stream.on('data', (c) => {
-              console.log(c.byteLength)
-            })
-
-            stream.on('end', () => {
-              console.log('yo rdy')
-            })
-
-            stream.on('finish', () => {
-              console.log('yo rdy FINISH')
-            })
-
             const x = await readStream(stream, {
               throttle: 10,
               maxCunkSize: 1000,
@@ -90,15 +74,11 @@ test('stream small chunks', async (t: T) => {
         console.log('PROGRESS', Math.round(p * 100), '%')
       }
     )
-
-    console.info('DERP', result)
-
     t.is(result, len)
   } catch (err) {
     console.error(err)
+    t.fail('Should not error in fn')
   }
-
-  // cycles of 3 secs
   client.disconnect()
   await server.destroy()
 
