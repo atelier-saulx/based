@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
-import { Duplex } from 'node:stream'
+import { Readable } from 'node:stream'
 // import { readFileSync } from 'node:fs'
 // import { dirname, join } from 'node:path'
 // import { fileURLToPath } from 'url'
@@ -15,6 +15,41 @@ test.beforeEach(async (t: T) => {
   t.context.ws = `ws://localhost:${t.context.port}`
   t.context.http = `http://localhost:${t.context.port}`
 })
+
+/*
+  async streamNew(
+    name: string,
+    opts: StreamFunctionOpts,
+    progressListener?: (progress: number) => void
+  ): Promise<any> {
+    // @ts-ignore
+    if (isStreamFunctionOpts(opts)) {
+      let reqId = ++this.streamRequestId
+      if (reqId > 16777215) {
+        reqId = 0
+      }
+      let seqId = 0
+
+      addStreamRegister(
+        this,
+        reqId,
+        opts.size,
+        opts.fileName,
+        opts.mimeType,
+        name,
+        opts.payload
+      )
+
+      opts.contents.on('data', (chunk) => {
+        addStreamChunk(this, reqId, ++seqId, chunk)
+      })
+
+      return new Promise((resolve, reject) => {
+        this.streamFunctionResponseListeners.set(reqId, [resolve, reject])
+      })
+    }
+  }
+*/
 
 test('stream small chunks', async (t: T) => {
   const progressEvents: number[] = []
@@ -58,38 +93,30 @@ test('stream small chunks', async (t: T) => {
 
   const payload = new Uint8Array(Buffer.from(JSON.stringify(bigBod)))
 
-  const stream = new Duplex({
-    read() {},
-    write(x) {
-      this.push(x)
-    },
-  })
-
-  let index = 0
-  const streamBits = () => {
-    const readBytes = 100000
-    const end = (index + 1) * readBytes
-    if (end > payload.byteLength) {
-      stream.push(payload.slice(index * readBytes, end))
-      stream.push(null)
-    } else {
-      stream.push(payload.slice(index * readBytes, end))
-      setTimeout(() => {
-        index++
-        streamBits()
-      }, 5)
+  async function* generate() {
+    const readBytes = 1000000
+    let index = 0
+    while (index * readBytes < payload.byteLength) {
+      await wait(5)
+      const buf = payload.slice(
+        index * readBytes,
+        Math.min(payload.byteLength, (index + 1) * readBytes)
+      )
+      index++
+      yield buf
     }
+    console.log('END')
+    // return null
   }
 
-  streamBits()
-
-  // deflate as option ? e.g. for videos bit unnsecary
-  const result = await client.streamNew('hello', {
+  const result = await client.stream('hello', {
     payload: { power: true },
     size: payload.byteLength,
     mimeType: 'pipo',
-    contents: stream,
+    contents: Readable.from(generate()),
   })
+
+  console.info('DERP', result)
 
   t.is(result, len)
 

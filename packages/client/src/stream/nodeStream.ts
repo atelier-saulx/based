@@ -1,17 +1,9 @@
-import { Readable } from 'stream'
-import { IncomingMessage, request } from 'http'
-import { request as sslRequest } from 'https'
+import { Readable, Writable } from 'stream'
 import fs from 'fs'
 import { promisify } from 'util'
-import {
-  StreamFunctionPath,
-  StreamFunctionStream,
-  StreamHeaders,
-} from './types.js'
-import { BasedClient, encodeAuthState } from '../index.js'
-import parseOpts from '@based/opts'
-import { convertDataToBasedError } from '../types/index.js'
-import { serializeQuery } from '@saulx/utils'
+import { StreamFunctionPath, StreamFunctionStream } from './types.js'
+import { BasedClient } from '../index.js'
+import { addStreamChunk, addStreamRegister } from '../outgoing/index.js'
 
 const stat = promisify(fs.stat)
 
@@ -61,11 +53,130 @@ export const uploadFileStream = async (
     await client.once('connect')
   }
 
-  // key is something special
-  const url = await parseOpts(client.opts, true)
+  let reqId = ++client.streamRequestId
 
-  let q = ''
-  if (options.payload) {
-    q = '?' + serializeQuery(options.payload)
+  if (reqId > 16777215) {
+    reqId = 0
   }
+
+  let seqId = 0
+
+  addStreamRegister(
+    client,
+    reqId,
+    options.size,
+    options.fileName,
+    options.mimeType,
+    name,
+    options.payload
+  )
+
+  // 1MB 1000000
+
+  const readSize = Math.min(1000000, options.size)
+  let totalRead = 0
+
+  // while (totalRead !== options.size) {
+  //   const r = options.contents.read(readSize)
+
+  //   console.log(r)
+
+  //   // addStreamChunk(this, reqId, ++seqId, chunk)
+
+  //   totalRead += readSize
+  // }
+
+  // const wr = new WritableStream(
+  //   {
+  //     write: () => {
+  //       console.log('bla')
+  //     },
+  //     close() {},
+  //     abort(err) {},
+  //   },
+  //   new CountQueuingStrategy({ highWaterMark: 1 })
+  // )
+
+  /*
+stream.cork();
+stream.write('some ');
+stream.write('data ');
+process.nextTick(() => stream.uncork()); 
+    */
+
+  let isCorked = false
+
+  let r = 0
+
+  let bufferSize = 0
+  let chunks: any[] = []
+
+  let totalHandler = 0
+
+  const wr = new Writable({
+    write: function (c, encoding, next) {
+      bufferSize += c.byteLength
+      chunks.push(c)
+
+      if (totalHandler + bufferSize === options.size) {
+        const n = new Uint8Array(bufferSize)
+        let c = 0
+        for (const b of chunks) {
+          n.set(b, c)
+          c += b.length
+        }
+        totalHandler += bufferSize
+        addStreamChunk(client, reqId, ++seqId, n)
+        bufferSize = 0
+        chunks = []
+        next()
+
+        // END
+      } else if (bufferSize >= readSize) {
+        setTimeout(() => {
+          const n = new Uint8Array(bufferSize)
+          let c = 0
+          for (const b of chunks) {
+            n.set(b, c)
+            c += b.length
+          }
+          totalHandler += bufferSize
+          addStreamChunk(client, reqId, ++seqId, n)
+          bufferSize = 0
+          chunks = []
+          next()
+
+          // here we are going to wait for a reply
+        }, 0)
+      } else {
+        next()
+      }
+    },
+  })
+
+  // wr.on('drain', () => {
+  //   console.log('DRAIN')
+  // })
+
+  // wr.on('pipe', () => {
+  //   console.log('flap pipe')
+  // })
+
+  // wr.on('unpipe', () => {
+  //   console.log('flap pipe stop')
+  // })
+
+  // wr.on('error', (err) => {
+  //   console.log(err)
+  // })
+
+  // wr.on('end', () => {
+  //   console.log('END')
+  // })
+
+  options.contents.pipe(wr)
+
+  return new Promise((resolve, reject) => {
+    client.streamFunctionResponseListeners.set(reqId, [resolve, reject])
+  })
 }

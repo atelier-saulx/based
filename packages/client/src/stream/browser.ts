@@ -38,14 +38,9 @@ export default async (
     if (!options.mimeType) {
       options.mimeType = options.contents.type
     }
-
-    // want to stream this XHR browser / stream + http nodejs
-    // return fetch(client, name, options)
   }
 
   if (typeof options.contents === 'string') {
-    // want to stream this XHR browser / stream + http nodejs
-    // return fetch(client, name, options)
   }
 
   throw new Error(

@@ -445,47 +445,6 @@ export class BasedClient extends Emitter {
   saveStorage(): Promise<void> {
     return updateStorage(this)
   }
-
-  // -------- Stream NEW
-  /**
-  Stream large payload to a `stream-function`
-  
-  ```javascript
-  await client.stream('db:file', file)
-  ```
-  */
-  async streamNew(
-    name: string,
-    opts: StreamFunctionOpts,
-    progressListener?: (progress: number) => void
-  ): Promise<any> {
-    // @ts-ignore
-    if (isStreamFunctionOpts(opts)) {
-      let reqId = ++this.streamRequestId
-      if (reqId > 16777215) {
-        reqId = 0
-      }
-      let seqId = 0
-
-      addStreamRegister(
-        this,
-        reqId,
-        opts.size,
-        opts.fileName,
-        opts.mimeType,
-        name,
-        opts.payload
-      )
-
-      opts.contents.on('data', (chunk) => {
-        addStreamChunk(this, reqId, ++seqId, chunk)
-      })
-
-      return new Promise((resolve, reject) => {
-        this.streamFunctionResponseListeners.set(reqId, [resolve, reject])
-      })
-    }
-  }
 }
 
 export { BasedOpts }

@@ -45,14 +45,6 @@ export type StreamFunctionOpts =
   | StreamFunctionContents
   | StreamFunctionStream
 
-export type StreamHeaders = {
-  'Content-Extension'?: string
-  'Content-Length'?: string
-  'Content-Type': string
-  'Content-Name'?: string
-  Authorization: string
-}
-
 const isStream = (stream: any): boolean => {
   return (
     stream !== null &&
