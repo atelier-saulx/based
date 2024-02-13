@@ -78,6 +78,7 @@ export const uploadFileStream = async (
     options.payload
   )
 
+  // will determine max size based on troughput (troughput is limited by end point consumer YESH)
   // 1MB 1000000
   const readSize = Math.min(1000000, options.size)
 
