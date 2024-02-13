@@ -85,13 +85,13 @@ export const uploadFileStream = async (
   const maxSize = 1000000 * 3 // 3 mb
 
   // 1mb
-  const ideal = 1000000
+  const medium = 1000000
 
   // will determine max size based on troughput (troughput is limited by end point consumer YESH)
   // 1MB 1000000
 
-  let readSize = Math.min(ideal, options.size)
-  if (options.size < ideal * 10) {
+  let readSize = Math.min(medium, options.size)
+  if (options.size < medium * 10) {
     readSize = Math.min(smallest, options.size)
   }
 
@@ -113,6 +113,10 @@ export const uploadFileStream = async (
 
   const wr = new Writable({
     write: function (c, encoding, next) {
+      if (c.byteLength > maxSize) {
+        console.log('LARGER THEN MAX SIZE HANDLE!')
+      }
+
       bufferSize += c.byteLength
 
       // TODO: handle encoding?
