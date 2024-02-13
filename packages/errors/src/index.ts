@@ -1,102 +1,419 @@
+import { BasedRoute, Context, isAnyBasedRoute } from '@based/functions'
+import { BasedServer } from '@based/server'
+
 export type BasedError = {
-  code: ParseErrors
+  code: BasedErrorCode
   payload: any
 }
 
-export type BasedParseError = {
-  code: ParseErrors
-  path: string[]
-}
-
-export type BasedMutationError = {
-  code: MutationErrors
-  path: string[]
-  payload: { [key: string]: any }
-}
-export enum ParseErrors {
+export enum BasedErrorCode {
   // Parse Errors
-  'incorrectFieldType' = 1000,
-  'incorrectNodeType' = 1001,
-  'exceedsMaximum' = 1002,
-  'subceedsMinimum' = 1003,
-  'fieldDoesNotExist' = 1004,
-  'incorrectFormat' = 1005,
-  'referenceIsIncorrectType' = 1006,
-  'valueAndDefault' = 1007,
-  'defaultNotSupported' = 1008,
-  'multipleOperationsNotAllowed' = 1009,
-  'requiredFieldNotDefined' = 1010,
-  'languageNotSupported' = 1011,
-  'invalidJSON' = 1012,
-  'noLanguageFound' = 1013,
-  'cannotDeleteNodeFromModify' = 1014,
-  'nestedModifyObjectNotAllowed' = 1015,
-  'infinityNotSupported' = 1016,
-  'invalidSchemaFormat' = 1017,
-  'invalidProperty' = 1018,
+  incorrectFieldType = 1000,
+  incorrectNodeType = 1001,
+  exceedsMaximum = 1002,
+  subceedsMinimum = 1003,
+  fieldDoesNotExist = 1004,
+  incorrectFormat = 1005,
+  referenceIsIncorrectType = 1006,
+  valueAndDefault = 1007,
+  defaultNotSupported = 1008,
+  multipleOperationsNotAllowed = 1009,
+  requiredFieldNotDefined = 1010,
+  languageNotSupported = 1011,
+  invalidJSON = 1012,
+  noLanguageFound = 1013,
+  cannotDeleteNodeFromModify = 1014,
+  nestedModifyObjectNotAllowed = 1015,
+  infinityNotSupported = 1016,
+  invalidSchemaFormat = 1017,
+  invalidProperty = 1018,
+
+  // client errors
+  FunctionError = 50001,
+  AuthorizeFunctionError = 50002,
+  NoOservableCacheAvailable = 50003,
+  // ObservableFunctionError = 50004,
+  ObserveCallbackError = 50005,
+  FunctionNotFound = 40401,
+  // FunctionIsNotObservable = 40402,
+  // FunctionIsObservable = 40403,
+  // FunctionIsStream = 40404,
+  // CannotStreamToObservableFunction = 40405,
+  FunctionIsWrongType = 40406, // was 40402 in server
+  AuthorizeRejectedError = 40301,
+  InvalidPayload = 40001,
+  PayloadTooLarge = 40002,
+  ChunkTooLarge = 40003,
+  UnsupportedContentEncoding = 40004,
+  NoBinaryProtocol = 40005,
+  LengthRequired = 41101,
+  MethodNotAllowed = 40501,
+  RateLimit = 40029,
+  MissingAuthStateProtocolHeader = 40030,
+  IncorrectAccessKey = 40031,
+  Block = 90001,
 
   // Mutation error
-  'PrefixAlreadyInUse' = 2000,
-}
-export enum MutationErrors {
-  'PrefixAlreadyInUse' = 2000,
+  // PrefixAlreadyInUse = 2000,
 }
 
-export const errorDescriptions: {
-  [key in ParseErrors]: string | ((payload: { [key: string]: any }) => string)
-} = {
-  [ParseErrors.incorrectFieldType]: 'Incorrect field type.',
-  [ParseErrors.incorrectNodeType]: 'Incorrect node type.',
-  [ParseErrors.exceedsMaximum]: 'Exceeds maximum property.',
-  [ParseErrors.subceedsMinimum]: 'Subceeds minimum property.',
-  [ParseErrors.fieldDoesNotExist]: 'Field does not exist.',
-  [ParseErrors.incorrectFormat]: 'Incorrect format.',
-  [ParseErrors.referenceIsIncorrectType]: 'Reference is from incorrect type.',
-  [ParseErrors.valueAndDefault]:
-    'Value and $default are being used at the same time.',
-  [ParseErrors.defaultNotSupported]: '$default is not suported.',
-  [ParseErrors.multipleOperationsNotAllowed]:
-    'Multiple operations are not allowed here.',
-  [ParseErrors.requiredFieldNotDefined]: 'Required field is not defined.',
-  [ParseErrors.languageNotSupported]: 'Language not supported.',
-  [ParseErrors.invalidJSON]: 'Invalid JSON.',
-  [ParseErrors.noLanguageFound]: 'No language found.',
-  [ParseErrors.cannotDeleteNodeFromModify]: 'Cannot delete node from modify.',
-  [ParseErrors.nestedModifyObjectNotAllowed]:
-    'Nested modify object not allowed.',
-  [ParseErrors.infinityNotSupported]: 'Infinity not supported.',
-  [ParseErrors.invalidSchemaFormat]: 'Invalid schema format.',
-  [ParseErrors.invalidProperty]: 'Invalid property.',
-
-  [ParseErrors.PrefixAlreadyInUse]: (payload) =>
-    `Prefix${payload?.prefix ? ` ${payload.prefix}` : ''} is already in use.`,
+type BasedParseErrorPayload = {
+  path: string[]
 }
 
-export const makeError = (code: ParseErrors, payload: any) => ({
-  code,
-  payload,
-})
+type FunctionErrorProps = {
+  err: Error | string
+  requestId?: number
+  route: BasedRoute
+}
 
-export const makeErrorMessage = (error: BasedError): string => {
-  if (!errorDescriptions[error.code]) {
-    return `Uknown error: ${error}`
+type ObservableFunctionErrorProps = {
+  observableId: number
+  err: Error | string
+  route: BasedRoute
+}
+
+type ChannelFunctionErrorProps = {
+  channelId: number
+  err: Error | string
+  route: BasedRoute
+}
+
+export type BasedErrorPayload =
+  | {
+    observableId: number
+    route: BasedRoute
   }
-
-  if (typeof errorDescriptions[error.code] === 'function') {
-    return (errorDescriptions[error.code] as Function)(error.payload)
+  | {
+    requestId: number
+    route: BasedRoute
   }
-  return errorDescriptions[error.code] as string
+  | {
+    channelId: number
+    route: BasedRoute
+  }
+  | { route: BasedRoute }
+
+type BasedFunctionError =
+  | FunctionErrorProps
+  | ObservableFunctionErrorProps
+  | ChannelFunctionErrorProps
+
+export type ErrorPayload = {
+  [BasedErrorCode.incorrectFieldType]: BasedParseErrorPayload
+  [BasedErrorCode.incorrectNodeType]: BasedParseErrorPayload
+  [BasedErrorCode.exceedsMaximum]: BasedParseErrorPayload
+  [BasedErrorCode.subceedsMinimum]: BasedParseErrorPayload
+  [BasedErrorCode.fieldDoesNotExist]: BasedParseErrorPayload
+  [BasedErrorCode.incorrectFormat]: BasedParseErrorPayload,
+  [BasedErrorCode.referenceIsIncorrectType]: BasedParseErrorPayload,
+  [BasedErrorCode.valueAndDefault]: BasedParseErrorPayload,
+  [BasedErrorCode.defaultNotSupported]: BasedParseErrorPayload,
+  [BasedErrorCode.multipleOperationsNotAllowed]: BasedParseErrorPayload,
+  [BasedErrorCode.requiredFieldNotDefined]: BasedParseErrorPayload,
+  [BasedErrorCode.languageNotSupported]: BasedParseErrorPayload,
+  [BasedErrorCode.invalidJSON]: BasedParseErrorPayload,
+  [BasedErrorCode.noLanguageFound]: BasedParseErrorPayload,
+  [BasedErrorCode.cannotDeleteNodeFromModify]: BasedParseErrorPayload,
+  [BasedErrorCode.nestedModifyObjectNotAllowed]: BasedParseErrorPayload,
+  [BasedErrorCode.infinityNotSupported]: BasedParseErrorPayload,
+  [BasedErrorCode.invalidSchemaFormat]: BasedParseErrorPayload,
+  [BasedErrorCode.invalidProperty]: BasedParseErrorPayload,
+
+  [BasedErrorCode.FunctionError]: BasedFunctionError
+  [BasedErrorCode.AuthorizeFunctionError]: BasedFunctionError
+  [BasedErrorCode.NoOservableCacheAvailable]: {
+    observableId: number
+    route: BasedRoute
+  }
+  // [BasedErrorCode.ObservableFunctionError]: BasedErrorPayload
+  [BasedErrorCode.ObserveCallbackError]: {
+    err: Error
+    observableId: number
+    route: BasedRoute
+  }
+  [BasedErrorCode.FunctionNotFound]: BasedErrorPayload
+  // [BasedErrorCode.FunctionIsNotObservable]: BasedErrorPayload // FunctionIsWrongType?
+  // [BasedErrorCode.FunctionIsObservable]: BasedErrorPayload // FunctionIsWrongType?
+  // [BasedErrorCode.FunctionIsStream]: BasedErrorPayload // FunctionIsWrongType?
+  // [BasedErrorCode.CannotStreamToObservableFunction]: BasedErrorPayload
+  [BasedErrorCode.FunctionIsWrongType]: BasedErrorPayload
+  [BasedErrorCode.AuthorizeRejectedError]: BasedErrorPayload
+  [BasedErrorCode.InvalidPayload]: BasedErrorPayload
+  [BasedErrorCode.PayloadTooLarge]: BasedErrorPayload
+  [BasedErrorCode.ChunkTooLarge]: BasedRoute
+  [BasedErrorCode.UnsupportedContentEncoding]: BasedRoute
+  [BasedErrorCode.NoBinaryProtocol]: { buffer: ArrayBuffer }
+  [BasedErrorCode.LengthRequired]: BasedRoute
+  [BasedErrorCode.MethodNotAllowed]: BasedRoute
+  [BasedErrorCode.RateLimit]: {}
+  [BasedErrorCode.MissingAuthStateProtocolHeader]: {}
+  [BasedErrorCode.IncorrectAccessKey]: {}
+  [BasedErrorCode.Block]: {}
 }
 
-export class BasedException extends Error {
-  public code: ParseErrors
-  public payload: any
+export type ErrorHandler<T extends BasedErrorCode> = {
+  statusCode?: number
+  statusMessage?: string
+  message: (payload: ErrorPayload[T]) => string
+}
 
-  constructor(error: BasedError) {
-    super(makeErrorMessage(error))
-    this.code = error.code
-    this.payload = error.payload
+export type BasedErrorData<T extends BasedErrorCode = BasedErrorCode> = {
+  route: BasedRoute
+  message: string
+  code: T
+  statusCode: number
+  statusMessage: string
+  requestId?: number
+  observableId?: number
+  channelId?: number
+}
+
+const addName = (
+  payload: { name: string } & { [key: string]: unknown }
+): string => {
+  return payload.name ? `[${payload.name}] ` : ''
+}
+
+type ErrorType = {
+  [K in BasedErrorCode]: ErrorHandler<K>
+}
+
+export const errorTypeHandlers: ErrorType = {
+  // Parse errors
+  [BasedErrorCode.incorrectFieldType]: {
+    message: (payload) => `[${payload.path.join('.')}] Incorrect field type.`
+  },
+  [BasedErrorCode.incorrectNodeType]: {
+    message: (payload) => `[${payload.path.join('.')}] Incorrect node type.`
+  },
+  [BasedErrorCode.exceedsMaximum]: {
+    message: (payload) => `[${payload.path.join('.')}] Exceeds maximum property.`
+  },
+  [BasedErrorCode.subceedsMinimum]: {
+    message: (payload) => `[${payload.path.join('.')}] Subceeds minimum property.`
+  },
+  [BasedErrorCode.fieldDoesNotExist]: {
+    message: (payload) => `[${payload.path.join('.')}] Field does not exist.`
+  },
+  [BasedErrorCode.incorrectFormat]: {
+    message: (payload) => `[${payload.path.join('.')}] Incorrect format.`
+  },
+  [BasedErrorCode.referenceIsIncorrectType]: {
+    message: (payload) => `[${payload.path.join('.')}] Reference is from incorrect type.`
+  },
+  [BasedErrorCode.valueAndDefault]: {
+    message: (payload) => `[${payload.path.join('.')}] Value and $default are being used at the same time.`
+  },
+  [BasedErrorCode.defaultNotSupported]: {
+    message: (payload) => `[${payload.path.join('.')}] $default is not suported.`
+  },
+  [BasedErrorCode.multipleOperationsNotAllowed]: {
+    message: (payload) => `[${payload.path.join('.')}] Multiple operations are not allowed here.`
+  },
+  [BasedErrorCode.requiredFieldNotDefined]: {
+    message: (payload) => `[${payload.path.join('.')}] Required field is not defined.`
+  },
+  [BasedErrorCode.languageNotSupported]: {
+    message: (payload) => `[${payload.path.join('.')}] Language not supported.`
+  },
+  [BasedErrorCode.invalidJSON]: {
+    message: (payload) => `[${payload.path.join('.')}] Invalid JSON.`
+  },
+  [BasedErrorCode.noLanguageFound]: {
+    message: (payload) => `[${payload.path.join('.')}] No language found.`
+  },
+  [BasedErrorCode.cannotDeleteNodeFromModify]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot delete node from modify.`
+  },
+  [BasedErrorCode.nestedModifyObjectNotAllowed]: {
+    message: (payload) => `[${payload.path.join('.')}] Nested modify object not allowed.`
+  },
+  [BasedErrorCode.infinityNotSupported]: {
+    message: (payload) => `[${payload.path.join('.')}] Infinity not supported.`
+  },
+  [BasedErrorCode.invalidSchemaFormat]: {
+    message: (payload) => `[${payload.path.join('.')}] Invalid schema format.`
+  },
+  [BasedErrorCode.invalidProperty]: {
+    message: (payload) => `[${payload.path.join('.')}] Invalid property.`
+  },
+
+  [BasedErrorCode.FunctionError]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: (payload) => {
+      if (typeof payload.err === 'string' || !payload.err.message) {
+        return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
+      }
+      return (
+        addName(payload.route) +
+        `${payload.err.name && payload.err.name !== 'Error'
+          ? `[${payload.err.name}] `
+          : ''
+        }${payload.err.message || ''}`
+      )
+    },
+  },
+  [BasedErrorCode.AuthorizeFunctionError]: {
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+    message: (payload) => {
+      if (typeof payload.err === 'string' || !payload.err.message) {
+        return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
+      }
+      return (
+        addName(payload.route) +
+        `${payload.err.name && payload.err.name !== 'Error'
+          ? `[${payload.err.name}] `
+          : ''
+        }${payload.err.message || ''}`
+      )
+    },
+  },
+  [BasedErrorCode.NoOservableCacheAvailable]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: (
+      payload: ErrorPayload[BasedErrorCode.NoOservableCacheAvailable]
+    ) =>
+      addName(payload.route) +
+      `No observable cache available${payload.route.name} - ${payload.observableId}`,
+  },
+  // [BasedErrorCode.ObservableFunctionError]
+  [BasedErrorCode.ObserveCallbackError]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: () => {
+      return 'Error in server side observer'
+    },
+  },
+  [BasedErrorCode.FunctionNotFound]: {
+    statusCode: 404,
+    statusMessage: 'Not Found',
+    message: (payload) => {
+      return (
+        addName(payload.route) +
+        `Function not found${payload.route.path ? ` path '${payload.route.path}'` : ''
+        }`
+      )
+    },
+  },
+  // [BasedErrorCode.FunctionIsNotObservable]
+  // [BasedErrorCode.FunctionIsObservable]
+  // [BasedErrorCode.FunctionIsStream]
+  // [BasedErrorCode.CannotStreamToObservableFunction]
+  [BasedErrorCode.FunctionIsWrongType]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect Protocol',
+    message: (payload) => {
+      return addName(payload.route) + 'Target function is of wrong type'
+    },
+  },
+  [BasedErrorCode.AuthorizeRejectedError]: {
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+    message: (payload) => addName(payload.route) + `Authorize rejected access`,
+  },
+  [BasedErrorCode.InvalidPayload]: {
+    statusCode: 400,
+    statusMessage: 'Bad Request',
+    message: (payload) => addName(payload.route) + 'Invalid payload',
+  },
+  [BasedErrorCode.PayloadTooLarge]: {
+    statusCode: 413,
+    statusMessage: 'Payload Too Large',
+    message: (payload) => addName(payload.route) + ' PayloadTooLarge',
+  },
+  [BasedErrorCode.ChunkTooLarge]: {
+    statusCode: 413,
+    statusMessage: 'Payload Too Large',
+    message: (payload) => addName(payload) + 'ChunkTooLarge ' + payload.name,
+  },
+  [BasedErrorCode.UnsupportedContentEncoding]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect content encoding',
+    message: (payload) => addName(payload) + 'Incorrect content encoding',
+  },
+  [BasedErrorCode.NoBinaryProtocol]: {
+    statusCode: 400,
+    statusMessage: 'Protocol mismatch',
+    message: () => 'Please upgrade to the latest based client',
+  },
+  [BasedErrorCode.LengthRequired]: {
+    statusCode: 411,
+    statusMessage: 'Length Required',
+    message: (payload) => addName(payload) + 'Length Required',
+  },
+  [BasedErrorCode.MethodNotAllowed]: {
+    statusCode: 405,
+    statusMessage: 'Method Not Allowed',
+    message: (payload) => addName(payload) + 'Method Not Allowed',
+  },
+  [BasedErrorCode.RateLimit]: {
+    statusCode: 429,
+    statusMessage: 'Rate limit',
+    message: () => 'rate limt',
+  },
+  [BasedErrorCode.MissingAuthStateProtocolHeader]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: () => '',
+  },
+  [BasedErrorCode.IncorrectAccessKey]: {
+    statusCode: 429,
+    statusMessage: 'Rate limit',
+    message: () => 'rate limt',
+  },
+  [BasedErrorCode.Block]: {
+    statusCode: 429,
+    statusMessage: 'Blocked ip',
+    message: () => 'Blocked ip',
+  },
+}
+
+export const EMPTY_ROUTE: BasedRoute = {
+  name: 'no-route',
+  path: '',
+  type: 'function',
+}
+
+function isServerError(
+  payload: {} | BasedErrorPayload | BasedParseErrorPayload
+): payload is BasedErrorPayload {
+  return (payload as BasedErrorPayload).route !== undefined
+}
+
+export function createErrorData<T extends BasedErrorCode>(
+  code: T,
+  payload: ErrorPayload[T]
+) {
+  const type = errorTypeHandlers[code]
+  const route = !payload
+    ? EMPTY_ROUTE
+    : isAnyBasedRoute(payload)
+      ? payload
+      : 'route' in payload
+        ? payload.route
+        : EMPTY_ROUTE
+
+  return {
+    code,
+    message: type.message(payload),
+    ...(isServerError(payload) ? {
+      statusCode: type.statusCode,
+      statusMessage: type.statusMessage,
+      route: {
+        name: route.name,
+        path: route.path,
+        type: route.type,
+      },
+    } : null)
   }
 }
 
-export const makeException = (error: BasedError) => new BasedException(error)
+// export const errorDescriptions: {
+//   [BasedErrorCode.PrefixAlreadyInUse]: (payload) =>
+//     `Prefix${payload?.prefix ? ` ${payload.prefix}` : ''} is already in use.`,
+// }
+// export const makeException = (error: BasedError) => new BasedException(error)
