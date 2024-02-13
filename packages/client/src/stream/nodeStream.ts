@@ -108,13 +108,10 @@ export const uploadFileStream = async (
 
   // also add kb / sec as measure
 
-  let lastIncoming = 0
-  let lastDiff = 0
-
   const wr = new Writable({
     write: function (c, encoding, next) {
       if (c.byteLength > maxSize) {
-        console.log('LARGER THEN MAX SIZE HANDLE!')
+        console.log('LARGER THEN MAX SIZE HANDLE!', c.byteLength, maxSize)
       }
 
       bufferSize += c.byteLength
@@ -154,8 +151,6 @@ export const uploadFileStream = async (
         // sHandler[2] = cb
 
         if (seqId > 0) {
-          lastIncoming = Date.now()
-          lastDiff = 0
           sHandler[2] = cb
         } else {
           // start

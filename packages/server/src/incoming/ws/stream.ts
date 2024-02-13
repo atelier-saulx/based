@@ -212,7 +212,7 @@ export const receiveChunkStream: BinaryMessageHandler = (
     sendError(server, ctx, BasedErrorCode.FunctionError, {
       route: sRoute,
       streamRequestId: reqId,
-      err: `SeqId out of current seq ${seqId} prev seq ${streamPayload.seqId}`,
+      err: `SeqId out of order: ${seqId} prev seq ${streamPayload.seqId}`,
     })
     return true
   }
@@ -226,7 +226,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   if (streamPayload.stream.paused) {
     streamPayload.stream.once('resume', () => {
       if (!ctx.session) {
-        delete ctx.session.streams?.[reqId]
         streamPayload.stream.destroy()
         return false
       }
