@@ -10,6 +10,16 @@ export const mustBeString = (value: string, path: string[]) =>
         },
       ]
 
+export const mustBeArray = (value: string[], path: string[]) =>
+  Array.isArray(value)
+    ? []
+    : [
+        {
+          code: ParseError.incorrectFormat,
+          path,
+        },
+      ]
+
 export const mustBeStringArray = (value: string[], path: string[]) =>
   Array.isArray(value) && value.every((i) => typeof i === 'string')
     ? []

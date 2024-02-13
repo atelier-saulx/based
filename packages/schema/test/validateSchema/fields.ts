@@ -430,3 +430,93 @@ test('arrays', async (t) => {
     }
   )
 })
+
+test('enum', async (t) => {
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          enumField: {
+            enum: ['one', 'two'],
+          },
+        },
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          enumField: {
+            enum: [1, 2],
+          },
+        },
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          enumField: {
+            enum: [{ one: 'one' }, { two: 'two' }],
+          },
+        },
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          enumField: {
+            // @ts-ignore
+            enum: 'invalidEnum',
+          },
+        },
+      },
+    }),
+    {
+      errors: [
+        {
+          code: ParseError.incorrectFormat,
+          path: ['root', 'fields', 'enumField', 'enum'],
+        },
+      ],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          enumField: {
+            enum: ['one', 'two'],
+            // @ts-ignore
+            invalidProperty: 'invalid',
+          },
+        },
+      },
+    }),
+    {
+      errors: [
+        {
+          code: ParseError.invalidProperty,
+          path: ['root', 'fields', 'enumField', 'invalidProperty'],
+        },
+      ],
+    }
+  )
+})
