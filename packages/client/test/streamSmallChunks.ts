@@ -25,11 +25,11 @@ test('stream small chunks', async (t: T) => {
           fn: async (_, { stream, payload }) => {
             const x = await readStream(stream, {
               throttle: 10,
-              maxCunkSize: 100000,
+              maxCunkSize: 10000,
             })
             const y = new TextDecoder().decode(x)
             const len = JSON.parse(y).length
-            return len
+            return { payload, len }
           },
         },
       },
@@ -42,7 +42,7 @@ test('stream small chunks', async (t: T) => {
     url: async () => t.context.ws,
   })
 
-  const len = 1000000
+  const len = 100000
   const bigBod: any[] = []
   for (let i = 0; i < len; i++) {
     bigBod.push({ flap: 'snurp', i })
@@ -74,7 +74,8 @@ test('stream small chunks', async (t: T) => {
         console.log('PROGRESS', Math.round(p * 100), '%')
       }
     )
-    t.is(result, len)
+    t.deepEqual(result.payload, { power: true })
+    t.is(result.len, len)
   } catch (err) {
     console.error(err)
     t.fail('Should not error in fn')
