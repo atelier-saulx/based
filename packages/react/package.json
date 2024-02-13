@@ -1,6 +1,6 @@
 {
   "name": "@based/react",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
