@@ -88,6 +88,9 @@ export const uploadFileStream = async (
 
   let sHandler
 
+  // time spend (do smaller chunks if takes long)
+  // split chunks
+
   const wr = new Writable({
     write: function (c, encoding, next) {
       if (totalHandler === options.size) {
@@ -95,11 +98,11 @@ export const uploadFileStream = async (
         return
       }
 
-      if (progressListener && totalHandler === 0 && bufferSize === 0) {
-        progressListener(0)
-      }
-
       bufferSize += c.byteLength
+
+      // handle encoding?
+      // console.info(encoding)
+
       chunks.push(c)
 
       // keep them smaller then max size as well (now 1 mb min only)
