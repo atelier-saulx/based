@@ -16,9 +16,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-// const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-
-test('stream new', async (t: T) => {
+test('stream small chunks', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
@@ -37,8 +35,8 @@ test('stream new', async (t: T) => {
             })
             const x = await readStream(stream)
             const y = new TextDecoder().decode(x)
-            console.log('received', JSON.parse(y).length, 'things')
-            return payload
+            const len = JSON.parse(y).length
+            return len
           },
         },
       },
@@ -50,8 +48,11 @@ test('stream new', async (t: T) => {
     url: async () => t.context.ws,
   })
 
+  const len = 1000000
+
   const bigBod: any[] = []
-  for (let i = 0; i < 1000000; i++) {
+
+  for (let i = 0; i < len; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
 
@@ -83,14 +84,14 @@ test('stream new', async (t: T) => {
   streamBits()
 
   // deflate as option ? e.g. for videos bit unnsecary
-  const s = await client.streamNew('hello', {
+  const result = await client.streamNew('hello', {
     payload: { power: true },
     size: payload.byteLength,
     mimeType: 'pipo',
     contents: stream,
   })
 
-  console.log('GO RESULT!', s)
+  t.is(result, len)
 
   // cycles of 3 secs
   client.disconnect()
