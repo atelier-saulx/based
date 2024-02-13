@@ -198,7 +198,7 @@ test('stream functions - streamContents error', async (t: T) => {
   await server.destroy()
 })
 
-test.only('stream functions - path', async (t: T) => {
+test('stream functions - path', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
