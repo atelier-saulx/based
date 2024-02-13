@@ -28,17 +28,17 @@ export enum BasedErrorCode {
   invalidSchemaFormat = 1017,
   invalidProperty = 1018,
 
-  // client errors
+  // client/server errors
   FunctionError = 50001,
   AuthorizeFunctionError = 50002,
   NoOservableCacheAvailable = 50003,
-  // ObservableFunctionError = 50004,
+  ObservableFunctionError = 50004,
   ObserveCallbackError = 50005,
   FunctionNotFound = 40401,
-  // FunctionIsNotObservable = 40402,
-  // FunctionIsObservable = 40403,
-  // FunctionIsStream = 40404,
-  // CannotStreamToObservableFunction = 40405,
+  FunctionIsNotObservable = 40402,
+  FunctionIsObservable = 40403,
+  FunctionIsStream = 40404,
+  CannotStreamToObservableFunction = 40405,
   FunctionIsWrongType = 40406, // was 40402 in server
   AuthorizeRejectedError = 40301,
   InvalidPayload = 40001,
@@ -126,17 +126,17 @@ export type ErrorPayload = {
     observableId: number
     route: BasedRoute
   }
-  // [BasedErrorCode.ObservableFunctionError]: BasedErrorPayload
+  [BasedErrorCode.ObservableFunctionError]: BasedFunctionError
   [BasedErrorCode.ObserveCallbackError]: {
     err: Error
     observableId: number
     route: BasedRoute
   }
   [BasedErrorCode.FunctionNotFound]: BasedErrorPayload
-  // [BasedErrorCode.FunctionIsNotObservable]: BasedErrorPayload // FunctionIsWrongType?
-  // [BasedErrorCode.FunctionIsObservable]: BasedErrorPayload // FunctionIsWrongType?
-  // [BasedErrorCode.FunctionIsStream]: BasedErrorPayload // FunctionIsWrongType?
-  // [BasedErrorCode.CannotStreamToObservableFunction]: BasedErrorPayload
+  [BasedErrorCode.FunctionIsNotObservable]: BasedErrorPayload // FunctionIsWrongType?
+  [BasedErrorCode.FunctionIsObservable]: BasedErrorPayload // FunctionIsWrongType?
+  [BasedErrorCode.FunctionIsStream]: BasedErrorPayload // FunctionIsWrongType?
+  [BasedErrorCode.CannotStreamToObservableFunction]: BasedErrorPayload
   [BasedErrorCode.FunctionIsWrongType]: BasedErrorPayload
   [BasedErrorCode.AuthorizeRejectedError]: BasedErrorPayload
   [BasedErrorCode.InvalidPayload]: BasedErrorPayload
@@ -251,7 +251,7 @@ export const errorTypeHandlers: ErrorType = {
         `${payload.err.name && payload.err.name !== 'Error'
           ? `[${payload.err.name}] `
           : ''
-        }${payload.err.message || ''}`
+        }${payload.err.message || ''}.`
       )
     },
   },
@@ -267,7 +267,7 @@ export const errorTypeHandlers: ErrorType = {
         `${payload.err.name && payload.err.name !== 'Error'
           ? `[${payload.err.name}] `
           : ''
-        }${payload.err.message || ''}`
+        }${payload.err.message || ''}.`
       )
     },
   },
@@ -278,14 +278,29 @@ export const errorTypeHandlers: ErrorType = {
       payload: ErrorPayload[BasedErrorCode.NoOservableCacheAvailable]
     ) =>
       addName(payload.route) +
-      `No observable cache available${payload.route.name} - ${payload.observableId}`,
+      `No observable cache available${payload.route.name} - ${payload.observableId}.`,
   },
-  // [BasedErrorCode.ObservableFunctionError]
+  [BasedErrorCode.ObservableFunctionError]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: (payload) => {
+      if (typeof payload.err === 'string' || !payload.err.message) {
+        return `[${payload.route.name} (observable)] ${JSON.stringify(payload.err)}.`
+      }
+      return (
+        addName(payload.route) +
+        `${payload.err.name && payload.err.name !== 'Error'
+          ? `[${payload.err.name}] `
+          : ''
+        }${payload.err.message || ''}.`
+      )
+    },
+  },
   [BasedErrorCode.ObserveCallbackError]: {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
     message: () => {
-      return 'Error in server side observer'
+      return 'Error in server side observer.'
     },
   },
   [BasedErrorCode.FunctionNotFound]: {
@@ -295,65 +310,89 @@ export const errorTypeHandlers: ErrorType = {
       return (
         addName(payload.route) +
         `Function not found${payload.route.path ? ` path '${payload.route.path}'` : ''
-        }`
+        }.`
       )
     },
   },
-  // [BasedErrorCode.FunctionIsNotObservable]
-  // [BasedErrorCode.FunctionIsObservable]
-  // [BasedErrorCode.FunctionIsStream]
-  // [BasedErrorCode.CannotStreamToObservableFunction]
+  [BasedErrorCode.FunctionIsNotObservable]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect Protocol',
+    message: (payload) => {
+      return addName(payload.route) + 'Target function is not observable.'
+    },
+  },
+  [BasedErrorCode.FunctionIsObservable]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect Protocol',
+    message: (payload) => {
+      return addName(payload.route) + 'Target function is observable.'
+    },
+  },
+  [BasedErrorCode.FunctionIsStream]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect Protocol',
+    message: (payload) => {
+      return addName(payload.route) + 'Target function is stream.'
+    },
+  },
+  [BasedErrorCode.CannotStreamToObservableFunction]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect Protocol',
+    message: (payload) => {
+      return addName(payload.route) + 'Cannot stream to observable function.'
+    },
+  },
   [BasedErrorCode.FunctionIsWrongType]: {
     statusCode: 400,
     statusMessage: 'Incorrect Protocol',
     message: (payload) => {
-      return addName(payload.route) + 'Target function is of wrong type'
+      return addName(payload.route) + 'Target function is of wrong type.'
     },
   },
   [BasedErrorCode.AuthorizeRejectedError]: {
     statusCode: 403,
     statusMessage: 'Forbidden',
-    message: (payload) => addName(payload.route) + `Authorize rejected access`,
+    message: (payload) => addName(payload.route) + `Authorize rejected access.`,
   },
   [BasedErrorCode.InvalidPayload]: {
     statusCode: 400,
     statusMessage: 'Bad Request',
-    message: (payload) => addName(payload.route) + 'Invalid payload',
+    message: (payload) => addName(payload.route) + 'Invalid payload.',
   },
   [BasedErrorCode.PayloadTooLarge]: {
     statusCode: 413,
     statusMessage: 'Payload Too Large',
-    message: (payload) => addName(payload.route) + ' PayloadTooLarge',
+    message: (payload) => addName(payload.route) + ' PayloadTooLarge.',
   },
   [BasedErrorCode.ChunkTooLarge]: {
     statusCode: 413,
     statusMessage: 'Payload Too Large',
-    message: (payload) => addName(payload) + 'ChunkTooLarge ' + payload.name,
+    message: (payload) => addName(payload) + 'ChunkTooLarge ' + payload.name + '.',
   },
   [BasedErrorCode.UnsupportedContentEncoding]: {
     statusCode: 400,
     statusMessage: 'Incorrect content encoding',
-    message: (payload) => addName(payload) + 'Incorrect content encoding',
+    message: (payload) => addName(payload) + 'Incorrect content encoding.',
   },
   [BasedErrorCode.NoBinaryProtocol]: {
     statusCode: 400,
     statusMessage: 'Protocol mismatch',
-    message: () => 'Please upgrade to the latest based client',
+    message: () => 'Please upgrade to the latest based client.',
   },
   [BasedErrorCode.LengthRequired]: {
     statusCode: 411,
     statusMessage: 'Length Required',
-    message: (payload) => addName(payload) + 'Length Required',
+    message: (payload) => addName(payload) + 'Length Required.',
   },
   [BasedErrorCode.MethodNotAllowed]: {
     statusCode: 405,
     statusMessage: 'Method Not Allowed',
-    message: (payload) => addName(payload) + 'Method Not Allowed',
+    message: (payload) => addName(payload) + 'Method Not Allowed.',
   },
   [BasedErrorCode.RateLimit]: {
     statusCode: 429,
     statusMessage: 'Rate limit',
-    message: () => 'rate limt',
+    message: () => 'Rate limit.',
   },
   [BasedErrorCode.MissingAuthStateProtocolHeader]: {
     statusCode: 500,
@@ -363,12 +402,12 @@ export const errorTypeHandlers: ErrorType = {
   [BasedErrorCode.IncorrectAccessKey]: {
     statusCode: 429,
     statusMessage: 'Rate limit',
-    message: () => 'rate limt',
+    message: () => 'Rate limit.',
   },
   [BasedErrorCode.Block]: {
     statusCode: 429,
     statusMessage: 'Blocked ip',
-    message: () => 'Blocked ip',
+    message: () => 'Blocked ip.',
   },
 }
 
