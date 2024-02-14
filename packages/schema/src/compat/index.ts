@@ -33,7 +33,9 @@ const convertNewToOldMeta = (props) => {
     if (i[0] !== '$') {
       const v = props[i]
       meta ??= {}
-      if (i === 'display' && v === 'bytes') {
+      if (i === 'allowedTypes') {
+        meta.refTypes = v
+      } else if (i === 'display' && v === 'bytes') {
         meta.format = v
       } else if (i === 'title') {
         meta.name = v
@@ -49,7 +51,9 @@ const convertOldToNewMeta = (props) => {
   const meta: any = {}
   for (const i in props) {
     const v = props[i]
-    if (i === 'format' && v === 'bytes') {
+    if (i === 'refTypes') {
+      meta.allowedTypes = v
+    } else if (i === 'format' && v === 'bytes') {
       meta.display = 'bytes'
     } else if (i === 'name') {
       meta.title = v

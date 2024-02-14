@@ -31,6 +31,31 @@ const addStandardMetaToOld = (obj) => {
   }
 }
 
+test('refTypes', async (t) => {
+  const newSchema = convertOldToNew({
+    types: {
+      youzi: {
+        fields: {
+          image: {
+            type: 'reference',
+            meta: {
+              refTypes: ['youzi'],
+            },
+          },
+        },
+      },
+    },
+  })
+
+  // @ts-ignore
+  t.is(newSchema.types.youzi.fields.image.allowedTypes[0], 'youzi')
+
+  const oldSchema = convertNewToOld(newSchema)
+
+  // @ts-ignore
+  t.is(oldSchema.types.youzi.fields.image.meta.refTypes[0], 'youzi')
+})
+
 test('old schema compat mode', async (t) => {
   for (let i = 0; i < oldSchemas.length - 1; i++) {
     const oldSchema = oldSchemas[i]
