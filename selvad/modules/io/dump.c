@@ -158,31 +158,51 @@ static void print_ready(const char * restrict msg, struct timespec * restrict ts
 {
     struct timespec ts_diff;
     double t;
-    const char *unit;
+    const char *t_unit;
 
     timespec_sub(&ts_diff, ts_end, ts_start);
     t = timespec2ms(&ts_diff);
 
     if (t < 1e3) {
-        unit = "ms";
+        t_unit = "ms";
     } else if (t < 60e3) {
         t /= 1e3;
-        unit = "s";
+        t_unit = "s";
     } else if (t < 3.6e6) {
         t /= 60e3;
-        unit = "min";
+        t_unit = "min";
     } else {
         t /= 3.6e6;
-        unit = "h";
+        t_unit = "h";
     }
 
     if (selva_db_dump_state == SELVA_DB_DUMP_IS_CHILD) {
         struct selva_rusage rusage;
+        size_t maxrss;
+        const char *rss_unit;
 
         selva_getrusage(SELVA_RUSAGE_SELF, &rusage);
-        SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s, maxrss: %zu bytes", msg, t, unit, (size_t)rusage.ru_maxrss);
+        maxrss = rusage.ru_maxrss / 1024;
+        rss_unit = "kB";
+        if (maxrss > 1024) {
+            maxrss /= 1024;
+            rss_unit = "MB";
+        }
+        if (maxrss > 1024) {
+            maxrss /= 1024;
+            rss_unit = "GB";
+        }
+        if (maxrss > 1024) {
+            maxrss /= 1024;
+            rss_unit = "TB";
+        }
+
+        SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s, maxrss: %zu %s",
+                  msg,
+                  t, t_unit,
+                  maxrss, rss_unit);
     } else {
-        SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s", msg, t, unit);
+        SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s", msg, t, t_unit);
     }
 }
 

@@ -1034,16 +1034,20 @@ static void rusage_res(const struct cmd *, const void *msg, size_t msg_size)
             memcpy(&rusage, (char *)msg + i - data_len, data_len);
             /* TODO endianness */
 
-            char unit[3] = "kB";
+            const char *unit = "kB";
             unsigned long long maxrss = rusage.ru_maxrss / 1024;
 
             if (maxrss > 1024) {
                 maxrss /= 1024;
-                strcpy(unit, "MB");
+                unit = "MB";
             }
             if (maxrss > 1024) {
                 maxrss /= 1024;
-                strcpy(unit, "GB");
+                unit = "GB";
+            }
+            if (maxrss > 1024) {
+                maxrss /= 1024;
+                unit = "TB";
             }
 
             printf("utime: %lld s stime: %lld s max_rss: %llu %s\n",
