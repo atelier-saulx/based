@@ -48,7 +48,13 @@ export enum BasedErrorCode {
   Block = 90001,
 
   // Mutation error
-  // PrefixAlreadyInUse = 2000,
+  PrefixAlreadyInUse = 2000,
+  CannotChangeFieldInStrictMode = 2001,
+  CannotRemoveFieldInStrictMode = 2002,
+  CannotMutateWithExistingData = 2003,
+  CannotDeleteRoot = 2004,
+  CannotChangeDefaultField = 2005,
+  CannotRemoveLastProperty = 2006
 }
 
 type BasedParseErrorPayload = {
@@ -144,6 +150,14 @@ export type ErrorPayload = {
   [BasedErrorCode.MissingAuthStateProtocolHeader]: {}
   [BasedErrorCode.IncorrectAccessKey]: {}
   [BasedErrorCode.Block]: {}
+
+  [BasedErrorCode.PrefixAlreadyInUse]: BasedParseErrorPayload,
+  [BasedErrorCode.CannotChangeFieldInStrictMode]: BasedParseErrorPayload,
+  [BasedErrorCode.CannotRemoveFieldInStrictMode]: BasedParseErrorPayload,
+  [BasedErrorCode.CannotMutateWithExistingData]: BasedParseErrorPayload,
+  [BasedErrorCode.CannotDeleteRoot]: BasedParseErrorPayload,
+  [BasedErrorCode.CannotChangeDefaultField]: BasedParseErrorPayload,
+  [BasedErrorCode.CannotRemoveLastProperty]: BasedParseErrorPayload,
 }
 
 export type ErrorHandler<T extends BasedErrorCode> = {
@@ -402,6 +416,28 @@ export const errorTypeHandlers: ErrorType = {
     statusCode: 429,
     statusMessage: 'Blocked ip',
     message: () => 'Blocked ip.',
+  },
+
+  [BasedErrorCode.PrefixAlreadyInUse]: {
+    message: (payload) => `[${payload.path.join('.')}] Prefix already in use.`
+  },
+  [BasedErrorCode.CannotChangeFieldInStrictMode]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot change field in strict mode.`
+  },
+  [BasedErrorCode.CannotRemoveFieldInStrictMode]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot remove field in strict mode.`
+  },
+  [BasedErrorCode.CannotMutateWithExistingData]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot mutate with existing data.`
+  },
+  [BasedErrorCode.CannotDeleteRoot]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot delete root.`
+  },
+  [BasedErrorCode.CannotChangeDefaultField]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot change default field.`
+  },
+  [BasedErrorCode.CannotRemoveLastProperty]: {
+    message: (payload) => `[${payload.path.join('.')}] Cannot remove last property.`
   },
 }
 
