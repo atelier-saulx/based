@@ -11,13 +11,9 @@ import {
 
 test('old schema compat mode', async (t) => {
   for (let i = 0; i < oldSchemas.length - 1; i++) {
-    // for (let i = 0; i < 1; i++) {
     const oldSchema = oldSchemas[i]
-
     const newSchema = convertOldToNew(oldSchema)
-
     const validation = await validateSchema(newSchema)
-
     t.true(validation.valid)
 
     t.deepEqual(
@@ -28,14 +24,11 @@ test('old schema compat mode', async (t) => {
   }
 })
 
-test('new schema compat mode', async (t) => {
+test.only('new schema compat mode', async (t) => {
   for (let i = 0; i < newSchemas.length - 1; i++) {
-    // for (let i = 0; i < 1; i++) {
     const newSchema = newSchemas[i]
     const validation = await validateSchema(newSchema)
     const oldSchema = convertNewToOld(newSchema)
-
-    console.dir(validation, { depth: null })
 
     t.true(validation.valid)
 

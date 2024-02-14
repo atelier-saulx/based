@@ -44,7 +44,7 @@ const FIELD_PARSERS: Record<
     fieldSchema: BasedSchemaFieldArray
   ) => {
     const res = ary.map((x) => {
-      return parseFieldResult(ctx, fieldSchema.values, cmd, x)
+      return parseFieldResult(ctx, fieldSchema.items, cmd, x)
     })
 
     if (!res.length) {

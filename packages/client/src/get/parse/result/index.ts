@@ -115,7 +115,7 @@ function parseResultRows(
 
       schema = {
         type: 'object',
-        properties: (<BasedSchemaFieldObject>fieldSchema?.values)?.properties,
+        properties: (<BasedSchemaFieldObject>fieldSchema?.items)?.properties,
       }
     } else {
       schema = { type: 'object', properties: getTypeSchema(rowCtx, id)?.fields }

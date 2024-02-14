@@ -22,7 +22,7 @@ const schema: BasedSchemaPartial = {
         title: { type: 'text' },
         ary: {
           type: 'array',
-          values: {
+          items: {
             type: 'object',
             properties: {
               title: { type: 'text' },
@@ -38,14 +38,14 @@ const schema: BasedSchemaPartial = {
               },
               intAry: {
                 type: 'array',
-                values: { type: 'integer' },
+                items: { type: 'integer' },
               },
             },
           },
         },
         intAry: {
           type: 'array',
-          values: { type: 'integer' },
+          items: { type: 'integer' },
         },
       },
     },

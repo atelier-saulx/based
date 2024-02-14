@@ -272,7 +272,7 @@ export type BasedSchemaFieldRecord = {
 
 export type BasedSchemaFieldArray = {
   type: 'array'
-  values: BasedSchemaField
+  items: BasedSchemaField
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldSet = {

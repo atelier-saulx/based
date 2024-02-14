@@ -146,13 +146,13 @@ const onlyAllowedFieldTypes: MutationRule = (
 
     if (
       field.type === 'array' &&
-      (!(field as BasedSchemaFieldArray).values ||
-        !(field as BasedSchemaFieldArray).values.type)
+      (!(field as BasedSchemaFieldArray).items ||
+        !(field as BasedSchemaFieldArray).items.type)
     ) {
       throw new Error(
         `Field "${mutation.type}.${path.join(
           '.'
-        )}" is of type "array" but does not include a valid "values" property.`
+        )}" is of type "array" but does not include a valid "items" property.`
       )
     } else if (
       field.type === 'record' &&
@@ -196,7 +196,7 @@ const onlyAllowedArrayProperties: MutationRule = (
     if (field.type === 'array') {
       const keys = Object.keys(field)
       for (const k of keys) {
-        if (!(k === 'type' || k === 'values')) {
+        if (!(k === 'type' || k === 'items')) {
           throw new Error(
             `Invalid property "${k}" for array definition on "${
               mutation.type

@@ -380,7 +380,7 @@ test('arrays', async (t) => {
         fields: {
           arrayField: {
             type: 'array',
-            values: {
+            items: {
               type: 'string',
             },
           },
@@ -398,7 +398,7 @@ test('arrays', async (t) => {
         fields: {
           arrayField: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 aWrongObjectField: {

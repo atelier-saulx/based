@@ -39,7 +39,7 @@ test.beforeEach(async (t) => {
         fields: {
           level1array: {
             type: 'array',
-            values: { type: 'string' },
+            items: { type: 'string' },
           },
         },
       },
@@ -187,7 +187,7 @@ test('Change set field in flexible mode without existing nodes should fail', asy
   let newSchema = client.schema
   t.is(
     (newSchema.types['aType'].fields['level1array'] as BasedSchemaFieldArray)
-      .values.type,
+      .items.type,
     'number'
   )
 

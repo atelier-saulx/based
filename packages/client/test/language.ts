@@ -44,7 +44,7 @@ test.beforeEach(async (t) => {
           },
           randoArray: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 title: { type: 'text' },
@@ -90,7 +90,7 @@ test('language in all types of objects', async (t) => {
             },
             randoArray: {
               type: 'array',
-              values: {
+              items: {
                 type: 'object',
                 properties: {
                   title: { type: 'text' },

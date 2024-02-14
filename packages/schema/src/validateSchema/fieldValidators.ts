@@ -422,7 +422,7 @@ export const basedSchemaFieldRecordValidator: Validator<BasedSchemaFieldRecord> 
 export const basedSchemaFieldArrayValidator: Validator<BasedSchemaFieldArray> =
   {
     ...basedSchemaFieldSharedValidator,
-    values: {
+    items: {
       validator: mustBeField,
     },
   }

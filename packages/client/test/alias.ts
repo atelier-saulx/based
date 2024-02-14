@@ -58,7 +58,7 @@ test.beforeEach(async (t) => {
             },
           },
           dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
+          dingdongs: { type: 'array', items: { type: 'string' } },
           refs: { type: 'references' },
           value: { type: 'number' },
           age: { type: 'number' },

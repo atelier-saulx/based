@@ -14,7 +14,7 @@ type FieldType =
   | 'type'
   | 'timestamp'
 
-type FieldSchemaObject = {
+export type FieldSchemaObject = {
   type: 'object'
   properties: {
     [key: string]: FieldSchema
@@ -54,14 +54,14 @@ type FieldSchemaOther = {
   timeseries?: boolean
 }
 
-type FieldSchemaArrayLike = {
+export type FieldSchemaArrayLike = {
   type: 'set' | 'array'
   items: FieldSchema
   meta?: any
   timeseries?: boolean
 }
 
-type FieldSchema =
+export type FieldSchema =
   | FieldSchemaObject
   | FieldSchemaRecord
   | FieldSchemaArrayLike
@@ -83,7 +83,7 @@ type FieldInputSchemaRecord = {
   timeseries?: boolean
 }
 
-type FieldInputSchemaObject = {
+export type FieldInputSchemaObject = {
   type: 'object'
   properties: {
     [key: string]: FieldInputSchema
@@ -114,7 +114,7 @@ type HierarchySchema =
         | { includeAncestryWith: string[] }
     }
 
-type TypeSchema = {
+export type TypeSchema = {
   prefix?: string
   hierarchy?: HierarchySchema
   fields?: Fields

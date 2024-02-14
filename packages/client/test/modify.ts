@@ -173,12 +173,12 @@ test.beforeEach(async (t) => {
             values: {
               type: 'object',
               properties: {
-                floatArray: { type: 'array', values: { type: 'number' } },
-                intArray: { type: 'array', values: { type: 'integer' } },
-                strArray: { type: 'array', values: { type: 'string' } },
+                floatArray: { type: 'array', items: { type: 'number' } },
+                intArray: { type: 'array', items: { type: 'integer' } },
+                strArray: { type: 'array', items: { type: 'string' } },
                 objArray: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       hello: { type: 'string' },
@@ -188,7 +188,7 @@ test.beforeEach(async (t) => {
                 },
                 nestedObjArray: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       hello: { type: 'string' },
@@ -253,9 +253,9 @@ test.beforeEach(async (t) => {
             },
           },
           dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
-          floatArray: { type: 'array', values: { type: 'number' } },
-          intArray: { type: 'array', values: { type: 'integer' } },
+          dingdongs: { type: 'array', items: { type: 'string' } },
+          floatArray: { type: 'array', items: { type: 'number' } },
+          intArray: { type: 'array', items: { type: 'integer' } },
           refs: { type: 'references' },
           value: { type: 'number' },
           age: { type: 'number' },
@@ -856,7 +856,7 @@ test('array, json and set', async (t) => {
           },
           flap: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 gurk: { type: 'string' },

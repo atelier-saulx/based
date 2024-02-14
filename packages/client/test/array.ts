@@ -36,7 +36,7 @@ test.beforeEach(async (t) => {
         fields: {
           formFields: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 title: { type: 'text' },
@@ -50,7 +50,7 @@ test.beforeEach(async (t) => {
         fields: {
           media: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 src: { type: 'string' },

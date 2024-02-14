@@ -102,25 +102,25 @@ test.beforeEach(async (t) => {
           },
           stringAry: {
             type: 'array',
-            values: {
+            items: {
               type: 'string',
             },
           },
           intAry: {
             type: 'array',
-            values: {
+            items: {
               type: 'integer',
             },
           },
           doubleAry: {
             type: 'array',
-            values: {
+            items: {
               type: 'number',
             },
           },
           objAry: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 textyText: {

@@ -269,7 +269,7 @@ test('find - traverse expression with records', async (t) => {
           name: { type: 'string' },
           revisions: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 version: { type: 'string' },

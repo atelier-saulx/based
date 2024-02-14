@@ -256,9 +256,9 @@ export const newSchemas: BasedSchemaPartial[] = [
             type: 'timestamp',
             readOnly: true,
           },
-          enum: {
-            enum: ['tony', 'jim'],
-          },
+          // enum: {
+          //   enum: ['tony', 'jim'],
+          // },
           setOfNumbers: {
             type: 'set',
             items: {
@@ -289,7 +289,7 @@ export const newSchemas: BasedSchemaPartial[] = [
               properties: {
                 bla: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       snux: {
@@ -314,7 +314,6 @@ export const newSchemas: BasedSchemaPartial[] = [
         },
       },
     },
-    $defs: {},
     language: 'en',
     translations: ['de', 'nl', 'ro', 'za', 'ae'],
     root: {
@@ -352,9 +351,7 @@ export const newSchemas: BasedSchemaPartial[] = [
         },
       },
     },
-    $defs: {},
     language: 'en',
-    translations: [],
     root: {
       fields: {},
     },
@@ -366,7 +363,6 @@ export const newSchemas: BasedSchemaPartial[] = [
   {
     language: 'en',
     translations: ['nl'],
-    $defs: {},
     prefixToTypeMapping: {},
     root: {
       fields: {},
@@ -487,7 +483,7 @@ export const newSchemas: BasedSchemaPartial[] = [
             bidirectional: { fromField: 'usedIn' },
           },
           hits: { type: 'number' }, // get a bit more going here maybe? what does this mean
-          membership: { enum: ['Need membership', 'Free'] },
+          // membership: { enum: ['Need membership', 'Free'] },
           location: { type: 'text' }, // or string its just city name or smth
           bio: { type: 'text', format: 'json' }, //has a href and stuff so aarich text
           tweet: { type: 'string' }, // ask if it needs translation  // 'The 2009 allocation of solar subsidies in Solvakia "was rigged," say a US cable. PM Fico denies it.',

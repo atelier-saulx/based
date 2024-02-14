@@ -20,7 +20,7 @@ export function arrayOpToModify(props: {
   const { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
-  const valSchema = (<BasedSchemaFieldArray>fieldSchema).values
+  const valSchema = (<BasedSchemaFieldArray>fieldSchema).items
   const valType = DB_TYPE_TO_ARY_TYPE[valSchema.type]
 
   const iPath = [...path]

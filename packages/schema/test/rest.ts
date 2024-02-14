@@ -47,7 +47,7 @@ const schema: BasedSchema = {
             properties: {
               bla: {
                 type: 'array',
-                values: {
+                items: {
                   type: 'object',
                   properties: {
                     snux: {

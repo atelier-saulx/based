@@ -24,7 +24,7 @@
     ]
   },
   "dependencies": {
-    "@based/db-client": "^2.0.1"
+    "@based/db-client": "^3.0.0"
   },
   "devDependencies": {
     "@based/db-server": "*",

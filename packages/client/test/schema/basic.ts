@@ -49,11 +49,11 @@ const startingSchema: BasedSchemaPartial = {
           values: {
             type: 'object',
             properties: {
-              floatArray: { type: 'array', values: { type: 'number' } },
-              intArray: { type: 'array', values: { type: 'integer' } },
+              floatArray: { type: 'array', items: { type: 'number' } },
+              intArray: { type: 'array', items: { type: 'integer' } },
               objArray: {
                 type: 'array',
-                values: {
+                items: {
                   type: 'object',
                   properties: {
                     hello: { type: 'string' },
@@ -112,10 +112,10 @@ const startingSchema: BasedSchemaPartial = {
           },
         },
         dong: { type: 'json' },
-        dingdongs: { type: 'array', values: { type: 'string' } },
-        floatArray: { type: 'array', values: { type: 'number' } },
-        intArray: { type: 'array', values: { type: 'integer' } },
-        tsArray: { type: 'array', values: { type: 'timestamp' } },
+        dingdongs: { type: 'array', items: { type: 'string' } },
+        floatArray: { type: 'array', items: { type: 'number' } },
+        intArray: { type: 'array', items: { type: 'integer' } },
+        tsArray: { type: 'array', items: { type: 'timestamp' } },
         refs: { type: 'references' },
         value: { type: 'number' },
         age: { type: 'number' },

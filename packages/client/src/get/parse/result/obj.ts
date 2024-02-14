@@ -43,7 +43,7 @@ export function findFieldSchema(
   } else if (fieldSchema.type === 'text') {
     fieldSchema = { type: 'string' }
   } else if (fieldSchema.type === 'array') {
-    fieldSchema = (<BasedSchemaFieldArray>fieldSchema).values
+    fieldSchema = (<BasedSchemaFieldArray>fieldSchema).items
   }
 
   return fieldSchema
