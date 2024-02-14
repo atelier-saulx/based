@@ -97,7 +97,7 @@ test('Change array field in strick mode should fail', async (t) => {
         aType: {
           fields: {
             level1array: {
-              values: { type: 'number' },
+              items: { type: 'number' },
             },
           },
         },
@@ -145,7 +145,7 @@ test('Change array field in flexible mode with existing nodes should fail', asyn
           aType: {
             fields: {
               level1array: {
-                values: { type: 'number' },
+                items: { type: 'number' },
               },
             },
           },
@@ -172,7 +172,7 @@ test('Change set field in flexible mode without existing nodes should fail', asy
           aType: {
             fields: {
               level1array: {
-                values: { type: 'number' },
+                items: { type: 'number' },
               },
             },
           },
@@ -229,7 +229,7 @@ test('Add array field without values should fail', async (t) => {
     }),
     {
       message:
-        /^Field "anotherType.level1array" is of type "array" but does not include a valid "values" property.$/,
+        /^Field "anotherType.level1array" is of type "array" but does not include a valid "items" property.$/,
     }
   )
 })
