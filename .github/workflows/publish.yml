@@ -90,8 +90,6 @@ jobs:
       - name: Extract linux-x64 to package bin folder
         run: |
           mkdir -p packages/server/selvad-packages/linux-x64/bin
-          ls -la
-          ls -la Linux-X64-selvad-binaries
           tar -zxf Linux-X64-selvad-binaries/linux-x64.tar.gz -C packages/server/selvad-packages/linux-x64/bin
           ls -la packages/server/selvad-packages/linux-x64/bin
       - name: Extract darwin-x64 to package bin folder
