@@ -32,7 +32,7 @@
   "dependencies": {
     "@based/client": "^4.7.6",
     "@based/db-query": "2.0.1",
-    "@based/schema": "^3.0.0",
+    "@based/schema": "^3.1.0",
     "@saulx/diff": "^1.1.4",
     "@saulx/hash": "^2.0.0",
     "@saulx/utils": "^3.5.3",
