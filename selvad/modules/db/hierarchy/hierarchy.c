@@ -3811,7 +3811,7 @@ static void Hierarchy_SubtreeLoad(SelvaHierarchy *hierarchy, struct selva_string
         return;
     }
 
-    selva_io_end(&io);
+    selva_io_end(&io, NULL, NULL);
 }
 
 /**
@@ -3846,7 +3846,7 @@ static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, str
     (void)dfs(hierarchy, node, RELATIONSHIP_CHILD, &cb);
     selva_io_save_str(&io, HIERARCHY_SERIALIZATION_EOF, sizeof(HIERARCHY_SERIALIZATION_EOF));
 
-    selva_io_end(&io);
+    selva_io_end(&io, NULL, NULL);
 
     return raw;
 }

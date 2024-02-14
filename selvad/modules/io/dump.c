@@ -73,22 +73,16 @@ static int gen_default_sdb_name(char filename[static SDB_NAME_MIN_BUF_SIZE])
     return sdb_name(filename, SDB_NAME_MIN_BUF_SIZE, NULL, (uint64_t)ts_monorealtime_now());
 }
 
-static void handle_last_good_sync(void)
+__used static void print_hash(const uint8_t hash[static const SELVA_IO_HASH_SIZE])
 {
-    uint8_t hash[SELVA_IO_HASH_SIZE];
-    struct selva_string *filename;
-    const char *filename_str;
+    char buf[2 * SELVA_IO_HASH_SIZE + 1];
 
-    if (selva_io_last_good_info(hash, &filename)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to read the last good file (sync)");
-        return;
+    for (size_t i = 0; i < SELVA_IO_HASH_SIZE; i++) {
+        const size_t k = 2 * i;
+
+        snprintf(buf + k, sizeof(buf) - k, "%02x", hash[i]);
     }
-
-    filename_str = selva_string_to_str(filename, NULL);
-    SELVA_LOG(SELVA_LOGL_INFO, "Found last good (sync): \"%s\"", filename_str);
-    selva_replication_new_sdb(filename_str, hash);
-
-    selva_string_free(filename);
+    SELVA_LOG(SELVA_LOGL_INFO, "hash: %.*s", (int)sizeof(buf), buf);
 }
 
 static int handle_last_good_async(void)
@@ -220,8 +214,18 @@ static int dump_load(struct selva_io *io)
         serializers[i].deserialize(io);
     }
 
-    selva_io_end(io);
-    handle_last_good_sync(); /* RFE This is a bit heavy and we could just extract the info from `io`. */
+    struct selva_string *filename;
+    uint8_t hash[SELVA_IO_HASH_SIZE];
+
+    selva_io_end(io, &filename, hash);
+    /*
+     * We assume that selva_io_end() will terminate on error.
+     */
+
+    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
+        selva_replication_new_sdb(selva_string_to_str(filename, NULL), hash);
+        selva_string_free(filename);
+    }
 
     ts_monotime(&ts_end);
     print_ready(__func__, &ts_start, &ts_end);
@@ -299,7 +303,7 @@ static int dump_save_async(const char *filename)
             serializers[i].serialize(&io);
         }
 
-        selva_io_end(&io);
+        selva_io_end(&io, NULL, NULL);
 
         ts_monotime(&ts_end);
         print_ready(__func__, &ts_start, &ts_end);
@@ -342,9 +346,10 @@ static int dump_save_sync(const char *filename)
         serializers[i].serialize(&io);
     }
 
-    selva_io_end(&io);
+    uint8_t hash[SELVA_IO_HASH_SIZE];
 
-    handle_last_good_sync();
+    selva_io_end(&io, NULL, hash);
+    selva_replication_new_sdb(filename, hash);
     selva_db_is_dirty = false;
 
     ts_monotime(&ts_end);

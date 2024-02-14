@@ -297,7 +297,7 @@ static char *sha3_to_hex(char s[64], const uint8_t hash[SELVA_IO_HASH_SIZE])
     return s;
 }
 
-void selva_io_end(struct selva_io *io)
+void selva_io_end(struct selva_io * restrict io, struct selva_string * restrict *filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE])
 {
     if (io->flags & SELVA_IO_FLAGS_WRITE) {
         sdb_write_footer(io);
@@ -330,7 +330,7 @@ void selva_io_end(struct selva_io *io)
         fclose(io->file_io.file);
 
         /*
-         * Mark as last good.
+         * Mark as last good by symnlinking.
          */
         (void)unlink(last_good_name);
         if (symlink(selva_string_to_str(io->file_io.filename, NULL), last_good_name) == -1) {
@@ -338,7 +338,17 @@ void selva_io_end(struct selva_io *io)
                       selva_string_to_str(io->file_io.filename, NULL), last_good_name);
         }
 
-        selva_string_free(io->file_io.filename);
+        if (filename_out) {
+            *filename_out = io->file_io.filename;
+        } else {
+            selva_string_free(io->file_io.filename);
+        }
+        io->file_io.filename = NULL;
+
+    }
+
+    if (hash_out) {
+        memcpy(hash_out, io->computed_hash, SELVA_IO_HASH_SIZE);
     }
 
     sdb_deinit(io);

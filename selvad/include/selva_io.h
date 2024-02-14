@@ -184,8 +184,9 @@ SELVA_IO_EXPORT(int, selva_io_init_string_read, struct selva_io * restrict io, s
  * End the IO operation.
  * 1. Verifies the hash on read mode; Writes the hash in write mode.
  * 2. Closes the file.
+ * If filename_out is non-NULL then the caller is responsible of freeing the selva_string.
  */
-SELVA_IO_EXPORT(void, selva_io_end, struct selva_io *io);
+SELVA_IO_EXPORT(void, selva_io_end, struct selva_io * restrict io, struct selva_string * restrict * filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE]);
 
 SELVA_IO_EXPORT(void, selva_io_save_unsigned, struct selva_io *io, uint64_t value);
 SELVA_IO_EXPORT(void, selva_io_save_signed, struct selva_io *io, int64_t value);
