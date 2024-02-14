@@ -152,10 +152,7 @@ static int handle_child_status(pid_t pid, int status __unused, int selva_err)
 }
 
 /**
- * Print ready message.
- * Prints:
- * - time diff ts_end - ts_start
- * - maxrss of the current process
+ * Print ready message after load/save.
  */
 static void print_ready(const char * restrict msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
 {
@@ -166,11 +163,17 @@ static void print_ready(const char * restrict msg, struct timespec * restrict ts
     timespec_sub(&ts_diff, ts_end, ts_start);
     t = timespec2ms(&ts_diff);
 
-    if (t < 1000.0) {
+    if (t < 1e3) {
         unit = "ms";
-    } else {
-        t /= 1000.0;
+    } else if (t < 60e3) {
+        t /= 1e3;
         unit = "s";
+    } else if (t < 3.6e6) {
+        t /= 60e3;
+        unit = "min";
+    } else {
+        t /= 3.6e6;
+        unit = "h";
     }
 
     if (selva_db_dump_state == SELVA_DB_DUMP_IS_CHILD) {
