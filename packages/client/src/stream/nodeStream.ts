@@ -1,7 +1,11 @@
 import { Readable, Writable } from 'stream'
 import fs from 'fs'
 import { promisify } from 'util'
-import { StreamFunctionPath, StreamFunctionStream } from './types.js'
+import {
+  StreamFunctionPath,
+  StreamFunctionStream,
+  StreamResponseHandler,
+} from './types.js'
 import { BasedClient } from '../index.js'
 import { addStreamChunk, addStreamRegister } from '../outgoing/index.js'
 
@@ -87,9 +91,6 @@ export const uploadFileStream = async (
   // 1mb
   const medium = 1000000
 
-  // will determine max size based on troughput (troughput is limited by end point consumer YESH)
-  // 1MB 1000000
-
   let readSize = Math.min(medium, options.size)
   if (options.size < medium * 10) {
     readSize = Math.min(smallest, options.size)
@@ -99,14 +100,13 @@ export const uploadFileStream = async (
 
   let chunks: any[] = []
 
-  let totalHandler = 0
+  let totalBytes = 0
 
-  let sHandler
+  let streamHandler: StreamResponseHandler
 
-  // time spend (do smaller chunks if takes long)
-  // split chunks
-
-  // also add kb / sec as measure
+  client.once('disconnect', () => {
+    console.error('CLIENT DC -> ABORT STREAM')
+  })
 
   const wr = new Writable({
     write: function (c, encoding, next) {
@@ -121,12 +121,7 @@ export const uploadFileStream = async (
 
       chunks.push(c)
 
-      // keep them smaller then max size as well (now 1 mb min only)
-
-      if (
-        bufferSize >= readSize ||
-        totalHandler + bufferSize === options.size
-      ) {
+      if (bufferSize >= readSize || totalBytes + bufferSize === options.size) {
         const cb = (_, code: number) => {
           if (code === 1) {
             progressListener(1, options.size)
@@ -138,9 +133,9 @@ export const uploadFileStream = async (
               c += b.length
             }
             if (progressListener) {
-              progressListener(totalHandler / options.size, totalHandler)
+              progressListener(totalBytes / options.size, totalBytes)
             }
-            totalHandler += bufferSize
+            totalBytes += bufferSize
             addStreamChunk(client, reqId, ++seqId, n)
             bufferSize = 0
             chunks = []
@@ -148,10 +143,8 @@ export const uploadFileStream = async (
           }
         }
 
-        // sHandler[2] = cb
-
         if (seqId > 0) {
-          sHandler[2] = cb
+          streamHandler[2] = cb
         } else {
           // start
           setTimeout(cb, 0)
@@ -165,7 +158,7 @@ export const uploadFileStream = async (
   options.contents.pipe(wr)
 
   return new Promise((resolve, reject) => {
-    sHandler = [resolve, reject, () => {}]
-    client.streamFunctionResponseListeners.set(reqId, sHandler)
+    streamHandler = [resolve, reject, () => {}]
+    client.streamFunctionResponseListeners.set(reqId, streamHandler)
   })
 }

@@ -18,7 +18,7 @@ import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '../../error/index.js'
 import zlib from 'node:zlib'
 
-const startStream: IsAuthorizedHandler<
+const startStreamFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'stream'>
 > = (route, spec, server, ctx, payload, streamRequestId) => {
@@ -158,7 +158,7 @@ export const registerStream: BinaryMessageHandler = (
     server,
     ctx,
     streamPayload,
-    startStream,
+    startStreamFunction,
     reqId,
     undefined,
     route.public,
@@ -189,9 +189,7 @@ export const receiveChunkStream: BinaryMessageHandler = (
   }
 
   const infoLen = 9
-
   const reqId = readUint8(arr, start + 5, 3)
-
   const seqId = readUint8(arr, start + 8, 1)
 
   if (reqId === undefined) {
@@ -214,10 +212,15 @@ export const receiveChunkStream: BinaryMessageHandler = (
       streamRequestId: reqId,
       err: `SeqId out of order: ${seqId} prev seq ${streamPayload.seqId}`,
     })
+    streamPayload.stream.destroy()
+    delete ctx.session.streams[reqId]
+    // maybe return false... (something is wrong)
     return true
   }
 
   streamPayload.seqId = seqId === 255 ? -1 : seqId
+
+  // encoding can still be a thing for streams test with png's
 
   const chunk = !isDeflate
     ? arr.slice(infoLen + start, start + len)

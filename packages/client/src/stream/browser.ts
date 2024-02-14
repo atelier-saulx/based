@@ -8,6 +8,8 @@ import {
 
 export const isStreaming = { streaming: false }
 
+// will get browser stream as well
+
 export default async (
   client: BasedClient,
   name: string,

@@ -14,8 +14,6 @@ import {
   ChannelState,
   CallOptions,
   QueryOptions,
-  StreamQueue,
-  StreamFunctionResponseListeners,
 } from './types/index.js'
 import { Connection } from './websocket/types.js'
 import connectWebsocket from './websocket/index.js'
@@ -24,8 +22,6 @@ import {
   addChannelPublishIdentifier,
   addChannelSubscribeToQueue,
   addObsToQueue,
-  addStreamChunk,
-  addStreamRegister,
   addToFunctionQueue,
   drainQueue,
   sendAuth,
@@ -33,7 +29,11 @@ import {
 import { incoming } from './incoming/index.js'
 import { BasedQuery } from './query/index.js'
 import startStream from './stream/index.js'
-import { StreamFunctionOpts, isStreamFunctionPath } from './stream/types.js'
+import {
+  StreamFunctionOpts,
+  StreamQueue,
+  StreamFunctionResponseListeners,
+} from './stream/types.js'
 import {
   initStorage,
   clearStorage,

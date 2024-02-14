@@ -67,3 +67,30 @@ export const isStreamFunctionStream = (
 ): options is StreamFunctionStream => {
   return 'contents' in options && isStream(options.contents)
 }
+
+export type StreamQueueItem =
+  | [
+      1, // register id
+      number, // reqId
+      number, // contentSize
+      string, // name
+      string, // mimeType
+      string, // fnName
+      any // payload
+    ]
+  | [
+      2, // chunk
+      number, // reqId,
+      number, // seq,
+      Uint8Array // contents
+    ]
+
+export type StreamQueue = StreamQueueItem[]
+
+export type StreamResponseHandler = [
+  (val?: any) => void,
+  (err: Error) => void,
+  (seqId: number, code: number) => void
+]
+
+export type StreamFunctionResponseListeners = Map<number, StreamResponseHandler>
