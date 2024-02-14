@@ -30,6 +30,7 @@ import {
 } from '../types.js'
 import { ValidateSchemaError, Validator, validate } from './index.js'
 import {
+  mustBeArray,
   mustBeBidirectional,
   mustBeBoolean,
   mustBeNumber,
@@ -55,7 +56,7 @@ export const mustBeField = (
       },
     ]
   }
-  const type = value.type
+  const type = value.hasOwnProperty('enum') ? 'enum' : value.type
   if (
     (options?.limitTo === 'primitives' &&
       ![
@@ -117,6 +118,12 @@ export const mustBeField = (
       break
     case 'set':
       validator = basedSchemaFieldSetValidator
+      break
+    case 'reference':
+      validator = basedSchemaFieldReferenceValidator
+      break
+    case 'references':
+      validator = basedSchemaFieldReferencesValidator
       break
     default:
       validator = basedSchemaFieldSharedValidator
@@ -288,7 +295,9 @@ export const basedSchemaStringValidator: Validator<BasedSchemaFieldString> = {
 
 export const basedSchemaFieldEnumValidator: Validator<BasedSchemaFieldEnum> = {
   ...basedSchemaFieldSharedValidator,
-  enum: {},
+  enum: {
+    validator: mustBeArray,
+  },
 }
 
 export const basedSchemaFieldCardinalityValidator: Validator<BasedSchemaFieldCardinality> =

@@ -201,7 +201,7 @@ const migrateTypes = (oldSchema: any): any => {
   return result
 }
 
-const convertRoot = (oldSchema: BasedOldSchema) => {
+const convertRoot = (oldSchema: Partial<BasedOldSchema>) => {
   const result = {
     fields: {},
     ...metaParser(oldSchema.rootType?.meta),
@@ -222,7 +222,9 @@ const convertRoot = (oldSchema: BasedOldSchema) => {
   return result
 }
 
-export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
+export const convertOldToNew = (
+  oldSchema: Partial<BasedOldSchema>
+): BasedSchema => {
   const tempSchema = migrateTypes(oldSchema)
 
   tempSchema.$defs = {}

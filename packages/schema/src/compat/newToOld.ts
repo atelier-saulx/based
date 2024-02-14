@@ -168,7 +168,7 @@ const metaParser = (obj) => {
     }
   }
 
-  return Object.keys({ meta: tmp }.meta).length > 0 ? { meta: tmp } : null
+  return Object.keys(tmp).length > 0 ? { meta: tmp } : null
 }
 
 const migrateField = (field: any): any | null => {
@@ -302,11 +302,19 @@ const convertRoot = (schema: BasedSchemaPartial) => {
 }
 
 export const convertNewToOld = (
-  schema: BasedSchema
+  schema: BasedSchemaPartial
 ): Partial<BasedOldSchema> => {
   const tmpSchema = migrateTypes(schema)
   tmpSchema.prefixToTypeMapping = schema.prefixToTypeMapping
-  tmpSchema.languages = [schema.language, ...schema?.translations]
+  tmpSchema.languages = []
+
+  if (schema.language) {
+    tmpSchema.languages.push(schema.language)
+  }
+
+  if (schema.translations) {
+    tmpSchema.languages.push(...schema.translations)
+  }
 
   tmpSchema.rootType = convertRoot(schema)
 

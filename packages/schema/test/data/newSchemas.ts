@@ -1,6 +1,245 @@
-import { BasedSchema } from '../../src/types.js'
+import { BasedSchema, BasedSchemaPartial } from '../../src/types.js'
 
-export const newSchemas: BasedSchema[] = [
+const defaultFields: BasedSchemaPartial['types'][0]['fields'] = {
+  createdAt: {
+    readOnly: true,
+    type: 'timestamp',
+  },
+  updatedAt: {
+    readOnly: true,
+    type: 'timestamp',
+  },
+}
+
+const testSchema: BasedSchemaPartial = {
+  language: 'en',
+  translations: ['pt', 'es'],
+  root: {
+    fields: {
+      currentSeason: {
+        type: 'reference',
+        title: 'Currently active season',
+      },
+    },
+  },
+  types: {
+    file: {
+      fields: {
+        ...defaultFields,
+        width: {
+          type: 'number',
+        },
+        height: {
+          type: 'number',
+        },
+      },
+    },
+    country: {
+      prefix: 'co',
+      title: 'Country',
+      description: 'This is the country',
+      fields: {
+        ...defaultFields,
+        name: {
+          type: 'string',
+          title: 'Country code',
+        },
+        title: {
+          type: 'text',
+          title: 'Translated country name',
+        },
+        circleImage: {
+          type: 'reference',
+          title: 'Circular flag image',
+        },
+        heartImage: {
+          type: 'reference',
+          title: 'Heart-shaped flag image',
+        },
+      },
+    },
+    season: {
+      prefix: 'se',
+      fields: {
+        ...defaultFields,
+        name: {
+          type: 'string',
+          title: 'Season name',
+        },
+        winner: {
+          type: 'reference',
+          allowedTypes: ['contestant'],
+        },
+        countries: {
+          type: 'references',
+          title: 'Participating countries',
+        },
+      },
+    },
+    episode: {
+      prefix: 'ep',
+      fields: {
+        ...defaultFields,
+        episodeType: {
+          type: 'string', // redemption, grandFinal, nationalFinal or nationalQualifier
+          title: 'Type of episode',
+        },
+        title: {
+          type: 'text',
+          title: 'Episode title',
+        },
+        image: {
+          type: 'reference',
+          allowedTypes: ['file'],
+        },
+        startTime: {
+          type: 'timestamp',
+          title: 'Start time',
+        },
+        endTime: {
+          type: 'timestamp',
+          title: 'End time',
+        },
+        producer: {
+          type: 'reference',
+          allowedTypes: ['broadcaster'],
+        },
+        distributors: {
+          type: 'references',
+          allowedTypes: ['broadcaster'],
+        },
+      },
+    },
+    votingWindow: {
+      prefix: 'vo',
+      fields: {
+        ...defaultFields,
+        startTime: {
+          type: 'timestamp',
+        },
+        closeTime: {
+          type: 'timestamp',
+        },
+        endTime: {
+          type: 'timestamp',
+        },
+      },
+    },
+    contestant: {
+      prefix: 'ct',
+      fields: {
+        ...defaultFields,
+        name: {
+          type: 'string',
+        },
+        song: {
+          type: 'string',
+        },
+        songUrl: {
+          type: 'string',
+          format: 'URL',
+        },
+        writer: {
+          type: 'string',
+        },
+        image: {
+          type: 'reference',
+          allowedTypes: ['file'],
+        },
+        content: {
+          type: 'text',
+          format: 'html',
+        },
+      },
+    },
+    broadcaster: {
+      prefix: 'br',
+      fields: {
+        ...defaultFields,
+        name: {
+          type: 'string',
+        },
+        email: {
+          type: 'string',
+          format: 'email',
+        },
+        image: {
+          type: 'reference',
+          allowedTypes: ['file'],
+        },
+      },
+    },
+    feed: {
+      prefix: 'fe',
+      fields: {
+        ...defaultFields,
+        title: {
+          type: 'text',
+        },
+        content: {
+          type: 'text',
+          format: 'html',
+        },
+        imageUrl: {
+          type: 'string',
+          format: 'URL',
+        },
+        videoUrl: {
+          type: 'string',
+          format: 'URL',
+        },
+        url: {
+          type: 'string',
+          format: 'URL',
+        },
+      },
+    },
+    user: {
+      prefix: 'us',
+      fields: {
+        ...defaultFields,
+        name: { type: 'string' },
+        language: { type: 'string' },
+        notify: { type: 'boolean' },
+        country: { type: 'string' },
+        customerId: {
+          // stripe customerId
+          type: 'string',
+        },
+        credits: {
+          type: 'record',
+          values: {
+            type: 'object',
+            properties: {
+              purchased: {
+                type: 'number',
+              },
+              earned: {
+                type: 'number',
+              },
+            },
+          },
+        },
+
+        voteHistory: {
+          type: 'record',
+          values: {
+            type: 'record',
+            values: {
+              type: 'record',
+              values: {
+                type: 'number',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const
+
+export const newSchemas: BasedSchemaPartial[] = [
+  testSchema,
   {
     types: {
       thing: {
@@ -13,6 +252,10 @@ export const newSchemas: BasedSchema[] = [
       bla: {
         prefix: 'bl',
         fields: {
+          createdAt: {
+            type: 'timestamp',
+            readOnly: true,
+          },
           enum: {
             enum: ['tony', 'jim'],
           },
@@ -111,6 +354,7 @@ export const newSchemas: BasedSchema[] = [
     },
     $defs: {},
     language: 'en',
+    translations: [],
     root: {
       fields: {},
     },
