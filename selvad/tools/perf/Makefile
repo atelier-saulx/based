@@ -1,10 +1,10 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 OBJ := \
 	   perf.o
-CFLAGS := -Wall -Wextra -g3 -std=gnu2x -pthread -I../../include
+CFLAGS := -Wall -Wextra -Wno-unknown-attributes -g3 -std=gnu2x -pthread -I../../include
 LDFLAGS := -L../../lib -pthread -lm -lutil -ljemalloc_selva -ldeflate
 ifeq ($(uname_S),Linux)
 LDFLAGS += -Wl,-rpath,'$$ORIGIN'/../../lib
