@@ -151,6 +151,12 @@ static int handle_child_status(pid_t pid, int status __unused, int selva_err)
     return 1;
 }
 
+/**
+ * Print ready message.
+ * Prints:
+ * - time diff ts_end - ts_start
+ * - maxrss of the current process
+ */
 static void print_ready(const char * restrict msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
 {
     struct timespec ts_diff;
