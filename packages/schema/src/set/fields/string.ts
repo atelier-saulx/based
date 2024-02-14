@@ -86,6 +86,7 @@ const formatPatterns: Record<
   clike: () => true,
   // Can add some more checks for this...
   basedId: (value) => typeof value === 'string' && value.length < 16,
+  basedType: (value) => typeof value === 'string' && value.length < 64,
 }
 
 const validateString = (

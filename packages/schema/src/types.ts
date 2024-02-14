@@ -172,6 +172,7 @@ export const basedSchemaStringFormatValues = [
   'markdown',
   'clike',
   'basedId',
+  'basedType',
 ] as const
 // -------------- Primitive ---------------
 export type BasedSchemaStringShared = {
