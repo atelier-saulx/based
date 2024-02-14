@@ -404,7 +404,7 @@ test('arrays', async (t) => {
                 aWrongObjectField: {
                   type: 'object',
                   // @ts-ignore
-                  values: { type: 'string' },
+                  items: { type: 'string' },
                 },
               },
             },
@@ -420,10 +420,10 @@ test('arrays', async (t) => {
             'root',
             'fields',
             'arrayField',
-            'values',
+            'items',
             'properties',
             'aWrongObjectField',
-            'values',
+            'items',
           ],
         },
       ],
