@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Forced replica reload when origin loads an SDB dump file (#309)
+
+## [3.1.1] - 2024-02-14
+
 ### Added
 
 - Added a Message Queue (MQ) module and commands
