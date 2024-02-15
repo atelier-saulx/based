@@ -16,6 +16,11 @@ enum replication_sync_mode {
     REPLICATION_SYNC_MODE_PARTIAL, /*!< Start based on a previously sent dump. */
 };
 
+enum new_sdb_mode {
+    REPLICATION_NEW_SDB_LOAD,
+    REPLICATION_NEW_SDB_SAVE,
+};
+
 /**
  * Last SDB loaded.
  * Updated by selva_replication_new_sdb().
@@ -24,8 +29,9 @@ extern uint8_t last_sdb_hash[SELVA_IO_HASH_SIZE];
 
 /**
  * Publish a new SDB dump to the replication.
+ * @param mode load or save.
  */
-void selva_replication_new_sdb(const char *filename, const uint8_t sdb_hash[SELVA_IO_HASH_SIZE]);
+void selva_replication_new_sdb(const char *filename, const uint8_t sdb_hash[SELVA_IO_HASH_SIZE], enum new_sdb_mode mode);
 
 /**
  * Let the module know that a new dump should be coming.
@@ -45,10 +51,19 @@ void selva_replication_complete_sdb(uint64_t sdb_eid, uint8_t sdb_hash[SELVA_IO_
  * @{
  */
 
-void replication_origin_new_sdb(const char *filename, uint8_t sdb_hash[SELVA_IO_HASH_SIZE]);
+/**
+ * Insert a new sdb structure. (sync op)
+ * If force_load is set the replicas will do a full reload despite the current
+ * state. This can be used if an older on unrelated SDB is loaded manually on
+ * the origin and thus the new state doesn't derive from any previous state
+ * known by the origin.
+ * @param force_load if set the replicas are forced to reload into this state;
+ *                   Otherwise existing replicas that are in-sync will only receive info.
+ */
+void replication_origin_new_sdb(const char *filename, uint8_t sdb_hash[SELVA_IO_HASH_SIZE], bool force_load);
 
 /**
- * Insert a new sdb structure that is marked as incomplete.
+ * Insert a new sdb structure that is marked as incomplete. (async op)
  * The intention is that we can keep replicating commands for existing replicas
  * while a new SDB dump is being created asynchronously.
  * @returns sdb_eid.
@@ -56,7 +71,7 @@ void replication_origin_new_sdb(const char *filename, uint8_t sdb_hash[SELVA_IO_
 uint64_t replication_origin_new_incomplete_sdb(const char *filename);
 
 /**
- * Finalize an incomplete sdb structure.
+ * Finalize an incomplete sdb structure. (async op)
  */
 void replication_origin_complete_sdb(uint64_t sdb_eid, uint8_t sdb_hash[SELVA_IO_HASH_SIZE]);
 

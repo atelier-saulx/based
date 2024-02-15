@@ -223,7 +223,7 @@ static int dump_load(struct selva_io *io)
      */
 
     if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        selva_replication_new_sdb(selva_string_to_str(filename, NULL), hash);
+        selva_replication_new_sdb(selva_string_to_str(filename, NULL), hash, REPLICATION_NEW_SDB_LOAD);
         selva_string_free(filename);
     }
 
@@ -349,7 +349,7 @@ static int dump_save_sync(const char *filename)
     uint8_t hash[SELVA_IO_HASH_SIZE];
 
     selva_io_end(&io, NULL, hash);
-    selva_replication_new_sdb(filename, hash);
+    selva_replication_new_sdb(filename, hash, REPLICATION_NEW_SDB_SAVE);
     selva_db_is_dirty = false;
 
     ts_monotime(&ts_end);

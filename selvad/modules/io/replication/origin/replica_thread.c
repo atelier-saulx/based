@@ -30,7 +30,7 @@
  * Send the initial dump to the replica.
  * @param no_send can be set to indicate that the replica is already running on this sdb and it doesn't need to be sent again.
  */
-static int sync_dump(
+static int sync_state(
         struct selva_server_response_out *resp,
         struct ring_buffer *rb,
         struct ring_buffer_reader_state *state,
@@ -48,7 +48,7 @@ static int sync_dump(
         goto fail;
     }
 
-    assert(e->data_size == sizeof(struct selva_replication_sdb));
+    assert(e->data_size > sizeof(struct selva_replication_sdb));
     sdb = (struct selva_replication_sdb *)e->data;
 
     if (sdb->status != SDB_STATUS_COMPLETE) {
@@ -99,7 +99,7 @@ void *replication_thread(void *arg)
         goto out;
     }
 
-    if (sync_dump(resp, rb, &state, replica->start_sdb_hash, replica->sync_mode)) {
+    if (sync_state(resp, rb, &state, replica->start_sdb_hash, replica->sync_mode)) {
         goto out;
     }
 
@@ -107,11 +107,21 @@ void *replication_thread(void *arg)
         int res;
 
         if (e->id & EID_MSB_MASK) {
-            /*
-             * This is a bit opportunistic because we don't know whether
-             * incomplete sdb structs will ever be completed.
-             */
-            res = selva_send_replication_pseudo_sdb(resp, e->id);
+            struct selva_replication_sdb *sdb;
+
+            assert(e->data_size > sizeof(struct selva_replication_sdb));
+            sdb = (struct selva_replication_sdb *)e->data;
+            if (sdb->force_load) {
+                res = selva_send_replication_sdb(resp, e->id, sdb->filename);
+            } else {
+                /*
+                 * This is a bit opportunistic if sdb->status == SDB_STATUS_INCOMPLETE
+                 * because we don't know in advance whether a particular incomplete sdb
+                 * struct will ever be completed and a completion event won't be
+                 * delivered.
+                 */
+                res = selva_send_replication_pseudo_sdb(resp, e->id);
+            }
         } else if (e->cmd_id == CMD_ID_PING) {
             res = selva_send_replication_cmd(resp, e->id, e->ts, e->cmd_id, NULL, 0);
         } else if (e->data_size == 0) {

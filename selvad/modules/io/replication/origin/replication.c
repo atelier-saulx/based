@@ -81,19 +81,21 @@ static void insert(ring_buffer_eid_t eid, int64_t ts, int8_t cmd, void *p, size_
     origin_state.last_eid = eid;
 }
 
-void replication_origin_new_sdb(const char *filename, uint8_t sdb_hash[SELVA_IO_HASH_SIZE])
+void replication_origin_new_sdb(const char *filename, uint8_t sdb_hash[SELVA_IO_HASH_SIZE], bool force_load)
 {
     size_t filename_len = strlen(filename);
-    struct selva_replication_sdb *sdb = selva_malloc(sizeof(struct selva_replication_sdb) + filename_len + 1);
+    size_t sdb_size = sizeof(struct selva_replication_sdb) + filename_len + 1;
+    struct selva_replication_sdb *sdb = selva_malloc(sdb_size);
     uint64_t sdb_eid = replication_new_origin_sdb_eid(filename);
 
     sdb->status = SDB_STATUS_COMPLETE;
+    sdb->force_load = force_load;
     strcpy(sdb->filename, filename);
     memcpy(sdb->hash, sdb_hash, SELVA_IO_HASH_SIZE);
 
     SELVA_LOG(SELVA_LOGL_INFO, "New SDB: %s (0x%" PRIx64 ")", filename, sdb_eid);
 
-    insert(sdb_eid, (sdb_eid & ~EID_MSB_MASK), 0, sdb, sizeof(*sdb));
+    insert(sdb_eid, (sdb_eid & ~EID_MSB_MASK), 0, sdb, sdb_size);
     origin_state.last_sdb_eid = sdb_eid;
     origin_state.last_cmd_eid = 0;
 }
@@ -101,12 +103,13 @@ void replication_origin_new_sdb(const char *filename, uint8_t sdb_hash[SELVA_IO_
 uint64_t replication_origin_new_incomplete_sdb(const char *filename)
 {
     size_t filename_len = strlen(filename);
-    struct selva_replication_sdb *sdb = selva_malloc(sizeof(struct selva_replication_sdb) + filename_len + 1);
+    size_t sdb_size = sizeof(struct selva_replication_sdb) + filename_len + 1;
+    struct selva_replication_sdb *sdb = selva_malloc(sdb_size);
     uint64_t sdb_eid = replication_new_origin_sdb_eid(filename);
 
     sdb->status = SDB_STATUS_INCOMPLETE;
     strcpy(sdb->filename, filename);
-    insert(sdb_eid, (sdb_eid & ~EID_MSB_MASK), 0, sdb, sizeof(*sdb));
+    insert(sdb_eid, (sdb_eid & ~EID_MSB_MASK), 0, sdb, sdb_size);
 
     /*
      * This is set so that we can always have cmd_eids be greater than sdb dumps
@@ -135,11 +138,16 @@ void replication_origin_complete_sdb(uint64_t sdb_eid, uint8_t sdb_hash[SELVA_IO
     }
 
     sdb = (struct selva_replication_sdb *)rb_elem->data;
-    assert(rb_elem->data_size == sizeof(struct selva_replication_sdb));
+    assert(rb_elem->data_size > sizeof(struct selva_replication_sdb));
     assert(sdb && sdb->status == SDB_STATUS_INCOMPLETE);
 
     sdb->status = SDB_STATUS_COMPLETE;
     memcpy(sdb->hash, sdb_hash, SELVA_IO_HASH_SIZE);
+    /*
+     * Note that changing the state doesn't necessarily mean that all replicas
+     * will be informed. A replica may have already received an "opportunistic"
+     * notification about this sdb and it won't be repeated.
+     */
 
     SELVA_LOG(SELVA_LOGL_INFO, "New SDB: %s (0x%" PRIx64 ")", sdb->filename, sdb_eid);
 
@@ -392,7 +400,7 @@ int replication_origin_check_sdb(uint64_t eid)
 
     assert((el->id & EID_MSB_MASK) &&
            el->data &&
-           el->data_size == sizeof(struct selva_replication_sdb));
+           el->data_size > sizeof(struct selva_replication_sdb));
 
     sdb = (struct selva_replication_sdb *)el->data;
     if (access(sdb->filename, F_OK)) {

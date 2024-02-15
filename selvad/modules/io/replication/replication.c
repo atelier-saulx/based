@@ -71,12 +71,17 @@ enum replication_mode selva_replication_get_mode(void)
  * behaviour of these functions.
  */
 
-void selva_replication_new_sdb(const char *filename, const uint8_t sdb_hash[SELVA_IO_HASH_SIZE])
+void selva_replication_new_sdb(const char *filename, const uint8_t sdb_hash[SELVA_IO_HASH_SIZE], enum new_sdb_mode mode)
 {
     switch (replication_mode) {
     case SELVA_REPLICATION_MODE_ORIGIN:
         memcpy(last_sdb_hash, sdb_hash, SELVA_IO_HASH_SIZE);
-        replication_origin_new_sdb(filename, last_sdb_hash);
+        /*
+         * We force reload the replicas if this was a load. Otherwise, the new SDB
+         * must be based on the previous state and what happens depends on the
+         * replication state of each replica.
+         */
+        replication_origin_new_sdb(filename, last_sdb_hash, (mode == REPLICATION_NEW_SDB_LOAD) ? true : false);
         break;
     case SELVA_REPLICATION_MODE_REPLICA:
         memcpy(last_sdb_hash, sdb_hash, SELVA_IO_HASH_SIZE);

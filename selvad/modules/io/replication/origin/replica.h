@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -28,6 +28,14 @@ struct selva_replication_sdb {
         SDB_STATUS_INCOMPLETE = 0x01,
         SDB_STATUS_COMPLETE = 0x02,
     } status;
+    /**
+     * Force the replica load the db from this dump.
+     * If this is set the replica will do a full reload despite the current
+     * state. This can be used if an older on unrelated SDB is loaded manually
+     * on the origin and thus the new state doesn't derive from any previous
+     * state known by the origin.
+     */
+    bool force_load;
 
     /**
      * The hash of the dump.
