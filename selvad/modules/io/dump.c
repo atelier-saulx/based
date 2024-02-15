@@ -31,6 +31,7 @@
 #include "selva_reaper.h"
 #include "selva_server.h"
 #include "sdb_name.h"
+#include "myreadlink.h"
 #include "replication/replication.h"
 #include "dump.h"
 
@@ -434,12 +435,14 @@ static int dump_auto_sdb(int interval_s)
 static void load_db_cmd(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     __auto_finalizer struct finalizer fin;
-    struct selva_string *filename;
+    struct selva_string *name;
+    struct selva_string *tmp;
+    const char *filename;
     int argc, err;
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%p", &filename);
+    argc = selva_proto_scanf(&fin, buf, len, "%p", &name);
     if (argc != 1) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
@@ -449,10 +452,26 @@ static void load_db_cmd(struct selva_server_response_out *resp, const void *buf,
         return;
     }
 
+    filename = selva_string_to_str(name, NULL);
+
+    if (strchr(filename, '/')) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid character in the name");
+        return;
+    }
+
+    /*
+     * Resolve possible symlink.
+     */
+    tmp = myreadlink(filename);
+    if (tmp) {
+        filename = selva_string_to_str(tmp, NULL);
+        selva_string_auto_finalize(&fin, tmp);
+    }
+
     const enum selva_io_flags flags = SELVA_IO_FLAGS_READ;
     struct selva_io io;
 
-    err = selva_io_init(&io, selva_string_to_str(filename, NULL), flags);
+    err = selva_io_init(&io, filename, flags);
     if (err) {
         selva_send_errorf(resp, SELVA_EGENERAL, "Failed to open the dump file");
         return;
