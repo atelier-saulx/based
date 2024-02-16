@@ -42,6 +42,17 @@ can read and write the database.
 
 Read [more](modules/db/README.md).
 
+### mq
+
+*Mq* implements a message queue service backed by *io*'s `SDB` but completely
+independently from the hierarchy implemented by *db*.
+
+### piper
+
+*Piper* implements the `pipe` command allowing piping commands together without a
+roundtrip to the client. The glue layers are hard-coded in the module thus only
+predefined commands can be piped together in select ways.
+
 ## Feature Notes
 
 ### Fast incremental counters
