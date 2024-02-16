@@ -44,6 +44,10 @@ Selva binary dump serialization format (.sdb).
 
 ## Replication
 
+The replication protocol has two roles *origin* and *replica*. There can be
+only one *origin* in the system and multiple *replica* nodes that are
+registered to the origin node.
+
 The replication protocol is technically a regular `selva_proto` commands stream
 sent as a response to `replica_sync` command, which utilizes a few special
 commands and message types to carry out the replication.
@@ -54,9 +58,10 @@ commands and message types to carry out the replication.
 CMD_ID_REPLICAOF port addr
 ```
 
-This command is executed by the user to tell a replica node where the designated
-origin is located. The origin doesn't need to be running yet at this point as
-the replica will keep retrying to establish the connection indefinitely.
+This command is executed by the user to tell a *replica* node where the
+designated *origin* is located. The origin doesn't need to be running yet at
+this point as the *replica* will keep retrying to establish the connection
+indefinitely.
 
 ```
 CMD_ID_REPLICASYNC [known_sdb_hash, known_sdb_eid]

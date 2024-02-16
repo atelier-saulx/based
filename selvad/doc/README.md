@@ -17,40 +17,30 @@ modules.
 
 The most important modules are the following:
 
-- **db**: Implements the database (data structures and such)
-- **io**: Implements the serialization to disk and in-mem
-- **server**: Implements the networking parts, TCP server and command message serialization over the wire
-- **replication**: Implements the replication of commands and database dumps over the network using **server**
-
-### db
-
-The **db** module provides the hierarchy, objects, indexing, subscriptions, and queries.
-It registers a number of RPC-like commands with the **server** module, so that a client
-can read and write the database.
-
-Read [more](modules/db/README.md).
-
-### io
-
-Implements the persistent data serialization format called `SDB` as well as client
-commands to dump and load `SDB` files.
-
-Read [more](modules/io/README.md).
+- *db*: Implements the database (data structures and such)
+- *io*: Implements the serialization to disk and in-mem
+- *server*: Implements the networking parts, TCP server and command message serialization over the wire
+- *replication*: Implements the replication of commands and database dumps over the network using *server*
 
 ### server
 
 Read [more](modules/server/README.md).
 
+### io
 
-### replication
+Implements the persistent data serialization format called `SDB` as well as client
+commands to dump and load `SDB` files. The *io* module also implements the
+replication protocol utilizing `SDB` and the server module.
 
-The **replication** module implements server roles (origin and replica),
-replication of server commands ran on an origin node to the replicas, and
-commands to observe and change the replication. Replication of commands doesn't
-happen implicitly but each command function must explicitly call one of the
-`replicate` functions to trigger the replication.
+Read [more](modules/io/README.md).
 
-Read [more](modules/replication/README.md).
+### db
+
+The *db* module provides the hierarchy, objects, indexing, subscriptions, and queries.
+It registers a number of RPC-like commands with the *server* module, so that a client
+can read and write the database.
+
+Read [more](modules/db/README.md).
 
 ## Feature Notes
 
@@ -62,18 +52,18 @@ voting). This kind of task can be accelerated efficiently by using the
 
 ### Publisher/subscriber pattern
 
-The **server** module implements a **pubsub** feature divided into channels
+The *server* module implements a *pubsub* feature divided into channels
 (number). It's possible to publish a message to a channel internally with the
 `selva_pubsub_publish()` function or externally wit the `publish` command.
 Channels are subscribed with the `subscribe` command and unsubscribed with
 `unsubscribe`.
 
 The `subscribe` command is implemented as an asynchronous stream in
-**selva_proto** and thus the client nor the server are blocked when the
+`selva_proto` and thus the client nor the server are blocked when the
 command is called, i.e. the client subscribes to a channel.
 
-The subscription marker system implemnted by the **hierarchy** module utilizes
-**pubsub** for sending subscription events to the client(s).
+The subscription marker system implemnted by the *hierarchy* module utilizes
+*pubsub* for sending subscription events to the client(s).
 
 ## API
 
