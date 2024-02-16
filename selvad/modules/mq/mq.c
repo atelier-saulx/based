@@ -634,10 +634,46 @@ static bool mq_is_ready(void)
     return true;
 }
 
-static int mq_load(struct selva_io *io)
+static bool inhibit_sdb(void)
+{
+    /*
+     * A readonly node shouldn't load mq because none of the commands
+     * would work. This is likely happening when the node is in
+     * a readonly replica replication mode. We check it anyway...
+     */
+    return (selva_server_is_readonly() ||
+            selva_replication_get_mode() == SELVA_REPLICATION_MODE_REPLICA);
+}
+
+/**
+ * This must be done to reproduce the correct SDB hash and
+ * to progress the read index properly.
+ */
+static void mq_fake_load(struct selva_io *io)
 {
     size_t n = selva_io_load_unsigned(io);
+    for (size_t i = 0; i < n; i++) {
+        __unused __selva_autofree const char *name = selva_io_load_str(io, NULL);
+        selva_io_load_signed(io);
+        selva_io_load_signed(io);
+        selva_io_load_signed(io);
 
+        const size_t nr_msg = selva_io_load_unsigned(io);
+        for (size_t i = 0; i < nr_msg; i++) {
+            selva_io_load_unsigned(io);
+            selva_io_load_string(io);
+        }
+    }
+}
+
+static int mq_load(struct selva_io *io)
+{
+    if (inhibit_sdb()) {
+        mq_fake_load(io);
+        return 0;
+    }
+
+    size_t n = selva_io_load_unsigned(io);
     for (size_t i = 0; i < n; i++) {
         __selva_autofree const char *name = selva_io_load_str(io, NULL); /* we know the length */
         struct timespec timeout;
@@ -682,6 +718,10 @@ static void mq_save_pending(struct selva_io *io, struct mq_message_tailq *pendin
 static void mq_save(struct selva_io *io)
 {
     struct mq *mq;
+
+    if (inhibit_sdb()) {
+        return;
+    }
 
     selva_io_save_unsigned(io, nr_mq);
 

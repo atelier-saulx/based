@@ -45,7 +45,8 @@ Read [more](modules/db/README.md).
 ### mq
 
 *Mq* implements a message queue service backed by *io*'s `SDB` but completely
-independently from the hierarchy implemented by *db*.
+independently from the hierarchy implemented by *db*. The message queues are not
+available on the *replica* nodes and can't be used.
 
 ### piper
 

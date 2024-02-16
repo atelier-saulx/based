@@ -92,6 +92,11 @@ void selva_server_set_readonly(void)
     readonly_server = true;
 }
 
+bool selva_server_is_readonly(void)
+{
+    return readonly_server;
+}
+
 bool selva_server_is_query_fork(void)
 {
     return query_fork.child;

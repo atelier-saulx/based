@@ -67,6 +67,8 @@ typedef bool (*selva_cmd_query_fork_test)(const void *buf, size_t len);
  */
 SELVA_SERVER_EXPORT(void, selva_server_set_readonly, void);
 
+SELVA_SERVER_EXPORT(bool, selva_server_is_readonly, void);
+
 /**
  * Test if this process is a query fork.
  * A query fork is a short-lived process created for processing a slow read-only query.
@@ -323,6 +325,7 @@ SELVA_SERVER_EXPORT(int, selva_pubsub_publish, unsigned ch_id, const void *messa
 
 #define _import_selva_server(apply) \
     apply(selva_server_set_readonly) \
+    apply(selva_server_is_readonly) \
     apply(selva_server_is_query_fork) \
     apply(selva_mk_command) \
     apply(selva_server_query_fork_init_ret_msg) \
