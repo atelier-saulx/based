@@ -62,7 +62,7 @@ The `subscribe` command is implemented as an asynchronous stream in
 `selva_proto` and thus the client nor the server are blocked when the
 command is called, i.e. the client subscribes to a channel.
 
-The subscription marker system implemnted by the *hierarchy* module utilizes
+The subscription marker system implemented by the *db* module utilizes
 *pubsub* for sending subscription events to the client(s).
 
 ## API
