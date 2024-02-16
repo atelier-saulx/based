@@ -321,3 +321,29 @@ test.serial.skip('full replication buffer', async (_t) => {
   // TODO Fill the replication buffer and verify that everything stabilizes eventually
   // TODO This should be also tested with >1 replicas where one or more replicas are too slow to follow the origin
 })
+
+test.serial('rollback', async (t) => {
+  const { originClient, replicaClient } = t.context
+
+  // First we need to write something
+  const ding = await originClient.set({
+    type: 'ding',
+    name: 'ding',
+  })
+  await originClient.command('save', ['prev.sdb'])
+  const dong = await originClient.set({
+    type: 'dong',
+    name: 'dong',
+  })
+  await originClient.command('replicawait', [])
+
+  t.deepEqual(await replicaClient.get({ $id: ding, name: true }), { name: 'ding' })
+  t.deepEqual(await replicaClient.get({ $id: dong, name: true }), { name: 'dong' })
+
+  // now rollback
+  await originClient.command('load', ['prev.sdb'])
+  await originClient.command('replicawait', [])
+
+  t.deepEqual(await replicaClient.get({ $id: ding, name: true }), { name: 'ding' })
+  t.deepEqual(await replicaClient.get({ $id: dong, name: true }), {})
+})
