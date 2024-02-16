@@ -16,6 +16,15 @@
 #include "selva_error.h"
 #include "util/selva_cpu.h"
 
+/*
+ * Monitoring the QoS class of processes and threads
+ * ```sh
+ * sudo powermetrics --show-process-qos --samplers tasks -n 1 | head -n 30
+ * ```
+ *
+ * `htop` can be configured to show the current CPU but not the QoS class.
+ */
+
 pthread_t pthread_main_thread_np(void); /* This is a "private" API. */
 
 static bool have_affinity; /*!< Affinity supported by the kernel. */
