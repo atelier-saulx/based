@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 SHELL := /bin/bash
@@ -24,7 +24,6 @@ selvad: lib
 	$(MAKE) -C src
 
 # Build all libraries (ordered)
-# TODO Doesn't work properly!?
 lib: | $(LIBS)
 
 $(LIBS):
