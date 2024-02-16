@@ -248,11 +248,6 @@ test.serial('origin flush', async (t) => {
   t.deepEqual(await replicaClient.get({ $id: ding, id: true }), {})
 })
 
-test.serial.skip('origin load another sdb', async (_t) => {
-  // const { originClient, replicaClient } = t.context
-  // TODO
-})
-
 test.serial('replica restart', async (t) => {
   const { replicaClient } = t.context
 
