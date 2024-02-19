@@ -1,7 +1,7 @@
+import { BasedErrorCode, convertDataToBasedError } from '@based/errors'
 import { BasedClient, encodeAuthState } from '../index.js'
 import { StreamFunctionContents, ProgressListener } from './types.js'
 import parseOpts from '@based/opts'
-import { convertDataToBasedError, BasedErrorCode } from '../types/index.js'
 const inProgress: { [url: string]: boolean } = {}
 
 type QueueItem = {

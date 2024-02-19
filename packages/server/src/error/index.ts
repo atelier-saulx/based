@@ -1,40 +1,14 @@
 import { BasedServer } from '../server.js'
-import { Context, isAnyBasedRoute } from '@based/functions'
+import { Context } from '@based/functions'
 import {
   BasedErrorCode,
   ErrorPayload,
   BasedErrorData,
-  EMPTY_ROUTE,
-} from './types.js'
+  createErrorData,
+} from '@based/errors'
 
-import { errorTypeHandlers } from './errorTypeHandlers.js'
-export * from './types.js'
+// export * from './types.js'
 
-export function createErrorData<T extends BasedErrorCode>(
-  code: T,
-  payload: ErrorPayload[T]
-) {
-  const type = errorTypeHandlers[code]
-  const route = !payload
-    ? EMPTY_ROUTE
-    : isAnyBasedRoute(payload)
-    ? payload
-    : 'route' in payload
-    ? payload.route
-    : EMPTY_ROUTE
-
-  return {
-    code,
-    statusCode: type.statusCode,
-    statusMessage: type.statusMessage,
-    message: type.message(payload),
-    route: {
-      name: route.name,
-      path: route.path,
-      type: route.type,
-    },
-  }
-}
 
 export function createError<T extends BasedErrorCode>(
   server: BasedServer,

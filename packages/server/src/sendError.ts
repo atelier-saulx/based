@@ -10,11 +10,9 @@ import {
 } from '@based/functions'
 import { valueToBuffer, encodeErrorResponse } from './protocol.js'
 import {
-  BasedErrorCode,
-  ErrorPayload,
   createError,
-  BasedErrorData,
 } from './error/index.js'
+import { BasedErrorCode, BasedErrorData, ErrorPayload } from '@based/errors'
 
 const sendHttpErrorData = (
   errorData: BasedErrorData,
@@ -104,15 +102,15 @@ export function sendSimpleError<T extends BasedErrorCode>(
     payload = id
       ? route.type === 'query'
         ? {
-            route,
-            observableId: id,
-          }
+          route,
+          observableId: id,
+        }
         : route.type === 'channel'
-        ? {
+          ? {
             route,
             channelId: id,
           }
-        : {
+          : {
             route,
             requestId: id,
           }

@@ -6,8 +6,9 @@ import {
   BasedFunctionTypes,
 } from '@based/functions'
 import { sendSimpleError } from './sendError.js'
-import { BasedErrorCode, createError } from './error/index.js'
+import { createError } from './error/index.js'
 import { BasedServer } from './server.js'
+import { BasedErrorCode } from '@based/errors'
 
 export const verifyRoute = <T extends BasedFunctionTypes>(
   server: BasedServer,

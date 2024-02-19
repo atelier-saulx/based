@@ -5,12 +5,13 @@ import { subscribeMessage, unsubscribeMessage } from './query.js'
 import { authMessage } from './auth.js'
 import { getMessage } from './get.js'
 import { WebSocketSession, Context } from '@based/functions'
-import { BasedErrorCode, createError } from '../../error/index.js'
+import { createError } from '../../error/index.js'
 import {
   channelSubscribeMessage,
   unsubscribeChannelMessage,
 } from './channelSubscribe.js'
 import { channelPublishMessage } from './channelPublish.js'
+import { BasedErrorCode } from '@based/errors'
 
 const reader = (
   server: BasedServer,

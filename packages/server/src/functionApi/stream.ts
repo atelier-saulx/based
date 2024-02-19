@@ -1,5 +1,5 @@
 import { BasedServer } from '../server.js'
-import { BasedErrorCode, createError } from '../error/index.js'
+import { createError } from '../error/index.js'
 import {
   Context,
   BasedDataStream,
@@ -10,6 +10,7 @@ import {
 import { verifyRoute } from '../verifyRoute.js'
 import { installFn } from '../installFn.js'
 import { Duplex, Readable } from 'stream'
+import { BasedErrorCode } from '@based/errors'
 
 const wrapStream = (
   stream: BasedDataStream | Readable | Duplex,
@@ -67,8 +68,8 @@ export const streamFunction = async (
       typeof contents === 'string'
         ? Buffer.from(contents)
         : contents instanceof ArrayBuffer
-        ? Buffer.from(contents)
-        : contents
+          ? Buffer.from(contents)
+          : contents
 
     const stream = new BasedDataStream(buffer.byteLength)
 

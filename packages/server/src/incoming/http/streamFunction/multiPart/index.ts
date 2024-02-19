@@ -12,7 +12,7 @@ import {
   BasedErrorCode,
   BasedErrorData,
   createErrorData,
-} from '../../../../error/index.js'
+} from '@based/errors'
 import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 
 const handleFile = async (
@@ -24,13 +24,13 @@ const handleFile = async (
 ): Promise<
   | { value: any }
   | {
-      error: BasedErrorData<
-        | BasedErrorCode.FunctionError
-        | BasedErrorCode.FunctionNotFound
-        | BasedErrorCode.AuthorizeFunctionError
-        | BasedErrorCode.AuthorizeRejectedError
-      >
-    }
+    error: BasedErrorData<
+      | BasedErrorCode.FunctionError
+      | BasedErrorCode.FunctionNotFound
+      | BasedErrorCode.AuthorizeFunctionError
+      | BasedErrorCode.AuthorizeRejectedError
+    >
+  }
 > => {
   const spec = await installedFn
 

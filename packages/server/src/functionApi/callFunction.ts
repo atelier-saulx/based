@@ -1,8 +1,9 @@
 import { BasedServer } from '../server.js'
-import { BasedErrorCode, createError } from '../error/index.js'
+import { createError } from '../error/index.js'
 import { Context } from '@based/functions'
 import { verifyRoute } from '../verifyRoute.js'
 import { installFn } from '../installFn.js'
+import { BasedErrorCode } from '@based/errors'
 
 export const callFunction = async (
   server: BasedServer,

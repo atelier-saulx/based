@@ -8,7 +8,7 @@ import {
   StreamPayload,
   BasedRoute,
 } from '@based/functions'
-import { BasedErrorCode } from '../../../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 import mimeTypes from 'mime-types'
 import { parseQuery } from '@saulx/utils'
@@ -38,7 +38,7 @@ export const singleStream = (
   if ('query' in ctx.session) {
     try {
       payload = parseQuery(decodeURIComponent(ctx.session.query))
-    } catch (err) {}
+    } catch (err) { }
   }
 
   const streamPayload: StreamPayload = {

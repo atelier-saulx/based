@@ -1,6 +1,6 @@
 import { BasedServer } from './server.js'
 import { sendError } from './sendError.js'
-import { BasedErrorCode } from './error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import {
   HttpSession,
   Context,

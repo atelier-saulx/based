@@ -22,7 +22,5 @@
   "dependencies": {
     "node-fetch": "^3.3.2"
   },
-  "devDependencies": {
-    "@saulx/prettier-config": "^1.0.0"
-  }
+  "devDependencies": {}
 }
