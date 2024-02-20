@@ -1,11 +1,11 @@
-import type { Language } from './languages'
-import { languages as allLanguages } from './languages'
-import type { PartialDeep, SetOptional } from 'type-fest'
-import { ParseError } from './error'
-import { ArgsClass, Path } from './walker'
-import { StringFormat } from './display/string'
-import { NumberFormat } from './display/number'
-import { DateFormat } from './display/timestamp'
+import type { Language } from './languages.js'
+import { languages as allLanguages } from './languages.js'
+import type { PartialDeep } from 'type-fest'
+import { ParseError } from './error.js'
+import { ArgsClass, Path } from './walker/index.js'
+import { StringFormat } from './display/string.js'
+import { NumberFormat } from './display/number.js'
+import { DateFormat } from './display/timestamp.js'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
@@ -42,6 +42,7 @@ export const basedSchemaFieldTypes = [
   'text',
   'enum',
   'cardinality',
+  'any',
 ] as const
 
 export type BasedSchemaFieldType = (typeof basedSchemaFieldTypes)[number]
@@ -69,7 +70,7 @@ export type BasedSchemaContentMediaType =
   | 'video/*'
   | 'audio/*'
   | '*/*'
-  | `${string}/${string}`
+  | `${string}/${string}` // this is overriding the previous
 
 export type BasedSchemaFieldShared = {
   hooks?:
@@ -98,6 +99,81 @@ export type BasedSchemaFieldShared = {
   $delete?: boolean
 }
 
+export const basedSchemaStringFormatValues = [
+  'email',
+  'URL',
+  'MACAddress',
+  'IP',
+  'IPRange',
+  'FQDN',
+  'IBAN',
+  'BIC',
+  'alpha',
+  'alphaLocales',
+  'alphanumeric',
+  'alphanumericLocales',
+  'passportNumber',
+  'port',
+  'lowercase',
+  'uppercase',
+  'ascii',
+  'semVer',
+  'surrogatePair',
+  'IMEI',
+  'hexadecimal',
+  'octal',
+  'hexColor',
+  'rgbColor',
+  'HSL',
+  'ISRC',
+  'MD5',
+  'JWT',
+  'UUID',
+  'luhnNumber',
+  'creditCard',
+  'identityCard',
+  'EAN',
+  'ISIN',
+  'ISBN',
+  'ISSN',
+  'mobilePhone',
+  'mobilePhoneLocales',
+  'postalCode',
+  'postalCodeLocales',
+  'ethereumAddress',
+  'currency',
+  'btcAddress',
+  'ISO6391',
+  'ISO8601',
+  'RFC3339',
+  'ISO31661Alpha2',
+  'ISO31661Alpha3',
+  'ISO4217',
+  'base32',
+  'base58',
+  'base64',
+  'dataURI',
+  'magnetURI',
+  'mimeType',
+  'latLong',
+  'slug',
+  'strongPassword',
+  'taxID',
+  'licensePlate',
+  'VAT',
+  'code',
+  'typescript',
+  'javascript',
+  'python',
+  'rust',
+  'css',
+  'html',
+  'json',
+  'markdown',
+  'clike',
+  'basedId',
+  'basedType',
+] as const
 // -------------- Primitive ---------------
 export type BasedSchemaStringShared = {
   minLength?: number
@@ -105,89 +181,19 @@ export type BasedSchemaStringShared = {
   contentMediaEncoding?: string // base64
   contentMediaType?: BasedSchemaContentMediaType // 'image/*'
   pattern?: BasedSchemaPattern // TODO: does not exist
-  format?:
-    | 'email'
-    | 'URL'
-    | 'MACAddress'
-    | 'IP'
-    | 'IPRange'
-    | 'FQDN'
-    | 'IBAN'
-    | 'BIC'
-    | 'alpha'
-    | 'alphaLocales'
-    | 'alphanumeric'
-    | 'alphanumericLocales'
-    | 'passportNumber'
-    | 'port'
-    | 'lowercase'
-    | 'uppercase'
-    | 'ascii'
-    | 'semVer'
-    | 'surrogatePair'
-    | 'IMEI'
-    | 'hexadecimal'
-    | 'octal'
-    | 'hexColor'
-    | 'rgbColor'
-    | 'HSL'
-    | 'ISRC'
-    | 'MD5'
-    | 'JWT'
-    | 'UUID'
-    | 'luhnNumber'
-    | 'creditCard'
-    | 'identityCard'
-    | 'EAN'
-    | 'ISIN'
-    | 'ISBN'
-    | 'ISSN'
-    | 'mobilePhone'
-    | 'mobilePhoneLocales'
-    | 'postalCode'
-    | 'postalCodeLocales'
-    | 'ethereumAddress'
-    | 'currency'
-    | 'btcAddress'
-    | 'ISO6391'
-    | 'ISO8601'
-    | 'RFC3339'
-    | 'ISO31661Alpha2'
-    | 'ISO31661Alpha3'
-    | 'ISO4217'
-    | 'base32'
-    | 'base58'
-    | 'base64'
-    | 'dataURI'
-    | 'magnetURI'
-    | 'mimeType'
-    | 'latLong'
-    | 'slug'
-    | 'strongPassword'
-    | 'taxID'
-    | 'licensePlate'
-    | 'VAT'
-    | 'code'
-    | 'typescript'
-    | 'javascript'
-    | 'python'
-    | 'rust'
-    | 'css'
-    | 'html'
-    | 'json'
-    | 'markdown'
-    | 'clike'
+  format?: (typeof basedSchemaStringFormatValues)[number]
   display?: StringFormat
   multiline?: boolean
 }
 
-type NumberDefaults = {
+export type BasedSchemaNumberDefaults = {
   multipleOf?: number
   minimum?: number
   maximum?: number
   exclusiveMaximum?: boolean
   exclusiveMinimum?: boolean
 }
+export type NumberDefaults = BasedSchemaNumberDefaults // deprecated
 
 export type BasedNumberDisplay = NumberFormat
 
@@ -232,6 +238,10 @@ export type BasedSchemaFieldJSON = {
   format?: 'rich-text'
 } & BasedSchemaFieldShared
 
+export type BasedSchemaFieldAny = {
+  type: 'any'
+} & BasedSchemaFieldShared
+
 export type BasedSchemaFieldPrimitive =
   | BasedSchemaFieldString
   | BasedSchemaFieldNumber
@@ -263,7 +273,7 @@ export type BasedSchemaFieldRecord = {
 
 export type BasedSchemaFieldArray = {
   type: 'array'
-  values: BasedSchemaField
+  items: BasedSchemaField
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldSet = {
@@ -284,7 +294,6 @@ export type BasedSchemaFieldReference = {
   bidirectional?: {
     fromField: string
   }
-  // TODO: selva filters { $operator: 'includes', $value: 'image/', $field: 'mimeType' }
   allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
@@ -294,6 +303,7 @@ export type BasedSchemaFieldReferences = {
   bidirectional?: {
     fromField: string
   }
+  sortable?: boolean
   allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
@@ -315,6 +325,7 @@ export type BasedSchemaFields = {
   references: BasedSchemaFieldReferences
   text: BasedSchemaFieldText
   cardinality: BasedSchemaFieldCardinality
+  any: BasedSchemaFieldAny
 }
 
 export type BasedSchemaField =
@@ -326,6 +337,7 @@ export type BasedSchemaField =
     })
 
 export type BasedSchemaType = {
+  directory?: string // sets field that we want for navigation e.g. children
   fields: {
     [name: string]: BasedSchemaField
   }

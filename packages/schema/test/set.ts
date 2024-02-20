@@ -1,7 +1,6 @@
 import test from 'ava'
-import { BasedSchema, setWalker, walk } from '../src/index'
-import { wait } from '@saulx/utils'
-import { resultCollect } from './utils'
+import { BasedSchema, setWalker } from '../src/index.js'
+import { resultCollect } from './utils/index.js'
 let r
 const schema: BasedSchema = {
   types: {

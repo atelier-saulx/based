@@ -1,4 +1,4 @@
-import { ExecContext } from '../types'
+import { ExecContext } from '../types.js'
 
 export function makeLangArg(ctx: ExecContext) {
   const { lang } = ctx

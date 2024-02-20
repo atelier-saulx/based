@@ -1,14 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../../src'
-import { startOrigin } from '../../../server/dist'
-import { SelvaServer } from '../../../server/dist/server'
-import { SelvaFindResultType, SelvaTraversal } from '../../src/protocol'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import '../assertions'
-import { getIndexingState } from '../assertions/utils'
+import '../assertions/index.js'
+import { getIndexingState } from '../assertions/utils.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from '../assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -21,11 +20,11 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     name: 'default',
     env: {
-      FIND_INDICES_MAX: '1',
-      FIND_INDEXING_INTERVAL: '10',
-      FIND_INDEXING_ICB_UPDATE_INTERVAL: '1',
-      FIND_INDEXING_POPULARITY_AVE_PERIOD: '1',
-      FIND_INDEXING_THRESHOLD: '2',
+      SELVA_INDEX_MAX: '1',
+      SELVA_INDEX_INTERVAL: '10',
+      SELVA_INDEX_ICB_UPDATE_INTERVAL: '1',
+      SELVA_INDEX_POPULARITY_AVE_PERIOD: '1',
+      SELVA_INDEX_THRESHOLD: '2',
     },
   })
 
@@ -136,7 +135,7 @@ test.skip('find references', async (t) => {
   }
 
   for (let i = 0; i < 300; i++) {
-    t.deepEqualIgnoreOrder(await client.get(q), {
+    deepEqualIgnoreOrder(t, await client.get(q), {
       items: [
         { name: 'sub 1' },
         { name: 'sub 2' },

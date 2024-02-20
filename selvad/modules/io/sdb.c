@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -21,6 +21,13 @@
 #define SDB_VERSION 1
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
+
+/**
+ * Total bytes used by the header and footer.
+ */
+#define HDR_FTR_SIZE \
+    (sizeof(magic_start) + SELVA_DB_VERSION_SIZE + SELVA_DB_VERSION_SIZE + sizeof(uint32_t) + sizeof(uint32_t) + \
+     sizeof(magic_end) + SELVA_IO_HASH_SIZE)
 
 struct selva_io_zbuf {
     size_t block_buf_i; /*!< Index into block_buf. */
@@ -45,7 +52,39 @@ void selva_io_get_ver(struct SelvaDbVersionInfo *nfo)
     memcpy(nfo, &selva_db_version_info, sizeof(*nfo));
 }
 
-static int sdb_zwriteout(struct selva_io *io)
+static void file_raw_write(struct selva_io *io, const void *p, size_t size)
+{
+    (void)fwrite(p, sizeof(uint8_t), size, io->file_io.file);
+}
+
+static void string_raw_write(struct selva_io *io, const void *p, size_t size)
+{
+    io->string_io.err = selva_string_append(io->string_io.data, p, size);
+}
+
+static int file_raw_read(struct selva_io *io, void *buf, size_t rd)
+{
+    return (fread(buf, sizeof(uint8_t), rd, io->file_io.file) != rd) ? SELVA_EIO : 0;
+}
+
+static int string_raw_read(struct selva_io *io, void *buf, size_t rd)
+{
+    const char *data;
+    size_t data_len;
+    size_t offset = io->string_io.offset;
+
+    data = selva_string_to_str(io->string_io.data, &data_len);
+
+    if (offset + rd > data_len) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(buf, data + offset, rd);
+    io->string_io.offset = offset + rd;
+    return 0;
+}
+
+static int zsdb_writeout(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
     size_t out_nbytes;
@@ -53,16 +92,26 @@ static int sdb_zwriteout(struct selva_io *io)
     assert(zbuf->block_buf_i == ZBLOCK_BUF_SIZE);
 
     out_nbytes = libdeflate_deflate_compress(io->compressor, zbuf->block_buf, ZBLOCK_BUF_SIZE, zbuf->compressed_buf, zbuf->compressed_buf_size);
-    if (fwrite(zbuf->compressed_buf, sizeof(uint8_t), out_nbytes, io->file_io.file) != out_nbytes) {
-        return SELVA_EIO;
+    if (unlikely(out_nbytes == 0)) {
+        /*
+         * This shouldn't happen as the buffer is (should be) always big enough.
+         * Therefore, even if the data expands slightly we can just accept it
+         * like that. This simplifies the process slightly as we can expect
+         * every block of data to be compressed and avoid adding more metadata
+         * and hopefully still actually save some space.
+         */
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to compress an SDB block");
+        abort();
     }
 
+
+    io->raw_write(io, zbuf->compressed_buf, out_nbytes);
     zbuf->block_buf_i = 0;
 
     return 0;
 }
 
-static int sdb_flush_block_buf(struct selva_io *io)
+static int zsdb_flush_block_buf(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
 
@@ -75,12 +124,34 @@ static int sdb_flush_block_buf(struct selva_io *io)
         memset(zbuf->block_buf + zbuf->block_buf_i, 0, remain);
         zbuf->block_buf_i += remain;
 
-        return sdb_zwriteout(io);
+        return zsdb_writeout(io);
     }
     return 0;
 }
 
-static int sdb_zreadin(struct selva_io *io)
+static void zsdb_write(struct selva_io *restrict io, const void *restrict ptr, size_t size)
+{
+    struct selva_io_zbuf *zbuf = io->zbuf;
+    size_t left = size;
+    const char *p = ptr;
+
+    while (left > 0) {
+        size_t bytes_to_copy = min(left, ZBLOCK_BUF_SIZE - zbuf->block_buf_i);
+
+        assert(zbuf->block_buf_i < ZBLOCK_BUF_SIZE && bytes_to_copy > 0);
+
+        memcpy(zbuf->block_buf + zbuf->block_buf_i, p, bytes_to_copy);
+        p += bytes_to_copy;
+        left -= bytes_to_copy;
+        zbuf->block_buf_i += bytes_to_copy;
+
+        if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
+            (void)zsdb_writeout(io);
+        }
+    }
+}
+
+static int file_zsdb_readin(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
     const size_t fread_nbytes = min(zbuf->compressed_buf_size, io->file_io.file_remain);
@@ -109,145 +180,158 @@ static int sdb_zreadin(struct selva_io *io)
     return 0;
 }
 
-static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
+static int string_zsdb_readin(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
+    const size_t remain = selva_string_get_len(io->string_io.data) - io->string_io.offset - (sizeof(magic_end) + SELVA_IO_HASH_SIZE);
+    const size_t in_nbytes = min(zbuf->compressed_buf_size, remain);
+    size_t in_nbytes_act;
+    enum libdeflate_result res;
+    int err;
 
-    sha3_Update(&io->hash_c, ptr, count * size);
+    assert(zbuf->block_buf_i == ZBLOCK_BUF_SIZE);
 
-    if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
-        size_t left = size * count;
-        const char *p = ptr;
-
-        while (left > 0) {
-            size_t bytes_to_copy = min(left, ZBLOCK_BUF_SIZE - zbuf->block_buf_i);
-
-            assert(zbuf->block_buf_i < ZBLOCK_BUF_SIZE && bytes_to_copy > 0);
-
-            memcpy(zbuf->block_buf + zbuf->block_buf_i, p, bytes_to_copy);
-            p += bytes_to_copy;
-            left -= bytes_to_copy;
-            zbuf->block_buf_i += bytes_to_copy;
-
-            if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
-                if (sdb_zwriteout(io)) {
-                    return (size * count) - left;
-                }
-            }
-        }
-
-        return count;
-    } else {
-        return fwrite(ptr, size, count, io->file_io.file);
+    err = string_raw_read(io, zbuf->compressed_buf, in_nbytes);
+    if (err) {
+        return err;
     }
+
+    /* Just to be sure that there is never any garbage left. */
+    memset(zbuf->compressed_buf + in_nbytes, 0, zbuf->compressed_buf_size - in_nbytes);
+
+    res = libdeflate_deflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
+    if (res) {
+        return SELVA_EINVAL;
+    }
+
+    io->string_io.offset -= in_nbytes - in_nbytes_act;
+    zbuf->block_buf_i = 0;
+
+    return 0;
 }
 
-static size_t sdb_read_file(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
+static size_t zsdb_read(struct selva_io *restrict io, void * restrict ptr, size_t total_size, int (*zreadin)(struct selva_io *io))
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
-    size_t r;
+    size_t r = 0;
 
-    if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
-        const size_t total_size = size * count;
-        r = 0;
+    while (r < total_size) {
+        size_t bytes_to_copy;
 
-        while (r < total_size) {
-            size_t bytes_to_copy;
+        if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
+            int err;
 
-            if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
-                int err;
-
-                err = sdb_zreadin(io);
-                if (err) {
-                    goto out;
-                }
+            err = zreadin(io);
+            if (err) {
+                goto out;
             }
-
-            bytes_to_copy = min(total_size - r, ZBLOCK_BUF_SIZE - zbuf->block_buf_i);
-            memcpy((uint8_t *)ptr + r, zbuf->block_buf + zbuf->block_buf_i, bytes_to_copy);
-            r += bytes_to_copy;
-            zbuf->block_buf_i += bytes_to_copy;
         }
-out:
-        r /= size;
-    } else {
-        r = fread(ptr, size, count, io->file_io.file);
-    }
-    sha3_Update(&io->hash_c, ptr, r * size);
 
+        bytes_to_copy = min(total_size - r, ZBLOCK_BUF_SIZE - zbuf->block_buf_i);
+        memcpy((uint8_t *)ptr + r, zbuf->block_buf + zbuf->block_buf_i, bytes_to_copy);
+        r += bytes_to_copy;
+        zbuf->block_buf_i += bytes_to_copy;
+    }
+out:
     return r;
 }
 
-static void sdb_raw_write(struct selva_io *io, const void *p, size_t size)
+static void file_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
-    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        (void)fwrite(p, sizeof(uint8_t), size, io->file_io.file);
-    } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        io->string_io.err = selva_string_append(io->string_io.data, p, size);
+    const size_t wr = count * size;
+
+    sha3_Update(&io->hash_c, ptr, wr);
+
+    if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
+        zsdb_write(io, ptr, wr);
+    } else {
+        (void)fwrite(ptr, size, count, io->file_io.file);
     }
 }
 
-static size_t sdb_write_string(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
+static size_t file_sdb_read(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
+    size_t r;
+
+    if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
+        r = zsdb_read(io, ptr, size * count, file_zsdb_readin);
+        sha3_Update(&io->hash_c, ptr, r);
+        return r / size;
+    } else {
+        r = fread(ptr, size, count, io->file_io.file);
+        sha3_Update(&io->hash_c, ptr, r * size);
+        return r;
+    }
+}
+
+static void string_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
+{
+    const size_t wr = count * size;
     int err;
 
-    sha3_Update(&io->hash_c, ptr, count * size);
-    err = selva_string_append(io->string_io.data, ptr, size * count);
+    sha3_Update(&io->hash_c, ptr, wr);
 
-    if (err) {
-        io->string_io.err = err;
-        return 0;
+    if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
+        zsdb_write(io, ptr, wr);
     } else {
-        return count;
+        err = selva_string_append(io->string_io.data, ptr, wr);
+        if (err) {
+            io->string_io.err = err;
+        }
     }
 }
 
-static size_t sdb_read_string(void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
+static size_t string_sdb_read(void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
 {
-    const char *data;
-    size_t data_len;
     const size_t rd = size * count;
 
-    data = selva_string_to_str(io->string_io.data, &data_len);
+    if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
+        if (zsdb_read(io, ptr, rd, string_zsdb_readin) != rd) {
+            return 0;
+        }
+    } else {
+        int err;
 
-    if (io->string_io.offset + rd > data_len) {
-        return 0;
+        err = string_raw_read(io, ptr, rd);
+        if (err) {
+            return 0;
+        }
     }
 
-    memcpy(ptr, data + io->string_io.offset, rd);
-    io->string_io.offset += rd;
-
     sha3_Update(&io->hash_c, ptr, rd);
-
-    return rd;
+    return count;
 }
 
-static off_t sdb_tell_file(struct selva_io *io)
+static off_t file_sdb_tell(struct selva_io *io)
 {
     return ftello(io->file_io.file);
 }
 
-static off_t sdb_tell_string(struct selva_io *io)
+static off_t string_sdb_tell(struct selva_io *io)
 {
     return (off_t)io->string_io.offset;
 }
 
-static int sdb_seek_file(struct selva_io *io, off_t offset, int whence)
+static int file_sdb_seek(struct selva_io *io, off_t offset, int whence)
 {
     return fseeko(io->file_io.file, offset, whence);
 }
 
-static int sdb_seek_string(struct selva_io *io, off_t offset, int whence)
+static int string_sdb_seek(struct selva_io *io, off_t offset, int whence)
 {
     const size_t data_len = selva_string_get_len(io->string_io.data);
 
-    if (whence == SEEK_SET) {
+    switch (whence) {
+    case SEEK_SET:
         /* NOP */
-    } else if (whence == SEEK_CUR) {
+        break;
+    case SEEK_CUR:
         offset += io->string_io.offset;
-    } else if (whence == SEEK_END) {
+        break;
+    case SEEK_END:
         offset = data_len + io->string_io.offset;
-    } else {
+        break;
+    default:
         return SELVA_EINVAL;
     }
 
@@ -259,17 +343,17 @@ static int sdb_seek_string(struct selva_io *io, off_t offset, int whence)
     return 0;
 }
 
-static int sdb_flush_file(struct selva_io *io)
+static int file_sdb_flush(struct selva_io *io)
 {
     return fflush(io->file_io.file);
 }
 
-static int sdb_flush_string(struct selva_io *)
+static int string_sdb_flush(struct selva_io *)
 {
     return 0;
 }
 
-static int sdb_error_file(struct selva_io *restrict io)
+static int file_sdb_error(struct selva_io *restrict io)
 {
     if (ferror(io->file_io.file)) {
         return SELVA_EIO;
@@ -278,17 +362,17 @@ static int sdb_error_file(struct selva_io *restrict io)
     return 0;
 }
 
-static int sdb_error_string(struct selva_io *restrict io)
+static int string_sdb_error(struct selva_io *restrict io)
 {
     return io->string_io.err;
 }
 
-static void sdb_clearerr_file(struct selva_io *restrict io)
+static void file_sdb_clearerr(struct selva_io *restrict io)
 {
     clearerr(io->file_io.file);
 }
 
-static void sdb_clearerr_string(struct selva_io *restrict io)
+static void string_sdb_clearerr(struct selva_io *restrict io)
 {
     io->string_io.err = 0;
 }
@@ -297,8 +381,11 @@ void sdb_init(struct selva_io *io)
 {
     sha3_Init256KitTen(&io->hash_c);
 
-    if ((io->flags & SELVA_IO_FLAGS_FILE_IO) &&
-        (io->flags & (SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED))) {
+    /*
+     * Initialize compressor if requested or if reading because we don't know
+     * whether the SDB will be compressed.
+     */
+    if (io->flags & (SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED)) {
 #if 0
         struct libdeflate_options deflate_opts = {
             .sizeof_options = sizeof(deflate_opts),
@@ -306,10 +393,6 @@ void sdb_init(struct selva_io *io)
             .free_func = selva_free,
         };
 #endif
-        struct stat st;
-        const size_t hdr_ftr_size =
-            sizeof(magic_start) + SELVA_DB_VERSION_SIZE + SELVA_DB_VERSION_SIZE + sizeof(uint32_t) + sizeof(uint32_t) +
-            sizeof(magic_end) + SELVA_IO_HASH_SIZE;
 
         /* NOTE decomp needs the compressor to determine the worst case buf size. */
         /* TODO Coming in the upcoming version */
@@ -325,32 +408,36 @@ void sdb_init(struct selva_io *io)
         zbuf->compressed_buf_size = compressed_buf_size;
         zbuf->block_buf_i = (io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;
         io->zbuf = zbuf;
+    }
+
+    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
+        struct stat st;
 
         /*
          * Find the size of the compressed segment in the SDB file.
          */
         fstat(fileno(io->file_io.file), &st);
-        io->file_io.file_remain = (st.st_size >= SELVA_IO_HASH_SIZE) ? st.st_size - hdr_ftr_size : 0;
-    }
+        io->file_io.file_remain = (st.st_size >= SELVA_IO_HASH_SIZE) ? st.st_size - HDR_FTR_SIZE : 0;
 
-    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        io->sdb_write = sdb_write_file;
-        io->sdb_read = sdb_read_file;
-        io->sdb_tell = sdb_tell_file;
-        io->sdb_seek = sdb_seek_file;
-        io->sdb_flush = sdb_flush_file;
-        io->sdb_error = sdb_error_file;
-        io->sdb_clearerr = sdb_clearerr_file;
+        io->raw_write = file_raw_write;
+        io->raw_read = file_raw_read;
+        io->sdb_write = file_sdb_write;
+        io->sdb_read = file_sdb_read;
+        io->sdb_tell = file_sdb_tell;
+        io->sdb_seek = file_sdb_seek;
+        io->sdb_flush = file_sdb_flush;
+        io->sdb_error = file_sdb_error;
+        io->sdb_clearerr = file_sdb_clearerr;
     } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        io->sdb_write = sdb_write_string;
-        io->sdb_read = sdb_read_string;
-        io->sdb_tell = sdb_tell_string;
-        io->sdb_seek = sdb_seek_string;
-        io->sdb_flush = sdb_flush_string;
-        io->sdb_error = sdb_error_string;
-        io->sdb_clearerr = sdb_clearerr_string;
-
-        assert(!(io->flags & SELVA_IO_FLAGS_COMPRESSED));
+        io->raw_write = string_raw_write;
+        io->raw_read = string_raw_read;
+        io->sdb_write = string_sdb_write;
+        io->sdb_read = string_sdb_read;
+        io->sdb_tell = string_sdb_tell;
+        io->sdb_seek = string_sdb_seek;
+        io->sdb_flush = string_sdb_flush;
+        io->sdb_error = string_sdb_error;
+        io->sdb_clearerr = string_sdb_clearerr;
     }
 }
 
@@ -364,7 +451,7 @@ void sdb_deinit(struct selva_io *io)
 int sdb_write_header(struct selva_io *io)
 {
     const char *created_with;
-    const uint32_t save_flags = io->flags & SAVE_FLAGS_MASK;
+    const uint32_t save_flags = htole32(io->flags & SAVE_FLAGS_MASK);
     int err;
 
     if (selva_db_version_info.created_with[0] != '\0') {
@@ -412,7 +499,7 @@ int sdb_read_header(struct selva_io *io)
         return SELVA_ENOTSUP;
     }
 
-    io->flags |= letoh(flags) & SELVA_IO_FLAGS_COMPRESSED;
+    io->flags |= letoh(flags) & SAVE_FLAGS_MASK;
 
     if (io->flags & SELVA_IO_FLAGS_COMPRESSED) {
         io->flags |= _SELVA_IO_FLAGS_EN_COMPRESS;
@@ -432,16 +519,16 @@ int sdb_write_footer(struct selva_io *io)
     int err = SELVA_EINTYPE;
 
     if (prevz) {
-        err = sdb_flush_block_buf(io);
+        err = zsdb_flush_block_buf(io);
         if (err) {
             return err;
         }
     }
 
     sha3_Update(&io->hash_c, magic_end, sizeof(magic_end));
-    sdb_raw_write(io, magic_end, sizeof(magic_end));
+    io->raw_write(io, magic_end, sizeof(magic_end));
     io->computed_hash = sha3_Finalize(&io->hash_c);
-    sdb_raw_write(io, (void *)io->computed_hash, SELVA_IO_HASH_SIZE);
+    io->raw_write(io, (void *)io->computed_hash, SELVA_IO_HASH_SIZE);
     err = io->sdb_error(io);
 
     return err;
@@ -451,6 +538,7 @@ int sdb_read_footer(struct selva_io *io)
 {
     char magic[sizeof(magic_end)];
     size_t res;
+    int err;
     typeof(io->flags) prevz = io->flags & _SELVA_IO_FLAGS_EN_COMPRESS;
 
     io->flags &= ~_SELVA_IO_FLAGS_EN_COMPRESS;
@@ -466,24 +554,9 @@ int sdb_read_footer(struct selva_io *io)
     }
 
     io->computed_hash = sha3_Finalize(&io->hash_c);
-    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        res = fread(io->stored_hash, sizeof(uint8_t), sizeof(io->stored_hash), io->file_io.file);
-        if (res != SELVA_IO_HASH_SIZE) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Hash size invalid. act: %zu expected: %zu", res, (size_t)SELVA_IO_HASH_SIZE);
-            return SELVA_EINVAL;
-        }
-    } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        const char *data;
-        size_t data_len;
-        const size_t rd = (size_t)SELVA_IO_HASH_SIZE;
-
-        data = selva_string_to_str(io->string_io.data, &data_len);
-
-        if (io->string_io.offset + rd > data_len) {
-            return SELVA_EINVAL;
-        }
-
-        memcpy(io->stored_hash, data + io->string_io.offset, rd);
+    err = io->raw_read(io, io->stored_hash, sizeof(io->stored_hash));
+    if (err) {
+        return err;
     }
 
     io->flags |= prevz;

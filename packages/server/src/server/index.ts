@@ -7,12 +7,17 @@ type ServerDescriptor = {
   type: ServerType
 }
 
-import { ServerOptions } from '../types'
+import { ServerOptions } from '../types.js'
 import { EventEmitter } from 'events'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import { mkdirSync, existsSync } from 'fs'
 import node_modules from 'node_modules-path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(
+  fileURLToPath(import.meta.url).replace('/dist/', '/')
+)
 
 export class SelvaServer extends EventEmitter {
   public pm: ChildProcess
@@ -111,7 +116,7 @@ function addSignalHandlers(server: SelvaServer): void {
   process.setMaxListeners(10e4)
 
   process.on('SIGINT', () => {
-    console.info('Got SIGINT, closing redis server')
+    console.info('Got SIGINT, closing selvad server')
     if (server.pm) {
       server.pm.kill('SIGINT')
     }
@@ -122,7 +127,7 @@ function addSignalHandlers(server: SelvaServer): void {
     }, 1e3 * 4).unref()
   })
   process.on('SIGTERM', () => {
-    console.info('Got SIGTERM, closing redis server')
+    console.info('Got SIGTERM, closing selvad server')
     if (server.pm) {
       server.pm.kill('SIGTERM')
     }
@@ -146,7 +151,7 @@ export const startServer = async (
   const server = new SelvaServer(type)
   await server.start(opts)
 
-  // add singnal handlers in selva itself to close redis
+  // add signal handlers in selva itself to close selvad
   console.log('ADDING SIGNAL HANDLERS')
   addSignalHandlers(server)
 

@@ -1,12 +1,7 @@
-import {
-  BasedSchemaCollectProps,
-  BasedSchemaField,
-  BasedSchemaFieldArray,
-  Path,
-} from '@based/schema'
-import { toModifyArgs } from '.'
-import { ModifyArgType } from '../protocol/encode/modify/types'
-import { joinPath } from '../util'
+import { BasedSchemaField, BasedSchemaFieldArray, Path } from '@based/schema'
+import { toModifyArgs } from './index.js'
+import { ModifyArgType } from '../protocol/encode/modify/types.js'
+import { joinPath } from '../util/index.js'
 
 const DB_TYPE_TO_ARY_TYPE = {
   string: 0,
@@ -25,7 +20,7 @@ export function arrayOpToModify(props: {
   const { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
-  const valSchema = (<BasedSchemaFieldArray>fieldSchema).values
+  const valSchema = (<BasedSchemaFieldArray>fieldSchema).items
   const valType = DB_TYPE_TO_ARY_TYPE[valSchema.type]
 
   const iPath = [...path]

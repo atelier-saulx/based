@@ -75,7 +75,7 @@ jobs:
       #     fail-on-cache-miss: true
       - name: Restore node_modules
         id: cache-npm-try
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: '**/node_modules'
           key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
@@ -84,6 +84,24 @@ jobs:
         run: npm ci
       - name: Build based-db
         run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+      - name: Extract linux-x64 to package bin folder
+        run: |
+          mkdir -p packages/server/selvad-packages/linux-x64/bin
+          tar -zxf Linux-X64-selvad-binaries/linux-x64.tar.gz -C packages/server/selvad-packages/linux-x64/bin
+          ls -la packages/server/selvad-packages/linux-x64/bin
+      - name: Extract darwin-x64 to package bin folder
+        run: |
+          mkdir -p packages/server/selvad-packages/darwin-x64/bin
+          tar -zxf macOS-X64-selvad-binaries/darwin-x64.tar.gz -C packages/server/selvad-packages/darwin-x64/bin
+          ls -la packages/server/selvad-packages/darwin-x64/bin
+      - name: Extract darwin-arm64 to package bin folder
+        run: |
+          mkdir -p packages/server/selvad-packages/darwin-arm64/bin
+          tar -zxf macOS-ARM64-selvad-binaries/darwin-arm64.tar.gz -C packages/server/selvad-packages/darwin-arm64/bin
+          ls -la packages/server/selvad-packages/darwin-arm64/bin
       - name: Update query version
         run: |
           cd packages/query
@@ -145,14 +163,6 @@ jobs:
           git config --global user.email 'dev@saulx.com'
           git commit -am "CI/CD update package.json files"
           git push
-      - uses: actions/download-artifact@v3
-        with:
-          path: .
-      - name: Extract linux-x64 to package bin folder
-        run: |
-          mkdir -p packages/server/selvad-packages/linux-x64/bin
-          tar -zxf Linux-X64-selvad-binaries/linux-x64.tar.gz -C packages/server/selvad-packages/linux-x64/bin
-          ls -la packages/server/selvad-packages/linux-x64/bin
       - name: Publish linux-x64 npm package\
         run: |
           cd packages/server/selvad-packages/linux-x64
@@ -160,11 +170,6 @@ jobs:
           cd ../../../..
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Extract darwin-x64 to package bin folder
-        run: |
-          mkdir -p packages/server/selvad-packages/darwin-x64/bin
-          tar -zxf macOS-X64-selvad-binaries/darwin-x64.tar.gz -C packages/server/selvad-packages/darwin-x64/bin
-          ls -la packages/server/selvad-packages/darwin-x64/bin
       - name: Publish darwin-x64 npm package
         run: |
           cd packages/server/selvad-packages/darwin-x64
@@ -172,11 +177,6 @@ jobs:
           cd ../../../..
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Extract darwin-arm64 to package bin folder
-        run: |
-          mkdir -p packages/server/selvad-packages/darwin-arm64/bin
-          tar -zxf macOS-ARM64-selvad-binaries/darwin-arm64.tar.gz -C packages/server/selvad-packages/darwin-arm64/bin
-          ls -la packages/server/selvad-packages/darwin-arm64/bin
       - name: Publish darwin-arm64 npm package
         run: |
           cd packages/server/selvad-packages/darwin-arm64

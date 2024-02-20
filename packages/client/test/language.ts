@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
-import { SchemaUpdateMode } from '../src/types'
+import { SchemaUpdateMode } from '../src/types.js'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -44,7 +44,7 @@ test.beforeEach(async (t) => {
           },
           randoArray: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 title: { type: 'text' },
@@ -90,7 +90,7 @@ test('language in all types of objects', async (t) => {
             },
             randoArray: {
               type: 'array',
-              values: {
+              items: {
                 type: 'object',
                 properties: {
                   title: { type: 'text' },
@@ -123,7 +123,8 @@ test('language in all types of objects', async (t) => {
     randoArray: [{ title: 'randoArray.engTitle' }],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'bl1',
       $language: 'en',

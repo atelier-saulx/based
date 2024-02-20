@@ -11,17 +11,17 @@ import {
   ModifyOpSetType,
   SelvaModify_OpEdgeMetaCode,
   edgeMetaDef,
-} from '../protocol/encode/modify/types'
-import { arrayOpToModify } from './array'
-import { joinPath } from '../util'
-import { BasedDbClient } from '..'
-import genId from '../id'
+} from '../protocol/encode/modify/types.js'
+import { arrayOpToModify } from './array.js'
+import { joinPath } from '../util/index.js'
+import { BasedDbClient } from '../index.js'
+import genId from '../id/index.js'
 import { createRecord } from 'data-record'
 import {
   encodeDouble,
   encodeLongLong,
-} from '../protocol/encode/modify/primitiveTypes'
-import { resolveNodeId } from '../get/exec/cmd'
+} from '../protocol/encode/modify/primitiveTypes.js'
+import { resolveNodeId } from '../get/exec/cmd.js'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
@@ -63,7 +63,9 @@ export function toModifyArgs(props: {
   let { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
+  let opType: ModifyArgType
   switch (fieldSchema.type) {
+    // @ts-expect-error fallthrough
     case 'reference':
       if (!value.$value && !value.$delete) {
         value = { $value: [value] }
@@ -121,8 +123,16 @@ export function toModifyArgs(props: {
         strPath,
         value.$delete === true ? { $delete: true } : [2],
       ]
+    case 'any':
+      opType = DB_TYPE_TO_MODIFY_TYPE[typeof value]
+      if (!opType) {
+        console.error('Unsupported field type', path, fieldSchema, value)
+        return []
+      }
+
+      return [opType, strPath, value]
     default:
-      let opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
+      opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
 
       if (value?.$increment) {
         opType = VALUE_TYPE_TO_INCREMENT_TYPE[opType]

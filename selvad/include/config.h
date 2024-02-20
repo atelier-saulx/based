@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -9,6 +9,7 @@
 enum config_type {
     CONFIG_CSTRING = 0,
     CONFIG_INT,
+    CONFIG_BOOL,
     CONFIG_SIZE_T,
 };
 

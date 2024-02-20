@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -26,7 +26,7 @@
 
 #define DISK_SUBTREE_PREFIX_SIZE 5
 
-static void gen_prefix(char str[DISK_SUBTREE_PREFIX_SIZE])
+static void gen_prefix(char str[static DISK_SUBTREE_PREFIX_SIZE])
 {
     static const char *hex_digits = "0123456789abcdef";
 
@@ -85,9 +85,12 @@ static int fread_compressed_subtree(struct selva_string *zpath, struct selva_str
 
     fp = fopen(zpath_str, "rb");
     if (!fp) {
+        char err_buf[80];
+
+        strerror_r(errno, err_buf, sizeof(err_buf));
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to open compressed subtree \"%s\": %s",
                   zpath_str,
-                  strerror(errno));
+                  err_buf);
         /*
          * It could look like ENOENT would make more sense here but that's not
          * true because ENOENT would be interpreted as if the node was not

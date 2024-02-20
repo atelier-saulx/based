@@ -102,6 +102,8 @@ export const COMMAND_TYPES = {
   'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
   'hierarchy.expire': 26,
+  'hierarchy.compress': 33,
+  'hierarchy.listCompressed': 34,
   // subscriptions
   'subscriptions.addMarker': 59,
   'subscriptions.addAlias': 60,
@@ -125,6 +127,13 @@ export const COMMAND_TYPES = {
   'rpn.evalDouble': 45,
   'rpn.evalString': 46,
   'rpn.evalSet': 47,
+  'mq.create': 84,
+  'mq.delete': 85,
+  'mq.list': 86,
+  'mq.post': 87,
+  'mq.recv': 88,
+  'mq.ack': 89,
+  'mq.nack': 90,
 }
 export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {
@@ -335,6 +344,11 @@ export const hierarchy_find_def = compile(
     align: true,
   }
 )
+
+export const hierarchyCompressType = {
+  SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM: 1n,
+  SELVA_HIERARCHY_DETACHED_COMPRESSED_DISK: 2n,
+}
 
 export enum SelvaHierarchy_AggregateType {
   SELVA_AGGREGATE_TYPE_COUNT_NODE = 0,

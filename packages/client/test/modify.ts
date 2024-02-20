@@ -1,19 +1,19 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { readValue } from 'data-record'
-import './assertions'
-import { SelvaTraversal } from '../src/protocol'
-import { doubleDef } from '../src/protocol/encode/modify/types'
+import './assertions/index.js'
+import { SelvaTraversal } from '../src/protocol/index.js'
+import { doubleDef } from '../src/protocol/encode/modify/types.js'
 import getPort from 'get-port'
-import { find, idExists } from './assertions/utils'
+import { find, idExists } from './assertions/utils.js'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-export function readDouble(x) {
+export function readDouble(x: any) {
   return readValue(doubleDef, x, '.d')
 }
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -173,12 +173,12 @@ test.beforeEach(async (t) => {
             values: {
               type: 'object',
               properties: {
-                floatArray: { type: 'array', values: { type: 'number' } },
-                intArray: { type: 'array', values: { type: 'integer' } },
-                strArray: { type: 'array', values: { type: 'string' } },
+                floatArray: { type: 'array', items: { type: 'number' } },
+                intArray: { type: 'array', items: { type: 'integer' } },
+                strArray: { type: 'array', items: { type: 'string' } },
                 objArray: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       hello: { type: 'string' },
@@ -188,7 +188,7 @@ test.beforeEach(async (t) => {
                 },
                 nestedObjArray: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       hello: { type: 'string' },
@@ -253,9 +253,9 @@ test.beforeEach(async (t) => {
             },
           },
           dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
-          floatArray: { type: 'array', values: { type: 'number' } },
-          intArray: { type: 'array', values: { type: 'integer' } },
+          dingdongs: { type: 'array', items: { type: 'string' } },
+          floatArray: { type: 'array', items: { type: 'number' } },
+          intArray: { type: 'array', items: { type: 'integer' } },
           refs: { type: 'references' },
           value: { type: 'number' },
           age: { type: 'number' },
@@ -306,7 +306,8 @@ test('root', async (t) => {
     match,
   ])
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({ $id: 'root', $all: true, schema: false }),
     {
       id: 'root',
@@ -388,7 +389,8 @@ test('basic', async (t) => {
     'Title of person is correctly set'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -399,7 +401,8 @@ test('basic', async (t) => {
     ['root']
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -428,7 +431,8 @@ test('basic', async (t) => {
     'match has no children after move'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -459,7 +463,8 @@ test('basic', async (t) => {
     'person has correct parents after $add'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -491,7 +496,8 @@ test('basic', async (t) => {
     'person has correct parents after $remove'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -531,7 +537,8 @@ test('basic', async (t) => {
     'person has correct parents after 2nd $add'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -586,7 +593,8 @@ test('basic', async (t) => {
     'person has correct parents after reset of children of match'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -615,7 +623,8 @@ test('basic', async (t) => {
     'person has correct parents after adding person to match using children'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -644,7 +653,8 @@ test('basic', async (t) => {
     'league has correct children after setting ancestors'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -655,7 +665,8 @@ test('basic', async (t) => {
     ['root', league, match]
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -678,7 +689,8 @@ test('basic', async (t) => {
     'person has correct parents after removing match from league'
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -744,7 +756,8 @@ test('deep hierarchy manipulation', async (t) => {
     parents: { $add: 'root' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -755,7 +768,8 @@ test('deep hierarchy manipulation', async (t) => {
     ['root', 'cuX', 'cuA']
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -766,7 +780,8 @@ test('deep hierarchy manipulation', async (t) => {
     ['root', 'cuX', 'cuA']
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -777,7 +792,8 @@ test('deep hierarchy manipulation', async (t) => {
     ['root', 'cuX', 'cuA']
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -793,7 +809,8 @@ test('deep hierarchy manipulation', async (t) => {
     parents: { $remove: 'cuA' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -804,7 +821,8 @@ test('deep hierarchy manipulation', async (t) => {
     ['root']
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,
@@ -838,7 +856,7 @@ test('array, json and set', async (t) => {
           },
           flap: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 gurk: { type: 'string' },
@@ -887,7 +905,8 @@ test('set empty object', async (t) => {
     flurpy: {},
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: id,
       flurpy: true,
@@ -895,7 +914,8 @@ test('set empty object', async (t) => {
     {}
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: id,
       flurpy: {
@@ -910,7 +930,8 @@ test('set empty object', async (t) => {
     flurpy: { hello: 'yes' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: id,
       flurpy: true,
@@ -941,10 +962,14 @@ test('incrby', async (t) => {
     10,
   ])
 
-  t.deepEqualIgnoreOrder(await client.get({ $id: 'viDingDong', value: true }), {
-    value: 110,
-  })
-  t.deepEqualIgnoreOrder(newVal, 110)
+  deepEqualIgnoreOrder(
+    t,
+    await client.get({ $id: 'viDingDong', value: true }),
+    {
+      value: 110,
+    }
+  )
+  deepEqualIgnoreOrder(t, newVal, 110)
 })
 
 test('$increment, $default', async (t) => {
@@ -971,9 +996,13 @@ test('$increment, $default', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(await client.get({ $id: 'viDingDong', value: true }), {
-    value: 110,
-  })
+  deepEqualIgnoreOrder(
+    t,
+    await client.get({ $id: 'viDingDong', value: true }),
+    {
+      value: 110,
+    }
+  )
 
   t.is(
     (await client.command('object.get', ['', 'viDingDong', 'value']))[0],
@@ -1242,7 +1271,7 @@ test('automatic child creation', async (t) => {
 
   const titles = (
     await Promise.all(
-      children.map((child) => {
+      children.map((child: any) => {
         // return client.redis.selva_object_get('', child, 'title.nl')
         return client.command('object.get', ['', child, 'title.nl'])
       })
@@ -1295,7 +1324,7 @@ test('Set empty object', async (t) => {
     },
   })
   try {
-    const result = await client.get({
+    await client.get({
       $id: id,
       $all: true,
     })
@@ -1329,7 +1358,8 @@ test('no root in parents when adding nested', async (t) => {
   })
 
   // await new Promise(res => setTimeout(res, 1e8))
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'hello',
@@ -1342,7 +1372,8 @@ test('no root in parents when adding nested', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'hello2',
@@ -1397,7 +1428,8 @@ test('$delete: true', async (t) => {
     settySet: { $add: 'hmmmm' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1427,7 +1459,8 @@ test('$delete: true', async (t) => {
     title: { de: { $delete: true } },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1456,7 +1489,8 @@ test('$delete: true', async (t) => {
     obj: { hello: { $delete: true }, hallo: 'mmmmh' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1485,7 +1519,8 @@ test('$delete: true', async (t) => {
     obj: { $delete: true },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1511,7 +1546,8 @@ test('$delete: true', async (t) => {
     title: { $delete: true },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1535,7 +1571,8 @@ test('$delete: true', async (t) => {
     title: { en: 'yes title is back!!!' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1560,7 +1597,8 @@ test('$delete: true', async (t) => {
     reffyRefs: { $delete: true },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,
@@ -1584,7 +1622,8 @@ test('$delete: true', async (t) => {
     settySet: { $delete: true },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       id: true,

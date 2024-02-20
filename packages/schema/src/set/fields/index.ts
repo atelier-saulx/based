@@ -1,12 +1,12 @@
-import { FieldParsers } from '../../walker'
-import { ParseError } from '../../error'
-import { BasedSetTarget } from '../../types'
-import { array } from './array'
-import { object, record } from './object'
-import { number, integer, timestamp } from './number'
-import { string, text } from './string'
-import { reference, references } from './references'
-import { set } from './set'
+import { FieldParsers } from '../../walker/index.js'
+import { ParseError } from '../../error.js'
+import { BasedSetTarget } from '../../types.js'
+import { array } from './array.js'
+import { object, record } from './object.js'
+import { number, integer, timestamp } from './number.js'
+import { string, text } from './string.js'
+import { reference, references } from './references.js'
+import { set } from './set.js'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 
@@ -57,7 +57,6 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
     }
   },
   enum: async (args) => {
-    // args.stop()
     const enumValues = args.fieldSchema.enum
     for (let i = 0; i < enumValues.length; i++) {
       if (deepEqual(enumValues[i], args.value)) {
@@ -66,5 +65,24 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
       }
     }
     args.error(ParseError.incorrectFormat)
+  },
+  any: async (args) => {
+    args.stop()
+
+    if (typeof args.value !== 'object') {
+      args.collect(args.value)
+      return
+    }
+
+    const q: Promise<any>[] = []
+    for (const key in args.value) {
+      q.push(
+        args.parse({
+          key: key,
+          value: args.value[key],
+          fieldSchema: { type: 'any' },
+        })
+      )
+    }
   },
 }

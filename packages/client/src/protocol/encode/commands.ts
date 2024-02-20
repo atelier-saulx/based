@@ -1,7 +1,7 @@
-import { Command } from '../types'
-import { defaultEncoder, strEncoder } from './defaultEncoder'
-import { modify } from './modify'
-import { update } from './update'
+import { Command } from '../types.js'
+import { defaultEncoder, strEncoder } from './defaultEncoder.js'
+import { modify } from './modify/index.js'
+import { update } from './update.js'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 
@@ -152,6 +152,11 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
   'hierarchy.children': defaultEncoder([{ type: 'id' }]),
+  'hierarchy.compress': defaultEncoder([
+    { type: 'id', },
+    { type: 'longlong' },
+  ]),
+  'hierarchy.listCompressed': null,
   'subscriptions.addMarker': defaultEncoder([
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
@@ -204,5 +209,31 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // key
     { type: 'string' }, // expression
     { type: 'string', vararg: true }, // regs
+  ]),
+  'mq.create': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // optional timeout
+  ]),
+  'mq.delete': defaultEncoder([
+    { type: 'string' }, // name
+  ]),
+  'mq.list': null,
+  'mq.post': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'string', vararg: true }, // messages
+  ]),
+  'mq.recv': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // min
+    { type: 'longlong' }, // max
+    { type: 'longlong' }, // timeout
+  ]),
+  'mq.ack': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // msg_id
+  ]),
+  'mq.nack': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // msg_id
   ]),
 }

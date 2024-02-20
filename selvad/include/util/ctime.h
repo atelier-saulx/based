@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   time types.
  * @section LICENSE
- * Copyright (c) 2022-2023 Saulx
+ * Copyright (c) 2022-2024 Saulx
  * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -40,20 +40,20 @@
  * @param[out]  ts      is a pointer to the destination struct.
  * @param[in]   nsec    is the value in milliseconds.
  */
-void msec2timespec(struct timespec * ts, int64_t msec);
+struct timespec *msec2timespec(struct timespec * ts, int64_t msec);
 
 #define MSEC2TIMESPEC(msec) \
-    ({ struct timespec _ts; msec2timespec(&_ts, msec); _ts; })
+    ({ struct timespec _ts; (void)msec2timespec(&_ts, msec); _ts; })
 
 /**
  * Convert a nsec value to a timespec struct.
  * @param[out]  ts      is a pointer to the destination struct.
  * @param[in]   nsec    is the value in nanoseconds.
  */
-void nsec2timespec(struct timespec * ts, int64_t nsec);
+struct timespec *nsec2timespec(struct timespec * ts, int64_t nsec);
 
 #define NSEC2TIMESPEC(nsec) \
-    ({ struct timespec _ts; NSEC2TIMESPEC(&_ts, nsec); _ts; })
+    ({ struct timespec _ts; (void)NSEC2TIMESPEC(&_ts, nsec); _ts; })
 
 /**
  * Compare two timespec structs.

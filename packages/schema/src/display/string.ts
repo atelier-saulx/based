@@ -1,4 +1,11 @@
-export type StringFormat = 'lowercase' | 'uppercase' | 'capitalize'
+export const basedSchemaDisplayFormats = [
+  'lowercase',
+  'uppercase',
+  'capitalize',
+] as const
+export type basedSchemaDisplayFormat =
+  (typeof basedSchemaDisplayFormats)[number]
+export type StringFormat = basedSchemaDisplayFormat // deprecated
 
 const parseString = (value?: string, format?: StringFormat): string => {
   if (!format) {

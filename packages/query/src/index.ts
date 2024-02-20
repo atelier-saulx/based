@@ -1,1 +1,1 @@
-export * from './ast2rpn'
+export * from './ast2rpn/index.js'

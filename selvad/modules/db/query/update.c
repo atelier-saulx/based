@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -12,11 +12,11 @@
 #include "util/data-record.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
+#include "selva_io.h"
 #include "selva_db.h"
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
 #include "jemalloc.h"
 #include "hierarchy.h"
@@ -370,10 +370,10 @@ static int update_node_cb(
 
         SelvaHierarchy_GetNodeId(nodeId, node);
 
-        /* Set node_id to the register */
         rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-        rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+        rpn_ctx->data.hierarchy = hierarchy;
+        rpn_ctx->data.node = node;
+        rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
 
         /*
          * Resolve the expression and get the result.
@@ -678,7 +678,7 @@ static void SelvaCommand_Update(struct selva_server_response_out *resp, const vo
         }
     }
 
-    selva_db_is_dirty = 1;
+    selva_io_set_dirty();
     selva_send_ll(resp, nr_nodes);
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
 #undef SHIFT_ARGS

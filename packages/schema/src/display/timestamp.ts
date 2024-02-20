@@ -1,10 +1,14 @@
-export type DateFormat =
-  | 'date'
-  | 'date-time'
-  | 'date-time-text'
-  | 'human'
-  | 'time'
-  | 'time-precise'
+export const basedSchemaDateFormats = [
+  ,
+  'date',
+  'date-time',
+  'date-time-text',
+  'human',
+  'time',
+  'time-precise',
+] as const
+export type BasedSchemaDateFormat = (typeof basedSchemaDateFormats)[number]
+export type DateFormat = BasedSchemaDateFormat // deprecated
 
 const addZero = (d: number): string => {
   const s = d + ''

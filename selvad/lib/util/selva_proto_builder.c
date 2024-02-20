@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -11,13 +11,19 @@
 #include "selva_proto.h"
 #include "util/selva_proto_builder.h"
 
-void selva_proto_builder_init(struct selva_proto_builder_msg *msg)
+/* FIXME endianness is not handled properly */
+
+void selva_proto_builder_init(struct selva_proto_builder_msg *msg, bool encapsulate)
 {
-    msg->bsize = 0;
+    msg->encapsulated = encapsulate;
     msg->nr_values = 0;
+    msg->bsize = 0;
     msg->buf = NULL;
 }
 
+/**
+ * Encapsulate the current contents of the message with an array header.
+ */
 static void encapsulate_with_array(struct selva_proto_builder_msg * restrict msg)
 {
     struct selva_proto_array arr = {
@@ -33,7 +39,7 @@ static void encapsulate_with_array(struct selva_proto_builder_msg * restrict msg
 
 static void selva_proto_builder_insert_header(struct selva_proto_builder_msg * restrict msg, const void * restrict hdr, size_t hsize)
 {
-    if (msg->nr_values++ == 1) {
+    if (msg->encapsulated && msg->nr_values++ == 1) {
         encapsulate_with_array(msg);
     }
 
@@ -53,7 +59,7 @@ static void selva_proto_builder_insert_payload(struct selva_proto_builder_msg * 
 
 void selva_proto_builder_end(struct selva_proto_builder_msg *msg)
 {
-    if (msg->nr_values > 1) {
+    if (msg->encapsulated && msg->nr_values > 1) {
         struct selva_proto_control ctrl = {
             .type = SELVA_PROTO_ARRAY_END,
         };
@@ -71,6 +77,22 @@ void selva_proto_builder_insert_null(struct selva_proto_builder_msg *msg)
     };
 
     selva_proto_builder_insert_header(msg, &hdr, sizeof(hdr));
+}
+
+void selva_proto_builder_insert_error(
+        struct selva_proto_builder_msg * restrict msg,
+        int err,
+        const char * restrict str,
+        size_t len)
+{
+    struct selva_proto_error hdr = {
+        .type = SELVA_PROTO_ERROR,
+        .err_code = err,
+        .bsize = len,
+    };
+
+    selva_proto_builder_insert_header(msg, &hdr, sizeof(hdr));
+    selva_proto_builder_insert_payload(msg, str, len);
 }
 
 void selva_proto_builder_insert_double(struct selva_proto_builder_msg *msg, double v)
@@ -120,5 +142,15 @@ void selva_proto_builder_insert_array_end(struct selva_proto_builder_msg *msg)
         .type = SELVA_PROTO_ARRAY_END,
     };
 
+    selva_proto_builder_insert_header(msg, &hdr, sizeof(hdr));
+}
+
+void selva_proto_builder_insert_replication_cmd(
+        struct selva_proto_builder_msg *msg,
+        struct selva_proto_replication_cmd *cmd)
+{
+    struct selva_proto_replication_cmd hdr = *cmd;
+
+    hdr.type = SELVA_PROTO_REPLICATION_CMD,
     selva_proto_builder_insert_header(msg, &hdr, sizeof(hdr));
 }

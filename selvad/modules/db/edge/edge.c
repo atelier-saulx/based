@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -122,8 +122,8 @@ static void del_edge_metadata(struct SelvaObject *edge_field_metadata, const Sel
  */
 static void remove_arc(struct EdgeField *edge_field, Selva_NodeId node_id) {
     /*
-     * This works because we know this SVector uses SelvaSVectorComparator_Node
-     * and the deletion happens by comparison.
+     * This works even in RB mode because we know this SVector uses
+     * SelvaSVectorComparator_Node and the deletion happens by comparison.
      */
     (void)SVector_Remove(&edge_field->arcs, (void *)node_id);
 
@@ -195,7 +195,8 @@ __attribute__((nonnull (1, 2))) static struct EdgeField *alloc_EdgeField(
     edgeField = selva_calloc(1, sizeof(struct EdgeField));
     edgeField->constraint = constraint;
     memcpy(edgeField->src_node_id, src_node_id, SELVA_NODE_ID_SIZE);
-    SVector_Init(&edgeField->arcs, initial_size, SelvaSVectorComparator_Node);
+    SVector_Init(&edgeField->arcs, initial_size,
+                 (constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY) ? NULL : SelvaSVectorComparator_Node);
 
     return edgeField;
 }
@@ -239,6 +240,31 @@ struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *src_node, const
     return err ? NULL : src_edge_field;
 }
 
+static struct SelvaHierarchyNode *EdgeField_Search(const struct EdgeField *edge_field, const Selva_NodeId dst_node_id) {
+    if (edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY) {
+        struct EdgeFieldIterator it;
+        struct SelvaHierarchyNode *node;
+
+        Edge_ForeachBegin(&it, edge_field);
+
+        while ((node = Edge_Foreach(&it))) {
+            Selva_NodeId node_id;
+
+            SelvaHierarchy_GetNodeId(node_id, node);
+            if (!memcmp(node_id, dst_node_id, SELVA_NODE_ID_SIZE)) {
+                return node;
+            }
+        }
+
+        return NULL;
+    } else {
+        return SVector_Search(&edge_field->arcs, (void *)dst_node_id);
+    }
+}
+
+#define EdgeField_Search(EDGE_FIELD, NODE_ID) \
+    EDGE_QP(struct SelvaHierarchyNode, EdgeField_Search, (EDGE_FIELD), (NODE_ID))
+
 int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
     struct SelvaHierarchyNode *dst_node;
     struct EdgeField *bck_edge_field = NULL;
@@ -246,7 +272,7 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
     struct SelvaObject *bck_edge_field_metadata = NULL;
     struct SelvaObject *edge_metadata = NULL;
 
-    dst_node = SVector_Search(&edge_field->arcs, (void *)dst_node_id);
+    dst_node = EdgeField_Search(edge_field, dst_node_id);
     if (!dst_node) {
         return SELVA_ENOENT;
     }
@@ -448,14 +474,18 @@ int Edge_Usage(const struct SelvaHierarchyNode *node) {
 }
 
 int Edge_Has(const struct EdgeField *edge_field, struct SelvaHierarchyNode *dst_node) {
-    return SVector_SearchIndex(&edge_field->arcs, dst_node) >= 0;
+
+    Selva_NodeId node_id;
+
+    SelvaHierarchy_GetNodeId(node_id, dst_node);
+    return !!EdgeField_Search(edge_field, node_id);
 }
 
 int Edge_HasNodeId(const struct EdgeField *edge_field, const Selva_NodeId dst_node_id) {
     Selva_NodeId node_id;
 
     memcpy(node_id, dst_node_id, SELVA_NODE_ID_SIZE);
-    return SVector_SearchIndex(&edge_field->arcs, node_id) >= 0;
+    return !!EdgeField_Search(edge_field, node_id);
 }
 
 int Edge_DerefSingleRef(const struct EdgeField *edge_field, struct SelvaHierarchyNode **node_out) {
@@ -636,7 +666,7 @@ int Edge_Delete(
     int err;
 
     SelvaHierarchy_GetNodeId(src_node_id, src_node);
-    dst_node = SVector_Search(&edge_field->arcs, dst_node_id);
+    dst_node = EdgeField_Search(edge_field, dst_node_id);
     if (!dst_node) {
         return SELVA_ENOENT;
     }
@@ -917,7 +947,7 @@ int Edge_DeleteAll(
             }
         }
     } else if (any.type == SELVA_OBJECT_ARRAY) {
-        /* An array of edges, huh? I don't think we support this kind of heresy. */
+        /* An array of edges is not supported and shouldn't be here. */
         return SELVA_EINTYPE;
     } else {
         /* Shouldn't happen? */

@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -54,6 +54,16 @@ test.beforeEach(async (t) => {
           },
         },
       },
+      jsonTest: {
+        prefix: 'js',
+        fields: {
+          enabled: { type: 'boolean' },
+          jsonRecord: {
+            type: 'record',
+            values: { type: 'json' },
+          },
+        },
+      },
     },
   })
 })
@@ -96,8 +106,8 @@ test('remove object from record', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(res1.members[0], { x: 'hallo', refs: [thingId] })
-  t.deepEqualIgnoreOrder(res1.members[1], { x: 'doei' })
+  deepEqualIgnoreOrder(t, res1.members[0], { x: 'hallo', refs: [thingId] })
+  deepEqualIgnoreOrder(t, res1.members[1], { x: 'doei' })
 
   await client.set({
     $id: id,
@@ -120,5 +130,46 @@ test('remove object from record', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(res2, { name: 'derp' })
+  deepEqualIgnoreOrder(t, res2, { name: 'derp' })
+})
+
+test('json record should allow based-db reserved keys', async (t) => {
+  const { client } = t.context
+
+  let id: string
+  await t.notThrowsAsync(async () => {
+    id = await client.set({
+      type: 'jsonTest',
+      jsonRecord: {
+        record1: {
+          fieldA: 'record1FieldA',
+        },
+        record2: {
+          fieldA: 'record2FieldA',
+          $id: 'id_inside_json',
+        },
+      },
+    })
+  })
+  if (id) {
+    const result = await client.get({ $id: id, $all: true })
+    t.is(result.jsonRecord.record2.$id, 'id_inside_json')
+  }
+})
+
+test('empty json records', async (t) => {
+  const { client } = t.context
+
+  let id: string
+  await t.notThrowsAsync(async () => {
+    id = await client.set({
+      type: 'jsonTest',
+      enabled: true,
+      jsonRecord: {},
+    })
+  })
+  if (id) {
+    //   const result = await client.get({ $id: id, $all: true })
+    //   t.is(result.jsonRecord.record2.$id, 'id_inside_json')
+  }
 })

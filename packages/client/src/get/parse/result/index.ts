@@ -1,9 +1,9 @@
 import { deepEqual, deepMerge, getByPath, setByPath } from '@saulx/utils'
-import { getTypeSchema } from '../../../util'
-import { ExecContext, GetCommand } from '../../types'
-import { findFieldSchema, parseObjFields } from './obj'
-import { setResultValue } from './setResultValue'
-import { SELVA_NODE_ID_LEN } from '../../../protocol'
+import { getTypeSchema } from '../../../util/index.js'
+import { ExecContext, GetCommand } from '../../types.js'
+import { findFieldSchema, parseObjFields } from './obj.js'
+import { setResultValue } from './setResultValue.js'
+import { SELVA_NODE_ID_LEN } from '../../../protocol/index.js'
 import { BasedSchemaFieldArray, BasedSchemaFieldObject } from '@based/schema'
 
 export function parseGetResult(
@@ -115,7 +115,7 @@ function parseResultRows(
 
       schema = {
         type: 'object',
-        properties: (<BasedSchemaFieldObject>fieldSchema?.values)?.properties,
+        properties: (<BasedSchemaFieldObject>fieldSchema?.items)?.properties,
       }
     } else {
       schema = { type: 'object', properties: getTypeSchema(rowCtx, id)?.fields }

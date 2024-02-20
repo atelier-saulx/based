@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -72,7 +72,8 @@ test('children cycle: delete root', async (t) => {
 
   // Note that $recursive is required to delete cycles that are descendants of the
   // deleted node.
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.delete({ $id: 'root', $returnIds: true, $recursive: true }),
     ['root', 'cy1', 'cy2', 'cy3']
   )
@@ -108,7 +109,8 @@ test('children cycle: delete first node', async (t) => {
     children: ['cy1'],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.delete({ $id: 'cy1', $returnIds: true }),
     ['cy1', 'cy2', 'cy3']
   )
@@ -163,7 +165,8 @@ test('delete ref', async (t) => {
     { next: 'cy1' }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.delete({ $id: 'cy1', $returnIds: true }),
     ['cy1']
   )

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -122,10 +122,5 @@ static inline const char *Selva_GetEdgeMetaKey(const char *field_str, size_t fie
     *meta_key_len_out = meta_key_len;
     return meta_key_str;
 }
-
-/**
- * Set if the database has been modified since last save.
- */
-extern int selva_db_is_dirty;
 
 #endif /* _SELVA_DB_ */

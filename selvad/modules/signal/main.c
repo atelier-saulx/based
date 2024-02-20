@@ -15,6 +15,7 @@
 #include "promise.h"
 #include "module.h"
 #include "trace.h"
+#include "selva_reaper.h"
 
 static void handle_signal(struct event *ev, void *arg __unused)
 {
@@ -93,7 +94,6 @@ IMPORT() {
 
 __constructor static void init(void)
 {
-
     /*
      * SIGPIPE can be sync or async depending on the system.
      * Either way, we just want to ignore it.
@@ -106,4 +106,5 @@ __constructor static void init(void)
 #undef SETUP_TERM
 
     setup_async_signals();
+    setup_sigchld();
 }

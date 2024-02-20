@@ -1,12 +1,10 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -31,7 +29,7 @@ test.beforeEach(async (t) => {
 
   await t.context.client.updateSchema({
     language: 'cs',
-    translations: ['en', 'de', 'fi', 'pt'],
+    translations: ['en', 'de', 'fi', 'pt', 'gsw' ],
     types: {
       match: {
         prefix: 'ma',
@@ -58,9 +56,8 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-// only runs on darwin?
-// test[process.platform === 'darwin' ? 'skip' : 'serial'](
-test.skip('$lang should change the order when relevant', async (t) => {
+test[process.platform === 'darwin' ? 'skip' : 'serial'](
+  '$lang should change the order when relevant', async (t) => {
   const { client } = t.context
   const children = await Promise.all(
     [
@@ -73,6 +70,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Öäpelin pallo',
           fi: 'Öäpelin pallo',
           pt: 'Öäpelin pallo',
+          gsw: 'Öäpelin pallo',
         },
       },
       {
@@ -84,6 +82,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Aopelin pallo',
           fi: 'Aopelin pallo',
           pt: 'Aopelin pallo',
+          gsw: 'Aopelin pallo',
         },
       },
       {
@@ -95,6 +94,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Oopelin pallo',
           fi: 'OOpelin pallo',
           pt: 'OOpelin pallo',
+          gsw: 'OOpelin pallo',
         },
       },
       {
@@ -106,6 +106,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Ääpelin pallo',
           fi: 'Ääpelin pallo',
           pt: 'Ääpelin pallo',
+          gsw: 'Ääpelin pallo',
         },
       },
       {
@@ -117,6 +118,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'öäpelin pallo',
           fi: 'öäpelin pallo',
           pt: 'öäpelin pallo',
+          gsw: 'öäpelin pallo',
         },
       },
       {
@@ -128,6 +130,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'aopelin pallo',
           fi: 'aopelin pallo',
           pt: 'aopelin pallo',
+          gsw: 'aopelin pallo',
         },
       },
       {
@@ -139,6 +142,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'oopelin pallo',
           fi: 'oOpelin pallo',
           pt: 'oOpelin pallo',
+          gsw: 'oOpelin pallo',
         },
       },
       {
@@ -150,6 +154,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'ääpelin pallo',
           fi: 'ääpelin pallo',
           pt: 'ääpelin pallo',
+          gsw: 'ääpelin pallo',
         },
       },
       {
@@ -161,6 +166,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'hrnec pallo',
           fi: 'hrnec pallo',
           pt: 'hrnec pallo',
+          gsw: 'hrnec pallo',
         },
       },
       {
@@ -172,6 +178,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'chrt pallo',
           fi: 'chrt pallo',
           pt: 'chrt pallo',
+          gsw: 'chrt pallo',
         },
       },
     ].map((s) => client.set(s))
@@ -331,5 +338,78 @@ test.skip('$lang should change the order when relevant', async (t) => {
         { id: 'team3' },
       ],
     }
+  )
+})
+
+test('like op', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    $id: 'root',
+    children: [
+      {
+        type: 'team',
+        title: {
+          de: 'Öäpelin pallo',
+          en: 'Öäpelin pallo',
+          fi: 'Öäpelin pallo',
+        },
+      },
+      {
+        type: 'team',
+        title: {
+          de: 'Erdäpfel',
+          en: 'Potato',
+          fi: 'Peruna',
+        },
+      }
+    ]
+  })
+
+  t.deepEqual(
+    await client.get({
+      $language: 'fi',
+      $id: 'root',
+      teams: {
+        title: true,
+        $list: {
+          $find: {
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $operator: '=',
+                $field: 'title',
+                $value: 'ÖÄPELIN PALLO',
+                $caseInsensitive: true,
+              }
+            ],
+          }
+        },
+      },
+    }),
+    { teams: [ { title: 'Öäpelin pallo' } ] }
+  )
+  t.deepEqual(
+    await client.get({
+      $language: 'de',
+      $id: 'root',
+      teams: {
+        title: true,
+        $list: {
+          $find: {
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $operator: '!=',
+                $field: 'title',
+                $value: 'erdäpfel',
+                $caseInsensitive: true,
+              }
+            ],
+          }
+        },
+      },
+    }),
+    { teams: [ { title: 'Öäpelin pallo' } ] }
   )
 })

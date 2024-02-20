@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedSchema, setWalker } from '../src/index'
-import { resultCollect, errorCollect } from './utils'
+import { BasedSchema, setWalker } from '../src/index.js'
+import { resultCollect, errorCollect } from './utils/index.js'
 
 const schema: BasedSchema = {
   types: {
@@ -194,7 +194,7 @@ test('value', async (t) => {
     multipleOf: { $value: 6 },
   })
 
-  const res5 = await setWalker(schema, {
+  await setWalker(schema, {
     $id: 'bl1',
     set: { $value: [3, 3, 3, 4] },
   })

@@ -1,7 +1,7 @@
-import { FilterAST, Fork, Value, WithRequired } from './types'
-import { Filter, GeoFilter } from './types'
-import isFork from './isFork'
-import reduceAnd from './reduceAnd'
+import { FilterAST, Fork, Value, WithRequired } from './types.js'
+import { Filter, GeoFilter } from './types.js'
+import isFork from './isFork.js'
+import reduceAnd from './reduceAnd.js'
 
 const addToOption = (
   prevList: (FilterAST | Fork)[],
@@ -35,6 +35,8 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
     '<',
     '..',
     '!=',
+    'like',
+    'notLike',
     'has',
     'includes',
     'distance',
@@ -50,6 +52,16 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
   const filter: FilterAST = {
     $operator: o,
     $field: filterOpt.$field,
+  }
+
+  if (filterOpt.$caseInsensitive) {
+    if (o === '=') {
+      filter.$operator = 'like'
+    } else if (o === '!=') {
+      filter.$operator = 'notLike'
+    } else {
+      return [{ isFork: true }, `$caseInsensitive is only valid with '=' and '!='`]
+    }
   }
 
   if (o !== 'notExists' && o !== 'exists') {

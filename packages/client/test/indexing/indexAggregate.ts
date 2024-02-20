@@ -1,14 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../../src'
-import { startOrigin } from '../../../server/dist'
-import { SelvaServer } from '../../../server/dist/server'
-import { SelvaFindResultType, SelvaTraversal } from '../../src/protocol'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import '../assertions'
-import { find, getIndexingState } from '../assertions/utils'
+import '../assertions/index.js'
+import { getIndexingState } from '../assertions/utils.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from '../assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -21,10 +20,10 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     name: 'default',
     env: {
-      FIND_INDICES_MAX: '100',
-      FIND_INDEXING_INTERVAL: '1000',
-      FIND_INDEXING_ICB_UPDATE_INTERVAL: '500',
-      FIND_INDEXING_POPULARITY_AVE_PERIOD: '3',
+      SELVA_INDEX_MAX: '100',
+      SELVA_INDEX_INTERVAL: '1000',
+      SELVA_INDEX_ICB_UPDATE_INTERVAL: '500',
+      SELVA_INDEX_POPULARITY_AVE_PERIOD: '3',
     },
   })
 
@@ -108,7 +107,8 @@ test.skip('simple aggregate with indexing', async (t) => {
   })
 
   for (let i = 0; i < 30; i++) {
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       await client.get({
         $id: 'root',
         id: true,
@@ -136,9 +136,9 @@ test.skip('simple aggregate with indexing', async (t) => {
     await wait(300)
   }
 
-  const indState = await getIndexingState(client);
+  const indState = await getIndexingState(client)
   t.deepEqual(Object.keys(indState).length, 2)
-  t.deepEqualIgnoreOrder(indState['root.J.Im1hIiBl'].card, '4001')
-  t.deepEqualIgnoreOrder(indState['root.J.InZhbHVlIiBo'].card, '4000')
+  deepEqualIgnoreOrder(t, indState['root.J.Im1hIiBl'].card, '4001')
+  deepEqualIgnoreOrder(t, indState['root.J.InZhbHVlIiBo'].card, '4000')
   t.truthy(Number(indState['root.J.InZhbHVlIiBo'].ind_take_max_ave) > 3000)
 })

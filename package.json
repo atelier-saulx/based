@@ -21,9 +21,6 @@
     "packages/*"
   ],
   "prettier": "@saulx/prettier-config",
-  "eslintConfig": {
-    "extends": "@saulx/eslint-config"
-  },
   "scripts": {
     "watch": "turbo run watch --parallel --no-cache",
     "build": "turbo run build",
@@ -31,6 +28,7 @@
     "clean-c": "cd selvad; make mostlyclean",
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
+    "testSubs": "cd packages/subs && npm run test",
     "clean": "turbo run clean && rimraf node_modules"
   },
   "packageManager": "npm@8.1.0",
@@ -38,9 +36,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@saulx/eslint-config": "^1.1.1",
+    "@saulx/tsconfig": "^1.1.0",
     "@saulx/prettier-config": "^1.0.0",
-    "lint-staged": "12.1.2",
     "rimraf": "^3.0.2",
     "turbo": "1.6.3",
     "typescript": "^5.1.6"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -21,6 +21,7 @@
 #include "util/data-record.h"
 #include "util/finalizer.h"
 #include "util/ptag.h"
+#include "util/selva_lang.h"
 #include "util/selva_string.h"
 #include "util/svector.h"
 #include "selva_error.h"
@@ -31,7 +32,7 @@
 #include "hierarchy.h"
 #include "rpn.h"
 #include "db_config.h"
-#include "selva_lang.h"
+#include "selva_index.h"
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"
@@ -40,7 +41,6 @@
 #include "subscriptions.h"
 #include "edge.h"
 #include "traversal.h"
-#include "find_index.h"
 #include "../field_names.h"
 #include "../count_filter_regs.h"
 #include "query.h"
@@ -72,8 +72,9 @@ static int exec_fields_expression(
 
     SelvaHierarchy_GetNodeId(nodeId, node);
     rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-    rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-    rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+    rpn_ctx->data.hierarchy = hierarchy;
+    rpn_ctx->data.node = node;
+    rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
 
     rpn_err = rpn_string(rpn_ctx, expr, &out);
     if (rpn_err) {
@@ -236,10 +237,10 @@ static __hot int FindCommand_NodeCb(
 
         SelvaHierarchy_GetNodeId(nodeId, node);
 
-        /* Set node_id to the register */
         rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-        rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+        rpn_ctx->data.hierarchy = hierarchy;
+        rpn_ctx->data.node = node;
+        rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
 
         /*
          * Resolve the expression and get the result.
@@ -334,7 +335,7 @@ static int FindCommand_ArrayObjectCb(
                       rpn_str_error[err]);
             return 1;
         }
-        rpn_set_obj(rpn_ctx, obj);
+        rpn_ctx->data.obj = obj;
 
         /*
          * Resolve the expression and get the result.
@@ -746,7 +747,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
 
     struct selva_string **index_hints = NULL;
     int nr_index_hints = 0;
-    if (query_opts.index_hints_len && selva_glob_config.find_indices_max > 0) {
+    if (query_opts.index_hints_len && selva_glob_config.index_max > 0) {
         index_hints = parse_index_hints(&fin, query_opts.index_hints_str, query_opts.index_hints_len, &nr_index_hints);
     }
 
@@ -909,16 +910,16 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
 
         const size_t nr_ind_icb = max(nr_index_hints, 1);
-        struct SelvaFindIndexControlBlock *ind_icb[nr_ind_icb];
+        struct SelvaIndexControlBlock *ind_icb[nr_ind_icb];
         int ind_select = -1; /* Selected index. The smallest of all found. */
 
-        memset(ind_icb, 0, nr_ind_icb * sizeof(struct SelvaFindIndexControlBlock *));
+        memset(ind_icb, 0, nr_ind_icb * sizeof(struct SelvaIndexControlBlock *));
 
         if (nr_index_hints > 0) {
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
+            ind_select = SelvaIndex_AutoMulti(hierarchy, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
 
             /*
              * Query optimization.
@@ -929,7 +930,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
              */
             if (ind_select >= 0 &&
                 ids_len == SELVA_NODE_ID_SIZE &&
-                SelvaFindIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
+                SelvaIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
                 query_opts.order = SELVA_RESULT_ORDER_NONE;
                 order_by_field = NULL; /* This controls sorting in the callback. */
             }
@@ -974,7 +975,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             }
 
             SELVA_TRACE_BEGIN(cmd_find_index);
-            err = SelvaFindIndex_Traverse(hierarchy, ind_icb[ind_select], FindCommand_NodeCb, &args);
+            err = SelvaIndex_Traverse(hierarchy, ind_icb[ind_select], FindCommand_NodeCb, &args);
             SELVA_TRACE_END(cmd_find_index);
         } else {
             struct query_traverse qt = {
@@ -1008,7 +1009,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         /*
          * Do index accounting.
          */
-        SelvaFindIndex_AccMulti(ind_icb, nr_index_hints, ind_select, args.acc_take, args.acc_tot);
+        SelvaIndex_AccMulti(ind_icb, nr_index_hints, ind_select, args.acc_take, args.acc_tot);
     }
 
     if (postprocess) {
@@ -1033,8 +1034,60 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     }
 }
 
+static bool query_fork_eligible_is_complex_traversal(const char *query_opts_str, size_t query_opts_len)
+{
+    struct SelvaFind_QueryOpts query_opts;
+
+    if (!query_opts_str || query_opts_len == 0) {
+        return false;
+    }
+
+    /*
+     * query_opts was read.
+     */
+    int err;
+
+    /* TODO It would be faster to check against some "finterprints" i.e. bit masks or so. */
+    memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+    err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+
+    return !err &&
+           !!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
+                                SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+                                SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
+                                SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD));
+}
+
+static bool query_fork_eligible(const void *buf, size_t len)
+{
+    const char *lang_str;
+    size_t lang_len;
+    const char *query_opts_str = NULL;
+    size_t query_opts_len = 0;
+    const char *ids_str;
+    size_t ids_len;
+    const char *filter_str;
+    size_t filter_len = 0;
+    int argc;
+
+    argc = selva_proto_scanf(NULL, buf, len, "%.*s, %.*s, %.*s, %.*s",
+                             &lang_len, &lang_str,
+                             &query_opts_len, &query_opts_str,
+                             &ids_len, &ids_str,
+                             &filter_len, &filter_str
+                            );
+
+    return (argc > 0 || argc == SELVA_PROTO_EINVAL) && /* TODO We might want an unique error code for this one. */
+           filter_len > 3 && /* We often have filters like: '#1 ' */
+           query_fork_eligible_is_complex_traversal(query_opts_str, query_opts_len);
+}
+
 static int Find_OnLoad(void) {
-    selva_mk_command(CMD_ID_HIERARCHY_FIND, SELVA_CMD_MODE_PURE, "hierarchy.find", SelvaHierarchy_FindCommand);
+    selva_mk_command(CMD_ID_HIERARCHY_FIND, SELVA_CMD_MODE_PURE | SELVA_CMD_MODE_QUERY_FORK, "hierarchy.find", SelvaHierarchy_FindCommand, query_fork_eligible);
 
     return 0;
 }

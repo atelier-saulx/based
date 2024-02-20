@@ -1,12 +1,11 @@
-import { deepEqual } from '@saulx/utils'
 import {
   BasedSchemaField,
   BasedSchemaFieldObject,
   BasedSchemaFieldRecord,
   BasedSchemaFields,
-} from '../types'
-import { ArgsClass } from './args'
-import { ArgsOpts, FieldParser, KeyParser, Stopped } from './types'
+} from '../types.js'
+import { ArgsClass } from './args.js'
+import { ArgsOpts, FieldParser, KeyParser, Stopped } from './types.js'
 
 export type ParseResult<T> = ArgsClass<T> | void
 

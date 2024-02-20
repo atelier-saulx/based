@@ -1,6 +1,6 @@
 import test from 'ava'
-import { createAst, printAst, createRpn } from '../src/ast2rpn'
-import { Fork, Filter, GeoFilter } from '../src/ast2rpn/types'
+import { createAst, printAst, createRpn } from '../src/ast2rpn/index.js'
+import { Fork, Filter } from '../src/ast2rpn/types.js'
 
 test('basic filter', async (t) => {
   const filter: Filter[] = [

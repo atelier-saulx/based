@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <fnmatch.h>
@@ -21,13 +21,13 @@ static const char * const colors[] = {
     [SELVA_LOGL_INFO] = "\033[0;32m", /* green */
     [SELVA_LOGL_DBG] = "\033[0;34m", /* blue */
 };
-static int env_force_color;
-static int env_no_color;
-static int use_colors;
+static bool env_force_color;
+static bool env_no_color;
+static bool use_colors;
 
 static const struct config selva_log_cfg_map[] = {
-    { "FORCE_COLOR",            CONFIG_INT, &env_force_color },
-    { "NO_COLOR",               CONFIG_INT, &env_no_color },
+    { "FORCE_COLOR",            CONFIG_BOOL, &env_force_color },
+    { "NO_COLOR",               CONFIG_BOOL, &env_no_color },
 };
 
 static struct selva_string *dbg_pattern;

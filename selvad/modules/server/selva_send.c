@@ -1,6 +1,6 @@
 /*
  * High level send functions.
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -18,6 +18,7 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "util/selva_string.h"
+#include "../../tunables.h"
 #include "selva_server.h"
 #include "server.h"
 
@@ -30,12 +31,13 @@ static int send_hdr_and_payload(
         const void *hdr_buf, size_t hdr_size,
         const void *p_buf, size_t p_size)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     const int more = p_size > 0;
     ssize_t res;
 
-    res = server_send_buf(resp, hdr_buf, hdr_size, more ? SERVER_SEND_MORE : 0);
+    res = message_handlers[rtype].send_buf(resp, hdr_buf, hdr_size, more ? SERVER_SEND_MORE : 0);
     if (res == (ssize_t)hdr_size && more) {
-        res = server_send_buf(resp, p_buf, p_size, 0);
+        res = message_handlers[rtype].send_buf(resp, p_buf, p_size, 0);
     }
 
     return (res < 0) ? (int)res : 0;
@@ -43,25 +45,28 @@ static int send_hdr_and_payload(
 
 int selva_send_flush(struct selva_server_response_out *restrict resp)
 {
-    return server_flush_frame_buf(resp, false);
+    const enum server_message_handler rtype = resp->resp_msg_handler;
+    return message_handlers[rtype].flush(resp, false);
 }
 
 int selva_send_raw(struct selva_server_response_out *restrict resp, const void *restrict p, size_t len)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     ssize_t res;
 
-    res = server_send_buf(resp, p, len, 0);
+    res = message_handlers[rtype].send_buf(resp, p, len, 0);
     return (res < 0) ? (int)res : 0;
 }
 
 int selva_send_null(struct selva_server_response_out *resp)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_null buf = {
         .type = SELVA_PROTO_NULL,
     };
     ssize_t res;
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
@@ -81,6 +86,7 @@ int selva_send_error(struct selva_server_response_out *resp, int err, const char
 
 int selva_send_errorf(struct selva_server_response_out *resp, int err, const char *fmt, ...)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     va_list args;
     int len;
     ssize_t res;
@@ -107,7 +113,7 @@ int selva_send_errorf(struct selva_server_response_out *resp, int err, const cha
     (void)vsnprintf(buf->msg, len + 1, fmt, args);
     va_end(args);
 
-    res = server_send_buf(resp, buf, bsize, 0);
+    res = message_handlers[rtype].send_buf(resp, buf, bsize, 0);
     return (res < 0) ? (int)res : 0;
 }
 
@@ -118,6 +124,7 @@ int selva_send_error_arity(struct selva_server_response_out *resp)
 
 int selva_send_double(struct selva_server_response_out *resp, double value)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_double buf = {
         .type = SELVA_PROTO_DOUBLE,
     };
@@ -125,24 +132,26 @@ int selva_send_double(struct selva_server_response_out *resp, double value)
 
     htoledouble((char *)&buf.v, value);
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
 int selva_send_ll(struct selva_server_response_out *resp, long long value)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_longlong buf = {
         .type = SELVA_PROTO_LONGLONG,
         .v = htole64(value),
     };
     ssize_t res;
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
 int selva_send_llx(struct selva_server_response_out *resp, long long value)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_longlong buf = {
         .type = SELVA_PROTO_LONGLONG,
         .flags = SELVA_PROTO_LONGLONG_FMT_HEX,
@@ -150,7 +159,7 @@ int selva_send_llx(struct selva_server_response_out *resp, long long value)
     };
     ssize_t res;
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
@@ -172,6 +181,7 @@ int selva_send_str(struct selva_server_response_out *resp, const char *str, size
 
 int selva_send_strf(struct selva_server_response_out *resp, const char *fmt, ...)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     va_list args;
     int len;
     ssize_t res;
@@ -196,7 +206,7 @@ int selva_send_strf(struct selva_server_response_out *resp, const char *fmt, ...
     (void)vsnprintf(buf->data, len + 1, fmt, args);
     va_end(args);
 
-    res = server_send_buf(resp, buf, bsize, 0);
+    res = message_handlers[rtype].send_buf(resp, buf, bsize, 0);
     return (res < 0) ? (int)res : 0;
 }
 
@@ -215,6 +225,7 @@ int selva_send_bin(struct selva_server_response_out *resp, const void *b, size_t
 
 int selva_send_array(struct selva_server_response_out *resp, int len)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_array buf = {
         .type = SELVA_PROTO_ARRAY,
     };
@@ -226,7 +237,7 @@ int selva_send_array(struct selva_server_response_out *resp, int len)
         buf.flags = SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH;
     }
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
@@ -235,6 +246,7 @@ int selva_send_array_embed(struct selva_server_response_out *resp, enum selva_se
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wenum-conversion"
 #pragma GCC diagnostic ignored "-Wenum-compare"
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_array buf = {
         .type = SELVA_PROTO_ARRAY,
         .length = htole32(len),
@@ -249,19 +261,20 @@ int selva_send_array_embed(struct selva_server_response_out *resp, enum selva_se
         return SELVA_EINVAL;
     }
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 #pragma GCC diagnostic pop
 }
 
 int selva_send_array_end(struct selva_server_response_out *resp)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_control buf = {
         .type = SELVA_PROTO_ARRAY_END,
     };
     ssize_t res;
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
@@ -285,7 +298,7 @@ int selva_send_replication_cmd_s(struct selva_server_response_out *resp, uint64_
     const char *data = selva_string_to_str(s, &bsize);
     struct selva_proto_replication_cmd buf = {
         .type = SELVA_PROTO_REPLICATION_CMD,
-        .flags = (s && (selva_string_get_flags(s) & SELVA_STRING_COMPRESS)) ? SElVA_PROTO_REPLICATION_CMD_FDEFLATE : 0,
+        .flags = (s && (selva_string_get_flags(s) & SELVA_STRING_COMPRESS)) ? SELVA_PROTO_REPLICATION_CMD_FDEFLATE : 0,
         .cmd = cmd,
         .eid = htole64(eid),
         .ts = htole64(ts),
@@ -297,6 +310,7 @@ int selva_send_replication_cmd_s(struct selva_server_response_out *resp, uint64_
 
 int selva_send_replication_sdb(struct selva_server_response_out *resp, uint64_t eid, const char *filename)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     int oflags = O_RDONLY | O_NOATIME;
     int fd;
     struct selva_proto_replication_sdb buf = {
@@ -344,13 +358,13 @@ int selva_send_replication_sdb(struct selva_server_response_out *resp, uint64_t 
     buf.bsize = htole64((uint64_t)file_size);
     lseek(fd, 0, SEEK_SET);
 
-    res = server_send_buf(resp, &buf, sizeof(buf), SERVER_SEND_MORE);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), SERVER_SEND_MORE);
     if (res < 0) {
         close(fd);
         return (int)res;
     }
 
-    res = server_send_file(resp, fd, file_size, 0);
+    res = message_handlers[rtype].send_file(resp, fd, file_size, 0);
     close(fd);
 
     return (res < 0) ? (int)res : 0;
@@ -358,6 +372,7 @@ int selva_send_replication_sdb(struct selva_server_response_out *resp, uint64_t 
 
 int selva_send_replication_pseudo_sdb(struct selva_server_response_out *resp, uint64_t eid)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     struct selva_proto_replication_sdb buf = {
         .type = SELVA_PROTO_REPLICATION_SDB,
         .flags = SELVA_PROTO_REPLICATION_SDB_FPSEUDO,
@@ -366,15 +381,16 @@ int selva_send_replication_pseudo_sdb(struct selva_server_response_out *resp, ui
     };
     ssize_t res;
 
-    res = server_send_buf(resp, &buf, sizeof(buf), 0);
+    res = message_handlers[rtype].send_buf(resp, &buf, sizeof(buf), 0);
     return (res < 0) ? (int)res : 0;
 }
 
 int selva_send_end(struct selva_server_response_out *restrict resp)
 {
+    const enum server_message_handler rtype = resp->resp_msg_handler;
     int err;
 
-    err = server_flush_frame_buf(resp, true);
+    err = message_handlers[rtype].flush(resp, true);
     if (err == SELVA_PROTO_ENOTCONN) {
         /* Likely no ctx. */
         return err;
@@ -388,4 +404,18 @@ int selva_send_end(struct selva_server_response_out *restrict resp)
     }
 
     return err;
+}
+
+int selva_start_stream(struct selva_server_response_out *resp, struct selva_server_response_out **stream_resp_out)
+{
+    const enum server_message_handler rtype = resp->resp_msg_handler;
+
+    return message_handlers[rtype].start_stream(resp, stream_resp_out);
+}
+
+void selva_cancel_stream(struct selva_server_response_out *resp, struct selva_server_response_out *stream_resp)
+{
+    const enum server_message_handler rtype = resp->resp_msg_handler;
+
+    message_handlers[rtype].cancel_stream(resp, stream_resp);
 }

@@ -1,18 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../../src'
-import { startOrigin } from '../../../server/dist'
-import { SelvaServer } from '../../../server/dist/server'
-import {
-  SelvaFindResultType,
-  SelvaResultOrder,
-  SelvaTraversal,
-} from '../../src/protocol'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import '../assertions'
-import { find, getIndexingState } from '../assertions/utils'
+import '../assertions/index.js'
+import { getIndexingState } from '../assertions/utils.js'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -25,10 +19,10 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     name: 'default',
     env: {
-      FIND_INDICES_MAX: '2',
-      FIND_INDEXING_INTERVAL: '1000',
-      FIND_INDEXING_ICB_UPDATE_INTERVAL: '500',
-      FIND_INDEXING_POPULARITY_AVE_PERIOD: '6',
+      SELVA_INDEX_MAX: '2',
+      SELVA_INDEX_INTERVAL: '1000',
+      SELVA_INDEX_ICB_UPDATE_INTERVAL: '500',
+      SELVA_INDEX_POPULARITY_AVE_PERIOD: '6',
     },
   })
 

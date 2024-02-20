@@ -9,7 +9,7 @@ import {
   selva_proto_string_def,
   selva_proto_array_def,
   SELVA_PROTO_STRING_FBINARY,
-} from '../types'
+} from '../types.js'
 
 import { CompiledRecordDef, serialize } from 'data-record'
 

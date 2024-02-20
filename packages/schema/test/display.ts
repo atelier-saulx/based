@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, display } from '../src/index'
+import { BasedSchema, display } from '../src/index.js'
 
 const schema: BasedSchema = {
   types: {
@@ -49,30 +49,19 @@ test('date display', async (t) => {
     display('', schema.types.thing.fields.capitalize),
     display('bla', schema.types.thing.fields.upperCase),
     display('BLA', schema.types.thing.fields.lowerCase),
-
     display(100000, schema.types.thing.fields.euros),
     display(100000, schema.types.thing.fields.dollars),
-
     display(10.21, schema.types.thing.fields.euros),
     display(10.2312234342, schema.types.thing.fields.dollars),
-
     display(1001.21212, schema.types.thing.fields.euros),
     display(1001.21212, schema.types.thing.fields.dollars),
-
     display(10000.21212, schema.types.thing.fields.euros),
     display(10000.21212, schema.types.thing.fields.dollars),
-
     display(100e6, schema.types.thing.fields.euros),
     display(100e6, schema.types.thing.fields.dollars),
     display(100e6, schema.types.thing.fields.bytes),
     display(100e9, schema.types.thing.fields.bytes),
-
     display(100e9, schema.types.thing.fields.short),
-
-    // display(now + 20e3, schema.types.thing.fields.dateTimeText),
-    // display(now + 20e3, schema.types.thing.fields.timePrecise),
-    // display(now+ 20e3, schema.types.thing.fields.dateTime),
-    // display(now + 20e3, schema.types.thing.fields.time),
   ]
 
   t.deepEqual(parsed, [
@@ -95,11 +84,23 @@ test('date display', async (t) => {
     '95.37 mb',
     '93.13 gb',
     '100b',
-    // 'December 4, 2023, 2:18:09 PM',
-    // '14:18:09',
-    // '14:18 4/12/2023',
-    // '14:18',
   ])
+
+  const dates = [
+    display(now + 20e3, schema.types.thing.fields.dateTimeText),
+    display(now + 20e3, schema.types.thing.fields.timePrecise),
+    display(now + 20e3, schema.types.thing.fields.dateTime),
+    display(now + 20e3, {
+      type: 'timestamp',
+      display: 'date-time-text',
+    }),
+  ]
+
+  for (const d of dates) {
+    if (!d) {
+      t.fail('date is not parsed')
+    }
+  }
 
   t.regex(
     String(display(now + 20e3, schema.types.thing.fields.dateTimeText)),

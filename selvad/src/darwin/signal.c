@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <errno.h>
@@ -86,8 +86,11 @@ static void sig_handler(int sig, siginfo_t *info, void *uap __unused)
 
     int err = write(wfd, &esig, sizeof(esig));
     if (err == -1) {
+        char buf[80];
+
+        strerror_r(errno, buf, sizeof(buf));
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to handle signal. signo: %d fd: %d err: \"%s\"",
-                  sig, wfd, strerror(errno));
+                  sig, wfd, buf);
     }
 
     errno = saved_errno;

@@ -1,11 +1,10 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -58,7 +57,7 @@ test.beforeEach(async (t) => {
             },
           },
           dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
+          dingdongs: { type: 'array', items: { type: 'string' } },
           refs: { type: 'references' },
           value: { type: 'number' },
           age: { type: 'number' },
@@ -264,7 +263,7 @@ test('get - simple $field with $inherit: true', async (t) => {
     },
   })
 
-  const r = t.deepEqual(
+  t.deepEqual(
     await client.get({
       $id: 'viI',
       id: true,

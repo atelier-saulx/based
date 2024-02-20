@@ -1,13 +1,12 @@
-import { SELVA_PROTO_STRING } from '../../types'
-import { defaultEncoder } from '../defaultEncoder'
-import { encodeLongLong, encodeDouble } from './primitiveTypes'
-import { EncodeDefinition } from '../protocol'
-import { encodeSetOperation } from './set'
-import { ModifyArgType } from './types'
-import { encodeArrayOp } from './array'
-import { encodeHll } from './hll'
-import { encodeObjMeta } from './objMeta'
-import { encodeIncrement } from './increment'
+import { defaultEncoder } from '../defaultEncoder.js'
+import { encodeLongLong, encodeDouble } from './primitiveTypes.js'
+import { EncodeDefinition } from '../protocol.js'
+import { encodeSetOperation } from './set.js'
+import { ModifyArgType } from './types.js'
+import { encodeArrayOp } from './array.js'
+import { encodeHll } from './hll.js'
+import { encodeObjMeta } from './objMeta.js'
+import { encodeIncrement } from './increment.js'
 
 // note: just the non-string values are represented here
 export const VALUE_TYPES = {

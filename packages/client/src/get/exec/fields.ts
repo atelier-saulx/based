@@ -1,6 +1,6 @@
 import { fieldsExpr2rpn } from '@based/db-query'
-import { joinPath } from '../../util'
-import { ExecContext, Field, Fields } from '../types'
+import { joinPath } from '../../util/index.js'
+import { ExecContext, Field, Fields } from '../types.js'
 
 function getField(field: Field): { str: string; isInherit: boolean } {
   let str = joinPath(field.field)
@@ -74,15 +74,18 @@ export function getFields(
   fields: string
   strFields: string
 } {
+  if (!$any) {
+    console.error('$any is undefined')
+  }
   if (byType) {
     let hasTypes = false
-    const { fields: anyFields, isInherit } = getFieldsStr($any)
+    const { fields: anyFields, isInherit } = getFieldsStr($any!)
     const expr: Record<string, string> = { $any: anyFields }
     let hasInherit = isInherit
-    const allFields: Field[] = $any
+    const allFields: Field[] = $any!
     for (const type in byType) {
       hasTypes = true
-      const { fields, isInherit } = getFieldsStr([...$any, ...byType[type]])
+      const { fields, isInherit } = getFieldsStr([...$any!, ...byType[type]])
       expr[type] = fields
       hasInherit = hasInherit || isInherit
       allFields.push(...byType[type])
@@ -94,7 +97,7 @@ export function getFields(
         fields: expr.$any,
         isInherit: false,
         // strFields: expr.$any,
-        strFields: getSimpleFieldsStr($any),
+        strFields: getSimpleFieldsStr($any!),
       }
     }
 
@@ -107,12 +110,12 @@ export function getFields(
     }
   }
 
-  const { fields, isInherit } = getFieldsStr($any)
+  const { fields, isInherit } = getFieldsStr($any!)
   return {
     isRpn: false,
     fields: isInherit ? `"${fields}"` : fields,
     // strFields: fields,
-    strFields: getSimpleFieldsStr($any),
+    strFields: getSimpleFieldsStr($any!),
     isInherit,
   }
 }

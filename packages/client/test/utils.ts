@@ -3,7 +3,7 @@ import {
   pathToQuery,
   getValueByPath,
   getSchemaTypeFieldByPath,
-} from '../src/util'
+} from '../src/util/index.js'
 import { BasedSchemaTypePartial } from '@based/schema'
 
 test('pathToQuery should create an object structure out of a path', (t) => {

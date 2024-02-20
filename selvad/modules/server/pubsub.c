@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>

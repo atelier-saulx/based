@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -195,7 +195,7 @@ static struct SelvaObjectKey *array_ind_to_key(struct SelvaObjectKey *restrict k
     *k = (struct SelvaObjectKey){
         .type = arr_key->subtype,
         .subtype = SELVA_OBJECT_NULL,
-        .user_meta = 0, /* TODO What's the meta value for array members. */
+        .user_meta = 0,
         .name_len = 0,
     };
 
@@ -220,7 +220,7 @@ static struct SelvaObjectKey *array_ind_to_key(struct SelvaObjectKey *restrict k
                 k->emb_ll_value = 0;
             }
             break;
-        case SELVA_OBJECT_POINTER: /* ptr opts not supported. */
+        case SELVA_OBJECT_POINTER: /* ptr opts not supported for arrays. */
             k->ptr_opts = &default_ptr_opts;
             [[fallthrough]];
         case SELVA_OBJECT_STRING:
@@ -2094,7 +2094,7 @@ static void lang_key_to_res(struct SelvaObjectKey *key, const char *lang_str, si
     res->subtype = key->subtype;
     res->user_meta = SELVA_OBJECT_META_SUBTYPE_TEXT;
     memset(res->str_lang, '\0', sizeof(res->str_lang));
-    memcpy(res->str_lang, lang_str, min(lang_len, LANG_MAX));
+    memcpy(res->str_lang, lang_str, min(lang_len, LANG_NAME_MAX));
     res->str = key->value;
 }
 

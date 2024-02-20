@@ -6,12 +6,12 @@ import {
   GetCommand,
   GetNode,
   Path,
-} from '../../types'
-import { hashCmd } from '../../util'
-import { parseList } from './list'
-import { parseAlias } from './alias'
+} from '../../types.js'
+import { hashCmd } from '../../util.js'
+import { parseList } from './list.js'
+import { parseAlias } from './alias.js'
 import { deepCopy, deepEqual } from '@saulx/utils'
-import { joinPath } from '../../../util'
+import { joinPath } from '../../../util/index.js'
 
 export async function parseGetOpts(
   ctx: ExecContext,

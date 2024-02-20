@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedSchema, setWalker } from '../src/index'
-import { errorCollect, resultCollect } from './utils'
+import { BasedSchema, setWalker } from '../src/index.js'
+import { resultCollect } from './utils/index.js'
 
 const schema: BasedSchema = {
   types: {
@@ -47,7 +47,7 @@ const schema: BasedSchema = {
             properties: {
               bla: {
                 type: 'array',
-                values: {
+                items: {
                   type: 'object',
                   properties: {
                     snux: {

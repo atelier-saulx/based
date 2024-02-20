@@ -6,10 +6,10 @@ import {
   createAst,
   isFork,
 } from '@based/db-query'
-import { ExecContext, GetTraverse } from '../types'
-import { SelvaResultOrder } from '../../protocol'
-import { execCmd } from './cmd'
-import { BasedDbClient } from '../..'
+import { ExecContext, GetTraverse } from '../types.js'
+import { SelvaResultOrder } from '../../protocol/index.js'
+import { execCmd } from './cmd.js'
+import { BasedDbClient } from '../../index.js'
 
 export function excludeTimebased(ast: Fork | FilterAST): Fork | FilterAST {
   if (!isFork(ast)) {

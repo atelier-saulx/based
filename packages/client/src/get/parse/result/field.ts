@@ -1,15 +1,17 @@
 import {
   BasedSchemaField,
+  BasedSchemaFieldAny,
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
+  BasedSchemaFieldRecord,
   BasedSchemaFieldSet,
 } from '@based/schema'
-import { ExecContext, Field, GetCommand } from '../../types'
-import { parseRecFields } from './rec'
-import { getTypeSchema } from '../../../util'
-import { parseObjFields } from './obj'
-import { hashCmd } from '../../util'
-import { addSubMarker } from '../../exec/cmd'
+import { ExecContext, GetCommand } from '../../types.js'
+import { parseRecFields } from './rec.js'
+import { getTypeSchema } from '../../../util/index.js'
+import { parseObjFields } from './obj.js'
+import { hashCmd } from '../../util.js'
+import { addSubMarker } from '../../exec/cmd.js'
 
 const FIELD_PARSERS: Record<
   string,
@@ -42,7 +44,7 @@ const FIELD_PARSERS: Record<
     fieldSchema: BasedSchemaFieldArray
   ) => {
     const res = ary.map((x) => {
-      return parseFieldResult(ctx, fieldSchema.values, cmd, x)
+      return parseFieldResult(ctx, fieldSchema.items, cmd, x)
     })
 
     if (!res.length) {
@@ -129,9 +131,18 @@ const FIELD_PARSERS: Record<
     ary: any[],
     ctx: ExecContext,
     cmd,
-    fieldSchema: BasedSchemaFieldArray
+    fieldSchema: BasedSchemaFieldRecord
   ) => {
     return parseRecFields(ctx, fieldSchema.values, cmd, ary)
+  },
+  any: (v: any, ctx: ExecContext, cmd, _fieldSchema: BasedSchemaFieldAny) => {
+    if (Array.isArray(v)) {
+      return parseRecFields(ctx, { type: 'any' }, cmd, v)
+    }
+
+    const fs: BasedSchemaField = { type: <any>typeof v }
+    const parser = FIELD_PARSERS[fs.type]
+    return parser?.(v, ctx, cmd, fs)
   },
 }
 

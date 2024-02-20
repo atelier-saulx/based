@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  *
  * @section LICENSE
- * Copyright (c) 2022 Saulx
+ * Copyright (c) 2022, 2024 Saulx
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -46,7 +46,12 @@ struct heap {
     heap_comp cmp; /*!< Compare two items. */
     int size; /*!< Max heap size. */
     int last; /*!< Current heap size. (last item)  */
-    heap_value_t a[0]; /*!< Heap array. */
+    /**
+     * Heap array.
+     * Note that the size of 0 is important to allow this struct as a member in
+     * other structs and make HEAP_DEF work correctly.
+     */
+    heap_value_t a[0] __counted_by(size);
 } __attribute__((packed, aligned(sizeof(void *))));
 
 /**

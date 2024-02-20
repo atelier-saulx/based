@@ -1,12 +1,18 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
 
 /*
+ * See include/event_loop.h for event loop limits.
+ */
+
+/*
  * Generic tunables.
  */
+
+#define FALLBACK_LANG "en"
 
 /**
  * Debug memory usage.
@@ -33,6 +39,27 @@
  * SVECTOR_MODE_RBTREE mode.
  */
 #define SVECTOR_SLAB_SIZE 4194304
+
+/*
+ * Server tunables.
+ */
+
+/**
+ * Maximum number of streams per client.
+ * Keep in mind that increasing this tunable increases the memory consumption
+ * extremely heavily.
+ */
+#define SERVER_MAX_STREAMS 3
+
+/**
+ * Maximum number of query fork processes.
+ */
+#define MAX_QUERY_FORKS 16
+
+/**
+ * Maximum number of bytes for the query_fork command return channel.
+ */
+#define QUERY_FORK_CMD_BUF_SIZE (1024 - sizeof(size_t))
 
 /*
  * Replication tunables.
@@ -69,7 +96,7 @@
  */
 
 /**
- * Maximum number of update operations on a sinlge command.
+ * Maximum number of update operations per a single command.
  */
 #define SELVA_CMD_UPDATE_MAX 300
 
@@ -107,39 +134,5 @@
  * Dynamic Find Query Index Tunables.
  */
 
-#define FIND_INDICES_MAX_HINTS_CMD             20 /*!< Maximum number of indexing hints per find command. */
-#define FIND_INDICES_MAX_HINTS                 500 /*!< Maximum number of indexing hints tracked. */
-
-/*
- * Async_task Tunables.
- */
-
-/**
- * Drop all messages.
- */
-#define ASYNC_TASK_DEBUG_DROP_ALL       0
-
-/**
- * Task buffer block size.
- * Tasks are sent over fixed size buffers but a single task can occupy multiple
- * buffers. This value should be big enough to fit majority of tasks sent in
- * normal operation but also small enough so no space is wasted for padding,
- * as the buffers can't be split.
- * It might be a good idea to set this to a multiple of the cache line size.
- */
-#define ASYNC_TASK_RING_BUF_BLOCK_SIZE  64
-
-/**
- * Number of task buffer blocks per worker.
- */
-#define ASYNC_TASK_RING_BUF_LENGTH      1000000
-
-/**
- * Async task peek interval.
- */
-#define ASYNC_TASK_PEEK_INTERVAL_NS     500000L
-
-/**
- * Number of async task workers.
- */
-#define ASYNC_TASK_HIREDIS_WORKER_COUNT 4
+#define SELVA_INDEX_MAX_HINTS_CMD       20 /*!< Maximum number of indexing hints per find command. */
+#define SELVA_INDEX_MAX_HINTS           500 /*!< Maximum number of indexing hints tracked. */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -230,7 +230,7 @@ struct selva_proto_replication_cmd {
      */
     enum selva_proto_data_type type;
     enum {
-        SElVA_PROTO_REPLICATION_CMD_FDEFLATE = 0x02, /*!< Compressed with deflate. */
+        SELVA_PROTO_REPLICATION_CMD_FDEFLATE = 0x02, /*!< Compressed with deflate. */
     } __packed flags; /*! String flags. */
     uint8_t _spare[5];
     int8_t cmd; /*!< Command identifier. */

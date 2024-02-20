@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -63,11 +63,11 @@ test.beforeEach(async (t) => {
             values: {
               type: 'object',
               properties: {
-                floatArray: { type: 'array', values: { type: 'number' } },
-                intArray: { type: 'array', values: { type: 'integer' } },
+                floatArray: { type: 'array', items: { type: 'number' } },
+                intArray: { type: 'array', items: { type: 'integer' } },
                 objArray: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       hello: { type: 'string' },
@@ -126,10 +126,10 @@ test.beforeEach(async (t) => {
             },
           },
           dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
-          floatArray: { type: 'array', values: { type: 'number' } },
-          intArray: { type: 'array', values: { type: 'integer' } },
-          tsArray: { type: 'array', values: { type: 'timestamp' } },
+          dingdongs: { type: 'array', items: { type: 'string' } },
+          floatArray: { type: 'array', items: { type: 'number' } },
+          intArray: { type: 'array', items: { type: 'integer' } },
+          tsArray: { type: 'array', items: { type: 'timestamp' } },
           refs: { type: 'references' },
           value: { type: 'number' },
           age: { type: 'number' },
@@ -325,7 +325,7 @@ test('get - field with array', async (t) => {
     $all: true,
   })
 
-  t.deepEqualIgnoreOrder(all, {
+  deepEqualIgnoreOrder(t, all, {
     id,
     // dong: { dingdong: [] },
     type: 'lekkerType',
@@ -370,7 +370,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -400,7 +400,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -430,7 +430,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -460,7 +460,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -506,7 +506,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [

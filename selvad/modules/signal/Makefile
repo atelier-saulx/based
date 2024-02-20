@@ -1,11 +1,13 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 OBJ := \
 	   main.o \
+	   reaper.o \
 	   trace.o
 
 DEP := $(OBJ:%.o=%.d)
+CFLAGS += -DSELVA_SIGNAL_MAIN=1
 LDFLAGS += -lutil
 TARGET := ../mod_signal$(MOD_SUFFIX)
 

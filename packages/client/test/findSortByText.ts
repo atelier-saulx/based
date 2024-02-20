@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -74,12 +74,12 @@ test('find - sort by text', async (t) => {
         name: 'match' + j,
         title: 'match' + j,
         value: Number(i + '.' + j),
-        related: globMatches.map((v) => v.$id),
+        related: globMatches.map((v: any) => v.$id),
       }
       matches.push(match)
       globMatches.push(match)
     }
-    const matchesIds = await Promise.all(matches.map((m) => client.set(m)))
+    const matchesIds = await Promise.all(matches.map((m: any) => client.set(m)))
     leaguesSet.push({
       type: 'league',
       name: 'league' + i,
@@ -87,7 +87,7 @@ test('find - sort by text', async (t) => {
       children: matchesIds,
     })
   }
-  await Promise.all(leaguesSet.map((v) => client.set(v)))
+  await Promise.all(leaguesSet.map((v: any) => client.set(v)))
 
   const result = await client.get({
     $id: 'root',
@@ -114,7 +114,7 @@ test('find - sort by text', async (t) => {
 
   for (let i = 0; i < result.children.length; i++) {
     const idx = Math.floor(i / 10)
-    t.deepEqualIgnoreOrder(result.children[i].title, `match${idx}`)
+    deepEqualIgnoreOrder(t, result.children[i].title, `match${idx}`)
   }
 
   const result2 = await client.get({
@@ -142,7 +142,7 @@ test('find - sort by text', async (t) => {
 
   for (let i = 0; i < result2.children.length; i++) {
     const idx = Math.floor(i / 10)
-    t.deepEqualIgnoreOrder(result2.children[i].title, `match${idx}`)
+    deepEqualIgnoreOrder(t, result2.children[i].title, `match${idx}`)
   }
 
   const result3 = await client.get({

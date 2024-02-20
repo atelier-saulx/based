@@ -1,12 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -37,7 +36,7 @@ test.beforeEach(async (t) => {
         fields: {
           formFields: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 title: { type: 'text' },
@@ -51,7 +50,7 @@ test.beforeEach(async (t) => {
         fields: {
           media: {
             type: 'array',
-            values: {
+            items: {
               type: 'object',
               properties: {
                 src: { type: 'string' },
@@ -121,7 +120,8 @@ test('should replace array', async (t) => {
     type: 'lekkerType',
     media: originalMedia,
   })
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: lekker,
@@ -145,7 +145,7 @@ test('should replace array', async (t) => {
     media: true,
   })
   t.log(r)
-  t.deepEqualIgnoreOrder(r, {
+  deepEqualIgnoreOrder(t, r, {
     id: lekker,
     media: [{ src: 'http://wawa.com/222' }, { src: 'http://wawa.com/333' }],
   })
@@ -155,7 +155,8 @@ test('should replace array', async (t) => {
     media: [{ src: 'http://wawa.com/444' }],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: lekker,
@@ -173,7 +174,8 @@ test('should replace array', async (t) => {
     media: [],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: lekker,
@@ -199,7 +201,8 @@ test('delete index', async (t) => {
     media: { $remove: { $idx: 0 } },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: lekker,

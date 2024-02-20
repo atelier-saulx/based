@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedSchema, setWalker } from '../src/index'
-import { errorCollect, resultCollect } from './utils'
+import { BasedSchema, setWalker } from '../src/index.js'
+import { errorCollect, resultCollect } from './utils/index.js'
 
 const schema: BasedSchema = {
   types: {
@@ -9,13 +9,13 @@ const schema: BasedSchema = {
       fields: {
         arrNum: {
           type: 'array',
-          values: {
+          items: {
             type: 'number',
           },
         },
         objArray: {
           type: 'array',
-          values: {
+          items: {
             type: 'object',
             properties: {
               snurp: {
@@ -26,13 +26,13 @@ const schema: BasedSchema = {
         },
         arrStr: {
           type: 'array',
-          values: {
+          items: {
             type: 'string',
           },
         },
         intarray: {
           type: 'array',
-          values: {
+          items: {
             type: 'integer',
           },
         },

@@ -1,7 +1,7 @@
 import test from 'ava'
 import { BasedDbClient } from '@based/db-client'
 import { startOrigin } from '@based/db-server'
-import { subscribe } from '../src'
+import { destroySubscriber, subscribe } from '../src/index.js'
 import getPort from 'get-port'
 
 test('subs', async (t) => {
@@ -11,7 +11,7 @@ test('subs', async (t) => {
     port,
     host: '127.0.0.1',
   }
-  const server = startOrigin(dbOpts)
+  const server = await startOrigin(dbOpts)
   const client = new BasedDbClient()
 
   client.connect(dbOpts)
@@ -48,7 +48,7 @@ test('subs', async (t) => {
   })
 
   let count = 0
-  const promise = new Promise<void>((resolve) => {
+  await new Promise<void>((resolve) => {
     subscribe(
       client,
       {
@@ -58,7 +58,7 @@ test('subs', async (t) => {
           $list: true,
         },
       },
-      async (res) => {
+      async (_res: any) => {
         count++
         if (count === 10) {
           resolve()
@@ -72,7 +72,8 @@ test('subs', async (t) => {
     )
   })
 
-  await promise
-
   t.pass()
+  destroySubscriber(client)
+  client.destroy()
+  await server.destroy()
 })

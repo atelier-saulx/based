@@ -235,10 +235,9 @@ further analyze the time complexity of the indexing subsystem as the data set
 and index size grows.
 
 Naturally, it's also possible to attach [Intel VTune](/doc/debugging.md#intel-vtune)
-to the `redis-server-selva` process while the test is running and gather even
-more performance data. The only thing to keep in mind is that the test will run
-three Redis processes which of only one is processing the data, the `origin`
-process.
+to the `selvad` process while the test is running and gather even more performance
+data. The only thing to keep in mind is that the test will run three `selvad`
+processes which of only one is processing the data, the `origin` process.
 
 ## Hierarchy Serialization
 
@@ -295,6 +294,6 @@ See [modify.c](../../../modules/db/module/modify.c).
 
 ### Selva Objects
 
-Direct SelvaObject manipulation for objects backed by a Redis key.
+Direct SelvaObject manipulation.
 
 See [selva_object](../../../modules/db/module/selva_object.c).

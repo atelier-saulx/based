@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Saulx
+ * Copyright (c) 2022, 2024 Saulx
  * Copyright (c) 2014 - 2016, 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * SPDX-License-Identifier: BSD-2-Clause
  */
@@ -9,7 +9,7 @@
 #include <time.h>
 #include "util/ctime.h"
 
-void msec2timespec(struct timespec * ts, int64_t msec)
+struct timespec *msec2timespec(struct timespec * ts, int64_t msec)
 {
     const int64_t sec_msec = (int64_t)1000;
     const int64_t nsec_msec = (int64_t)1000000;
@@ -18,9 +18,11 @@ void msec2timespec(struct timespec * ts, int64_t msec)
     mod = msec % sec_msec;
     ts->tv_sec = (msec - mod) / sec_msec;
     ts->tv_nsec = mod * nsec_msec;
+
+    return ts;
 }
 
-void nsec2timespec(struct timespec * ts, int64_t nsec)
+struct timespec *nsec2timespec(struct timespec * ts, int64_t nsec)
 {
     const int64_t sec_nsec = (int64_t)1000000000;
     int64_t mod;
@@ -28,6 +30,8 @@ void nsec2timespec(struct timespec * ts, int64_t nsec)
     mod = nsec % sec_nsec;
     ts->tv_sec = (nsec - mod) / sec_nsec;
     ts->tv_nsec = mod;
+
+    return ts;
 }
 
 void timespec_add(struct timespec * sum, const struct timespec * left,

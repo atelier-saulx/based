@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <arpa/inet.h>
@@ -15,12 +15,12 @@
 #include "selva_proto.h"
 #include "selva_log.h"
 #include "selva_server.h"
-#include "server.h"
 #include "../../tunables.h"
+#include "server.h"
 
 #define STREAM_WRITER_RETRY_SEC 15
 
-#define ALL_STREAMS_FREE ((1 << MAX_STREAMS) - 1)
+#define ALL_STREAMS_FREE ((1 << SERVER_MAX_STREAMS) - 1)
 #define CLIENTS_SIZE(nr) (ALIGNED_SIZE((nr) * sizeof(struct conn_ctx), DCACHE_LINESIZE))
 
 /**
@@ -45,7 +45,12 @@ void conn_init(int max_clients)
     }
 
     clients = selva_aligned_alloc(DCACHE_LINESIZE, CLIENTS_SIZE(max_clients));
-    memset(clients, 0, CLIENTS_SIZE(max_clients));
+    /*
+     * Clean a a part of the memory to enforce actual allocation (avoid page fault).
+     * This will make first connections to the server faster but avoid
+     * overcommit in case the limit was exaggerated.
+     */
+    memset(clients, 0, CLIENTS_SIZE(max_clients >> 1));
 }
 
 struct conn_ctx *alloc_conn_ctx(void)
@@ -97,7 +102,7 @@ void free_conn_ctx(struct conn_ctx *ctx)
 
         SELVA_LOG(SELVA_LOGL_DBG, "conn_ctx (%p) %d stream(s) busy, waiting...",
                   ctx,
-                  MAX_STREAMS - __builtin_popcount(free_map));
+                  SERVER_MAX_STREAMS - __builtin_popcount(free_map));
 
         (void)evl_set_timeout(&t, retry_free_con_ctx, ctx);
     }
@@ -183,7 +188,7 @@ void send_client_list(struct selva_server_response_out *resp)
             selva_send_ll(resp, client->recv_msg_buf_size);
 
             selva_send_str(resp, "nr_streams", 10);
-            selva_send_ll(resp, MAX_STREAMS - __builtin_popcount(atomic_load(&client->streams.free_map)));
+            selva_send_ll(resp, SERVER_MAX_STREAMS - __builtin_popcount(atomic_load(&client->streams.free_map)));
 
             selva_send_str(resp, "last_cmd", 8);
             selva_send_ll(resp, client->recv_frame_hdr_buf.cmd);

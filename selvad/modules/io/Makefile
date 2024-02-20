@@ -1,11 +1,20 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 SELVA_DB_VERSION := $(shell sh -c 'git rev-parse --verify HEAD')
 OBJ := \
+	   dump.o \
 	   io.o \
 	   myreadlink.o \
+	   replication/eid.o \
+	   replication/origin/replica_thread.o \
+	   replication/origin/replication.o \
+	   replication/origin/ring_buffer.o \
+	   replication/replica/replication.o \
+	   replication/replication.o \
 	   sdb.o \
+	   sdb_name.o \
+	   sdb_purge.o \
 	   version.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_IO_MAIN=1 -DSELVA_IO_TYPE

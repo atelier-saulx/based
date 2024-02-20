@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -17,7 +17,6 @@
 #include "selva_io.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
 #include "hierarchy.h"
 #include "selva_db.h"
@@ -179,14 +178,17 @@ const struct EdgeFieldConstraint *Edge_GetConstraint(
 static void EdgeConstraint_Reply(struct selva_server_response_out *resp, void *p) {
     const struct EdgeFieldConstraint *constraint = (struct EdgeFieldConstraint *)p;
     enum EdgeFieldConstraintFlag cflags = constraint->flags;
+    const char cflags_str[] = {
+        (cflags & EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF)    ? 'S' : '-',
+        (cflags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) ? 'B' : '-',
+        (cflags & EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC)       ? 'D' : '-',
+        (cflags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY)         ? 'A' : '-',
+    };
 
     selva_send_array(resp, 6);
 
     selva_send_str(resp, "flags", 5);
-    selva_send_strf(resp, "%c%c%c",
-                    (cflags & EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF)    ? 'C' : '-',
-                    (cflags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) ? 'B' : '-',
-                    (cflags & EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC)       ? 'D' : '-');
+    selva_send_str(resp, cflags_str, sizeof(cflags_str));
 
     selva_send_str(resp, "field_name", 10);
     selva_send_str(resp, constraint->field_name_str, constraint->field_name_len);
@@ -303,15 +305,7 @@ static void Edge_AddConstraintCommand(struct selva_server_response_out *resp, co
         flags |= flags_str[i] == 'S' ? EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF : 0;
         flags |= flags_str[i] == 'B' ? EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL : 0;
         flags |= flags_str[i] == 'D' ? EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC : 0; /* Implicit. */
-    }
-
-    if ((flags & ~(
-         EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF |
-         EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL |
-         EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC
-        )) != 0) {
-        selva_send_errorf(resp, SELVA_EINVAL, "constraint flags");
-        return;
+        flags |= flags_str[i] == 'A' ? EDGE_FIELD_CONSTRAINT_FLAG_ARRAY : 0;
     }
 
     struct EdgeFieldDynConstraintParams params = {
@@ -329,7 +323,7 @@ static void Edge_AddConstraintCommand(struct selva_server_response_out *resp, co
         selva_send_error(resp, err, NULL, 0);
         return;
     } else {
-        selva_db_is_dirty = 1;
+        selva_io_set_dirty();
         selva_send_ll(resp, 1);
         selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -40,6 +40,22 @@ static int parse_int(void *dst, const char *src)
     }
 
     *d = (int)v;
+
+    return 0;
+}
+
+static int parse_bool(void *dst, const char *src)
+{
+    long long v;
+    char *endptr = (char *)src;
+    bool *x = (bool *)dst;
+
+    v = strtol(src, &endptr, 10);
+    if (endptr == src) {
+        return SELVA_EINVAL;
+    }
+
+    *x = (bool)(!!v);
 
     return 0;
 }
@@ -97,11 +113,16 @@ int config_resolve(const char *mod_name, const struct config cfg_map[], size_t l
         case CONFIG_INT:
             err = parse_int(cfg->dp, str);
             break;
+        case CONFIG_BOOL:
+            err = parse_bool(cfg->dp, str);
+            break;
         case CONFIG_SIZE_T:
             err = parse_size_t(cfg->dp, str);
             break;
         }
         if (err) {
+            SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args for \"%s\": %s",
+                      mod_name, selva_strerror(err));
             return err;
         }
 

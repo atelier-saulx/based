@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import getPort from 'get-port'
 import { startOrigin, SelvaServer } from '@based/db-server'
-import { BasedDbClient } from '../../src'
-import '../assertions'
-import { SchemaUpdateMode } from '../../src/types'
+import { BasedDbClient } from '../../src/index.js'
+import '../assertions/index.js'
+import { SchemaUpdateMode } from '../../src/types.js'
 import { BasedSchemaFieldArray } from '@based/schema'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -39,7 +39,7 @@ test.beforeEach(async (t) => {
         fields: {
           level1array: {
             type: 'array',
-            values: { type: 'string' },
+            items: { type: 'string' },
           },
         },
       },
@@ -97,7 +97,7 @@ test('Change array field in strick mode should fail', async (t) => {
         aType: {
           fields: {
             level1array: {
-              values: { type: 'number' },
+              items: { type: 'number' },
             },
           },
         },
@@ -112,7 +112,7 @@ test('Change array field in strick mode should fail', async (t) => {
 test('Change array field in flexible mode with existing nodes should fail', async (t) => {
   const { client } = t.context
 
-  const id = await client.set({
+  await client.set({
     type: 'aType',
     level1array: ['one', 'one', 'three'],
   })
@@ -145,7 +145,7 @@ test('Change array field in flexible mode with existing nodes should fail', asyn
           aType: {
             fields: {
               level1array: {
-                values: { type: 'number' },
+                items: { type: 'number' },
               },
             },
           },
@@ -172,7 +172,7 @@ test('Change set field in flexible mode without existing nodes should fail', asy
           aType: {
             fields: {
               level1array: {
-                values: { type: 'number' },
+                items: { type: 'number' },
               },
             },
           },
@@ -187,7 +187,7 @@ test('Change set field in flexible mode without existing nodes should fail', asy
   let newSchema = client.schema
   t.is(
     (newSchema.types['aType'].fields['level1array'] as BasedSchemaFieldArray)
-      .values.type,
+      .items.type,
     'number'
   )
 
@@ -229,7 +229,7 @@ test('Add array field without values should fail', async (t) => {
     }),
     {
       message:
-        /^Field "anotherType.level1array" is of type "array" but does not include a valid "values" property.$/,
+        /^Field "anotherType.level1array" is of type "array" but does not include a valid "items" property.$/,
     }
   )
 })

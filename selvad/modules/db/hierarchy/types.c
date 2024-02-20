@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -10,8 +10,8 @@
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
+#include "selva_io.h"
 #include "selva_db.h"
 #include "selva_onload.h"
 #include "selva_object.h"
@@ -73,7 +73,7 @@ static void SelvaHierarchyTypes_AddCommand(struct selva_server_response_out *res
         return;
     }
 
-    selva_db_is_dirty = 1;
+    selva_io_set_dirty();
     selva_send_ll(resp, 1);
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
 }
@@ -84,7 +84,7 @@ static void SelvaHierarchyTypes_ClearCommand(struct selva_server_response_out *r
     } else {
         SelvaHierarchyTypes_Clear(main_hierarchy);
 
-        selva_db_is_dirty = 1;
+        selva_io_set_dirty();
         selva_send_ll(resp, 1);
         selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
     }

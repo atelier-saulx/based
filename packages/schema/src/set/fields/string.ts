@@ -2,9 +2,9 @@ import {
   BasedSchemaFieldString,
   BasedSchemaLanguage,
   BasedSetTarget,
-} from '../../types'
-import { ParseError } from '../../error'
-import { FieldParser, ArgsClass } from '../../walker'
+} from '../../types.js'
+import { ParseError } from '../../error.js'
+import { FieldParser, ArgsClass } from '../../walker/index.js'
 import validators from 'validator'
 
 type StringTypes = 'string' | 'text'
@@ -84,6 +84,9 @@ const formatPatterns: Record<
   json: () => true,
   markdown: () => true,
   clike: () => true,
+  // Can add some more checks for this...
+  basedId: (value) => typeof value === 'string' && value.length < 16,
+  basedType: (value) => typeof value === 'string' && value.length < 64,
 }
 
 const validateString = (

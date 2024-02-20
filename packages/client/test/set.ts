@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin } from '@based/db-server'
 import getPort from 'get-port'
 
 test('set primitive fields', async (t) => {
@@ -74,12 +74,12 @@ test('set primitive fields', async (t) => {
           arys: {
             type: 'object',
             properties: {
-              ints: { type: 'array', values: { type: 'integer' } },
-              floats: { type: 'array', values: { type: 'number' } },
-              strs: { type: 'array', values: { type: 'string' } },
+              ints: { type: 'array', items: { type: 'integer' } },
+              floats: { type: 'array', items: { type: 'number' } },
+              strs: { type: 'array', items: { type: 'string' } },
               objs: {
                 type: 'array',
-                values: {
+                items: {
                   type: 'object',
                   properties: {
                     a: { type: 'number' },

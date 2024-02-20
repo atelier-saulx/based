@@ -55,6 +55,7 @@ export const languages = {
   lg: 'Ganda',
   ka: 'Georgian',
   de: 'German',
+  gsw: 'Swiss German',
   ki: 'Gikuyu, Kikuyu',
   el: 'Greek (Modern)',
   kl: 'Greenlandic, Kalaallisut',

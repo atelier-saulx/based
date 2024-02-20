@@ -1,16 +1,15 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 OBJ := \
 	   alias.o \
 	   comparator.o \
 	   db.o \
-	   dump.o \
 	   edge/edge.o \
 	   edge/edge_constraint.o \
-	   find_index/find_index.o \
-	   find_index/icb.o \
-	   find_index/pick_icb.o \
+	   field_lookup/data_field.o \
+	   field_lookup/inherit_field.o \
+	   field_lookup/traversable.o \
 	   hierarchy/field_set.o \
 	   hierarchy/hierarchy.o \
 	   hierarchy/hierarchy_detached.o \
@@ -19,6 +18,9 @@ OBJ := \
 	   hierarchy/traversal.o \
 	   hierarchy/traversal_order.o \
 	   hierarchy/types.o \
+	   index/icb.o \
+	   index/index.o \
+	   index/pick_icb.o \
 	   modify.o \
 	   parsers/enum.o \
 	   parsers/index_hints.o \
@@ -34,16 +36,11 @@ OBJ := \
 	   query/find/find_send_node_merge.o \
 	   query/find/inherit.o \
 	   query/find/inherit_send_field.o \
-	   field_lookup/data_field.o \
-	   field_lookup/inherit_field.o \
-	   field_lookup/traversable.o \
 	   query/query_traverse.o \
 	   query/update.o \
 	   resolve.o \
 	   rpn/rpn.o \
 	   rpn/rpn_eval.o \
-	   sdb_purge.o \
-	   selva_lang.o \
 	   selva_object/selva_object.o \
 	   selva_object/selva_object_commands.o \
 	   selva_object/selva_object_foreach.o \

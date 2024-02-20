@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 include ../common.mk
@@ -7,8 +7,10 @@ OBJ := \
 	   config.o \
 	   event_loop.o \
 	   heap.o \
+	   langs.o \
 	   main.o \
 	   module.o \
+	   proc_init.o \
 	   promise.o \
 	   selva_log.o \
 	   timers.o

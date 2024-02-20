@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -19,7 +19,7 @@ struct selva_string **parse_index_hints(struct finalizer *fin, const char *index
     s = index_hints[0];
     while (s) {
         s = index_hints[++nr_index_hints];
-        if (nr_index_hints >= FIND_INDICES_MAX_HINTS_CMD) {
+        if (nr_index_hints >= SELVA_INDEX_MAX_HINTS_CMD) {
             break;
         }
     }

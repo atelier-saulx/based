@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -14,6 +14,7 @@
 #endif
 
 enum selva_proto_data_type;
+struct selva_proto_builder_msg;
 struct selva_server_response_out;
 struct selva_string;
 
@@ -33,6 +34,13 @@ enum selva_cmd_mode {
      * database objects as well as their serialized state.
      */
     SELVA_CMD_MODE_MUTATE = 0x02,
+    /**
+     * Allow forking when executing this command.
+     * SELVA_CMD_MODE_PURE must be set and SELVA_CMD_MODE_MUTATE must not be set.
+     * When a command is executed in a fork any changes in the memory are not
+     * directly reflected on the origin.
+     */
+    SELVA_CMD_MODE_QUERY_FORK = 0x04,
 };
 
 /**
@@ -44,6 +52,14 @@ enum selva_cmd_mode {
 typedef void (*selva_cmd_function)(struct selva_server_response_out *resp, const void *buf, size_t len);
 
 /**
+ * Function to test whether this command is eligible for forking.
+ * The function should return true if it's safe to fork the process and any
+ * in-memory changes are either temporary, handled properly, or communicated
+ * to the main process.
+ */
+typedef bool (*selva_cmd_query_fork_test)(const void *buf, size_t len);
+
+/**
  * Set the server to read-only mode.
  * This operation is irreversible at runtime.
  * A read-only server can only invoke commands marked as `SELVA_CMD_MODE_PURE`
@@ -51,12 +67,35 @@ typedef void (*selva_cmd_function)(struct selva_server_response_out *resp, const
  */
 SELVA_SERVER_EXPORT(void, selva_server_set_readonly, void);
 
+SELVA_SERVER_EXPORT(bool, selva_server_is_readonly, void);
+
+/**
+ * Test if this process is a query fork.
+ * A query fork is a short-lived process created for processing a slow read-only query.
+ * A query fork is also a readonly db.
+ */
+SELVA_SERVER_EXPORT(bool, selva_server_is_query_fork, void);
+
 /**
  * Register a command.
+ * A fifth argument of type selva_cmd_query_fork_test must be given if
+ * `SELVA_CMD_MODE_QUERY_FORK` is set in `mode`.
  */
-SELVA_SERVER_EXPORT(int, selva_mk_command, int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd);
-#define SELVA_MK_COMMAND(nr, mode, cmd) \
-    selva_mk_command(nr, mode, #cmd, cmd)
+SELVA_SERVER_EXPORT(int, selva_mk_command, int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd, ...);
+#define SELVA_MK_COMMAND(nr, mode, cmd, ...) \
+    selva_mk_command(nr, mode, #cmd, cmd __VA_OPT__(,) __VA_ARGS__)
+
+/**
+ * Initialize a message for query_fork return channel use.
+ * for a message initialized by this function.
+ * selva_proto_builder_deinit() must be called after use.
+ */
+SELVA_SERVER_EXPORT(void, selva_server_query_fork_init_ret_msg, struct selva_proto_builder_msg *msg, int8_t cmd);
+
+/**
+ * Send a message initialized by selva_server_query_fork_init_ret_msg().
+ */
+SELVA_SERVER_EXPORT(void, selva_server_query_fork_send_ret_msg, struct selva_proto_builder_msg *msg);
 
 /**
  * Describe the connection related to this response as a string.
@@ -102,7 +141,9 @@ SELVA_SERVER_EXPORT(void, selva_cancel_stream, struct selva_server_response_out 
 
 /**
  * End sending a response.
- * Finalizes the response sequence.
+ * Finalizes the response sequence. Nothing can be sent to the response after
+ * this function has been called. Normally the respnose is terminated
+ * automatically but streams must be ended explicitly.
  */
 SELVA_SERVER_EXPORT(int, selva_send_end, struct selva_server_response_out *restrict resp);
 
@@ -253,9 +294,23 @@ SELVA_SERVER_EXPORT(int, selva_send_replication_pseudo_sdb, struct selva_server_
  */
 
 /**
+ * @addtogroup run_cmd
+ * Run commands internally.
+ */
+
+/**
  * Run a command.
  */
-SELVA_SERVER_EXPORT(int, selva_server_run_cmd, int8_t cmd_id, int64_t ts, void *msg, size_t msg_size);
+SELVA_SERVER_EXPORT(int, selva_server_run_cmd, int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size);
+
+/**
+ * Run a command and store the response to the out buffer.
+ */
+SELVA_SERVER_EXPORT(int, selva_server_run_cmd2buf, int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size, struct selva_string *out);
+
+/**
+ * @}
+ */
 
 /**
  * @addtogroup pubsub
@@ -270,7 +325,11 @@ SELVA_SERVER_EXPORT(int, selva_pubsub_publish, unsigned ch_id, const void *messa
 
 #define _import_selva_server(apply) \
     apply(selva_server_set_readonly) \
+    apply(selva_server_is_readonly) \
+    apply(selva_server_is_query_fork) \
     apply(selva_mk_command) \
+    apply(selva_server_query_fork_init_ret_msg) \
+    apply(selva_server_query_fork_send_ret_msg) \
     apply(selva_resp_to_str) \
     apply(selva_resp_cmp_conn) \
     apply(selva_resp_to_cmd_id) \
@@ -299,6 +358,7 @@ SELVA_SERVER_EXPORT(int, selva_pubsub_publish, unsigned ch_id, const void *messa
     apply(selva_send_replication_sdb) \
     apply(selva_send_replication_pseudo_sdb) \
     apply(selva_server_run_cmd) \
+    apply(selva_server_run_cmd2buf) \
     apply(selva_pubsub_publish)
 
 #define _import_selva_server1(f) \

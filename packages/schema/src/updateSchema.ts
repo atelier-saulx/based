@@ -1,7 +1,7 @@
-import { BasedSchema, BasedSchemaPartial } from './types'
+import { BasedSchema, BasedSchemaPartial } from './types.js'
 
 export const updateSchema = async (
-  newSchema: BasedSchemaPartial,
+  _newSchema: BasedSchemaPartial,
   oldSchema: BasedSchema = {
     $defs: {},
     types: {},

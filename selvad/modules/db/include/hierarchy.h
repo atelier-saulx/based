@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -183,6 +183,11 @@ struct SelvaHierarchy {
      */
     struct {
         /**
+         * A timer used by auto compression.
+         */
+        int auto_compress_timer;
+        size_t nr_nodes; /*!< Size of nodes. */
+        /**
          * Inactive nodeIds.
          * Inactive node ids are listed here during serialization for further
          * processing. This is a pointer to a memory region shared with the
@@ -191,14 +196,8 @@ struct SelvaHierarchy {
          * those times. NodeIds listed here have been inactive for a long time
          * and are potential candidates for compression.
          */
-        Selva_NodeId *nodes;
-        size_t nr_nodes;
+        Selva_NodeId *nodes __counted_by(nr_nodes);
         size_t next; /*!< Next empty slot in inactive_nodes. */
-
-        /**
-         * A timer used by auto compression.
-         */
-        int auto_compress_timer;
     } inactive;
 
     /**

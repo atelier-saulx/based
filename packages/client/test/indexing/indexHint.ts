@@ -1,14 +1,17 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../../src'
-import { startOrigin } from '../../../server/dist'
-import { SelvaServer } from '../../../server/dist/server'
-import { SelvaFindResultType, SelvaTraversal } from '../../src/protocol'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import {
+  SelvaFindResultType,
+  SelvaTraversal,
+} from '../../src/protocol/index.js'
 import { wait } from '@saulx/utils'
-import '../assertions'
-import { find } from '../assertions/utils'
+import '../assertions/index.js'
+import { find } from '../assertions/utils.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from '../assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -21,11 +24,11 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     name: 'default',
     env: {
-      FIND_INDICES_MAX: '100',
-      FIND_INDEXING_INTERVAL: '1000',
-      FIND_INDEXING_ICB_UPDATE_INTERVAL: '500',
-      FIND_INDEXING_POPULARITY_AVE_PERIOD: '3',
-      FIND_INDEXING_THRESHOLD: '0',
+      SELVA_INDEX_MAX: '100',
+      SELVA_INDEX_INTERVAL: '1000',
+      SELVA_INDEX_ICB_UPDATE_INTERVAL: '500',
+      SELVA_INDEX_POPULARITY_AVE_PERIOD: '3',
+      SELVA_INDEX_THRESHOLD: '0',
     },
   })
 
@@ -78,9 +81,9 @@ test('create and destroy an index', async (t) => {
   }
   const expected = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
   const lsIdx = async () =>
-    (await client.command('index.list')).map((v, i: number) =>
-      i % 2 === 0 ? v : v[3]
-    )[0].map((v, i: number) => i % 2 == 1 ? v[3] : v)
+    (await client.command('index.list'))
+      .map((v, i: number) => (i % 2 === 0 ? v : v[3]))[0]
+      .map((v, i: number) => (i % 2 == 1 ? v[3] : v))
 
   for (let i = 0; i < 100; i++) {
     await client.set({
@@ -93,7 +96,8 @@ test('create and destroy an index', async (t) => {
 
   for (let i = 0; i < 500; i++) {
     const r = (await find(q))[0]
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       r.map((v) => v[1][1]),
       expected
     )
@@ -101,7 +105,8 @@ test('create and destroy an index', async (t) => {
   await wait(2e3)
   for (let i = 0; i < 500; i++) {
     const r = (await find(q))[0]
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       r.map((v) => v[1][1]),
       expected
     )
@@ -114,7 +119,8 @@ test('create and destroy an index', async (t) => {
 
   for (let i = 0; i < 500; i++) {
     const r = (await find(q))[0]
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       r.map((v) => v[1][1]),
       expected
     )
@@ -122,7 +128,8 @@ test('create and destroy an index', async (t) => {
   await wait(2e3)
   for (let i = 0; i < 500; i++) {
     const r = (await find(q))[0]
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       r.map((v) => v[1][1]),
       expected
     )
@@ -172,7 +179,8 @@ test('add and delete nodes in an index', async (t) => {
 
   for (let i = 0; i < 500; i++) {
     const r = (await find(q))[0]
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       r.map((v) => v[1][1]),
       ['81', '82']
     )
@@ -180,7 +188,8 @@ test('add and delete nodes in an index', async (t) => {
   await wait(2e3)
   for (let i = 0; i < 500; i++) {
     const r = (await find(q))[0]
-    t.deepEqualIgnoreOrder(
+    deepEqualIgnoreOrder(
+      t,
       r.map((v) => v[1][1]),
       ['81', '82']
     )
@@ -193,7 +202,8 @@ test('add and delete nodes in an index', async (t) => {
   })
 
   const r1 = (await find(q))[0]
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     r1.map((v) => v[1][1]),
     ['81', '82', '84']
   )
@@ -201,7 +211,8 @@ test('add and delete nodes in an index', async (t) => {
   await client.delete({ $id: ids[1] })
 
   const r2 = (await find(q))[0]
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     r2.map((v) => v[1][1]),
     ['81', '84']
   )
@@ -215,7 +226,12 @@ test.skip('create max number of indices', async (t) => {
     client,
     id: 'root',
     dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-    index_hints: (Array.from({ length: 15 }, (_, i: number) => ['index', `"value" g #${Math.floor(Math.random() * 100 + i)} I`]).flat()).join('\0'),
+    index_hints: Array.from({ length: 15 }, (_, i: number) => [
+      'index',
+      `"value" g #${Math.floor(Math.random() * 100 + i)} I`,
+    ])
+      .flat()
+      .join('\0'),
     res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
     res_opt_str: 'strValue',
     rpn: ['"value" g #10 I'],
@@ -234,7 +250,7 @@ test.skip('create max number of indices', async (t) => {
     console.time('batch')
     const q = getQ()
     for (let i = 0; i < 500; i++) {
-      await find(q);
+      await find(q)
     }
     await wait(2e3)
     console.timeEnd('batch')

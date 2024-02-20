@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Restore selvad build cache
         id: cache-selvad-try
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             packages/server/selvad/local
@@ -33,7 +33,7 @@ jobs:
         run: |
           tar -czf ${{ steps.archive-name.outputs.filename }} -C packages/server/selvad/local .
       - name: Archive artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os}}-${{ runner.arch}}-selvad-binaries
           path: |

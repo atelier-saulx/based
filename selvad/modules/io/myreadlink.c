@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <sys/types.h>
@@ -17,6 +17,10 @@ struct selva_string *myreadlink(const char *linkname)
     ssize_t nbytes, bufsiz;
 
     if (lstat(linkname, &sb) == -1) {
+        return NULL;
+    }
+
+    if (!S_ISLNK(sb.st_mode)) {
         return NULL;
     }
 

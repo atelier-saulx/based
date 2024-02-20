@@ -1,5 +1,5 @@
-import { Connection } from './types'
-import { BasedDbClient } from '..'
+import { Connection } from './types.js'
+import { BasedDbClient } from '../index.js'
 import { Socket } from 'node:net'
 
 const connect = (
@@ -34,7 +34,7 @@ const connect = (
       }
     )
 
-    socket.on('error', (err) => {})
+    socket.on('error', (_err) => {})
 
     socket.on('data', (data) => {
       client.onData(data)

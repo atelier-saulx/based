@@ -1,0 +1,129 @@
+comment_char %
+escape_char /
+
+% This file is part of the GNU C Library and contains locale data.
+% The Free Software Foundation does not claim any copyright interest
+% in the locale data contained in this file.  The foregoing does not
+% affect the license of the GNU C Library as a whole.  It does not
+% exempt you from the conditions of the license if your use would
+% otherwise be governed by that license.
+
+LC_IDENTIFICATION
+title      "Corsican locale for France"
+source     ""
+address    ""
+contact    ""
+email      ""
+tel        ""
+fax        ""
+language   "Corsican"
+territory  "France"
+revision   "1.0"
+date       "2024-01-18"
+
+category "i18n:2012";LC_IDENTIFICATION
+category "i18n:2012";LC_CTYPE
+category "i18n:2012";LC_COLLATE
+category "i18n:2012";LC_TIME
+category "i18n:2012";LC_NUMERIC
+category "i18n:2012";LC_MONETARY
+category "i18n:2012";LC_MESSAGES
+category "i18n:2012";LC_PAPER
+category "i18n:2012";LC_NAME
+category "i18n:2012";LC_ADDRESS
+category "i18n:2012";LC_TELEPHONE
+category "i18n:2012";LC_MEASUREMENT
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "it_IT"
+END LC_CTYPE
+
+LC_MESSAGES
+yesexpr "^[+1sSyY]"
+noexpr  "^[-0nN]"
+yesstr  "i<U00E8>"
+nostr   "inn<U00F2>"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "fr_FR"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "fr_FR"
+END LC_NUMERIC
+
+LC_TIME
+abday   "dum";"lun";/
+	"mar";"m<U00E0>r";/
+	"ghj";"v<U00E8>n";/
+	"s<U00E0>b"
+day     "dumenica";/
+	"luni";/
+	"marti";/
+	"m<U00E0>rcuri";/
+	"ghjovi";/
+	"v<U00E8>nnari";/
+	"s<U00E0>batu"
+abmon   "ghj";"feb";/
+	"mar";"apr";/
+	"mag";"ghj";/
+	"lug";"aos";/
+	"sit";"ott";/
+	"nuv";"dic"
+mon     "ghjinnaghju";/
+	"febbraiu";/
+	"marzu";/
+	"aprile";/
+	"maghju";/
+	"ghjugnu";/
+	"lugliu";/
+	"aostu";/
+	"sittembre";/
+	"ottobre";/
+	"nuvembre";/
+	"dicembre"
+d_t_fmt "%a %-d %b %Y, %T"
+d_fmt   "%d//%m//%Y"
+t_fmt   "%T"
+am_pm   "";""
+t_fmt_ampm ""
+date_fmt   "%a %-d %b %Y, %T, %Z"
+week 7;19971130;4
+first_weekday 2
+END LC_TIME
+
+LC_PAPER
+copy "i18n"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "fr_FR"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "i18n"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "fr_FR"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "%f%N%a%N%d%N%b%N%s %h %e %r%N%z %T%N%c%N"
+country_name "France"
+country_ab2 "FR"
+country_ab3 "FRA"
+country_num 250
+country_isbn "979-10"
+country_car  "F"
+lang_name "fran<U00E7>ais"
+lang_ab      "co"
+lang_term    "cor"
+lang_lib  "cor"
+END LC_ADDRESS

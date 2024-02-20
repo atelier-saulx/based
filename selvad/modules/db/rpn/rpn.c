@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -18,12 +18,14 @@
 #include "selva_log.h"
 #include "util/cstrings.h"
 #include "util/fast_parsei.h"
+#include "util/selva_lang.h"
 #include "util/selva_math.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
 #include "selva_db.h"
 #include "hierarchy.h"
 #include "field_lookup.h"
+#include "selva_langs.h"
 #include "selva_object.h"
 #include "selva_set.h"
 #include "selva_set_ops.h"
@@ -52,6 +54,9 @@ enum rpn_code {
     RPN_CODE_JMP_FWD,
 } __packed;
 
+/*
+ * Handle operand cleanup automatically.
+ */
 #define AUTO_OPERANDS(...) \
     struct rpn_operand *auto_operands[] __attribute__((cleanup(free_rpn_auto_operands))) = { __VA_ARGS__ __VA_OPT__(,) NULL }; \
     if (!valid_rpn_auto_operands(auto_operands, num_elem(auto_operands) - 1)) return RPN_ERR_BADSTK
@@ -61,9 +66,6 @@ enum rpn_code {
 
 #define OPERAND_GET_S(x) \
      ((const char *)((x)->flags.spused && ((x)->sp) ? (x)->sp : (x)->s))
-
-#define OPERAND_GET_S_LEN(x) \
-    ((x)->s_size > 0 ? (x)->s_size - 1 : 0)
 
 #define OPERAND_GET_OBJ(x) \
     ((x)->flags.slvobj ? (x)->obj : NULL)
@@ -79,13 +81,13 @@ enum rpn_code {
 
 struct rpn_operand {
     struct {
-        unsigned pooled : 1; /*!< Pooled operand, do not free. */
-        unsigned regist : 1; /*!< Register value, do not free. */
-        unsigned spused : 1; /*!< The value is a string pointed by sp. */
-        unsigned spfree : 1; /*!< Free sp if set when freeing the operand. */
-        unsigned slvobj : 1; /*!< SelvaObject pointer. */
-        unsigned slvset : 1; /*!< Set pointer is pointing to a SelvaSet. */
-        unsigned embset : 1; /*!< Embedded set is used and it must be destroyed. */
+        bool pooled : 1; /*!< Pooled operand, do not free. */
+        bool regist : 1; /*!< Register value, do not free. */
+        bool spused : 1; /*!< The value is a string pointed by sp. */
+        bool apfree : 1; /*!< Free sp if set when freeing the operand. */
+        bool slvobj : 1; /*!< SelvaObject pointer. */
+        bool slvset : 1; /*!< The value is a SelvaSet. */
+        bool embset : 1; /*!< Embedded set is used and it must be destroyed. */
     } flags;
     uint32_t refcount; /*!< Stack reference counter adjusted on push/pop. */
     struct rpn_operand *next_free; /* Next free in pool. */
@@ -123,6 +125,7 @@ const char *rpn_str_error[] = {
     "Divide by zero",
     "Break",
 };
+static_assert(num_elem(rpn_str_error) == RPN_ERR_LAST);
 
 static void free_rpn_operand(void *p);
 static void free_rpn_auto_operands(void *p);
@@ -149,6 +152,9 @@ struct rpn_ctx *rpn_init(int nr_reg) {
 
     ctx = selva_calloc(1, sizeof(struct rpn_ctx) + nr_reg * sizeof(struct rpn_operand *));
     ctx->nr_reg = nr_reg;
+#ifndef PU_TEST_BUILD
+    ctx->data.loc = selva_langs->fallback; /* We just assume that the fallback is always set, as it should be. */
+#endif
 
     return ctx;
 }
@@ -164,7 +170,7 @@ void rpn_destroy(struct rpn_ctx *ctx) {
             }
 
             v->refcount = 0;
-            v->flags.regist = 0;
+            v->flags.regist = false;
 
             free_rpn_operand(&v);
         }
@@ -220,7 +226,7 @@ static inline double js_fmod(double x, double y) {
 
 static struct selva_string *rpn_operand2string(struct rpn_ctx *ctx, const struct rpn_operand *o) {
     const char *str = OPERAND_GET_S(o);
-    const size_t len = OPERAND_GET_S_LEN(o);
+    const size_t len = o->s_size;
 
     if (!ctx->string) {
         ctx->string = selva_string_create(str, len, SELVA_STRING_MUTABLE);
@@ -239,7 +245,7 @@ static struct rpn_operand *alloc_rpn_operand(size_t s_size) {
         small_operand_pool_next = v->next_free;
 
         memset(v, 0, sizeof(struct rpn_operand));
-        v->flags.pooled = 1;
+        v->flags.pooled = true;
     } else {
         const size_t size = sizeof(struct rpn_operand) - RPN_SMALL_OPERAND_SIZE + s_size;
 
@@ -253,8 +259,8 @@ static struct rpn_operand *alloc_rpn_set_operand(enum SelvaSetType type) {
     struct rpn_operand *v;
 
     v = alloc_rpn_operand(sizeof(struct SelvaSet *) + sizeof(struct SelvaSet));
-    v->flags.slvset = 1;
-    v->flags.embset = 1;
+    v->flags.slvset = true;
+    v->flags.embset = true;
     v->d = nan_undefined();
     v->set = &v->set_emb;
     SelvaSet_Init(v->set, type);
@@ -275,10 +281,24 @@ static void free_rpn_operand(void *p) {
         return;
     }
 
-    if (v->flags.spused && v->flags.spfree && v->sp) {
-        selva_free((void *)v->sp);
-    } else if (v->flags.embset && v->flags.slvset) {
-        SelvaSet_Destroy(&v->set_emb);
+    if (v->flags.apfree || v->flags.embset) {
+        /*
+         * Auto free unref'd values.
+         * Moreover, an embedded set must be always destroyed.
+         */
+        if (v->flags.spused) {
+            if (v->sp) {
+                selva_free((void *)v->sp);
+            }
+        } else if (v->flags.slvobj) {
+            if (v->obj) {
+                SelvaObject_Destroy(v->obj);
+            }
+        } else if (v->flags.slvset) {
+            if (v->set) {
+                SelvaSet_Destroy(v->set);
+            }
+        }
     }
     if (v->flags.pooled) {
         struct rpn_operand *prev = small_operand_pool_next;
@@ -385,12 +405,10 @@ static enum rpn_error push_int_result(struct rpn_ctx *ctx, long long x) {
 }
 
 static enum rpn_error push_string_result(struct rpn_ctx *ctx, const char *s, size_t slen) {
-    const size_t size = slen + 1;
-    struct rpn_operand *v = alloc_rpn_operand(size);
+    struct rpn_operand *v = alloc_rpn_operand(slen);
 
-    v->s_size = size;
+    v->s_size = slen;
     memcpy(v->s, s, slen);
-    v->s[slen] = '\0';
     v->d = nan_undefined();
 
     return push(ctx, v);
@@ -413,12 +431,10 @@ static enum rpn_error push_empty_value(struct rpn_ctx *ctx) {
  * Note that the string must not be freed while it's still in use by rpn.
  */
 static enum rpn_error push_selva_string_result(struct rpn_ctx *ctx, const struct selva_string *s) {
-    size_t slen;
     struct rpn_operand *v = alloc_rpn_operand(sizeof(struct selva_string *));
 
-    v->flags.spused = 1;
-    v->sp = selva_string_to_str(s, &slen);
-    v->s_size = slen + 1;
+    v->flags.spused = true;
+    v->sp = selva_string_to_str(s, &v->s_size);
     v->d = nan_undefined();
 
     return push(ctx, v);
@@ -427,7 +443,7 @@ static enum rpn_error push_selva_string_result(struct rpn_ctx *ctx, const struct
 static enum rpn_error push_selva_set_result(struct rpn_ctx *ctx, struct SelvaSet *set) {
     struct rpn_operand *v = alloc_rpn_operand(sizeof(struct SelvaSet *));
 
-    v->flags.slvset = 1;
+    v->flags.slvset = true;
     v->set = set;
     v->d = nan_undefined();
 
@@ -461,19 +477,24 @@ static int to_bool(struct rpn_operand *v) {
     return !!((long long)d);
 }
 
+/**
+ * Clear old register value.
+ * Note that this function doesn't reset the pointer in ctx->reg and it must
+ * be done by the caller.
+ */
 static void clear_old_reg(struct rpn_ctx *ctx, size_t i) {
     struct rpn_operand *old;
 
     old = ctx->reg[i];
     if (old) {
         /* Can be freed again unless some other flag inhibits it. */
-        old->flags.regist = 0;
+        old->flags.regist = false;
 
         free_rpn_operand(&old);
     }
 }
 
-enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags) {
+enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, enum rpn_set_reg_flags flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -486,9 +507,9 @@ enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t 
         /*
          * Set the string value.
          */
-        r->flags.regist = 1; /* Can't be freed when this flag is set. */
-        r->flags.spused = 1;
-        r->flags.spfree = (flags & RPN_SET_REG_FLAG_SELVA_FREE) == RPN_SET_REG_FLAG_SELVA_FREE;
+        r->flags.regist = true; /* Can't be freed when this flag is set. */
+        r->flags.spused = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->s_size = size;
         r->sp = s;
 
@@ -514,7 +535,7 @@ enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, size_t n, struct selva_s
         size_t str_len;
         const char *str = selva_string_to_str(a[i], &str_len);
 
-        err = rpn_set_reg(ctx, reg_i, str, str_len + 1, 0);
+        err = rpn_set_reg(ctx, reg_i, str, str_len, 0);
         if (err) {
             break;
         }
@@ -543,7 +564,7 @@ enum rpn_error rpn_set_regs(struct rpn_ctx *ctx, const char *regs_buf, size_t re
             break;
         }
 
-        err = rpn_set_reg(ctx, reg_i, val, len, 0);
+        err = rpn_set_reg(ctx, reg_i, val, len - 1, 0);
         if (err) {
             break;
         }
@@ -556,17 +577,15 @@ enum rpn_error rpn_set_regs(struct rpn_ctx *ctx, const char *regs_buf, size_t re
 }
 
 enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, const struct selva_string *s) {
-    TO_STR(s);
-    const size_t size = s_len + 1;
-    char *arg;
+    size_t len;
+    const char *s_str = selva_string_to_str(s, &len);
+    char *val = selva_malloc(len);
 
-    arg = selva_malloc(size);
-    memcpy(arg, s_str, size);
-    return rpn_set_reg(ctx, i, arg, size, RPN_SET_REG_FLAG_SELVA_FREE);
+    memcpy(val, s_str, len);
+    return rpn_set_reg(ctx, i, val, len, RPN_SET_REG_FLAG_AUTO_FREE);
 }
 
-/* TODO free flag for rpn_set_reg_slvobj() */
-enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObject *obj, unsigned flags __unused) {
+enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObject *obj, unsigned flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -579,8 +598,9 @@ enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObj
         /*
          * Set the values.
          */
-        r->flags.regist = 1;
-        r->flags.slvobj = 1;
+        r->flags.regist = true;
+        r->flags.slvobj = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->d = nan_undefined();
         r->obj = obj;
 
@@ -592,8 +612,7 @@ enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObj
     return RPN_ERR_OK;
 }
 
-/* TODO free flag for rpn_set_reg_slvset() */
-enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet *set, unsigned flags __unused) {
+enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet *set, unsigned flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -613,8 +632,9 @@ enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet
         /*
          * Set the values.
          */
-        r->flags.regist = 1;
-        r->flags.slvset = 1;
+        r->flags.regist = true;
+        r->flags.slvset = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->d = nan_undefined();
         r->set = set;
 
@@ -686,16 +706,16 @@ static enum rpn_error add_rec_key2slvset_res(
 
 static enum rpn_error rpn_getfld(struct rpn_ctx *ctx, const struct rpn_operand *field, int type) {
     const char *field_str = OPERAND_GET_S(field);
-    const size_t field_len = OPERAND_GET_S_LEN(field);
+    const size_t field_len = field->s_size;
     struct SelvaObjectAny any;
     int err;
 
-    if (ctx->node) {
+    if (ctx->data.node) {
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
 
-        err = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_str, field_len, &any);
-    } else if (ctx->obj) {
-        err = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
+        err = field_lookup_data_field(NULL, traversal_metadata, ctx->data.node, field_str, field_len, &any);
+    } else if (ctx->data.obj) {
+        err = SelvaObject_GetAnyStr(ctx->data.obj, field_str, field_len, &any);
     } else {
         return RPN_ERR_NPE;
     }
@@ -969,8 +989,8 @@ static enum rpn_error rpn_op_exists(struct rpn_ctx *ctx) {
     OPERAND(ctx, field);
     AUTO_OPERANDS(field);
     const char *field_str = OPERAND_GET_S(field);
-    const size_t field_len = OPERAND_GET_S_LEN(field);
-    const struct SelvaHierarchyNode *node = ctx->node;
+    const size_t field_len = field->s_size;
+    const struct SelvaHierarchyNode *node = ctx->data.node;
     int res;
 
     /*
@@ -982,11 +1002,11 @@ static enum rpn_error rpn_op_exists(struct rpn_ctx *ctx) {
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
         struct SelvaObjectAny any;
 
-        res = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_str, field_len, &any);
-    } else if (ctx->obj) {
+        res = field_lookup_data_field(NULL, traversal_metadata, ctx->data.node, field_str, field_len, &any);
+    } else if (ctx->data.obj) {
         struct SelvaObjectAny any;
 
-        res = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
+        res = SelvaObject_GetAnyStr(ctx->data.obj, field_str, field_len, &any);
     } else {
         res = SELVA_ENOENT;
     }
@@ -1043,16 +1063,16 @@ static int data_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, 
      * The operand `s` is a field_name string.
      */
     const char *field_name_str = OPERAND_GET_S(field);
-    const size_t field_name_len = OPERAND_GET_S_LEN(field);
+    const size_t field_name_len = field->s_size;
     struct SelvaObjectAny any;
     int err;
 
-    if (ctx->node) {
+    if (ctx->data.node) {
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
 
-        err = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_name_str, field_name_len, &any);
-    } else if (ctx->obj) {
-        err = SelvaObject_GetAnyStr(ctx->obj, field_name_str, field_name_len, &any);
+        err = field_lookup_data_field(NULL, traversal_metadata, ctx->data.node, field_name_str, field_name_len, &any);
+    } else if (ctx->data.obj) {
+        err = SelvaObject_GetAnyStr(ctx->data.obj, field_name_str, field_name_len, &any);
     } else {
         err = SELVA_ENOENT;
     }
@@ -1067,21 +1087,21 @@ static int data_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, 
  *          2 = match.
  */
 static int set_like_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, const struct rpn_operand *v) {
-    if (ctx->node) {
+    if (ctx->data.node) {
         /*
          * The operand `s` is the name of a set-like field.
          */
         const char *field_name_str = OPERAND_GET_S(field);
-        const size_t field_name_len = OPERAND_GET_S_LEN(field);
+        const size_t field_name_len = field->s_size;
         int res;
 
         if (isnan(v->d) || v->s_size > 0) { /* Assume string */
             const char *value_str = OPERAND_GET_S(v);
-            const size_t value_len = OPERAND_GET_S_LEN(v);
+            const size_t value_len = v->s_size;
 
-            res = SelvaSet_field_has_string(ctx->hierarchy, ctx->node, field_name_str, field_name_len, value_str, value_len);
+            res = SelvaSet_field_has_string(ctx->data.hierarchy, ctx->data.node, field_name_str, field_name_len, value_str, value_len);
         } else { /* Assume number */
-            res = SelvaSet_field_has_double(ctx->hierarchy, ctx->node, field_name_str, field_name_len, v->d);
+            res = SelvaSet_field_has_double(ctx->data.hierarchy, ctx->data.node, field_name_str, field_name_len, v->d);
         }
 
         return !!res + 1;
@@ -1141,21 +1161,20 @@ static enum rpn_error rpn_op_idcmp(struct rpn_ctx *ctx) {
     OPERAND(ctx, a);
     OPERAND(ctx, b);
     AUTO_OPERANDS(a, b);
-    const int size_ok = a->s_size >= SELVA_NODE_ID_SIZE && b->s_size >= SELVA_NODE_ID_SIZE;
+    const bool size_ok = a->s_size >= SELVA_NODE_ID_SIZE &&
+                         b->s_size >= SELVA_NODE_ID_SIZE;
 
     return push_int_result(ctx, size_ok &&
                            !memcmp(OPERAND_GET_S(a), OPERAND_GET_S(b), SELVA_NODE_ID_SIZE));
 }
 
-static enum rpn_error rpn_op_cidcmp(struct rpn_ctx *ctx) {
+static enum rpn_error rpn_op_typecmp(struct rpn_ctx *ctx) {
     OPERAND(ctx, a);
     AUTO_OPERANDS(a);
 
-    /*
-     * Note the the allocated string is always large enough,
-     * so the comparison is safe without checking s_size.
-     */
-    return push_int_result(ctx, !Selva_CmpNodeType(OPERAND_GET_S(a), OPERAND_GET_S(ctx->reg[0])));
+    return push_int_result(ctx,
+                           a->s_size >= SELVA_NODE_TYPE_SIZE &&
+                           !Selva_CmpNodeType(OPERAND_GET_S(a), OPERAND_GET_S(ctx->reg[0])));
 }
 
 static enum rpn_error rpn_op_getsfld(struct rpn_ctx *ctx) {
@@ -1178,7 +1197,7 @@ static enum rpn_error rpn_op_ffirst(struct rpn_ctx *ctx) {
     struct SelvaSet *set_a;
     RESULT_OPERAND(result);
     struct SelvaSetElement *el;
-    const struct SelvaHierarchyNode *node = ctx->node;
+    const struct SelvaHierarchyNode *node = ctx->data.node;
 
     if (!node) {
         return RPN_ERR_ILLOPN;
@@ -1223,7 +1242,7 @@ static enum rpn_error rpn_op_aon(struct rpn_ctx *ctx) {
     AUTO_OPERANDS(a);
     struct SelvaSet *set_a;
     struct SelvaSetElement *el;
-    const struct SelvaHierarchyNode *node = ctx->node;
+    const struct SelvaHierarchyNode *node = ctx->data.node;
 
     if (!node) {
         return RPN_ERR_ILLOPN;
@@ -1270,21 +1289,21 @@ static enum rpn_error rpn_op_in(struct rpn_ctx *ctx) {
         res = SelvaSet_seta_in_setb(set_a, set_b);
     } else if (set_a && !set_b) {
         const char *field_str = OPERAND_GET_S(b);
-        const size_t field_len = OPERAND_GET_S_LEN(b);
+        const size_t field_len = b->s_size;
 
-        res = SelvaSet_seta_in_fieldb(set_a, ctx->hierarchy, ctx->node, field_str, field_len);
+        res = SelvaSet_seta_in_fieldb(set_a, ctx->data.hierarchy, ctx->data.node, field_str, field_len);
     } else if (!set_a && set_b) {
         const char *field_str = OPERAND_GET_S(a);
-        const size_t field_len = OPERAND_GET_S_LEN(a);
+        const size_t field_len = a->s_size;
 
-        res = SelvaSet_fielda_in_setb(ctx->hierarchy, ctx->node, field_str, field_len, set_b);
+        res = SelvaSet_fielda_in_setb(ctx->data.hierarchy, ctx->data.node, field_str, field_len, set_b);
     } else if (!set_a && !set_b) {
         const char *field_a_str = OPERAND_GET_S(a);
-        const size_t field_a_len = OPERAND_GET_S_LEN(a);
+        const size_t field_a_len = a->s_size;
         const char *field_b_str = OPERAND_GET_S(b);
-        const size_t field_b_len = OPERAND_GET_S_LEN(b);
+        const size_t field_b_len = b->s_size;
 
-        res = SelvaSet_fielda_in_fieldb(ctx->hierarchy, ctx->node, field_a_str, field_a_len, field_b_str, field_b_len);
+        res = SelvaSet_fielda_in_fieldb(ctx->data.hierarchy, ctx->data.node, field_a_str, field_a_len, field_b_str, field_b_len);
     }
 
     return push_int_result(ctx, res);
@@ -1295,7 +1314,7 @@ static enum rpn_error rpn_op_str_includes(struct rpn_ctx *ctx) {
     OPERAND(ctx, b);
     AUTO_OPERANDS(a, b);
 
-    return push_int_result(ctx, !!memmem(OPERAND_GET_S(a), OPERAND_GET_S_LEN(a), OPERAND_GET_S(b), OPERAND_GET_S_LEN(b)));
+    return push_int_result(ctx, !!memmem(OPERAND_GET_S(a), a->s_size, OPERAND_GET_S(b), b->s_size));
 }
 
 static enum rpn_error rpn_op_get_clock_realtime(struct rpn_ctx *ctx) {
@@ -1308,12 +1327,17 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
     OPERAND(ctx, c); /* value */
     AUTO_OPERANDS(a, b, c);
     RESULT_OPERAND(res);
+
+    if (b->s_size != 2) {
+        return RPN_ERR_ILLOPC;
+    }
+
     const char *field_str = OPERAND_GET_S(a);
-    const size_t field_len = OPERAND_GET_S_LEN(a);
+    const size_t field_len = a->s_size;
     const char sel = OPERAND_GET_S(b)[0];
-    const char op = OPERAND_GET_S(b)[1]; /* This should be always valid. */
+    const char op = OPERAND_GET_S(b)[1];
     const char *v_str = OPERAND_GET_S(c);
-    const size_t v_len = OPERAND_GET_S_LEN(c);
+    const size_t v_len = c->s_size;
     struct SelvaObject *edges;
     struct SelvaObject *obj;
     SelvaObject_Iterator *it;
@@ -1321,10 +1345,6 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
     const char *last_rec_key_str = NULL; /* Last match for 'l' */
     size_t last_rec_key_len = 0; /* Last match for 'l' */
     int err;
-
-    if (OPERAND_GET_S_LEN(b) != 2) {
-        return RPN_ERR_ILLOPC;
-    }
 
     /*
      * a = all
@@ -1339,12 +1359,12 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
         return RPN_ERR_ILLOPN;
     }
 
-    if (!ctx->obj || !ctx->node) {
+    if (!ctx->data.obj || !ctx->data.node) {
         return RPN_ERR_NPE;
     }
 
     /* RFE Is it possible to know if this is a record? */
-    edges = SelvaHierarchy_GetNodeMetadataByPtr(ctx->node)->edge_fields.edges;
+    edges = SelvaHierarchy_GetNodeMetadataByPtr(ctx->data.node)->edge_fields.edges;
     if (!edges) {
         return push_empty_value(ctx);
     }
@@ -1423,6 +1443,33 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
     }
 
     return push(ctx, res);
+}
+
+static enum rpn_error rpn_op_like(struct rpn_ctx *ctx) {
+    OPERAND(ctx, t); /* transformation */
+    OPERAND(ctx, a); /* string */
+    OPERAND(ctx, b); /* string */
+    AUTO_OPERANDS(a, b, t);
+
+#ifdef PU_TEST_BUILD
+    return push_int_result(ctx, 0);
+#else
+    const char *a_str = OPERAND_GET_S(a);
+    const size_t a_len = a->s_size;
+    const char *b_str = OPERAND_GET_S(b);
+    const size_t b_len = a->s_size;
+    const char *t_str = OPERAND_GET_S(t);
+    const size_t t_len = t->s_size;
+
+    /*
+     * This isn't strictly necessary but it allows the user to rewrite
+     * `ctx->data` in a more relaxed way.
+     * We also assume that at least the fallback is always set.
+     */
+    locale_t loc = ctx->data.loc ?: selva_langs->fallback;
+
+    return push_int_result(ctx, !selva_mbscmp(a_str, a_len, b_str, b_len, selva_wctrans(t_str, t_len, loc), loc));
+#endif
 }
 
 static enum rpn_error rpn_op_union(struct rpn_ctx *ctx) {
@@ -1504,7 +1551,7 @@ static rpn_fp funcs[] = {
     rpn_op_typeof,  /* b */
     rpn_op_strcmp,  /* c */
     rpn_op_idcmp,   /* d */
-    rpn_op_cidcmp,  /* e */
+    rpn_op_typecmp, /* e */
     rpn_op_getsfld, /* f */
     rpn_op_getdfld, /* g */
     rpn_op_exists,  /* h */
@@ -1518,7 +1565,7 @@ static rpn_fp funcs[] = {
     rpn_op_abo,     /* p spare */
     rpn_op_abo,     /* q spare */
     rpn_op_abo,     /* r spare */
-    rpn_op_abo,     /* s spare */
+    rpn_op_like,    /* s */
     rpn_op_abo,     /* t spare */
     rpn_op_abo,     /* u spare */
     rpn_op_abo,     /* v spare */
@@ -1714,7 +1761,7 @@ static enum rpn_error compile_store_literal(struct rpn_expression *expr, size_t 
         return RPN_ERR_BADSTK;
     }
 
-    v->flags.regist = 1;
+    v->flags.regist = true;
     expr->literal_reg[i] = v;
 
     return RPN_ERR_OK;
@@ -1745,13 +1792,11 @@ static enum rpn_error compile_num_literal(struct rpn_expression *expr, size_t i,
  * Parse a string literal into an operand and store it in the literal register file.
  */
 static enum rpn_error compile_str_literal(struct rpn_expression *expr, size_t i, const char *str, size_t len) {
-    size_t size = len + 1;
     RESULT_OPERAND(v);
 
-    v = alloc_rpn_operand(size);
-    v->s_size = size;
+    v = alloc_rpn_operand(len);
+    v->s_size = len;
     memcpy(v->s, str, len);
-    v->s[len] = '\0';
     v->d = nan("");
 
     return compile_store_literal(expr, i, v);
@@ -1992,7 +2037,7 @@ void rpn_destroy_expression(struct rpn_expression *expr) {
         selva_free(expr->expression);
 
         while (*op) {
-            (*op)->flags.regist = 0;
+            (*op)->flags.regist = false;
             free_rpn_operand(op);
             op++;
         }
@@ -2240,7 +2285,7 @@ enum rpn_error rpn_string(struct rpn_ctx *ctx, const struct rpn_expression *expr
         return RPN_ERR_BADSTK;
     }
 
-    *out = selva_string_create(OPERAND_GET_S(res), OPERAND_GET_S_LEN(res), 0);
+    *out = selva_string_create(OPERAND_GET_S(res), res->s_size, 0);
     free_rpn_operand(&res);
 
     return RPN_ERR_OK;

@@ -3,13 +3,12 @@ import {
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
 } from '@based/schema'
-import { ExecContext, Field, GetCommand } from '../../types'
-import { setResultValue } from './setResultValue'
-import { parseFieldResult } from './field'
-import { joinPath } from '../../../util'
+import { ExecContext, GetCommand } from '../../types.js'
+import { setResultValue } from './setResultValue.js'
+import { parseFieldResult } from './field.js'
 import { deepCopy, setByPath } from '@saulx/utils'
-import { hashCmd } from '../../util'
-import { addSubMarker } from '../../exec/cmd'
+import { hashCmd } from '../../util.js'
+import { addSubMarker } from '../../exec/cmd.js'
 
 export function findFieldSchema(
   f: string,
@@ -29,6 +28,8 @@ export function findFieldSchema(
     } else if (fieldSchema.type === 'array') {
       // @ts-ignore
       fieldSchema = fieldSchema.values
+    } else if (fieldSchema.type === 'any') {
+      return { type: 'any' }
     }
   }
 
@@ -42,7 +43,7 @@ export function findFieldSchema(
   } else if (fieldSchema.type === 'text') {
     fieldSchema = { type: 'string' }
   } else if (fieldSchema.type === 'array') {
-    fieldSchema = (<BasedSchemaFieldArray>fieldSchema).values
+    fieldSchema = (<BasedSchemaFieldArray>fieldSchema).items
   }
 
   return fieldSchema

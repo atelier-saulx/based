@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -35,7 +35,7 @@
 
 /**
  * List supported languages.
- * module: db
+ * module: server
  * cmd: lslang
  */
 #define CMD_ID_LSLANG 4
@@ -98,28 +98,28 @@
 
 /**
  * Load db.
- * module: db
+ * module: io
  * cmd: load
  */
 #define CMD_ID_LOAD 14
 
 /**
  * Save db.
- * module: db
+ * module: io
  * cmd: save
  */
 #define CMD_ID_SAVE 15
 
 /**
  * Flush the in-mem database.
- * module: db
+ * module: io
  * cmd: flush
  */
 #define CMD_ID_FLUSH 16
 
 /**
  * Purge old SDB dumps.
- * module: db
+ * module: io
  * cmd: purge
  */
 #define CMD_ID_PURGE 17
@@ -281,6 +281,13 @@
  * cmd: index.del
  */
 #define CMD_ID_INDEX_DEL 41
+
+/**
+ * Update indexing accounting.
+ * module: db
+ * cmd: index.acc
+ */
+#define CMD_ID_INDEX_ACC 91
 
 /**
  * Describe a find index.
@@ -486,21 +493,21 @@
 
 /**
  * Start replication stream.
- * module: replication
+ * module: io
  * cmd: replicasync
  */
 #define CMD_ID_REPLICASYNC 73
 
 /**
  * Set this node as a replica of another node.
- * module: replication
+ * module: io
  * cmd: replicaof
  */
 #define CMD_ID_REPLICAOF 74
 
 /**
  * Show the current status of the replication module.
- * module: replication
+ * module: io
  * cmd: replicainfo
  */
 #define CMD_ID_REPLICAINFO 75
@@ -508,7 +515,7 @@
 /**
  * Replica status message.
  * Sent by a replica to the origin.
- * module: replication
+ * module: io
  * cmd: replicastatus
  */
 #define CMD_ID_REPLICASTATUS 76
@@ -517,7 +524,7 @@
  * Wait for replicas to sync.
  * Waits until all replicas are at current or newer eid (if new sync points are
  * created during the execution of this command).
- * module: replication
+ * module: io
  * cmd: replicawait
  */
 #define CMD_ID_REPLICAWAIT 77
@@ -545,10 +552,70 @@
 
 /**
  * Get a selva_string field flags, crc, and value.
+ * module: db
+ * cmd: object.getString
  */
 #define CMD_ID_OBJECT_GET_STRING 81
 
 /**
  * Compare & Swap a string.
+ * module: db
+ * cmd: object.cas
  */
 #define CMD_ID_OBJECT_CAS 82
+
+/**
+ * Pipe.
+ * module: piper
+ * cmd: pipe
+ */
+#define CMD_ID_PIPE 83
+
+/**
+ * Create MQ.
+ * module: mq
+ * cmd: mq.create
+ */
+#define CMD_ID_MQ_CREATE 84
+
+/**
+ * Delete MQ.
+ * module: mq
+ * cmd: mq.delete
+ */
+#define CMD_ID_MQ_DELETE 85
+
+/**
+ * List MQs.
+ * module: mq
+ * cmd: mq.list
+ */
+#define CMD_ID_MQ_LIST 86
+
+/**
+ * MQ post.
+ * module: mq
+ * cmd: mq.post
+ */
+#define CMD_ID_MQ_POST 87
+
+/**
+ * MQ receive msg.
+ * module: mq
+ * cmd: mq.recv
+ */
+#define CMD_ID_MQ_RECV 88
+
+/**
+ * MQ ack msg.
+ * module: mq
+ * cmd: mq.ack
+ */
+#define CMD_ID_MQ_ACK 89
+
+/**
+ * MQ nack msg.
+ * module: mq
+ * cmd: mq.nack
+ */
+#define CMD_ID_MQ_NACK 90

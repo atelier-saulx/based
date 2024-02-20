@@ -1,6 +1,6 @@
-import { ParseError } from '../../error'
-import { FieldParser, ArgsClass } from '../../walker'
-import { BasedSetTarget } from '../../types'
+import { ParseError } from '../../error.js'
+import { FieldParser, ArgsClass } from '../../walker/index.js'
+import { BasedSetTarget } from '../../types.js'
 
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 

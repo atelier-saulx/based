@@ -1,9 +1,17 @@
-const path = require('node:path')
-const fs = require('node:fs')
+import path from 'node:path'
+import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
-const version = process.argv[2]
+const __dirname = path.dirname(
+  fileURLToPath(import.meta.url).replace('/dist/', '/')
+)
+
+let version = process.argv[2]
 if (!version) {
   throw new Error('no version argument')
+}
+if (Array.from(version)[0] === 'v') {
+  version = version.slice(1, version.length)
 }
 const pkg = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')

@@ -2,8 +2,8 @@
 import { StdioOptions } from 'child_process'
 
 // TODO: fix the import
-type ConnectOptions = any
-type ServerType = any
+// type ConnectOptions = any
+// type ServerType = any
 
 export type ServerOptions = {
   port: number

@@ -1,4 +1,4 @@
-import { joinPath } from '../util'
+import { joinPath } from '../util/index.js'
 
 type EdgeConstraint = {
   prefix: string

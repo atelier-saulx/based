@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -19,8 +19,8 @@
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
+#include "selva_io.h"
 #include "util/array_field.h"
 #include "util/bitmap.h"
 #include "util/cstrings.h"
@@ -40,13 +40,6 @@
 #include "subscriptions.h"
 #include "typestr.h"
 #include "modify.h"
-
-enum modify_flags {
-    FLAG_NO_ROOT =  0x01, /*!< Don't set root as a parent. */
-    FLAG_NO_MERGE = 0x02, /*!< Clear any existing fields. */
-    FLAG_CREATE =   0x04, /*!< Only create a new node or fail. */
-    FLAG_UPDATE =   0x08, /*!< Only update an existing node. */
-};
 
 #define FISSET_NO_ROOT(m) ({ \
         ASSERT_TYPE(enum modify_flags, m); \
@@ -955,7 +948,7 @@ int SelvaModify_ModifyDel(
          */
         err1 = Edge_DeleteAll(hierarchy, node, field_str, field_len);
         err2 = SelvaObject_DelKeyStr(obj, field_str, field_len);
-        err = err1 != SELVA_ENOENT ? err1 : err2;
+        err = (err1 != SELVA_ENOENT && err1 != SELVA_EINTYPE) ? err1 : err2;
     }
 
     return err > 0 ? 0 : err;
@@ -1734,7 +1727,7 @@ static void replicate_modify(struct selva_server_response_out *resp, const struc
         return; /* Skip. */
     }
 
-    selva_proto_builder_init(&msg);
+    selva_proto_builder_init(&msg, true);
 
     /*
      * Insert the leading args.
@@ -2234,7 +2227,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     }
 
     if (created || updated) {
-        selva_db_is_dirty = 1;
+        selva_io_set_dirty();
     }
 
     if (selva_replication_get_mode() == SELVA_REPLICATION_MODE_ORIGIN) {

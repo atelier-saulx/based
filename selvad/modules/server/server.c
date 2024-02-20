@@ -1,58 +1,112 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <langinfo.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 #include "jemalloc.h"
 #include "endian.h"
 #include "util/finalizer.h"
 #include "util/net.h"
+#include "util/selva_cpu.h"
+#include "util/selva_lang.h"
+#include "util/selva_proto_builder.h"
 #include "util/selva_rusage.h"
 #include "util/selva_string.h"
 #include "util/tcp.h"
 #include "util/timestamp.h"
 #include "event_loop.h"
+#include "selva_langs.h"
 #include "config.h"
 #include "module.h"
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_proto.h"
 #include "selva_server.h"
-#include "../../tunables.h"
+#include "selva_reaper.h"
+#include "xsi_strerror_r.h"
 #include "server.h"
 
-#define ENV_PORT_NAME "SELVA_PORT"
+#if !defined(__APPLE__)
+/* Unfortunately something with query_fork is unstable on macOS. */
+#define USE_QUERY_FORK
+#endif
+
 static int selva_port = 3000;
-static int server_backlog_size = 10;
-static int max_clients = 100;
-static int so_reuse;
+static int server_backlog_size = 4096;
+static int max_clients = EVENT_LOOP_MAX_FDS - 16; /* minus few because we need some fds for other purposes */
+static bool so_reuse;
 static int server_sockfd;
-static int readonly_server;
+static bool readonly_server;
+static struct query_fork_ctrl {
+    bool disabled; /*!< Feature disabled. */
+    bool child; /*!< Set if currently in a query_fork child. */
+    int count;
+    size_t slot; /*!< Current index in pids and ret_channel. Only valid if child is set. */
+    /**
+     * Currently running query_forks.
+     */
+    pid_t pids[MAX_QUERY_FORKS];
+
+    struct {
+        /**
+         * Index into buf.
+         * Only valid if child is set.
+         */
+        size_t buf_i;
+        /**
+         * Return channel from the forks.
+         * Indexed by slot.
+         */
+        uint8_t buf[QUERY_FORK_CMD_BUF_SIZE];
+    } (*ret_channel)[MAX_QUERY_FORKS];
+} query_fork;
+static bool hierarchy_auto_compress_period_ms; /* Only used to check that this is not enabled when query_fork is enabled. */
 static struct command {
     selva_cmd_function cmd_fn;
+    selva_cmd_query_fork_test query_fork_eligible;
     enum selva_cmd_mode cmd_mode;
     const char *cmd_name;
 } commands[254];
+struct message_handlers_vtable message_handlers[3];
 
 static const struct config server_cfg_map[] = {
-    { "SELVA_PORT",             CONFIG_INT, &selva_port },
-    { "SERVER_BACKLOG_SIZE",    CONFIG_INT, &server_backlog_size },
-    { "SERVER_MAX_CLIENTS",     CONFIG_INT, &max_clients },
-    { "SERVER_SO_REUSE",        CONFIG_INT, &so_reuse },
+    { "SELVA_PORT",                         CONFIG_INT, &selva_port },
+    { "SERVER_BACKLOG_SIZE",                CONFIG_INT, &server_backlog_size },
+    { "SERVER_MAX_CLIENTS",                 CONFIG_INT, &max_clients },
+    { "SERVER_SO_REUSE",                    CONFIG_BOOL, &so_reuse },
+    { "SERVER_DISABLE_QUERY_FORK",          CONFIG_INT, &query_fork.disabled },
+    { "HIERARCHY_AUTO_COMPRESS_PERIOD_MS",  CONFIG_INT, &hierarchy_auto_compress_period_ms },
 };
 
 void selva_server_set_readonly(void)
 {
-    readonly_server = 1;
+    readonly_server = true;
 }
 
-int selva_mk_command(int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd)
+bool selva_server_is_readonly(void)
 {
+    return readonly_server;
+}
+
+bool selva_server_is_query_fork(void)
+{
+    return query_fork.child;
+}
+
+int selva_mk_command(int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd, ...)
+{
+    va_list args;
+    struct command *c;
+
     if (nr < 0 || nr >= (int)num_elem(commands)) {
         return SELVA_EINVAL;
     }
@@ -61,9 +115,28 @@ int selva_mk_command(int nr, enum selva_cmd_mode mode, const char *name, selva_c
         return SELVA_EEXIST;
     }
 
-    commands[nr].cmd_fn = cmd;
-    commands[nr].cmd_mode = mode;
-    commands[nr].cmd_name = name;
+    if (__builtin_popcount(mode & (SELVA_CMD_MODE_PURE | SELVA_CMD_MODE_MUTATE)) != 1) {
+        return SELVA_EINVAL;
+    }
+
+    if ((mode & SELVA_CMD_MODE_QUERY_FORK) && !(mode & SELVA_CMD_MODE_PURE)) {
+        return SELVA_EINVAL;
+    }
+
+    c = &commands[nr];
+    c->cmd_fn = cmd;
+    c->cmd_mode = mode;
+    c->cmd_name = name;
+
+    if (mode & SELVA_CMD_MODE_QUERY_FORK) {
+        /*
+         * __STDC_VERSION__ > 201710L shouldn't require the second argument but
+         * clang on macOS is broken.
+         */
+        va_start(args, cmd);
+        c->query_fork_eligible = va_arg(args, selva_cmd_query_fork_test);
+        va_end(args);
+    }
 
     return 0;
 }
@@ -71,37 +144,6 @@ int selva_mk_command(int nr, enum selva_cmd_mode mode, const char *name, selva_c
 static struct command *get_command(int nr)
 {
     return (nr >= 0 && nr < (int)num_elem(commands)) ? &commands[nr] : NULL;
-}
-
-size_t selva_resp_to_str(const struct selva_server_response_out *resp, char *buf, size_t bsize)
-{
-    if (bsize < CONN_STR_LEN) {
-        return 0;
-    }
-
-    if (!resp || !resp->ctx) {
-        strcpy(buf, "<not connected>");
-        return 15;
-    }
-
-    return conn_to_str(resp->ctx, buf, bsize);
-}
-
-int selva_resp_cmp_conn(
-        const struct selva_server_response_out *resp_a,
-        const struct selva_server_response_out *resp_b)
-{
-    return resp_a->ctx && resp_b->ctx && resp_a->ctx == resp_b->ctx;
-}
-
-int selva_resp_to_cmd_id(struct selva_server_response_out *resp)
-{
-    return resp->cmd;
-}
-
-int64_t selva_resp_to_ts(struct selva_server_response_out *resp)
-{
-    return resp->ts;
 }
 
 static void ping(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
@@ -168,6 +210,30 @@ static void lscmd(struct selva_server_response_out *resp, const void *buf __unus
         }
     }
     selva_send_array_end(resp);
+}
+
+static void lslang(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
+{
+    selva_send_array(resp, selva_langs->len);
+    for (size_t i = 0; i < selva_langs->len; i++) {
+        const struct selva_lang *lang = &selva_langs->langs[i];
+        const char *lang_ident;
+
+        if (lang->locale) {
+#ifdef __linux__
+            lang_ident = nl_langinfo_l(_NL_IDENTIFICATION_LANGUAGE, lang->locale);
+#else
+            lang_ident = "loaded";
+#endif
+        } else {
+            lang_ident = "not_loaded";
+        }
+
+        selva_send_array(resp, 3);
+        selva_send_strf(resp, "%s", lang->name);
+        selva_send_strf(resp, "%s", lang->loc_name);
+        selva_send_strf(resp, "%s", lang_ident);
+    }
 }
 
 static void lsmod(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
@@ -285,6 +351,9 @@ static void config(struct selva_server_response_out *resp, const void *buf __unu
                 break;
             case CONFIG_INT:
                 selva_send_ll(resp, *(int *)cfg->dp);
+                break;
+            case CONFIG_BOOL:
+                selva_send_strf(resp, "%s", (*(bool *)cfg->dp) ? "true" : "false");
                 break;
             case CONFIG_SIZE_T:
                 selva_send_ll(resp, *(size_t *)cfg->dp);
@@ -477,7 +546,10 @@ static int new_server(int port)
     server.sin_port = htons(port);
 
     if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "bind failed");
+        char buf[80];
+
+        xsi_strerror_r(errno, buf, sizeof(buf));
+        SELVA_LOG(SELVA_LOGL_CRIT, "bind failed: %s", buf);
         exit(EXIT_FAILURE);
     }
 
@@ -489,6 +561,183 @@ static int new_server(int port)
     SELVA_LOG(SELVA_LOGL_INFO, "Listening on port: %d pid: %jd", port, (intmax_t)getpid());
 
     return sockfd;
+}
+
+static size_t query_fork_alloc_pid(void)
+{
+    pid_t *pids = query_fork.pids;
+
+    for (size_t i = 0; i < MAX_QUERY_FORKS; i++) {
+        if (pids[i] == 0) {
+            pids[i] = 1; /* placeholder */
+            return i;
+        }
+    }
+
+    return SIZE_MAX;
+}
+
+static size_t query_fork_del_pid(pid_t pid)
+{
+    pid_t *pids = query_fork.pids;
+
+    for (size_t i = 0; i < MAX_QUERY_FORKS; i++) {
+        if (pids[i] == pid) {
+            pids[i] = 0;
+            return i;
+        }
+    }
+
+    return SIZE_MAX;
+}
+
+static void query_fork_ret_ch_msg_writeout(size_t slot, const uint8_t *buf, size_t bsize)
+{
+    uint8_t (*ret_ch_buf)[QUERY_FORK_CMD_BUF_SIZE] = &(*query_fork.ret_channel)[slot].buf;
+
+    if ((*query_fork.ret_channel)[slot].buf_i + bsize <= sizeof(*ret_ch_buf)) {
+        memcpy(*ret_ch_buf + (*query_fork.ret_channel)[slot].buf_i, buf, bsize);
+        (*query_fork.ret_channel)[slot].buf_i += bsize;
+    } else {
+        SELVA_LOG(SELVA_LOGL_ERR, "Out of buffer space for query_fork ret channel msg. bsize: %zu", bsize);
+    }
+}
+
+void selva_server_query_fork_init_ret_msg(struct selva_proto_builder_msg *msg, typeof_field(struct selva_proto_header, cmd) cmd)
+{
+    /* TODO This could be optimized slightly if the tmp_msg builder could utilize the already existing buffer. */
+    selva_proto_builder_init(msg, false);
+    selva_proto_builder_insert_replication_cmd(msg, &(struct selva_proto_replication_cmd){
+        .cmd = cmd,
+        .ts = ts_now(),
+        .bsize = 0, /* We need to calculate the real value later. */
+    });
+}
+
+void selva_server_query_fork_send_ret_msg(struct selva_proto_builder_msg *msg)
+{
+    struct selva_proto_replication_cmd *hdr;
+
+    if (unlikely(!query_fork.child)) {
+        return;
+    }
+
+    hdr = (struct selva_proto_replication_cmd *)msg->buf; /* Do not try this at home. */
+    hdr->bsize = msg->bsize - sizeof(*hdr);
+
+    query_fork_ret_ch_msg_writeout(query_fork.slot, msg->buf, msg->bsize);
+}
+
+static void query_fork_ret_ch_exec(size_t slot)
+{
+    uint8_t (*buf)[QUERY_FORK_CMD_BUF_SIZE] = &(*query_fork.ret_channel)[slot].buf;
+    const size_t bsize = (*query_fork.ret_channel)[slot].buf_i;
+
+    if (bsize == 0) {
+        return;
+    }
+
+    for (size_t i = 0; i < bsize;) {
+        uint64_t eid;
+        int64_t ts;
+        int8_t cmd;
+        int compressed;
+        size_t data_size;
+        int err;
+
+        err = selva_proto_parse_replication_cmd(buf, bsize, i, &eid, &ts, &cmd, &compressed, &data_size);
+        if (err) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed to parse query_fork ret_ch[%zu] msg at index: %zu", slot, i);
+            return;
+        }
+
+#if 0
+        SELVA_LOG(SELVA_LOGL_DBG, "Run ret_ch cmd: %d", cmd);
+#endif
+
+        i += sizeof(struct selva_proto_replication_cmd);
+        if (i + data_size > sizeof(*buf)) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Invalid query_fork ret_ch[%zu] cmd args size: %zu", slot, data_size);
+            return;
+        }
+
+        if (compressed) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Compression not supported: ret_ch[%zu]", slot);
+            return;
+        }
+
+        err = selva_server_run_cmd(cmd, ts, &(*buf)[i], data_size);
+        if (err) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed run the command %d: %s", (int)cmd, selva_strerror(err));
+            return;
+        }
+
+        i += data_size;
+    }
+}
+
+__used static void mk_query_fork(struct selva_server_response_out *resp, struct command *cmd)
+{
+    struct conn_ctx *ctx = resp->ctx;
+    size_t slot = query_fork_alloc_pid();
+    pid_t pid;
+
+    if (unlikely(slot == SIZE_MAX)) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Unable to reserve a query_fork slot");
+        selva_send_errorf(resp, SELVA_ENOBUFS, "Failed to execute");
+        selva_send_end(resp);
+        return;
+    }
+
+    pid = fork();
+    if (pid == -1) {
+        selva_send_errorf(resp, SELVA_EGENERAL, "Failed to execute");
+        selva_send_end(resp);
+    } else if (pid == 0) {
+        /* child */
+        cpu_set_t cs;
+
+        /*
+         * Don't run on the main CPU but on any other.
+         */
+        CPU_FILL(&cs);
+        CPU_CLR(0, &cs);
+        selva_cpu_set_main_affinity(&cs);
+
+        readonly_server = true;
+        query_fork.child = true;
+        query_fork.slot = slot;
+        /* The follwing cleanups are only done for the correctness. */
+        query_fork.count = 0;
+        memset(query_fork.pids, 0, sizeof(query_fork.pids));
+        memset(&(*query_fork.ret_channel)[slot], 0, sizeof((*query_fork.ret_channel)[slot]));
+
+        cmd->cmd_fn(resp, ctx->recv_msg_buf, ctx->recv_msg_buf_i);
+        selva_send_end(resp);
+
+        exit(EXIT_SUCCESS);
+    } else {
+        /* main */
+        query_fork.pids[slot] = pid;
+        query_fork.count++;
+        SELVA_LOG(SELVA_LOGL_DBG, "fork pid: %d nr: %d", pid, query_fork.count);
+    }
+}
+
+static int handle_query_fork_exit(pid_t pid, int status __unused, int selva_err)
+{
+    size_t slot = query_fork_del_pid(pid);
+
+    if (slot == SIZE_MAX) {
+        return 0;
+    }
+
+    query_fork_ret_ch_exec(slot);
+
+    query_fork.count--;
+    SELVA_LOG(SELVA_LOGL_DBG, "fork %d exit: %d", pid, selva_err);
+
+    return 1;
 }
 
 static void on_data(struct event *event, void *arg)
@@ -511,6 +760,7 @@ static void on_data(struct event *event, void *arg)
         struct selva_server_response_out resp = {
             .ctx = ctx,
             .cork = 1, /* Cork the full response (lazy). This will be turned off if a stream is started. */
+            .resp_msg_handler = SERVER_MESSAGE_HANDLER_SOCK,
             .cmd = ctx->recv_frame_hdr_buf.cmd,
             .frame_flags = SELVA_PROTO_HDR_FFIRST,
             .seqno = seqno,
@@ -526,6 +776,13 @@ static void on_data(struct event *event, void *arg)
                 static const char msg[] = "read-only server";
 
                 (void)selva_send_error(&resp, SELVA_PROTO_ENOTSUP, msg, sizeof(msg) - 1);
+#ifdef USE_QUERY_FORK
+            } else if ((cmd->cmd_mode & SELVA_CMD_MODE_QUERY_FORK) &&
+                       !query_fork.disabled && query_fork.count < MAX_QUERY_FORKS &&
+                       cmd->query_fork_eligible(ctx->recv_msg_buf, ctx->recv_msg_buf_i)) {
+                mk_query_fork(&resp, cmd);
+                return;
+#endif
             } else {
                 cmd->cmd_fn(&resp, ctx->recv_msg_buf, ctx->recv_msg_buf_i);
             }
@@ -592,30 +849,92 @@ static void on_connection(struct event *event, void *arg __unused)
     evl_wait_fd(new_sockfd, on_data, NULL, on_close, conn_ctx);
 }
 
-int selva_server_run_cmd(int8_t cmd_id, int64_t ts, void *msg, size_t msg_size)
+size_t selva_resp_to_str(const struct selva_server_response_out *resp, char *buf, size_t bsize)
+{
+    if (bsize < CONN_STR_LEN) {
+        return 0;
+    }
+
+    if (!resp || !resp->ctx) {
+        strcpy(buf, "<not connected>");
+        return 15;
+    }
+
+    return conn_to_str(resp->ctx, buf, bsize);
+}
+
+int selva_resp_cmp_conn(
+        const struct selva_server_response_out *resp_a,
+        const struct selva_server_response_out *resp_b)
+{
+    return resp_a->ctx && resp_b->ctx && resp_a->ctx == resp_b->ctx;
+}
+
+int selva_resp_to_cmd_id(struct selva_server_response_out *resp)
+{
+    return resp->cmd;
+}
+
+int64_t selva_resp_to_ts(struct selva_server_response_out *resp)
+{
+    return resp->ts;
+}
+
+static int run_cmd(struct selva_server_response_out * restrict resp, const void * restrict msg, size_t msg_size, bool force)
+{
+    struct command *cmd;
+    int err;
+
+    cmd = get_command(resp->cmd);
+    if (cmd) {
+        if (force || !(cmd->cmd_mode & SELVA_CMD_MODE_MUTATE && readonly_server)) {
+            /*
+             * Run the command.
+             */
+            cmd->cmd_fn(resp, msg, msg_size);
+            err = resp->last_error;
+        } else {
+            err = SELVA_PROTO_ENOTSUP;
+            selva_send_errorf(resp, err, "Server is read-only");
+        }
+    } else {
+        err = SELVA_EINVAL;
+        selva_send_errorf(resp, err, "Invalid cmd_id: %d", resp->cmd);
+    }
+
+    return err;
+}
+
+int selva_server_run_cmd(int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size)
 {
     struct selva_server_response_out resp = {
         .ctx = NULL,
+        .resp_msg_handler = SERVER_MESSAGE_HANDLER_NONE,
         .cmd = cmd_id,
         .last_error = 0,
         .ts = ts ? ts : ts_now(),
     };
-    struct command *cmd;
-    int err;
 
-    cmd = get_command(cmd_id);
-    if (cmd) {
-        /*
-         * Note that we don't care here whether the server is in read-only mode.
-         */
-        cmd->cmd_fn(&resp, msg, msg_size);
-        err = resp.last_error;
-    } else {
-        SELVA_LOG(SELVA_LOGL_ERR, "Invalid cmd_id: %d", cmd_id);
-        err = SELVA_EINVAL;
-    }
+    /*
+     * Note that we don't care here whether the server is in read-only mode.
+     * This is because we are currently using this function only for replication
+     * purposes but if this changes then we might not want to do it like this.
+     */
+    return run_cmd(&resp, msg, msg_size, true);
+}
 
-    return err;
+int selva_server_run_cmd2buf(int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size, struct selva_string *out)
+{
+    struct selva_server_response_out resp = {
+        .ctx = NULL,
+        .resp_msg_handler = SERVER_MESSAGE_HANDLER_BUF,
+        .cmd = cmd_id,
+        .last_error = 0,
+        .ts = ts ? ts : ts_now(),
+        .msg_buf = out,
+    };
+
+    return run_cmd(&resp, msg, msg_size, false);
 }
 
 IMPORT() {
@@ -626,28 +945,51 @@ IMPORT() {
     evl_import_main(evl_get_next_module);
     evl_import_main(config_resolve);
     evl_import_main(config_list_get);
+    evl_import_main(selva_langs);
     evl_import_event_loop();
+    import_selva_reaper();
+}
+
+__used static void query_fork_init(void)
+{
+    if (!query_fork.disabled) {
+#if __linux__
+        const int mmap_flags = MAP_SHARED | MAP_ANONYMOUS | MAP_LOCKED;
+#else
+        const int mmap_flags = MAP_SHARED | MAP_ANONYMOUS;
+#endif
+        if (hierarchy_auto_compress_period_ms > 0) {
+            SELVA_LOG(SELVA_LOGL_CRIT, "query_fork and auto compression are mutually exclusive");
+        }
+
+        query_fork.ret_channel = mmap(NULL, sizeof(*query_fork.ret_channel),
+                                      PROT_READ | PROT_WRITE, mmap_flags,
+                                      -1, 0);
+        selva_reaper_register_hook(handle_query_fork_exit, 1);
+    }
 }
 
 __constructor static void init(void)
 {
     evl_module_init("server");
 
-	int err = config_resolve("server", server_cfg_map, num_elem(server_cfg_map));
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args: %s",
-                  selva_strerror(err));
+    message_none_init(&message_handlers[SERVER_MESSAGE_HANDLER_NONE]);
+    message_sock_init(&message_handlers[SERVER_MESSAGE_HANDLER_SOCK]);
+    message_buf_init(&message_handlers[SERVER_MESSAGE_HANDLER_BUF]);
+
+	if (config_resolve("server", server_cfg_map, num_elem(server_cfg_map))) {
         exit(EXIT_FAILURE);
     }
 
-    const char *selva_port_str = getenv(ENV_PORT_NAME);
-    if (selva_port_str) {
-        selva_port = strtol(selva_port_str, NULL, 10);
+    if (max_clients >= EVENT_LOOP_MAX_FDS - 3) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "max_clients can't be greater than EVENT_LOOP_MAX_FDS minus few fds");
+        exit(EXIT_FAILURE);
     }
 
     SELVA_MK_COMMAND(CMD_ID_PING, SELVA_CMD_MODE_PURE, ping);
     SELVA_MK_COMMAND(CMD_ID_ECHO, SELVA_CMD_MODE_PURE, echo);
     SELVA_MK_COMMAND(CMD_ID_LSCMD, SELVA_CMD_MODE_PURE, lscmd);
+    SELVA_MK_COMMAND(CMD_ID_LSLANG, SELVA_CMD_MODE_PURE, lslang);
     SELVA_MK_COMMAND(CMD_ID_LSMOD, SELVA_CMD_MODE_PURE, lsmod);
     SELVA_MK_COMMAND(CMD_ID_HRT, SELVA_CMD_MODE_PURE, hrt);
     SELVA_MK_COMMAND(CMD_ID_CONFIG, SELVA_CMD_MODE_PURE, config);
@@ -658,9 +1000,11 @@ __constructor static void init(void)
     SELVA_MK_COMMAND(CMD_ID_RUSAGE, SELVA_CMD_MODE_PURE, rusage);
     selva_mk_command(CMD_ID_CLIENT, SELVA_CMD_MODE_PURE, "client", client_command);
 
-    pubsub_init();
+#ifdef USE_QUERY_FORK
+    query_fork_init();
+#endif
 
-    /* Async server for receiving messages. */
+    pubsub_init();
     conn_init(max_clients);
     server_sockfd = new_server(selva_port);
     evl_wait_fd(server_sockfd, on_connection, NULL, NULL, NULL);

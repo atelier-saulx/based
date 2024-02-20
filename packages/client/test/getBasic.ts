@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -51,6 +51,9 @@ test.beforeEach(async (t) => {
       lekkerType: {
         prefix: 'vi',
         fields: {
+          anyField: {
+            type: 'any',
+          },
           strRec: {
             type: 'record',
             values: {
@@ -68,11 +71,11 @@ test.beforeEach(async (t) => {
             values: {
               type: 'object',
               properties: {
-                floatArray: { type: 'array', values: { type: 'number' } },
-                intArray: { type: 'array', values: { type: 'integer' } },
+                floatArray: { type: 'array', items: { type: 'number' } },
+                intArray: { type: 'array', items: { type: 'integer' } },
                 objArray: {
                   type: 'array',
-                  values: {
+                  items: {
                     type: 'object',
                     properties: {
                       hello: { type: 'string' },
@@ -131,10 +134,10 @@ test.beforeEach(async (t) => {
             },
           },
           dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
-          floatArray: { type: 'array', values: { type: 'number' } },
-          intArray: { type: 'array', values: { type: 'integer' } },
-          tsArray: { type: 'array', values: { type: 'timestamp' } },
+          dingdongs: { type: 'array', items: { type: 'string' } },
+          floatArray: { type: 'array', items: { type: 'number' } },
+          intArray: { type: 'array', items: { type: 'integer' } },
+          tsArray: { type: 'array', items: { type: 'timestamp' } },
           refs: { type: 'references' },
           value: { type: 'number' },
           age: { type: 'number' },
@@ -662,7 +665,7 @@ test('get - references', async (t) => {
     refs: true,
   })
 
-  t.deepEqualIgnoreOrder(result, {
+  deepEqualIgnoreOrder(t, result, {
     refs: [id1, id11],
   })
 
@@ -731,7 +734,8 @@ test('get - hierarchy', async (t) => {
     { depth: 6 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'viflapx',
       descendants: true,
@@ -847,13 +851,14 @@ test('get - $inherit', async (t) => {
     title: { $inherit: { $type: ['custom', 'club'] } },
   })
   t.log({ r })
-  t.deepEqualIgnoreOrder(r, {
+  deepEqualIgnoreOrder(t, r, {
     title: {
       en: 'snurf',
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'cuC',
       $language: 'nl',
@@ -864,7 +869,8 @@ test('get - $inherit', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'cuC',
       image: {
@@ -877,7 +883,7 @@ test('get - $inherit', async (t) => {
   )
 
   // FIXME: is the order really specific here?
-  // t.deepEqualIgnoreOrder(
+  // deepEqualIgnoreOrder(t,
   //   await client.get({
   //     $id: 'cuD',
   //     image: {
@@ -1482,6 +1488,93 @@ test('get - record with nested wildcard query', async (t) => {
               value: 13,
             },
           },
+        },
+      },
+    }
+  )
+})
+test('get - any type', async (t) => {
+  const { client } = t.context
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    anyField: {
+      hello: {
+        test: 1,
+        yes: 'no',
+        nest: {
+          a: 112,
+        },
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      anyField: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      anyField: {
+        hello: {
+          test: 1,
+          yes: 'no',
+          nest: {
+            a: 112,
+          },
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      anyField: {
+        hello: {
+          yes: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      anyField: {
+        hello: {
+          yes: 'no',
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      anyField: {
+        hello: {
+          test: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      anyField: {
+        hello: {
+          test: 1,
         },
       },
     }

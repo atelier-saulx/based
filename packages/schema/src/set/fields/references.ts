@@ -1,7 +1,7 @@
-import { ParseError } from '../../error'
-import { AllowedTypes, BasedSetTarget } from '../../types'
-import { ArgsClass, FieldParser } from '../../walker'
-import { isValidId } from '../isValidId'
+import { ParseError } from '../../error.js'
+import { BasedSetTarget } from '../../types.js'
+import { ArgsClass, FieldParser } from '../../walker/index.js'
+import { isValidId } from '../isValidId.js'
 
 async function parseOperator<T>(
   args: ArgsClass<T, 'references'>,

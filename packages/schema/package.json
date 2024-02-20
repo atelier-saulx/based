@@ -1,42 +1,41 @@
 {
   "name": "@based/schema",
-  "version": "2.2.10",
+  "version": "3.1.0",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "files": [
     "dist",
+    "README.md",
+    "package.json",
     "!dist/**/*.js.map"
   ],
   "scripts": {
     "build": "npx tsc",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
-    "test-ci": "ava --color --node-arguments='--expose-gc' --concurrency 1 --timeout 3m"
+    "test": "ava --color --timeout 3m --verbose",
+    "test-ci": "ava --color --concurrency 1 --timeout 3m"
   },
   "sideEffects": false,
+  "type": "module",
   "dependencies": {
     "validator": "^13.9.0",
     "@saulx/hash": "^2.0.0",
     "@saulx/utils": "^3.5.0"
   },
   "ava": {
+    "timeout": "2m",
     "files": [
-      "test/*.ts"
-    ],
-    "concurrency": 1,
-    "extensions": [
-      "ts"
-    ],
-    "require": [
-      "ts-node/register"
+      "./dist/test/*.js",
+      "./dist/test/validateSchema/*.js"
     ]
   },
   "devDependencies": {
     "type-fest": "^3.12.0",
+    "@saulx/tsconfig": "^1.1.0",
     "ts-node": "10.9.1",
     "typescript": "^5.1.6",
     "rimraf": "^3.0.2",
-    "ava": "3.15.0"
+    "ava": "6.1.1"
   }
 }

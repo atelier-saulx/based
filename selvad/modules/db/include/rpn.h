@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -47,9 +47,36 @@ struct selva_string;
 struct rpn_ctx {
     int depth; /*!< Stack pointer, current stack depth. */
     int nr_reg; /*!< Number of registers allocated. */
-    struct SelvaHierarchy *hierarchy; /*!< A pointer to the associated hierarchy. */
-    struct SelvaHierarchyNode *node; /*!< A pointer to the current hierarchy node set with rpn_set_hierarchy_node(). */
-    struct SelvaObject *obj; /*!< Selva object of the current node. */
+    /**
+     * Data that can be altered between executions.
+     */
+    struct rpn_data {
+        /**
+         * Current locale.
+         * Just locale_t but we don't want to include the locale header everywhere, do we? */
+        void *loc;
+        /**
+         * A pointer to the associated hierarchy.
+         */
+        struct SelvaHierarchy *hierarchy;
+        /**
+         * A pointer to the current hierarchy node.
+         * If set then also obj must be set.
+         */
+        struct SelvaHierarchyNode *node;
+        /**
+         * A SelvaObject that can be accessed.
+         * Setting the hierarchy and node pointers will enable some operands
+         * operating on the hierarchy but it's not necessary to set this if
+         * these operands are not needed.
+         * An operand requiring a node pointer will return RPN_ERR_ILLOPN if the pointer
+         * is not set.
+         * Usually a pointer to the SelvaObject of the current node.
+         * In some cases the node is not set and this is just an object.
+         * In some cases the node is set but this is actually an edge_metadata object.
+         */
+        struct SelvaObject *obj;
+    } data;
     struct selva_string *string;
     struct rpn_operand *stack[RPN_MAX_D]; /*!< Execution stack. */
     struct rpn_operand *reg[0]; /*!< RPN registers. */
@@ -68,8 +95,16 @@ struct rpn_expression {
     struct rpn_operand *literal_reg[RPN_MAX_D]; /*!< Literals used in the expression. */
 };
 
-#define RPN_SET_REG_FLAG_SELVA_FREE 0x01 /*!< Free register values after unref using selva_free. */
-#define RPN_SET_REG_FLAG_IS_NAN     0x02 /*!< The numeric value of a reg should be NaN when set with rpn_set_reg(). */
+enum rpn_set_reg_flags {
+    /**
+     * Free the register pointer automatically after unref in rpn.
+     * - sp, rpn_set_reg_slvobj() = selva_free()
+     * - obj, rpn_set_reg_slvobj() = SelvaObject_Destroy()
+     * - set, rpn_set_reg_slvset() = SelvaSet_Destroy()
+     */
+    RPN_SET_REG_FLAG_AUTO_FREE  = 0x01, /*!< Free register values after unref using selva_free. */
+    RPN_SET_REG_FLAG_IS_NAN     = 0x02, /*!< The numeric value of a reg should be NaN when set with rpn_set_reg(). */
+};
 
 extern const char *rpn_str_error[RPN_ERR_LAST];
 
@@ -85,26 +120,10 @@ struct rpn_ctx *rpn_init(int nr_reg);
 void rpn_destroy(struct rpn_ctx *ctx);
 
 /**
- * Set the hierarchy node pointer in the RPN context.
- * Setting the node pointer enables some operands operating on the hierarchy but
- * it's not necessary to set this if those operands are not needed.
- * An operand requiring a node pointer will return RPN_ERR_ILLOPN if the pointer
- * is not set.
- */
-static inline void rpn_set_hierarchy_node(struct rpn_ctx *ctx, struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    ctx->hierarchy = hierarchy;
-    ctx->node = node;
-}
-
-static inline void rpn_set_obj(struct rpn_ctx *ctx, struct SelvaObject *obj) {
-    ctx->obj = obj;
-}
-
-/**
  * Set register value.
  * A pointer to s is held until the register is cleared or changed.
  */
-enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags)
+enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, enum rpn_set_reg_flags flags)
     __attribute__((access(read_only, 1, 2)));
 
 
