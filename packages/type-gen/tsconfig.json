@@ -1,10 +1,11 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
-    "rootDir": "src",
     "outDir": "dist",
-    "declarationMap": true
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src/**/*", "src/**/*.json"],
-  "exclude": ["node_modules", "test", "dist", "tmp", "examples"]
+  "include": ["./src", "./test"],
+  "exclude": ["./test/examples", "./dist/test", "./dist/src"]
 }
