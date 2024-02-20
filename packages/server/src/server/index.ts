@@ -87,6 +87,12 @@ export class SelvaServer extends EventEmitter {
       ...opts.env,
     }
 
+    // ldExecutablePath is used when running on systems with
+    // a glic version lower than 2.38.
+    // glibc should be installed in the machine.
+    // Ex:
+    //    ldLibraryPath: '/opt/glibc-2.38/lib:/lib64',
+    //    ldExecutablePath: '/opt/glibc-2.38/lib/ld-linux-x86-64.so.2',
     if (opts.ldExecutablePath) {
       console.log('--------- ldExecutablePath:', opts.ldExecutablePath, env)
       this.pm = spawn(opts.ldExecutablePath, [binaryPath], {
