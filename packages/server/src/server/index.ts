@@ -59,7 +59,7 @@ export class SelvaServer extends EventEmitter {
       path.join(__dirname, '..', '..', 'selvad', 'local')
     )
 
-    const execPath = localBuild
+    let binaryPath = localBuild
       ? path.join(__dirname, '..', '..', 'selvad', 'local', 'selvad')
       : path.join(
           node_modules(),
@@ -69,22 +69,45 @@ export class SelvaServer extends EventEmitter {
           'selvad'
         )
 
-    this.pm = spawn(execPath, [], {
-      env: {
-        ...process.env,
-        ...{
-          LOCPATH: path.join(execPath, '..', 'locale'),
-          SELVA_PORT: String(this.port),
-          SERVER_SO_REUSE: '1',
-          SELVA_REPLICATION_MODE: this.type == 'replica' ? '2' : '1',
-          AUTO_SAVE_INTERVAL: String(this.saveInterval),
-          SAVE_AT_EXIT: opts.save ? '1' : '0',
-        },
-        ...opts.env,
+    const env = {
+      ...process.env,
+      ...{
+        LOCPATH: path.join(binaryPath, '..', 'locale'),
+        ...(opts.ldLibraryPath
+          ? {
+              LD_LIBRARY_PATH: opts.ldLibraryPath,
+            }
+          : null),
+        SELVA_PORT: String(this.port),
+        SERVER_SO_REUSE: '1',
+        SELVA_REPLICATION_MODE: this.type == 'replica' ? '2' : '1',
+        AUTO_SAVE_INTERVAL: String(this.saveInterval),
+        SAVE_AT_EXIT: opts.save ? '1' : '0',
       },
-      cwd: this.backupDir ?? process.cwd(),
-      stdio: opts.stdio || 'inherit',
-    })
+      ...opts.env,
+    }
+
+    // ldExecutablePath is used when running on systems with
+    // a glic version lower than 2.38.
+    // glibc should be installed in the machine.
+    // Ex:
+    //    ldLibraryPath: '/opt/glibc-2.38/lib:/lib64',
+    //    ldExecutablePath: '/opt/glibc-2.38/lib/ld-linux-x86-64.so.2',
+    if (opts.ldExecutablePath) {
+      console.log('--------- ldExecutablePath:', opts.ldExecutablePath, env)
+      this.pm = spawn(opts.ldExecutablePath, [binaryPath], {
+        env,
+        cwd: this.backupDir ?? process.cwd(),
+        stdio: opts.stdio || 'inherit',
+      })
+    } else {
+      console.log('--------- straight to binary:', opts.ldExecutablePath, env)
+      this.pm = spawn(binaryPath, [], {
+        env,
+        cwd: this.backupDir ?? process.cwd(),
+        stdio: opts.stdio || 'inherit',
+      })
+    }
   }
 
   async destroy() {

@@ -13,6 +13,8 @@ export type ServerOptions = {
   env?: NodeJS.ProcessEnv
   stdio?: StdioOptions | undefined
   default?: boolean
+  ldLibraryPath?: string // glibc lib folder path Ex: '/opt/glibc-2.38/lib:/lib64'
+  ldExecutablePath?: string // ld executable path Ex: '/opt/glibc-2.38/lib/ld-linux-x86-64.so.2'
 }
 
 export type Stats = {
