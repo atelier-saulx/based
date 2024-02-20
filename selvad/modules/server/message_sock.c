@@ -315,7 +315,8 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
     const ssize_t frame_bsize = le16toh(ctx->recv_frame_hdr_buf.frame_bsize); /* We know it's aligned. */
     const size_t frame_payload_size = frame_bsize - sizeof(struct selva_proto_header);
 
-    if (frame_bsize > SELVA_PROTO_FRAME_SIZE_MAX) {
+    if (frame_bsize > SELVA_PROTO_FRAME_SIZE_MAX ||
+        frame_payload_size > SELVA_PROTO_FRAME_SIZE_MAX) {
 #if 0
         SELVA_LOG(SELVA_LOGL_DBG, "Frame too large: %zu", frame_payload_size);
 #endif
