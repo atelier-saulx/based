@@ -56,6 +56,7 @@ export const COMMAND_TYPES = {
   save: 15,
   load: 14,
   flush: 16,
+  purge: 17,
   replicasync: 73,
   replicaof: 74,
   replicainfo: 75,

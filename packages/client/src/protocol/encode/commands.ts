@@ -12,6 +12,9 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   lscmd: null,
   debug: null,
   flush: null,
+  purge: defaultEncoder([
+    {type: 'longlong' }, // n
+  ]),
   save: strEncoder(1),
   load: strEncoder(1),
   lsaliases: null,
