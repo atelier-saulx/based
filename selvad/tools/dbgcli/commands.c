@@ -52,6 +52,7 @@ static int cmd_index_acc_req(const struct cmd *cmd, int sock, int seqno, int arg
 static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_purge_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_mq_create_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_mq_recv_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
@@ -154,6 +155,12 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_REPLICAOF,
         .cmd_name = "replicaof",
         .cmd_req = cmd_replicaof_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_PURGE] = {
+        .cmd_id = CMD_ID_PURGE,
+        .cmd_name = "purge",
+        .cmd_req = cmd_purge_req,
         .cmd_res = generic_res,
     },
     [CMD_ID_MQ_CREATE] = {
@@ -812,6 +819,37 @@ static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int arg
 
     if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
          send_message(sock, addr_str, addr_len, 0)) {
+        return -1;
+    }
+    return 0;
+}
+
+static int cmd_purge_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc != 2) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_longlong n;
+    } __packed buf = {
+        .hdr = {
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf)),
+        },
+        .n = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = htole64(strtol(argv[1], NULL, 10)),
+        },
+    };
+
+    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+
+    if (send_message(sock, &buf, sizeof(buf), 0)) {
         return -1;
     }
     return 0;
