@@ -20,11 +20,11 @@
 #include "../replication.h"
 #include "replica.h"
 
-#define log_with_ctx_info(resp, msg) ({ \
-        char strcon[80]; \
-        size_t len = selva_resp_to_str(resp, strcon, sizeof(strcon)); \
-        SELVA_LOG(SELVA_LOGL_INFO, "%s (%.*s)", (msg), (int)len, strcon); \
-    })
+static thread_local char strcon[80];
+static thread_local int strcon_len;
+
+#define log_with_ctx(resp, level, msg, ...) \
+        SELVA_LOG(level, "(%.*s) " msg, strcon_len, strcon __VA_OPT__(,) __VA_ARGS__)
 
 /**
  * Send the initial dump to the replica.
@@ -43,7 +43,7 @@ static int sync_state(
 
     ring_buffer_get_current(rb, state, &e);
     if (!(e->id & EID_MSB_MASK)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Expected an SDB dump. eid: 0x%" PRIx64, e->id);
+        log_with_ctx(resp, SELVA_LOGL_ERR, "Expected an SDB dump. eid: 0x%" PRIx64, e->id);
         err = SELVA_EINVAL;
         goto fail;
     }
@@ -52,7 +52,7 @@ static int sync_state(
     sdb = (struct selva_replication_sdb *)e->data;
 
     if (sdb->status != SDB_STATUS_COMPLETE) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Invalid or incomplete SDB structure. eid: 0x%" PRIx64, e->id);
+        log_with_ctx(resp, SELVA_LOGL_ERR, "Invalid or incomplete SDB structure. eid: 0x%" PRIx64, e->id);
         err = SELVA_EINVAL;
         goto fail;
     }
@@ -63,14 +63,14 @@ static int sync_state(
     }
 
     if (sync_mode == REPLICATION_SYNC_MODE_FULL) {
-        log_with_ctx_info(resp, "Full sync");
+        log_with_ctx(resp, SELVA_LOGL_INFO, "Full sync");
         err = selva_send_replication_sdb(resp, e->id, sdb->filename);
         if (err) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to sync replica's initial state: %s", selva_strerror(err));
+            log_with_ctx(resp, SELVA_LOGL_ERR, "Failed to sync replica's initial state: %s", selva_strerror(err));
             goto fail;
         }
     } else {
-        log_with_ctx_info(resp, "Partial sync");
+        log_with_ctx(resp, SELVA_LOGL_INFO, "Partial sync");
     }
 
     err = 0;
@@ -87,14 +87,16 @@ void *replication_thread(void *arg)
     struct ring_buffer_reader_state state;
     struct ring_buffer_element *e;
 
-    log_with_ctx_info(resp, "Replication started");
+    strcon_len = (int)selva_resp_to_str(resp, strcon, sizeof(strcon));
+
+    log_with_ctx(resp, SELVA_LOGL_INFO, "Replication started");
 
     /*
      * RFE It would be better to be able to retry with another sdb eid instead
      * of letting the replica die but currently there is no easy way to do it.
      */
     if (ring_buffer_init_state(&state, rb, replica->start_eid, replica->id)) {
-        SELVA_LOG(SELVA_LOGL_DBG, "Failed to initialize a ring_buffer_reader_state");
+        log_with_ctx(resp, SELVA_LOGL_DBG, "Failed to initialize a ring_buffer_reader_state");
         selva_send_errorf(resp, SELVA_ENOENT, "Initial state mismatch");
         goto out;
     }
@@ -143,7 +145,7 @@ void *replication_thread(void *arg)
     }
 
 out:
-    log_with_ctx_info(resp, "Replica going offline");
+    log_with_ctx(resp, SELVA_LOGL_INFO, "Replica going offline");
     selva_send_end(resp);
     ring_buffer_reader_exit(rb, &state);
     return NULL;
