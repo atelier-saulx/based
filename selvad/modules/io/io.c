@@ -57,6 +57,18 @@ static void test_io_mode(struct selva_io *io, enum selva_io_flags mode)
 }
 
 /**
+ * Abort and unlink last_good SDB if running in replica mode.
+ * Use this function instead of calling abort() or _exit() directly.
+ */
+__noreturn static void io_abort(void)
+{
+    if (replication_mode == SELVA_REPLICATION_MODE_REPLICA) {
+        (void)unlink(last_good_name);
+    }
+    abort();
+}
+
+/**
  * Log a read error and exit.
  * @param whence should be one of WHENCE_ macros.
  */
@@ -74,7 +86,7 @@ __noreturn static void exit_read_error(struct selva_io *io, const char *type, co
         SELVA_LOG(SELVA_LOGL_CRIT, "SDB read error. offset: %lld whence: \"%s\" type: %s",
                   (long long)io->sdb_tell(io), whence, type);
     }
-    abort();
+    io_abort();
 }
 
 /**
@@ -302,7 +314,7 @@ void selva_io_end(struct selva_io * restrict io, struct selva_string * restrict 
     if (io->flags & SELVA_IO_FLAGS_WRITE) {
         sdb_write_footer(io);
         io->sdb_flush(io);
-    } else {
+    } else { /* SELVA_IO_FLAGS_READ */
         int err;
 
         err = sdb_read_footer(io);
@@ -321,7 +333,7 @@ void selva_io_end(struct selva_io * restrict io, struct selva_string * restrict 
              * It wouldn't be necessary to crash here as hierarchy loading is
              * sort of safe to fail.
              */
-            abort();
+            io_abort();
         }
 
     }
