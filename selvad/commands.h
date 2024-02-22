@@ -64,9 +64,9 @@
 /**
  * Toggle debug messages.
  * module: server
- * cmd: dbg
+ * cmd: debug
  */
-#define CMD_ID_DBG 8
+#define CMD_ID_DEBUG 8
 
 /**
  * Show malloc stats.

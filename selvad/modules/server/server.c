@@ -389,7 +389,7 @@ static void loglevel(struct selva_server_response_out *resp, const void *buf, si
     }
 }
 
-static void dbg(struct selva_server_response_out *resp, const void *buf, size_t size)
+static void debug(struct selva_server_response_out *resp, const void *buf, size_t size)
 {
     const char *pattern_str;
     size_t pattern_len;
@@ -994,7 +994,7 @@ __constructor static void init(void)
     SELVA_MK_COMMAND(CMD_ID_HRT, SELVA_CMD_MODE_PURE, hrt);
     SELVA_MK_COMMAND(CMD_ID_CONFIG, SELVA_CMD_MODE_PURE, config);
     SELVA_MK_COMMAND(CMD_ID_LOGLEVEL, SELVA_CMD_MODE_PURE, loglevel);
-    SELVA_MK_COMMAND(CMD_ID_DBG, SELVA_CMD_MODE_PURE, dbg);
+    SELVA_MK_COMMAND(CMD_ID_DEBUG, SELVA_CMD_MODE_PURE, debug);
     SELVA_MK_COMMAND(CMD_ID_MALLOCSTATS, SELVA_CMD_MODE_PURE, mallocstats);
     SELVA_MK_COMMAND(CMD_ID_MALLOCPROFDUMP, SELVA_CMD_MODE_PURE, mallocprofdump);
     SELVA_MK_COMMAND(CMD_ID_RUSAGE, SELVA_CMD_MODE_PURE, rusage);
