@@ -1,6 +1,6 @@
 {
   "name": "@based/db-query",
-  "version": "3.2.0-alpha",
+  "version": "3.2.0",
   "license": "MIT",
   "main": "dist/src/index.js",
   "scripts": {
