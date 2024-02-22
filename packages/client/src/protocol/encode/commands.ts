@@ -106,10 +106,8 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'id' },
     // field
     { type: 'string' },
-    // valueId
-    { type: 'string' },
     // old crc
-    { type: 'string' },
+    { type: 'longlong' },
     // new value
     { type: 'string' },
   ]),

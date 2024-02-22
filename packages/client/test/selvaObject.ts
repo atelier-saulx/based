@@ -164,3 +164,26 @@ test('deleting a field from object arrays', async (t) => {
   //  [ [ 's', 'Hello' ] ]
   //)
 })
+
+test('cas', async (t) => {
+  const { client } = t.context
+
+  await client.command('object.cas', ['root', 'field', 0n, 'value'])
+  const [[flags1, crc1, value1]] = await client.command('object.getString', ['root', 'field'])
+  t.deepEqual(flags1, 1n)
+  t.deepEqual(crc1, 1528838005n)
+  t.deepEqual(value1, 'value')
+
+  await t.throwsAsync(
+    () => client.command('object.cas', ['root', 'field', 42n, 'new']),
+    { message: 'CRC mismatch' }
+  )
+
+  await t.notThrowsAsync(
+    () => client.command('object.cas', ['root', 'field', crc1, 'new'])
+  )
+  const [[flags2, crc2, value2]] = await client.command('object.getString', ['root', 'field'])
+  t.deepEqual(flags2, 1n)
+  t.deepEqual(crc2, 3454013344n)
+  t.deepEqual(value2, 'new')
+})
