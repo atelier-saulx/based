@@ -94,14 +94,19 @@ export class SelvaServer extends EventEmitter {
     //    ldLibraryPath: '/opt/glibc-2.38/lib:/lib64',
     //    ldExecutablePath: '/opt/glibc-2.38/lib/ld-linux-x86-64.so.2',
     if (opts.ldExecutablePath) {
-      console.log('--------- ldExecutablePath:', opts.ldExecutablePath, env)
+      console.log(
+        '--------- ldExecutablePath:',
+        opts.ldExecutablePath,
+        opts.ldLibraryPath,
+        binaryPath
+      )
       this.pm = spawn(opts.ldExecutablePath, [binaryPath], {
         env,
         cwd: this.backupDir ?? process.cwd(),
         stdio: opts.stdio || 'inherit',
       })
     } else {
-      console.log('--------- straight to binary:', opts.ldExecutablePath, env)
+      console.log('--------- straight to binary:', binaryPath)
       this.pm = spawn(binaryPath, [], {
         env,
         cwd: this.backupDir ?? process.cwd(),
