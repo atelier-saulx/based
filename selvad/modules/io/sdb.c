@@ -506,7 +506,8 @@ int sdb_read_header(struct selva_io *io)
     }
 
     SELVA_LOG(SELVA_LOGL_INFO,
-              "created_with: %.*s updated_with: %.*s",
+              "running: %.*s created_with: %.*s updated_with: %.*s",
+              SELVA_DB_VERSION_SIZE, selva_db_version_info.running,
               SELVA_DB_VERSION_SIZE, selva_db_version_info.created_with,
               SELVA_DB_VERSION_SIZE, selva_db_version_info.updated_with);
 
@@ -564,10 +565,8 @@ int sdb_read_footer(struct selva_io *io)
     return 0;
 }
 
-__constructor static void init(void)
+__attribute__((constructor(101)))
+static void init(void)
 {
     strncpy(selva_db_version_info.running, selva_db_version, sizeof(selva_db_version_info.running));
-
-    SELVA_LOG(SELVA_LOGL_INFO, "Selva db version running: %.*s",
-              (int)sizeof(selva_db_version_info.running), selva_db_version_info.running);
 }
