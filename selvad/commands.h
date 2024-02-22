@@ -466,7 +466,7 @@
 /**
  * Delete a subscription marker.
  * module: db
- * cmd: subscriptions.delmarker
+ * cmd: subscriptions.delMarker
  */
 #define CMD_ID_SUBSCRIPTIONS_DELMARKER 69
 

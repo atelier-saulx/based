@@ -189,7 +189,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   'subscriptions.del': defaultEncoder([
     { type: 'longlong' }, // subId
   ]),
-  'subscriptions.delmarker': defaultEncoder([
+  'subscriptions.delMarker': defaultEncoder([
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
   ]),

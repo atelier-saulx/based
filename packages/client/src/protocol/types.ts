@@ -113,17 +113,8 @@ export const COMMAND_TYPES = {
   'subscriptions.refresh': 63,
   'subscriptions.refreshMarker': 64,
   'subscriptions.del': 68,
-  'subscriptions.delmarker': 69,
-  // TODO:
-  // #define CMD_ID_HIERARCHY_AGGREGATE 21
-  // #define CMD_ID_HIERARCHY_HEADS 26
-  // #define CMD_ID_HIERARCHY_TYPES_ADD 36
-  // #define CMD_ID_HIERARCHY_TYPES_CLEAR 37
-  // #define CMD_ID_HIERARCHY_TYPES_LIST 38
-  // subscriptions
-  // TODO:
-  // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 62
-  // #define CMD_ID_SUBSCRIPTIONS_DEBUG 67
+  'subscriptions.delMarker': 69,
+  // rpn test
   'rpn.evalBool': 44,
   'rpn.evalDouble': 45,
   'rpn.evalString': 46,

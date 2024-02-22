@@ -35,7 +35,7 @@ export async function sub(
   const cleanup = async () => {
     if (origMarkerId !== markerId) {
       try {
-        await client.command('subscriptions.delmarker', [subId, origMarkerId])
+        await client.command('subscriptions.delMarker', [subId, origMarkerId])
       } catch (e) {
         console.error('Error cleaning up marker', subId, origMarkerId)
       }

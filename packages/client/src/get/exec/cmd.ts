@@ -76,7 +76,7 @@ export function addSubMarker(
     const purged = client.purgeSubMarkerMapping(subCmd.cmdId)
     if (purged) {
       ctx.client
-        .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
+        .command('subscriptions.delMarker', [ctx.subId, subCmd.cmdId])
         .catch((_e) => {
           console.error('Error cleaning up marker', ctx.subId, subCmd.cmdId)
         })
@@ -140,7 +140,7 @@ export async function getCmd(
     }
 
     try {
-      await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+      await client.command('subscriptions.delMarker', [ctx.subId, cmdID])
     } catch (e) {
       console.error(
         'Error cleaning up marker',
