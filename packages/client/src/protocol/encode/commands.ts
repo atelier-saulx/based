@@ -108,7 +108,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' },
     // valueId
     { type: 'string' },
-    // old value
+    // old crc
     { type: 'string' },
     // new value
     { type: 'string' },
