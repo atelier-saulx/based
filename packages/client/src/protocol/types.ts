@@ -52,19 +52,32 @@ export const COMMAND_TYPES = {
   ping: 0,
   echo: 1,
   lscmd: 2,
+  hrt: 3,
+  lslang: 4,
+  lsmod: 5,
+  config: 6,
+  loglevel: 7,
   debug: 8,
-  save: 15,
+  mallocstats: 9,
+  mallocprofdump: 10,
+  ver: 35,
+  rusage: 11,
+  client: 12,
+  // SDB mgmt
   load: 14,
+  save: 15,
   flush: 16,
   purge: 17,
+  // replication
   replicasync: 73,
   replicaof: 74,
   replicainfo: 75,
   replicawait: 77,
-  rusage: 11,
   // essential
   'resolve.nodeid': 18,
   lsaliases: 72,
+  pipe: 83,
+  // pubsub
   publish: 78,
   subscribe: 79,
   unsubscribe: 80,
@@ -72,11 +85,13 @@ export const COMMAND_TYPES = {
   'index.list': 39,
   'index.new': 40,
   'index.del': 41,
-  // TODO:
-  // #define CMD_ID_INDEX_DEBUG 42
+  'index.debug': 42,
   // object primitives
+  'object.type': 56,
   'object.get': 50,
+  'object.getString': 81,
   'object.set': 54,
+  'object.cas': 82,
   'object.del': 48,
   'object.exists': 49,
   'object.len': 53,
@@ -88,7 +103,6 @@ export const COMMAND_TYPES = {
   // modify related commands
   modify: 70,
   update: 71,
-  // TODO:
   // hierarchy
   'hierarchy.types.add': 36,
   'hierarchy.types.clear': 37,
@@ -97,6 +111,8 @@ export const COMMAND_TYPES = {
   'hierarchy.aggregate': 21,
   'hierarchy.edgeList': 30,
   'hierarchy.edgeGet': 31,
+  'hierarchy.edgeGetMetadata': 32,
+  'hierarchy.heads': 27,
   'hierarchy.parents': 28,
   'hierarchy.children': 29,
   'hierarchy.addConstraint': 23,
@@ -108,6 +124,7 @@ export const COMMAND_TYPES = {
   // subscriptions
   'subscriptions.addMarker': 59,
   'subscriptions.addAlias': 60,
+  'subscriptions.addTrigger': 62,
   'subscriptions.list': 65,
   'subscriptions.debug': 67,
   'subscriptions.refresh': 63,
@@ -119,6 +136,7 @@ export const COMMAND_TYPES = {
   'rpn.evalDouble': 45,
   'rpn.evalString': 46,
   'rpn.evalSet': 47,
+  // mq
   'mq.create': 84,
   'mq.delete': 85,
   'mq.list': 86,

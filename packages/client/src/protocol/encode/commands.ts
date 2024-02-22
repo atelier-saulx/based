@@ -7,17 +7,36 @@ type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 
 export const COMMAND_ENCODERS: CommandEncoders = {
   // system commands
-  echo: strEncoder(1),
   ping: null,
+  echo: strEncoder(1),
   lscmd: null,
-  debug: null,
+  hrt: null,
+  lslang: null,
+  lsmod: null,
+  config: null,
+  loglevel: defaultEncoder([
+    { type: 'longlong' },
+  ]),
+  debug: defaultEncoder([
+    { type: 'string' },
+  ]),
+  mallocstats: defaultEncoder([
+    { type: 'string' },
+  ]),
+  mallocprofdump: defaultEncoder([
+    { type: 'string' }, // opt filename
+  ]),
+  ver: null,
+  rusage: null,
+  client: defaultEncoder([
+    { type: 'string' },
+  ]),
+  load: strEncoder(1),
+  save: strEncoder(1),
   flush: null,
   purge: defaultEncoder([
-    {type: 'longlong' }, // n
+    { type: 'longlong' }, // n
   ]),
-  save: strEncoder(1),
-  load: strEncoder(1),
-  lsaliases: null,
   replicasync: null,
   replicaof: defaultEncoder([
     { type: 'longlong' }, // port
@@ -27,12 +46,12 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   replicawait: defaultEncoder([
     { type: 'longlong' }, // ?timeout [sec],
   ]),
-  rusage: null,
   // essential
   'resolve.nodeid': defaultEncoder([
     { type: 'longlong' }, // sub id
     { type: 'string', vararg: true }, // ...(id | alias)
   ]),
+  lsaliases: null,
   publish: defaultEncoder([
     { type: 'longlong' }, // channel id
     { type: 'string' }, // msg
@@ -45,10 +64,6 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   // indexes
   'index.list': null,
-  'index.del': defaultEncoder([
-    { type: 'string' }, // index name
-    { type: 'longlong' }, // ?discard
-  ]),
   'index.new': defaultEncoder([
     { type: 'longlong' }, // SelvaTraversal
     { type: 'string' }, // ref field
@@ -57,7 +72,27 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'id' }, // nodeId
     { type: 'string' }, // filter
   ]),
+  'index.del': defaultEncoder([
+    { type: 'string' }, // index name
+    { type: 'longlong' }, // ?discard
+  ]),
+  'index.debug': defaultEncoder([
+    { type: 'string' },
+  ]),
   // object primitives
+  'object.type': defaultEncoder([
+    { type: 'id' },
+    { type: 'string' },
+  ]),
+  'object.get': defaultEncoder([
+    { type: 'string' }, // lang
+    { type: 'id' },
+    { type: 'string', vararg: true }, // ...fields
+  ]),
+  'object.getString': defaultEncoder([
+    { type: 'id' },
+    { type: 'string' },
+  ]),
   'object.set': defaultEncoder([
     { type: 'id' },
     // field
@@ -67,11 +102,16 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     // value
     { type: 'string' },
   ]),
-
-  'object.get': defaultEncoder([
-    { type: 'string' }, // lang
+  'object.cas': defaultEncoder([
     { type: 'id' },
-    { type: 'string', vararg: true }, // ...fields
+    // field
+    { type: 'string' },
+    // valueId
+    { type: 'string' },
+    // old value
+    { type: 'string' },
+    // new value
+    { type: 'string' },
   ]),
   'object.del': defaultEncoder([
     { type: 'id' },
@@ -153,6 +193,12 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     // field name
     { type: 'string' },
   ]),
+  'hierarchy.edgeGetMetadata': defaultEncoder([
+    { type: 'id', },
+    { type: 'string' }, // field
+    { type: 'id' }, // dst
+  ]),
+  'hierarchy.heads': null,
   'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
   'hierarchy.children': defaultEncoder([{ type: 'id' }]),
   'hierarchy.compress': defaultEncoder([
@@ -173,6 +219,13 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
     { type: 'string' }, // alias
+  ]),
+  'subscriptions.addTrigger': defaultEncoder([
+    { type: 'longlong' }, // subId
+    { type: 'longlong' }, // markerId
+    { type: 'longlong' }, // event type
+    { type: 'string' }, // filter expr (RPN string)
+    { type: 'string', vararg: true }, // filter args
   ]),
   'subscriptions.list': defaultEncoder([
     { type: 'longlong' }
@@ -239,4 +292,5 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // name
     { type: 'longlong' }, // msg_id
   ]),
+  pipe: null, // TODO pipe is raw data
 }
