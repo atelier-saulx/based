@@ -234,11 +234,11 @@
 #define CMD_ID_HIERARCHY_LIST_COMPRESSED 34
 
 /**
- * Get hierarchy version information.
- * module: db
- * cmd: hierarchy.ver
+ * Get io version information.
+ * module: io
+ * cmd: ver
  */
-#define CMD_ID_HIERARCHY_VER 35
+#define CMD_ID_VER 35
 
 /**
  * Add a new node type.

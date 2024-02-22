@@ -4283,36 +4283,6 @@ static void SelvaHierarchy_ListCompressedCommand(struct selva_server_response_ou
     }
 }
 
-static void SelvaHierarchy_VerCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    struct SelvaDbVersionInfo nfo;
-
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
-
-    selva_io_get_ver(&nfo);
-
-    selva_send_array(resp, 6);
-
-    selva_send_str(resp, "running", 7);
-    selva_send_str(resp, nfo.running, sizeof(nfo.running));
-
-    selva_send_str(resp, "created", 7);
-    if (nfo.created_with[0] != '\0') {
-        selva_send_str(resp, nfo.created_with, sizeof(nfo.created_with));
-    } else {
-        selva_send_null(resp);
-    }
-
-    selva_send_str(resp, "updated", 7);
-    if (nfo.updated_with[0] != '\0') {
-        selva_send_str(resp, nfo.updated_with, sizeof(nfo.updated_with));
-    } else {
-        selva_send_null(resp);
-    }
-}
-
 static int Hierarchy_OnLoad(void) {
     selva_mk_command(CMD_ID_HIERARCHY_DEL, SELVA_CMD_MODE_MUTATE, "hierarchy.del", SelvaHierarchy_DelNodeCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EXPIRE, SELVA_CMD_MODE_MUTATE, "hierarchy.expire", SelvaHierarchy_ExpireCommand);
@@ -4324,7 +4294,6 @@ static int Hierarchy_OnLoad(void) {
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_GET_METADATA, SELVA_CMD_MODE_PURE, "hierarchy.edgeGetMetadata", SelvaHierarchy_EdgeGetMetadataCommand);
     selva_mk_command(CMD_ID_HIERARCHY_COMPRESS, SELVA_CMD_MODE_PURE, "hierarchy.compress", SelvaHierarchy_CompressCommand); /* Pure or not? */
     selva_mk_command(CMD_ID_HIERARCHY_LIST_COMPRESSED, SELVA_CMD_MODE_PURE, "hierarchy.listCompressed", SelvaHierarchy_ListCompressedCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_VER, SELVA_CMD_MODE_PURE, "hierarchy.ver", SelvaHierarchy_VerCommand);
 
     return 0;
 }
