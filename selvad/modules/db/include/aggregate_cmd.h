@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -36,7 +36,8 @@ struct SelvaAggregate_QueryOpts {
     size_t edge_filter_regs_len;
 
     /**
-     * Indexing hint.
+     * Indexing hints.
+     * Separated with `\0`.
      * Optional.
      */
     const char *index_hints_str;
