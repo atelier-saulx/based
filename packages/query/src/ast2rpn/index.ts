@@ -3,6 +3,7 @@ import isFork from './isFork.js'
 import ast2rpn from './ast2rpn.js'
 import bfsExpr2rpn from './bfsExpr2rpn.js'
 import fieldsExpr2rpn from './fieldsExpr2rpn.js'
+import ast2IndexHints from './ast2IndexHints.js'
 
 import createAst from './parseFilters.js'
 
@@ -34,6 +35,7 @@ export {
   isFork,
   createAst,
   ast2rpn,
+  ast2IndexHints,
   bfsExpr2rpn,
   fieldsExpr2rpn,
   createRpn,
