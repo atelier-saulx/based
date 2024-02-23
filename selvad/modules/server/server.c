@@ -519,6 +519,11 @@ static void client_command(struct selva_server_response_out *resp, const void *b
         } else {
             selva_send_ll(resp, 0);
         }
+    } else if (op_len == 4 && !memcmp(op_str, "help", 4)) {
+        selva_send_array(resp, 3);
+        selva_send_str(resp, "list", 4);
+        selva_send_str(resp, "kill", 4);
+        selva_send_str(resp, "help", 4);
     } else {
         selva_send_error(resp, SELVA_EINVAL, NULL, 0);
         return;
