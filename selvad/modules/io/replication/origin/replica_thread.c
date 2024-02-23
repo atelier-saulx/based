@@ -20,11 +20,12 @@
 #include "../replication.h"
 #include "replica.h"
 
+static thread_local unsigned replica_id;
 static thread_local char strcon[80];
 static thread_local int strcon_len;
 
 #define log_with_ctx(resp, level, msg, ...) \
-        SELVA_LOG(level, "(%.*s) " msg, strcon_len, strcon __VA_OPT__(,) __VA_ARGS__)
+        SELVA_LOG(level, "(%.*s:%u) " msg, strcon_len, strcon, replica_id __VA_OPT__(,) __VA_ARGS__)
 
 /**
  * Send the initial dump to the replica.
@@ -87,6 +88,7 @@ void *replication_thread(void *arg)
     struct ring_buffer_reader_state state;
     struct ring_buffer_element *e;
 
+    replica_id = replica->id;
     strcon_len = (int)selva_resp_to_str(resp, strcon, sizeof(strcon));
 
     log_with_ctx(resp, SELVA_LOGL_INFO, "Replication started");
