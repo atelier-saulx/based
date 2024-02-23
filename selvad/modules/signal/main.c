@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <dlfcn.h>
@@ -39,10 +39,11 @@ static void handle_signal(struct event *ev, void *arg __unused)
 
 /**
  * Signals that should terminate the process.
- * These are als often but not always synchronus signals that can't be used with
+ * These are also often but not always synchronus signals that can't be used with
  * evl_create_sigfd().
  */
 #define TERM_SIGNALS(apply) \
+    apply(SIGABRT) \
     apply(SIGKILL) \
     apply(SIGSEGV) \
     apply(SIGBUS) \
