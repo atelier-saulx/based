@@ -10,7 +10,7 @@ import { makeLangArg } from './lang.js'
 import { ExecContext, GetCommand } from '../types.js'
 import { sourceId } from '../id.js'
 import { getFields } from './fields.js'
-import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
+import { ast2rpn, ast2IndexHints, bfsExpr2rpn, createAst } from '@based/db-query'
 import { hashCmd } from '../util.js'
 import { inspect } from 'node:util'
 
@@ -205,6 +205,8 @@ export async function execCmd(
   return op
 }
 
+const nonIndexedFields = new Set(['node', 'ancestors'])
+
 export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
   const cmdID = cmd.markerId ?? cmd.cmdId
 
@@ -253,6 +255,10 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
         }
 
         rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
+
+        if (typeof cmd.sourceField === 'string' && !nonIndexedFields.has(cmd.sourceField)) {
+            struct.index_hints_str = ast2IndexHints(ctx.client.schema.types, ast).join('\0')
+        }
       }
     }
 
