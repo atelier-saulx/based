@@ -635,7 +635,7 @@ static struct SelvaObject *insert_new_obj_into_array_key(struct SelvaObjectKey *
 }
 
 static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectGetKeyFlags flags, struct SelvaObjectKey **out) {
-    int is_timeseries = 0;
+    bool is_timeseries = false;
     const char *sep = ".";
     const size_t nr_parts = substring_count(key_name_str, sep, key_name_len) + 1;
     char buf[key_name_len + 1]; /* We assume that the length has been sanity checked at this point. */
@@ -691,7 +691,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
 
             obj = key->value;
             assert(obj);
-            is_timeseries = 0;
+            is_timeseries = false;
             key = NULL;
         }
 
@@ -754,7 +754,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
              */
 
             if (key->user_meta == SELVA_OBJECT_META_SUBTYPE_TIMESERIES) {
-                is_timeseries = 1;
+                is_timeseries = true;
             }
 
             obj = key->value;
