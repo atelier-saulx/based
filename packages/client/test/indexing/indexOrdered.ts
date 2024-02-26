@@ -70,7 +70,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.skip('find with sort', async (t) => {
+test.serial('find with sort', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -124,11 +124,11 @@ test.skip('find with sort', async (t) => {
     (await client.command('index.list'))[0].map((v: any, i: any) =>
       i % 2 === 0 ? v : v[3]
     ),
-    ['root.J.B.dGhpbmc=.ImxlIiBl', '36', 'root.J.B.dGhpbmc=.InRoaW5nIiBo', '35']
+    ['root.J.B.dGhpbmc=.ImxlIiBl', 36, 'root.J.B.dGhpbmc=.InRoaW5nIiBo', 35]
   )
 })
 
-test.skip('find with sort and limit', async (t) => {
+test.serial('find with sort and limit', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -183,11 +183,11 @@ test.skip('find with sort and limit', async (t) => {
     (await client.command('index.list'))[0].map((v: any, i: any) =>
       i % 2 === 0 ? v : v[3]
     ),
-    ['root.J.B.dGhpbmc=.ImxlIiBl', '36', 'root.J.B.dGhpbmc=.InRoaW5nIiBo', '35']
+    ['root.J.B.dGhpbmc=.ImxlIiBl', 36, 'root.J.B.dGhpbmc=.InRoaW5nIiBo', 35]
   )
 })
 
-test.skip('pick unordered index for sorted result', async (t) => {
+test.serial('pick unordered index for sorted result', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < chars.length; i++) {
@@ -249,11 +249,11 @@ test.skip('pick unordered index for sorted result', async (t) => {
   }
 
   const stateMap = await getIndexingState(client)
-  t.deepEqual(stateMap['root.J.ImxlIiBl'].card, '35')
+  t.deepEqual(stateMap['root.J.ImxlIiBl'].card, 35)
   t.deepEqual(stateMap['root.J.B.dGhpbmc=.ImxlIiBl'].card, 'not_active')
 })
 
-test.skip('pick index with wrong order for sorted result', async (t) => {
+test.serial('pick index with wrong order for sorted result', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < chars.length; i++) {
@@ -319,11 +319,12 @@ test.skip('pick index with wrong order for sorted result', async (t) => {
   }
 
   const stateMap = await getIndexingState(client)
-  t.deepEqual(stateMap['root.J.B.dGhpbmc=.ImxlIiBl'].card, '35')
+  t.deepEqual(stateMap['root.J.B.dGhpbmc=.ImxlIiBl'].card, 35)
   t.deepEqual(stateMap['root.J.C.dGhpbmc=.ImxlIiBl'].card, 'not_active')
 })
 
-test.skip('do not pick ordered index for unsorted result', async (t) => {
+// TODO Too unstable
+test.serial('do not pick ordered index for unsorted result', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < chars.length; i++) {
@@ -385,11 +386,12 @@ test.skip('do not pick ordered index for unsorted result', async (t) => {
   }
 
   const stateMap = await getIndexingState(client)
-  t.deepEqual(stateMap['root.J.B.dGhpbmc=.ImxlIiBl'].card, '35')
-  t.deepEqual(stateMap['root.J.ImxlIiBl'].card, '35')
+  t.deepEqual(stateMap['root.J.B.dGhpbmc=.ImxlIiBl'].card, 35)
+  t.deepEqual(stateMap['root.J.ImxlIiBl'].card, 35)
 })
 
-test.skip('change the sorted field value', async (t) => {
+// TODO Too unstable
+test.serial('change the sorted field value', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -443,7 +445,7 @@ test.skip('change the sorted field value', async (t) => {
     (await client.command('index.list'))[0].map((v: any, i: any) =>
       i % 2 === 0 ? v : v[3]
     ),
-    ['root.J.B.dGhpbmc=.ImxlIiBl', '36', 'root.J.B.dGhpbmc=.InRoaW5nIiBo', '35']
+    ['root.J.B.dGhpbmc=.ImxlIiBl', 36, 'root.J.B.dGhpbmc=.InRoaW5nIiBo', 35]
   )
 
   await Promise.all(

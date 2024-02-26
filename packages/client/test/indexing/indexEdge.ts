@@ -56,6 +56,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
+// TODO The final index is something we didn't expect
 test.skip('find references', async (t) => {
   const { client } = t.context
 
@@ -152,6 +153,9 @@ test.skip('find references', async (t) => {
     await wait(1)
   }
 
+  //console.dir(await client.command('index.debug', []), { depth: 100 })
+
   const indState = await getIndexingState(client)
+  console.log(indState);
   t.deepEqual(indState[`${mainThing}.O.eyJzdWJ0aGluZ3MifQ==.InRoIiBl`].card, 10)
 })

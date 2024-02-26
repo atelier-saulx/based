@@ -68,6 +68,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
+// TODO It's not as stable as we hope atm
 test.skip('index stability', async (t) => {
   const { client } = t.context
 
@@ -230,8 +231,8 @@ test.skip('index stability', async (t) => {
         const stateMap = await getIndexingState(client)
 
         if (i >= 120) {
-          t.deepEqual(stateMap['root.J.InRlIiBl']?.card, '51') // q1, q3
-          t.deepEqual(stateMap['root.J.InZhbHVlIiBnICMyIEY=']?.card, '6') // q1
+          t.deepEqual(stateMap['root.J.InRlIiBl']?.card, 51) // q1, q3
+          t.deepEqual(stateMap['root.J.InZhbHVlIiBnICMyIEY=']?.card, 6) // q1
           t.deepEqual(
             stateMap['root.J.B.dmFsdWU=.Im1hIiBl']?.card,
             'not_active'

@@ -74,7 +74,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.skip('simple aggregate with indexing', async (t) => {
+test('simple aggregate with indexing', async (t) => {
   const { client } = t.context
   let sum = 0
 
@@ -138,7 +138,7 @@ test.skip('simple aggregate with indexing', async (t) => {
 
   const indState = await getIndexingState(client)
   t.deepEqual(Object.keys(indState).length, 2)
-  deepEqualIgnoreOrder(t, indState['root.J.Im1hIiBl'].card, '4001')
-  deepEqualIgnoreOrder(t, indState['root.J.InZhbHVlIiBo'].card, '4000')
+  deepEqualIgnoreOrder(t, indState['root.J.Im1hIiBl'].card, 4001)
+  deepEqualIgnoreOrder(t, indState['root.J.InZhbHVlIiBo'].card, 4000)
   t.truthy(Number(indState['root.J.InZhbHVlIiBo'].ind_take_max_ave) > 3000)
 })
