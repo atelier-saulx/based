@@ -69,6 +69,4 @@ export default function ast2IndexHints(types: Record<string, { prefix?: string }
     .filter((f: Fork | FilterAST) => !isFork(f))
     .map((f: FilterAST) => ast2inlineRpn(types, f))
     .filter((s: string | null) => s)
-    .map((s: string): string[] => ['index', s])
-    .reduce((prev, cur) => (prev.push(...cur), prev), [])
 }
