@@ -664,10 +664,9 @@ static void upsert_remote(const Selva_NodeId node_id, const struct icb_descripto
  * Get or create an indexing control block.
  */
 static struct SelvaIndexControlBlock *upsert_icb(
-        struct finalizer *fin,
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id,
-        struct icb_descriptor *desc) {
+        const struct icb_descriptor *desc) {
     struct SelvaIndexControlBlock *icb;
     int err;
 
@@ -682,10 +681,8 @@ static struct SelvaIndexControlBlock *upsert_icb(
     /*
      * Get a deterministic name for indexing this find query.
      */
-    const size_t name_len = SelvaIndexICB_CalcNameLen(node_id, desc);
-    char name_str[name_len];
-
-    SelvaIndexICB_BuildName(name_str, node_id, desc);
+    char name_str[SelvaIndexICB_CalcBufSize(node_id, desc)];
+    const size_t name_len = SelvaIndexICB_BuildName(name_str, node_id, desc);
 
     err = SelvaIndexICB_Get(hierarchy, name_str, name_len, &icb);
     if (err == SELVA_ENOENT) {
@@ -738,13 +735,13 @@ static struct SelvaIndexControlBlock *upsert_icb(
         /* Note that dir_field is not supported for indexing. */
         icb->traversal = *desc;
         if (icb->traversal.dir_opt) {
-            finalizer_del(fin, icb->traversal.dir_opt);
+            icb->traversal.dir_opt = selva_string_dup(icb->traversal.dir_opt, 0);
         }
-        finalizer_del(fin, icb->traversal.filter);
+        icb->traversal.filter = selva_string_dup(icb->traversal.filter, 0);
 
         if (icb->traversal.sort.order != SELVA_RESULT_ORDER_NONE) {
             icb->flags.ordered = 1;
-            finalizer_del(fin, icb->traversal.sort.order_field);
+            icb->traversal.sort.order_field = selva_string_dup(icb->traversal.sort.order_field, 0);
         }
 
         /*
@@ -752,8 +749,8 @@ static struct SelvaIndexControlBlock *upsert_icb(
          */
         err = SelvaIndexICB_Set(hierarchy, name_str, name_len, icb);
         if (err) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to insert a new ICB at \"%.*s\". err: \"%s\"",
-                      (int)name_len, name_str,
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed to insert a new ICB at \"%.*s\" (%zu). err: \"%s\"",
+                      (int)name_len, name_str, name_len,
                       selva_strerror(err));
 
             destroy_icb(hierarchy, icb);
@@ -880,27 +877,10 @@ int SelvaIndex_Auto(
        return SELVA_EINVAL;
     }
 
-    __auto_finalizer struct finalizer fin;
-    struct selva_string *dir_opt = NULL;
-    struct SelvaIndexControlBlock *icb;
-
-    finalizer_init(&fin);
-
-    /*
-     * Copy the strings.
-     */
-    if (dir_opt_str && dir_opt_len > 0) {
-        dir_opt = selva_string_create(dir_opt_str, dir_opt_len, 0);
-        selva_string_auto_finalize(&fin, dir_opt);
-    }
-    if (order_field && selva_string_get_len(order_field) > 0) {
-        order_field = selva_string_dup(order_field, 0);
-        selva_string_auto_finalize(&fin, order_field);
-    }
-    filter = selva_string_dup(filter, 0);
-    selva_string_auto_finalize(&fin, filter);
-
-    struct icb_descriptor icb_desc = {
+    struct selva_string *dir_opt = (dir_opt_str && dir_opt_len)
+        ? selva_string_create(dir_opt_str, dir_opt_len, 0)
+        : NULL;
+    const struct icb_descriptor icb_desc = {
         .dir = dir,
         .dir_opt = dir_opt,
         .filter = filter,
@@ -909,8 +889,10 @@ int SelvaIndex_Auto(
             .order_field = order_field,
         },
     };
+    struct SelvaIndexControlBlock *icb;
 
-    icb = SelvaIndexICB_Pick(hierarchy, node_id, &icb_desc, upsert_icb(&fin, hierarchy, node_id, &icb_desc));
+    icb = SelvaIndexICB_Pick(hierarchy, node_id, &icb_desc, upsert_icb(hierarchy, node_id, &icb_desc));
+    selva_string_free(dir_opt);
     *icb_out = icb;
 
     if (!icb || !icb->flags.valid) {
@@ -1385,16 +1367,26 @@ static void SelvaIndex_DebugCommand(struct selva_server_response_out *resp, cons
     }
 
     argc = selva_proto_scanf(NULL, buf, len, "%d", &i);
-    if (argc != 1) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
+    if (argc < 0) {
+        selva_send_errorf(resp, argc, "Failed to parse args");
+    } else if (argc == 0) {
+        struct SelvaObject *obj = hierarchy->dyn_index.index_map;
+        if (!obj) {
+            selva_send_null(resp);
         } else {
-            selva_send_error_arity(resp);
-        }
-        return;
-    }
+            int err;
 
-    debug_index(resp, hierarchy, (i - 1) / 2);
+            err = SelvaObject_ReplyWithObject(resp, NULL, obj, NULL, 0);
+            if (err) {
+                selva_send_error(resp, err, NULL, 0);
+            }
+        }
+    } else if (argc == 1) {
+        debug_index(resp, hierarchy, (i - 1) / 2);
+    } else {
+        SELVA_LOG(SELVA_LOGL_ERR, "ararr %d", argc);
+        selva_send_error_arity(resp);
+    }
 }
 
 static void SelvaIndex_InfoCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {

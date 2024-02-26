@@ -160,16 +160,17 @@ struct SelvaIndexControlBlock {
 };
 
 /**
- * Calculate the length of an index name.
+ * Calculate the minimum buffer size for an index name.
  */
-__purefn size_t SelvaIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct icb_descriptor *desc);
+__purefn size_t SelvaIndexICB_CalcBufSize(const Selva_NodeId node_id, const struct icb_descriptor *desc);
 
 /**
  * Create a deterministic name for an index.
  * node_id.<direction>[.<dir expression>][.<sort order>.<order field>].H(<indexing clause>)
- * @param buf is a buffer that has at least the length given by SelvaIndexICB_CalcNameLen().
+ * @param buf is a buffer that has at least the length given by SelvaIndexICB_CalcBufSize().
  */
-void SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc);
+[[nodiscard]]
+size_t SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc);
 
 /**
  * Get an ICB from the index map.

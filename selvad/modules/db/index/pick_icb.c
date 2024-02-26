@@ -27,10 +27,9 @@ static struct SelvaIndexControlBlock *pick_unordered(struct SelvaHierarchy *hier
     icb_desc.sort.order = SELVA_RESULT_ORDER_NONE;
     icb_desc.sort.order_field = NULL;
 
-    const size_t name_len = SelvaIndexICB_CalcNameLen(node_id, &icb_desc);
-    char name_str[name_len];
+    char name_str[SelvaIndexICB_CalcBufSize(node_id, &icb_desc)];
+    size_t name_len = SelvaIndexICB_BuildName(name_str, node_id, &icb_desc);
 
-    SelvaIndexICB_BuildName(name_str, node_id, &icb_desc);
     err = SelvaIndexICB_Get(hierarchy, name_str, name_len, &icb_unord);
 
     return err ? NULL : icb_unord;
@@ -90,10 +89,8 @@ static struct SelvaIndexControlBlock *pick_any_order(
     icb_desc.sort.order_field = NULL;
     icb_desc.filter = NULL; /* build a name without the filter part. */
 
-    const size_t name_len = SelvaIndexICB_CalcNameLen(node_id, &icb_desc);
-    char name_str[name_len];
-
-    SelvaIndexICB_BuildName(name_str, node_id, &icb_desc);
+    char name_str[SelvaIndexICB_CalcBufSize(node_id, &icb_desc)];
+    const size_t name_len = SelvaIndexICB_BuildName(name_str, node_id, &icb_desc);
 
     struct SelvaObject *root;
 

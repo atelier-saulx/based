@@ -15,24 +15,14 @@
 #include "hierarchy.h"
 #include "icb.h"
 
-size_t SelvaIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct icb_descriptor *desc) {
-    const size_t filter_len = desc->filter ? selva_string_get_len(desc->filter) : 0;
-    size_t n;
-
-    n = Selva_NodeIdLen(node_id) + base64_out_len(filter_len, 0) + 3;
-
-    if (desc->dir_opt) {
-        n += base64_out_len(selva_string_get_len(desc->dir_opt), 0) + 1;
-    }
-
-    if (desc->sort.order != SELVA_RESULT_ORDER_NONE) {
-        n += base64_out_len(selva_string_get_len(desc->sort.order_field), 0) + 3;
-    }
-
-    return n;
+size_t SelvaIndexICB_CalcBufSize(const Selva_NodeId node_id, const struct icb_descriptor *desc) {
+    return Selva_NodeIdLen(node_id) + 3 +
+        ((desc->filter) ? base64_out_len(selva_string_get_len(desc->filter), 0) : 0) +
+        ((desc->dir_opt) ? base64_out_len(selva_string_get_len(desc->dir_opt), 0) + 1 : 0) +
+        ((desc->sort.order != SELVA_RESULT_ORDER_NONE) ? base64_out_len(selva_string_get_len(desc->sort.order_field), 0) + 3 : 0);
 }
 
-void SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc) {
+size_t SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct icb_descriptor *desc) {
     size_t filter_len = 0;
     const char *filter_str = desc->filter ? selva_string_to_str(desc->filter, &filter_len) : NULL;
     char *s = buf;
@@ -74,6 +64,8 @@ void SelvaIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const struct
         *s++ = '.';
         s += base64_encode_s(s, filter_str, filter_len, 0);
     }
+
+    return s - buf;
 }
 
 int SelvaIndexICB_Get(struct SelvaHierarchy *hierarchy, const char *name_str, size_t name_len, struct SelvaIndexControlBlock **icb) {
