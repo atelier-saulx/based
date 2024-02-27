@@ -37,6 +37,11 @@ export const parseHttpPayload = (
     contentType === 'application/xml'
   ) {
     return decoder.decode(data)
+    // } else if (contentType === 'multipart/form-data') {
+  } else if (contentType === 'application/x-www-form-urlencoded') {
+    const str = decoder.decode(data)
+    console.log('-------', str)
+    return data
   } else {
     return data
   }
