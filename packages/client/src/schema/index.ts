@@ -10,6 +10,7 @@ import { validateSchemaMutations } from './validationRules.js'
 type EdgeConstraint = {
   prefix: string
   isSingle: boolean
+  arrayMode: boolean
   field: string
   bidirectional: { fromField: string }
 }
@@ -118,10 +119,10 @@ export async function updateSchema(
 
   if (newConstraints?.length) {
     await Promise.all(
-      newConstraints.map(({ prefix, isSingle, bidirectional, field }) => {
+      newConstraints.map(({ prefix, isSingle, arrayMode, bidirectional, field }) => {
         return client.command('hierarchy.addConstraint', [
           prefix,
-          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
+          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}${arrayMode ? 'A' : ''}`,
           field,
           bidirectional?.fromField ?? '',
         ])

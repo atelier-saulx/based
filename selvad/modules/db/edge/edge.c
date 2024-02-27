@@ -121,12 +121,34 @@ static void del_edge_metadata(struct SelvaObject *edge_field_metadata, const Sel
  * Only one-way.
  */
 static void remove_arc(struct EdgeField *edge_field, Selva_NodeId node_id) {
-    /*
-     * This works even in RB mode because we know this SVector uses
-     * SelvaSVectorComparator_Node and the deletion happens by comparison.
-     */
-    (void)SVector_Remove(&edge_field->arcs, (void *)node_id);
+    if (edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY) {
+        struct SVector *arcs = &edge_field->arcs;
+        struct SVectorIterator it;
+        size_t i = 0;
 
+        SVector_ForeachBegin(&it, arcs);
+        while (!SVector_Done(&it)) {
+            struct SelvaHierarchyNode *dst = SVector_Foreach(&it);
+            Selva_NodeId dst_id;
+
+            SelvaHierarchy_GetNodeId(dst_id, dst);
+            if (!memcmp(dst_id, node_id, SELVA_NODE_ID_SIZE)) {
+                SVector_RemoveIndex(arcs, i);
+                goto finish;
+            }
+            i++;
+        }
+        return; /* not found. */
+    } else {
+        /*
+         * This works even in RB mode because we know this SVector uses
+         * SelvaSVectorComparator_Node and the deletion happens by comparison.
+         */
+        (void)SVector_Remove(&edge_field->arcs, (void *)node_id);
+
+    }
+
+finish:
     if (edge_field->metadata) {
         del_edge_metadata(edge_field->metadata, node_id);
     }

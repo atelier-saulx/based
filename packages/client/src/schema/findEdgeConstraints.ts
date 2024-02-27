@@ -3,6 +3,7 @@ import { joinPath } from '../util/index.js'
 type EdgeConstraint = {
   prefix: string
   isSingle: boolean
+  arrayMode: boolean
   field: string
   bidirectional: { fromField: string }
 }
@@ -53,6 +54,7 @@ export const findEdgeConstraints = (
       ? { fromField: typeSchema?.bidirectional?.fromField }
       : undefined,
     isSingle: typeSchema.type === 'reference',
+    arrayMode: typeSchema?.sortable,
     field: joinPath(path),
   }
 
