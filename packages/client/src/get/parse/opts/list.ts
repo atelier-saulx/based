@@ -70,6 +70,10 @@ export function parseList(
     }
   }
 
+  if ($list?.$find?.$disableIndexing) {
+    cmd.disableIndexing = true
+  }
+
   if ($list?.isSingle !== undefined) {
     // @ts-ignore
     cmd.isSingle = $list.isSingle

@@ -534,3 +534,55 @@ test.serial('find index exists', async (t) => {
   //t.truthy(ilist[3][2] > 120, `act: ${ilist[3][2]}`)
   t.truthy(ilist[3][3] > 490, `act: ${ilist[3][2]}`)
 })
+
+test.serial('disable indexing per query', async (t) => {
+  const { client } = t.context
+
+  for (let i = 0; i < 1000; i++) {
+    const o = {
+      type: 'league',
+      name: `League ${i}`,
+      thing: 'abc',
+      things: ['a', 'b'],
+    }
+    if (i % 2) {
+      // @ts-ignore
+      delete o.thing
+    } else {
+      // @ts-ignore
+      delete o.things
+    }
+    await client.set(o)
+  }
+
+  const q1 = async () =>
+    client.get({
+      $id: 'root',
+      id: true,
+      items: {
+        name: true,
+        $list: {
+          $find: {
+            $disableIndexing: true,
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $field: 'thing',
+                $operator: 'exists',
+              },
+            ],
+          },
+        },
+      },
+    })
+  for (let i = 0; i < 500; i++) {
+    await q1()
+  }
+  await wait(2e3)
+  for (let i = 0; i < 500; i++) {
+    await q1()
+  }
+
+  const ilist = (await client.command('index.list'))[0]
+  t.deepEqual(ilist, [])
+})

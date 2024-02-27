@@ -91,6 +91,7 @@ export type GetTraversalShared = {
   sort?: { field: string; order: 'asc' | 'desc' }
   filter?: Filter | Filter[]
   recursive?: boolean
+  disableIndexing?: boolean // Disable indexing for this query.
 
   // one of these
   traverseExpr?: TraverseByType // also includes just array of fields ({ $first: [...field] })

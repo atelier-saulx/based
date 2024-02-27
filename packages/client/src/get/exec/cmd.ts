@@ -256,7 +256,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
 
         rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
 
-        if (typeof cmd.sourceField === 'string' && !nonIndexedFields.has(cmd.sourceField)) {
+        if (!cmd.disableIndexing && typeof cmd.sourceField === 'string' && !nonIndexedFields.has(cmd.sourceField)) {
             struct.index_hints_str = ast2IndexHints(ctx.client.schema.types, ast).join('\0')
         }
       }
