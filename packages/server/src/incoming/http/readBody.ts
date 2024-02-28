@@ -3,6 +3,7 @@ import zlib from 'node:zlib'
 import { BasedErrorCode } from '@based/errors'
 import { BasedServer } from '../../server.js'
 import { sendError } from '../../sendError.js'
+import querystring from 'node:querystring'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -40,8 +41,12 @@ export const parseHttpPayload = (
     // } else if (contentType === 'multipart/form-data') {
   } else if (contentType === 'application/x-www-form-urlencoded') {
     const str = decoder.decode(data)
-    console.log('-------', str)
-    return data
+    try {
+      const parsedData = { ...querystring.parse(str) }
+      return parsedData
+    } catch (error) {
+      return str
+    }
   } else {
     return data
   }
