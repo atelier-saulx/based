@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support `$disableIndexing` boolean property in `$find` blocks to disable indexing selectively
+- Support `sortable` boolean property to turn a `references` type field into an ordered set
+
 ### Fixed
 
 - Forced replica reload when origin loads an SDB dump file (#309)
+- Fixed find and aggregate indexing hints on the client
 
 ## [3.1.1] - 2024-02-14
 
