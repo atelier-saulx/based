@@ -1,5 +1,5 @@
 import { Duplex, Readable } from 'stream'
-import util from 'node:util'
+import util from 'util'
 
 // prob want to move this to based functions
 export class BasedDataStream extends Duplex {
@@ -13,7 +13,7 @@ export class BasedDataStream extends Duplex {
     this.emit('progress', 0)
   }
 
-  override _read() {}
+  override _read() { }
 
   override _write(chunk, encoding, callback) {
     this.receivedBytes += chunk.byteLength
@@ -70,21 +70,21 @@ export type StreamFunctionContents<F = Buffer | ArrayBuffer | string> = {
 
 export type StreamFunctionStream =
   | {
-      contents: Readable | Duplex
-      payload?: any
-      size: number
-      mimeType?: string
-      fileName?: string
-      extension?: string
-    }
+    contents: Readable | Duplex
+    payload?: any
+    size: number
+    mimeType?: string
+    fileName?: string
+    extension?: string
+  }
   | {
-      contents: BasedDataStream
-      payload?: any
-      size?: number
-      mimeType?: string
-      fileName?: string
-      extension?: string
-    }
+    contents: BasedDataStream
+    payload?: any
+    size?: number
+    mimeType?: string
+    fileName?: string
+    extension?: string
+  }
 
 export type StreamFunctionOpts = StreamFunctionContents | StreamFunctionStream
 
