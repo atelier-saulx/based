@@ -123,4 +123,19 @@ test('edge array ops', async (t) => {
     players: [player2, player1, player4],
   })
 
+  await client.set({
+    $id: game,
+    players: [
+      player4,
+      player3,
+      player2,
+      player1,
+    ],
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player4, player3, player2, player1],
+  })
 })

@@ -36,6 +36,7 @@ function strsToStr(ary: string[] = []): string {
 export function encodeSetOperation({
   setType,
   isSingle,
+  sortable,
   isBidirectional,
   $value,
   $add,
@@ -44,6 +45,7 @@ export function encodeSetOperation({
 }: {
   setType: number
   isSingle?: boolean
+  sortable?: boolean
   isBidirectional?: boolean
   $value?: any | any[]
   $add?: any | any[]
@@ -54,7 +56,7 @@ export function encodeSetOperation({
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
       constraint_id: getConstraint({ isSingle, isBidirectional }),
-      delete_all: $delete || $value?.length === 0,
+      delete_all: !!($delete || $value?.length === 0 || (sortable && $value?.length)),
       $value: refsToStr($value),
       $add: refsToStr($add),
       $delete: refsToStr($remove),

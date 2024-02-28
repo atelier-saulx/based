@@ -71,6 +71,7 @@ export function toModifyArgs(props: {
         value = { $value: [value] }
       }
     case 'references':
+      // @ts-ignore
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
         strPath,
@@ -78,6 +79,11 @@ export function toModifyArgs(props: {
           ...value,
           setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
           isSingle: fieldSchema.type === 'reference',
+          // We have to pass sortable instead of setting $delete directly here
+          // because otherwise we'd never reach encodeSetOperation() as this
+          // op would be probably turned into a field deletion.
+          // @ts-ignore
+          sortable: fieldSchema.sortable,
           // @ts-ignore
           isBidirectional: !!fieldSchema.bidirectional,
         },

@@ -721,7 +721,7 @@ int Edge_Delete(
         if (bck_edge_field) {
             err = Edge_Delete(hierarchy, bck_edge_field, dst_node, src_node_id);
             if (err && err != SELVA_ENOENT) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Failed to to remove a backwards edge of a bidirectional edge field");
+                SELVA_LOG(SELVA_LOGL_ERR, "Failed to to remove a backwards edge of a bidirectional edge field: %s", selva_strerror(err));
             }
         }
     }

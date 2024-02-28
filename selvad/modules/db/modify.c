@@ -861,7 +861,6 @@ int SelvaModify_ModifySet(
         int isParents = !isChildren && !strcmp(field_str, "parents");
 
         if (setOpts->delete_all) {
-            /* If delete_all is set the other fields are ignored. */
             int err;
 
             if (isChildren) {
@@ -872,14 +871,14 @@ int SelvaModify_ModifySet(
                 err = Edge_ClearField(hierarchy, node, field_str, field_len);
             }
 
-            if (err >= 0) {
+            if (err < 0 && err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
                 return err;
-            } else if (err == SELVA_ENOENT || err == SELVA_HIERARCHY_ENOENT) {
-                return 0;
-            } else {
-                return err;
+            } else if (setOpts->$value_len == 0 && setOpts->$add_len == 0) {
+                return err > 0 ? err : 0;
             }
-        } else if (isChildren || isParents) {
+        }
+
+        if (isChildren || isParents) {
             return update_hierarchy(hierarchy, node_id, field_str, setOpts, modify_flags);
         } else {
             /*
@@ -907,13 +906,17 @@ int SelvaModify_ModifySet(
                 }
             }
 
-            return err == SELVA_ENOENT ? 0 : err;
-        } else {
-            /*
-             * Other set ops use C-strings and operate on the node SelvaObject.
-             */
-            return update_set(hierarchy, obj, node_id, field, setOpts);
+            if (err && err != SELVA_ENOENT) {
+                return err;
+            } else if (setOpts->$value_len == 0 && setOpts->$add_len == 0) {
+                return err > 0 ? err : 0;
+            }
         }
+
+        /*
+         * Other set ops use C-strings and operate on the node SelvaObject.
+         */
+        return update_set(hierarchy, obj, node_id, field, setOpts);
     }
 }
 
