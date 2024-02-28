@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import { encodeAuthState } from '../src/index.js'
 import { BasedFunctionConfigComplete, isHttpContext } from '@based/functions'
 import getPort from 'get-port'
+import querystring from 'node:querystring'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -510,6 +511,83 @@ test.serial('bad accept-encoding header', async (t: T) => {
   ).text()
 
   t.assert(!r.includes('Incorrect content encoding'))
+
+  server.destroy()
+})
+
+test.only('handle application/x-www-form-urlencoded', async (t: T) => {
+  const store: {
+    [key: string]: BasedFunctionConfigComplete
+  } = {
+    hello: {
+      type: 'function',
+      path: '/flap',
+      name: 'hello',
+      version: 1,
+      maxPayloadSize: 1e11,
+      rateLimitTokens: 1,
+      fn: async (_, payload) => {
+        await wait(100)
+        return payload
+      },
+    },
+  }
+
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      // closeAfterIdleTime: { query: 3e3, channel: 3e3 },
+      // uninstallAfterIdleTime: 3e3,
+      route: ({ name, path }) => {
+        if (path) {
+          for (const name in store) {
+            if (store[name].path === path) {
+              return store[name]
+            }
+          }
+        }
+
+        if (name && store[name]) {
+          return store[name]
+        }
+        return null
+      },
+
+      uninstall: async () => {
+        await wait(1e3)
+        return true
+      },
+
+      install: async ({ name }) => {
+        if (store[name]) {
+          return store[name]
+        } else {
+          return null
+        }
+      },
+    },
+  })
+  await server.start()
+
+  const data = {
+    one: 'one',
+    two: 'two',
+    three: 'four'
+  }
+
+  const body = querystring.stringify(data)
+
+  const result1 = await (
+    await fetch(t.context.http + '/flap', {
+      method: 'post',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body
+    })
+  ).json()
+
+  t.deepEqual(result1, data)
 
   server.destroy()
 })
