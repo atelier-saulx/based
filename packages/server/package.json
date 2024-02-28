@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "7.0.2",
+  "version": "7.1.0-alpha",
   "license": "MIT",
   "main": "./dist/index.js",
   "type": "module",
