@@ -118,6 +118,7 @@ export const uploadFileStream = async (
 
       // TODO: handle encoding?
       // console.info(encoding)
+      // only deflate ;?
 
       chunks.push(c)
 
