@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -54,7 +54,7 @@ void finalizer_add(struct finalizer *fin, void *p, void (*dispose)(void *p))
     SLIST_INSERT_HEAD(&fin->head, item, entries);
 }
 
-void finalizer_del(struct finalizer *fin, void *p) {
+void finalizer_forget(struct finalizer *fin, void *p) {
     struct finalizer_stack *head = &fin->head;
     struct finalizer_item *item;
     struct finalizer_item *item_tmp;

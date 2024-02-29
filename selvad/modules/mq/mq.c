@@ -521,7 +521,7 @@ static void cmd_post(struct selva_server_response_out *resp, const void *buf, si
     for (size_t i = 0; messages[i]; i++) {
         struct selva_string *msg = messages[i];
 
-        finalizer_del(&fin, msg);
+        finalizer_forget(&fin, msg);
         mq_post(new_message(mq, msg));
     }
 

@@ -91,7 +91,7 @@ void SelvaTraversalOrder_DestroyOrderResult(struct finalizer *fin, SVector *orde
     SVector_ForeachBegin(&it, order_result);
     while ((item = SVector_Foreach(&it))) {
         if (fin) {
-            finalizer_del(fin, item);
+            finalizer_forget(fin, item);
         }
         SelvaTraversalOrder_DestroyOrderItem(item);
     }
@@ -155,7 +155,7 @@ static struct TraversalOrderItem *alloc_item(struct finalizer *fin, size_t data_
 
 static void free_item(struct finalizer *fin, struct TraversalOrderItem *item) {
     if (fin) {
-        finalizer_del(fin, item);
+        finalizer_forget(fin, item);
     }
     SelvaTraversalOrder_DestroyOrderItem(item);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022, 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -41,7 +41,7 @@ void finalizer_add(struct finalizer *fin, void *p, void (*dispose)(void *p));
  * Delete a pointer from the finalizer.
  * Cancels the finalization.
  */
-void finalizer_del(struct finalizer *fin, void *p);
+void finalizer_forget(struct finalizer *fin, void *p);
 
 /**
  * Runt he finalizer for the items currently in the finalization list.

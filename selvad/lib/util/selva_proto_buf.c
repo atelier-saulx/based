@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -15,7 +15,7 @@
 static void buf2strings_cleanup(struct finalizer *fin, struct selva_string **list, size_t len)
 {
     for (size_t i = 0; i < len; i++) {
-        finalizer_del(fin, list[i]);
+        finalizer_forget(fin, list[i]);
     }
     selva_free(list);
 }

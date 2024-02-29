@@ -460,7 +460,7 @@ static int add_set_values_char(
             SVector_Insert(&new_set, ref);
         }
         if (err == 0) {
-            finalizer_del(&fin, ref);
+            finalizer_forget(&fin, ref);
 
             /* Add to the global aliases hash. */
             if (is_aliases) {
@@ -1189,7 +1189,7 @@ static enum selva_op_repl_state modify_array_op(
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
 
-        finalizer_del(fin, value);
+        finalizer_forget(fin, value);
     } else if (type_code == SELVA_MODIFY_ARG_DOUBLE) {
         int err;
         double d;
@@ -1427,7 +1427,7 @@ static enum selva_op_repl_state op_string(
             selva_send_errorf(resp, err, "Failed to set a string value");
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
-        finalizer_del(fin, value);
+        finalizer_forget(fin, value);
     }
 
     return SELVA_OP_REPL_STATE_UPDATED;

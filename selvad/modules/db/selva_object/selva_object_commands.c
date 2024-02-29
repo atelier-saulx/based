@@ -285,7 +285,7 @@ static void SelvaObject_SetCommand(struct selva_server_response_out *resp, const
     case SELVA_OBJECT_STRING:
         err = SelvaObject_SetStringStr(obj, okey_str, okey_len, oval[0]);
         if (err == 0) {
-            finalizer_del(&fin, oval[0]);
+            finalizer_forget(&fin, oval[0]);
         }
         values_set++;
         break;
@@ -296,7 +296,7 @@ static void SelvaObject_SetCommand(struct selva_server_response_out *resp, const
 
             err = SelvaObject_AddStringSetStr(obj, okey_str, okey_len, el);
             if (err == 0) {
-                finalizer_del(&fin, el);
+                finalizer_forget(&fin, el);
                 values_set++;
             } else if (values_set == 0) {
                 break;
@@ -777,7 +777,7 @@ static void SelvaObject_CasCommand(struct selva_server_response_out *resp, const
     selva_string_en_crc(new_value);
     err = SelvaObject_SetStringStr(obj, okey_str, okey_len, new_value);
     if (err == 0) {
-        finalizer_del(&fin, new_value);
+        finalizer_forget(&fin, new_value);
     } else if (err) {
         selva_send_error(resp, err, NULL, 0);
         return;

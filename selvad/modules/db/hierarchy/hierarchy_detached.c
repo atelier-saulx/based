@@ -261,7 +261,7 @@ void SelvaHierarchyDetached_RemoveNode(struct finalizer * restrict fin, SelvaHie
          * We know that we still have one or more references to zpath, but
          * we also know that they'll be all cleaned up during this callstack.
          */
-        finalizer_del(fin, zpath);
+        finalizer_forget(fin, zpath);
         selva_string_auto_finalize(fin, zpath);
     }
 
