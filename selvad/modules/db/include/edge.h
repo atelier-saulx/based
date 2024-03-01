@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -235,6 +235,11 @@ int Edge_Has(const struct EdgeField *edge_field, struct SelvaHierarchyNode *dst_
 int Edge_HasNodeId(const struct EdgeField *edge_field, const Selva_NodeId dst_node_id)
     __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 
+static inline struct SelvaHierarchyNode *Edge_GetIndex(const struct EdgeField *edge_field, size_t index) {
+    return SVector_GetIndex(&edge_field->arcs, index);
+}
+
+
 /**
  * Deref the node from a single ref edge field.
  * @param edge_field is a pointer to the edge field.
@@ -288,8 +293,20 @@ int Edge_Delete(
         struct SelvaHierarchy *hierarchy,
         struct EdgeField *edge_field,
         struct SelvaHierarchyNode *src_node,
-        Selva_NodeId dst_node_id)
+        const Selva_NodeId dst_node_id)
     __attribute__((access(read_write, 1), access(read_write, 2), access(read_write, 3), access(read_only, 4)));
+
+/**
+ * Move a node to new `index`.
+ * The edge field must have `EDGE_FIELD_CONSTRAINT_FLAG_ARRAY` set.
+ * @param index must be less than the size of the edge field.
+ */
+int Edge_Move(
+        struct SelvaHierarchyNode *src_node,
+        const char *field_name_str,
+        size_t field_name_len,
+        const Selva_NodeId dst_node_id,
+        ssize_t index);
 
 /**
  * Delete all edges of a field.

@@ -35,6 +35,7 @@ enum SelvaModify_ArgType {
     SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE = 'B', /*!< Increment a double value. */
     /* Node object set field operations. */
     SELVA_MODIFY_ARG_OP_SET = '5', /*!< Value is a struct SelvaModify_OpSet. */
+    SELVA_MODIFY_ARG_OP_ORD_SET = 'J', /*!<  Value is a struct SelvaModify_OpOrdSet. */
     /* Node object array field operations. */
     SELVA_MODIFY_ARG_OP_ARRAY_PUSH = 'D', /*!< Set a new empty SelvaObject at the end of an array */
     SELVA_MODIFY_ARG_OP_ARRAY_INSERT = 'E', /*!< Set a new empty SelvaObject at the start of an array */
@@ -49,6 +50,8 @@ enum SelvaModify_ArgType {
     SELVA_MODIFY_ARG_OP_EDGE_META = 'G', /*!< Modify edge field metadata. */
     /* Other ops. */
     SELVA_MODIFY_ARG_STRING_ARRAY = '6', /*!< Array of C-strings. */
+    /* Deprecated values */
+    SELVA_MODIFY_ARG_RESERVED_0 __attribute__((unavailable)) = '1',
 };
 
 struct SelvaModify_OpIncrement {
@@ -61,40 +64,113 @@ struct SelvaModify_OpIncrementDouble {
     double $increment;
 };
 
+/**
+ * Set operation value type.
+ */
 enum SelvaModify_OpSetType {
     SELVA_MODIFY_OP_SET_TYPE_CHAR = 0,
     SELVA_MODIFY_OP_SET_TYPE_REFERENCE = 1, /*!< Items are of size SELVA_NODE_ID_SIZE. */
     SELVA_MODIFY_OP_SET_TYPE_DOUBLE = 2,
     SELVA_MODIFY_OP_SET_TYPE_LONG_LONG = 3,
-};
+} __packed;
 
+/**
+ * Set operations.
+ */
 struct SelvaModify_OpSet {
-    int8_t op_set_type; /*!< Set type. One of SELVA_MODIFY_OP_SET_TYPE_xxx. */
+    /**
+     * Set type.
+     * One of SELVA_MODIFY_OP_SET_TYPE_xxx.
+     */
+    enum SelvaModify_OpSetType op_set_type;
     int8_t delete_all; /*!< Delete all intems from the set. */
-    uint16_t edge_constraint_id; /*!< Edge field constraint id when op_set_type is set to SELVA_MODIFY_OP_SET_TYPE_EDGE. */
+    uint16_t edge_constraint_id; /*!< Edge field constraint id when modifying an edge field. */
 
+    /**
+     * Add these elements tot the set.
+     */
     const char *$add_str;
     size_t $add_len;
 
+    /**
+     * Delete these elements from the set.
+     */
     const char *$delete_str;
     size_t $delete_len;
 
+    /**
+     * Replace the current set with these elements.
+     */
     const char *$value_str;
     size_t $value_len;
 };
 
-enum SelvaModify_OpEdgeMetaCode {
-    SELVA_MODIFY_OP_EDGE_META_DEL = 0,
-    SELVA_MODIFY_OP_EDGE_META_DEFAULT_STRING = 1,
-    SELVA_MODIFY_OP_EDGE_META_STRING = 2,
-    SELVA_MODIFY_OP_EDGE_META_DEFAULT_LONGLONG = 3,
-    SELVA_MODIFY_OP_EDGE_META_LONGLONG = 4,
-    SELVA_MODIFY_OP_EDGE_META_DEFAULT_DOUBLE = 5,
-    SELVA_MODIFY_OP_EDGE_META_DOUBLE = 6,
+/**
+ * Ordered set operations.
+ */
+struct SelvaModify_OpOrdSet {
+    /**
+     * Set type.
+     * Currently only SELVA_MODIFY_OP_SET_TYPE_REFERENCE is supported and only
+     * edge fields can be modified.
+     * The array field type and array operations shall be used for other ordered
+     * sets.
+     */
+    enum SelvaModify_OpSetType op_set_type;
+    enum SelvaModify_OpOrdSetMode {
+        SelvaModify_OpOrdSet_Insert = 0,
+        SelvaModify_OpOrdSet_Assign = 1,
+        SelvaModify_OpOrdSet_Delete = 2,
+        SelvaModify_OpOrdSet_Move = 3,
+    } __packed mode;
+    uint16_t edge_constraint_id;
+
+    /**
+     * Index.
+     * Must be less than or equal to the size of the current set.
+     * Can be negative for counting from the last item.
+     * Note that `[idx]` can't be used to modify sortable references (array EdgeFields).
+     */
+    ssize_t index;
+
+    /**
+     * Insert these elements to the ordered set starting from index.
+     *
+     * **SelvaModify_OpOrdSet_Insert**
+     * List of nodes to be inserted starting from `index`. If the EdgeField
+     * doesn't exist, it will be created.
+     *
+     * **SelvaModify_OpOrdSet_Assign**
+     *
+     * List of nodes to be replaced starting from `index`.
+     * If the edgeField doesn't exist yet then `index` must be set 0.
+     *
+     * **SelvaModify_OpOrdSet_Delete**
+     * List of nodes to be deleted starting from `index`. The nodes must exist
+     * on the edgeField in the exact order starting from `index`.
+     *
+     * **SelvaModify_OpOrdSet_Move**
+     * Move listed nodes to `index`. The nodes must exist but they don't need to
+     * be consecutive.
+     */
+    const char *$value_str;
+    size_t $value_len;
 };
 
+
 struct SelvaModify_OpEdgeMeta {
-    int8_t op_code; /*!< Edge field metadata op code. */
+    /**
+     * Edge field metadata op code.
+     */
+    enum SelvaModify_OpEdgeMetaCode {
+        SELVA_MODIFY_OP_EDGE_META_DEL = 0,
+        SELVA_MODIFY_OP_EDGE_META_DEFAULT_STRING = 1,
+        SELVA_MODIFY_OP_EDGE_META_STRING = 2,
+        SELVA_MODIFY_OP_EDGE_META_DEFAULT_LONGLONG = 3,
+        SELVA_MODIFY_OP_EDGE_META_LONGLONG = 4,
+        SELVA_MODIFY_OP_EDGE_META_DEFAULT_DOUBLE = 5,
+        SELVA_MODIFY_OP_EDGE_META_DOUBLE = 6,
+    } __packed op_code;
     int8_t delete_all; /*!< Delete all metadata from this edge field. */
 
     char dst_node_id[SELVA_NODE_ID_SIZE];
@@ -122,7 +198,10 @@ enum selva_op_repl_state {
     SELVA_OP_REPL_STATE_REPLICATE,  /*!< Value might have changed, replicate, reply with OK */
 };
 
-struct SelvaModify_OpSet *SelvaModify_OpSet_align(
+struct SelvaModify_OpSet *SelvaModify_OpSet_fixup(
+        struct finalizer *fin,
+        const struct selva_string *data);
+struct SelvaModify_OpOrdSet *SelvaModify_OpOrdSet_fixup(
         struct finalizer *fin,
         const struct selva_string *data);
 

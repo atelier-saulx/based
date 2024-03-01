@@ -82,7 +82,7 @@ static enum selva_op_repl_state (*modify_op_fn[256])(
         char type_code,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags);
+        enum modify_flags modify_flags);
 
 SELVA_TRACE_HANDLE(cmd_modify);
 
@@ -246,103 +246,345 @@ static int update_hierarchy(
     }
 }
 
+/**
+ * @param value_len must be value_len % SELVA_NODE_ID_SIZE == 0.
+ */
+static void opSet_refs_to_svector(SVector *vec, const char *value_str, size_t value_len) {
+    /* Must be uninitialized. */
+#if 0
+    assert(vec->vec_mode == SVECTOR_MODE_NONE);
+    assert(value_len % SELVA_NODE_ID_SIZE == 0);
+#endif
+
+    /* The comparator works for both nodes and nodeIds. */
+    SVector_Init(vec, value_len / SELVA_NODE_ID_SIZE, SelvaSVectorComparator_Node);
+
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+
+        SVector_Insert(vec, (void *)dst_node_id);
+    }
+}
+
+/**
+ * Replace edgeField value with nodeIds prevent in value_str.
+ * @param value_str same as SelvaModify_OpSet->$value_str.
+ */
+static int replace_edge_value(
+        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        unsigned constraint_id,
+        const char *value_str,
+        size_t value_len) {
+    int res = 0;
+    SVECTOR_AUTOFREE(new_ids);
+
+    if (value_len % SELVA_NODE_ID_SIZE) {
+        return SELVA_EINVAL;
+    }
+
+    opSet_refs_to_svector(&new_ids, value_str, value_len);
+
+    struct EdgeField *edgeField = Edge_GetField(node, field_str, field_len);
+    if (edgeField && Edge_GetFieldLength(edgeField) > 0) {
+        /*
+         * First we remove the arcs from the old set that don't exist
+         * in the new set.
+         * Note that we can cast a hierarchy node to Selva_NodeId or even a
+         * char as it's guaranteed that the structure starts with the id
+         * that has a known length.
+         */
+
+        struct SVectorIterator it;
+        SVECTOR_AUTOFREE(old_arcs);
+        const struct SelvaHierarchyNode *dst_node;
+
+        if (!Edge_CloneArcs(&old_arcs, edgeField)) {
+            return SELVA_EGENERAL;
+        }
+
+        SVector_ForeachBegin(&it, &old_arcs);
+        while ((dst_node = SVector_Foreach(&it))) {
+            Selva_NodeId dst_id;
+
+            SelvaHierarchy_GetNodeId(dst_id, dst_node);
+            if (!SVector_Search(&new_ids, dst_id)) {
+                Edge_Delete(hierarchy, edgeField, node, dst_id);
+                res++; /* Count delete as a change. */
+            }
+        }
+    }
+
+    /*
+     * Then we add the new arcs.
+     */
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+        struct SelvaHierarchyNode *dst_node;
+        int err;
+
+        err = SelvaHierarchy_UpsertNode(hierarchy, dst_node_id, &dst_node);
+        if ((err && err != SELVA_HIERARCHY_EEXIST) || !dst_node) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Upserting a node failed: %s",
+                      selva_strerror(err));
+            /*
+             * We could also ignore the error and try to insert the rest but
+             * perhaps it can be considered a fatal error if one of the
+             * nodes cannot be referenced/created.
+             */
+            return err;
+        }
+
+        err = Edge_Add(hierarchy, constraint_id, field_str, field_len, node, dst_node);
+        if (!err) {
+            res++;
+        } else if (err != SELVA_EEXIST) {
+            /*
+             * This will most likely happen in real production only when
+             * the constraints don't match.
+             */
+#if 0
+            SELVA_LOG(SELVA_LOGL_DBG, "Adding an edge from %.*s.%.*s to %.*s failed with an error: %s",
+                      (int)SELVA_NODE_ID_SIZE, node_id,
+                      (int)field_len, field_str,
+                      (int)SELVA_NODE_ID_SIZE, dst_node_id,
+                      selva_strerror(err));
+#endif
+            return err;
+        }
+    }
+
+    return res;
+}
+
+static int insert_edges(
+        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        unsigned constraint_id,
+        const char *value_str,
+        size_t value_len,
+        ssize_t index) {
+    int res = 0;
+
+    if (value_len % SELVA_NODE_ID_SIZE) {
+        return SELVA_EINVAL;
+    }
+
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+        struct SelvaHierarchyNode *dst_node;
+        int err;
+
+        err = SelvaHierarchy_UpsertNode(hierarchy, dst_node_id, &dst_node);
+        if ((err && err != SELVA_HIERARCHY_EEXIST) || !dst_node) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Upserting a node failed: %s",
+                      selva_strerror(err));
+            /*
+             * We could also ignore the error and try to insert the rest but
+             * perhaps it can be considered a fatal error if one of the
+             * nodes cannot be referenced/created.
+             */
+            return err;
+        }
+
+        err = Edge_AddIndex(hierarchy, constraint_id, field_str, field_len, node, dst_node, index);
+        if (!err) {
+            res++;
+        } else if (err != SELVA_EEXIST) {
+            /*
+             * This will most likely happen in real production only when
+             * the constraints don't match.
+             */
+#if 0
+            SELVA_LOG(SELVA_LOGL_DBG, "Adding an edge from %.*s.%.*s to %.*s failed with an error: %s",
+                      (int)SELVA_NODE_ID_SIZE, node_id,
+                      (int)field_len, field_str,
+                      (int)SELVA_NODE_ID_SIZE, dst_node_id,
+                      selva_strerror(err));
+#endif
+            return err;
+        }
+        if (index >= 0) {
+            index++;
+            /* Negative index is always correct. */
+        }
+    }
+
+    return res;
+}
+
+static int assign_edges(
+        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        unsigned constraint_id,
+        const char *value_str,
+        size_t value_len,
+        ssize_t index) {
+    struct EdgeField *edge_field;
+    int res = 0;
+
+    if (value_len % SELVA_NODE_ID_SIZE) {
+        return SELVA_EINVAL;
+    }
+
+    /* Note that edge_field doesn't need to exist. */
+    edge_field = Edge_GetField(node, field_str, field_len);
+
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+        struct SelvaHierarchyNode *dst_node;
+        int err;
+
+        if (edge_field) {
+            struct SelvaHierarchyNode *old_dst_node;
+
+            old_dst_node = Edge_GetIndex(edge_field, index);
+            if (old_dst_node) {
+                Selva_NodeId old_dst_node_id;
+
+
+                SelvaHierarchy_GetNodeId(old_dst_node_id, old_dst_node);
+                err = Edge_Delete(hierarchy, edge_field, node, old_dst_node_id);
+                if (err) {
+                    return err;
+                }
+            }
+        }
+
+        err = SelvaHierarchy_UpsertNode(hierarchy, dst_node_id, &dst_node);
+        if ((err && err != SELVA_HIERARCHY_EEXIST) || !dst_node) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Upserting a node failed: %s",
+                      selva_strerror(err));
+            /*
+             * We could also ignore the error and try to insert the rest but
+             * perhaps it can be considered a fatal error if one of the
+             * nodes cannot be referenced/created.
+             */
+            return err;
+        }
+
+        err = Edge_AddIndex(hierarchy, constraint_id, field_str, field_len, node, dst_node, index);
+        if (!err) {
+            res++;
+        } else if (err != SELVA_EEXIST) {
+            /*
+             * This will most likely happen in real production only when
+             * the constraints don't match.
+             */
+#if 0
+            SELVA_LOG(SELVA_LOGL_DBG, "Adding an edge from %.*s.%.*s to %.*s failed with an error: %s",
+                      (int)SELVA_NODE_ID_SIZE, node_id,
+                      (int)field_len, field_str,
+                      (int)SELVA_NODE_ID_SIZE, dst_node_id,
+                      selva_strerror(err));
+#endif
+            return err;
+        }
+        if (index >= 0) {
+            index++;
+            /* Negative index is always correct. */
+        }
+    }
+
+    return res;
+}
+
+static int delete_edges(
+        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        const char *value_str,
+        size_t value_len,
+        ssize_t index) {
+    struct EdgeField *edge_field;
+    int res = 0;
+
+    if (value_len % SELVA_NODE_ID_SIZE) {
+        return SELVA_EINVAL;
+    }
+
+    edge_field = Edge_GetField(node, field_str, field_len);
+    if (!edge_field) {
+       return SELVA_ENOENT;
+    }
+
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+        struct SelvaHierarchyNode *dst_node;
+        int err;
+
+        dst_node = Edge_GetIndex(edge_field, index);
+        if (dst_node) {
+            Selva_NodeId old_dst_node_id;
+
+            SelvaHierarchy_GetNodeId(old_dst_node_id, dst_node);
+            if (memcmp(dst_node_id, old_dst_node_id, SELVA_NODE_ID_SIZE)) {
+                return SELVA_HIERARCHY_ENOENT;
+            }
+
+            err = Edge_Delete(hierarchy, edge_field, node, dst_node_id);
+            if (err) {
+                return err;
+            }
+        }
+    }
+
+    return res;
+}
+
+static int move_edges(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        const char *value_str,
+        size_t value_len,
+        ssize_t index) {
+    int res = 0;
+
+    if (value_len % SELVA_NODE_ID_SIZE) {
+        return SELVA_EINVAL;
+    }
+
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+        int err;
+
+        err = Edge_Move(node, field_str, field_len, dst_node_id, index);
+        if (err) {
+            return err;
+        }
+
+        res++;
+        if (index >= 0) {
+            index++;
+            /* Negative index is always correct. */
+        }
+    }
+
+    return res;
+}
+
 static int update_edge(
-    SelvaHierarchy *hierarchy,
-    struct SelvaHierarchyNode *node,
-    const struct selva_string *field,
-    const struct SelvaModify_OpSet *setOpts
+        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        const struct selva_string *field,
+        const struct SelvaModify_OpSet *setOpts
 ) {
     const unsigned constraint_id = setOpts->edge_constraint_id;
     TO_STR(field);
 
     if (setOpts->$value_len > 0) {
-        int res = 0;
-
-        if (setOpts->$value_len % SELVA_NODE_ID_SIZE) {
-            return SELVA_EINVAL;
-        }
-
-        SVECTOR_AUTOFREE(new_ids);
-
-        /* The comparator works for both nodes and nodeIds. */
-        SVector_Init(&new_ids, setOpts->$value_len / SELVA_NODE_ID_SIZE, SelvaSVectorComparator_Node);
-
-        for (size_t i = 0; i < setOpts->$value_len; i += SELVA_NODE_ID_SIZE) {
-            const char *dst_node_id = setOpts->$value_str + i;
-
-            SVector_Insert(&new_ids, (void *)dst_node_id);
-        }
-
-        struct EdgeField *edgeField = Edge_GetField(node, field_str, field_len);
-        if (edgeField) {
-            /*
-             * First we remove the arcs from the old set that don't exist
-             * in the new set.
-             * Note that we can cast a hierarchy node to Selva_NodeId or even a
-             * char as it's guaranteed that the structure starts with the id
-             * that has a known length.
-             */
-
-            struct SVectorIterator it;
-            SVECTOR_AUTOFREE(old_arcs);
-            const struct SelvaHierarchyNode *dst_node;
-
-            if (!Edge_CloneArcs(&old_arcs, edgeField)) {
-                return SELVA_EGENERAL;
-            }
-
-            SVector_ForeachBegin(&it, &old_arcs);
-            while ((dst_node = SVector_Foreach(&it))) {
-                Selva_NodeId dst_id;
-
-                SelvaHierarchy_GetNodeId(dst_id, dst_node);
-                if (!SVector_Search(&new_ids, dst_id)) {
-                    Edge_Delete(hierarchy, edgeField, node, dst_id);
-                    res++; /* Count delete as a change. */
-                }
-            }
-        }
-
-        /*
-         * Then we add the new arcs.
-         */
-        for (size_t i = 0; i < setOpts->$value_len; i += SELVA_NODE_ID_SIZE) {
-            const char *dst_node_id = setOpts->$value_str + i;
-            struct SelvaHierarchyNode *dst_node;
-            int err;
-
-            err = SelvaHierarchy_UpsertNode(hierarchy, dst_node_id, &dst_node);
-            if ((err && err != SELVA_HIERARCHY_EEXIST) || !dst_node) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Upserting a node failed: %s",
-                          selva_strerror(err));
-                /*
-                 * We could also ignore the error and try to insert the rest but
-                 * perhaps it can be considered a fatal error if one of the
-                 * nodes cannot be referenced/created.
-                 */
-                return err;
-            }
-
-            err = Edge_Add(hierarchy, constraint_id, field_str, field_len, node, dst_node);
-            if (!err) {
-                res++;
-            } else if (err != SELVA_EEXIST) {
-                /*
-                 * This will most likely happen in real production only when
-                 * the constraints don't match.
-                 */
-#if 0
-                SELVA_LOG(SELVA_LOGL_DBG, "Adding an edge from %.*s.%.*s to %.*s failed with an error: %s",
-                          (int)SELVA_NODE_ID_SIZE, node_id,
-                          (int)field_len, field_str,
-                          (int)SELVA_NODE_ID_SIZE, dst_node_id,
-                          selva_strerror(err));
-#endif
-                return err;
-            }
-        }
-
-        return res;
+        return replace_edge_value(hierarchy, node,
+                                  field_str, field_len,
+                                  constraint_id,
+                                  setOpts->$value_str, setOpts->$value_len);
     } else {
         int res = 0;
 
@@ -1019,7 +1261,16 @@ static int opset_fixup(struct SelvaModify_OpSet *op, size_t size) {
     return 0;
 }
 
-struct SelvaModify_OpSet *SelvaModify_OpSet_align(struct finalizer *fin, const struct selva_string *data) {
+static int opordset_fixup(struct SelvaModify_OpOrdSet *op, size_t size) {
+    static_assert(sizeof(op->edge_constraint_id) == sizeof(int16_t));
+    op->edge_constraint_id = le16toh(op->edge_constraint_id);
+    op->index = letoh(op->index);
+
+    DATA_RECORD_FIXUP_CSTRING_P(op, op, size, $value);
+    return 0;
+}
+
+struct SelvaModify_OpSet *SelvaModify_OpSet_fixup(struct finalizer *fin, const struct selva_string *data) {
     TO_STR(data);
     struct SelvaModify_OpSet *op;
 
@@ -1034,6 +1285,27 @@ struct SelvaModify_OpSet *SelvaModify_OpSet_align(struct finalizer *fin, const s
     memcpy(op, data_str, data_len);
 
     if (opset_fixup(op, data_len)) {
+        return NULL;
+    }
+
+    return op;
+}
+
+struct SelvaModify_OpOrdSet *SelvaModify_OpOrdSet_fixup(struct finalizer *fin, const struct selva_string *data) {
+    TO_STR(data);
+    struct SelvaModify_OpOrdSet *op;
+
+    static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
+
+    if (!data || data_len == 0 || data_len < sizeof(struct SelvaModify_OpOrdSet)) {
+        return NULL;
+    }
+
+    op = selva_malloc(data_len);
+    finalizer_add(fin, op, selva_free);
+    memcpy(op, data_str, data_len);
+
+    if (opordset_fixup(op, data_len)) {
         return NULL;
     }
 
@@ -1166,10 +1438,10 @@ static enum selva_op_repl_state modify_array_op(
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
 
     if (idx < 0) {
-        const int ary_len = (int)SelvaObject_GetArrayLenStr(obj, field_str, new_len);
+        const ssize_t ary_len = (ssize_t)SelvaObject_GetArrayLenStr(obj, field_str, new_len);
         idx = ary_idx_to_abs(ary_len, idx) + has_push;
         if (idx < 0) {
-            selva_send_errorf(resp, SELVA_EINVAL, "Invalid array index %d", idx);
+            selva_send_errorf(resp, SELVA_EINVAL, "Invalid array index %zd", idx);
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
     }
@@ -1322,20 +1594,86 @@ static enum selva_op_repl_state op_set(
         char type_code __unused,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags) {
+        enum modify_flags modify_flags) {
     Selva_NodeId node_id;
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     struct SelvaModify_OpSet *setOpts;
     int err;
 
     SelvaHierarchy_GetNodeId(node_id, node);
-    setOpts = SelvaModify_OpSet_align(fin, value);
+    setOpts = SelvaModify_OpSet_fixup(fin, value);
     if (!setOpts) {
         selva_send_errorf(resp, SELVA_EINVAL, "Invalid OpSet");
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
     err = SelvaModify_ModifySet(hierarchy, node_id, node, obj, field, setOpts, modify_flags);
+    if (err == 0) {
+        selva_send_str(resp, "OK", 2);
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    } else if (err < 0) {
+        selva_send_error(resp, err, NULL, 0);
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    }
+
+    return SELVA_OP_REPL_STATE_UPDATED;
+}
+
+static enum selva_op_repl_state op_ord_set(
+        struct finalizer *fin,
+        struct selva_server_response_out *resp,
+        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        char type_code __unused,
+        struct selva_string *field,
+        struct selva_string *value,
+        enum modify_flags) {
+    Selva_NodeId node_id;
+    struct SelvaModify_OpOrdSet *setOpts;
+    int err;
+
+    SelvaHierarchy_GetNodeId(node_id, node);
+    setOpts = SelvaModify_OpOrdSet_fixup(fin, value);
+    if (!setOpts) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid OpOrdSet");
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    }
+
+    TO_STR(field);
+
+    /*
+     * Only EdgeFields are supported.
+     */
+    if (!strcmp(field_str, "children") || !strcmp(field_str, "parents")) {
+        selva_send_error(resp, SELVA_EINVAL, NULL, 0);
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    }
+
+    switch (setOpts->mode) {
+    case SelvaModify_OpOrdSet_Insert:
+        err = insert_edges(hierarchy, node,
+                           field_str, field_len,
+                           setOpts->edge_constraint_id,
+                           setOpts->$value_str, setOpts->$value_len, setOpts->index);
+        break;
+    case SelvaModify_OpOrdSet_Assign:
+        err = assign_edges(hierarchy, node,
+                           field_str, field_len,
+                           setOpts->edge_constraint_id,
+                           setOpts->$value_str, setOpts->$value_len, setOpts->index);
+        break;
+    case SelvaModify_OpOrdSet_Delete:
+        err = delete_edges(hierarchy, node,
+                           field_str, field_len,
+                           setOpts->$value_str, setOpts->$value_len, setOpts->index);
+        break;
+    case SelvaModify_OpOrdSet_Move:
+        err = move_edges(node, field_str, field_len,
+                         setOpts->$value_str, setOpts->$value_len, setOpts->index);
+        break;
+        default:
+        err = SELVA_EINVAL;
+    }
     if (err == 0) {
         selva_send_str(resp, "OK", 2);
         return SELVA_OP_REPL_STATE_UNCHANGED;
@@ -1843,6 +2181,7 @@ int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char t
         type = SELVA_OBJECT_DOUBLE;
         break;
     case SELVA_MODIFY_ARG_OP_SET:
+    case SELVA_MODIFY_ARG_OP_ORD_SET:
         type = SELVA_OBJECT_SET;
         break;
     case SELVA_MODIFY_ARG_OP_ARRAY_PUSH:
@@ -2004,6 +2343,9 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     replset->nbits = nr_triplets;
     bitmap_erase(replset);
 
+    /*
+     * TODO Explain what is this and why it affects all array field modifications.
+     */
     int has_push = 0;
     int active_insert_idx = -1;
 
@@ -2253,6 +2595,7 @@ static int Modify_OnLoad(void) {
     modify_op_fn[SELVA_MODIFY_ARG_OP_INCREMENT] = op_increment_longlong;
     modify_op_fn[SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE] = op_increment_double;
     modify_op_fn[SELVA_MODIFY_ARG_OP_SET] = op_set;
+    modify_op_fn[SELVA_MODIFY_ARG_OP_ORD_SET] = op_ord_set;
     modify_op_fn[SELVA_MODIFY_ARG_OP_DEL] = op_del;
     modify_op_fn[SELVA_MODIFY_ARG_DEFAULT_STRING] = op_string;
     modify_op_fn[SELVA_MODIFY_ARG_STRING] = op_string;

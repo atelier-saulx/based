@@ -121,7 +121,7 @@ static void del_edge_metadata(struct SelvaObject *edge_field_metadata, const Sel
  * Delete arc and its metadata.
  * Only one-way.
  */
-static void remove_arc(struct EdgeField *edge_field, Selva_NodeId node_id) {
+static void remove_arc(struct EdgeField *edge_field, const Selva_NodeId node_id) {
     if (edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY) {
         struct SVector *arcs = &edge_field->arcs;
         struct SVectorIterator it;
@@ -483,6 +483,8 @@ static int insert_edge_index(struct EdgeField * restrict src_edge_field, struct 
                   selva_strerror(err));
         abort();
     }
+
+    return 0;
 }
 
 /**
@@ -696,6 +698,39 @@ int Edge_AddIndex(
     return err;
 }
 
+int Edge_Move(
+        struct SelvaHierarchyNode *src_node,
+        const char *field_name_str,
+        size_t field_name_len,
+        const Selva_NodeId dst_node_id,
+        ssize_t index) {
+    struct EdgeField *edge_field;
+    ssize_t old_index;
+    struct SelvaHierarchyNode *dst_node;
+
+    edge_field = Edge_GetField(src_node, field_name_str, field_name_len);
+    if (!edge_field) {
+        return SELVA_ENOENT;
+    }
+
+    if (!(edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY)) {
+        return SELVA_ENOTSUP;
+    }
+
+    old_index = SVector_SearchIndex(&edge_field->arcs, (void *)dst_node_id);
+    if (old_index == -1) {
+        return SELVA_ENOENT;
+    }
+    dst_node = SVector_RemoveIndex(&edge_field->arcs, old_index);
+    if (!dst_node) {
+        return SELVA_ENOENT;
+    }
+
+    SVector_InsertIndex(&edge_field->arcs, index, dst_node);
+
+    return 0;
+}
+
 /*
  * Remove origin references to src_edge_field from dst_node.
  * Origin references are needed to know the origin of an edge. This allows
@@ -745,7 +780,7 @@ int Edge_Delete(
         struct SelvaHierarchy *hierarchy,
         struct EdgeField *edge_field,
         struct SelvaHierarchyNode *src_node,
-        Selva_NodeId dst_node_id) {
+        const Selva_NodeId dst_node_id) {
     Selva_NodeId src_node_id;
     struct SelvaHierarchyNode *dst_node;
     const struct EdgeFieldConstraint *src_constraint;

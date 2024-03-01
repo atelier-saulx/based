@@ -88,7 +88,7 @@ static int parse_update_ops(struct finalizer *fin, struct selva_string **argv, i
         };
 
         if (op.type_code == SELVA_MODIFY_ARG_OP_SET) {
-            op.set_opts = SelvaModify_OpSet_align(fin, op.value);
+            op.set_opts = SelvaModify_OpSet_fixup(fin, op.value);
             if (!op.set_opts) {
                 return SELVA_EINVAL;
             }
