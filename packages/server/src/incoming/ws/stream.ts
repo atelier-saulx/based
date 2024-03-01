@@ -53,7 +53,7 @@ export const registerStream: BinaryMessageHandler = (
     return false
   }
 
-  const infoLen = 15
+  const infoLen = 16
 
   const reqId = readUint8(arr, start + 5, 3)
 
@@ -76,16 +76,6 @@ export const registerStream: BinaryMessageHandler = (
   const fnNameLen = readUint8(arr, start + 14, 1)
   const extensionLen = readUint8(arr, start + 15, 1)
 
-  /*
-
- if (extension) {
-    const mime = mimeTypes.lookup(extension)
-    if (mime) {
-      type = ctx.session.headers['content-type'] = mime
-    }
-  }
-  */
-
   const name = decodeName(arr, start + infoLen, start + infoLen + nameLen)
   let mime = decodeName(
     arr,
@@ -96,6 +86,11 @@ export const registerStream: BinaryMessageHandler = (
     arr,
     start + infoLen + nameLen + mimeLen,
     start + infoLen + mimeLen + nameLen + fnNameLen
+  )
+  let extension = decodeName(
+    arr,
+    start + infoLen + nameLen + mimeLen + fnNameLen,
+    start + infoLen + mimeLen + nameLen + fnNameLen + extensionLen
   )
 
   const route = verifyRoute(
@@ -120,13 +115,13 @@ export const registerStream: BinaryMessageHandler = (
   }
 
   const payload =
-    len === nameLen + infoLen + mimeLen
+    len === nameLen + infoLen + mimeLen + extensionLen
       ? undefined
       : parsePayload(
           decodePayload(
             new Uint8Array(
               arr.slice(
-                start + infoLen + nameLen + mimeLen + fnNameLen,
+                start + infoLen + nameLen + mimeLen + fnNameLen + extensionLen,
                 start + len
               )
             ),
@@ -137,6 +132,15 @@ export const registerStream: BinaryMessageHandler = (
   if (!ctx.session.streams) {
     ctx.session.streams = {}
   }
+
+  /*
+ if (extension) {
+    const mime = mimeTypes.lookup(extension)
+    if (mime) {
+      type = ctx.session.headers['content-type'] = mime
+    }
+  }
+  */
 
   if (!mime) {
     const e = name.split('.')
