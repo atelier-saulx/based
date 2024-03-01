@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
 #ifndef _SELVA_ENDIAN_H_
 #define _SELVA_ENDIAN_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 /*
@@ -169,6 +170,8 @@ static inline double ledoubletoh(const char buf[8]) {
 #error "Machine byte order not supported"
 #endif
 
+#if __linux__
+
 /**
  * Type generic Host to LE.
  */
@@ -190,5 +193,34 @@ static inline double ledoubletoh(const char buf[8]) {
         int32_t: (int32_t)le32toh(v), \
         uint64_t: le64toh(v), \
         int64_t: (int64_t)le64toh(v))
+#else
+
+/**
+ * Type generic Host to LE.
+ */
+#define htole(v) _Generic((v), \
+        uint16_t: htole16(v), \
+        int16_t: (int16_t)htole16(v), \
+        uint32_t: htole32(v), \
+        int32_t: (int32_t)htole32(v), \
+        uint64_t: htole64(v), \
+        size_t: htole64(v), \
+        ssize_t: htole64(v), \
+        int64_t: (int64_t)htole64(v))
+
+#define letoh(v) _Generic((v), \
+        uint16_t: le16toh(v), \
+        int16_t: (int16_t)le16toh(v), \
+        uint32_t: le32toh(v), \
+        int32_t: (int32_t)le32toh(v), \
+        uint64_t: le64toh(v), \
+        size_t: le64toh(v), \
+        ssize_t: le64toh(v), \
+        int64_t: (int64_t)le64toh(v))
+
+#endif
+
+/* If this fails then htole and letoh will need some adjustment. */
+static_assert(sizeof(size_t) == sizeof(uint64_t));
 
 #endif /* _SELVA_ENDIAN_H_ */
