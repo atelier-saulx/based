@@ -78,6 +78,7 @@ export const uploadFileStream = async (
     options.size,
     options.fileName,
     options.mimeType,
+    options.extension,
     name,
     options.payload
   )

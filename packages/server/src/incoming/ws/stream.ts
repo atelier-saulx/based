@@ -77,6 +77,7 @@ export const registerStream: BinaryMessageHandler = (
   const extensionLen = readUint8(arr, start + 15, 1)
 
   const name = decodeName(arr, start + infoLen, start + infoLen + nameLen)
+
   let mime = decodeName(
     arr,
     start + infoLen + nameLen,
@@ -133,33 +134,35 @@ export const registerStream: BinaryMessageHandler = (
     ctx.session.streams = {}
   }
 
-  /*
- if (extension) {
-    const mime = mimeTypes.lookup(extension)
-    if (mime) {
-      type = ctx.session.headers['content-type'] = mime
-    }
-  }
-  */
-
   if (!mime) {
-    const e = name.split('.')
-    const extension = e[e.length - 1]
-    if (name) {
-      const t = mimeTypes.lookup(extension)
-      if (t) {
-        mime = t
+    if (extension) {
+      const mimeLookup = mimeTypes.lookup(extension)
+      if (mimeLookup) {
+        mime = mimeLookup
       }
     } else {
-      mime = '*/*'
+      const e = name.split('.')
+      const extension = e[e.length - 1]
+      if (name) {
+        const t = mimeTypes.lookup(extension)
+        if (t) {
+          mime = t
+        }
+      } else {
+        mime = '*/*'
+      }
     }
+  }
+
+  if (!extension) {
+    extension = mimeTypes.extension(mime) || ''
   }
 
   const streamPayload = {
     fileName: name,
     mimeType: mime,
     size: contentSize,
-    extension: mimeTypes.extension(mime) || '',
+    extension,
     fn: fnName,
     payload,
     stream: new BasedDataStream(contentSize),

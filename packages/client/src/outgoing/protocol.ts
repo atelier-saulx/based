@@ -246,11 +246,13 @@ export const encodeStreamMessage = (
   const [subType, reqId] = f
 
   // Type 7.1 Start stream
-  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | name | mime | fnName | payload
+  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | 1 extensionLength | name | mime | fnName | extension | payload
   if (subType === 1) {
-    const [, , contentSize, name, mimeType, fnName, payload] = f
+    const [, , contentSize, name, mimeType, extension, fnName, payload] = f
 
-    let sLen = 15
+    console.info({ f, name, fnName, extension })
+
+    let sLen = 16
 
     let len = sLen
 
@@ -269,6 +271,9 @@ export const encodeStreamMessage = (
     const fnNameEncoded = encoder.encode(fnName)
     len += fnNameEncoded.length
 
+    const extensionEncoded = encoder.encode(extension)
+    len += extensionEncoded.length
+
     const buff = createBuffer(7, isDeflate, len, sLen)
 
     storeUint8(buff, 1, 4, 1)
@@ -277,14 +282,31 @@ export const encodeStreamMessage = (
     storeUint8(buff, nameEncoded.length, 12, 1)
     storeUint8(buff, mimeTypeEncoded.length, 13, 1)
     storeUint8(buff, fnNameEncoded.length, 14, 1)
+    storeUint8(buff, extensionEncoded.length, 15, 1)
 
     if (p) {
       return {
-        buffers: [buff, nameEncoded, mimeTypeEncoded, fnNameEncoded, p],
+        buffers: [
+          buff,
+          nameEncoded,
+          mimeTypeEncoded,
+          fnNameEncoded,
+          extensionEncoded,
+          p,
+        ],
         len,
       }
     }
-    return { buffers: [buff, nameEncoded, mimeTypeEncoded, fnNameEncoded], len }
+    return {
+      buffers: [
+        buff,
+        nameEncoded,
+        mimeTypeEncoded,
+        fnNameEncoded,
+        extensionEncoded,
+      ],
+      len,
+    }
   } else if (subType === 2) {
     // Type 7.2 Chunk
     // | 4 header | 1 subType = 2 | 3 reqId | 1 seqId | content

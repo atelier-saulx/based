@@ -301,10 +301,20 @@ export const addStreamRegister = (
   contentSize: number,
   name: string,
   mimeType: string,
+  extension: string,
   fnName: string,
   payload: any
 ) => {
-  client.sQ.push([1, reqId, contentSize, name, mimeType, fnName, payload])
+  client.sQ.push([
+    1,
+    reqId,
+    contentSize,
+    name,
+    mimeType,
+    extension,
+    fnName,
+    payload,
+  ])
   drainQueue(client)
 }
 

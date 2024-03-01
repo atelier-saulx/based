@@ -76,6 +76,7 @@ export type StreamQueueItem =
       string, // name
       string, // mimeType
       string, // fnName
+      string, // extension
       any // payload
     ]
   | [
