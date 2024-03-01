@@ -10,8 +10,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include "jemalloc.h"
-#include "util/svector.h"
+#include "util/array_field.h"
 #include "util/auto_free.h"
+#include "util/svector.h"
 #include "selva_error.h"
 #include "selva_io.h"
 #include "selva_log.h"
@@ -411,13 +412,29 @@ __attribute__((nonnull (1, 4))) static struct EdgeField *Edge_NewField(
     return edge_field;
 }
 
+static struct SelvaObject *upsert_origins(struct SelvaHierarchyNode *node) {
+    struct SelvaHierarchyMetadata *node_metadata;
+
+    /*
+     * Add origin reference.
+     * Note that we must ensure that this insertion is only ever done once.
+     */
+    node_metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+
+    if (!node_metadata->edge_fields.origins) {
+        /* The edge origin refs struct is initialized lazily. */
+        node_metadata->edge_fields.origins = SelvaObject_New();
+    }
+
+    return node_metadata->edge_fields.origins;
+}
+
 /**
  * Insert an edge.
  * The edge must not exist before calling this function because this
  * function doesn't perform any checks.
  */
 static void insert_edge(struct EdgeField *src_edge_field, struct SelvaHierarchyNode *dst_node) {
-    struct SelvaHierarchyMetadata *dst_node_metadata;
     int err;
 
     /*
@@ -429,14 +446,36 @@ static void insert_edge(struct EdgeField *src_edge_field, struct SelvaHierarchyN
      * Add origin reference.
      * Note that we must ensure that this insertion is only ever done once.
      */
-    dst_node_metadata = SelvaHierarchy_GetNodeMetadataByPtr(dst_node);
+    err = SelvaObject_InsertArrayStr(upsert_origins(dst_node),
+                                    src_edge_field->src_node_id, SELVA_NODE_ID_SIZE,
+                                    SELVA_OBJECT_POINTER, src_edge_field);
+    if (err) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Edge origin update failed: %s",
+                  selva_strerror(err));
+        abort();
+    }
+}
 
-    if (!dst_node_metadata->edge_fields.origins) {
-        /* The edge origin refs struct is initialized lazily. */
-        dst_node_metadata->edge_fields.origins = SelvaObject_New();
+/**
+ * Insert dst_node into an index.
+ * @param index >= 0 index from first; < 0 index from last.
+ */
+static int insert_edge_index(struct EdgeField * restrict src_edge_field, struct SelvaHierarchyNode * restrict dst_node, ssize_t index) {
+    size_t i;
+    int err;
+
+    i = vec_idx_to_abs(&src_edge_field->arcs, index);
+
+    /*
+     * Creating gaps is not allowed.
+     */
+    if (i > SVector_Size(&src_edge_field->arcs)) {
+        return SELVA_EINVAL;
     }
 
-    err = SelvaObject_InsertArrayStr(dst_node_metadata->edge_fields.origins,
+    SVector_InsertIndex(&src_edge_field->arcs, i, dst_node);
+
+    err = SelvaObject_InsertArrayStr(upsert_origins(dst_node),
                                     src_edge_field->src_node_id, SELVA_NODE_ID_SIZE,
                                     SELVA_OBJECT_POINTER, src_edge_field);
     if (err) {
@@ -530,14 +569,26 @@ int Edge_DerefSingleRef(const struct EdgeField *edge_field, struct SelvaHierarch
     return 0;
 }
 
-/* RFE Optimize by taking edgeField as an arg. */
 int Edge_Add(
         struct SelvaHierarchy *hierarchy,
         unsigned constraint_id,
         const char *field_name_str,
         size_t field_name_len,
         struct SelvaHierarchyNode *src_node,
-        struct SelvaHierarchyNode *dst_node) {
+        struct SelvaHierarchyNode *dst_node)
+{
+    return Edge_AddIndex(hierarchy, constraint_id, field_name_str, field_name_len, src_node, dst_node, -1);
+}
+
+/* RFE Optimize by taking edgeField as an arg. */
+int Edge_AddIndex(
+        struct SelvaHierarchy *hierarchy,
+        unsigned constraint_id,
+        const char *field_name_str,
+        size_t field_name_len,
+        struct SelvaHierarchyNode *src_node,
+        struct SelvaHierarchyNode *dst_node,
+        ssize_t index) {
     const struct EdgeFieldConstraints *constraints = &hierarchy->edge_field_constraints;
     const struct EdgeFieldConstraint *constraint;
     enum EdgeFieldConstraintFlag constraint_flags;
@@ -568,6 +619,12 @@ int Edge_Add(
         int res;
 
         /*
+         * Single ref shouldn't have EDGE_FIELD_CONSTRAINT_FLAG_ARRAY set
+         * but this ensures that we'll never even need to check it.
+         */
+        index = -1;
+
+        /*
          * single_ref allows only one edge to exist in the field.
          */
         res = Edge_ClearField(hierarchy, src_node, field_name_str, field_name_len);
@@ -576,7 +633,14 @@ int Edge_Add(
         }
     }
 
-    insert_edge(src_edge_field, dst_node);
+    if (index != -1 && (constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY)) {
+        err = insert_edge_index(src_edge_field, dst_node, index);
+        if (err) {
+            return err;
+        }
+    } else {
+        insert_edge(src_edge_field, dst_node);
+    }
 
     err = 0; /* Just to be sure. */
 
@@ -587,9 +651,9 @@ int Edge_Add(
         /*
          * This field is bidirectional and so we need to create an edge pointing back.
          */
-        err = Edge_Add(hierarchy, EDGE_FIELD_CONSTRAINT_DYNAMIC,
+        err = Edge_AddIndex(hierarchy, EDGE_FIELD_CONSTRAINT_DYNAMIC,
                        constraint->bck_field_name_str, constraint->bck_field_name_len,
-                       dst_node, src_node);
+                       dst_node, src_node, -1);
         if (err && err != SELVA_EEXIST) {
             Selva_NodeId dst_node_id;
             int err1; /* We must retain the original err. */
