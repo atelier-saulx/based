@@ -105,9 +105,11 @@ export const uploadFileStream = async (
 
   let streamHandler: StreamResponseHandler
 
-  client.once('disconnect', () => {
+  const dcHandler = () => {
     console.error('CLIENT DC -> ABORT STREAM')
-  })
+  }
+
+  client.once('disconnect', dcHandler)
 
   const wr = new Writable({
     write: function (c, encoding, next) {
@@ -158,6 +160,10 @@ export const uploadFileStream = async (
   })
 
   options.contents.pipe(wr)
+
+  options.contents.on('end', () => {
+    client.off('disconnect', dcHandler)
+  })
 
   return new Promise((resolve, reject) => {
     streamHandler = [resolve, reject, () => {}]

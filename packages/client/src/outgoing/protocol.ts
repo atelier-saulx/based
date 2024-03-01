@@ -250,8 +250,6 @@ export const encodeStreamMessage = (
   if (subType === 1) {
     const [, , contentSize, name, mimeType, extension, fnName, payload] = f
 
-    console.info({ f, name, fnName, extension })
-
     let sLen = 16
 
     let len = sLen
