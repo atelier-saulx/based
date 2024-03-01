@@ -48,7 +48,7 @@ export const registerStream: BinaryMessageHandler = (
   ctx,
   server
 ) => {
-  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | name | mime | fnName | payload
+  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | 1 extensionLength | name | mime | fnName | extension | payload
   if (!ctx.session) {
     return false
   }
@@ -74,6 +74,17 @@ export const registerStream: BinaryMessageHandler = (
   const nameLen = readUint8(arr, start + 12, 1)
   const mimeLen = readUint8(arr, start + 13, 1)
   const fnNameLen = readUint8(arr, start + 14, 1)
+  const extensionLen = readUint8(arr, start + 15, 1)
+
+  /*
+
+ if (extension) {
+    const mime = mimeTypes.lookup(extension)
+    if (mime) {
+      type = ctx.session.headers['content-type'] = mime
+    }
+  }
+  */
 
   const name = decodeName(arr, start + infoLen, start + infoLen + nameLen)
   let mime = decodeName(
