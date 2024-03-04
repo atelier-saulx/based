@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support `$disableIndexing` boolean property in `$find` blocks to disable indexing selectively
 - Support `sortable` boolean property to turn a `references` type field into an ordered set
+- Added `SelvaModify_OpOrdSet` that can insert, assign, delete, and move edges in an edge field (references)
 
 ### Fixed
 
