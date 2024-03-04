@@ -13,7 +13,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test('stream small chunks', async (t: T) => {
+test.only('stream small chunks', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -23,14 +23,14 @@ test('stream small chunks', async (t: T) => {
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
           fn: async (_, { stream, payload }) => {
-            stream.on('progress', () => console.log(stream))
-            const x = await readStream(stream, {
-              throttle: 10,
-              maxChunkSize: 5000,
-            })
-            console.log(stream)
-            const y = new TextDecoder().decode(x)
-            const len = JSON.parse(y).length
+            const len = JSON.parse(
+              new TextDecoder().decode(
+                await readStream(stream, {
+                  throttle: 10,
+                  maxChunkSize: 5000,
+                })
+              )
+            ).length
             return { payload, len }
           },
         },
@@ -62,7 +62,7 @@ test('stream small chunks', async (t: T) => {
       yield buf
     }
   }
-
+  let cnt = 0
   try {
     const result = await client.stream(
       'hello',
@@ -72,15 +72,8 @@ test('stream small chunks', async (t: T) => {
         mimeType: 'application/json',
         contents: Readable.from(generate()),
       },
-      (p, bytes) => {
-        console.log(
-          'PROGRESS',
-          Math.round(p * 100),
-          '%',
-          ' ',
-          Math.round(bytes / 1024),
-          'kb'
-        )
+      () => {
+        cnt++
       }
     )
     t.deepEqual(result.payload, { power: true })
@@ -90,12 +83,12 @@ test('stream small chunks', async (t: T) => {
     t.fail('Should not error in fn')
   }
   client.disconnect()
+  t.true(cnt > 0)
   await server.destroy()
-
   t.pass()
 })
 
-test.skip('big boy chunks', async (t: T) => {
+test('big boy chunks', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -106,7 +99,6 @@ test.skip('big boy chunks', async (t: T) => {
           maxPayloadSize: 1e9,
           fn: async (_, { stream, payload }) => {
             const x = await readStream(stream)
-            console.log(stream)
             const y = new TextDecoder().decode(x)
             const len = JSON.parse(y).length
             return { payload, len }
@@ -150,16 +142,7 @@ test.skip('big boy chunks', async (t: T) => {
         mimeType: 'application/json',
         contents: Readable.from(generate()),
       },
-      (p, bytes) => {
-        console.log(
-          'PROGRESS',
-          Math.round(p * 100),
-          '%',
-          ' ',
-          Math.round(bytes / 1024),
-          'kb'
-        )
-      }
+      (p, bytes) => {}
     )
     t.deepEqual(result.payload, { power: true })
     t.is(result.len, len)

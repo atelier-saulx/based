@@ -112,12 +112,6 @@ export const uploadFileStream = async (
   let totalBytes = 0
   let streamHandler: StreamResponseHandler
 
-  const dcHandler = () => {
-    console.error('CLIENT DC -> ABORT STREAM')
-  }
-
-  client.once('disconnect', dcHandler)
-
   const wr = new Writable({
     write: function (c, encoding, next) {
       if (c.byteLength > maxSize) {
@@ -180,7 +174,15 @@ export const uploadFileStream = async (
 
   options.contents.pipe(wr)
 
+  let id = Math.random().toString(16)
+  const dcHandler = () => {
+    console.error('CLIENT DC -> ABORT STREAM', id)
+  }
+
+  client.once('disconnect', dcHandler)
+
   options.contents.on('end', () => {
+    console.log('END', id)
     client.off('disconnect', dcHandler)
   })
 
