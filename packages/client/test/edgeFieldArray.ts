@@ -94,6 +94,8 @@ test('edge array ops', async (t) => {
       player3,
     ],
   })
+
+  // Verify initial state
   t.deepEqual(await client.get({
     $id: game,
     players: true,
@@ -101,6 +103,7 @@ test('edge array ops', async (t) => {
     players: [player2, player1, player3],
   })
 
+  // $add
   await client.set({
     $id: game,
     players: { $add: player4 }
@@ -112,6 +115,7 @@ test('edge array ops', async (t) => {
     players: [player2, player1, player3, player4],
   })
 
+  // $remove
   await client.set({
     $id: game,
     players: { $remove: player3 },
@@ -123,6 +127,7 @@ test('edge array ops', async (t) => {
     players: [player2, player1, player4],
   })
 
+  // set new order
   await client.set({
     $id: game,
     players: [
@@ -138,4 +143,68 @@ test('edge array ops', async (t) => {
   }), {
     players: [player4, player3, player2, player1],
   })
+
+  // Set the same ref multiple times
+  await client.set({
+    $id: game,
+    players: [
+      player1,
+      player2,
+      player1,
+      player2,
+    ],
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player1, player2],
+  })
+
+  // Set the same ref multiple times using $add
+  await client.set({
+    $id: game,
+    players: [],
+  })
+  await client.set({
+    $id: game,
+    players: { $add: player1 }
+  })
+  await client.set({
+    $id: game,
+    players: { $add: player2 }
+  })
+  await client.set({
+    $id: game,
+    players: { $add: player1 }
+  })
+  await client.set({
+    $id: game,
+    players: { $add: player2 }
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player1, player2],
+  })
+
+  // TODO $assign $idx
+  //await client.set({
+  //  $id: game,
+  //  players: [player2],
+  //})
+  //await client.set({
+  //  $id: game,
+  //  players: {
+  //    $assign: {
+  //      $idx: 0,
+  //      $value: player1,
+  //    }
+  //  },
+  //})
+
+  // TODO insert?
+  // TODO $remove $idx
+  // TODO $move $idx
 })
