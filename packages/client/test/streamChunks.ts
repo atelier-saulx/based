@@ -13,7 +13,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test.only('stream small chunks', async (t: T) => {
+test('stream small chunks', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {

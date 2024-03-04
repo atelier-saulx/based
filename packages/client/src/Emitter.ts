@@ -57,10 +57,12 @@ class Emitter {
         this.on(type, listener)
       })
     }
-    const listener = (v: EventMap[E]) => {
-      fn(v)
+    // TODO: optmize this
+    const listener = () => {
       this.off(type, listener)
+      this.off(type, fn)
     }
+    this.on(type, fn)
     this.on(type, listener)
   }
 
@@ -73,7 +75,6 @@ class Emitter {
         for (let i = 0; i < listeners.length; i++) {
           if (listeners[i] === fn) {
             listeners.splice(i, 1)
-            i--
             break
           }
         }

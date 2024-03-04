@@ -176,13 +176,13 @@ export const uploadFileStream = async (
 
   let id = Math.random().toString(16)
   const dcHandler = () => {
-    console.error('CLIENT DC -> ABORT STREAM', id)
+    // HANDLE THIS
+    console.error('CLIENT DC -> ABORT STREAM', Date.now(), id)
   }
 
   client.once('disconnect', dcHandler)
 
   options.contents.on('end', () => {
-    console.log('END', id)
     client.off('disconnect', dcHandler)
   })
 
