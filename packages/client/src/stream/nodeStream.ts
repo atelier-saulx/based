@@ -83,26 +83,33 @@ export const uploadFileStream = async (
     options.payload
   )
 
-  // // 100kb
+  const useDeflate = !(options.mimeType
+    ? /image|video|x-zip/i.test(options.mimeType)
+    : options.extension
+    ? /(mp4|avi|mov|zip|jpg|jpeg|png|gif|mkv)/i.test(options.extension)
+    : false)
+
+  // 100kb
   const smallest = 100000
 
-  // // 3mb
-  const maxSize = 1000000 * 3 // 3 mb
+  // 10mb
+  const maxSize = 1000000 * 10
 
   // 1mb
-  const medium = 1000000
+  const medium = 1000000 * 1
 
   let readSize = Math.min(medium, options.size)
-  if (options.size < medium * 10) {
+  if (options.size < medium * 5) {
     readSize = Math.min(smallest, options.size)
+  } else if (options.size > medium * 100) {
+    readSize = maxSize
   }
 
   let bufferSize = 0
-
+  let nextHandler: any
   let chunks: any[] = []
-
+  let lastReceived = 0
   let totalBytes = 0
-
   let streamHandler: StreamResponseHandler
 
   const dcHandler = () => {
@@ -115,42 +122,20 @@ export const uploadFileStream = async (
     write: function (c, encoding, next) {
       if (c.byteLength > maxSize) {
         console.log('LARGER THEN MAX SIZE HANDLE!', c.byteLength, maxSize)
+        // handle this
       }
 
       bufferSize += c.byteLength
 
-      // TODO: handle encoding?
-      // console.info(encoding)
-      // only deflate ;?
-
       chunks.push(c)
 
       if (bufferSize >= readSize || totalBytes + bufferSize === options.size) {
-        const cb = (_, code: number) => {
-          if (code === 1) {
-            progressListener(1, options.size)
-          } else {
-            const n = new Uint8Array(bufferSize)
-            let c = 0
-            for (const b of chunks) {
-              n.set(b, c)
-              c += b.length
-            }
-            if (progressListener) {
-              progressListener(totalBytes / options.size, totalBytes)
-            }
-            totalBytes += bufferSize
-            addStreamChunk(client, reqId, ++seqId, n)
-            bufferSize = 0
-            chunks = []
-            next()
-          }
-        }
-
+        nextHandler = next
         if (seqId > 0) {
-          streamHandler[2] = cb
+          if (lastReceived === seqId) {
+            cb(undefined)
+          }
         } else {
-          // start
           setTimeout(cb, 0)
         }
       } else {
@@ -159,6 +144,39 @@ export const uploadFileStream = async (
     },
   })
 
+  const cb = (receivedSeqId, code?: number, maxChunkSize?: number) => {
+    if (receivedSeqId !== undefined) {
+      if (maxChunkSize) {
+        readSize = maxChunkSize
+      }
+      lastReceived = receivedSeqId
+    }
+
+    if (!nextHandler) {
+      return
+    }
+
+    if (code === 1) {
+      progressListener(1, options.size)
+    } else {
+      const n = new Uint8Array(bufferSize)
+      let c = 0
+      for (const b of chunks) {
+        n.set(b, c)
+        c += b.length
+      }
+      if (progressListener) {
+        progressListener(totalBytes / options.size, totalBytes)
+      }
+      totalBytes += bufferSize
+      addStreamChunk(client, reqId, ++seqId, n, useDeflate)
+      bufferSize = 0
+      chunks = []
+      nextHandler()
+      nextHandler = undefined
+    }
+  }
+
   options.contents.pipe(wr)
 
   options.contents.on('end', () => {
@@ -166,7 +184,7 @@ export const uploadFileStream = async (
   })
 
   return new Promise((resolve, reject) => {
-    streamHandler = [resolve, reject, () => {}]
+    streamHandler = [resolve, reject, cb]
     client.streamFunctionResponseListeners.set(reqId, streamHandler)
   })
 }

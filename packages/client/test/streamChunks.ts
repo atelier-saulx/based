@@ -59,7 +59,7 @@ test('stream small chunks', async (t: T) => {
         Math.min(payload.byteLength, (index + 1) * readBytes)
       )
       index++
-      console.log('INDEX', index)
+      console.log('write INDEX', index)
       yield buf
     }
   }

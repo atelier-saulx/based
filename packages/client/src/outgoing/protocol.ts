@@ -314,6 +314,8 @@ export const encodeStreamMessage = (
 
     const [, , seqId, chunk] = f
 
+    // only deflate is it makes sense
+
     let isDeflate = false
     let processed = chunk
     if (chunk.length > 150) {

@@ -8,6 +8,10 @@ import { uploadFilePath, uploadFileStream } from './nodeStream.js'
 
 export const isStreaming = { streaming: false }
 
+const createReadableStreamFromContents = () => {
+  // this is the best way
+}
+
 export default async (
   client: BasedClient,
   name: string,
@@ -21,6 +25,8 @@ export default async (
   if (isStreamFunctionStream(options)) {
     return uploadFileStream(client, name, options, progressListener)
   }
+
+  // make readable
 
   if (options.contents instanceof ArrayBuffer) {
     options.contents = global.Buffer.from(options.contents)

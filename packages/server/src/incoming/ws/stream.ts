@@ -17,6 +17,7 @@ import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '../../error/index.js'
 import zlib from 'node:zlib'
+import { BasedServer } from '../../server.js'
 
 const startStreamFunction: IsAuthorizedHandler<
   WebSocketSession,
@@ -192,6 +193,12 @@ export const registerStream: BinaryMessageHandler = (
   return true
 }
 
+const getMaxChunkSize = (server: BasedServer): number => {
+  return 0
+}
+
+// add counter for active streams
+
 export const receiveChunkStream: BinaryMessageHandler = (
   arr,
   start,
@@ -228,7 +235,9 @@ export const receiveChunkStream: BinaryMessageHandler = (
     sendError(server, ctx, BasedErrorCode.FunctionError, {
       route: sRoute,
       streamRequestId: reqId,
-      err: `SeqId out of order: ${seqId} prev seq ${streamPayload.seqId}`,
+      err: `Chunk is out of order
+- current chunk #${seqId}, 
+- previous chunk #${streamPayload.seqId}`,
     })
     streamPayload.stream.destroy()
     delete ctx.session.streams[reqId]
@@ -255,16 +264,25 @@ export const receiveChunkStream: BinaryMessageHandler = (
         streamPayload.size
       ) {
         streamPayload.stream.end(chunk)
-
         ctx.session.ws.send(
-          encodeStreamFunctionChunkResponse(reqId, seqId, 1),
+          encodeStreamFunctionChunkResponse(
+            reqId,
+            seqId,
+            1,
+            getMaxChunkSize(server)
+          ),
           true,
           false
         )
       } else {
         streamPayload.stream.write(chunk)
         ctx.session.ws.send(
-          encodeStreamFunctionChunkResponse(reqId, seqId, 0),
+          encodeStreamFunctionChunkResponse(
+            reqId,
+            seqId,
+            0,
+            getMaxChunkSize(server)
+          ),
           true,
           false
         )
@@ -274,14 +292,24 @@ export const receiveChunkStream: BinaryMessageHandler = (
     streamPayload.stream.write(chunk)
     if (streamPayload.stream.receivedBytes === streamPayload.size) {
       ctx.session.ws.send(
-        encodeStreamFunctionChunkResponse(reqId, seqId, 1),
+        encodeStreamFunctionChunkResponse(
+          reqId,
+          seqId,
+          1,
+          getMaxChunkSize(server)
+        ),
         true,
         false
       )
       streamPayload.stream.end()
     } else {
       ctx.session.ws.send(
-        encodeStreamFunctionChunkResponse(reqId, seqId, 0),
+        encodeStreamFunctionChunkResponse(
+          reqId,
+          seqId,
+          0,
+          getMaxChunkSize(server)
+        ),
         true,
         false
       )

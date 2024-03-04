@@ -390,14 +390,26 @@ export const incoming = async (client: BasedClient, data: any) => {
           client.streamFunctionResponseListeners.delete(id)
         }
       } else if (subType === 2) {
-        // | 4 header | 1 subType | 3 id | 1 seqId | 1 code
+        // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize
         const id = readUint8(buffer, 5, 3)
         const seqId = readUint8(buffer, 8, 1)
         const code = readUint8(buffer, 9, 1)
 
+        let maxChunkSize = 0
+
+        if (len > 10 - 4) {
+          maxChunkSize = readUint8(buffer, 10, len - 6)
+          console.log('more data', maxChunkSize)
+        }
+
         // if len is smaller its an error OR use 0 as error (1 - 255)
+
         if (client.streamFunctionResponseListeners.has(id)) {
-          client.streamFunctionResponseListeners.get(id)[2](seqId, code)
+          client.streamFunctionResponseListeners.get(id)[2](
+            seqId,
+            code,
+            maxChunkSize
+          )
         }
       }
     }

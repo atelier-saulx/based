@@ -322,7 +322,8 @@ export const addStreamChunk = (
   client: BasedClient,
   reqId: number,
   seqId: number,
-  chunk: Uint8Array
+  chunk: Uint8Array,
+  deflate: boolean
 ) => {
   // lets send the chunks of streams directly
   // also need to keep the amount we push in here to a minimum
@@ -333,7 +334,13 @@ export const addStreamChunk = (
 
   if (client.connected) {
     // how to get progress
-    const { len, buffers } = encodeStreamMessage([2, reqId, seqId, chunk])
+    const { len, buffers } = encodeStreamMessage([
+      2,
+      reqId,
+      seqId,
+      chunk,
+      deflate,
+    ])
     const n = new Uint8Array(len)
     let c = 0
     for (const b of buffers) {
@@ -344,7 +351,6 @@ export const addStreamChunk = (
     idleTimeout(client)
   } else {
     // console.info('for streams you need to be connected', this can other wiser overflow)
-    // prob
-    client.sQ.push([2, reqId, seqId, chunk])
+    client.sQ.push([2, reqId, seqId, chunk, deflate])
   }
 }

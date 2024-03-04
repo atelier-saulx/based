@@ -83,7 +83,8 @@ export type StreamQueueItem =
       2, // chunk
       number, // reqId,
       number, // seq,
-      Uint8Array // contents
+      Uint8Array, // contents
+      boolean // deflate
     ]
 
 export type StreamQueue = StreamQueueItem[]
@@ -91,7 +92,7 @@ export type StreamQueue = StreamQueueItem[]
 export type StreamResponseHandler = [
   (val?: any) => void,
   (err: Error) => void,
-  (seqId: number, code: number) => void
+  (seqId: number, code: number, maxChunkSize: number) => void
 ]
 
 export type StreamFunctionResponseListeners = Map<number, StreamResponseHandler>

@@ -196,18 +196,31 @@ export const encodeStreamFunctionResponse = (
 export const encodeStreamFunctionChunkResponse = (
   id: number,
   seqId: number,
-  code: number = 0
+  code: number = 0,
+  maxChunkSize: number = 0
 ): Uint8Array => {
   // Type 7.2
-  // | 4 header | 1 subType | 3 id | 1 seqId | 1 code
-  const msgSize = 6
+  // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize?
+  let msgSize = 6
+
+  if (maxChunkSize) {
+    msgSize += 3
+  }
+
   const header = encodeHeader(7, false, msgSize)
+
   const array = new Uint8Array(4 + msgSize)
+
   storeUint8(array, header, 0, 4)
   storeUint8(array, 2, 4, 1)
   storeUint8(array, id, 5, 3)
   storeUint8(array, seqId, 8, 1)
   storeUint8(array, code, 9, 1)
+
+  if (maxChunkSize) {
+    storeUint8(array, maxChunkSize, 10, 3)
+  }
+
   return array
 }
 

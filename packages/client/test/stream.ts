@@ -235,7 +235,9 @@ test('stream functions - path', async (t: T) => {
   await server.destroy()
 })
 
-test('stream functions - path json', async (t: T) => {
+test.only('stream functions - path json', async (t: T) => {
+  let lastChunk = 0
+
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -246,8 +248,24 @@ test('stream functions - path json', async (t: T) => {
           maxPayloadSize: 1e9,
           fn: async (_, x) => {
             const { payload, stream, mimeType } = x
-            const file = (await readStream(stream)).toString()
-            return { payload, file, mimeType }
+
+            stream.on('end', () => {
+              console.info('flap')
+            })
+
+            for await (const chunk of stream) {
+              console.log(
+                '>>> ' + chunk.byteLength,
+                stream,
+                'took',
+                Date.now() - lastChunk,
+                'ms',
+                'to receive chunk'
+              )
+
+              lastChunk = Date.now()
+            }
+            return { payload, mimeType }
           },
         },
       },
@@ -260,7 +278,9 @@ test('stream functions - path json', async (t: T) => {
   })
   const s = await client.stream('hello', {
     payload: { power: true },
-    path: join(__dirname, '/browser/tmp.json'),
+    path: '/Users/jimdebeer/Downloads/A.Quiet.Place.Part.II.2020.1080p.BluRay.AV1.AAC.5.1.MULTi10-lvl99.mkv',
+
+    // join(__dirname, '/browser/tmp.json'),
   })
   t.deepEqual(s, {
     mimeType: 'application/json',
