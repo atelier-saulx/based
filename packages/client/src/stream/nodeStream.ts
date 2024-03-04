@@ -121,22 +121,24 @@ export const uploadFileStream = async (
   const wr = new Writable({
     write: function (c, encoding, next) {
       if (c.byteLength > maxSize) {
-        console.log('LARGER THEN MAX SIZE HANDLE!', c.byteLength, maxSize)
-        // handle this
+        console.warn(
+          'CHUNK SIZE LARGER THEN MAX SIZE NOT HANDLED YET',
+          c.byteLength,
+          maxSize
+        )
       }
-
       bufferSize += c.byteLength
-
       chunks.push(c)
-
       if (bufferSize >= readSize || totalBytes + bufferSize === options.size) {
         nextHandler = next
         if (seqId > 0) {
           if (lastReceived === seqId) {
-            cb(undefined)
+            // Client is slower then server (most common)
+            nextChunk(undefined)
           }
+          // Else server is slower then client e.g. transcoding etc
         } else {
-          setTimeout(cb, 0)
+          setTimeout(nextChunk, 0)
         }
       } else {
         next()
@@ -144,18 +146,17 @@ export const uploadFileStream = async (
     },
   })
 
-  const cb = (receivedSeqId, code?: number, maxChunkSize?: number) => {
+  const nextChunk = (receivedSeqId, code?: number, maxChunkSize?: number) => {
     if (receivedSeqId !== undefined) {
       if (maxChunkSize) {
+        // set readSize if sefver is busy
         readSize = maxChunkSize
       }
       lastReceived = receivedSeqId
     }
-
     if (!nextHandler) {
       return
     }
-
     if (code === 1) {
       progressListener(1, options.size)
     } else {
@@ -184,7 +185,7 @@ export const uploadFileStream = async (
   })
 
   return new Promise((resolve, reject) => {
-    streamHandler = [resolve, reject, cb]
+    streamHandler = [resolve, reject, nextChunk]
     client.streamFunctionResponseListeners.set(reqId, streamHandler)
   })
 }

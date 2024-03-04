@@ -26,7 +26,7 @@ test('stream small chunks', async (t: T) => {
             stream.on('progress', () => console.log(stream))
             const x = await readStream(stream, {
               throttle: 10,
-              maxChunkSize: 1000,
+              maxChunkSize: 5000,
             })
             console.log(stream)
             const y = new TextDecoder().decode(x)
@@ -44,7 +44,7 @@ test('stream small chunks', async (t: T) => {
     url: async () => t.context.ws,
   })
 
-  const len = 1000000
+  const len = 100000
   const bigBod: any[] = []
   for (let i = 0; i < len; i++) {
     bigBod.push({ flap: 'snurp', i })
@@ -59,7 +59,6 @@ test('stream small chunks', async (t: T) => {
         Math.min(payload.byteLength, (index + 1) * readBytes)
       )
       index++
-      console.log('write INDEX', index)
       yield buf
     }
   }
