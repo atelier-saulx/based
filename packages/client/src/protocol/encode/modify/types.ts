@@ -53,14 +53,21 @@ export const SET_TYPE_TO_MODIFY_VALUE_TYPE: Record<number, (t: any) => any> = {
   1: null,
   2: (x) => x,
   3: (x) => BigInt(x),
-}
+} as const
 
 export const OP_SET_TYPE = {
   char: 0,
   reference: 1,
   double: 2,
   long_long: 3,
-}
+} as const
+
+export const ORD_SET_MODE = {
+  insert: 0,
+  assign: 1,
+  delete: 2,
+  move: 3,
+} as const
 
 export const doubleDef = compile([{ name: 'd', type: 'double_le' }])
 
@@ -99,6 +106,15 @@ export const opSetHll = compile([
   { name: '$add', type: 'cstring_p' },
 ])
 
+export const opOrdSetDefCstring = compile([
+  { name: 'op_set_type', type: 'int8' },
+  { name: 'mode', type: 'int8' },
+  { name: 'constraint_id', type: 'uint16_le' },
+  /* 32 zeroed bytes */
+  { name: 'index', type: 'uint64_le' },
+  { name: '$value', type: 'cstring_p' },
+])
+
 export const edgeMetaDef = compile([
   { name: 'op_code', type: 'int8' },
   { name: 'delete_all', type: 'int8' },
@@ -124,4 +140,10 @@ export const SET_OP_BY_TYPE: {
   1: opSetDefCstring,
   2: opSetDefDouble,
   3: opSetDefInt64,
-}
+} as const
+
+export const ORD_SET_OP_BY_TYPE: {
+  [OP_SET_TYPE: number]: CompiledRecordDef
+} = {
+  1: opOrdSetDefCstring,
+} as const
