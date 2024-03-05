@@ -18,7 +18,7 @@ test.beforeEach(async (t: T) => {
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
-test('stream functions - buffer contents', async (t: T) => {
+test.only('stream functions - buffer contents', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
@@ -33,7 +33,13 @@ test('stream functions - buffer contents', async (t: T) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })
-            await readStream(stream)
+            stream.on('data', (c) => {
+              console.log('CHUNK', c.toString())
+            })
+            const r = await readStream(stream)
+            const decoder = new TextDecoder()
+            const str = decoder.decode(r)
+            // console.log(str)
             return payload
           },
         },
@@ -51,7 +57,7 @@ test('stream functions - buffer contents', async (t: T) => {
   }
   const s = await client.stream('hello', {
     payload: { power: true },
-    contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
+    contents: Buffer.from(JSON.stringify(bigBod)),
   })
   t.deepEqual(s, { power: true })
 
@@ -235,7 +241,7 @@ test('stream functions - path', async (t: T) => {
   await server.destroy()
 })
 
-test.only('stream functions - path json', async (t: T) => {
+test('stream functions - path json', async (t: T) => {
   let lastChunk = 0
 
   const server = new BasedServer({
