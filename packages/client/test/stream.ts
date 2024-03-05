@@ -122,7 +122,7 @@ test.only('stream functions - streamContents', async (t: T) => {
       setTimeout(() => {
         index++
         streamBits()
-      }, 18)
+      }, 100)
     }
   }
   streamBits()
