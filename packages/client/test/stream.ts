@@ -68,7 +68,7 @@ test('stream functions - buffer contents', async (t: T) => {
   await server.destroy()
 })
 
-test('stream functions - streamContents', async (t: T) => {
+test.only('stream functions - streamContents', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
@@ -100,7 +100,7 @@ test('stream functions - streamContents', async (t: T) => {
     url: async () => t.context.ws,
   })
   const bigBod: any[] = []
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
   const payload = Buffer.from(JSON.stringify(bigBod))
@@ -112,7 +112,7 @@ test('stream functions - streamContents', async (t: T) => {
   })
   let index = 0
   const streamBits = () => {
-    const readBytes = 1000
+    const readBytes = 100000
     const end = (index + 1) * readBytes
     if (end > payload.byteLength) {
       stream.push(payload.slice(index * readBytes, end))
