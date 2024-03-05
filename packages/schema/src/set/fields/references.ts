@@ -159,6 +159,35 @@ export const references: FieldParser<'references'> = async (args) => {
           args.error(ParseError.incorrectFormat)
           return
         }
+      } else if (key === '$insert') {
+        if (typeof value.$insert !== 'object') {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
+        if (!args.fieldSchema.sortable) {
+          args.error(ParseError.incorrectFieldType)
+          return
+        }
+
+        switch (typeof value.$insert.$idx) {
+          case 'bigint':
+            break;
+          case 'number':
+            value.$insert.$idx = BigInt(value.$insert.$idx)
+            break;
+          default:
+            args.error(ParseError.incorrectFormat)
+            return
+        }
+
+        if (Array.isArray(value.$insert.$value)) {
+          // NOP
+        } else if (typeof value.$insert.$value === 'string') {
+          value.$insert.$value = [value.$insert.$value]
+        } else {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
       } else {
         args.create({ key }).error(ParseError.fieldDoesNotExist)
       }

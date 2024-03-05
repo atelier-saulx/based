@@ -213,7 +213,7 @@ test.only('edge array ops', async (t) => {
   // $assign $idx multi
   await client.set({
     $id: game,
-    players: [player1 ],
+    players: [player1],
   })
   await client.set({
     $id: game,
@@ -231,7 +231,27 @@ test.only('edge array ops', async (t) => {
     players: [player1, player2, player3]
   })
 
-  // TODO insert $idx (Not supported in the client)
+  // $insert $idx
+  await client.set({
+    $id: game,
+    players: [player1, player3],
+  })
+  await client.set({
+    $id: game,
+    players: {
+      $insert: {
+        $idx: 1,
+        $value: player2,
+      }
+    },
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player1, player2, player3]
+  })
+
   // TODO $remove $idx (Not supported in the client)
   // TODO $move $idx (Not supported in the client)
 })

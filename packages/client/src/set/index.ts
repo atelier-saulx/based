@@ -83,6 +83,17 @@ export function toModifyArgs(props: {
             $value: value.$assign.$value,
           }
         ]
+      } else if (value.$insert) {
+        return [
+          ModifyArgType.SELVA_MODIFY_ARG_OP_ORD_SET,
+          strPath,
+          {
+            setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+            mode: ORD_SET_MODE.insert,
+            index: value.$insert.$idx,
+            $value: value.$insert.$value,
+          }
+        ]
       } else {
         // @ts-ignore
         return [
