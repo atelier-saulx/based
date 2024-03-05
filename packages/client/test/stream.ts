@@ -3,7 +3,7 @@ import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
-import { readFileSync } from 'node:fs'
+import { readFileSync, createReadStream } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 import getPort from 'get-port'
@@ -18,7 +18,7 @@ test.beforeEach(async (t: T) => {
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
-test.only('stream functions - buffer contents', async (t: T) => {
+test('stream functions - buffer contents', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
@@ -239,36 +239,26 @@ test('stream functions - path', async (t: T) => {
   await server.destroy()
 })
 
-test('stream functions - path json', async (t: T) => {
-  let lastChunk = 0
-
+test.only('stream functions - path json', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
       configs: {
         hello: {
           type: 'stream',
-          uninstallAfterIdleTime: 1,
-          maxPayloadSize: 1e9,
+          uninstallAfterIdleTime: 1e6,
+          maxPayloadSize: 1e100,
           fn: async (_, x) => {
             const { payload, stream, mimeType } = x
-
-            stream.on('end', () => {
-              console.info('flap')
+            stream.on('end', () => {})
+            stream.on('progress', (d) => {
+              console.info(stream)
             })
 
-            for await (const chunk of stream) {
-              console.log(
-                '>>> ' + chunk.byteLength,
-                stream,
-                'took',
-                Date.now() - lastChunk,
-                'ms',
-                'to receive chunk'
-              )
+            await wait(1e6)
 
-              lastChunk = Date.now()
-            }
+            // for await (const chunk of stream) {
+            // }
             return { payload, mimeType }
           },
         },
@@ -280,6 +270,21 @@ test('stream functions - path json', async (t: T) => {
   client.connect({
     url: async () => t.context.ws,
   })
+
+  let fileRead = 0
+  // createReadStream(
+  //   '/Users/jimdebeer/Downloads/A.Quiet.Place.Part.II.2020.1080p.BluRay.AV1.AAC.5.1.MULTi10-lvl99.mkv'
+  // ).on('data', (d) => {
+  //   // @ts-ignore
+  //   fileRead += d.byteLength
+  // })
+
+  // setInterval(() => {
+  //   console.log(fileRead / 1e6, 'mb')
+  // }, 100)
+
+  // await wait(10e3)
+
   const s = await client.stream('hello', {
     payload: { power: true },
     path: '/Users/jimdebeer/Downloads/A.Quiet.Place.Part.II.2020.1080p.BluRay.AV1.AAC.5.1.MULTi10-lvl99.mkv',

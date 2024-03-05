@@ -239,13 +239,14 @@ export const receiveChunkStream: BinaryMessageHandler = (
 - current chunk #${seqId}, 
 - previous chunk #${streamPayload.seqId}`,
     })
+    console.log('ERROR chunky')
     streamPayload.stream.destroy()
     delete ctx.session.streams[reqId]
     // maybe return false... (something is wrong)
     return true
   }
 
-  streamPayload.seqId = seqId === 255 ? -1 : seqId
+  streamPayload.seqId = seqId === 255 ? 0 : seqId
 
   // encoding can still be a thing for streams test with png's
 

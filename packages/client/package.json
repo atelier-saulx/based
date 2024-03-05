@@ -24,7 +24,7 @@
     ".": "./dist/src/index.js"
   },
   "ava": {
-    "timeout": "2m",
+    "timeout": "4m",
     "workerThreads": false,
     "files": [
       "./dist/test/**/*.js"

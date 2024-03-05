@@ -67,7 +67,7 @@ export const uploadFileStream = async (
   let reqId = ++client.streamRequestId
 
   if (reqId > 16777215) {
-    reqId = 0
+    reqId = client.streamRequestId = 0
   }
 
   let seqId = 0
@@ -164,6 +164,11 @@ export const uploadFileStream = async (
         progressListener(totalBytes / options.size, totalBytes)
       }
       totalBytes += bufferSize
+
+      if (seqId === 255) {
+        seqId = 0
+      }
+
       addStreamChunk(client, reqId, ++seqId, n, useDeflate)
       bufferSize = 0
       chunks = []
