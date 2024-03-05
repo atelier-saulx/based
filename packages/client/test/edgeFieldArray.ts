@@ -66,7 +66,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.only('edge array ops', async (t) => {
+test('edge array ops', async (t) => {
   const { client } = t.context
 
   const player1 = await client.set({
@@ -252,6 +252,26 @@ test.only('edge array ops', async (t) => {
     players: [player1, player2, player3]
   })
 
+  // $move $idx
+  await client.set({
+    $id: game,
+    players: [player3, player1, player2],
+  })
+  await client.set({
+    $id: game,
+    players: {
+      $move: {
+        $idx: 1,
+        $value: [player2, player3],
+      }
+    },
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player1, player2, player3]
+  })
+
   // TODO $remove $idx (Not supported in the client)
-  // TODO $move $idx (Not supported in the client)
 })

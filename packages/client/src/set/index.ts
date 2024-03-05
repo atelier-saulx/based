@@ -94,6 +94,17 @@ export function toModifyArgs(props: {
             $value: value.$insert.$value,
           }
         ]
+      } else if (value.$move) {
+        return [
+          ModifyArgType.SELVA_MODIFY_ARG_OP_ORD_SET,
+          strPath,
+          {
+            setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+            mode: ORD_SET_MODE.move,
+            index: value.$move.$idx,
+            $value: value.$move.$value,
+          }
+        ]
       } else {
         // @ts-ignore
         return [

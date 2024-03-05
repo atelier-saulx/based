@@ -101,6 +101,37 @@ export const reference: FieldParser<'reference'> = async (args) => {
   }
 }
 
+function parseSortableOp(args, value, op: '$assign' | '$insert' | '$move') {
+  if (typeof value[op] !== 'object') {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+  if (!args.fieldSchema.sortable) {
+    args.error(ParseError.incorrectFieldType)
+    return
+  }
+
+  switch (typeof value[op].$idx) {
+    case 'bigint':
+      break;
+    case 'number':
+      value[op].$idx = BigInt(value[op].$idx)
+      break;
+    default:
+      args.error(ParseError.incorrectFormat)
+      return
+  }
+
+  if (Array.isArray(value[op].$value)) {
+    // NOP
+  } else if (typeof value[op].$value === 'string') {
+    value[op].$value = [value[op].$value]
+  } else {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+}
+
 export const references: FieldParser<'references'> = async (args) => {
   const { value } = args
 
@@ -131,63 +162,12 @@ export const references: FieldParser<'references'> = async (args) => {
       } else if (key === '$remove') {
         args.value.$remove = await parseOperator(args, key)
       } else if (key === '$assign') {
-        if (typeof value.$assign !== 'object') {
-          args.error(ParseError.incorrectFormat)
-          return
-        }
-        if (!args.fieldSchema.sortable) {
-          args.error(ParseError.incorrectFieldType)
-          return
-        }
-
-        switch (typeof value.$assign.$idx) {
-          case 'bigint':
-            break;
-          case 'number':
-            value.$assign.$idx = BigInt(value.$assign.$idx)
-            break;
-          default:
-            args.error(ParseError.incorrectFormat)
-            return
-        }
-
-        if (Array.isArray(value.$assign.$value)) {
-          // NOP
-        } else if (typeof value.$assign.$value === 'string') {
-          value.$assign.$value = [value.$assign.$value]
-        } else {
-          args.error(ParseError.incorrectFormat)
-          return
-        }
+        parseSortableOp(args, value, '$assign')
       } else if (key === '$insert') {
-        if (typeof value.$insert !== 'object') {
-          args.error(ParseError.incorrectFormat)
-          return
-        }
-        if (!args.fieldSchema.sortable) {
-          args.error(ParseError.incorrectFieldType)
-          return
-        }
-
-        switch (typeof value.$insert.$idx) {
-          case 'bigint':
-            break;
-          case 'number':
-            value.$insert.$idx = BigInt(value.$insert.$idx)
-            break;
-          default:
-            args.error(ParseError.incorrectFormat)
-            return
-        }
-
-        if (Array.isArray(value.$insert.$value)) {
-          // NOP
-        } else if (typeof value.$insert.$value === 'string') {
-          value.$insert.$value = [value.$insert.$value]
-        } else {
-          args.error(ParseError.incorrectFormat)
-          return
-        }
+        parseSortableOp(args, value, '$insert')
+      } else if (key === '$move') {
+        parseSortableOp(args, value, '$move')
+        value.$move.$value.reverse()
       } else {
         args.create({ key }).error(ParseError.fieldDoesNotExist)
       }

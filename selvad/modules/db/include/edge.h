@@ -306,7 +306,7 @@ int Edge_Move(
         const char *field_name_str,
         size_t field_name_len,
         const Selva_NodeId dst_node_id,
-        ssize_t index);
+        size_t index);
 
 /**
  * Delete all edges of a field.

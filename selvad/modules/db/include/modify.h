@@ -151,7 +151,8 @@ struct SelvaModify_OpOrdSet {
      *
      * **SelvaModify_OpOrdSet_Move**
      * Move listed nodes to `index`. The nodes must exist but they don't need to
-     * be consecutive.
+     * be consecutive. The move will happen in reverse order.
+     * E.g. `[1, 2, 3]` will be inserted as `[3, 2, 1]`.
      */
     const char *$value_str;
     size_t $value_len;
