@@ -73,7 +73,6 @@ export default (
         }
       },
       close: (ws: BasedWebSocket) => {
-        console.log('close?')
         const session = ws.getUserData()
 
         if (session.streams) {
