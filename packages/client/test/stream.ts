@@ -255,10 +255,8 @@ test.only('stream functions - path json', async (t: T) => {
               console.info(stream)
             })
 
-            await wait(1e6)
-
-            // for await (const chunk of stream) {
-            // }
+            for await (const chunk of stream) {
+            }
             return { payload, mimeType }
           },
         },
