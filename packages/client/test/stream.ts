@@ -68,7 +68,7 @@ test('stream functions - buffer contents', async (t: T) => {
   await server.destroy()
 })
 
-test.only('stream functions - streamContents', async (t: T) => {
+test('stream functions - streamContents', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
