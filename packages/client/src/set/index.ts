@@ -9,6 +9,7 @@ import {
 import {
   ModifyArgType,
   ModifyOpSetType,
+  ORD_SET_MODE,
   SelvaModify_OpEdgeMetaCode,
   edgeMetaDef,
 } from '../protocol/encode/modify/types.js'
@@ -71,23 +72,36 @@ export function toModifyArgs(props: {
         value = { $value: [value] }
       }
     case 'references':
-      // @ts-ignore
-      return [
-        ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
-        strPath,
-        {
-          ...value,
-          setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-          isSingle: fieldSchema.type === 'reference',
-          // We have to pass sortable instead of setting $delete directly here
-          // because otherwise we'd never reach encodeSetOperation() as this
-          // op would be probably turned into a field deletion.
-          // @ts-ignore
-          sortable: fieldSchema.sortable,
-          // @ts-ignore
-          isBidirectional: !!fieldSchema.bidirectional,
-        },
-      ]
+      if (value.$assign) {
+        return [
+          ModifyArgType.SELVA_MODIFY_ARG_OP_ORD_SET,
+          strPath,
+          {
+            setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+            mode: ORD_SET_MODE.assign,
+            index: value.$assign.$idx,
+            $value: value.$assign.$value,
+          }
+        ]
+      } else {
+        // @ts-ignore
+        return [
+          ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
+          strPath,
+          {
+            ...value,
+            setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+            isSingle: fieldSchema.type === 'reference',
+            // We have to pass sortable instead of setting $delete directly here
+            // because otherwise we'd never reach encodeSetOperation() as this
+            // op would be probably turned into a field deletion.
+            // @ts-ignore
+            sortable: fieldSchema.sortable,
+            // @ts-ignore
+            isBidirectional: !!fieldSchema.bidirectional,
+          },
+        ]
+      }
     case 'set':
       const setFieldSchema = <BasedSchemaFieldSet>fieldSchema
       return [

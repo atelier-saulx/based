@@ -15,6 +15,7 @@ export enum ModifyArgType {
   SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE = 'B' /*!< Increment a double value. */,
   /* Node object set field operations. */
   SELVA_MODIFY_ARG_OP_SET = '5' /*!< Value is a struct SelvaModify_OpSet. */,
+  SELVA_MODIFY_ARG_OP_ORD_SET = 'J' /*!<  Value is a struct SelvaModify_OpOrdSet. */,
   /* Node object array field operations. */
   SELVA_MODIFY_ARG_OP_ARRAY_PUSH = 'D' /*!< Set a new empty SelvaObject at the end of an array */,
   SELVA_MODIFY_ARG_OP_ARRAY_INSERT = 'E' /*!< Set a new empty SelvaObject at the start of an array */,

@@ -66,7 +66,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('edge array ops', async (t) => {
+test.only('edge array ops', async (t) => {
   const { client } = t.context
 
   const player1 = await client.set({
@@ -189,22 +189,49 @@ test('edge array ops', async (t) => {
     players: [player1, player2],
   })
 
-  // TODO $assign $idx
-  //await client.set({
-  //  $id: game,
-  //  players: [player2],
-  //})
-  //await client.set({
-  //  $id: game,
-  //  players: {
-  //    $assign: {
-  //      $idx: 0,
-  //      $value: player1,
-  //    }
-  //  },
-  //})
+  // $assign $idx
+  await client.set({
+    $id: game,
+    players: [player2, player3],
+  })
+  await client.set({
+    $id: game,
+    players: {
+      $assign: {
+        $idx: 0,
+        $value: player1,
+      }
+    },
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player1, player3]
+  })
 
-  // TODO insert?
-  // TODO $remove $idx
-  // TODO $move $idx
+  // $assign $idx multi
+  await client.set({
+    $id: game,
+    players: [player1 ],
+  })
+  await client.set({
+    $id: game,
+    players: {
+      $assign: {
+        $idx: 1,
+        $value: [player2, player3],
+      }
+    },
+  })
+  t.deepEqual(await client.get({
+    $id: game,
+    players: true,
+  }), {
+    players: [player1, player2, player3]
+  })
+
+  // TODO insert $idx (Not supported in the client)
+  // TODO $remove $idx (Not supported in the client)
+  // TODO $move $idx (Not supported in the client)
 })
