@@ -251,13 +251,8 @@ test.only('stream functions - path json', async (t: T) => {
           fn: async (_, x) => {
             const { payload, stream, mimeType } = x
             stream.on('end', () => {})
-            stream.on('progress', (d) => {
-              console.info(stream)
-            })
-
-            for await (const chunk of stream) {
-            }
-            return { payload, mimeType }
+            const file = await readStream(stream)
+            return { payload, mimeType, file: file.toString() }
           },
         },
       },
@@ -269,25 +264,9 @@ test.only('stream functions - path json', async (t: T) => {
     url: async () => t.context.ws,
   })
 
-  let fileRead = 0
-  // createReadStream(
-  //   '/Users/jimdebeer/Downloads/A.Quiet.Place.Part.II.2020.1080p.BluRay.AV1.AAC.5.1.MULTi10-lvl99.mkv'
-  // ).on('data', (d) => {
-  //   // @ts-ignore
-  //   fileRead += d.byteLength
-  // })
-
-  // setInterval(() => {
-  //   console.log(fileRead / 1e6, 'mb')
-  // }, 100)
-
-  // await wait(10e3)
-
   const s = await client.stream('hello', {
     payload: { power: true },
-    path: '/Users/jimdebeer/Downloads/A.Quiet.Place.Part.II.2020.1080p.BluRay.AV1.AAC.5.1.MULTi10-lvl99.mkv',
-
-    // join(__dirname, '/browser/tmp.json'),
+    path: join(__dirname, '/browser/tmp.json'),
   })
   t.deepEqual(s, {
     mimeType: 'application/json',
