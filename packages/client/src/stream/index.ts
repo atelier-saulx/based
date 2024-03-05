@@ -6,10 +6,11 @@ import {
 } from './types.js'
 import { Readable } from 'node:stream'
 import { uploadFilePath, uploadFileStream } from './nodeStream.js'
+import { Buffer } from 'node:buffer'
 
 export const isStreaming = { streaming: false }
 
-async function* generateChunks(bytes: ArrayBuffer) {
+async function* generateChunks(bytes: Uint8Array) {
   // 100kb (bit arbitrary)
   const readBytes = 100000
   let index = 0
@@ -23,7 +24,7 @@ async function* generateChunks(bytes: ArrayBuffer) {
   }
 }
 
-const createReadableStreamFromContents = (bytes: ArrayBuffer): Readable => {
+const createReadableStreamFromContents = (bytes: Uint8Array): Readable => {
   return Readable.from(generateChunks(bytes))
 }
 
@@ -41,15 +42,19 @@ export default async (
     return uploadFileStream(client, name, options, progressListener)
   }
 
-  if (options.contents instanceof global.Buffer) {
-    options.contents = options.contents.buffer
+  if (options.contents instanceof Buffer) {
+    options.contents = new Uint8Array(
+      options.contents.buffer,
+      options.contents.byteOffset,
+      options.contents.length
+    )
   }
 
   if (typeof options.contents === 'string') {
     options.contents = new TextEncoder().encode(options.contents)
   }
 
-  if (options.contents instanceof ArrayBuffer) {
+  if (options.contents instanceof Uint8Array) {
     return uploadFileStream(
       client,
       name,

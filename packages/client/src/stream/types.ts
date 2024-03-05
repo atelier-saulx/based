@@ -7,7 +7,7 @@ export type ReadableStream = {
 export type ProgressListener = (progress: number, files: number) => void
 
 export type StreamFunctionContents<
-  F = Buffer | ArrayBuffer | string | File | Blob
+  F = Buffer | Uint8Array | string | File | Blob
 > = {
   contents: F
   payload?: any

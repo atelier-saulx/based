@@ -34,7 +34,7 @@ test.only('stream functions - buffer contents', async (t: T) => {
               progressEvents.push(d)
             })
             stream.on('data', (c) => {
-              console.log('CHUNK', c.toString())
+              // console.log('CHUNK', c.toString())
             })
             const r = await readStream(stream)
             const decoder = new TextDecoder()
@@ -60,10 +60,8 @@ test.only('stream functions - buffer contents', async (t: T) => {
     contents: Buffer.from(JSON.stringify(bigBod)),
   })
   t.deepEqual(s, { power: true })
-
   t.true(progressEvents.length > 0)
   t.is(progressEvents[progressEvents.length - 1], 1)
-  // cycles of 3 secs
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
   client.disconnect()
