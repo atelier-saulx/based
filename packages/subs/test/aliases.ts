@@ -62,3 +62,51 @@ test('changing alias to another node fires subscription', async (t) => {
   await wait(500 * 2)
   destroySubscriber(client)
 })
+
+test.failing(
+  'subcribing to non existing alias should not cache results',
+  async (t) => {
+    t.timeout(3000)
+    const client = t.context.client
+
+    const alias = 'hello-friend'
+
+    // TODO: Should a "isNull" result trigger a subscribe?
+    await new Promise((resolve) => {
+      subscribe(
+        client,
+        {
+          $alias: alias,
+          yesh: true,
+        },
+        (d: any) => {
+          t.is(d, {})
+          resolve(true)
+        }
+      )
+    })
+
+    client.set({
+      $id: 'yebba',
+      yesh: 'pretty nice',
+      aliases: { $add: 'hello-friend' },
+    })
+
+    await new Promise((resolve) => {
+      subscribe(
+        client,
+        {
+          $alias: alias,
+          yesh: true,
+        },
+        (d: any) => {
+          t.is(d.yesh, 'pretty nice')
+          resolve(true)
+        }
+      )
+    })
+
+    await wait(500)
+    destroySubscriber(client)
+  }
+)

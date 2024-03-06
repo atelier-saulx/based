@@ -632,3 +632,31 @@ test('set with $alias', async (t) => {
     }
   )
 })
+
+test.only('get non-existing by $alias and then create alias', async (t) => {
+  const { client } = t.context
+
+  const alias = 'does_not_exists'
+
+  const query = {
+    $language: 'en',
+    $alias: alias,
+    id: true,
+    title: true,
+    aliases: true,
+  }
+
+  deepEqualIgnoreOrder(t, await client.get(query), {})
+
+  const id = await client.set({
+    aliases: [alias],
+    type: 'match',
+    title: { en: 'yesh' },
+  })
+
+  deepEqualIgnoreOrder(t, await client.get(query), {
+    title: 'yesh',
+    id,
+    aliases: [alias],
+  })
+})
