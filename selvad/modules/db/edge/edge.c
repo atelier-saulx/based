@@ -698,12 +698,32 @@ int Edge_AddIndex(
     return err;
 }
 
+static ssize_t edge_field_array_search_index(struct EdgeField *edge_field, const Selva_NodeId dst_node_id) {
+  struct EdgeFieldIterator it;
+  struct SelvaHierarchyNode *node;
+  size_t i = 0;
+
+  Edge_ForeachBegin(&it, edge_field);
+
+  while ((node = Edge_Foreach(&it))) {
+      Selva_NodeId node_id;
+
+      SelvaHierarchy_GetNodeId(node_id, node);
+      if (!memcmp(node_id, dst_node_id, SELVA_NODE_ID_SIZE)) {
+          return i;
+      }
+      i++;
+  }
+
+  return -1;
+}
+
 int Edge_Move(
         struct SelvaHierarchyNode *src_node,
         const char *field_name_str,
         size_t field_name_len,
         const Selva_NodeId dst_node_id,
-        ssize_t index) {
+        size_t index) {
     struct EdgeField *edge_field;
     ssize_t old_index;
     struct SelvaHierarchyNode *dst_node;
@@ -717,7 +737,7 @@ int Edge_Move(
         return SELVA_ENOTSUP;
     }
 
-    old_index = SVector_SearchIndex(&edge_field->arcs, (void *)dst_node_id);
+    old_index = edge_field_array_search_index(edge_field, (void *)dst_node_id);
     if (old_index == -1) {
         return SELVA_ENOENT;
     }

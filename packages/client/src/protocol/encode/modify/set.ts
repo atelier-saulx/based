@@ -100,7 +100,7 @@ export function encodeOrdSetOperation({
   setType: OpSetType
   mode: OrdSetMode
   index: number
-  $value?: any | any[]
+  $value: any | any[]
 }): Buffer {
 
   if (setType !== ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
@@ -111,7 +111,7 @@ export function encodeOrdSetOperation({
       op_set_type: setType,
       mode,
       constraint_id: EDGE_FIELD_CONSTRAINT_DYNAMIC, // always dynamic
-      index: index | 0,
+      index: index,
       $value: refsToStr($value),
   })
 }

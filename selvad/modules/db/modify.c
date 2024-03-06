@@ -562,10 +562,6 @@ static int move_edges(
         }
 
         res++;
-        if (index >= 0) {
-            index++;
-            /* Negative index is always correct. */
-        }
     }
 
     return res;

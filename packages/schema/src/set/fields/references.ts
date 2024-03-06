@@ -101,6 +101,37 @@ export const reference: FieldParser<'reference'> = async (args) => {
   }
 }
 
+function parseSortableOp(args, value, op: '$assign' | '$insert' | '$move') {
+  if (typeof value[op] !== 'object') {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+  if (!args.fieldSchema.sortable) {
+    args.error(ParseError.incorrectFieldType)
+    return
+  }
+
+  switch (typeof value[op].$idx) {
+    case 'bigint':
+      break;
+    case 'number':
+      value[op].$idx = BigInt(value[op].$idx)
+      break;
+    default:
+      args.error(ParseError.incorrectFormat)
+      return
+  }
+
+  if (Array.isArray(value[op].$value)) {
+    // NOP
+  } else if (typeof value[op].$value === 'string') {
+    value[op].$value = [value[op].$value]
+  } else {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+}
+
 export const references: FieldParser<'references'> = async (args) => {
   const { value } = args
 
@@ -130,6 +161,13 @@ export const references: FieldParser<'references'> = async (args) => {
         args.value.$add = await parseOperator(args, key)
       } else if (key === '$remove') {
         args.value.$remove = await parseOperator(args, key)
+      } else if (key === '$assign') {
+        parseSortableOp(args, value, '$assign')
+      } else if (key === '$insert') {
+        parseSortableOp(args, value, '$insert')
+      } else if (key === '$move') {
+        parseSortableOp(args, value, '$move')
+        value.$move.$value.reverse()
       } else {
         args.create({ key }).error(ParseError.fieldDoesNotExist)
       }
