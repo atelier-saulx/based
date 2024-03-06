@@ -719,27 +719,25 @@ static ssize_t edge_field_array_search_index(struct EdgeField *edge_field, const
 }
 
 int Edge_Move(
-        struct SelvaHierarchyNode *src_node,
-        const char *field_name_str,
-        size_t field_name_len,
+        struct EdgeField *edge_field,
         const Selva_NodeId dst_node_id,
         size_t index) {
-    struct EdgeField *edge_field;
     ssize_t old_index;
     struct SelvaHierarchyNode *dst_node;
-
-    edge_field = Edge_GetField(src_node, field_name_str, field_name_len);
-    if (!edge_field) {
-        return SELVA_ENOENT;
-    }
 
     if (!(edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY)) {
         return SELVA_ENOTSUP;
     }
 
+    if (index >= Edge_GetFieldLength(edge_field)) {
+        return SELVA_EINVAL;
+    }
+
     old_index = edge_field_array_search_index(edge_field, (void *)dst_node_id);
     if (old_index == -1) {
         return SELVA_ENOENT;
+    } else if ((size_t)old_index == index) {
+        return 0;
     }
     dst_node = SVector_RemoveIndex(&edge_field->arcs, old_index);
     if (!dst_node) {

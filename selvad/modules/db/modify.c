@@ -272,6 +272,36 @@ static void opSet_refs_to_svector(SVector *vec, const char *value_str, size_t va
     }
 }
 
+static void sort_edge_field(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        struct EdgeField *edge_field,
+        const char *value_str,
+        size_t value_len) {
+    if (!(Edge_GetFieldConstraintFlags(edge_field) & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY)) {
+        return;
+    }
+
+    for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
+        const char *dst_node_id = value_str + i;
+        size_t new_idx = i / SELVA_NODE_ID_SIZE;
+        int err;
+
+        err = Edge_Move(edge_field, dst_node_id, new_idx);
+        if (err && err != SELVA_EINVAL) { /* EINVAL is invalid index. */
+            Selva_NodeId node_id;
+
+            SelvaHierarchy_GetNodeId(node_id, node);
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed to move edge %.*s[%.*s][%zu] = %.*s",
+                      (int)SELVA_NODE_ID_SIZE, node_id,
+                      (int)field_len, field_str,
+                      new_idx,
+                      (int)SELVA_NODE_ID_SIZE, dst_node_id);
+        }
+    }
+}
+
 /**
  * Replace edgeField value with nodeIds present in value_str.
  * Existing edges are preserved.
@@ -286,6 +316,7 @@ static int replace_edge_field(
         const char *value_str,
         size_t value_len) {
     int res = 0;
+    size_t orig_len = 0;
     SVECTOR_AUTOFREE(new_ids);
 
     if (value_len % SELVA_NODE_ID_SIZE) {
@@ -295,7 +326,7 @@ static int replace_edge_field(
     opSet_refs_to_svector(&new_ids, value_str, value_len);
 
     struct EdgeField *edgeField = Edge_GetField(node, field_str, field_len);
-    if (edgeField && Edge_GetFieldLength(edgeField) > 0) {
+    if (edgeField && (orig_len = Edge_GetFieldLength(edgeField)) > 0) {
         /*
          * First we remove the arcs from the old set that don't exist
          * in the new set.
@@ -360,6 +391,15 @@ static int replace_edge_field(
                       selva_strerror(err));
 #endif
             return err;
+        }
+    }
+
+    if (orig_len > 0) {
+        if (!edgeField) {
+            edgeField = Edge_GetField(node, field_str, field_len);
+        }
+        if (likely(edgeField)) {
+            sort_edge_field(node, field_str, field_len, edgeField, value_str, value_len);
         }
     }
 
@@ -575,17 +615,23 @@ static int move_edges(
         const char *value_str,
         size_t value_len,
         ssize_t index) {
+    struct EdgeField *edge_field;
     int res = 0;
 
     if (value_len % SELVA_NODE_ID_SIZE) {
         return SELVA_EINVAL;
     }
 
+    edge_field = Edge_GetField(node, field_str, field_len);
+    if (!edge_field) {
+        return SELVA_ENOENT;
+    }
+
     for (size_t i = 0; i < value_len; i += SELVA_NODE_ID_SIZE) {
         const char *dst_node_id = value_str + i;
         int err;
 
-        err = Edge_Move(node, field_str, field_len, dst_node_id, index);
+        err = Edge_Move(edge_field, dst_node_id, index);
         if (err) {
             return err;
         }

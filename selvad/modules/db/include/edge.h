@@ -204,6 +204,9 @@ struct EdgeField *Edge_GetField(
         const char *field_name_str, size_t field_name_len)
     __attribute__((access(read_only, 2, 3)));
 
+/**
+ * Returns the number of arcs in the given EdgeField.
+ */
 __attribute__((pure)) static inline size_t Edge_GetFieldLength(const struct EdgeField *edge_field) {
     return SVector_Size(&edge_field->arcs);
 }
@@ -302,9 +305,7 @@ int Edge_Delete(
  * @param index must be less than the size of the edge field.
  */
 int Edge_Move(
-        struct SelvaHierarchyNode *src_node,
-        const char *field_name_str,
-        size_t field_name_len,
+        struct EdgeField *edge_field,
         const Selva_NodeId dst_node_id,
         size_t index);
 
