@@ -267,10 +267,11 @@ static void opSet_refs_to_svector(SVector *vec, const char *value_str, size_t va
 }
 
 /**
- * Replace edgeField value with nodeIds prevent in value_str.
+ * Replace edgeField value with nodeIds present in value_str.
+ * Existing edges are preserved.
  * @param value_str same as SelvaModify_OpSet->$value_str.
  */
-static int replace_edge_value(
+static int replace_edge_field(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -577,7 +578,7 @@ static int update_edge(
     TO_STR(field);
 
     if (setOpts->$value_len > 0) {
-        return replace_edge_value(hierarchy, node,
+        return replace_edge_field(hierarchy, node,
                                   field_str, field_len,
                                   constraint_id,
                                   setOpts->$value_str, setOpts->$value_len);

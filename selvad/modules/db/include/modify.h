@@ -100,6 +100,11 @@ struct SelvaModify_OpSet {
 
     /**
      * Replace the current set with these elements.
+     * If the edgeField has the `EDGE_FIELD_CONSTRAINT_FLAG_ARRAY` flag set,
+     * it's advisable to also use `delete_all` in this op to achieve the
+     * order given in this list. The downside is that all the current moetadata
+     * will be lost. If the metada needs to be preserved then
+     * `SelvaModify_OpOrdSet` should be used instead.
      */
     const char *$value_str;
     size_t $value_len;
