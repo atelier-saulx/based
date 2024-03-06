@@ -134,6 +134,9 @@ static int find_first_alias(SelvaHierarchy *hierarchy, const SVector *alias_quer
     return 0;
 }
 
+/**
+ * Update a hierarchy field.
+ */
 static int update_hierarchy(
     SelvaHierarchy *hierarchy,
     const Selva_NodeId node_id,
@@ -247,6 +250,9 @@ static int update_hierarchy(
 }
 
 /**
+ * Make an SVector out of the values in value_str.
+ * Note that the SVector vec will point to the strings in value_str, and
+ * thus it must not be freed unless the SVector is also destroyed.
  * @param value_len must be value_len % SELVA_NODE_ID_SIZE == 0.
  */
 static void opSet_refs_to_svector(SVector *vec, const char *value_str, size_t value_len) {
@@ -360,6 +366,10 @@ static int replace_edge_field(
     return res;
 }
 
+/**
+ * Insert nodes in the list value_str to the EdgeField starting from index.
+ * @returns Return the number of chages made; Otherwise a selva error is returned.
+ */
 static int insert_edges(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
@@ -418,6 +428,10 @@ static int insert_edges(
     return res;
 }
 
+/**
+ * Assign nodes in the list value_str to the EdgeField starting from index replacing the original edges.
+ * @returns Return the number of chages made; Otherwise a selva error is returned.
+ */
 static int assign_edges(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
@@ -496,6 +510,14 @@ static int assign_edges(
     return res;
 }
 
+/**
+ * Delete nodes from the EdgeField.
+ * The list of nodeIds in value_str acts as a condition variable for the deletion,
+ * preventing a race condition between two clients.
+ * @param value_str a list of nodes that exist in the EdgeField starting from index.
+ * @param index is the deletion index.
+ * @returns Return the number of chages made; Otherwise a selva error is returned.
+ */
 static int delete_edges(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
@@ -540,6 +562,12 @@ static int delete_edges(
     return res;
 }
 
+/**
+ * Move nodes listed in value_len to index.
+ * Every node_id in the value list must refer to an existing node in the
+ * EdgeField.
+ * @returns Return the number of chages made; Otherwise a selva error is returned.
+ */
 static int move_edges(
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -568,6 +596,10 @@ static int move_edges(
     return res;
 }
 
+/**
+ * Update EdgeField.
+ * @returns Return the number of chages made; Otherwise a selva error is returned.
+ */
 static int update_edge(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
