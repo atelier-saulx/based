@@ -276,3 +276,39 @@ test('stream functions - path json', async (t: T) => {
   client.disconnect()
   await server.destroy()
 })
+
+test('stream functions - filename', async (t: T) => {
+  const name = 'sldfoifgn09oijdf08wlejknf'
+
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: {
+        hello: {
+          type: 'stream',
+          uninstallAfterIdleTime: 1e6,
+          maxPayloadSize: 1e100,
+          fn: async (_based, streamPayload) => {
+            const { fileName } = streamPayload
+            return { fileName }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => t.context.ws,
+  })
+
+  const s = await client.stream('hello', {
+    fileName: name,
+    path: join(__dirname, '/browser/tmp.json'),
+  })
+  t.deepEqual(s, {
+    fileName: name,
+  })
+  client.disconnect()
+  await server.destroy()
+})
