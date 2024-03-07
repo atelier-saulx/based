@@ -46,11 +46,9 @@ function ast2inlineRpn(types: Record<string, { prefix?: string }>, f: FilterAST 
             return null
           }
 
-          const a = `{${f.$value.map((v) => `"${v}"`).join(',')}}`
-          return `"${f.$field}" ${a} l`
+          return f.$value.map((v) => `"${v}" "${f.$field}" a`).join(' Q U ')
         } else if (typeof f.$value[0] === 'number') {
-          const a = `{${f.$value.map((v) => `#${v}`).join(',')}}`
-          return `"${f.$field}" ${a} l`
+          return f.$value.map((v) => `#${v} "${f.$field}" a`).join(' Q U ')
         }
         return null
       }

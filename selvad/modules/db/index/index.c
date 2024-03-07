@@ -1384,7 +1384,6 @@ static void SelvaIndex_DebugCommand(struct selva_server_response_out *resp, cons
     } else if (argc == 1) {
         debug_index(resp, hierarchy, (i - 1) / 2);
     } else {
-        SELVA_LOG(SELVA_LOGL_ERR, "ararr %d", argc);
         selva_send_error_arity(resp);
     }
 }
