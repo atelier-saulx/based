@@ -12,6 +12,7 @@ export const selvaError = [
     "ERR_SELVA ENOMEM Out of memory",
     "ERR_SELVA ENOENT Not found",
     "ERR_SELVA EEXIST Exist",
+    "ERR_SELVA EACCES Permission denied",
     "ERR_SELVA ENOBUFS No buffer or resource space available",
     "ERR_SELVA EINPROGRESS Operation in progress",
     "ERR_SELVA Input/output error",
