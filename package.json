@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/atelier-saulx/based"
   },
-  "private": true,
+  "prettier": "@saulx/prettier-config",
   "description": "Based",
   "keywords": [
     "based",
@@ -20,7 +20,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "prettier": "@saulx/prettier-config",
   "scripts": {
     "watch": "turbo run watch --parallel --no-cache",
     "build": "turbo run build",
@@ -33,7 +32,8 @@
   },
   "devDependencies": {
     "turbo": "1.6.3",
-    "@saulx/prettier-config": "^1.0.0",
+    "@saulx/prettier-config": "2.0.0",
+    "@saulx/tsconfig": "^1.1.0",
     "lint-staged": "12.1.2",
     "rimraf": "^3.0.2",
     "typescript": "^5.2.2"

@@ -6,7 +6,7 @@ import { extendChannel, hasChannel } from '../../channel/index.js'
 import { IsAuthorizedHandler, authorize } from '../../authorize.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 
 const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
   route,
@@ -91,11 +91,11 @@ export const channelPublishMessage: BinaryMessageHandler = (
     len === 12
       ? undefined
       : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 12, start + len)),
-            isDeflate
-          )
+        decodePayload(
+          new Uint8Array(arr.slice(start + 12, start + len)),
+          isDeflate
         )
+      )
 
   authorize(
     route,

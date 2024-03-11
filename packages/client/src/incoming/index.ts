@@ -13,8 +13,9 @@ import {
 } from './protocol.js'
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
-import { CacheValue, convertDataToBasedError } from '../types/index.js'
+import { CacheValue } from '../types/index.js'
 import { freeCacheMemory } from '../cache.js'
+import { convertDataToBasedError } from '@based/errors'
 
 const decodeAndDeflate = (
   start: number,

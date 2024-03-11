@@ -1,7 +1,7 @@
-import { BasedErrorCode } from './error/index.js'
-import type { BasedServer } from './server.js'
-import uws from '@based/uws'
-import { HttpSession, WebSocketSession, Context } from '@based/functions'
+import { BasedErrorCode } from "@based/errors";
+import type { BasedServer } from "./server.js";
+import uws from "@based/uws";
+import { HttpSession, WebSocketSession, Context } from "@based/functions";
 
 enum IsBlocked {
   notBlocked = 0,
@@ -10,31 +10,31 @@ enum IsBlocked {
 }
 
 // TODO add tests and put on server
-const blockedEvents = new Set()
+const blockedEvents = new Set();
 
 const drainRequestCounter = (server: BasedServer) => {
-  server.requestsCounterInProgress = true
+  server.requestsCounterInProgress = true;
   server.requestsCounterTimeout = setTimeout(() => {
-    server.requestsCounterInProgress = false
+    server.requestsCounterInProgress = false;
     server.rateLimitCounter.forEach((value, ip) => {
       if (value.requests <= 0) {
-        server.rateLimitCounter.delete(ip)
-        return
+        server.rateLimitCounter.delete(ip);
+        return;
       }
-      value.requests -= server.rateLimit.drain
-    })
+      value.requests -= server.rateLimit.drain;
+    });
     if (server.rateLimitCounter.size) {
-      drainRequestCounter(server)
+      drainRequestCounter(server);
     }
     if (blockedEvents.size) {
-      server.emit('error', server.client.ctx, {
+      server.emit("error", server.client.ctx, {
         code: BasedErrorCode.Block,
         blockedEvents,
-      })
-      blockedEvents.clear()
+      });
+      blockedEvents.clear();
     }
-  }, 30e3)
-}
+  }, 30e3);
+};
 
 const incomingRequestCounter = (
   server: BasedServer,
@@ -42,26 +42,26 @@ const incomingRequestCounter = (
   tokens: number,
   max: number
 ): IsBlocked => {
-  let ipReqCounter = server.rateLimitCounter.get(ip)
+  let ipReqCounter = server.rateLimitCounter.get(ip);
   if (!ipReqCounter) {
     ipReqCounter = {
       requests: tokens,
-    }
-    server.rateLimitCounter.set(ip, ipReqCounter)
+    };
+    server.rateLimitCounter.set(ip, ipReqCounter);
   } else {
-    ipReqCounter.requests += tokens
+    ipReqCounter.requests += tokens;
   }
   if (ipReqCounter.requests === max) {
-    return 2
+    return 2;
   }
   if (ipReqCounter.requests > max) {
-    return 1
+    return 1;
   }
   if (!server.requestsCounterInProgress) {
-    drainRequestCounter(server)
+    drainRequestCounter(server);
   }
-  return 0
-}
+  return 0;
+};
 
 export const rateLimitRequest = (
   server: BasedServer,
@@ -70,25 +70,25 @@ export const rateLimitRequest = (
   max: number
 ): boolean => {
   if (!ctx.session) {
-    return false
+    return false;
   }
-  const ip = ctx.session.ip
-  const code = incomingRequestCounter(server, ip, tokens, max)
+  const ip = ctx.session.ip;
+  const code = incomingRequestCounter(server, ip, tokens, max);
   if (code === 0) {
-    return false
+    return false;
   }
   if (code === 2) {
-    server.emit('error', ctx, { code: BasedErrorCode.RateLimit })
+    server.emit("error", ctx, { code: BasedErrorCode.RateLimit });
   }
-  return true
-}
+  return true;
+};
 
 export const endRateLimitHttp = (res: uws.HttpResponse) => {
   res.cork(() => {
-    res.writeStatus('429 Too Many Requests')
-    res.end()
-  })
-}
+    res.writeStatus("429 Too Many Requests");
+    res.end();
+  });
+};
 
 export const blockIncomingRequest = (
   server: BasedServer,
@@ -99,33 +99,33 @@ export const blockIncomingRequest = (
   tokens: number
 ): boolean => {
   if (server.allowedIps.has(ip)) {
-    return false
+    return false;
   }
   if (server.blockedIps.has(ip)) {
     if (blockedEvents.size < 1e3) {
-      blockedEvents.add(ip)
+      blockedEvents.add(ip);
     }
-    res.close()
-    return true
+    res.close();
+    return true;
   }
-  const code = incomingRequestCounter(server, ip, tokens, max)
+  const code = incomingRequestCounter(server, ip, tokens, max);
   if (code === 0) {
-    return false
+    return false;
   }
   if (code === 2) {
     server.emit(
-      'error',
+      "error",
       {
         session: {
-          origin: req.getHeader('origin'),
+          origin: req.getHeader("origin"),
           headers: {},
-          ua: req.getHeader('user-agent'),
+          ua: req.getHeader("user-agent"),
           ip,
         },
       },
       { code: BasedErrorCode.RateLimit }
-    )
+    );
   }
-  endRateLimitHttp(res)
-  return true
-}
+  endRateLimitHttp(res);
+  return true;
+};

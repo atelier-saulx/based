@@ -21,7 +21,7 @@ import {
   genObservableId,
 } from '../../query/index.js'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { promisify } from 'node:util'
 import { authorize, IsAuthorizedHandler } from '../../authorize.js'

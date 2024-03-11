@@ -6,8 +6,9 @@ import {
   addChannelSubscribeToQueue,
   addToPublishQueue,
 } from '../outgoing/index.js'
-import { ChannelMessageFunction, BasedError } from '../types/index.js'
+import { ChannelMessageFunction } from '../types/index.js'
 import { cleanUpChannels } from './cleanUp.js'
+import { BasedError } from '@based/errors'
 
 export class BasedChannel<P = any, K = any> {
   public id: number

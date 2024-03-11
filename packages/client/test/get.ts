@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { BasedError, BasedErrorCode } from '../src/types/error.js'
+import { BasedError, BasedErrorCode } from '@based/errors'
 import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
@@ -25,7 +25,7 @@ const setup = async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: (_, payload, update) => {
             update(payload)
-            return () => {}
+            return () => { }
           },
         },
         nestedAny: {
@@ -42,7 +42,7 @@ const setup = async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: (_, payload, update) => {
             update(payload.power)
-            return () => {}
+            return () => { }
           },
         },
         counter: {

@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { BasedError, BasedErrorCode } from '../src/types/error.js'
+import { BasedError, BasedErrorCode } from '@based/errors'
 import { wait } from '@saulx/utils'
 import { Authorize, BasedFunction, BasedQueryFunction } from '@based/functions'
 import getPort from 'get-port'
@@ -134,7 +134,7 @@ test('authorize observe', async (t: T) => {
         myQuery: 123,
       })
       .subscribe(
-        () => {},
+        () => { },
         (err: BasedError) => {
           t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
           resolve(err)

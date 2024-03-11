@@ -5,7 +5,7 @@ import {
   BasedFunctionConfig,
 } from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse.js'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { installFn } from '../../installFn.js'
 import { IsAuthorizedHandler } from '../../authorize.js'

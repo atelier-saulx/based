@@ -1,7 +1,7 @@
 import { BasedServer } from '../server.js'
 import { ActiveObservable, ObservableUpdateFunction } from './types.js'
 import { extendCache } from './extendCache.js'
-import { BasedErrorCode, BasedErrorData } from '../error/index.js'
+import { BasedErrorCode, BasedErrorData } from '@based/errors'
 import { sendObsWs } from './send.js'
 import { getObsAndStopRemove } from './get.js'
 import { sendErrorData } from '../sendError.js'

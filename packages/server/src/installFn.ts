@@ -8,7 +8,7 @@ import {
   BasedFunctionTypes,
 } from '@based/functions'
 import { sendSimpleError } from './sendError.js'
-import { BasedErrorCode } from './error/index.js'
+import { BasedErrorCode } from '@based/errors'
 
 const functionNotFound = (
   server: BasedServer,

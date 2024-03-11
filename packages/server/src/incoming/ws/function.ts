@@ -6,7 +6,7 @@ import {
   valueToBuffer,
   parsePayload,
 } from '../../protocol.js'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security.js'
@@ -123,11 +123,11 @@ export const functionMessage: BinaryMessageHandler = (
     len === nameLen + 8
       ? undefined
       : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-            isDeflate
-          )
+        decodePayload(
+          new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
+          isDeflate
         )
+      )
 
   authorize(route, server, ctx, payload, sendFunction, requestId)
 

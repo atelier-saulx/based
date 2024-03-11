@@ -4,7 +4,7 @@ import {
   decodePayload,
   parsePayload,
 } from '../../protocol.js'
-import { BasedErrorCode } from '../../error/index.js'
+import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security.js'
@@ -119,11 +119,11 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
         len === nameLen + 13
           ? undefined
           : parsePayload(
-              decodePayload(
-                new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
-                false
-              )
+            decodePayload(
+              new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+              false
             )
+          )
       // This has to be done instantly so publish can be received immediatly
       const channel = createChannel(server, name, id, payload, true)
 
@@ -166,11 +166,11 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     len === nameLen + 13
       ? undefined
       : parsePayload(
-          decodePayload(
-            new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
-            false
-          )
+        decodePayload(
+          new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+          false
         )
+      )
 
   session.obs.add(id)
 

@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { BasedError, BasedErrorCode } from '../src/types/error.js'
+import { BasedError, BasedErrorCode } from '@based/errors'
 import { BasedQueryFunction, ObservableUpdateFunction } from '@based/functions'
 import getPort from 'get-port'
 
@@ -171,7 +171,7 @@ test('throw in an interval', async (t: T) => {
   })
   await t.throwsAsync(
     new Promise((_, reject) =>
-      coreClient.query('errorTimer', {}).subscribe(() => {}, reject)
+      coreClient.query('errorTimer', {}).subscribe(() => { }, reject)
     )
   )
 })
