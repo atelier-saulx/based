@@ -1136,29 +1136,30 @@ int SelvaObject_GetDouble(struct SelvaObject *obj, const struct selva_string *ke
 
 int SelvaObject_SetDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value) {
     ssize_t ary_err, idx;
-    int err;
 
     assert(obj);
 
     ary_err = get_array_field_index(key_name_str, key_name_len, &idx);
     if (ary_err < 0) {
-        err = SELVA_EINVAL;
+        return SELVA_EINVAL;
     } else if (ary_err > 0) {
         size_t new_len = ary_err;
 
-        err = SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(value));
+        return SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(value));
     } else {
         struct SelvaObjectKey *key;
+        int err;
 
         err = get_key(obj, key_name_str, key_name_len, SELVA_OBJECT_GETKEY_CREATE, &key);
-        if (!err) {
-            clear_key_value(key);
-            key->type = SELVA_OBJECT_DOUBLE;
-            key->emb_double_value = value;
+        if (err) {
+            return err;
         }
-    }
 
-    return err;
+        clear_key_value(key);
+        key->type = SELVA_OBJECT_DOUBLE;
+        key->emb_double_value = value;
+        return 0;
+    }
 }
 
 int SelvaObject_SetDouble(struct SelvaObject *obj, const struct selva_string *key_name, double value) {
@@ -1278,29 +1279,31 @@ int SelvaObject_GetLongLong(struct SelvaObject *obj, const struct selva_string *
 
 int SelvaObject_SetLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) {
     ssize_t ary_err, idx;
-    int err;
 
     assert(obj);
 
     ary_err = get_array_field_index(key_name_str, key_name_len, &idx);
     if (ary_err < 0) {
-        err = SELVA_EINVAL;
+        return SELVA_EINVAL;
     } else if (ary_err > 0) {
         size_t new_len = ary_err;
 
-        err = SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(value));
+        return SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(value));
     } else {
         struct SelvaObjectKey *key;
+        int err;
 
         err = get_key(obj, key_name_str, key_name_len, SELVA_OBJECT_GETKEY_CREATE, &key);
-        if (!err) {
-            clear_key_value(key);
-            key->type = SELVA_OBJECT_LONGLONG;
-            key->emb_ll_value = value;
+        if (err) {
+            return err;
         }
-    }
 
-    return err;
+        clear_key_value(key);
+        key->type = SELVA_OBJECT_LONGLONG;
+        key->emb_ll_value = value;
+
+        return 0;
+    }
 }
 
 int SelvaObject_SetLongLong(struct SelvaObject *obj, const struct selva_string *key_name, long long value) {
@@ -1426,29 +1429,30 @@ int SelvaObject_GetString(struct SelvaObject *obj, const struct selva_string *ke
 
 int SelvaObject_SetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) {
     ssize_t ary_err, idx;
-    int err;
 
     assert(obj);
 
     ary_err = get_array_field_index(key_name_str, key_name_len, &idx);
     if (ary_err < 0) {
-        err = SELVA_EINVAL;
+        return SELVA_EINVAL;
     } else if (ary_err > 0) {
         size_t new_len = ary_err;
 
-        err = SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_STRING, idx, value);
+        return SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_STRING, idx, value);
     } else {
         struct SelvaObjectKey *key;
+        int err;
 
         err = get_key(obj, key_name_str, key_name_len, SELVA_OBJECT_GETKEY_CREATE, &key);
-        if (!err) {
-            clear_key_value(key);
-            key->type = SELVA_OBJECT_STRING;
-            key->value = value;
+        if (err) {
+            return err;
         }
-    }
 
-    return err;
+        clear_key_value(key);
+        key->type = SELVA_OBJECT_STRING;
+        key->value = value;
+        return 0;
+    }
 }
 
 int SelvaObject_SetString(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value) {
