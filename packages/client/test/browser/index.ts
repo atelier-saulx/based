@@ -37,6 +37,25 @@ export const app = () => {
   }
   body.appendChild(logout)
 
+  const fileUpload = document.createElement('input')
+  fileUpload.type = 'file'
+  fileUpload.onchange = async (e) => {
+    // @ts-ignore
+    console.log('|--->', e.target.files[0])
+    // @ts-ignore
+    const x = await client.stream('flap', { contents: e.target.files[0] })
+    console.info('READY', { x })
+  }
+  body.appendChild(fileUpload)
+
+  const btn = document.createElement('button')
+  btn.onclick = async (e) => {
+    const x = await client.stream('flap', { contents: 'flap' })
+    console.info('READY', { x })
+  }
+  btn.innerHTML = 'blap'
+  body.appendChild(btn)
+
   const log = document.createElement('div')
   body.appendChild(log)
   const meta = document.createElement('pre')
@@ -47,7 +66,7 @@ export const app = () => {
 
   client.query('counter').subscribe(
     (d) => {
-      log.innerHTML += `<span>cnt: ${d}</span>`
+      log.innerHTML = `<span>cnt: ${d}</span>`
     },
     (err) => {
       console.error(err)

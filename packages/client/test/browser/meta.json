@@ -275,8 +275,13 @@
       "imports": [],
       "format": "esm"
     },
+    "node_modules/@saulx/utils/dist/src/nonRecursiveWalker.js": {
+      "bytes": 794,
+      "imports": [],
+      "format": "esm"
+    },
     "node_modules/@saulx/utils/dist/src/index.js": {
-      "bytes": 689,
+      "bytes": 730,
       "imports": [
         {
           "path": "node_modules/@saulx/utils/dist/src/deepCopy.js",
@@ -362,6 +367,11 @@
           "path": "node_modules/@saulx/utils/dist/src/base64.js",
           "kind": "import-statement",
           "original": "./base64.js"
+        },
+        {
+          "path": "node_modules/@saulx/utils/dist/src/nonRecursiveWalker.js",
+          "kind": "import-statement",
+          "original": "./nonRecursiveWalker.js"
         }
       ],
       "format": "esm"
@@ -377,172 +387,8 @@
       ],
       "format": "esm"
     },
-    "../fetch/browser.js": {
-      "bytes": 21,
-      "imports": [],
-      "format": "esm"
-    },
-    "node_modules/@based/opts/dist/index.js": {
-      "bytes": 1864,
-      "imports": [
-        {
-          "path": "../fetch/browser.js",
-          "kind": "import-statement",
-          "original": "@based/fetch"
-        },
-        {
-          "path": "node_modules/@saulx/utils/dist/src/index.js",
-          "kind": "import-statement",
-          "original": "@saulx/utils"
-        },
-        {
-          "path": "node_modules/@saulx/hash/dist/src/index.js",
-          "kind": "import-statement",
-          "original": "@saulx/hash"
-        }
-      ],
-      "format": "esm"
-    },
-    "dist/src/types/generic.js": {
-      "bytes": 46,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/observe.js": {
-      "bytes": 46,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/events.js": {
-      "bytes": 45,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/auth.js": {
-      "bytes": 43,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/cache.js": {
-      "bytes": 44,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/functions.js": {
-      "bytes": 48,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/channel.js": {
-      "bytes": 46,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/error.js": {
-      "bytes": 2861,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/types/index.js": {
-      "bytes": 267,
-      "imports": [
-        {
-          "path": "dist/src/types/generic.js",
-          "kind": "import-statement",
-          "original": "./generic.js"
-        },
-        {
-          "path": "dist/src/types/observe.js",
-          "kind": "import-statement",
-          "original": "./observe.js"
-        },
-        {
-          "path": "dist/src/types/events.js",
-          "kind": "import-statement",
-          "original": "./events.js"
-        },
-        {
-          "path": "dist/src/types/auth.js",
-          "kind": "import-statement",
-          "original": "./auth.js"
-        },
-        {
-          "path": "dist/src/types/cache.js",
-          "kind": "import-statement",
-          "original": "./cache.js"
-        },
-        {
-          "path": "dist/src/types/functions.js",
-          "kind": "import-statement",
-          "original": "./functions.js"
-        },
-        {
-          "path": "dist/src/types/channel.js",
-          "kind": "import-statement",
-          "original": "./channel.js"
-        },
-        {
-          "path": "dist/src/types/error.js",
-          "kind": "import-statement",
-          "original": "./error.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "dist/src/stream/uploadFileBrowser.js": {
-      "bytes": 4214,
-      "imports": [
-        {
-          "path": "dist/src/index.js",
-          "kind": "import-statement",
-          "original": "../index.js"
-        },
-        {
-          "path": "node_modules/@based/opts/dist/index.js",
-          "kind": "import-statement",
-          "original": "@based/opts"
-        },
-        {
-          "path": "dist/src/types/index.js",
-          "kind": "import-statement",
-          "original": "../types/index.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "../../node_modules/isomorphic-ws/browser.js": {
-      "bytes": 540,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/websocket/index.js": {
-      "bytes": 4063,
-      "imports": [
-        {
-          "path": "dist/src/websocket/urlLoader.js",
-          "kind": "import-statement",
-          "original": "./urlLoader.js"
-        },
-        {
-          "path": "dist/src/authState/parseAuthState.js",
-          "kind": "import-statement",
-          "original": "../authState/parseAuthState.js"
-        },
-        {
-          "path": "dist/src/stream/uploadFileBrowser.js",
-          "kind": "import-statement",
-          "original": "../stream/uploadFileBrowser.js"
-        },
-        {
-          "path": "../../node_modules/isomorphic-ws/browser.js",
-          "kind": "import-statement",
-          "original": "isomorphic-ws"
-        }
-      ],
-      "format": "esm"
-    },
-    "dist/src/Emitter.js": {
-      "bytes": 1968,
+    "dist/src/stream/types.js": {
+      "bytes": 651,
       "imports": [],
       "format": "esm"
     },
@@ -557,7 +403,7 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 6255,
+      "bytes": 6097,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -594,7 +440,7 @@
       "format": "esm"
     },
     "dist/src/outgoing/protocol.js": {
-      "bytes": 5325,
+      "bytes": 8088,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -605,7 +451,7 @@
       "format": "esm"
     },
     "dist/src/outgoing/index.js": {
-      "bytes": 6904,
+      "bytes": 8565,
       "imports": [
         {
           "path": "dist/src/authState/updateAuthState.js",
@@ -623,6 +469,69 @@
           "original": "@saulx/utils"
         }
       ],
+      "format": "esm"
+    },
+    "dist/src/stream/browserStream.js": {
+      "bytes": 3099,
+      "imports": [
+        {
+          "path": "dist/src/outgoing/index.js",
+          "kind": "import-statement",
+          "original": "../outgoing/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dist/src/stream/browser.js": {
+      "bytes": 1284,
+      "imports": [
+        {
+          "path": "dist/src/stream/types.js",
+          "kind": "import-statement",
+          "original": "./types.js"
+        },
+        {
+          "path": "dist/src/stream/browserStream.js",
+          "kind": "import-statement",
+          "original": "./browserStream.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/isomorphic-ws/browser.js": {
+      "bytes": 540,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/websocket/index.js": {
+      "bytes": 4051,
+      "imports": [
+        {
+          "path": "dist/src/websocket/urlLoader.js",
+          "kind": "import-statement",
+          "original": "./urlLoader.js"
+        },
+        {
+          "path": "dist/src/authState/parseAuthState.js",
+          "kind": "import-statement",
+          "original": "../authState/parseAuthState.js"
+        },
+        {
+          "path": "dist/src/stream/browser.js",
+          "kind": "import-statement",
+          "original": "../stream/index.js"
+        },
+        {
+          "path": "../../node_modules/isomorphic-ws/browser.js",
+          "kind": "import-statement",
+          "original": "isomorphic-ws"
+        }
+      ],
+      "format": "esm"
+    },
+    "dist/src/Emitter.js": {
+      "bytes": 2008,
+      "imports": [],
       "format": "esm"
     },
     "node_modules/@saulx/diff/dist/src/applyPatch.js": {
@@ -685,7 +594,7 @@
       "format": "esm"
     },
     "dist/src/incoming/protocol.js": {
-      "bytes": 1549,
+      "bytes": 1567,
       "imports": [
         {
           "path": "dist/src/outgoing/index.js",
@@ -700,8 +609,110 @@
       "imports": [],
       "format": "esm"
     },
+    "dist/src/types/generic.js": {
+      "bytes": 46,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/observe.js": {
+      "bytes": 46,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/events.js": {
+      "bytes": 45,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/auth.js": {
+      "bytes": 43,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/cache.js": {
+      "bytes": 44,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/functions.js": {
+      "bytes": 48,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/channel.js": {
+      "bytes": 46,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/error.js": {
+      "bytes": 2861,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/src/types/index.js": {
+      "bytes": 303,
+      "imports": [
+        {
+          "path": "dist/src/types/generic.js",
+          "kind": "import-statement",
+          "original": "./generic.js"
+        },
+        {
+          "path": "dist/src/types/observe.js",
+          "kind": "import-statement",
+          "original": "./observe.js"
+        },
+        {
+          "path": "dist/src/types/events.js",
+          "kind": "import-statement",
+          "original": "./events.js"
+        },
+        {
+          "path": "dist/src/types/auth.js",
+          "kind": "import-statement",
+          "original": "./auth.js"
+        },
+        {
+          "path": "dist/src/types/cache.js",
+          "kind": "import-statement",
+          "original": "./cache.js"
+        },
+        {
+          "path": "dist/src/types/functions.js",
+          "kind": "import-statement",
+          "original": "./functions.js"
+        },
+        {
+          "path": "dist/src/types/channel.js",
+          "kind": "import-statement",
+          "original": "./channel.js"
+        },
+        {
+          "path": "dist/src/types/error.js",
+          "kind": "import-statement",
+          "original": "./error.js"
+        },
+        {
+          "path": "dist/src/stream/types.js",
+          "kind": "import-statement",
+          "original": "../stream/types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "dist/src/cache.js": {
+      "bytes": 360,
+      "imports": [
+        {
+          "path": "dist/src/persistentStorage/browser.js",
+          "kind": "import-statement",
+          "original": "./persistentStorage/index.js"
+        }
+      ],
+      "format": "esm"
+    },
     "dist/src/incoming/index.js": {
-      "bytes": 12038,
+      "bytes": 14987,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -752,6 +763,11 @@
           "path": "dist/src/types/index.js",
           "kind": "import-statement",
           "original": "../types/index.js"
+        },
+        {
+          "path": "dist/src/cache.js",
+          "kind": "import-statement",
+          "original": "../cache.js"
         }
       ],
       "format": "esm"
@@ -768,7 +784,7 @@
       "format": "esm"
     },
     "dist/src/query/index.js": {
-      "bytes": 4050,
+      "bytes": 4192,
       "imports": [
         {
           "path": "dist/src/outgoing/index.js",
@@ -784,58 +800,11 @@
           "path": "dist/src/persistentStorage/browser.js",
           "kind": "import-statement",
           "original": "../persistentStorage/index.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "dist/src/stream/types.js": {
-      "bytes": 651,
-      "imports": [],
-      "format": "esm"
-    },
-    "dist/src/stream/fetch.js": {
-      "bytes": 998,
-      "imports": [
-        {
-          "path": "dist/src/index.js",
-          "kind": "import-statement",
-          "original": "../index.js"
         },
         {
-          "path": "../fetch/browser.js",
+          "path": "dist/src/cache.js",
           "kind": "import-statement",
-          "original": "@based/fetch"
-        },
-        {
-          "path": "node_modules/@saulx/utils/dist/src/index.js",
-          "kind": "import-statement",
-          "original": "@saulx/utils"
-        },
-        {
-          "path": "node_modules/@based/opts/dist/index.js",
-          "kind": "import-statement",
-          "original": "@based/opts"
-        }
-      ],
-      "format": "esm"
-    },
-    "dist/src/stream/browser.js": {
-      "bytes": 1351,
-      "imports": [
-        {
-          "path": "dist/src/stream/types.js",
-          "kind": "import-statement",
-          "original": "./types.js"
-        },
-        {
-          "path": "dist/src/stream/uploadFileBrowser.js",
-          "kind": "import-statement",
-          "original": "./uploadFileBrowser.js"
-        },
-        {
-          "path": "dist/src/stream/fetch.js",
-          "kind": "import-statement",
-          "original": "./fetch.js"
+          "original": "../cache.js"
         }
       ],
       "format": "esm"
@@ -866,8 +835,34 @@
       ],
       "format": "esm"
     },
+    "../fetch/browser.js": {
+      "bytes": 21,
+      "imports": [],
+      "format": "esm"
+    },
+    "node_modules/@based/opts/dist/index.js": {
+      "bytes": 1864,
+      "imports": [
+        {
+          "path": "../fetch/browser.js",
+          "kind": "import-statement",
+          "original": "@based/fetch"
+        },
+        {
+          "path": "node_modules/@saulx/utils/dist/src/index.js",
+          "kind": "import-statement",
+          "original": "@saulx/utils"
+        },
+        {
+          "path": "node_modules/@saulx/hash/dist/src/index.js",
+          "kind": "import-statement",
+          "original": "@saulx/hash"
+        }
+      ],
+      "format": "esm"
+    },
     "dist/src/index.js": {
-      "bytes": 10732,
+      "bytes": 11137,
       "imports": [
         {
           "path": "dist/src/websocket/index.js",
@@ -925,6 +920,11 @@
           "original": "@based/opts"
         },
         {
+          "path": "dist/src/cache.js",
+          "kind": "import-statement",
+          "original": "./cache.js"
+        },
+        {
           "path": "dist/src/authState/parseAuthState.js",
           "kind": "import-statement",
           "original": "./authState/parseAuthState.js"
@@ -938,7 +938,7 @@
       "format": "esm"
     },
     "test/browser/index.ts": {
-      "bytes": 1688,
+      "bytes": 2259,
       "imports": [
         {
           "path": "dist/src/index.js",
@@ -1003,20 +1003,56 @@
         "node_modules/@saulx/utils/dist/src/encoder/index.js": {
           "bytesInOutput": 461
         },
-        "node_modules/@saulx/utils/dist/src/query.js": {
-          "bytesInOutput": 393
-        },
         "node_modules/@saulx/utils/dist/src/base64.js": {
           "bytesInOutput": 661
         },
         "dist/src/authState/parseAuthState.js": {
           "bytesInOutput": 168
         },
-        "../fetch/browser.js": {
-          "bytesInOutput": 13
+        "dist/src/stream/types.js": {
+          "bytesInOutput": 258
         },
-        "node_modules/@based/opts/dist/index.js": {
-          "bytesInOutput": 1673
+        "node_modules/fflate/esm/browser.js": {
+          "bytesInOutput": 8179
+        },
+        "dist/src/persistentStorage/constants.js": {
+          "bytesInOutput": 64
+        },
+        "dist/src/persistentStorage/browser.js": {
+          "bytesInOutput": 1843
+        },
+        "dist/src/authState/updateAuthState.js": {
+          "bytesInOutput": 63
+        },
+        "dist/src/outgoing/protocol.js": {
+          "bytesInOutput": 2206
+        },
+        "dist/src/outgoing/index.js": {
+          "bytesInOutput": 2586
+        },
+        "dist/src/stream/browserStream.js": {
+          "bytesInOutput": 1192
+        },
+        "dist/src/stream/browser.js": {
+          "bytesInOutput": 494
+        },
+        "../../node_modules/isomorphic-ws/browser.js": {
+          "bytesInOutput": 230
+        },
+        "dist/src/websocket/index.js": {
+          "bytesInOutput": 1130
+        },
+        "dist/src/Emitter.js": {
+          "bytesInOutput": 707
+        },
+        "node_modules/@saulx/diff/dist/src/applyPatch.js": {
+          "bytesInOutput": 1332
+        },
+        "dist/src/incoming/protocol.js": {
+          "bytesInOutput": 457
+        },
+        "dist/src/getTargetInfo.js": {
+          "bytesInOutput": 186
         },
         "dist/src/types/index.js": {
           "bytesInOutput": 0
@@ -1024,59 +1060,17 @@
         "dist/src/types/error.js": {
           "bytesInOutput": 1486
         },
-        "dist/src/stream/uploadFileBrowser.js": {
-          "bytesInOutput": 1290
-        },
-        "../../node_modules/isomorphic-ws/browser.js": {
-          "bytesInOutput": 230
-        },
-        "dist/src/websocket/index.js": {
-          "bytesInOutput": 979
-        },
-        "dist/src/Emitter.js": {
-          "bytesInOutput": 688
-        },
-        "node_modules/fflate/esm/browser.js": {
-          "bytesInOutput": 8169
-        },
-        "dist/src/persistentStorage/constants.js": {
-          "bytesInOutput": 64
-        },
-        "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 1754
-        },
-        "dist/src/authState/updateAuthState.js": {
-          "bytesInOutput": 63
-        },
-        "dist/src/outgoing/protocol.js": {
-          "bytesInOutput": 1598
-        },
-        "dist/src/outgoing/index.js": {
-          "bytesInOutput": 2090
-        },
-        "node_modules/@saulx/diff/dist/src/applyPatch.js": {
-          "bytesInOutput": 1236
-        },
-        "dist/src/incoming/protocol.js": {
-          "bytesInOutput": 457
+        "dist/src/cache.js": {
+          "bytesInOutput": 114
         },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 2975
+          "bytesInOutput": 4006
         },
         "dist/src/genObserveId.js": {
           "bytesInOutput": 40
         },
         "dist/src/query/index.js": {
-          "bytesInOutput": 1621
-        },
-        "dist/src/stream/types.js": {
-          "bytesInOutput": 258
-        },
-        "dist/src/stream/fetch.js": {
-          "bytesInOutput": 389
-        },
-        "dist/src/stream/browser.js": {
-          "bytesInOutput": 421
+          "bytesInOutput": 1706
         },
         "dist/src/channel/cleanUp.js": {
           "bytesInOutput": 290
@@ -1084,14 +1078,20 @@
         "dist/src/channel/index.js": {
           "bytesInOutput": 1098
         },
+        "../fetch/browser.js": {
+          "bytesInOutput": 13
+        },
+        "node_modules/@based/opts/dist/index.js": {
+          "bytesInOutput": 1673
+        },
         "dist/src/index.js": {
-          "bytesInOutput": 2738
+          "bytesInOutput": 3017
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 1019
+          "bytesInOutput": 1442
         }
       },
-      "bytes": 38216
+      "bytes": 40996
     }
   }
 }

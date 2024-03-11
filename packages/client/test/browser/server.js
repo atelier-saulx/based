@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 // tmp to test
 const client = based({
-  url: t.context.ws,
+  url: 'http://localhost:9910',
 })
 
 client.setAuthState({
@@ -49,6 +49,29 @@ const start = async () => {
     },
     functions: {
       configs: {
+        flap: {
+          public: true,
+          maxPayloadSize: 1e9,
+          type: 'stream',
+          fn: async (based, { stream, size }, ctx) => {
+            console.log('incoming', size / 1e6, 'mb', { stream })
+
+            stream.on('progress', console.info)
+
+            let data = 'yesh!'
+            for await (const chunk of stream) {
+              console.log('CHUNK!')
+              if (size < 1e6) {
+                data += chunk
+              }
+            }
+
+            return {
+              power: 1000,
+              data,
+            }
+          },
+        },
         bundle: {
           public: true,
           type: 'function',

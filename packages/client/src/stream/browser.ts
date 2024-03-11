@@ -5,6 +5,7 @@ import {
   isStreamFunctionPath,
   isStreamFunctionStream,
 } from './types.js'
+import { uploadFile } from './browserStream.js'
 
 export const isStreaming = { streaming: false }
 
@@ -16,33 +17,35 @@ export default async (
   options: StreamFunctionOpts,
   progressListener?: (progress: number) => void
 ): Promise<any> => {
-  if (isStreamFunctionPath(options)) {
+  if (isStreamFunctionPath(options) || isStreamFunctionStream(options)) {
     return
   }
 
-  if (isStreamFunctionStream(options)) {
-    return
-  }
-
-  if (options.contents instanceof ArrayBuffer) {
+  if (
+    options.contents instanceof ArrayBuffer ||
+    typeof options.contents === 'string'
+  ) {
     options.contents = new global.Blob([options.contents], {
       type: options.mimeType || 'text/plain',
     })
-    // want to stream this XHR browser / stream + http nodejs
-    // return fetch(client, name, options)
   }
 
   if (isFileContents(options)) {
-    // return uploadFileBrowser(client, name, options, progressListener)
+    if (!options.size) {
+      options.size = options.contents.size
+    }
+    return uploadFile(client, name, options, progressListener)
   }
 
   if (options.contents instanceof global.Blob) {
     if (!options.mimeType) {
       options.mimeType = options.contents.type
     }
-  }
 
-  if (typeof options.contents === 'string') {
+    options.contents = new File([options.contents], options.fileName || 'blob')
+
+    // @ts-ignore
+    return uploadFile(client, name, options, progressListener)
   }
 
   throw new Error(

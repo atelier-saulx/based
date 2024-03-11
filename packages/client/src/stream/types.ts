@@ -14,6 +14,8 @@ export type StreamFunctionContents<
   mimeType?: string
   fileName?: string
   serverKey?: string
+  extension?: string
+  size?: number
 }
 
 export const isFileContents = (
