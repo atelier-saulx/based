@@ -247,6 +247,18 @@ export const incoming = async (client: BasedClient, data: any) => {
         payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
+      if (payload.streamRequestId) {
+        if (
+          client.streamFunctionResponseListeners.has(payload.streamRequestId)
+        ) {
+          const [, reject] = client.streamFunctionResponseListeners.get(
+            payload.streamRequestId
+          )
+          reject(convertDataToBasedError(payload))
+          client.streamFunctionResponseListeners.delete(payload.streamRequestId)
+        }
+      }
+
       if (payload.requestId) {
         if (client.functionResponseListeners.has(payload.requestId)) {
           const [, reject, stack] = client.functionResponseListeners.get(
@@ -334,11 +346,12 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.connection.ws.send(buffer)
       }
-    } // ----------- Channel message
+    } // ----------- SubType 7
     else if (type === 7) {
       // | 4 header | 1 subType |
       const subType = readUint8(buffer, 4, 1)
 
+      // channel
       if (subType === 0) {
         // | 4 header | 1 subType | 8 id | * payload |
         const id = readUint8(buffer, 5, 8)
@@ -362,6 +375,42 @@ export const incoming = async (client: BasedClient, data: any) => {
           for (const [, handlers] of observable.subscribers) {
             handlers.onMessage(payload)
           }
+        }
+      } else if (subType === 1) {
+        // | 4 header | 1 subType | 3 id | * payload |
+        const id = readUint8(buffer, 5, 3)
+        const start = 8
+        const end = len + 4
+        let payload: any
+        // if not empty response, parse it
+        if (len !== 4) {
+          payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        }
+        if (client.streamFunctionResponseListeners.has(id)) {
+          client.streamFunctionResponseListeners.get(id)[0](payload)
+          client.streamFunctionResponseListeners.delete(id)
+        }
+      } else if (subType === 2) {
+        // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize
+        const id = readUint8(buffer, 5, 3)
+        const seqId = readUint8(buffer, 8, 1)
+        const code = readUint8(buffer, 9, 1)
+
+        let maxChunkSize = 0
+
+        if (len > 10 - 4) {
+          maxChunkSize = readUint8(buffer, 10, len - 6)
+          console.log('more data', maxChunkSize)
+        }
+
+        // if len is smaller its an error OR use 0 as error (1 - 255)
+
+        if (client.streamFunctionResponseListeners.has(id)) {
+          client.streamFunctionResponseListeners.get(id)[2](
+            seqId,
+            code,
+            maxChunkSize
+          )
         }
       }
     }

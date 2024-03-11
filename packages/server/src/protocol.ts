@@ -154,6 +154,76 @@ export const encodeFunctionResponse = (
   }
 }
 
+export const encodeStreamFunctionResponse = (
+  id: number,
+  buffer: Buffer
+): Uint8Array => {
+  // Type 7
+  // | 4 header | 1 subType | 3 id | * payload |
+
+  let isDeflate = false
+  // TODO: implement for streams!
+  // chunk isChunk | isNotCunk | isLastchunk 0|1 (use 1 bye for now?)
+  const chunks = 1
+
+  if (buffer.length > COMPRESS_FROM_BYTES) {
+    isDeflate = true
+    buffer = zlib.deflateRawSync(buffer, {})
+  }
+
+  if (chunks === 1) {
+    const headerSize = 4
+    const idSize = 3
+    const subTypeSize = 1
+    const msgSize = idSize + subTypeSize + buffer.length
+    const header = encodeHeader(7, isDeflate, msgSize)
+
+    // not very nessecary but ok
+    const array = new Uint8Array(headerSize + msgSize)
+    storeUint8(array, header, 0, 4)
+    storeUint8(array, 1, 4, 1)
+    storeUint8(array, id, 5, 3)
+    if (buffer.length) {
+      array.set(buffer, 8)
+    }
+    return array
+  } else {
+    console.warn('chunk not implemented yet')
+    return new Uint8Array(0)
+  }
+}
+
+export const encodeStreamFunctionChunkResponse = (
+  id: number,
+  seqId: number,
+  code: number = 0,
+  maxChunkSize: number = 0
+): Uint8Array => {
+  // Type 7.2
+  // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize?
+  let msgSize = 6
+
+  if (maxChunkSize) {
+    msgSize += 3
+  }
+
+  const header = encodeHeader(7, false, msgSize)
+
+  const array = new Uint8Array(4 + msgSize)
+
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, 2, 4, 1)
+  storeUint8(array, id, 5, 3)
+  storeUint8(array, seqId, 8, 1)
+  storeUint8(array, code, 9, 1)
+
+  if (maxChunkSize) {
+    storeUint8(array, maxChunkSize, 10, 3)
+  }
+
+  return array
+}
+
 export const encodeGetResponse = (id: number): Uint8Array => {
   // Type 4
   // | 4 header | 8 id |

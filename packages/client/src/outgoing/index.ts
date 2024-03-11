@@ -7,6 +7,7 @@ import {
   encodeGetObserveMessage,
   encodeObserveMessage,
   encodePublishMessage,
+  encodeStreamMessage,
   encodeSubscribeChannelMessage,
 } from './protocol.js'
 import { deepEqual } from '@saulx/utils'
@@ -33,7 +34,8 @@ const hasQueue = (client: BasedClient): boolean => {
     client.oQ.size ||
     client.gQ.size ||
     client.cQ.size ||
-    client.pQ.length
+    client.pQ.length ||
+    client.sQ.length
   )
 }
 
@@ -53,6 +55,7 @@ export const drainQueue = (client: BasedClient) => {
         const fn = client.fQ
         const obs = client.oQ
         const get = client.gQ
+        const stream = client.sQ
 
         const buffs = []
         let l = 0
@@ -92,6 +95,13 @@ export const drainQueue = (client: BasedClient) => {
           l += len
         }
 
+        // ------- Stream
+        for (const s of stream) {
+          const { buffers, len } = encodeStreamMessage(s)
+          buffs.push(...buffers)
+          l += len
+        }
+
         const n = new Uint8Array(l)
         let c = 0
         for (const b of buffs) {
@@ -101,6 +111,8 @@ export const drainQueue = (client: BasedClient) => {
 
         client.fQ = []
         client.pQ = []
+        client.sQ = []
+
         client.oQ.clear()
         client.gQ.clear()
         client.cQ.clear()
@@ -280,4 +292,65 @@ export const sendAuth = async (
     client.authRequest.inProgress = false
   })
   return client.authRequest.promise
+}
+
+// ------------ Stream ---------------
+export const addStreamRegister = (
+  client: BasedClient,
+  reqId: number,
+  contentSize: number,
+  name: string,
+  mimeType: string,
+  extension: string,
+  fnName: string,
+  payload: any
+) => {
+  client.sQ.push([
+    1,
+    reqId,
+    contentSize,
+    name,
+    mimeType,
+    extension,
+    fnName,
+    payload,
+  ])
+  drainQueue(client)
+}
+
+export const addStreamChunk = (
+  client: BasedClient,
+  reqId: number,
+  seqId: number,
+  chunk: Uint8Array,
+  deflate: boolean
+) => {
+  // lets send the chunks of streams directly
+  // also need to keep the amount we push in here to a minimum
+  // dc for streams will not resend them
+  // client.sQ.push([2, reqId, seqId, chunk])
+
+  // TODO: Add progress listener (send seqId back or multiple)
+
+  if (client.connected) {
+    // how to get progress
+    const { len, buffers } = encodeStreamMessage([
+      2,
+      reqId,
+      seqId,
+      chunk,
+      deflate,
+    ])
+    const n = new Uint8Array(len)
+    let c = 0
+    for (const b of buffers) {
+      n.set(b, c)
+      c += b.length
+    }
+    client.connection.ws.send(n)
+    idleTimeout(client)
+  } else {
+    // console.info('for streams you need to be connected', this can other wiser overflow)
+    client.sQ.push([2, reqId, seqId, chunk, deflate])
+  }
 }

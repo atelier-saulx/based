@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect } from 'react'
-import { BasedClient, BasedError, QueryMap } from '@based/client'
+import { BasedClient, QueryMap } from '@based/client'
+import { BasedError } from '@based/errors'
 import { Ctx } from './Ctx.js'
 import { hooksLoading, useLoadingListeners } from './useLoading.js'
 
@@ -8,7 +9,7 @@ export const useQueries = <T = any>(
   payloads?: any[],
   opts?: {
     persistent: boolean
-  }
+  },
 ): {
   loading: boolean
   data?: T
@@ -48,7 +49,7 @@ export const useQueries = <T = any>(
             update(
               queries.reduce((sum, { cache }) => {
                 return cache ? sum + cache.c : sum
-              }, '')
+              }, ''),
             )
           })
         }
@@ -89,7 +90,7 @@ export const useQuery = <N extends keyof QueryMap>(
   payload?: QueryMap[N]['payload'],
   opts?: {
     persistent: boolean
-  }
+  },
 ): {
   loading: boolean
   data?: QueryMap[N]['result']
@@ -111,7 +112,7 @@ export const useQuery = <N extends keyof QueryMap>(
         },
         (err) => {
           update(err)
-        }
+        },
       )
       return () => {
         const isLoading = hooksLoading.size > 0

@@ -39,7 +39,7 @@ export default (
 
   if (!disableWs) {
     app.ws('/*', {
-      maxPayloadLength: 1024 * 1024 * 30, // 20 mb max payload
+      maxPayloadLength: 1024 * 1024 * 30, // 30 mb max payload
       idleTimeout: 100,
       maxBackpressure: wsOptions.maxBackpressureSize,
       closeOnBackpressureLimit: wsOptions.maxBackpressureSize,
@@ -74,6 +74,14 @@ export default (
       },
       close: (ws: BasedWebSocket) => {
         const session = ws.getUserData()
+
+        if (session.streams) {
+          for (const key in session.streams) {
+            session.streams[key].stream.destroy()
+            delete session.streams[key]
+          }
+        }
+
         session.obs.forEach((id) => {
           if (unsubscribeWsIgnoreClient(server, id, session.c)) {
             // This is here for channels so we do not need to keep a seperate obs set on clients
@@ -88,6 +96,7 @@ export default (
         session.c = null
       },
       drain: () => {
+        // console.log('DRAIN?')
         // lets handle drain efficiently (or more efficiently at least)
         // call client.drain can be much more efficient
         // if (ws.client && ws.client.backpressureQueue) {

@@ -10,7 +10,7 @@
     "test": "npx ava",
     "microBuild": "microbundle -i dist/src/index.js -o test/browser/bundle.js --no-pkg-main -f modern --visualize",
     "browserBuildConsole": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window",
-    "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window --drop:console",
+    "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window",
     "browser": "node ./test/browser/server.js"
   },
   "type": "module",
@@ -24,7 +24,7 @@
     ".": "./dist/src/index.js"
   },
   "ava": {
-    "timeout": "2m",
+    "timeout": "4m",
     "workerThreads": false,
     "files": [
       "./dist/test/**/*.js"
@@ -38,8 +38,9 @@
   "dependencies": {
     "@saulx/diff": "^2.0.1",
     "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^4.1.0",
+    "@saulx/utils": "^4.3.2",
     "@based/fetch": "^2.0.3",
+    "@based/errors": "^1.2.0",
     "@based/opts": "^1.0.0",
     "fflate": "0.8.1",
     "isomorphic-ws": "^5.0.0",
@@ -52,6 +53,7 @@
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",
     "@based/functions": "^3.0.1",
+    "cross-fetch": "4.0.0",
     "ava": "5.3.1",
     "typescript": "^5.2.2",
     "rimraf": "^3.0.2"

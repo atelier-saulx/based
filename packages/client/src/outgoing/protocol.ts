@@ -6,6 +6,7 @@ import {
   FunctionQueueItem,
   GetObserveQueue,
   ObserveQueue,
+  StreamQueueItem,
 } from '../types/index.js'
 
 const encoder = new TextEncoder()
@@ -37,7 +38,9 @@ const encodeHeader = (
   //   4 = auth
   //   5 = subscribeChannel
   //   6 = publishChannel
-  //   7 = unsubscribeChannel
+  //   7.0 = unsubscribeChannel
+  //   7.1 = register stream
+  //   7.2 = chunk
   // isDeflate (1 bit)
   // len (28 bits)
 
@@ -124,13 +127,14 @@ export const encodeSubscribeChannelMessage = (
   // | 4 header | 8 id | 1 name length | * name | * payload |
 
   // Type 7 = unsubscribe
-  // | 4 header | 8 id |
-
+  // | 4 header | 1    = 0 | 8 id |
   if (type === 7) {
-    const buff = createBuffer(type, false, 12)
-    storeUint8(buff, id, 4, 8)
-    return { buffers: [buff], len: 12 }
+    const buff = createBuffer(type, false, 13)
+    storeUint8(buff, 0, 4, 1)
+    storeUint8(buff, id, 5, 8)
+    return { buffers: [buff], len: 13 }
   }
+
   const n = encoder.encode(name)
   len += 1 + n.length
   const isRequestSubscriber = type === 6
@@ -234,4 +238,102 @@ export const encodeAuthMessage = (authState: AuthState) => {
     buff.set(payload, 4)
   }
   return buff
+}
+
+export const encodeStreamMessage = (
+  f: StreamQueueItem
+): { buffers: Uint8Array[]; len: number } => {
+  const [subType, reqId] = f
+
+  // Type 7.1 Start stream
+  // | 4 header | 1 subType = 1 | 3 reqId | 4 content-size | 1 nameLen | 1 mimeLen | 1 fnNameLen | 1 extensionLength | name | mime | fnName | extension | payload
+  if (subType === 1) {
+    const [, , contentSize, name, mimeType, extension, fnName, payload] = f
+
+    let sLen = 16
+
+    let len = sLen
+
+    const nameEncoded = encoder.encode(name)
+    len += nameEncoded.length
+
+    const [isDeflate, p] = encodePayload(payload)
+
+    if (p) {
+      len += p.length
+    }
+
+    const mimeTypeEncoded = encoder.encode(mimeType)
+    len += mimeTypeEncoded.length
+
+    const fnNameEncoded = encoder.encode(fnName)
+    len += fnNameEncoded.length
+
+    const extensionEncoded = encoder.encode(extension)
+    len += extensionEncoded.length
+
+    const buff = createBuffer(7, isDeflate, len, sLen)
+
+    storeUint8(buff, 1, 4, 1)
+    storeUint8(buff, reqId, 5, 3)
+    storeUint8(buff, contentSize, 8, 4)
+    storeUint8(buff, nameEncoded.length, 12, 1)
+    storeUint8(buff, mimeTypeEncoded.length, 13, 1)
+    storeUint8(buff, fnNameEncoded.length, 14, 1)
+    storeUint8(buff, extensionEncoded.length, 15, 1)
+
+    if (p) {
+      return {
+        buffers: [
+          buff,
+          nameEncoded,
+          mimeTypeEncoded,
+          fnNameEncoded,
+          extensionEncoded,
+          p,
+        ],
+        len,
+      }
+    }
+    return {
+      buffers: [
+        buff,
+        nameEncoded,
+        mimeTypeEncoded,
+        fnNameEncoded,
+        extensionEncoded,
+      ],
+      len,
+    }
+  } else if (subType === 2) {
+    // Type 7.2 Chunk
+    // | 4 header | 1 subType = 2 | 3 reqId | 1 seqId | content
+
+    let sLen = 9
+    let len = sLen
+
+    const [, , seqId, chunk] = f
+
+    // only deflate is it makes sense
+
+    let isDeflate = false
+    let processed = chunk
+    if (chunk.length > 150) {
+      processed = deflateSync(chunk)
+      len += processed.length
+      isDeflate = true
+    } else {
+      len += chunk.length
+    }
+
+    const buff = createBuffer(7, isDeflate, len, sLen)
+
+    storeUint8(buff, 2, 4, 1)
+    storeUint8(buff, reqId, 5, 3)
+    storeUint8(buff, seqId, 8, 1)
+
+    return { buffers: [buff, processed], len }
+  }
+
+  return { buffers: [], len: 0 }
 }

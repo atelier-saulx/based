@@ -37,6 +37,7 @@ test('stream functions (small over http + file)', async (t: T) => {
       },
     },
   })
+
   await server.start()
 
   const result = await (

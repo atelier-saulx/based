@@ -2,7 +2,7 @@ import urlLoader from './urlLoader.js'
 import { Connection } from './types.js'
 import { BasedClient } from '../index.js'
 import { encodeAuthState } from '../authState/parseAuthState.js'
-import { isStreaming } from '../stream/uploadFileBrowser.js'
+import { isStreaming } from '../stream/index.js'
 
 import WebSocket from 'isomorphic-ws'
 

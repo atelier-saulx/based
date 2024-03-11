@@ -7,13 +7,15 @@ export type ReadableStream = {
 export type ProgressListener = (progress: number, files: number) => void
 
 export type StreamFunctionContents<
-  F = Buffer | ArrayBuffer | string | File | Blob
+  F = Buffer | Uint8Array | string | File | Blob
 > = {
   contents: F
   payload?: any
   mimeType?: string
   fileName?: string
   serverKey?: string
+  extension?: string
+  size?: number
 }
 
 export const isFileContents = (
@@ -45,14 +47,6 @@ export type StreamFunctionOpts =
   | StreamFunctionContents
   | StreamFunctionStream
 
-export type StreamHeaders = {
-  'Content-Extension'?: string
-  'Content-Length'?: string
-  'Content-Type': string
-  'Content-Name'?: string
-  Authorization: string
-}
-
 const isStream = (stream: any): boolean => {
   return (
     stream !== null &&
@@ -75,3 +69,32 @@ export const isStreamFunctionStream = (
 ): options is StreamFunctionStream => {
   return 'contents' in options && isStream(options.contents)
 }
+
+export type StreamQueueItem =
+  | [
+      1, // register id
+      number, // reqId
+      number, // contentSize
+      string, // name
+      string, // mimeType
+      string, // fnName
+      string, // extension
+      any // payload
+    ]
+  | [
+      2, // chunk
+      number, // reqId,
+      number, // seq,
+      Uint8Array, // contents
+      boolean // deflate
+    ]
+
+export type StreamQueue = StreamQueueItem[]
+
+export type StreamResponseHandler = [
+  (val?: any) => void,
+  (err: Error) => void,
+  (seqId: number, code: number, maxChunkSize: number) => void
+]
+
+export type StreamFunctionResponseListeners = Map<number, StreamResponseHandler>

@@ -16,8 +16,6 @@ import { BinaryMessageHandler } from './types.js'
 import { Duplex, Readable } from 'stream'
 import { readStream } from '@saulx/utils'
 
-// combine authorize with installfn AuthorizeAndInstall
-
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'function'>
@@ -56,7 +54,7 @@ const sendFunction: IsAuthorizedHandler<
   spec
     .fn(server.client, payload, ctx)
     .then(async (v) => {
-      // TODO: allow chunked reply!
+      // TODO: allow chunked REPLY!
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }

@@ -1,95 +1,105 @@
-import { Duplex, Readable } from 'stream'
-import util from 'util'
+import { Duplex, Readable } from "stream";
+import util from "util";
 
 // prob want to move this to based functions
 export class BasedDataStream extends Duplex {
-  public size: number = 0
-  public receivedBytes: number = 0
-  public progessTimer: NodeJS.Timeout
+  public size: number = 0;
+  public paused: boolean = false;
+  public receivedBytes: number = 0;
+  public progessTimer: NodeJS.Timeout;
 
   constructor(size: number) {
-    super()
-    this.size = size
-    this.emit('progress', 0)
+    super();
+    this.size = size;
+
+    this.on("pause", () => {
+      this.paused = true;
+    });
+
+    this.on("resume", () => {
+      this.paused = false;
+    });
+
+    this.emit("progress", 0);
   }
 
-  override _read() { }
+  override _read() {}
 
   override _write(chunk, encoding, callback) {
-    this.receivedBytes += chunk.byteLength
+    this.receivedBytes += chunk.byteLength;
     if (this.size && this.size > 20000) {
       if (!this.progessTimer) {
         this.progessTimer = setTimeout(() => {
-          const progress = this.receivedBytes / this.size
-          this.emit('progress', progress)
-          this.progessTimer = null
-        }, 200)
+          const progress = this.receivedBytes / this.size;
+          this.emit("progress", progress);
+          this.progessTimer = null;
+        }, 200);
       }
     }
-    this.push(Buffer.from(chunk, encoding))
-    callback()
+    this.push(Buffer.from(chunk, encoding));
+    callback();
   }
 
   override _final() {
     if (!this.size) {
-      this.size = this.receivedBytes
+      this.size = this.receivedBytes;
     }
-    this.receivedBytes = this.size
+    this.receivedBytes = this.size;
     if (this.progessTimer) {
-      clearTimeout(this.progessTimer)
-      this.progessTimer = null
+      clearTimeout(this.progessTimer);
+      this.progessTimer = null;
     }
-    this.emit('progress', 1)
-    this.push(null)
+    this.emit("progress", 1);
+    this.push(null);
   }
 
   [util.inspect.custom]() {
     if (this.size) {
       const rb =
         this.receivedBytes < 1000
-          ? Math.round(this.receivedBytes / 1024) + 'kb'
-          : Math.round(this.receivedBytes / 1024 / 1024) + 'mb'
+          ? Math.round(this.receivedBytes / 1024) + "kb"
+          : Math.round(this.receivedBytes / 1024 / 1024) + "mb";
 
       return `[BasedStream ${~~(
         (this.receivedBytes / this.size) *
         100
-      )}% ${rb}]`
+      )}% ${rb}]`;
     } else {
-      return `[BasedStream]`
+      return `[BasedStream]`;
     }
   }
 }
 
 // maybe make a type pkg
 export type StreamFunctionContents<F = Buffer | ArrayBuffer | string> = {
-  contents: F
-  payload?: any
-  mimeType?: string
-  fileName?: string
-}
+  contents: F;
+  payload?: any;
+  mimeType?: string;
+  fileName?: string;
+};
 
 export type StreamFunctionStream =
   | {
-    contents: Readable | Duplex
-    payload?: any
-    size: number
-    mimeType?: string
-    fileName?: string
-    extension?: string
-  }
+      contents: Readable | Duplex;
+      payload?: any;
+      size: number;
+      mimeType?: string;
+      fileName?: string;
+      extension?: string;
+    }
   | {
-    contents: BasedDataStream
-    payload?: any
-    size?: number
-    mimeType?: string
-    fileName?: string
-    extension?: string
-  }
+      contents: BasedDataStream;
+      payload?: any;
+      size?: number;
+      mimeType?: string;
+      fileName?: string;
+      extension?: string;
+    };
 
-export type StreamFunctionOpts = StreamFunctionContents | StreamFunctionStream
+export type StreamFunctionOpts = StreamFunctionContents | StreamFunctionStream;
 
 export const isStreamFunctionOpts = (
   opts: StreamFunctionContents | StreamFunctionStream
 ): opts is StreamFunctionStream => {
-  return opts.contents instanceof Duplex || opts.contents instanceof Readable
-}
+  return opts.contents instanceof Duplex || opts.contents instanceof Readable;
+};

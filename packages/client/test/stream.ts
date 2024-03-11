@@ -3,7 +3,7 @@ import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
-import { readFileSync } from 'node:fs'
+import { readFileSync, createReadStream } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 import getPort from 'get-port'
@@ -33,7 +33,13 @@ test('stream functions - buffer contents', async (t: T) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })
-            await readStream(stream)
+            stream.on('data', (c) => {
+              // console.log('CHUNK', c.toString())
+            })
+            const r = await readStream(stream)
+            const decoder = new TextDecoder()
+            const str = decoder.decode(r)
+            // console.log(str)
             return payload
           },
         },
@@ -51,13 +57,11 @@ test('stream functions - buffer contents', async (t: T) => {
   }
   const s = await client.stream('hello', {
     payload: { power: true },
-    contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
+    contents: Buffer.from(JSON.stringify(bigBod)),
   })
   t.deepEqual(s, { power: true })
-
   t.true(progressEvents.length > 0)
   t.is(progressEvents[progressEvents.length - 1], 1)
-  // cycles of 3 secs
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
   client.disconnect()
@@ -96,7 +100,7 @@ test('stream functions - streamContents', async (t: T) => {
     url: async () => t.context.ws,
   })
   const bigBod: any[] = []
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
   const payload = Buffer.from(JSON.stringify(bigBod))
@@ -108,7 +112,7 @@ test('stream functions - streamContents', async (t: T) => {
   })
   let index = 0
   const streamBits = () => {
-    const readBytes = 1000
+    const readBytes = 100000
     const end = (index + 1) * readBytes
     if (end > payload.byteLength) {
       stream.push(payload.slice(index * readBytes, end))
@@ -118,7 +122,7 @@ test('stream functions - streamContents', async (t: T) => {
       setTimeout(() => {
         index++
         streamBits()
-      }, 18)
+      }, 100)
     }
   }
   streamBits()
@@ -242,12 +246,13 @@ test('stream functions - path json', async (t: T) => {
       configs: {
         hello: {
           type: 'stream',
-          uninstallAfterIdleTime: 1,
-          maxPayloadSize: 1e9,
+          uninstallAfterIdleTime: 1e6,
+          maxPayloadSize: 1e100,
           fn: async (_, x) => {
             const { payload, stream, mimeType } = x
-            const file = (await readStream(stream)).toString()
-            return { payload, file, mimeType }
+            stream.on('end', () => {})
+            const file = await readStream(stream)
+            return { payload, mimeType, file: file.toString() }
           },
         },
       },
@@ -258,6 +263,7 @@ test('stream functions - path json', async (t: T) => {
   client.connect({
     url: async () => t.context.ws,
   })
+
   const s = await client.stream('hello', {
     payload: { power: true },
     path: join(__dirname, '/browser/tmp.json'),
@@ -266,6 +272,42 @@ test('stream functions - path json', async (t: T) => {
     mimeType: 'application/json',
     payload: { power: true },
     file: readFileSync(join(__dirname, '/browser/tmp.json')).toString(),
+  })
+  client.disconnect()
+  await server.destroy()
+})
+
+test('stream functions - filename', async (t: T) => {
+  const name = 'sldfoifgn09oijdf08wlejknf'
+
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: {
+        hello: {
+          type: 'stream',
+          uninstallAfterIdleTime: 1e6,
+          maxPayloadSize: 1e100,
+          fn: async (_based, streamPayload) => {
+            const { fileName } = streamPayload
+            return { fileName }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => t.context.ws,
+  })
+
+  const s = await client.stream('hello', {
+    fileName: name,
+    path: join(__dirname, '/browser/tmp.json'),
+  })
+  t.deepEqual(s, {
+    fileName: name,
   })
   client.disconnect()
   await server.destroy()
