@@ -5,6 +5,7 @@ import { addStreamChunk, addStreamRegister } from '../outgoing/index.js'
 const waitForChunk = (reader: FileReader): Promise<Uint8Array> => {
   return new Promise((resolve) => {
     reader.addEventListener('loadend', (e) => {
+      console.log('loaded?')
       resolve(new Uint8Array(reader.result as ArrayBuffer))
     })
   })

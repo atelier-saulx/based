@@ -1,10 +1,5 @@
 import { BasedClient } from '../index.js'
-import {
-  isFileContents,
-  StreamFunctionOpts,
-  isStreamFunctionPath,
-  isStreamFunctionStream,
-} from './types.js'
+import { isFileContents, StreamFunctionContents } from './types.js'
 import { uploadFile } from './browserStream.js'
 
 export const isStreaming = { streaming: false }
@@ -14,13 +9,9 @@ export const isStreaming = { streaming: false }
 export default async (
   client: BasedClient,
   name: string,
-  options: StreamFunctionOpts,
+  options: StreamFunctionContents,
   progressListener?: (progress: number) => void
 ): Promise<any> => {
-  if (isStreamFunctionPath(options) || isStreamFunctionStream(options)) {
-    return
-  }
-
   if (
     options.contents instanceof ArrayBuffer ||
     typeof options.contents === 'string'
@@ -30,21 +21,21 @@ export default async (
     })
   }
 
-  if (isFileContents(options)) {
-    if (!options.size) {
-      options.size = options.contents.size
-    }
-    return uploadFile(client, name, options, progressListener)
-  }
-
   if (options.contents instanceof global.Blob) {
     if (!options.mimeType) {
       options.mimeType = options.contents.type
     }
+    options.contents = new File(
+      [options.contents],
+      options.fileName || 'blob',
+      { type: options.contents.type }
+    )
+  }
 
-    options.contents = new File([options.contents], options.fileName || 'blob')
-
-    // @ts-ignore
+  if (isFileContents(options)) {
+    if (!options.size) {
+      options.size = options.contents.size
+    }
     return uploadFile(client, name, options, progressListener)
   }
 

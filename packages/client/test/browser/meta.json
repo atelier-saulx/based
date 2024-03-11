@@ -472,7 +472,7 @@
       "format": "esm"
     },
     "dist/src/stream/browserStream.js": {
-      "bytes": 3099,
+      "bytes": 3135,
       "imports": [
         {
           "path": "dist/src/outgoing/index.js",
@@ -483,7 +483,7 @@
       "format": "esm"
     },
     "dist/src/stream/browser.js": {
-      "bytes": 1284,
+      "bytes": 1082,
       "imports": [
         {
           "path": "dist/src/stream/types.js",
@@ -1010,7 +1010,7 @@
           "bytesInOutput": 168
         },
         "dist/src/stream/types.js": {
-          "bytesInOutput": 258
+          "bytesInOutput": 37
         },
         "node_modules/fflate/esm/browser.js": {
           "bytesInOutput": 8179
@@ -1031,10 +1031,10 @@
           "bytesInOutput": 2586
         },
         "dist/src/stream/browserStream.js": {
-          "bytesInOutput": 1192
+          "bytesInOutput": 1215
         },
         "dist/src/stream/browser.js": {
-          "bytesInOutput": 494
+          "bytesInOutput": 477
         },
         "../../node_modules/isomorphic-ws/browser.js": {
           "bytesInOutput": 230
@@ -1091,7 +1091,7 @@
           "bytesInOutput": 1442
         }
       },
-      "bytes": 40996
+      "bytes": 40781
     }
   }
 }
