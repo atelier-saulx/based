@@ -8,7 +8,6 @@ OBJ := \
 	   edge/edge.o \
 	   edge/edge_constraint.o \
 	   field_lookup/data_field.o \
-	   field_lookup/inherit_field.o \
 	   field_lookup/traversable.o \
 	   hierarchy/field_set.o \
 	   hierarchy/hierarchy.o \

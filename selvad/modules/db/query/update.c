@@ -254,7 +254,7 @@ static int op_set(
 
     SelvaHierarchy_GetNodeId(node_id, node);
 
-    err = SelvaModify_ModifySet(hierarchy, node_id, node, obj, op->field, op->set_opts, 0);
+    err = SelvaModify_ModifySet(hierarchy, node_id, node, obj, op->field, op->set_opts);
     return (err) ? SELVA_OP_REPL_STATE_UNCHANGED : SELVA_OP_REPL_STATE_UPDATED;
 }
 

@@ -38,19 +38,6 @@ int field_lookup_data_field(
     __attribute__((access(read_only, 1), access(read_only, 2), access(read_only, 4, 5), access(write_only, 6)));
 
 /**
- * Get a plain field value in inherit style.
- */
-int field_lookup_inherit(
-        struct SelvaHierarchy *hierarchy,
-        const struct selva_string *lang,
-        const struct SelvaHierarchyNode *node,
-        struct SelvaObject *obj,
-        const char *field_str,
-        size_t field_len,
-        struct SelvaObjectAny *out)
-    __attribute__((access(read_only, 2), access(read_only, 5, 6), access(write_only, 7)));
-
-/**
  * Get a traversable hierarchy-like SVector field value.
  * - edge
  * - object array

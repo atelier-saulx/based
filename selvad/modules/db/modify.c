@@ -76,8 +76,7 @@ static enum selva_op_repl_state (*modify_op_fn[256])(
         struct SelvaHierarchyNode *node,
         char type_code,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags modify_flags);
+        struct selva_string *value);
 
 SELVA_TRACE_HANDLE(cmd_modify);
 
@@ -1048,8 +1047,7 @@ int SelvaModify_ModifySet(
     struct SelvaHierarchyNode *node,
     struct SelvaObject *obj,
     const struct selva_string *field,
-    struct SelvaModify_OpSet *setOpts,
-    enum modify_flags modify_flags
+    struct SelvaModify_OpSet *setOpts
 ) {
     TO_STR(field);
 
@@ -1448,8 +1446,7 @@ static enum selva_op_repl_state op_increment_longlong(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     struct SelvaModify_OpIncrement incrementOpts;
@@ -1480,8 +1477,7 @@ static enum selva_op_repl_state op_increment_double(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     struct SelvaModify_OpIncrementDouble incrementOpts;
@@ -1512,8 +1508,7 @@ static enum selva_op_repl_state op_set(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags modify_flags) {
+        struct selva_string *value) {
     Selva_NodeId node_id;
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     struct SelvaModify_OpSet *setOpts;
@@ -1526,7 +1521,7 @@ static enum selva_op_repl_state op_set(
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
-    err = SelvaModify_ModifySet(hierarchy, node_id, node, obj, field, setOpts, modify_flags);
+    err = SelvaModify_ModifySet(hierarchy, node_id, node, obj, field, setOpts);
     if (err == 0) {
         selva_send_str(resp, "OK", 2);
         return SELVA_OP_REPL_STATE_UNCHANGED;
@@ -1545,8 +1540,7 @@ static enum selva_op_repl_state op_ord_set(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     Selva_NodeId node_id;
     struct SelvaModify_OpOrdSet *setOpts;
     int err;
@@ -1603,8 +1597,7 @@ static enum selva_op_repl_state op_del(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value __unused,
-        enum modify_flags) {
+        struct selva_string *value __unused) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field);
     int err;
@@ -1630,8 +1623,7 @@ static enum selva_op_repl_state op_string(
         struct SelvaHierarchyNode *node,
         char type_code,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field, value);
     const enum SelvaObjectType old_type = SelvaObject_GetTypeStr(obj, field_str, field_len);
@@ -1689,8 +1681,7 @@ static enum selva_op_repl_state op_longlong(
         struct SelvaHierarchyNode *node,
         char type_code,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     long long ll;
@@ -1726,8 +1717,7 @@ static enum selva_op_repl_state op_double(
         struct SelvaHierarchyNode *node,
         char type_code,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     double d;
@@ -1763,8 +1753,7 @@ static enum selva_op_repl_state op_meta(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
 
     return SelvaModify_ModifyMetadata(resp, obj, field, value);
@@ -1777,8 +1766,7 @@ static enum selva_op_repl_state op_array_remove(
         struct SelvaHierarchyNode *node,
         char type_code __unused,
         struct selva_string *field,
-        struct selva_string *value,
-        enum modify_flags) {
+        struct selva_string *value) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field, value);
     uint32_t v;
@@ -1809,8 +1797,7 @@ static enum selva_op_repl_state op_notsup(
         struct SelvaHierarchyNode *,
         char type_code,
         struct selva_string *field __unused,
-        struct selva_string *value __unused,
-        enum modify_flags) {
+        struct selva_string *value __unused) {
     selva_send_errorf(resp, SELVA_EINTYPE, "Invalid type: \"%c\"", type_code);
     return SELVA_OP_REPL_STATE_UNCHANGED;
 }
@@ -2390,7 +2377,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
         } else if (type_code == SELVA_MODIFY_ARG_OP_HLL) {
             repl_state = modify_hll(resp, node, field, value);
         } else {
-            repl_state = modify_op_fn[(uint8_t)type_code](&fin, resp, hierarchy, node, type_code, field, value, flags);
+            repl_state = modify_op_fn[(uint8_t)type_code](&fin, resp, hierarchy, node, type_code, field, value);
         }
 
         if (repl_state == SELVA_OP_REPL_STATE_REPLICATE) {
@@ -2432,7 +2419,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
                 .$value_len = 0,
             };
 
-            err = SelvaModify_ModifySet(hierarchy, nodeId, node, obj, aliases_field, &opSet, flags);
+            err = SelvaModify_ModifySet(hierarchy, nodeId, node, obj, aliases_field, &opSet);
             if (err < 0) {
                 /*
                  * Since we are already at the end of the command, it's next to

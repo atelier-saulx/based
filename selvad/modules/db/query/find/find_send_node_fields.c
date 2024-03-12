@@ -640,8 +640,6 @@ int find_send_node_fields(
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         struct SelvaObject *fields,
-        struct selva_string **inherit_fields,
-        size_t nr_inherit_fields,
         struct selva_string *excluded_fields)
 {
     Selva_NodeId nodeId;
@@ -688,9 +686,6 @@ int find_send_node_fields(
     }
 
     send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
-    if (inherit_fields) {
-        /* TODO remove inherit */
-    }
 
     selva_send_array_end(resp);
 
