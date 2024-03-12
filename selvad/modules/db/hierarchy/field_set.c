@@ -52,51 +52,6 @@ static int hierarchy_foreach_cb(
     return cb->cb(svalue, SELVA_SET_TYPE_NODEID, cb->cb_arg);
 }
 
-static int array_foreach_cb_wrapper(union SelvaObjectArrayForeachValue value, enum SelvaObjectType subtype, void *arg) {
-    const struct SelvaObjectSetForeachCallback *cb = (struct SelvaObjectSetForeachCallback *)arg;
-    union SelvaObjectSetForeachValue svalue;
-
-    switch (subtype) {
-    case SELVA_OBJECT_DOUBLE:
-        svalue.d = value.d;
-        cb->cb(svalue, SELVA_SET_TYPE_DOUBLE, cb->cb_arg);
-        break;
-    case SELVA_OBJECT_LONGLONG:
-    case SELVA_OBJECT_HLL:
-        svalue.ll = value.ll;
-        cb->cb(svalue, SELVA_SET_TYPE_LONGLONG, cb->cb_arg);
-        break;
-    case SELVA_OBJECT_STRING:
-        svalue.s = value.s;
-        cb->cb(svalue, SELVA_SET_TYPE_STRING, cb->cb_arg);
-        break;
-    case SELVA_OBJECT_NULL:
-    case SELVA_OBJECT_OBJECT:
-    case SELVA_OBJECT_SET:
-    case SELVA_OBJECT_ARRAY:
-    case SELVA_OBJECT_POINTER:
-        return 1; /* Unsupported. */
-    }
-
-    return 0;
-}
-
-/**
- * Foreach item in an array field.
- */
-static int array_foreach(
-        struct SelvaObject *obj,
-        const char *field_str,
-        size_t field_len,
-        const struct SelvaObjectSetForeachCallback *cb) {
-    struct SelvaObjectArrayForeachCallback arr_cb = {
-        .cb = array_foreach_cb_wrapper,
-        .cb_arg = (void *)cb,
-    };
-
-    return SelvaObject_ArrayForeach(obj, field_str, field_len, &arr_cb);
-}
-
 int SelvaHierarchy_ForeachInField(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
@@ -133,8 +88,6 @@ int SelvaHierarchy_ForeachInField(
         field_type = SelvaObject_GetTypeStr(obj, field_str, field_len);
         if (field_type == SELVA_OBJECT_SET) {
             return SelvaObject_SetForeach(obj, field_str, field_len, cb);
-        } else if (field_type == SELVA_OBJECT_ARRAY) {
-            return array_foreach(obj, field_str, field_len, cb);
         }
     }
 

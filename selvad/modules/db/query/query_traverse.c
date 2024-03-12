@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -28,18 +28,7 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
 {
     int err;
 
-    if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && qt->dir_opt_str) {
-        const struct SelvaObjectArrayForeachCallback ary_cb = {
-            .cb = qt->ary_cb,
-            .cb_arg = args,
-        };
-        const char *ref_field_str = qt->dir_opt_str;
-        size_t ref_field_len = qt->dir_opt_len;
-
-        SELVA_TRACE_BEGIN(query_traverse_array);
-        err = SelvaHierarchy_TraverseArray(hierarchy, node_id, ref_field_str, ref_field_len, &ary_cb);
-        SELVA_TRACE_END(query_traverse_array);
-    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && qt->dir_opt_str) {
+    if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && qt->dir_opt_str) {
         const struct SelvaHierarchyCallback cb = {
             .node_cb = qt->node_cb,
             .node_arg = args,
@@ -79,15 +68,11 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
             .node_cb = qt->node_cb,
             .node_arg = args,
         };
-        const struct SelvaObjectArrayForeachCallback acb = {
-            .cb = qt->ary_cb,
-            .cb_arg = args,
-        };
 
         SELVA_TRACE_BEGIN(query_traverse_traversal_field);
         err = (qt->dir == SELVA_HIERARCHY_TRAVERSAL_FIELD)
-            ? SelvaHierarchy_TraverseField2(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb, &acb)
-            : SelvaHierarchy_TraverseField2Bfs(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb, &acb);
+            ? SelvaHierarchy_TraverseField2(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb)
+            : SelvaHierarchy_TraverseField2Bfs(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb);
         SELVA_TRACE_END(query_traverse_traversal_field);
     } else {
         const struct SelvaHierarchyCallback cb = {

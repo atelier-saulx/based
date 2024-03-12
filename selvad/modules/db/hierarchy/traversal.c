@@ -29,8 +29,6 @@ const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir)
         return (const char *)"node";
     case SELVA_HIERARCHY_TRAVERSAL_ALL:
         return (const char *)"all";
-    case SELVA_HIERARCHY_TRAVERSAL_ARRAY:
-        return (const char *)"array";
     case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
         return (const char *)"edge_field";
     case SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD:

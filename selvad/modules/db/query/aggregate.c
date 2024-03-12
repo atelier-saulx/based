@@ -606,7 +606,6 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
     if (!(query_opts.dir & (
           SELVA_HIERARCHY_TRAVERSAL_NONE |
           SELVA_HIERARCHY_TRAVERSAL_NODE |
-          SELVA_HIERARCHY_TRAVERSAL_ARRAY |
           SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
@@ -623,7 +622,6 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
     __auto_free_rpn_ctx struct rpn_ctx *traversal_rpn_ctx = NULL;
     __auto_free_rpn_expression struct rpn_expression *traversal_expression = NULL;
     if (query_opts.dir & (
-         SELVA_HIERARCHY_TRAVERSAL_ARRAY |
          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
          SELVA_HIERARCHY_TRAVERSAL_FIELD |

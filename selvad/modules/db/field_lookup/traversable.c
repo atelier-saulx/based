@@ -72,37 +72,7 @@ static int do_field_lookup_traversable(
         size_t field_len,
         struct field_lookup_traversable *out)
 {
-    SVector *vec;
-    int err;
-
-    /*
-     * Try recurse to an edge field.
-     */
-    err = get_from_edge_field(node, field_str, field_len, out);
-    if (!err) {
-        return 0;
-    } else if (err != SELVA_ENOENT) {
-        return err;
-    }
-
-    /*
-     * Array field.
-     */
-    struct SelvaObject *obj;
-    enum SelvaObjectType obj_subtype;
-
-    obj = SelvaHierarchy_GetNodeObject(node);
-    err = SelvaObject_GetArrayStr(obj, field_str, field_len, &obj_subtype, &vec);
-    if (err) {
-        return err;
-    } else if (obj_subtype != SELVA_OBJECT_OBJECT) {
-        return SELVA_EINTYPE;
-    } else {
-        out->type = SELVA_HIERARCHY_TRAVERSAL_ARRAY;
-        out->vec = vec;
-        out->node = node;
-        return 0;
-    }
+    return get_from_edge_field(node, field_str, field_len, out);
 }
 
 int field_lookup_traversable(

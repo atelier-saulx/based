@@ -1299,8 +1299,7 @@ int SelvaHierarchy_TraverseField2(
         const Selva_NodeId node_id,
         const char *ref_field_str,
         size_t ref_field_len,
-        const struct SelvaHierarchyCallback *hcb,
-        const struct SelvaObjectArrayForeachCallback *acb) {
+        const struct SelvaHierarchyCallback *hcb) {
     struct SelvaHierarchyNode *head;
     struct field_lookup_traversable t;
     int err;
@@ -1341,34 +1340,6 @@ int SelvaHierarchy_TraverseField2(
         SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, t.vec, hcb);
         SELVA_TRACE_END(traverse_edge_field);
         return 0;
-    } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
-        struct SVectorIterator it;
-
-        assert(t.vec);
-
-        if (!acb) {
-            return SELVA_HIERARCHY_EINVAL;
-        }
-
-        SELVA_TRACE_BEGIN(traversal_array);
-
-        /*
-         * This code comes from selva_object_foreach.c
-         */
-        SVector_ForeachBegin(&it, t.vec);
-        while (!SVector_Done(&it)) {
-            union SelvaObjectArrayForeachValue v;
-
-            v.obj = SVector_Foreach(&it);
-
-            if (acb->cb(v, SELVA_OBJECT_OBJECT, acb->cb_arg)) {
-                break;
-            }
-        }
-
-        SELVA_TRACE_END(traversal_array);
-
-        return 0;
     } else {
         return SELVA_HIERARCHY_ENOTSUP; /* Same as SelvaHierarchy_Traverse(). */
     }
@@ -1379,8 +1350,7 @@ int SelvaHierarchy_TraverseField2Bfs(
         const Selva_NodeId node_id,
         const char *ref_field_str,
         size_t ref_field_len,
-        const struct SelvaHierarchyCallback *hcb,
-        const struct SelvaObjectArrayForeachCallback *acb) {
+        const struct SelvaHierarchyCallback *hcb) {
     struct SelvaHierarchyNode *head;
 
     head = SelvaHierarchy_FindNode(hierarchy, node_id);
@@ -1422,27 +1392,6 @@ int SelvaHierarchy_TraverseField2Bfs(
                 Trx_End(&hierarchy->trx_state, &trx_cur);
                 return SELVA_ENOTSUP;
             }
-        } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
-            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
-
-            if (acb) {
-                assert(t.vec);
-                /*
-                 * This code comes from selva_object_foreach.c
-                 */
-                SVector_ForeachBegin(&it, t.vec);
-                while (!SVector_Done(&it)) {
-                    union SelvaObjectArrayForeachValue v;
-
-                    v.obj = SVector_Foreach(&it);
-
-                    if (acb->cb(v, SELVA_OBJECT_OBJECT, acb->cb_arg)) {
-                        break;
-                    }
-                }
-            }
-
-            break;
         } else {
             adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
             SELVA_LOG(SELVA_LOGL_WARN, "Unsupported traversal: %d", t.type);
@@ -1560,24 +1509,6 @@ int SelvaHierarchy_TraverseExpressionBfs(
     }
 
     return bfs_expression(hierarchy, head, rpn_ctx, rpn_expr, edge_filter_ctx, edge_filter, cb);
-}
-
-int SelvaHierarchy_TraverseArray(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        const char *field_str,
-        size_t field_len,
-        const struct SelvaObjectArrayForeachCallback *cb) {
-    struct SelvaHierarchyNode *head;
-
-    head = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!head) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    Trx_Sync(&hierarchy->trx_state, &head->trx_label);
-
-    return SelvaObject_ArrayForeach(GET_NODE_OBJ(head), field_str, field_len, cb);
 }
 
 int SelvaHierarchy_TraverseSet(

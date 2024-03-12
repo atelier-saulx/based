@@ -510,8 +510,7 @@ int SelvaHierarchy_TraverseField2(
         const Selva_NodeId node_id,
         const char *ref_field_str,
         size_t ref_field_len,
-        const struct SelvaHierarchyCallback *hcb,
-        const struct SelvaObjectArrayForeachCallback *acb)
+        const struct SelvaHierarchyCallback *hcb)
     __attribute__((access(read_only, 2), access(read_only, 3, 4)));
 
 /**
@@ -524,8 +523,7 @@ int SelvaHierarchy_TraverseField2Bfs(
         const Selva_NodeId node_id,
         const char *ref_field_str,
         size_t ref_field_len,
-        const struct SelvaHierarchyCallback *hcb,
-        const struct SelvaObjectArrayForeachCallback *acb)
+        const struct SelvaHierarchyCallback *hcb)
     __attribute__((access(read_only, 2), access(read_only, 3, 4)));
 
 /**
@@ -557,19 +555,6 @@ int SelvaHierarchy_TraverseExpressionBfs(
         const struct rpn_expression *edge_filter,
         const struct SelvaHierarchyCallback *cb)
     __attribute__((access(read_only, 2)));
-
-/**
- * Foreach value in an array field.
- * Implements:
- * - SELVA_HIERARCHY_TRAVERSAL_ARRAY
- */
-int SelvaHierarchy_TraverseArray(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        const char *field_str,
-        size_t field_len,
-        const struct SelvaObjectArrayForeachCallback *cb)
-    __attribute__((access(read_only, 2), access(read_only, 3, 4)));
 
 /**
  * Foreach value in a set field.

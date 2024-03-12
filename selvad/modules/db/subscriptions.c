@@ -765,15 +765,6 @@ static void marker_set_traversal_expression(struct Selva_SubscriptionMarker *mar
     marker->change_marker.traversal_expression = traversal_expression;
 }
 
-static int traverse_marker_from_acb(union SelvaObjectArrayForeachValue, enum SelvaObjectType, void *)
-{
-    /*
-     * NOP, this function is only provided to avoid errors being returned from
-     * SelvaHierarchy_TraverseField2() and SelvaHierarchy_TraverseField2BFS().
-     */
-    return 0;
-}
-
 /**
  * Do a traversal over the given marker.
  * Bear in mind that cb is passed directly to the hierarchy traversal, thus any
@@ -832,17 +823,12 @@ static int traverse_marker_from(
         const size_t ref_field_len = strlen(ref_field_str);
         struct SelvaHierarchyNode *head;
         struct field_lookup_traversable t;
-        struct SelvaObjectArrayForeachCallback acb = {
-            .cb = traverse_marker_from_acb,
-            .cb_arg = NULL,
-        };
         int (*traverse)(
                 struct SelvaHierarchy *hierarchy,
                 const Selva_NodeId node_id,
                 const char *ref_field_str,
                 size_t ref_field_len,
-                const struct SelvaHierarchyCallback *hcb,
-                const struct SelvaObjectArrayForeachCallback *acb) = (dir == SELVA_HIERARCHY_TRAVERSAL_FIELD)
+                const struct SelvaHierarchyCallback *hcb) = (dir == SELVA_HIERARCHY_TRAVERSAL_FIELD)
             ? SelvaHierarchy_TraverseField2
             : SelvaHierarchy_TraverseField2Bfs;
 
@@ -862,7 +848,7 @@ static int traverse_marker_from(
             goto fail;
         }
 
-        err = traverse(hierarchy, node_id, ref_field_str, ref_field_len, &cb, &acb);
+        err = traverse(hierarchy, node_id, ref_field_str, ref_field_len, &cb);
     } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)) {
         struct rpn_ctx *rpn_ctx;
         int (*traverse)(
@@ -1578,7 +1564,6 @@ static bool is_field_traversed(
         case SELVA_HIERARCHY_TRAVERSAL_NONE:
         case SELVA_HIERARCHY_TRAVERSAL_NODE:
         case SELVA_HIERARCHY_TRAVERSAL_ALL:
-        case SELVA_HIERARCHY_TRAVERSAL_ARRAY:
             return false;
         case SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION:
             return true;
