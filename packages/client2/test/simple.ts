@@ -210,6 +210,27 @@ test('simple test', async (t) => {
     console.error(err)
   }
 
+  try {
+    console.log('ALL')
+    const result2 = await client
+      .command('hierarchy.find', [
+        '', // lang
+        createRecord(hierarchy_find_def, {
+          skip: 0n,
+          offset: 0n,
+          limit: -1n,
+          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_ALL,
+          res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS,
+        }),
+        'bogus'.padEnd(16, '\0')
+      ])
+      .catch(console.error)
+
+    console.dir(result2, { depth: 10 })
+  } catch (err) {
+    console.error(err)
+  }
+
   await wait(1e3)
 
   t.true(true)

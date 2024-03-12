@@ -606,6 +606,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
     if (!(query_opts.dir & (
           SELVA_HIERARCHY_TRAVERSAL_NONE |
           SELVA_HIERARCHY_TRAVERSAL_NODE |
+          SELVA_HIERARCHY_TRAVERSAL_ALL |
           SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
