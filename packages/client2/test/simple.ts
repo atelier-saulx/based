@@ -186,9 +186,10 @@ test('simple test', async (t) => {
           skip: 0n,
           offset: 0n,
           limit: 10000n,
-          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
+          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD,
+          dir_opt_str: '1',
           res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-          res_opt_str: '1.1',
+          res_opt_str: '1',
         }),
         flap2, // flap2 ->1 [flap, flap3]
         ...rpn,
