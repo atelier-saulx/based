@@ -41,7 +41,7 @@
  * Maximum length of the name of an embedded key.
  * Must align nicely with the SelvaObject structure. This is ensured by the macros.
  */
-#define EMBEDDED_NAME_MAX               ALIGNED_SIZE(9, alignof(struct SelvaObjectKey))
+#define EMBEDDED_NAME_MAX               ALIGNED_SIZE(8, alignof(struct SelvaObjectKey))
 #define EMBEDDED_KEY_SIZE               (sizeof(struct SelvaObjectKey) + EMBEDDED_NAME_MAX)
 
 #define SELVA_OBJECT_FLAG_DYNAMIC       0x01 /*!< Dynamic allocation with SelvaObject_New(). */

@@ -39,8 +39,8 @@
 #define SELVA_ID_FIELD          "id"
 #define SELVA_TYPE_FIELD        "type"
 #define SELVA_ALIASES_FIELD     "aliases"
-#define SELVA_CREATED_AT_FIELD  "createdAt"
-#define SELVA_UPDATED_AT_FIELD  "updatedAt"
+#define SELVA_CREATED_AT_FIELD  "created"
+#define SELVA_UPDATED_AT_FIELD  "updated"
 /**
  * Pseudo field name for retrieving edge metadata.
  */

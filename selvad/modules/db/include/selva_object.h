@@ -29,7 +29,7 @@ enum SelvaObjectReplyFlags {
  * Size of struct SelvaObject.
  * This must match with the actual size of selva_object.c won't compile.
  */
-#define SELVA_OBJECT_BSIZE 336
+#define SELVA_OBJECT_BSIZE 304
 
 /**
  * Define a for holding a SelvaObject.
