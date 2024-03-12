@@ -215,8 +215,7 @@ int SelvaModify_ModifySet(
     struct SelvaHierarchyNode *node,
     struct SelvaObject *obj,
     const struct selva_string *field,
-    struct SelvaModify_OpSet *setOpts,
-    enum modify_flags modify_flags
+    struct SelvaModify_OpSet *setOpts
 );
 
 int SelvaModify_ModifyDel(
