@@ -21,7 +21,6 @@ struct field_name {
 
 static const struct field_name unsupported_fields[] = {
     UNSUP(SELVA_ID_FIELD),
-    UNSUP(SELVA_TYPE_FIELD),
     UNSUP(SELVA_CREATED_AT_FIELD),
     UNSUP(SELVA_UPDATED_AT_FIELD),
 };

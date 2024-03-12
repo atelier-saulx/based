@@ -35,7 +35,7 @@
  * Must be a power of two. This must be relatively small because we are doing
  * a linear search into the embedded keys.
  */
-#define NR_EMBEDDED_KEYS                3
+#define NR_EMBEDDED_KEYS                2
 #define EMBEDDED_KEYS_FREE_MASK         ((1 << NR_EMBEDDED_KEYS) - 1)
 /**
  * Maximum length of the name of an embedded key.
@@ -2902,32 +2902,15 @@ static int load_object_long_long(struct selva_io *io, struct SelvaObject *obj, c
     return 0;
 }
 
-static int load_object_string(struct selva_io *io, int level, struct SelvaObject *obj, const struct selva_string *name) {
+static int load_object_string(struct selva_io *io, struct SelvaObject *obj, const struct selva_string *name) {
     TO_STR(name);
     struct selva_string *value = selva_io_load_string(io);
+    int err;
 
-    if (level == 0 && SELVA_IS_TYPE_FIELD(name_str, name_len)) {
-        TO_STR(value);
-        struct selva_string *shared;
-        int err;
-
-        shared = selva_string_create(value_str, value_len, SELVA_STRING_INTERN);
-
-        selva_string_free(value);
-
-        err = SelvaObject_SetStringStr(obj, name_str, name_len, shared);
-        if (err) {
-            SELVA_LOG(SELVA_LOGL_CRIT,  "Failed to set a shared string value");
-            return err;
-        }
-    } else {
-        int err;
-
-        err = SelvaObject_SetStringStr(obj, name_str, name_len, value);
-        if (err) {
-            SELVA_LOG(SELVA_LOGL_CRIT, "Error while loading a string");
-            return SELVA_EINVAL;
-        }
+    err = SelvaObject_SetStringStr(obj, name_str, name_len, value);
+    if (err) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "Error while loading a string");
+        return SELVA_EINVAL;
     }
 
     return 0;
@@ -3122,7 +3105,7 @@ static int load_field(struct selva_io *io, struct SelvaObject *obj, int encver, 
         err = load_object_long_long(io, obj, name);
         break;
     case SELVA_OBJECT_STRING:
-        err = load_object_string(io, level, obj, name);
+        err = load_object_string(io, obj, name);
         break;
     case SELVA_OBJECT_OBJECT:
         {
