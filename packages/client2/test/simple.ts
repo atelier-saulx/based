@@ -78,6 +78,15 @@ test('simple test', async (t) => {
         isSingle: false,
         isBidirectional: false,
       },
+      ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
+      '1',
+      createRecord(edgeMetaDef, {
+        op_code: SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_STRING,
+        delete_all: 0,
+        dst_node_id: flap3,
+        meta_field_name: '0',
+        meta_field_value: 'HELLO',
+      }),
     ],
   ])
 
@@ -189,7 +198,7 @@ test('simple test', async (t) => {
           dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD,
           dir_opt_str: '1',
           res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-          res_opt_str: '1',
+          res_opt_str: '1\n$edgeMeta.0',
         }),
         flap2, // flap2 ->1 [flap, flap3]
         ...rpn,

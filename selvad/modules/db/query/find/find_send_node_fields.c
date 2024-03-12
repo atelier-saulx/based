@@ -609,12 +609,12 @@ static void send_top_level_edge_meta(
 
                 SelvaHierarchy_GetNodeId(dst_node_id, node);
 
-                if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
+                if (meta_key_len == 0) {
                     /* Send all but excluded. */
                     if (send_edge_meta_fields(resp, lang, edge_metadata, dst_node_id, excluded_fields)) {
                         break;
                     }
-                } else if (field_str[sizeof(SELVA_EDGE_META_FIELD)] == '.') {
+                } else {
                     /* Send a specific field. */
                     if (send_edge_meta_field(
                                     resp, lang,
@@ -623,7 +623,7 @@ static void send_top_level_edge_meta(
                                     meta_key_str, meta_key_len) > 0) {
                         break;
                     }
-                } /* Otherwise the field name was something else. */
+                }
             }
         }
     }
