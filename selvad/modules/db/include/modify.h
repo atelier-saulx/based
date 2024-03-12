@@ -35,11 +35,6 @@ enum SelvaModify_ArgType {
     /* Node object set field operations. */
     SELVA_MODIFY_ARG_OP_SET = '5', /*!< Value is a struct SelvaModify_OpSet. */
     SELVA_MODIFY_ARG_OP_ORD_SET = 'J', /*!<  Value is a struct SelvaModify_OpOrdSet. */
-    /* Node object array field operations. */
-    SELVA_MODIFY_ARG_OP_ARRAY_PUSH = 'D', /*!< Set a new empty SelvaObject at the end of an array */
-    SELVA_MODIFY_ARG_OP_ARRAY_INSERT = 'E', /*!< Set a new empty SelvaObject at the start of an array */
-    SELVA_MODIFY_ARG_OP_ARRAY_REMOVE = 'F', /*!< Remove item in specified index from array */
-    SELVA_MODIFY_ARG_OP_ARRAY_QUEUE_TRIM = 'H', /*!< Remove items from the end of the array to match given length */
     /* HLL operations. */
     SELVA_MODIFY_ARG_OP_HLL = 'I',
     /* Node object operations. */
@@ -47,8 +42,6 @@ enum SelvaModify_ArgType {
     SELVA_MODIFY_ARG_OP_OBJ_META = 'C', /*!< Set object user metadata. */
     /* Edge metadata ops. */
     SELVA_MODIFY_ARG_OP_EDGE_META = 'G', /*!< Modify edge field metadata. */
-    /* Other ops. */
-    SELVA_MODIFY_ARG_STRING_ARRAY = '6', /*!< Array of C-strings. */
     /* Deprecated values */
     SELVA_MODIFY_ARG_RESERVED_0 __attribute__((unavailable)) = '1',
 };
@@ -112,8 +105,6 @@ struct SelvaModify_OpOrdSet {
      * Set type.
      * Currently only SELVA_MODIFY_OP_SET_TYPE_REFERENCE is supported and only
      * edge fields can be modified.
-     * The array field type and array operations shall be used for other ordered
-     * sets.
      */
     enum SelvaModify_OpSetType op_set_type;
     enum SelvaModify_OpOrdSetMode {

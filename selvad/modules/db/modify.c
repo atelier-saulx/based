@@ -1151,6 +1151,11 @@ static enum modify_flags parse_flags(const struct selva_string *arg) {
  *                        The SVector must be initialized before calling this function.
  */
 static void pre_parse_ops(struct selva_string **argv, int argc, SVector *alias_query_out) {
+    /* FIXME Support alias using OpOrdSet */
+    (void)argv;
+    (void)argc;
+    (void)alias_query_out;
+#if 0
     for (int i = 0; i < argc; i += 3) {
         const struct selva_string *type = argv[i];
         const struct selva_string *field = argv[i + 1];
@@ -1168,6 +1173,7 @@ static void pre_parse_ops(struct selva_string **argv, int argc, SVector *alias_q
             }
         }
     }
+#endif
 }
 
 static int opset_fixup(struct SelvaModify_OpSet *op, size_t size) {
@@ -1331,112 +1337,6 @@ static enum selva_op_repl_state SelvaModify_ModifyMetadata(
     }
 
     return SELVA_OP_REPL_STATE_REPLICATE;
-}
-
-static enum selva_op_repl_state modify_array_op(
-        struct finalizer *fin,
-        struct selva_server_response_out *resp,
-        struct SelvaHierarchyNode *node,
-        int *active_insert_idx,
-        int has_push,
-        char type_code,
-        struct selva_string *field,
-        struct selva_string *value) {
-    TO_STR(field, value);
-    ssize_t new_len;
-    ssize_t idx;
-
-    new_len = get_array_field_index(field_str, field_len, &idx);
-    if (new_len <= 0) {
-        selva_send_errorf(resp, SELVA_EINVAL, "Invalid array index");
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
-
-    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-
-    if (idx < 0) {
-        const ssize_t ary_len = (ssize_t)SelvaObject_GetArrayLenStr(obj, field_str, new_len);
-        idx = ary_idx_to_abs(ary_len, idx) + has_push;
-        if (idx < 0) {
-            selva_send_errorf(resp, SELVA_EINVAL, "Invalid array index %zd", idx);
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
-    }
-
-    if (type_code == SELVA_MODIFY_ARG_STRING) {
-        int err;
-
-        if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_STRING, idx, value);
-            *active_insert_idx = -1;
-        } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_STRING, idx, value);
-        }
-
-        if (err) {
-            selva_send_errorf(resp, err, "Failed to set a string value");
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
-
-        finalizer_forget(fin, value);
-    } else if (type_code == SELVA_MODIFY_ARG_DOUBLE) {
-        int err;
-        double d;
-
-        if (value_len != sizeof(d)) {
-            REPLY_WITH_ARG_TYPE_ERROR(d);
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
-
-        d = ledoubletoh(value_str);
-
-        if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(d));
-            *active_insert_idx = -1;
-        } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(d));
-        }
-
-        if (err) {
-            selva_send_errorf(resp, err, "Failed to set a double value");
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
-    } else if (type_code == SELVA_MODIFY_ARG_LONGLONG) {
-        int err;
-        union {
-            char s[sizeof(long long)];
-            long long ll;
-        } v = {
-            .ll = 0,
-        };
-
-        if (value_len != sizeof(v.ll)) {
-            REPLY_WITH_ARG_TYPE_ERROR(v.ll);
-            return 0;
-        }
-
-        memcpy(v.s, value_str, sizeof(v.ll));
-        v.ll = le64toh(v.ll);
-
-        if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(v.ll));
-            *active_insert_idx = -1;
-        } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(v.ll));
-        }
-
-        if (err) {
-            selva_send_errorf(resp, err, "Failed to set a long value");
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
-    } else if (type_code == SELVA_MODIFY_ARG_OP_OBJ_META) {
-        return SelvaModify_ModifyMetadata(resp, obj, field, value);
-    } else {
-        selva_send_errorf(resp, SELVA_EINTYPE, "Invalid operation type with array syntax: \"%c\"", type_code);
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
-
-    return SELVA_OP_REPL_STATE_UPDATED;
 }
 
 static enum selva_op_repl_state op_increment_longlong(
@@ -1759,37 +1659,6 @@ static enum selva_op_repl_state op_meta(
     return SelvaModify_ModifyMetadata(resp, obj, field, value);
 }
 
-static enum selva_op_repl_state op_array_remove(
-        struct finalizer *,
-        struct selva_server_response_out *resp,
-        SelvaHierarchy *,
-        struct SelvaHierarchyNode *node,
-        char type_code __unused,
-        struct selva_string *field,
-        struct selva_string *value) {
-    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-    TO_STR(field, value);
-    uint32_t v;
-    int err;
-
-    if (value_len != sizeof(uint32_t)) {
-        REPLY_WITH_ARG_TYPE_ERROR(v);
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
-
-    memcpy(&v, value_str, sizeof(uint32_t));
-
-    err = SelvaObject_RemoveArrayIndexStr(obj, field_str, field_len, v);
-    if (err) {
-        selva_send_errorf(resp, err, "Failed to remove array index: %.*s[%d]",
-                          (int)field_len, field_str,
-                          (int)v);
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
-
-    return SELVA_OP_REPL_STATE_UPDATED;
-}
-
 static enum selva_op_repl_state op_notsup(
         struct finalizer *,
         struct selva_server_response_out *resp,
@@ -2082,13 +1951,6 @@ int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char t
     case SELVA_MODIFY_ARG_OP_ORD_SET:
         type = SELVA_OBJECT_SET;
         break;
-    case SELVA_MODIFY_ARG_OP_ARRAY_PUSH:
-    case SELVA_MODIFY_ARG_OP_ARRAY_INSERT:
-    case SELVA_MODIFY_ARG_OP_ARRAY_REMOVE:
-    case SELVA_MODIFY_ARG_OP_ARRAY_QUEUE_TRIM:
-    case SELVA_MODIFY_ARG_STRING_ARRAY:
-        type = SELVA_OBJECT_ARRAY;
-        break;
     case SELVA_MODIFY_ARG_OP_HLL:
         type = SELVA_OBJECT_HLL;
         break;
@@ -2136,7 +1998,10 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     SVECTOR_AUTOFREE(alias_query);
     bool created = false; /* Will be set if the node was created during this command. */
     bool updated = false;
+    /* FIXME Fix $alias handling */
+#if 0
     bool new_alias = false; /* Set if $alias will be creating new alias(es). */
+#endif
     int err = 0;
 
     finalizer_init(&fin);
@@ -2172,12 +2037,15 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
 
     /*
      * Look for $alias that would replace id.
+     * FIXME
      */
     pre_parse_ops(argv + 2, argc - 2, &alias_query);
     if (SVector_Size(&alias_query) > 0) {
         Selva_NodeId tmp_id;
 
+#if 0
         new_alias = true;
+#endif
         if (find_first_alias(hierarchy, &alias_query, tmp_id)) {
             /*
              * Replace id with the first match from alias_query.
@@ -2190,7 +2058,9 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
              * prevent any new aliases from being created.
              */
             SVector_Clear(&alias_query);
+#if 0
             new_alias = false;
+#endif
         }
     }
 
@@ -2239,12 +2109,6 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     bitmap_erase(replset);
 
     /*
-     * TODO Explain what is this and why it affects all array field modifications.
-     */
-    int has_push = 0;
-    int active_insert_idx = -1;
-
-    /*
      * Parse the rest of the arguments and run the modify operations.
      * Each part of the command will send a separate response back to the client.
      * Each part is also replicated separately.
@@ -2270,109 +2134,8 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
             continue;
         }
 
-        if (get_array_field_index(field_str, field_len, NULL) > 0) {
-            repl_state = modify_array_op(&fin, resp, node, &active_insert_idx, has_push, type_code, field, value);
-        } else if (type_code == SELVA_MODIFY_ARG_OP_ARRAY_PUSH) {
-            TO_STR(value);
-            uint32_t item_type;
-
-            if (value_len != sizeof(uint32_t)) {
-                selva_send_errorf(resp, SELVA_EINVAL, "Invalid item type");
-                continue;
-            }
-
-            memcpy(&item_type, value_str, sizeof(uint32_t));
-            if (item_type == SELVA_OBJECT_OBJECT) {
-                struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-                struct SelvaObject *new_obj;
-                int err;
-
-                new_obj = SelvaObject_New();
-                err = SelvaObject_InsertArrayStr(obj, field_str, field_len, SELVA_OBJECT_OBJECT, new_obj);
-                if (err) {
-                    selva_send_errorf(resp, err, "Failed to push new object to array index: %.*s[]",
-                                      (int)field_len, field_str);
-                    continue;
-                }
-            } else {
-                has_push = 1;
-            }
-
-            repl_state = SELVA_OP_REPL_STATE_UPDATED;
-        } else if (type_code == SELVA_MODIFY_ARG_OP_ARRAY_INSERT) {
-            TO_STR(value);
-            uint32_t item_type;
-            uint32_t insert_idx;
-
-            if (value_len != 2 * sizeof(uint32_t)) {
-                selva_send_errorf(resp, SELVA_EINTYPE, "Expected: int[2]");
-                continue;
-            }
-
-            memcpy(&item_type, value_str, sizeof(uint32_t));
-            memcpy(&insert_idx, value_str + sizeof(uint32_t), sizeof(uint32_t));
-
-            if (item_type == SELVA_OBJECT_OBJECT) {
-                struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-                struct SelvaObject *new_obj = SelvaObject_New();
-                int err;
-
-                err = SelvaObject_InsertArrayIndexStr(obj, field_str, field_len, SELVA_OBJECT_OBJECT, insert_idx, new_obj);
-                if (err) {
-                    SelvaObject_Destroy(new_obj);
-
-                    selva_send_errorf(resp, err, "Failed to push new object to array index: %.*s",
-                                      (int)field_len, field_str);
-                    continue;
-                }
-            } else {
-                active_insert_idx = insert_idx;
-            }
-
-            repl_state = SELVA_OP_REPL_STATE_UPDATED;
-        } else if (type_code == SELVA_MODIFY_ARG_OP_ARRAY_QUEUE_TRIM) {
-            TO_STR(value);
-            uint32_t max_array_len;
-
-            if (value_len != 1 * sizeof(uint32_t)) {
-                selva_send_errorf(resp, SELVA_EINTYPE, "Expected: int[1]");
-                continue;
-            }
-
-            memcpy(&max_array_len, value_str, sizeof(uint32_t));
-
-            struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-            const uint32_t ary_len = (uint32_t)SelvaObject_GetArrayLenStr(obj, field_str, field_len);
-            if (ary_len > max_array_len) {
-                for (uint32_t i = ary_len; i > max_array_len; i--) {
-                    int err;
-
-                    err = SelvaObject_RemoveArrayIndexStr(obj, field_str, field_len, i - 1);
-                    if (err) {
-                        SELVA_LOG(SELVA_LOGL_ERR, "Failed to remove array index (%.*s[%d]): %s",
-                                  (int)field_len, field_str,
-                                  (int)i - 1,
-                                  selva_strerror(err));
-                    }
-                }
-            }
-
-            repl_state = SELVA_OP_REPL_STATE_UPDATED;
-        } else if (type_code == SELVA_MODIFY_ARG_STRING_ARRAY) {
-            /*
-             * Currently the $alias query is the only operation using string arrays.
-             * $alias: NOP
-             */
-            if (new_alias) {
-                selva_send_str(resp, "UPDATED", 7);
-            } else {
-                selva_send_str(resp, "OK", 2);
-            }
-
-            /* This triplet needs to be replicated. */
-            bitmap_set(replset, (i - 2) / 3);
-            continue;
-        } else if (type_code == SELVA_MODIFY_ARG_OP_EDGE_META) {
+        /* TODO Use modify_op_fn for all */
+        if (type_code == SELVA_MODIFY_ARG_OP_EDGE_META) {
             repl_state = modify_edge_meta_op(&fin, resp, node, field, value);
         } else if (type_code == SELVA_MODIFY_ARG_OP_HLL) {
             repl_state = modify_hll(resp, node, field, value);
@@ -2493,7 +2256,6 @@ static int Modify_OnLoad(void) {
     modify_op_fn[SELVA_MODIFY_ARG_DEFAULT_DOUBLE] = op_double;
     modify_op_fn[SELVA_MODIFY_ARG_DOUBLE] = op_double;
     modify_op_fn[SELVA_MODIFY_ARG_OP_OBJ_META] = op_meta;
-    modify_op_fn[SELVA_MODIFY_ARG_OP_ARRAY_REMOVE] = op_array_remove;
 
     selva_mk_command(CMD_ID_MODIFY, SELVA_CMD_MODE_MUTATE, "modify", SelvaCommand_Modify);
 

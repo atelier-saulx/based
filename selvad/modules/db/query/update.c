@@ -136,15 +136,6 @@ static int parse_update_ops(struct finalizer *fin, struct selva_string **argv, i
             }
 
             memcpy(&op.d, value_str, sizeof(d));
-        } else if (op.type_code == SELVA_MODIFY_ARG_OP_ARRAY_REMOVE) {
-            size_t value_len;
-            const char *value_str = selva_string_to_str(op.value, &value_len);
-
-            if (value_len != sizeof(uint32_t)) {
-                return SELVA_EINVAL;
-            }
-
-            memcpy(&op.u32, value_str, sizeof(uint32_t));
         }
 
         memcpy(&(*update_ops)[i / 3], &op, sizeof(op));
@@ -339,20 +330,6 @@ static int op_meta(
     return (err || new_user_meta == old_user_meta) ? SELVA_OP_REPL_STATE_UNCHANGED : SELVA_OP_REPL_STATE_UPDATED;
 }
 
-static int op_array_remove(
-        SelvaHierarchy *,
-        struct SelvaHierarchyNode *node,
-        const struct update_op *op)
-{
-    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-    size_t field_len;
-    const char *field_str = selva_string_to_str(op->field, &field_len);
-    int err;
-
-    err = SelvaObject_RemoveArrayIndexStr(obj, field_str, field_len, op->u32);
-    return (err) ? SELVA_OP_REPL_STATE_UNCHANGED : SELVA_OP_REPL_STATE_UPDATED;
-}
-
 static int update_node_cb(
         struct SelvaHierarchy *hierarchy,
         const struct SelvaHierarchyTraversalMetadata *,
@@ -395,10 +372,6 @@ static int update_node_cb(
 
     /*
      * TODO Some modify op codes are not supported:
-     * - Anything handled by modify_array_op()
-     * - SELVA_MODIFY_ARG_OP_ARRAY_PUSH
-     * - SELVA_MODIFY_ARG_OP_ARRAY_INSERT
-     * - SELVA_MODIFY_ARG_STRING_ARRAY
      * - SELVA_MODIFY_ARG_OP_EDGE_META
      */
     bool node_updated = false;
@@ -698,7 +671,6 @@ static int Update_OnLoad(void) {
     update_op_fn[SELVA_MODIFY_ARG_OP_SET] = op_set;
     update_op_fn[SELVA_MODIFY_ARG_OP_DEL] = op_del;
     update_op_fn[SELVA_MODIFY_ARG_OP_OBJ_META] = op_meta;
-    update_op_fn[SELVA_MODIFY_ARG_OP_ARRAY_REMOVE] = op_array_remove;
 
     selva_mk_command(CMD_ID_UPDATE, SELVA_CMD_MODE_MUTATE, "update", SelvaCommand_Update);
 
