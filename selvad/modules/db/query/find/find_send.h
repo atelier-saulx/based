@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -18,8 +18,6 @@ int find_send_node_fields(
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         struct SelvaObject *fields,
-        struct selva_string **inherit_fields,
-        size_t nr_inherit_fields,
         struct selva_string *excluded_fields)
     __attribute__((access(read_only, 3), access(read_only, 5), access(read_only, 7), access(read_only, 8), access(read_only, 10)));
 

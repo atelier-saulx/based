@@ -51,12 +51,6 @@ struct SelvaNodeSendParam {
     struct SelvaObject *fields;
 
     /**
-     * Inherit specific fields.
-     */
-    struct selva_string **inherit_fields;
-    size_t nr_inherit_fields; /*!< Number of fields in inherit_fields. */
-
-    /**
      * Fields that should be excluded when `fields` contains a wildcard.
      * The list should delimit the excluded fields in the following way:
      * ```
@@ -75,7 +69,7 @@ struct SelvaNodeSendParam {
      * Field names expression.
      * Another way to select which fields should be returned to the client is
      * using an RPN expression that returns a set on field names.
-     * If this is set then fields, inherit_fields, and excluded_fields should be NULL.
+     * If this is set then fields and excluded_fields should be NULL.
      */
     struct rpn_expression *fields_expression;
 };
@@ -168,8 +162,6 @@ int find_parse_fields(
         struct finalizer *fin,
         const struct selva_string *raw_in,
         struct SelvaObject **fields_out,
-        struct selva_string ***inherit_fields_out,
-        size_t *nr_inherit_fields_out,
         struct selva_string **excluded_fields_out
 )
     __attribute__((access(read_only, 2), access(write_only, 3), access(write_only, 4), access(write_only, 5), access(write_only, 6)));

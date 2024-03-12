@@ -1,13 +1,8 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-
-/**
- * Inherit.
- */
-#define STRING_SET_INH_PREFIX       '^'
 
 /**
  * Exclude.
