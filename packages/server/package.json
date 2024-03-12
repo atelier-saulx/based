@@ -17,9 +17,6 @@
     "!selvad/local"
   ],
   "dependencies": {
-    "@saulx/diff": "^1.1.4",
-    "@saulx/utils": "^3.2.2",
-    "@based/client": "^4.7.6",
     "node_modules-path": "^2.0.7",
     "get-port": "^5.1.1",
     "mkdirp": "^1.0.4",

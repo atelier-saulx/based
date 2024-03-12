@@ -24,8 +24,7 @@
   },
   "dependencies": {
     "@saulx/diff": "^1.1.4",
-    "@saulx/utils": "^3.2.2",
-    "@based/client": "^4.7.6"
+    "@saulx/utils": "^3.2.2"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
