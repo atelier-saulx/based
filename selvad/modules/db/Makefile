@@ -34,8 +34,6 @@ OBJ := \
 	   query/find/find_send_array_object_fields.o \
 	   query/find/find_send_node_fields.o \
 	   query/find/find_send_node_merge.o \
-	   query/find/inherit.o \
-	   query/find/inherit_send_field.o \
 	   query/query_traverse.o \
 	   query/update.o \
 	   resolve.o \

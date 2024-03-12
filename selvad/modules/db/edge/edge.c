@@ -1227,16 +1227,11 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
         /*
          * Ensure that the destination node exist before creating an edge.
          */
-        err = SelvaModify_AddHierarchy(hierarchy, dst_id_str, 0, NULL, 0, NULL);
-        if (err < 0) {
-            SELVA_LOG(SELVA_LOGL_CRIT, "AddHierarchy(%.*s) failed: %s",
+        err = SelvaHierarchy_UpsertNode(hierarchy, dst_id_str, &dst_node);
+        if (err < 0 && err != SELVA_HIERARCHY_EEXIST) {
+            SELVA_LOG(SELVA_LOGL_CRIT, "Upserting node %.*s failed: %s",
                       (int)SELVA_NODE_ID_SIZE, dst_id_str,
                       selva_strerror(err));
-            return NULL;
-        }
-
-        dst_node = SelvaHierarchy_FindNode(hierarchy, dst_id_str);
-        if (!unlikely(dst_node)) {
             return NULL;
         }
 

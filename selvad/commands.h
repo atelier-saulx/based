@@ -178,27 +178,6 @@
 #define CMD_ID_HIERARCHY_EXPIRE 26
 
 /**
- * List hierarchy heads.
- * module: db
- * cmd: hierarchy.heads
- */
-#define CMD_ID_HIERARCHY_HEADS 27
-
-/**
- * List node parents.
- * module: db
- * cmd: hierarchy.parents
- */
-#define CMD_ID_HIERARCHY_PARENTS 28
-
-/**
- * List node children.
- * module: db
- * cmd: hierarchy.children
- */
-#define CMD_ID_HIERARCHY_CHILDREN 29
-
-/**
  * List node edges.
  * module: db
  * cmd: hierarchy.edgeList

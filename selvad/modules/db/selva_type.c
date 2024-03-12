@@ -16,8 +16,7 @@ struct protected_field {
     /**
      * Type of the protected field represented as a SelvaObject type.
      * This is only a "rough" typing as some fields are not even stored in
-     * the node data SelvaObject and set fields have subtype too. E.g.
-     * parents and children are stored in a specialized data structure.
+     * the node data SelvaObject and set fields have subtype too.
      */
     enum SelvaObjectType type;
     enum selva_field_prot_mode en_mode;
@@ -30,10 +29,6 @@ static const struct protected_field protected_fields[] = {
     PROT_FIELD(SELVA_ID_FIELD, SELVA_OBJECT_STRING, 0),
     PROT_FIELD(SELVA_TYPE_FIELD, SELVA_OBJECT_STRING, 0),
     PROT_FIELD(SELVA_ALIASES_FIELD, SELVA_OBJECT_SET, SELVA_FIELD_PROT_WRITE | SELVA_FIELD_PROT_DEL),
-    PROT_FIELD(SELVA_PARENTS_FIELD, SELVA_OBJECT_SET, SELVA_FIELD_PROT_WRITE | SELVA_FIELD_PROT_DEL),
-    PROT_FIELD(SELVA_CHILDREN_FIELD, SELVA_OBJECT_SET, SELVA_FIELD_PROT_WRITE | SELVA_FIELD_PROT_DEL),
-    PROT_FIELD(SELVA_ANCESTORS_FIELD, SELVA_OBJECT_SET, 0),
-    PROT_FIELD(SELVA_DESCENDANTS_FIELD, SELVA_OBJECT_SET, 0),
     PROT_FIELD(SELVA_CREATED_AT_FIELD, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE),
     PROT_FIELD(SELVA_UPDATED_AT_FIELD, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE),
 };

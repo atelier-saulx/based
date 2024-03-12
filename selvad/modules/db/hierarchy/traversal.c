@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <sys/types.h>
@@ -14,11 +14,7 @@ int SelvaTraversal_GetSkip(enum SelvaTraversal dir, ssize_t skip)
      * Find needs to skip the head node of the traverse for some types as we
      * are not interested in the node we already know.
      */
-    r = !!((SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-            SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-            SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
-            SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
-            SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+    r = !!((SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
             SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD) & dir);
 
     return (skip <= -1) ? 0 : r + skip;
@@ -31,22 +27,10 @@ const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir)
         return (const char *)"none";
     case SELVA_HIERARCHY_TRAVERSAL_NODE:
         return (const char *)"node";
+    case SELVA_HIERARCHY_TRAVERSAL_ALL:
+        return (const char *)"all";
     case SELVA_HIERARCHY_TRAVERSAL_ARRAY:
         return (const char *)"array";
-    case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-        return (const char *)"children";
-    case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-        return (const char *)"parents";
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
-        return (const char *)"bfs_ancestors";
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
-        return (const char *)"bfs_descendants";
-    case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
-        return (const char *)"dfs_ancestors";
-    case SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS:
-        return (const char *)"dfs_descendants";
-    case SELVA_HIERARCHY_TRAVERSAL_DFS_FULL:
-        return (const char *)"dfs_full";
     case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
         return (const char *)"edge_field";
     case SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD:

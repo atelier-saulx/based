@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -21,15 +21,9 @@ struct selva_string;
 enum SelvaTraversal {
     SELVA_HIERARCHY_TRAVERSAL_NONE =            0x00000, /*!< Do nothing. */
     SELVA_HIERARCHY_TRAVERSAL_NODE =            0x00001, /*!< Visit just the given node. */
+    SELVA_HIERARCHY_TRAVERSAL_ALL =             0x80000, /*!< Traverse all nodes. */
     SELVA_HIERARCHY_TRAVERSAL_ARRAY =           0x00002, /*!< Traverse an array. */
     SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD =      0x00010, /*!< Visit nodes pointed by an edge field. */
-    SELVA_HIERARCHY_TRAVERSAL_CHILDREN =        0x00020, /*!< Visit children of the given node. */
-    SELVA_HIERARCHY_TRAVERSAL_PARENTS =         0x00040, /*!< Visit parents of the given node. */
-    SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS =   0x00080, /*!< Visit ancestors of the given node using BFS. */
-    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS = 0x00100, /*!< Visit descendants of the given node using BFS. */
-    SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS =   0x00200, /*!< Visit ancestors of the given node using DFS. */
-    SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS = 0x00400, /*!< Visit descendants of the given node using DFS. */
-    SELVA_HIERARCHY_TRAVERSAL_DFS_FULL =        0x00800, /*!< Full DFS traversal of the whole hierarchy. */
     SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD =  0x01000, /*!< Traverse an edge field according to its constraints using BFS. */
     SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION =  0x02000, /*!< Traverse with an expression returning a set of field names. */
     SELVA_HIERARCHY_TRAVERSAL_EXPRESSION =      0x04000, /*!< Visit fields with an expression returning a set of field names. */
@@ -53,8 +47,6 @@ enum SelvaHierarchyTraversalSVecPtag {
      * if p is non-NULL then the source is unknown or can't be described.
      */
     SELVA_TRAVERSAL_SVECTOR_PTAG_NONE = 0,
-    SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS = 1, /*!< Parents SVector. */
-    SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN = 2, /*!< Children SVector. */
     SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE = 3, /*!< Edge field SVector. */
 };
 

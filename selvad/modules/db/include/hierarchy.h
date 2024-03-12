@@ -278,7 +278,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void);
 /**
  * Free a hierarchy.
  */
-void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy);
+void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy);
 
 /**
  * Get the type name for a type prefix.
@@ -369,22 +369,6 @@ int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node)
 void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj)
     __attribute__((access(read_write, 1)));
 
-/**
- * Delete all child edges of a node.
- */
-int SelvaHierarchy_DelChildren(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node)
-    __attribute((access(read_write, 1), access(read_write, 2)));
-
-/**
- * Delete all parent edges of a node.
- */
-int SelvaHierarchy_DelParents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node)
-    __attribute__((access(read_write, 1), access(read_write, 2)));
-
 enum SelvaModify_SetFlags {
     SELVA_MODIFY_SET_FLAG_NO_ROOT = 0x01,
 };
@@ -393,102 +377,22 @@ enum SelvaModify_SetFlags {
  * Set node relationships relative to other existing nodes.
  * Previously existing connections to and from other nodes are be removed.
  * If a node with id doesn't exist it will be created.
+ * TODO This should be removed in favor of UsertNode().
  * @param parents   Sets these nodes and only these nodes as parents of this node.
  * @param children  Sets these nodes and only these nodes as children of this node.
  */
 int SelvaModify_SetHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children],
         enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out)
     __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5), access(write_only, 8)));
-
-/**
- * Set parents of an existing node.
- * @param parents   Sets these nodes and only these nodes as parents of this node.
- */
-int SelvaModify_SetHierarchyParents(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        enum SelvaModify_SetFlags flags)
-    __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3)));
-
-/**
- * Set children of an existing node.
- * @param children  Sets these nodes and only these nodes as children of this node.
- */
-int SelvaModify_SetHierarchyChildren(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_children,
-        const Selva_NodeId children[nr_children],
-        enum SelvaModify_SetFlags flags)
-    __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3)));
 
 int SelvaHierarchy_UpsertNode(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         struct SelvaHierarchyNode **out)
     __attribute__((access(read_write, 1), access(read_only, 2), access(write_only, 3)));
-
-/**
- * Add new relationships relative to other existing nodes.
- * The function is nondestructive; previously existing edges to and from other
- * nodes and metadata are be preserved.
- * @param parents   Sets these nodes as parents to this node,
- *                  while keeping the existing parents.
- * @param children  Sets these nodes as children to this node,
- *                  while keeping the existing children.
- */
-int SelvaModify_AddHierarchyP(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children])
-    __attribute__((access(read_write, 1), access(read_write, 2), access(read_only, 4, 3), access(read_only, 6, 5)));
-
-/**
- * Add new relationships relative to other existing nodes.
- * The function is nondestructive; previously existing edges to and from other
- * nodes and metadata are be preserved.
- * If a node with id doesn't exist it will be created.
- * @param parents   Sets these nodes as parents to this node,
- *                  while keeping the existing parents.
- * @param children  Sets these nodes as children to this node,
- *                  while keeping the existing children.
- */
-int SelvaModify_AddHierarchy(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children])
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5)));
-
-/**
- * Remove relationship relative to other existing nodes.
- * @param parents   Removes the child relationship between this node and
- *                  the listed parents.
- * @param children  Removes the parent relationship between this node and
- *                  the listed children.
- */
-int SelvaModify_DelHierarchy(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children])
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5)));
 
 /**
  * Delete a node from the hierarchy.
@@ -550,47 +454,14 @@ void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node
 void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, const struct selva_string *ref)
     __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 3)));
 
-/**
- * Get the SVector of a hierarchy field.
- */
-SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type)
-    __attribute__((access(read_only, 2, 3)));
+int SelvaHierarchy_TraverseAll(struct SelvaHierarchy *hierarchy, const struct SelvaHierarchyCallback *cb);
 
-void SelvaHierarchy_TraverseChildren(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb);
-void SelvaHierarchy_TraverseParents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb);
-/**
- * Traverse ancestors without including node.
- */
-int SelvaHierarchy_TraverseBFSAncestors(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb);
-/**
- * Traverse descendants without including node.
- */
-int SelvaHierarchy_TraverseBFSDescendants(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb);
 /**
  * Traverse the hierarchy.
  * Implements:
  * - SELVA_HIERARCHY_TRAVERSAL_NONE
- * - SELVA_HIERARCHY_TRAVERSAL_DFS_FULL
  * - SELVA_HIERARCHY_TRAVERSAL_NODE
- * - SELVA_HIERARCHY_TRAVERSAL_CHILDREN
- * - SELVA_HIERARCHY_TRAVERSAL_PARENTS
- * - SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS
- * - SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS
- * - SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS
- * - SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS
- * - SELVA_HIERARCHY_TRAVERSAL_DFS_FULL
+ * - SELVA_HIERARCHY_TRAVERSAL_ALL
  */
 int SelvaHierarchy_Traverse(
         struct SelvaHierarchy *hierarchy,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -22,7 +22,6 @@
 #include "hierarchy.h"
 #include "../field_names.h"
 #include "../find.h"
-#include "inherit_fields.h"
 #include "find_send.h"
 
 static int send_node_field(
@@ -73,44 +72,6 @@ static int is_excluded(struct selva_string *excluded_fields, const char *full_fi
     }
 
     return 0;
-}
-
-static int send_hierarchy_field(
-        struct selva_server_response_out *resp,
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId nodeId,
-        const char *full_field_name_str,
-        size_t full_field_name_len,
-        const char *field_str,
-        size_t field_len)
-{
-#define SEND_FIELD_NAME() selva_send_str(resp, full_field_name_str, full_field_name_len)
-#define IS_FIELD(name) \
-    (field_len == (sizeof(name) - 1) && !memcmp(field_str, name, sizeof(name) - 1))
-
-    /*
-     * Check if the field name is a hierarchy field name.
-     * We use length check and memcmp() here instead of strcmp() because it
-     * seems to give us a much better branch prediction success rate and
-     * this function is pretty hot.
-     */
-    if (IS_FIELD(SELVA_ANCESTORS_FIELD)) {
-        SEND_FIELD_NAME();
-        return HierarchyReply_WithTraversal(resp, hierarchy, nodeId, 0, NULL, SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS);
-    } else if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        SEND_FIELD_NAME();
-        return HierarchyReply_WithTraversal(resp, hierarchy, nodeId, 0, NULL, SELVA_HIERARCHY_TRAVERSAL_CHILDREN);
-    } else if (IS_FIELD(SELVA_DESCENDANTS_FIELD)) {
-        SEND_FIELD_NAME();
-        return HierarchyReply_WithTraversal(resp, hierarchy, nodeId, 0, NULL, SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS);
-    } else if (IS_FIELD(SELVA_PARENTS_FIELD)) {
-        SEND_FIELD_NAME();
-        return HierarchyReply_WithTraversal(resp, hierarchy, nodeId, 0, NULL, SELVA_HIERARCHY_TRAVERSAL_PARENTS);
-    }
-
-    return SELVA_ENOENT;
-#undef SEND_FIELD_NAME
-#undef IS_FIELD
 }
 
 static int send_obj_field(
@@ -480,6 +441,7 @@ static int send_node_field(
     const char *full_field_name_str;
     size_t full_field_name_len;
     int err;
+    int res = 0;
 
     SelvaHierarchy_GetNodeId(nodeId, node);
     full_field_name_str = make_full_field_name_str(fin, field_prefix_str, field_prefix_len, field_str, field_len, &full_field_name_len);
@@ -488,32 +450,16 @@ static int send_node_field(
         return 0;
     }
 
-    int res = 0;
-
     /*
-     * Check if the field name is a hierarchy field name.
+     * Check if the field name is an edge field.
      */
-    err = send_hierarchy_field(resp, hierarchy, nodeId, full_field_name_str, full_field_name_len, field_str, field_len);
-    if (err == 0) {
-        return 1;
-    } else if (err != SELVA_ENOENT) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Sending the %s field of %.*s failed: %s",
-                  field_str,
-                  (int)SELVA_NODE_ID_SIZE, nodeId,
-                  selva_strerror(err));
-        return 1; /* Something was already sent so +1 */
-    } else {
-        /*
-         * Check if the field name is an edge field.
-         */
-        err = send_edge_field(fin, resp, lang, hierarchy, node, field_prefix_str, field_prefix_len, field_str, field_len, excluded_fields);
-        if (err < 0 && err != SELVA_ENOENT) {
-            return 0;
-        } else if (err >= 0) {
-            res += err;
-        }
-        /* Note that we might still need to send something from the data object. */
+    err = send_edge_field(fin, resp, lang, hierarchy, node, field_prefix_str, field_prefix_len, field_str, field_len, excluded_fields);
+    if (err < 0 && err != SELVA_ENOENT) {
+        return 0;
+    } else if (err >= 0) {
+        res += err;
     }
+    /* Note that we might still need to send something from the data object. */
 
     res += send_obj_field(resp, lang, obj, field_prefix_str, field_prefix_len, field_str, field_len);
 
@@ -743,12 +689,7 @@ int find_send_node_fields(
 
     send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
     if (inherit_fields) {
-        /*
-         * This should only happen in the postprocess handling because
-         * otherwise we'll easily hit the reentrancy limit of the trx
-         * system.
-         */
-        Inherit_SendFields(resp, hierarchy, lang, nodeId, inherit_fields, nr_inherit_fields);
+        /* TODO remove inherit */
     }
 
     selva_send_array_end(resp);

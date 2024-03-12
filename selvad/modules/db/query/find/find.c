@@ -44,7 +44,6 @@
 #include "../field_names.h"
 #include "../count_filter_regs.h"
 #include "query.h"
-#include "inherit_fields.h"
 #include "find_send.h"
 #include "../find.h"
 #include "find_cmd.h"
@@ -207,16 +206,6 @@ static int process_node_sort(
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to create an order item for the node %.*s",
                   (int)SELVA_NODE_ID_SIZE, nodeId);
     }
-
-    return 0;
-}
-
-static int process_node_inherit(
-        struct SelvaHierarchy *,
-        const struct SelvaHierarchyTraversalMetadata *,
-        struct FindCommand_Args *args,
-        struct SelvaHierarchyNode *node) {
-    SVector_Insert(args->result, node);
 
     return 0;
 }
@@ -472,101 +461,10 @@ static void postprocess_sort(
     selva_send_array_end(resp);
 }
 
-static void postprocess_inherit(
-        struct finalizer *fin,
-        struct selva_server_response_out *resp,
-        struct SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
-        ssize_t offset,
-        ssize_t limit,
-        struct SelvaNodeSendParam *args,
-        SVector *result) {
-    /* Merge + inherit == not supported */
-    assert(args->merge_strategy == MERGE_STRATEGY_NONE);
-
-    /*
-     * If order is set we need to sort the nodes first.
-     * In case of inherit we also want to inherit the sort-by field.
-     */
-    if (args->order != SELVA_RESULT_ORDER_NONE) {
-        SVECTOR_AUTOFREE(order_result);
-        size_t order_by_field_len;
-        const char *order_by_field_str = selva_string_to_str(args->order_field, &order_by_field_len);
-        struct SelvaHierarchyNode *node;
-        struct SVectorIterator it;
-
-        SelvaTraversalOrder_InitOrderResult(&order_result, args->order, limit);
-
-        /* result contains nodes in this case instead of items. */
-        assert(!result->vec_compar);
-
-        SVector_ForeachBegin(&it, result);
-        while ((node = SVector_Foreach(&it))) {
-            Selva_NodeId node_id;
-            struct SelvaObjectAny fv;
-            struct TraversalOrderItem *item;
-            int err;
-
-            SelvaHierarchy_GetNodeId(node_id, node);
-            err = Inherit_FieldValue(hierarchy, lang, node_id, NULL, 0, order_by_field_str, order_by_field_len, &fv);
-            if (err) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Inherit_FieldValue(%.*s, NULL, %.*s) failed: %s",
-                          (int)SELVA_NODE_ID_SIZE, node_id,
-                          (int)order_by_field_len, order_by_field_str,
-                          selva_strerror(err));
-                continue;
-            }
-
-            item = SelvaTraversalOrder_CreateAnyNodeOrderItem(fin, node, &fv);
-            if (item) {
-                SVector_Insert(&order_result, item);
-            } else {
-                SELVA_LOG(SELVA_LOGL_ERR, "Failed to create an order item for the node %.*s",
-                          (int)SELVA_NODE_ID_SIZE, node_id);
-            }
-
-        }
-
-        FindCommand_SendOrderedNodeResult(fin, resp, hierarchy, lang, offset, limit, args, &order_result);
-        selva_send_array_end(resp);
-    } else {
-        struct SelvaHierarchyNode *node;
-        struct SVectorIterator it;
-
-        /*
-         * First handle the offsetting.
-         */
-        for (ssize_t i = 0; i < offset; i++) {
-            SVector_Shift(result);
-        }
-        SVector_ShiftReset(result);
-
-        /*
-         * Then send out node IDs upto the limit.
-         */
-        SVector_ForeachBegin(&it, result);
-        while ((node = SVector_Foreach(&it))) {
-            if (limit-- == 0) {
-                break;
-            }
-
-            /* No traversal_metadata with inherit. */
-            send_node(fin, resp, lang, hierarchy, NULL, node, args);
-        }
-
-        selva_send_array_end(resp);
-    }
-}
-
 static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaResultOrder order, enum SelvaFind_ResType res_type) {
     SelvaFind_Postprocess postprocess;
 
-    if (res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
-        /* This will also handle sorting if it was requested. */
-        args->process_node = &process_node_inherit;
-        args->process_obj = NULL;
-        postprocess = &postprocess_inherit;
-    } else if (order != SELVA_RESULT_ORDER_NONE) {
+    if (order != SELVA_RESULT_ORDER_NONE) {
         args->process_node = &process_node_sort;
         args->process_obj = &process_array_obj_sort;
         postprocess = &postprocess_sort;
@@ -670,13 +568,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
           SELVA_HIERARCHY_TRAVERSAL_NODE |
           SELVA_HIERARCHY_TRAVERSAL_ARRAY |
           SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-          SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-          SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-          SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-          SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-          SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
-          SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
-          SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
           SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
@@ -821,8 +712,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;
         }
-    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN ||
-               query_opts.res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
+    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN) {
         /*
          * Note that fields_rpn and merge can't work together because the
          * field names can't vary in a merge.
@@ -873,9 +763,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
     }
 
-    if (query_opts.res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
-        SVector_Init(&traverse_result, selva_glob_config.hierarchy_expected_resp_len, NULL);
-    } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
+    if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
         SelvaTraversalOrder_InitOrderResult(&traverse_result, query_opts.order, query_opts.limit);
     }
 
@@ -1052,12 +940,7 @@ static bool query_fork_eligible_is_complex_traversal(const char *query_opts_str,
     err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
 
     return !err &&
-           !!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-                                SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-                                SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
-                                SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
-                                SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
-                                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+           !!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
                                 SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
                                 SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD));
 }

@@ -89,8 +89,6 @@ struct SelvaFind_QueryOpts {
          *
          * - `field` = Take a field if it exists on the node
          * - `field1|field2` = Take first field that exists:
-         * - `^types:field` = Inherit the field from an ancestor of specific type
-         * - `^:field` = Inherit the field from any ancestor
          * - `!field` = Exclude field
          * - `cool@field` = field alias
          * - `cool@fieldA|fieldB` = field alias
@@ -98,8 +96,6 @@ struct SelvaFind_QueryOpts {
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
          * The `id` field can't be excluded.
-         * Care should be taken to not exceed the re-entrancy limit of the trx
-         * system when ^ (inherit) is used with this mode.
          */
         SELVA_FIND_QUERY_RES_FIELDS,
         /**
@@ -108,8 +104,6 @@ struct SelvaFind_QueryOpts {
          * the format used in SELVA_FIND_QUERY_RES_FIELDS.
          *
          * **Supported prefixes for field names**
-         * - `^types:field` = Inherit the field from an ancestor of specific type
-         * - `^:field` = Inherit the field from any ancestor
          * - `!` = Exclude the field
          *
          * **Special field names**
@@ -117,17 +111,9 @@ struct SelvaFind_QueryOpts {
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
          * The `id` field can't be excluded.
-         * Care should be taken to not exceed the re-entrancy limit of the trx
-         * system when ^ (inherit) is used with this mode.
          */
         SELVA_FIND_QUERY_RES_FIELDS_RPN,
-        /**
-         * Inherit fields using ancestors traversal and expression.
-         * This works similarly to SELVA_FIND_QUERY_RES_FIELDS_RPN but the
-         * response is sent in postprocess_inherit which requires more buffering
-         * but avoids the reentrancy limits of the trx system.
-         */
-        SELVA_FIND_QUERY_RES_INHERIT_RPN,
+        SELVA_FIND_QUERY_RES_INHERIT_RPN __attribute__((deprecated)),
     } res_type;
 
     /**

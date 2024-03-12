@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef SELVA_MODIFY_SUBSCRIPTIONS
-#define SELVA_MODIFY_SUBSCRIPTIONS
 
 #include "selva_db.h"
 #include "traversal.h"
@@ -408,27 +406,6 @@ int Selva_SubscriptionFilterMatch(
         struct Selva_SubscriptionMarker *marker);
 
 /**
- * Inherit subscription markers from a parent to child nodes.
- */
-void SelvaSubscriptions_InheritParent(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId node_id,
-        struct SelvaHierarchyMetadata *node_metadata,
-        size_t node_nr_children,
-        struct SelvaHierarchyNode *parent);
-
-/**
- * Inherit subscription markers from a child to parent nodes.
- * This function makes sense if there are markers traversing upwards.
- */
-void SelvaSubscriptions_InheritChild(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId node_id,
-        struct SelvaHierarchyMetadata *node_metadata,
-        size_t node_nr_parents,
-        struct SelvaHierarchyNode *child);
-
-/**
  * Inherit subscription markers over an edge field.
  * @param field_str is a pointer to the name of the source field.
  */
@@ -493,5 +470,3 @@ typedef union {
 
 void SelvaSubscriptions_ReplyWithSubscription(struct selva_server_response_out *resp, Selva_SubscriptionReply_t sp);
 void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, Selva_SubscriptionMarkerReply_t mp);
-
-#endif /* SELVA_MODIFY_SUBSCRIPTIONS */

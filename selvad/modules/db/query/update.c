@@ -419,9 +419,7 @@ static int update_node_cb(
             size_t field_len;
             const char *field_str = selva_string_to_str(op->field, &field_len);
 
-            if (strcmp(field_str, SELVA_PARENTS_FIELD) && strcmp(field_str, SELVA_CHILDREN_FIELD)) {
-                SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
-            }
+            SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
             node_updated = true;
         }
     }

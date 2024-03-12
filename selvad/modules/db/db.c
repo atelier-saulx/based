@@ -80,7 +80,7 @@ static int db_load(struct selva_io *io)
     }
 
     if (tmp_hierarchy) {
-        SelvaModify_DestroyHierarchy(tmp_hierarchy);
+        SelvaHierarchy_Destroy(tmp_hierarchy);
     }
 
     return 0;
@@ -93,7 +93,7 @@ static void db_save(struct selva_io *io)
 
 static void db_flush(void)
 {
-    SelvaModify_DestroyHierarchy(main_hierarchy);
+    SelvaHierarchy_Destroy(main_hierarchy);
     main_hierarchy = SelvaModify_NewHierarchy();
     if (!main_hierarchy) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Failed to create a new main_hierarchy");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -66,21 +66,6 @@ static int get_from_edge_field(
     }
 }
 
-static enum SelvaTraversal get_pseudo_field(const char *field_str, size_t field_len)
-{
-#define IS_FIELD(name) \
-    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
-
-    if (IS_FIELD(SELVA_ANCESTORS_FIELD)) {
-        return SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS;
-    } else if (IS_FIELD(SELVA_DESCENDANTS_FIELD)) {
-        return SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS;
-    }
-
-    return SELVA_HIERARCHY_TRAVERSAL_NONE;
-#undef IS_FIELD
-}
-
 static int do_field_lookup_traversable(
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -88,34 +73,7 @@ static int do_field_lookup_traversable(
         struct field_lookup_traversable *out)
 {
     SVector *vec;
-    enum SelvaTraversal field_type;
     int err;
-
-    /*
-     * Is it a hierarchy field.
-     * - parents
-     * - children
-     */
-    vec = SelvaHierarchy_GetHierarchyField(node, field_str, field_len, &field_type);
-    if (vec) {
-        out->type = field_type;
-        out->vec = vec;
-        out->node = node;
-        return 0;
-    }
-
-    /*
-     * Is it a hierarchy pseudo-field.
-     * - ancestors
-     * - descendants
-     */
-    field_type = get_pseudo_field(field_str, field_len);
-    if (field_type != SELVA_HIERARCHY_TRAVERSAL_NONE) {
-        out->type = field_type;
-        out->vec = NULL;
-        out->node = node;
-        return 0;
-    }
 
     /*
      * Try recurse to an edge field.

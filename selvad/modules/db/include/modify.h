@@ -15,7 +15,6 @@ struct selva_server_response_out;
 struct selva_string;
 
 enum modify_flags {
-    FLAG_NO_ROOT =  0x01, /*!< Don't set root as a parent. */
     FLAG_NO_MERGE = 0x02, /*!< Clear any existing fields. */
     FLAG_CREATE =   0x04, /*!< Only create a new node or fail. */
     FLAG_UPDATE =   0x08, /*!< Only update an existing node. */

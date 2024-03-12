@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -19,9 +19,6 @@ struct send_hierarchy_field_data {
     size_t len;
 };
 
-/*
- * Used for ancestors, children, descendants, parents
- */
 static int send_hierarchy_field_NodeCb(
         struct SelvaHierarchy *,
         const struct SelvaHierarchyTraversalMetadata *,
@@ -64,10 +61,9 @@ int HierarchyReply_WithTraversal(
         size_t nr_types,
         const Selva_NodeType types[nr_types],
         enum SelvaTraversal dir) {
-    const size_t skip = !!(dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS | SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS));
     struct send_hierarchy_field_data args = {
         .resp = resp,
-        .skip = skip,
+        .skip = 0,
         .nr_types = nr_types,
         .types = types,
         .len = 0,

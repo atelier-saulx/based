@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -17,12 +17,6 @@ struct selva_string;
 struct field_lookup_traversable {
     /**
      * Type of `a`.
-     * - SELVA_HIERARCHY_TRAVERSAL_CHILDREN
-     * - SELVA_HIERARCHY_TRAVERSAL_PARENTS
-     * - SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS
-     * - SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS
-     * - SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
-     * - SELVA_HIERARCHY_TRAVERSAL_ARRAY
      */
     enum SelvaTraversal type;
     int hops; /*!< Number of edge_field hops. */
@@ -58,10 +52,6 @@ int field_lookup_inherit(
 
 /**
  * Get a traversable hierarchy-like SVector field value.
- * - parents
- * - children
- * - ancestors
- * - descendants
  * - edge
  * - object array
  */

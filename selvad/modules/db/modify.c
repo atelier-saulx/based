@@ -41,11 +41,6 @@
 #include "typestr.h"
 #include "modify.h"
 
-#define FISSET_NO_ROOT(m) ({ \
-        ASSERT_TYPE(enum modify_flags, m); \
-        (((m) & FLAG_NO_ROOT) == FLAG_NO_ROOT); \
-    })
-
 #define FISSET_NO_MERGE(m) ({ \
         ASSERT_TYPE(enum modify_flags, m); \
         (((m) & FLAG_NO_MERGE) == FLAG_NO_MERGE); \
@@ -132,121 +127,6 @@ static int find_first_alias(SelvaHierarchy *hierarchy, const SVector *alias_quer
     }
 
     return 0;
-}
-
-/**
- * Update a hierarchy field.
- */
-static int update_hierarchy(
-    SelvaHierarchy *hierarchy,
-    const Selva_NodeId node_id,
-    const char *field_str,
-    const struct SelvaModify_OpSet *setOpts,
-    enum modify_flags modify_flags
-) {
-    /*
-     * If the field starts with 'p' we assume "parents"; Otherwise "children".
-     * No other field can modify the hierarchy.
-     */
-    const int isFieldParents = field_str[0] == 'p';
-
-    if (setOpts->$value_len > 0) {
-        const size_t nr_nodes = setOpts->$value_len / SELVA_NODE_ID_SIZE;
-        enum SelvaModify_SetFlags set_flags = FISSET_NO_ROOT(modify_flags) ? SELVA_MODIFY_SET_FLAG_NO_ROOT : 0;
-        int err = 0;
-
-        if (setOpts->$value_len % SELVA_NODE_ID_SIZE) {
-            return SELVA_EINVAL;
-        }
-
-        if (isFieldParents) { /* parents */
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Set parents of %.*s nr_nodes: %zu ",
-                      (int)SELVA_NODE_ID_SIZE, node_id,
-                      nr_nodes);
-            for (size_t i = 0; i < nr_nodes; i++) {
-                SELVA_LOG(SELVA_LOGL_DBG, "%.*s, ", (int)SELVA_NODE_ID_SIZE, ((const Selva_NodeId *)setOpts->$value)[i]);
-
-            }
-#endif
-
-            err = SelvaModify_SetHierarchyParents(hierarchy, node_id,
-                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str,
-                    set_flags);
-        } else { /* children */
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Set children of %.*s nr_nodes: %zu",
-                      (int)SELVA_NODE_ID_SIZE, node_id,
-                      nr_nodes);
-            for (size_t i = 0; i < nr_nodes; i++) {
-                SELVA_LOG(SELVA_LOGL_DBG, "%.*s, ", (int)SELVA_NODE_ID_SIZE, ((const Selva_NodeId *)setOpts->$value)[i]);
-
-            }
-#endif
-
-            err = SelvaModify_SetHierarchyChildren(hierarchy, node_id,
-                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str,
-                    set_flags);
-        }
-
-        return err;
-    } else {
-        int err, res = 0;
-
-        if (setOpts->$add_len % SELVA_NODE_ID_SIZE ||
-            setOpts->$delete_len % SELVA_NODE_ID_SIZE) {
-            return SELVA_EINVAL;
-        }
-
-        if (setOpts->$add_len > 0) {
-            const size_t nr_nodes = setOpts->$add_len / SELVA_NODE_ID_SIZE;
-
-            if (isFieldParents) { /* parents */
-#if 0
-                SELVA_LOG(SELVA_LOGL_DBG, "Add to parents of %.*s nr_nodes: %zu",
-                          (int)SELVA_NODE_ID_SIZE, node_id,
-                          nr_nodes);
-#endif
-
-                err = SelvaModify_AddHierarchy(hierarchy, node_id,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$add_str,
-                        0, NULL);
-            } else { /* children */
-#if 0
-                SELVA_LOG(SELVA_LOGL_DBG, "Add to children of %.*s nr_nodes: %zu",
-                          (int)SELVA_NODE_ID_SIZE, node_id,
-                          nr_nodes);
-#endif
-
-                err = SelvaModify_AddHierarchy(hierarchy, node_id,
-                        0, NULL,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$add_str);
-            }
-            if (err < 0) {
-                return err;
-            }
-            res += err;
-        }
-        if (setOpts->$delete_len > 0) {
-            const size_t nr_nodes = setOpts->$delete_len / SELVA_NODE_ID_SIZE;
-
-            if (isFieldParents) { /* parents */
-                err = SelvaModify_DelHierarchy(hierarchy, node_id,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$delete_str,
-                        0, NULL);
-            } else { /* children */
-                err = SelvaModify_DelHierarchy(hierarchy, node_id,
-                        0, NULL,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$delete_str);
-            }
-            if (err < 0) {
-                return err;
-            }
-            res += 1;
-        }
-
-        return res;
-    }
 }
 
 /**
@@ -1174,19 +1054,10 @@ int SelvaModify_ModifySet(
     TO_STR(field);
 
     if (setOpts->op_set_type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
-        int isChildren = !strcmp(field_str, "children");
-        int isParents = !isChildren && !strcmp(field_str, "parents");
-
         if (setOpts->delete_all) {
             int err;
 
-            if (isChildren) {
-                err = SelvaHierarchy_DelChildren(hierarchy, node);
-            } else if (isParents) {
-                err = SelvaHierarchy_DelParents(hierarchy, node);
-            } else {
-                err = Edge_ClearField(hierarchy, node, field_str, field_len);
-            }
+            err = Edge_ClearField(hierarchy, node, field_str, field_len);
 
             if (err < 0 && err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
                 return err;
@@ -1195,15 +1066,7 @@ int SelvaModify_ModifySet(
             }
         }
 
-        if (isChildren || isParents) {
-            return update_hierarchy(hierarchy, node_id, field_str, setOpts, modify_flags);
-        } else {
-            /*
-             * Other graph fields are dynamic and implemented separately
-             * from hierarchy.
-             */
-            return update_edge(hierarchy, node, field, setOpts);
-        }
+        return update_edge(hierarchy, node, field, setOpts);
     } else {
         if (setOpts->delete_all) {
             int err;
@@ -1249,10 +1112,6 @@ int SelvaModify_ModifyDel(
     if (!strcmp(field_str, "aliases")) {
         delete_all_node_aliases(hierarchy, obj);
         err = 0;
-    } else if (!strcmp(field_str, "children")) {
-        err = SelvaHierarchy_DelChildren(hierarchy, node);
-    } else if (!strcmp(field_str, "parents")) {
-        err = SelvaHierarchy_DelParents(hierarchy, node);
     } else { /* It's an edge field or an object field. */
         int err1, err2;
 
@@ -1279,7 +1138,6 @@ static enum modify_flags parse_flags(const struct selva_string *arg) {
     unsigned flags = 0;
 
     for (size_t i = 0; i < arg_len; i++) {
-        flags |= arg_str[i] == 'N' ? FLAG_NO_ROOT : 0;
         flags |= arg_str[i] == 'M' ? FLAG_NO_MERGE : 0;
         flags |= arg_str[i] == 'C' ? FLAG_CREATE : 0;
         flags |= arg_str[i] == 'U' ? FLAG_UPDATE : 0;
@@ -1290,12 +1148,11 @@ static enum modify_flags parse_flags(const struct selva_string *arg) {
 
 /**
  * Pre-parse op args.
- * Check if parents.$value is given.
  * Parse $alias query from the command args if one exists.
  * @param alias_query_out a vector for the query.
  *                        The SVector must be initialized before calling this function.
  */
-static void pre_parse_ops(struct selva_string **argv, int argc, bool *parents_value_is_set, SVector *alias_query_out) {
+static void pre_parse_ops(struct selva_string **argv, int argc, SVector *alias_query_out) {
     for (int i = 0; i < argc; i += 3) {
         const struct selva_string *type = argv[i];
         const struct selva_string *field = argv[i + 1];
@@ -1310,19 +1167,6 @@ static void pre_parse_ops(struct selva_string **argv, int argc, bool *parents_va
             size_t j = 0;
             while ((s = sztok(value_str, value_len, &j))) {
                 SVector_Insert(alias_query_out, (void *)s);
-            }
-        } else if (type_code == SELVA_MODIFY_ARG_OP_SET &&
-                   !strcmp(field_str, SELVA_PARENTS_FIELD) &&
-                   value_len >= sizeof(struct SelvaModify_OpSet)) {
-            typeof_field(struct SelvaModify_OpSet, op_set_type) op_set_type;
-            typeof_field(struct SelvaModify_OpSet, $value_len) op_set_value_len;
-
-            memcpy(&op_set_type, value_str + offsetof(struct SelvaModify_OpSet, op_set_type), sizeof(op_set_type));
-            memcpy(&op_set_value_len, value_str + offsetof(struct SelvaModify_OpSet, $value_len), sizeof(op_set_value_len));
-
-            if (op_set_type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE &&
-                op_set_value_len > 0) {
-                *parents_value_is_set = true;
             }
         }
     }
@@ -1715,14 +1559,6 @@ static enum selva_op_repl_state op_ord_set(
     }
 
     TO_STR(field);
-
-    /*
-     * Only EdgeFields are supported.
-     */
-    if (!strcmp(field_str, "children") || !strcmp(field_str, "parents")) {
-        selva_send_error(resp, SELVA_EINVAL, NULL, 0);
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
 
     switch (setOpts->mode) {
     case SelvaModify_OpOrdSet_Insert:
@@ -2350,8 +2186,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     /*
      * Look for $alias that would replace id.
      */
-    bool parents_value_is_set = false;
-    pre_parse_ops(argv + 2, argc - 2, &parents_value_is_set, &alias_query);
+    pre_parse_ops(argv + 2, argc - 2, &alias_query);
     if (SVector_Size(&alias_query) > 0) {
         Selva_NodeId tmp_id;
 
@@ -2383,9 +2218,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
             return;
         }
 
-        const size_t nr_parents = !FISSET_NO_ROOT(flags) && !parents_value_is_set;
-
-        err = SelvaModify_SetHierarchy(hierarchy, nodeId, nr_parents, ((Selva_NodeId []){ ROOT_NODE_ID }), 0, NULL, 0, &node);
+        err = SelvaHierarchy_UpsertNode(hierarchy, nodeId, &node);
         if (err < 0) {
             selva_send_errorf(resp, err, "Failed to initialize the node hierarchy for id: \"%.*s\"", (int)SELVA_NODE_ID_SIZE, nodeId);
             return;
@@ -2569,13 +2402,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
             /* This triplet needs to be replicated. */
             bitmap_set(replset, (i - 2) / 3);
 
-            /*
-             * Publish that the field was changed.
-             * Hierarchy handles events for parents and children.
-             */
-            if (strcmp(field_str, SELVA_PARENTS_FIELD) && strcmp(field_str, SELVA_CHILDREN_FIELD)) {
-                SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
-            }
+            SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
 
             selva_send_str(resp, "UPDATED", 7);
             updated = true;

@@ -799,9 +799,7 @@ static int traverse_marker_from(
      * always visit it.
      */
     if (dir &
-        (SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-         SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-         SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+        (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
          SELVA_HIERARCHY_TRAVERSAL_FIELD |
@@ -1343,109 +1341,6 @@ void SelvaSubscriptions_ClearAllMarkers(
     SVector_Clear(&metadata->sub_markers.vec);
 }
 
-void SelvaSubscriptions_InheritParent(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId node_id __unused,
-        struct SelvaHierarchyMetadata *node_metadata,
-        size_t node_nr_children,
-        struct SelvaHierarchyNode *parent) {
-    /*
-     * Trigger all relevant subscriptions to make sure the subscriptions are
-     * propagated properly.
-     */
-    if (node_nr_children > 0) {
-        defer_event_for_traversing_markers(hierarchy, parent);
-    } else {
-        Selva_NodeId parent_id;
-        struct SVectorIterator it;
-        struct Selva_SubscriptionMarker *marker;
-        struct Selva_SubscriptionMarkers *node_sub_markers = &node_metadata->sub_markers;
-        const SVector *markers_vec = &SelvaHierarchy_GetNodeMetadataByPtr(parent)->sub_markers.vec;
-
-        SelvaHierarchy_GetNodeId(parent_id, parent);
-
-        SVector_ForeachBegin(&it, markers_vec);
-        while ((marker = SVector_Foreach(&it))) {
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Inherit marker %" PRImrkId " to %.*s <- %.*s",
-                      marker->marker_id,
-                      (int)SELVA_NODE_ID_SIZE, node_id,
-                      (int)SELVA_NODE_ID_SIZE, parent_id);
-#endif
-            switch (marker->change_marker.dir) {
-            case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
-            case SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS:
-            case SELVA_HIERARCHY_TRAVERSAL_DFS_FULL:
-                /* These markers can be copied safely. */
-                set_marker(node_sub_markers, marker);
-                break;
-            case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-                /* Only propagate if the parent is the first node. */
-                if (marker_includes_node_id(parent_id, marker)) {
-                    set_marker(node_sub_markers, marker);
-                }
-                break;
-            default:
-                /*
-                 * NOP.
-                 */
-                break;
-            }
-        }
-    }
-}
-
-void SelvaSubscriptions_InheritChild(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId node_id __unused,
-        struct SelvaHierarchyMetadata *node_metadata,
-        size_t node_nr_parents,
-        struct SelvaHierarchyNode *child) {
-    /*
-     * Trigger all relevant subscriptions to make sure the subscriptions are
-     * propagated properly.
-     */
-    if (node_nr_parents > 0) {
-        defer_event_for_traversing_markers(hierarchy, child);
-    } else {
-        Selva_NodeId child_id;
-        struct SVectorIterator it;
-        struct Selva_SubscriptionMarker *marker;
-        struct Selva_SubscriptionMarkers *node_sub_markers = &node_metadata->sub_markers;
-        const SVector *markers_vec = &SelvaHierarchy_GetNodeMetadataByPtr(child)->sub_markers.vec;
-
-        SelvaHierarchy_GetNodeId(child_id, child);
-
-        SVector_ForeachBegin(&it, markers_vec);
-        while ((marker = SVector_Foreach(&it))) {
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "inherit marker %" PRImrkId " to %.*s <- %.*s",
-                      marker->marker_id,
-                      (int)SELVA_NODE_ID_SIZE, node_id,
-                      (int)SELVA_NODE_ID_SIZE, child_id);
-#endif
-            switch (marker->change_marker.dir) {
-            case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
-            case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
-                /* These markers can be copied safely. */
-                set_marker(node_sub_markers, marker);
-                break;
-            case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-                /* Only propagate if the child is the first node. */
-                if (marker_includes_node_id(child_id, marker)) {
-                    set_marker(node_sub_markers, marker);
-                }
-                break;
-            default:
-                /*
-                 * NOP.
-                 */
-                break;
-            }
-        }
-    }
-}
-
 void SelvaSubscriptions_InheritEdge(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *src_node,
@@ -1682,19 +1577,9 @@ static bool is_field_traversed(
         switch (marker->change_marker.dir) {
         case SELVA_HIERARCHY_TRAVERSAL_NONE:
         case SELVA_HIERARCHY_TRAVERSAL_NODE:
-        case SELVA_HIERARCHY_TRAVERSAL_DFS_FULL:
+        case SELVA_HIERARCHY_TRAVERSAL_ALL:
         case SELVA_HIERARCHY_TRAVERSAL_ARRAY:
             return false;
-        case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-            return IS_FIELD(SELVA_CHILDREN_FIELD);
-        case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-            return IS_FIELD(SELVA_PARENTS_FIELD);
-        case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
-        case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
-            return IS_FIELD(SELVA_ANCESTORS_FIELD);
-        case SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS:
-        case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
-            return IS_FIELD(SELVA_DESCENDANTS_FIELD);
         case SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION:
             return true;
         case SELVA_HIERARCHY_TRAVERSAL_EXPRESSION:
@@ -2072,10 +1957,6 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
     if (!(query_opts.dir &
           (SELVA_HIERARCHY_TRAVERSAL_NONE |
            SELVA_HIERARCHY_TRAVERSAL_NODE |
-           SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-           SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-           SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-           SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
            SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
            SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
            SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
@@ -2149,16 +2030,6 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
     }
 
     enum SelvaSubscriptionsMarkerFlags marker_flags = 0;
-
-    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-                          SELVA_HIERARCHY_TRAVERSAL_PARENTS)) {
-        /*
-         * RFE We might want to have an arg for REF flag
-         * but currently it seems to be enough to support
-         * it only for these specific traversal types.
-         */
-        marker_flags = SELVA_SUBSCRIPTION_FLAG_REF;
-    }
 
     err = new_marker(hierarchy, marker_id, (Selva_NodeId *)node_ids_str, node_ids_len / SELVA_NODE_ID_SIZE,
                      fields_str, fields_len, marker_flags, defer_event, &marker);

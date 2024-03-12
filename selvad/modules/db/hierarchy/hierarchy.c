@@ -85,15 +85,6 @@ typedef struct SelvaHierarchyNode {
     struct trx_label trx_label;
     STATIC_SELVA_OBJECT(_obj_data);
     struct SelvaHierarchyMetadata metadata;
-    SVector parents;
-    SVector children;
-    /**
-     * Children metadata.
-     * Used the same way as metadata in struct EdgeField.
-     * Only parent has metadata as it's easy enough to find this object
-     * anyway.
-     */
-    struct SelvaObject *children_metadata;
     RB_ENTRY(SelvaHierarchyNode) _index_entry;
 } SelvaHierarchyNode;
 
@@ -145,18 +136,16 @@ static const struct timespec hierarchy_expire_period = {
 static void SelvaHierarchy_DestroyNode(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node);
-static int removeRelationships(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        enum SelvaHierarchyNode_Relationship rel);
 static void hierarchy_expire_tim_proc(struct event *e __unused, void *data);
 static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, uint32_t expire);
 RB_PROTOTYPE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, SelvaHierarchyNode_Compare)
 static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type);
 static int restore_subtree(SelvaHierarchy *hierarchy, const Selva_NodeId id);
+#if 0
 static void auto_compress_proc(struct event *, void *data);
 static void Hierarchy_SubtreeLoad(SelvaHierarchy *hierarchy, struct selva_string *s);
 static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node);
+#endif
 
 /* Node metadata constructors. */
 SET_DECLARE(selva_HMCtor, SelvaHierarchyMetadataConstructorHook);
@@ -171,8 +160,6 @@ SELVA_TRACE_HANDLE(find_inmem);
 SELVA_TRACE_HANDLE(find_detached);
 SELVA_TRACE_HANDLE(restore_subtree);
 SELVA_TRACE_HANDLE(auto_compress_proc);
-SELVA_TRACE_HANDLE(traverse_children);
-SELVA_TRACE_HANDLE(traverse_parents);
 SELVA_TRACE_HANDLE(traverse_edge_field);
 SELVA_TRACE_HANDLE(traverse_bfs_ancestors);
 SELVA_TRACE_HANDLE(traverse_bfs_descendants);
@@ -188,15 +175,6 @@ static int flag_isLoading;
 
 static int isLoading(void) {
     return flag_isLoading || isDecompressingSubtree;
-}
-
-static int SVector_HierarchyNode_id_compare(const void ** restrict a_raw, const void ** restrict b_raw) {
-    const SelvaHierarchyNode *a = *(const SelvaHierarchyNode **)a_raw;
-    const SelvaHierarchyNode *b = *(const SelvaHierarchyNode **)b_raw;
-
-    assert(a && b);
-
-    return memcmp(a->id, b->id, SELVA_NODE_ID_SIZE);
 }
 
 static int SVector_HierarchyNode_expire_compare(const void ** restrict a_raw, const void ** restrict b_raw) {
@@ -225,15 +203,14 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
 
     mempool_init(&hierarchy->node_pool, HIERARCHY_SLAB_SIZE, sizeof(SelvaHierarchyNode), _Alignof(SelvaHierarchyNode));
     RB_INIT(&hierarchy->index_head);
-    SVector_Init(&hierarchy->heads, 1, SVector_HierarchyNode_id_compare);
     SelvaObject_Init(hierarchy->types._obj_data);
     SelvaObject_Init(hierarchy->aliases._obj_data);
     Edge_InitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
-    if (SelvaModify_SetHierarchy(hierarchy, ROOT_NODE_ID, 0, NULL, 0, NULL, 0, NULL) < 0) {
-        SelvaModify_DestroyHierarchy(hierarchy);
+    if (SelvaHierarchy_UpsertNode(hierarchy, ROOT_NODE_ID, NULL)) {
+        SelvaHierarchy_Destroy(hierarchy);
         hierarchy = NULL;
         goto fail;
     }
@@ -246,17 +223,19 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
         struct timespec timeout;
 
         if (SelvaHierarchy_InitInactiveNodes(hierarchy, HIERARCHY_AUTO_COMPRESS_INACT_NODES_LEN)) {
-            SelvaModify_DestroyHierarchy(hierarchy);
+            SelvaHierarchy_Destroy(hierarchy);
             hierarchy = NULL;
             goto fail;
         }
 
         msec2timespec(&timeout, selva_glob_config.hierarchy_auto_compress_period_ms);
+#if 0
         hierarchy->inactive.auto_compress_timer = evl_set_timeout(&timeout, auto_compress_proc, hierarchy);
         if (hierarchy->inactive.auto_compress_timer < 0) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to setup a timer for auto compression: %s",
                       selva_strerror(hierarchy->inactive.auto_compress_timer));
         }
+#endif
     } else {
         hierarchy->inactive.auto_compress_timer = SELVA_ENOENT;
     }
@@ -276,7 +255,7 @@ static void end_auto_compress(SelvaHierarchy *hierarchy) {
     SelvaHierarchy_DeinitInactiveNodes(hierarchy);
 }
 
-void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy) {
+void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
     SelvaHierarchyNode *node;
     SelvaHierarchyNode *next;
 
@@ -299,7 +278,6 @@ void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy) {
      */
     SelvaIndex_Deinit(hierarchy);
     Edge_DeinitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
-    SVector_Destroy(&hierarchy->heads);
 
     end_auto_compress(hierarchy);
     mempool_destroy(&hierarchy->node_pool);
@@ -376,8 +354,6 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
 #endif
 
     memcpy(node->id, id, SELVA_NODE_ID_SIZE);
-    SVector_Init(&node->parents,  selva_glob_config.hierarchy_initial_vector_len, SVector_HierarchyNode_id_compare);
-    SVector_Init(&node->children, selva_glob_config.hierarchy_initial_vector_len, SVector_HierarchyNode_id_compare);
 
     /* The SelvaObject is created elsewhere if we are loading. */
     if (likely(!isLoading())) {
@@ -415,7 +391,6 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
 
 /**
  * Destroy node.
- * parents and children etc. must be empty unless the whole hierarchy is being freed.
  */
 static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     SelvaHierarchyMetadataDestructorHook **dtor_p;
@@ -427,8 +402,6 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
         dtor(hierarchy, node, &node->metadata);
     }
 
-    SVector_Destroy(&node->parents);
-    SVector_Destroy(&node->children);
     SelvaObject_Destroy(GET_NODE_OBJ(node));
 #if MEM_DEBUG
     memset(node, 0, sizeof(*node));
@@ -436,6 +409,7 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
     mempool_return(&hierarchy->node_pool, node);
 }
 
+#if 0
 /**
  * Create a new detached node with given parents.
  */
@@ -485,6 +459,7 @@ static int repopulate_detached_head(struct SelvaHierarchy *hierarchy, SelvaHiera
 
     return 0;
 }
+#endif
 
 /**
  * Search from the normal node index.
@@ -516,12 +491,13 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
     if (node && !(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
         return node;
     } else if (node && isDecompressingSubtree) {
+#if 0
         err = repopulate_detached_head(hierarchy, node);
         if (err) {
             return NULL;
         }
-
-        return node;
+#endif
+        return (node = NULL);
     } else if (!isDecompressingSubtree && SelvaHierarchyDetached_IndexExists(hierarchy)) {
         SELVA_TRACE_BEGIN(find_detached);
         err = restore_subtree(hierarchy, id);
@@ -564,50 +540,6 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
     return !node ? NULL : &node->metadata;
 }
 
-/**
- * Delete all edge_metadata from a parent to child relationship.
- * @returns 0 if deleted or no edge_metadata was set for this relationship;
- *          Otherwise a SelvaObject_DelKey() error is returned.
- */
-static int delete_all_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id)
-{
-    int err;
-
-    if (!parent->children_metadata) {
-        return 0;
-    }
-
-    err = SelvaObject_DelKeyStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE);
-    return (err == SELVA_ENOENT) ? 0 : err;
-}
-
-/**
- * Get or create the edge_metadata object for a parent to child arc.
- */
-static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
-    int err = SELVA_ENOENT;
-
-    if (!parent->children_metadata && create) {
-        parent->children_metadata = SelvaObject_New();
-    }
-
-    if (parent->children_metadata) {
-        err = SelvaObject_GetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, out);
-        if (err == SELVA_ENOENT && create) {
-            struct SelvaObject *edge_metadata = SelvaObject_New();
-
-            err = SelvaObject_SetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
-            if (err) {
-                SelvaObject_Destroy(edge_metadata);
-            } else {
-                *out = edge_metadata;
-            }
-        }
-    }
-
-    return err;
-}
-
 int SelvaHierarchy_GetEdgeMetadata(
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -616,58 +548,22 @@ int SelvaHierarchy_GetEdgeMetadata(
         bool delete_all,
         bool create,
         struct SelvaObject **out) {
-#define IS_FIELD(name) \
-    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
+    struct EdgeField *edge_field;
 
-    if (IS_FIELD(SELVA_PARENTS_FIELD)) {
-        struct SelvaHierarchyNode *parent;
-
-        parent = SVector_Search(&node->parents, (void *)dst_node_id);
-        if (!parent) {
-            return SELVA_HIERARCHY_ENOENT;
-        }
-
-        if (delete_all) {
-            int err;
-
-            err = delete_all_hierarchy_edge_metadata(parent, node->id);
-            if (err) {
-                return err;
-            }
-        }
-
-        return get_hierarchy_edge_metadata(parent, node->id, create, out);
-    } else if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        if (delete_all) {
-            int err;
-
-            err = delete_all_hierarchy_edge_metadata(node, dst_node_id);
-            if (err) {
-                return err;
-            }
-        }
-
-        return get_hierarchy_edge_metadata(node, dst_node_id, create, out);
-    } else {
-        struct EdgeField *edge_field;
-
-        edge_field = Edge_GetField(node, field_str, field_len);
-        if (!edge_field) {
-            return SELVA_HIERARCHY_ENOENT;
-        }
-
-        if (delete_all) {
-            Edge_DeleteFieldMetadata(edge_field);
-            if (!create) {
-                *out = NULL;
-                return 0;
-            }
-        }
-
-        return Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, create, out);
+    edge_field = Edge_GetField(node, field_str, field_len);
+    if (!edge_field) {
+        return SELVA_HIERARCHY_ENOENT;
     }
-    unreachable();
-#undef IS_FIELD
+
+    if (delete_all) {
+        Edge_DeleteFieldMetadata(edge_field);
+        if (!create) {
+            *out = NULL;
+            return 0;
+        }
+    }
+
+    return Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, create, out);
 }
 
 /**
@@ -678,37 +574,7 @@ int SelvaHierarchy_GetEdgeMetadata(
 static struct SelvaObject *get_edge_metadata(struct SelvaHierarchyNode *node, enum SelvaTraversal field_type, const SVector *adj_vec) {
     struct SelvaObject *edge_metadata = NULL;
 
-    if (field_type & (SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                      SELVA_HIERARCHY_TRAVERSAL_CHILDREN)) {
-        struct SelvaHierarchyNode *parent;
-        struct SelvaHierarchyNode *child;
-        struct SelvaObject *field_metadata;
-
-        switch (field_type) {
-        case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-            parent = node;
-            child = containerof(adj_vec, struct SelvaHierarchyNode, parents);
-            break;
-        case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-            parent = containerof(adj_vec, struct SelvaHierarchyNode, children);
-            child = node;
-            break;
-        default:
-            unreachable();
-        }
-
-        field_metadata = parent->children_metadata;
-        if (field_metadata) {
-            int err;
-
-            err = SelvaObject_GetObjectStr(field_metadata, child->id, SELVA_NODE_ID_SIZE, &edge_metadata);
-            if (err && err != SELVA_ENOENT) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Odd error: dst: %.*s err: %s",
-                          (int)SELVA_NODE_ID_SIZE, node->id,
-                          selva_strerror(err));
-            }
-        }
-    } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
+    if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
         struct EdgeField *edge_field = containerof(adj_vec, struct EdgeField, arcs);
         (void)Edge_GetFieldEdgeMetadata(edge_field, node->id, false, &edge_metadata);
     }
@@ -721,12 +587,6 @@ struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(const struct Selva
     enum SelvaTraversal field_type;
 
     switch (tag) {
-    case SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS:
-        field_type = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
-        break;
-    case SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN:
-        field_type = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
-        break;
     case SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE:
         field_type = SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD;
         break;
@@ -759,38 +619,17 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
     SelvaObject_Clear(obj, excluded_fields);
 }
 
-static inline void mkHead(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
-    (void)SVector_Insert(&hierarchy->heads, node);
-}
-
-static inline void rmHead(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
-    /* Root should be never removed from heads. */
-    if (memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        SVector_Remove(&hierarchy->heads, node);
-    }
-}
-
 static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const int send_events = !isLoading();
     struct SelvaObject *obj = GET_NODE_OBJ(node);
     Selva_NodeId id;
     int is_root;
-    int err;
 
     memcpy(id, node->id, SELVA_NODE_ID_SIZE);
     is_root = !memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE);
 
     if (send_events) {
         SelvaSubscriptions_DeferTriggerEvents(hierarchy, node, SELVA_SUBSCRIPTION_TRIGGER_TYPE_DELETED);
-    }
-
-    err = removeRelationships(hierarchy, node, RELATIONSHIP_PARENT);
-    if (err < 0) {
-        /* Presumably bad things could happen if we'd proceed now. */
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to remove node parent relationships. node: %.*s err: %s",
-                  (int)SELVA_NODE_ID_SIZE, id,
-                  selva_strerror(err));
-        return;
     }
 
     delete_all_node_aliases(hierarchy, obj);
@@ -808,25 +647,6 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
          */
         mempool_gc(&hierarchy->node_pool);
     } else {
-        err = removeRelationships(hierarchy, node, RELATIONSHIP_CHILD);
-        if (err < 0) {
-            /*
-             * Well, this is embarassing. The caller won't be happy about
-             * having a half-deleted node dangling there.
-             */
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to remove node child relationships. node: %.*s err: \"%s\"",
-                      (int)SELVA_NODE_ID_SIZE, id,
-                      selva_strerror(err));
-            return;
-        }
-
-        /*
-         * The node was now marked as a head but we are going to get rid of it
-         * soon, so there is no reason to make it a tree head. In fact, doing
-         * so would break things.
-         */
-        rmHead(hierarchy, node);
-
         RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
         SelvaHierarchy_DestroyNode(hierarchy, node);
     }
@@ -844,638 +664,8 @@ static void publishNewNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) 
     }
 }
 
-static inline void publishAncestorsUpdate(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    if (!isLoading()) {
-        const char *field_str = SELVA_ANCESTORS_FIELD;
-        const size_t field_len = sizeof(SELVA_ANCESTORS_FIELD) - 1;
-
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
-    }
-}
-
-static inline void publishDescendantsUpdate(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    if (!isLoading()) {
-        const char *field_str = SELVA_DESCENDANTS_FIELD;
-        const size_t field_len = sizeof(SELVA_DESCENDANTS_FIELD) - 1;
-
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
-    }
-}
-
-static inline void publishChildrenUpdate(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    if (!isLoading()) {
-        const char *field_str = SELVA_CHILDREN_FIELD;
-        const size_t field_len = sizeof(SELVA_CHILDREN_FIELD) - 1;
-
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
-    }
-}
-
-static inline void publishParentsUpdate(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    if (!isLoading()) {
-        const char *field_str = SELVA_PARENTS_FIELD;
-        const size_t field_len = sizeof(SELVA_PARENTS_FIELD) - 1;
-
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, field_str, field_len);
-    }
-}
-
-static int cross_insert_children(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        size_t n,
-        const Selva_NodeId *nodes) {
-    int res = 0;
-
-    if (n == 0) {
-        return 0; /* No changes. */
-    }
-
-    if (unlikely(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
-        /* The subtree must be restored before adding nodes here. */
-        SELVA_LOG(SELVA_LOGL_ERR, "Cannot add children to a detached node %s",
-                  node->id);
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
-
-    for (size_t i = 0; i < n; i++) {
-        SelvaHierarchyNode *child;
-
-        /* TODO Could we upsert here? */
-        child = SelvaHierarchy_FindNode(hierarchy, nodes[i]);
-        if (!child) {
-            int err;
-
-            err = SelvaModify_SetHierarchy(hierarchy, nodes[i],
-                    0, NULL,
-                    0, NULL,
-                    0,
-                    &child);
-            if (err < 0) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a child \"%.*s\" for \"%.*s\". err: \"%s\"",
-                        (int)SELVA_NODE_ID_SIZE, nodes[i],
-                        (int)SELVA_NODE_ID_SIZE, node->id,
-                        selva_strerror(err));
-                continue;
-            }
-        }
-
-        if (SVector_Insert(&node->children, child) == NULL) {
-            /* The child node is no longer an orphan */
-            if (SVector_Size(&child->parents) == 0) {
-                rmHead(hierarchy, child);
-            }
-
-            (void)SVector_Insert(&child->parents, node);
-
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Inserted %.*s.children <= %.*s",
-                      (int)SELVA_NODE_ID_SIZE, node->id,
-                      (int)SELVA_NODE_ID_SIZE, child->id);
-#endif
-
-            /*
-             * Inherit markers from the parent node to the new child.
-             */
-            SelvaSubscriptions_InheritParent(
-                    hierarchy,
-                    child->id, &child->metadata,
-                    SVector_Size(&child->children),
-                    node);
-
-            /*
-             * Inherit markers from the new child to the parent node.
-             */
-            SelvaSubscriptions_InheritChild(
-                    hierarchy,
-                    node->id, &node->metadata,
-                    SVector_Size(&node->parents),
-                    child);
-
-            /*
-             * Publish that the parents field was changed.
-             * Actual events are only sent if there are subscription markers
-             * set on this node.
-             */
-            publishParentsUpdate(hierarchy, child);
-            publishAncestorsUpdate(hierarchy, child);
-
-            res++; /* Count actual insertions */
-        }
-
-        publishChildrenUpdate(hierarchy, node);
-        publishDescendantsUpdate(hierarchy, node);
-    }
-
-    /*
-     * Publish that the children field was changed.
-     */
-    if (res > 0) {
-        publishChildrenUpdate(hierarchy, node);
-        publishDescendantsUpdate(hierarchy, node);
-    }
-
-    return res;
-}
-
-static int cross_insert_parents(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        size_t n,
-        const Selva_NodeId *nodes,
-        enum SelvaModify_SetFlags flags) {
-    int res = 0;
-
-    if (n == 0) {
-        return 0; /* No changes. */
-    }
-
-    /* The node is no longer an orphan */
-    if (SVector_Size(&node->parents) == 0) {
-        rmHead(hierarchy, node);
-    }
-
-    for (size_t i = 0; i < n; i++) {
-        SelvaHierarchyNode *parent;
-
-        parent = SelvaHierarchy_FindNode(hierarchy, nodes[i]);
-        if (!parent) {
-            int err;
-
-            err = SelvaModify_SetHierarchy(hierarchy, nodes[i],
-                    !(flags & SELVA_MODIFY_SET_FLAG_NO_ROOT), ((Selva_NodeId []){ ROOT_NODE_ID }),
-                    0, NULL,
-                    0,
-                    &parent);
-            if (err < 0) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a parent \"%.*s\" for \"%.*s\". err: \"%s\"",
-                        (int)SELVA_NODE_ID_SIZE, nodes[i],
-                        (int)SELVA_NODE_ID_SIZE, node->id,
-                        selva_strerror(err));
-                continue;
-            }
-        }
-
-        /* Do inserts only if the relationship doesn't exist already */
-        if (SVector_Insert(&node->parents, parent) == NULL) {
-            (void)SVector_Insert(&parent->children, node);
-
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Inserted %.*s.parents <= %.*s",
-                      (int)SELVA_NODE_ID_SIZE, node->id,
-                      (int)SELVA_NODE_ID_SIZE, parent->id);
-#endif
-
-            /*
-             * Inherit subscription markers from the new parent to the node.
-             */
-            SelvaSubscriptions_InheritParent(
-                    hierarchy,
-                    node->id, &node->metadata,
-                    SVector_Size(&node->children),
-                    parent);
-
-            /*
-             * Inherit subscription markers from the node to the new parent.
-             */
-            SelvaSubscriptions_InheritChild(
-                    hierarchy,
-                    parent->id, &parent->metadata,
-                    SVector_Size(&parent->parents),
-                    node);
-
-            /*
-             * Publish that the children field was changed.
-             * Actual events are only sent if there are subscription markers
-             * set on this node.
-             */
-            publishChildrenUpdate(hierarchy, parent);
-            publishDescendantsUpdate(hierarchy, parent);
-
-            res++;
-        }
-    }
-
-    /*
-     * Publish that the parents field was changed.
-     */
-    if (res > 0) {
-        publishParentsUpdate(hierarchy, node);
-        publishAncestorsUpdate(hierarchy, node);
-    }
-
-    return res;
-}
-
-/*
- * @param pointers is set if nodes array contains pointers instead of Ids.
- */
-static int crossRemove(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        enum SelvaHierarchyNode_Relationship rel,
-        size_t n,
-        const Selva_NodeId *nodes,
-        int pointers) {
-    SVECTOR_AUTOFREE(sub_markers);
-
-    /*
-     * Take a backup of the subscription markers so we can refresh them after
-     * the operation.
-     */
-#ifndef PU_TEST_BUILD
-    if (unlikely(!SVector_Clone(&sub_markers, &node->metadata.sub_markers.vec, NULL))) {
-        return SELVA_HIERARCHY_ENOMEM;
-    }
-    SelvaSubscriptions_ClearAllMarkers(hierarchy, node);
-#endif
-
-    if (rel == RELATIONSHIP_CHILD) { /* no longer a child of adjacent */
-        const size_t initialNodeParentsSize = SVector_Size(&node->parents);
-        int pubParents = 0;
-
-        for (size_t i = 0; i < n; i++) {
-            SelvaHierarchyNode *parent;
-
-            if (pointers) {
-                memcpy(&parent, nodes[i], sizeof(SelvaHierarchyNode *));
-            } else {
-                parent = SelvaHierarchy_FindNode(hierarchy, nodes[i]);
-            }
-
-            if (!parent) {
-                /*
-                 * The most Redis thing to do is probably to ignore any
-                 * missing nodes.
-                 */
-                continue;
-            }
-
-            SVector_Remove(&parent->children, node);
-            SVector_Remove(&node->parents, parent);
-
-            publishChildrenUpdate(hierarchy, parent);
-            pubParents = 1;
-        }
-
-        if (initialNodeParentsSize > 0 && SVector_Size(&node->parents) == 0) {
-            /* node is an orphan now */
-            mkHead(hierarchy, node);
-        }
-
-        if (pubParents) {
-            publishParentsUpdate(hierarchy, node);
-        }
-    } else if (rel == RELATIONSHIP_PARENT) { /* no longer a parent of adjacent */
-        int pubChildren = 0;
-
-        for (size_t i = 0; i < n; i++) {
-            SelvaHierarchyNode *child;
-
-            if (pointers) {
-                memcpy(&child, nodes[i], sizeof(SelvaHierarchyNode *));
-            } else {
-                child = SelvaHierarchy_FindNode(hierarchy, nodes[i]);
-            }
-
-            if (!child) {
-                /*
-                 * The most Redis thing to do is probably to ignore any
-                 * missing nodes.
-                 */
-                continue;
-            }
-
-            SVector_Remove(&child->parents, node);
-            SVector_Remove(&node->children, child);
-
-            if (SVector_Size(&child->parents) == 0) {
-                /* child is an orphan now */
-                mkHead(hierarchy, child);
-            }
-
-            publishParentsUpdate(hierarchy, child);
-            pubChildren = 1;
-        }
-
-        if (pubChildren) {
-            publishChildrenUpdate(hierarchy, node);
-        }
-    } else {
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
-
-    SelvaSubscriptions_RefreshSubsByMarker(hierarchy, &sub_markers);
-
-    return 0;
-}
-
-/**
- * Remove all relationships rel of node.
- * @returns the number removed relationships. The nodes aren't necessary deleted.
- */
-static int removeRelationships(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        enum SelvaHierarchyNode_Relationship rel) {
-    SVector *vec_a;
-    size_t offset_a;
-    size_t offset_b;
-    int nr_removed;
-    SVECTOR_AUTOFREE(sub_markers);
-
-    switch (rel) {
-    case RELATIONSHIP_PARENT:
-        /* Remove parent releationship to other nodes */
-        offset_a = offsetof(SelvaHierarchyNode, children);
-        offset_b = offsetof(SelvaHierarchyNode, parents);
-        break;
-    case RELATIONSHIP_CHILD:
-        /* Remove child releationship to other nodes */
-        offset_a = offsetof(SelvaHierarchyNode, parents);
-        offset_b = offsetof(SelvaHierarchyNode, children);
-        break;
-    default:
-        /* rel is invalid */
-        assert(0);
-        return 0;
-    }
-
-    vec_a = (SVector *)((char *)node + offset_a);
-    nr_removed = SVector_Size(vec_a);
-    if (nr_removed == 0) {
-        return nr_removed;
-    }
-
-    /*
-     * Backup the subscription markers so we can refresh them after the
-     * operation.
-     */
-#ifndef PU_TEST_BUILD
-    if (unlikely(!SVector_Clone(&sub_markers, &node->metadata.sub_markers.vec, NULL))) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Cloning markers of the node %.*s failed",
-                  (int)SELVA_NODE_ID_SIZE, node->id);
-        return SELVA_HIERARCHY_EINVAL;
-    }
-#endif
-
-    SelvaSubscriptions_ClearAllMarkers(hierarchy, node);
-
-    struct SVectorIterator it;
-    SelvaHierarchyNode *adj;
-
-    SVector_ForeachBegin(&it, vec_a);
-    while ((adj = SVector_Foreach(&it))) {
-        SVector *vec_b = (SVector *)((char *)adj + offset_b);
-
-        SVector_Remove(vec_b, node);
-
-        if (rel == RELATIONSHIP_PARENT && SVector_Size(vec_b) == 0) {
-            /* This node is now orphan */
-            mkHead(hierarchy, adj);
-        }
-
-    }
-    SVector_Clear(vec_a);
-
-    SelvaSubscriptions_RefreshSubsByMarker(hierarchy, &sub_markers);
-
-    if (rel == RELATIONSHIP_CHILD) {
-        mkHead(hierarchy, node);
-    }
-
-    return nr_removed;
-}
-
-int SelvaHierarchy_DelChildren(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node) {
-    return removeRelationships(hierarchy, node, RELATIONSHIP_PARENT);
-}
-
-int SelvaHierarchy_DelParents(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node) {
-    return removeRelationships(hierarchy, node, RELATIONSHIP_CHILD);
-}
-
 static inline SelvaHierarchyNode *index_new_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     return RB_INSERT(hierarchy_index_tree, &hierarchy->index_head, node);
-}
-
-int SelvaModify_SetHierarchy(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children],
-        enum SelvaModify_SetFlags flags,
-        struct SelvaHierarchyNode **node_out) {
-    SelvaHierarchyNode *node;
-    int isNewNode = 0;
-    int err, res = 0;
-
-    node = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!node) {
-        node = newNode(hierarchy, id);
-        if (unlikely(!node)) {
-            return SELVA_HIERARCHY_ENOMEM;
-        }
-
-        publishNewNode(hierarchy, node);
-        isNewNode = 1;
-    }
-
-    if (isNewNode) {
-        if (unlikely(index_new_node(hierarchy, node))) {
-            SelvaHierarchy_DestroyNode(hierarchy, node);
-
-            return SELVA_HIERARCHY_EEXIST;
-        }
-
-        if (nr_parents == 0) {
-            /* This node is orphan */
-            mkHead(hierarchy, node);
-        }
-
-        res++;
-    } else {
-        /*
-         * Clear the existing node relationships.
-         * Note that we can't really tell the caller how many relationships were
-         * removed because there is only one count we return.
-         */
-        (void)removeRelationships(hierarchy, node, RELATIONSHIP_PARENT);
-        (void)removeRelationships(hierarchy, node, RELATIONSHIP_CHILD);
-    }
-
-    /*
-     * Set relationship relative to other nodes
-     * RFE if isNewNode == 0 then errors are not handled properly as
-     * we don't know how to rollback.
-     */
-    err = cross_insert_parents(hierarchy, node, nr_parents, parents, flags);
-    if (err < 0) {
-        if (isNewNode) {
-            del_node(hierarchy, node);
-        }
-        return err;
-    }
-    res += err;
-
-    /* Same for the children */
-    err = cross_insert_children(hierarchy, node, nr_children, children);
-    if (err < 0) {
-        if (isNewNode) {
-            del_node(hierarchy, node);
-        }
-        return err;
-    }
-    res += err;
-
-    if (node_out) {
-        *node_out = node;
-    }
-
-    return res;
-}
-
-/**
- * Remove adjacents not on the nodes list.
- */
-static int remove_missing(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        size_t nr_nodes,
-        const Selva_NodeId nodes[nr_nodes],
-        enum SelvaHierarchyNode_Relationship rel) {
-    SVECTOR_AUTOFREE(old_adjs);
-    struct SVectorIterator it;
-    SelvaHierarchyNode *adj;
-    int res = 0;
-
-    if (unlikely(!SVector_Clone(&old_adjs, rel == RELATIONSHIP_CHILD ? &node->parents : &node->children, NULL))) {
-        SELVA_LOG(SELVA_LOGL_ERR, "SVector clone failed");
-        return SELVA_HIERARCHY_ENOMEM;
-    }
-
-    SVector_ForeachBegin(&it, &old_adjs);
-    while ((adj = SVector_Foreach(&it))) {
-        int found = 0;
-
-        for (size_t i = 0; i < nr_nodes; i++) {
-            if (!memcmp(adj->id, nodes[i], SELVA_NODE_ID_SIZE)) {
-                found = 1;
-                break;
-            }
-        }
-
-        if (!found) {
-            Selva_NodeId arr[1];
-
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Removing %.*s.%s.%.*s",
-                    (int)SELVA_NODE_ID_SIZE, node->id,
-                    rel == RELATIONSHIP_CHILD ? SELVA_PARENTS_FIELD : SELVA_CHILDREN_FIELD,
-                    (int)SELVA_NODE_ID_SIZE, adj->id);
-#endif
-
-            memcpy(arr, &adj, sizeof(SelvaHierarchyNode *));
-            crossRemove(hierarchy, node, rel, 1, arr, 1);
-            res++;
-        }
-    }
-
-    return res;
-}
-
-int SelvaModify_SetHierarchyParents(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        enum SelvaModify_SetFlags flags) {
-    SelvaHierarchyNode *node;
-    int err, res = 0;
-
-    node = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!node) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    if (nr_parents == 0) {
-        /* Clear the existing node relationships. */
-        return removeRelationships(hierarchy, node, RELATIONSHIP_CHILD);
-    }
-
-    /*
-     * Set relationship relative to other nodes.
-     */
-    err = cross_insert_parents(hierarchy, node, nr_parents, parents, flags);
-    if (err < 0) {
-        return err;
-    }
-    res += err;
-
-    /*
-     * Remove parents that are not in the given list.
-     */
-    err = remove_missing(hierarchy, node, nr_parents, parents, RELATIONSHIP_CHILD);
-    if (err < 0) {
-        return err;
-    }
-    res += err;
-
-    return res;
-}
-
-int SelvaModify_SetHierarchyChildren(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_children,
-        const Selva_NodeId children[nr_children],
-        enum SelvaModify_SetFlags) {
-    SelvaHierarchyNode *node;
-    int err, res = 0;
-
-    node = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!node) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    if (nr_children == 0) {
-        /* Clear the existing node relationships */
-        return removeRelationships(hierarchy, node, RELATIONSHIP_PARENT);
-    }
-
-    /*
-     * Set relationship relative to other nodes.
-     */
-    err = cross_insert_children(hierarchy, node, nr_children, children);
-    if (err < 0) {
-        return err;
-    }
-    res += err;
-
-    /*
-     * Remove children that are not in the given list.
-     */
-    err = remove_missing(hierarchy, node, nr_children, children, RELATIONSHIP_PARENT);
-    if (err < 0) {
-        return err;
-    }
-    res += err;
-
-    return res;
 }
 
 int SelvaHierarchy_UpsertNode(
@@ -1516,100 +706,13 @@ int SelvaHierarchy_UpsertNode(
          return SELVA_HIERARCHY_EEXIST;
      }
 
-     /*
-      * This node is currently an orphan and it must be marked as such.
-      */
-     mkHead(hierarchy, node);
-
      if (out) {
          *out = node;
      }
      return 0;
 }
 
-int SelvaModify_AddHierarchyP(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children]) {
-    int err, res = 0;
-
-    /*
-     * Update relationship relative to other nodes
-     * RFE if isNewNode == 0 then errors are not handled properly as
-     * we don't know how to rollback.
-     */
-    err = cross_insert_parents(hierarchy, node, nr_parents, parents, 0);
-    if (err < 0) {
-        return err;
-    }
-    res += err;
-
-    /* Same for the children */
-    err = cross_insert_children(hierarchy, node, nr_children, children);
-    if (err < 0) {
-        return err;
-    }
-    res += err;
-
-    return res;
-}
-
-int SelvaModify_AddHierarchy(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children]) {
-    SelvaHierarchyNode *node;
-    int isNewNode;
-    int err;
-
-    err = SelvaHierarchy_UpsertNode(hierarchy, id, &node);
-    if (err == SELVA_HIERARCHY_EEXIST) {
-        isNewNode = 0;
-    } else if (err) {
-        return err;
-    } else {
-        isNewNode = 1;
-    }
-
-    err = SelvaModify_AddHierarchyP(hierarchy, node, nr_parents, parents, nr_children, children);
-    if (err < 0) {
-        if (isNewNode) {
-            del_node(hierarchy, node);
-        }
-
-        return err;
-    }
-
-    return err + isNewNode; /* Return the number of changes. */
-}
-
-int SelvaModify_DelHierarchy(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        size_t nr_parents,
-        const Selva_NodeId parents[nr_parents],
-        size_t nr_children,
-        const Selva_NodeId children[nr_children]) {
-    SelvaHierarchyNode *node;
-    int err1, err2;
-
-    node = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!node) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    err1 = crossRemove(hierarchy, node, RELATIONSHIP_CHILD, nr_parents, parents, 0);
-    err2 = crossRemove(hierarchy, node, RELATIONSHIP_PARENT, nr_children, children, 0);
-
-    return err1 ? err1 : err2;
-}
-
+#if 0
 /**
  * Copy nodeIds from vec to dst array.
  * The dst array must be large enough.
@@ -1625,35 +728,7 @@ static void copy_nodeIds(Selva_NodeId *dst, const struct SVector *vec) {
         memcpy(dst++, node->id, SELVA_NODE_ID_SIZE);
     }
 }
-
-static int subr_del_adj_relationship(
-        SelvaHierarchy *hierarchy,
-        SelvaHierarchyNode *node,
-        const Selva_NodeId adj_node_id,
-        enum SelvaHierarchyNode_Relationship dir,
-        SelvaHierarchyNode **adj_node_out) {
-    SelvaHierarchyNode *adj_node;
-    Selva_NodeId arr[1];
-
-    /*
-     * Find the node.
-     */
-    adj_node = SelvaHierarchy_FindNode(hierarchy, adj_node_id);
-    *adj_node_out = adj_node;
-    if (!adj_node) {
-        /* Node not found;
-         * This is probably fine, as there might have been a circular link.
-         */
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    /*
-     * Note that we store a pointer in a Selva_NodeId array to save in
-     * pointless RB_FIND() lookups.
-     */
-    memcpy(arr, &adj_node, sizeof(SelvaHierarchyNode *));
-    return crossRemove(hierarchy, node, dir, 1, arr, 1);
-}
+#endif
 
 /**
  * Delete a node and its children.
@@ -1667,7 +742,6 @@ static int SelvaHierarchy_DelNodeP(
         SelvaHierarchyNode *node,
         enum SelvaModify_DelHierarchyNodeFlag flags,
         void *opt_arg) {
-    size_t nr_ids;
     int nr_deleted = 0;
 
     assert(hierarchy);
@@ -1689,69 +763,6 @@ static int SelvaHierarchy_DelNodeP(
     }
 
     SelvaSubscriptions_ClearAllMarkers(hierarchy, node);
-
-    /*
-     * Delete links to parents.
-     * This might seem like unnecessary as the parent links will be deleted
-     * when then node is deleted. However, if there is a cycle back to this
-     * node from its descendants then we'd loop back here and eventually
-     * causing invalid/NULL pointers to appear.
-     */
-    nr_ids = SVector_Size(&node->parents);
-    if (nr_ids > 0) {
-        Selva_NodeId *ids;
-
-        ids = alloca(nr_ids * SELVA_NODE_ID_SIZE);
-
-        copy_nodeIds(ids, &node->parents);
-        for (size_t i = 0; i < nr_ids; i++) {
-            SelvaHierarchyNode *parent;
-            int err;
-
-            err = subr_del_adj_relationship(hierarchy, node, ids[i], RELATIONSHIP_CHILD, &parent);
-            if (err == SELVA_HIERARCHY_ENOENT) {
-                continue;
-            } else if (err) {
-                return err;
-            }
-        }
-    }
-
-    /*
-     * Delete orphan children recursively.
-     */
-    nr_ids = SVector_Size(&node->children);
-    if (nr_ids > 0) {
-        Selva_NodeId *ids;
-
-        ids = alloca(nr_ids * SELVA_NODE_ID_SIZE);
-
-        copy_nodeIds(ids, &node->children);
-        for (size_t i = 0; i < nr_ids; i++) {
-            SelvaHierarchyNode *child;
-            int err;
-
-            err = subr_del_adj_relationship(hierarchy, node, ids[i], RELATIONSHIP_PARENT, &child);
-            if (err == SELVA_HIERARCHY_ENOENT) {
-                continue;
-            } else if (err) {
-                return err;
-            }
-
-            /*
-             * Recursively delete the child and its children if its parents field is
-             * empty and no edge fields are pointing to it.
-             */
-            if ((flags & DEL_HIERARCHY_NODE_FORCE) || (SVector_Size(&child->parents) == 0 && Edge_Refcount(child) == 0)) {
-                err = SelvaHierarchy_DelNodeP(resp, hierarchy, child, flags, opt_arg);
-                if (err < 0) {
-                    return err;
-                } else {
-                    nr_deleted += err;
-                }
-            }
-        }
-    }
 
     if ((flags & DEL_HIERARCHY_NODE_REPLY_IDS) != 0) {
         assert(resp);
@@ -1911,100 +922,7 @@ static int SelvaHierarchyChildCallback_Dummy(
     return 0;
 }
 
-/**
- * DFS from a given head node towards its descendants or ancestors.
- */
-static int dfs(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *head,
-        enum SelvaHierarchyNode_Relationship dir,
-        const struct SelvaHierarchyCallback * restrict cb) {
-    SelvaHierarchyNodeCallback head_cb = cb->head_cb ? cb->head_cb : &SelvaHierarchyHeadCallback_Dummy;
-    SelvaHierarchyNodeCallback node_cb = cb->node_cb ? cb->node_cb : &HierarchyNode_Callback_Dummy;
-    SelvaHierarchyNodeCallback child_cb = cb->child_cb ? cb->child_cb : &SelvaHierarchyChildCallback_Dummy;
-    enum SelvaHierarchyTraversalSVecPtag vec_tag;
-    size_t offset;
-
-    switch (dir) {
-    case RELATIONSHIP_PARENT:
-        vec_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
-        offset = offsetof(SelvaHierarchyNode, parents);
-        break;
-    case RELATIONSHIP_CHILD:
-        vec_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
-        offset = offsetof(SelvaHierarchyNode, children);
-        break;
-    default:
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
-
-    SVECTOR_AUTOFREE(stack);
-    SVECTOR_AUTOFREE(src_stack);
-    SVector_Init(&stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
-    SVector_Init(&src_stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
-
-    int err = 0;
-    struct trx trx_cur;
-    if (Trx_Begin(&hierarchy->trx_state, &trx_cur)) {
-        return SELVA_HIERARCHY_ETRMAX;
-    }
-
-    SVector_Insert(&stack, head);
-    SVector_Insert(&src_stack, NULL);
-    struct SelvaHierarchyTraversalMetadata head_cb_metadata = {};
-    if (head_cb(hierarchy, &head_cb_metadata, head, cb->head_arg)) {
-        err = 0;
-        goto out;
-    }
-
-    while (SVector_Size(&stack) > 0) {
-        SelvaHierarchyNode *node = SVector_Pop(&stack);
-        const struct SelvaHierarchyTraversalMetadata node_cb_metadata = {
-            .origin_field_svec_tagp = SVector_Pop(&src_stack),
-        };
-
-        if (Trx_Visit(&trx_cur, &node->trx_label)) {
-            if (node_cb(hierarchy, &node_cb_metadata, node, cb->node_arg)) {
-                err = 0;
-                goto out;
-            }
-
-            /* Add parents/children of this node to the stack of unvisited nodes */
-            struct SVectorIterator it;
-            SelvaHierarchyNode *adj;
-            const SVector *vec = (SVector *)((char *)node + offset);
-
-            SVector_ForeachBegin(&it, vec);
-            while ((adj = SVector_Foreach(&it))) {
-                const struct SelvaHierarchyTraversalMetadata child_metadata = {
-                    .origin_field_svec_tagp = PTAG(vec, vec_tag),
-                };
-
-                if (adj->flags & SELVA_NODE_FLAGS_DETACHED) {
-                    err = restore_subtree(hierarchy, adj->id);
-                    if (err) {
-                        /*
-                         * The error is already logged,
-                         * we just try to bail from here.
-                         */
-                        goto out;
-                    }
-                }
-
-                (void)child_cb(hierarchy, &child_metadata, adj, cb->child_arg);
-
-                /* Add to the stack of unvisited nodes */
-                SVector_Insert(&stack, adj);
-                SVector_Insert(&src_stack, (void *)child_metadata.origin_field_svec_tagp);
-            }
-        }
-    }
-
-out:
-    Trx_End(&hierarchy->trx_state, &trx_cur);
-    return err;
-}
-
+#if 0
 /**
  * Returns true if calling SelvaHierarchy_AddInactiveNodeId() is safe.
  * I.e. true if we should track inactive nodes for auto compression.
@@ -2021,145 +939,7 @@ static bool SelvaHierarchy_CanTrackInactiveNodes(struct SelvaHierarchy *hierarch
          */
         hierarchy->flag_isSaving;
 }
-
-/**
- * Traverse through all nodes of the hierarchy from heads to leaves.
- */
-static int full_dfs(
-        struct SelvaHierarchy *hierarchy,
-        const struct SelvaHierarchyCallback * restrict cb) {
-    SelvaHierarchyNodeCallback head_cb = cb->head_cb ? cb->head_cb : &SelvaHierarchyHeadCallback_Dummy;
-    SelvaHierarchyNodeCallback node_cb = cb->node_cb ? cb->node_cb : &HierarchyNode_Callback_Dummy;
-    SelvaHierarchyNodeCallback child_cb = cb->child_cb ? cb->child_cb : &SelvaHierarchyChildCallback_Dummy;
-    const int enable_restore = !(cb->flags & SELVA_HIERARCHY_CALLBACK_FLAGS_INHIBIT_RESTORE);
-    SelvaHierarchyNode *head;
-    SVECTOR_AUTOFREE(stack);
-    SVECTOR_AUTOFREE(source_stack);
-
-    SVector_Init(&stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
-    SVector_Init(&source_stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
-
-    struct trx trx_cur;
-    if (Trx_Begin(&hierarchy->trx_state, &trx_cur)) {
-        return SELVA_HIERARCHY_ETRMAX;
-    }
-
-    int err = 0;
-    struct SVectorIterator it;
-
-    const bool track_auto_compression = SelvaHierarchy_CanTrackInactiveNodes(hierarchy);
-    const long long old_age_threshold = selva_glob_config.hierarchy_auto_compress_old_age_lim;
-
-    SVector_ForeachBegin(&it, &hierarchy->heads);
-    while ((head = SVector_Foreach(&it))) {
-        const struct SelvaHierarchyTraversalMetadata head_cb_metadata = {
-            .origin_field_svec_tagp = PTAG(&hierarchy->heads, SELVA_TRAVERSAL_SVECTOR_PTAG_NONE),
-        };
-        SVector_Insert(&stack, head);
-        SVector_Insert(&source_stack, (void *)head_cb_metadata.origin_field_svec_tagp);
-
-        if ((head->flags & SELVA_NODE_FLAGS_DETACHED) && enable_restore) {
-            err = restore_subtree(hierarchy, head->id);
-            if (err) {
-                /*
-                 * The error is already logged,
-                 * we just try to bail from here.
-                 */
-                goto out;
-            }
-        }
-
-        if (head_cb(hierarchy, &head_cb_metadata, head, cb->head_arg)) {
-            err = 0;
-            goto out;
-        }
-
-        /**
-         * This variable tracks a contiguous (DFS) path that hasn't been
-         * traversed for some time. It starts tracking when the first old node
-         * is found and keeps its value unless a subsequent node has been
-         * touched recently.
-         * The candidate is saved and the variable is reset to NULL once a leaf
-         * is reached, and the tracking can start again from the top.
-         */
-        struct SelvaHierarchyNode *compressionCandidate = NULL;
-
-        while (SVector_Size(&stack) > 0) {
-            SelvaHierarchyNode *node = SVector_Pop(&stack);
-            struct SelvaHierarchyTraversalMetadata node_cb_metadata = {
-                .origin_field_svec_tagp = SVector_Pop(&source_stack),
-            };
-
-            /*
-             * Note that the serialization child process won't touch the trxids
-             * in the parent process (separate address space), therefore old
-             * nodes will generally stay old if they are otherwise untouched.
-             */
-            if (track_auto_compression && !compressionCandidate &&
-                memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-                if (Trx_LabelAge(&hierarchy->trx_state, &node->trx_label) >= old_age_threshold &&
-                    !(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
-                    compressionCandidate = node;
-                }
-            }
-            if (compressionCandidate && Trx_LabelAge(&hierarchy->trx_state, &node->trx_label) < old_age_threshold) {
-                compressionCandidate = NULL;
-            }
-
-            if (Trx_Visit(&trx_cur, &node->trx_label)) {
-                struct SVectorIterator it2;
-                SelvaHierarchyNode *adj;
-
-                if (node_cb(hierarchy, &node_cb_metadata, node, cb->node_arg)) {
-                    err = 0;
-                    goto out;
-                }
-                if (node->flags & SELVA_NODE_FLAGS_DETACHED) {
-                    /*
-                     * Can't traverse a detached node any further.
-                     * This flag can be set only if we inhibit restoring
-                     * subtrees with SELVA_HIERARCHY_CALLBACK_FLAGS_INHIBIT_RESTORE.
-                     */
-                    continue;
-                }
-
-                /*
-                 * Reset the compressionCandidate tracking and save the current candidate.
-                 * No need to test track_auto_compression as compressionCandidate
-                 * would be NULL on false case.
-                 */
-                if (compressionCandidate && SVector_Size(&node->children) == 0) {
-                    SelvaHierarchy_AddInactiveNodeId(hierarchy, compressionCandidate->id);
-                    compressionCandidate = NULL;
-                }
-
-                SVector_ForeachBegin(&it2, &node->children);
-                while ((adj = SVector_Foreach(&it2))) {
-                    const struct SelvaHierarchyTraversalMetadata child_metadata = {
-                        .origin_field_svec_tagp = PTAG(&node->children, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN),
-                    };
-
-                    if ((adj->flags & SELVA_NODE_FLAGS_DETACHED) && enable_restore) {
-                        err = restore_subtree(hierarchy, adj->id);
-                        if (err) {
-                            goto out;
-                        }
-                    }
-
-                    (void)child_cb(hierarchy, &child_metadata, adj, cb->child_arg);
-
-                    /* Add to the stack of unvisited nodes */
-                    SVector_Insert(&stack, adj);
-                    SVector_Insert(&source_stack, (void *)child_metadata.origin_field_svec_tagp);
-                }
-            }
-        }
-    }
-
-out:
-    Trx_End(&hierarchy->trx_state, &trx_cur);
-    return err;
-}
+#endif
 
 #define BFS_TRAVERSE(hierarchy, head, cb) \
     SelvaHierarchyNodeCallback head_cb = (cb)->head_cb ? (cb)->head_cb : SelvaHierarchyHeadCallback_Dummy; \
@@ -2240,23 +1020,6 @@ out:
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
-SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type) {
-#define IS_FIELD(name) \
-    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
-
-    if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        *field_type = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
-        return &node->children;
-    } else if (IS_FIELD(SELVA_PARENTS_FIELD)) {
-        *field_type = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
-        return &node->parents;
-    }
-
-    *field_type = SELVA_HIERARCHY_TRAVERSAL_NONE;
-    return NULL;
-#undef IS_FIELD
-}
-
 /**
  * Execute an edge filter for the node.
  * @param edge_filter_ctx is a context for the filter.
@@ -2286,40 +1049,6 @@ __attribute__((nonnull (5))) static int exec_edge_filter(
     rpn_err = rpn_bool(edge_filter_ctx, edge_filter, &res);
 
     return (!rpn_err && res) ? 1 : 0;
-}
-
-/**
- * BFS from a given head node towards its ancestors.
- */
-static __hot int bfs_ancestors(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *head,
-        const struct SelvaHierarchyCallback * restrict cb) {
-    BFS_TRAVERSE(hierarchy, head, cb) {
-        const SVector *adj_vec = (SVector *)((char *)node + offsetof(SelvaHierarchyNode, parents));
-
-        BFS_VISIT_NODE(hierarchy, cb);
-        BFS_VISIT_ADJACENTS(hierarchy, cb, SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS, adj_vec);
-    } BFS_TRAVERSE_END(hierarchy);
-
-    return 0;
-}
-
-/**
- * BFS from a given head node towards its descendants.
- */
-static __hot int bfs_descendants(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *head,
-        const struct SelvaHierarchyCallback * restrict cb) {
-    BFS_TRAVERSE(hierarchy, head, cb) {
-        const SVector *adj_vec = (SVector *)((char *)node + offsetof(SelvaHierarchyNode, children));
-
-        BFS_VISIT_NODE(hierarchy, cb);
-        BFS_VISIT_ADJACENTS(hierarchy, cb, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN, adj_vec);
-    } BFS_TRAVERSE_END(hierarchy);
-
-    return 0;
 }
 
 static int bfs_edge(
@@ -2352,10 +1081,6 @@ static int bfs_edge(
 
 static enum SelvaHierarchyTraversalSVecPtag traversal2vec_tag(enum SelvaTraversal field_type) {
     switch (field_type) {
-    case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-        return SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
-    case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-        return SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
     case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
         return SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE;
     default:
@@ -2433,9 +1158,7 @@ static int bfs_expression(
 
 /**
  * Traverse adjacent vector.
- * This function can be useful with edge fields,
- * field_lookup_traversable, and SelvaHierarchy_GetHierarchyField().
- * @param adj_vec can be children, parents, or an edge field arcs.
+ * @param adj_vec can be an edge field arcs.
  */
 static void SelvaHierarchy_TraverseAdjacents(
         struct SelvaHierarchy *hierarchy,
@@ -2514,92 +1237,22 @@ int SelvaHierarchy_TraverseEdgeFieldBfs(
     return bfs_edge(hierarchy, head, field_name_str, field_name_len, cb);
 }
 
-void SelvaHierarchy_TraverseChildren(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb) {
-    if (cb->head_cb) {
-        const struct SelvaHierarchyTraversalMetadata metadata = {};
+int SelvaHierarchy_TraverseAll(struct SelvaHierarchy *hierarchy, const struct SelvaHierarchyCallback *cb) {
+    struct trx trx_cur;
+    struct SelvaHierarchyNode *node;
 
-        if (cb->head_cb(hierarchy, &metadata, node, cb->head_arg)) {
-            return;
+    if (Trx_Begin(&hierarchy->trx_state, &trx_cur)) {
+        return SELVA_HIERARCHY_ETRMAX;
+    }
+
+    RB_FOREACH(node, hierarchy_index_tree, &hierarchy->index_head) {
+        if (Trx_Visit(&trx_cur, &node->trx_label)) {
+            cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, node, cb->node_arg);
         }
     }
 
-    SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN, &node->children, cb);
-}
-
-void SelvaHierarchy_TraverseParents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb) {
-    if (cb->head_cb) {
-        const struct SelvaHierarchyTraversalMetadata metadata = {};
-
-        if (cb->head_cb(hierarchy, &metadata, node, cb->head_arg)) {
-            return;
-        }
-    }
-
-    SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS, &node->parents, cb);
-}
-
-struct pseudo_field_cb {
-    SelvaHierarchyNodeCallback node_cb;
-    void *node_arg;
-    int skip;
-};
-
-/**
- * This is used to skip the first node with BFS ancestors/descendants traversal.
- */
-static int pseudo_field_cb(
-        struct SelvaHierarchy *hierarchy,
-        const struct SelvaHierarchyTraversalMetadata *cb_metadata,
-        struct SelvaHierarchyNode *node,
-        void *arg) {
-    struct pseudo_field_cb *cb = (struct pseudo_field_cb *)arg;
-
-    if (likely(!cb->skip)) {
-        return cb->node_cb(hierarchy, cb_metadata, node, cb->node_arg);
-    } else {
-        cb->skip = 0;
-        return 0;
-    }
-}
-
-int SelvaHierarchy_TraverseBFSAncestors(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb) {
-    struct pseudo_field_cb data = {
-        .node_cb = cb->node_cb,
-        .node_arg = cb->node_arg,
-        .skip = 1,
-    };
-    struct SelvaHierarchyCallback bfs_cb = {
-        .node_cb = pseudo_field_cb,
-        .node_arg = &data,
-    };
-
-    return bfs_ancestors(hierarchy, node, &bfs_cb);
-}
-
-int SelvaHierarchy_TraverseBFSDescendants(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct SelvaHierarchyCallback *cb) {
-    struct pseudo_field_cb data = {
-        .node_cb = cb->node_cb,
-        .node_arg = cb->node_arg,
-        .skip = 1,
-    };
-    struct SelvaHierarchyCallback bfs_cb = {
-        .node_cb = pseudo_field_cb,
-        .node_arg = &data,
-    };
-
-    return bfs_descendants(hierarchy, node, &bfs_cb);
+    Trx_End(&hierarchy->trx_state, &trx_cur);
+    return 0;
 }
 
 int SelvaHierarchy_Traverse(
@@ -2614,7 +1267,7 @@ int SelvaHierarchy_Traverse(
         return SELVA_HIERARCHY_EINVAL;
     }
 
-    if (dir != SELVA_HIERARCHY_TRAVERSAL_DFS_FULL) {
+    if (dir != SELVA_HIERARCHY_TRAVERSAL_ALL) {
         head = SelvaHierarchy_FindNode(hierarchy, id);
         if (!head) {
             return SELVA_HIERARCHY_ENOENT;
@@ -2623,32 +1276,15 @@ int SelvaHierarchy_Traverse(
         Trx_Sync(&hierarchy->trx_state, &head->trx_label);
     }
 
+
     switch (dir) {
     case SELVA_HIERARCHY_TRAVERSAL_NODE:
         cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, head, cb->node_arg);
         break;
-    case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-        SelvaHierarchy_TraverseChildren(hierarchy, head, cb);
+    case SELVA_HIERARCHY_TRAVERSAL_ALL:
+        SelvaHierarchy_TraverseAll(hierarchy, cb);
         break;
-    case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-        SelvaHierarchy_TraverseParents(hierarchy, head, cb);
-        break;
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
-        err = bfs_ancestors(hierarchy, head, cb);
-        break;
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
-        err = bfs_descendants(hierarchy, head, cb);
-        break;
-    case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
-        err = dfs(hierarchy, head, RELATIONSHIP_PARENT, cb);
-        break;
-     case SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS:
-        err = dfs(hierarchy, head, RELATIONSHIP_CHILD, cb);
-        break;
-     case SELVA_HIERARCHY_TRAVERSAL_DFS_FULL:
-        err = full_dfs(hierarchy, cb);
-        break;
-     default:
+    default:
         /* Should probably use some other traversal function. */
         SELVA_LOG(SELVA_LOGL_ERR, "Invalid or unsupported traversal requested (%d)",
                   (int)dir);
@@ -2693,21 +1329,7 @@ int SelvaHierarchy_TraverseField2(
         return err;
     }
 
-    if (t.type == SELVA_HIERARCHY_TRAVERSAL_CHILDREN) {
-        assert(t.vec);
-
-        SELVA_TRACE_BEGIN(traverse_children);
-        SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN, t.vec, hcb);
-        SELVA_TRACE_END(traverse_children);
-        return 0;
-    } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_PARENTS) {
-        assert(t.vec);
-
-        SELVA_TRACE_BEGIN(traverse_parents);
-        SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS, t.vec, hcb);
-        SELVA_TRACE_END(traverse_parents);
-        return 0;
-    } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
+    if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
         assert(t.vec);
 
         /* TODO Temp hack to prevent multi-hop derefs because we can't handle those in subscriptions. */
@@ -2719,22 +1341,6 @@ int SelvaHierarchy_TraverseField2(
         SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, t.vec, hcb);
         SELVA_TRACE_END(traverse_edge_field);
         return 0;
-    } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS) {
-        int res;
-
-        SELVA_TRACE_BEGIN(traverse_bfs_ancestors);
-        res = SelvaHierarchy_TraverseBFSAncestors(hierarchy, t.node, hcb);
-        SELVA_TRACE_END(traverse_bfs_ancestors);
-
-        return res;
-    } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS) {
-        int res;
-
-        SELVA_TRACE_BEGIN(traverse_bfs_descendants);
-        res = SelvaHierarchy_TraverseBFSDescendants(hierarchy, t.node, hcb);
-        SELVA_TRACE_END(traverse_bfs_descendants);
-
-        return res;
     } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
         struct SVectorIterator it;
 
@@ -2800,16 +1406,8 @@ int SelvaHierarchy_TraverseField2Bfs(
             return err;
         }
 
-        if (t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-                      SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                      SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) {
+        if (t.type & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) {
             switch (t.type) {
-            case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
-                adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
-                break;
-            case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
-                adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
-                break;
             case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
                 adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE;
                 break;
@@ -2824,12 +1422,6 @@ int SelvaHierarchy_TraverseField2Bfs(
                 Trx_End(&hierarchy->trx_state, &trx_cur);
                 return SELVA_ENOTSUP;
             }
-        } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS) {
-            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
-            adj_vec = &node->parents;
-        } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS) {
-            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
-            adj_vec = &node->children;
         } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
             adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
 
@@ -3007,33 +1599,24 @@ int SelvaHierarchy_TraverseSet(
 }
 
 int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const char *field_str, size_t field_len) {
-#define IS_FIELD(name) \
-    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
-
-    if (IS_FIELD(SELVA_PARENTS_FIELD) ||
-        IS_FIELD(SELVA_ANCESTORS_FIELD)) {
-        return SVector_Size(&node->parents) > 0;
-    } else if (IS_FIELD(SELVA_CHILDREN_FIELD) ||
-               IS_FIELD(SELVA_DESCENDANTS_FIELD)) {
-        return SVector_Size(&node->children) > 0;
-    } else if (field_len > 0) {
-        /*
-         * Check if field is an edge field name.
-         */
-        const struct EdgeField *edge_field;
-
-        edge_field = Edge_GetField(node, field_str, field_len);
-        if (!edge_field) {
-            return 0;
-        }
-
-        return Edge_GetFieldLength(edge_field);
+    if (field_len == 0) {
+        return 0;
     }
 
-    return 0;
-#undef IS_FIELD
+    /*
+     * Check if field is an edge field name.
+     */
+    const struct EdgeField *edge_field;
+
+    edge_field = Edge_GetField(node, field_str, field_len);
+    if (!edge_field) {
+        return 0;
+    }
+
+    return Edge_GetFieldLength(edge_field);
 }
 
+#if 0
 /**
  * DO NOT CALL DIRECTLY. USE verifyDetachableSubtree().
  */
@@ -3180,8 +1763,11 @@ static struct selva_string *compress_subtree(SelvaHierarchy *hierarchy, struct S
 
     return Hierarchy_SubtreeSave(hierarchy, node);
 }
+#endif
 
-static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type) {
+static int detach_subtree(SelvaHierarchy *hierarchy __unused, struct SelvaHierarchyNode *node __unused, enum SelvaHierarchyDetachedType type __unused) {
+    return SELVA_HIERARCHY_ENOTSUP;
+#if 0
     Selva_NodeId node_id;
     Selva_NodeId *parents = NULL;
     const size_t nr_parents = SVector_Size(&node->parents);
@@ -3238,8 +1824,10 @@ static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *
     }
 
     return err;
+#endif
 }
 
+#if 0
 static int restore_compressed_subtree(SelvaHierarchy *hierarchy, struct selva_string *compressed) {
     isDecompressingSubtree = 1;
     Hierarchy_SubtreeLoad(hierarchy, compressed);
@@ -3247,13 +1835,16 @@ static int restore_compressed_subtree(SelvaHierarchy *hierarchy, struct selva_st
 
     return 0;
 }
+#endif
 
 /**
+ * FIXME
  * Restore a compressed subtree back to hierarchy from the detached hierarchy subtree storage.
  * @param id can be the id of any node within a compressed subtree.
  * @returns SELVA_ENOENT if id is not a member of any detached subtree.
  */
-static int restore_subtree(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
+static int restore_subtree(SelvaHierarchy *hierarchy __unused, const Selva_NodeId id __unused) {
+#if 0
     struct selva_string *compressed;
     int err;
 
@@ -3273,8 +1864,11 @@ static int restore_subtree(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
               (int)SELVA_NODE_ID_SIZE, id);
 
     return err;
+#endif
+    return SELVA_HIERARCHY_ENOTSUP;
 }
 
+#if 0
 static void auto_compress_proc(struct event *, void *data) {
     static struct backoff_timeout backoff;
     struct timespec timeout;
@@ -3330,6 +1924,7 @@ static void auto_compress_proc(struct event *, void *data) {
                   selva_strerror(hierarchy->inactive.auto_compress_timer));
     }
 }
+#endif
 
 static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     int err;
@@ -3376,15 +1971,21 @@ static int load_node_id(struct selva_io *io, Selva_NodeId node_id_out) {
     return 0;
 }
 
-static int load_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy, Selva_NodeId node_id) {
+static int load_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy __unused, Selva_NodeId node_id __unused) {
     enum SelvaHierarchyDetachedType type;
     struct selva_string *compressed;
+#if 0
     SelvaHierarchyNode *node;
     int err;
+#endif
 
     type = selva_io_load_signed(io);
     compressed = selva_io_load_string(io);
     selva_string_set_compress(compressed);
+
+    /* TODO Remove */
+    (void)type;
+    (void)compressed;
 
     /*
      * It would be cleaner and faster to just attach this node as detached and
@@ -3395,6 +1996,9 @@ static int load_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy, Se
      * subtree first and detach it again.
      */
 
+    return SELVA_HIERARCHY_ENOTSUP;
+    /* TODO */
+#if 0
     err = restore_compressed_subtree(hierarchy, compressed);
     if (err) {
         goto out;
@@ -3411,9 +2015,10 @@ static int load_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy, Se
 out:
     selva_string_free(compressed);
     return err;
+#endif
 }
 
-static int load_hierarchy_node(struct finalizer *fin, struct selva_io *io, int encver, SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
+static int load_hierarchy_node(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     int err;
 
     /*
@@ -3423,51 +2028,6 @@ static int load_hierarchy_node(struct finalizer *fin, struct selva_io *io, int e
     if (err) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load hierarchy node (%.*s) metadata: %s",
                   (int)SELVA_NODE_ID_SIZE, node->id,
-                  selva_strerror(err));
-        return err;
-    }
-
-    /*
-     * Load the ids of child nodes.
-     */
-    uint64_t nr_children = selva_io_load_unsigned(io);
-    Selva_NodeId *children __selva_autofree = NULL;
-
-    if (nr_children > 0) {
-        children = selva_malloc(nr_children * SELVA_NODE_ID_SIZE);
-
-        /* Create/Update children */
-        for (uint64_t i = 0; i < nr_children; i++) {
-            Selva_NodeId child_id;
-
-            err = load_node_id(io, child_id);
-            if (err) {
-                SELVA_LOG(SELVA_LOGL_CRIT, "Invalid child node_id: %s",
-                          selva_strerror(err));
-                return err;
-            }
-
-            if (isDecompressingSubtree) {
-                SelvaHierarchyDetached_RemoveNode(fin, hierarchy, child_id);
-            }
-
-            err = SelvaModify_AddHierarchy(hierarchy, child_id, 0, NULL, 0, NULL);
-            if (err < 0) {
-                SELVA_LOG(SELVA_LOGL_CRIT, "Unable to rebuild the hierarchy: %s",
-                          selva_strerror(err));
-                return err;
-            }
-
-            memcpy(children + i, child_id, SELVA_NODE_ID_SIZE);
-        }
-    }
-
-    /*
-     * Insert children of the node.
-     */
-    err = SelvaModify_AddHierarchyP(hierarchy, node, 0, NULL, nr_children, children);
-    if (err < 0) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Unable to rebuild the hierarchy: %s",
                   selva_strerror(err));
         return err;
     }
@@ -3511,7 +2071,7 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
          */
         err = load_detached_node(io, hierarchy, node_id);
     } else {
-        err = load_hierarchy_node(fin, io, encver, hierarchy, node);
+        err = load_hierarchy_node(io, encver, hierarchy, node);
     }
 
     return err;
@@ -3608,7 +2168,7 @@ SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
     return hierarchy;
 error:
     if (hierarchy) {
-        SelvaModify_DestroyHierarchy(hierarchy);
+        SelvaHierarchy_Destroy(hierarchy);
     }
 
     flag_isLoading = 0;
@@ -3669,12 +2229,12 @@ static int HierarchySaveNode(
         save_detached_node(io, hierarchy, node->id);
     } else {
         save_metadata(io, node);
-        selva_io_save_unsigned(io, SVector_Size(&node->children));
     }
 
     return 0;
 }
 
+#if 0
 /**
  * Save a node from a subtree.
  * Used by Hierarchy_SubtreeSave() when saving a subtree into a string.
@@ -3696,40 +2256,19 @@ static int HierarchySaveSubtreeNode(
 
     return 0;
 }
-
-static int HierarchySaveChild(
-        struct SelvaHierarchy *hierarchy __unused,
-        const struct SelvaHierarchyTraversalMetadata *,
-        struct SelvaHierarchyNode *child,
-        void *arg) {
-    struct selva_io *io = (struct selva_io *)arg;
-
-    /*
-     * We don't need to care here whether the node is detached because the
-     * node callback is the only callback touching the node data. Here we
-     * are only interested in saving the child ids.
-     */
-
-    selva_io_save_str(io, child->id, SELVA_NODE_ID_SIZE);
-
-    return 0;
-}
+#endif
 
 static void save_hierarchy(struct selva_io *io, SelvaHierarchy *hierarchy) {
     struct HierarchySaveNode args = {
         .io = io,
     };
     const struct SelvaHierarchyCallback cb = {
-        .head_cb = NULL,
-        .head_arg = NULL,
         .node_cb = HierarchySaveNode,
         .node_arg = &args,
-        .child_cb = HierarchySaveChild,
-        .child_arg = io,
         .flags = SELVA_HIERARCHY_CALLBACK_FLAGS_INHIBIT_RESTORE,
     };
 
-    (void)full_dfs(hierarchy, &cb);
+    SelvaHierarchy_TraverseAll(hierarchy, &cb);
     selva_io_save_str(io, HIERARCHY_SERIALIZATION_EOF, sizeof(HIERARCHY_SERIALIZATION_EOF));
 }
 
@@ -3745,8 +2284,8 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
      * ENCVER
      * TYPE_MAP
      * EDGE_CONSTRAINTS
-     * NODE_ID1 | FLAGS | METADATA | NR_CHILDREN | CHILD_ID_0,..
-     * NODE_ID2 | FLAGS | METADATA | NR_CHILDREN | ...
+     * NODE_ID1 | FLAGS | METADATA
+     * NODE_ID2 | FLAGS | METADATA
      * HIERARCHY_SERIALIZATION_EOF
      * ALIASES
      */
@@ -3759,6 +2298,7 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
     hierarchy->flag_isSaving = 0;
 }
 
+#if 0
 static int load_nodeId(struct selva_io *io, Selva_NodeId nodeId) {
     __selva_autofree const char *buf = NULL;
     size_t len;
@@ -3850,6 +2390,7 @@ static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, str
 
     return raw;
 }
+#endif
 
 /*
  * HIERARCHY.DEL FLAGS [NODE_ID1[, NODE_ID2, ...]]
@@ -3957,96 +2498,6 @@ static void SelvaHierarchy_ExpireCommand(struct selva_server_response_out *resp,
     }
 
     selva_send_ll(resp, prev);
-}
-
-static void SelvaHierarchy_HeadsCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
-
-    struct SVectorIterator it;
-    const SelvaHierarchyNode *node;
-
-    selva_send_array(resp, SVector_Size(&hierarchy->heads));
-
-    SVector_ForeachBegin(&it, &hierarchy->heads);
-    while ((node = SVector_Foreach(&it))) {
-        selva_send_str(resp, node->id, Selva_NodeIdLen(node->id));
-    }
-}
-
-static void SelvaHierarchy_ParentsCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    Selva_NodeId nodeId;
-    int argc;
-
-    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID, nodeId);
-    if (argc != 1) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
-        } else {
-            selva_send_error_arity(resp);
-        }
-        return;
-    }
-
-    /*
-     * Find the node.
-     */
-    const SelvaHierarchyNode *node = SelvaHierarchy_FindNode(hierarchy, nodeId);
-    if (!node) {
-        selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
-        return;
-    }
-
-    struct SVectorIterator it;
-    const SelvaHierarchyNode *parent;
-    const SVector *parents = &node->parents;
-
-    selva_send_array(resp, SVector_Size(parents));
-
-    SVector_ForeachBegin(&it, parents);
-    while ((parent = SVector_Foreach(&it))) {
-        selva_send_str(resp, parent->id, Selva_NodeIdLen(parent->id));
-    }
-}
-
-static void SelvaHierarchy_ChildrenCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    Selva_NodeId nodeId;
-    int argc;
-
-    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID, nodeId);
-    if (argc != 1) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
-        } else {
-            selva_send_error_arity(resp);
-        }
-        return;
-    }
-
-    /*
-     * Find the node.
-     */
-    const SelvaHierarchyNode *node = SelvaHierarchy_FindNode(hierarchy, nodeId);
-    if (!node) {
-        selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
-        return;
-    }
-
-    selva_send_array(resp, SVector_Size(&node->children));
-
-    struct SVectorIterator it;
-    const SelvaHierarchyNode *child;
-
-    SVector_ForeachBegin(&it, &node->children);
-    while((child = SVector_Foreach(&it))) {
-        selva_send_str(resp, child->id, Selva_NodeIdLen(child->id));
-    }
 }
 
 static void SelvaHierarchy_EdgeListCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
@@ -4286,9 +2737,6 @@ static void SelvaHierarchy_ListCompressedCommand(struct selva_server_response_ou
 static int Hierarchy_OnLoad(void) {
     selva_mk_command(CMD_ID_HIERARCHY_DEL, SELVA_CMD_MODE_MUTATE, "hierarchy.del", SelvaHierarchy_DelNodeCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EXPIRE, SELVA_CMD_MODE_MUTATE, "hierarchy.expire", SelvaHierarchy_ExpireCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_HEADS, SELVA_CMD_MODE_PURE, "hierarchy.heads", SelvaHierarchy_HeadsCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_PARENTS, SELVA_CMD_MODE_PURE, "hierarchy.parents", SelvaHierarchy_ParentsCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_CHILDREN, SELVA_CMD_MODE_PURE, "hierarchy.children", SelvaHierarchy_ChildrenCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_LIST, SELVA_CMD_MODE_PURE, "hierarchy.edgeList", SelvaHierarchy_EdgeListCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_GET, SELVA_CMD_MODE_PURE, "hierarchy.edgeGet", SelvaHierarchy_EdgeGetCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_GET_METADATA, SELVA_CMD_MODE_PURE, "hierarchy.edgeGetMetadata", SelvaHierarchy_EdgeGetMetadataCommand);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022, 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -106,38 +106,7 @@ int SelvaHierarchy_ForeachInField(
 #define IS_FIELD(name) \
     (field_len == (sizeof(name) - 1) && !memcmp(field_str, name, sizeof(name) - 1))
 
-    if (IS_FIELD(SELVA_PARENTS_FIELD)) {
-        const struct SelvaHierarchyCallback hcb = {
-            .node_cb = hierarchy_foreach_cb,
-            .node_arg = (void *)cb,
-        };
-
-        SelvaHierarchy_TraverseParents(hierarchy, node, &hcb);
-        return 0;
-
-    } else if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        const struct SelvaHierarchyCallback hcb = {
-            .node_cb = hierarchy_foreach_cb,
-            .node_arg = (void *)cb,
-        };
-
-        SelvaHierarchy_TraverseChildren(hierarchy, node, &hcb);
-        return 0;
-    } else if (IS_FIELD(SELVA_ANCESTORS_FIELD)) {
-        const struct SelvaHierarchyCallback hcb = {
-            .node_cb = hierarchy_foreach_cb,
-            .node_arg = (void *)cb,
-        };
-
-        return SelvaHierarchy_TraverseBFSAncestors(hierarchy, node, &hcb);
-    } else if (IS_FIELD(SELVA_DESCENDANTS_FIELD)) {
-        const struct SelvaHierarchyCallback hcb = {
-            .node_cb = hierarchy_foreach_cb,
-            .node_arg = (void *)cb,
-        };
-
-        return SelvaHierarchy_TraverseBFSDescendants(hierarchy, node, &hcb);
-    } else if (is_unsupported_field(field_str, field_len)) {
+    if (is_unsupported_field(field_str, field_len)) {
         /* NOP */
     } else if (is_edge_field(node, field_str, field_len)) {
         Selva_NodeId id;
