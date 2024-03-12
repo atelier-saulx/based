@@ -294,17 +294,9 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
 static int create_node_object(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const long long now = ts_now();
     struct SelvaObject *obj;
-    struct selva_string *node_name;
     int err;
 
-    node_name = selva_string_createf("%.*s", (int)SELVA_NODE_ID_SIZE, node->id);
     obj = SelvaObject_Init(node->_obj_data);
-
-    err = SelvaObject_SetStringStr(obj, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, node_name);
-    if (err) {
-        selva_string_free(node_name);
-        return err;
-    }
 
     struct selva_string *type;
 

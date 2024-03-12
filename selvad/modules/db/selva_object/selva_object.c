@@ -35,7 +35,7 @@
  * Must be a power of two. This must be relatively small because we are doing
  * a linear search into the embedded keys.
  */
-#define NR_EMBEDDED_KEYS                4
+#define NR_EMBEDDED_KEYS                3
 #define EMBEDDED_KEYS_FREE_MASK         ((1 << NR_EMBEDDED_KEYS) - 1)
 /**
  * Maximum length of the name of an embedded key.
