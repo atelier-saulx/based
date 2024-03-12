@@ -15,6 +15,8 @@ import { drainQueue, addCommandToQueue } from './outgoing.js'
 import { incoming } from './incoming.js'
 import connect from './socket/index.js'
 
+export * from './id.js'
+
 export type BasedDbClientOpts = { port: number; host: string }
 
 export class BasedDbClient extends Emitter {

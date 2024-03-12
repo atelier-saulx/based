@@ -3,7 +3,6 @@ import { encodeLongLong, encodeDouble } from './primitiveTypes.js'
 import { EncodeDefinition } from '../protocol.js'
 import { encodeOrdSetOperation, encodeSetOperation } from './set.js'
 import { ModifyArgType } from './types.js'
-import { encodeArrayOp } from './array.js'
 import { encodeHll } from './hll.js'
 import { encodeObjMeta } from './objMeta.js'
 import { encodeIncrement } from './increment.js'
@@ -16,9 +15,7 @@ export const VALUE_TYPES = {
   [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ORD_SET]: { type: 'bin' },
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: { type: 'bin' },
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: { type: 'bin' },
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: { type: 'bin' },
+
   [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT]: { type: 'bin' },
@@ -39,9 +36,7 @@ export const VALUE_ENCODERS = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: encodeSetOperation,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ORD_SET]: encodeOrdSetOperation,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: encodeHll,
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: encodeArrayOp,
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: encodeArrayOp,
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: encodeArrayOp,
+
   [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META]: encodeObjMeta,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT]: encodeIncrement,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE]: encodeIncrement,
