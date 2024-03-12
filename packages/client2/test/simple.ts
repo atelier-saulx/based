@@ -4,6 +4,7 @@ import getPort from 'get-port'
 import { BasedDbClient } from '../src/index.js'
 import { wait } from '@saulx/utils'
 import { sourceId } from '../src/id.js'
+import { Fork, ast2rpn, createAst } from '@based/db-query'
 
 import {
   ModifyArgType,
@@ -159,6 +160,39 @@ test('simple test', async (t) => {
   try {
     const result2 = await client
       .command('hierarchy.edgeGetMetadata', [flap2, '2', flap1])
+      .catch(console.error)
+
+    console.dir(result2, { depth: 10 })
+  } catch (err) {
+    console.error(err)
+  }
+
+  console.log(result)
+  try {
+    const ast = createAst({
+      $field: '1',
+      $operator: '=',
+      $value: 'its flap 3',
+    })
+
+    const rpn = ast2rpn(undefined, ast as Fork, '')
+
+    console.info(rpn)
+
+    const result2 = await client
+      .command('hierarchy.find', [
+        '', // lang
+        createRecord(hierarchy_find_def, {
+          skip: 0n,
+          offset: 0n,
+          limit: 10000n,
+          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
+          res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+          res_opt_str: '1.1',
+        }),
+        flap2, // flap2 ->1 [flap, flap3]
+        ...rpn,
+      ])
       .catch(console.error)
 
     console.dir(result2, { depth: 10 })
