@@ -32,7 +32,7 @@ test('simple test', async (t) => {
   console.log(node)
 
   const result = await client
-    .command('object.get', [nodeId, ''])
+    .command('object.get', ['', nodeId])
     .catch(console.error)
 
   console.log(result)
