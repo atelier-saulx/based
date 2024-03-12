@@ -17,7 +17,6 @@
  * Common SelvaObject user meta types.
  */
 #define SELVA_OBJECT_META_SUBTYPE_OBJECT 0 /*!< Regular object. */
-#define SELVA_OBJECT_META_SUBTYPE_RECORD 1 /*!< The object is a record (field). */
 #define SELVA_OBJECT_META_SUBTYPE_TEXT 2 /*!< The object is a text field. */
 #define SELVA_OBJECT_META_SUBTYPE_TIMESERIES 3 /*!< A timeseries field. */
 

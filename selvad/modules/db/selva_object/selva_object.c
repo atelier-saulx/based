@@ -2787,8 +2787,7 @@ int SelvaObject_ReplyWithWildcardStr(
     int err;
 
     err = get_key(obj, before, before_len, 0, &key);
-    if (!err && (key->type != SELVA_OBJECT_OBJECT ||
-        ((flags & SELVA_OBJECT_REPLY_ANY_OBJ_FLAG) == 0 && key->user_meta != SELVA_OBJECT_META_SUBTYPE_RECORD))) {
+    if (!err && (key->type != SELVA_OBJECT_OBJECT || (flags & SELVA_OBJECT_REPLY_ANY_OBJ_FLAG) == 0)) {
         err = SELVA_ENOENT;
     } else if (!err) {
         void *it = SelvaObject_ForeachBegin(key->value);
