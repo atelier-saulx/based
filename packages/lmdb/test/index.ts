@@ -78,7 +78,7 @@ test('create server', async (t) => {
     // Here 'found' contains the key, and you can get the data with eg. getCurrentString/getCurrentBinary etc.
     // ...
   }
-  console.info(Date.now() - d2, 'ms', 'read', i)
+  console.info(Date.now() - d2, 'ms', 'read', i / 1000, 'k', 'keys')
 
   cursor.close()
   txn.commit()

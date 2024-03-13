@@ -48,31 +48,21 @@ const write = (writes) => {
   })
 }
 
-// let d = Date.now()
-
 const x = lorem.generateParagraphs(7)
 const data = zlib.deflateSync(x)
 
 let tx = 0
 
 for (let i = 0; i < workerData.rounds; i++) {
-  //   let dx = Date.now()
   const writes = []
   for (let j = 0; j < workerData.amount; j++) {
     tx =
       i * workerData.amount +
       j +
       workerData.i * (workerData.rounds * workerData.amount)
-    writes.push([dbi, tx + 'a', data])
+    writes.push([dbi, tx + 'a', new Uint8Array([0])])
   }
   await write(writes)
-  //   console.info(
-  //     `write done (${amount / 1000})`,
-  //     (tx + 1) / 1000,
-  //     'k',
-  //     Date.now() - dx,
-  //     'ms',
-  //   )
 }
 
 parentPort.postMessage('done!')
