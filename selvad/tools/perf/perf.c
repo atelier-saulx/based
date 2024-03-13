@@ -276,7 +276,7 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[S
 static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
     struct SelvaFind_QueryOpts qo = {
-        .dir = SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+        .dir = SELVA_HIERARCHY_TRAVERSAL_ALL,
         .order = SELVA_RESULT_ORDER_NONE,
         .offset = 0,
         .limit = -1,
