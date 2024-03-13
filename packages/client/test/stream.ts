@@ -3,7 +3,7 @@ import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
-import { readFileSync, createReadStream } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 import getPort from 'get-port'
@@ -196,7 +196,7 @@ test('stream functions - streamContents error', async (t: T) => {
       payload: { power: true },
       size: payload.byteLength,
       contents: stream,
-    })
+    }),
   )
   client.disconnect()
   await server.destroy()
