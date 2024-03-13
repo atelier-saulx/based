@@ -65,7 +65,7 @@ for (let i = 0; i < workerData.rounds; i++) {
       j +
       workerData.i * (workerData.rounds * workerData.amount)
 
-    writes.push([dbi, tx + 'a', arr])
+    writes.push([dbi, tx + 'a', data])
   }
   await write(writes)
 }
