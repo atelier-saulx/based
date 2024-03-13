@@ -263,6 +263,7 @@ static int op_string(
     size_t value_len;
     const char *value_str = selva_string_to_str(value, &value_len);
     struct selva_string *old_value;
+    int err;
 
     if (op->type_code == SELVA_MODIFY_ARG_DEFAULT_STRING && old_type != SELVA_OBJECT_NULL) {
         return SELVA_OP_REPL_STATE_UNCHANGED;
@@ -276,22 +277,9 @@ static int op_string(
         }
     }
 
-    if (SELVA_IS_TYPE_FIELD(field_str, field_len)) {
-        struct selva_string *shared;
-        int err;
-
-        shared = selva_string_create(value_str, value_len, SELVA_STRING_INTERN);
-        err = SelvaObject_SetString(obj, field, shared);
-        if (err) {
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
-    } else {
-        int err;
-
-        err = SelvaObject_SetString(obj, field, selva_string_dup(value, 0));
-        if (err) {
-            return SELVA_OP_REPL_STATE_UNCHANGED;
-        }
+    err = SelvaObject_SetString(obj, field, selva_string_dup(value, 0));
+    if (err) {
+        return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
     return SELVA_OP_REPL_STATE_UPDATED;

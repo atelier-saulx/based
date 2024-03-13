@@ -291,31 +291,11 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
  * This function should be called when creating a new node but not when loading
  * nodes from a serialized data.
  */
-static int create_node_object(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
+static int create_node_object(SelvaHierarchyNode *node) {
     const long long now = ts_now();
     struct SelvaObject *obj;
-    struct selva_string *node_name;
-    int err;
 
-    node_name = selva_string_createf("%.*s", (int)SELVA_NODE_ID_SIZE, node->id);
     obj = SelvaObject_Init(node->_obj_data);
-
-    err = SelvaObject_SetStringStr(obj, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, node_name);
-    if (err) {
-        selva_string_free(node_name);
-        return err;
-    }
-
-    struct selva_string *type;
-
-    type = SelvaHierarchyTypes_Get(hierarchy, node->id);
-    if (type) {
-        err = SelvaObject_SetStringStr(obj, SELVA_TYPE_FIELD, sizeof(SELVA_TYPE_FIELD) - 1, type);
-        if (err) {
-            return err;
-        }
-    }
-
     SelvaObject_SetLongLongStr(obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, now);
     SelvaObject_SetLongLongStr(obj, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1, now);
 
@@ -359,7 +339,7 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
     if (likely(!isLoading())) {
         int err;
 
-        err = create_node_object(hierarchy, node);
+        err = create_node_object(node);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a node object for \"%.*s\". err: \"%s\"",
                       (int)SELVA_NODE_ID_SIZE, id,
@@ -447,7 +427,7 @@ static void new_detached_node(SelvaHierarchy *hierarchy, const Selva_NodeId node
 static int repopulate_detached_head(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     int err;
 
-    err = create_node_object(hierarchy, node);
+    err = create_node_object(node);
     if (err) {
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to repopulate a detached dummy node %.*s. err: \"%s\"",
                   (int)SELVA_NODE_ID_SIZE, node->id,
@@ -599,7 +579,6 @@ struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(const struct Selva
 
 static const char * const excluded_fields[] = {
     SELVA_ID_FIELD,
-    SELVA_TYPE_FIELD,
     SELVA_CREATED_AT_FIELD,
     SELVA_ALIASES_FIELD,
     NULL

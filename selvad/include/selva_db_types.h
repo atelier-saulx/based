@@ -37,10 +37,9 @@
  * @{
  */
 #define SELVA_ID_FIELD          "id"
-#define SELVA_TYPE_FIELD        "type"
 #define SELVA_ALIASES_FIELD     "aliases"
-#define SELVA_CREATED_AT_FIELD  "createdAt"
-#define SELVA_UPDATED_AT_FIELD  "updatedAt"
+#define SELVA_CREATED_AT_FIELD  "created"
+#define SELVA_UPDATED_AT_FIELD  "updated"
 /**
  * Pseudo field name for retrieving edge metadata.
  */
@@ -52,9 +51,6 @@
 
 #define SELVA_IS_ID_FIELD(_s, _len) \
     ((_len) == (sizeof(SELVA_ID_FIELD) - 1) && !__builtin_memcmp((_s), SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1))
-
-#define SELVA_IS_TYPE_FIELD(_s, _len) \
-    ((_len) == (sizeof(SELVA_TYPE_FIELD) - 1) && !__builtin_memcmp((_s), SELVA_TYPE_FIELD, sizeof(SELVA_TYPE_FIELD) - 1))
 
 #define SELVA_IS_ALIASES_FIELD(_s, _len) \
     ((_len) == (sizeof(SELVA_ALIASES_FIELD) - 1) && !__builtin_memcmp((_s), SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1))
