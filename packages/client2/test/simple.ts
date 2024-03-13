@@ -78,16 +78,6 @@ test('simple test', async (t) => {
         isSingle: false,
         isBidirectional: false,
       },
-<<<<<<< HEAD
-      ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
-      '3',
-      {
-        $value: [flap1, flap3],
-        setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-        isSingle: false,
-        isBidirectional: false,
-      },
-=======
       ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
       '1',
       createRecord(edgeMetaDef, {
@@ -97,7 +87,6 @@ test('simple test', async (t) => {
         meta_field_name: '0',
         meta_field_value: 'HELLO',
       }),
->>>>>>> 4716d3d75f19cd2556ca9a918d5583544381d8a9
     ],
   ])
 
@@ -233,7 +222,7 @@ test('simple test', async (t) => {
           dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_ALL,
           res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS,
         }),
-        'bogus'.padEnd(16, '\0')
+        'bogus'.padEnd(16, '\0'),
       ])
       .catch(console.error)
 
