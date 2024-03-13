@@ -97,14 +97,6 @@ struct SelvaHierarchySearchFilter {
     Selva_NodeId id;
 };
 
-/**
- * Hierarchy ancestral relationship types.
- */
-enum SelvaHierarchyNode_Relationship {
-    RELATIONSHIP_PARENT,
-    RELATIONSHIP_CHILD,
-};
-
 #define GET_NODE_OBJ(_node_) \
     ((struct SelvaObject *)((_node_)->_obj_data))
 
