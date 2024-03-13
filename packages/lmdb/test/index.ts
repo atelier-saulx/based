@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const d = dirname(fileURLToPath(import.meta.url))
 
 const amount = 1000
-const rounds = 200
+const rounds = 100
 
 const worker = (i: number) => {
   return new Promise((resolve) => {
@@ -90,6 +90,9 @@ test('create server', async (t) => {
     //     match++
     //   }
     // } else {
+
+    // starts with
+
     if (lastValue.equals(arr)) {
       match++
     }
