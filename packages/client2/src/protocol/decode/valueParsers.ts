@@ -56,7 +56,10 @@ export const VALUE_PARSERS: Record<ValueType, ParserFn> = {
     const v = deserialize(def, buf)
     const data_end = def.size + v.bsize
     const data = buf.slice(def.size, data_end)
-    /* TODO support deflate */
+    /*
+     * TODO support deflate (v.flags & SELVA_PROTO_STRING_FDEFLATE)
+     * | u32 size | deflate stream |
+     */
     return [
       v.flags & SELVA_PROTO_STRING_FBINARY ? data : data.toString('utf8'),
       data_end,
