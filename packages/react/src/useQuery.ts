@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect } from 'react'
-import { BasedClient, BasedError, QueryMap } from '@based/client'
+import { BasedClient, QueryMap } from '@based/client'
+import { BasedError } from "@based/errors"
 import { Ctx } from './Ctx.js'
 import { hooksLoading, useLoadingListeners } from './useLoading.js'
 
@@ -70,7 +71,7 @@ export const useQueries = <T = any>(
   }
 
   useState(sum)
-  useEffect(() => {}, [key])
+  useEffect(() => { }, [key])
 
   return Array(payloads.length).fill({ loading: true })
 }
@@ -159,7 +160,7 @@ export const useQuery = <N extends keyof QueryMap>(
   }
 
   useState()
-  useEffect(() => {}, [null])
+  useEffect(() => { }, [null])
 
   return { loading: true }
 }

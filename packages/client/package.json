@@ -37,6 +37,7 @@
   ],
   "dependencies": {
     "@saulx/diff": "^2.0.1",
+    "@based/errors": "^1.1.0",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^4.1.0",
     "@based/fetch": "^2.0.3",
@@ -48,6 +49,7 @@
   "devDependencies": {
     "get-port": "7.0.0",
     "microbundle": "^0.15.1",
+    "cross-fetch": "4.0.0",
     "esbuild": "^0.19.5",
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",
