@@ -17,6 +17,7 @@ export const drainQueue = (client: BasedDbClient) => {
 
       if (client.commandQueue.length) {
         const commands = client.commandQueue
+        client.commandQueue = []
 
         // ------- Command
         for (const c of commands) {
@@ -26,6 +27,7 @@ export const drainQueue = (client: BasedDbClient) => {
               if (!err) {
                 return
               }
+              console.info('ERROR retry')
 
               const listeners = client.commandResponseListeners.get(c.seqno)
 
@@ -39,8 +41,6 @@ export const drainQueue = (client: BasedDbClient) => {
             })
           }
         }
-
-        client.commandQueue = []
       }
     }
 

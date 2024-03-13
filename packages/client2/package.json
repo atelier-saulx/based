@@ -40,6 +40,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "lorem-ipsum": "2.0.8",
     "@based/db-server": "*",
     "@based/server": "^6.7.2",
     "@saulx/prettier-config": "^1.0.0",
