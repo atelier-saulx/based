@@ -36,6 +36,7 @@ const write = (writes) => {
     env.batchWrite(
       writes,
       // @ts-ignore
+      //   { keyIsBuffer: true },
       (error, results) => {
         if (error) {
           console.error(error)
@@ -48,8 +49,11 @@ const write = (writes) => {
   })
 }
 
+const arr = Buffer.from(new Uint8Array([1, 2, 3, 4, 5]))
+
 const x = lorem.generateParagraphs(7)
 const data = zlib.deflateSync(x)
+const zero = new Uint8Array([0])
 
 let tx = 0
 
@@ -60,7 +64,8 @@ for (let i = 0; i < workerData.rounds; i++) {
       i * workerData.amount +
       j +
       workerData.i * (workerData.rounds * workerData.amount)
-    writes.push([dbi, tx + 'a', new Uint8Array([0])])
+
+    writes.push([dbi, tx + 'a', arr])
   }
   await write(writes)
 }

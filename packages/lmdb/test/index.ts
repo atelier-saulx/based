@@ -9,8 +9,8 @@ import fs from 'node:fs/promises'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const d = dirname(fileURLToPath(import.meta.url))
 
-const amount = 1e3
-const rounds = 100
+const amount = 1000
+const rounds = 200
 
 const worker = (i: number) => {
   return new Promise((resolve) => {
@@ -62,10 +62,15 @@ test('create server', async (t) => {
   var txn = env.beginTxn()
 
   var cursor = new lmdb.Cursor(txn, dbi)
+  // var cursor = new lmdb.Cursor(txn, dbi, { keyIsBuffer: true })
+
   var xx = cursor.goToFirst()
 
   console.log('---> KEY FIRST', xx)
 
+  let match = 0
+
+  let lastValue
   let i = 0
   let d2 = Date.now()
   for (
@@ -73,12 +78,34 @@ test('create server', async (t) => {
     found !== null;
     found = cursor.goToNext()
   ) {
+    lastValue = cursor.getCurrentBinary()
+    // if (lastValue > 4) {
+    //   match++
+    // }
+
     i++
     // console.info({ i, found })
     // Here 'found' contains the key, and you can get the data with eg. getCurrentString/getCurrentBinary etc.
     // ...
   }
-  console.info(Date.now() - d2, 'ms', 'read', i / 1000, 'k', 'keys')
+
+  // 0a
+
+  console.info(
+    Date.now() - d2,
+    'ms',
+    'read',
+    i / 1000,
+    'k',
+    'keys',
+    match,
+    'match',
+  )
+  console.info('last value', lastValue)
+
+  const buff = cursor.getCurrentBinaryUnsafe()
+
+  console.info(buff)
 
   cursor.close()
   txn.commit()
