@@ -17,10 +17,6 @@ export enum ModifyArgType {
   SELVA_MODIFY_ARG_OP_SET = '5' /*!< Value is a struct SelvaModify_OpSet. */,
   SELVA_MODIFY_ARG_OP_ORD_SET = 'J' /*!<  Value is a struct SelvaModify_OpOrdSet. */,
   /* Node object array field operations. */
-  SELVA_MODIFY_ARG_OP_ARRAY_PUSH = 'D' /*!< Set a new empty SelvaObject at the end of an array */,
-  SELVA_MODIFY_ARG_OP_ARRAY_INSERT = 'E' /*!< Set a new empty SelvaObject at the start of an array */,
-  SELVA_MODIFY_ARG_OP_ARRAY_REMOVE = 'F' /*!< Remove item in specified index from array */,
-  SELVA_MODIFY_ARG_OP_ARRAY_QUEUE_TRIM = 'H' /*!< Remove items from the end of the array to match given length */,
   /* HLL operations. */
   SELVA_MODIFY_ARG_OP_HLL = 'I',
   /* Node object operations. */

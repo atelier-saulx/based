@@ -78,6 +78,14 @@ test('simple test', async (t) => {
         isSingle: false,
         isBidirectional: false,
       },
+      ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
+      '3',
+      {
+        $value: [flap1, flap3],
+        setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+        isSingle: false,
+        isBidirectional: false,
+      },
     ],
   ])
 
@@ -99,7 +107,7 @@ test('simple test', async (t) => {
           limit: 10000n,
           dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
           res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-          res_opt_str: '1.1\n1.createdAt\n1.updatedAt\n1.${EDGEFLAG}.0',
+          res_opt_str: '1.1\n1.createdAt\n1.updatedAt\n1.${EDGEFLAG}.0\n3.1',
         }),
         flap2,
       ])
