@@ -5,6 +5,7 @@ import { Worker } from 'node:worker_threads'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
+import zlib from 'node:zlib'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const d = dirname(fileURLToPath(import.meta.url))
@@ -70,6 +71,10 @@ test('create server', async (t) => {
 
   let match = 0
 
+  const arr = Buffer.from(new Uint8Array([1, 2, 3, 4, 5]))
+
+  const word = 'Lorem'
+
   let lastValue
   let i = 0
   let d2 = Date.now()
@@ -79,6 +84,18 @@ test('create server', async (t) => {
     found = cursor.goToNext()
   ) {
     lastValue = cursor.getCurrentBinary()
+
+    // if (lastValue.byteLength > 100) {
+    //   if (zlib.inflateSync(lastValue).includes(word)) {
+    //     match++
+    //   }
+    // } else {
+    if (lastValue.equals(arr)) {
+      match++
+    }
+    // }
+
+    // buf1.equals(buf2);
     // if (lastValue > 4) {
     //   match++
     // }
