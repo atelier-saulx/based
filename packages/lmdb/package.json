@@ -24,6 +24,7 @@
     "package.json"
   ],
   "dependencies": {
+    "@based/schema": "^3.1.0",
     "@saulx/utils": "^4.3.2",
     "node-lmdb": "^0.10.0",
     "@based/server": "^8.0.0",
