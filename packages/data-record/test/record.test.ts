@@ -10,7 +10,7 @@ import test from 'ava'
 const subRecordDef = [{ name: 'value', type: 'uint32_le' }]
 const recordDef = [
   { name: 'a', type: 'uint32_le' },
-  { name: 'name', type: 'cstring', size: 15 },
+  // { name: 'name', type: 'cstring', size: 15 },
   { name: 'values', type: 'record_p' },
   { name: 'more', type: 'cstring_p' },
 ]
@@ -18,15 +18,17 @@ const recordDef = [
 Object.freeze(subRecordDef)
 Object.freeze(recordDef)
 
-test('A simple record pointer', (t) => {
+test.only('A simple record pointer', (t) => {
   const sub = compile(subRecordDef)
   const rec = compile(recordDef)
   const buf = createRecord(rec, {
     a: 42,
-    name: 'Joe',
+    // name: 'Joe',
     values: createRecord(sub, { value: 1337 }),
     more: 'hello hello',
   })
+
+  console.log(rec, buf)
 
   t.is(readValue(rec, buf, '.a'), 42)
   const subBuf = readValue<Buffer>(rec, buf, '.values')

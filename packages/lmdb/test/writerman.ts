@@ -52,8 +52,8 @@ const write = (writes) => {
 const arr = Buffer.from(new Uint8Array([1, 2, 3, 4, 5]))
 
 const x = lorem.generateParagraphs(7)
-console.info('----------------------------')
-console.info(x)
+// console.info('----------------------------')
+// console.info(x)
 const data = zlib.deflateSync(x)
 const zero = new Uint8Array([0])
 
