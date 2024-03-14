@@ -18,7 +18,7 @@ const recordDef = [
 Object.freeze(subRecordDef)
 Object.freeze(recordDef)
 
-test.only('A simple record pointer', (t) => {
+test('A simple record pointer', (t) => {
   const sub = compile(subRecordDef)
   const rec = compile(recordDef)
   const buf = createRecord(rec, {
@@ -27,8 +27,6 @@ test.only('A simple record pointer', (t) => {
     values: createRecord(sub, { value: 1337 }),
     more: 'hello hello',
   })
-
-  console.log(rec, buf)
 
   t.is(readValue(rec, buf, '.a'), 42)
   const subBuf = readValue<Buffer>(rec, buf, '.values')
