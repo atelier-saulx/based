@@ -42,6 +42,7 @@ export const uploadFilePath = async (
         size: info.size,
         payload: options.payload,
         serverKey: options.serverKey,
+        fileName: options.fileName,
       },
       progressListener
     );
