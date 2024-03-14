@@ -237,11 +237,11 @@ const txt = lorem.generateParagraphs(7)
 // 1M
 for (let j = 0; j < 100; j++) {
   let q = []
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 10000; i++) {
     const idx = 's' + i + 'a' + id + 'a' + j
 
     // deflate
-
+    // createdAt + lastUpdated
     q.push(
       client.command('modify', [
         idx,
