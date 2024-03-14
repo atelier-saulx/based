@@ -44,6 +44,7 @@ export const uploadFilePath = async (
       size: info.size,
       payload: options.payload,
       serverKey: options.serverKey,
+      fileName: options.fileName,
     })
   } else {
     throw new Error(`File does not exist ${options.path}`)
