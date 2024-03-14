@@ -5,14 +5,12 @@ const storeUint = (buff: Uint8Array, n: number, start: number) => {
   buff[start + 3] = n & 0xff
 }
 
-type View = { view?: DataView; arr?: Uint8Array }
-
-const writeFromSetObj = (obj, tree, schema, view: View) => {
+const writeFromSetObj = (obj, tree, schema, buf: Buffer) => {
   for (const key in obj) {
     const t = tree[key]
     const value = obj[key]
     if (typeof value === 'object') {
-      writeFromSetObj(value, t, schema, view)
+      writeFromSetObj(value, t, schema, buf)
     } else {
       // if (t.type === 'timestamp') {
       //   view.result[t.index] = BigInt(value)
@@ -20,18 +18,11 @@ const writeFromSetObj = (obj, tree, schema, view: View) => {
       // view.result[t.index] = value
       // }
       if (t.type === 'timestamp' || t.type === 'number') {
-        if (!view.view) {
-          view.view = new DataView(view.arr.buffer)
-        }
-        view.view.setFloat64(t.start, value)
+        buf.writeFloatLE(value, t.start)
       } else if (t.type === 'integer') {
-        if (view.view) {
-          view.view.setUint32(t.start, value)
-        } else {
-          storeUint(view.arr, value, t.start)
-        }
+        buf.writeUint32LE(value, t.start)
       } else if (t.type === 'boolean') {
-        view.arr[t.start] = value ? 1 : 0
+        buf.writeInt8(value ? 1 : 0, t.start)
       }
     }
   }
@@ -39,9 +30,8 @@ const writeFromSetObj = (obj, tree, schema, view: View) => {
 
 // just use buffer sadnass
 export const createBuffer = (obj, schema, buf?: Buffer) => {
-  let arr
   if (!buf) {
-    arr = new Uint8Array(schema.dbMap._len)
+    buf = Buffer.alloc(schema.dbMap._len)
   } else {
     // use buff offset
   }
@@ -49,9 +39,9 @@ export const createBuffer = (obj, schema, buf?: Buffer) => {
 
   // preAllocated
 
-  writeFromSetObj(obj, schema.dbMap.tree, schema, { arr })
+  writeFromSetObj(obj, schema.dbMap.tree, schema, buf)
 
   // return createRecord(schema.dbMap.record, result)
 
-  return arr
+  return buf
 }

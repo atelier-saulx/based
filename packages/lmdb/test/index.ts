@@ -235,17 +235,17 @@ test('create server', async (t) => {
   const dSet = Date.now()
   const writes: any = []
   for (let i = 0; i < 1e6; i++) {
-    // set(
-    //   {
-    //     // flap: i,
-    //     // updated,
-    //     value: i,
-    //     // created,
-    //     // mep: i * 100,
-    //     // snurp: { derp: 100, hup: { isDope: true, x: 1 } },
-    //   },
-    //   schemaField,
-    // )
+    createBuffer(
+      {
+        // flap: i,
+        // updated,
+        value: i,
+        // created,
+        // mep: i * 100,
+        // snurp: { derp: 100, hup: { isDope: true, x: 1 } },
+      },
+      schemaField,
+    )
 
     writes.push([
       dbi,

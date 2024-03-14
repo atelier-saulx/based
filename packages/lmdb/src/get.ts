@@ -10,31 +10,24 @@ const readUint = (buff: Uint8Array, start: number): number => {
   )
 }
 
-const readFromBuffer = (view: View, tree: any): any => {
+const readFromBuffer = (buf: Buffer, tree: any): any => {
   const obj = {}
   for (const key in tree) {
     const t = tree[key]
     if (t.type === 'boolean') {
-      obj[key] = view.arr[t.start] ? true : false
+      obj[key] = buf.readUInt8(t.start) ? true : false
     } else if (t.type === 'number' || t.type === 'timestamp') {
-      if (!view.view) {
-        view.view = new DataView(view.arr.buffer)
-      }
-      obj[key] = view.view.getFloat64(t.start)
+      obj[key] = buf.readFloatLE(t.start)
     } else if (t.type === 'string') {
     } else if (t.type === 'integer') {
-      if (view.view) {
-        obj[key] = view.view.getUint32(t.start)
-      } else {
-        obj[key] = readUint(view.arr, t.start)
-      }
+      obj[key] = buf.readUint32LE(t.start)
     } else {
-      obj[key] = readFromBuffer(view, tree[key])
+      obj[key] = readFromBuffer(buf, tree[key])
     }
   }
   return obj
 }
 
-export const parseBuffer = (arr: Uint8Array, schema) => {
-  return readFromBuffer({ arr }, schema.dbMap.tree)
+export const parseBuffer = (buf: Buffer, schema) => {
+  return readFromBuffer(buf, schema.dbMap.tree)
 }
