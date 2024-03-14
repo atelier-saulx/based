@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "license": "MIT",
   "scripts": {
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts",
