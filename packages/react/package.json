@@ -14,7 +14,7 @@
   "sideEffects": false,
   "dependencies": {
     "@saulx/hash": "^2.0.0",
-    "@based/errors": "^1.1.0"
+    "@based/errors": "^1.1.1"
   },
   "devDependencies": {
     "@types/react": "^18.0.29",
