@@ -203,6 +203,8 @@ test('create server', async (t) => {
         f.index = i
         i++
 
+        // reference
+
         result.dbMap.dataRecordDef.push({
           name: f.index,
           type:
