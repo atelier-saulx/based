@@ -29,7 +29,12 @@ enum SelvaObjectReplyFlags {
  * Size of struct SelvaObject.
  * This must match with the actual size of selva_object.c won't compile.
  */
-#define SELVA_OBJECT_BSIZE 160
+#define SELVA_OBJECT_BSIZE 16
+
+/**
+ * Calculate appropriate buffer size in bytes for embedded keys.
+ */
+#define SELVA_OBJECT_EMB_SIZE(n) (n * 72)
 
 /**
  * Define a for holding a SelvaObject.
@@ -143,7 +148,7 @@ void SelvaObject_Unref(struct SelvaObject *obj);
  * The given buffer must be aligned the same way as the struct SelvaObject is
  * aligned.
  */
-struct SelvaObject *SelvaObject_Init(char buf[SELVA_OBJECT_BSIZE]) __attribute__((returns_nonnull));
+struct SelvaObject *SelvaObject_Init(char buf[SELVA_OBJECT_BSIZE], size_t emb_size) __attribute__((returns_nonnull));
 /**
  * Clear all keys in the object, except those listed in exclude.
  */

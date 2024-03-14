@@ -50,7 +50,7 @@ void Edge_InitEdgeFieldConstraints(struct EdgeFieldConstraints *efc) {
     efc->hard_constraints[0].constraint_id = EDGE_FIELD_CONSTRAINT_ID_DEFAULT;
     efc->hard_constraints[1].constraint_id = EDGE_FIELD_CONSTRAINT_SINGLE_REF;
     efc->hard_constraints[1].flags = EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF;
-    SelvaObject_Init(efc->dyn_constraints);
+    SelvaObject_Init(efc->dyn_constraints, 0);
 }
 
 void Edge_DeinitEdgeFieldConstraints(struct EdgeFieldConstraints *efc) {

@@ -30,13 +30,9 @@
 
 #define SELVA_OBJECT_KEY_MAX            USHRT_MAX /*!< Maximum length of a key including dots and array notation. */
 #define SELVA_OBJECT_SIZE_MAX           0x7FFFFFFF /*!< Maximum number of keys in a SelvaObject. */
-/**
- * Number of keys embedded into the object.
- * Must be a power of two. This must be relatively small because we are doing
- * a linear search into the embedded keys.
- */
-#define NR_EMBEDDED_KEYS                2
-#define EMBEDDED_KEYS_FREE_MASK         ((1 << NR_EMBEDDED_KEYS) - 1)
+
+#define EMBEDDED_KEYS_MAX               15
+#define EMBEDDED_KEYS_FREE_MASK(N)      (0x7FFF >> (EMBEDDED_KEYS_MAX - (N)))
 /**
  * Maximum length of the name of an embedded key.
  * Must align nicely with the SelvaObject structure. This is ensured by the macros.
@@ -59,7 +55,7 @@ struct SelvaObjectKey {
     enum SelvaObjectType type; /*!< Type of the value. */
     enum SelvaObjectType subtype; /*!< Subtype of the value. Arrays use this. */
     SelvaObjectMeta_t user_meta; /*!< User defined metadata. */
-    unsigned short name_len;
+    uint16_t name_len;
     struct SelvaObject *container;
     RB_ENTRY(SelvaObjectKey) _entry;
     union {
@@ -75,15 +71,18 @@ struct SelvaObjectKey {
     char name[0]; /*!< Name of the key. nul terminated. */
 };
 
+#define SELVA_OBJECT_MAKE(N) \
+
 struct SelvaObject {
     uint32_t obj_size;
     uint16_t emb_res; /*!< Bitmap for reserved embedded fields. */
     uint8_t flags;
     uint8_t ref_count; /*!< Used only with SELVA_OBJECT_FLAG_DYNAMIC. If rec_count > 0 the object is not removed on SelvaObject_Destroy() */
     struct SelvaObjectKeys keys_head;
-    _Alignas(struct SelvaObjectKey) char emb_keys[NR_EMBEDDED_KEYS * EMBEDDED_KEY_SIZE];
+    _Alignas(struct SelvaObjectKey) char emb_keys[];
 };
 
+static_assert(SELVA_OBJECT_EMB_SIZE(4) == (4 * EMBEDDED_KEY_SIZE));
 /* Change SELVA_OBJECT_BSIZE in selva_object.h if this fails. */
 static_assert(SELVA_OBJECT_BSIZE == sizeof(struct SelvaObject), "Sizes must match");
 /* Change all the code using SelvaObject_Init() if this fails :) */
@@ -138,9 +137,34 @@ static const struct so_type_name type_names[] = {
     [SELVA_OBJECT_HLL] =          { "hll",          3 },
 };
 
+/**
+ * Get the number of embedded keys allocated.
+ */
+static size_t get_emb_alloc_count(const struct SelvaObject *obj) {
+    unsigned int x = obj->emb_res;
+
+    if (x == 0) {
+        return 0;
+    }
+
+    return 31 - __builtin_clz(x);
+}
+
+/**
+ * Get the actual reservation map.
+ */
+static size_t get_emb_res_mask(const struct SelvaObject *obj) {
+    unsigned int x = obj->emb_res;
+
+    if (x == 0) {
+        return 0;
+    }
+
+    return x ^ (1 << get_emb_alloc_count(obj));
+}
+
 static void init_obj(struct SelvaObject *obj) {
     obj->obj_size = 0;
-    obj->emb_res = EMBEDDED_KEYS_FREE_MASK;
     RB_INIT(&obj->keys_head);
 }
 
@@ -150,6 +174,7 @@ struct SelvaObject *SelvaObject_New(void) {
     obj = selva_malloc(sizeof(*obj));
     init_obj(obj);
     obj->flags = SELVA_OBJECT_FLAG_DYNAMIC;
+    obj->emb_res = 0;
 
     return obj;
 }
@@ -164,7 +189,7 @@ void SelvaObject_Unref(struct SelvaObject *obj) {
     obj->ref_count--;
 }
 
-struct SelvaObject *SelvaObject_Init(char buf[SELVA_OBJECT_BSIZE]) {
+struct SelvaObject *SelvaObject_Init(char buf[SELVA_OBJECT_BSIZE], size_t emb_size) {
     struct SelvaObject *obj = (struct SelvaObject *)buf;
 
     /*
@@ -176,6 +201,16 @@ struct SelvaObject *SelvaObject_Init(char buf[SELVA_OBJECT_BSIZE]) {
 
     init_obj(obj);
     obj->flags = SELVA_OBJECT_FLAG_STATIC;
+    if (emb_size) {
+        size_t n = emb_size / EMBEDDED_KEY_SIZE;
+        if (n > EMBEDDED_KEYS_MAX) {
+            n = EMBEDDED_KEYS_MAX;
+        }
+
+        obj->emb_res = EMBEDDED_KEYS_FREE_MASK(n) | (1 << n);
+    } else {
+        obj->emb_res = 0;
+    }
 
     return obj;
 }
@@ -457,9 +492,10 @@ static inline struct SelvaObjectKey *get_emb_key(struct SelvaObject *obj, size_t
 static struct SelvaObjectKey *alloc_key(struct SelvaObject *obj, const char *name_str, size_t name_len) {
     const size_t key_size = sizeof(struct SelvaObjectKey) + name_len + 1;
     struct SelvaObjectKey *key;
+    size_t emb_res_mask = get_emb_res_mask(obj);
 
-    if (name_len < EMBEDDED_NAME_MAX && obj->emb_res != 0) {
-        int i = __builtin_ffs(obj->emb_res) - 1;
+    if (name_len < EMBEDDED_NAME_MAX && emb_res_mask != 0) {
+        int i = __builtin_ffs(emb_res_mask) - 1;
 
         obj->emb_res &= ~(1 << i); /* Reserve it. */
         key = get_emb_key(obj, i);
@@ -492,7 +528,7 @@ static void remove_key(struct SelvaObjectKey *key) {
     obj->obj_size--;
     clear_key_value(key);
 
-    if (i >= 0 && i < NR_EMBEDDED_KEYS) {
+    if (i >= 0 && i < (intptr_t)get_emb_alloc_count(obj)) {
         /* The key was allocated from the embedded keys. */
         obj->emb_res |= 1 << i; /* Mark it free. */
     } else {
@@ -812,13 +848,14 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
 
 static struct SelvaObjectKey *find_key_emb(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) {
     if (key_name_len < EMBEDDED_NAME_MAX) {
-        const unsigned k = obj->emb_res;
+        const size_t mask = get_emb_res_mask(obj);
+        const size_t n = get_emb_alloc_count(obj);
 
         /*
          * This is tested to be about 2x faster than using __builtin_ffs()
          */
-        for (int i = 0; i < NR_EMBEDDED_KEYS; i++) {
-            if ((k & (1 << i)) == 0) {
+        for (size_t i = 0; i < n; i++) {
+            if ((mask & (1 << i)) == 0) {
                 struct SelvaObjectKey *key = get_emb_key(obj, i);
 
                 if (key->name_len == key_name_len && !memcmp(key->name, key_name_str, key_name_len)) {

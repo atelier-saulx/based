@@ -14,7 +14,7 @@
 void SelvaSubscriptions_InitHierarchy(struct SelvaHierarchy *hierarchy) {
     struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
 
-    SelvaObject_Init(hierarchy->subs.missing._obj_data);
+    SelvaObject_Init(hierarchy->subs.missing._obj_data, 0);
     SVector_Init(&def->marker_events, 2, NULL);
     SVector_Init(&hierarchy->subs.detached_markers.vec, 0, NULL);
     hierarchy->subs.detached_markers.flags_filter = 0;

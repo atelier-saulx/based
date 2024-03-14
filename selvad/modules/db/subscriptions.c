@@ -436,7 +436,7 @@ void SelvaSubscriptions_InitHierarchy(SelvaHierarchy *hierarchy) {
     RB_INIT(&hierarchy->subs.subs_head);
     RB_INIT(&hierarchy->subs.mrks_head);
 
-    SelvaObject_Init(hierarchy->subs.missing._obj_data);
+    SelvaObject_Init(hierarchy->subs.missing._obj_data, 0);
 
     init_markers_struct(&hierarchy->subs.detached_markers);
     init_deferred_events(&hierarchy->subs.deferred_events);

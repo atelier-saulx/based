@@ -49,60 +49,12 @@
 #define IS_EXPIRED(_ts_, _now_) ((time_t)(_ts_) <= (time_t)(_now_))
 
 /**
- * Node flags changing the node behavior.
- */
-enum SelvaNodeFlags {
-    /**
-     * Detached node.
-     * When set this is the head of a compressed subtree stored in
-     * hierarchy_detached. Some information has been removed from the node
-     * and the subtree must be restored to make this node usable.
-     */
-    SELVA_NODE_FLAGS_DETACHED = 0x01,
-    /**
-     * Implicitly created node.
-     * Nodes that are created through child or references lists are implicit.
-     * The flag should be cleared when the node is actually taken into use.
-     */
-    SELVA_NODE_FLAGS_IMPLICIT = 0x02,
-} __packed;
-
-/**
- * The core type of Selva hierarchy.
- */
-typedef struct SelvaHierarchyNode {
-    Selva_NodeId id; /* Must be first. */
-    enum SelvaNodeFlags flags;
-    /**
-     * Expiration timestamp for this node.
-     * epoch = UNIX 2023-01-01T00:00:00Z = 1672531200000 (UNIX)
-     * 0 = never expires
-     * As this is a 32-bit unsigned integer, it means that we should be good
-     * until the year 2106.
-     * 1970+(2^32)/60/60/24/365 = 2106
-     */
-    uint32_t expire;
-    struct trx_label trx_label;
-    STATIC_SELVA_OBJECT(_obj_data);
-    struct SelvaHierarchyMetadata metadata;
-    RB_ENTRY(SelvaHierarchyNode) _index_entry;
-} SelvaHierarchyNode;
-
-/**
  * Filter struct used for RB searches from hierarchy_index_tree.
  * This should somewhat match to SelvaHierarchyNode to the level necessary for
  * comparing nodes.
  */
 struct SelvaHierarchySearchFilter {
     Selva_NodeId id;
-};
-
-/**
- * Hierarchy ancestral relationship types.
- */
-enum SelvaHierarchyNode_Relationship {
-    RELATIONSHIP_PARENT,
-    RELATIONSHIP_CHILD,
 };
 
 #define GET_NODE_OBJ(_node_) \
@@ -133,6 +85,10 @@ static const struct timespec hierarchy_expire_period = {
     .tv_sec = 1,
 };
 
+/**
+ * You should almost never call thsi function.
+ */
+static SelvaHierarchyNode *init_node(SelvaHierarchyNode *node, const Selva_NodeId id);
 static void SelvaHierarchy_DestroyNode(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node);
@@ -200,21 +156,21 @@ RB_GENERATE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, Selva
 
 SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     SelvaHierarchy *hierarchy = selva_calloc(1, sizeof(*hierarchy));
+    struct default_node {
+        struct SelvaHierarchyNode node;
+        char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
+    };
 
-    mempool_init(&hierarchy->node_pool, HIERARCHY_SLAB_SIZE, sizeof(SelvaHierarchyNode), _Alignof(SelvaHierarchyNode));
+    mempool_init(&hierarchy->node_pool, HIERARCHY_SLAB_SIZE, sizeof(struct default_node), _Alignof(struct default_node));
     RB_INIT(&hierarchy->index_head);
-    SelvaObject_Init(hierarchy->types._obj_data);
-    SelvaObject_Init(hierarchy->aliases._obj_data);
+    SelvaObject_Init(hierarchy->types._obj_data, 0);
+    SelvaObject_Init(hierarchy->aliases._obj_data, 0);
     Edge_InitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
-    if (SelvaHierarchy_UpsertNode(hierarchy, ROOT_NODE_ID, NULL)) {
-        SelvaHierarchy_Destroy(hierarchy);
-        hierarchy = NULL;
-        goto fail;
-    }
-    assert(hierarchy->root && !memcmp(hierarchy->root->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)); /* should be set by now. */
+    (void)init_node(&hierarchy->root, ROOT_NODE_ID);
+    assert(!memcmp(hierarchy->root.id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)); /* should be set by now. */
 
     /*
      * Initialize auto compression.
@@ -286,6 +242,14 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
     selva_free(hierarchy);
 }
 
+static size_t get_node_emb_size_by_type(Selva_NodeId id) {
+    if (!memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
+        return sizeof_field(struct SelvaHierarchy, root_emb_fields);
+    }
+    /* FIXME hackedy hack */
+    return sizeof_field(struct SelvaHierarchy, root_emb_fields);
+}
+
 /**
  * Create the default fields of a node object.
  * This function should be called when creating a new node but not when loading
@@ -295,7 +259,7 @@ static int create_node_object(SelvaHierarchyNode *node) {
     const long long now = ts_now();
     struct SelvaObject *obj;
 
-    obj = SelvaObject_Init(node->_obj_data);
+    obj = SelvaObject_Init(node->_obj_data, get_node_emb_size_by_type(node->id));
     SelvaObject_SetLongLongStr(obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, now);
     SelvaObject_SetLongLongStr(obj, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1, now);
 
@@ -313,31 +277,16 @@ static void node_metadata_init(
 }
 SELVA_MODIFY_HIERARCHY_METADATA_CONSTRUCTOR(node_metadata_init);
 
-/**
- * Create a new node.
- */
-static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva_NodeId id) {
-    SelvaHierarchyNode *node;
+static SelvaHierarchyNode *init_node(SelvaHierarchyNode *node, const Selva_NodeId id) {
+    int err;
 
-    if (!memcmp(id, EMPTY_NODE_ID, SELVA_NODE_ID_SIZE) ||
-        !memcmp(id, HIERARCHY_SERIALIZATION_EOF, SELVA_NODE_ID_SIZE)) {
-        SELVA_LOG(SELVA_LOGL_WARN, "An attempt to create a node with a reserved id");
-        return NULL;
-    }
-
-    node = mempool_get(&hierarchy->node_pool);
     memset(node, 0, sizeof(*node));
+    memcpy(node->id, id, SELVA_NODE_ID_SIZE);
 
 #if 0
     SELVA_LOG(SELVA_LOGL_DBG, "Creating node %.*s",
               (int)SELVA_NODE_ID_SIZE, id);
 #endif
-
-    memcpy(node->id, id, SELVA_NODE_ID_SIZE);
-
-    /* The SelvaObject is created elsewhere if we are loading. */
-    if (likely(!isLoading())) {
-        int err;
 
         err = create_node_object(node);
         if (err) {
@@ -346,6 +295,7 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
                       selva_strerror(err));
         }
 
+    if (likely(!isLoading())) {
         /*
          * Every node is implicit unless it isn't. Modify should clear this flag
          * when explicitly creating a node, that can happen on a later command
@@ -361,12 +311,20 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
         ctor(node->id, &node->metadata);
     }
 
-    if (unlikely(!memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE))) {
-        /* Establish fast access to the root. */
-        hierarchy->root = node;
+    return node;
+}
+
+/**
+ * Create a new node.
+ */
+static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva_NodeId id) {
+    if (!memcmp(id, EMPTY_NODE_ID, SELVA_NODE_ID_SIZE) ||
+        !memcmp(id, HIERARCHY_SERIALIZATION_EOF, SELVA_NODE_ID_SIZE)) {
+        SELVA_LOG(SELVA_LOGL_WARN, "An attempt to create a node with a reserved id");
+        return NULL;
     }
 
-    return node;
+    return init_node(mempool_get(&hierarchy->node_pool), id);
 }
 
 /**
@@ -448,7 +406,7 @@ static int repopulate_detached_head(struct SelvaHierarchy *hierarchy, SelvaHiera
  */
 static SelvaHierarchyNode *find_node_index(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
     if (!memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        return hierarchy->root;
+        return &hierarchy->root;
     } else {
         struct SelvaHierarchySearchFilter filter;
         SelvaHierarchyNode *node;
@@ -1018,7 +976,7 @@ __attribute__((nonnull (5))) static int exec_edge_filter(
 
     if (!edge_metadata) {
         /* Execute the filter with an empty object. */
-        edge_metadata = SelvaObject_Init(tmp_obj);
+        edge_metadata = SelvaObject_Init(tmp_obj, 0);
     }
 
     rpn_set_reg(edge_filter_ctx, 0, node->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
@@ -1853,11 +1811,7 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
         return err;
     }
 
-    /*
-     * node object is currently empty because it's not created when
-     * isLoading() is true.
-     */
-    if (!SelvaObjectTypeLoadTo(io, encver, SelvaObject_Init(node->_obj_data), NULL)) {
+    if (!SelvaObjectTypeLoadTo(io, encver, GET_NODE_OBJ(node), NULL)) {
         return SELVA_ENOENT;
     }
 

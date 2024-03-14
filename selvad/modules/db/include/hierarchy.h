@@ -6,6 +6,7 @@
 #ifndef _SELVA_HIERARCHY_H_
 #define _SELVA_HIERARCHY_H_
 
+#include <stdint.h>
 #include "linker_set.h"
 #include "selva_db.h"
 #include "util/svector.h"
@@ -72,6 +73,46 @@ RB_HEAD(hierarchy_index_tree, SelvaHierarchyNode);
 RB_HEAD(hierarchy_subscriptions_tree, Selva_Subscription);
 RB_HEAD(hierarchy_subscription_markers_tree, Selva_SubscriptionMarker);
 
+/**
+ * Node flags changing the node behavior.
+ */
+enum SelvaNodeFlags {
+    /**
+     * Detached node.
+     * When set this is the head of a compressed subtree stored in
+     * hierarchy_detached. Some information has been removed from the node
+     * and the subtree must be restored to make this node usable.
+     */
+    SELVA_NODE_FLAGS_DETACHED = 0x01,
+    /**
+     * Implicitly created node.
+     * Nodes that are created through child or references lists are implicit.
+     * The flag should be cleared when the node is actually taken into use.
+     */
+    SELVA_NODE_FLAGS_IMPLICIT = 0x02,
+} __packed;
+
+/**
+ * The core type of Selva hierarchy.
+ */
+typedef struct SelvaHierarchyNode {
+    Selva_NodeId id; /* Must be first. */
+    enum SelvaNodeFlags flags;
+    /**
+     * Expiration timestamp for this node.
+     * epoch = UNIX 2023-01-01T00:00:00Z = 1672531200000 (UNIX)
+     * 0 = never expires
+     * As this is a 32-bit unsigned integer, it means that we should be good
+     * until the year 2106.
+     * 1970+(2^32)/60/60/24/365 = 2106
+     */
+    uint32_t expire;
+    struct trx_label trx_label;
+    struct SelvaHierarchyMetadata metadata;
+    RB_ENTRY(SelvaHierarchyNode) _index_entry;
+    STATIC_SELVA_OBJECT(_obj_data);
+} SelvaHierarchyNode;
+
 struct SelvaHierarchy {
     /**
      * Global transaction state.
@@ -89,7 +130,8 @@ struct SelvaHierarchy {
     /**
      * Root node.
      */
-    struct SelvaHierarchyNode *root;
+    struct SelvaHierarchyNode root;
+    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
 
     /**
      * Orphan nodes aka heads of the hierarchy.
