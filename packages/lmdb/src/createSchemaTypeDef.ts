@@ -3,8 +3,9 @@ import {
   BasedSchemaFieldType,
   BasedSchemaType,
 } from '@based/schema'
-import { setByPath, wait } from '@saulx/utils'
-import { compile, createRecord } from 'data-record'
+import { setByPath } from '@saulx/utils'
+import { compile } from 'data-record'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 const lenMap = {
   timestamp: 8, // 64bit
@@ -26,10 +27,12 @@ export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
 
 export type SchemaTypeDef = {
   _cnt: number
+  _checksum: number
   fields: {
     [keyof: string]: FieldDef
   }
   dbMap: {
+    prefix: string
     _len: number
     tree: SchemaFieldTree
     dataRecordDef: { name: number | string; type: string }[]
@@ -47,6 +50,7 @@ export const createSchemaTypeDef = (
       tree: {},
       dataRecordDef: [],
     },
+    _checksum: hashObjectIgnoreKeyOrder(type),
   },
   path: string[] = [],
   top: boolean = true,
@@ -75,6 +79,10 @@ export const createSchemaTypeDef = (
   }
 
   if (top) {
+    if (!('type' in type && 'properties' in type)) {
+      result.dbMap.prefix = type.prefix ?? ''
+    }
+
     const vals: any = Object.values(result.fields)
 
     vals.sort((a: any, b: any) => {
@@ -126,10 +134,6 @@ export const createSchemaTypeDef = (
     }
 
     result.dbMap.record = compile(result.dbMap.dataRecordDef)
-
-    console.log(result.dbMap.record)
-    console.dir(Object.keys(result.dbMap), { depth: 10 })
-    console.log(result.dbMap._.map((v) => v.path))
   }
 
   return result
