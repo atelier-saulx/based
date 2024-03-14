@@ -250,9 +250,10 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
  */
 static int create_node_object(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
     const long long now = ts_now();
+    struct SelvaHierarchySchemaNode *ns;
     struct SelvaObject *obj;
-    struct SelvaHierarchySchemaNode *ns = SelvaHierarchy_FindNodeSchema(hierarchy, node->id);
 
+    ns = SelvaHierarchy_FindNodeSchema(hierarchy, node->id);
     obj = SelvaObject_Init(node->_obj_data, SELVA_OBJECT_EMB_SIZE(ns->nr_emb_fields));
 
     if (ns->updated_en) {

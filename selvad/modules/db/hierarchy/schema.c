@@ -16,6 +16,7 @@
 #include "selva_server.h"
 #include "selva_io.h"
 #include "selva_db.h"
+#include "selva_log.h"
 #include "selva_onload.h"
 #include "hierarchy.h"
 #include "schema.h"
@@ -231,9 +232,6 @@ int SelvaHierarchy_SchemaLoad(struct selva_io *io, int encver, struct SelvaHiera
 {
     size_t nr_types = selva_io_load_unsigned(io);
 
-    assert(!hierarchy->types);
-    assert(!hierarchy->schema);
-
     const char *types = selva_io_load_str(io, NULL);
     struct SelvaHierarchySchema *schema = alloc_schema(nr_types);
 
@@ -253,6 +251,8 @@ int SelvaHierarchy_SchemaLoad(struct selva_io *io, int encver, struct SelvaHiera
         }
     }
 
+    selva_free(hierarchy->types);
+    SelvaHierarchy_DestroySchema(hierarchy->schema);
     hierarchy->types = (char *)types;
     hierarchy->schema = schema;
 
