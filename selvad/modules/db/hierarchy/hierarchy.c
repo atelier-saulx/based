@@ -42,6 +42,7 @@
 #include "selva_trace.h"
 #include "subscriptions.h"
 #include "traversal.h"
+#include "schema.h"
 #include "hierarchy.h"
 #include "hierarchy_detached.h"
 #include "hierarchy_inactive.h"
@@ -88,7 +89,7 @@ static const struct timespec hierarchy_expire_period = {
 /**
  * You should almost never call thsi function.
  */
-static SelvaHierarchyNode *init_node(SelvaHierarchyNode *node, const Selva_NodeId id);
+static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, const Selva_NodeId id);
 static void SelvaHierarchy_DestroyNode(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node);
@@ -163,13 +164,12 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
 
     mempool_init(&hierarchy->node_pool, HIERARCHY_SLAB_SIZE, sizeof(struct default_node), _Alignof(struct default_node));
     RB_INIT(&hierarchy->index_head);
-    SelvaObject_Init(hierarchy->types._obj_data, 0);
     SelvaObject_Init(hierarchy->aliases._obj_data, 0);
-    Edge_InitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
+    SelvaHierarchy_SetDefaultSchema(hierarchy);
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
-    (void)init_node(&hierarchy->root, ROOT_NODE_ID);
+    (void)init_node(hierarchy, &hierarchy->root, ROOT_NODE_ID);
     assert(!memcmp(hierarchy->root.id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)); /* should be set by now. */
 
     /*
@@ -233,7 +233,8 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
      * bother about cleaning up subscriptions used by the indexing.
      */
     SelvaIndex_Deinit(hierarchy);
-    Edge_DeinitEdgeFieldConstraints(&hierarchy->edge_field_constraints);
+    selva_free(hierarchy->types);
+    SelvaHierarchy_DestroySchema(hierarchy->schema);
 
     end_auto_compress(hierarchy);
     mempool_destroy(&hierarchy->node_pool);
@@ -242,26 +243,24 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
     selva_free(hierarchy);
 }
 
-static size_t get_node_emb_size_by_type(Selva_NodeId id) {
-    if (!memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        return sizeof_field(struct SelvaHierarchy, root_emb_fields);
-    }
-    /* FIXME hackedy hack */
-    return sizeof_field(struct SelvaHierarchy, root_emb_fields);
-}
-
 /**
  * Create the default fields of a node object.
  * This function should be called when creating a new node but not when loading
  * nodes from a serialized data.
  */
-static int create_node_object(SelvaHierarchyNode *node) {
+static int create_node_object(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
     const long long now = ts_now();
     struct SelvaObject *obj;
+    struct SelvaHierarchySchemaNode *ns = SelvaHierarchy_FindNodeSchema(hierarchy, node->id);
 
-    obj = SelvaObject_Init(node->_obj_data, get_node_emb_size_by_type(node->id));
-    SelvaObject_SetLongLongStr(obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, now);
-    SelvaObject_SetLongLongStr(obj, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1, now);
+    obj = SelvaObject_Init(node->_obj_data, SELVA_OBJECT_EMB_SIZE(ns->nr_emb_fields));
+
+    if (ns->updated_en) {
+        SelvaObject_SetLongLongStr(obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, now);
+    }
+    if (ns->created_en) {
+        SelvaObject_SetLongLongStr(obj, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1, now);
+    }
 
     return 0;
 }
@@ -277,7 +276,7 @@ static void node_metadata_init(
 }
 SELVA_MODIFY_HIERARCHY_METADATA_CONSTRUCTOR(node_metadata_init);
 
-static SelvaHierarchyNode *init_node(SelvaHierarchyNode *node, const Selva_NodeId id) {
+static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, const Selva_NodeId id) {
     int err;
 
     memset(node, 0, sizeof(*node));
@@ -288,7 +287,7 @@ static SelvaHierarchyNode *init_node(SelvaHierarchyNode *node, const Selva_NodeI
               (int)SELVA_NODE_ID_SIZE, id);
 #endif
 
-        err = create_node_object(node);
+        err = create_node_object(hierarchy, node);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a node object for \"%.*s\". err: \"%s\"",
                       (int)SELVA_NODE_ID_SIZE, id,
@@ -324,7 +323,7 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
         return NULL;
     }
 
-    return init_node(mempool_get(&hierarchy->node_pool), id);
+    return init_node(hierarchy, mempool_get(&hierarchy->node_pool), id);
 }
 
 /**
@@ -385,7 +384,7 @@ static void new_detached_node(SelvaHierarchy *hierarchy, const Selva_NodeId node
 static int repopulate_detached_head(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     int err;
 
-    err = create_node_object(node);
+    err = create_node_object(hierarchy, node);
     if (err) {
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to repopulate a detached dummy node %.*s. err: \"%s\"",
                   (int)SELVA_NODE_ID_SIZE, node->id,
@@ -2005,15 +2004,9 @@ SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
         goto error;
     }
 
-    if (!SelvaObjectTypeLoadTo(io, encver, SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy), NULL)) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to node types");
-        err = SELVA_HIERARCHY_EINVAL;
-        goto error;
-    }
-
-    err = EdgeConstraint_Load(io, encver, &hierarchy->edge_field_constraints);
+    err = SelvaHierarchy_SchemaLoad(io, encver, hierarchy);
     if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load the dynamic constraints: %s",
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load the schema: %s",
                   selva_strerror(err));
         goto error;
     }
@@ -2146,8 +2139,7 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
     /*
      * Serialization format:
      * ENCVER
-     * TYPE_MAP
-     * EDGE_CONSTRAINTS
+     * SCHEMA
      * NODE_ID1 | FLAGS | METADATA
      * NODE_ID2 | FLAGS | METADATA
      * HIERARCHY_SERIALIZATION_EOF
@@ -2155,8 +2147,7 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
      */
     hierarchy->flag_isSaving = 1;
     selva_io_save_signed(io, HIERARCHY_ENCODING_VERSION);
-    SelvaObjectTypeSave(io, SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy), NULL);
-    EdgeConstraint_Save(io, &hierarchy->edge_field_constraints);
+    SelvaHierarchy_SchemaSave(io, hierarchy);
     save_hierarchy(io, hierarchy);
     save_aliases(io, hierarchy);
     hierarchy->flag_isSaving = 0;
@@ -2420,7 +2411,6 @@ static void SelvaHierarchy_EdgeListCommand(struct selva_server_response_out *res
  *
  * Reply format:
  * [
- *   constraint_id,
  *   nodeId1,
  *   nodeId2,
  * ]
@@ -2466,8 +2456,7 @@ static void SelvaHierarchy_EdgeGetCommand(struct selva_server_response_out *resp
     struct EdgeFieldIterator it;
     const SelvaHierarchyNode *dst;
 
-    selva_send_array(resp, 1 + Edge_GetFieldLength(edge_field));
-    selva_send_ll(resp, edge_field->constraint ? edge_field->constraint->constraint_id : EDGE_FIELD_CONSTRAINT_ID_DEFAULT);
+    selva_send_array(resp, Edge_GetFieldLength(edge_field));
 
     Edge_ForeachBegin(&it, edge_field);
     while ((dst = Edge_Foreach(&it))) {

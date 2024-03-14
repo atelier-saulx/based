@@ -21,13 +21,6 @@ struct selva_io;
 struct selva_server_response_out;
 struct selva_string;
 
-/*
- * Constraint ids.
- */
-#define EDGE_FIELD_CONSTRAINT_ID_DEFAULT    0
-#define EDGE_FIELD_CONSTRAINT_SINGLE_REF    1
-#define EDGE_FIELD_CONSTRAINT_DYNAMIC       2
-
 /**
  * EdgeFieldConstraint Flags.
  *
@@ -45,11 +38,6 @@ enum EdgeFieldConstraintFlag {
      */
     EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02,
     /**
-     * User defined constraints apply.
-     * Lookup from dynamic constraints by node type and field_name.
-     */
-    EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC          = 0x04,
-    /**
      * Edge field array mode.
      * By default an edge field acts like a set. This flag makes the field work like an array.
      */
@@ -57,10 +45,10 @@ enum EdgeFieldConstraintFlag {
 } __packed;
 
 struct EdgeFieldDynConstraintParams {
-    enum EdgeFieldConstraintFlag flags;
     Selva_NodeType src_node_type;
-    struct selva_string *fwd_field_name;
-    struct selva_string *bck_field_name;
+    enum EdgeFieldConstraintFlag flags;
+    char fwd_field_name[16];
+    char bck_field_name[16];
 };
 
 /**
@@ -69,8 +57,6 @@ struct EdgeFieldDynConstraintParams {
  * like arc insertion and deletion or hierarchy node deletion.
  */
 struct EdgeFieldConstraint {
-    unsigned constraint_id;
-
     /**
      * Constraint flags controlling the behaviour.
      */
@@ -95,22 +81,9 @@ struct EdgeFieldConstraint {
     size_t bck_field_name_len;
 };
 
-/**
- * Edge field constraints per hierarchy key.
- * Edge field constraints are insert only and the only way to clear all the
- * constraints is by deleting the whole structure, meaning deleting the
- * hierarchy key.
- * Each constraint has an unique constraint_id given at creation time which also
- * corresponds its location in the constraints array of this structure.
- * This structure should be accessed with the following functions:
- *
- * - Edge_InitEdgeFieldConstraints(),
- * - Edge_NewConstraint(),
- * - Edge_GetConstraint(),
- */
 struct EdgeFieldConstraints {
-    struct EdgeFieldConstraint hard_constraints[2];
     STATIC_SELVA_OBJECT(dyn_constraints);
+    char edge_constraint_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
 };
 
 /**
@@ -176,7 +149,6 @@ int Edge_NewDynConstraint(struct EdgeFieldConstraints *efc, const struct EdgeFie
 
 const struct EdgeFieldConstraint *Edge_GetConstraint(
         const struct EdgeFieldConstraints *efc,
-        unsigned constraint_id,
         const Selva_NodeType node_type,
         const char *field_name_str,
         size_t field_name_len)
@@ -270,13 +242,9 @@ __attribute__((artificial)) static inline struct SelvaHierarchyNode *Edge_Foreac
 
 /**
  * Add a new edge.
- * If the field doesn't exist it will be created using the given constraint_id.
- * If the field exists but the constraint_id doesn't match to the currently set
- * constraint then the function will return SELVA_EINVAL.
  */
 int Edge_Add(
         struct SelvaHierarchy *hierarchy,
-        unsigned constraint_id,
         const char *field_name_str,
         size_t field_name_len,
         struct SelvaHierarchyNode *src_node,
@@ -284,7 +252,6 @@ int Edge_Add(
     __attribute__((access(read_write, 1), access(read_only, 3, 4), access(read_write, 5), access(read_write, 6)));
 int Edge_AddIndex(
         struct SelvaHierarchy *hierarchy,
-        unsigned constraint_id,
         const char *field_name_str,
         size_t field_name_len,
         struct SelvaHierarchyNode *src_node,
@@ -354,6 +321,6 @@ void replyWithEdgeField(struct selva_server_response_out *resp, struct EdgeField
 int Edge_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node);
 void Edge_Save(struct selva_io *io, struct SelvaHierarchyNode *node);
 int EdgeConstraint_Load(struct selva_io *io, int encver, struct EdgeFieldConstraints *data);
-void EdgeConstraint_Save(struct selva_io *io, struct EdgeFieldConstraints *data);
+void EdgeConstraint_Save(struct selva_io *io, const struct EdgeFieldConstraints *data);
 
 #endif /* _EDGE_H_ */

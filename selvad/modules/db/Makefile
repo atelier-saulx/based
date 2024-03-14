@@ -14,9 +14,9 @@ OBJ := \
 	   hierarchy/hierarchy_detached.o \
 	   hierarchy/hierarchy_inactive.o \
 	   hierarchy/hierarchy_reply.o \
+	   hierarchy/schema.o \
 	   hierarchy/traversal.o \
 	   hierarchy/traversal_order.o \
-	   hierarchy/types.o \
 	   index/icb.o \
 	   index/index.o \
 	   index/pick_icb.o \

@@ -19,7 +19,7 @@
 #include "selva_set.h"
 #include "subscriptions.h"
 
-#define HIERARCHY_ENCODING_VERSION  5
+#define HIERARCHY_ENCODING_VERSION  6
 
 /* Forward declarations */
 struct SelvaHierarchy;
@@ -131,20 +131,24 @@ struct SelvaHierarchy {
      * Root node.
      */
     struct SelvaHierarchyNode root;
-    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
+    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)]; /* TODO Needs #define for schema */
 
-    /**
-     * Orphan nodes aka heads of the hierarchy.
-     * Includes root.
+    /*
+     * Schema.
      */
-    SVector heads;
-
-    /**
-     * Node types.
-     */
-    struct {
-        STATIC_SELVA_OBJECT(_obj_data);
-    } types;
+    char *types; /*!< List of all type prefixes terminated with the SELVA_NULL_TYPE. */
+    struct SelvaHierarchySchema {
+        size_t count;
+        struct SelvaHierarchySchemaNode {
+            struct {
+                uint32_t nr_emb_fields: 16;
+                uint32_t created_en: 1;
+                uint32_t updated_en: 1;
+                uint32_t _spare: 14;
+            };
+            struct EdgeFieldConstraints efc;
+        } node[] __counted_by(count);
+    } *schema;
 
     /**
      * Aliases.
@@ -152,11 +156,6 @@ struct SelvaHierarchy {
     struct {
         STATIC_SELVA_OBJECT(_obj_data);
     } aliases;
-
-    /**
-     * Edge field constraints.
-     */
-    struct EdgeFieldConstraints edge_field_constraints;
 
     struct {
         /**
@@ -300,9 +299,6 @@ struct SelvaHierarchyCallback {
     } flags;
 };
 
-#define SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy) \
-    GET_STATIC_SELVA_OBJECT(&((hierarchy)->types))
-
 /**
  * Flags for SelvaModify_DelHierarchyNode().
  */
@@ -322,12 +318,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void);
  */
 void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy);
 
-/**
- * Get the type name for a type prefix.
- * The caller may call selva_string_free() for the returned string but it won't
- * be actually freed.
- */
-struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, const Selva_NodeId node_id);
+struct SelvaHierarchySchemaNode *SelvaHierarchy_FindNodeSchema(struct SelvaHierarchy *hierarchy, const Selva_NodeType type);
 
 /**
  * Copy nodeId to a buffer.

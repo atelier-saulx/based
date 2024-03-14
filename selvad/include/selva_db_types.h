@@ -30,6 +30,7 @@
  * An empty nodeId.
  */
 #define EMPTY_NODE_ID           "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+#define SELVA_NULL_TYPE         "\0"
 
 /**
  * Reserved field names.

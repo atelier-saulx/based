@@ -76,7 +76,6 @@ struct SelvaModify_OpSet {
      */
     enum SelvaModify_OpSetType op_set_type;
     int8_t delete_all; /*!< Delete all intems from the set. */
-    uint16_t edge_constraint_id; /*!< Edge field constraint id when modifying an edge field. */
 
     /**
      * Add these elements tot the set.
@@ -113,7 +112,6 @@ struct SelvaModify_OpOrdSet {
         SelvaModify_OpOrdSet_Delete = 2,
         SelvaModify_OpOrdSet_Move = 3,
     } __packed mode;
-    uint16_t edge_constraint_id;
 
     /**
      * Index.

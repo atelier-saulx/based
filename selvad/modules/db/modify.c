@@ -191,7 +191,6 @@ static int replace_edge_field(
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
-        unsigned constraint_id,
         const char *value_str,
         size_t value_len) {
     int res = 0;
@@ -254,7 +253,7 @@ static int replace_edge_field(
             return err;
         }
 
-        err = Edge_Add(hierarchy, constraint_id, field_str, field_len, node, dst_node);
+        err = Edge_Add(hierarchy, field_str, field_len, node, dst_node);
         if (!err) {
             res++;
         } else if (err != SELVA_EEXIST) {
@@ -294,7 +293,6 @@ static int insert_edges(
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
-        unsigned constraint_id,
         const char *value_str,
         size_t value_len,
         ssize_t index) {
@@ -321,7 +319,7 @@ static int insert_edges(
             return err;
         }
 
-        err = Edge_AddIndex(hierarchy, constraint_id, field_str, field_len, node, dst_node, index);
+        err = Edge_AddIndex(hierarchy, field_str, field_len, node, dst_node, index);
         if (!err) {
             res++;
         } else if (err != SELVA_EEXIST) {
@@ -356,7 +354,6 @@ static int assign_edges(
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
-        unsigned constraint_id,
         const char *value_str,
         size_t value_len,
         ssize_t index) {
@@ -403,7 +400,7 @@ static int assign_edges(
             return err;
         }
 
-        err = Edge_AddIndex(hierarchy, constraint_id, field_str, field_len, node, dst_node, index);
+        err = Edge_AddIndex(hierarchy, field_str, field_len, node, dst_node, index);
         if (!err) {
             res++;
         } else if (err != SELVA_EEXIST) {
@@ -531,13 +528,11 @@ static int update_edge(
         const struct selva_string *field,
         const struct SelvaModify_OpSet *setOpts
 ) {
-    const unsigned constraint_id = setOpts->edge_constraint_id;
     TO_STR(field);
 
     if (setOpts->$value_len > 0) {
         return replace_edge_field(hierarchy, node,
                                   field_str, field_len,
-                                  constraint_id,
                                   setOpts->$value_str, setOpts->$value_len);
     } else {
         int res = 0;
@@ -560,7 +555,7 @@ static int update_edge(
                     return err;
                 }
 
-                err = Edge_Add(hierarchy, constraint_id, field_str, field_len, node, dst_node);
+                err = Edge_Add(hierarchy, field_str, field_len, node, dst_node);
                 if (!err) {
                     res++;
                 } else if (err != SELVA_EEXIST) {
@@ -1177,16 +1172,11 @@ static void pre_parse_ops(struct selva_string **argv, int argc, SVector *alias_q
 }
 
 static int opset_fixup(struct SelvaModify_OpSet *op, size_t size) {
-    static_assert(sizeof(op->edge_constraint_id) == sizeof(int16_t));
-    op->edge_constraint_id = le16toh(op->edge_constraint_id);
-
     DATA_RECORD_FIXUP_CSTRING_P(op, op, size, $add, $delete, $value);
     return 0;
 }
 
 static int opordset_fixup(struct SelvaModify_OpOrdSet *op, size_t size) {
-    static_assert(sizeof(op->edge_constraint_id) == sizeof(int16_t));
-    op->edge_constraint_id = le16toh(op->edge_constraint_id);
     op->index = letoh(op->index);
 
     DATA_RECORD_FIXUP_CSTRING_P(op, op, size, $value);
@@ -1458,13 +1448,11 @@ static enum selva_op_repl_state op_ord_set(
     case SelvaModify_OpOrdSet_Insert:
         err = insert_edges(hierarchy, node,
                            field_str, field_len,
-                           setOpts->edge_constraint_id,
                            setOpts->$value_str, setOpts->$value_len, setOpts->index);
         break;
     case SelvaModify_OpOrdSet_Assign:
         err = assign_edges(hierarchy, node,
                            field_str, field_len,
-                           setOpts->edge_constraint_id,
                            setOpts->$value_str, setOpts->$value_len, setOpts->index);
         break;
     case SelvaModify_OpOrdSet_Delete:
