@@ -1,8 +1,54 @@
 import { BasedDb } from './index.js'
+import lmdb from 'node-lmdb'
 
-const drain = () => {}
+const drain = (db: BasedDb) => {
+  db.isDraining = true
+  // make workers as well ? maybe
+  process.nextTick(() => {
+    for (const w of db.writes) {
+      const dbName = w[0]
+      if (!db.dbis[dbName]) {
+        db.dbis[dbName] = db.env.openDbi({
+          name: dbName,
+          create: true, // will create if database did not exist
+        })
+      }
 
-const addToWriteQueue = (db: BasedDb) => {}
+      // @ts-ignore
+      w[0] = db.dbis[dbName]
+    }
+    const listeners = db.writeListeners
+    const writes: any = db.writes
+    db.writes = []
+    db.writeListeners = []
+    // add db info for options!
+    db.env.batchWrite(
+      writes,
+      // @ts-ignore
+      {},
+      (error, results) => {
+        if (error) {
+          console.error(error)
+          listeners.forEach((fn) => fn(error))
+        } else {
+          listeners.forEach((fn) => fn())
+        }
+      },
+    )
+  })
+}
+
+export const addToWriteQueue = (
+  db: BasedDb,
+  writes: [string, string, Buffer][],
+  cb: (err?: any) => void,
+) => {
+  db.writes.push(...writes)
+  db.writeListeners.push(cb)
+  if (!db.isDraining) {
+    drain(db)
+  }
+}
 
 // write worker
 // const worker = (i: number) => {

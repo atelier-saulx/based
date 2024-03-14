@@ -7,6 +7,7 @@ import { inflateSync, deflateSync } from 'node:zlib'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
+import { addToWriteQueue } from './batchWrite.js'
 
 export * from './createSchemaTypeDef.js'
 export * from './get.js'
@@ -23,6 +24,12 @@ const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
 export class BasedDb {
   env: lmdb.Env
   dbis: { [key: string]: lmdb.Dbi } = {}
+
+  writes: [string, any, Buffer][] = []
+
+  writeListeners: ((x?: any) => void)[] = []
+
+  isDraining: boolean = false
 
   schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -41,8 +48,14 @@ export class BasedDb {
       maxDbs: 200,
     })
     this.env = env
+
+    // type counter
     this.dbis.config = env.openDbi({
       name: 'config',
+      create: true, // will create if database did not exist
+    })
+    this.dbis.main = env.openDbi({
+      name: 'main',
       create: true, // will create if database did not exist
     })
     const txn = env.beginTxn()
@@ -88,13 +101,44 @@ export class BasedDb {
     return this.schema
   }
 
-  set(value: any) {
-    // return new Promise((resolve, reject) => {
-    //   // find type
-    //   const buf = createBuffer(value, schemaField)
-    //   console.log('set', value, buf)
-    //   console.log('read', parseBuffer(buf, schemaField))
-    // })
+  set(value: any[] | any) {
+    return new Promise((resolve, reject) => {
+      const v: any[] = []
+
+      // TODO get this form the DB
+      const bid = Math.random().toString(36).substring(7)
+
+      if (Array.isArray(value)) {
+        value = value.map((value) => {
+          const schemaField =
+            this.schemaTypesParsed[
+              value.type ??
+                this.schema.prefixToTypeMapping[value.id.slice(0, 2)]
+            ]
+          const prefix = schemaField.dbMap.prefix
+          const id = value.id ?? prefix + bid + '0'
+          v.push(id)
+          return [id, createBuffer(value.value, schemaField)]
+        })
+      } else {
+        const schemaField =
+          this.schemaTypesParsed[
+            value.type ?? this.schema.prefixToTypeMapping[value.id.slice(0, 2)]
+          ]
+        const prefix = schemaField.dbMap.prefix
+        const id = value.id ?? prefix + bid + '0'
+        v.push(id)
+        value = [[id, createBuffer(value.value, schemaField)]]
+      }
+
+      addToWriteQueue(this, value, (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(v)
+        }
+      })
+    })
   }
 
   get(key: string) {

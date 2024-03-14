@@ -1,7 +1,5 @@
 import test from 'ava'
-import lmdb from 'node-lmdb'
 import { wait } from '@saulx/utils'
-import { Worker } from 'node:worker_threads'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
@@ -74,7 +72,14 @@ test('create server', async (t) => {
     },
   })
 
-  console.log(schema)
+  console.info(
+    await db.set({
+      type: 'vote',
+      value: {
+        value: 100,
+      },
+    }),
+  )
 
   await wait(1e3)
 
