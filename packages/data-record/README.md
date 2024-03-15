@@ -286,8 +286,8 @@ struct data_record_def {
         uint32_t offset;
         uint32_t size;
         uint32_t arr_size;
-        uint8_t type;
-        char name[51];
+        char type[2];
+        char name[50];
     } field_list[0];
 };
 ```
