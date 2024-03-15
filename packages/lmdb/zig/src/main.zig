@@ -39,6 +39,7 @@ fn bla() !void {
         // std.mem.writeInt(u32, &key, i, .big);
 
         var buffer: [6]u8 = undefined; // Define a buffer to hold the string
+        // adds 80ms
         const str = try std.fmt.bufPrint(&buffer, "{}", .{i});
         try txn.set(str, value);
     }
