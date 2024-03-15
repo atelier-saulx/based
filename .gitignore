@@ -138,3 +138,4 @@ local-cloud/
 /.zigmod
 /deps.zig
 zig-cache
+zig-out
