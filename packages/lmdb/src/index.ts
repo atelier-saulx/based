@@ -7,7 +7,6 @@ import { inflateSync, deflateSync } from 'node:zlib'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
-import { addToWriteQueue } from './batchWrite.js'
 
 export * from './createSchemaTypeDef.js'
 export * from './get.js'
@@ -101,47 +100,9 @@ export class BasedDb {
     return this.schema
   }
 
-  set(value: any[] | any): Promise<string[]> {
-    return new Promise((resolve, reject) => {
-      const v: any[] = []
-      const db = 'main'
-      // TODO get this from the DB
-      const bid = Math.random().toString(36).substring(7)
-
-      if (Array.isArray(value)) {
-        value = value.map((value, i) => {
-          const schemaField =
-            this.schemaTypesParsed[
-              value.type ??
-                this.schema.prefixToTypeMapping[value.id.slice(0, 2)]
-            ]
-          const prefix = schemaField.dbMap.prefix
-          const id = value.id ?? prefix + bid + i
-          v.push(id)
-          return [db, id, createBuffer(value.value, schemaField)]
-        })
-      } else {
-        const schemaField =
-          this.schemaTypesParsed[
-            value.type ?? this.schema.prefixToTypeMapping[value.id.slice(0, 2)]
-          ]
-        const prefix = schemaField.dbMap.prefix
-        const id = value.id ?? prefix + bid + 0
-        v.push(id)
-        value = [[db, id, createBuffer(value.value, schemaField)]]
-      }
-
-      addToWriteQueue(this, value, (err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(v)
-        }
-      })
-    })
+  set(value: any[] | any) {
+    return set(this, value)
   }
 
-  get(key: string) {
-    return new Promise((resolve, reject) => {})
-  }
+  get(key: string) {}
 }

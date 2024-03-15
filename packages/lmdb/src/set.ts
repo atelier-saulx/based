@@ -1,3 +1,5 @@
+import { BasedDb } from './index.js'
+
 const storeUint = (buff: Uint8Array, n: number, start: number) => {
   buff[start] = (n >> 24) & 0xff
   buff[start + 1] = (n >> 16) & 0xff
@@ -44,4 +46,14 @@ export const createBuffer = (obj, schema, buf?: Buffer) => {
   // return createRecord(schema.dbMap.record, result)
 
   return buf
+}
+
+type ValueInner = any
+
+type Value = ValueInner | ValueInner[]
+
+export const set = (db: BasedDb, value: Value) => {
+  // const buf = createBuffer(value, db.schemaTypesParsed.vote)
+  // const txn = db.env.beginTxn()
+  // txn.putBinary(db.dbis.main, 'key', buf)
 }

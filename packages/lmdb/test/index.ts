@@ -3,7 +3,7 @@ import { wait } from '@saulx/utils'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
-import { BasedDb } from '../src/index.js'
+import { BasedDb, createBuffer } from '../src/index.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
@@ -70,18 +70,40 @@ test('create server', async (t) => {
     },
   })
 
-  const x: any = []
-  const d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
-    x.push({
-      type: 'vote',
-      value: {
-        value: i,
-        vectorClock: i,
-      },
+  const write = () => {
+    return new Promise((resolve, reject) => {
+      // @ts-ignore
+      db.env.batchWrite(x, {}, () => {
+        resolve('OK')
+      })
     })
   }
-  await db.set(x)
+
+  const x: any = []
+  const d = Date.now()
+  const dbi = db.dbis.main
+  const bla = Buffer.from('bla')
+  const txn = db.env.beginTxn()
+
+  for (let i = 0; i < 1e6; i++) {
+    txn.putBinary(dbi, i + 'a', bla)
+
+    // x.push([db.dbis.main, i + 'a', bla])
+
+    // const buf = createBuffer({ value: i }, db.schemaTypesParsed.vote)
+    // x.push({
+    //   type: 'vote',
+    //   value: {
+    //     value: i,
+    //     vectorClock: i,
+    //   },
+    // })
+  }
+  txn.commit()
+
+  // await write()
+
+  // await db.set(x)
   console.log(Date.now() - d, 'ms', 'to set 1000k')
 
   await wait(1e3)
