@@ -33,17 +33,18 @@ fn bla() !void {
 
     var i: u32 = 0;
     // var key: [4]u8 = undefined;
-    // const value = "bla";
+    const value = "bla";
     var buffer: [6]u8 = undefined; // Define a buffer to hold the string
 
     while (i < 1_000_000) : (i += 1) {
         // std.mem.writeInt(u32, &key, i, .big);
 
-        std.fmt.bufPrint(&buffer, "{}", .{i}) catch unreachable;
-        // try txn.set(str, value);
+        _ = std.fmt.bufPrint(&buffer, "{}", .{i}) catch unreachable;
+
+        try txn.set(&buffer, &buffer);
     }
 
-    std.debug.print("{}", .{buffer});
+    std.debug.print("{s}", value);
 
     std.debug.print("1M took ms: {}\n", .{@divFloor(std.time.nanoTimestamp() - currentTime, 1_000_000)});
 
