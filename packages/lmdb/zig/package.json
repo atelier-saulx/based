@@ -1,0 +1,11 @@
+{
+  "name": "basedb-zig-napi-example",
+  "version": "0.0.0",
+  "description": "example napi package in zig",
+  "main": "boink.js",
+  "scripts": {
+    "build": "zig build-lib -dynamic -lc -isystem /Users/jimdebeer/.nvm/versions/node/v18.15.0/bin/node example.zig -femit-bin=example.node"
+  },
+  "author": "Isaac Freund <ifreund@ifreund.xyz>",
+  "license": "0BSD"
+}

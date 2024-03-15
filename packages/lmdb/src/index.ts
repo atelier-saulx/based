@@ -101,7 +101,7 @@ export class BasedDb {
   }
 
   set(value: any[] | any) {
-    return set(this, value)
+    // return set(this, value)
   }
 
   get(key: string) {}

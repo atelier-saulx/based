@@ -8,23 +8,21 @@ pub fn build(b: *std.Build) void {
 
     // const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
+    // zig build-lib -dynamic -lc -isystem /usr/include/node example.zig -femit-bin=example.node
+
+    const lib = b.addSharedLibrary(.{
         // the name of your project
         .name = "based-db-zig",
         // your main function
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "src/lib.zig" },
         // references the ones you declared above
+        .main_pkg_path = "src/lib.zig",
         .target = target,
         .optimize = .ReleaseFast,
     });
 
     const pkg = b.dependency("lmdb", .{});
-    exe.root_module.addImport("lmdb", pkg.module("lmdb"));
+    lib.root_module.addImport("lmdb", pkg.module("lmdb"));
 
-    b.installArtifact(exe);
-
-    const run_exe = b.addRunArtifact(exe);
-
-    const run_step = b.step("run", "Run it!");
-    run_step.dependOn(&run_exe.step);
+    b.install(lib);
 }
