@@ -1,8 +1,25 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+
+#include <stdint.h>
+
+/**
+ * C typing for the output of compRecordDef2buffer().
+ */
+struct data_record_def {
+    struct data_record_def_field_type {
+        uint32_t offset;
+        uint32_t size;
+        uint32_t arr_size;
+        uint8_t type;
+        char name[51];
+    } field_list[0];
+};
+
+static_assert(sizeof(struct data_record_def_field_type) == 64);
 
 static inline void data_record_fixup_cstring_p(const void *data_region, const char **pp, size_t len)
 {
