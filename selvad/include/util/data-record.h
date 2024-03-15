@@ -6,16 +6,89 @@
 
 #include <stdint.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmultichar"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmultichar"
+enum data_record_type {
+	/* Fixed size */
+	DATA_RECORD_int8 = htobe16('a\0'),
+	DATA_RECORD_int16_be = htobe16('b\0'),
+	DATA_RECORD_int16_le = htobe16('c\0'),
+	DATA_RECORD_int32_be = htobe16('d\0'),
+	DATA_RECORD_int32_le = htobe16('e\0'),
+	DATA_RECORD_int64_be = htobe16('f\0'),
+	DATA_RECORD_int64_le = htobe16('g\0'),
+	DATA_RECORD_uint8 = htobe16('h\0'),
+	DATA_RECORD_uint16_be = htobe16('i\0'),
+	DATA_RECORD_uint16_le = htobe16('j\0'),
+	DATA_RECORD_uint32_be = htobe16('k\0'),
+	DATA_RECORD_uint32_le = htobe16('l\0'),
+	DATA_RECORD_uint64_be = htobe16('m\0'),
+	DATA_RECORD_uint64_le = htobe16('n\0'),
+	DATA_RECORD_float_be = htobe16('o\0'),
+	DATA_RECORD_float_le = htobe16('p\0'),
+	DATA_RECORD_double_be = htobe16('q\0'),
+	DATA_RECORD_double_le = htobe16('r\0'),
+	/* Variable size */
+	DATA_RECORD_int_be = htobe16('s\0'),
+	DATA_RECORD_int_le = htobe16('t\0'),
+	DATA_RECORD_uint_be = htobe16('u\0'),
+	DATA_RECORD_uint_le = htobe16('v\0'),
+	DATA_RECORD_cstring = htobe16('w\0'),
+	/* Virtual */
+	DATA_RECORD_record = htobe16('z\0'),
+	/* Pointer types */
+	DATA_RECORD_int8_p = htobe16('pa'),
+	DATA_RECORD_int16_be_p = htobe16('pb'),
+	DATA_RECORD_int16_le_p = htobe16('pc'),
+	DATA_RECORD_int32_be_p = htobe16('pd'),
+	DATA_RECORD_int32_le_p = htobe16('pe'),
+	DATA_RECORD_int64_be_p = htobe16('pf'),
+	DATA_RECORD_int64_le_p = htobe16('pg'),
+	DATA_RECORD_uint8_p = htobe16('ph'),
+	DATA_RECORD_uint16_be_p = htobe16('pi'),
+	DATA_RECORD_uint16_le_p = htobe16('pj'),
+	DATA_RECORD_uint32_be_p = htobe16('pk'),
+	DATA_RECORD_uint32_le_p = htobe16('pl'),
+	DATA_RECORD_uint64_be_p = htobe16('pm'),
+	DATA_RECORD_uint64_le_p = htobe16('pn'),
+	DATA_RECORD_float_be_p = htobe16('po'),
+	DATA_RECORD_float_le_p = htobe16('pp'),
+	DATA_RECORD_double_be_p = htobe16('pq'),
+	DATA_RECORD_double_le_p = htobe16('pr'),
+	/* Variable size pointer types */
+	DATA_RECORD_cstring_p = htobe16('pw'),
+	DATA_RECORD_record_p = htobe16('pz'),
+};
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
+
 /**
  * C typing for the output of compRecordDef2buffer().
  */
 struct data_record_def {
     struct data_record_def_field_type {
+        /**
+         * Offset in the record.
+         */
         uint32_t offset;
+        /**
+         * Size of of the type in bytes.
+         */
         uint32_t size;
+        /**
+         * Number of elements in a fixed array.
+         */
         uint32_t arr_size;
-        uint8_t type;
-        char name[51];
+        /**
+         * Type code.
+         */
+        uint8_t type[2];
+        /**
+         * Name of the field.
+         */
+        char name[50];
     } field_list[0];
 };
 
