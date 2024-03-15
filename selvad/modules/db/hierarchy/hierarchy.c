@@ -155,14 +155,46 @@ static int SelvaHierarchyNode_Compare(const SelvaHierarchyNode *a, const SelvaHi
 
 RB_GENERATE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, SelvaHierarchyNode_Compare)
 
-SelvaHierarchy *SelvaModify_NewHierarchy(void) {
-    SelvaHierarchy *hierarchy = selva_calloc(1, sizeof(*hierarchy));
-    struct default_node {
-        struct SelvaHierarchyNode node;
-        char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
+static void init_nodepools(struct SelvaHierarchy *hierarchy) {
+#define DECLARE_NODE_SIZE(v) \
+    struct node_size##v { \
+        struct SelvaHierarchyNode node; \
+        char root_emb_fields[SELVA_OBJECT_EMB_SIZE(v)]; \
     };
 
-    mempool_init(&hierarchy->node_pool, HIERARCHY_SLAB_SIZE, sizeof(struct default_node), _Alignof(struct default_node));
+    HIERARCHY_NODEPOOL_SIZES(DECLARE_NODE_SIZE)
+
+#define NODEPOOL_SIZE_EL(v) \
+    sizeof(struct node_size##v) ,
+#define NODEPOOL_ALIGN_EL(v) \
+    _Alignof(struct node_size##v) ,
+
+    size_t sizes[] = {
+        HIERARCHY_NODEPOOL_SIZES(NODEPOOL_SIZE_EL)
+    };
+    size_t aligns[] = {
+        HIERARCHY_NODEPOOL_SIZES(NODEPOOL_ALIGN_EL)
+    };
+
+    for (size_t i = 0; i < HIERARCHY_NODEPOOL_COUNT; i++) {
+        mempool_init(&hierarchy->nodepool[i], HIERARCHY_SLAB_SIZE, sizes[i], aligns[i]);
+    }
+
+#undef DECLARE_NODE_SIZE
+#undef NODEPOOL_SIZE_EL
+#undef NODEPOOL_ALIGN_EL
+}
+
+static void deinit_nodepools(struct SelvaHierarchy *hierarchy) {
+    for (size_t i = 0; i < HIERARCHY_NODEPOOL_COUNT; i++) {
+        mempool_destroy(&hierarchy->nodepool[i]);
+    }
+}
+
+SelvaHierarchy *SelvaModify_NewHierarchy(void) {
+    struct SelvaHierarchy *hierarchy = selva_calloc(1, sizeof(*hierarchy));
+
+    init_nodepools(hierarchy);
     RB_INIT(&hierarchy->index_head);
     SelvaObject_Init(hierarchy->aliases._obj_data, 0);
     SelvaHierarchy_SetDefaultSchema(hierarchy);
@@ -237,7 +269,7 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
     SelvaHierarchy_DestroySchema(hierarchy->schema);
 
     end_auto_compress(hierarchy);
-    mempool_destroy(&hierarchy->node_pool);
+    deinit_nodepools(hierarchy);
 
     memset(hierarchy, 0, sizeof(*hierarchy));
     selva_free(hierarchy);
@@ -314,6 +346,20 @@ static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHier
     return node;
 }
 
+static struct mempool *get_mempool_by_type(struct SelvaHierarchy *hierarchy, const Selva_NodeType type) {
+    struct SelvaHierarchySchemaNode *ns = SelvaHierarchy_FindNodeSchema(hierarchy, type);
+    size_t nr_emb_fields = ns->nr_emb_fields;
+    size_t i = 0;
+
+#define FIND_BEST_POOL(v) \
+    if (nr_emb_fields <= v) return &hierarchy->nodepool[i]; else i++;
+
+    HIERARCHY_NODEPOOL_SIZES(FIND_BEST_POOL)
+    return &hierarchy->nodepool[HIERARCHY_NODEPOOL_COUNT - 1];
+
+#undef FIND_BEST_POOL
+}
+
 /**
  * Create a new node.
  */
@@ -324,14 +370,17 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
         return NULL;
     }
 
-    return init_node(hierarchy, mempool_get(&hierarchy->node_pool), id);
+    return init_node(hierarchy, mempool_get(get_mempool_by_type(hierarchy, id)), id);
 }
 
 /**
  * Destroy node.
  */
 static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
+    Selva_NodeType type;
     SelvaHierarchyMetadataDestructorHook **dtor_p;
+
+    memcpy(type, node->id, SELVA_NODE_TYPE_SIZE);
 
     hierarchy_set_expire(hierarchy, node, 0); /* Remove expire */
 
@@ -344,7 +393,8 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
 #if MEM_DEBUG
     memset(node, 0, sizeof(*node));
 #endif
-    mempool_return(&hierarchy->node_pool, node);
+
+    mempool_return(get_mempool_by_type(hierarchy, type), node);
 }
 
 #if 0
@@ -582,7 +632,9 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
          * Regardless, running the gc is a relatively cheap operation and makes
          * sense here.
          */
-        mempool_gc(&hierarchy->node_pool);
+        for (size_t i = 0; i < HIERARCHY_NODEPOOL_COUNT; i++) {
+            mempool_gc(&hierarchy->nodepool[i]);
+        }
     } else {
         RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
         SelvaHierarchy_DestroyNode(hierarchy, node);

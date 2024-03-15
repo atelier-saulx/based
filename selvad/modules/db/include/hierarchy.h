@@ -21,6 +21,21 @@
 
 #define HIERARCHY_ENCODING_VERSION  6
 
+/**
+ * Hierarchy node pool sizes with a varying number of embedded fields.
+ */
+#define HIERARCHY_NODEPOOL_SIZES(apply) \
+    apply(2) \
+    apply(5) \
+    apply(10) \
+    apply(15)
+
+#define HIERARCHY_NODEPOOL_COUNT_1(v) \
+    + 1
+
+#define HIERARCHY_NODEPOOL_COUNT \
+    (0 + HIERARCHY_NODEPOOL_SIZES(HIERARCHY_NODEPOOL_COUNT_1))
+
 /* Forward declarations */
 struct SelvaHierarchy;
 struct SelvaHierarchyNode;
@@ -125,7 +140,7 @@ struct SelvaHierarchy {
      * Index of all hierarchy nodes by ID.
      */
     struct hierarchy_index_tree index_head;
-    struct mempool node_pool;
+    struct mempool nodepool[HIERARCHY_NODEPOOL_COUNT];
 
     /**
      * Root node.
