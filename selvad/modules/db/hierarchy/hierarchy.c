@@ -346,7 +346,7 @@ static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHier
     return node;
 }
 
-static struct mempool *get_mempool_by_type(struct SelvaHierarchy *hierarchy, const Selva_NodeType type) {
+static struct mempool *get_nodepool_by_type(struct SelvaHierarchy *hierarchy, const Selva_NodeType type) {
     struct SelvaHierarchySchemaNode *ns = SelvaHierarchy_FindNodeSchema(hierarchy, type);
     size_t nr_emb_fields = ns->nr_emb_fields;
     size_t i = 0;
@@ -370,7 +370,7 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
         return NULL;
     }
 
-    return init_node(hierarchy, mempool_get(get_mempool_by_type(hierarchy, id)), id);
+    return init_node(hierarchy, mempool_get(get_nodepool_by_type(hierarchy, id)), id);
 }
 
 /**
@@ -394,7 +394,7 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
     memset(node, 0, sizeof(*node));
 #endif
 
-    mempool_return(get_mempool_by_type(hierarchy, type), node);
+    mempool_return(get_nodepool_by_type(hierarchy, type), node);
 }
 
 #if 0
