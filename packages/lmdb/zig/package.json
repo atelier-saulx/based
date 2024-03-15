@@ -1,11 +1,13 @@
 {
-  "name": "basedb-zig-napi-example",
-  "version": "0.0.0",
-  "description": "example napi package in zig",
-  "main": "boink.js",
+  "name": "zig-node-native-module",
+  "version": "1.0.0",
+  "description": "Example of a Node.js module written in Zig",
+  "main": "index.js",
   "scripts": {
-    "build": "zig build-lib -dynamic -lc -isystem /Users/jimdebeer/.nvm/versions/node/v18.15.0/bin/node example.zig -femit-bin=example.node"
+    "build": "mkdir -p dist && ZIG_SYSTEM_LINKER_HACK=1 zig build-lib -mcpu=baseline -OReleaseSmall -dynamic -lc -isystem deps/node-$(node --version)/include/node src/lib.zig -fallow-shlib-undefined -femit-bin=dist/lib.node",
+    "test": "node test.js",
+    "postinstall": "./download-node-headers.sh"
   },
-  "author": "Isaac Freund <ifreund@ifreund.xyz>",
-  "license": "0BSD"
+  "author": "Andre 'Staltz' Medeiros <contact@staltz.com>",
+  "license": "Unlicense"
 }
