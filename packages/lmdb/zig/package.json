@@ -4,7 +4,8 @@
   "description": "Example of a Node.js module written in Zig",
   "main": "index.js",
   "scripts": {
-    "build": "mkdir -p dist && ZIG_SYSTEM_LINKER_HACK=1 zig build-lib -mcpu=baseline -OReleaseSmall -dynamic -lc -isystem deps/node-$(node --version)/include/node src/lib.zig -fallow-shlib-undefined -femit-bin=dist/lib.node",
+    "build-fast": "mkdir -p dist && zig build --release=fast --summary all",
+    "build-normal": "mkdir -p dist && zig build-lib -mcpu=baseline -OReleaseSmall -dynamic -lc -isystem deps/node-$(node --version)/include/node src/lib.zig -fallow-shlib-undefined -femit-bin=dist/lib.node",
     "test": "node test.js",
     "postinstall": "./download-node-headers.sh"
   },

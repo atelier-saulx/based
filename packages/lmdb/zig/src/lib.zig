@@ -1,18 +1,19 @@
 const std = @import("std");
 const lmdb = @import("lmdb");
 
-const assert = std.debug.assert;
+// const assert = std.debug.assert;
 const c = @import("c.zig");
 const translate = @import("translate.zig");
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    translate.register_function(env, exports, "greet", greet) catch return null;
+    translate.register_function(env, exports, "doIt", doIt) catch return null;
     return exports;
 }
 
-fn greet(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+fn doIt(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     _ = info;
-    return translate.create_string(env, "world") catch return null;
+    const res = try bla();
+    return translate.create_string(env, res) catch return null;
 }
 
 const os = std.os;
@@ -33,7 +34,7 @@ const testing = std.testing;
 //     mode: u16 = 0o664,
 
 /// Fun with bla!
-pub fn bla() !void {
+pub fn bla() !i32 {
     const env = try lmdb.Environment.init("./tmp", .{
         .map_size = 100 * 1024 * 1024 * 1024,
     });
@@ -60,4 +61,6 @@ pub fn bla() !void {
     std.debug.print("1B took ms: {}\n", .{@divFloor(std.time.nanoTimestamp() - currentTime, 1_000_000)});
 
     try txn.commit();
+
+    return 10;
 }
