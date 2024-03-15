@@ -146,7 +146,8 @@ struct SelvaHierarchy {
      * Root node.
      */
     struct SelvaHierarchyNode root;
-    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)]; /* TODO Needs #define for schema */
+#define HIERARCHY_ROOT_NR_EMB_FIELDS 2
+    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(HIERARCHY_ROOT_NR_EMB_FIELDS)];
 
     /*
      * Schema.

@@ -93,7 +93,7 @@ static struct SelvaHierarchySchema *alloc_schema(size_t nr_types)
 static void apply_root_schema(struct SelvaHierarchySchemaNode *ns)
 {
     *ns = (struct SelvaHierarchySchemaNode){
-        .nr_emb_fields = 2, /* TODO Determine this from a #define that doesn't exist yet. */
+        .nr_emb_fields = HIERARCHY_ROOT_NR_EMB_FIELDS,
         .created_en = true,
         .updated_en = true,
     };
@@ -126,7 +126,7 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
             return;
         }
 
-        if (!memcmp("ro", &buf[offsetof(struct client_schema, type)], 2)) {
+        if (!memcmp("ro", &buf[offsetof(struct client_schema, type)], SELVA_NODE_TYPE_SIZE)) {
             implicit_root = false;
         }
 
