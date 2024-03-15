@@ -139,4 +139,4 @@ local-cloud/
 /deps.zig
 zig-cache
 zig-out
-deps
+**/deps/node-*
