@@ -12,7 +12,7 @@
             // the url to the release of the module
             .url = "https://github.com/canvasxyz/zig-lmdb/archive/refs/heads/main.tar.gz",
             // the hash of the module, this is not the checksum of the tarball
-            .hash = "12208c41a60cc152bb8b16d355f75b5302d3f1030188fdf941966dfbf2cf3930721f",
+            .hash = "12209858bcdacf486d04fdebe1c46c3efab5cef52cc50d6f534d714b688ca52ca068",
         },
     },
 }

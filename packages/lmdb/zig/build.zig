@@ -6,7 +6,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
-    const optimize = b.standardOptimizeOption(.{});
+    // const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
         // the name of your project
@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = .{ .path = "src/main.zig" },
         // references the ones you declared above
         .target = target,
-        .optimize = optimize,
+        .optimize = .ReleaseFast,
     });
 
     const pkg = b.dependency("lmdb", .{});
