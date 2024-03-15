@@ -133,3 +133,7 @@ local-cloud/
 
 .turbo
 .vercel
+
+
+/.zigmod
+/deps.zig

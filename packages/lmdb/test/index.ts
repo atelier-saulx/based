@@ -8,8 +8,6 @@ import { BasedDb } from '../src/index.js'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 test('create server', async (t) => {
-  const d = Date.now()
-
   const path = __dirname + '/tmp'
   try {
     await fs.rmdir(path, { recursive: true })
@@ -20,7 +18,7 @@ test('create server', async (t) => {
     path,
   })
 
-  const schema = db.updateSchema({
+  db.updateSchema({
     types: {
       vote: {
         fields: {
@@ -72,14 +70,19 @@ test('create server', async (t) => {
     },
   })
 
-  console.info(
-    await db.set({
+  const x: any = []
+  const d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
+    x.push({
       type: 'vote',
       value: {
-        value: 100,
+        value: i,
+        vectorClock: i,
       },
-    }),
-  )
+    })
+  }
+  await db.set(x)
+  console.log(Date.now() - d, 'ms', 'to set 1000k')
 
   await wait(1e3)
 

@@ -1,0 +1,18 @@
+.{
+    .paths = .{ "src", "build.zig", "build.zig.zon" },
+    // the name of your project
+    .name = "based-db-zig",
+    // the version of your project
+    .version = "0.0.1",
+
+    // the actual packages you need as dependencies of your project
+    .dependencies = .{
+        // the name of the package
+        .lmdb = .{
+            // the url to the release of the module
+            .url = "https://github.com/canvasxyz/zig-lmdb/archive/refs/heads/main.tar.gz",
+            // the hash of the module, this is not the checksum of the tarball
+            .hash = "12208c41a60cc152bb8b16d355f75b5302d3f1030188fdf941966dfbf2cf3930721f",
+        },
+    },
+}

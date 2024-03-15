@@ -21,6 +21,7 @@ const drain = (db: BasedDb) => {
     const writes: any = db.writes
     db.writes = []
     db.writeListeners = []
+    db.isDraining = false
     // add db info for options!
     db.env.batchWrite(
       writes,
@@ -43,7 +44,12 @@ export const addToWriteQueue = (
   writes: [string, string, Buffer][],
   cb: (err?: any) => void,
 ) => {
-  db.writes.push(...writes)
+  if (db.writes.length === 0) {
+    db.writes = writes
+  } else {
+    db.writes.push(...writes)
+  }
+
   db.writeListeners.push(cb)
   if (!db.isDraining) {
     drain(db)

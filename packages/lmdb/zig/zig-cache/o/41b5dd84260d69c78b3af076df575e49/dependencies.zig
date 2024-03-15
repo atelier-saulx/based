@@ -1,0 +1,8 @@
+pub const imports = struct {
+    pub const @"ziglmdb.lmdb" = @import("12209bfdbf43d479c2cac0ca2212853ab2136f1621f49461f62c7932a7819bc29110");
+    pub const ziglmdb = @import("12208c41a60cc152bb8b16d355f75b5302d3f1030188fdf941966dfbf2cf3930721f");
+};
+pub const build_root = struct {
+    pub const ziglmdb = "/Users/jimdebeer/.cache/zig/p/12208c41a60cc152bb8b16d355f75b5302d3f1030188fdf941966dfbf2cf3930721f";
+    pub const @"ziglmdb.lmdb" = "/Users/jimdebeer/.cache/zig/p/12209bfdbf43d479c2cac0ca2212853ab2136f1621f49461f62c7932a7819bc29110";
+};
