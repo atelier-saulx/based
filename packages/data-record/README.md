@@ -263,7 +263,34 @@ With the definition language here we can do the following:
 ]
 ```
 
-This is the exact bitwise equivalent of the previous C struct.
+This is the exact bitwise equivalent of the former C struct.
+
+### Dynamic Typing with C
+
+It's also possible to use more dynamically built records with C by passing the
+compiled record definition to the C program as a buffer and resolving the fields
+at runtime.
+
+```js
+> import { compile, compRecordDef2buffer } from './dist/src/index.js'
+> const def = dr.compile([ { name: 'haha', type: 'int16_le' }, { name: 'hehe', type: 'uint8'}])
+> const buf = compRecordDef2buffer(def)
+```
+
+The function `compRecordDef2buffer()` will return a buffer that can be read in C
+as:
+
+```c
+struct data_record_def {
+    struct data_record_def_field_type {
+        uint32_t offset;
+        uint32_t size;
+        uint32_t arr_size;
+        uint8_t type;
+        char name[51];
+    } field_list[0];
+};
+```
 
 ## Scripts
 
