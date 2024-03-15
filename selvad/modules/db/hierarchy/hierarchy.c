@@ -159,7 +159,7 @@ static void init_nodepools(struct SelvaHierarchy *hierarchy) {
 #define DECLARE_NODE_SIZE(v) \
     struct node_size##v { \
         struct SelvaHierarchyNode node; \
-        char root_emb_fields[SELVA_OBJECT_EMB_SIZE(v)]; \
+        char emb_fields[SELVA_OBJECT_EMB_SIZE(v)]; \
     };
 
     HIERARCHY_NODEPOOL_SIZES(DECLARE_NODE_SIZE)
