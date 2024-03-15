@@ -80,6 +80,50 @@ static int send_message(int fd, const void *buf, size_t size, int flags)
     return 0;
 }
 
+static int send_schema(int fd, int seqno)
+{
+    struct client_schema { /* from db/hierarchy/schema.c */
+        uint32_t nr_emb_fields;
+        char type[SELVA_NODE_TYPE_SIZE];
+        uint8_t created_en;
+        uint8_t updated_en;
+        char edge_constraints_str; /* n * EdgeFieldDynConstraintParams */
+        size_t edge_constraints_len;
+    };
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_array arr;
+        struct selva_proto_string type0_hdr;
+        struct client_schema type0;
+    } __packed buf = {
+        .hdr = {
+            .cmd = CMD_ID_HIERARCHY_SCHEMA_SET,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf)),
+        },
+        .arr = {
+            .type = SELVA_PROTO_ARRAY,
+            .flags = 0,
+            .length = htole32(1),
+        },
+        .type0_hdr = {
+            .type = SELVA_PROTO_STRING,
+            .bsize = htole32(sizeof(struct client_schema)),
+        },
+        .type0 = {
+            .type = "ma",
+            .nr_emb_fields = 2,
+            .created_en = false,
+            .updated_en = false,
+            .edge_constraints_len = 0,
+        },
+    };
+
+    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+    return send_message(fd, &buf, sizeof(buf), 0);
+}
+
 static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
     struct {
@@ -597,6 +641,12 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    if (send_schema(sock, seqno++) ||
+        recv_message(sock)) {
+        fprintf(stderr, "Setting schema failed");
+        exit(EXIT_FAILURE);
+    }
+
     (void)sigaction(SIGINT, &(const struct sigaction){
             .sa_handler = sigint_handler,
             .sa_flags = SA_NODEFER | SA_RESETHAND
@@ -608,7 +658,7 @@ int main(int argc, char *argv[])
     const char *unit = "ms";
 
     if (threaded) {
-        thread = start_recv(sock, n);
+        thread = start_recv(sock, n - 1);
     }
 
     ts_monotime(&ts_start);
