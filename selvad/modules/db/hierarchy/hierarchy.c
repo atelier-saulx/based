@@ -165,9 +165,9 @@ static void init_nodepools(struct SelvaHierarchy *hierarchy) {
     HIERARCHY_NODEPOOL_SIZES(DECLARE_NODE_SIZE)
 
 #define NODEPOOL_SIZE_EL(v) \
-    sizeof(struct node_size##v) ,
+    sizeof(struct node_size##v),
 #define NODEPOOL_ALIGN_EL(v) \
-    _Alignof(struct node_size##v) ,
+    _Alignof(struct node_size##v),
 
     size_t sizes[] = {
         HIERARCHY_NODEPOOL_SIZES(NODEPOOL_SIZE_EL)
