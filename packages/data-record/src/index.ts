@@ -10,6 +10,9 @@ export {
   generateRecordDef,
   generateCHeader,
 } from './compiler.js'
+export {
+  compRecordDef2buffer
+} from './compRecordDef2Buffer.js'
 export { serialize, deserialize } from './serializer.js'
 export {
   readValue,
