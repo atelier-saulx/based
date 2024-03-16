@@ -47,8 +47,8 @@ enum EdgeFieldConstraintFlag {
 struct EdgeFieldDynConstraintParams {
     Selva_NodeType src_node_type;
     enum EdgeFieldConstraintFlag flags;
-    char fwd_field_name[16];
-    char bck_field_name[16];
+    char fwd_field_name[8];
+    char bck_field_name[8];
 };
 
 /**
