@@ -5,11 +5,6 @@ const std = @import("std");
 // runner.
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    // const optimize = b.standardOptimizeOption(.{});
-
-    // b.addIm("lmdb", .{ .root_source_file = .{ .path = "deps/lmdb" } });
-
-    // zig build-lib -dynamic -lc -isystem /usr/include/node example.zig -femit-bin=example.node
 
     const lib = b.addSharedLibrary(.{
         .name = "based-db-zig",
@@ -23,11 +18,12 @@ pub fn build(b: *std.Build) void {
 
     lib.addSystemIncludePath(.{ .path = "deps/node-v20.11.1/include/node/" });
 
-    // const pkg = b.dependency("lmdb", .{});
-    // lib.root_module.addImport("lmdb", pkg.module("lmdb"));
+    const pkg = b.dependency("lmdb", .{});
+    lib.root_module.addImport("lmdb", pkg.module("lmdb"));
 
     lib.linkLibC();
 
+    // @franky: this is still wrong location bit should be EZ
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "dist/lib.node",
     });

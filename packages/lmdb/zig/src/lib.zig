@@ -13,7 +13,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 fn doIt(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     _ = info;
     // const res = bla();
-    return translate.create_string(env, "bla") catch return null;
+    return translate.create_string(env, "blap") catch return null;
 }
 
 //   map_size: usize = 10 * 1024 * 1024,
