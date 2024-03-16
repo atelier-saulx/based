@@ -1,12 +1,13 @@
 const std = @import("std");
 const c = @import("c.zig");
 const Environment = @import("./Environment.zig");
+const Transaction = @import("./Transaction.zig");
+const errors = @import("./errors.zig");
+const Error = errors.Error;
 
 var dbEnv: Environment.Environment = undefined;
 
 var dbEnvIsDefined: bool = false;
-
-const Error = error{EnvDoesNotExist};
 
 const TranslationError = error{ExceptionThrown};
 
@@ -117,7 +118,28 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 
     std.debug.print("get stuff... {s}\n", .{memory[0..strlen]});
 
-    bla(memory[0..strlen], argv[1]) catch |err| return throwError(env, err);
+    // var value: [*c]u8 = undefined;
+
+    // var memory2: [*c]u8 = undefined;
+
+    // var anyopaque_pointer: ?*anyopaque = undefined;
+    var size: usize = undefined;
+
+    // var result: []const u8 = @as([*]u8, @ptrCast(anyopaque_pointer))[0..item_count];
+
+    // _ = c.napi(env, argv[0], &memory2, strlen, &strlen);
+
+    _ = c.napi_get_arraybuffer_info(env, argv[1], null, &size);
+    // c.napi_get_value_u8
+
+    // std.debug.print("snup snup {any}\n", .{anyopaque_pointer});
+    std.debug.print("ffff snup {d}\n", .{size});
+
+    // const result: []const u8 = @as([*]u8, @ptrCast(anyopaque_pointer))[0..size];
+
+    // std.debug.print("ffff snup {any}\n", .{result});
+
+    bla(memory[0..strlen], "bla") catch |err| return throwError(env, err);
 
     var number: c.napi_value = undefined;
 
@@ -137,7 +159,7 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 
 /// Fun with bla!
 /// pub fn bla(key: []const u8, value: []c.napi_value) !void {
-pub fn bla(key: []const u8, value: c.napi_value) !void {
+pub fn bla(key: []const u8, value: []const u8) !void {
     if (!dbEnvIsDefined) {
         return Error.EnvDoesNotExist;
     }
@@ -149,10 +171,12 @@ pub fn bla(key: []const u8, value: c.napi_value) !void {
 
     // defer env.deinit();
 
-    // const txn = try lmdb.Transaction.init(env, .{ .mode = .ReadWrite });
-    // errdefer txn.abort();
+    const txn = try Transaction.init(dbEnv, .{ .mode = .ReadWrite });
+    errdefer txn.abort();
 
     // // const currentTime = std.time.nanoTimestamp();
+
+    try txn.set(key, value);
 
     // // var i: u32 = 0;
     // // var key: [4]u8 = undefined;
@@ -165,5 +189,5 @@ pub fn bla(key: []const u8, value: c.napi_value) !void {
 
     // // std.debug.print("1M took ms: {}\n", .{@divFloor(std.time.nanoTimestamp() - currentTime, 1_000_000)});
 
-    // try txn.commit();
+    try txn.commit();
 }
