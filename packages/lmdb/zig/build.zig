@@ -18,8 +18,14 @@ pub fn build(b: *std.Build) void {
 
     lib.addSystemIncludePath(.{ .path = "deps/node-v20.11.1/include/node/" });
 
-    const pkg = b.dependency("lmdb", .{});
-    lib.root_module.addImport("lmdb", pkg.module("lmdb"));
+    const dep = b.dependency("lmdb", .{});
+
+    lib.addIncludePath(dep.path("libraries/liblmdb"));
+    lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/mdb.c") });
+    lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/midl.c") });
+
+    // const pkg = b.dependency("lmdb", .{});
+    // lib.root_module.addImport("lmdb", pkg.module("lmdb"));
 
     lib.linkLibC();
 
