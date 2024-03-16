@@ -1,3 +1,3 @@
 const addon = require('./dist/lib')
 
-console.log(addon.greet())
+console.log(addon.doIt())

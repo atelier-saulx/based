@@ -1,5 +1,5 @@
 const std = @import("std");
-const lmdb = @import("lmdb");
+// const lmdb = @import("lmdb");
 
 // const assert = std.debug.assert;
 const c = @import("c.zig");
@@ -12,17 +12,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
 fn doIt(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     _ = info;
-    const res = try bla();
-    return translate.create_string(env, res) catch return null;
+    // const res = bla();
+    return translate.create_string(env, "bla") catch return null;
 }
-
-const os = std.os;
-const fs = std.fs;
-const mem = std.mem;
-const math = std.math;
-const meta = std.meta;
-const debug = std.debug;
-const testing = std.testing;
 
 //   map_size: usize = 10 * 1024 * 1024,
 //     max_dbs: u32 = 0,
@@ -34,33 +26,35 @@ const testing = std.testing;
 //     mode: u16 = 0o664,
 
 /// Fun with bla!
-pub fn bla() !i32 {
-    const env = try lmdb.Environment.init("./tmp", .{
-        .map_size = 100 * 1024 * 1024 * 1024,
-    });
-    defer env.deinit();
+pub fn bla() u32 {
+    // const env = lmdb.Environment.init("./tmp", .{
+    //     .map_size = 100 * 1024 * 1024 * 1024,
+    // });
+    // defer env.deinit();
 
-    const txn = try lmdb.Transaction.init(env, .{ .mode = .ReadWrite });
-    errdefer txn.abort();
+    // const txn = lmdb.Transaction.init(env, .{ .mode = .ReadWrite });
+    // errdefer txn.abort();
 
-    const currentTime = std.time.nanoTimestamp();
+    // const currentTime = std.time.nanoTimestamp();
 
-    var i: u32 = 0;
-    // var key: [4]u8 = undefined;
-    const value = "bla";
-    var buffer: [6]u8 = undefined; // Define a buffer to hold the string
+    // var i: u32 = 0;
+    // // var key: [4]u8 = undefined;
+    // const value = "bla";
+    // var buffer: [6]u8 = undefined; // Define a buffer to hold the string
 
-    while (i < 1_000_000) : (i += 1) {
-        // std.mem.writeInt(u32, &key, i, .big);
+    // while (i < 1_000_000) : (i += 1) {
+    //     // std.mem.writeInt(u32, &key, i, .big);
 
-        // adds 80ms
-        const str = try std.fmt.bufPrint(&buffer, "{}", .{i});
-        try txn.set(str, value);
-    }
+    //     // adds 80ms
+    //     const str = try std.fmt.bufPrint(&buffer, "{}", .{i});
+    //     try txn.set(str, value);
+    // }
 
-    std.debug.print("1B took ms: {}\n", .{@divFloor(std.time.nanoTimestamp() - currentTime, 1_000_000)});
+    // std.debug.print("1B took ms: {}\n", .{@divFloor(std.time.nanoTimestamp() - currentTime, 1_000_000)});
 
-    try txn.commit();
+    // txn.commit();
 
-    return 10;
+    const i: u32 = 10;
+
+    return i;
 }

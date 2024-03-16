@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build-fast": "mkdir -p dist && zig build --release=fast --summary all",
-    "build-normal": "mkdir -p dist && zig build-lib -mcpu=baseline -OReleaseSmall -dynamic -lc -isystem deps/node-$(node --version)/include/node src/lib.zig -fallow-shlib-undefined -femit-bin=dist/lib.node",
+    "build": "mkdir -p dist && zig build --summary all",
+    "build-bla": "mkdir -p dist && zig build-lib -mcpu=baseline -OReleaseSmall -dynamic -lc -isystem deps/node-$(node --version)/include/node src/lib.zig -fallow-shlib-undefined -femit-bin=dist/lib.node",
     "test": "node test.js",
     "postinstall": "./download-node-headers.sh"
   },
