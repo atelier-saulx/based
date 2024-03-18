@@ -2,6 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 const Environment = @import("./Environment.zig");
 const Transaction = @import("./Transaction.zig");
+const Database = @import("./Database.zig");
 const errors = @import("./errors.zig");
 const Error = errors.Error;
 
@@ -20,10 +21,13 @@ pub fn throw(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     return TranslationError.ExceptionThrown;
 }
 
+const dbthrow = errors.throw;
+
 pub fn errorToStr(err: Error) [*c]const u8 {
     if (err == Error.EnvDoesNotExist) {
         return "Env does not exist";
     } else {
+        std.debug.print("ERROR {any}\n", .{err});
         return "Unknown error";
     }
 }
@@ -69,6 +73,7 @@ fn statusOk(env: c.napi_env, isOk: bool) c.napi_value {
     return number;
 }
 
+// pass pointer of env (later)
 fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
@@ -79,15 +84,13 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     var memory: [16]u8 = undefined;
     _ = c.napi_get_value_string_utf8(env, argv[0], &memory, strlen, &strlen);
     const path = memory[0..strlen];
-    std.debug.print("Create db on path {s}\n", .{path});
+    // std.debug.print("Create db on path {s}\n", .{path});
 
     if (dbEnvIsDefined) {
         dbEnv.deinit();
     }
 
-    dbEnv = Environment.init(path.ptr, .{
-        .map_size = 100 * 1024 * 1024 * 1024,
-    }) catch return statusOk(env, false);
+    dbEnv = Environment.init(path.ptr, .{ .map_size = 100 * 1024 * 1024 * 1024, .max_dbs = 200 }) catch return statusOk(env, false);
 
     dbEnvIsDefined = true;
 
@@ -104,46 +107,60 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
         throw(env, "Failed to get args.") catch return null;
     }
 
-    var strlen: usize = undefined;
+    // var strlen: usize = undefined;
 
     // _ = c.napi_get_value_string_utf8(env, argv[0], null, 0, &strlen);
     // std.debug.print("snufff {d}\n", .{strlen});
 
     // max size 16
-    var memory: [16]u8 = undefined;
+    // var memory: [16]u8 = undefined;
 
     // var buffer: [10]u8 = undefined; // Define a buffer to hold the string
 
-    _ = c.napi_get_value_string_utf8(env, argv[0], &memory, strlen, &strlen);
+    // _ = c.napi_get_value_string_utf8(env, argv[0], &memory, strlen, &strlen);
 
-    std.debug.print("get stuff... {s}\n", .{memory[0..strlen]});
+    // std.debug.print("get stuff... {s}\n", .{memory[0..strlen]});
 
     // var value: [*c]u8 = undefined;
 
     // var memory2: [*c]u8 = undefined;
 
     // var anyopaque_pointer: ?*anyopaque = undefined;
-    var size: usize = undefined;
 
     // var result: []const u8 = @as([*]u8, @ptrCast(anyopaque_pointer))[0..item_count];
 
     // _ = c.napi(env, argv[0], &memory2, strlen, &strlen);
 
-    _ = c.napi_get_arraybuffer_info(env, argv[1], null, &size);
+    var size: usize = undefined;
+    _ = c.napi_get_buffer_info(env, argv[1], null, &size);
+
+    // var keysize: usize = undefined;
+    // _ = c.napi_get_buffer_info(env, argv[0], null, &keysize);
+
     // c.napi_get_value_u8
 
     // std.debug.print("snup snup {any}\n", .{anyopaque_pointer});
-    std.debug.print("ffff snup {d}\n", .{size});
+    // std.debug.print("ffff snup {d}\n", .{size});
 
     // const result: []const u8 = @as([*]u8, @ptrCast(anyopaque_pointer))[0..size];
 
     // std.debug.print("ffff snup {any}\n", .{result});
+    // std.debug.print("value???: {d}\n", .{size});
 
-    bla(memory[0..strlen], "bla") catch |err| return throwError(env, err);
+    // check if array
+    // if array write multiple
 
-    var number: c.napi_value = undefined;
+    var buf: [20]u8 = undefined;
+    // @memset(&buf, 0);
 
-    _ = c.napi_create_uint32(env, 1, &number);
+    var strlen: usize = undefined;
+    // var memory: [16]u8 = undefined;
+    _ = c.napi_get_value_string_utf8(env, argv[0], buf[0..16], strlen, &strlen);
+
+    writeSingle(&buf, argv[1], size) catch |err| return throwError(env, err);
+
+    // var number: c.napi_value = undefined;
+    // _ = c.napi_create_uint32(env, 1, &number);
 
     return statusOk(env, true);
 }
@@ -159,13 +176,12 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 
 /// Fun with bla!
 /// pub fn bla(key: []const u8, value: []c.napi_value) !void {
-pub fn bla(key: []const u8, value: []const u8) !void {
+pub fn writeSingle(buf: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
     if (!dbEnvIsDefined) {
         return Error.EnvDoesNotExist;
     }
 
-    std.debug.print("key: {s}\n", .{key});
-    std.debug.print("value: {any}\n", .{value});
+    // std.debug.print("value: {any}\n", .{value});
 
     // key: []const u8, value: c.napi_value
 
@@ -176,7 +192,48 @@ pub fn bla(key: []const u8, value: []const u8) !void {
 
     // // const currentTime = std.time.nanoTimestamp();
 
-    try txn.set(key, value);
+    //     try throw(c.mdb_put(self.txn.ptr, self.dbi, &k, &v, 0));
+
+    // make transactions shared
+    const db: Database = try txn.database(null, .{ .integer_key = true });
+
+    // const flags: c_uint = 0;
+    // if (options.reverse_key) flags |= c.MDB_REVERSEKEY;
+    // if (options.integer_key) flags |= c.MDB_INTEGERKEY;
+    // if (options.create) flags |= c.MDB_CREATE;
+
+    // std.debug.print("value: {d}\n", .{size});
+
+    // var k: c.MDB_val = .{ .mv_size = key.len, .mv_data = @as([*]u8, @ptrFromInt(@intFromPtr(key.ptr))) };
+    var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = value };
+
+    // try dbthrow(c.mdb_dbi_open(txn.ptr, "flap", flags, &dbi));
+
+    var i: u32 = 0;
+
+    // std.debug.print("value: {s}\n", .{buf});
+
+    // const s: u32 = 1_000_000;
+
+    // 4
+    // 20
+
+    // std.debug.print("key BEOFRE: {any}\n", .{buf});
+
+    // std.mem.writeInt(u32, buf[16..20], s, .big);
+    // std.debug.print("key ===>: {any}\n", .{buf});
+
+    // key
+
+    while (i < 1_000_000) : (i += 1) {
+        std.mem.writeInt(u32, buf[16..20], i, .big);
+        var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(buf) };
+        try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+    }
+
+    // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+
+    // try txn.set(key, value);
 
     // // var i: u32 = 0;
     // // var key: [4]u8 = undefined;

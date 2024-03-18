@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
 
     lib.addSystemIncludePath(.{ .path = "deps/node-v20.11.1/include/node/" });
 
-    const dep = b.dependency("lmdb", .{});
+    const dep = b.dependency("lmdb", .{ .create = true });
 
     lib.addIncludePath(dep.path("libraries/liblmdb"));
     lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/mdb.c") });
