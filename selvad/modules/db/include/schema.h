@@ -85,11 +85,10 @@ struct SelvaSchema {
             char field_name[SELVA_SHORT_FIELD_NAME_LEN];
             enum SelvaObjectType type;
             struct {
-                struct data_record_def_field_type name;
-                struct data_record_def_field_type meta;
-                struct data_record_def_field_type value; /* TODO $add, $del, $move, etc. */
-                int (*set_value)(void *buf, size_t buf_size, size_t offset, enum data_record_type type, size_t type_size, size_t arr_size); /* TODO args */
-            } modify;
+                bool data: 1;
+                bool edge: 1;
+            } flags;
+            SelvaObjectMeta_t meta;
         } *field_schemas __counted_by(nr_fields);
         struct EdgeFieldConstraints efc;
     } node[] __counted_by(count);

@@ -19,6 +19,7 @@ OBJ := \
 	   index/index.o \
 	   index/pick_icb.o \
 	   modify.o \
+	   modify2.o \
 	   parsers/enum.o \
 	   parsers/index_hints.o \
 	   parsers/string_list.o \
