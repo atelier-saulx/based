@@ -5,16 +5,14 @@ OBJ := \
 	   alias.o \
 	   comparator.o \
 	   db.o \
-	   edge/edge.o \
-	   edge/edge_constraint.o \
 	   field_lookup/data_field.o \
 	   field_lookup/traversable.o \
+	   hierarchy/edge.o \
 	   hierarchy/field_set.o \
 	   hierarchy/hierarchy.o \
 	   hierarchy/hierarchy_detached.o \
 	   hierarchy/hierarchy_inactive.o \
 	   hierarchy/hierarchy_reply.o \
-	   hierarchy/schema.o \
 	   hierarchy/traversal.o \
 	   hierarchy/traversal_order.o \
 	   index/icb.o \
@@ -38,6 +36,8 @@ OBJ := \
 	   resolve.o \
 	   rpn/rpn.o \
 	   rpn/rpn_eval.o \
+	   schema/edge_constraint.o \
+	   schema/schema.o \
 	   selva_object/selva_object.o \
 	   selva_object/selva_object_commands.o \
 	   selva_object/selva_object_foreach.o \

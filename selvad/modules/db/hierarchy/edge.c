@@ -18,10 +18,11 @@
 #include "selva_log.h"
 #include "selva_server.h"
 #include "selva_db.h"
+#include "comparator.h"
 #include "hierarchy.h"
+#include "schema.h"
 #include "selva_object.h"
 #include "subscriptions.h"
-#include "comparator.h"
 #include "edge.h"
 
 #define EDGE_QP(T, F, S, ...) \
@@ -596,7 +597,7 @@ int Edge_AddIndex(
     int err;
 
     SelvaHierarchy_GetNodeId(src_node_id, src_node);
-    constraints = &SelvaHierarchy_FindNodeSchema(hierarchy, src_node_id)->efc;
+    constraints = &SelvaSchema_FindNodeSchema(hierarchy, src_node_id)->efc;
 
     /*
      * Get src_edge_field
@@ -1188,7 +1189,7 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
 
     node_type = selva_io_load_str(io, NULL);
     field_name_str = selva_io_load_str(io, &field_name_len);
-    struct EdgeFieldConstraints *constraints = &SelvaHierarchy_FindNodeSchema(hierarchy, src_node_id)->efc;
+    struct EdgeFieldConstraints *constraints = &SelvaSchema_FindNodeSchema(hierarchy, src_node_id)->efc;
     constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
 
     if (!constraint) {

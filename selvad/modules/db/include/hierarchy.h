@@ -39,6 +39,7 @@
 /* Forward declarations */
 struct SelvaHierarchy;
 struct SelvaHierarchyNode;
+struct SelvaSchema;
 struct Selva_Subscription;
 struct ida;
 struct selva_server_response_out;
@@ -153,18 +154,7 @@ struct SelvaHierarchy {
      * Schema.
      */
     char *types; /*!< List of all type prefixes terminated with the SELVA_NULL_TYPE. */
-    struct SelvaHierarchySchema {
-        size_t count;
-        struct SelvaHierarchySchemaNode {
-            struct {
-                uint32_t nr_emb_fields: 16;
-                uint32_t created_en: 1;
-                uint32_t updated_en: 1;
-                uint32_t _spare: 14;
-            };
-            struct EdgeFieldConstraints efc;
-        } node[] __counted_by(count);
-    } *schema;
+    struct SelvaSchema *schema;
 
     /**
      * Aliases.
@@ -333,8 +323,6 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void);
  * Free a hierarchy.
  */
 void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy);
-
-struct SelvaHierarchySchemaNode *SelvaHierarchy_FindNodeSchema(struct SelvaHierarchy *hierarchy, const Selva_NodeType type);
 
 /**
  * Copy nodeId to a buffer.

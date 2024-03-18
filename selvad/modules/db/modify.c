@@ -38,6 +38,7 @@
 #include "selva_set.h"
 #include "selva_trace.h"
 #include "subscriptions.h"
+#include "schema.h"
 #include "typestr.h"
 #include "modify.h"
 

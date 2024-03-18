@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _EDGE_H_
-#define _EDGE_H_
 
 /*
  * Custom edge field management.
@@ -12,79 +10,15 @@
 
 #include "util/svector.h"
 #include "selva_db.h"
-#include "selva_object.h"
+#include "schema.h"
 
+struct EdgeFieldConstraint;
 struct SelvaHierarchy;
 struct SelvaHierarchyNode;
 struct SelvaObject;
 struct selva_io;
 struct selva_server_response_out;
 struct selva_string;
-
-/**
- * EdgeFieldConstraint Flags.
- *
- * **Bidirectional references**
- * If one edge is removed the other edge is removed too. This flag requires
- * that fwd_field, and bck_field are set.
- */
-enum EdgeFieldConstraintFlag {
-    /**
-     * Single reference edge.
-     */
-    EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF       = 0x01,
-    /**
-     * Bidirectional reference.
-     */
-    EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02,
-    /**
-     * Edge field array mode.
-     * By default an edge field acts like a set. This flag makes the field work like an array.
-     */
-    EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
-} __packed;
-
-struct EdgeFieldDynConstraintParams {
-    Selva_NodeType src_node_type;
-    enum EdgeFieldConstraintFlag flags;
-    char fwd_field_name[8];
-    char bck_field_name[8];
-};
-
-/**
- * Edge constraint.
- * Edge constraints controls how an edge field behaves on different operations
- * like arc insertion and deletion or hierarchy node deletion.
- */
-struct EdgeFieldConstraint {
-    /**
-     * Constraint flags controlling the behaviour.
-     */
-    enum EdgeFieldConstraintFlag flags;
-
-    /**
-     * Source node type this constraint applies to.
-     */
-    Selva_NodeType src_node_type;
-
-    /**
-     * Forward traversing field of this constraint.
-     */
-    char *field_name_str;
-    size_t field_name_len;
-
-    /**
-     * Constraint of the backwards traversing field.
-     * Used if the EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL flag is set.
-     */
-    char *bck_field_name_str;
-    size_t bck_field_name_len;
-};
-
-struct EdgeFieldConstraints {
-    STATIC_SELVA_OBJECT(dyn_constraints);
-    char edge_constraint_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
-};
 
 /**
  * A struct for edge fields.
@@ -137,22 +71,6 @@ struct EdgeFieldContainer {
      */
     struct SelvaObject *origins;
 };
-
-void Edge_InitEdgeFieldConstraints(struct EdgeFieldConstraints *efc)
-    __attribute__((access(write_only, 1)));
-
-void Edge_DeinitEdgeFieldConstraints(struct EdgeFieldConstraints *efc)
-    __attribute__((access(read_write, 1)));
-
-int Edge_NewDynConstraint(struct EdgeFieldConstraints *efc, const struct EdgeFieldDynConstraintParams *params)
-    __attribute__((access(read_write, 1), access(read_only, 2)));
-
-const struct EdgeFieldConstraint *Edge_GetConstraint(
-        const struct EdgeFieldConstraints *efc,
-        const Selva_NodeType node_type,
-        const char *field_name_str,
-        size_t field_name_len)
-    __attribute__((access(read_only, 1), access(read_only, 4, 5)));
 
 /**
  * Assess the usage of Edge features in a hierarchy node.
@@ -320,7 +238,3 @@ void replyWithEdgeField(struct selva_server_response_out *resp, struct EdgeField
 
 int Edge_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node);
 void Edge_Save(struct selva_io *io, struct SelvaHierarchyNode *node);
-int EdgeConstraint_Load(struct selva_io *io, int encver, struct EdgeFieldConstraints *data);
-void EdgeConstraint_Save(struct selva_io *io, const struct EdgeFieldConstraints *data);
-
-#endif /* _EDGE_H_ */

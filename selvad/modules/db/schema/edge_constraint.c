@@ -22,6 +22,7 @@
 #include "selva_db.h"
 #include "selva_object.h"
 #include "selva_onload.h"
+#include "schema.h"
 #include "edge.h"
 
 static void EdgeConstraint_Reply(struct selva_server_response_out *resp, void *p);

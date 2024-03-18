@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -12,6 +12,7 @@
 #include "selva_db.h"
 #include "selva_onload.h"
 #include "selva_set.h"
+#include "schema.h"
 #include "hierarchy.h"
 
 int get_alias_str(struct SelvaHierarchy *hierarchy, const char *ref_str, size_t ref_len, Selva_NodeId node_id)

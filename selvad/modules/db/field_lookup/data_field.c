@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -11,9 +11,10 @@
 #include "selva_error.h"
 #include "selva_db.h"
 #include "selva_object.h"
-#include "edge.h"
 #include "traversal.h"
 #include "hierarchy.h"
+#include "schema.h"
+#include "edge.h"
 #include "field_lookup.h"
 
 static int get_from_edge_field(

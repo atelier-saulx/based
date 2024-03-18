@@ -42,7 +42,7 @@ static ssize_t find_node_type(const char types[], const Selva_NodeType type)
     return -1;
 }
 
-struct SelvaHierarchySchemaNode *SelvaHierarchy_FindNodeSchema(struct SelvaHierarchy *hierarchy, const Selva_NodeType type)
+struct SelvaNodeSchema *SelvaSchema_FindNodeSchema(struct SelvaHierarchy *hierarchy, const Selva_NodeType type)
 {
     ssize_t idx;
 
@@ -51,13 +51,13 @@ struct SelvaHierarchySchemaNode *SelvaHierarchy_FindNodeSchema(struct SelvaHiera
         return &hierarchy->schema->node[idx];
     }
 
-    return SelvaHierarchy_FindNodeSchema(hierarchy, "ro");
+    return SelvaSchema_FindNodeSchema(hierarchy, "ro");
 }
 
-void SelvaHierarchy_DestroySchema(struct SelvaHierarchySchema *schema)
+void SelvaSchema_Destroy(struct SelvaSchema *schema)
 {
     for (size_t i = 0; i < schema->count; i++) {
-        struct SelvaHierarchySchemaNode *ns = &schema->node[i];
+        struct SelvaNodeSchema *ns = &schema->node[i];
 
         Edge_DeinitEdgeFieldConstraints(&ns->efc);
     }
@@ -80,19 +80,19 @@ static char *alloc_types(size_t nr_types)
     return types;
 }
 
-static struct SelvaHierarchySchema *alloc_schema(size_t nr_types)
+static struct SelvaSchema *alloc_schema(size_t nr_types)
 {
-    struct SelvaHierarchySchema *schema;
+    struct SelvaSchema *schema;
 
-    schema = selva_malloc(sizeof(struct SelvaHierarchySchema) + nr_types * sizeof(struct SelvaHierarchySchemaNode));
+    schema = selva_malloc(sizeof(struct SelvaSchema) + nr_types * sizeof(struct SelvaNodeSchema));
     schema->count = nr_types;
 
     return schema;
 }
 
-static void apply_root_schema(struct SelvaHierarchySchemaNode *ns)
+static void apply_root_schema(struct SelvaNodeSchema *ns)
 {
-    *ns = (struct SelvaHierarchySchemaNode){
+    *ns = (struct SelvaNodeSchema){
         .nr_emb_fields = HIERARCHY_ROOT_NR_EMB_FIELDS,
         .created_en = true,
         .updated_en = true,
@@ -139,19 +139,19 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
 
     const size_t nr_types = argc + implicit_root;
     char *types = alloc_types(nr_types);
-    struct SelvaHierarchySchema *schema = alloc_schema(nr_types);
+    struct SelvaSchema *schema = alloc_schema(nr_types);
 
     for (size_t i = 0; i < (size_t)argc; i++) {
         const char *buf = selva_string_to_str(argv[i], NULL);
         struct client_schema cs;
-        struct SelvaHierarchySchemaNode *ns;
+        struct SelvaNodeSchema *ns;
 
         memcpy(&cs, buf, sizeof(cs));
         cs.nr_emb_fields = letoh(cs.nr_emb_fields);
         memcpy(&types[i * SELVA_NODE_TYPE_SIZE], cs.type, sizeof(cs.type));
 
         ns = &schema->node[i];
-        *ns = (struct SelvaHierarchySchemaNode){
+        *ns = (struct SelvaNodeSchema){
             .nr_emb_fields = cs.nr_emb_fields,
             .created_en = !!cs.created_en,
             .updated_en = !!cs.updated_en,
@@ -177,7 +177,7 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
     }
 
     selva_free(hierarchy->types);
-    SelvaHierarchy_DestroySchema(hierarchy->schema);
+    SelvaSchema_Destroy(hierarchy->schema);
 
     hierarchy->types = types;
     hierarchy->schema = schema;
@@ -190,7 +190,7 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
 static void schema_get(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     struct SelvaHierarchy *hierarchy = main_hierarchy;
     const char *types = hierarchy->types;
-    const struct SelvaHierarchySchemaNode *nodes = hierarchy->schema->node;
+    const struct SelvaNodeSchema *nodes = hierarchy->schema->node;
 
     if (len != 0) {
         selva_send_error_arity(resp);
@@ -215,10 +215,10 @@ static void schema_get(struct selva_server_response_out *resp, const void *buf _
     }
 }
 
-void SelvaHierarchy_SetDefaultSchema(struct SelvaHierarchy *hierarchy)
+void SelvaSchema_SetDefaultSchema(struct SelvaHierarchy *hierarchy)
 {
     char *types = alloc_types(1);
-    struct SelvaHierarchySchema  *schema = alloc_schema(1);
+    struct SelvaSchema  *schema = alloc_schema(1);
 
     types[0] = 'r';
     types[1] = 'o';
@@ -228,15 +228,15 @@ void SelvaHierarchy_SetDefaultSchema(struct SelvaHierarchy *hierarchy)
     hierarchy->schema = schema;
 }
 
-int SelvaHierarchy_SchemaLoad(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy)
+int SelvaSchema_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy)
 {
     size_t nr_types = selva_io_load_unsigned(io);
 
     const char *types = selva_io_load_str(io, NULL);
-    struct SelvaHierarchySchema *schema = alloc_schema(nr_types);
+    struct SelvaSchema *schema = alloc_schema(nr_types);
 
     for (size_t i = 0; i < nr_types; i++) {
-        struct SelvaHierarchySchemaNode *ns = &schema->node[i];
+        struct SelvaNodeSchema *ns = &schema->node[i];
         uint64_t flags;
         int err;
 
@@ -252,23 +252,23 @@ int SelvaHierarchy_SchemaLoad(struct selva_io *io, int encver, struct SelvaHiera
     }
 
     selva_free(hierarchy->types);
-    SelvaHierarchy_DestroySchema(hierarchy->schema);
+    SelvaSchema_Destroy(hierarchy->schema);
     hierarchy->types = (char *)types;
     hierarchy->schema = schema;
 
     return 0;
 }
 
-void SelvaHierarchy_SchemaSave(struct selva_io *io, struct SelvaHierarchy *hierarchy)
+void SelvaSchema_Save(struct selva_io *io, struct SelvaHierarchy *hierarchy)
 {
-    const struct SelvaHierarchySchema *schema = hierarchy->schema;
-    const struct SelvaHierarchySchemaNode *nodes = schema->node;
+    const struct SelvaSchema *schema = hierarchy->schema;
+    const struct SelvaNodeSchema *nodes = schema->node;
 
     selva_io_save_unsigned(io, schema->count);
     selva_io_save_str(io, hierarchy->types, (schema->count + 1) * SELVA_NODE_TYPE_SIZE);
 
     for (size_t i = 0; i < schema->count; i++) {
-        const struct SelvaHierarchySchemaNode *ns = &nodes[i];
+        const struct SelvaNodeSchema *ns = &nodes[i];
 
         selva_io_save_unsigned(io, ns->nr_emb_fields);
         selva_io_save_unsigned(io, (ns->updated_en << 1) | ns->created_en);

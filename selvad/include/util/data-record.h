@@ -4,7 +4,9 @@
  */
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
+#include "endian.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmultichar"
@@ -96,6 +98,14 @@ struct data_record_def {
 };
 
 static_assert(sizeof(struct data_record_def_field_type) == 64);
+
+static inline void data_record_def_fixup(struct data_record_def_field_type *ft)
+{
+    ft->offset = letoh(ft->offset);
+    ft->size = letoh(ft->size);
+    ft->arr_size = letoh(ft->arr_size);
+    /* Note that def->type is always big-endian. */
+}
 
 static inline void data_record_fixup_cstring_p(const void *data_region, const char **pp, size_t len)
 {

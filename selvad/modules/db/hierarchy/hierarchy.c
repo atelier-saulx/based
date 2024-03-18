@@ -197,7 +197,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     init_nodepools(hierarchy);
     RB_INIT(&hierarchy->index_head);
     SelvaObject_Init(hierarchy->aliases._obj_data, 0);
-    SelvaHierarchy_SetDefaultSchema(hierarchy);
+    SelvaSchema_SetDefaultSchema(hierarchy);
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
@@ -266,7 +266,7 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
      */
     SelvaIndex_Deinit(hierarchy);
     selva_free(hierarchy->types);
-    SelvaHierarchy_DestroySchema(hierarchy->schema);
+    SelvaSchema_Destroy(hierarchy->schema);
 
     end_auto_compress(hierarchy);
     deinit_nodepools(hierarchy);
@@ -282,10 +282,10 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
  */
 static int create_node_object(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
     const long long now = ts_now();
-    struct SelvaHierarchySchemaNode *ns;
+    struct SelvaNodeSchema *ns;
     struct SelvaObject *obj;
 
-    ns = SelvaHierarchy_FindNodeSchema(hierarchy, node->id);
+    ns = SelvaSchema_FindNodeSchema(hierarchy, node->id);
     obj = SelvaObject_Init(node->_obj_data, SELVA_OBJECT_EMB_SIZE(ns->nr_emb_fields));
 
     if (ns->updated_en) {
@@ -347,7 +347,7 @@ static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHier
 }
 
 static struct mempool *get_nodepool_by_type(struct SelvaHierarchy *hierarchy, const Selva_NodeType type) {
-    struct SelvaHierarchySchemaNode *ns = SelvaHierarchy_FindNodeSchema(hierarchy, type);
+    struct SelvaNodeSchema *ns = SelvaSchema_FindNodeSchema(hierarchy, type);
     size_t nr_emb_fields = ns->nr_emb_fields;
     size_t i = 0;
 
@@ -2057,7 +2057,7 @@ SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
         goto error;
     }
 
-    err = SelvaHierarchy_SchemaLoad(io, encver, hierarchy);
+    err = SelvaSchema_Load(io, encver, hierarchy);
     if (err) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load the schema: %s",
                   selva_strerror(err));
@@ -2200,7 +2200,7 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
      */
     hierarchy->flag_isSaving = 1;
     selva_io_save_signed(io, HIERARCHY_ENCODING_VERSION);
-    SelvaHierarchy_SchemaSave(io, hierarchy);
+    SelvaSchema_Save(io, hierarchy);
     save_hierarchy(io, hierarchy);
     save_aliases(io, hierarchy);
     hierarchy->flag_isSaving = 0;
