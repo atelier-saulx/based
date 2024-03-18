@@ -39,4 +39,4 @@ for (let i = 0; i < 10; i++) {
   console.log('wrote ', i * 1e6, Date.now() - d, 'ms')
 }
 
-console.log('wrote 100M', Date.now() - d, 'ms')
+console.log('wrote 10M', Date.now() - d, 'ms')
