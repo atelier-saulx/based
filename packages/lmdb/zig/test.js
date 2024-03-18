@@ -1,8 +1,8 @@
+const zlib = require('node:zlib')
+const { LoremIpsum } = require('lorem-ipsum')
 const addon = require('./zig-out/lib/dist/lib.node')
 
-const { LoremIpsum } = require('lorem-ipsum')
-
-console.log(LoremIpsum)
+// console.log(LoremIpsum)
 
 const lorem = new LoremIpsum({
   sentencesPerParagraph: {
@@ -15,28 +15,38 @@ const lorem = new LoremIpsum({
   },
 })
 const x = lorem.generateParagraphs(7)
+const value = Buffer.from(zlib.deflateSync(x))
 
-const zlib = require('node:zlib')
-
-console.log(addon, x)
+console.log(addon)
 
 console.log('go create db...', addon.createDb('./tmp'))
 
 const d = Date.now()
 
-const buf = Buffer.from(zlib.deflateSync(x))
-
-for (let i = 0; i < 10; i++) {
+let i = 0
+for (i; i < 1; i++) {
   const d = Date.now()
 
-  const x = Buffer.from('bla' + i)
+  const key = Buffer.from('bla' + i)
 
   // slow creates multiple transactions...
   // for (let i = 0; i < 1; i++) {
-  addon.set(x, buf)
+  addon.set(key, value)
   // }
 
-  console.log('wrote ', i * 1e6, Date.now() - d, 'ms')
+  // console.log('wrote ', i, Date.now() - d, 'ms')
 }
 
-console.log('wrote 100M', Date.now() - d, 'ms')
+console.log('total wrote = ', i, Date.now() - d, 'ms')
+
+const batchTime = Date.now()
+const batch = []
+let y = 0
+for (y; y < 100_000; y++) {
+  const key = Buffer.from('derp' + y)
+  batch.push(key)
+  batch.push(value)
+}
+
+addon.setBatch(batch)
+console.log(`batch writing ${y} nodes took`, Date.now() - batchTime, 'ms')

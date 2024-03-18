@@ -36,6 +36,7 @@ pub const Error = error{
 
     MDB_UNKNOWN_ERROR,
     EnvDoesNotExist,
+    Unknown
 };
 
 pub fn throw(rc: c_int) Error!void {
