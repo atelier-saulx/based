@@ -93,7 +93,7 @@ struct SelvaSchema {
         } *field_schemas __counted_by(nr_fields);
         struct EdgeFieldConstraints efc;
     } node[] __counted_by(count);
-} *schema;
+};
 
 void SelvaSchema_Destroy(struct SelvaSchema *schema);
 void SelvaSchema_SetDefaultSchema(struct SelvaHierarchy *hierarchy);
