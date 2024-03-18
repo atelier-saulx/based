@@ -775,7 +775,7 @@ export function getWriteFuncs(buf: Buffer): {
         throw new Error('Invalid record array element size')
       }
       if (!va.every((el) => Buffer.isBuffer(el) && el.length === elemSize)) {
-        throw new Error('Every record array element must be equal')
+        throw new Error('Every record array element must have equal size')
       }
 
       setPointer(buf, offset, destOffset, va.length * elemSize)
