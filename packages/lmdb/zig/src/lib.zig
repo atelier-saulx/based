@@ -82,9 +82,9 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     }
     var strlen: usize = undefined;
     var memory: [16]u8 = undefined;
-    _ = c.napi_get_value_string_utf8(env, argv[0], &memory, strlen, &strlen);
+    _ = c.napi_get_value_string_utf8(env, argv[0], &memory, 16, &strlen);
     const path = memory[0..strlen];
-    // std.debug.print("Create db on path {s}\n", .{path});
+    std.debug.print("Create db on path {s}\n", .{path});
 
     if (dbEnvIsDefined) {
         dbEnv.deinit();
