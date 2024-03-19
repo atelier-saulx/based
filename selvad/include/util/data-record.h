@@ -107,6 +107,42 @@ static inline void data_record_def_fixup(struct data_record_def_field_type *ft)
     /* Note that def->type is always big-endian. */
 }
 
+#if 0
+static int cpy_offset(void *dst, void *src, size_t src_size, size_t offset, size_t cpy_len)
+{
+    const ptrdiff_t src_start = (ptrdiff_t)src;
+    const ptrdiff_t src_end = src_start + src_size - 1;
+    const ptrdiff_t off = (ptrdiff_t)offset;
+
+    if (!(src_start + off >= src_start && src_start + off <= src_end &&
+          src_start + off + (ptrdiff_t)cpy_len >= src_start && src_start + (ptrdiff_t)cpy_len <= src_end)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(dst, (uint8_t *)src + offset, cpy_len);
+
+    return 0;
+}
+
+static int parse_data_record_def(struct SelvaFieldSchema *fs, const struct data_record_def *def, size_t def_size)
+{
+    const size_t nr_fields = def_size / sizeof(struct data_record_def_field_type);
+
+    if ((nr_fields % sizeof(struct data_record_def_field_type)) != 0) {
+        return SELVA_EINVAL;
+    }
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        const struct data_record_def_field_type *ft = &def->field_list[i];
+
+        if (!strncmp(ft->name, "name", 4)) {
+        }
+    }
+
+    return 0;
+}
+#endif
+
 static inline void data_record_fixup_cstring_p(const void *data_region, const char **pp, size_t len)
 {
     uintptr_t base = (uintptr_t)data_region;
