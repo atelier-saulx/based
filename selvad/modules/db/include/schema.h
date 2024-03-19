@@ -111,7 +111,7 @@ const struct EdgeFieldConstraint *Edge_GetConstraint(
         const Selva_NodeType node_type,
         const char *field_name_str,
         size_t field_name_len)
-    __attribute__((access(read_only, 1), access(read_only, 4, 5)));
+    __attribute__((access(read_only, 1), access(read_only, 3, 4)));
 
 void Edge_InitEdgeFieldConstraints(struct EdgeFieldConstraints *efc)
     __attribute__((access(write_only, 1)));

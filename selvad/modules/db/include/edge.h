@@ -167,7 +167,7 @@ int Edge_Add(
         size_t field_name_len,
         struct SelvaHierarchyNode *src_node,
         struct SelvaHierarchyNode *dst_node)
-    __attribute__((access(read_write, 1), access(read_only, 3, 4), access(read_write, 5), access(read_write, 6)));
+    __attribute__((access(read_write, 1), access(read_only, 2, 3), access(read_write, 4), access(read_write, 5)));
 int Edge_AddIndex(
         struct SelvaHierarchy *hierarchy,
         const char *field_name_str,
@@ -175,7 +175,7 @@ int Edge_AddIndex(
         struct SelvaHierarchyNode *src_node,
         struct SelvaHierarchyNode *dst_node,
         ssize_t index)
-    __attribute__((access(read_write, 1), access(read_only, 3, 4), access(read_write, 5), access(read_write, 6)));
+    __attribute__((access(read_write, 1), access(read_only, 2, 3), access(read_write, 4), access(read_write, 5)));
 
 int Edge_Delete(
         struct SelvaHierarchy *hierarchy,

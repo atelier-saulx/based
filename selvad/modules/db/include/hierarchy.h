@@ -423,7 +423,7 @@ int SelvaModify_SetHierarchy(
         const Selva_NodeId id,
         enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out)
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5), access(write_only, 8)));
+    __attribute__((access(read_write, 1), access(read_only, 2), access(write_only, 4)));
 
 int SelvaHierarchy_UpsertNode(
         SelvaHierarchy *hierarchy,
