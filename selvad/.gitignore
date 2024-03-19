@@ -8,5 +8,6 @@
 *.dylib
 vgcore.*
 /binaries
+*.trace
 # Selva db dumps
 *.sdb

@@ -2217,6 +2217,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     return;
 }
 
+#if 0
 static int Modify_OnLoad(void) {
     for (size_t i = 0; i < num_elem(modify_op_fn); i++) {
         modify_op_fn[i] = op_notsup;
@@ -2240,3 +2241,4 @@ static int Modify_OnLoad(void) {
     return 0;
 }
 SELVA_ONLOAD(Modify_OnLoad);
+#endif

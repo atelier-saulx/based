@@ -647,8 +647,11 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
  */
 static void publishNewNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     if (!isLoading()) {
+        /* FIXME created and updated fields are not always enabled */
+#if 0
         SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1);
         SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1);
+#endif
         SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, node->id, SELVA_NODE_ID_SIZE);
     }
 }
@@ -677,23 +680,13 @@ int SelvaHierarchy_UpsertNode(
          return SELVA_HIERARCHY_ENOMEM;
      }
 
-     publishNewNode(hierarchy, node);
-
      /*
       * All nodes must be indexed.
       */
      prev_node = index_new_node(hierarchy, node);
-     if (prev_node) {
-         /*
-          * We are being extremely paranoid here as this shouldn't be possible.
-          */
-         SelvaHierarchy_DestroyNode(hierarchy, node);
+     assert(!prev_node);
 
-         if (out) {
-             *out = prev_node;
-         }
-         return SELVA_HIERARCHY_EEXIST;
-     }
+     publishNewNode(hierarchy, node);
 
      if (out) {
          *out = node;
