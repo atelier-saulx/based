@@ -1,7 +1,7 @@
 const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
-const throw = errors.throw;
+const throw = errors.CtoZigError;
 
 const Transaction = @import("Transaction.zig");
 

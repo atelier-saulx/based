@@ -3,7 +3,7 @@ const hex = std.fmt.fmtSliceHexLower;
 
 const c = @import("c.zig");
 const errors = @import("errors.zig");
-const throw = errors.throw;
+const throw = errors.CtoZigError;
 
 const Environment = @import("Environment.zig");
 const Database = @import("Database.zig");

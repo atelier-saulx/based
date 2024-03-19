@@ -2,6 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 
 pub const Error = error{
+    // OS errors
     INVAL,
     ACCES,
     NOMEM,
@@ -13,6 +14,7 @@ pub const Error = error{
     PIPE,
     IO,
 
+    // MDB errors
     MDB_KEYEXIST,
     MDB_NOTFOUND,
     MDB_PAGE_NOTFOUND,
@@ -34,12 +36,14 @@ pub const Error = error{
     MDB_BAD_VALSIZE,
     MDB_BAD_DBI,
 
-    MDB_UNKNOWN_ERROR,
-    EnvDoesNotExist,
-    Unknown
+    // Other errors
+    NO_DB_ENV,
+
+    UNKNOWN_ERROR,
 };
 
-pub fn throw(rc: c_int) Error!void {
+pub fn CtoZigError(rc: c_int) Error!void {
+    // errors enum is never 0 so this return void when rc == 0
     try switch (rc) {
         c.MDB_SUCCESS => {},
 
@@ -114,6 +118,6 @@ pub fn throw(rc: c_int) Error!void {
         @intFromEnum(std.os.E.PIPE) => Error.PIPE,
         @intFromEnum(std.os.E.IO) => Error.IO,
 
-        else => Error.MDB_UNKNOWN_ERROR,
+        else => Error.UNKNOWN_ERROR,
     };
 }

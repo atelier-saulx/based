@@ -39,14 +39,14 @@ for (i; i < 1; i++) {
 
 console.log('total wrote = ', i, Date.now() - d, 'ms')
 
-const batchTime = Date.now()
-const batch = []
-let y = 0
-for (y; y < 1_000_000; y++) {
-  const key = Buffer.from('derp' + y)
-  batch.push(key)
-  batch.push(value)
-}
+// const batchTime = Date.now()
+// const batch = []
+// let y = 0
+// for (y; y < 100_000; y++) {
+//   const key = Buffer.from('derp' + y)
+//   batch.push(key)
+//   batch.push(value)
+// }
 
-addon.setBatch(batch)
-console.log(`batch writing ${y} nodes took`, Date.now() - batchTime, 'ms')
+// addon.setBatch(batch)
+// console.log(`batch writing ${y} nodes took`, Date.now() - batchTime, 'ms')

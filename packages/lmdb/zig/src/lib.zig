@@ -12,7 +12,7 @@ var dbEnvIsDefined: bool = false;
 
 const TranslationError = error{ExceptionThrown};
 
-pub fn throw(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
+pub fn JsThrow(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     const result = c.napi_throw_error(env, null, message);
     switch (result) {
         c.napi_ok, c.napi_pending_exception => {},
@@ -21,10 +21,10 @@ pub fn throw(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     return TranslationError.ExceptionThrown;
 }
 
-const dbthrow = errors.throw;
+const dbthrow = errors.CtoZigError;
 
 pub fn errorToStr(err: Error) [*c]const u8 {
-    if (err == Error.EnvDoesNotExist) {
+    if (err == Error.NO_DB_ENV) {
         return "Env does not exist";
     } else {
         std.debug.print("ERROR {any}\n", .{err});
@@ -49,11 +49,11 @@ pub fn register_function(
 ) !void {
     var napi_function: c.napi_value = undefined;
     if (c.napi_create_function(env, null, 0, function, null, &napi_function) != c.napi_ok) {
-        return throw(env, "Failed to create function " ++ name ++ "().");
+        return JsThrow(env, "Failed to create function " ++ name ++ "().");
     }
 
     if (c.napi_set_named_property(env, exports, name, napi_function) != c.napi_ok) {
-        return throw(env, "Failed to add " ++ name ++ "() to exports.");
+        return JsThrow(env, "Failed to add " ++ name ++ "() to exports.");
     }
 }
 
@@ -79,7 +79,7 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        throw(env, "Failed to get args.") catch return null;
+        JsThrow(env, "Failed to get args.") catch return null;
     }
     var strlen: usize = undefined;
     // dynamic allocator?
@@ -114,7 +114,7 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var argv: [2]c.napi_value = undefined;
 
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        throw(env, "Failed to get args.") catch return null;
+        JsThrow(env, "Failed to get args.") catch return null;
     }
 
     // var strlen: usize = undefined;
@@ -188,44 +188,20 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 /// pub fn bla(key: []const u8, value: []c.napi_value) !void {
 pub fn writeSingle(key: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
     if (!dbEnvIsDefined) {
-        return Error.EnvDoesNotExist;
+        return Error.NO_DB_ENV;
     }
-
-    // std.debug.print("value: {any}\n", .{value});
-
-    // key: []const u8, value: c.napi_value
-
-    // defer env.deinit();
-
+    // _ = sizeValue;
     const txn = try Transaction.init(dbEnv, .{ .mode = .ReadWrite });
     errdefer txn.abort();
 
-    // // const currentTime = std.time.nanoTimestamp();
-
-    //     try throw(c.mdb_put(self.txn.ptr, self.dbi, &k, &v, 0));
-
-    // make transactions shared
-    const db: Database = try txn.database(null, .{ .integer_key = true });
-
-    // const flags: c_uint = 0;
-    // if (options.reverse_key) flags |= c.MDB_REVERSEKEY;
-    // if (options.integer_key) flags |= c.MDB_INTEGERKEY;
-    // if (options.create) flags |= c.MDB_CREATE;
-
-    // std.debug.print("value: {d}\n", .{size});
-
-    // var buf: u8[20] =
+    // const db: Database = try txn.database(null, .{ .integer_key = true });
 
     // var k: c.MDB_val = .{ .mv_size = key.len, .mv_data = @as([*]u8, @ptrFromInt(@intFromPtr(key.ptr))) };
-    var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = value };
+    // var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = value };
     // var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
     // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
 
-    // try dbthrow(c.mdb_dbi_open(txn.ptr, "flap", flags, &dbi));
-
     var i: u32 = 0;
-
-    // std.debug.print("value: {s}\n", .{buf});
 
     // const s: u32 = 1_000_000;
 
@@ -239,10 +215,11 @@ pub fn writeSingle(key: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
 
     // key
 
-    while (i < 100_000) : (i += 1) {
+    while (i < 1_000_000) : (i += 1) {
         std.mem.writeInt(u32, key[16..20], i, .big);
-        var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
-        try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+        try txn.set(key, @as([*]u8, @ptrCast(value))[0..sizeValue]);
+        //     var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
+        //     try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
     }
 
     // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
@@ -270,51 +247,10 @@ fn setBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     var argv: [1]c.napi_value = undefined;
 
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        throw(env, "Failed to get args.") catch return null;
+        JsThrow(env, "Failed to get args.") catch return null;
     }
 
     writeMultiple(env, argv[0]) catch |err| return throwError(env, err);
-    // // c.napi_get_array_length(env: napi_env, value: napi_value, result: [*c]u32)
-    // var arraySize: u32 = undefined;
-
-    // if (c.napi_get_array_length(env, argv[0], &arraySize) != c.napi_ok) {
-    //     throw(env, "Failed to get array length") catch return null;
-    // }
-
-    // if (!dbEnvIsDefined) {
-    //     throw(env, "Env does not exist") catch return null;
-    //     return Error.EnvDoesNotExist;
-    // }
-    // const txn = try Transaction.init(dbEnv, .{ .mode = .ReadWrite });
-    // errdefer txn.abort();
-
-    // const db: Database = try txn.database(null, .{ .integer_key = true });
-
-    // std.debug.print("LENGHT OF ARRAY = {d}\n", .{arraySize});
-
-    // var key: c.napi_value = undefined;
-    // var value: c.napi_value = undefined;
-    // var keyChars: [20]u8 = undefined;
-    // var keySize: u32 = undefined;
-    // var valueSize: u32 = undefined;
-    // var index: u32 = 0;
-    // while (index < arraySize) : (index += 2) {
-    //     if (c.napi_get_element(env, argv[0], index, &key) != c.napi_ok) {
-    //         throw(env, "Failed to get array length") catch return null;
-    //     }
-    //     if (c.napi_get_element(env, argv[0], index + 1, &value) != c.napi_ok) {
-    //         throw(env, "Failed to get array length") catch return null;
-    //     }
-
-    //     _ = c.napi_get_value_string_utf8(env, key, &keyChars, 20, &keySize);
-    //     _ = c.napi_get_buffer_info(env, value, null, &valueSize);
-
-    //     var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
-    //     var v: c.MDB_val = .{ .mv_size = valueSize, .mv_data = value };
-    //     try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
-    // }
-
-    // txn.commit();
     return statusOk(env, true);
 }
 
@@ -324,11 +260,11 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
     var arraySize: u32 = undefined;
 
     if (c.napi_get_array_length(env, batch, &arraySize) != c.napi_ok) {
-        return Error.Unknown;
+        return Error.UNKNOWN_ERROR;
     }
 
     if (!dbEnvIsDefined) {
-        return Error.EnvDoesNotExist;
+        return Error.NO_DB_ENV;
     }
     const txn = try Transaction.init(dbEnv, .{ .mode = .ReadWrite });
     errdefer txn.abort();
@@ -343,10 +279,10 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
     var index: u32 = 0;
     while (index < arraySize) : (index += 2) {
         if (c.napi_get_element(env, batch, index, &key) != c.napi_ok) {
-            return Error.Unknown;
+            return Error.UNKNOWN_ERROR;
         }
         if (c.napi_get_element(env, batch, index + 1, &value) != c.napi_ok) {
-            return Error.Unknown;
+            return Error.UNKNOWN_ERROR;
         }
 
         _ = c.napi_get_value_string_utf8(env, key, &keyChars, 20, &keySize);
