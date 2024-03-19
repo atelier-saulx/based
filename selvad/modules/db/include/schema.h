@@ -83,11 +83,11 @@ struct SelvaSchema {
         size_t nr_fields;
         struct SelvaFieldSchema {
             char field_name[SELVA_SHORT_FIELD_NAME_LEN];
-            enum SelvaObjectType type;
-            struct {
-                bool data: 1;
-                bool edge: 1;
-            } flags;
+            enum SelvaFieldSchemaType {
+                SELVA_FIELD_SCHEMA_TYPE_DATA = 0,
+                SELVA_FIELD_SCHEMA_TYPE_EDGE = 1,
+            } __packed type1;
+            enum SelvaObjectType type2;
             SelvaObjectMeta_t meta;
         } *field_schemas __counted_by(nr_fields);
         struct EdgeFieldConstraints efc;
@@ -97,6 +97,7 @@ struct SelvaSchema {
 void SelvaSchema_Destroy(struct SelvaSchema *schema);
 void SelvaSchema_SetDefaultSchema(struct SelvaHierarchy *hierarchy);
 struct SelvaNodeSchema *SelvaSchema_FindNodeSchema(struct SelvaHierarchy *hierarchy, const Selva_NodeType type);
+struct SelvaFieldSchema *SelvaSchema_FindFieldSchema(struct SelvaNodeSchema *ns, char field_name[SELVA_SHORT_FIELD_NAME_LEN]);
 int SelvaSchema_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy);
 void SelvaSchema_Save(struct selva_io *io, struct SelvaHierarchy *hierarchy);
 

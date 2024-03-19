@@ -21,12 +21,14 @@
 #include "hierarchy.h"
 #include "schema.h"
 
-struct client_schema {
+struct client_node_schema {
     uint32_t nr_emb_fields;
     char type[SELVA_NODE_TYPE_SIZE];
     uint8_t created_en;
     uint8_t updated_en;
-    char edge_constraints_str; /* n * EdgeFieldDynConstraintParams */
+    const char *field_schemas_str; /*!< n * struct struct SelvaFieldSchema */
+    size_t field_schemas_len;
+    const char *edge_constraints_str; /*!< n * EdgeFieldDynConstraintParams */
     size_t edge_constraints_len;
 };
 
@@ -54,11 +56,28 @@ struct SelvaNodeSchema *SelvaSchema_FindNodeSchema(struct SelvaHierarchy *hierar
     return SelvaSchema_FindNodeSchema(hierarchy, "ro");
 }
 
+struct SelvaFieldSchema *SelvaSchema_FindFieldSchema(struct SelvaNodeSchema *ns, char field_name[SELVA_SHORT_FIELD_NAME_LEN])
+{
+    char buf[SELVA_SHORT_FIELD_NAME_LEN];
+
+    strncpy(buf, field_name, SELVA_SHORT_FIELD_NAME_LEN);
+    for (size_t i = 0; i < ns->nr_fields; i++) {
+        struct SelvaFieldSchema *fs = &ns->field_schemas[i];
+
+        if (!memcmp(fs->field_name, buf, sizeof(buf))) {
+            return fs;
+        }
+    }
+
+    return NULL;
+}
+
 void SelvaSchema_Destroy(struct SelvaSchema *schema)
 {
     for (size_t i = 0; i < schema->count; i++) {
         struct SelvaNodeSchema *ns = &schema->node[i];
 
+        selva_free(ns->field_schemas);
         Edge_DeinitEdgeFieldConstraints(&ns->efc);
     }
 
@@ -100,6 +119,60 @@ static void apply_root_schema(struct SelvaNodeSchema *ns)
     Edge_InitEdgeFieldConstraints(&ns->efc);
 }
 
+/**
+ * @param[out] ns
+ * @param[out] type
+ */
+static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TYPE_SIZE], const char *buf, size_t len)
+{
+    struct client_node_schema cs;
+
+    if (len < sizeof(cs)) {
+        return SELVA_EINVAL;
+    }
+
+    /* Fixup. */
+    memcpy(&cs, buf, sizeof(cs));
+    cs.nr_emb_fields = letoh(cs.nr_emb_fields);
+    DATA_RECORD_FIXUP_CSTRING_P(&cs, buf, len, field_schemas, edge_constraints);
+
+    /* Copy the type prefix. */
+    memcpy(type, cs.type, sizeof(cs.type));
+
+    *ns = (struct SelvaNodeSchema){
+        .nr_emb_fields = cs.nr_emb_fields,
+        .nr_fields = cs.field_schemas_len / sizeof(struct SelvaFieldSchema),
+        .created_en = !!cs.created_en,
+        .updated_en = !!cs.updated_en,
+    };
+
+    /*
+     * Parse field schemas.
+     */
+    ns->field_schemas = selva_malloc(cs.field_schemas_len);
+    memcpy(ns->field_schemas, cs.field_schemas_str, cs.field_schemas_len);
+    for (size_t i = 0; i < ns->nr_fields; i++) {
+        struct SelvaFieldSchema *fs = &ns->field_schemas[i];
+
+        fs->meta = htole(fs->meta);
+    }
+
+    /*
+     * Parse edge constraints.
+     */
+    Edge_InitEdgeFieldConstraints(&ns->efc);
+    for (size_t i = 0; i < cs.edge_constraints_len; i += sizeof(struct EdgeFieldDynConstraintParams)) {
+        int err;
+
+        err = Edge_NewDynConstraint(&ns->efc, (const struct EdgeFieldDynConstraintParams *)(cs.edge_constraints_str + i));
+        if (err) {
+            return SELVA_EINVAL;
+        }
+    }
+
+    return 0;
+}
+
 static void schema_set(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     struct SelvaHierarchy *hierarchy = main_hierarchy;
@@ -121,16 +194,22 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
         size_t len;
         const char *buf = selva_string_to_str(argv[i], &len);
 
-        if (len != sizeof(struct client_schema)) {
+        if (len != sizeof(struct client_node_schema)) {
             selva_send_errorf(resp, SELVA_EINVAL, "Invalid schema argument at %zu", i);
             return;
         }
 
-        if (!memcmp("ro", &buf[offsetof(struct client_schema, type)], SELVA_NODE_TYPE_SIZE)) {
+        if (!memcmp("ro", &buf[offsetof(struct client_node_schema, type)], SELVA_NODE_TYPE_SIZE)) {
             implicit_root = false;
         }
 
-        const size_t edge_constraints_len = letoh(*(size_t *)memcpy(&(size_t){0}, &buf[offsetof(struct client_schema, edge_constraints_len)], sizeof(size_t)));
+        const size_t field_schemas_len = letoh(*(size_t *)memcpy(&(size_t){0}, &buf[offsetof(struct client_node_schema, field_schemas_len)], sizeof(size_t)));
+        if (!!(field_schemas_len % sizeof(struct SelvaFieldSchema))) {
+            selva_send_errorf(resp, SELVA_EINVAL, "Invalid field schemas at %zu", i);
+            return;
+        }
+
+        const size_t edge_constraints_len = letoh(*(size_t *)memcpy(&(size_t){0}, &buf[offsetof(struct client_node_schema, edge_constraints_len)], sizeof(size_t)));
         if (!!(edge_constraints_len % sizeof(struct EdgeFieldDynConstraintParams))) {
             selva_send_errorf(resp, SELVA_EINVAL, "Invalid edge constraints at %zu", i);
             return;
@@ -142,30 +221,17 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
     struct SelvaSchema *schema = alloc_schema(nr_types);
 
     for (size_t i = 0; i < (size_t)argc; i++) {
-        const char *buf = selva_string_to_str(argv[i], NULL);
-        struct client_schema cs;
-        struct SelvaNodeSchema *ns;
+        struct SelvaNodeSchema *ns = &schema->node[i];
+        size_t cs_len;
+        const char *cs_buf = selva_string_to_str(argv[i], &cs_len);
+        int err;
 
-        memcpy(&cs, buf, sizeof(cs));
-        cs.nr_emb_fields = letoh(cs.nr_emb_fields);
-        memcpy(&types[i * SELVA_NODE_TYPE_SIZE], cs.type, sizeof(cs.type));
-
-        ns = &schema->node[i];
-        *ns = (struct SelvaNodeSchema){
-            .nr_emb_fields = cs.nr_emb_fields,
-            .created_en = !!cs.created_en,
-            .updated_en = !!cs.updated_en,
-        };
-
-        Edge_InitEdgeFieldConstraints(&ns->efc);
-        for (size_t j = 0; j < cs.edge_constraints_len; j += sizeof(struct EdgeFieldDynConstraintParams)) {
-            int err;
-
-            err = Edge_NewDynConstraint(&ns->efc, (const struct EdgeFieldDynConstraintParams *)(cs.edge_constraints_str + j));
-            if (err) {
-                selva_send_errorf(resp, SELVA_EINVAL, "Invalid edge constraint at %zu.%zu", i, j);
-                return;
-            }
+        err = parse_node_schema(ns, &types[i * SELVA_NODE_TYPE_SIZE], cs_buf, cs_len);
+        if (err) {
+            selva_free(types);
+            SelvaSchema_Destroy(schema);
+            selva_send_errorf(resp, SELVA_EINVAL, "Invalid field_schema at %zu", i);
+            return;
         }
     }
 

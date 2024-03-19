@@ -420,7 +420,7 @@ static inline int data_record_is_valid_cstring_p(const void *data_region, size_t
  * Fix cstring_p pointers in a data-record.
  * @param _rec is a pointer to the record struct.
  * @param _rec_size is the total size of the record.
- * @param ... are the cstring_p field names.
+ * @param ... are the cstring_p field names. Note that these fields must have type of `contst char *`.
  */
 #define DATA_RECORD_FIXUP_CSTRING_P(_rec, _data, _data_size, ...) \
     CONCATENATE(DATA_RECORD_FIXUP_CSTRING_P_, UTIL_NARG(__VA_ARGS__))((_rec), (_data), (_data_size), __VA_ARGS__)
