@@ -129,8 +129,7 @@ fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     if (c.napi_create_buffer(env, value_buffer.len, &data, &result) != c.napi_ok) {
         JsThrow(env, "Failed to create ArrayBuffer") catch return null;
     }
-
-    std.mem.copyForwards(u8, @as([*]u8, @ptrCast(data))[0..value_buffer.len], value_buffer[0..value_buffer.len]);
+    @memcpy(@as([*]u8, @ptrCast(data))[0..value_buffer.len], value_buffer[0..value_buffer.len]);
 
     return result;
 }
