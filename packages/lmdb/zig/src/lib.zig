@@ -167,6 +167,7 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     // var memory: [16]u8 = undefined;
     _ = c.napi_get_value_string_utf8(env, argv[0], buf[0..16], strlen, &strlen);
 
+    // writeSingleLIB(&buf, argv[1], size) catch |err| return throwError(env, err);
     writeSingle(&buf, argv[1], size) catch |err| return throwError(env, err);
 
     // var number: c.napi_value = undefined;
@@ -184,9 +185,7 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 //     no_lock: bool = false,
 //     mode: u16 = 0o664,
 
-/// Fun with bla!
-/// pub fn bla(key: []const u8, value: []c.napi_value) !void {
-pub fn writeSingle(key: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
+pub fn writeSingleLIB(key: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
     if (!dbEnvIsDefined) {
         return Error.NO_DB_ENV;
     }
@@ -218,8 +217,68 @@ pub fn writeSingle(key: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
     while (i < 1_000_000) : (i += 1) {
         std.mem.writeInt(u32, key[16..20], i, .big);
         try txn.set(key, @as([*]u8, @ptrCast(value))[0..sizeValue]);
-        //     var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
-        //     try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+        // var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
+        // var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = value };
+        //
+        // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+    }
+
+    // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+
+    // try txn.set(key, value);
+
+    // // var i: u32 = 0;
+    // // var key: [4]u8 = undefined;
+    // // const value = "bla";
+    // // var buffer: [6]u8 = undefined; // Define a buffer to hold the string
+
+    // // while (i < 1_000_000) : (i += 1) {
+    // try txn.set(key, value);
+    // // }
+
+    // // std.debug.print("1M took ms: {}\n", .{@divFloor(std.time.nanoTimestamp() - currentTime, 1_000_000)});
+
+    try txn.commit();
+}
+
+/// Fun with bla!
+/// pub fn bla(key: []const u8, value: []c.napi_value) !void {
+pub fn writeSingle(key: *[20]u8, value: ?*anyopaque, sizeValue: usize) !void {
+    if (!dbEnvIsDefined) {
+        return Error.NO_DB_ENV;
+    }
+    // _ = sizeValue;
+    const txn = try Transaction.init(dbEnv, .{ .mode = .ReadWrite });
+    errdefer txn.abort();
+
+    const db: Database = try txn.database(null, .{ .integer_key = true });
+
+    // var k: c.MDB_val = .{ .mv_size = key.len, .mv_data = @as([*]u8, @ptrFromInt(@intFromPtr(key.ptr))) };
+    // var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = value };
+    // var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
+    // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+
+    var i: u32 = 0;
+
+    // const s: u32 = 1_000_000;
+
+    // 4
+    // 20
+
+    // std.debug.print("key BEOFRE: {any}\n", .{buf});
+
+    // std.mem.writeInt(u32, buf[16..20], s, .big);
+    // std.debug.print("key ===>: {any}\n", .{buf});
+
+    // key
+
+    while (i < 1_000_000) : (i += 1) {
+        std.mem.writeInt(u32, key[16..20], i, .big);
+        // try txn.set(key, @as([*]u8, @ptrCast(value))[0..sizeValue]);
+        var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
+        var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = value };
+        //
+        try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
     }
 
     // try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));

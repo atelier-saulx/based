@@ -1,8 +1,11 @@
 const zlib = require('node:zlib')
 const { LoremIpsum } = require('lorem-ipsum')
 const addon = require('./zig-out/lib/dist/lib.node')
-
+const fs = require('fs/promises')
+const { join } = require('path')
 // console.log(LoremIpsum)
+
+const tmpF = join(__dirname, '/tmp')
 
 const lorem = new LoremIpsum({
   sentencesPerParagraph: {
@@ -15,29 +18,48 @@ const lorem = new LoremIpsum({
   },
 })
 const x = lorem.generateParagraphs(7)
-const value = Buffer.from(zlib.deflateSync(x))
+// const value = Buffer.from(zlib.deflateSync(x))
+
+const value = Buffer.from('a')
 
 console.log(addon)
 
 console.log('go create db...', addon.createDb('./tmp'))
 
-const d = Date.now()
+let total = 0
 
-let i = 0
-for (i; i < 1; i++) {
-  const d = Date.now()
+const n = 30
 
-  const key = Buffer.from('bla' + i)
+const bla = async () => {
+  // rm tmp
+  for (let j = 0; j < n; j++) {
+    let i = 0
 
-  // slow creates multiple transactions...
-  // for (let i = 0; i < 1; i++) {
-  addon.set(key, value)
-  // }
+    await fs.rmdir(tmpF).catch(() => {})
+    await fs.mkdir(tmpF).catch(() => {})
 
-  // console.log('wrote ', i, Date.now() - d, 'ms')
+    for (i; i < 3; i++) {
+      const key = Buffer.from('a' + i)
+
+      const d = global.performance.now()
+      // slow creates multiple transactions...
+      // for (let i = 0; i < 1; i++) {
+      addon.set(key, value)
+
+      total += global.performance.now() - d
+      console.log('total wrote = ', i, global.performance.now() - d, 'ns')
+    }
+
+    // }
+
+    // console.log('wrote ', i, Date.now() - d, 'ms')
+    // }
+  }
 }
 
-console.log('total wrote = ', i, Date.now() - d, 'ms')
+bla().then(() => {
+  console.log('WRITE TOOK', total / n)
+})
 
 // const batchTime = Date.now()
 // const batch = []
