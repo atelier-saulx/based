@@ -42,7 +42,7 @@ console.log('total wrote = ', i, Date.now() - d, 'ms')
 const batchTime = Date.now()
 const batch = []
 let y = 0
-for (y; y < 100_000; y++) {
+for (y; y < 1_000_000; y++) {
   const key = Buffer.from('derp' + y)
   batch.push(key)
   batch.push(value)
