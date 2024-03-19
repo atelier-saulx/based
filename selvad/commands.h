@@ -208,14 +208,14 @@
 /**
  * Set schema.
  * module: db
- * cmd: hierarchy.schema.set
+ * cmd: schema.set
  */
 #define CMD_ID_HIERARCHY_SCHEMA_SET 36
 
 /**
  * Get schema.
  * module: db
- * cmd: hierarchy.schema.get
+ * cmd: schema.get
  */
 #define CMD_ID_HIERARCHY_SCHEMA_GET 37
 

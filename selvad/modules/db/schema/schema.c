@@ -194,7 +194,7 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
         size_t len;
         const char *buf = selva_string_to_str(argv[i], &len);
 
-        if (len != sizeof(struct client_node_schema)) {
+        if (len < sizeof(struct client_node_schema)) {
             selva_send_errorf(resp, SELVA_EINVAL, "Invalid schema argument at %zu", i);
             return;
         }
@@ -266,11 +266,22 @@ static void schema_get(struct selva_server_response_out *resp, const void *buf _
     size_t i = 0;
     while (memcmp(SELVA_NULL_TYPE, types + i, SELVA_NODE_TYPE_SIZE)) {
         size_t idx = i / SELVA_NODE_TYPE_SIZE;
-        selva_send_array(resp, 4);
+        selva_send_array(resp, 2 * 5);
+        selva_send_str(resp, "type", 4);
         selva_send_str(resp, types + i, SELVA_NODE_TYPE_SIZE);
+        selva_send_str(resp, "nr_emb_fields", 13);
         selva_send_ll(resp, nodes[idx].nr_emb_fields);
+        selva_send_str(resp, "created_en", 10);
         selva_send_ll(resp, nodes[idx].created_en);
+        selva_send_str(resp, "updated_en", 10);
         selva_send_ll(resp, nodes[idx].updated_en);
+        selva_send_str(resp, "fields", 6);
+        selva_send_array(resp, nodes[idx].nr_fields);
+        for (size_t field = 0; field < nodes[idx].nr_fields; field++) {
+            selva_send_strf(resp, "%.*s", SELVA_SHORT_FIELD_NAME_LEN, nodes[idx].field_schemas[field].field_name);
+        }
+
+        /* TODO Send edge constraints */
 #if 0
         err = SelvaObject_ReplyWithObject(resp, NULL, get_dyn_constraints(&ns->efc), NULL, 0);
         if (err) {
@@ -344,8 +355,8 @@ void SelvaSchema_Save(struct selva_io *io, struct SelvaHierarchy *hierarchy)
 
 static int SelvaHierarchyTypes_OnLoad(void)
 {
-    selva_mk_command(CMD_ID_HIERARCHY_SCHEMA_SET, SELVA_CMD_MODE_MUTATE, "hierarchy.schema.set", schema_set);
-    selva_mk_command(CMD_ID_HIERARCHY_SCHEMA_GET, SELVA_CMD_MODE_PURE, "hierarchy.schema.get", schema_get);
+    selva_mk_command(CMD_ID_HIERARCHY_SCHEMA_SET, SELVA_CMD_MODE_MUTATE, "schema.set", schema_set);
+    selva_mk_command(CMD_ID_HIERARCHY_SCHEMA_GET, SELVA_CMD_MODE_PURE, "schema.get", schema_get);
 
     return 0;
 }

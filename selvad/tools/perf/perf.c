@@ -82,12 +82,23 @@ static int send_message(int fd, const void *buf, size_t size, int flags)
 
 static int send_schema(int fd, int seqno)
 {
+    struct SelvaFieldSchema { /* from db/include/schema.h */
+        char field_name[SELVA_SHORT_FIELD_NAME_LEN];
+        enum SelvaFieldSchemaType {
+            SELVA_FIELD_SCHEMA_TYPE_DATA = 0,
+            SELVA_FIELD_SCHEMA_TYPE_EDGE = 1,
+        } __packed type1;
+        uint8_t type2; /* enum SelvaObjectType */
+        uint16_t meta; /* SelvaObjectMeta_t */
+    };
     struct client_schema { /* from db/hierarchy/schema.c */
         uint32_t nr_emb_fields;
         char type[SELVA_NODE_TYPE_SIZE];
         uint8_t created_en;
         uint8_t updated_en;
-        char edge_constraints_str; /* n * EdgeFieldDynConstraintParams */
+        const char *field_schema_str;
+        size_t field_schema_len;
+        const char *edge_constraints_str; /* n * EdgeFieldDynConstraintParams */
         size_t edge_constraints_len;
     };
     struct {
@@ -95,6 +106,8 @@ static int send_schema(int fd, int seqno)
         struct selva_proto_array arr;
         struct selva_proto_string type0_hdr;
         struct client_schema type0;
+        /* Flexible/heap data for type0 */
+        char type0_fs[2 * sizeof(struct SelvaFieldSchema)];
     } __packed buf = {
         .hdr = {
             .cmd = CMD_ID_HIERARCHY_SCHEMA_SET,
@@ -109,7 +122,7 @@ static int send_schema(int fd, int seqno)
         },
         .type0_hdr = {
             .type = SELVA_PROTO_STRING,
-            .bsize = htole32(sizeof(struct client_schema)),
+            .bsize = htole32(sizeof(buf.type0) + sizeof(buf.type0_fs)),
         },
         .type0 = {
             .type = "ma",
@@ -117,8 +130,26 @@ static int send_schema(int fd, int seqno)
             .created_en = false,
             .updated_en = false,
             .edge_constraints_len = 0,
+            .field_schema_str = (void *)sizeof(struct client_schema), /* offset */
+            .field_schema_len = sizeof(buf.type0_fs),
         },
     };
+
+    memcpy(buf.type0_fs,
+           &(struct SelvaFieldSchema){
+               .field_name = "field",
+               .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+               .type2 = 3, /* SELVA_OBJECT_STRING */
+               .meta = 0,
+           }, sizeof(struct SelvaFieldSchema));
+    memcpy(buf.type0_fs + sizeof(struct SelvaFieldSchema),
+           &(struct SelvaFieldSchema){
+               .field_name = "num",
+               .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+               .type2 = 2, /* SELVA_OBJECT_LONGLONG */
+               .meta = 0,
+           }, sizeof(struct SelvaFieldSchema));
+
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
     return send_message(fd, &buf, sizeof(buf), 0);
