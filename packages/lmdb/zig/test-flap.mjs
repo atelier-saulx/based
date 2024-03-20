@@ -21,7 +21,7 @@ client.once('connect', () => {
 const bla = async () => {
   for (let j = 0; j < 20; j++) {
     let q = []
-    let id = (Math.random() * 1000).toString(16)
+    let id = (~~(Math.random() * 10000)).toString(16)
 
     const writes = []
     for (let i = 0; i < 1e4; i++) {
