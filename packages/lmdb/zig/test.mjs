@@ -8,6 +8,7 @@ import addon from './nativebla.js'
 import { BasedServer } from '@based/server'
 import { Worker } from 'node:worker_threads'
 import { write } from 'node:fs'
+import { wait } from '@saulx/utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -178,8 +179,23 @@ const server = new BasedServer({
 
 const runIt = async () => {
   await server.start()
-  await fs.rmdir(tmpF).catch(() => {})
+  await fs.rmdir(tmpF, { recursive: true }).catch((err) => {
+    console.error(err)
+  })
   await fs.mkdir(tmpF).catch(() => {})
+
+  console.log('go create db...', addon.createDb('./tmp'))
+
+  const key = Buffer.alloc(20)
+  key.write('aaa')
+  console.log('key=\t', key)
+
+  const value = Buffer.from('sdkfhjjsdlfjksdkjhgfkshgklsdflkjsd')
+  console.log('value=\t', value)
+  addon.set(key, value)
+
+  await wait(100)
+
   const q = []
   for (let i = 0; i < 5; i++) {
     q.push(doworker(i))
@@ -187,6 +203,9 @@ const runIt = async () => {
   await Promise.all(q)
   const ms = Date.now() - s
   const seconds = ms / 1000
+
+  const mb = (await fs.stat(join(tmpF, 'data.mdb'))).size / 1000 / 1000
+
   console.info(
     'RDY',
     'wrote',
@@ -195,6 +214,12 @@ const runIt = async () => {
     'writes / sec',
     ms,
     'ms',
+    'wrote to disk',
+    ~~mb,
+    'mb',
+
+    ~~(mb / seconds),
+    'mb / sec',
   )
 }
 
