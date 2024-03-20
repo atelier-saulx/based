@@ -34,7 +34,7 @@ enum SelvaObjectReplyFlags {
 /**
  * Calculate appropriate buffer size in bytes for embedded keys.
  */
-#define SELVA_OBJECT_EMB_SIZE(n) (n * 72)
+#define SELVA_OBJECT_EMB_SIZE(n) (n * 64)
 
 /**
  * Define a for holding a SelvaObject.
@@ -51,7 +51,7 @@ struct SelvaSet;
 struct selva_server_response_out;
 struct selva_string;
 
-typedef uint32_t SelvaObjectMeta_t; /*!< SelvaObject key metadata. */
+typedef uint16_t SelvaObjectMeta_t; /*!< SelvaObject key metadata. */
 typedef void SelvaObject_Iterator; /* Opaque type. */
 typedef void *(*SelvaObject_PtrLoad)(struct selva_io *io, int encver, void *data);
 typedef void (*SelvaObject_PtrSave)(struct selva_io *io, void *value, void *data);

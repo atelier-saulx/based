@@ -280,6 +280,22 @@ struct selva_proto_control {
     enum selva_proto_data_type type;
 } __packed;
 
+/*
+ * Ensure that the proto value are aliased properly.
+ * First appeared in section 6.2.5 of ISO 9899:1999
+ */
+union selva_proto_value_type {
+    struct selva_proto_control vt_control;
+    struct selva_proto_null vt_null;
+    struct selva_proto_error vt_error;
+    struct selva_proto_double vt_double;
+    struct selva_proto_longlong vt_longlong;
+    struct selva_proto_string vt_string;
+    struct selva_proto_array vt_array;
+    struct selva_proto_replication_cmd vt_cmd;
+    struct selva_proto_replication_sdb vt_sdb;
+};
+
 /**
  * selva_proto structure to a literal string.
  */

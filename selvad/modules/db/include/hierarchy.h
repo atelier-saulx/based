@@ -19,11 +19,27 @@
 #include "selva_set.h"
 #include "subscriptions.h"
 
-#define HIERARCHY_ENCODING_VERSION  5
+#define HIERARCHY_ENCODING_VERSION  6
+
+/**
+ * Hierarchy node pool sizes with a varying number of embedded fields.
+ */
+#define HIERARCHY_NODEPOOL_SIZES(apply) \
+    apply(2) \
+    apply(5) \
+    apply(10) \
+    apply(15)
+
+#define HIERARCHY_NODEPOOL_COUNT_1(v) \
+    + 1
+
+#define HIERARCHY_NODEPOOL_COUNT \
+    (HIERARCHY_NODEPOOL_SIZES(HIERARCHY_NODEPOOL_COUNT_1))
 
 /* Forward declarations */
 struct SelvaHierarchy;
 struct SelvaHierarchyNode;
+struct SelvaSchema;
 struct Selva_Subscription;
 struct ida;
 struct selva_server_response_out;
@@ -125,26 +141,20 @@ struct SelvaHierarchy {
      * Index of all hierarchy nodes by ID.
      */
     struct hierarchy_index_tree index_head;
-    struct mempool node_pool;
+    struct mempool nodepool[HIERARCHY_NODEPOOL_COUNT];
 
     /**
      * Root node.
      */
     struct SelvaHierarchyNode root;
-    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(2)];
+#define HIERARCHY_ROOT_NR_EMB_FIELDS 2
+    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(HIERARCHY_ROOT_NR_EMB_FIELDS)];
 
-    /**
-     * Orphan nodes aka heads of the hierarchy.
-     * Includes root.
+    /*
+     * Schema.
      */
-    SVector heads;
-
-    /**
-     * Node types.
-     */
-    struct {
-        STATIC_SELVA_OBJECT(_obj_data);
-    } types;
+    char *types; /*!< List of all type prefixes terminated with the SELVA_NULL_TYPE. */
+    struct SelvaSchema *schema;
 
     /**
      * Aliases.
@@ -152,11 +162,6 @@ struct SelvaHierarchy {
     struct {
         STATIC_SELVA_OBJECT(_obj_data);
     } aliases;
-
-    /**
-     * Edge field constraints.
-     */
-    struct EdgeFieldConstraints edge_field_constraints;
 
     struct {
         /**
@@ -300,9 +305,6 @@ struct SelvaHierarchyCallback {
     } flags;
 };
 
-#define SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy) \
-    GET_STATIC_SELVA_OBJECT(&((hierarchy)->types))
-
 /**
  * Flags for SelvaModify_DelHierarchyNode().
  */
@@ -321,13 +323,6 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void);
  * Free a hierarchy.
  */
 void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy);
-
-/**
- * Get the type name for a type prefix.
- * The caller may call selva_string_free() for the returned string but it won't
- * be actually freed.
- */
-struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, const Selva_NodeId node_id);
 
 /**
  * Copy nodeId to a buffer.
@@ -428,7 +423,7 @@ int SelvaModify_SetHierarchy(
         const Selva_NodeId id,
         enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out)
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5), access(write_only, 8)));
+    __attribute__((access(read_write, 1), access(read_only, 2), access(write_only, 4)));
 
 int SelvaHierarchy_UpsertNode(
         SelvaHierarchy *hierarchy,

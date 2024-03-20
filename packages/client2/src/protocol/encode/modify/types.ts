@@ -73,7 +73,6 @@ export const longLongDef = compile([{ name: 'd', type: 'int64_le' }])
 export const opSetDefCstring = compile([
   { name: 'op_set_type', type: 'int8' },
   { name: 'delete_all', type: 'int8' },
-  { name: 'constraint_id', type: 'uint16_le' },
   /* 32 zeroed bytes */
   { name: '$add', type: 'cstring_p' },
   { name: '$delete', type: 'cstring_p' },
@@ -106,7 +105,6 @@ export const opSetHll = compile([
 export const opOrdSetDefCstring = compile([
   { name: 'op_set_type', type: 'int8' },
   { name: 'mode', type: 'int8' },
-  { name: 'constraint_id', type: 'uint16_le' },
   /* 32 zeroed bytes */
   { name: 'index', type: 'uint64_le' },
   { name: '$value', type: 'cstring_p' },

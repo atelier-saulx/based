@@ -134,12 +134,10 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   modify,
   update,
   // hierarchy
-  'hierarchy.types.add': defaultEncoder([
-    { type: 'string' }, // prefix
-    { type: 'string' }, // type name
+  'hierarchy.schema.set': defaultEncoder([
+    { type: 'string', vararg: true }, // node schema
   ]),
-  'hierarchy.types.clear': null,
-  'hierarchy.types.list': null,
+  'hierarchy.schema.get': null,
   'hierarchy.del': defaultEncoder([
     { type: 'string' }, // flags
     { type: 'string', vararg: true }, // ... nodeID
@@ -148,8 +146,6 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'id' },
     { type: 'longlong' }, // ts
   ]),
-  'hierarchy.addConstraint': strEncoder(4), // <src node type>,<contraint flags>,<fwd field name>,<bck field name>
-  'hierarchy.listConstraints': null,
   'hierarchy.find': defaultEncoder([
     { type: 'string' }, // lang
     { type: 'bin' }, // find query opts (

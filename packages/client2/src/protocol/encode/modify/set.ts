@@ -12,25 +12,6 @@ import {
 type OpSetType = typeof OP_SET_TYPE[keyof typeof OP_SET_TYPE]
 type OrdSetMode = typeof ORD_SET_MODE[keyof typeof ORD_SET_MODE]
 
-// Constraint ids.
-const EDGE_FIELD_CONSTRAINT_ID_DEFAULT = 0
-const EDGE_FIELD_CONSTRAINT_SINGLE_REF = 1
-const EDGE_FIELD_CONSTRAINT_DYNAMIC = 2
-
-function getConstraintId({
-  isSingle,
-  isBidirectional,
-}: {
-  isSingle: boolean
-  isBidirectional: boolean
-}) {
-  if (isBidirectional) {
-    return EDGE_FIELD_CONSTRAINT_DYNAMIC
-  }
-
-  return isSingle ? EDGE_FIELD_CONSTRAINT_SINGLE_REF : EDGE_FIELD_CONSTRAINT_ID_DEFAULT
-}
-
 function refsToStr(ary: string[] = []): string {
   if (!ary) {
     return ''
@@ -63,7 +44,6 @@ export function encodeSetOperation({
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-      constraint_id: getConstraintId({ isSingle, isBidirectional }),
       delete_all: $delete || $value?.length === 0,
       $value: refsToStr($value),
       $add: refsToStr($add),
@@ -108,7 +88,6 @@ export function encodeOrdSetOperation({
   return createRecord(ORD_SET_OP_BY_TYPE[setType], {
       op_set_type: setType,
       mode,
-      constraint_id: EDGE_FIELD_CONSTRAINT_DYNAMIC, // always dynamic
       index: index,
       $value: refsToStr($value),
   })

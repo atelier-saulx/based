@@ -80,27 +80,131 @@ static int send_message(int fd, const void *buf, size_t size, int flags)
     return 0;
 }
 
-static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
+static int send_schema(int fd, int seqno)
 {
+    struct SelvaFieldSchema { /* from db/include/schema.h */
+        char field_name[SELVA_SHORT_FIELD_NAME_LEN];
+        enum SelvaFieldSchemaType {
+            SELVA_FIELD_SCHEMA_TYPE_DATA = 0,
+            SELVA_FIELD_SCHEMA_TYPE_EDGE = 1,
+        } __packed type1;
+        uint8_t type2; /* enum SelvaObjectType */
+        uint16_t meta; /* SelvaObjectMeta_t */
+    };
+    struct client_schema { /* from db/hierarchy/schema.c */
+        uint32_t nr_emb_fields;
+        char type[SELVA_NODE_TYPE_SIZE];
+        uint8_t created_en;
+        uint8_t updated_en;
+        const char *field_schema_str;
+        size_t field_schema_len;
+        const char *edge_constraints_str; /* n * EdgeFieldDynConstraintParams */
+        size_t edge_constraints_len;
+    };
     struct {
         struct selva_proto_header hdr;
         struct selva_proto_array arr;
-        struct selva_proto_string id_hdr;
-        char id_str[SELVA_NODE_ID_SIZE];
-        struct selva_proto_string flags_hdr;
+        struct selva_proto_string type0_hdr;
+        struct client_schema type0;
+        /* Flexible/heap data for type0 */
+        char type0_fs[2 * sizeof(struct SelvaFieldSchema)];
+    } __packed buf = {
+        .hdr = {
+            .cmd = CMD_ID_HIERARCHY_SCHEMA_SET,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf)),
+        },
+        .arr = {
+            .type = SELVA_PROTO_ARRAY,
+            .flags = 0,
+            .length = htole32(1),
+        },
+        .type0_hdr = {
+            .type = SELVA_PROTO_STRING,
+            .bsize = htole32(sizeof(buf.type0) + sizeof(buf.type0_fs)),
+        },
+        .type0 = {
+            .type = "ma",
+            .nr_emb_fields = 2,
+            .created_en = false,
+            .updated_en = false,
+            .edge_constraints_len = 0,
+            .field_schema_str = (void *)sizeof(struct client_schema), /* offset */
+            .field_schema_len = sizeof(buf.type0_fs),
+        },
+    };
+
+    memcpy(buf.type0_fs,
+           &(struct SelvaFieldSchema){
+               .field_name = "field",
+               .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+               .type2 = 3, /* SELVA_OBJECT_STRING */
+               .meta = 0,
+           }, sizeof(struct SelvaFieldSchema));
+    memcpy(buf.type0_fs + sizeof(struct SelvaFieldSchema),
+           &(struct SelvaFieldSchema){
+               .field_name = "num",
+               .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+               .type2 = 2, /* SELVA_OBJECT_LONGLONG */
+               .meta = 0,
+           }, sizeof(struct SelvaFieldSchema));
+
+
+    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+    return send_message(fd, &buf, sizeof(buf), 0);
+}
+
+static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
+{
+    /* TODO The structs should come from headers */
+    struct SelvaModifyFieldOp {
+        enum SelvaModifyOpCode {
+            SELVA_MODIFY_OP_DEL = 0, /*!< Delete field. */
+            SELVA_MODIFY_OP_STRING = 1,
+            SELVA_MODIFY_OP_STRING_DEFAULT = 2,
+            SELVA_MODIFY_OP_LONGLONG = 3,
+            SELVA_MODIFY_OP_LONGLONG_DEFAULT = 4,
+            SELVA_MODIFY_OP_LONGLONG_INCREMENT = 5,
+            SELVA_MODIFY_OP_DOUBLE = 6,
+            SELVA_MODIFY_OP_DOUBLE_DEFAULT = 7,
+            SELVA_MODIFY_OP_DOUBLE_INCREMENT = 8,
+            SELVA_MODIFY_OP_SET_VALUE = 9,
+            SELVA_MODIFY_OP_SET_INSERT = 10,
+            SELVA_MODIFY_OP_SET_REMOVE = 11,
+            SELVA_MODIFY_OP_SET_ASSIGN = 12,
+            SELVA_MODIFY_OP_SET_MOVE = 13,
+            SELVA_MODIFY_OP_EDGE_META = 14, /*!< Value is `struct SelvaModifyEdgeMeta`. */
+        } __packed op;
+        enum {
+            SELVA_MODIFY_OP_FLAGS_VALUE_IS_DEFLATED = 0x01,
+        } __packed flags;
+        char lang[2];
+        uint32_t index;
+        char field_name[SELVA_SHORT_FIELD_NAME_LEN];
+        const char *value_str;
+        size_t value_len;
+    };
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_string modify_hdr;
+        /* modify_header */
+        struct {
+            char node_id[SELVA_NODE_ID_SIZE];
+            enum {
+                FLAG_NO_MERGE = 0x01,
+                FLAG_CREATE =   0x02,
+                FLAG_UPDATE =   0x04,
+            } flags;
+            uint32_t nr_changes;
+        } modify;
         /* field 1 */
-        struct selva_proto_string type1_hdr;
-        char type1_str[1];
         struct selva_proto_string field1_hdr;
-        char field1_str[5];
-        struct selva_proto_string value1_hdr;
+        struct SelvaModifyFieldOp field1_op;
         char value1_str[3];
         /* field 2 */
-        struct selva_proto_string type2_hdr;
-        char type2_str[1];
         struct selva_proto_string field2_hdr;
-        char field2_str[3];
-        struct selva_proto_string value2_hdr;
+        struct SelvaModifyFieldOp field2_op;
         char value2_str[sizeof(uint64_t)];
     } __packed buf = {
         .hdr = {
@@ -108,64 +212,40 @@ static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_i
             .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST | frame_extra_flags,
             .seqno = htole32(seqno),
             .frame_bsize = htole16(sizeof(buf)),
-            .msg_bsize = 0,
-            .chk = 0,
         },
-        .arr = {
-            .type = SELVA_PROTO_ARRAY,
-            .flags = 0,
-            .length = htole32(2 + 3),
-        },
-        .id_hdr = {
+        .modify_hdr = {
             .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(SELVA_NODE_ID_SIZE),
+            .bsize = htole32(sizeof(buf.modify)),
         },
-        .flags_hdr = {
-            .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(0),
+        .modify = {
+            .nr_changes = 2,
         },
         /* Field 1 */
-        .type1_hdr = {
-            .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(sizeof(buf.type1_str)),
-        },
-        .type1_str = {'0'},
         .field1_hdr = {
             .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(sizeof(buf.field1_str)),
+            .bsize = htole32(sizeof(buf.field1_op) + sizeof(buf.value1_str)),
         },
-        .field1_str = {'f', 'i', 'e', 'l', 'd'},
-        .value1_hdr = {
-            .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(sizeof(buf.value1_str)),
+        .field1_op = {
+            .op = SELVA_MODIFY_OP_STRING,
+            .field_name = "field",
+            .value_str = (char *)sizeof(buf.field1_op),
+            .value_len = sizeof(buf.value1_str),
         },
-        .value1_str = {'l', 'o', 'l'},
+        .value1_str = "lol",
         /* Field 2 */
-        .type2_hdr = {
-            .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(sizeof(buf.type2_str)),
-        },
-        .type2_str = {'3'},
         .field2_hdr = {
             .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(sizeof(buf.field2_str)),
+            .bsize = htole32(sizeof(buf.field2_op) + sizeof(buf.value2_str)),
         },
-        .field2_str = {'n', 'u', 'm'},
-        .value2_hdr = {
-            .type = SELVA_PROTO_STRING,
-            .flags = 0,
-            .bsize = htole32(sizeof(buf.value2_str)),
+        .field2_op = {
+            .op = SELVA_MODIFY_OP_LONGLONG,
+            .field_name = "num",
+            .value_str = (char *)sizeof(buf.field2_op),
+            .value_len = sizeof(buf.value2_str),
         },
     };
 
-    strncpy(buf.id_str, node_id, SELVA_NODE_ID_SIZE);
+    strncpy(buf.modify.node_id, node_id, SELVA_NODE_ID_SIZE);
     memcpy(buf.value2_str, &(uint64_t){seqno}, sizeof(uint64_t));
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
@@ -597,6 +677,12 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    if (send_schema(sock, seqno++) ||
+        recv_message(sock)) {
+        fprintf(stderr, "Setting schema failed");
+        exit(EXIT_FAILURE);
+    }
+
     (void)sigaction(SIGINT, &(const struct sigaction){
             .sa_handler = sigint_handler,
             .sa_flags = SA_NODEFER | SA_RESETHAND
@@ -608,7 +694,7 @@ int main(int argc, char *argv[])
     const char *unit = "ms";
 
     if (threaded) {
-        thread = start_recv(sock, n);
+        thread = start_recv(sock, n - 1);
     }
 
     ts_monotime(&ts_start);

@@ -193,6 +193,18 @@ static inline double ledoubletoh(const char buf[8]) {
         int32_t: (int32_t)le32toh(v), \
         uint64_t: le64toh(v), \
         int64_t: (int64_t)le64toh(v))
+
+/**
+ * Type generic BE to Host.
+ */
+#define betoh(v) _Generic((v), \
+        uint16_t: be16toh(v), \
+        int16_t: (int16_t)be16toh(v), \
+        uint32_t: be32toh(v), \
+        int32_t: (int32_t)be32toh(v), \
+        uint64_t: be64toh(v), \
+        int64_t: (int64_t)be64toh(v))
+
 #else
 
 /**
@@ -208,6 +220,9 @@ static inline double ledoubletoh(const char buf[8]) {
         ssize_t: htole64(v), \
         int64_t: (int64_t)htole64(v))
 
+/**
+ * Type generic LE to Host.
+ */
 #define letoh(v) _Generic((v), \
         uint16_t: le16toh(v), \
         int16_t: (int16_t)le16toh(v), \
@@ -217,6 +232,19 @@ static inline double ledoubletoh(const char buf[8]) {
         size_t: le64toh(v), \
         ssize_t: le64toh(v), \
         int64_t: (int64_t)le64toh(v))
+
+/**
+ * Type generic BE to Host.
+ */
+#define betoh(v) _Generic((v), \
+        uint16_t: be16toh(v), \
+        int16_t: (int16_t)be16toh(v), \
+        uint32_t: be32toh(v), \
+        int32_t: (int32_t)be32toh(v), \
+        uint64_t: be64toh(v), \
+        size_t: be64toh(v), \
+        ssize_t: be64toh(v), \
+        int64_t: (int64_t)be64toh(v))
 
 #endif
 

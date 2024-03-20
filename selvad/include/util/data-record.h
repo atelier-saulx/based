@@ -1,8 +1,147 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
+
+#include <stddef.h>
+#include <stdint.h>
+#include "endian.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmultichar"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmultichar"
+union data_record_type_union {
+    enum data_record_type {
+	    /* Fixed size */
+	    DATA_RECORD_int8 = htobe16('a\0'),
+	    DATA_RECORD_int16_be = htobe16('b\0'),
+	    DATA_RECORD_int16_le = htobe16('c\0'),
+	    DATA_RECORD_int32_be = htobe16('d\0'),
+	    DATA_RECORD_int32_le = htobe16('e\0'),
+	    DATA_RECORD_int64_be = htobe16('f\0'),
+	    DATA_RECORD_int64_le = htobe16('g\0'),
+	    DATA_RECORD_uint8 = htobe16('h\0'),
+	    DATA_RECORD_uint16_be = htobe16('i\0'),
+	    DATA_RECORD_uint16_le = htobe16('j\0'),
+	    DATA_RECORD_uint32_be = htobe16('k\0'),
+	    DATA_RECORD_uint32_le = htobe16('l\0'),
+	    DATA_RECORD_uint64_be = htobe16('m\0'),
+	    DATA_RECORD_uint64_le = htobe16('n\0'),
+	    DATA_RECORD_float_be = htobe16('o\0'),
+	    DATA_RECORD_float_le = htobe16('p\0'),
+	    DATA_RECORD_double_be = htobe16('q\0'),
+	    DATA_RECORD_double_le = htobe16('r\0'),
+	    /* Variable size */
+	    DATA_RECORD_int_be = htobe16('s\0'),
+	    DATA_RECORD_int_le = htobe16('t\0'),
+	    DATA_RECORD_uint_be = htobe16('u\0'),
+	    DATA_RECORD_uint_le = htobe16('v\0'),
+	    DATA_RECORD_cstring = htobe16('w\0'),
+	    /* Virtual */
+	    DATA_RECORD_record = htobe16('z\0'),
+	    /* Pointer types */
+	    DATA_RECORD_int8_p = htobe16('pa'),
+	    DATA_RECORD_int16_be_p = htobe16('pb'),
+	    DATA_RECORD_int16_le_p = htobe16('pc'),
+	    DATA_RECORD_int32_be_p = htobe16('pd'),
+	    DATA_RECORD_int32_le_p = htobe16('pe'),
+	    DATA_RECORD_int64_be_p = htobe16('pf'),
+	    DATA_RECORD_int64_le_p = htobe16('pg'),
+	    DATA_RECORD_uint8_p = htobe16('ph'),
+	    DATA_RECORD_uint16_be_p = htobe16('pi'),
+	    DATA_RECORD_uint16_le_p = htobe16('pj'),
+	    DATA_RECORD_uint32_be_p = htobe16('pk'),
+	    DATA_RECORD_uint32_le_p = htobe16('pl'),
+	    DATA_RECORD_uint64_be_p = htobe16('pm'),
+	    DATA_RECORD_uint64_le_p = htobe16('pn'),
+	    DATA_RECORD_float_be_p = htobe16('po'),
+	    DATA_RECORD_float_le_p = htobe16('pp'),
+	    DATA_RECORD_double_be_p = htobe16('pq'),
+	    DATA_RECORD_double_le_p = htobe16('pr'),
+	    /* Variable size pointer types */
+	    DATA_RECORD_cstring_p = htobe16('pw'),
+	    DATA_RECORD_record_p = htobe16('pz'),
+    } __packed e;
+    char s[2];
+} __transparent_union;
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
+
+/**
+ * C typing for the output of compRecordDef2buffer().
+ */
+struct data_record_def {
+    struct data_record_def_field_type {
+        /**
+         * Offset in the record.
+         */
+        uint32_t offset;
+        /**
+         * Size of of the type in bytes.
+         */
+        uint32_t size;
+        /**
+         * Number of elements in a fixed array.
+         */
+        uint32_t arr_size;
+        /**
+         * Type code.
+         */
+        union data_record_type_union type;
+        /**
+         * Name of the field.
+         */
+        char name[50];
+    } field_list[0];
+};
+
+static_assert(sizeof(struct data_record_def_field_type) == 64);
+
+static inline void data_record_def_fixup(struct data_record_def_field_type *ft)
+{
+    ft->offset = letoh(ft->offset);
+    ft->size = letoh(ft->size);
+    ft->arr_size = letoh(ft->arr_size);
+    /* Note that def->type is always big-endian. */
+}
+
+#if 0
+static int cpy_offset(void *dst, void *src, size_t src_size, size_t offset, size_t cpy_len)
+{
+    const ptrdiff_t src_start = (ptrdiff_t)src;
+    const ptrdiff_t src_end = src_start + src_size - 1;
+    const ptrdiff_t off = (ptrdiff_t)offset;
+
+    if (!(src_start + off >= src_start && src_start + off <= src_end &&
+          src_start + off + (ptrdiff_t)cpy_len >= src_start && src_start + (ptrdiff_t)cpy_len <= src_end)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(dst, (uint8_t *)src + offset, cpy_len);
+
+    return 0;
+}
+
+static int parse_data_record_def(struct SelvaFieldSchema *fs, const struct data_record_def *def, size_t def_size)
+{
+    const size_t nr_fields = def_size / sizeof(struct data_record_def_field_type);
+
+    if ((nr_fields % sizeof(struct data_record_def_field_type)) != 0) {
+        return SELVA_EINVAL;
+    }
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        const struct data_record_def_field_type *ft = &def->field_list[i];
+
+        if (!strncmp(ft->name, "name", 4)) {
+        }
+    }
+
+    return 0;
+}
+#endif
 
 static inline void data_record_fixup_cstring_p(const void *data_region, const char **pp, size_t len)
 {
@@ -281,7 +420,7 @@ static inline int data_record_is_valid_cstring_p(const void *data_region, size_t
  * Fix cstring_p pointers in a data-record.
  * @param _rec is a pointer to the record struct.
  * @param _rec_size is the total size of the record.
- * @param ... are the cstring_p field names.
+ * @param ... are the cstring_p field names. Note that these fields must have type of `contst char *`.
  */
 #define DATA_RECORD_FIXUP_CSTRING_P(_rec, _data, _data_size, ...) \
     CONCATENATE(DATA_RECORD_FIXUP_CSTRING_P_, UTIL_NARG(__VA_ARGS__))((_rec), (_data), (_data_size), __VA_ARGS__)

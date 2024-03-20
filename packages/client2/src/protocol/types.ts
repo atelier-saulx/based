@@ -105,9 +105,8 @@ export const COMMAND_TYPES = {
   modify: 70,
   update: 71,
   // hierarchy
-  'hierarchy.types.add': 36,
-  'hierarchy.types.clear': 37,
-  'hierarchy.types.list': 38,
+  'hierarchy.schema.set': 36,
+  'hierarchy.schema.get': 37,
   'hierarchy.find': 19,
   'hierarchy.aggregate': 21,
   'hierarchy.edgeList': 30,
@@ -115,8 +114,6 @@ export const COMMAND_TYPES = {
   'hierarchy.edgeGetMetadata': 32,
   'hierarchy.heads': 27,
 
-  'hierarchy.addConstraint': 23,
-  'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
   'hierarchy.expire': 26,
   'hierarchy.compress': 33,

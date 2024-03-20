@@ -18,10 +18,11 @@
 #include "selva_log.h"
 #include "selva_server.h"
 #include "selva_db.h"
+#include "comparator.h"
 #include "hierarchy.h"
+#include "schema.h"
 #include "selva_object.h"
 #include "subscriptions.h"
-#include "comparator.h"
 #include "edge.h"
 
 #define EDGE_QP(T, F, S, ...) \
@@ -495,7 +496,6 @@ static int get_or_create_EdgeField(
         struct SelvaHierarchyNode *node,
         const char *field_name_str,
         size_t field_name_len,
-        unsigned constraint_id,
         struct EdgeField **out) {
     Selva_NodeType node_type;
     struct EdgeField *edge_field;
@@ -506,7 +506,7 @@ static int get_or_create_EdgeField(
     if (!edge_field) {
         const struct EdgeFieldConstraint *constraint;
 
-        constraint = Edge_GetConstraint(constraints, constraint_id, node_type, field_name_str, field_name_len);
+        constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
         if (!constraint) {
             return SELVA_EINVAL;
         }
@@ -573,34 +573,36 @@ int Edge_DerefSingleRef(const struct EdgeField *edge_field, struct SelvaHierarch
 
 int Edge_Add(
         struct SelvaHierarchy *hierarchy,
-        unsigned constraint_id,
         const char *field_name_str,
         size_t field_name_len,
         struct SelvaHierarchyNode *src_node,
         struct SelvaHierarchyNode *dst_node)
 {
-    return Edge_AddIndex(hierarchy, constraint_id, field_name_str, field_name_len, src_node, dst_node, -1);
+    return Edge_AddIndex(hierarchy, field_name_str, field_name_len, src_node, dst_node, -1);
 }
 
 /* RFE Optimize by taking edgeField as an arg. */
 int Edge_AddIndex(
         struct SelvaHierarchy *hierarchy,
-        unsigned constraint_id,
         const char *field_name_str,
         size_t field_name_len,
         struct SelvaHierarchyNode *src_node,
         struct SelvaHierarchyNode *dst_node,
         ssize_t index) {
-    const struct EdgeFieldConstraints *constraints = &hierarchy->edge_field_constraints;
+    Selva_NodeId src_node_id;
+    const struct EdgeFieldConstraints *constraints;
     const struct EdgeFieldConstraint *constraint;
     enum EdgeFieldConstraintFlag constraint_flags;
     struct EdgeField *src_edge_field = NULL;
     int err;
 
+    SelvaHierarchy_GetNodeId(src_node_id, src_node);
+    constraints = &SelvaSchema_FindNodeSchema(hierarchy, src_node_id)->efc;
+
     /*
      * Get src_edge_field
      */
-    err = get_or_create_EdgeField(constraints, src_node, field_name_str, field_name_len, constraint_id, &src_edge_field);
+    err = get_or_create_EdgeField(constraints, src_node, field_name_str, field_name_len, &src_edge_field);
     if (err) {
         return err;
     }
@@ -653,8 +655,7 @@ int Edge_AddIndex(
         /*
          * This field is bidirectional and so we need to create an edge pointing back.
          */
-        err = Edge_AddIndex(hierarchy, EDGE_FIELD_CONSTRAINT_DYNAMIC,
-                       constraint->bck_field_name_str, constraint->bck_field_name_len,
+        err = Edge_AddIndex(hierarchy, constraint->bck_field_name_str, constraint->bck_field_name_len,
                        dst_node, src_node, -1);
         if (err && err != SELVA_EEXIST) {
             Selva_NodeId dst_node_id;
@@ -1167,7 +1168,6 @@ struct EdgeField_load_data {
 /*
  * A custom SelvaObject pointer loader for EdgeFields.
  * Storage format: [
- *   constraint_id,
  *   nr_edges,
  *   dst_id...
  * ]
@@ -1176,7 +1176,6 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
     struct EdgeField_load_data *load_data = (struct EdgeField_load_data *)p;
     struct SelvaHierarchy *hierarchy = load_data->hierarchy;
     Selva_NodeId src_node_id;
-    unsigned constraint_id;
     const struct EdgeFieldConstraint *constraint;
     size_t nr_edges;
     struct EdgeField *edge_field;
@@ -1184,18 +1183,14 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
     /*
      * Constraint.
      */
-    constraint_id = selva_io_load_unsigned(io);
-    if (constraint_id == EDGE_FIELD_CONSTRAINT_DYNAMIC) {
-        __selva_autofree const char *node_type = NULL;
-        __selva_autofree const char *field_name_str = NULL;
-        size_t field_name_len;
+    __selva_autofree const char *node_type = NULL;
+    __selva_autofree const char *field_name_str = NULL;
+    size_t field_name_len;
 
-        node_type = selva_io_load_str(io, NULL);
-        field_name_str = selva_io_load_str(io, &field_name_len);
-        constraint = Edge_GetConstraint(&hierarchy->edge_field_constraints, constraint_id, node_type, field_name_str, field_name_len);
-    } else {
-        constraint = Edge_GetConstraint(&hierarchy->edge_field_constraints, constraint_id, "NA", "", 0);
-    }
+    node_type = selva_io_load_str(io, NULL);
+    field_name_str = selva_io_load_str(io, &field_name_len);
+    struct EdgeFieldConstraints *constraints = &SelvaSchema_FindNodeSchema(hierarchy, src_node_id)->efc;
+    constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
 
     if (!constraint) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Constraint not found");
@@ -1317,18 +1312,14 @@ int Edge_Load(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, struct
 static void EdgeField_Save(struct selva_io *io, void *value, __unused void *save_data) {
     const struct EdgeField *edge_field = (struct EdgeField *)value;
     const struct EdgeFieldConstraint *constraint = edge_field->constraint;
-    unsigned constraint_id = constraint->constraint_id;
     struct EdgeFieldIterator edge_it;
     const struct SelvaHierarchyNode *dst_node;
 
     /*
      * Constraint.
      */
-    selva_io_save_unsigned(io, constraint_id);
-    if (constraint_id == EDGE_FIELD_CONSTRAINT_DYNAMIC) {
-        selva_io_save_str(io, constraint->src_node_type, SELVA_NODE_TYPE_SIZE);
-        selva_io_save_str(io, constraint->field_name_str, constraint->field_name_len);
-    }
+    selva_io_save_str(io, constraint->src_node_type, SELVA_NODE_TYPE_SIZE);
+    selva_io_save_str(io, constraint->field_name_str, constraint->field_name_len);
 
     /*
      * Edges/arcs.

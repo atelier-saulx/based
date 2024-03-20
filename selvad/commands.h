@@ -146,22 +146,8 @@
 #define CMD_ID_HIERARCHY_AGGREGATE 21
 
 /*
- * HOLE 22
+ * HOLE 22, 23, 24
  */
-
-/**
- * Edge add constraints.
- * module: db
- * cmd: hierarchy.addConstraint
- */
-#define CMD_ID_HIERARCHY_ADDCONSTRAINT 23
-
-/**
- * Edge list constraints.
- * module: db
- * cmd: hierarchy.listConstraints
- */
-#define CMD_ID_HIERARCHY_LIST_CONSTRAINTS 24
 
 /**
  * Delete node.
@@ -220,25 +206,22 @@
 #define CMD_ID_VER 35
 
 /**
- * Add a new node type.
+ * Set schema.
  * module: db
- * cmd: hierarchy.types.add
+ * cmd: schema.set
  */
-#define CMD_ID_HIERARCHY_TYPES_ADD 36
+#define CMD_ID_HIERARCHY_SCHEMA_SET 36
 
 /**
- * Clear all node types.
+ * Get schema.
  * module: db
- * cmd: hierarchy.types.clear
+ * cmd: schema.get
  */
-#define CMD_ID_HIERARCHY_TYPES_CLEAR 37
+#define CMD_ID_HIERARCHY_SCHEMA_GET 37
 
-/**
- * List all known node types.
- * module: db
- * cmd: hierarchy.types.list
+/*
+ * HOLE 38
  */
-#define CMD_ID_HIERARCHY_TYPES_LIST 38
 
 /**
  * List find indices.

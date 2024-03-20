@@ -22,6 +22,7 @@
 #include "selva_db.h"
 #include "selva_object.h"
 #include "selva_onload.h"
+#include "schema.h"
 #include "edge.h"
 
 static void EdgeConstraint_Reply(struct selva_server_response_out *resp, void *p);
@@ -29,7 +30,7 @@ static void *so_load(struct selva_io *io, int encver, void *load_data);
 static void so_save(struct selva_io *io, void *value, void *load_data);
 
 #define DYN_CONSTRAINT_NAME_LEN(field_name_len) \
-    (SELVA_NODE_TYPE_SIZE + 1 + field_name_len)
+    (field_name_len)
 
 static const struct SelvaObjectPointerOpts obj_opts = {
     .ptr_type_id = SELVA_OBJECT_POINTER_EDGE_CONSTRAINTS,
@@ -47,10 +48,7 @@ static inline struct SelvaObject *get_dyn_constraints(const struct EdgeFieldCons
 
 void Edge_InitEdgeFieldConstraints(struct EdgeFieldConstraints *efc) {
     memset(efc, 0, sizeof(*efc));
-    efc->hard_constraints[0].constraint_id = EDGE_FIELD_CONSTRAINT_ID_DEFAULT;
-    efc->hard_constraints[1].constraint_id = EDGE_FIELD_CONSTRAINT_SINGLE_REF;
-    efc->hard_constraints[1].flags = EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF;
-    SelvaObject_Init(efc->dyn_constraints, 0);
+    SelvaObject_Init(efc->dyn_constraints, sizeof(efc->edge_constraint_emb_fields));
 }
 
 void Edge_DeinitEdgeFieldConstraints(struct EdgeFieldConstraints *efc) {
@@ -66,25 +64,33 @@ void Edge_DeinitEdgeFieldConstraints(struct EdgeFieldConstraints *efc) {
  * @param field_name_str is a edge field name
  * @param field_name_len is the length of field_name_str without the terminating character
  */
-static char *make_dyn_constraint_name(char *buf, const char node_type[SELVA_NODE_TYPE_SIZE], const char *field_name_str, size_t field_name_len) {
-    buf[SELVA_NODE_TYPE_SIZE] = '.';
-    memcpy(buf, node_type, SELVA_NODE_TYPE_SIZE);
-    memcpy(buf + SELVA_NODE_TYPE_SIZE + 1, field_name_str, field_name_len);
+static char *make_dyn_constraint_name(char *buf, const char *field_name_str, size_t field_name_len) {
+    memcpy(buf, field_name_str, field_name_len);
     ch_replace(buf + SELVA_NODE_TYPE_SIZE + 1, field_name_len, '.', ':');
 
     return buf;
 }
 
+static size_t calc_params_field_len(const typeof_field(struct EdgeFieldDynConstraintParams, fwd_field_name) field_name)
+{
+    if (field_name[sizeof(typeof_field(struct EdgeFieldDynConstraintParams, fwd_field_name)) - 1] == '\0') {
+        return strlen(field_name);
+    } else {
+        return sizeof(typeof_field(struct EdgeFieldDynConstraintParams, fwd_field_name));
+    }
+}
+
 static struct EdgeFieldConstraint *create_constraint(const struct EdgeFieldDynConstraintParams *params) {
     const int is_bidir = !!(params->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL);
-    size_t fwd_field_name_len;
-    const char *fwd_field_name_str = selva_string_to_str(params->fwd_field_name, &fwd_field_name_len);
+    size_t fwd_field_name_len = calc_params_field_len(params->fwd_field_name);
+    const char *fwd_field_name_str = params->fwd_field_name;
     size_t bck_field_name_len = 0;
     const char *bck_field_name_str = NULL;
     struct EdgeFieldConstraint *p;
 
     if (is_bidir) {
-        bck_field_name_str = selva_string_to_str(params->bck_field_name, &bck_field_name_len);
+        bck_field_name_len = calc_params_field_len(params->fwd_field_name);
+        bck_field_name_str = params->bck_field_name;
     }
 
     p = selva_calloc(1,
@@ -100,8 +106,7 @@ static struct EdgeFieldConstraint *create_constraint(const struct EdgeFieldDynCo
     p->field_name_str = (char *)p + sizeof(*p);
     p->bck_field_name_str = p->field_name_str + fwd_field_name_len + 1;
 
-    p->constraint_id = EDGE_FIELD_CONSTRAINT_DYNAMIC;
-    p->flags = params->flags | EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC;
+    p->flags = params->flags;
     memcpy(p->src_node_type, params->src_node_type, SELVA_NODE_TYPE_SIZE);
 
     p->field_name_len = fwd_field_name_len;
@@ -121,14 +126,14 @@ static struct EdgeFieldConstraint *create_constraint(const struct EdgeFieldDynCo
 }
 
 int Edge_NewDynConstraint(struct EdgeFieldConstraints *efc, const struct EdgeFieldDynConstraintParams *params) {
-    size_t fwd_field_name_len;
-    const char *fwd_field_name_str = selva_string_to_str(params->fwd_field_name, &fwd_field_name_len);
+    size_t fwd_field_name_len = sizeof(params->fwd_field_name);
+    const char *fwd_field_name_str = params->fwd_field_name;
     const size_t constraint_name_len = DYN_CONSTRAINT_NAME_LEN(fwd_field_name_len);
     char constraint_name_str[constraint_name_len];
     struct EdgeFieldConstraint *p;
     int err;
 
-    make_dyn_constraint_name(constraint_name_str, params->src_node_type, fwd_field_name_str, fwd_field_name_len);
+    make_dyn_constraint_name(constraint_name_str, fwd_field_name_str, fwd_field_name_len);
 
     err = SelvaObject_ExistsStr(get_dyn_constraints(efc), constraint_name_str, constraint_name_len);
     if (err != SELVA_ENOENT) {
@@ -145,32 +150,27 @@ int Edge_NewDynConstraint(struct EdgeFieldConstraints *efc, const struct EdgeFie
 
 const struct EdgeFieldConstraint *Edge_GetConstraint(
         const struct EdgeFieldConstraints *efc,
-        unsigned constraint_id,
         const Selva_NodeType node_type,
         const char *field_name_str,
         size_t field_name_len) {
     const struct EdgeFieldConstraint *constraint = NULL;
 
-    if (constraint_id == EDGE_FIELD_CONSTRAINT_DYNAMIC) {
-        const size_t constraint_name_len = DYN_CONSTRAINT_NAME_LEN(field_name_len);
-        char constraint_name_str[constraint_name_len];
-        void *p = NULL;
-        int err;
+    const size_t constraint_name_len = DYN_CONSTRAINT_NAME_LEN(field_name_len);
+    char constraint_name_str[constraint_name_len];
+    void *p = NULL;
+    int err;
 
-        make_dyn_constraint_name(constraint_name_str, node_type, field_name_str, field_name_len);
-        err = SelvaObject_GetPointerStr(get_dyn_constraints(efc), constraint_name_str, constraint_name_len, &p);
-        if (err) {
-            SELVA_LOG(SELVA_LOGL_ERR,
-                      "Failed to get a dynamic constraint. type: \"%.*s\" field_name: \"%.*s\" err: %s",
-                      (int)SELVA_NODE_TYPE_SIZE, node_type,
-                      (int)field_name_len, field_name_str,
-                      selva_strerror(err));
-        }
-
-        constraint = p;
-    } else if (constraint_id < num_elem(efc->hard_constraints)) {
-        constraint = &efc->hard_constraints[constraint_id];
+    make_dyn_constraint_name(constraint_name_str, field_name_str, field_name_len);
+    err = SelvaObject_GetPointerStr(get_dyn_constraints(efc), constraint_name_str, constraint_name_len, &p);
+    if (err) {
+        SELVA_LOG(SELVA_LOGL_ERR,
+                  "Failed to get a dynamic constraint. type: \"%.*s\" field_name: \"%.*s\" err: %s",
+                  (int)SELVA_NODE_TYPE_SIZE, node_type,
+                  (int)field_name_len, field_name_str,
+                  selva_strerror(err));
     }
+
+    constraint = p;
 
     return constraint;
 }
@@ -181,7 +181,6 @@ static void EdgeConstraint_Reply(struct selva_server_response_out *resp, void *p
     const char cflags_str[] = {
         (cflags & EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF)    ? 'S' : '-',
         (cflags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) ? 'B' : '-',
-        (cflags & EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC)       ? 'D' : '-',
         (cflags & EDGE_FIELD_CONSTRAINT_FLAG_ARRAY)         ? 'A' : '-',
     };
 
@@ -219,19 +218,23 @@ static void save_src_node_type(struct selva_io *io, const Selva_NodeType type) {
 static void *so_load(struct selva_io *io, int encver __unused, void *load_data __unused) {
     struct EdgeFieldDynConstraintParams params = { 0 };
     struct EdgeFieldConstraint *constraint;
+    struct selva_string *fwd_field;
+    struct selva_string *bck_field;
 
     params.flags = selva_io_load_unsigned(io);
     load_src_node_type(io, params.src_node_type);
-    selva_string_free(selva_io_load_string(io)); /* Legacy. */
-    params.fwd_field_name = selva_io_load_string(io);
+
+    fwd_field = selva_io_load_string(io);
+    strncpy(params.fwd_field_name, selva_string_to_str(fwd_field, NULL), sizeof(params.fwd_field_name));
+    selva_string_free(fwd_field);
+
     if (params.flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
-        params.bck_field_name = selva_io_load_string(io);
+        bck_field = selva_io_load_string(io);
+        strncpy(params.bck_field_name, selva_string_to_str(bck_field, NULL), sizeof(params.bck_field_name));
+        selva_string_free(bck_field);
     }
 
     constraint = create_constraint(&params);
-
-    selva_string_free(params.fwd_field_name);
-    selva_string_free(params.bck_field_name);
 
     return constraint;
 }
@@ -244,7 +247,6 @@ static void so_save(struct selva_io *io, void *value, void *save_data __unused) 
 
     selva_io_save_unsigned(io, constraint->flags);
     save_src_node_type(io, constraint->src_node_type);
-    selva_io_save_str(io, "", 0); /* Legacy. */
     selva_io_save_str(io, constraint->field_name_str, constraint->field_name_len);
     if (constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
         selva_io_save_str(io, constraint->bck_field_name_str, constraint->bck_field_name_len);
@@ -252,10 +254,6 @@ static void so_save(struct selva_io *io, void *value, void *save_data __unused) 
 }
 
 int EdgeConstraint_Load(struct selva_io *io, int encver, struct EdgeFieldConstraints *data) {
-    if (encver < 2) { /* hierarchy encver */
-        return 0; /* Only the latest version supports loading metadata. */
-    }
-
     if (!SelvaObjectTypeLoadTo(io, encver, get_dyn_constraints(data), NULL)) {
         return SELVA_ENOENT;
     }
@@ -263,92 +261,6 @@ int EdgeConstraint_Load(struct selva_io *io, int encver, struct EdgeFieldConstra
     return 0;
 }
 
-void EdgeConstraint_Save(struct selva_io *io, struct EdgeFieldConstraints *data) {
+void EdgeConstraint_Save(struct selva_io *io, const struct EdgeFieldConstraints *data) {
     SelvaObjectTypeSave(io, get_dyn_constraints(data), NULL);
 }
-
-static void Edge_AddConstraintCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
-    __auto_finalizer struct finalizer fin;
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    struct selva_string **argv;
-    int argc;
-    int err;
-
-    finalizer_init(&fin);
-
-    const int ARGV_SRC_NODE_TYPE = 0;
-    const int ARGV_CONSTRAINT_FLAGS = 1;
-    const int ARGV_FWD_FIELD = 2;
-    const int ARGV_BCK_FIELD = 3;
-
-    argc = selva_proto_buf2strings(&fin, buf, len, &argv);
-    if (argc < 0) {
-        selva_send_errorf(resp, argc, "Failed to parse args");
-        return;
-    } else if (argc != 3 && argc != 4) {
-        selva_send_error_arity(resp);
-    }
-
-    Selva_NodeType src_type;
-    if (selva_string_get_len(argv[ARGV_SRC_NODE_TYPE]) < SELVA_NODE_TYPE_SIZE) {
-        selva_send_errorf(resp, SELVA_EINVAL, "source node type");
-        return;
-    }
-
-    memcpy(src_type, selva_string_to_str(argv[ARGV_SRC_NODE_TYPE], NULL), sizeof(Selva_NodeType));
-
-    size_t flags_len;
-    const char *flags_str = selva_string_to_str(argv[ARGV_CONSTRAINT_FLAGS], &flags_len);
-    enum EdgeFieldConstraintFlag flags = 0;
-
-    for (size_t i = 0; i < flags_len; i++) {
-        flags |= flags_str[i] == 'S' ? EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF : 0;
-        flags |= flags_str[i] == 'B' ? EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL : 0;
-        flags |= flags_str[i] == 'D' ? EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC : 0; /* Implicit. */
-        flags |= flags_str[i] == 'A' ? EDGE_FIELD_CONSTRAINT_FLAG_ARRAY : 0;
-    }
-
-    struct EdgeFieldDynConstraintParams params = {
-        .flags = flags,
-        .src_node_type = SELVA_TYPE_INITIALIZER(src_type),
-        .fwd_field_name = argv[ARGV_FWD_FIELD],
-        .bck_field_name = argv[ARGV_BCK_FIELD],
-    };
-
-    err = Edge_NewDynConstraint(&hierarchy->edge_field_constraints, &params);
-    if (err == SELVA_EEXIST) {
-        selva_send_ll(resp, 0);
-        return;
-    } else if (err) {
-        selva_send_error(resp, err, NULL, 0);
-        return;
-    } else {
-        selva_io_set_dirty();
-        selva_send_ll(resp, 1);
-        selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
-    }
-}
-
-static void Edge_ListConstraintsCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    int err;
-
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
-
-    err = SelvaObject_ReplyWithObject(resp, NULL, get_dyn_constraints(&hierarchy->edge_field_constraints), NULL, 0);
-    if (err) {
-        selva_send_error(resp, err, NULL, 0);
-        return;
-    }
-}
-
-static int EdgeConstraints_OnLoad(void) {
-    selva_mk_command(CMD_ID_HIERARCHY_ADDCONSTRAINT, SELVA_CMD_MODE_MUTATE, "hierarchy.addConstraint", Edge_AddConstraintCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_LIST_CONSTRAINTS, SELVA_CMD_MODE_PURE, "hierarchy.listConstraints", Edge_ListConstraintsCommand);
-
-    return 0;
-}
-SELVA_ONLOAD(EdgeConstraints_OnLoad);
