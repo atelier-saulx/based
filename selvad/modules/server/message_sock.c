@@ -21,8 +21,6 @@
 #include "selva_proto.h"
 #include "server.h"
 
-#define MAX_RETRIES 3
-
 /*
  * NOTICE: All logs are commented out for perf. Please keep it this way in prod.
  */
@@ -70,13 +68,13 @@ static char *sendbufs_get_next_buf(struct server_sendbufs *sendbufs)
     return sendbufs->buf[i];
 }
 
-static bool sendbufs_put_buf(struct server_sendbufs *sendbufs, char *buf, size_t len)
+static bool sendbufs_put_buf(struct server_sendbufs *sendbufs, char *buf)
 {
     assert(sendbufs->i < num_elem(sendbufs->vec));
 
     sendbufs->vec[sendbufs->i] = (struct iovec){
         .iov_base = buf,
-        .iov_len = len,
+        .iov_len = SELVA_PROTO_FRAME_SIZE_MAX,
     };
     sendbufs->i++;
 
@@ -85,54 +83,12 @@ static bool sendbufs_put_buf(struct server_sendbufs *sendbufs, char *buf, size_t
 
 static ssize_t sendbufs_flush(int fd, struct server_sendbufs *sendbufs)
 {
-    int retry_count = 0;
     ssize_t res;
     size_t n = sendbufs->i;
 
-retry:
-    res = writev(fd, sendbufs->vec, sendbufs->i);
+    res = tcp_writev(fd, sendbufs->vec, sendbufs->i);
     if (res < 0) {
-        switch (errno) {
-        case EAGAIN:
-#if EWOULDBLOCK != EAGAIN
-        case EWOULDBLOCK:
-#endif
-        case ENOBUFS:
-            if (retry_count++ > MAX_RETRIES) {
-                return SELVA_PROTO_ENOBUFS; /* Not quite exact for EAGAIN but good enough. */
-            } else {
-                /*
-                 * The safest thing to do is a blocking sleep so this
-                 * thread/process will give the kernel some time to
-                 * flush its buffers.
-                 */
-                const struct timespec tim = {
-                    .tv_sec = 0,
-                    .tv_nsec = 500, /* *sleeve-shaking* */
-                };
-
-                nanosleep(&tim, NULL);
-            }
-
-            goto retry;
-        case EINTR:
-            goto retry;
-        case EBADF:
-            return SELVA_PROTO_EBADF;
-        case ENOMEM:
-            return SELVA_PROTO_ENOMEM;
-        case ECONNRESET:
-            return SELVA_PROTO_ECONNRESET;
-        case ENOTCONN:
-            return SELVA_PROTO_ENOTCONN;
-        case ENOTSUP:
-#if ENOTSUP != EOPNOTSUPP
-        case EOPNOTSUPP:
-#endif
-            return SELVA_PROTO_ENOTSUP;
-        default:
-            return SELVA_PROTO_EINVAL;
-        }
+        return res;
     }
     sendbufs->i = 0;
 
@@ -224,7 +180,7 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, enum ser
 
     resp_frame_finalize(resp->buf, resp->buf_i, last_frame);
 
-    const bool needs_flush = sendbufs_put_buf(sendbufs, resp->buf, resp->buf_i);
+    const bool needs_flush = sendbufs_put_buf(sendbufs, resp->buf);
     if ((flags & SERVER_FLUSH_FLAG_FORCE) || needs_flush ||
         (last_frame && !resp->ctx->flags.batch_active)) {
         sendbufs_flush(resp->ctx->fd, sendbufs);
@@ -367,11 +323,51 @@ static void sock_cancel_stream(struct selva_server_response_out *resp, struct se
     free_stream_resp(stream_resp);
 }
 
+/* TODO macro in selva_proto.h */
+#define MAX_PAYLOAD_SIZE (SELVA_PROTO_FRAME_SIZE_MAX - sizeof(struct selva_proto_header))
 static ssize_t sock_recv_frame(struct conn_ctx *ctx)
 {
     int fd = ctx->fd;
     ssize_t r;
 
+    if (ctx->recv.msg_buf_size - ctx->recv.msg_buf_i < SELVA_PROTO_FRAME_SIZE_MAX) {
+        realloc_ctx_msg_buf(ctx, ctx->recv.msg_buf_size + MAX_PAYLOAD_SIZE);
+    }
+
+    const struct iovec rd[2] = {
+        {
+            .iov_base = &ctx->recv_frame_hdr_buf,
+            .iov_len = sizeof(ctx->recv_frame_hdr_buf),
+        },
+        {
+            .iov_base = ctx->recv.msg_buf + ctx->recv.msg_buf_i,
+            .iov_len = MAX_PAYLOAD_SIZE,
+        }
+    };
+
+    r = tcp_readv(fd, rd, num_elem(rd));
+    if (r <= 0) {
+        /* Drop the connection immediately on error. */
+        return SELVA_PROTO_ECONNRESET;
+    } else if (r != (ssize_t)SELVA_PROTO_FRAME_SIZE_MAX) {
+#if 0
+        SELVA_LOG(SELVA_LOGL_DBG, "Header size mismatch: %zu", (size_t)r);
+#endif
+        return SELVA_PROTO_EBADMSG;
+    }
+
+    const ssize_t frame_bsize = le16toh(ctx->recv_frame_hdr_buf.frame_bsize);
+    const size_t frame_payload_size = frame_bsize - sizeof(struct selva_proto_header);
+
+    if (frame_payload_size > SELVA_PROTO_FRAME_SIZE_MAX) {
+#if 0
+        SELVA_LOG(SELVA_LOGL_DBG, "Frame too large: %zu", frame_payload_size);
+#endif
+        return SELVA_PROTO_EBADMSG;
+    }
+    ctx->recv.msg_buf_i += frame_payload_size;
+
+#if 0
     r = tcp_read(fd, &ctx->recv_frame_hdr_buf, sizeof(ctx->recv_frame_hdr_buf));
     if (r <= 0) {
         /* Drop the connection immediately on error. */
@@ -417,6 +413,7 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
 
         ctx->recv.msg_buf_i += frame_payload_size;
     }
+#endif
 
     /*
      * Verify the frame checksum.

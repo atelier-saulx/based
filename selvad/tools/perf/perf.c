@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <arpa/inet.h>
@@ -19,6 +19,7 @@
 #include "endian.h"
 #include "util/crc32c.h"
 #include "util/ctime.h"
+#include "util/tcp.h"
 #include "util/timestamp.h"
 #include "selva_db_types.h"
 #include "selva_error.h"
@@ -73,7 +74,7 @@ static int connect_to_server(const char *addr, int port)
 
 static int send_message(int fd, const void *buf, size_t size, bool flush)
 {
-#define IO_BUFS 100
+#define IO_BUFS 1000
     static char io_buf[IO_BUFS][SELVA_PROTO_FRAME_SIZE_MAX];
     static struct iovec vec[IO_BUFS];
     static size_t vec_i;
@@ -82,11 +83,11 @@ static int send_message(int fd, const void *buf, size_t size, bool flush)
     memcpy(io_buf[vec_i], buf, size);
     vec[vec_i] = (struct iovec){
         .iov_base = io_buf[vec_i],
-        .iov_len = size,
+        .iov_len = SELVA_PROTO_FRAME_SIZE_MAX,
     };
 
     if (++vec_i >= num_elem(vec) || flush) {
-        ssize_t res = writev(fd, vec, vec_i);
+        ssize_t res = tcp_writev(fd, vec, vec_i);
         vec_i = 0;
 
         if (res < 0) {
@@ -466,33 +467,6 @@ static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size
     }
 }
 
-static ssize_t recvn(int fd, void *buf, size_t n)
-{
-    ssize_t i = 0;
-
-    while (i < (ssize_t)n) {
-        ssize_t res;
-
-        errno = 0;
-        res = recv(fd, (char *)buf + i, n - i, 0);
-        if (res <= 0) {
-            if (errno == EINTR) {
-                if (flag_stop) {
-                    fprintf(stderr, "Interrupted\n");
-                    return res;
-                }
-                continue;
-            }
-
-            return res;
-        }
-
-        i += res;
-    }
-
-    return (ssize_t)i;
-}
-
 int recv_message(int fd)
 {
     static _Alignas(uintptr_t) uint8_t msg_buf[MSG_BUF_SIZE] __lazy_alloc_glob;
@@ -500,38 +474,45 @@ int recv_message(int fd)
     size_t i = 0;
 
     do {
+        const struct iovec rd_vec[2] = {
+            {
+                .iov_base = &resp_hdr,
+                .iov_len = sizeof(resp_hdr),
+            },
+            {
+                .iov_base = msg_buf + i,
+                .iov_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(resp_hdr),
+            },
+        };
         ssize_t r;
 
-        r = recvn(fd, &resp_hdr, sizeof(resp_hdr));
-        if (r != (ssize_t)sizeof(resp_hdr)) {
-            fprintf(stderr, "Reading selva_proto header failed. result: %d\n", (int)r);
+        r = tcp_readv(fd, rd_vec, num_elem(rd_vec));
+        if (r != SELVA_PROTO_FRAME_SIZE_MAX) {
+            fprintf(stderr, "Reading selva_proto frame failed. result: %d\n", (int)r);
             return 1;
-        } else {
-            size_t frame_bsize = le16toh(resp_hdr.frame_bsize);
-            const size_t payload_size = frame_bsize - sizeof(resp_hdr);
+        }
 
-            if (!(resp_hdr.flags & SELVA_PROTO_HDR_FREQ_RES)) {
-                fprintf(stderr, "Invalid response: response bit not set\n");
-                return 1;
-            } else if (i + payload_size > sizeof(msg_buf)) {
-                fprintf(stderr, "Buffer overflow\n");
-                return 1;
-            }
+        const size_t frame_bsize = le16toh(resp_hdr.frame_bsize);
+        const size_t payload_size = frame_bsize - sizeof(resp_hdr);
 
-            if (payload_size > 0) {
-                r = recvn(fd, msg_buf + i, payload_size);
-                if (r != (ssize_t)payload_size) {
-                    fprintf(stderr, "Reading payload failed: result: %d expected: %d\n", (int)r, (int)payload_size);
-                    return 1;
-                }
+        if (frame_bsize < sizeof(resp_hdr)) {
+            fprintf(stderr, "Invalid frame_bsize: %zu\n", frame_bsize);
+            return 1;
+        }
 
-                i += payload_size;
-            }
+        if (!(resp_hdr.flags & SELVA_PROTO_HDR_FREQ_RES)) {
+            fprintf(stderr, "Invalid response: response bit not set. flags: %x\n", resp_hdr.flags);
+            return 1;
+        } else if (i + payload_size > sizeof(msg_buf)) {
+            fprintf(stderr, "Buffer overflow\n");
+            return 1;
+        }
 
-            if (!selva_proto_verify_frame_chk(&resp_hdr, msg_buf + i - payload_size, payload_size)) {
-                fprintf(stderr, "Checksum mismatch\n");
-                return 1;
-            }
+        i += payload_size;
+
+        if (!selva_proto_verify_frame_chk(&resp_hdr, msg_buf + i - payload_size, payload_size)) {
+            fprintf(stderr, "Checksum mismatch\n");
+            return 1;
         }
 
         /*
@@ -696,9 +677,11 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (send_schema(sock, seqno++) ||
-        recv_message(sock)) {
-        fprintf(stderr, "Setting schema failed");
+    int err1 = 0;
+    int err2 = 0;
+    if ((err1 = send_schema(sock, seqno++)) ||
+        (err2 = recv_message(sock))) {
+        fprintf(stderr, "Setting schema failed: [%d, %d]\n", err1, err2);
         exit(EXIT_FAILURE);
     }
 

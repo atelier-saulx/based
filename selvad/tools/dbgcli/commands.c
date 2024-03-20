@@ -18,6 +18,7 @@
 #include "selva_proto.h"
 #include "util/crc32c.h"
 #include "util/selva_rusage.h"
+#include "util/tcp.h"
 #include "../../commands.h"
 #include "commands.h"
 
@@ -201,16 +202,6 @@ static struct cmd commands[255] = {
     }
 };
 
-int send_message(int fd, const void *buf, size_t size, int flags)
-{
-    if (send(fd, buf, size, flags) != (ssize_t)size) {
-        fprintf(stderr, "Send failed\n");
-        return -1; /* TODO Maybe an error code? */
-    }
-
-    return 0;
-}
-
 static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size_t msg_size)
 {
     static_assert((1 << (sizeof(resp_hdr->cmd) * 8)) - 1 <= num_elem(commands));
@@ -235,33 +226,6 @@ static void recv_int_handler(int sig __unused)
     flag_stop_recv = 1;
 }
 
-static ssize_t recvn(int fd, void *buf, size_t n)
-{
-    ssize_t i = 0;
-
-    while (i < (ssize_t)n) {
-        ssize_t res;
-
-        errno = 0;
-        res = recv(fd, (char *)buf + i, n - i, 0);
-        if (res <= 0) {
-            if (errno == EINTR) {
-                if (flag_stop_recv) {
-                    fprintf(stderr, "Interrupted\n");
-                    return res;
-                }
-                continue;
-            }
-
-            return res;
-        }
-
-        i += res;
-    }
-
-    return (ssize_t)i;
-}
-
 void recv_message(int fd)
 {
     static _Alignas(uintptr_t) uint8_t msg_buf[100 * 1048576] __lazy_alloc_glob;
@@ -275,33 +239,40 @@ void recv_message(int fd)
             }, NULL);
 
     do {
+        const struct iovec rd_vec[2] = {
+            {
+                .iov_base = &resp_hdr,
+                .iov_len = sizeof(resp_hdr),
+            },
+            {
+                .iov_base = msg_buf + i,
+                .iov_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(resp_hdr),
+            },
+        };
         ssize_t r;
 
-        r = recvn(fd, &resp_hdr, sizeof(resp_hdr));
-        if (r != (ssize_t)sizeof(resp_hdr)) {
-            fprintf(stderr, "Reading selva_proto header failed. result: %d\n", (int)r);
+        r = tcp_readv(fd, rd_vec, num_elem(rd_vec));
+        if (r != SELVA_PROTO_FRAME_SIZE_MAX) {
+            fprintf(stderr, "Reading selva_proto frame failed. result: %d\n", (int)r);
             exit(EXIT_FAILURE);
         } else {
             size_t frame_bsize = le16toh(resp_hdr.frame_bsize);
             const size_t payload_size = frame_bsize - sizeof(resp_hdr);
 
+            if (frame_bsize < sizeof(resp_hdr)) {
+                fprintf(stderr, "Invalid frame_bsize: %zu\n", frame_bsize);
+                return;
+            }
+
             if (!(resp_hdr.flags & SELVA_PROTO_HDR_FREQ_RES)) {
-                fprintf(stderr, "Invalid response: response bit not set\n");
+                fprintf(stderr, "Invalid response: response bit not set. flags: %x\n", resp_hdr.flags);
                 return;
             } else if (i + payload_size > sizeof(msg_buf)) {
                 fprintf(stderr, "Buffer overflow\n");
                 return;
             }
 
-            if (payload_size > 0) {
-                r = recvn(fd, msg_buf + i, payload_size);
-                if (r != (ssize_t)payload_size) {
-                    fprintf(stderr, "Reading payload failed: result: %d expected: %d\n", (int)r, (int)payload_size);
-                    return;
-                }
-
-                i += payload_size;
-            }
+            i += payload_size;
 
             if (!selva_proto_verify_frame_chk(&resp_hdr, msg_buf + i - payload_size, payload_size)) {
                 fprintf(stderr, "Checksum mismatch\n");
@@ -331,18 +302,24 @@ void recv_message(int fd)
 
 static int cmd_ping_req(const struct cmd *cmd, int sock, int seqno, int argc __unused, char *argv[] __unused)
 {
-    _Alignas(struct selva_proto_header) char buf[sizeof(struct selva_proto_header)];
+    _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
     struct selva_proto_header *hdr = (struct selva_proto_header *)buf;
 
     memset(hdr, 0, sizeof(*hdr));
     hdr->cmd = cmd->cmd_id;
     hdr->flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST;
     hdr->seqno = htole32(seqno);
-    hdr->frame_bsize = htole16(sizeof(buf));
+    hdr->frame_bsize = htole16(sizeof(*hdr));
     hdr->msg_bsize = 0;
-    hdr->chk = htole32(crc32c(0, buf, sizeof(buf)));
+    hdr->chk = htole32(crc32c(0, buf, sizeof(*hdr)));
 
-    if (send_message(sock, buf, sizeof(buf), 0)) {
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -405,8 +382,23 @@ static int cmd_resolve_nodeid_req(const struct cmd *cmd, int sock, int seqno, in
 
     buf.hdr.chk = htole32(crc32c(crc32c(0, &buf, sizeof(buf)), accessor_str, accessor_len));
 
-    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
-        send_message(sock, accessor_str, accessor_len, 0)) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf) - accessor_len;
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = (void *)accessor_str,
+            .iov_len = accessor_len,
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -425,7 +417,19 @@ static int cmd_lscmd_req(const struct cmd *cmd, int sock, int seqno, int argc __
 
     buf.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    if (send_message(sock, &buf, sizeof(buf), 0)) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -458,7 +462,19 @@ static int cmd_loglevel_req(const struct cmd *cmd, int sock, int seqno, int argc
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    if (send_message(sock, &buf, sizeof(buf), 0)) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -521,7 +537,20 @@ static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int
         sizeof(struct selva_proto_longlong));
 
     memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(0, buf, buf_size))}, sizeof(CHK_T));
-    if (send_message(sock, buf, buf_size, 0)) {
+
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -595,8 +624,24 @@ static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int ar
         sizeof(struct selva_proto_string));
 
     memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(crc32c(0, buf, buf_size), value_str, value_len))}, sizeof(CHK_T));
-    if (send_message(sock, buf, buf_size, MSG_MORE) ||
-        send_message(sock, value_str, value_len, 0)) {
+
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf) - value_len;
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = (void *)value_str,
+            .iov_len = value_len,
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -634,7 +679,20 @@ static int cmd_hierarchy_compress(const struct cmd *cmd, int sock, int seqno, in
     strncpy(buf.node_id, argv[1], SELVA_NODE_ID_SIZE);
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
-    if (send_message(sock, &buf, sizeof(buf), 0)) {
+
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -695,7 +753,20 @@ static int cmd_index_acc_req(const struct cmd *cmd, int sock, int seqno, int arg
     p += sizeof(struct selva_proto_longlong);
 
     memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(0, buf, buf_size))}, sizeof(CHK_T));
-    if (send_message(sock, buf, buf_size, 0)) {
+
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
 
@@ -740,11 +811,26 @@ static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc,
     chk = crc32c(chk, message_str, message_len);
     buf.hdr.chk = htole32(chk);
 
-    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
-        send_message(sock, message_str, message_len, 0)
-       ) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf) - message_len;
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = (void *)message_str,
+            .iov_len = message_len,
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -775,9 +861,22 @@ static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int arg
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    if (send_message(sock, &buf, sizeof(buf), 0)) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -817,10 +916,26 @@ static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int arg
 
     buf.hdr.chk = htole32(crc32c(crc32c(0, &buf, sizeof(buf)), addr_str, addr_len));
 
-    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
-         send_message(sock, addr_str, addr_len, 0)) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf) - addr_len;
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = (void *)addr_str,
+            .iov_len = addr_len,
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -849,9 +964,22 @@ static int cmd_purge_req(const struct cmd *cmd, int sock, int seqno, int argc, c
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    if (send_message(sock, &buf, sizeof(buf), 0)) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -896,11 +1024,33 @@ static int cmd_mq_create_req(const struct cmd *cmd, int sock, int seqno, int arg
     if (argc >= 3) buf1.hdr.chk = crc32c(buf1.hdr.chk, &buf2, sizeof(buf2));
     buf1.hdr.chk = htole32(buf1.hdr.chk);
 
-    if (send_message(sock, &buf1, sizeof(buf1), MSG_MORE) ||
-        send_message(sock, name_str, name_len, (argc >= 3) ? MSG_MORE : 0) ||
-        (argc >= 3 && send_message(sock, &buf2, sizeof(buf2), 0))) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf1) - name_len;
+    struct iovec iov[4] = {
+        {
+            .iov_base = &buf1,
+            .iov_len = sizeof(buf1),
+        },
+        {
+            .iov_base = (void *)name_str,
+            .iov_len = name_len,
+        },
+    };
+    if (argc >= 3) {
+        iov[2] = (struct iovec){
+            .iov_base = &buf2,
+            .iov_len = sizeof(buf2),
+        };
+        pad_len -= sizeof(buf2);
+    }
+    char pad_buf[pad_len];
+    iov[argc >= 3 ? 3 : 2] = (struct iovec){
+        .iov_base = pad_buf,
+        .iov_len = pad_len,
+    };
+    if (tcp_writev(sock, iov, argc >= 3 ? 4 : 3) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -952,7 +1102,6 @@ static int cmd_mq_recv_req(const struct cmd *cmd, int sock, int seqno, int argc,
         },
     };
 
-
     buf1.hdr.frame_bsize = htole16(
             sizeof(buf1) + name_len +
             (argc >= 3) * sizeof(buf2) +
@@ -965,26 +1114,63 @@ static int cmd_mq_recv_req(const struct cmd *cmd, int sock, int seqno, int argc,
     if (argc >= 5) buf1.hdr.chk = crc32c(buf1.hdr.chk, &buf4, sizeof(buf4));
     buf1.hdr.chk = htole32(buf1.hdr.chk);
 
-    if (send_message(sock, &buf1, sizeof(buf1), MSG_MORE) ||
-        send_message(sock, name_str, name_len, (argc >= 3) ? MSG_MORE : 0) ||
-        (argc >= 3 && send_message(sock, &buf2, sizeof(buf2), (argc >= 4) ? MSG_MORE : 0)) ||
-        (argc >= 4 && send_message(sock, &buf3, sizeof(buf3), (argc >= 5) ? MSG_MORE : 0)) ||
-        (argc >= 5 && send_message(sock, &buf4, sizeof(buf4), 0))) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf2) - name_len;
+    size_t iov_len = 2;
+    struct iovec iov[5] = {
+        {
+            .iov_base = &buf1,
+            .iov_len = sizeof(buf1),
+        },
+        {
+            .iov_base = (void *)name_str,
+            .iov_len = name_len,
+        },
+    };
+    if (argc >= 3) {
+        iov[iov_len++] = (struct iovec){
+            .iov_base = &buf2,
+            .iov_len = sizeof(buf2),
+        };
+        pad_len -= sizeof(buf2);
+        iov_len++;
+    }
+    if (argc >= 4) {
+        iov[iov_len++] = (struct iovec){
+            .iov_base = &buf3,
+            .iov_len = sizeof(buf3),
+        };
+        pad_len -= sizeof(buf3);
+        iov_len++;
+    }
+    if (argc >= 5) {
+        iov[iov_len++] = (struct iovec){
+            .iov_base = &buf4,
+            .iov_len = sizeof(buf4),
+        };
+        pad_len -= sizeof(buf4);
+        iov_len++;
+    }
+    char pad_buf[pad_len];
+    iov[iov_len++] = (struct iovec){
+        .iov_base = pad_buf,
+        .iov_len = pad_len,
+    };
+    if (tcp_writev(sock, iov, pad_len) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
 static int generic_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
 {
     const int seq = htole32(seqno);
-#define FRAME_PAYLOAD_SIZE_MAX (sizeof(struct selva_proto_string) + 20)
     int arg_i = 1;
     int value_i = 0;
     int frame_nr = 0;
 
     while (arg_i < argc || frame_nr == 0) {
-        _Alignas(struct selva_proto_header) char buf[sizeof(struct selva_proto_header) + FRAME_PAYLOAD_SIZE_MAX];
+        _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
         struct selva_proto_header *hdr = (struct selva_proto_header *)buf;
         size_t frame_bsize = sizeof(*hdr);
 
@@ -1022,23 +1208,24 @@ static int generic_req(const struct cmd *cmd, int sock, int seqno, int argc, cha
         }
         hdr->frame_bsize = htole16(frame_bsize);
 
-        int send_flags = 0;
-
         if (arg_i == argc) {
             hdr->flags |= SELVA_PROTO_HDR_FLAST;
-        } else {
-#if     __linux__
-            send_flags = MSG_MORE;
-#endif
         }
 
         hdr->chk = 0;
         hdr->chk = htole32(crc32c(0, buf, frame_bsize));
 
-        send_message(sock, buf, frame_bsize, send_flags);
+        struct iovec iov[] = {
+            {
+                .iov_base = &buf,
+                .iov_len = sizeof(buf),
+            },
+        };
+        if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
+            return -1;
+        }
     }
 
-#undef FRAME_PAYLOAD_SIZE_MAX
     return 0;
 }
 

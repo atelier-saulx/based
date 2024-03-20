@@ -851,7 +851,7 @@ static void on_connection(struct event *event, void *arg __unused)
     tcp_set_keepalive(new_sockfd, TCP_KEEPALIVE_TIME, TCP_KEEPALIVE_INTVL, TCP_KEEPALIVE_PROBES);
 
     /* selva_proto will never see a chunk smaller than this. */
-    (void)setsockopt(new_sockfd, SOL_SOCKET, SO_RCVLOWAT, &(int){8}, sizeof(int));
+    (void)setsockopt(new_sockfd, SOL_SOCKET, SO_RCVLOWAT, &(int){SELVA_PROTO_FRAME_SIZE_MAX}, sizeof(int));
 
     inet_ntop(AF_INET, &client.sin_addr, buf, sizeof(buf));
     SELVA_LOG(SELVA_LOGL_DBG, "Received a connection from %s:%d", buf, ntohs(client.sin_port));
