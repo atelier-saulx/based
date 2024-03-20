@@ -1,15 +1,22 @@
 {
   "name": "zig-node-native-module",
   "version": "1.0.0",
-  "description": "Example of a Node.js module written in Zig",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "build-fast": "mkdir -p dist && zig build --release=fast --summary all",
     "build": "mkdir -p dist && zig build --summary all",
-    "build-bla": "mkdir -p dist && zig build-lib -mcpu=baseline -OReleaseSmall -dynamic -lc -isystem deps/node-$(node --version)/include/node src/lib.zig -fallow-shlib-undefined -femit-bin=dist/lib.node",
-    "test": "node test.js",
+    "test": "npx ava",
     "postinstall": "./download-node-headers.sh"
   },
-  "author": "Andre 'Staltz' Medeiros <contact@staltz.com>",
-  "license": "Unlicense"
+  "devDependencies": {
+    "ava": "6.1.2"
+  },
+  "ava": {
+    "timeout": "2m",
+    "workerThreads": false,
+    "files": [
+      "./test/**/*.mjs"
+    ]
+  }
 }
