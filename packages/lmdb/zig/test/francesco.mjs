@@ -1,43 +1,67 @@
 import test from 'ava'
-import { LoremIpsum } from 'lorem-ipsum'
+// import { LoremIpsum } from 'lorem-ipsum'
 import { join, dirname } from 'path'
-import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
 import addon from '../nativebla.js'
+import { mkdir, rm } from 'fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// console.log(LoremIpsum)
+// const lorem = new LoremIpsum({
+//   sentencesPerParagraph: {
+//     max: 8,
+//     min: 4,
+//   },
+//   wordsPerSentence: {
+//     max: 16,
+//     min: 4,
+//   },
+// })
+// const x = lorem.generateParagraphs(7)
+// // const value = Buffer.from(zlib.deflateSync(x))
+const relativePath = '/tmp'
+const dbFolder = join(__dirname, relativePath)
 
-const tmpF = join(__dirname, '/tmp')
-
-const lorem = new LoremIpsum({
-  sentencesPerParagraph: {
-    max: 8,
-    min: 4,
-  },
-  wordsPerSentence: {
-    max: 16,
-    min: 4,
-  },
+test.beforeEach('reset db', async () => {
+  await rm(dbFolder, { force: true, recursive: true })
+  await mkdir(dbFolder).catch(() => {})
+  console.log(`Creating db at ${relativePath}`, addon.createDb(relativePath))
 })
-const x = lorem.generateParagraphs(7)
-// const value = Buffer.from(zlib.deflateSync(x))
 
 console.log(addon)
-
-console.log('go create db...', addon.createDb('./tmp'))
 
 test('set and get single', (t) => {
   const key = Buffer.alloc(20)
   key.write('aaa')
-  console.log('key=\t', key)
-
   const value = Buffer.from('sdkfhjjsdlfjksdkjhgfkshgklsdflkjsd')
-  console.log('value=\t', value)
+
   addon.set(key, value)
   const res = addon.get(key)
-  console.log('\nexpected =\t', value)
-  console.log('actual =\t', res)
   t.deepEqual(res, value)
+})
+
+test.only('set and get batch', (t) => {
+  const batch = []
+  const batchSize = 100_000
+  for (let i = 0; i < batchSize; i++) {
+    const key = Buffer.alloc(20)
+    key.write(String(i), 'base64')
+    const value = Buffer.from('AMAZINGVALUE' + 1)
+
+    batch.push(key, value)
+  }
+
+  addon.setBatch(batch)
+
+  for (let i = 0; i < batchSize; i += 2) {
+    try {
+      const res = addon.get(batch[i])
+      t.deepEqual(res, batch[i + 1])
+    } catch (err) {
+      console.error(`FAILED AT INDEX ${i}`)
+      console.error(batch[i - 2])
+      console.error(batch[i])
+      throw err
+    }
+  }
 })
