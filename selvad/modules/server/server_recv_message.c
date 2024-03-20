@@ -22,7 +22,7 @@ int server_recv_message(struct conn_ctx *ctx)
         /*
          * Reset the message buffer state.
          */
-        ctx->recv_msg_buf_i = 0;
+        ctx->recv.msg_buf_i = 0;
     }
 
     /* Only sockets are suported for now. */
@@ -77,7 +77,7 @@ int server_recv_message(struct conn_ctx *ctx)
          */
         if (msg_bsize > SELVA_PROTO_MSG_SIZE_MAX) {
             return SELVA_PROTO_EBADMSG;
-        } else if (ctx->recv_msg_buf_size < msg_bsize) {
+        } else if (ctx->recv.msg_buf_size < msg_bsize) {
             realloc_ctx_msg_buf(ctx, msg_bsize);
         }
     } else if (ctx->flags.recv_state == CONN_CTX_RECV_STATE_FRAGMENT) {

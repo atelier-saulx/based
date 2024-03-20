@@ -43,11 +43,18 @@ struct selva_server_response_out {
     typeof_field(struct selva_proto_header, seqno) seqno;
     int last_error; /*!< Last error. Set by send_error functions. 0 if none. */
     int64_t ts; /*!< Timestamp when the command execution started. */
-    size_t buf_i; /*!< Index into buf */
-    /**
-     * Used with SERVER_MESSAGE_HANDLER_SOCKSERVER_MESSAGE_HANDLER_SOCK.
-     */
-    struct selva_string *msg_buf;
+    size_t buf_i; /*!< Index into buf. */
+    union {
+        /**
+         * Used with SERVER_MESSAGE_HANDLER_SOCKSERVER_MESSAGE_HANDLER_SOCK.
+         */
+        struct selva_string *msg_buf;
+        /**
+         * Current send buffer.
+         * Used with SERVER_MESSAGE_HANDLER_SOCK.
+         */
+        char *buf;
+    };
 };
 
 /**
@@ -96,11 +103,12 @@ struct conn_ctx {
      * Buffers for outgoing messages.
      */
     struct server_sendbufs {
-#define SERVER_NR_SEND_BUFS 10
+#define SERVER_NR_SEND_BUFS 16
+#define SERVER_SEND_BUFS_MASK 0xFFFF
         _Alignas(struct selva_proto_header) char buf[SERVER_NR_SEND_BUFS][SELVA_PROTO_FRAME_SIZE_MAX];
         struct iovec vec[SERVER_NR_SEND_BUFS];
-        typeof_field(struct selva_proto_header, seqno) seqno[SERVER_NR_SEND_BUFS];
-        size_t i;
+        size_t i; /* vec last index. */
+        uint16_t buf_res_map;
     } send;
 
     /**
@@ -120,10 +128,6 @@ struct conn_ctx {
         int tim_hrt; /*!< Server heartbeat timer. */
     } app;
 } __attribute__((aligned(DCACHE_LINESIZE)));
-
-enum server_send_flags {
-    SERVER_SEND_MORE = 0x01,
-};
 
 /**
  * @addtogroup conn
@@ -208,6 +212,15 @@ int pubsub_unsubscribe(struct conn_ctx *ctx, unsigned ch_id);
  */
 int server_recv_message(struct conn_ctx *ctx);
 
+enum server_flush_flags {
+    SERVER_FLUSH_FLAG_LAST_FRAME = 0x01,
+    SERVER_FLUSH_FLAG_FORCE = 0x02,
+};
+
+enum server_send_flags {
+    SERVER_SEND_MORE = 0x01,
+};
+
 struct message_handlers_vtable {
     /**
      * Receive a single frame from a connection.
@@ -218,7 +231,7 @@ struct message_handlers_vtable {
      * Sends the data currently in the outgoing buffer.
      * @param last_frame if set the current message will be terminated.
      */
-    int (*flush)(struct selva_server_response_out *resp, bool last_frame);
+    int (*flush)(struct selva_server_response_out *resp, enum server_flush_flags flags);
     /**
      * Send buffer as a part of the response resp.
      * The data is sent as is framed within selva_proto frames. Typically the buf

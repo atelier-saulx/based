@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <time.h>
@@ -59,7 +60,8 @@ static char *sendbufs_get_next_buf(struct server_sendbufs *sendbufs)
     int i;
 
     if (sendbufs->buf_res_map == 0) {
-        /* FIXME flush */
+        /* TODO We could try to flush. */
+        return NULL;
     }
 
     i = __builtin_ffs(sendbufs->buf_res_map) - 1;
@@ -68,16 +70,21 @@ static char *sendbufs_get_next_buf(struct server_sendbufs *sendbufs)
     return sendbufs->buf[i];
 }
 
-static void sendbufs_put_buf(struct server_sendbufs *sendbufs, char *buf, size_t len)
+static bool sendbufs_put_buf(struct server_sendbufs *sendbufs, char *buf, size_t len)
 {
+    assert(sendbufs->i < num_elem(sendbufs->vec));
+
     sendbufs->vec[sendbufs->i] = (struct iovec){
         .iov_base = buf,
         .iov_len = len,
     };
     sendbufs->i++;
+
+    return sendbufs->i >= num_elem(sendbufs->vec) || sendbufs->buf_res_map == 0;
 }
 
-static ssize_t sendbufs_flush(int fd, struct server_sendbufs *sendbufs) {
+static ssize_t sendbufs_flush(int fd, struct server_sendbufs *sendbufs)
+{
     int retry_count = 0;
     ssize_t res;
     size_t n = sendbufs->i;
@@ -141,10 +148,15 @@ retry:
  * Start a new frame in resp.
  * Must not be called if resp->ctx is not set.
  */
-static void resp_frame_start(struct selva_server_response_out *resp)
+[[nodiscard]]
+static int resp_frame_start(struct selva_server_response_out *resp)
 {
     char *buf = sendbufs_get_next_buf(&resp->ctx->send);
     struct selva_proto_header *hdr = (struct selva_proto_header *)buf;
+
+    if (!buf) {
+        return SELVA_ENOBUFS;
+    }
 
     /* Make sure it's really zeroed as initializers might leave some bits. */
     memset(hdr, 0, sizeof(*hdr));
@@ -156,6 +168,8 @@ static void resp_frame_start(struct selva_server_response_out *resp)
     resp->frame_flags &= ~SELVA_PROTO_HDR_FFMASK;
 
     resp->buf = buf;
+
+    return 0;
 }
 
 /**
@@ -183,8 +197,7 @@ static void resp_frame_finalize(void *buf, size_t bsize, int last_frame)
 
 static int sock_flush_frame_buf(struct selva_server_response_out *resp, enum server_flush_flags flags)
 {
-    bool last_frame = flags & SERVER_FLUSH_FLAG_LAST_FRAME;
-    int err = 0; /* TODO should be not necessary to set */
+    const bool last_frame = flags & SERVER_FLUSH_FLAG_LAST_FRAME;
 
     if (!resp->ctx) {
         return SELVA_PROTO_ENOTCONN;
@@ -194,7 +207,12 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, enum ser
 
     if (resp->buf_i == 0) {
         if (last_frame) {
-            resp_frame_start(resp);
+            int err;
+
+            err = resp_frame_start(resp);
+            if (err) {
+                return err;
+            }
         } else {
             /*
              * Nothing to flush.
@@ -206,9 +224,8 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, enum ser
 
     resp_frame_finalize(resp->buf, resp->buf_i, last_frame);
 
-    sendbufs_put_buf(sendbufs, resp->buf, resp->buf_i);
-    if ((flags & SERVER_FLUSH_FLAG_FORCE) ||
-        sendbufs->i >= num_elem(sendbufs->vec) || sendbufs->buf_res_map == 0 ||
+    const bool needs_flush = sendbufs_put_buf(sendbufs, resp->buf, resp->buf_i);
+    if ((flags & SERVER_FLUSH_FLAG_FORCE) || needs_flush ||
         (last_frame && !resp->ctx->flags.batch_active)) {
         sendbufs_flush(resp->ctx->fd, sendbufs);
     }
@@ -219,7 +236,7 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, enum ser
         maybe_uncork(resp, 0);
     }
 
-    return err;
+    return 0;
 }
 
 static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags)
@@ -235,6 +252,7 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
     while (i < len) {
         if (resp->buf_i >= SELVA_PROTO_FRAME_SIZE_MAX) {
             int err;
+
             err = sock_flush_frame_buf(resp, 0);
             if (err) {
                 ret = err;
@@ -243,7 +261,12 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
             continue;
         }
         if (resp->buf_i == 0) {
-            resp_frame_start(resp);
+            int err;
+
+            err = resp_frame_start(resp);
+            if (err) {
+                return err;
+            }
         }
 
         char *frame_buf = resp->buf;
@@ -259,6 +282,8 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
 
 static ssize_t sock_send_file(struct selva_server_response_out *resp, int fd, size_t size, enum server_send_flags flags)
 {
+    int err;
+
     if (!resp->ctx) {
         return SELVA_PROTO_ENOTCONN;
     }
@@ -269,7 +294,10 @@ static ssize_t sock_send_file(struct selva_server_response_out *resp, int fd, si
      * Create and send a new frame header with no payload and msg_bsize set.
      */
     sock_flush_frame_buf(resp, 0);
-    resp_frame_start(resp);
+    err = resp_frame_start(resp);
+    if (err) {
+        return err;
+    }
     resp_frame_set_msg_len(resp, size);
     sock_flush_frame_buf(resp, SERVER_FLUSH_FLAG_FORCE);
 

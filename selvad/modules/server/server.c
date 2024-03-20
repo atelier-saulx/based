@@ -694,6 +694,15 @@ __used static void mk_query_fork(struct selva_server_response_out *resp, struct 
         return;
     }
 
+    if (ctx) {
+        /*
+         * Force flush to avoid partial messages being processed in the fork.
+         */
+        if (resp->resp_msg_handler == SERVER_MESSAGE_HANDLER_SOCK) {
+            message_handlers[resp->resp_msg_handler].flush(resp, SERVER_FLUSH_FLAG_FORCE);
+        }
+    }
+
     pid = fork();
     if (pid == -1) {
         selva_send_errorf(resp, SELVA_EGENERAL, "Failed to execute");
@@ -717,7 +726,7 @@ __used static void mk_query_fork(struct selva_server_response_out *resp, struct 
         memset(query_fork.pids, 0, sizeof(query_fork.pids));
         memset(&(*query_fork.ret_channel)[slot], 0, sizeof((*query_fork.ret_channel)[slot]));
 
-        cmd->cmd_fn(resp, ctx->recv_msg_buf, ctx->recv_msg_buf_i);
+        cmd->cmd_fn(resp, ctx->recv.msg_buf, ctx->recv.msg_buf_i);
         selva_send_end(resp);
 
         exit(EXIT_SUCCESS);
@@ -784,12 +793,12 @@ static void on_data(struct event *event, void *arg)
 #ifdef USE_QUERY_FORK
             } else if ((cmd->cmd_mode & SELVA_CMD_MODE_QUERY_FORK) &&
                        !query_fork.disabled && query_fork.count < MAX_QUERY_FORKS &&
-                       cmd->query_fork_eligible(ctx->recv_msg_buf, ctx->recv_msg_buf_i)) {
+                       cmd->query_fork_eligible(ctx->recv.msg_buf, ctx->recv.msg_buf_i)) {
                 mk_query_fork(&resp, cmd);
                 return;
 #endif
             } else {
-                cmd->cmd_fn(&resp, ctx->recv_msg_buf, ctx->recv_msg_buf_i);
+                cmd->cmd_fn(&resp, ctx->recv.msg_buf, ctx->recv.msg_buf_i);
             }
         } else {
             static const char msg[] = "Invalid command";

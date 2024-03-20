@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <unistd.h>
 #include "cdefs.h"
 #include "endian.h"
@@ -70,11 +71,28 @@ static int connect_to_server(const char *addr, int port)
     return sock;
 }
 
-static int send_message(int fd, const void *buf, size_t size, int flags)
+static int send_message(int fd, const void *buf, size_t size, bool flush)
 {
-    if (send(fd, buf, size, flags) != (ssize_t)size) {
-        fprintf(stderr, "Send failed\n");
-        return -1; /* TODO Maybe an error code? */
+#define IO_BUFS 100
+    static char io_buf[IO_BUFS][SELVA_PROTO_FRAME_SIZE_MAX];
+    static struct iovec vec[IO_BUFS];
+    static size_t vec_i;
+
+    assert(size < SELVA_PROTO_FRAME_SIZE_MAX);
+    memcpy(io_buf[vec_i], buf, size);
+    vec[vec_i] = (struct iovec){
+        .iov_base = io_buf[vec_i],
+        .iov_len = size,
+    };
+
+    if (++vec_i >= num_elem(vec) || flush) {
+        ssize_t res = writev(fd, vec, vec_i);
+        vec_i = 0;
+
+        if (res < 0) {
+            fprintf(stderr, "Send failed: \"%s\"\n", strerror(errno));
+            return -1;
+        }
     }
 
     return 0;
@@ -152,7 +170,7 @@ static int send_schema(int fd, int seqno)
 
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), true);
 }
 
 static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -250,7 +268,7 @@ static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_i
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -295,7 +313,7 @@ static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_i
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -350,7 +368,7 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[S
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -401,7 +419,7 @@ static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size_t msg_size)
