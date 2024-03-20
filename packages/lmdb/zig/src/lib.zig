@@ -144,13 +144,13 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
         JsThrow(env, "Failed to get args.") catch return null;
     }
 
-    var value_size: usize = undefined;
-    var value_buffer: []u8 = undefined;
-    _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(@alignCast(&value_buffer)), &value_size);
-
     var key_size: usize = undefined;
     var key_buffer: []u8 = undefined;
     _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&key_buffer)), &key_size);
+
+    var value_size: usize = undefined;
+    var value_buffer: []u8 = undefined;
+    _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(@alignCast(&value_buffer)), &value_size);
 
     // std.debug.print("SET keySize = {d}\n", .{key_size});
     // std.debug.print("SET key = {x}\n", .{key_buffer[0..20]});
@@ -219,9 +219,11 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
 
     var key: c.napi_value = undefined;
     var value: c.napi_value = undefined;
-    var keyChars: [20]u8 = undefined;
-    var keySize: usize = undefined;
-    var valueSize: usize = undefined;
+
+    var key_buffer: []u8 = undefined;
+    var value_size: usize = undefined;
+    var value_buffer: []u8 = undefined;
+
     var index: u32 = 0;
     while (index < arraySize) : (index += 2) {
         if (c.napi_get_element(env, batch, index, &key) != c.napi_ok) {
@@ -231,11 +233,12 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
             return Error.UNKNOWN_ERROR;
         }
 
-        _ = c.napi_get_value_string_utf8(env, key, &keyChars, 20, &keySize);
-        _ = c.napi_get_buffer_info(env, value, null, &valueSize);
+        // var key_size: usize = undefined;
+        _ = c.napi_get_buffer_info(env, key, @ptrCast(@alignCast(&key_buffer)), null);
+        _ = c.napi_get_buffer_info(env, value, @ptrCast(@alignCast(&value_buffer)), &value_size);
 
-        var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
-        var v: c.MDB_val = .{ .mv_size = valueSize, .mv_data = value };
+        var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key_buffer) };
+        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @ptrCast(value_buffer) };
         try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
     }
 
