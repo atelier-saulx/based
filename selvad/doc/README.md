@@ -134,3 +134,21 @@ graceful shutdown and dump.
 The server implementation of `selva_proto` is located in the
 [server](../modules/server) module. The protocol is documented in
 [doc/selva\_proto.md](modules/server/selva_proto.md).
+
+## Profiling 
+
+### MacOs
+
+```
+xctrace record --template 'Time Profiler' --output out.trace --launch ./selvad
+...
+open out.trace
+```
+
+### VTune
+
+Naturally, it's also possible to attach [Intel VTune](/doc/debugging.md#intel-vtune)
+to the `selvad` process while the test is running and gather even more performance
+data. The only thing to keep in mind is that the test will run three `selvad`
+processes which of only one is processing the data, the `origin` process.
+

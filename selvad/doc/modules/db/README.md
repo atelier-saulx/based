@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2022-2023 SAULX
+Copyright (c) 2022-2024 SAULX
 
 SPDX-License-Identifier: MIT
 -->
@@ -233,11 +233,6 @@ The [indexing performance test](/test/perf/indexing.ts) will create a CSV file
 in the [client directory](/client) when executed. This CSV can be used to
 further analyze the time complexity of the indexing subsystem as the data set
 and index size grows.
-
-Naturally, it's also possible to attach [Intel VTune](/doc/debugging.md#intel-vtune)
-to the `selvad` process while the test is running and gather even more performance
-data. The only thing to keep in mind is that the test will run three `selvad`
-processes which of only one is processing the data, the `origin` process.
 
 ## Hierarchy Serialization
 
