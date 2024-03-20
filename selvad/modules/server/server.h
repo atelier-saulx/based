@@ -44,16 +44,10 @@ struct selva_server_response_out {
     int last_error; /*!< Last error. Set by send_error functions. 0 if none. */
     int64_t ts; /*!< Timestamp when the command execution started. */
     size_t buf_i; /*!< Index into buf */
-    union {
-        /**
-         * Used with SERVER_MESSAGE_HANDLER_SOCKSERVER_MESSAGE_HANDLER_SOCK.
-         */
-        struct selva_string *msg_buf;
-        /**
-         * Used with SERVER_MESSAGE_HANDLER_SOCK.
-         */
-        char *buf;
-    };
+    /**
+     * Used with SERVER_MESSAGE_HANDLER_SOCKSERVER_MESSAGE_HANDLER_SOCK.
+     */
+    struct selva_string *msg_buf;
 };
 
 /**
@@ -92,18 +86,22 @@ struct conn_ctx {
     /**
      * Buffer for the currently incoming message.
      */
-    char *recv_msg_buf __counted_by(recv_msg_buf_size);
-    size_t recv_msg_buf_size;
-    size_t recv_msg_buf_i;
+    struct {
+        char *msg_buf __counted_by(recv_msg_buf_size);
+        size_t msg_buf_size;
+        size_t msg_buf_i;
+    } recv;
 
     /**
      * Buffers for outgoing messages.
      */
-    struct {
-        _Alignas(struct selva_proto_header) char more_buf[10][SELVA_PROTO_FRAME_SIZE_MAX];
-        struct iovec vecs[10];
+    struct server_sendbufs {
+#define SERVER_NR_SEND_BUFS 10
+        _Alignas(struct selva_proto_header) char buf[SERVER_NR_SEND_BUFS][SELVA_PROTO_FRAME_SIZE_MAX];
+        struct iovec vec[SERVER_NR_SEND_BUFS];
+        typeof_field(struct selva_proto_header, seqno) seqno[SERVER_NR_SEND_BUFS];
         size_t i;
-    } gath;
+    } send;
 
     /**
      * Open streams.
