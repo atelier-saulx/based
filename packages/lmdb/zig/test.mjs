@@ -173,7 +173,7 @@ const server = new BasedServer({
 
           for (let i = 0; i < payload.writes.length; i += 2) {
             const w = payload.writes
-            writes.push(w[i], Buffer.from(w[i + 1]))
+            writes.push(Buffer.from(w[i]), Buffer.from(w[i + 1]))
             // writes.push(w[i] + '1', Buffer.from(''))
             // writes.push(w[i] + '0', Buffer.from(''))
             cnt++
@@ -214,7 +214,7 @@ const runIt = async () => {
   const done = () =>
     new Promise((resolve) => {
       let interval = setInterval(() => {
-        console.log(writes.length)
+        // console.log(writes.length)
         if (writes.length === 0) {
           clearInterval(interval)
           resolve()
