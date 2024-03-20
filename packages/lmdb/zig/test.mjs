@@ -109,15 +109,29 @@ const doworker = (data) =>
 //   console.log(`batch writing ${y} nodes took`, Date.now() - batchTime, 'ms')
 // }
 
+const wrker = new Worker(join(__dirname, './db.mjs'))
+
 let writes = []
 let isDraining = false
+let inProgress = false
 const drain = () => {
   if (!isDraining) {
     isDraining = true
     setTimeout(() => {
-      const w = writes
-      writes = []
-      addon.setBatch(w)
+      if (!inProgress) {
+        const w = writes
+        writes = []
+        inProgress = true
+        wrker.postMessage(w)
+        wrker.once('message', () => {
+          inProgress = false
+          if (isDraining) {
+            drain()
+          }
+        })
+      }
+
+      // addon.setBatch(w)
       isDraining = false
     }, 0)
   }
