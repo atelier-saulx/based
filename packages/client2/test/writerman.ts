@@ -234,6 +234,10 @@ const id = ~~(Math.random() * 99999)
 const txt = lorem.generateParagraphs(7)
 // console.log('start wrk', id, txt)
 
+// #1 setType{ pi, compiledReturnThingyOfDateRecord }
+
+// deflate_string
+
 // 1M
 for (let j = 0; j < 100; j++) {
   let q = []
@@ -244,31 +248,37 @@ for (let j = 0; j < 100; j++) {
     // createdAt + lastUpdated
     q.push(
       client.command('modify', [
-        idx,
+        idx, // DEF piSnurpaypants
         '', // lang
-        [
-          ModifyArgType.SELVA_MODIFY_ARG_STRING,
-          '3',
-          'a',
-          // ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
-          // '2',
-          // createRecord(edgeMetaDef, {
-          //   op_code: SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_STRING,
-          //   delete_all: 0,
-          //   dst_node_id: flap3,
-          //   meta_field_name: '0',
-          //   meta_field_value: 'HELLO',
-          // }),
-          // ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
-          // '2',
-          // createRecord(edgeMetaDef, {
-          //   op_code: SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_STRING,
-          //   delete_all: 0,
-          //   dst_node_id: flap1,
-          //   meta_field_name: '0',
-          //   meta_field_value: 'BYE',
-          // }),
-        ],
+        // BUFFER_DATARECORD
+
+        // references: create() // new value OR $delete, $add
+
+        //
+
+        // [
+        //   ModifyArgType.SELVA_MODIFY_ARG_STRING,
+        //   '3',
+        //   'a',
+        //   // ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
+        //   // '2',
+        //   // createRecord(edgeMetaDef, {
+        //   //   op_code: SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_STRING,
+        //   //   delete_all: 0,
+        //   //   dst_node_id: flap3,
+        //   //   meta_field_name:  '0',
+        //   //   meta_field_value: 'HELLO',
+        //   // }),
+        //   // ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
+        //   // '2',
+        //   // createRecord(edgeMetaDef, {
+        //   //   op_code: SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_STRING,
+        //   //   delete_all: 0,
+        //   //   dst_node_id: flap1,
+        //   //   meta_field_name: '0',
+        //   //   meta_field_value: 'BYE',
+        //   // }),
+        // ],
       ])
     )
   }
