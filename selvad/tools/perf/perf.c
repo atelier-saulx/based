@@ -529,6 +529,7 @@ int recv_message(int fd)
             handle_response(&resp_hdr, msg_buf, i);
             i = 0;
         }
+        //printf("seq: %d\n", (int)resp_hdr.seqno);
     } while (!(resp_hdr.flags & SELVA_PROTO_HDR_FLAST));
 
     handle_response(&resp_hdr, msg_buf, i);
@@ -541,7 +542,7 @@ void *recv_thread(void *arg)
     int fd = args->fd;
     int n = args->n;
 
-    while (!flag_stop && n-- && !recv_message(fd));
+    while (!flag_stop && n-- && !recv_message(fd)); // printf("n: %d\n", n);
 
     return NULL;
 }
@@ -700,6 +701,7 @@ int main(int argc, char *argv[])
     ts_monotime(&ts_start);
     while (!flag_stop && seqno < n) {
         flags_t frame_extra_flags = (batch && (seqno < n - 1)) ? SELVA_PROTO_HDR_BATCH : 0;
+        //printf("flags: %u\n", frame_extra_flags);
 
         suites[suite](sock, seqno++, frame_extra_flags);
 

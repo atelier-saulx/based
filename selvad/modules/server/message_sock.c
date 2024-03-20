@@ -5,6 +5,7 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
@@ -15,9 +16,7 @@
 #include "util/tcp.h"
 #include "endian.h"
 #include "selva_error.h"
-#if 0
 #include "selva_log.h"
-#endif
 #include "selva_proto.h"
 #include "server.h"
 
@@ -105,6 +104,7 @@ retry:
             return SELVA_PROTO_EINVAL;
         }
     }
+    assert(res == (ssize_t)len); /* TODO Handle this case */
     return 0;
 }
 
@@ -151,14 +151,19 @@ static void resp_frame_finalize(void *buf, size_t bsize, int last_frame)
 static int sock_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame)
 {
     int err;
+    bool sendnow;
 
     if (!resp->ctx) {
         return SELVA_PROTO_ENOTCONN;
     }
 
+    sendnow = last_frame && !resp->ctx->flags.batch_active;
+
     if (resp->buf_i == 0) {
         if (last_frame) {
+            resp->buf = resp->ctx->gath.more_buf[resp->ctx->gath.i];
             resp_frame_start(resp);
+            sendnow = true;
         } else {
             /*
              * Nothing to flush.
@@ -169,7 +174,24 @@ static int sock_flush_frame_buf(struct selva_server_response_out *resp, bool las
     }
 
     resp_frame_finalize(resp->buf, resp->buf_i, last_frame);
+
+    resp->ctx->gath.vecs[resp->ctx->gath.i] = (struct iovec){
+        .iov_base = resp->ctx->gath.more_buf[resp->ctx->gath.i],
+        .iov_len = resp->buf_i,
+    };
+    //SELVA_LOG(SELVA_LOGL_ERR, "flags %d %d", last_frame, resp->ctx->flags.batch_active);
+    resp->ctx->gath.i++;
+    if (resp->ctx->gath.i >= num_elem(resp->ctx->gath.vecs) || sendnow) {
+        ssize_t res = writev(resp->ctx->fd, resp->ctx->gath.vecs, resp->ctx->gath.i);
+        //memset(resp->gath.vecs, 0, sizeof(resp->gath.vecs));
+        //SELVA_LOG(SELVA_LOGL_ERR, "SENT %d buffers act: b%d", (int)resp->ctx->gath.i, !!resp->ctx->flags.batch_active);
+        resp->ctx->gath.i = 0;
+    }
+    resp->buf = resp->ctx->gath.more_buf[resp->ctx->gath.i];
+    //SELVA_LOG(SELVA_LOGL_ERR, "i: %zu buf: %p", resp->ctx->gath.i, resp->buf);
+#if 0
     err = send_frame(resp->ctx->fd, resp->buf, resp->buf_i, 0);
+#endif
     resp->buf_i = 0;
 
     if (last_frame) {
@@ -188,10 +210,13 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
     if (!resp->ctx) {
         return SELVA_PROTO_ENOTCONN;
     }
+    if (resp->buf_i == 0) {
+        resp->buf = resp->ctx->gath.more_buf[resp->ctx->gath.i];
+    }
 
     maybe_cork(resp);
     while (i < len) {
-        if (resp->buf_i >= sizeof(resp->buf)) {
+        if (resp->buf_i >= SELVA_PROTO_FRAME_SIZE_MAX) {
             int err;
             err = sock_flush_frame_buf(resp, false);
             if (err) {
@@ -203,7 +228,7 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
             resp_frame_start(resp);
         }
 
-        const size_t wr = min(sizeof(resp->buf) - resp->buf_i, len - i);
+        const size_t wr = min(SELVA_PROTO_FRAME_SIZE_MAX - resp->buf_i, len - i);
         memcpy(resp->buf + resp->buf_i, (uint8_t *)buf + i, wr);
         i += wr;
         resp->buf_i += wr;

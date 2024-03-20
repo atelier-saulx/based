@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <sys/uio.h>
 #include "../../tunables.h"
 
 struct conn_ctx;
@@ -51,7 +52,7 @@ struct selva_server_response_out {
         /**
          * Used with SERVER_MESSAGE_HANDLER_SOCK.
          */
-        _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+        char *buf;
     };
 };
 
@@ -94,6 +95,15 @@ struct conn_ctx {
     char *recv_msg_buf __counted_by(recv_msg_buf_size);
     size_t recv_msg_buf_size;
     size_t recv_msg_buf_i;
+
+    /**
+     * Buffers for outgoing messages.
+     */
+    struct {
+        _Alignas(struct selva_proto_header) char more_buf[10][SELVA_PROTO_FRAME_SIZE_MAX];
+        struct iovec vecs[10];
+        size_t i;
+    } gath;
 
     /**
      * Open streams.
