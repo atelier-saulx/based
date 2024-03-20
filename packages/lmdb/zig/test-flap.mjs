@@ -18,11 +18,11 @@ const lorem = new LoremIpsum({
   },
 })
 
-const loremx = lorem.generateParagraphs(1)
+// const loremx = lorem.generateParagraphs(1)
 
-console.log(loremx)
+// console.log(loremx)
 
-const x = loremx // 'bla bla bla snurp 1000'
+const x = 'bla bla bla snurp 1000'
 
 const client = new BasedClient()
 

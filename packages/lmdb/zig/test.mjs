@@ -119,21 +119,30 @@ const drain = () => {
   if (!isDraining) {
     isDraining = true
     setTimeout(() => {
+      isDraining = false
+
       if (!inProgress) {
-        const w = writes
-        writes = []
+        let w
+        console.log('DRAIN', writes.length)
+        const DRAIN = 2e6
+        if (writes.length > DRAIN) {
+          w = writes.splice(DRAIN, DRAIN)
+          // isDraining = true
+        } else {
+          w = writes
+          writes = []
+        }
         inProgress = true
         wrker.postMessage(w)
         wrker.once('message', () => {
           inProgress = false
-          if (isDraining) {
+          if (writes.length) {
             drain()
           }
         })
       }
 
       // addon.setBatch(w)
-      isDraining = false
     }, 0)
   }
 }
@@ -201,8 +210,24 @@ const runIt = async () => {
     q.push(doworker(i))
   }
   await Promise.all(q)
+
+  const done = () =>
+    new Promise((resolve) => {
+      let interval = setInterval(() => {
+        console.log(writes.length)
+        if (writes.length === 0) {
+          clearInterval(interval)
+          resolve()
+        }
+      }, 0)
+    })
+
+  await done()
+
   const ms = Date.now() - s
   const seconds = ms / 1000
+
+  await wait(250)
 
   const mb = (await fs.stat(join(tmpF, 'data.mdb'))).size / 1000 / 1000
 
