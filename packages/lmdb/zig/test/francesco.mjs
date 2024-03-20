@@ -45,7 +45,8 @@ test.only('set and get batch', (t) => {
   const batchSize = 100_000
   for (let i = 0; i < batchSize; i++) {
     const key = Buffer.alloc(20)
-    key.write(String(i), 'base64')
+    key.write(String(i))
+    // if (i == 99998) console.log('key = ', key)
     const value = Buffer.from('AMAZINGVALUE' + 1)
 
     batch.push(key, value)
@@ -53,7 +54,7 @@ test.only('set and get batch', (t) => {
 
   addon.setBatch(batch)
 
-  for (let i = 0; i < batchSize; i += 2) {
+  for (let i = 0; i < batch.length; i += 2) {
     try {
       const res = addon.get(batch[i])
       t.deepEqual(res, batch[i + 1])
