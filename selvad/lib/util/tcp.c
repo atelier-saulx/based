@@ -125,10 +125,9 @@ static size_t tcp_iov_op(int fd, const struct iovec *vec, size_t count, ssize_t 
         ssize_t bytes;
 retry:
         bytes = iov_fn(fd, remain_p, remain_count);
-        if (bytes == 0) {
-            bytes = EAGAIN;
-        }
-        if (bytes == -1) {
+        if (bytes == 0 && iov_fn == readv) {
+            return SELVA_PROTO_ENOTCONN;
+        } else if (bytes == -1) {
             switch (errno) {
             case EAGAIN:
 #if EWOULDBLOCK != EAGAIN
