@@ -11,8 +11,10 @@ void tcp_unset_nodelay(int fd);
 void tcp_set_keepalive(int fd, int time, int intvl, int probes);
 void tcp_cork(int fd);
 void tcp_uncork(int fd);
+
 ssize_t tcp_recv(int fd, void *buf, size_t n, int flags);
 ssize_t tcp_read(int fd, void *buf, size_t n);
+ssize_t tcp_write(int fd, void *buf, size_t n);
 
 ssize_t tcp_readv(int fd, const struct iovec *vec, size_t count);
 ssize_t tcp_writev(int fd, const struct iovec *vec, size_t count);
@@ -25,7 +27,6 @@ off_t tcp_sendfile(int out_fd, int in_fd, off_t *offset, size_t count);
 /* TODO fix fuzzer with tcp_read() */
 
 #ifndef FUZZER
-#define tcp_write write
 #define tcp_send send
 #define tcp_sendto sendto
 #define tcp_sendmsg sendmsg

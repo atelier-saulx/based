@@ -55,6 +55,7 @@ static int connect_to_server(const char *addr, int port)
     }
 
     (void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &(int){1}, sizeof(int));
+    (void)setsockopt(sock, SOL_SOCKET, SO_RCVLOWAT, &(int){SELVA_PROTO_FRAME_SIZE_MAX}, sizeof(int));
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
@@ -496,7 +497,7 @@ int recv_message(int fd)
         const size_t payload_size = frame_bsize - sizeof(resp_hdr);
 
         if (frame_bsize < sizeof(resp_hdr)) {
-            fprintf(stderr, "Invalid frame_bsize: %zu\n", frame_bsize);
+            fprintf(stderr, "Invalid frame size. flags: %x frame_bsize: %zu\n", resp_hdr.flags, frame_bsize);
             return 1;
         }
 

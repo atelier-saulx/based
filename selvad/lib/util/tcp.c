@@ -75,6 +75,52 @@ void tcp_uncork(int fd)
 #endif
 }
 
+static int errno2serr(int errno_bak, int *retry_count)
+{
+    switch (errno_bak) {
+    case EAGAIN:
+#if EWOULDBLOCK != EAGAIN
+    case EWOULDBLOCK:
+#endif
+        return SELVA_PROTO_EAGAIN;
+    case ENOBUFS:
+        if ((*retry_count)++ > MAX_RETRIES) {
+            return SELVA_PROTO_ENOBUFS;
+        } else {
+            /*
+             * The safest thing to do is a blocking sleep so this
+             * thread/process will give the kernel some time to
+             * flush its buffers.
+             */
+            const struct timespec tim = {
+                .tv_sec = 0,
+                .tv_nsec = 500, /* *sleeve-shaking* */
+            };
+
+            nanosleep(&tim, NULL);
+        }
+
+        return 0;
+    case EINTR:
+        return 0;
+    case EBADF:
+        return SELVA_PROTO_EBADF;
+    case ENOMEM:
+        return SELVA_PROTO_ENOMEM;
+    case ECONNRESET:
+        return SELVA_PROTO_ECONNRESET;
+    case ENOTCONN:
+        return SELVA_PROTO_ENOTCONN;
+    case ENOTSUP:
+#if ENOTSUP != EOPNOTSUPP
+    case EOPNOTSUPP:
+#endif
+        return SELVA_PROTO_ENOTSUP;
+    default:
+        return SELVA_PROTO_EINVAL;
+    }
+}
+
 ssize_t tcp_recv(int fd, void *buf, size_t n, int flags)
 {
 	ssize_t i = 0;
@@ -95,14 +141,50 @@ ssize_t tcp_recv(int fd, void *buf, size_t n, int flags)
 
 ssize_t tcp_read(int fd, void *buf, size_t n)
 {
+    int retry_count = 0;
 	ssize_t i = 0;
 
 	while (i < (ssize_t)n) {
 		ssize_t res;
 
+retry:
 		res = read(fd, (char *)buf + i, n - i);
-		if (res <= 0) {
-			return i;
+        if (res == 0) {
+            return SELVA_PROTO_ENOTCONN;
+        } else if (res < 0) {
+            int err;
+
+            err = errno2serr(errno, &retry_count);
+            if (err) {
+                return err;
+            }
+            goto retry;
+		}
+
+		i += res;
+	}
+
+	return i;
+}
+
+ssize_t tcp_write(int fd, void *buf, size_t n)
+{
+    int retry_count = 0;
+	ssize_t i = 0;
+
+	while (i < (ssize_t)n) {
+		ssize_t res;
+
+retry:
+		res = write(fd, (char *)buf + i, n - i);
+        if (res < 0) {
+            int err;
+
+            err = errno2serr(errno, &retry_count);
+            if (err) {
+                return err;
+            }
+            goto retry;
 		}
 
 		i += res;
@@ -128,48 +210,21 @@ retry:
         if (bytes == 0 && iov_fn == readv) {
             return SELVA_PROTO_ENOTCONN;
         } else if (bytes == -1) {
-            switch (errno) {
-            case EAGAIN:
-#if EWOULDBLOCK != EAGAIN
-            case EWOULDBLOCK:
-#endif
-                return SELVA_PROTO_EAGAIN;
-            case ENOBUFS:
-                if (retry_count++ > MAX_RETRIES) {
-                    return SELVA_PROTO_ENOBUFS;
-                } else {
-                    /*
-                     * The safest thing to do is a blocking sleep so this
-                     * thread/process will give the kernel some time to
-                     * flush its buffers.
-                     */
-                    const struct timespec tim = {
-                        .tv_sec = 0,
-                        .tv_nsec = 500, /* *sleeve-shaking* */
-                    };
+            int err;
 
-                    nanosleep(&tim, NULL);
-                }
+            err = errno2serr(errno, &retry_count);
+            if (err == SELVA_PROTO_EAGAIN && tot_bytes > 0) {
+                const struct timespec tim = {
+                    .tv_sec = 0,
+                    .tv_nsec = 500, /* *sleeve-shaking* */
+                };
 
+                nanosleep(&tim, NULL);
                 goto retry;
-            case EINTR:
-                goto retry;
-            case EBADF:
-                return SELVA_PROTO_EBADF;
-            case ENOMEM:
-                return SELVA_PROTO_ENOMEM;
-            case ECONNRESET:
-                return SELVA_PROTO_ECONNRESET;
-            case ENOTCONN:
-                return SELVA_PROTO_ENOTCONN;
-            case ENOTSUP:
-#if ENOTSUP != EOPNOTSUPP
-            case EOPNOTSUPP:
-#endif
-                return SELVA_PROTO_ENOTSUP;
-            default:
-                return SELVA_PROTO_EINVAL;
+            } else if (err) {
+                return err;
             }
+            goto retry;
         }
 
         size_t bytes_to_consume = bytes;

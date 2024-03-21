@@ -346,13 +346,9 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
     };
 
     r = tcp_readv(fd, rd, num_elem(rd));
-    if (r <= 0) {
-        /* Drop the connection immediately on error. */
-        return SELVA_PROTO_ECONNRESET;
+    if (r < 0) {
+        return r;
     } else if (r != (ssize_t)SELVA_PROTO_FRAME_SIZE_MAX) {
-#if 0
-        SELVA_LOG(SELVA_LOGL_DBG, "Header size mismatch: %zu", (size_t)r);
-#endif
         return SELVA_PROTO_EBADMSG;
     }
 
@@ -366,54 +362,6 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
         return SELVA_PROTO_EBADMSG;
     }
     ctx->recv.msg_buf_i += frame_payload_size;
-
-#if 0
-    r = tcp_read(fd, &ctx->recv_frame_hdr_buf, sizeof(ctx->recv_frame_hdr_buf));
-    if (r <= 0) {
-        /* Drop the connection immediately on error. */
-        return SELVA_PROTO_ECONNRESET;
-    } else if (r != (ssize_t)sizeof(struct selva_proto_header)) {
-#if 0
-        SELVA_LOG(SELVA_LOGL_DBG, "Header size mismatch: %zu", (size_t)r);
-#endif
-        return SELVA_PROTO_EBADMSG;
-    }
-
-    const ssize_t frame_bsize = le16toh(ctx->recv_frame_hdr_buf.frame_bsize); /* We know it's aligned. */
-    const size_t frame_payload_size = frame_bsize - sizeof(struct selva_proto_header);
-
-    if (frame_bsize > SELVA_PROTO_FRAME_SIZE_MAX ||
-        frame_payload_size > SELVA_PROTO_FRAME_SIZE_MAX) {
-#if 0
-        SELVA_LOG(SELVA_LOGL_DBG, "Frame too large: %zu", frame_payload_size);
-#endif
-        return SELVA_PROTO_EBADMSG;
-    } else if (frame_payload_size > 0) {
-        /*
-         * Resize the message buffer if necessary.
-         */
-        if (frame_payload_size > ctx->recv.msg_buf_size - ctx->recv.msg_buf_i) {
-            realloc_ctx_msg_buf(ctx, ctx->recv.msg_buf_size + frame_payload_size);
-        }
-
-        r = tcp_read(fd, ctx->recv.msg_buf + ctx->recv.msg_buf_i, frame_payload_size);
-        if (r <= 0) {
-            /*
-             * Just drop the connection immediately to keep the server side
-             * connection handling simple. The client can handle connection
-             * issues better.
-             */
-            return SELVA_PROTO_ECONNRESET;
-        } else if (r != (ssize_t)frame_payload_size) {
-#if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Received frame has incorrect size");
-#endif
-            return SELVA_PROTO_EBADMSG;
-        }
-
-        ctx->recv.msg_buf_i += frame_payload_size;
-    }
-#endif
 
     /*
      * Verify the frame checksum.

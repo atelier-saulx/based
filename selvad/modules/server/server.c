@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <langinfo.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -759,16 +760,14 @@ static void on_data(struct event *event, void *arg)
     const int fd = event->fd;
     struct conn_ctx *ctx = (struct conn_ctx *)arg;
     int res;
+    static int count;
 
-    res = server_recv_message(ctx);
-    if (res < 0) {
-        /*
-         * Drop the connection on error.
-         * We can't send an error message because we don't know if the header
-         * data is reliable.
-         */
-        evl_end_fd(fd);
-    } else if (res == 1) {
+    while ((res = server_recv_message(ctx)) >= 0) {
+        if (res == 0) {
+            /* A frame was received. */
+            continue;
+        }
+
         /* A message was received. */
         const uint32_t seqno = le32toh(ctx->recv_frame_hdr_buf.seqno);
         struct selva_server_response_out resp = {
@@ -810,7 +809,14 @@ static void on_data(struct event *event, void *arg)
             selva_send_end(&resp);
         } /* The sequence doesn't end for streams. */
     }
-    /* Otherwise we need to wait for more frames. */
+    if (res < 0 && res != SELVA_PROTO_EAGAIN) {
+        /*
+         * Drop the connection on error.
+         * We can't send an error message because we don't know if the header
+         * data is reliable.
+         */
+        evl_end_fd(fd);
+    }
 }
 
 static void on_close(struct event *event, void *arg)
@@ -841,6 +847,9 @@ static void on_connection(struct event *event, void *arg __unused)
         return;
     }
 
+    /*
+     * TODO On Linux we could use accept4 and set the socket non-blocking already here.
+     */
     new_sockfd = accept(event->fd, (struct sockaddr *)&client, (socklen_t*)&c);
     if (new_sockfd < 0) {
         SELVA_LOG(SELVA_LOGL_ERR, "Accept failed");
@@ -852,6 +861,11 @@ static void on_connection(struct event *event, void *arg __unused)
 
     /* selva_proto will never see a chunk smaller than this. */
     (void)setsockopt(new_sockfd, SOL_SOCKET, SO_RCVLOWAT, &(int){SELVA_PROTO_FRAME_SIZE_MAX}, sizeof(int));
+
+    int status = fcntl(new_sockfd, F_SETFL, fcntl(new_sockfd, F_GETFL, 0) | O_NONBLOCK);
+    if (unlikely(status == -1)) {
+        SELVA_LOG(SELVA_LOGL_WARN, "Failed to set sock (%d) non-blocking", new_sockfd);
+    }
 
     inet_ntop(AF_INET, &client.sin_addr, buf, sizeof(buf));
     SELVA_LOG(SELVA_LOGL_DBG, "Received a connection from %s:%d", buf, ntohs(client.sin_port));
