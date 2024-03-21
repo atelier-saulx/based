@@ -760,7 +760,6 @@ static void on_data(struct event *event, void *arg)
     const int fd = event->fd;
     struct conn_ctx *ctx = (struct conn_ctx *)arg;
     int res;
-    static int count;
 
     while ((res = server_recv_message(ctx)) >= 0) {
         if (res == 0) {
