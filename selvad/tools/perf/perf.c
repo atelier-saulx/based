@@ -612,12 +612,35 @@ static void test_find(int fd, int seqno, flags_t frame_extra_flags)
     send_find(fd, seqno, frame_extra_flags, node_id);
 }
 
+static void test_ping(int fd, int seqno, flags_t frame_extra_flags)
+{
+    _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+    struct selva_proto_header *hdr = (struct selva_proto_header *)buf;
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+    };
+
+    memset(hdr, 0, sizeof(*hdr));
+    hdr->cmd = CMD_ID_PING;
+    hdr->flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST | frame_extra_flags;
+    hdr->seqno = htole32(seqno);
+    hdr->frame_bsize = htole16(sizeof(*hdr));
+    hdr->msg_bsize = 0;
+    hdr->chk = htole32(crc32c(0, buf, sizeof(*hdr)));
+
+    tcp_writev(fd, iov, num_elem(iov));
+}
+
 static void (*suites[])(int fd, int seqno, flags_t frame_extra_flags) = {
     test_modify,
     test_modify_single,
     test_incrby,
     test_hll,
     test_find,
+    test_ping,
 };
 
 int main(int argc, char *argv[])
