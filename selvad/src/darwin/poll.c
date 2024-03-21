@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <errno.h>
@@ -86,7 +86,7 @@ void evl_poll(struct event_loop_state *state, const struct timespec *timeout)
     int nfds_out, itim;
     struct timespec expire, cur;
     const struct timespec sleepy = {
-        .tv_nsec = 500,
+        .tv_nsec = 500, /* Values less than 100 ns seems to deadlock libsystem_kernel.dylib */
     };
 
     ts_monotime(&expire);
