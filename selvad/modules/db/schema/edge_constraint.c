@@ -30,7 +30,7 @@ static void *so_load(struct selva_io *io, int encver, void *load_data);
 static void so_save(struct selva_io *io, void *value, void *load_data);
 
 #define DYN_CONSTRAINT_NAME_LEN(field_name_len) \
-    (field_name_len)
+    (SELVA_NODE_TYPE_SIZE + 1 + field_name_len)
 
 static const struct SelvaObjectPointerOpts obj_opts = {
     .ptr_type_id = SELVA_OBJECT_POINTER_EDGE_CONSTRAINTS,
