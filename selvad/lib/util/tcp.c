@@ -133,9 +133,10 @@ retry:
 #if EWOULDBLOCK != EAGAIN
             case EWOULDBLOCK:
 #endif
+                return SELVA_PROTO_EAGAIN;
             case ENOBUFS:
                 if (retry_count++ > MAX_RETRIES) {
-                    return SELVA_PROTO_ENOBUFS; /* Not quite exact for EAGAIN but good enough. */
+                    return SELVA_PROTO_ENOBUFS;
                 } else {
                     /*
                      * The safest thing to do is a blocking sleep so this
