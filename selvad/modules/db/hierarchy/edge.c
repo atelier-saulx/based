@@ -1209,23 +1209,19 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
      * Edges/arcs.
      */
     for (size_t i = 0; i < nr_edges; i++) {
-        __selva_autofree const char *dst_id_str = NULL;
-        size_t dst_id_len;
+        Selva_NodeId dst_id;
         struct SelvaHierarchyNode *dst_node;
         int err;
 
-        dst_id_str = selva_io_load_str(io, &dst_id_len);
-        if (dst_id_len != SELVA_NODE_ID_SIZE) {
-            return NULL;
-        }
+        selva_io_load_str_fixed(io, dst_id, SELVA_NODE_ID_SIZE);
 
         /*
          * Ensure that the destination node exist before creating an edge.
          */
-        err = SelvaHierarchy_UpsertNode(hierarchy, dst_id_str, &dst_node);
+        err = SelvaHierarchy_UpsertNode(hierarchy, dst_id, &dst_node);
         if (err < 0 && err != SELVA_HIERARCHY_EEXIST) {
             SELVA_LOG(SELVA_LOGL_CRIT, "Upserting node %.*s failed: %s",
-                      (int)SELVA_NODE_ID_SIZE, dst_id_str,
+                      (int)SELVA_NODE_ID_SIZE, dst_id,
                       selva_strerror(err));
             return NULL;
         }
