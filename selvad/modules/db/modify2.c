@@ -353,7 +353,7 @@ static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t d
         return SELVA_EINVAL;
     }
 
-    if (op.op < 0 || op.op >= num_elem(modify_op_fn)) {
+    if ((size_t)op.op >= num_elem(modify_op_fn)) {
         selva_send_errorf(ctx->resp, SELVA_EINVAL, "Invalid opcode");
         return SELVA_EINVAL;
     }

@@ -212,6 +212,17 @@ static void save_src_node_type(struct selva_io *io, const Selva_NodeType type) {
     selva_io_save_str(io, type, SELVA_NODE_TYPE_SIZE);
 }
 
+static inline void cpyfldname(char dst[SELVA_SHORT_FIELD_NAME_LEN], const struct selva_string *src) {
+#if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+    strncpy(dst, selva_string_to_str(src, NULL), SELVA_SHORT_FIELD_NAME_LEN);
+#if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+}
+
 /**
  * Deserializer for SelvaObject ptr value.
  */
@@ -225,12 +236,12 @@ static void *so_load(struct selva_io *io, int encver __unused, void *load_data _
     load_src_node_type(io, params.src_node_type);
 
     fwd_field = selva_io_load_string(io);
-    strncpy(params.fwd_field_name, selva_string_to_str(fwd_field, NULL), sizeof(params.fwd_field_name));
+    cpyfldname(params.fwd_field_name, fwd_field);
     selva_string_free(fwd_field);
 
     if (params.flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
         bck_field = selva_io_load_string(io);
-        strncpy(params.bck_field_name, selva_string_to_str(bck_field, NULL), sizeof(params.bck_field_name));
+        cpyfldname(params.bck_field_name, bck_field);
         selva_string_free(bck_field);
     }
 
