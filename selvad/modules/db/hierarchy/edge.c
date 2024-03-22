@@ -506,7 +506,7 @@ static int get_or_create_EdgeField(
     if (!edge_field) {
         const struct EdgeFieldConstraint *constraint;
 
-        constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
+        constraint = Edge_GetConstraint(constraints, field_name_str, field_name_len);
         if (!constraint) {
             return SELVA_EINVAL;
         }
@@ -1176,30 +1176,22 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
     struct EdgeField_load_data *load_data = (struct EdgeField_load_data *)p;
     struct SelvaHierarchy *hierarchy = load_data->hierarchy;
     Selva_NodeId src_node_id;
+    __selva_autofree const char *field_name_str = NULL;
+    size_t field_name_len;
     const struct EdgeFieldConstraint *constraint;
     size_t nr_edges;
     struct EdgeField *edge_field;
 
-    /*
-     * Constraint.
-     */
-    __selva_autofree const char *node_type = NULL;
-    __selva_autofree const char *field_name_str = NULL;
-    size_t field_name_len;
-
-    node_type = selva_io_load_str(io, NULL);
+    SelvaHierarchy_GetNodeId(src_node_id, load_data->src_node);
     field_name_str = selva_io_load_str(io, &field_name_len);
     struct EdgeFieldConstraints *constraints = &SelvaSchema_FindNodeSchema(hierarchy, src_node_id)->efc;
-    constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
-
+    constraint = Edge_GetConstraint(constraints, field_name_str, field_name_len);
     if (!constraint) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Constraint not found");
         return NULL;
     }
 
     nr_edges = selva_io_load_unsigned(io);
-
-    SelvaHierarchy_GetNodeId(src_node_id, load_data->src_node);
     edge_field = alloc_EdgeField(src_node_id, constraint, nr_edges);
     if (!edge_field) {
         return NULL;
@@ -1314,7 +1306,6 @@ static void EdgeField_Save(struct selva_io *io, void *value, __unused void *save
     /*
      * Constraint.
      */
-    selva_io_save_str(io, constraint->src_node_type, SELVA_NODE_TYPE_SIZE);
     selva_io_save_str(io, constraint->field_name_str, constraint->field_name_len);
 
     /*

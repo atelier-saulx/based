@@ -150,7 +150,6 @@ int Edge_NewDynConstraint(struct EdgeFieldConstraints *efc, const struct EdgeFie
 
 const struct EdgeFieldConstraint *Edge_GetConstraint(
         const struct EdgeFieldConstraints *efc,
-        const Selva_NodeType node_type,
         const char *field_name_str,
         size_t field_name_len) {
     const struct EdgeFieldConstraint *constraint = NULL;
@@ -162,14 +161,6 @@ const struct EdgeFieldConstraint *Edge_GetConstraint(
 
     make_dyn_constraint_name(constraint_name_str, field_name_str, field_name_len);
     err = SelvaObject_GetPointerStr(get_dyn_constraints(efc), constraint_name_str, constraint_name_len, &p);
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_ERR,
-                  "Failed to get a dynamic constraint. type: \"%.*s\" field_name: \"%.*s\" err: %s",
-                  (int)SELVA_NODE_TYPE_SIZE, node_type,
-                  (int)field_name_len, field_name_str,
-                  selva_strerror(err));
-    }
-
     constraint = p;
 
     return constraint;

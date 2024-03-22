@@ -108,10 +108,9 @@ void SelvaSchema_Save(struct selva_io *io, struct SelvaHierarchy *hierarchy);
 
 const struct EdgeFieldConstraint *Edge_GetConstraint(
         const struct EdgeFieldConstraints *efc,
-        const Selva_NodeType node_type,
         const char *field_name_str,
         size_t field_name_len)
-    __attribute__((access(read_only, 1), access(read_only, 3, 4)));
+    __attribute__((access(read_only, 1), access(read_only, 2, 3)));
 
 void Edge_InitEdgeFieldConstraints(struct EdgeFieldConstraints *efc)
     __attribute__((access(write_only, 1)));
