@@ -21,11 +21,10 @@
 #include "selva_proto.h"
 #include "server.h"
 
-#define SERVER_MESSAGE_SOCK_ENABLE_DBG 1
-
 /*
  * NOTICE: All logs are commented out for perf. Please keep it this way in prod.
  */
+#define SERVER_MESSAGE_SOCK_ENABLE_DBG 0
 
 /**
  * Cork the underlying socket if not yet corked.

@@ -816,8 +816,6 @@ static void on_data(struct event *event, void *arg)
         } /* The sequence doesn't end for streams. */
     }
     if (res < 0 && res != SELVA_PROTO_EAGAIN) {
-        /* FIXME Remove */
-        SELVA_LOG(SELVA_LOGL_ERR, "Hello: %s", selva_strerror(res));
         /*
          * Drop the connection on error.
          * We can't send an error message because we don't know if the header
