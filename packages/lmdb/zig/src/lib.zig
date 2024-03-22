@@ -1,9 +1,9 @@
 const std = @import("std");
 const c = @import("c.zig");
-const Environment = @import("./Environment.zig");
-const Transaction = @import("./Transaction.zig");
-const Database = @import("./Database.zig");
-const errors = @import("./errors.zig");
+const Environment = @import("Environment.zig");
+const Transaction = @import("Transaction.zig");
+const Database = @import("Database.zig");
+const errors = @import("errors.zig");
 const Error = errors.Error;
 
 var dbEnv: Environment.Environment = undefined;
@@ -24,12 +24,7 @@ pub fn JsThrow(env: c.napi_env, comptime message: [:0]const u8) TranslationError
 const dbthrow = errors.CtoZigError;
 
 pub fn errorToStr(err: Error) [*c]const u8 {
-    if (err == Error.NO_DB_ENV) {
-        return "Env does not exist";
-    } else {
-        std.debug.print("ERROR {any}\n", .{err});
-        return "Unknown error";
-    }
+    return @errorName(err);
 }
 
 pub fn throwError(env: c.napi_env, err: Error) c.napi_value {
@@ -84,11 +79,11 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     }
     var strlen: usize = undefined;
     // dynamic allocator?
-    var memory: [16]u8 = undefined;
+    var memory: [256]u8 = undefined;
 
     // std.debug.print("============ Create db on path {any}\n", .{argv[0]});
 
-    _ = c.napi_get_value_string_utf8(env, argv[0], &memory, 16, &strlen);
+    _ = c.napi_get_value_string_utf8(env, argv[0], &memory, 256, &strlen);
 
     // std.debug.print("============ Create db on path {d} SIZE boink\n", .{strlen});
 
@@ -101,7 +96,11 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
         dbEnv.deinit();
     }
 
-    dbEnv = Environment.init(path.ptr, .{ .map_size = 100 * 1024 * 1024 * 1024, .max_dbs = 200 }) catch return statusOk(env, false);
+    dbEnv = Environment.init(path.ptr, .{
+        .map_size = 100 * 1024 * 1024 * 1024,
+        .max_dbs = 200,
+        .no_sync = true,
+    }) catch return statusOk(env, false);
 
     dbEnvIsDefined = true;
 
@@ -116,7 +115,7 @@ fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     }
 
     var keysize: usize = undefined;
-    var keyValue: []u8 = undefined;
+    var keyValue: [*]u8 = undefined;
     _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&keyValue)), &keysize);
 
     const value_buffer = getKey(keyValue) catch |err| return throwError(env, err);
@@ -220,9 +219,9 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
     var key: c.napi_value = undefined;
     var value: c.napi_value = undefined;
 
-    var key_buffer: []u8 = undefined;
+    var key_buffer: [*]u8 = undefined;
     var value_size: usize = undefined;
-    var value_buffer: []u8 = undefined;
+    var value_buffer: [*]u8 = undefined;
 
     var index: u32 = 0;
     while (index < arraySize) : (index += 2) {
@@ -233,19 +232,29 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
             return Error.UNKNOWN_ERROR;
         }
 
+        // std.debug.print("PFFFFFF {s}\n", .{key_buffer[0..20]});
+        // std.debug.print("PFFFFFF {any}\n", .{index});
+
         // var key_size: usize = undefined;
         _ = c.napi_get_buffer_info(env, key, @ptrCast(@alignCast(&key_buffer)), null);
         _ = c.napi_get_buffer_info(env, value, @ptrCast(@alignCast(&value_buffer)), &value_size);
 
+        // std.debug.print("====== SETTING IT {x}\n{any}\n", .{
+        //     key_buffer[0..20],
+        // });
+
         var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key_buffer) };
         var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @ptrCast(value_buffer) };
-        try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
+        dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0)) catch |err| {
+            std.debug.print("FAILED TO WRITE KEY {s}", .{key_buffer[0..20]});
+            return err;
+        };
     }
 
     try txn.commit();
 }
 
-fn getKey(key: []u8) ![]u8 {
+fn getKey(key: [*]u8) ![]u8 {
     const txn = try Transaction.init(dbEnv, .{ .mode = .ReadOnly });
     errdefer txn.abort();
 
@@ -253,6 +262,9 @@ fn getKey(key: []u8) ![]u8 {
     var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
     const db: Database = try txn.database(null, .{ .integer_key = true });
+
+    // std.debug.print("GET key poop = {s}\n", .{key[0..20]});
+
     try dbthrow(c.mdb_get(txn.ptr, db.dbi, &k, &v));
     try txn.commit();
 
