@@ -180,7 +180,7 @@ pub fn writeSingle(key: []u8, value: []u8, sizeValue: usize) !void {
 
     const db: Database = try txn.database(null, .{ .integer_key = true });
 
-    var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key) };
     var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = @ptrCast(value) };
 
     try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
@@ -243,7 +243,7 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
         //     key_buffer[0..20],
         // });
 
-        var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key_buffer) };
+        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key_buffer) };
         var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @ptrCast(value_buffer) };
         dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0)) catch |err| {
             std.debug.print("FAILED TO WRITE KEY {s}", .{key_buffer[0..20]});
@@ -258,12 +258,12 @@ fn getKey(key: [*]u8) ![]u8 {
     const txn = try Transaction.init(dbEnv, .{ .mode = .ReadOnly });
     errdefer txn.abort();
 
-    var k: c.MDB_val = .{ .mv_size = 20, .mv_data = @ptrCast(key) };
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key) };
     var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
     const db: Database = try txn.database(null, .{ .integer_key = true });
 
-    // std.debug.print("GET key poop = {s}\n", .{key[0..20]});
+    // std.debug.print("GET key poop = {any}\n", .{key[0..4]});
 
     try dbthrow(c.mdb_get(txn.ptr, db.dbi, &k, &v));
     try txn.commit();
