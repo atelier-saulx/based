@@ -247,42 +247,52 @@ size_t replication_replica_origin2str(char buf[CONN_STR_LEN])
 static int send_sync_req(int sock)
 {
     const uint32_t seqno = 0;
-    struct {
-        struct selva_proto_header hdr;
-        struct selva_proto_array arr;
-        struct selva_proto_string sdb_hash_hdr;
-        uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
-        struct selva_proto_longlong sdb_eid;
-    } __packed buf = {
+    union {
+        struct {
+            struct selva_proto_header hdr;
+            struct selva_proto_array arr;
+            struct selva_proto_string sdb_hash_hdr;
+            uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
+            struct selva_proto_longlong sdb_eid;
+        } msg __packed;
+        char pad[SELVA_PROTO_FRAME_SIZE_MAX];
+    } buf;
+
+    buf.msg = (typeof(buf.msg)){
         .hdr = {
             .cmd = CMD_ID_REPLICASYNC,
             .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
             .seqno = htole32(seqno),
-            .frame_bsize = htole16(sizeof(buf)),
-            .msg_bsize = htole32(sizeof(buf) - sizeof(struct selva_proto_header)),
+            .frame_bsize = htole16(sizeof(buf.msg)),
+            .msg_bsize = htole32(sizeof(buf.msg) - sizeof(struct selva_proto_header)),
             .chk = 0,
         },
-        .arr = {
-            .type = SELVA_PROTO_ARRAY,
-            .length = 2,
-        },
-        .sdb_hash_hdr = {
-            .type = SELVA_PROTO_STRING,
-            .flags = SELVA_PROTO_STRING_FBINARY,
-            .bsize = SELVA_IO_HASH_SIZE,
-        },
-        .sdb_eid = {
-            .type = SELVA_PROTO_LONGLONG,
-        },
+            .arr = {
+                .type = SELVA_PROTO_ARRAY,
+                .length = 2,
+            },
+            .sdb_hash_hdr = {
+                .type = SELVA_PROTO_STRING,
+                .flags = SELVA_PROTO_STRING_FBINARY,
+                .bsize = SELVA_IO_HASH_SIZE,
+            },
+            .sdb_eid = (struct selva_proto_longlong){
+                .type = SELVA_PROTO_LONGLONG,
+                .v = htole64(sv.last_sdb_eid),
+            },
     };
-    static_assert(sizeof(buf) <= SELVA_PROTO_FRAME_SIZE_MAX);
+    memcpy(buf.msg.sdb_hash, last_sdb_hash, SELVA_IO_HASH_SIZE);
+    static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
 
-    memcpy(buf.sdb_hash, last_sdb_hash, SELVA_IO_HASH_SIZE);
-    buf.sdb_eid.v = htole64(sv.last_sdb_eid);
-    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+    buf.msg.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf.msg)));
 
-    if (send(sock, &buf, sizeof(buf), 0) != (ssize_t)sizeof(buf)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASYNC request failed");
+    ssize_t r = tcp_send(sock, &buf, sizeof(buf), 0);
+    if (r != (ssize_t)sizeof(buf)) {
+        if (r < 0) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASYNC request failed: %s", selva_strerror(r));
+        } else {
+            SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASYNC request failed: %zd", r);
+        }
         return SELVA_EIO;
     }
 
@@ -292,23 +302,32 @@ static int send_sync_req(int sock)
 static int send_full_sync_req(int sock)
 {
     const uint32_t seqno = 0;
-    struct {
-        struct selva_proto_header hdr;
-    } __packed buf = {
-        .hdr = {
-            .cmd = CMD_ID_REPLICASYNC,
-            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
-            .seqno = htole32(seqno),
-            .frame_bsize = htole16(sizeof(buf)),
-            .msg_bsize = htole32(sizeof(buf) - sizeof(struct selva_proto_header)),
-            .chk = 0,
-        },
+    union {
+        struct {
+            struct selva_proto_header hdr;
+        } msg __packed;
+        char pad[SELVA_PROTO_FRAME_SIZE_MAX];
+    } buf;
+    static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
+
+    buf.msg.hdr = (struct selva_proto_header){
+        .cmd = CMD_ID_REPLICASYNC,
+        .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+        .seqno = htole32(seqno),
+        .frame_bsize = htole16(sizeof(buf.msg)),
+        .msg_bsize = htole32(sizeof(buf.msg) - sizeof(struct selva_proto_header)),
+        .chk = 0,
     };
 
-    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+    buf.msg.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf.msg)));
 
-    if (send(sock, &buf, sizeof(buf), 0) != (ssize_t)sizeof(buf)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASYNC request failed");
+    ssize_t r = tcp_send(sock, &buf, sizeof(buf), 0);
+    if (r != (ssize_t)sizeof(buf)) {
+        if (r < 0) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASYNC request failed: %s", selva_strerror(r));
+        } else {
+            SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASYNC request failed: %zd", r);
+        }
         return SELVA_EIO;
     }
 
@@ -318,16 +337,22 @@ static int send_full_sync_req(int sock)
 static int send_status(int sock, uint64_t eid)
 {
     uint32_t seqno = sv.seqno++ ?: 1; /* this should be never 0. See the comment on sv.status. */
-    struct {
-        struct selva_proto_header hdr;
-        struct selva_proto_longlong eid;
-    } __packed buf = {
+    union {
+        struct {
+            struct selva_proto_header hdr;
+            struct selva_proto_longlong eid;
+        } msg __packed;
+        char pad[SELVA_PROTO_FRAME_SIZE_MAX];
+    } buf;
+    static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
+
+    buf.msg = (typeof(buf.msg)){
         .hdr = {
             .cmd = CMD_ID_REPLICASTATUS,
             .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
             .seqno = htole32(seqno),
-            .frame_bsize = htole16(sizeof(buf)),
-            .msg_bsize = htole32(sizeof(buf) - sizeof(struct selva_proto_header)),
+            .frame_bsize = htole16(sizeof(buf.msg)),
+            .msg_bsize = htole32(sizeof(buf.msg) - sizeof(struct selva_proto_header)),
             .chk = 0,
         },
         .eid = {
@@ -336,88 +361,72 @@ static int send_status(int sock, uint64_t eid)
             .v = eid,
         },
     };
+    buf.msg.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf.msg)));
 
-    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
-
-    if (send(sock, &buf, sizeof(buf), 0) != (ssize_t)sizeof(buf)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASTATUS update failed");
+    ssize_t r = tcp_send(sock, &buf, sizeof(buf), 0);
+    if (r != (ssize_t)sizeof(buf)) {
+        if (r < 0) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASTATUS update failed: %s", selva_strerror(r));
+        } else {
+            SELVA_LOG(SELVA_LOGL_ERR, "Sending REPLICASTATUS update failed: %zd", r);
+        }
         return SELVA_EIO;
     }
 
     return 0;
 }
 
-static int recv_error(void) {
-    switch (errno) {
-        case EINTR:
-            return 0;
-        case EBADF:
-            return SELVA_PROTO_EBADF;
-        case ENOTCONN:
-        case ECONNREFUSED:
-            return SELVA_PROTO_ENOTCONN;
-        default:
-            return SELVA_PROTO_EINVAL;
-    }
-}
-
 static struct seq_state *recv_frame(int fd)
 {
     struct selva_proto_header hdr;
-    uint32_t seqno;
-    ssize_t recv_res;
-    struct seq_state *ss;
+    char payload[SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX];
+    const struct iovec rd_vec[2] = {
+        {
+            .iov_base = &hdr,
+            .iov_len = sizeof(hdr),
+        },
+        {
+            .iov_base = payload,
+            .iov_len = sizeof(payload),
+        },
+    };
+    ssize_t r;
 
-retry_hdr:
-    recv_res = tcp_recv(fd, &hdr, sizeof(hdr), 0);
-    if (recv_res != (ssize_t)sizeof(hdr)) {
-        int err = SELVA_PROTO_EBADF;
-
-        if (recv_res == -1) {
-            err = recv_error();
-            if (!err) {
-                goto retry_hdr;
-            }
+    r = tcp_readv(fd, rd_vec, num_elem(rd_vec));
+    if (r != SELVA_PROTO_FRAME_SIZE_MAX) {
+        if (r < 0) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Reading selva_proto frame failed. result: %s\n", selva_strerror(r));
+        } else {
+            SELVA_LOG(SELVA_LOGL_ERR, "Reading selva_proto frame failed. result: %d\n", (int)r);
         }
-
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to receive selva_proto_header: %s", selva_strerror(err));
         return NULL;
     }
 
-    seqno = le32toh(hdr.seqno);
-    ss = get_seq_state(seqno);
+    const uint32_t seqno = le32toh(hdr.seqno);
+    const size_t payload_size = le16toh(hdr.frame_bsize) - sizeof(hdr);
+    if (payload_size > SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX) {
+        SELVA_LOG(SELVA_LOGL_ERR, "seqno: %d cmd: %d Invalid frame payload size: %zu",
+                  seqno, hdr.cmd,
+                  payload_size);
+        return NULL;
+    }
+
+    if (!selva_proto_verify_frame_chk(&hdr, payload, payload_size)) {
+        SELVA_LOG(SELVA_LOGL_ERR, "seqno: %d cmd: %d Frame checksum mismatch",
+                  seqno, hdr.cmd);
+        return NULL;
+    }
+
+    struct seq_state *ss = get_seq_state(seqno);
     memcpy(&ss->cur_hdr, &hdr, sizeof(hdr));
 
-    const size_t payload_size = le16toh(hdr.frame_bsize) - sizeof(hdr);
     if (ss->msg_buf_i + payload_size > sizeof(ss->msg_buf)) {
         SELVA_LOG(SELVA_LOGL_ERR, "Buffer overflow");
         return NULL;
     } else if (payload_size > 0) {
-retry_payload:
-        recv_res = tcp_recv(fd, ss->msg_buf + ss->msg_buf_i, payload_size, 0);
-        if (recv_res != (ssize_t)payload_size) {
-            int err = SELVA_PROTO_EBADF;
-
-            if (recv_res == -1) {
-                err = recv_error();
-                if (!err) {
-                    goto retry_payload;
-                }
-            }
-
-            SELVA_LOG(SELVA_LOGL_ERR, "seqno: %d, cmd: %d Failed to receive a payload: %s",
-                      seqno, hdr.cmd, selva_strerror(err));
-            return NULL;
-        }
+        memcpy(ss->msg_buf + ss->msg_buf_i, payload, payload_size);
     }
-
     ss->cur_payload_size = payload_size;
-
-    if (!selva_proto_verify_frame_chk(&ss->cur_hdr, ss->msg_buf + ss->msg_buf_i, payload_size)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "seqno: %d cmd: %d Frame checksum mismatch",
-                  seqno, ss->cur_hdr.cmd);
-        return NULL;
-    }
 
     return ss;
 }
@@ -637,17 +646,10 @@ static enum repl_proto_state handle_recv_sdb(struct seq_state *ss, int fd)
     const size_t size = min(sv.sdb_size - sv.sdb_received_bytes, sizeof(ss->msg_buf));
     ssize_t recv_res;
 
-retry:
     recv_res = tcp_recv(fd, ss->msg_buf, size, 0);
     if (recv_res != (ssize_t)size) {
-        if (recv_res == -1) {
-            int recv_err = recv_error();
-
-            if (recv_err) {
-                SELVA_LOG(SELVA_LOGL_ERR, "recv error: %s", selva_strerror(recv_err));
-            } else {
-                goto retry;
-            }
+        if (recv_res < 0) {
+            SELVA_LOG(SELVA_LOGL_ERR, "recv error: %s", selva_strerror(recv_res));
         } else {
             SELVA_LOG(SELVA_LOGL_ERR, "Invalid message size returned by tcp_recv. act: %zu exp: %zu",
                       (ssize_t)size, recv_res);

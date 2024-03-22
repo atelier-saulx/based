@@ -123,13 +123,21 @@ static int errno2serr(int errno_bak, int *retry_count)
 
 ssize_t tcp_recv(int fd, void *buf, size_t n, int flags)
 {
+    int retries = 0;
 	ssize_t i = 0;
 
 	while (i < (ssize_t)n) {
 		ssize_t res;
 
+retry:
 		res = recv(fd, (char *)buf + i, n - i, flags);
 		if (res <= 0) {
+            int err;
+
+            err = errno2serr(errno, &retries);
+            if (err == 0) {
+                goto retry;
+            }
 			return i;
 		}
 
@@ -141,7 +149,7 @@ ssize_t tcp_recv(int fd, void *buf, size_t n, int flags)
 
 ssize_t tcp_read(int fd, void *buf, size_t n)
 {
-    int retry_count = 0;
+    int retries = 0;
 	ssize_t i = 0;
 
 	while (i < (ssize_t)n) {
@@ -154,7 +162,7 @@ retry:
         } else if (res < 0) {
             int err;
 
-            err = errno2serr(errno, &retry_count);
+            err = errno2serr(errno, &retries);
             if (err) {
                 return err;
             }
@@ -169,7 +177,7 @@ retry:
 
 ssize_t tcp_write(int fd, void *buf, size_t n)
 {
-    int retry_count = 0;
+    int retries = 0;
 	ssize_t i = 0;
 
 	while (i < (ssize_t)n) {
@@ -180,7 +188,7 @@ retry:
         if (res < 0) {
             int err;
 
-            err = errno2serr(errno, &retry_count);
+            err = errno2serr(errno, &retries);
             if (err) {
                 return err;
             }
@@ -195,7 +203,7 @@ retry:
 
 static size_t tcp_iov_op(int fd, const struct iovec *vec, size_t count, ssize_t (*iov_fn)(int filedes, const struct iovec *vector, int count))
 {
-    int retry_count = 0;
+    int retries = 0;
     struct iovec remain_vec[count];
     struct iovec *remain_p = remain_vec;
     size_t remain_count = count;
@@ -212,7 +220,7 @@ retry:
         } else if (bytes == -1) {
             int err;
 
-            err = errno2serr(errno, &retry_count);
+            err = errno2serr(errno, &retries);
             if (err == SELVA_PROTO_EAGAIN && tot_bytes > 0) {
                 const struct timespec tim = {
                     .tv_sec = 0,
@@ -275,6 +283,33 @@ off_t tcp_sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 #else
 #error "Not implemented"
 #endif
+    /*
+     * Some of the errors are not SELVA_PROTO but ¯\_(ツ)_/¯
+     */
+    if (bytes_sent == -1) {
+        switch (errno) {
+        case EBADF:
+            bytes_sent = SELVA_PROTO_EBADF;
+            break;
+        case EFAULT:
+        case EINVAL:
+            bytes_sent = SELVA_EINVAL;
+            break;
+        case EIO:
+            bytes_sent = SELVA_EIO;
+            break;
+        case ENOMEM:
+        case EOVERFLOW:
+            bytes_sent = SELVA_PROTO_ENOBUFS;
+            break;
+        case ESPIPE:
+            bytes_sent = SELVA_PROTO_EPIPE;
+            break;
+        default:
+            bytes_sent = SELVA_EGENERAL;
+            break;
+        }
+    }
 
     return bytes_sent;
 }

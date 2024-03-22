@@ -21,6 +21,8 @@
 #include "selva_proto.h"
 #include "server.h"
 
+#define SERVER_MESSAGE_SOCK_ENABLE_DBG 1
+
 /*
  * NOTICE: All logs are commented out for perf. Please keep it this way in prod.
  */
@@ -239,6 +241,7 @@ static ssize_t sock_send_buf(struct selva_server_response_out *restrict resp, co
 static ssize_t sock_send_file(struct selva_server_response_out *resp, int fd, size_t size, enum server_send_flags flags)
 {
     int err;
+    off_t bytes_sent;
 
     if (!resp->ctx) {
         return SELVA_PROTO_ENOTCONN;
@@ -257,36 +260,9 @@ static ssize_t sock_send_file(struct selva_server_response_out *resp, int fd, si
     resp_frame_set_msg_len(resp, size);
     sock_flush_frame_buf(resp, SERVER_FLUSH_FLAG_FORCE);
 
-    off_t bytes_sent = tcp_sendfile(resp->ctx->fd, fd, &(off_t){0}, size);
-    if (bytes_sent != (off_t)size) {
-        /*
-         * Some of the errors are not SELVA_PROTO but ¯\_(ツ)_/¯
-         */
-        switch (errno) {
-        case EBADF:
-            bytes_sent = SELVA_PROTO_EBADF;
-            break;
-        case EFAULT:
-        case EINVAL:
-            bytes_sent = SELVA_EINVAL;
-            break;
-        case EIO:
-            bytes_sent = SELVA_EIO;
-            break;
-        case ENOMEM:
-        case EOVERFLOW:
-            bytes_sent = SELVA_PROTO_ENOBUFS;
-            break;
-        case ESPIPE:
-            bytes_sent = SELVA_PROTO_EPIPE;
-            break;
-        default:
-            bytes_sent = SELVA_EGENERAL;
-            break;
-        }
-    }
-
+    bytes_sent = tcp_sendfile(resp->ctx->fd, fd, &(off_t){0}, size);
     maybe_uncork(resp, (bytes_sent < 0) ? flags & ~SERVER_SEND_MORE : flags);
+
     return bytes_sent;
 }
 
@@ -345,8 +321,14 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
 
     r = tcp_readv(fd, rd, num_elem(rd));
     if (r < 0) {
+#if SERVER_MESSAGE_SOCK_ENABLE_DBG
+        SELVA_LOG(SELVA_LOGL_DBG, "Sock read error: %s", selva_strerror(r));
+#endif
         return r;
     } else if (r != (ssize_t)SELVA_PROTO_FRAME_SIZE_MAX) {
+#if SERVER_MESSAGE_SOCK_ENABLE_DBG
+        SELVA_LOG(SELVA_LOGL_DBG, "Incorrent frame size: %zd", r);
+#endif
         return SELVA_PROTO_EBADMSG;
     }
 
@@ -354,7 +336,7 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
     const size_t frame_payload_size = frame_bsize - sizeof(struct selva_proto_header);
 
     if (frame_payload_size > SELVA_PROTO_FRAME_SIZE_MAX) {
-#if 0
+#if SERVER_MESSAGE_SOCK_ENABLE_DBG
         SELVA_LOG(SELVA_LOGL_DBG, "Frame too large: %zu", frame_payload_size);
 #endif
         return SELVA_PROTO_EBADMSG;
@@ -370,7 +352,7 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
         /* Discard the frame */
         ctx->recv.msg_buf_i -= frame_payload_size;
 
-#if 0
+#if SERVER_MESSAGE_SOCK_ENABLE_DBG
         SELVA_LOG(SELVA_LOGL_DBG, "Checksum mismatch");
 #endif
         return SELVA_PROTO_EBADMSG;

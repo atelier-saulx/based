@@ -71,6 +71,12 @@ int server_recv_message(struct conn_ctx *ctx)
          * big enough buffer right away.
          */
         if (msg_bsize > SELVA_PROTO_MSG_SIZE_MAX) {
+            char peer[CONN_STR_LEN];
+
+            conn_to_str(ctx, peer, sizeof(peer));
+            SELVA_LOG(SELVA_LOGL_WARN, "Invalid message size. client: %s seqno: %d msg_bsize: %zu",
+                      peer, seqno, msg_bsize);
+
             return SELVA_PROTO_EBADMSG;
         } else if (ctx->recv.msg_buf_size < msg_bsize) {
             realloc_ctx_msg_buf(ctx, msg_bsize);
