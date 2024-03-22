@@ -19,8 +19,9 @@
 #include "util/timestamp.h"
 #include "event_loop.h"
 #include "selva_error.h"
-#include "selva_log.h"
 #include "selva_io.h"
+#include "selva_log.h"
+#include "selva_proto.h"
 #include "selva_server.h"
 #include "../eid.h"
 #include "ring_buffer.h"
@@ -377,7 +378,15 @@ static ring_buffer_eid_t next_eid(void)
 
 void replication_origin_replicate(int64_t ts, int8_t cmd, const void *buf, size_t buf_size)
 {
-    struct selva_string *p = (buf_size > 0) ? selva_string_createz(buf, buf_size, 0) : NULL;
+    struct selva_string *p;
+
+    if (buf_size == 0) {
+        p = NULL;
+    } else if (buf_size < SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX) {
+        p = selva_string_create(buf, buf_size, 0);
+    } else {
+        p = selva_string_createz(buf, buf_size, 0);
+    }
 
     /* We mark it to be a selva_string by settings the size to 0. */
     insert(next_eid(), ts, cmd, p, 0);

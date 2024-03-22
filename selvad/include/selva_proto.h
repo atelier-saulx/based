@@ -16,6 +16,8 @@
  */
 #define SELVA_PROTO_FRAME_SIZE_MAX 2048
 
+#define SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX (SELVA_PROTO_FRAME_SIZE_MAX - sizeof(struct selva_proto_header))
+
 /**
  * Maximum selva_proto message size.
  * This is the biggest message that can be gathered and buffered for parsing and

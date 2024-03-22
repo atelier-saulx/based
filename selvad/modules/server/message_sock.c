@@ -323,15 +323,13 @@ static void sock_cancel_stream(struct selva_server_response_out *resp, struct se
     free_stream_resp(stream_resp);
 }
 
-/* TODO macro in selva_proto.h */
-#define MAX_PAYLOAD_SIZE (SELVA_PROTO_FRAME_SIZE_MAX - sizeof(struct selva_proto_header))
 static ssize_t sock_recv_frame(struct conn_ctx *ctx)
 {
     int fd = ctx->fd;
     ssize_t r;
 
     if (ctx->recv.msg_buf_size - ctx->recv.msg_buf_i < SELVA_PROTO_FRAME_SIZE_MAX) {
-        realloc_ctx_msg_buf(ctx, ctx->recv.msg_buf_size + MAX_PAYLOAD_SIZE);
+        realloc_ctx_msg_buf(ctx, ctx->recv.msg_buf_size + SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX);
     }
 
     const struct iovec rd[2] = {
@@ -341,7 +339,7 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
         },
         {
             .iov_base = ctx->recv.msg_buf + ctx->recv.msg_buf_i,
-            .iov_len = MAX_PAYLOAD_SIZE,
+            .iov_len = SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX,
         }
     };
 
