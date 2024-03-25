@@ -57,6 +57,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     register_function(env, exports, "get", get) catch return null;
     register_function(env, exports, "createDb", createDb) catch return null;
     register_function(env, exports, "setBatch", setBatch) catch return null;
+    register_function(env, exports, "setBatchBuffer", setBatchBuffer) catch return null;
     return exports;
 }
 
@@ -198,6 +199,57 @@ fn setBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     }
 
     writeMultiple(env, argv[0]) catch |err| return throwError(env, err);
+    return statusOk(env, true);
+}
+fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    // key: 4 bytes, size: 2 bytes, content: size bytes
+
+    var argc: usize = 1;
+    var argv: [1]c.napi_value = undefined;
+
+    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
+        JsThrow(env, "Failed to get args.") catch return null;
+    }
+
+    var data: ?*anyopaque = null;
+    var data_length: usize = undefined;
+    _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(&data), &data_length);
+
+    if (!dbEnvIsDefined) {
+        return statusOk(env, false);
+    }
+    const txn = Transaction.init(dbEnv, .{ .mode = .ReadWrite }) catch return statusOk(env, false);
+    // errdefer txn.abort();
+
+    const db: Database = txn.database(null, .{ .integer_key = true }) catch return statusOk(env, false);
+
+    var i: usize = 0;
+    while (i < data_length) {
+        const key = @as([*]u8, @ptrCast(data.?))[i .. i + 4];
+
+        var value_size: u16 = undefined;
+
+        value_size |= @as([*]u8, @ptrCast(data.?))[i + 4] << 7;
+        value_size |= @as([*]u8, @ptrCast(data.?))[i + 5];
+
+        const value = @as([*]u8, @ptrCast(data.?))[i + 6 .. i + 6 + value_size];
+
+        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key.ptr) };
+        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @ptrCast(value.ptr) };
+        dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0)) catch return statusOk(env, false);
+
+        // std.debug.print("\n=================\n", .{});
+        // std.debug.print("KEY= {x}\n", .{key});
+        // std.debug.print("value_size bits = 0x{x}\n", .{value_size});
+        // std.debug.print("value_size= {d}\n", .{value_size});
+        // std.debug.print("VALUE= {x}\n", .{value});
+        // std.debug.print("VALUE= {s}\n", .{value});
+        // std.debug.print("=================\n", .{});
+        i = i + 6 + value_size;
+    }
+
+    txn.commit() catch return statusOk(env, false);
+
     return statusOk(env, true);
 }
 
