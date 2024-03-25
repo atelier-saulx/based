@@ -173,7 +173,13 @@ const server = new BasedServer({
 
           for (let i = 0; i < payload.writes.length; i += 2) {
             const w = payload.writes
-            writes.push(Buffer.from(w[i]), Buffer.from(w[i + 1]))
+
+            const key = Buffer.alloc(4)
+
+            key.writeInt32BE(w[i])
+
+            // Buffer.from(w[i])
+            writes.push(key, Buffer.from(w[i + 1]))
             // writes.push(w[i] + '1', Buffer.from(''))
             // writes.push(w[i] + '0', Buffer.from(''))
             cnt++
@@ -227,7 +233,7 @@ const runIt = async () => {
   const ms = Date.now() - s
   const seconds = ms / 1000
 
-  await wait(250)
+  await wait(2250)
 
   const mb = (await fs.stat(join(tmpF, 'data.mdb'))).size / 1000 / 1000
 

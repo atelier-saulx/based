@@ -55,7 +55,17 @@ test('set and get batch', async (t) => {
 
   let d = Date.now()
   addon.setBatch(batch)
-  console.info(Date.now() - d, 'ms')
+
+  const ms = Date.now() - d
+  const seconds = ms / 1000
+
+  console.info(
+    'RDY',
+    'wrote',
+    batchSize / 1000 + 'k',
+    ~~(batchSize / seconds),
+    'writes / sec',
+  )
 
   // for (let i = 0; i < batchSize; i++) {
   //   const key = Buffer.alloc(20)
