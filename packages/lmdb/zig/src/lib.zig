@@ -58,6 +58,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     register_function(env, exports, "createDb", createDb) catch return null;
     register_function(env, exports, "setBatch", setBatch) catch return null;
     register_function(env, exports, "setBatchBuffer", setBatchBuffer) catch return null;
+    register_function(env, exports, "getNoCopy", getNoCopy) catch return null;
     return exports;
 }
 
@@ -133,6 +134,44 @@ fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 
     return result;
 }
+fn getNoCopy(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    var argc: usize = 1;
+    var argv: [1]c.napi_value = undefined;
+
+    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
+        JsThrow(env, "Failed to get args.") catch return null;
+    }
+
+    var key_size: usize = undefined;
+    var key_buffer: ?*anyopaque = null;
+    if (c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&key_buffer)), &key_size) != c.napi_ok) {
+        JsThrow(env, "Failed to get args.") catch return null;
+    }
+
+    const txn = Transaction.init(dbEnv, .{ .mode = .ReadOnly }) catch return statusOk(env, false);
+    const db: Database = txn.database(null, .{ .integer_key = true }) catch return statusOk(env, false);
+
+    // var data: ?*anyopaque = undefined;
+
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key_buffer) };
+    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
+    dbthrow(c.mdb_get(txn.ptr, db.dbi, &k, &v)) catch return statusOk(env, false);
+    txn.commit() catch return statusOk(env, false);
+
+    // var data: ?*anyopaque = undefined;
+    var result: c.napi_value = undefined;
+    // const pointer: [*c]?*anyopaque = @ptrCast(@alignCast(&result.ptr));
+
+    // std.debug.print("made it this far\n", .{});
+
+    if (c.napi_create_external_buffer(env, v.mv_size, @ptrCast(@alignCast(v.mv_data)), null, null, &result) != c.napi_ok) {
+        JsThrow(env, "Failed to create External Buffer") catch return null;
+    }
+    // std.debug.print("also here, surprise!\n", .{});
+
+    return result;
+}
 
 fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     // _ = info;
@@ -202,7 +241,7 @@ fn setBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     return statusOk(env, true);
 }
 fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    // key: 4 bytes, size: 2 bytes, content: size bytes
+    // format == key: 4 bytes | size: 2 bytes | content: size bytes
 
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
