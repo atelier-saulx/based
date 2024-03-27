@@ -86,18 +86,18 @@ test('create server', async (t) => {
   const txn = db.env.beginTxn()
 
   let i = 0
-  for (i = 0; i < 1e9; i++) {
-    // txn.putBinary(dbi, i + 'a', bla)
-    // x.push([db.dbis.main, i + 'a', bla])
-    // const buf = createBuffer({ value: i }, db.schemaTypesParsed.vote)
-    // x.push({
-    //   type: 'vote',
-    //   value: {
-    //     value: i,
-    //     vectorClock: i,
-    //   },
-    // })
-  }
+  // for (i = 0; i < 1e9; i++) {
+  // txn.putBinary(dbi, i + 'a', bla)
+  // x.push([db.dbis.main, i + 'a', bla])
+  // const buf = createBuffer({ value: i }, db.schemaTypesParsed.vote)
+  // x.push({
+  //   type: 'vote',
+  //   value: {
+  //     value: i,
+  //     vectorClock: i,
+  //   },
+  // })
+  // }
   // txn.commit()
 
   // await write()
