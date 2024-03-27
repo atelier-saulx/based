@@ -157,10 +157,9 @@ const struct EdgeFieldConstraint *Edge_GetConstraint(
     const size_t constraint_name_len = DYN_CONSTRAINT_NAME_LEN(field_name_len);
     char constraint_name_str[constraint_name_len];
     void *p = NULL;
-    int err;
 
     make_dyn_constraint_name(constraint_name_str, field_name_str, field_name_len);
-    err = SelvaObject_GetPointerStr(get_dyn_constraints(efc), constraint_name_str, constraint_name_len, &p);
+    (void)SelvaObject_GetPointerStr(get_dyn_constraints(efc), constraint_name_str, constraint_name_len, &p);
     constraint = p;
 
     return constraint;

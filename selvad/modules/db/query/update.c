@@ -156,6 +156,7 @@ static int op_notsup(
     return SELVA_OP_REPL_STATE_UNCHANGED;
 }
 
+#if 0
 static int op_increment_longlong(
         SelvaHierarchy *,
         struct SelvaHierarchyNode *node,
@@ -317,6 +318,7 @@ static int op_meta(
     err = SelvaObject_SetUserMeta(obj, op->field, new_user_meta, &old_user_meta);
     return (err || new_user_meta == old_user_meta) ? SELVA_OP_REPL_STATE_UNCHANGED : SELVA_OP_REPL_STATE_UPDATED;
 }
+#endif
 
 static int update_node_cb(
         struct SelvaHierarchy *hierarchy,
@@ -370,10 +372,12 @@ static int update_node_cb(
         size_t field_len;
         const char *field_str = selva_string_to_str(op->field, &field_len);
 
+#if 0
         if (!SelvaModify_field_prot_check(field_str, field_len, type_code)) {
             repl_state = SELVA_OP_REPL_STATE_UNCHANGED;
             continue;
         }
+#endif
 
         repl_state = update_op_fn[(uint8_t)type_code](hierarchy, node, op);
         if (repl_state == SELVA_OP_REPL_STATE_UPDATED) {
@@ -648,6 +652,7 @@ static int Update_OnLoad(void) {
         update_op_fn[i] = op_notsup;
     }
 
+#if 0
     update_op_fn[SELVA_MODIFY_ARG_OP_INCREMENT] = op_increment_longlong;
     update_op_fn[SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE] = op_increment_double;
     update_op_fn[SELVA_MODIFY_ARG_DEFAULT_LONGLONG] = op_default_longlong;
@@ -659,6 +664,7 @@ static int Update_OnLoad(void) {
     update_op_fn[SELVA_MODIFY_ARG_OP_SET] = op_set;
     update_op_fn[SELVA_MODIFY_ARG_OP_DEL] = op_del;
     update_op_fn[SELVA_MODIFY_ARG_OP_OBJ_META] = op_meta;
+#endif
 
     selva_mk_command(CMD_ID_UPDATE, SELVA_CMD_MODE_MUTATE, "update", SelvaCommand_Update);
 
