@@ -500,6 +500,27 @@ static int add_set_values_numeric(
     return res;
 }
 
+static int add_set_values_hll(struct SelvaObject *obj, const char *field_str, size_t field_len, const char *values, size_t size)
+{
+    const char *s;
+    const char *end = (values + size);
+    size_t state = 0;
+    int res = 0;
+
+    while ((s = sztok(values, size, &state))) {
+        const size_t slen = strnlen(s, end - s);
+        int err;
+
+        err = SelvaObject_AddHllStr(obj, field_str, field_len, s, slen);
+        if (err < 0) {
+            return err;
+        }
+        res |= err;
+    }
+
+    return res;
+}
+
 /**
  * Add all values from value_ptr to the set in obj.field.
  * @returns The number of items added; Otherwise a negative Selva error code is returned.
@@ -513,15 +534,19 @@ static int add_set_values(
         enum SelvaModifySetType type,
         bool remove_diff
 ) {
-    Selva_NodeId node_id;
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
 
-    SelvaHierarchy_GetNodeId(node_id, node);
 
-    /* TODO HLL support */
     if (type == SELVA_MODIFY_SET_TYPE_CHAR ||
         type == SELVA_MODIFY_SET_TYPE_REFERENCE) {
-        return add_set_values_char(hierarchy, obj, node_id, field->name_str, field->name_len, value_ptr, value_len, type, remove_diff);
+        if (field->fs->type2 == SELVA_OBJECT_HLL) {
+            return add_set_values_hll(obj, field->name_str, field->name_len, value_ptr, value_len);
+        } else { /* We just assume that the client honors the schema. */
+            Selva_NodeId node_id;
+
+            SelvaHierarchy_GetNodeId(node_id, node);
+            return add_set_values_char(hierarchy, obj, node_id, field->name_str, field->name_len, value_ptr, value_len, type, remove_diff);
+        }
     } else if (type == SELVA_MODIFY_SET_TYPE_DOUBLE ||
                type == SELVA_MODIFY_SET_TYPE_LONG_LONG) {
         return add_set_values_numeric(obj, field->name_str, field->name_len, value_ptr, value_len, type, remove_diff);
@@ -649,6 +674,9 @@ static int del_set_values(
 ) {
     if (type == SELVA_MODIFY_SET_TYPE_CHAR ||
         type == SELVA_MODIFY_SET_TYPE_REFERENCE) {
+        if (field->fs->type2 == SELVA_OBJECT_HLL) {
+            return SELVA_ENOTSUP; /* HLL only supports insertion. */
+        }
         return del_set_values_char(hierarchy, node, field, value_ptr, value_len, type);
     } else if (type == SELVA_MODIFY_SET_TYPE_DOUBLE ||
                type == SELVA_MODIFY_SET_TYPE_LONG_LONG) {
