@@ -59,6 +59,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     register_function(env, exports, "setBatch", setBatch) catch return null;
     register_function(env, exports, "setBatchBuffer", setBatchBuffer) catch return null;
     register_function(env, exports, "getNoCopy", getNoCopy) catch return null;
+    register_function(env, exports, "getBatch", getBatch) catch return null;
     return exports;
 }
 
@@ -130,6 +131,7 @@ fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     if (c.napi_create_buffer(env, value_buffer.len, &data, &result) != c.napi_ok) {
         JsThrow(env, "Failed to create ArrayBuffer") catch return null;
     }
+    // TODO: lifetime of data is not guaranteed after txn.commit, copying should happen before that
     @memcpy(@as([*]u8, @ptrCast(data))[0..value_buffer.len], value_buffer[0..value_buffer.len]);
 
     return result;
@@ -173,6 +175,101 @@ fn getNoCopy(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
     return result;
 }
 
+fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    var argc: usize = 1;
+    var argv: [1]c.napi_value = undefined;
+
+    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
+        JsThrow(env, "Failed to get args.") catch return null;
+    }
+
+    var buffer_size: usize = undefined;
+    var buffer_contents: ?*anyopaque = null;
+    if (c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&buffer_contents)), &buffer_size) != c.napi_ok) {
+        JsThrow(env, "Failed to get args.") catch return null;
+    }
+
+    const txn = Transaction.init(dbEnv, .{ .mode = .ReadOnly }) catch {
+        JsThrow(env, "Failed Transaction.init") catch return null;
+    };
+    const db: Database = txn.database(null, .{ .integer_key = true }) catch {
+        JsThrow(env, "Failed txn.database") catch return null;
+    };
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    // TODO: this can be severely optimized by reducing the number of allocations,
+    // perhaps allocating big chunks less often
+    // check impl of ArrayList to see if that already happens there
+    var values = std.ArrayList(c.MDB_val).init(allocator);
+
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
+
+    var total_data_length: usize = 0;
+    var i: usize = 0;
+    while (i < buffer_size) : (i += 4) {
+        k.mv_data = &(@as([*]u8, @ptrCast(buffer_contents.?))[i]);
+
+        // std.debug.print("KEY = {x}\n", .{@as([*]u8, @ptrCast(buffer_contents.?))[i .. i + 4]});
+
+        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
+        dbthrow(c.mdb_get(txn.ptr, db.dbi, &k, &v)) catch |err| {
+            std.debug.print("Err = {s}\n", .{errorToStr(err)});
+            JsThrow(env, "Failed mdb_get") catch return null;
+        };
+
+        values.append(v) catch {
+            JsThrow(env, "Failed values.append") catch return null;
+        };
+
+        total_data_length += v.mv_size + 2;
+    }
+
+    var data: ?*anyopaque = undefined;
+    var result: c.napi_value = undefined;
+
+    if (c.napi_create_buffer(env, total_data_length, &data, &result) != c.napi_ok) {
+        JsThrow(env, "Failed to create ArrayBuffer") catch return null;
+    }
+
+    var last_pos: usize = 0;
+    for (values.items) |*val| {
+        // TODO: we can probably reduce the number of @mem* calls significantly
+
+        // copy size
+        @memcpy(@as([*]u8, @ptrCast(@alignCast(data)))[last_pos .. last_pos + 2], @as([*]u8, @ptrCast(&val.mv_size))[0..2]);
+        last_pos += 2;
+        // std.debug.print(
+        //     "IN DATA= {d}, {X}\n",
+        //     .{ @as([*]u16, @ptrCast(@alignCast(data)))[0..1], @as([*]u16, @ptrCast(@alignCast(data)))[0..1] },
+        // );
+
+        // copy data
+        @memcpy(
+            @as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size],
+            @as([*]u8, @ptrCast(val.mv_data))[0..val.mv_size],
+        );
+
+        // std.debug.print("WROTE SIZE = {d}\n", .{@as([*]u16, @ptrCast(@alignCast(data)))[0..1]});
+        // std.debug.print("WROTE SIZE = {x}\n", .{@as([*]u16, @ptrCast(@alignCast(data)))[0..1]});
+        // std.debug.print("WROTE VALUE = {s}\n", .{@as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]});
+        // std.debug.print("WROTE VALUE = {x}\n", .{@as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]});
+
+        last_pos += val.mv_size;
+    }
+
+    txn.commit() catch {
+        JsThrow(env, "Failed to txn.commit") catch return null;
+    };
+
+    // std.debug.print("FINAL MEM STATE= {x}\n", .{@as([*]u8, @ptrCast(data))[0..last_pos]});
+
+    return result;
+}
+
 fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     // _ = info;
 
@@ -201,7 +298,7 @@ fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return statusOk(env, true);
 }
 
-//   map_size: usize = 10 * 1024 * 1024,
+//     map_size: usize = 10 * 1024 * 1024,
 //     max_dbs: u32 = 0,
 //     max_readers: u32 = 126,
 //     read_only: bool = false,

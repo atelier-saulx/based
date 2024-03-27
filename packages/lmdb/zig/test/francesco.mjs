@@ -212,7 +212,82 @@ test.only('getNoCopy', async (t) => {
   }
 })
 
-test('get', async (t) => {
+test.only('getBatch', async (t) => {
+  // let buf = Buffer.alloc(0)
+
+  const keys = []
+  const values = []
+  let totalLen = 0
+  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  const get_buffer = Buffer.allocUnsafe(entries * 4)
+  for (let i = 0; i < 0 + entries; i++) {
+    let key = Buffer.alloc(4)
+    key.writeInt32BE(i + 1)
+    // console.log('key', i, key)
+    const value = Buffer.from('AMAZINGVAL' + i)
+    values.push(value)
+    keys.push(key)
+    totalLen += 2 + value.byteLength + 4
+  }
+
+  const set_buffer = Buffer.allocUnsafe(totalLen)
+
+  let prevWritten = 0
+  for (let i = 0; i < values.length; i++) {
+    // key | size | value
+    keys[i].copy(set_buffer, prevWritten)
+    keys[i].copy(get_buffer, i * 4)
+    // console.log('get_buffer', i, get_buffer)
+    prevWritten += 4
+    const bla = values[i].byteLength
+    set_buffer.writeInt16BE(bla, prevWritten)
+    prevWritten += 2
+    values[i].copy(set_buffer, prevWritten)
+    prevWritten += bla
+  }
+
+  // console.log('final get buffer=', get_buffer)
+  // console.log(buf)
+  // console.log(buf.toString())
+
+  const res = addon.setBatchBuffer(set_buffer)
+
+  t.is(res, 1, 'setBatch returned 1')
+
+  let d = Date.now()
+
+  const get_res = addon.getBatch(get_buffer)
+  // console.log('JAVASCRIPT BUFFER = ', get_res)
+
+  const ms = Date.now() - d
+  const seconds = ms / 1000
+
+  console.info(
+    'BATCH GET',
+    'read',
+    entries / 1000 + 'k',
+    'entries in ',
+    seconds + ' s,',
+    ~~(entries / seconds),
+    'reads / sec',
+  )
+
+  let last_read = 0
+  for (let i = 0; i < entries; i++) {
+    let data_len = get_res.subarray(last_read, last_read + 2).readInt16LE()
+
+    // console.log('data len = ', data_len)
+
+    last_read += 2
+    const data = get_res.subarray(last_read, last_read + data_len)
+    // console.log('data val = ', data)
+    last_read += data_len
+
+    t.deepEqual(data, values[i])
+  }
+})
+
+test.only('get', async (t) => {
   // let buf = Buffer.alloc(0)
 
   const keys = []
