@@ -160,7 +160,7 @@ struct modify_ctx {
     bool created; /* Will be set if the node was created during this command. */
     bool updated;
     struct SelvaNodeSchema *ns;
-    struct {
+    struct modify_current_field {
         struct SelvaFieldSchema *fs;
         size_t name_len;
         char name_str[SELVA_SHORT_FIELD_NAME_LEN + 12];
@@ -266,7 +266,7 @@ static int add_set_values_char(
     size_t field_len,
     const char *value_ptr,
     size_t value_len,
-    int8_t type,
+    enum SelvaModifySetType type,
     int remove_diff)
 {
     const bool is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
@@ -380,7 +380,7 @@ static int add_set_values_numeric(
     size_t field_len,
     const char *value_ptr,
     size_t value_len,
-    int8_t type,
+    enum SelvaModifySetType type,
     int remove_diff) {
     const char *ptr = value_ptr;
     int res = 0;
@@ -505,23 +505,26 @@ static int add_set_values_numeric(
  * @returns The number of items added; Otherwise a negative Selva error code is returned.
  */
 static int add_set_values(
-    struct SelvaHierarchy *hierarchy,
-    struct SelvaObject *obj,
-    const Selva_NodeId node_id,
-    const char *field_str,
-    size_t field_len,
-    const char *value_ptr,
-    size_t value_len,
-    int8_t type,
-    bool remove_diff
+        struct SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *node,
+        struct modify_current_field *field,
+        const char *value_ptr,
+        size_t value_len,
+        enum SelvaModifySetType type,
+        bool remove_diff
 ) {
+    Selva_NodeId node_id;
+    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
+
+    SelvaHierarchy_GetNodeId(node_id, node);
+
     /* TODO HLL support */
     if (type == SELVA_MODIFY_SET_TYPE_CHAR ||
         type == SELVA_MODIFY_SET_TYPE_REFERENCE) {
-        return add_set_values_char(hierarchy, obj, node_id, field_str, field_len, value_ptr, value_len, type, remove_diff);
+        return add_set_values_char(hierarchy, obj, node_id, field->name_str, field->name_len, value_ptr, value_len, type, remove_diff);
     } else if (type == SELVA_MODIFY_SET_TYPE_DOUBLE ||
                type == SELVA_MODIFY_SET_TYPE_LONG_LONG) {
-        return add_set_values_numeric(obj, field_str, field_len, value_ptr, value_len, type, remove_diff);
+        return add_set_values_numeric(obj, field->name_str, field->name_len, value_ptr, value_len, type, remove_diff);
     } else {
         return SELVA_EINTYPE;
     }
@@ -529,12 +532,14 @@ static int add_set_values(
 
 static int del_set_values_char(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaObject *obj,
-        const char *field_str,
-        size_t field_len,
+        struct SelvaHierarchyNode *node,
+        struct modify_current_field *field,
         const char *value_ptr,
         size_t value_len,
         int8_t type) {
+    const char *field_str = field->name_str;
+    size_t field_len = field->name_len;
+    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     const int is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
     const char *ptr = value_ptr;
     int res = 0;
@@ -582,12 +587,14 @@ static int del_set_values_char(
 }
 
 static int del_set_values_numeric(
-        struct SelvaObject *obj,
-        const char *field_str,
-        size_t field_len,
+        struct SelvaHierarchyNode *node,
+        struct modify_current_field *field,
         const char *value_ptr,
         size_t value_len,
-        int8_t type) {
+        enum SelvaModifySetType type) {
+    const char *field_str = field->name_str;
+    size_t field_len = field->name_len;
+    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     const char *ptr = value_ptr;
     int res = 0;
 
@@ -634,19 +641,18 @@ static int del_set_values_numeric(
 
 static int del_set_values(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaObject *obj,
-        const char *field_str,
-        size_t field_len,
+        struct SelvaHierarchyNode *node,
+        struct modify_current_field *field,
         const char *value_ptr,
         size_t value_len,
-        int8_t type
+        enum SelvaModifySetType type
 ) {
     if (type == SELVA_MODIFY_SET_TYPE_CHAR ||
         type == SELVA_MODIFY_SET_TYPE_REFERENCE) {
-        return del_set_values_char(hierarchy, obj, field_str, field_len, value_ptr, value_len, type);
+        return del_set_values_char(hierarchy, node, field, value_ptr, value_len, type);
     } else if (type == SELVA_MODIFY_SET_TYPE_DOUBLE ||
                type == SELVA_MODIFY_SET_TYPE_LONG_LONG) {
-        return del_set_values_numeric(obj, field_str, field_len, value_ptr, value_len, type);
+        return del_set_values_numeric(node, field, value_ptr, value_len, type);
     } else {
         return SELVA_EINTYPE;
     }
@@ -1168,20 +1174,13 @@ static int selva_modify_op_double_increment(struct modify_ctx *ctx, struct Selva
 
 static int selva_modify_op_set_data(struct modify_ctx *ctx, enum SelvaModifyOpCode op, struct SelvaModifySet *set)
 {
-    Selva_NodeId node_id;
-    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(ctx->node);
-    const char *field_str = ctx->cur_field.name_str;
-    size_t field_len = ctx->cur_field.name_len;
-
-    SelvaHierarchy_GetNodeId(node_id, ctx->node);
-
     switch (op) {
     case SELVA_MODIFY_OP_SET_VALUE:
-        return add_set_values(ctx->hierarchy, obj, node_id, field_str, field_len, set->value_str, set->value_len, set->type, true);
+        return add_set_values(ctx->hierarchy, ctx->node, &ctx->cur_field, set->value_str, set->value_len, set->type, true);
     case SELVA_MODIFY_OP_SET_INSERT:
-        return add_set_values(ctx->hierarchy, obj, node_id, field_str, field_len, set->value_str, set->value_len, set->type, false);
+        return add_set_values(ctx->hierarchy, ctx->node, &ctx->cur_field, set->value_str, set->value_len, set->type, false);
     case SELVA_MODIFY_OP_SET_REMOVE:
-        return del_set_values(ctx->hierarchy, obj, field_str, field_len, set->value_str, set->value_len, set->type);
+        return del_set_values(ctx->hierarchy, ctx->node, &ctx->cur_field, set->value_str, set->value_len, set->type);
     case SELVA_MODIFY_OP_SET_ASSIGN:
         return SELVA_ENOTSUP;
     case SELVA_MODIFY_OP_SET_MOVE:
