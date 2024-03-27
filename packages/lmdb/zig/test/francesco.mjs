@@ -150,7 +150,7 @@ test('set and get batch with buffers', async (t) => {
   t.true(true)
 })
 
-test.only('getNoCopy', async (t) => {
+test('getNoCopy', async (t) => {
   // let buf = Buffer.alloc(0)
 
   const keys = []
