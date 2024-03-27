@@ -76,7 +76,8 @@ db.updateSchema()
 db.getSchema()
 ```
 
-`
+---
+
 data types
 
 references (+ edge)
@@ -89,7 +90,8 @@ float
 // 128 bits
 string
 string fixed length string
-`
+
+---
 
 // 2 bytes for type
 
