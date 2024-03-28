@@ -431,10 +431,20 @@ static enum rpn_error push_empty_value(struct rpn_ctx *ctx) {
  * Note that the string must not be freed while it's still in use by rpn.
  */
 static enum rpn_error push_selva_string_result(struct rpn_ctx *ctx, const struct selva_string *s) {
-    struct rpn_operand *v = alloc_rpn_operand(sizeof(struct selva_string *));
+    struct rpn_operand *v;
+    const enum selva_string_flags sflags = selva_string_get_flags(s);
 
-    v->flags.spused = true;
-    v->sp = selva_string_to_str(s, &v->s_size);
+    if (sflags & SELVA_STRING_COMPRESS) {
+        size_t slen = selva_string_getz_ulen(s);
+
+        v = alloc_rpn_operand(slen);
+        v->s_size = slen;
+        selva_string_decompress(s, v->s);
+    } else {
+        v = alloc_rpn_operand(sizeof(struct selva_string *));
+        v->flags.spused = true;
+        v->sp = selva_string_to_str(s, &v->s_size);
+    }
     v->d = nan_undefined();
 
     return push(ctx, v);
