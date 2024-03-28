@@ -2,6 +2,7 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  * TODO More strict schema checking.
+ * TODO Err when SELVA_MODIFY_OP_FLAGS_VALUE_DEFLATED is not supported
  */
 #include <assert.h>
 #include <stdio.h>
@@ -49,7 +50,7 @@ struct SelvaModifyFieldOp {
         SELVA_MODIFY_OP_EDGE_META = 14, /*!< Value is `struct SelvaModifyEdgeMeta`. */
     } __packed op;
     enum {
-        SELVA_MODIFY_OP_FLAGS_VALUE_IS_DEFLATED = 0x01,
+        SELVA_MODIFY_OP_FLAGS_VALUE_DEFLATED = 0x01,
     } __packed flags;
     char lang[2];
     uint32_t index;
@@ -1078,7 +1079,10 @@ static int selva_modify_op_string(struct modify_ctx *ctx, struct SelvaModifyFiel
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
-    new_value = selva_string_create(op->value_str, op->value_len, 0);
+    enum selva_string_flags string_flags =
+        ((op->flags & SELVA_MODIFY_OP_FLAGS_VALUE_DEFLATED) ? SELVA_STRING_COMPRESS : 0);
+
+    new_value = selva_string_create(op->value_str, op->value_len, string_flags);
 
     if (old_type == SELVA_OBJECT_STRING) {
         struct selva_string *old_value;
