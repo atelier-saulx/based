@@ -287,7 +287,7 @@ test.only('getBatch', async (t) => {
   }
 })
 
-test.only('get', async (t) => {
+test('get', async (t) => {
   // let buf = Buffer.alloc(0)
 
   const keys = []
