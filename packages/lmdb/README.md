@@ -32,7 +32,6 @@ db.query('*', 'article') // 1
 // DBI INDEX META INFO
 
 // NODE=> "0:x", "1:y", "0:1:2z", "b"
-
 db.query('root', 'article')
   .sort(['publishDate', 'asc', 0, 100])
   .filter(['sections', 'has', [ukraine, opinion]][('published', '=', true)], [
@@ -41,7 +40,88 @@ db.query('root', 'article')
     123123023321,
   ])
 
+db.query({
+  from: '*',
+  field: 'article',
+  language: 'en',
+  instance: 'articles',
+})
+  .sort({
+    field: 'publishDate',
+    order: 'asc',
+  })
+  .limit(100)
+  .offset(0)
+  .filter({
+    field: 'published',
+    function: '=',
+    value: true,
+  })
+  .filter({
+    field: 'publishDate',
+    function: '>',
+    value: 'now - 1week',
+  })
+  .filter({
+    field: 'sections',
+    function: 'has',
+    value: ['ur123', 's123'],
+    or: {
+      field: 'published',
+      function: '=',
+      value: false,
+    },
+  })
+  .fields(['id', 'name', 'publishDate'])
+
+// ------------------------
+
+db.query('article')
+  .language('en')
+  .sort('publishDate')
+  .limit(100)
+  .offset(0)
+  .filter('published', true)
+  .filter('publishDate', '>', 'now - 1week')
+  .filter(['sections', 'has', ['ur123', 's123']], ['published', false])
+  .select('id', 'name', 'publishDate')
+  .select('contributors')
+  .limit(5)
+  .filter('smart', true)
+  .select('email', 'name')
+
 // => indexesQuery, itemTest
+
+query('user')
+  .filter('published', true)
+  .or('flap', '>', 2)
+  .sort('publishDate')
+  .limit(10)
+  .fields('fullname', 'ranking', 'contributors')
+  .contributors.filter('smart', true)
+  .contributors.sort('articles')
+  .contributors.limit(1)
+  .contributos.fields('name', 'birthday', 'articles')
+  .contributors.articles.sort('hits')
+  .contributors.articles.limit(5)
+  .contributors.articles.fields('name', 'img')
+  .subscribe((data) => {
+    // type hint of fields... pretty hard
+    console.log(data)
+  })
+
+// https://github.com/coderello/js-query-builder
+
+db.query('article')
+  .limit(100)
+  .sections.has(['ur123', 's123'])
+  .or.published.is(false)
+
+  .published.is(true)
+  .publishDate.largerThen('now - 1week')
+  .select('id', 'name', 'publishDate')
+
+// select references (nested query / filter)
 
 // add article ukraine article > sections [id]
 
