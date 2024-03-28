@@ -97,26 +97,64 @@ query('user')
   .or('flap', '>', 2)
   .sort('publishDate')
   .limit(10)
-  .fields('fullname', 'ranking', 'contributors')
+  .select('fullname', 'ranking')
   .contributors.filter('smart', true)
   .contributors.sort('articles')
   .contributors.limit(1)
-  .contributos.fields('name', 'birthday', 'articles')
+  .contributos.select('name', 'birthday')
   .contributors.articles.sort('hits')
   .contributors.articles.limit(5)
-  .contributors.articles.fields('name', 'img')
+  .contributors.articles.select('name', 'img')
   .subscribe((data) => {
     // type hint of fields... pretty hard
     console.log(data)
   })
 
+// allways include
+query('user')
+  .published.is(true)
+  .or.flap.largerThen(20)
+  .publishDate.largerThen('now - 1 week')
+  .sort('publishDate')
+  .range(0, 10)
+  .include('id', 'fullname', 'ranking')
+  .contributors.smart.is(true)
+  .contributors.sort('articles')
+  .contributors.sort.hits.largerThen(20)
+  .contributors.range(0, 1)
+  .contributos.include('id', 'name', 'birthday')
+  .contributors.articles.sort('hits')
+  .contributors.articles.limit(5)
+  .contributors.articles.include('id', 'name', 'img')
+  .subscribe((data) => {
+    // type hint of fields... pretty hard
+    console.log(data)
+    /*
+      [{
+        id: 123132,
+        fullName: 'bla',
+        ranking: 10,
+        contributors: [{ 
+          name: 'jim de blap', id: 123, birthday: 23112312,
+          articles: [{
+            id: 213123,
+            name: "snrp",
+            img: 'http://bla.com'"
+          }]
+        }]
+      }]
+
+    */
+  })
+
 // https://github.com/coderello/js-query-builder
+
+// https://github.com/kristianmandrup/cypher-query
 
 db.query('article')
   .limit(100)
   .sections.has(['ur123', 's123'])
   .or.published.is(false)
-
   .published.is(true)
   .publishDate.largerThen('now - 1week')
   .select('id', 'name', 'publishDate')
