@@ -502,6 +502,25 @@ const char *selva_io_load_str(struct selva_io *io, size_t *len)
     return str;
 }
 
+void selva_io_load_str_fixed(struct selva_io *io, char *dst, size_t len)
+{
+    test_io_mode(io, SELVA_IO_FLAGS_READ);
+    struct selva_proto_string buf;
+
+    if (io->sdb_read(&buf, sizeof(buf), 1, io) != 1) {
+        exit_read_error(io, selva_proto_typeof_str(buf), READ_WHENCE_READ_HEADER);
+    }
+
+    buf.bsize = letoh(buf.bsize);
+    if (buf.type != SELVA_PROTO_STRING || buf.bsize != len) {
+        exit_read_error(io, selva_proto_typeof_str(buf), READ_WHENCE_HEADER_TYPE);
+    }
+
+    if (io->sdb_read(dst, sizeof(char), len, io) != len) {
+        exit_read_error(io, selva_proto_typeof_str(buf), READ_WHENCE_VALUE);
+    }
+}
+
 struct selva_string *selva_io_load_string(struct selva_io *io)
 {
     test_io_mode(io, SELVA_IO_FLAGS_READ);

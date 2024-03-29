@@ -207,13 +207,4 @@ int SelvaModify_ModifySet(
     struct SelvaModify_OpSet *setOpts
 );
 
-int SelvaModify_ModifyDel(
-    struct SelvaHierarchy *hierarchy,
-    struct SelvaHierarchyNode *node,
-    struct SelvaObject *obj,
-    const struct selva_string *field
-);
-
-int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char type_code);
-
 #endif /* SELVA_MODIFY_H */

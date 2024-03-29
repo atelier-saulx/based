@@ -397,13 +397,20 @@ static void debug(struct selva_server_response_out *resp, const void *buf, size_
     int argc;
 
     argc = selva_proto_scanf(NULL, buf, size, "%.*s", &pattern_len, &pattern_str);
-    if (argc < 0) {
-        selva_send_errorf(resp, argc, "Failed to parse args");
-    } else if (argc == 1) {
+    switch (argc) {
+    case 0:
+        selva_send_error(resp, SELVA_ENOTSUP, NULL, 0);
+        break;
+    case 1:
         selva_log_set_dbgpattern(pattern_str, pattern_len);
         selva_send_ll(resp, 1);
-    } else {
-        selva_send_error_arity(resp);
+        break;
+    default:
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
     }
 }
 

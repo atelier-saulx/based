@@ -482,7 +482,7 @@ int recv_message(int fd)
             },
             {
                 .iov_base = msg_buf + i,
-                .iov_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(resp_hdr),
+                .iov_len = SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX,
             },
         };
         ssize_t r;

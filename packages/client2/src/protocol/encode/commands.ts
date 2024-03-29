@@ -1,7 +1,6 @@
 import { Command } from '../types.js'
 import { defaultEncoder, strEncoder } from './defaultEncoder.js'
 import { modify } from './modify/index.js'
-import { update } from './update.js'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 
@@ -132,7 +131,6 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   // modify related commands
   modify,
-  update,
   // hierarchy
   'hierarchy.schema.set': defaultEncoder([
     { type: 'string', vararg: true }, // node schema

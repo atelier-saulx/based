@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -90,7 +90,8 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
 /**
  * Decompress a compressed string.
  * @param s is a pointer to a compressed selva_string.
- * @param buf is where the decompressed string will be copied to.
+ * @param buf is the destination where the decompressed string will be copied to.
+ *            The size of the buffer must be at least selva_string_getz_ulen(s) bytes.
  * @returns 0 if succeeded;
  *          SELVA_PROTO_EINTYPE if not a compressed string;
  *          SELVA_EINVAL if the string cannot be decompressed.

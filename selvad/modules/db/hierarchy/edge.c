@@ -506,7 +506,7 @@ static int get_or_create_EdgeField(
     if (!edge_field) {
         const struct EdgeFieldConstraint *constraint;
 
-        constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
+        constraint = Edge_GetConstraint(constraints, field_name_str, field_name_len);
         if (!constraint) {
             return SELVA_EINVAL;
         }
@@ -1176,30 +1176,22 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
     struct EdgeField_load_data *load_data = (struct EdgeField_load_data *)p;
     struct SelvaHierarchy *hierarchy = load_data->hierarchy;
     Selva_NodeId src_node_id;
+    __selva_autofree const char *field_name_str = NULL;
+    size_t field_name_len;
     const struct EdgeFieldConstraint *constraint;
     size_t nr_edges;
     struct EdgeField *edge_field;
 
-    /*
-     * Constraint.
-     */
-    __selva_autofree const char *node_type = NULL;
-    __selva_autofree const char *field_name_str = NULL;
-    size_t field_name_len;
-
-    node_type = selva_io_load_str(io, NULL);
+    SelvaHierarchy_GetNodeId(src_node_id, load_data->src_node);
     field_name_str = selva_io_load_str(io, &field_name_len);
     struct EdgeFieldConstraints *constraints = &SelvaSchema_FindNodeSchema(hierarchy, src_node_id)->efc;
-    constraint = Edge_GetConstraint(constraints, node_type, field_name_str, field_name_len);
-
+    constraint = Edge_GetConstraint(constraints, field_name_str, field_name_len);
     if (!constraint) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Constraint not found");
         return NULL;
     }
 
     nr_edges = selva_io_load_unsigned(io);
-
-    SelvaHierarchy_GetNodeId(src_node_id, load_data->src_node);
     edge_field = alloc_EdgeField(src_node_id, constraint, nr_edges);
     if (!edge_field) {
         return NULL;
@@ -1209,23 +1201,19 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
      * Edges/arcs.
      */
     for (size_t i = 0; i < nr_edges; i++) {
-        __selva_autofree const char *dst_id_str = NULL;
-        size_t dst_id_len;
+        Selva_NodeId dst_id;
         struct SelvaHierarchyNode *dst_node;
         int err;
 
-        dst_id_str = selva_io_load_str(io, &dst_id_len);
-        if (dst_id_len != SELVA_NODE_ID_SIZE) {
-            return NULL;
-        }
+        selva_io_load_str_fixed(io, dst_id, SELVA_NODE_ID_SIZE);
 
         /*
          * Ensure that the destination node exist before creating an edge.
          */
-        err = SelvaHierarchy_UpsertNode(hierarchy, dst_id_str, &dst_node);
+        err = SelvaHierarchy_UpsertNode(hierarchy, dst_id, &dst_node);
         if (err < 0 && err != SELVA_HIERARCHY_EEXIST) {
             SELVA_LOG(SELVA_LOGL_CRIT, "Upserting node %.*s failed: %s",
-                      (int)SELVA_NODE_ID_SIZE, dst_id_str,
+                      (int)SELVA_NODE_ID_SIZE, dst_id,
                       selva_strerror(err));
             return NULL;
         }
@@ -1318,7 +1306,6 @@ static void EdgeField_Save(struct selva_io *io, void *value, __unused void *save
     /*
      * Constraint.
      */
-    selva_io_save_str(io, constraint->src_node_type, SELVA_NODE_TYPE_SIZE);
     selva_io_save_str(io, constraint->field_name_str, constraint->field_name_len);
 
     /*

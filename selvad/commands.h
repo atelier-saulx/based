@@ -439,12 +439,7 @@
  */
 #define CMD_ID_MODIFY 70
 
-/**
- * Update nodes using a query.
- * module: db
- * cmd: update
- */
-#define CMD_ID_UPDATE 71
+/* HOLE 71 */
 
 /**
  * List node aliases.

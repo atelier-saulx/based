@@ -1863,23 +1863,6 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
     return 0;
 }
 
-/**
- * Load a node_id.
- * Should be only called by load_node().
- */
-static int load_node_id(struct selva_io *io, Selva_NodeId node_id_out) {
-    __selva_autofree const char *node_id = NULL;
-    size_t len = 0;
-
-    node_id = selva_io_load_str(io, &len);
-    if (!node_id || len != SELVA_NODE_ID_SIZE) {
-        return SELVA_HIERARCHY_EINVAL;
-    }
-
-    memcpy(node_id_out, node_id, SELVA_NODE_ID_SIZE);
-    return 0;
-}
-
 static int load_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy __unused, Selva_NodeId node_id __unused) {
     enum SelvaHierarchyDetachedType type;
     struct selva_string *compressed;
@@ -1997,12 +1980,7 @@ static int load_tree(struct finalizer *fin, struct selva_io *io, int encver, Sel
         Selva_NodeId node_id;
         int err;
 
-        err = load_node_id(io, node_id);
-        if (err) {
-            SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load the next nodeId: %s",
-                      selva_strerror(err));
-            return SELVA_HIERARCHY_EINVAL;
-        }
+        selva_io_load_str_fixed(io, node_id, SELVA_NODE_ID_SIZE);
 
         /*
          * If it's EOF there are no more nodes for this hierarchy.

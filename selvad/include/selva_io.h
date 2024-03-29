@@ -198,6 +198,7 @@ SELVA_IO_EXPORT(uint64_t, selva_io_load_unsigned, struct selva_io *io);
 SELVA_IO_EXPORT(int64_t, selva_io_load_signed, struct selva_io *io);
 SELVA_IO_EXPORT(double, selva_io_load_double, struct selva_io *io);
 SELVA_IO_EXPORT(const char*, selva_io_load_str, struct selva_io *io, size_t *len);
+SELVA_IO_EXPORT(void, selva_io_load_str_fixed, struct selva_io *io, char *dst, size_t len);
 SELVA_IO_EXPORT(struct selva_string *, selva_io_load_string, struct selva_io *io);
 
 /**
@@ -239,6 +240,7 @@ SELVA_IO_EXPORT(void, selva_replication_replicate_pass, int64_t ts, int8_t cmd, 
     apply(selva_io_load_signed) \
     apply(selva_io_load_double) \
     apply(selva_io_load_str) \
+    apply(selva_io_load_str_fixed) \
     apply(selva_io_load_string) \
     apply(selva_replication_get_mode) \
     apply(selva_replication_replicate) \

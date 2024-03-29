@@ -19,7 +19,6 @@ OBJ := \
 	   index/index.o \
 	   index/pick_icb.o \
 	   modify.o \
-	   modify2.o \
 	   parsers/enum.o \
 	   parsers/index_hints.o \
 	   parsers/string_list.o \
@@ -33,7 +32,6 @@ OBJ := \
 	   query/find/find_send_node_fields.o \
 	   query/find/find_send_node_merge.o \
 	   query/query_traverse.o \
-	   query/update.o \
 	   resolve.o \
 	   rpn/rpn.o \
 	   rpn/rpn_eval.o \

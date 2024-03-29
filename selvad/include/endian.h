@@ -181,7 +181,9 @@ static inline double ledoubletoh(const char buf[8]) {
         uint32_t: htole32(v), \
         int32_t: (int32_t)htole32(v), \
         uint64_t: htole64(v), \
-        int64_t: (int64_t)htole64(v))
+        int64_t: (int64_t)htole64(v), \
+        unsigned long long: (unsigned long long)htole64(v), \
+        long long: (int64_t)htole64(v))
 
 /**
  * Type generic LE to Host.
@@ -192,7 +194,9 @@ static inline double ledoubletoh(const char buf[8]) {
         uint32_t: le32toh(v), \
         int32_t: (int32_t)le32toh(v), \
         uint64_t: le64toh(v), \
-        int64_t: (int64_t)le64toh(v))
+        int64_t: (int64_t)le64toh(v), \
+        unsigned long long: (unsigned long long)le64toh(v), \
+        long long: (int64_t)le64toh(v))
 
 /**
  * Type generic BE to Host.
@@ -203,7 +207,12 @@ static inline double ledoubletoh(const char buf[8]) {
         uint32_t: be32toh(v), \
         int32_t: (int32_t)be32toh(v), \
         uint64_t: be64toh(v), \
-        int64_t: (int64_t)be64toh(v))
+        int64_t: (int64_t)be64toh(v), \
+        unsigned long long: (unsigned long long)be64toh(v), \
+        long long: (int64_t)be64toh(v))
+
+/* 128-bit machines not supported atm. */
+static_assert(sizeof(long long) == sizeof(uint64_t));
 
 #else
 
