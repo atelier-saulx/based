@@ -92,6 +92,10 @@ test('create server', async (t) => {
 
   console.log(parseBuffer(buf2, db.schemaTypesParsed.complex))
 
+  // SET(key, boolean)
+  // GET(key) //  get with keys also
+  // QUERY
+
   // x.push({
   //   type: 'vote',
   //   value: {
