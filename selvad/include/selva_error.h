@@ -66,125 +66,128 @@
  * Timed out.
  */
 #define SELVA_ETIMEDOUT                 (-14)
-
+/**
+ * Resource temporarily unavailable.
+ */
+#define SELVA_PROTO_EAGAIN              (-15)
 /**
  * Operation already in progress.
  */
-#define SELVA_PROTO_EALREADY            (-15)
+#define SELVA_PROTO_EALREADY            (-16)
 /**
  * Operation not supported.
  */
-#define SELVA_PROTO_ENOTSUP             (-16)
+#define SELVA_PROTO_ENOTSUP             (-17)
 /**
  * Invalid argument/input value.
  */
-#define SELVA_PROTO_EINVAL              (-17)
+#define SELVA_PROTO_EINVAL              (-18)
 /**
  * Invalid type.
  */
-#define SELVA_PROTO_EINTYPE             (-18)
+#define SELVA_PROTO_EINTYPE             (-19)
 /**
  * Out of memory.
  */
-#define SELVA_PROTO_ENOMEM              (-19)
+#define SELVA_PROTO_ENOMEM              (-20)
 /**
  * Node or entity not found.
  */
-#define SELVA_PROTO_ENOENT              (-20)
+#define SELVA_PROTO_ENOENT              (-21)
 /**
  * Entity already exist.
  */
-#define SELVA_PROTO_EEXIST              (-21)
+#define SELVA_PROTO_EEXIST              (-22)
 /**
  * No buffer or resource space available.
  */
-#define SELVA_PROTO_ENOBUFS             (-22)
+#define SELVA_PROTO_ENOBUFS             (-23)
 /**
  * Bad message.
  */
-#define SELVA_PROTO_EBADMSG             (-23)
+#define SELVA_PROTO_EBADMSG             (-24)
 /**
  * Not a valid open file descriptor.
  */
-#define SELVA_PROTO_EBADF               (-24)
+#define SELVA_PROTO_EBADF               (-25)
 /**
  * Connection reset by peer.
  */
-#define SELVA_PROTO_ECONNRESET          (-25)
+#define SELVA_PROTO_ECONNRESET          (-26)
 /**
  * The socket is not connected.
  */
-#define SELVA_PROTO_ENOTCONN            (-26)
+#define SELVA_PROTO_ENOTCONN            (-27)
 /**
  * The local end has been shutdown.
  */
-#define SELVA_PROTO_EPIPE               (-27)
+#define SELVA_PROTO_EPIPE               (-28)
 
 /**
  * General error.
  */
-#define SELVA_HIERARCHY_EGENERAL        (-28)
+#define SELVA_HIERARCHY_EGENERAL        (-29)
 /**
  * Operation not supported.
  */
-#define SELVA_HIERARCHY_ENOTSUP         (-29)
+#define SELVA_HIERARCHY_ENOTSUP         (-30)
 /**
  * Invalid argument/input value.
  */
-#define SELVA_HIERARCHY_EINVAL          (-30)
+#define SELVA_HIERARCHY_EINVAL          (-31)
 /**
  * Out of memory.
  */
-#define SELVA_HIERARCHY_ENOMEM          (-31)
+#define SELVA_HIERARCHY_ENOMEM          (-32)
 /**
  * Node or entity not found.
  */
-#define SELVA_HIERARCHY_ENOENT          (-32)
+#define SELVA_HIERARCHY_ENOENT          (-33)
 /**
  * Node or entity already exist.
  */
-#define SELVA_HIERARCHY_EEXIST          (-33)
+#define SELVA_HIERARCHY_EEXIST          (-34)
 /**
  * Maximum number of recursive traversal calls reached.
  */
-#define SELVA_HIERARCHY_ETRMAX          (-34)
+#define SELVA_HIERARCHY_ETRMAX          (-35)
 
 /**
  * General error.
  */
-#define SELVA_SUBSCRIPTIONS_EGENERAL    (-35)
+#define SELVA_SUBSCRIPTIONS_EGENERAL    (-36)
 /**
  * Invalid argument/input value.
  */
-#define SELVA_SUBSCRIPTIONS_EINVAL      (-36)
+#define SELVA_SUBSCRIPTIONS_EINVAL      (-37)
 /**
  * Out of memory.
  */
-#define SELVA_SUBSCRIPTIONS_ENOMEM      (-37)
+#define SELVA_SUBSCRIPTIONS_ENOMEM      (-38)
 /**
  * Node or entity not found.
  */
-#define SELVA_SUBSCRIPTIONS_ENOENT      (-38)
+#define SELVA_SUBSCRIPTIONS_ENOENT      (-39)
 /**
  * Node or entity already exist.
  */
-#define SELVA_SUBSCRIPTIONS_EEXIST      (-39)
+#define SELVA_SUBSCRIPTIONS_EEXIST      (-40)
 
 /**
  * RPN compilation error.
  */
-#define SELVA_RPN_ECOMP                 (-40)
+#define SELVA_RPN_ECOMP                 (-41)
 
 /**
  * Selva object has reached the maximum size.
  */
-#define SELVA_OBJECT_EOBIG              (-41)
+#define SELVA_OBJECT_EOBIG              (-42)
 /**
  * Selva object precondition mismatch or failed.
  */
-#define SELVA_OBJECT_EMISMATCH          (-42)
+#define SELVA_OBJECT_EMISMATCH          (-43)
 /* This must be the last error */
-#define SELVA_INVALID_ERROR             (-43)
+#define SELVA_INVALID_ERROR             (-44)
 
 /**
  * Selva error code to string.

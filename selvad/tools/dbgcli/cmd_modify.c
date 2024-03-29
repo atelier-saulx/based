@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -9,10 +9,11 @@
 #include <string.h>
 #include <sys/socket.h>
 #include "cdefs.h"
+#include "util/crc32c.h"
+#include "util/tcp.h"
 #include "endian.h"
 #include "selva_db_types.h"
 #include "selva_proto.h"
-#include "util/crc32c.h"
 #include "commands.h"
 
 #ifndef MSG_MORE
@@ -60,11 +61,26 @@ static int send_cmd_head(int sock, int cmd_id, int seqno, const char * restrict 
     chk = crc32c(chk, flags, flags_len);
     buf.hdr.chk = htole32(chk);
 
-    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
-        send_message(sock, flags, flags_len, 0)
-       ) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf) - flags_len;
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = (void *)flags,
+            .iov_len = flags_len,
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -95,11 +111,26 @@ static int send_string(int sock, int cmd_id, int seqno, const char *str)
     chk = crc32c(chk, str, str_len);
     buf.hdr.chk = htole32(chk);
 
-    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
-        send_message(sock, str, str_len, MSG_MORE)
-       ) {
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(buf) - str_len;
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+        {
+            .iov_base = (void *)str,
+            .iov_len = str_len,
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
         return -1;
     }
+
     return 0;
 }
 
@@ -115,7 +146,24 @@ static int send_terminator(int sock, int cmd_id, int seqno)
     };
 
     hdr.chk = htole32(crc32c(0, &hdr, sizeof(hdr)));
-    return send_message(sock, &hdr, sizeof(hdr), 0);
+
+    size_t pad_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(hdr);
+    char pad_buf[pad_len];
+    struct iovec iov[] = {
+        {
+            .iov_base = &hdr,
+            .iov_len = sizeof(hdr),
+        },
+        {
+            .iov_base = pad_buf,
+            .iov_len = pad_len,
+        }
+    };
+    if (tcp_writev(sock, iov, num_elem(iov)) < 0) { /* TODO should actually check the size */
+        return -1;
+    }
+
+    return 0;
 }
 
 static int cmd_modify_req(int sock, int cmd_id, int seqno, const char *node_id, char type, int argc, char *argv[])

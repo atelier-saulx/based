@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <errno.h>
@@ -62,21 +62,9 @@ __unused static void print_events(const struct pollfd *pfd)
               nfo[5], nfo[6], nfo[7], nfo[8], nfo[9]);
 }
 
-void evl_poll(struct event_loop_state *state, const struct timespec *timeout)
+static int update_poll_state(struct event_loop_state *state)
 {
-    int nfds = 0, nfds_out, itim;
-    struct timespec expire, cur;
-    const struct timespec sleepy = {
-        .tv_nsec = 500,
-    };
-
-    ts_monotime(&expire);
-    if (timeout) {
-        itim = timeout->tv_sec + (int)(timeout->tv_nsec / 1000000000);
-        timespec_add(&expire, &expire, timeout);
-    } else {
-        itim = -1;
-    }
+    int nfds = 0;
 
     for (int fd = 0; fd < EVENT_LOOP_MAX_FDS; fd++) {
         enum event_type mask = state->fds[fd].mask & (EVENT_TYPE_FD_READABLE | EVENT_TYPE_FD_WRITABLE);
@@ -90,6 +78,26 @@ void evl_poll(struct event_loop_state *state, const struct timespec *timeout)
         }
     }
 
+    return nfds;
+}
+
+void evl_poll(struct event_loop_state *state, const struct timespec *timeout)
+{
+    int nfds_out, itim;
+    struct timespec expire, cur;
+    const struct timespec sleepy = {
+        .tv_nsec = 500, /* Values less than 100 ns seems to deadlock libsystem_kernel.dylib */
+    };
+
+    ts_monotime(&expire);
+    if (timeout) {
+        itim = timeout->tv_sec + (int)(timeout->tv_nsec / 1000000000);
+        timespec_add(&expire, &expire, timeout);
+    } else {
+        itim = -1;
+    }
+
+    const int nfds = update_poll_state(state);
     do {
         /* TODO EINTR might affect the timeout. */
         while ((nfds_out = poll(state->pfds, nfds, itim)) == -1 &&

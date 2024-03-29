@@ -46,7 +46,7 @@ static int send_hdr_and_payload(
 int selva_send_flush(struct selva_server_response_out *restrict resp)
 {
     const enum server_message_handler rtype = resp->resp_msg_handler;
-    return message_handlers[rtype].flush(resp, false);
+    return message_handlers[rtype].flush(resp, 0);
 }
 
 int selva_send_raw(struct selva_server_response_out *restrict resp, const void *restrict p, size_t len)
@@ -390,7 +390,7 @@ int selva_send_end(struct selva_server_response_out *restrict resp)
     const enum server_message_handler rtype = resp->resp_msg_handler;
     int err;
 
-    err = message_handlers[rtype].flush(resp, true);
+    err = message_handlers[rtype].flush(resp, SERVER_FLUSH_FLAG_LAST_FRAME);
     if (err == SELVA_PROTO_ENOTCONN) {
         /* Likely no ctx. */
         return err;

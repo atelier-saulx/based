@@ -22,17 +22,12 @@ int server_recv_message(struct conn_ctx *ctx)
         /*
          * Reset the message buffer state.
          */
-        ctx->recv_msg_buf_i = 0;
+        ctx->recv.msg_buf_i = 0;
     }
 
     /* Only sockets are suported for now. */
     ssize_t frame_bsize = message_handlers[SERVER_MESSAGE_HANDLER_SOCK].recv_frame(ctx);
-    if (frame_bsize <= 0) {
-        char peer[CONN_STR_LEN];
-
-        conn_to_str(ctx, peer, sizeof(peer));
-        SELVA_LOG(SELVA_LOGL_DBG, "Connection failed client: %s err: \"%s\"",
-                  peer, selva_strerror(frame_bsize));
+    if (frame_bsize < 0) {
         return frame_bsize;
     }
 
@@ -77,7 +72,7 @@ int server_recv_message(struct conn_ctx *ctx)
          */
         if (msg_bsize > SELVA_PROTO_MSG_SIZE_MAX) {
             return SELVA_PROTO_EBADMSG;
-        } else if (ctx->recv_msg_buf_size < msg_bsize) {
+        } else if (ctx->recv.msg_buf_size < msg_bsize) {
             realloc_ctx_msg_buf(ctx, msg_bsize);
         }
     } else if (ctx->flags.recv_state == CONN_CTX_RECV_STATE_FRAGMENT) {

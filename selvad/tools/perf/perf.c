@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <arpa/inet.h>
@@ -13,11 +13,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <unistd.h>
 #include "cdefs.h"
 #include "endian.h"
 #include "util/crc32c.h"
 #include "util/ctime.h"
+#include "util/tcp.h"
 #include "util/timestamp.h"
 #include "selva_db_types.h"
 #include "selva_error.h"
@@ -53,6 +55,7 @@ static int connect_to_server(const char *addr, int port)
     }
 
     (void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &(int){1}, sizeof(int));
+    (void)setsockopt(sock, SOL_SOCKET, SO_RCVLOWAT, &(int){SELVA_PROTO_FRAME_SIZE_MAX}, sizeof(int));
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
@@ -70,11 +73,28 @@ static int connect_to_server(const char *addr, int port)
     return sock;
 }
 
-static int send_message(int fd, const void *buf, size_t size, int flags)
+static int send_message(int fd, const void *buf, size_t size, bool flush)
 {
-    if (send(fd, buf, size, flags) != (ssize_t)size) {
-        fprintf(stderr, "Send failed\n");
-        return -1; /* TODO Maybe an error code? */
+#define IO_BUFS 1000
+    static char io_buf[IO_BUFS][SELVA_PROTO_FRAME_SIZE_MAX];
+    static struct iovec vec[IO_BUFS];
+    static size_t vec_i;
+
+    assert(size < SELVA_PROTO_FRAME_SIZE_MAX);
+    memcpy(io_buf[vec_i], buf, size);
+    vec[vec_i] = (struct iovec){
+        .iov_base = io_buf[vec_i],
+        .iov_len = SELVA_PROTO_FRAME_SIZE_MAX,
+    };
+
+    if (++vec_i >= num_elem(vec) || flush) {
+        ssize_t res = tcp_writev(fd, vec, vec_i);
+        vec_i = 0;
+
+        if (res < 0) {
+            fprintf(stderr, "Send failed: \"%s\"\n", strerror(errno));
+            return -1;
+        }
     }
 
     return 0;
@@ -152,7 +172,7 @@ static int send_schema(int fd, int seqno)
 
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), true);
 }
 
 static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -250,7 +270,7 @@ static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_i
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -295,7 +315,7 @@ static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_i
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -350,7 +370,7 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[S
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
@@ -401,7 +421,7 @@ static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
-    return send_message(fd, &buf, sizeof(buf), 0);
+    return send_message(fd, &buf, sizeof(buf), !(frame_extra_flags & SELVA_PROTO_HDR_BATCH));
 }
 
 static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size_t msg_size)
@@ -448,33 +468,6 @@ static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size
     }
 }
 
-static ssize_t recvn(int fd, void *buf, size_t n)
-{
-    ssize_t i = 0;
-
-    while (i < (ssize_t)n) {
-        ssize_t res;
-
-        errno = 0;
-        res = recv(fd, (char *)buf + i, n - i, 0);
-        if (res <= 0) {
-            if (errno == EINTR) {
-                if (flag_stop) {
-                    fprintf(stderr, "Interrupted\n");
-                    return res;
-                }
-                continue;
-            }
-
-            return res;
-        }
-
-        i += res;
-    }
-
-    return (ssize_t)i;
-}
-
 int recv_message(int fd)
 {
     static _Alignas(uintptr_t) uint8_t msg_buf[MSG_BUF_SIZE] __lazy_alloc_glob;
@@ -482,38 +475,45 @@ int recv_message(int fd)
     size_t i = 0;
 
     do {
+        const struct iovec rd_vec[2] = {
+            {
+                .iov_base = &resp_hdr,
+                .iov_len = sizeof(resp_hdr),
+            },
+            {
+                .iov_base = msg_buf + i,
+                .iov_len = SELVA_PROTO_FRAME_SIZE_MAX - sizeof(resp_hdr),
+            },
+        };
         ssize_t r;
 
-        r = recvn(fd, &resp_hdr, sizeof(resp_hdr));
-        if (r != (ssize_t)sizeof(resp_hdr)) {
-            fprintf(stderr, "Reading selva_proto header failed. result: %d\n", (int)r);
+        r = tcp_readv(fd, rd_vec, num_elem(rd_vec));
+        if (r != SELVA_PROTO_FRAME_SIZE_MAX) {
+            fprintf(stderr, "Reading selva_proto frame failed. result: %d\n", (int)r);
             return 1;
-        } else {
-            size_t frame_bsize = le16toh(resp_hdr.frame_bsize);
-            const size_t payload_size = frame_bsize - sizeof(resp_hdr);
+        }
 
-            if (!(resp_hdr.flags & SELVA_PROTO_HDR_FREQ_RES)) {
-                fprintf(stderr, "Invalid response: response bit not set\n");
-                return 1;
-            } else if (i + payload_size > sizeof(msg_buf)) {
-                fprintf(stderr, "Buffer overflow\n");
-                return 1;
-            }
+        const size_t frame_bsize = le16toh(resp_hdr.frame_bsize);
+        const size_t payload_size = frame_bsize - sizeof(resp_hdr);
 
-            if (payload_size > 0) {
-                r = recvn(fd, msg_buf + i, payload_size);
-                if (r != (ssize_t)payload_size) {
-                    fprintf(stderr, "Reading payload failed: result: %d expected: %d\n", (int)r, (int)payload_size);
-                    return 1;
-                }
+        if (frame_bsize < sizeof(resp_hdr)) {
+            fprintf(stderr, "Invalid frame size. flags: %x frame_bsize: %zu\n", resp_hdr.flags, frame_bsize);
+            return 1;
+        }
 
-                i += payload_size;
-            }
+        if (!(resp_hdr.flags & SELVA_PROTO_HDR_FREQ_RES)) {
+            fprintf(stderr, "Invalid response: response bit not set. flags: %x\n", resp_hdr.flags);
+            return 1;
+        } else if (i + payload_size > sizeof(msg_buf)) {
+            fprintf(stderr, "Buffer overflow\n");
+            return 1;
+        }
 
-            if (!selva_proto_verify_frame_chk(&resp_hdr, msg_buf + i - payload_size, payload_size)) {
-                fprintf(stderr, "Checksum mismatch\n");
-                return 1;
-            }
+        i += payload_size;
+
+        if (!selva_proto_verify_frame_chk(&resp_hdr, msg_buf + i - payload_size, payload_size)) {
+            fprintf(stderr, "Checksum mismatch\n");
+            return 1;
         }
 
         /*
@@ -529,6 +529,7 @@ int recv_message(int fd)
             handle_response(&resp_hdr, msg_buf, i);
             i = 0;
         }
+        //printf("seq: %d\n", (int)resp_hdr.seqno);
     } while (!(resp_hdr.flags & SELVA_PROTO_HDR_FLAST));
 
     handle_response(&resp_hdr, msg_buf, i);
@@ -541,7 +542,7 @@ void *recv_thread(void *arg)
     int fd = args->fd;
     int n = args->n;
 
-    while (!flag_stop && n-- && !recv_message(fd));
+    while (!flag_stop && n-- && !recv_message(fd)); // printf("n: %d\n", n);
 
     return NULL;
 }
@@ -612,12 +613,35 @@ static void test_find(int fd, int seqno, flags_t frame_extra_flags)
     send_find(fd, seqno, frame_extra_flags, node_id);
 }
 
+static void test_ping(int fd, int seqno, flags_t frame_extra_flags)
+{
+    _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+    struct selva_proto_header *hdr = (struct selva_proto_header *)buf;
+    struct iovec iov[] = {
+        {
+            .iov_base = &buf,
+            .iov_len = sizeof(buf),
+        },
+    };
+
+    memset(hdr, 0, sizeof(*hdr));
+    hdr->cmd = CMD_ID_PING;
+    hdr->flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST | frame_extra_flags;
+    hdr->seqno = htole32(seqno);
+    hdr->frame_bsize = htole16(sizeof(*hdr));
+    hdr->msg_bsize = 0;
+    hdr->chk = htole32(crc32c(0, buf, sizeof(*hdr)));
+
+    tcp_writev(fd, iov, num_elem(iov));
+}
+
 static void (*suites[])(int fd, int seqno, flags_t frame_extra_flags) = {
     test_modify,
     test_modify_single,
     test_incrby,
     test_hll,
     test_find,
+    test_ping,
 };
 
 int main(int argc, char *argv[])
@@ -677,9 +701,11 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (send_schema(sock, seqno++) ||
-        recv_message(sock)) {
-        fprintf(stderr, "Setting schema failed");
+    int err1 = 0;
+    int err2 = 0;
+    if ((err1 = send_schema(sock, seqno++)) ||
+        (err2 = recv_message(sock))) {
+        fprintf(stderr, "Setting schema failed: [%d, %d]\n", err1, err2);
         exit(EXIT_FAILURE);
     }
 
@@ -700,6 +726,7 @@ int main(int argc, char *argv[])
     ts_monotime(&ts_start);
     while (!flag_stop && seqno < n) {
         flags_t frame_extra_flags = (batch && (seqno < n - 1)) ? SELVA_PROTO_HDR_BATCH : 0;
+        //printf("flags: %u\n", frame_extra_flags);
 
         suites[suite](sock, seqno++, frame_extra_flags);
 

@@ -8,10 +8,15 @@
 
 /**
  * Maximum frame size including selva_proto_header.
- * This should probably be a multiple of 1460 bytes
- * for optimal network utilization.
+ * Multiples of 1460 bytes seem to provide the best performance but powers of
+ * two are less annoying for memory alignment.
+ * Note that frames are always sent in this size but the payload
+ * doesn't need to occupy the whole frame as its size is indicated by
+ * `frame_bsize`.
  */
-#define SELVA_PROTO_FRAME_SIZE_MAX 5840
+#define SELVA_PROTO_FRAME_SIZE_MAX 2048
+
+#define SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX (SELVA_PROTO_FRAME_SIZE_MAX - sizeof(struct selva_proto_header))
 
 /**
  * Maximum selva_proto message size.

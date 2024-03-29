@@ -66,6 +66,7 @@ struct conn_ctx *alloc_conn_ctx(void)
         atomic_init(&ctx->streams.free_map, ALL_STREAMS_FREE);
         ctx->flags.inuse = i;
         ctx->flags.corked = 0;
+        ctx->send.buf_res_map = SERVER_SEND_BUFS_MASK;
     }
 
     return ctx;
@@ -91,7 +92,7 @@ void free_conn_ctx(struct conn_ctx *ctx)
 
         close(ctx->fd);
         ctx->flags.inuse = 0;
-        selva_free(ctx->recv_msg_buf);
+        selva_free(ctx->recv.msg_buf);
         bitmap_set(clients_map, i);
     } else {
         /* Wait for stream writers to terminate. */
@@ -110,8 +111,8 @@ void free_conn_ctx(struct conn_ctx *ctx)
 
 void realloc_ctx_msg_buf(struct conn_ctx *ctx, size_t new_size)
 {
-    ctx->recv_msg_buf = selva_realloc(ctx->recv_msg_buf, new_size);
-    ctx->recv_msg_buf_size = new_size;
+    ctx->recv.msg_buf = selva_realloc(ctx->recv.msg_buf, new_size);
+    ctx->recv.msg_buf_size = new_size;
 }
 
 struct selva_server_response_out *alloc_stream_resp(struct conn_ctx *ctx)
@@ -185,7 +186,7 @@ void send_client_list(struct selva_server_response_out *resp)
             selva_send_ll(resp, client->fd);
 
             selva_send_str(resp, "recv_msg_buf_size", 17);
-            selva_send_ll(resp, client->recv_msg_buf_size);
+            selva_send_ll(resp, client->recv.msg_buf_size);
 
             selva_send_str(resp, "nr_streams", 10);
             selva_send_ll(resp, SERVER_MAX_STREAMS - __builtin_popcount(atomic_load(&client->streams.free_map)));

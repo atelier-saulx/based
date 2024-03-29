@@ -18,7 +18,7 @@ static ssize_t buf_recv_frame(struct conn_ctx *ctx __unused)
     return SELVA_PROTO_ENOTSUP;
 }
 
-static int buf_flush(struct selva_server_response_out *resp __unused, bool last_frame __unused)
+static int buf_flush(struct selva_server_response_out *resp __unused, enum server_flush_flags)
 {
     return 0;
 }

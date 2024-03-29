@@ -8,10 +8,13 @@
 #include <stdint.h>
 #include "endian.h"
 
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmultichar"
+#else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmultichar"
+#endif
 union data_record_type_union {
     enum data_record_type {
 	    /* Fixed size */
@@ -66,8 +69,11 @@ union data_record_type_union {
     } __packed e;
     char s[2];
 } __transparent_union;
+#ifdef __clang__
 #pragma clang diagnostic pop
+#else
 #pragma GCC diagnostic pop
+#endif
 
 /**
  * C typing for the output of compRecordDef2buffer().

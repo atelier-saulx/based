@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <langinfo.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -694,6 +695,15 @@ __used static void mk_query_fork(struct selva_server_response_out *resp, struct 
         return;
     }
 
+    if (ctx) {
+        /*
+         * Force flush to avoid partial messages being processed in the fork.
+         */
+        if (resp->resp_msg_handler == SERVER_MESSAGE_HANDLER_SOCK) {
+            message_handlers[resp->resp_msg_handler].flush(resp, SERVER_FLUSH_FLAG_FORCE);
+        }
+    }
+
     pid = fork();
     if (pid == -1) {
         selva_send_errorf(resp, SELVA_EGENERAL, "Failed to execute");
@@ -717,7 +727,7 @@ __used static void mk_query_fork(struct selva_server_response_out *resp, struct 
         memset(query_fork.pids, 0, sizeof(query_fork.pids));
         memset(&(*query_fork.ret_channel)[slot], 0, sizeof((*query_fork.ret_channel)[slot]));
 
-        cmd->cmd_fn(resp, ctx->recv_msg_buf, ctx->recv_msg_buf_i);
+        cmd->cmd_fn(resp, ctx->recv.msg_buf, ctx->recv.msg_buf_i);
         selva_send_end(resp);
 
         exit(EXIT_SUCCESS);
@@ -751,15 +761,12 @@ static void on_data(struct event *event, void *arg)
     struct conn_ctx *ctx = (struct conn_ctx *)arg;
     int res;
 
-    res = server_recv_message(ctx);
-    if (res < 0) {
-        /*
-         * Drop the connection on error.
-         * We can't send an error message because we don't know if the header
-         * data is reliable.
-         */
-        evl_end_fd(fd);
-    } else if (res == 1) {
+    while ((res = server_recv_message(ctx)) >= 0) {
+        if (res == 0) {
+            /* A frame was received. */
+            continue;
+        }
+
         /* A message was received. */
         const uint32_t seqno = le32toh(ctx->recv_frame_hdr_buf.seqno);
         struct selva_server_response_out resp = {
@@ -784,12 +791,12 @@ static void on_data(struct event *event, void *arg)
 #ifdef USE_QUERY_FORK
             } else if ((cmd->cmd_mode & SELVA_CMD_MODE_QUERY_FORK) &&
                        !query_fork.disabled && query_fork.count < MAX_QUERY_FORKS &&
-                       cmd->query_fork_eligible(ctx->recv_msg_buf, ctx->recv_msg_buf_i)) {
+                       cmd->query_fork_eligible(ctx->recv.msg_buf, ctx->recv.msg_buf_i)) {
                 mk_query_fork(&resp, cmd);
                 return;
 #endif
             } else {
-                cmd->cmd_fn(&resp, ctx->recv_msg_buf, ctx->recv_msg_buf_i);
+                cmd->cmd_fn(&resp, ctx->recv.msg_buf, ctx->recv.msg_buf_i);
             }
         } else {
             static const char msg[] = "Invalid command";
@@ -801,7 +808,14 @@ static void on_data(struct event *event, void *arg)
             selva_send_end(&resp);
         } /* The sequence doesn't end for streams. */
     }
-    /* Otherwise we need to wait for more frames. */
+    if (res < 0 && res != SELVA_PROTO_EAGAIN) {
+        /*
+         * Drop the connection on error.
+         * We can't send an error message because we don't know if the header
+         * data is reliable.
+         */
+        evl_end_fd(fd);
+    }
 }
 
 static void on_close(struct event *event, void *arg)
@@ -832,6 +846,9 @@ static void on_connection(struct event *event, void *arg __unused)
         return;
     }
 
+    /*
+     * TODO On Linux we could use accept4 and set the socket non-blocking already here.
+     */
     new_sockfd = accept(event->fd, (struct sockaddr *)&client, (socklen_t*)&c);
     if (new_sockfd < 0) {
         SELVA_LOG(SELVA_LOGL_ERR, "Accept failed");
@@ -842,7 +859,12 @@ static void on_connection(struct event *event, void *arg __unused)
     tcp_set_keepalive(new_sockfd, TCP_KEEPALIVE_TIME, TCP_KEEPALIVE_INTVL, TCP_KEEPALIVE_PROBES);
 
     /* selva_proto will never see a chunk smaller than this. */
-    (void)setsockopt(new_sockfd, SOL_SOCKET, SO_RCVLOWAT, &(int){8}, sizeof(int));
+    (void)setsockopt(new_sockfd, SOL_SOCKET, SO_RCVLOWAT, &(int){SELVA_PROTO_FRAME_SIZE_MAX}, sizeof(int));
+
+    int status = fcntl(new_sockfd, F_SETFL, fcntl(new_sockfd, F_GETFL, 0) | O_NONBLOCK);
+    if (unlikely(status == -1)) {
+        SELVA_LOG(SELVA_LOGL_WARN, "Failed to set sock (%d) non-blocking", new_sockfd);
+    }
 
     inet_ntop(AF_INET, &client.sin_addr, buf, sizeof(buf));
     SELVA_LOG(SELVA_LOGL_DBG, "Received a connection from %s:%d", buf, ntohs(client.sin_port));

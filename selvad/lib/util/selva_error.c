@@ -21,6 +21,7 @@ static const char * const err2str[-SELVA_INVALID_ERROR + 1] = {
     [-SELVA_EINPROGRESS]                = (const char *)"ERR_SELVA EINPROGRESS Operation in progress",
     [-SELVA_EIO]                        = (const char *)"ERR_SELVA Input/output error",
     [-SELVA_ETIMEDOUT]                  = (const char *)"ERR_SELVA Timed out",
+    [-SELVA_PROTO_EAGAIN]               = (const char *)"ERR_PROTO EAGAIN Resource temporarily unavailable",
     [-SELVA_PROTO_EALREADY]             = (const char *)"ERR_PROTO EALREADY Operation already in progress",
     [-SELVA_PROTO_ENOTSUP]              = (const char *)"ERR_PROTO ENOTSUP Operation not supported",
     [-SELVA_PROTO_EINVAL]               = (const char *)"ERR_PROTO EINVAL Invalid argument/input value",

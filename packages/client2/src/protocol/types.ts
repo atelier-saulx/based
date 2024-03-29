@@ -17,6 +17,7 @@ export const selvaError = [
   'ERR_SELVA EINPROGRESS Operation in progress',
   'ERR_SELVA Input/output error',
   'ERR_SELVA Timed out',
+  'ERR_PROTO EAGAIN Resource temporarily unavailable',
   'ERR_PROTO EALREADY Operation already in progress',
   'ERR_PROTO ENOTSUP Operation not supported',
   'ERR_PROTO EINVAL Invalid argument/input value',
