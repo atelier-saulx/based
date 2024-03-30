@@ -13,10 +13,10 @@ OBJ := \
 	   xsi_strerror_r.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_SERVER_MAIN=1
-LDFLAGS += -lutil -ljemalloc_selva
+LDLIBS := -lutil -ljemalloc_selva
 TARGET := ../mod_server$(MOD_SUFFIX)
 
 $(TARGET): $(OBJ)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
 -include $(DEP)

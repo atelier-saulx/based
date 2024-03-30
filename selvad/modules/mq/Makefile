@@ -4,10 +4,10 @@
 OBJ := \
 	   mq.o
 DEP := $(OBJ:%.o=%.d)
-LDFLAGS += -lutil -ljemalloc_selva -ldeflate
+LDLIBS := -lutil -ljemalloc_selva -ldeflate
 TARGET := ../mod_mq$(MOD_SUFFIX)
 
 $(TARGET): $(OBJ)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
 -include $(DEP)

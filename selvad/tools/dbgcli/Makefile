@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
@@ -8,7 +8,8 @@ OBJ := \
 	   dbgcli.o \
 	   split.o
 CFLAGS := -Wall -Wextra -g3 -std=gnu2x -I../../include
-LDFLAGS := -L../../lib -lutil -ljemalloc_selva -ldeflate
+LDFLAGS := -L../../lib
+LDLIBS := -lutil -ljemalloc_selva -ldeflate
 ifeq ($(uname_S),Linux)
 LDFLAGS += -Wl,-rpath,'$$ORIGIN'/../../lib
 endif
@@ -18,7 +19,7 @@ LDFLAGS += -Wl,-rpath,@executable_path/../../lib
 endif
 
 dbgcli: $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
 clean:
 	$(RM) ./dbgcli $(OBJ)

@@ -50,10 +50,10 @@ OBJ := \
 	   subscriptions.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -iquote ./include -include ../../tunables.h
-LDFLAGS += -ldeflate -lutil -ljemalloc_selva
+LDLIBS := -ldeflate -lutil -ljemalloc_selva
 TARGET := ../mod_db$(MOD_SUFFIX)
 
 $(TARGET): $(OBJ)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
 -include $(DEP)

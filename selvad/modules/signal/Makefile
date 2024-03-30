@@ -8,7 +8,7 @@ OBJ := \
 
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_SIGNAL_MAIN=1
-LDFLAGS += -lutil
+LDLIBS += -lutil
 TARGET := ../mod_signal$(MOD_SUFFIX)
 
 ifeq ($(uname_S),Linux)
@@ -16,6 +16,6 @@ ifeq ($(uname_S),Linux)
 endif
 
 $(TARGET): $(OBJ)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
 -include $(DEP)
