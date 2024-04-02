@@ -19,8 +19,6 @@
 #include "util/finalizer.h"
 #include "util/selva_string.h"
 
-#define INVALID_FLAGS_MASK (~((_SELVA_STRING_LAST_FLAG - 1) | _SELVA_STRING_LAST_FLAG))
-
 #define SELVA_STRING_QP(T, F, S, ...) \
     STATIC_IF(IS_POINTER_CONST((S)), \
               (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
@@ -57,11 +55,28 @@ static struct libdeflate_decompressor *decompressor;
 
 RB_GENERATE_STATIC(selva_string_rbtree, selva_string, intern_entry, selva_string_cmp)
 
+static inline enum selva_string_flags len_parity(size_t len)
+{
+    return _Generic(len,
+            unsigned int: __builtin_parity,
+            unsigned long: __builtin_parityl,
+            unsigned long long: __builtin_parityll)(len) << (__builtin_ffsll(SELVA_STRING_LEN_PARITY) - 1);
+}
+
+static inline bool verify_parity(const struct selva_string *hdr)
+{
+    return len_parity(hdr->len) == (hdr->flags & SELVA_STRING_LEN_PARITY);
+}
+
 /**
  * Get a pointer to the string buffer.
  */
 static inline char *get_buf(const struct selva_string *s)
 {
+    if (!verify_parity(s)) {
+        abort();
+    }
+
     return (s->flags & SELVA_STRING_MUTABLE) ? (char *)s->p : (char *)s->emb;
 }
 
@@ -153,7 +168,7 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
 {
     char *buf;
 
-    s->flags = flags;
+    s->flags = flags | len_parity(len);
     s->len = len;
 
     buf = get_buf(s);
@@ -253,6 +268,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
     }
 
     s->len = fread(get_buf(s), 1, size, fp);
+    flags |= len_parity(s->len);
 
     update_crc(s);
     return s;
@@ -284,8 +300,8 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
         struct compressed_string_header hdr;
         char *buf = get_buf(s);
 
-        s->flags = flags | SELVA_STRING_COMPRESS;
         s->len = sizeof(hdr) + compressed_size;
+        s->flags = flags | SELVA_STRING_COMPRESS | len_parity(s->len);
         memset(buf + s->len, '\0', sizeof(char));
 
         hdr.uncompressed_size = in_len;
@@ -307,6 +323,10 @@ int selva_string_decompress(const struct selva_string * restrict s, char * restr
         struct compressed_string_header hdr;
         const void *data;
         size_t data_len;
+
+        if (!verify_parity(s)) {
+            abort();
+        }
 
         memcpy(&hdr, get_buf(s), sizeof(hdr));
         data = get_buf(s) + sizeof(hdr);
@@ -344,6 +364,7 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
         return SELVA_EINVAL;
     } else if (newlen < oldlen) {
         s->len = newlen;
+        s->flags |= len_parity(s->len);
         s->p = selva_realloc(s->p, s->len + 1);
         s->p[s->len] = '\0';
 
@@ -365,6 +386,7 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
         size_t old_len = s->len;
 
         s->len += len;
+        s->flags |= len_parity(s->len);
         s->p = selva_realloc(s->p, s->len + 1);
         if (str) {
             memcpy(s->p + old_len, str, len);
@@ -395,6 +417,7 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
 
     if (flags & SELVA_STRING_MUTABLE) {
         s->len = len;
+        s->flags |= len_parity(len);
         s->p = selva_realloc(s->p, len + 1);
         memcpy(s->p, str, len);
 
@@ -434,6 +457,10 @@ enum selva_string_flags selva_string_get_flags(const struct selva_string *s)
 
 size_t selva_string_get_len(const struct selva_string *s)
 {
+    if (!verify_parity(s)) {
+        abort();
+    }
+
     return s->len;
 }
 
@@ -445,6 +472,10 @@ size_t selva_string_getz_ulen(const struct selva_string *s)
         memcpy(&hdr, get_buf(s), sizeof(hdr));
         return hdr.uncompressed_size;
     } else {
+        if (!verify_parity(s)) {
+            abort();
+        }
+
         return s->len;
     }
 }
@@ -603,7 +634,7 @@ int selva_string_verify_crc(const struct selva_string *s)
     memcpy(&hdr, s, sizeof(*s));
     hdr.crc = 0;
 
-    return s->crc == calc_crc(&hdr, get_buf(s));
+    return verify_parity(&hdr) && s->crc == calc_crc(&hdr, get_buf(s));
 }
 
 uint32_t selva_string_get_crc(const struct selva_string *s)

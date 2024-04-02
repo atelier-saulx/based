@@ -16,32 +16,34 @@ enum selva_string_flags {
     /**
      * CRC enabled.
      */
-    SELVA_STRING_CRC = 0x01,
+    SELVA_STRING_CRC = 0x0001,
     /**
      * Permanently shared string; Shouldn't be freed.
      */
-    SELVA_STRING_FREEZE = 0x02,
+    SELVA_STRING_FREEZE = 0x0002,
     /**
      * A mutable string.
      */
-    SELVA_STRING_MUTABLE = 0x04,
+    SELVA_STRING_MUTABLE = 0x0004,
     /**
      * Fixed size mutable string.
      * Mutable only with selva_string_replace() and selva_string_to_mstr().
      */
-    SELVA_STRING_MUTABLE_FIXED = 0x08,
+    SELVA_STRING_MUTABLE_FIXED = 0x0008,
     /**
      * Intern the string.
      * Similar to SELVA_STRING_FREEZE but tracked and shared internally.
      * Implies SELVA_STRING_FREEZE.
      */
-    SELVA_STRING_INTERN = 0x10,
+    SELVA_STRING_INTERN = 0x0010,
     /**
      * Compressed string.
      */
-    SELVA_STRING_COMPRESS = 0x20,
-    _SELVA_STRING_LAST_FLAG = 0x40,
+    SELVA_STRING_COMPRESS = 0x0020,
+    SELVA_STRING_LEN_PARITY =  0x8000,
 };
+
+#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_INTERN | SELVA_STRING_COMPRESS))
 
 /**
  * Find already interned string.
