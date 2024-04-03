@@ -107,6 +107,7 @@ static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, i
  * Calculate the CRC of a selva_string.
  * @param hdr is the header part of a selva_string i.e. without the actual string.
  */
+static uint32_t calc_crc(const struct selva_string *hdr, const char *str) __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 static uint32_t calc_crc(const struct selva_string *hdr, const char *str)
 {
     uint32_t res;
@@ -132,6 +133,7 @@ static void update_crc(struct selva_string *s)
 /**
  * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
  */
+static uint32_t get_crc(const struct selva_string *s) __attribute__((pure, access (read_only, 1)));
 static uint32_t get_crc(const struct selva_string *s)
 {
     uint32_t csum;
@@ -141,6 +143,7 @@ static uint32_t get_crc(const struct selva_string *s)
     return csum;
 }
 
+[[nodiscard]]
 static struct selva_string *alloc_mutable(size_t len)
 {
     struct selva_string *s;
@@ -165,6 +168,7 @@ static size_t calc_immutable_alloc_size(size_t len)
 /**
  * Allocate an immutable selva_string.
  */
+[[nodiscard]]
 static struct selva_string *alloc_immutable(size_t len)
 {
     struct selva_string *s;
