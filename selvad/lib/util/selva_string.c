@@ -35,17 +35,6 @@ struct selva_string {
     };
 };
 
-/**
- * Header before compressed string.
- * This is stored just before the actual string.
- */
-struct compressed_string_header {
-    /**
-     * Uncompressed size of the string.
-     */
-    uint32_t uncompressed_size;
-} __packed;
-
 static struct libdeflate_compressor *compressor;
 static struct libdeflate_decompressor *decompressor;
 
@@ -282,8 +271,8 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
         return NULL; /* Invalid flags */
     }
 
-    s = alloc_immutable(sizeof(struct compressed_string_header) + in_len + trail);
-    compressed_size = libdeflate_deflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct compressed_string_header), in_len);
+    s = alloc_immutable(sizeof(struct selva_string_compressed_hdr) + in_len + trail);
+    compressed_size = libdeflate_deflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct selva_string_compressed_hdr), in_len);
     if (compressed_size == 0) {
         /*
          * No compression was achieved.
@@ -294,7 +283,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
         /*
          * The string was compressed.
          */
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
         char *buf = get_buf(s);
 
         s->len = sizeof(hdr) + compressed_size;
@@ -317,7 +306,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
 int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
         const void *data;
         size_t data_len;
 
@@ -465,7 +454,7 @@ size_t selva_string_get_len(const struct selva_string *s)
 size_t selva_string_getz_ulen(const struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
 
         memcpy(&hdr, get_buf(s), sizeof(hdr));
         return hdr.uncompressed_size;
@@ -481,7 +470,7 @@ size_t selva_string_getz_ulen(const struct selva_string *s)
 double selva_string_getz_cratio(const struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
 
         memcpy(&hdr, get_buf(s), sizeof(hdr));
 

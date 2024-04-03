@@ -50,6 +50,18 @@ enum selva_string_flags {
 #define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_COMPRESS))
 
 /**
+ * Header before compressed string.
+ * This is stored just before the actual string.
+ * Currently the compression used is raw DEFLATE.
+ */
+struct selva_string_compressed_hdr {
+    /**
+     * Uncompressed size of the string.
+     */
+    uint32_t uncompressed_size;
+} __packed;
+
+/**
  * Create a new string.
  * @param str can be NULL.
  */
