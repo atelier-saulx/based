@@ -49,6 +49,14 @@ struct compressed_string_header {
 static struct libdeflate_compressor *compressor;
 static struct libdeflate_decompressor *decompressor;
 
+/**
+ * Test that only one or none of excl flags are set in flags.
+ */
+static inline bool test_mutually_exclusive_flags(enum selva_string_flags flags, enum selva_string_flags excl)
+{
+    return __builtin_popcount(flags & excl) > 1;
+}
+
 static inline enum selva_string_flags len_parity(size_t len)
 {
     return _Generic(len,
@@ -82,7 +90,7 @@ static inline char *get_buf(const struct selva_string *s)
  * buffer. must_free is set to indicate that the returned buffer must be freed
  * with selva_free().
  */
-static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, int *must_free)
+static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, bool *must_free)
 {
     size_t len = selva_string_getz_ulen(s);
     char *buf;
@@ -91,16 +99,41 @@ static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, i
         buf = selva_malloc(len + 1);
         selva_string_decompress(s, buf); /* RFE Should we return a NULL on error? */
         buf[len] = '\0';
-        *must_free = 1;
+        *must_free = true;
     } else {
         buf = get_buf((struct selva_string *)s);
-        *must_free = 0;
+        *must_free = false;
     }
 
     if (buf_len) {
         *buf_len = len;
     }
     return buf;
+}
+
+/**
+ * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
+ */
+static uint32_t get_crc(const struct selva_string *s) __attribute__((pure, access (read_only, 1)));
+static uint32_t get_crc(const struct selva_string *s)
+{
+    uint32_t csum;
+
+    memcpy(&csum, get_buf(s) + s->len + 1, sizeof(csum));
+
+    return csum;
+}
+
+/**
+ * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
+ */
+static void set_crc(struct selva_string *s, uint32_t csum)
+{
+    /*
+     * Space for the CRC was hopefully allocated when alloc_immutable() or
+     * alloc_mutable() was called.
+     */
+    memcpy(get_buf(s) + s->len + 1, &csum, sizeof(csum));
 }
 
 /**
@@ -120,27 +153,8 @@ static uint32_t calc_crc(const struct selva_string *hdr, const char *str)
 static void update_crc(struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_CRC) {
-        uint32_t csum = calc_crc(s, get_buf(s));
-
-        /*
-         * Space for the CRC was hopefully allocated when alloc_immutable() or
-         * alloc_mutable() was called.
-         */
-        memcpy(get_buf(s) + s->len + 1, &csum, sizeof(csum));
+        set_crc(s, calc_crc(s, get_buf(s)));
     }
-}
-
-/**
- * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
- */
-static uint32_t get_crc(const struct selva_string *s) __attribute__((pure, access (read_only, 1)));
-static uint32_t get_crc(const struct selva_string *s)
-{
-    uint32_t csum;
-
-    memcpy(&csum, get_buf(s) + s->len + 1, sizeof(csum));
-
-    return csum;
 }
 
 [[nodiscard]]
@@ -200,10 +214,10 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
 
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
-    const enum selva_string_flags xor_mask = SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE;
     const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
-    if ((flags & INVALID_FLAGS_MASK) || __builtin_popcount(flags & xor_mask) > 1) {
+    if ((flags & INVALID_FLAGS_MASK) ||
+        test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
         return NULL; /* Invalid flags */
     }
 
@@ -331,6 +345,7 @@ int selva_string_decompress(const struct selva_string * restrict s, char * restr
 
 struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_string_flags flags)
 {
+    /* TODO Decompress the original if (s->flags & SELVA_STRING_COMPRESS) is set but (flags & SELVA_STRING_COMPRESS) is not set. */
     return selva_string_create(get_buf(s), s->len, flags);
 }
 
@@ -621,7 +636,7 @@ void selva_string_set_compress(struct selva_string *s)
 
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
 {
-    int must_free_a, must_free_b;
+    bool must_free_a, must_free_b;
     char *a_str = get_comparable_buf(a, NULL, &must_free_a);
     char *b_str = get_comparable_buf(b, NULL, &must_free_b);
     int res;
@@ -651,7 +666,7 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
 
 ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
 {
-    int must_free;
+    bool must_free;
     size_t len;
     char *str = get_comparable_buf(s, &len, &must_free);
     char *pos;
