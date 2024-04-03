@@ -12,7 +12,6 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
-#include "tree.h"
 #include "cdefs.h"
 #include "selva_error.h"
 #include "util/crc32c.h"
@@ -27,11 +26,10 @@
 struct selva_string {
     enum selva_string_flags flags;
     uint32_t crc;
-    RB_ENTRY(selva_string) intern_entry;
     size_t len;
     union {
-        char *p;
-        char emb[sizeof(char *)];
+        char *p __counted_by(len);
+        char emb[sizeof(char *)] __counted_by(len);
     };
 };
 
@@ -46,14 +44,8 @@ struct compressed_string_header {
     uint32_t uncompressed_size;
 } __packed;
 
-RB_HEAD(selva_string_rbtree, selva_string);
-RB_PROTOTYPE_STATIC(selva_string_rbtree ,selva_string, intern_entry, selva_string_cmp)
-
-static struct selva_string_rbtree intern_head = RB_INITIALIZER(&intern_head);
 static struct libdeflate_compressor *compressor;
 static struct libdeflate_decompressor *decompressor;
-
-RB_GENERATE_STATIC(selva_string_rbtree, selva_string, intern_entry, selva_string_cmp)
 
 static inline enum selva_string_flags len_parity(size_t len)
 {
@@ -183,33 +175,10 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
     return s;
 }
 
-struct selva_string *selva_string_find_intern(const char *str, size_t len)
-{
-    struct selva_string n = {
-        .flags = SELVA_STRING_MUTABLE,
-        .len = len,
-        .p = (char *)str,
-    };
-
-    return RB_FIND(selva_string_rbtree, &intern_head, &n);
-}
-
-static void intern(struct selva_string *s)
-{
-    (void)RB_INSERT(selva_string_rbtree, &intern_head, s);
-}
-
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
     struct selva_string *s;
     enum selva_string_flags xor_mask = SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE;
-
-    if (flags & SELVA_STRING_INTERN) {
-        if (!str) {
-            return NULL;
-        }
-        flags |= SELVA_STRING_FREEZE;
-    }
 
     if ((flags & INVALID_FLAGS_MASK) || __builtin_popcount(flags & xor_mask) > 1) {
         return NULL; /* Invalid flags */
@@ -217,12 +186,6 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
 
     if (flags & SELVA_STRING_MUTABLE) {
         s = set_string(alloc_mutable(len), str, len, flags);
-    } else if ((flags & SELVA_STRING_INTERN)) {
-        s = selva_string_find_intern(str, len);
-        if (!s) {
-            s = set_string(alloc_immutable(len), str, len, flags);
-            intern(s);
-        }
     } else {
         s = set_string(alloc_immutable(len), str, len, flags);
     }
@@ -280,7 +243,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
     size_t compressed_size;
     struct selva_string *tmp;
 
-    if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_INTERN | SELVA_STRING_MUTABLE_FIXED)) ||
+    if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
         (flags & INVALID_FLAGS_MASK)) {
         return NULL; /* Invalid flags */
     }

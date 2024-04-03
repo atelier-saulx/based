@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -177,21 +177,6 @@ PU_TEST(test_cmp)
     selva_string_free(s1);
     selva_string_free(s2);
     selva_string_free(s3);
-
-    return NULL;
-}
-
-PU_TEST(test_intern)
-{
-    struct selva_string *s1;
-    struct selva_string *s2;
-
-    s1 = selva_string_create("abraham", 7, SELVA_STRING_INTERN);
-    s2 = selva_string_create("abraham", 7, SELVA_STRING_INTERN);
-
-    pu_assert_ptr_equal("interned", s1, s2);
-
-    selva_string_free(s1);
 
     return NULL;
 }

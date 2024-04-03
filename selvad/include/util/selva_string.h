@@ -31,25 +31,13 @@ enum selva_string_flags {
      */
     SELVA_STRING_MUTABLE_FIXED = 0x0008,
     /**
-     * Intern the string.
-     * Similar to SELVA_STRING_FREEZE but tracked and shared internally.
-     * Implies SELVA_STRING_FREEZE.
-     */
-    SELVA_STRING_INTERN = 0x0010,
-    /**
      * Compressed string.
      */
     SELVA_STRING_COMPRESS = 0x0020,
     SELVA_STRING_LEN_PARITY =  0x8000,
 };
 
-#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_INTERN | SELVA_STRING_COMPRESS))
-
-/**
- * Find already interned string.
- */
-struct selva_string *selva_string_find_intern(const char *str, size_t len)
-    __attribute__((access(read_only, 1, 2)));
+#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_COMPRESS))
 
 /**
  * Create a new string.
