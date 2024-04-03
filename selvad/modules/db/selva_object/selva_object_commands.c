@@ -774,11 +774,10 @@ static void SelvaObject_CasCommand(struct selva_server_response_out *resp, const
         return;
     }
 
-    selva_string_en_crc(new_value);
-    err = SelvaObject_SetStringStr(obj, okey_str, okey_len, new_value);
-    if (err == 0) {
-        finalizer_forget(&fin, new_value);
-    } else if (err) {
+    struct selva_string *new_value_wcrc = selva_string_dup(new_value, SELVA_STRING_CRC);
+    err = SelvaObject_SetStringStr(obj, okey_str, okey_len, new_value_wcrc);
+    if (err) {
+        selva_string_free(new_value_wcrc);
         selva_send_error(resp, err, NULL, 0);
         return;
     }

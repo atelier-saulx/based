@@ -24,12 +24,14 @@
               (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
 struct selva_string {
-    enum selva_string_flags flags;
-    uint32_t crc;
-    size_t len;
+    struct {
+        uint64_t len: 48;
+        enum selva_string_flags flags: 16;
+    };
+    /* Don't add __counted_by(len) here because it's not the real size. */
     union {
-        char *p __counted_by(len);
-        char emb[sizeof(char *)] __counted_by(len);
+        char *p;
+        char emb[sizeof(char *)];
     };
 };
 
@@ -117,9 +119,26 @@ static uint32_t calc_crc(const struct selva_string *hdr, const char *str)
 static void update_crc(struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_CRC) {
-        s->crc = 0;
-        s->crc = calc_crc(s, get_buf(s));
+        uint32_t csum = calc_crc(s, get_buf(s));
+
+        /*
+         * Space for the CRC was hopefully allocated when alloc_immutable() or
+         * alloc_mutable() was called.
+         */
+        memcpy(get_buf(s) + s->len + 1, &csum, sizeof(csum));
     }
+}
+
+/**
+ * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
+ */
+static uint32_t get_crc(const struct selva_string *s)
+{
+    uint32_t csum;
+
+    memcpy(&csum, get_buf(s) + s->len + 1, sizeof(csum));
+
+    return csum;
 }
 
 static struct selva_string *alloc_mutable(size_t len)
@@ -177,20 +196,16 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
 
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
-    struct selva_string *s;
-    enum selva_string_flags xor_mask = SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE;
+    const enum selva_string_flags xor_mask = SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE;
+    const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
     if ((flags & INVALID_FLAGS_MASK) || __builtin_popcount(flags & xor_mask) > 1) {
         return NULL; /* Invalid flags */
     }
 
-    if (flags & SELVA_STRING_MUTABLE) {
-        s = set_string(alloc_mutable(len), str, len, flags);
-    } else {
-        s = set_string(alloc_immutable(len), str, len, flags);
-    }
-
-    return s;
+    return (flags & SELVA_STRING_MUTABLE)
+        ? set_string(alloc_mutable(len + trail), str, len, flags)
+        : set_string(alloc_immutable(len + trail), str, len, flags);
 }
 
 struct selva_string *selva_string_createf(const char *fmt, ...)
@@ -239,6 +254,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
 
 struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags)
 {
+    const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
     struct selva_string *s;
     size_t compressed_size;
     struct selva_string *tmp;
@@ -248,7 +264,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
         return NULL; /* Invalid flags */
     }
 
-    s = alloc_immutable(sizeof(struct compressed_string_header) + in_len);
+    s = alloc_immutable(sizeof(struct compressed_string_header) + in_len + trail);
     compressed_size = libdeflate_deflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct compressed_string_header), in_len);
     if (compressed_size == 0) {
         /*
@@ -580,29 +596,18 @@ void selva_string_freeze(struct selva_string *s)
     s->flags |= SELVA_STRING_FREEZE;
 }
 
-void selva_string_en_crc(struct selva_string *s)
-{
-    s->flags |= SELVA_STRING_CRC;
-    update_crc(s);
-}
-
 int selva_string_verify_crc(const struct selva_string *s)
 {
-    struct selva_string hdr;
-
-    if (!(s->flags & SELVA_STRING_CRC)) {
-        return 0;
-    }
-
-    memcpy(&hdr, s, sizeof(*s));
-    hdr.crc = 0;
-
-    return verify_parity(&hdr) && s->crc == calc_crc(&hdr, get_buf(s));
+    return verify_parity(s) && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s, get_buf(s));
 }
 
 uint32_t selva_string_get_crc(const struct selva_string *s)
 {
-    return s->crc;
+    if (!(s->flags & SELVA_STRING_CRC)) {
+        return 0;
+    }
+
+    return get_crc(s);
 }
 
 void selva_string_set_compress(struct selva_string *s)

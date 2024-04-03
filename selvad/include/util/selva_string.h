@@ -237,15 +237,6 @@ void selva_string_freeze(struct selva_string *s)
     __attribute((access(read_write, 1)));
 
 /**
- * Enable CRC checking for the strings s.
- * This function can be called even if the string is immutable.
- * If the string is compressed the CRC is computed from the compressed data.
- * @param s is a pointer to a selva_string.
- */
-void selva_string_en_crc(struct selva_string *s)
-    __attribute__((access(read_write, 1)));
-
-/**
  * Verify the CRC of the string s.
  * If the string is compressed the CRC is computed from the compressed data.
  * @param s is a pointer to a selva_string.
