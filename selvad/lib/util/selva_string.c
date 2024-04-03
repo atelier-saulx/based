@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -168,7 +168,7 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
 {
     char *buf;
 
-    s->flags = flags | len_parity(len);
+    s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
     s->len = len;
 
     buf = get_buf(s);
@@ -364,9 +364,9 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
         return SELVA_EINVAL;
     } else if (newlen < oldlen) {
         s->len = newlen;
-        s->flags |= len_parity(s->len);
-        s->p = selva_realloc(s->p, s->len + 1);
-        s->p[s->len] = '\0';
+        s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(newlen);
+        s->p = selva_realloc(s->p, newlen + 1);
+        s->p[newlen] = '\0';
 
         update_crc(s);
     }
@@ -386,7 +386,7 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
         size_t old_len = s->len;
 
         s->len += len;
-        s->flags |= len_parity(s->len);
+        s->flags = (s->flags & ~SELVA_STRING_LEN_PARITY) | len_parity(s->len);
         s->p = selva_realloc(s->p, s->len + 1);
         if (str) {
             memcpy(s->p + old_len, str, len);
@@ -417,7 +417,7 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
 
     if (flags & SELVA_STRING_MUTABLE) {
         s->len = len;
-        s->flags |= len_parity(len);
+        s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
         s->p = selva_realloc(s->p, len + 1);
         memcpy(s->p, str, len);
 
