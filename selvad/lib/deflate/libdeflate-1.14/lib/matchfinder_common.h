@@ -51,10 +51,24 @@ typedef s16 mf_pos_t;
 #define MATCHFINDER_INITVAL ((mf_pos_t)-MATCHFINDER_WINDOW_SIZE)
 
 /*
- * Required alignment of the matchfinder buffer pointer and size.  The values
- * here come from the AVX-2 implementation, which is the worst case.
+ * This is the memory address alignment, in bytes, required for the matchfinder
+ * buffers by the architecture-specific implementations of matchfinder_init()
+ * and matchfinder_rebase().  "Matchfinder buffer" means an entire struct
+ * hc_matchfinder, bt_matchfinder, or ht_matchfinder; the next_tab field of
+ * struct hc_matchfinder; or the child_tab field of struct bt_matchfinder.
+ *
+ * This affects how the entire 'struct deflate_compressor' is allocated, since
+ * the matchfinder structures are embedded inside it
  */
 #define MATCHFINDER_MEM_ALIGNMENT	32
+/*
+ * This declares a size, in bytes, that is guaranteed to divide the sizes of the
+ * matchfinder buffers (where "matchfinder buffers" is as defined for
+ * MATCHFINDER_MEM_ALIGNMENT).  The architecture-specific implementations of
+ * matchfinder_init() and matchfinder_rebase() take advantage of this value.
+ *
+ * This value can safely be changed to any power of two that is >= 128.
+ */
 #define MATCHFINDER_SIZE_ALIGNMENT	128
 
 #undef matchfinder_init
