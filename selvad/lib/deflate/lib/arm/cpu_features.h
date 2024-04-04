@@ -35,7 +35,6 @@
 #if defined(__arm__) || defined(__aarch64__)
 
 #if COMPILER_SUPPORTS_TARGET_FUNCTION_ATTRIBUTE && \
-	!defined(FREESTANDING) && \
 	(defined(__linux__) || \
 	 (defined(__aarch64__) && defined(__APPLE__)))
 #  undef HAVE_DYNAMIC_ARM_CPU_FEATURES

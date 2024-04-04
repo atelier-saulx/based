@@ -26,15 +26,8 @@
  */
 
 #include "lib_common.h"
-
 #include "libdeflate.h"
-
-#ifdef FREESTANDING
-#  define malloc NULL
-#  define free NULL
-#else
-#  include <stdlib.h>
-#endif
+#include <stdlib.h>
 
 static void *(*libdeflate_malloc_func)(size_t) = malloc;
 static void (*libdeflate_free_func)(void *) = free;
@@ -77,69 +70,6 @@ libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
 	libdeflate_malloc_func = malloc_func;
 	libdeflate_free_func = free_func;
 }
-
-/*
- * Implementations of libc functions for freestanding library builds.
- * Normal library builds don't use these.  Not optimized yet; usually the
- * compiler expands these functions and doesn't actually call them anyway.
- */
-#ifdef FREESTANDING
-#undef memset
-void * __attribute__((weak))
-memset(void *s, int c, size_t n)
-{
-	u8 *p = s;
-	size_t i;
-
-	for (i = 0; i < n; i++)
-		p[i] = c;
-	return s;
-}
-
-#undef memcpy
-void * __attribute__((weak))
-memcpy(void *dest, const void *src, size_t n)
-{
-	u8 *d = dest;
-	const u8 *s = src;
-	size_t i;
-
-	for (i = 0; i < n; i++)
-		d[i] = s[i];
-	return dest;
-}
-
-#undef memmove
-void * __attribute__((weak))
-memmove(void *dest, const void *src, size_t n)
-{
-	u8 *d = dest;
-	const u8 *s = src;
-	size_t i;
-
-	if (d <= s)
-		return memcpy(d, s, n);
-
-	for (i = n; i > 0; i--)
-		d[i - 1] = s[i - 1];
-	return dest;
-}
-
-#undef memcmp
-int __attribute__((weak))
-memcmp(const void *s1, const void *s2, size_t n)
-{
-	const u8 *p1 = s1;
-	const u8 *p2 = s2;
-	size_t i;
-
-	for (i = 0; i < n; i++) {
-		if (p1[i] != p2[i])
-			return (int)p1[i] - (int)p2[i];
-	}
-	return 0;
-}
-#endif /* FREESTANDING */
 
 #ifdef LIBDEFLATE_ENABLE_ASSERTIONS
 #include <stdio.h>

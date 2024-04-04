@@ -31,12 +31,7 @@
 #include <stdbool.h>
 #include <stddef.h>	/* for size_t */
 #include <stdint.h>
-#ifdef _MSC_VER
-#  include <stdlib.h>	/* for _byteswap_*() */
-#endif
-#ifndef FREESTANDING
-#  include <string.h>	/* for memcpy() */
-#endif
+#include <string.h>	/* for memcpy() */
 
 /* ========================================================================== */
 /*                              Type definitions                              */
@@ -51,15 +46,6 @@ typedef int8_t s8;
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
-
-/* ssize_t, if not available in <sys/types.h> */
-#ifdef _MSC_VER
-#  ifdef _WIN64
-     typedef long long ssize_t;
-#  else
-     typedef long ssize_t;
-#  endif
-#endif
 
 /*
  * Word type of the target architecture.  Use 'size_t' instead of
@@ -112,24 +98,11 @@ typedef size_t machine_word_t;
 #endif
 
 /* LIBEXPORT - export a function from a shared library */
-#ifdef _WIN32
-#  define LIBEXPORT		__declspec(dllexport)
-#elif defined(__GNUC__)
-#  define LIBEXPORT		__attribute__((visibility("default")))
-#else
-#  define LIBEXPORT
-#endif
-
-/* inline - suggest that a function be inlined */
-#ifdef _MSC_VER
-#  define inline		__inline
-#endif /* else assume 'inline' is usable as-is */
+#define LIBEXPORT		__attribute__((visibility("default")))
 
 /* forceinline - force a function to be inlined, if possible */
 #ifdef __GNUC__
 #  define forceinline		inline __attribute__((always_inline))
-#elif defined(_MSC_VER)
-#  define forceinline		__forceinline
 #else
 #  define forceinline		inline
 #endif
@@ -139,23 +112,6 @@ typedef size_t machine_word_t;
 #  define MAYBE_UNUSED		__attribute__((unused))
 #else
 #  define MAYBE_UNUSED
-#endif
-
-/* restrict - hint that writes only occur through the given pointer */
-#ifdef __GNUC__
-#  define restrict		__restrict__
-#elif defined(_MSC_VER)
-    /*
-     * Don't use MSVC's __restrict; it has nonstandard behavior.
-     * Standard restrict is okay, if it is supported.
-     */
-#  if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-#    define restrict		restrict
-#  else
-#    define restrict
-#  endif
-#else
-#  define restrict
 #endif
 
 /* likely(expr) - hint that an expression is usually true */
@@ -223,8 +179,6 @@ typedef size_t machine_word_t;
  */
 #if defined(__BYTE_ORDER__) /* gcc v4.6+ and clang */
 #  define CPU_IS_LITTLE_ENDIAN()  (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-#elif defined(_MSC_VER)
-#  define CPU_IS_LITTLE_ENDIAN()  true
 #else
 static forceinline bool CPU_IS_LITTLE_ENDIAN(void)
 {
@@ -243,8 +197,6 @@ static forceinline u16 bswap16(u16 v)
 {
 #if GCC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
 	return __builtin_bswap16(v);
-#elif defined(_MSC_VER)
-	return _byteswap_ushort(v);
 #else
 	return (v << 8) | (v >> 8);
 #endif
@@ -255,8 +207,6 @@ static forceinline u32 bswap32(u32 v)
 {
 #if GCC_PREREQ(4, 3) || __has_builtin(__builtin_bswap32)
 	return __builtin_bswap32(v);
-#elif defined(_MSC_VER)
-	return _byteswap_ulong(v);
 #else
 	return ((v & 0x000000FF) << 24) |
 	       ((v & 0x0000FF00) << 8) |
@@ -270,8 +220,6 @@ static forceinline u64 bswap64(u64 v)
 {
 #if GCC_PREREQ(4, 3) || __has_builtin(__builtin_bswap64)
 	return __builtin_bswap64(v);
-#elif defined(_MSC_VER)
-	return _byteswap_uint64(v);
 #else
 	return ((v & 0x00000000000000FF) << 56) |
 	       ((v & 0x000000000000FF00) << 40) |
@@ -311,8 +259,6 @@ static forceinline u64 bswap64(u64 v)
 	  * worth treating it as a CPU architecture with fast unaligned access.
 	  */ defined(__wasm__))
 #  define UNALIGNED_ACCESS_IS_FAST	1
-#elif defined(_MSC_VER)
-#  define UNALIGNED_ACCESS_IS_FAST	1
 #else
 #  define UNALIGNED_ACCESS_IS_FAST	0
 #endif
@@ -334,12 +280,6 @@ static forceinline u64 bswap64(u64 v)
  * If you run into it, please just use a newer version of gcc (or use clang).
  */
 
-#ifdef FREESTANDING
-#  define MEMCOPY	__builtin_memcpy
-#else
-#  define MEMCOPY	memcpy
-#endif
-
 /* Unaligned loads and stores without endianness conversion */
 
 #define DEFINE_UNALIGNED_TYPE(type)				\
@@ -348,22 +288,20 @@ load_##type##_unaligned(const void *p)				\
 {								\
 	type v;							\
 								\
-	MEMCOPY(&v, p, sizeof(v));				\
+	memcpy(&v, p, sizeof(v));				\
 	return v;						\
 }								\
 								\
 static forceinline void						\
 store_##type##_unaligned(type v, void *p)			\
 {								\
-	MEMCOPY(p, &v, sizeof(v));				\
+	memcpy(p, &v, sizeof(v));				\
 }
 
 DEFINE_UNALIGNED_TYPE(u16)
 DEFINE_UNALIGNED_TYPE(u32)
 DEFINE_UNALIGNED_TYPE(u64)
 DEFINE_UNALIGNED_TYPE(machine_word_t)
-
-#undef MEMCOPY
 
 #define load_word_unaligned	load_machine_word_t_unaligned
 #define store_word_unaligned	store_machine_word_t_unaligned
@@ -522,11 +460,6 @@ bsr32(u32 v)
 {
 #ifdef __GNUC__
 	return 31 - __builtin_clz(v);
-#elif defined(_MSC_VER)
-	unsigned long i;
-
-	_BitScanReverse(&i, v);
-	return i;
 #else
 	unsigned i = 0;
 
@@ -541,11 +474,6 @@ bsr64(u64 v)
 {
 #ifdef __GNUC__
 	return 63 - __builtin_clzll(v);
-#elif defined(_MSC_VER) && defined(_WIN64)
-	unsigned long i;
-
-	_BitScanReverse64(&i, v);
-	return i;
 #else
 	unsigned i = 0;
 
@@ -576,11 +504,6 @@ bsf32(u32 v)
 {
 #ifdef __GNUC__
 	return __builtin_ctz(v);
-#elif defined(_MSC_VER)
-	unsigned long i;
-
-	_BitScanForward(&i, v);
-	return i;
 #else
 	unsigned i = 0;
 
@@ -595,11 +518,6 @@ bsf64(u64 v)
 {
 #ifdef __GNUC__
 	return __builtin_ctzll(v);
-#elif defined(_MSC_VER) && defined(_WIN64)
-	unsigned long i;
-
-	_BitScanForward64(&i, v);
-	return i;
 #else
 	unsigned i = 0;
 

@@ -28,7 +28,7 @@
 #ifndef LIB_CPU_FEATURES_COMMON_H
 #define LIB_CPU_FEATURES_COMMON_H
 
-#if defined(TEST_SUPPORT__DO_NOT_USE) && !defined(FREESTANDING)
+#if defined(TEST_SUPPORT__DO_NOT_USE)
 #  undef _ANSI_SOURCE	/* for strdup() and strtok_r() */
 #  ifndef __APPLE__
 #    define _GNU_SOURCE 1
@@ -45,7 +45,7 @@ struct cpu_feature {
 	const char *name;
 };
 
-#if defined(TEST_SUPPORT__DO_NOT_USE) && !defined(FREESTANDING)
+#if defined(TEST_SUPPORT__DO_NOT_USE)
 /* Disable any features that are listed in $LIBDEFLATE_DISABLE_CPU_FEATURES. */
 static inline void
 disable_cpu_features_for_testing(u32 *features,

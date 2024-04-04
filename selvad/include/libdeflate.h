@@ -7,10 +7,6 @@
 #ifndef LIBDEFLATE_H
 #define LIBDEFLATE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define LIBDEFLATE_VERSION_MAJOR	2
 #define LIBDEFLATE_VERSION_MINOR	0
 #define LIBDEFLATE_VERSION_STRING	"2.0"
@@ -18,31 +14,10 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-/*
- * On Windows, if you want to link to the DLL version of libdeflate, then
- * #define LIBDEFLATE_DLL.  Note that the calling convention is "cdecl".
- */
-#ifdef LIBDEFLATE_DLL
-#  ifdef BUILDING_LIBDEFLATE
-#    define LIBDEFLATEEXPORT	LIBEXPORT
-#  elif defined(_WIN32) || defined(__CYGWIN__)
-#    define LIBDEFLATEEXPORT	__declspec(dllimport)
-#  endif
-#endif
-#ifndef LIBDEFLATEEXPORT
-#  define LIBDEFLATEEXPORT
-#endif
-
-#if defined(BUILDING_LIBDEFLATE) && defined(__GNUC__) && \
-	defined(_WIN32) && !defined(_WIN64)
-    /*
-     * On 32-bit Windows, gcc assumes 16-byte stack alignment but MSVC only 4.
-     * Realign the stack when entering libdeflate to avoid crashing in SSE/AVX
-     * code when called from an MSVC-compiled application.
-     */
-#  define LIBDEFLATEAPI	__attribute__((force_align_arg_pointer))
+#ifdef BUILDING_LIBDEFLATE
+#define LIBDEFLATEEXPORT __attribute__((visibility("default")))
 #else
-#  define LIBDEFLATEAPI
+#define LIBDEFLATEEXPORT
 #endif
 
 /* ========================================================================== */
@@ -69,7 +44,7 @@ struct libdeflate_compressor;
  * A single compressor is not safe to use by multiple threads concurrently.
  * However, different threads may use different compressors concurrently.
  */
-LIBDEFLATEEXPORT struct libdeflate_compressor * LIBDEFLATEAPI
+LIBDEFLATEEXPORT struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level);
 
 /*
@@ -79,7 +54,7 @@ libdeflate_alloc_compressor(int compression_level);
  * bytes.  The return value is the compressed size in bytes, or 0 if the data
  * could not be compressed to 'out_nbytes_avail' bytes or fewer.
  */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
+LIBDEFLATEEXPORT size_t
 libdeflate_deflate_compress(struct libdeflate_compressor *compressor,
 			    const void *in, size_t in_nbytes,
 			    void *out, size_t out_nbytes_avail);
@@ -109,7 +84,7 @@ libdeflate_deflate_compress(struct libdeflate_compressor *compressor,
  * libdeflate_deflate_compress() returns 0, indicating that the compressed data
  * did not fit into the provided output buffer.
  */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
+LIBDEFLATEEXPORT size_t
 libdeflate_deflate_compress_bound(struct libdeflate_compressor *compressor,
 				  size_t in_nbytes);
 
@@ -118,7 +93,7 @@ libdeflate_deflate_compress_bound(struct libdeflate_compressor *compressor,
  * libdeflate_alloc_compressor().  If a NULL pointer is passed in, no action is
  * taken.
  */
-LIBDEFLATEEXPORT void LIBDEFLATEAPI
+LIBDEFLATEEXPORT void
 libdeflate_free_compressor(struct libdeflate_compressor *compressor);
 
 /* ========================================================================== */
@@ -139,7 +114,7 @@ struct libdeflate_decompressor;
  * A single decompressor is not safe to use by multiple threads concurrently.
  * However, different threads may use different decompressors concurrently.
  */
-LIBDEFLATEEXPORT struct libdeflate_decompressor * LIBDEFLATEAPI
+LIBDEFLATEEXPORT struct libdeflate_decompressor *
 libdeflate_alloc_decompressor(void);
 
 /*
@@ -194,7 +169,7 @@ enum libdeflate_result {
  *     not large enough but no other problems were encountered, or another
  *     nonzero result code if decompression failed for another reason.
  */
-LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
+LIBDEFLATEEXPORT enum libdeflate_result
 libdeflate_deflate_decompress(struct libdeflate_decompressor *decompressor,
 			      const void *in, size_t in_nbytes,
 			      void *out, size_t out_nbytes_avail,
@@ -206,7 +181,7 @@ libdeflate_deflate_decompress(struct libdeflate_decompressor *decompressor,
  * then the actual compressed size of the DEFLATE stream (aligned to the next
  * byte boundary) is written to *actual_in_nbytes_ret.
  */
-LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
+LIBDEFLATEEXPORT enum libdeflate_result
 libdeflate_deflate_decompress_ex(struct libdeflate_decompressor *decompressor,
 				 const void *in, size_t in_nbytes,
 				 void *out, size_t out_nbytes_avail,
@@ -239,7 +214,7 @@ enum libdeflate_decompress_stop_by {
  * This feature is not compatible with the DEFLATE stream decoding standard,
  * this function can't support a single DEFLATE block that may have any length.
  */
-LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
+LIBDEFLATEEXPORT enum libdeflate_result
 libdeflate_deflate_decompress_block(struct libdeflate_decompressor *decompressor,
                  const void *in_part, size_t in_part_nbytes_bound,
                  void *out_block_with_in_dict,size_t in_dict_nbytes, size_t out_block_nbytes,
@@ -253,7 +228,7 @@ libdeflate_deflate_decompress_block(struct libdeflate_decompressor *decompressor
  * Note: if next block depend on the inputed data of the previous block, reset will
  * cause libdeflate_deflate_decompress_block() to fail.
  */
-LIBDEFLATEEXPORT void LIBDEFLATEAPI
+LIBDEFLATEEXPORT void
 libdeflate_deflate_decompress_block_reset(struct libdeflate_decompressor *decompressor);
 
 /*
@@ -261,7 +236,7 @@ libdeflate_deflate_decompress_block_reset(struct libdeflate_decompressor *decomp
  * libdeflate_alloc_decompressor().  If a NULL pointer is passed in, no action
  * is taken.
  */
-LIBDEFLATEEXPORT void LIBDEFLATEAPI
+LIBDEFLATEEXPORT void
 libdeflate_free_decompressor(struct libdeflate_decompressor *decompressor);
 
 /* ========================================================================== */
@@ -276,12 +251,8 @@ libdeflate_free_decompressor(struct libdeflate_decompressor *decompressor);
  * There must not be any libdeflate_compressor or libdeflate_decompressor
  * structures in existence when calling this function.
  */
-LIBDEFLATEEXPORT void LIBDEFLATEAPI
+LIBDEFLATEEXPORT void
 libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
 				void (*free_func)(void *));
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* LIBDEFLATE_H */
