@@ -41,7 +41,7 @@
 #  define EXTRACT_VARBITS8(word, count)	((word) & BITMASK((u8)(count)))
 #endif
 
-static enum libdeflate_result ATTRIBUTES MAYBE_UNUSED
+static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME(struct libdeflate_decompressor * restrict d,
 	 const void * restrict in, size_t in_nbytes,
 	 void * restrict out, size_t out_nbytes_avail,
@@ -179,11 +179,11 @@ next_block:
 			/* Run-length encoded codeword lengths */
 
 			/*
-			 * Note: we don't need verify that the repeat count
-			 * doesn't overflow the number of elements, since we've
-			 * sized the lens array to have enough extra space to
-			 * allow for the worst-case overrun (138 zeroes when
-			 * only 1 length was remaining).
+			 * Note: we don't need to immediately verify that the
+			 * repeat count doesn't overflow the number of elements,
+			 * since we've sized the lens array to have enough extra
+			 * space to allow for the worst-case overrun (138 zeroes
+			 * when only 1 length was remaining).
 			 *
 			 * In the case of the small repeat counts (presyms 16
 			 * and 17), it is fastest to always write the maximum
@@ -240,6 +240,9 @@ next_block:
 				i += rep_count;
 			}
 		} while (i < num_litlen_syms + num_offset_syms);
+
+		/* Unnecessary, but check this for consistency with zlib. */
+		SAFETY_CHECK(i == num_litlen_syms + num_offset_syms);
 
 	} else if (block_type == DEFLATE_BLOCKTYPE_UNCOMPRESSED) {
 		u16 len, nlen;
