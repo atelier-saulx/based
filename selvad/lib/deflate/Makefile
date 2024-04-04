@@ -7,7 +7,7 @@ cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null \
 	      1>&2 2>/dev/null; then echo $(1); fi)
 
 CFLAGS += -fPIC -fvisibility=hidden -I../../include \
-	-O2 -fomit-frame-pointer -std=c99 -Wall -Wundef	\
+	-O2 -fomit-frame-pointer -Wall -Wundef	\
 	$(call cc-option,-Wdeclaration-after-statement)	\
 	$(call cc-option,-Wimplicit-fallthrough) \
 	$(call cc-option,-Wmissing-prototypes) \

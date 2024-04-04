@@ -32,6 +32,7 @@
 #include <stddef.h> /* for size_t */
 #include <stdint.h>
 #include <string.h> /* for memcpy() */
+#include "cdefs.h"
 
 /* ========================================================================== */
 /*                              Type definitions                              */
@@ -112,20 +113,6 @@ typedef size_t machine_word_t;
 #  define MAYBE_UNUSED      __attribute__((unused))
 #else
 #  define MAYBE_UNUSED
-#endif
-
-/* likely(expr) - hint that an expression is usually true */
-#ifdef __GNUC__
-#  define likely(expr)      __builtin_expect(!!(expr), 1)
-#else
-#  define likely(expr)      (expr)
-#endif
-
-/* unlikely(expr) - hint that an expression is usually false */
-#ifdef __GNUC__
-#  define unlikely(expr)    __builtin_expect(!!(expr), 0)
-#else
-#  define unlikely(expr)    (expr)
 #endif
 
 /* prefetchr(addr) - prefetch into L1 cache for read */

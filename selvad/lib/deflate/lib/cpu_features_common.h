@@ -81,9 +81,9 @@ disable_cpu_features_for_testing(u32 *features,
 }
 #else /* TEST_SUPPORT__DO_NOT_USE */
 static inline void
-disable_cpu_features_for_testing(u32 *features,
-                 const struct cpu_feature *feature_table,
-                 size_t feature_table_length)
+disable_cpu_features_for_testing(u32 *features __unused,
+                 const struct cpu_feature *feature_table __unused,
+                 size_t feature_table_length __unused)
 {
 }
 #endif /* !TEST_SUPPORT__DO_NOT_USE */
