@@ -29,6 +29,8 @@ console.log(addon)
 test('set and get batch with buffers single DBI', async (t) => {
   // let buf = Buffer.alloc(0)
 
+  console.log('======= single dbi')
+
   const setTimes = []
   var setTotalTime = 0
   const getTimes = []
@@ -108,7 +110,7 @@ test('set and get batch with buffers single DBI', async (t) => {
 
       t.deepEqual(data, values[i])
     }
-    if (!(dbi_index % 100)) console.log(`step ${dbi_index}/${DBIs}`)
+    if (!(dbi_index % 500)) console.log(`step ${dbi_index}/${DBIs}`)
   }
   setTimes.sort((a, b) => a - b)
   getTimes.sort((a, b) => a - b)
@@ -123,6 +125,7 @@ test('set and get batch with buffers single DBI', async (t) => {
 })
 test('set and get batch with buffers MANY DBIs', async (t) => {
   // let buf = Buffer.alloc(0)
+  console.log('======= many dbis')
 
   const setTimes = []
   var setTotalTime = 0
@@ -133,7 +136,7 @@ test('set and get batch with buffers MANY DBIs', async (t) => {
   const values = []
   let totalLen = 0
   for (let dbi_index = 0; dbi_index < DBIs; dbi_index++) {
-    const dbiName = 'hallo' + String(dbi_index)
+    const dbiName = Buffer.from('hallo' + String(dbi_index))
     const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
 
     for (let i = 0; i < 0 + entries; i++) {
@@ -204,7 +207,7 @@ test('set and get batch with buffers MANY DBIs', async (t) => {
 
       t.deepEqual(data, values[i])
     }
-    if (!(dbi_index % 100)) console.log(`step ${dbi_index}/${DBIs}`)
+    if (!(dbi_index % 500)) console.log(`step ${dbi_index}/${DBIs}`)
   }
   setTimes.sort((a, b) => a - b)
   getTimes.sort((a, b) => a - b)

@@ -125,18 +125,13 @@ fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
         JsThrow(env, "Failed to get args.") catch return null;
     }
 
-    const p_allocator = std.heap.page_allocator;
+    var dbi_name: ?*anyopaque = null;
+    var dbi_name_length: usize = undefined;
 
-    const dbi_name = p_allocator.alloc(u8, 1000) catch return statusOk(env, false);
-    defer p_allocator.free(dbi_name);
-
-    // var dbi_name: ?[1000:0]u8 = null;
-    var db_name_len: usize = 0;
+    var hasDbi: bool = false;
     if (argc > 1) {
-        if (c.napi_get_value_string_latin1(env, argv[1], @ptrCast(dbi_name.ptr), 1000, &db_name_len) != c.napi_ok) {
-            @panic("NAPI NOT OK");
-        }
-        // std.debug.print("FOUND DBI NAME = {s}\n", .{dbi_name[0..db_name_len]});
+        _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(&dbi_name), &dbi_name_length);
+        hasDbi = true;
     }
 
     var db: Database = undefined;
@@ -145,8 +140,8 @@ fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
         JsThrow(env, "Failed Transaction.init") catch return null;
     };
 
-    if (db_name_len > 0) {
-        db = txn.database(@ptrCast(dbi_name.ptr), .{ .integer_key = true }) catch {
+    if (hasDbi) {
+        db = txn.database(@ptrCast(dbi_name), .{ .integer_key = true }) catch {
             JsThrow(env, "Failed txn.database") catch return null;
         };
     } else {
@@ -296,26 +291,14 @@ fn setBatchBufferWithDbi(env: c.napi_env, info: c.napi_callback_info) callconv(.
     var data_length: usize = undefined;
     _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(&data), &data_length);
 
-    // var db_arg: ?[]u8 = undefined;
+    var dbi_name: ?*anyopaque = null;
+    var dbi_name_length: usize = undefined;
 
-    const allocator = std.heap.page_allocator;
-
-    const dbi_name = allocator.alloc(u8, 1000) catch return statusOk(env, false);
-    defer allocator.free(dbi_name);
-
-    // var dbi_name: ?[1000:0]u8 = null;
-    var result: usize = 0;
+    var hasDbi: bool = false;
     if (argc > 1) {
-        // var callback_type: c.napi_valuetype = undefined;
-        // if (c.napi_typeof(env, argv[1], &callback_type) != c.napi_ok) {
-        //     @panic("NAPI NOT OK");
-        // }
+        _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(&dbi_name), &dbi_name_length);
 
-        // std.debug.print("TYPE IS {d}\n", .{callback_type});
-
-        if (c.napi_get_value_string_latin1(env, argv[1], @ptrCast(dbi_name.ptr), 1000, &result) != c.napi_ok) {
-            @panic("NAPI NOT OK");
-        }
+        hasDbi = true;
     }
 
     if (!dbEnvIsDefined) {
@@ -327,9 +310,9 @@ fn setBatchBufferWithDbi(env: c.napi_env, info: c.napi_callback_info) callconv(.
     // errdefer txn.abort();
 
     var db: Database = undefined;
-    if (result > 0) {
+    if (hasDbi) {
         db = txn.database(
-            @ptrCast(dbi_name.ptr),
+            @ptrCast(dbi_name),
             .{ .integer_key = true, .create = true },
         ) catch |err| {
             std.debug.print("============= {s}\n", .{@errorName(err)});
