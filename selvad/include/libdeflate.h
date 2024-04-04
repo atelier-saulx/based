@@ -11,9 +11,9 @@
 extern "C" {
 #endif
 
-#define LIBDEFLATE_VERSION_MAJOR	1
-#define LIBDEFLATE_VERSION_MINOR	14
-#define LIBDEFLATE_VERSION_STRING	"1.14"
+#define LIBDEFLATE_VERSION_MAJOR	2
+#define LIBDEFLATE_VERSION_MINOR	0
+#define LIBDEFLATE_VERSION_STRING	"2.0"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -52,12 +52,12 @@ extern "C" {
 struct libdeflate_compressor;
 
 /*
- * libdeflate_alloc_compressor() allocates a new compressor that supports
- * DEFLATE, zlib, and gzip compression.  'compression_level' is the compression
- * level on a zlib-like scale but with a higher maximum value (1 = fastest, 6 =
- * medium/default, 9 = slow, 12 = slowest).  Level 0 is also supported and means
- * "no compression", specifically "create a valid stream, but only emit
- * uncompressed blocks" (this will expand the data slightly).
+ * libdeflate_alloc_compressor() allocates a new compressor.
+ * 'compression_level' is the compression level on a zlib-like scale but with a
+ * higher maximum value (1 = fastest, 6 = medium/default, 9 = slow, 12 = slowest).
+ * Level 0 is also supported and means "no compression", specifically "create a
+ * valid stream, but only emit uncompressed blocks" (this will expand the data
+ * slightly).
  *
  * The return value is a pointer to the new compressor, or NULL if out of memory
  * or if the compression level is invalid (i.e. outside the range [0, 12]).
@@ -114,42 +114,6 @@ libdeflate_deflate_compress_bound(struct libdeflate_compressor *compressor,
 				  size_t in_nbytes);
 
 /*
- * Like libdeflate_deflate_compress(), but stores the data in the zlib wrapper
- * format.
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_zlib_compress(struct libdeflate_compressor *compressor,
-			 const void *in, size_t in_nbytes,
-			 void *out, size_t out_nbytes_avail);
-
-/*
- * Like libdeflate_deflate_compress_bound(), but assumes the data will be
- * compressed with libdeflate_zlib_compress() rather than with
- * libdeflate_deflate_compress().
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_zlib_compress_bound(struct libdeflate_compressor *compressor,
-			       size_t in_nbytes);
-
-/*
- * Like libdeflate_deflate_compress(), but stores the data in the gzip wrapper
- * format.
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_gzip_compress(struct libdeflate_compressor *compressor,
-			 const void *in, size_t in_nbytes,
-			 void *out, size_t out_nbytes_avail);
-
-/*
- * Like libdeflate_deflate_compress_bound(), but assumes the data will be
- * compressed with libdeflate_gzip_compress() rather than with
- * libdeflate_deflate_compress().
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_gzip_compress_bound(struct libdeflate_compressor *compressor,
-			       size_t in_nbytes);
-
-/*
  * libdeflate_free_compressor() frees a compressor that was allocated with
  * libdeflate_alloc_compressor().  If a NULL pointer is passed in, no action is
  * taken.
@@ -164,8 +128,8 @@ libdeflate_free_compressor(struct libdeflate_compressor *compressor);
 struct libdeflate_decompressor;
 
 /*
- * libdeflate_alloc_decompressor() allocates a new decompressor that can be used
- * for DEFLATE, zlib, and gzip decompression.  The return value is a pointer to
+ * libdeflate_alloc_decompressor() allocates a new decompressor.
+ * The return value is a pointer to
  * the new decompressor, or NULL if out of memory.
  *
  * This function takes no parameters, and the returned decompressor is valid for
@@ -179,8 +143,7 @@ LIBDEFLATEEXPORT struct libdeflate_decompressor * LIBDEFLATEAPI
 libdeflate_alloc_decompressor(void);
 
 /*
- * Result of a call to libdeflate_deflate_decompress(),
- * libdeflate_zlib_decompress(), or libdeflate_gzip_decompress().
+ * Result of a call to libdeflate_deflate_decompress().
  */
 enum libdeflate_result {
 	/* Decompression was successful.  */

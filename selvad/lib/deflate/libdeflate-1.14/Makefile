@@ -143,21 +143,6 @@ endif
 
 ##############################################################################
 
-#### Quiet make is enabled by default.  Define V=1 to disable.
-
-ifneq ($(findstring s,$(MAKEFLAGS)),s)
-ifneq ($(V),1)
-        QUIET_CC       = @echo '  CC      ' $@;
-        QUIET_CCLD     = @echo '  CCLD    ' $@;
-        QUIET_AR       = @echo '  AR      ' $@;
-        QUIET_LN       = @echo '  LN      ' $@;
-        QUIET_CP       = @echo '  CP      ' $@;
-        QUIET_GEN      = @echo '  GEN     ' $@;
-endif
-endif
-
-##############################################################################
-
 # Rebuild if a user-specified setting that affects the build changed.
 .build-config: FORCE
 	@flags=$$(							\
@@ -184,7 +169,7 @@ DEFAULT_TARGETS :=
 
 STATIC_LIB := libdeflate$(STATIC_LIB_SUFFIX)
 
-LIB_CFLAGS += $(CFLAGS) -fvisibility=hidden -D_ANSI_SOURCE
+LIB_CFLAGS += $(CFLAGS) -fvisibility=hidden
 
 LIB_HEADERS := $(wildcard lib/*.h) $(wildcard lib/*/*.h)
 
@@ -201,22 +186,22 @@ SHARED_LIB_OBJ := $(LIB_SRC:.c=.shlib.o)
 
 # Compile static library object files
 $(STATIC_LIB_OBJ): %.o: %.c $(LIB_HEADERS) $(COMMON_HEADERS) .build-config
-	$(QUIET_CC) $(CC) -o $@ -c $(CPPFLAGS) $(LIB_CFLAGS) $<
+	$(CC) -o $@ -c $(CPPFLAGS) $(LIB_CFLAGS) $<
 
 # Compile shared library object files
 $(SHARED_LIB_OBJ): %.shlib.o: %.c $(LIB_HEADERS) $(COMMON_HEADERS) .build-config
-	$(QUIET_CC) $(CC) -o $@ -c $(CPPFLAGS) $(LIB_CFLAGS) \
+	$(CC) -o $@ -c $(CPPFLAGS) $(LIB_CFLAGS) \
 		$(SHARED_LIB_CFLAGS) -DLIBDEFLATE_DLL $<
 
 # Create static library
 $(STATIC_LIB):$(STATIC_LIB_OBJ)
-	$(QUIET_AR) $(AR) cr $@ $+
+	$(AR) cr $@ $+
 
 DEFAULT_TARGETS += $(STATIC_LIB)
 
 # Create shared library
 $(SHARED_LIB):$(SHARED_LIB_OBJ)
-	$(QUIET_CCLD) $(CC) -o $@ $(LDFLAGS) $(LIB_CFLAGS) \
+	$(CC) -o $@ $(LDFLAGS) $(LIB_CFLAGS) \
 		$(SHARED_LIB_LDFLAGS) -shared $+
 
 ifdef DISABLE_SHARED
@@ -228,7 +213,7 @@ endif
 ifdef SHARED_LIB_SYMLINK
 # Create the symlink libdeflate.so => libdeflate.so.$SOVERSION
 $(SHARED_LIB_SYMLINK):$(SHARED_LIB)
-	$(QUIET_LN) ln -sf $+ $@
+	ln -sf $+ $@
 DEFAULT_TARGETS += $(SHARED_LIB_SYMLINK)
 endif
 
@@ -264,12 +249,12 @@ ALL_PROG_OBJ	     := $(PROG_COMMON_OBJ) $(NONTEST_PROG_OBJ) \
 
 # Generate autodetected configuration header
 programs/config.h:scripts/detect.sh .build-config
-	$(QUIET_GEN) CC="$(CC)" CFLAGS="$(PROG_CFLAGS)" $< > $@
+	CC="$(CC)" CFLAGS="$(PROG_CFLAGS)" $< > $@
 
 # Compile program object files
 $(ALL_PROG_OBJ): %.o: %.c $(ALL_PROG_COMMON_HEADERS) $(COMMON_HEADERS) \
 			.build-config
-	$(QUIET_CC) $(CC) -o $@ -c $(CPPFLAGS) $(PROG_CFLAGS) $<
+	$(CC) -o $@ -c $(CPPFLAGS) $(PROG_CFLAGS) $<
 
 # Link the programs.
 #
@@ -283,11 +268,11 @@ LIB := $(STATIC_LIB)
 endif
 
 $(NONTEST_PROGRAMS): %$(PROG_SUFFIX): programs/%.o $(PROG_COMMON_OBJ) $(LIB)
-	$(QUIET_CCLD) $(CC) -o $@ $(LDFLAGS) $(PROG_CFLAGS) $+
+	$(CC) -o $@ $(LDFLAGS) $(PROG_CFLAGS) $+
 
 $(TEST_PROGRAMS): %$(PROG_SUFFIX): programs/%.o $(PROG_COMMON_OBJ) \
 			$(TEST_PROG_COMMON_OBJ) $(LIB)
-	$(QUIET_CCLD) $(CC) -o $@ $(LDFLAGS) $(PROG_CFLAGS) $+ -lz
+	$(CC) -o $@ $(LDFLAGS) $(PROG_CFLAGS) $+ -lz
 
 ##############################################################################
 
