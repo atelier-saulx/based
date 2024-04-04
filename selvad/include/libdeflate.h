@@ -217,9 +217,9 @@ enum libdeflate_decompress_stop_by {
 LIBDEFLATEEXPORT enum libdeflate_result
 libdeflate_decompress_block(struct libdeflate_decompressor *decompressor,
                  const void *in_part, size_t in_part_nbytes_bound,
-                 void *out_block_with_in_dict,size_t in_dict_nbytes, size_t out_block_nbytes,
-                 size_t *actual_in_nbytes_ret,size_t *actual_out_nbytes_ret,
-                 enum libdeflate_decompress_stop_by stop_type,int* is_final_block_ret);
+                 void *out_block_with_in_dict, size_t in_dict_nbytes, size_t out_block_nbytes,
+                 size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
+                 enum libdeflate_decompress_stop_by stop_type, int *is_final_block_ret);
 
 /*
  * Clear the state saved between calls libdeflate_decompress_block();
