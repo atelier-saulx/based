@@ -1101,30 +1101,11 @@ typedef enum libdeflate_result (*decompress_func_t)
 #endif
 
 #ifdef arch_select_decompress_func
-static enum libdeflate_result
-dispatch_decomp(struct libdeflate_decompressor *d,
-        const void *in, size_t in_nbytes,
-        void *out, size_t in_dict_nbytes, size_t out_nbytes_avail,
-        size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-        enum libdeflate_decompress_stop_by stop_type, int* is_final_block_ret);
+static volatile decompress_func_t decompress_impl;
 
-static volatile decompress_func_t decompress_impl = dispatch_decomp;
-
-/* Choose the best implementation at runtime. */
-static enum libdeflate_result
-dispatch_decomp(struct libdeflate_decompressor *d,
-        const void *in, size_t in_nbytes,
-        void *out, size_t out_nbytes_avail,
-        size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret)
+__attribute__((constructor)) static void init_select_decompressor(void)
 {
-    decompress_func_t f = arch_select_decompress_func();
-
-    if (f == NULL)
-        f = DEFAULT_IMPL;
-
-    decompress_impl = f;
-    return f(d, in, in_nbytes, out, in_dict_nbytes, out_nbytes_avail,
-             actual_in_nbytes_ret, actual_out_nbytes_ret, stop_type, is_final_block_ret);
+    decompress_impl = arch_select_decompress_func() ?: DEFAULT_IMPL;
 }
 #else
 /* The best implementation is statically known, so call it directly. */
