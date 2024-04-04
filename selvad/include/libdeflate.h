@@ -69,10 +69,6 @@ libdeflate_compress(struct libdeflate_compressor *compressor,
  * guaranteed to be the same for all invocations with the same compressor and
  * same 'in_nbytes'.
  *
- * As a special case, 'compressor' may be NULL.  This causes the bound to be
- * taken across *any* libdeflate_compressor that could ever be allocated with
- * this build of the library, with any options.
- *
  * Note that this function is not necessary in many applications.  With
  * block-based compression, it is usually preferable to separately store the
  * uncompressed size of each block and to store any blocks that did not compress
@@ -85,8 +81,7 @@ libdeflate_compress(struct libdeflate_compressor *compressor,
  * did not fit into the provided output buffer.
  */
 LIBDEFLATEEXPORT size_t
-libdeflate_compress_bound(struct libdeflate_compressor *compressor,
-				  size_t in_nbytes);
+libdeflate_compress_bound(size_t in_nbytes);
 
 /*
  * libdeflate_free_compressor() frees a compressor that was allocated with

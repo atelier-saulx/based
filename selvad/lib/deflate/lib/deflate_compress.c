@@ -4054,8 +4054,7 @@ libdeflate_get_compression_level(struct libdeflate_compressor *c)
 }
 
 LIBDEFLATEEXPORT size_t
-libdeflate_compress_bound(struct libdeflate_compressor *c,
-                  size_t in_nbytes)
+libdeflate_compress_bound(size_t in_nbytes)
 {
     size_t max_blocks;
 
