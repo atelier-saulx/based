@@ -73,7 +73,7 @@ test('set and get batch with buffers single DBI', async (t) => {
     // console.log(buf)
     // console.log(buf.toString())
     let d = Date.now()
-    const res = addon.setBatchBufferWithDbi(buf)
+    const res = addon.setBatchBuffer(buf)
 
     let ms = Date.now() - d
     setTimes.push(ms)
@@ -170,7 +170,7 @@ test('set and get batch with buffers MANY DBIs', async (t) => {
     // console.log(buf)
     // console.log(buf.toString())
     let d = Date.now()
-    const res = addon.setBatchBufferWithDbi(buf, dbiName)
+    const res = addon.setBatchBuffer(buf, dbiName)
 
     let ms = Date.now() - d
     setTimes.push(ms)
