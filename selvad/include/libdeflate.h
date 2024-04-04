@@ -48,22 +48,22 @@ LIBDEFLATEEXPORT struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level);
 
 /*
- * libdeflate_deflate_compress() performs raw DEFLATE compression on a buffer of
+ * libdeflate_compress() performs raw DEFLATE compression on a buffer of
  * data.  The function attempts to compress 'in_nbytes' bytes of data located at
  * 'in' and write the results to 'out', which has space for 'out_nbytes_avail'
  * bytes.  The return value is the compressed size in bytes, or 0 if the data
  * could not be compressed to 'out_nbytes_avail' bytes or fewer.
  */
 LIBDEFLATEEXPORT size_t
-libdeflate_deflate_compress(struct libdeflate_compressor *compressor,
+libdeflate_compress(struct libdeflate_compressor *compressor,
 			    const void *in, size_t in_nbytes,
 			    void *out, size_t out_nbytes_avail);
 
 /*
- * libdeflate_deflate_compress_bound() returns a worst-case upper bound on the
+ * libdeflate_compress_bound() returns a worst-case upper bound on the
  * number of bytes of compressed data that may be produced by compressing any
  * buffer of length less than or equal to 'in_nbytes' using
- * libdeflate_deflate_compress() with the specified compressor.  Mathematically,
+ * libdeflate_compress() with the specified compressor.  Mathematically,
  * this bound will necessarily be a number greater than or equal to 'in_nbytes'.
  * It may be an overestimate of the true upper bound.  The return value is
  * guaranteed to be the same for all invocations with the same compressor and
@@ -80,12 +80,12 @@ libdeflate_deflate_compress(struct libdeflate_compressor *compressor,
  * need to know the worst-case compressed size, since the maximum number of
  * bytes of compressed data that may be used would always be one less than the
  * input length.  You can just pass a buffer of that size to
- * libdeflate_deflate_compress() and store the data uncompressed if
- * libdeflate_deflate_compress() returns 0, indicating that the compressed data
+ * libdeflate_compress() and store the data uncompressed if
+ * libdeflate_compress() returns 0, indicating that the compressed data
  * did not fit into the provided output buffer.
  */
 LIBDEFLATEEXPORT size_t
-libdeflate_deflate_compress_bound(struct libdeflate_compressor *compressor,
+libdeflate_compress_bound(struct libdeflate_compressor *compressor,
 				  size_t in_nbytes);
 
 /*
@@ -118,7 +118,7 @@ LIBDEFLATEEXPORT struct libdeflate_decompressor *
 libdeflate_alloc_decompressor(void);
 
 /*
- * Result of a call to libdeflate_deflate_decompress().
+ * Result of a call to libdeflate_decompress().
  */
 enum libdeflate_result {
 	/* Decompression was successful.  */
@@ -138,7 +138,7 @@ enum libdeflate_result {
 };
 
 /*
- * libdeflate_deflate_decompress() decompresses the DEFLATE-compressed stream
+ * libdeflate_decompress() decompresses the DEFLATE-compressed stream
  * from the buffer 'in' with compressed size up to 'in_nbytes' bytes.  The
  * uncompressed data is written to 'out', a buffer with size 'out_nbytes_avail'
  * bytes.  If decompression succeeds, then 0 (LIBDEFLATE_SUCCESS) is returned.
@@ -149,12 +149,12 @@ enum libdeflate_result {
  * Decompression stops at the end of the DEFLATE stream (as indicated by the
  * BFINAL flag), even if it is actually shorter than 'in_nbytes' bytes.
  *
- * libdeflate_deflate_decompress() can be used in cases where the actual
+ * libdeflate_decompress() can be used in cases where the actual
  * uncompressed size is known (recommended) or unknown (not recommended):
  *
  *   - If the actual uncompressed size is known, then pass the actual
  *     uncompressed size as 'out_nbytes_avail' and pass NULL for
- *     'actual_out_nbytes_ret'.  This makes libdeflate_deflate_decompress() fail
+ *     'actual_out_nbytes_ret'.  This makes libdeflate_decompress() fail
  *     with LIBDEFLATE_SHORT_OUTPUT if the data decompressed to fewer than the
  *     specified number of bytes.
  *
@@ -163,32 +163,32 @@ enum libdeflate_result {
  *     'out_nbytes_avail' that you think is large enough to hold all the
  *     uncompressed data.  In this case, if the data decompresses to less than
  *     or equal to 'out_nbytes_avail' bytes, then
- *     libdeflate_deflate_decompress() will write the actual uncompressed size
+ *     libdeflate_decompress() will write the actual uncompressed size
  *     to *actual_out_nbytes_ret and return 0 (LIBDEFLATE_SUCCESS).  Otherwise,
  *     it will return LIBDEFLATE_INSUFFICIENT_SPACE if the provided buffer was
  *     not large enough but no other problems were encountered, or another
  *     nonzero result code if decompression failed for another reason.
  */
 LIBDEFLATEEXPORT enum libdeflate_result
-libdeflate_deflate_decompress(struct libdeflate_decompressor *decompressor,
+libdeflate_decompress(struct libdeflate_decompressor *decompressor,
 			      const void *in, size_t in_nbytes,
 			      void *out, size_t out_nbytes_avail,
 			      size_t *actual_out_nbytes_ret);
 
 /*
- * Like libdeflate_deflate_decompress(), but adds the 'actual_in_nbytes_ret'
+ * Like libdeflate_decompress(), but adds the 'actual_in_nbytes_ret'
  * argument.  If decompression succeeds and 'actual_in_nbytes_ret' is not NULL,
  * then the actual compressed size of the DEFLATE stream (aligned to the next
  * byte boundary) is written to *actual_in_nbytes_ret.
  */
 LIBDEFLATEEXPORT enum libdeflate_result
-libdeflate_deflate_decompress_ex(struct libdeflate_decompressor *decompressor,
+libdeflate_decompress_ex(struct libdeflate_decompressor *decompressor,
 				 const void *in, size_t in_nbytes,
 				 void *out, size_t out_nbytes_avail,
 				 size_t *actual_in_nbytes_ret,
 				 size_t *actual_out_nbytes_ret);
 
-/* ctrl libdeflate_deflate_decompress_block() stop condition */
+/* ctrl libdeflate_decompress_block() stop condition */
 enum libdeflate_decompress_stop_by {
     LIBDEFLATE_STOP_BY_FINAL_BLOCK                = 0,
     LIBDEFLATE_STOP_BY_ANY_BLOCK                  = 1,
@@ -198,13 +198,13 @@ enum libdeflate_decompress_stop_by {
 };
 
 /*
- * Large stream data can be decompress by calling libdeflate_deflate_decompress_block()
+ * Large stream data can be decompress by calling libdeflate_decompress_block()
  * multiple times.  Each time call this function, 'out_block_with_in_dict' have
  * 'in_dict_nbytes' repeat of the last called's tail outputed uncompressed data as
  * dictionary data, and 'out_block_nbytes' new uncompressed data want be decompressed;
  * The dictionary data size in_dict_nbytes<=32k, if it is greater than 32k, the extra
  * part of the previous part of the dictionary data is invalid.
- * libdeflate_deflate_compress_bound_block(out_block_nbytes) can got the upper limit
+ * libdeflate_compress_bound_block(out_block_nbytes) can got the upper limit
  *  of 'in_part' required space 'in_part_nbytes_bound'.
  * 'is_final_block_ret' can NULL.
  *
@@ -215,21 +215,21 @@ enum libdeflate_decompress_stop_by {
  * this function can't support a single DEFLATE block that may have any length.
  */
 LIBDEFLATEEXPORT enum libdeflate_result
-libdeflate_deflate_decompress_block(struct libdeflate_decompressor *decompressor,
+libdeflate_decompress_block(struct libdeflate_decompressor *decompressor,
                  const void *in_part, size_t in_part_nbytes_bound,
                  void *out_block_with_in_dict,size_t in_dict_nbytes, size_t out_block_nbytes,
                  size_t *actual_in_nbytes_ret,size_t *actual_out_nbytes_ret,
                  enum libdeflate_decompress_stop_by stop_type,int* is_final_block_ret);
 
 /*
- * Clear the state saved between calls libdeflate_deflate_decompress_block();
+ * Clear the state saved between calls libdeflate_decompress_block();
  * if you know the next block does not depend on the inputed data of the previous
  * block, you can call this function reset 'decompressor';
  * Note: if next block depend on the inputed data of the previous block, reset will
- * cause libdeflate_deflate_decompress_block() to fail.
+ * cause libdeflate_decompress_block() to fail.
  */
 LIBDEFLATEEXPORT void
-libdeflate_deflate_decompress_block_reset(struct libdeflate_decompressor *decompressor);
+libdeflate_decompress_block_reset(struct libdeflate_decompressor *decompressor);
 
 /*
  * libdeflate_free_decompressor() frees a decompressor that was allocated with

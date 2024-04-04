@@ -272,7 +272,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
     }
 
     s = alloc_immutable(sizeof(struct selva_string_compressed_hdr) + in_len + trail);
-    compressed_size = libdeflate_deflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct selva_string_compressed_hdr), in_len);
+    compressed_size = libdeflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct selva_string_compressed_hdr), in_len);
     if (compressed_size == 0) {
         /*
          * No compression was achieved.
@@ -321,7 +321,7 @@ int selva_string_decompress(const struct selva_string * restrict s, char * restr
         size_t nbytes_out = 0;
         enum libdeflate_result res;
 
-        res = libdeflate_deflate_decompress(decompressor, data, data_len, buf, hdr.uncompressed_size, &nbytes_out);
+        res = libdeflate_decompress(decompressor, data, data_len, buf, hdr.uncompressed_size, &nbytes_out);
         if (res != 0 || nbytes_out != (size_t)hdr.uncompressed_size) {
             return SELVA_EINVAL;
         }

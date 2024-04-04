@@ -1132,7 +1132,7 @@ dispatch_decomp(struct libdeflate_decompressor *d,
 #endif
 
 LIBDEFLATEEXPORT enum libdeflate_result
-libdeflate_deflate_decompress_block(struct libdeflate_decompressor *d,
+libdeflate_decompress_block(struct libdeflate_decompressor *d,
                  const void *in_part, size_t in_part_nbytes_bound,
                  void *out_block_with_in_dict, size_t in_dict_nbytes, size_t out_block_nbytes,
                  size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
@@ -1144,7 +1144,7 @@ libdeflate_deflate_decompress_block(struct libdeflate_decompressor *d,
 }
 
 LIBDEFLATEEXPORT void
-libdeflate_deflate_decompress_block_reset(struct libdeflate_decompressor *d){
+libdeflate_decompress_block_reset(struct libdeflate_decompressor *d){
     _decompress_block_init(d);
 }
 
@@ -1157,7 +1157,7 @@ libdeflate_deflate_decompress_block_reset(struct libdeflate_decompressor *d){
  * at runtime.
  */
 LIBDEFLATEEXPORT enum libdeflate_result
-libdeflate_deflate_decompress_ex(struct libdeflate_decompressor *d,
+libdeflate_decompress_ex(struct libdeflate_decompressor *d,
                  const void *in, size_t in_nbytes,
                  void *out, size_t out_nbytes_avail,
                  size_t *actual_in_nbytes_ret,
@@ -1170,12 +1170,12 @@ libdeflate_deflate_decompress_ex(struct libdeflate_decompressor *d,
 }
 
 LIBDEFLATEEXPORT enum libdeflate_result
-libdeflate_deflate_decompress(struct libdeflate_decompressor *d,
+libdeflate_decompress(struct libdeflate_decompressor *d,
                   const void *in, size_t in_nbytes,
                   void *out, size_t out_nbytes_avail,
                   size_t *actual_out_nbytes_ret)
 {
-    return libdeflate_deflate_decompress_ex(d, in, in_nbytes,
+    return libdeflate_decompress_ex(d, in, in_nbytes,
                         out, out_nbytes_avail,
                         NULL, actual_out_nbytes_ret);
     _decompress_block_init(d);

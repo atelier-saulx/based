@@ -196,7 +196,7 @@ check_buildtime_parameters(void)
 {
     /*
      * Verify that MIN_BLOCK_LENGTH is being honored, as
-     * libdeflate_deflate_compress_bound() depends on it.
+     * libdeflate_compress_bound() depends on it.
      */
     STATIC_ASSERT(SOFT_MAX_BLOCK_LENGTH >= MIN_BLOCK_LENGTH);
     STATIC_ASSERT(FAST_SOFT_MAX_BLOCK_LENGTH >= MIN_BLOCK_LENGTH);
@@ -2027,7 +2027,7 @@ out:
     /*
      * Assert that the block cost was computed correctly.  This is relied on
      * above for the bounds check on the output buffer.  Also,
-     * libdeflate_deflate_compress_bound() relies on this via the assumption
+     * libdeflate_compress_bound() relies on this via the assumption
      * that uncompressed blocks will always be used when cheapest.
      */
     ASSERT(8 * (out_next - os->next) + bitcount - os->bitcount == best_cost);
@@ -3998,7 +3998,7 @@ libdeflate_alloc_compressor(int compression_level)
 }
 
 LIBDEFLATEEXPORT size_t
-libdeflate_deflate_compress(struct libdeflate_compressor *c,
+libdeflate_compress(struct libdeflate_compressor *c,
                 const void *in, size_t in_nbytes,
                 void *out, size_t out_nbytes_avail)
 {
@@ -4054,7 +4054,7 @@ libdeflate_get_compression_level(struct libdeflate_compressor *c)
 }
 
 LIBDEFLATEEXPORT size_t
-libdeflate_deflate_compress_bound(struct libdeflate_compressor *c,
+libdeflate_compress_bound(struct libdeflate_compressor *c,
                   size_t in_nbytes)
 {
     size_t max_blocks;
