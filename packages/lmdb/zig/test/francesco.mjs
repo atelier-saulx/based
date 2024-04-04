@@ -7,80 +7,18 @@ import { mkdir, rm } from 'fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// const lorem = new LoremIpsum({
-//   sentencesPerParagraph: {
-//     max: 8,
-//     min: 4,
-//   },
-//   wordsPerSentence: {
-//     max: 16,
-//     min: 4,
-//   },
-// })
-// const x = lorem.generateParagraphs(7)
-// // const value = Buffer.from(zlib.deflateSync(x))
+const KEY_LEN = 4
+
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.beforeEach('reset db', async () => {
+test.beforeEach('reset environment', async () => {
   await rm(dbFolder, { force: true, recursive: true }).catch(() => {})
   await mkdir(dbFolder).catch(() => {})
-  console.log(`Creating db at ${relativePath}`, addon.createDb(dbFolder))
+  console.log(`Creating env at ${relativePath}`, addon.createEnv(dbFolder))
 })
 
 console.log(addon)
-
-// test('set and get single', (t) => {
-//   const key = Buffer.alloc(20)
-//   key.write('aaa')
-//   const value = Buffer.from('sdkfhjjsdlfjksdkjhgfkshgklsdflkjsd')
-
-//   addon.set(key, value)
-//   const res = addon.get(key)
-//   t.deepEqual(res, value)
-// })
-
-test('set and get batch', async (t) => {
-  const batch = []
-  const batchSize = 1e6 // 329 + 10 + 10 + 10 + 2
-  for (let i = 0; i < batchSize; i++) {
-    // const u8 = new Uint8Array(4)
-    const key = Buffer.alloc(4)
-    key.writeInt32BE(i)
-
-    const value = Buffer.from('AMAZINGVALUE' + i)
-
-    batch.push(key, value)
-  }
-
-  let d = Date.now()
-  addon.setBatch(batch)
-
-  const ms = Date.now() - d
-  const seconds = ms / 1000
-
-  console.info(
-    'ARRAY BATCH WRITE',
-    'wrote',
-    batchSize / 1000 + 'k',
-    ~~(batchSize / seconds),
-    'writes / sec',
-  )
-
-  for (let i = 0; i < batch.length; i += 2) {
-    try {
-      const res = addon.get(batch[i])
-      t.deepEqual(res, batch[i + 1])
-    } catch (err) {
-      console.error(`FAILED AT INDEX ${i / 2}`)
-      console.error('bytes =', batch[i])
-      console.error('str =', batch[i].toString())
-      throw err
-    }
-  }
-
-  t.true(true)
-})
 
 test('set and get batch with buffers', async (t) => {
   // let buf = Buffer.alloc(0)
@@ -89,13 +27,17 @@ test('set and get batch with buffers', async (t) => {
   const values = []
   let totalLen = 0
   const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  // for (let round = 1; round < 3; round++) {
   for (let i = 0; i < 0 + entries; i++) {
-    let key = Buffer.alloc(4)
-    key.writeInt32BE(i + 1)
+    // if (i % round) {
+    let key = Buffer.alloc(KEY_LEN)
+    key.writeInt32BE(i)
+    // key.write('hallo' + String(i))
     const value = Buffer.from('AMAZINGVALUE' + i)
     values.push(value)
     keys.push(key)
-    totalLen += 2 + value.byteLength + 4
+    totalLen += 2 + value.byteLength + KEY_LEN
+    // }
   }
 
   const buf = Buffer.allocUnsafe(totalLen)
@@ -104,9 +46,9 @@ test('set and get batch with buffers', async (t) => {
   for (let i = 0; i < values.length; i++) {
     // key | size | value
     keys[i].copy(buf, prevWritten)
-    prevWritten += 4
+    prevWritten += KEY_LEN
     const bla = values[i].byteLength
-    buf.writeInt16BE(bla, prevWritten)
+    buf.writeUInt16LE(bla, prevWritten)
     prevWritten += 2
     values[i].copy(buf, prevWritten)
     prevWritten += bla
@@ -127,10 +69,12 @@ test('set and get batch with buffers', async (t) => {
     'wrote',
     entries / 1000 + 'k',
     ~~(entries / seconds),
-    'writes / sec',
+    'writes / sec, total',
+    seconds + 's',
   )
 
   t.is(res, 1)
+  // }
 
   for (let i = 0; i < keys.length; i++) {
     try {
@@ -150,20 +94,25 @@ test('set and get batch with buffers', async (t) => {
   t.true(true)
 })
 
-test('getNoCopy', async (t) => {
-  // let buf = Buffer.alloc(0)
-
+test('getBatch', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  const entries = 1e5 // 329 + 10 + 10 + 10 + 2
+
+  const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
+
   for (let i = 0; i < 0 + entries; i++) {
-    let key = Buffer.alloc(4)
-    key.writeInt32BE(i + 1)
+    // if (i % round) {
+    let key = Buffer.alloc(KEY_LEN)
+    key.writeInt32BE(i)
+    key.copy(get_buffer, i * KEY_LEN)
+    // key.write('hallo' + String(i))
     const value = Buffer.from('AMAZINGVALUE' + i)
     values.push(value)
     keys.push(key)
-    totalLen += 2 + value.byteLength + 4
+    totalLen += 2 + value.byteLength + KEY_LEN
+    // }
   }
 
   const buf = Buffer.allocUnsafe(totalLen)
@@ -172,9 +121,9 @@ test('getNoCopy', async (t) => {
   for (let i = 0; i < values.length; i++) {
     // key | size | value
     keys[i].copy(buf, prevWritten)
-    prevWritten += 4
+    prevWritten += KEY_LEN
     const bla = values[i].byteLength
-    buf.writeInt16BE(bla, prevWritten)
+    buf.writeUInt16LE(bla, prevWritten)
     prevWritten += 2
     values[i].copy(buf, prevWritten)
     prevWritten += bla
@@ -184,73 +133,11 @@ test('getNoCopy', async (t) => {
   // console.log(buf)
   // console.log(buf.toString())
 
-  const res = addon.setBatchBuffer(buf)
+  const res = addon.setBatchBufferWithDbi(buf)
 
-  t.is(res, 1, 'setBatch returned 1')
+  t.is(res, 1)
 
-  const gets = []
-  let d = Date.now()
-
-  for (let i = 0; i < keys.length; i++) {
-    gets.push(addon.getNoCopy(keys[i]))
-  }
-  const ms = Date.now() - d
-  const seconds = ms / 1000
-
-  console.info(
-    'NO_COPY GET',
-    'read',
-    entries / 1000 + 'k',
-    'entries in ',
-    seconds + ' s,',
-    ~~(entries / seconds),
-    'reads / sec',
-  )
-
-  for (let i = 0; i < keys.length; i++) {
-    t.deepEqual(gets[i], values[i])
-  }
-})
-
-test.only('getBatch', async (t) => {
-  // let buf = Buffer.alloc(0)
-
-  const keys = []
-  const values = []
-  let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
-  const get_buffer = Buffer.allocUnsafe(entries * 4)
-  for (let i = 0; i < 0 + entries; i++) {
-    let key = Buffer.alloc(4)
-    key.writeInt32BE(i + 1)
-    // console.log('key', i, key)
-    const value = Buffer.from('AMAZINGVAL' + i)
-    values.push(value)
-    keys.push(key)
-    totalLen += 2 + value.byteLength + 4
-  }
-
-  const set_buffer = Buffer.allocUnsafe(totalLen)
-
-  let prevWritten = 0
-  for (let i = 0; i < values.length; i++) {
-    // key | size | value
-    keys[i].copy(set_buffer, prevWritten)
-    keys[i].copy(get_buffer, i * 4)
-    // console.log('get_buffer', i, get_buffer)
-    prevWritten += 4
-    const bla = values[i].byteLength
-    set_buffer.writeInt16BE(bla, prevWritten)
-    prevWritten += 2
-    values[i].copy(set_buffer, prevWritten)
-    prevWritten += bla
-  }
-
-  // console.log('final get buffer=', get_buffer)
-  // console.log(buf)
-  // console.log(buf.toString())
-
-  const res = addon.setBatchBuffer(set_buffer)
+  // const res = addon.setBatchBuffer(set_buffer)
 
   t.is(res, 1, 'setBatch returned 1')
 
@@ -283,68 +170,8 @@ test.only('getBatch', async (t) => {
     // console.log('data val = ', data)
     last_read += data_len
 
+    // console.log(data.toString(), values[i].toString())
+
     t.deepEqual(data, values[i])
-  }
-})
-
-test.only('get', async (t) => {
-  // let buf = Buffer.alloc(0)
-
-  const keys = []
-  const values = []
-  let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
-  for (let i = 0; i < 0 + entries; i++) {
-    let key = Buffer.alloc(4)
-    key.writeInt32BE(i + 1)
-    const value = Buffer.from('AMAZINGVALUE' + i)
-    values.push(value)
-    keys.push(key)
-    totalLen += 2 + value.byteLength + 4
-  }
-
-  const buf = Buffer.allocUnsafe(totalLen)
-
-  let prevWritten = 0
-  for (let i = 0; i < values.length; i++) {
-    // key | size | value
-    keys[i].copy(buf, prevWritten)
-    prevWritten += 4
-    const bla = values[i].byteLength
-    buf.writeInt16BE(bla, prevWritten)
-    prevWritten += 2
-    values[i].copy(buf, prevWritten)
-    prevWritten += bla
-  }
-
-  // console.log(keys[keys.length - 1])
-  // console.log(buf)
-  // console.log(buf.toString())
-
-  const res = addon.setBatchBuffer(buf)
-
-  t.is(res, 1, 'setBatch returned 1')
-
-  const gets = []
-  let d = Date.now()
-
-  for (let i = 0; i < keys.length; i++) {
-    gets.push(addon.get(keys[i]))
-  }
-  const ms = Date.now() - d
-  const seconds = ms / 1000
-
-  console.info(
-    'MEM_COPY GET',
-    'read',
-    entries / 1000 + 'k',
-    'entries in ',
-    seconds + ' s,',
-    ~~(entries / seconds),
-    'reads / sec',
-  )
-
-  for (let i = 0; i < keys.length; i++) {
-    t.deepEqual(gets[i], values[i])
   }
 })

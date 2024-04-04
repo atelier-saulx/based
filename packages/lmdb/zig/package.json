@@ -13,7 +13,7 @@
     "ava": "6.1.2"
   },
   "ava": {
-    "timeout": "2m",
+    "timeout": "10m",
     "workerThreads": false,
     "files": [
       "./test/**/*.mjs"

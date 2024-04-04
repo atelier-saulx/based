@@ -12,6 +12,8 @@ var dbEnvIsDefined: bool = false;
 
 const TranslationError = error{ExceptionThrown};
 
+const KEY_LEN = 4;
+
 pub fn JsThrow(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     const result = c.napi_throw_error(env, null, message);
     switch (result) {
@@ -40,7 +42,10 @@ pub fn register_function(
     env: c.napi_env,
     exports: c.napi_value,
     comptime name: [:0]const u8,
-    comptime function: fn (env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value,
+    comptime function: fn (
+        env: c.napi_env,
+        info: c.napi_callback_info,
+    ) callconv(.C) c.napi_value,
 ) !void {
     var napi_function: c.napi_value = undefined;
     if (c.napi_create_function(env, null, 0, function, null, &napi_function) != c.napi_ok) {
@@ -53,12 +58,10 @@ pub fn register_function(
 }
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    register_function(env, exports, "set", set) catch return null;
     register_function(env, exports, "get", get) catch return null;
-    register_function(env, exports, "createDb", createDb) catch return null;
-    register_function(env, exports, "setBatch", setBatch) catch return null;
+    register_function(env, exports, "createEnv", createEnv) catch return null;
     register_function(env, exports, "setBatchBuffer", setBatchBuffer) catch return null;
-    register_function(env, exports, "getNoCopy", getNoCopy) catch return null;
+    register_function(env, exports, "setBatchBufferWithDbi", setBatchBufferWithDbi) catch return null;
     register_function(env, exports, "getBatch", getBatch) catch return null;
     return exports;
 }
@@ -74,7 +77,7 @@ fn statusOk(env: c.napi_env, isOk: bool) c.napi_value {
 }
 
 // pass pointer of env (later)
-fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+fn createEnv(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
@@ -101,7 +104,7 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
 
     dbEnv = Environment.init(path.ptr, .{
         .map_size = 100 * 1024 * 1024 * 1024,
-        .max_dbs = 200,
+        .max_dbs = 20_000,
         .no_sync = true,
     }) catch return statusOk(env, false);
 
@@ -110,8 +113,8 @@ fn createDb(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     return statusOk(env, true);
 }
 fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    var argc: usize = 1;
-    var argv: [1]c.napi_value = undefined;
+    var argc: usize = 2;
+    var argv: [2]c.napi_value = undefined;
 
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
         JsThrow(env, "Failed to get args.") catch return null;
@@ -121,7 +124,38 @@ fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var keyValue: [*]u8 = undefined;
     _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&keyValue)), &keysize);
 
-    const value_buffer = getKey(keyValue) catch |err| return throwError(env, err);
+    const allocator = std.heap.page_allocator;
+
+    const dbi_name = allocator.alloc(u8, 1000) catch return statusOk(env, false);
+    defer allocator.free(dbi_name);
+
+    // var dbi_name: ?[1000:0]u8 = null;
+    var db_name_len: usize = 0;
+    if (argc > 1) {
+        if (c.napi_get_value_string_latin1(env, argv[1], @ptrCast(dbi_name.ptr), 1000, &db_name_len) != c.napi_ok) {
+            @panic("NAPI NOT OK");
+        }
+        // std.debug.print("FOUND DBI NAME = {s}\n", .{dbi_name[0..db_name_len]});
+    }
+
+    var value_buffer: []u8 = undefined;
+
+    if (db_name_len > 0) {
+        value_buffer = getKey(
+            keyValue,
+            @ptrCast(dbi_name.ptr),
+        ) catch |err| return throwError(env, err);
+    } else {
+        value_buffer = getKey(
+            keyValue,
+            null,
+        ) catch |err| return throwError(env, err);
+    }
+
+    // const value_buffer = getKey(
+    //     keyValue,
+    //     &dbi_name,
+    // ) catch |err| return throwError(env, err);
 
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
@@ -136,48 +170,10 @@ fn get(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
 
     return result;
 }
-fn getNoCopy(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    var argc: usize = 1;
-    var argv: [1]c.napi_value = undefined;
-
-    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        JsThrow(env, "Failed to get args.") catch return null;
-    }
-
-    var key_size: usize = undefined;
-    var key_buffer: ?*anyopaque = null;
-    if (c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&key_buffer)), &key_size) != c.napi_ok) {
-        JsThrow(env, "Failed to get args.") catch return null;
-    }
-
-    const txn = Transaction.init(dbEnv, .{ .mode = .ReadOnly }) catch return statusOk(env, false);
-    const db: Database = txn.database(null, .{ .integer_key = true }) catch return statusOk(env, false);
-
-    // var data: ?*anyopaque = undefined;
-
-    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key_buffer) };
-    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
-    dbthrow(c.mdb_get(txn.ptr, db.dbi, &k, &v)) catch return statusOk(env, false);
-    txn.commit() catch return statusOk(env, false);
-
-    // var data: ?*anyopaque = undefined;
-    var result: c.napi_value = undefined;
-    // const pointer: [*c]?*anyopaque = @ptrCast(@alignCast(&result.ptr));
-
-    // std.debug.print("made it this far\n", .{});
-
-    if (c.napi_create_external_buffer(env, v.mv_size, @ptrCast(@alignCast(v.mv_data)), null, null, &result) != c.napi_ok) {
-        JsThrow(env, "Failed to create External Buffer") catch return null;
-    }
-    // std.debug.print("also here, surprise!\n", .{});
-
-    return result;
-}
 
 fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    var argc: usize = 1;
-    var argv: [1]c.napi_value = undefined;
+    var argc: usize = 2;
+    var argv: [2]c.napi_value = undefined;
 
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
         JsThrow(env, "Failed to get args.") catch return null;
@@ -189,12 +185,35 @@ fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
         JsThrow(env, "Failed to get args.") catch return null;
     }
 
+    const p_allocator = std.heap.page_allocator;
+
+    const dbi_name = p_allocator.alloc(u8, 1000) catch return statusOk(env, false);
+    defer p_allocator.free(dbi_name);
+
+    // var dbi_name: ?[1000:0]u8 = null;
+    var db_name_len: usize = 0;
+    if (argc > 1) {
+        if (c.napi_get_value_string_latin1(env, argv[1], @ptrCast(dbi_name.ptr), 1000, &db_name_len) != c.napi_ok) {
+            @panic("NAPI NOT OK");
+        }
+        // std.debug.print("FOUND DBI NAME = {s}\n", .{dbi_name[0..db_name_len]});
+    }
+
+    var db: Database = undefined;
+
     const txn = Transaction.init(dbEnv, .{ .mode = .ReadOnly }) catch {
         JsThrow(env, "Failed Transaction.init") catch return null;
     };
-    const db: Database = txn.database(null, .{ .integer_key = true }) catch {
-        JsThrow(env, "Failed txn.database") catch return null;
-    };
+
+    if (db_name_len > 0) {
+        db = txn.database(@ptrCast(dbi_name.ptr), .{ .integer_key = true }) catch {
+            JsThrow(env, "Failed txn.database") catch return null;
+        };
+    } else {
+        db = txn.database(null, .{ .integer_key = true }) catch {
+            JsThrow(env, "Failed txn.database") catch return null;
+        };
+    }
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -205,11 +224,11 @@ fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     // check impl of ArrayList to see if that already happens there
     var values = std.ArrayList(c.MDB_val).init(allocator);
 
-    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
+    var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
     var total_data_length: usize = 0;
     var i: usize = 0;
-    while (i < buffer_size) : (i += 4) {
+    while (i < buffer_size) : (i += KEY_LEN) {
         k.mv_data = &(@as([*]u8, @ptrCast(buffer_contents.?))[i]);
 
         // std.debug.print("KEY = {x}\n", .{@as([*]u8, @ptrCast(buffer_contents.?))[i .. i + 4]});
@@ -270,75 +289,8 @@ fn getBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_val
     return result;
 }
 
-fn set(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    // _ = info;
-
-    var argc: usize = 2;
-    var argv: [2]c.napi_value = undefined;
-
-    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        JsThrow(env, "Failed to get args.") catch return null;
-    }
-
-    var key_size: usize = undefined;
-    var key_buffer: []u8 = undefined;
-    _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(@alignCast(&key_buffer)), &key_size);
-
-    var value_size: usize = undefined;
-    var value_buffer: []u8 = undefined;
-    _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(@alignCast(&value_buffer)), &value_size);
-
-    // std.debug.print("SET keySize = {d}\n", .{key_size});
-    // std.debug.print("SET key = {x}\n", .{key_buffer[0..20]});
-    // std.debug.print("SET valueSize = {d}\n", .{value_size});
-    // std.debug.print("SET value = {x}\n", .{value_buffer[0..value_size]});
-
-    writeSingle(key_buffer, value_buffer, value_size) catch |err| return throwError(env, err);
-
-    return statusOk(env, true);
-}
-
-//     map_size: usize = 10 * 1024 * 1024,
-//     max_dbs: u32 = 0,
-//     max_readers: u32 = 126,
-//     read_only: bool = false,
-//     write_map: bool = false,
-//     no_tls: bool = false,
-//     no_lock: bool = false,
-//     mode: u16 = 0o664,
-
-pub fn writeSingle(key: []u8, value: []u8, sizeValue: usize) !void {
-    if (!dbEnvIsDefined) {
-        return Error.NO_DB_ENV;
-    }
-    // _ = sizeValue;
-    const txn = try Transaction.init(dbEnv, .{ .mode = .ReadWrite });
-    errdefer txn.abort();
-
-    const db: Database = try txn.database(null, .{ .integer_key = true });
-
-    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key) };
-    var v: c.MDB_val = .{ .mv_size = sizeValue, .mv_data = @ptrCast(value) };
-
-    try dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0));
-    try txn.commit();
-}
-
-fn setBatch(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    // in js: setBatch([key1, value1, key2, value2])
-
-    var argc: usize = 1;
-    var argv: [1]c.napi_value = undefined;
-
-    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
-        JsThrow(env, "Failed to get args.") catch return null;
-    }
-
-    writeMultiple(env, argv[0]) catch |err| return throwError(env, err);
-    return statusOk(env, true);
-}
 fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    // format == key: 4 bytes | size: 2 bytes | content: size bytes
+    // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
 
     var argc: usize = 1;
     var argv: [1]c.napi_value = undefined;
@@ -361,17 +313,18 @@ fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
 
     var i: usize = 0;
     while (i < data_length) {
-        const key = @as([*]u8, @ptrCast(data.?))[i .. i + 4];
+        const key = @as([*]u8, @ptrCast(data.?))[i .. i + KEY_LEN];
 
-        var value_size: u16 = undefined;
+        const size_byte1 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN];
+        const size_byte2 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 1];
+        const size_arr: [2]u8 = .{ size_byte1, size_byte2 };
 
-        value_size |= @as([*]u8, @ptrCast(data.?))[i + 4] << 7;
-        value_size |= @as([*]u8, @ptrCast(data.?))[i + 5];
+        const value_size: u16 = std.mem.readInt(u16, &size_arr, .little);
 
-        const value = @as([*]u8, @ptrCast(data.?))[i + 6 .. i + 6 + value_size];
+        const value = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 2 .. i + KEY_LEN + 2 + @as(usize, value_size)];
 
-        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key.ptr) };
-        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @ptrCast(value.ptr) };
+        var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = @as([*]u8, @ptrCast(@alignCast(key.ptr))) };
+        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @as([*]u8, @ptrCast(@alignCast(value.ptr))) };
         dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0)) catch return statusOk(env, false);
 
         // std.debug.print("\n=================\n", .{});
@@ -381,7 +334,7 @@ fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
         // std.debug.print("VALUE= {x}\n", .{value});
         // std.debug.print("VALUE= {s}\n", .{value});
         // std.debug.print("=================\n", .{});
-        i = i + 6 + value_size;
+        i = i + KEY_LEN + 2 + value_size;
     }
 
     txn.commit() catch return statusOk(env, false);
@@ -442,14 +395,14 @@ fn writeMultiple(env: c.napi_env, batch: c.napi_value) !void {
     try txn.commit();
 }
 
-fn getKey(key: [*]u8) ![]u8 {
+fn getKey(key: [*]u8, dbName: ?[*:0]u8) ![]u8 {
     const txn = try Transaction.init(dbEnv, .{ .mode = .ReadOnly });
     errdefer txn.abort();
 
-    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @ptrCast(key) };
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @as([*]u8, @ptrFromInt(@intFromPtr(key))) };
     var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
-    const db: Database = try txn.database(null, .{ .integer_key = true });
+    const db: Database = try txn.database(dbName.?, .{ .integer_key = true });
 
     // std.debug.print("GET key poop = {any}\n", .{key[0..4]});
 
@@ -460,4 +413,95 @@ fn getKey(key: [*]u8) ![]u8 {
     // std.debug.print("GET value = {x}\n", .{@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size]});
 
     return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+}
+
+fn setBatchBufferWithDbi(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
+
+    var argc: usize = 2;
+    var argv: [2]c.napi_value = undefined;
+
+    if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
+        JsThrow(env, "Failed to get args.") catch return null;
+    }
+
+    var data: ?*anyopaque = null;
+    var data_length: usize = undefined;
+    _ = c.napi_get_buffer_info(env, argv[0], @ptrCast(&data), &data_length);
+
+    // var db_arg: ?[]u8 = undefined;
+
+    const allocator = std.heap.page_allocator;
+
+    const dbi_name = allocator.alloc(u8, 1000) catch return statusOk(env, false);
+    defer allocator.free(dbi_name);
+
+    // var dbi_name: ?[1000:0]u8 = null;
+    var result: usize = 0;
+    if (argc > 1) {
+        // var callback_type: c.napi_valuetype = undefined;
+        // if (c.napi_typeof(env, argv[1], &callback_type) != c.napi_ok) {
+        //     @panic("NAPI NOT OK");
+        // }
+
+        // std.debug.print("TYPE IS {d}\n", .{callback_type});
+
+        if (c.napi_get_value_string_latin1(env, argv[1], @ptrCast(dbi_name.ptr), 1000, &result) != c.napi_ok) {
+            @panic("NAPI NOT OK");
+        }
+    }
+
+    if (!dbEnvIsDefined) {
+        return statusOk(env, false);
+    }
+    const txn = Transaction.init(dbEnv, .{ .mode = .ReadWrite }) catch {
+        return statusOk(env, false);
+    };
+    // errdefer txn.abort();
+
+    var db: Database = undefined;
+    if (result > 0) {
+        db = txn.database(
+            @ptrCast(dbi_name.ptr),
+            .{ .integer_key = true, .create = true },
+        ) catch |err| {
+            std.debug.print("============= {s}\n", .{@errorName(err)});
+            return statusOk(env, false);
+        };
+    } else {
+        db = txn.database(
+            null,
+            .{ .integer_key = true, .create = true },
+        ) catch return statusOk(env, false);
+    }
+
+    var i: usize = 0;
+    while (i < data_length) {
+        const key = @as([*]u8, @ptrCast(data.?))[i .. i + KEY_LEN];
+
+        const size_byte1 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN];
+        const size_byte2 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 1];
+        const size_arr: [2]u8 = .{ size_byte1, size_byte2 };
+
+        const value_size: u16 = std.mem.readInt(u16, &size_arr, .little);
+
+        const value = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 2 .. i + KEY_LEN + 2 + @as(usize, value_size)];
+
+        var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = @as([*]u8, @ptrCast(@alignCast(key.ptr))) };
+        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @as([*]u8, @ptrCast(@alignCast(value.ptr))) };
+        dbthrow(c.mdb_put(txn.ptr, db.dbi, &k, &v, 0)) catch return statusOk(env, false);
+
+        // std.debug.print("\n=================\n", .{});
+        // std.debug.print("KEY= {x}\n", .{key});
+        // std.debug.print("value_size bits = 0x{x}\n", .{value_size});
+        // std.debug.print("value_size= {d}\n", .{value_size});
+        // std.debug.print("VALUE= {x}\n", .{value});
+        // std.debug.print("VALUE= {s}\n", .{value});
+        // std.debug.print("=================\n", .{});
+        i = i + KEY_LEN + 2 + value_size;
+    }
+
+    txn.commit() catch return statusOk(env, false);
+
+    return statusOk(env, true);
 }
