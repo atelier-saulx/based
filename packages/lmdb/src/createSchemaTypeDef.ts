@@ -35,8 +35,8 @@ export type SchemaTypeDef = {
     prefix: string
     _len: number
     tree: SchemaFieldTree
-    dataRecordDef: { name: number | string; type: string }[]
-    record: ReturnType<typeof compile>
+    // dataRecordDef: { name: number | string; type: string }[]
+    // record: ReturnType<typeof compile>
   }
 }
 
@@ -99,21 +99,21 @@ export const createSchemaTypeDef = (
 
       // reference will be changed in schema
 
-      result.dbMap.dataRecordDef.push({
-        name: f.index,
-        type:
-          f.type === 'integer'
-            ? 'uint32_le'
-            : f.type === 'timestamp'
-              ? 'double_le'
-              : f.type === 'number'
-                ? 'double_le'
-                : f.type === 'boolean'
-                  ? 'uint8'
-                  : f.type === 'string'
-                    ? 'cstring_p'
-                    : '????',
-      })
+      // result.dbMap.dataRecordDef.push({
+      //   name: f.index,
+      //   type:
+      //     f.type === 'integer'
+      //       ? 'uint32_le'
+      //       : f.type === 'timestamp'
+      //         ? 'double_le'
+      //         : f.type === 'number'
+      //           ? 'double_le'
+      //           : f.type === 'boolean'
+      //             ? 'uint8'
+      //             : f.type === 'string'
+      //               ? 'cstring_p'
+      //               : '????',
+      // })
 
       const len = f.len
       if (len) {
@@ -133,7 +133,7 @@ export const createSchemaTypeDef = (
       }
     }
 
-    result.dbMap.record = compile(result.dbMap.dataRecordDef)
+    // result.dbMap.record = compile(result.dbMap.dataRecordDef)
   }
 
   return result

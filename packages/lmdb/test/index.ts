@@ -3,7 +3,7 @@ import { wait } from '@saulx/utils'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
-import { BasedDb, createBuffer } from '../src/index.js'
+import { BasedDb, createBuffer, parseBuffer } from '../src/index.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
@@ -70,26 +70,32 @@ test('create server', async (t) => {
     },
   })
 
-  const write = () => {
-    return new Promise((resolve, reject) => {
-      // @ts-ignore
-      db.env.batchWrite(x, {}, () => {
-        resolve('OK')
-      })
-    })
-  }
-
-  const x: any = []
-  const d = Date.now()
-  const dbi = db.dbis.main
-  const bla = Buffer.from('bla')
-  const txn = db.env.beginTxn()
+  // const x: any = []
+  // const d = Date.now()
+  // const dbi = db.dbis.main
+  // const bla = Buffer.from('bla')
+  // const txn = db.env.beginTxn()
 
   let i = 0
   // for (i = 0; i < 1e9; i++) {
   // txn.putBinary(dbi, i + 'a', bla)
   // x.push([db.dbis.main, i + 'a', bla])
-  // const buf = createBuffer({ value: i }, db.schemaTypesParsed.vote)
+  const buf = createBuffer({ value: 1e3 }, db.schemaTypesParsed.vote)
+
+  console.log('fix', buf)
+
+  console.log(parseBuffer(buf, db.schemaTypesParsed.vote))
+
+  const buf2 = createBuffer({ value: 1e3 }, db.schemaTypesParsed.complex)
+
+  console.log('fix', buf2)
+
+  console.log(parseBuffer(buf2, db.schemaTypesParsed.complex))
+
+  // SET(key, boolean)
+  // GET(key) //  get with keys also
+  // QUERY
+
   // x.push({
   //   type: 'vote',
   //   value: {
@@ -103,7 +109,7 @@ test('create server', async (t) => {
   // await write()
 
   // await db.set(x)
-  console.log(i, Date.now() - d, 'ms', 'to set 1000k')
+  // console.log(i, Date.now() - d, 'ms', 'to set 1000k')
 
   await wait(1e3)
 

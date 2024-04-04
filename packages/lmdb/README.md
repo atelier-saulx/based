@@ -1,96 +1,154 @@
-# @based/db
-
 ```typescript
-db.set({}, merge) // merge: true / false
-
-db.get(key, fields) //
-
 //
+const results = db
+  .query('article')
+  .include(['name', 'publishDate'])
+  .filter(
+    ['sections', 'has', ['se123', 'se321']],
+    ['published', '=', true],
+    ['publishedDate', '>', 'now - 1week'],
+  )
+  .range(0, 100)
 
-// query ID
-// will make indexes based on what you are asking
-//  from the top
-//  from references field in a key
+db.query('article')
+  .include(['name', 'publishDate', 'tags'])
+  .includeReferences('contributors', (contributors) =>
+    contributors
+      .include(['name', 'age'])
+      .filter(['age', '>', 12])
+      .includeReferences('friends', (friends) => {
+        friends.include(['age'])
+      }),
+  )
+  .includeReferences('sections', (sections) => {
+    sections.include(['name', 'age']).filter(['age', '>', 12])
+  })
 
-// 2 envs
-// 1 indexes / config etc
-// 1 raw data (also indexed on primary index thing)
-// 255
+db.query('article').filter(['publishedDate', '>', 'now-1week'])
+// not nessecary traverse escpases context
+// .traverseReferences('contributors', (contributors) =>
+//   contributors
+//     .include(['name', 'age'])
+//     .filter(['age', '>', 12])
+//     .includeReferences('friends', (friends) => friends.include(['age']))
 
-// article publihedDate > march 2023
-// sorted by publishDate
-// published : true
-db.query('*', 'article') // 1
-  .sort(['publishDate', 'asc', 0, 100])
-  .filter(['publishedDate', '>', 123123123321], ['published', '=', true])
+//     // can be written as
+//     .include('friends.age')
 
-// INDEX Article publishedDate
-// INDEX Article published
+//     .sort('articles.length')
+//     .range(0, 10),
+// )
 
-// SUBSCRIBE DBI
-// {sub id} -> lastUsed  INDEX, INDEX, INDEX
-// DBI INDEX META INFO
+db.query('article')
+  .filter('publishedDate', '>', 'now-1week')
+  .traverse('contributors.creditcards')
+  .include('name', 'bank')
+  .filter('name', 'includes', 'A')
+  .range(0, 10)
 
-// NODE=> "0:x", "1:y", "0:1:2z", "b"
+// edge filters
+db.query('article')
+  .filter(['publishedDate', '>', 'now-1week'])
+  .traverse('contributors.creditcards')
+  .filter(['name', 'includes', 'A'])
+  .traverse('bank.country')
+  .include('name', 'code', { transactions: 'count(transactions)' })
+  .references('banks', (banks) =>
+    banks.sort('transactions').include('website', 'name').range(0, 10),
+  )
 
-db.query('root', 'article')
-  .sort(['publishDate', 'asc', 0, 100])
-  .filter(['sections', 'has', [ukraine, opinion]][('published', '=', true)], [
-    'publishedDate',
-    '>',
-    123123023321,
-  ])
+// countries: [ { name: 'netherlands', code: 'NL', transactions: 1e6, banks: [{name: 'ing', website: 'ing.nl'}] }  ]
+// can go trough traverse
+// traverse is essentialy a collect
 
-// => indexesQuery, itemTest
+db.query('article')
+  .filter('publishedDate', '>', 'now-1week')
+  .sort('hits', 'desc')
+  .range(0, 100)
+  .include('img.src', 'title', 'abstract')
 
-// add article ukraine article > sections [id]
+db.query('article')
+  .filter('publishedDate', '>', 'now-1week')
+  .sort('hits', 'desc')
+  .range(0, 100)
+  .traverse('contributors')
+  .range(0, 10)
+  .include('name', 'avatar.src')
 
-// yes? yes!
-// is it published ? yes
-// is it larger then 123123023321
-// run query
+db.query('article')
+  .filter('publishedDate', '>', 'now-1week')
+  .sort('hits', 'desc')
+  .traverse('contributors')
+  .range(0, 10)
 
-//  id: null //
-// * article publishDate  12345000: [id,id,id]
+db.query('contributor')
+  .filter(['articles.publishDate', '>', 'now-1week', '>', 0])
+  .sort('sum(articles.hits)')
+  .range(0, 10)
 
-// [coBR, episodes, startTime, 948327498] => ep1,ep2,ep5
-// 0121 948327498 => ep1, ep2
-// { type: 'references', edge: { type: 'integer' }, sortBy: 'edge' // 'start' }
+db.query('contributor')
+  .filter(['articles', '>', 0])
+  .sort('sum(articles.hits)')
+  .range(0, 10)
 
-// UKKRAINE -> articles 20k []
-// UKRAINE -> 0 / 1 ->
+db.query('contributor')
+  .filter(['articles', '>', 0])
+  .sort('articles')
+  .range(0, 10)
 
-// INDEX Article publishedDate
-// INDEX Article published
+db.query('article')
+  .filter(['publishedDate', '>', 'now-1week'])
+  .traverse('contributors.creditcards')
+  .include(['name', 'bank'])
+  .filter(['name', 'includes', 'A'])
+  .range(0, 10)
 
-//
+db.query('article.contributors.creditcards')
+  .include(['name', 'bank'])
+  .filter(['name', 'includes', 'A'])
+  .range(0, 10)
 
-// SUBSCRIBE DBI
-// {sub id} -> lastUsed  INDEX, INDEX, INDEX
-// DBI INDEX META INFO
+db.query('ar1.avatar') // gets all
 
-// NODE=> "0:x", "1:y", "0:1:2z", "b"
+db.query('ar1').exclude(['name']) // [{ id: 'ar1', }]
 
-db.updateSchema()
+db.query('article')
+  .traverse('contributors')
+  .include(['name', 'bank'])
+  .filter(['name', 'includes', 'A'])
+  .range(0, 10)
 
-db.getSchema()
+// with conditionals
+db.query('co1.articles')
+  .include('id', 'name', 'publishDate')
+  .filter(
+    ['sections', 'has', ['se123', 'se321']],
+    ['published', '=', true],
+    ['publishedDate', '>', 'now - 1week'],
+  )
+  .or('publishedDate', '>', 'now - 1h')
+  .range(0, 100)
+
+db.query('article')
+  .language('en')
+  .filter(
+    ['publishedDate', '>', 'now-1week'],
+    ['section', 'includes', sections],
+    ['articleType', 'includes', articleTypes],
+  )
+  .exclude('body')
+  .references('section', (section) =>
+    section.filter('hidden', '=', false).include('title'),
+  )
+  .references('articleType', (articleType) =>
+    articleType.filter('hidden', '=', false).include('title'),
+  )
+  .sort(mostRead ? 'hits' : 'publishedDate')
+  .range(0, 10)
+
+db.query('articleType').filter('hidden', 'is', false).include('title.en')
+
+db.query('section').filter('hidden', 'is', false).include('title.en')
 ```
 
-`
-data types
-
-references (+ edge)
-reference
-
-Uint
-
-float
-
-// 128 bits
-string
-string fixed length string
-`
-
-// 2 bytes for type
-
-// primary INDEX
+// .include('section.title', 'articleType.title')
