@@ -3869,7 +3869,7 @@ deflate_init_offset_slot_full(struct libdeflate_compressor *c)
 
 #endif /* SUPPORT_NEAR_OPTIMAL_PARSING */
 
-LIBDEFLATEEXPORT struct libdeflate_compressor * LIBDEFLATEAPI
+LIBDEFLATEEXPORT struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level)
 {
 	struct libdeflate_compressor *c;
@@ -3997,7 +3997,7 @@ libdeflate_alloc_compressor(int compression_level)
 	return c;
 }
 
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
+LIBDEFLATEEXPORT size_t
 libdeflate_deflate_compress(struct libdeflate_compressor *c,
 			    const void *in, size_t in_nbytes,
 			    void *out, size_t out_nbytes_avail)
@@ -4041,7 +4041,7 @@ libdeflate_deflate_compress(struct libdeflate_compressor *c,
 	return os.next - (u8 *)out;
 }
 
-LIBDEFLATEEXPORT void LIBDEFLATEAPI
+LIBDEFLATEEXPORT void
 libdeflate_free_compressor(struct libdeflate_compressor *c)
 {
 	libdeflate_aligned_free(c);
@@ -4053,7 +4053,7 @@ libdeflate_get_compression_level(struct libdeflate_compressor *c)
 	return c->compression_level;
 }
 
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
+LIBDEFLATEEXPORT size_t
 libdeflate_deflate_compress_bound(struct libdeflate_compressor *c,
 				  size_t in_nbytes)
 {
