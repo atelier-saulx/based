@@ -11,9 +11,9 @@
 extern "C" {
 #endif
 
-#define LIBDEFLATE_VERSION_MAJOR	1
-#define LIBDEFLATE_VERSION_MINOR	14
-#define LIBDEFLATE_VERSION_STRING	"1.14"
+#define LIBDEFLATE_VERSION_MAJOR	2
+#define LIBDEFLATE_VERSION_MINOR	0
+#define LIBDEFLATE_VERSION_STRING	"2.0"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -52,12 +52,12 @@ extern "C" {
 struct libdeflate_compressor;
 
 /*
- * libdeflate_alloc_compressor() allocates a new compressor that supports
- * DEFLATE, zlib, and gzip compression.  'compression_level' is the compression
- * level on a zlib-like scale but with a higher maximum value (1 = fastest, 6 =
- * medium/default, 9 = slow, 12 = slowest).  Level 0 is also supported and means
- * "no compression", specifically "create a valid stream, but only emit
- * uncompressed blocks" (this will expand the data slightly).
+ * libdeflate_alloc_compressor() allocates a new compressor.
+ * 'compression_level' is the compression level on a zlib-like scale but with a
+ * higher maximum value (1 = fastest, 6 = medium/default, 9 = slow, 12 = slowest).
+ * Level 0 is also supported and means "no compression", specifically "create a
+ * valid stream, but only emit uncompressed blocks" (this will expand the data
+ * slightly).
  *
  * The return value is a pointer to the new compressor, or NULL if out of memory
  * or if the compression level is invalid (i.e. outside the range [0, 12]).
@@ -114,42 +114,6 @@ libdeflate_deflate_compress_bound(struct libdeflate_compressor *compressor,
 				  size_t in_nbytes);
 
 /*
- * Like libdeflate_deflate_compress(), but stores the data in the zlib wrapper
- * format.
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_zlib_compress(struct libdeflate_compressor *compressor,
-			 const void *in, size_t in_nbytes,
-			 void *out, size_t out_nbytes_avail);
-
-/*
- * Like libdeflate_deflate_compress_bound(), but assumes the data will be
- * compressed with libdeflate_zlib_compress() rather than with
- * libdeflate_deflate_compress().
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_zlib_compress_bound(struct libdeflate_compressor *compressor,
-			       size_t in_nbytes);
-
-/*
- * Like libdeflate_deflate_compress(), but stores the data in the gzip wrapper
- * format.
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_gzip_compress(struct libdeflate_compressor *compressor,
-			 const void *in, size_t in_nbytes,
-			 void *out, size_t out_nbytes_avail);
-
-/*
- * Like libdeflate_deflate_compress_bound(), but assumes the data will be
- * compressed with libdeflate_gzip_compress() rather than with
- * libdeflate_deflate_compress().
- */
-LIBDEFLATEEXPORT size_t LIBDEFLATEAPI
-libdeflate_gzip_compress_bound(struct libdeflate_compressor *compressor,
-			       size_t in_nbytes);
-
-/*
  * libdeflate_free_compressor() frees a compressor that was allocated with
  * libdeflate_alloc_compressor().  If a NULL pointer is passed in, no action is
  * taken.
@@ -164,8 +128,8 @@ libdeflate_free_compressor(struct libdeflate_compressor *compressor);
 struct libdeflate_decompressor;
 
 /*
- * libdeflate_alloc_decompressor() allocates a new decompressor that can be used
- * for DEFLATE, zlib, and gzip decompression.  The return value is a pointer to
+ * libdeflate_alloc_decompressor() allocates a new decompressor.
+ * The return value is a pointer to
  * the new decompressor, or NULL if out of memory.
  *
  * This function takes no parameters, and the returned decompressor is valid for
@@ -179,8 +143,7 @@ LIBDEFLATEEXPORT struct libdeflate_decompressor * LIBDEFLATEAPI
 libdeflate_alloc_decompressor(void);
 
 /*
- * Result of a call to libdeflate_deflate_decompress(),
- * libdeflate_zlib_decompress(), or libdeflate_gzip_decompress().
+ * Result of a call to libdeflate_deflate_decompress().
  */
 enum libdeflate_result {
 	/* Decompression was successful.  */
@@ -250,61 +213,48 @@ libdeflate_deflate_decompress_ex(struct libdeflate_decompressor *decompressor,
 				 size_t *actual_in_nbytes_ret,
 				 size_t *actual_out_nbytes_ret);
 
+/* ctrl libdeflate_deflate_decompress_block() stop condition */
+enum libdeflate_decompress_stop_by {
+    LIBDEFLATE_STOP_BY_FINAL_BLOCK                = 0,
+    LIBDEFLATE_STOP_BY_ANY_BLOCK                  = 1,
+    LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT   = 2,
+    LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT  = 3,
+    LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN = 4,
+};
+
 /*
- * Like libdeflate_deflate_decompress(), but assumes the zlib wrapper format
- * instead of raw DEFLATE.
+ * Large stream data can be decompress by calling libdeflate_deflate_decompress_block()
+ * multiple times.  Each time call this function, 'out_block_with_in_dict' have
+ * 'in_dict_nbytes' repeat of the last called's tail outputed uncompressed data as
+ * dictionary data, and 'out_block_nbytes' new uncompressed data want be decompressed;
+ * The dictionary data size in_dict_nbytes<=32k, if it is greater than 32k, the extra
+ * part of the previous part of the dictionary data is invalid.
+ * libdeflate_deflate_compress_bound_block(out_block_nbytes) can got the upper limit
+ *  of 'in_part' required space 'in_part_nbytes_bound'.
+ * 'is_final_block_ret' can NULL.
  *
- * Decompression will stop at the end of the zlib stream, even if it is shorter
- * than 'in_nbytes'.  If you need to know exactly where the zlib stream ended,
- * use libdeflate_zlib_decompress_ex().
+ * WARNING: This function must decompressed one full DEFLATE block before stop;
+ * so 'in_part_nbytes_bound' must possess a block end flag, and "out_block_nbytes"
+ * must be able to store uncompressed data of this block decompressed;
+ * This feature is not compatible with the DEFLATE stream decoding standard,
+ * this function can't support a single DEFLATE block that may have any length.
  */
 LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
-libdeflate_zlib_decompress(struct libdeflate_decompressor *decompressor,
-			   const void *in, size_t in_nbytes,
-			   void *out, size_t out_nbytes_avail,
-			   size_t *actual_out_nbytes_ret);
+libdeflate_deflate_decompress_block(struct libdeflate_decompressor *decompressor,
+                 const void *in_part, size_t in_part_nbytes_bound,
+                 void *out_block_with_in_dict,size_t in_dict_nbytes, size_t out_block_nbytes,
+                 size_t *actual_in_nbytes_ret,size_t *actual_out_nbytes_ret,
+                 enum libdeflate_decompress_stop_by stop_type,int* is_final_block_ret);
 
 /*
- * Like libdeflate_zlib_decompress(), but adds the 'actual_in_nbytes_ret'
- * argument.  If 'actual_in_nbytes_ret' is not NULL and the decompression
- * succeeds (indicating that the first zlib-compressed stream in the input
- * buffer was decompressed), then the actual number of input bytes consumed is
- * written to *actual_in_nbytes_ret.
+ * Clear the state saved between calls libdeflate_deflate_decompress_block();
+ * if you know the next block does not depend on the inputed data of the previous
+ * block, you can call this function reset 'decompressor';
+ * Note: if next block depend on the inputed data of the previous block, reset will
+ * cause libdeflate_deflate_decompress_block() to fail.
  */
-LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
-libdeflate_zlib_decompress_ex(struct libdeflate_decompressor *decompressor,
-			      const void *in, size_t in_nbytes,
-			      void *out, size_t out_nbytes_avail,
-			      size_t *actual_in_nbytes_ret,
-			      size_t *actual_out_nbytes_ret);
-
-/*
- * Like libdeflate_deflate_decompress(), but assumes the gzip wrapper format
- * instead of raw DEFLATE.
- *
- * If multiple gzip-compressed members are concatenated, then only the first
- * will be decompressed.  Use libdeflate_gzip_decompress_ex() if you need
- * multi-member support.
- */
-LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
-libdeflate_gzip_decompress(struct libdeflate_decompressor *decompressor,
-			   const void *in, size_t in_nbytes,
-			   void *out, size_t out_nbytes_avail,
-			   size_t *actual_out_nbytes_ret);
-
-/*
- * Like libdeflate_gzip_decompress(), but adds the 'actual_in_nbytes_ret'
- * argument.  If 'actual_in_nbytes_ret' is not NULL and the decompression
- * succeeds (indicating that the first gzip-compressed member in the input
- * buffer was decompressed), then the actual number of input bytes consumed is
- * written to *actual_in_nbytes_ret.
- */
-LIBDEFLATEEXPORT enum libdeflate_result LIBDEFLATEAPI
-libdeflate_gzip_decompress_ex(struct libdeflate_decompressor *decompressor,
-			      const void *in, size_t in_nbytes,
-			      void *out, size_t out_nbytes_avail,
-			      size_t *actual_in_nbytes_ret,
-			      size_t *actual_out_nbytes_ret);
+LIBDEFLATEEXPORT void LIBDEFLATEAPI
+libdeflate_deflate_decompress_block_reset(struct libdeflate_decompressor *decompressor);
 
 /*
  * libdeflate_free_decompressor() frees a decompressor that was allocated with
