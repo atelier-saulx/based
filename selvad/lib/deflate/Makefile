@@ -8,13 +8,14 @@ cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null \
 
 CFLAGS += -fPIC -fvisibility=hidden -I../../include \
 	-O2 -fomit-frame-pointer -Wall -Wundef	\
-	$(call cc-option,-Wdeclaration-after-statement)	\
 	$(call cc-option,-Wimplicit-fallthrough) \
 	$(call cc-option,-Wmissing-prototypes) \
 	$(call cc-option,-Wpedantic) \
 	$(call cc-option,-Wshadow) \
 	$(call cc-option,-Wstrict-prototypes) \
-	$(call cc-option,-Wvla)
+	$(call cc-option,-Wvla) \
+	$(call cc-option,-Wno-keyword-macro) \
+	$(call cc-option,-Wno-constant-logical-operand)
 LDFLAGS += -g -L../
 
 OBJ := \
