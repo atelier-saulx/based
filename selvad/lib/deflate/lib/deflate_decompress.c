@@ -1033,7 +1033,7 @@ build_precode_decode_table(struct libdeflate_decompressor *d)
 /* Build the decode table for the literal/length code.  */
 static bool
 build_litlen_decode_table(struct libdeflate_decompressor *d,
-              unsigned num_litlen_syms, unsigned num_offset_syms)
+              unsigned num_litlen_syms, unsigned num_offset_syms __unused)
 {
     /* When you change TABLEBITS, you must change ENOUGH, and vice versa! */
     STATIC_ASSERT(LITLEN_TABLEBITS == 11 && LITLEN_ENOUGH == 2342);
