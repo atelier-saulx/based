@@ -248,7 +248,6 @@ PROG_COMMON_SRC      := programs/prog_util.c \
 			programs/tgetopt.c
 TEST_PROG_COMMON_SRC := programs/test_util.c
 TEST_PROG_SRC        := programs/benchmark.c \
-			programs/checksum.c \
 			$(filter-out $(TEST_PROG_COMMON_SRC),$(wildcard programs/test_*.c))
 
 NONTEST_PROGRAMS := $(NONTEST_PROG_SRC:programs/%.c=%$(PROG_SUFFIX))
@@ -289,8 +288,6 @@ $(NONTEST_PROGRAMS): %$(PROG_SUFFIX): programs/%.o $(PROG_COMMON_OBJ) $(LIB)
 $(TEST_PROGRAMS): %$(PROG_SUFFIX): programs/%.o $(PROG_COMMON_OBJ) \
 			$(TEST_PROG_COMMON_OBJ) $(LIB)
 	$(QUIET_CCLD) $(CC) -o $@ $(LDFLAGS) $(PROG_CFLAGS) $+ -lz
-
-DEFAULT_TARGETS += gunzip$(PROG_SUFFIX)
 
 ##############################################################################
 

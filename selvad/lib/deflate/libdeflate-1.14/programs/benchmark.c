@@ -630,8 +630,7 @@ tmain(int argc, tchar *argv[])
 				argv[i] = NULL;
 	}
 
-	printf("Benchmarking %s compression:\n",
-	       format == DEFLATE_FORMAT ? "DEFLATE" :
+	printf("Benchmarking %s compression:\n", "DEFLATE");
 	printf("\tCompression level: %d\n", level);
 	printf("\tChunk size: %"PRIu32"\n", chunk_size);
 	printf("\tCompression engine: %"TS"\n", compress_engine->name);
