@@ -5,10 +5,10 @@
 
 /* BMI2 optimized version */
 #if HAVE_BMI2_INTRIN
-#  define deflate_decompress_bmi2	deflate_decompress_bmi2
-#  define FUNCNAME			deflate_decompress_bmi2
+#  define deflate_decompress_bmi2   deflate_decompress_bmi2
+#  define FUNCNAME          deflate_decompress_bmi2
 #  if !HAVE_BMI2_NATIVE
-#    define ATTRIBUTES			__attribute__((target("bmi2")))
+#    define ATTRIBUTES          __attribute__((target("bmi2")))
 #  endif
    /*
     * Even with __attribute__((target("bmi2"))), gcc doesn't reliably use the
@@ -32,18 +32,18 @@
 #endif /* HAVE_BMI2_INTRIN */
 
 #if defined(deflate_decompress_bmi2) && HAVE_BMI2_NATIVE
-#define DEFAULT_IMPL	deflate_decompress_bmi2
+#define DEFAULT_IMPL    deflate_decompress_bmi2
 #else
 static inline decompress_func_t
 arch_select_decompress_func(void)
 {
 #ifdef deflate_decompress_bmi2
-	if (HAVE_BMI2(get_x86_cpu_features()))
-		return deflate_decompress_bmi2;
+    if (HAVE_BMI2(get_x86_cpu_features()))
+        return deflate_decompress_bmi2;
 #endif
-	return NULL;
+    return NULL;
 }
-#define arch_select_decompress_func	arch_select_decompress_func
+#define arch_select_decompress_func arch_select_decompress_func
 #endif
 
 #endif /* LIB_X86_DECOMPRESS_IMPL_H */

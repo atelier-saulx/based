@@ -42,44 +42,44 @@
 static inline void
 cpuid(u32 leaf, u32 subleaf, u32 *a, u32 *b, u32 *c, u32 *d)
 {
-	__asm__(".ifnc %%ebx, %1; mov  %%ebx, %1; .endif\n"
-		"cpuid                                  \n"
-		".ifnc %%ebx, %1; xchg %%ebx, %1; .endif\n"
-		: "=a" (*a), EBX_CONSTRAINT (*b), "=c" (*c), "=d" (*d)
-		: "a" (leaf), "c" (subleaf));
+    __asm__(".ifnc %%ebx, %1; mov  %%ebx, %1; .endif\n"
+        "cpuid                                  \n"
+        ".ifnc %%ebx, %1; xchg %%ebx, %1; .endif\n"
+        : "=a" (*a), EBX_CONSTRAINT (*b), "=c" (*c), "=d" (*d)
+        : "a" (leaf), "c" (subleaf));
 }
 
 /* Read an extended control register.  */
 static inline u64
 read_xcr(u32 index)
 {
-	u32 edx, eax;
+    u32 edx, eax;
 
-	/* Execute the "xgetbv" instruction.  Old versions of binutils do not
-	 * recognize this instruction, so list the raw bytes instead.  */
-	__asm__ (".byte 0x0f, 0x01, 0xd0" : "=d" (edx), "=a" (eax) : "c" (index));
+    /* Execute the "xgetbv" instruction.  Old versions of binutils do not
+     * recognize this instruction, so list the raw bytes instead.  */
+    __asm__ (".byte 0x0f, 0x01, 0xd0" : "=d" (edx), "=a" (eax) : "c" (index));
 
-	return ((u64)edx << 32) | eax;
+    return ((u64)edx << 32) | eax;
 }
 
 #undef BIT
-#define BIT(nr)			(1UL << (nr))
+#define BIT(nr)         (1UL << (nr))
 
-#define XCR0_BIT_SSE		BIT(1)
-#define XCR0_BIT_AVX		BIT(2)
-#define XCR0_BIT_OPMASK		BIT(5)
-#define XCR0_BIT_ZMM_HI256	BIT(6)
-#define XCR0_BIT_HI16_ZMM	BIT(7)
+#define XCR0_BIT_SSE        BIT(1)
+#define XCR0_BIT_AVX        BIT(2)
+#define XCR0_BIT_OPMASK     BIT(5)
+#define XCR0_BIT_ZMM_HI256  BIT(6)
+#define XCR0_BIT_HI16_ZMM   BIT(7)
 
-#define IS_SET(reg, nr)		((reg) & BIT(nr))
-#define IS_ALL_SET(reg, mask)	(((reg) & (mask)) == (mask))
+#define IS_SET(reg, nr)     ((reg) & BIT(nr))
+#define IS_ALL_SET(reg, mask)   (((reg) & (mask)) == (mask))
 
 static const struct cpu_feature x86_cpu_feature_table[] = {
-	{X86_CPU_FEATURE_SSE2,		"sse2"},
-	{X86_CPU_FEATURE_PCLMUL,	"pclmul"},
-	{X86_CPU_FEATURE_AVX,		"avx"},
-	{X86_CPU_FEATURE_AVX2,		"avx2"},
-	{X86_CPU_FEATURE_BMI2,		"bmi2"},
+    {X86_CPU_FEATURE_SSE2,      "sse2"},
+    {X86_CPU_FEATURE_PCLMUL,    "pclmul"},
+    {X86_CPU_FEATURE_AVX,       "avx"},
+    {X86_CPU_FEATURE_AVX2,      "avx2"},
+    {X86_CPU_FEATURE_BMI2,      "bmi2"},
 };
 
 volatile u32 libdeflate_x86_cpu_features = 0;
@@ -87,54 +87,54 @@ volatile u32 libdeflate_x86_cpu_features = 0;
 /* Initialize libdeflate_x86_cpu_features. */
 void libdeflate_init_x86_cpu_features(void)
 {
-	u32 features = 0;
-	u32 dummy1, dummy2, dummy3, dummy4;
-	u32 max_function;
-	u32 features_1, features_2, features_3, features_4;
-	bool os_avx_support = false;
+    u32 features = 0;
+    u32 dummy1, dummy2, dummy3, dummy4;
+    u32 max_function;
+    u32 features_1, features_2, features_3, features_4;
+    bool os_avx_support = false;
 
-	/* Get maximum supported function  */
-	cpuid(0, 0, &max_function, &dummy2, &dummy3, &dummy4);
-	if (max_function < 1)
-		goto out;
+    /* Get maximum supported function  */
+    cpuid(0, 0, &max_function, &dummy2, &dummy3, &dummy4);
+    if (max_function < 1)
+        goto out;
 
-	/* Standard feature flags  */
-	cpuid(1, 0, &dummy1, &dummy2, &features_2, &features_1);
+    /* Standard feature flags  */
+    cpuid(1, 0, &dummy1, &dummy2, &features_2, &features_1);
 
-	if (IS_SET(features_1, 26))
-		features |= X86_CPU_FEATURE_SSE2;
+    if (IS_SET(features_1, 26))
+        features |= X86_CPU_FEATURE_SSE2;
 
-	if (IS_SET(features_2, 1))
-		features |= X86_CPU_FEATURE_PCLMUL;
+    if (IS_SET(features_2, 1))
+        features |= X86_CPU_FEATURE_PCLMUL;
 
-	if (IS_SET(features_2, 27)) { /* OSXSAVE set? */
-		u64 xcr0 = read_xcr(0);
+    if (IS_SET(features_2, 27)) { /* OSXSAVE set? */
+        u64 xcr0 = read_xcr(0);
 
-		os_avx_support = IS_ALL_SET(xcr0,
-					    XCR0_BIT_SSE |
-					    XCR0_BIT_AVX);
-	}
+        os_avx_support = IS_ALL_SET(xcr0,
+                        XCR0_BIT_SSE |
+                        XCR0_BIT_AVX);
+    }
 
-	if (os_avx_support && IS_SET(features_2, 28))
-		features |= X86_CPU_FEATURE_AVX;
+    if (os_avx_support && IS_SET(features_2, 28))
+        features |= X86_CPU_FEATURE_AVX;
 
-	if (max_function < 7)
-		goto out;
+    if (max_function < 7)
+        goto out;
 
-	/* Extended feature flags  */
-	cpuid(7, 0, &dummy1, &features_3, &features_4, &dummy4);
+    /* Extended feature flags  */
+    cpuid(7, 0, &dummy1, &features_3, &features_4, &dummy4);
 
-	if (os_avx_support && IS_SET(features_3, 5))
-		features |= X86_CPU_FEATURE_AVX2;
+    if (os_avx_support && IS_SET(features_3, 5))
+        features |= X86_CPU_FEATURE_AVX2;
 
-	if (IS_SET(features_3, 8))
-		features |= X86_CPU_FEATURE_BMI2;
+    if (IS_SET(features_3, 8))
+        features |= X86_CPU_FEATURE_BMI2;
 
 out:
-	disable_cpu_features_for_testing(&features, x86_cpu_feature_table,
-					 ARRAY_LEN(x86_cpu_feature_table));
+    disable_cpu_features_for_testing(&features, x86_cpu_feature_table,
+                     ARRAY_LEN(x86_cpu_feature_table));
 
-	libdeflate_x86_cpu_features = features | X86_CPU_FEATURES_KNOWN;
+    libdeflate_x86_cpu_features = features | X86_CPU_FEATURES_KNOWN;
 }
 
 #endif /* HAVE_DYNAMIC_X86_CPU_FEATURES */

@@ -30,38 +30,38 @@
 
 #include "../lib_common.h"
 
-#define HAVE_DYNAMIC_X86_CPU_FEATURES	0
+#define HAVE_DYNAMIC_X86_CPU_FEATURES   0
 
 #if defined(__i386__) || defined(__x86_64__)
 
 #if COMPILER_SUPPORTS_TARGET_FUNCTION_ATTRIBUTE
 #  undef HAVE_DYNAMIC_X86_CPU_FEATURES
-#  define HAVE_DYNAMIC_X86_CPU_FEATURES	1
+#  define HAVE_DYNAMIC_X86_CPU_FEATURES 1
 #endif
 
-#define X86_CPU_FEATURE_SSE2		0x00000001
-#define X86_CPU_FEATURE_PCLMUL		0x00000002
-#define X86_CPU_FEATURE_AVX		0x00000004
-#define X86_CPU_FEATURE_AVX2		0x00000008
-#define X86_CPU_FEATURE_BMI2		0x00000010
+#define X86_CPU_FEATURE_SSE2        0x00000001
+#define X86_CPU_FEATURE_PCLMUL      0x00000002
+#define X86_CPU_FEATURE_AVX     0x00000004
+#define X86_CPU_FEATURE_AVX2        0x00000008
+#define X86_CPU_FEATURE_BMI2        0x00000010
 
-#define HAVE_SSE2(features)	(HAVE_SSE2_NATIVE     || ((features) & X86_CPU_FEATURE_SSE2))
-#define HAVE_PCLMUL(features)	(HAVE_PCLMUL_NATIVE   || ((features) & X86_CPU_FEATURE_PCLMUL))
-#define HAVE_AVX(features)	(HAVE_AVX_NATIVE      || ((features) & X86_CPU_FEATURE_AVX))
-#define HAVE_AVX2(features)	(HAVE_AVX2_NATIVE     || ((features) & X86_CPU_FEATURE_AVX2))
-#define HAVE_BMI2(features)	(HAVE_BMI2_NATIVE     || ((features) & X86_CPU_FEATURE_BMI2))
+#define HAVE_SSE2(features) (HAVE_SSE2_NATIVE     || ((features) & X86_CPU_FEATURE_SSE2))
+#define HAVE_PCLMUL(features)   (HAVE_PCLMUL_NATIVE   || ((features) & X86_CPU_FEATURE_PCLMUL))
+#define HAVE_AVX(features)  (HAVE_AVX_NATIVE      || ((features) & X86_CPU_FEATURE_AVX))
+#define HAVE_AVX2(features) (HAVE_AVX2_NATIVE     || ((features) & X86_CPU_FEATURE_AVX2))
+#define HAVE_BMI2(features) (HAVE_BMI2_NATIVE     || ((features) & X86_CPU_FEATURE_BMI2))
 
 #if HAVE_DYNAMIC_X86_CPU_FEATURES
-#define X86_CPU_FEATURES_KNOWN		0x80000000
+#define X86_CPU_FEATURES_KNOWN      0x80000000
 extern volatile u32 libdeflate_x86_cpu_features;
 
 void libdeflate_init_x86_cpu_features(void);
 
 static inline u32 get_x86_cpu_features(void)
 {
-	if (libdeflate_x86_cpu_features == 0)
-		libdeflate_init_x86_cpu_features();
-	return libdeflate_x86_cpu_features;
+    if (libdeflate_x86_cpu_features == 0)
+        libdeflate_init_x86_cpu_features();
+    return libdeflate_x86_cpu_features;
 }
 #else /* HAVE_DYNAMIC_X86_CPU_FEATURES */
 static inline u32 get_x86_cpu_features(void) { return 0; }
@@ -74,8 +74,8 @@ static inline u32 get_x86_cpu_features(void) { return 0; }
  * have to check its version.
  */
 #define HAVE_TARGET_INTRINSICS \
-	(HAVE_DYNAMIC_X86_CPU_FEATURES && \
-	 (GCC_PREREQ(4, 9) || CLANG_PREREQ(3, 8, 7030000)))
+    (HAVE_DYNAMIC_X86_CPU_FEATURES && \
+     (GCC_PREREQ(4, 9) || CLANG_PREREQ(3, 8, 7030000)))
 
 /*
  * Before gcc 5.1 and clang 3.9, emmintrin.h only defined vectors of signed
@@ -84,8 +84,8 @@ static inline u32 get_x86_cpu_features(void) { return 0; }
  * behavior.  Add the missing definitions for the unsigned ones if needed.
  */
 #if (GCC_PREREQ(4, 0) && !GCC_PREREQ(5, 1)) || \
-	(defined(__clang__) && !CLANG_PREREQ(3, 9, 8020000)) || \
-	defined(__INTEL_COMPILER)
+    (defined(__clang__) && !CLANG_PREREQ(3, 9, 8020000)) || \
+    defined(__INTEL_COMPILER)
 typedef unsigned long long  __v2du __attribute__((__vector_size__(16)));
 typedef unsigned int        __v4su __attribute__((__vector_size__(16)));
 typedef unsigned short      __v8hu __attribute__((__vector_size__(16)));
@@ -103,61 +103,61 @@ typedef char  __v64qi __attribute__((__vector_size__(64)));
 
 /* SSE2 */
 #ifdef __SSE2__
-#  define HAVE_SSE2_NATIVE	1
+#  define HAVE_SSE2_NATIVE  1
 #else
-#  define HAVE_SSE2_NATIVE	0
+#  define HAVE_SSE2_NATIVE  0
 #endif
-#define HAVE_SSE2_TARGET	HAVE_DYNAMIC_X86_CPU_FEATURES
+#define HAVE_SSE2_TARGET    HAVE_DYNAMIC_X86_CPU_FEATURES
 #define HAVE_SSE2_INTRIN \
-	(HAVE_SSE2_NATIVE || (HAVE_SSE2_TARGET && HAVE_TARGET_INTRINSICS))
+    (HAVE_SSE2_NATIVE || (HAVE_SSE2_TARGET && HAVE_TARGET_INTRINSICS))
 
 /* PCLMUL */
 #ifdef __PCLMUL__
-#  define HAVE_PCLMUL_NATIVE	1
+#  define HAVE_PCLMUL_NATIVE    1
 #else
-#  define HAVE_PCLMUL_NATIVE	0
+#  define HAVE_PCLMUL_NATIVE    0
 #endif
 #define HAVE_PCLMUL_TARGET \
-	(HAVE_DYNAMIC_X86_CPU_FEATURES && \
-	 (GCC_PREREQ(4, 4) || __has_builtin(__builtin_ia32_pclmulqdq128)))
+    (HAVE_DYNAMIC_X86_CPU_FEATURES && \
+     (GCC_PREREQ(4, 4) || __has_builtin(__builtin_ia32_pclmulqdq128)))
 #define HAVE_PCLMUL_INTRIN \
-	(HAVE_PCLMUL_NATIVE || (HAVE_PCLMUL_TARGET && HAVE_TARGET_INTRINSICS))
+    (HAVE_PCLMUL_NATIVE || (HAVE_PCLMUL_TARGET && HAVE_TARGET_INTRINSICS))
 
 /* AVX */
 #ifdef __AVX__
-#  define HAVE_AVX_NATIVE	1
+#  define HAVE_AVX_NATIVE   1
 #else
-#  define HAVE_AVX_NATIVE	0
+#  define HAVE_AVX_NATIVE   0
 #endif
 #define HAVE_AVX_TARGET \
-	(HAVE_DYNAMIC_X86_CPU_FEATURES && \
-	 (GCC_PREREQ(4, 6) || __has_builtin(__builtin_ia32_maxps256)))
+    (HAVE_DYNAMIC_X86_CPU_FEATURES && \
+     (GCC_PREREQ(4, 6) || __has_builtin(__builtin_ia32_maxps256)))
 #define HAVE_AVX_INTRIN \
-	(HAVE_AVX_NATIVE || (HAVE_AVX_TARGET && HAVE_TARGET_INTRINSICS))
+    (HAVE_AVX_NATIVE || (HAVE_AVX_TARGET && HAVE_TARGET_INTRINSICS))
 
 /* AVX2 */
 #ifdef __AVX2__
-#  define HAVE_AVX2_NATIVE	1
+#  define HAVE_AVX2_NATIVE  1
 #else
-#  define HAVE_AVX2_NATIVE	0
+#  define HAVE_AVX2_NATIVE  0
 #endif
 #define HAVE_AVX2_TARGET \
-	(HAVE_DYNAMIC_X86_CPU_FEATURES && \
-	 (GCC_PREREQ(4, 7) || __has_builtin(__builtin_ia32_psadbw256)))
+    (HAVE_DYNAMIC_X86_CPU_FEATURES && \
+     (GCC_PREREQ(4, 7) || __has_builtin(__builtin_ia32_psadbw256)))
 #define HAVE_AVX2_INTRIN \
-	(HAVE_AVX2_NATIVE || (HAVE_AVX2_TARGET && HAVE_TARGET_INTRINSICS))
+    (HAVE_AVX2_NATIVE || (HAVE_AVX2_TARGET && HAVE_TARGET_INTRINSICS))
 
 /* BMI2 */
 #ifdef __BMI2__
-#  define HAVE_BMI2_NATIVE	1
+#  define HAVE_BMI2_NATIVE  1
 #else
-#  define HAVE_BMI2_NATIVE	0
+#  define HAVE_BMI2_NATIVE  0
 #endif
 #define HAVE_BMI2_TARGET \
-	(HAVE_DYNAMIC_X86_CPU_FEATURES && \
-	 (GCC_PREREQ(4, 7) || __has_builtin(__builtin_ia32_pdep_di)))
+    (HAVE_DYNAMIC_X86_CPU_FEATURES && \
+     (GCC_PREREQ(4, 7) || __has_builtin(__builtin_ia32_pdep_di)))
 #define HAVE_BMI2_INTRIN \
-	(HAVE_BMI2_NATIVE || (HAVE_BMI2_TARGET && HAVE_TARGET_INTRINSICS))
+    (HAVE_BMI2_NATIVE || (HAVE_BMI2_TARGET && HAVE_TARGET_INTRINSICS))
 
 #endif /* __i386__ || __x86_64__ */
 

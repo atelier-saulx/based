@@ -29,13 +29,13 @@ void libdeflate_aligned_free(void *ptr);
 #ifdef LIBDEFLATE_ENABLE_ASSERTIONS
 void libdeflate_assertion_failed(const char *expr, const char *file, int line);
 #define ASSERT(expr) { if (unlikely(!(expr))) \
-	libdeflate_assertion_failed(#expr, __FILE__, __LINE__); }
+    libdeflate_assertion_failed(#expr, __FILE__, __LINE__); }
 #else
 #define ASSERT(expr) (void)(expr)
 #endif
 
-#define CONCAT_IMPL(a, b)	a##b
-#define CONCAT(a, b)		CONCAT_IMPL(a, b)
-#define ADD_SUFFIX(name)	CONCAT(name, SUFFIX)
+#define CONCAT_IMPL(a, b)   a##b
+#define CONCAT(a, b)        CONCAT_IMPL(a, b)
+#define ADD_SUFFIX(name)    CONCAT(name, SUFFIX)
 
 #endif /* LIB_LIB_COMMON_H */

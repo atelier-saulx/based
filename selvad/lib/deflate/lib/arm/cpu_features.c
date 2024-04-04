@@ -55,81 +55,81 @@
 #include <string.h>
 #include <unistd.h>
 
-#define AT_HWCAP	16
-#define AT_HWCAP2	26
+#define AT_HWCAP    16
+#define AT_HWCAP2   26
 
 static void scan_auxv(unsigned long *hwcap, unsigned long *hwcap2)
 {
-	int fd;
-	unsigned long auxbuf[32];
-	int filled = 0;
-	int i;
+    int fd;
+    unsigned long auxbuf[32];
+    int filled = 0;
+    int i;
 
-	fd = open("/proc/self/auxv", O_RDONLY);
-	if (fd < 0)
-		return;
+    fd = open("/proc/self/auxv", O_RDONLY);
+    if (fd < 0)
+        return;
 
-	for (;;) {
-		do {
-			int ret = read(fd, &((char *)auxbuf)[filled],
-				       sizeof(auxbuf) - filled);
-			if (ret <= 0) {
-				if (ret < 0 && errno == EINTR)
-					continue;
-				goto out;
-			}
-			filled += ret;
-		} while (filled < 2 * sizeof(long));
+    for (;;) {
+        do {
+            int ret = read(fd, &((char *)auxbuf)[filled],
+                       sizeof(auxbuf) - filled);
+            if (ret <= 0) {
+                if (ret < 0 && errno == EINTR)
+                    continue;
+                goto out;
+            }
+            filled += ret;
+        } while (filled < 2 * sizeof(long));
 
-		i = 0;
-		do {
-			unsigned long type = auxbuf[i];
-			unsigned long value = auxbuf[i + 1];
+        i = 0;
+        do {
+            unsigned long type = auxbuf[i];
+            unsigned long value = auxbuf[i + 1];
 
-			if (type == AT_HWCAP)
-				*hwcap = value;
-			else if (type == AT_HWCAP2)
-				*hwcap2 = value;
-			i += 2;
-			filled -= 2 * sizeof(long);
-		} while (filled >= 2 * sizeof(long));
+            if (type == AT_HWCAP)
+                *hwcap = value;
+            else if (type == AT_HWCAP2)
+                *hwcap2 = value;
+            i += 2;
+            filled -= 2 * sizeof(long);
+        } while (filled >= 2 * sizeof(long));
 
-		memmove(auxbuf, &auxbuf[i], filled);
-	}
+        memmove(auxbuf, &auxbuf[i], filled);
+    }
 out:
-	close(fd);
+    close(fd);
 }
 
 static u32 query_arm_cpu_features(void)
 {
-	u32 features = 0;
-	unsigned long hwcap = 0;
-	unsigned long hwcap2 = 0;
+    u32 features = 0;
+    unsigned long hwcap = 0;
+    unsigned long hwcap2 = 0;
 
-	scan_auxv(&hwcap, &hwcap2);
+    scan_auxv(&hwcap, &hwcap2);
 
 #ifdef __arm__
-	STATIC_ASSERT(sizeof(long) == 4);
-	if (hwcap & (1 << 12))	/* HWCAP_NEON */
-		features |= ARM_CPU_FEATURE_NEON;
-	if (hwcap2 & (1 << 1))	/* HWCAP2_PMULL */
-		features |= ARM_CPU_FEATURE_PMULL;
-	if (hwcap2 & (1 << 4))	/* HWCAP2_CRC32 */
-		features |= ARM_CPU_FEATURE_CRC32;
+    STATIC_ASSERT(sizeof(long) == 4);
+    if (hwcap & (1 << 12))  /* HWCAP_NEON */
+        features |= ARM_CPU_FEATURE_NEON;
+    if (hwcap2 & (1 << 1))  /* HWCAP2_PMULL */
+        features |= ARM_CPU_FEATURE_PMULL;
+    if (hwcap2 & (1 << 4))  /* HWCAP2_CRC32 */
+        features |= ARM_CPU_FEATURE_CRC32;
 #else
-	STATIC_ASSERT(sizeof(long) == 8);
-	if (hwcap & (1 << 1))	/* HWCAP_ASIMD */
-		features |= ARM_CPU_FEATURE_NEON;
-	if (hwcap & (1 << 4))	/* HWCAP_PMULL */
-		features |= ARM_CPU_FEATURE_PMULL;
-	if (hwcap & (1 << 7))	/* HWCAP_CRC32 */
-		features |= ARM_CPU_FEATURE_CRC32;
-	if (hwcap & (1 << 17))	/* HWCAP_SHA3 */
-		features |= ARM_CPU_FEATURE_SHA3;
-	if (hwcap & (1 << 20))	/* HWCAP_ASIMDDP */
-		features |= ARM_CPU_FEATURE_DOTPROD;
+    STATIC_ASSERT(sizeof(long) == 8);
+    if (hwcap & (1 << 1))   /* HWCAP_ASIMD */
+        features |= ARM_CPU_FEATURE_NEON;
+    if (hwcap & (1 << 4))   /* HWCAP_PMULL */
+        features |= ARM_CPU_FEATURE_PMULL;
+    if (hwcap & (1 << 7))   /* HWCAP_CRC32 */
+        features |= ARM_CPU_FEATURE_CRC32;
+    if (hwcap & (1 << 17))  /* HWCAP_SHA3 */
+        features |= ARM_CPU_FEATURE_SHA3;
+    if (hwcap & (1 << 20))  /* HWCAP_ASIMDDP */
+        features |= ARM_CPU_FEATURE_DOTPROD;
 #endif
-	return features;
+    return features;
 }
 
 #elif defined(__APPLE__)
@@ -139,56 +139,56 @@ static u32 query_arm_cpu_features(void)
 #include <sys/sysctl.h>
 
 static const struct {
-	const char *name;
-	u32 feature;
+    const char *name;
+    u32 feature;
 } feature_sysctls[] = {
-	{ "hw.optional.neon",		  ARM_CPU_FEATURE_NEON },
-	{ "hw.optional.AdvSIMD",	  ARM_CPU_FEATURE_NEON },
-	{ "hw.optional.arm.FEAT_PMULL",	  ARM_CPU_FEATURE_PMULL },
-	{ "hw.optional.armv8_crc32",	  ARM_CPU_FEATURE_CRC32 },
-	{ "hw.optional.armv8_2_sha3",	  ARM_CPU_FEATURE_SHA3 },
-	{ "hw.optional.arm.FEAT_SHA3",	  ARM_CPU_FEATURE_SHA3 },
-	{ "hw.optional.arm.FEAT_DotProd", ARM_CPU_FEATURE_DOTPROD },
+    { "hw.optional.neon",         ARM_CPU_FEATURE_NEON },
+    { "hw.optional.AdvSIMD",      ARM_CPU_FEATURE_NEON },
+    { "hw.optional.arm.FEAT_PMULL",   ARM_CPU_FEATURE_PMULL },
+    { "hw.optional.armv8_crc32",      ARM_CPU_FEATURE_CRC32 },
+    { "hw.optional.armv8_2_sha3",     ARM_CPU_FEATURE_SHA3 },
+    { "hw.optional.arm.FEAT_SHA3",    ARM_CPU_FEATURE_SHA3 },
+    { "hw.optional.arm.FEAT_DotProd", ARM_CPU_FEATURE_DOTPROD },
 };
 
 static u32 query_arm_cpu_features(void)
 {
-	u32 features = 0;
-	size_t i;
+    u32 features = 0;
+    size_t i;
 
-	for (i = 0; i < ARRAY_LEN(feature_sysctls); i++) {
-		const char *name = feature_sysctls[i].name;
-		u32 val = 0;
-		size_t valsize = sizeof(val);
+    for (i = 0; i < ARRAY_LEN(feature_sysctls); i++) {
+        const char *name = feature_sysctls[i].name;
+        u32 val = 0;
+        size_t valsize = sizeof(val);
 
-		if (sysctlbyname(name, &val, &valsize, NULL, 0) == 0 &&
-		    valsize == sizeof(val) && val == 1)
-			features |= feature_sysctls[i].feature;
-	}
-	return features;
+        if (sysctlbyname(name, &val, &valsize, NULL, 0) == 0 &&
+            valsize == sizeof(val) && val == 1)
+            features |= feature_sysctls[i].feature;
+    }
+    return features;
 }
 #else
 #error "unhandled case"
 #endif
 
 static const struct cpu_feature arm_cpu_feature_table[] = {
-	{ARM_CPU_FEATURE_NEON,		"neon"},
-	{ARM_CPU_FEATURE_PMULL,		"pmull"},
-	{ARM_CPU_FEATURE_CRC32,		"crc32"},
-	{ARM_CPU_FEATURE_SHA3,		"sha3"},
-	{ARM_CPU_FEATURE_DOTPROD,	"dotprod"},
+    {ARM_CPU_FEATURE_NEON,      "neon"},
+    {ARM_CPU_FEATURE_PMULL,     "pmull"},
+    {ARM_CPU_FEATURE_CRC32,     "crc32"},
+    {ARM_CPU_FEATURE_SHA3,      "sha3"},
+    {ARM_CPU_FEATURE_DOTPROD,   "dotprod"},
 };
 
 volatile u32 libdeflate_arm_cpu_features = 0;
 
 void libdeflate_init_arm_cpu_features(void)
 {
-	u32 features = query_arm_cpu_features();
+    u32 features = query_arm_cpu_features();
 
-	disable_cpu_features_for_testing(&features, arm_cpu_feature_table,
-					 ARRAY_LEN(arm_cpu_feature_table));
+    disable_cpu_features_for_testing(&features, arm_cpu_feature_table,
+                     ARRAY_LEN(arm_cpu_feature_table));
 
-	libdeflate_arm_cpu_features = features | ARM_CPU_FEATURES_KNOWN;
+    libdeflate_arm_cpu_features = features | ARM_CPU_FEATURES_KNOWN;
 }
 
 #endif /* HAVE_DYNAMIC_ARM_CPU_FEATURES */

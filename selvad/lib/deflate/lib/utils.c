@@ -35,40 +35,40 @@ static void (*libdeflate_free_func)(void *) = free;
 void *
 libdeflate_malloc(size_t size)
 {
-	return (*libdeflate_malloc_func)(size);
+    return (*libdeflate_malloc_func)(size);
 }
 
 void
 libdeflate_free(void *ptr)
 {
-	(*libdeflate_free_func)(ptr);
+    (*libdeflate_free_func)(ptr);
 }
 
 void *
 libdeflate_aligned_malloc(size_t alignment, size_t size)
 {
-	void *ptr = libdeflate_malloc(sizeof(void *) + alignment - 1 + size);
-	if (ptr) {
-		void *orig_ptr = ptr;
-		ptr = (void *)ALIGN((uintptr_t)ptr + sizeof(void *), alignment);
-		((void **)ptr)[-1] = orig_ptr;
-	}
-	return ptr;
+    void *ptr = libdeflate_malloc(sizeof(void *) + alignment - 1 + size);
+    if (ptr) {
+        void *orig_ptr = ptr;
+        ptr = (void *)ALIGN((uintptr_t)ptr + sizeof(void *), alignment);
+        ((void **)ptr)[-1] = orig_ptr;
+    }
+    return ptr;
 }
 
 void
 libdeflate_aligned_free(void *ptr)
 {
-	if (ptr)
-		libdeflate_free(((void **)ptr)[-1]);
+    if (ptr)
+        libdeflate_free(((void **)ptr)[-1]);
 }
 
 LIBDEFLATEEXPORT void
 libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
-				void (*free_func)(void *))
+                void (*free_func)(void *))
 {
-	libdeflate_malloc_func = malloc_func;
-	libdeflate_free_func = free_func;
+    libdeflate_malloc_func = malloc_func;
+    libdeflate_free_func = free_func;
 }
 
 #ifdef LIBDEFLATE_ENABLE_ASSERTIONS
@@ -77,7 +77,7 @@ libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
 void
 libdeflate_assertion_failed(const char *expr, const char *file, int line)
 {
-	fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
-	abort();
+    fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
+    abort();
 }
 #endif /* LIBDEFLATE_ENABLE_ASSERTIONS */
