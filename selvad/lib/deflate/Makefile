@@ -15,7 +15,8 @@ CFLAGS += -fPIC -fvisibility=hidden -I../../include \
 	$(call cc-option,-Wstrict-prototypes) \
 	$(call cc-option,-Wvla) \
 	$(call cc-option,-Wno-keyword-macro) \
-	$(call cc-option,-Wno-constant-logical-operand)
+	$(call cc-option,-Wno-constant-logical-operand) \
+	-DNDEBUG
 LDFLAGS += -g -L../
 
 OBJ := \

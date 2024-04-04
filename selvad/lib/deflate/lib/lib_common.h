@@ -21,18 +21,9 @@ void *libdeflate_aligned_malloc(size_t alignment, size_t size);
 void libdeflate_aligned_free(void *ptr);
 
 #include <string.h>
+#include <assert.h>
 
-/*
- * Runtime assertion support.  Don't enable this in production builds; it may
- * hurt performance significantly.
- */
-#ifdef LIBDEFLATE_ENABLE_ASSERTIONS
-void libdeflate_assertion_failed(const char *expr, const char *file, int line);
-#define ASSERT(expr) { if (unlikely(!(expr))) \
-    libdeflate_assertion_failed(#expr, __FILE__, __LINE__); }
-#else
-#define ASSERT(expr) (void)(expr)
-#endif
+#define ASSERT assert
 
 #define CONCAT_IMPL(a, b)   a##b
 #define CONCAT(a, b)        CONCAT_IMPL(a, b)
