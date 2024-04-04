@@ -43,7 +43,7 @@ test('set and get batch with buffers single DBI', async (t) => {
     for (let i = 0; i < 0 + entries; i++) {
       // if (i % round) {
       let key = Buffer.alloc(KEY_LEN)
-      key.writeInt32BE(i)
+      key.writeInt32LE(i)
       key.copy(get_buffer, i * KEY_LEN)
       // key.write('hallo' + String(i))
       const value = Buffer.from('AMAZINGVALUE' + i)
@@ -139,7 +139,7 @@ test('set and get batch with buffers MANY DBIs', async (t) => {
     for (let i = 0; i < 0 + entries; i++) {
       // if (i % round) {
       let key = Buffer.alloc(KEY_LEN)
-      key.writeInt32BE(i)
+      key.writeInt32LE(i)
       key.copy(get_buffer, i * KEY_LEN)
       // key.write('hallo' + String(i))
       const value = Buffer.from('AMAZINGVALUE' + i)

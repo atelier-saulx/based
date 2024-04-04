@@ -30,7 +30,7 @@ test.only('set and get batch with buffers', async (t) => {
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
-    key.writeInt32BE(i)
+    key.writeUInt32LE(i)
     key.copy(get_buffer, i * KEY_LEN)
     const value = Buffer.from('AMAZINGVALUE' + i)
     values.push(value)
