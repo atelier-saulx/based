@@ -13,10 +13,6 @@
 # decompression-only library.  If doing this, you must also build a specific
 # library target such as 'libdeflate.a', as the programs will no longer compile.
 #
-# Define DISABLE_GZIP to disable support for the gzip wrapper format.
-#
-# Define DISABLE_ZLIB to disable support for the zlib wrapper format.
-#
 # Define PREFIX to override the installation prefix, like './configure --prefix'
 # in autotools-based projects (default: /usr/local)
 #
@@ -168,8 +164,6 @@ endif
 		echo 'USE_SHARED_LIB=$(USE_SHARED_LIB)';		\
 		echo 'DISABLE_SHARED=$(DISABLE_SHARED)';		\
 		echo 'DECOMPRESSION_ONLY=$(DECOMPRESSION_ONLY)';	\
-		echo 'DISABLE_GZIP=$(DISABLE_GZIP)';			\
-		echo 'DISABLE_ZLIB=$(DISABLE_ZLIB)';			\
 		echo 'FREESTANDING=$(FREESTANDING)';			\
 		echo 'CC=$(CC)';					\
 		echo 'CFLAGS=$(CFLAGS)';				\
@@ -200,22 +194,6 @@ LIB_SRC := lib/deflate_decompress.c lib/utils.c \
 DECOMPRESSION_ONLY :=
 ifndef DECOMPRESSION_ONLY
     LIB_SRC += lib/deflate_compress.c
-endif
-
-DISABLE_ZLIB :=
-ifndef DISABLE_ZLIB
-    LIB_SRC += lib/adler32.c lib/zlib_decompress.c
-    ifndef DECOMPRESSION_ONLY
-        LIB_SRC += lib/zlib_compress.c
-    endif
-endif
-
-DISABLE_GZIP :=
-ifndef DISABLE_GZIP
-    LIB_SRC += lib/crc32.c lib/gzip_decompress.c
-    ifndef DECOMPRESSION_ONLY
-        LIB_SRC += lib/gzip_compress.c
-    endif
 endif
 
 STATIC_LIB_OBJ := $(LIB_SRC:.c=.o)
@@ -268,7 +246,6 @@ ALL_PROG_COMMON_HEADERS := programs/config.h \
 			   programs/test_util.h
 PROG_COMMON_SRC      := programs/prog_util.c \
 			programs/tgetopt.c
-NONTEST_PROG_SRC     := programs/gzip.c
 TEST_PROG_COMMON_SRC := programs/test_util.c
 TEST_PROG_SRC        := programs/benchmark.c \
 			programs/checksum.c \
@@ -313,16 +290,6 @@ $(TEST_PROGRAMS): %$(PROG_SUFFIX): programs/%.o $(PROG_COMMON_OBJ) \
 			$(TEST_PROG_COMMON_OBJ) $(LIB)
 	$(QUIET_CCLD) $(CC) -o $@ $(LDFLAGS) $(PROG_CFLAGS) $+ -lz
 
-ifdef HARD_LINKS
-# Hard link gunzip to gzip
-gunzip$(PROG_SUFFIX):gzip$(PROG_SUFFIX)
-	$(QUIET_LN) ln -f $< $@
-else
-# No hard links; copy gzip to gunzip
-gunzip$(PROG_SUFFIX):gzip$(PROG_SUFFIX)
-	$(QUIET_CP) cp -f $< $@
-endif
-
 DEFAULT_TARGETS += gunzip$(PROG_SUFFIX)
 
 ##############################################################################
@@ -332,47 +299,6 @@ all:$(DEFAULT_TARGETS)
 # We don't generate the pkg-config file until install time, as needed
 # definitions might not exist until then.
 PKGCONFBASE := libdeflate.pc.in
-
-# Install the files.  Note: not all versions of the 'install' program have the
-# '-D' and '-t' options, so don't use them; use portable commands only.
-install:all $(PKGCONFBASE)
-	install -d $(DESTDIR)$(LIBDIR)/pkgconfig $(DESTDIR)$(INCDIR)	\
-		$(DESTDIR)$(BINDIR)
-	install -m644 $(STATIC_LIB) $(DESTDIR)$(LIBDIR)
-	if [ -z "$(DISABLE_SHARED)" ]; then				\
-		install -m755 $(SHARED_LIB) $(DESTDIR)$(LIBDIR);	\
-	fi
-	sed -e "s|@PREFIX@|$(PREFIX)|"					\
-	    -e "s|@LIBDIR@|$(LIBDIR)|"					\
-	    -e "s|@INCDIR@|$(INCDIR)|"					\
-	    -e "s|@VERSION@|$(VERSION)|"				\
-	    $(PKGCONFBASE) > $(DESTDIR)$(LIBDIR)/pkgconfig/libdeflate.pc
-	chmod 644 $(DESTDIR)$(LIBDIR)/pkgconfig/libdeflate.pc
-	install -m644 libdeflate.h $(DESTDIR)$(INCDIR)
-	install -m755 gzip$(PROG_SUFFIX) \
-		$(DESTDIR)$(BINDIR)/libdeflate-gzip$(PROG_SUFFIX)
-	if [ -n "$(HARD_LINKS)" ]; then					\
-		ln -f $(DESTDIR)$(BINDIR)/libdeflate-gzip$(PROG_SUFFIX)	\
-		      $(DESTDIR)$(BINDIR)/libdeflate-gunzip$(PROG_SUFFIX); \
-	else								\
-		ln -sf libdeflate-gzip$(PROG_SUFFIX)			\
-		       $(DESTDIR)$(BINDIR)/libdeflate-gunzip$(PROG_SUFFIX); \
-	fi
-	if [ -n "$(SHARED_LIB_SYMLINK)" ]; then				\
-		ln -sf $(SHARED_LIB)					\
-		       $(DESTDIR)$(LIBDIR)/$(SHARED_LIB_SYMLINK);	\
-	fi
-
-uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/$(STATIC_LIB)				\
-	      $(DESTDIR)$(LIBDIR)/$(SHARED_LIB)				\
-	      $(DESTDIR)$(LIBDIR)/pkgconfig/libdeflate.pc		\
-	      $(DESTDIR)$(INCDIR)/libdeflate.h				\
-	      $(DESTDIR)$(BINDIR)/libdeflate-gzip$(PROG_SUFFIX)		\
-	      $(DESTDIR)$(BINDIR)/libdeflate-gunzip$(PROG_SUFFIX)
-	if [ -n "$(SHARED_LIB_SYMLINK)" ]; then				\
-		rm -f $(DESTDIR)$(LIBDIR)/$(SHARED_LIB_SYMLINK);	\
-	fi
 
 test_programs:$(TEST_PROGRAMS)
 
@@ -411,7 +337,7 @@ realclean: clean
 
 FORCE:
 
-.PHONY: all install uninstall test_programs check scan-build shellcheck help \
+.PHONY: all test_programs check scan-build shellcheck help \
 	clean realclean
 
 .DEFAULT_GOAL = all

@@ -315,29 +315,6 @@ LIBDEFLATEEXPORT void LIBDEFLATEAPI
 libdeflate_free_decompressor(struct libdeflate_decompressor *decompressor);
 
 /* ========================================================================== */
-/*                                Checksums                                   */
-/* ========================================================================== */
-
-/*
- * libdeflate_adler32() updates a running Adler-32 checksum with 'len' bytes of
- * data and returns the updated checksum.  When starting a new checksum, the
- * required initial value for 'adler' is 1.  This value is also returned when
- * 'buffer' is specified as NULL.
- */
-LIBDEFLATEEXPORT uint32_t LIBDEFLATEAPI
-libdeflate_adler32(uint32_t adler, const void *buffer, size_t len);
-
-
-/*
- * libdeflate_crc32() updates a running CRC-32 checksum with 'len' bytes of data
- * and returns the updated checksum.  When starting a new checksum, the required
- * initial value for 'crc' is 0.  This value is also returned when 'buffer' is
- * specified as NULL.
- */
-LIBDEFLATEEXPORT uint32_t LIBDEFLATEAPI
-libdeflate_crc32(uint32_t crc, const void *buffer, size_t len);
-
-/* ========================================================================== */
 /*                           Custom memory allocator                          */
 /* ========================================================================== */
 

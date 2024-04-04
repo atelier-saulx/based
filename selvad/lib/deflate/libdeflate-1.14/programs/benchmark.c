@@ -31,8 +31,6 @@ static const tchar *const optstring = T("0::1::2::3::4::5::6::7::8::9::C:D:eghs:
 
 enum format {
 	DEFLATE_FORMAT,
-	ZLIB_FORMAT,
-	GZIP_FORMAT,
 };
 
 struct compressor {
@@ -76,10 +74,6 @@ static size_t
 libdeflate_engine_compress_bound(struct compressor *c, size_t in_nbytes)
 {
 	switch (c->format) {
-	case ZLIB_FORMAT:
-		return libdeflate_zlib_compress_bound(c->private, in_nbytes);
-	case GZIP_FORMAT:
-		return libdeflate_gzip_compress_bound(c->private, in_nbytes);
 	default:
 		return libdeflate_deflate_compress_bound(c->private, in_nbytes);
 	}
@@ -90,12 +84,6 @@ libdeflate_engine_compress(struct compressor *c, const void *in,
 			   size_t in_nbytes, void *out, size_t out_nbytes_avail)
 {
 	switch (c->format) {
-	case ZLIB_FORMAT:
-		return libdeflate_zlib_compress(c->private, in, in_nbytes,
-						out, out_nbytes_avail);
-	case GZIP_FORMAT:
-		return libdeflate_gzip_compress(c->private, in, in_nbytes,
-						out, out_nbytes_avail);
 	default:
 		return libdeflate_deflate_compress(c->private, in, in_nbytes,
 						   out, out_nbytes_avail);
@@ -120,12 +108,6 @@ libdeflate_engine_decompress(struct decompressor *d, const void *in,
 			     size_t in_nbytes, void *out, size_t out_nbytes)
 {
 	switch (d->format) {
-	case ZLIB_FORMAT:
-		return !libdeflate_zlib_decompress(d->private, in, in_nbytes,
-						   out, out_nbytes, NULL);
-	case GZIP_FORMAT:
-		return !libdeflate_gzip_decompress(d->private, in, in_nbytes,
-						   out, out_nbytes, NULL);
 	default:
 		return !libdeflate_deflate_decompress(d->private, in, in_nbytes,
 						      out, out_nbytes, NULL);
@@ -158,10 +140,6 @@ get_libz_window_bits(enum format format)
 {
 	const int windowBits = 15;
 	switch (format) {
-	case ZLIB_FORMAT:
-		return windowBits;
-	case GZIP_FORMAT:
-		return windowBits + 16;
 	default:
 		return -windowBits;
 	}
@@ -401,11 +379,9 @@ show_usage(FILE *fp)
 "  -C ENGINE compression engine\n"
 "  -D ENGINE decompression engine\n"
 "  -e        allow chunks to be expanded (implied by -0)\n"
-"  -g        use gzip format instead of raw DEFLATE\n"
 "  -h        print this help\n"
 "  -s SIZE   chunk size\n"
 "  -V        show version and legal information\n"
-"  -z        use zlib format instead of raw DEFLATE\n"
 "\n", prog_invocation_name);
 
 	show_available_engines(fp);
@@ -594,9 +570,6 @@ tmain(int argc, tchar *argv[])
 		case 'e':
 			allow_expansion = true;
 			break;
-		case 'g':
-			format = GZIP_FORMAT;
-			break;
 		case 'h':
 			show_usage(stdout);
 			return 0;
@@ -615,9 +588,6 @@ tmain(int argc, tchar *argv[])
 			break;
 		case 'Z': /* deprecated, use '-D libz' instead */
 			decompress_engine = &libz_engine;
-			break;
-		case 'z':
-			format = ZLIB_FORMAT;
 			break;
 		default:
 			show_usage(stderr);
@@ -662,7 +632,6 @@ tmain(int argc, tchar *argv[])
 
 	printf("Benchmarking %s compression:\n",
 	       format == DEFLATE_FORMAT ? "DEFLATE" :
-	       format == ZLIB_FORMAT ? "zlib" : "gzip");
 	printf("\tCompression level: %d\n", level);
 	printf("\tChunk size: %"PRIu32"\n", chunk_size);
 	printf("\tCompression engine: %"TS"\n", compress_engine->name);

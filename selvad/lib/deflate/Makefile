@@ -16,7 +16,7 @@ endif
 CUSTOM_CFLAGS := -fPIC $(TARGET_CFLAGS)
 
 deflate:
-	$(MAKE) "CFLAGS=$(CUSTOM_CFLAGS)" "LDFLAGS=$(LDFLAGS)" DISABLE_GZIP=1 DISABLE_ZLIB=1 -C ./libdeflate-$(LIBDEFLATE_VER) $(TARGET)
+	$(MAKE) "CFLAGS=$(CUSTOM_CFLAGS)" "LDFLAGS=$(LDFLAGS)" -C ./libdeflate-$(LIBDEFLATE_VER) $(TARGET)
 	rsync --checksum "./libdeflate-$(LIBDEFLATE_VER)/libdeflate.h" "../../include/libdeflate.h"
 ifeq ($(uname_S),Linux)
 	cp -P libdeflate-$(LIBDEFLATE_VER)/libdeflate.so.0 "../"
