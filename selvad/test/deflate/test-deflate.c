@@ -43,23 +43,31 @@ static size_t _limitMaxDefBSize(size_t maxDeflateBlockSize)
     return maxDeflateBlockSize;
 }
 
+static uint8_t *alloc_buf(size_t max_deflate_block_size, size_t *cur_block_size_out, size_t *data_buf_size_out)
+{
+    const size_t cur_block_size = _limitMaxDefBSize(max_deflate_block_size);
+    const size_t data_buf_size = 2 * cur_block_size + kDictSize;
+    size_t code_buf_size = 2 * cur_block_size;
+
+    *cur_block_size_out = cur_block_size;
+    *data_buf_size_out = data_buf_size;
+    return malloc(data_buf_size + code_buf_size);
+}
+
 static char *fn(struct libdeflate_decompressor *d, const char *in_buf, size_t in_len, char *out_buf, size_t out_len)
 {
-	int err_code = 0;
-	uint8_t *pmem = 0;
 	uint8_t *data_buf;
 	uint64_t out_cur = 0;
-	const size_t curBlockSize = _limitMaxDefBSize(kMaxDeflateBlockSize);
-	const size_t data_buf_size = 2 * curBlockSize + kDictSize;
+	size_t cur_block_size;
+	size_t data_buf_size;
 	size_t data_cur = kDictSize;
-    size_t code_buf_size = 2 * curBlockSize;
 	size_t in_cur = 0;
 	size_t actual_in_nbytes_ret;
     bool final_block = false;
 	int ret;
     size_t out_i = 0;
 
-    data_buf = malloc(data_buf_size + code_buf_size);
+    data_buf = alloc_buf(kMaxDeflateBlockSize, &cur_block_size, &data_buf_size);
 
 	do {
 		bool is_final_block_ret;
@@ -76,7 +84,7 @@ static char *fn(struct libdeflate_decompressor *d, const char *in_buf, size_t in
 		in_cur += actual_in_nbytes_ret;
 		data_cur += actual_out_nbytes_ret;
 
-		if (final_block || (data_cur > curBlockSize + kDictSize)) {
+		if (final_block || (data_cur > cur_block_size + kDictSize)) {
             const size_t dlen = data_cur - kDictSize;
 
             pu_assert("no overrun", out_i + dlen <= out_len);
