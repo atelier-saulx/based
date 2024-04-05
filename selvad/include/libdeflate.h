@@ -83,6 +83,12 @@ libdeflate_compress(struct libdeflate_compressor *compressor,
 LIBDEFLATEEXPORT size_t
 libdeflate_compress_bound(size_t in_nbytes);
 
+static inline size_t
+libdeflate_compress_bound_block(size_t in_block_nbytes)
+{
+    return libdeflate_compress_bound(in_block_nbytes) + 5;
+}
+
 /*
  * libdeflate_free_compressor() frees a compressor that was allocated with
  * libdeflate_alloc_compressor().  If a NULL pointer is passed in, no action is
@@ -195,13 +201,14 @@ enum libdeflate_decompress_stop_by {
 /*
  * Large stream data can be decompress by calling libdeflate_decompress_block()
  * multiple times.  Each time call this function, 'out_block_with_in_dict' have
- * 'in_dict_nbytes' repeat of the last called's tail outputed uncompressed data as
- * dictionary data, and 'out_block_nbytes' new uncompressed data want be decompressed;
+ * 'in_dict_nbytes' repeat of the last called's tail outputted uncompressed data
+ * as dictionary data, and 'out_block_nbytes' new uncompressed data want be
+ * decompressed;
  * The dictionary data size in_dict_nbytes<=32k, if it is greater than 32k, the extra
  * part of the previous part of the dictionary data is invalid.
- * libdeflate_compress_bound_block(out_block_nbytes) can got the upper limit
- *  of 'in_part' required space 'in_part_nbytes_bound'.
- * 'is_final_block_ret' can NULL.
+ * libdeflate_compress_bound_block(out_block_nbytes) can get the upper limit
+ * of 'in_part' required space 'in_part_nbytes_bound'.
+ * 'is_final_block_ret' can be NULL.
  *
  * WARNING: This function must decompressed one full DEFLATE block before stop;
  * so 'in_part_nbytes_bound' must possess a block end flag, and "out_block_nbytes"

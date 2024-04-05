@@ -1117,7 +1117,7 @@ libdeflate_decompress_block(struct libdeflate_decompressor *d,
                  const void *in_part, size_t in_part_nbytes_bound,
                  void *out_block_with_in_dict, size_t in_dict_nbytes, size_t out_block_nbytes,
                  size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-                 enum libdeflate_decompress_stop_by stop_type, int *is_final_block_ret)
+                 enum libdeflate_decompress_stop_by stop_type, bool *is_final_block_ret)
 {
     return decompress_impl(d, in_part, in_part_nbytes_bound,
                            out_block_with_in_dict, in_dict_nbytes, out_block_nbytes,
@@ -1156,11 +1156,8 @@ libdeflate_decompress(struct libdeflate_decompressor *d,
                   void *out, size_t out_nbytes_avail,
                   size_t *actual_out_nbytes_ret)
 {
-    return libdeflate_decompress_ex(d, in, in_nbytes,
-                        out, out_nbytes_avail,
-                        NULL, actual_out_nbytes_ret);
     _decompress_block_init(d);
-    return decompress_impl(d, in, in_nbytes,out, 0, out_nbytes_avail,
+    return decompress_impl(d, in, in_nbytes, out, 0, out_nbytes_avail,
                            NULL, actual_out_nbytes_ret,
                            LIBDEFLATE_STOP_BY_FINAL_BLOCK, NULL);
 }
