@@ -45,6 +45,7 @@
         bitsleft = (u8)bitsleft;            \
         SAFETY_CHECK(overread_count <= (bitsleft >> 3));    \
         in_next -= (bitsleft >> 3) - overread_count; } while(0)
+
 #define _DEF_bitstream_byte_align() do{ \
         _DEF_bitstream_byte_restore();  \
         overread_count = 0; \
@@ -55,19 +56,17 @@ static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME(struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
-     size_t *actual_in_nbytes_ret,size_t *actual_out_nbytes_ret,
-     enum libdeflate_decompress_stop_by stop_type,int* is_final_block_ret)
+     size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
+     enum libdeflate_decompress_stop_by stop_type, int *is_final_block_ret)
 {
     u8 *out_next = ((u8 *)out)+in_dict_nbytes;
     u8 * const out_end = out_next + out_nbytes_avail;
-    u8 * const out_fastloop_end =
-        out_end - MIN(out_nbytes_avail, FASTLOOP_MAX_BYTES_WRITTEN);
+    u8 * const out_fastloop_end = out_end - MIN(out_nbytes_avail, FASTLOOP_MAX_BYTES_WRITTEN);
 
     /* Input bitstream state; see deflate_decompress.c for documentation */
     const u8 *in_next = in;
     const u8 * const in_end = in_next + in_nbytes;
-    const u8 * const in_fastloop_end =
-        in_end - MIN(in_nbytes, FASTLOOP_MAX_BYTES_READ);
+    const u8 * const in_fastloop_end = in_end - MIN(in_nbytes, FASTLOOP_MAX_BYTES_READ);
     bitbuf_t bitbuf = d->bitbuf_back;
     bitbuf_t saved_bitbuf;
     u32 bitsleft = d->bitsleft_back;
@@ -760,15 +759,15 @@ block_done:
             // stop, not next block
         } break;
         case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT:{
-            if (in_next-((((u8)bitsleft)>>3)-overread_count)<in_end)
+            if (in_next - ((((u8)bitsleft) >> 3) - overread_count) < in_end)
                 goto next_block;
         } break;
         case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT:{
-            if (out_next<out_end)
+            if (out_next < out_end)
                 goto next_block;
         } break;
         case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN:{
-            if ((out_next<out_end)|((bitsleft&7)!=0))
+            if ((out_next < out_end)|((bitsleft & 7) != 0))
                 goto next_block;
         } break;
     }
@@ -776,12 +775,12 @@ block_done:
     /* That was the last block. */
 
     if (is_final_block_ret)
-        *is_final_block_ret=is_final_block;
-    if (!is_final_block){
+        *is_final_block_ret = is_final_block;
+    if (!is_final_block) {
         _DEF_bitstream_byte_restore();
         //backup for next block
-        d->bitsleft_back=bitsleft&7;
-        d->bitbuf_back=bitbuf&((1<<(bitsleft&7))-1);
+        d->bitsleft_back = bitsleft & 7;
+        d->bitbuf_back = bitbuf & ((1 << (bitsleft & 7)) - 1);
     }
 
     /* Optionally return the actual number of bytes consumed. */
@@ -791,7 +790,7 @@ block_done:
 
     /* Optionally return the actual number of bytes written. */
     if (actual_out_nbytes_ret) {
-        *actual_out_nbytes_ret = out_next - (((u8 *)out)+in_dict_nbytes);
+        *actual_out_nbytes_ret = out_next - (((u8 *)out) + in_dict_nbytes);
     } else {
         if (out_next != out_end)
             return LIBDEFLATE_SHORT_OUTPUT;
