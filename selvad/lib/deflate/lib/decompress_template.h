@@ -41,16 +41,20 @@
 #  define EXTRACT_VARBITS8(word, count) ((word) & BITMASK((u8)(count)))
 #endif
 
+#ifndef _DEF_bitstream_byte_restore
 #define _DEF_bitstream_byte_restore() do{   \
         bitsleft = (u8)bitsleft;            \
         SAFETY_CHECK(overread_count <= (bitsleft >> 3));    \
         in_next -= (bitsleft >> 3) - overread_count; } while(0)
+#endif
 
+#ifndef _DEF_bitstream_byte_align
 #define _DEF_bitstream_byte_align() do{ \
         _DEF_bitstream_byte_restore();  \
         overread_count = 0; \
         bitbuf = 0;         \
         bitsleft = 0; } while(0)
+#endif
 
 static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME(struct libdeflate_decompressor * restrict d,
