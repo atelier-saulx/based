@@ -1145,7 +1145,7 @@ libdeflate_decompress_ex(struct libdeflate_decompressor *d,
                  size_t *actual_out_nbytes_ret)
 {
     _decompress_block_init(d);
-    return decompress_impl(d, in, in_nbytes,out, 0, out_nbytes_avail,
+    return decompress_impl(d, in, in_nbytes, out, 0, out_nbytes_avail,
                            actual_in_nbytes_ret, actual_out_nbytes_ret,
                            LIBDEFLATE_STOP_BY_FINAL_BLOCK, NULL);
 }

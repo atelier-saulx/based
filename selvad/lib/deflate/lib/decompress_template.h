@@ -63,7 +63,7 @@ FUNCNAME(struct libdeflate_decompressor * restrict d,
      size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
      enum libdeflate_decompress_stop_by stop_type, bool *is_final_block_ret)
 {
-    u8 *out_next = ((u8 *)out)+in_dict_nbytes;
+    u8 *out_next = ((u8 *)out) + in_dict_nbytes;
     u8 * const out_end = out_next + out_nbytes_avail;
     u8 * const out_fastloop_end = out_end - MIN(out_nbytes_avail, FASTLOOP_MAX_BYTES_WRITTEN);
 
@@ -771,7 +771,7 @@ block_done:
                 goto next_block;
         } break;
         case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN:{
-            if ((out_next < out_end)|((bitsleft & 7) != 0))
+            if ((out_next < out_end) | ((bitsleft & 7) != 0))
                 goto next_block;
         } break;
     }
