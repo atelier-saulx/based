@@ -13,6 +13,10 @@ pub const Options = struct {
     reverse_key: bool = false,
     integer_key: bool = false,
     create: bool = false,
+    dup_sort: bool = false,
+    dup_fixed: bool = false,
+    integer_dup: bool = false,
+    reverse_dup: bool = false,
 };
 
 pub const Stat = struct {
@@ -34,6 +38,10 @@ pub fn open(txn: Transaction, name: ?[*:0]const u8, options: Options) !Database 
     if (options.reverse_key) flags |= c.MDB_REVERSEKEY;
     if (options.integer_key) flags |= c.MDB_INTEGERKEY;
     if (options.create) flags |= c.MDB_CREATE;
+    if (options.dup_sort) flags |= c.MDB_DUPSORT;
+    if (options.dup_fixed) flags |= c.MDB_DUPFIXED;
+    if (options.integer_dup) flags |= c.MDB_INTEGERDUP;
+    if (options.reverse_dup) flags |= c.MDB_REVERSEDUP;
 
     try throw(c.mdb_dbi_open(txn.ptr, name, flags, &dbi));
 
