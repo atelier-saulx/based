@@ -12,7 +12,7 @@ var dbEnvIsDefined: bool = false;
 
 const TranslationError = error{ExceptionThrown};
 
-const KEY_LEN = 4;
+const KEY_LEN = 8;
 
 pub fn JsThrow(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     const result = c.napi_throw_error(env, null, message);
@@ -100,8 +100,8 @@ fn createEnv(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
     }
 
     dbEnv = Environment.init(path.ptr, .{
-        .map_size = 100 * 1024 * 1024 * 1024,
-        .max_dbs = 20_000,
+        .map_size = 1000 * 1024 * 1024 * 1024,
+        .max_dbs = 20_000_000,
         .no_sync = true,
     }) catch return statusOk(env, false);
 
@@ -245,24 +245,36 @@ fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
     var hasDbi: bool = false;
     if (argc > 1) {
         _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(&dbi_name), &dbi_name_length);
-
         hasDbi = true;
     }
 
     if (!dbEnvIsDefined) {
         return statusOk(env, false);
     }
+
     const txn = Transaction.init(dbEnv, .{ .mode = .ReadWrite }) catch {
         return statusOk(env, false);
     };
-    // errdefer txn.abort();
+    errdefer txn.abort();
 
     var db: Database = undefined;
     if (hasDbi) {
+
+        //   @as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]
+
+        // std.debug.print("Hello dbi {s}", .{@as([*]u8, @ptrCast(dbi_name))[0..dbi_name_length]});
+
         db = txn.database(
             @ptrCast(dbi_name),
             .{ .integer_key = true, .create = true },
         ) catch |err| {
+            std.debug.print("============= {s}\n", .{@errorName(err)});
+
+            std.debug.print("SIZE {d}\n", .{dbi_name_length});
+            std.debug.print("Hello dbi SLICE {any}\n", .{@as([*]u8, @ptrCast(dbi_name))[0..dbi_name_length]});
+
+            std.debug.print("Hello dbi {s}'n", .{@as([*:0]u8, @ptrCast(dbi_name))});
+
             std.debug.print("============= {s}\n", .{@errorName(err)});
             return statusOk(env, false);
         };
@@ -300,6 +312,8 @@ fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
     }
 
     txn.commit() catch return statusOk(env, false);
+
+    // c.mdb_dbi_close(dbEnv.ptr, db.dbi);
 
     return statusOk(env, true);
 }
