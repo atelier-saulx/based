@@ -5,10 +5,12 @@
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
-    "build": "rm -rf ./dist && tsc",
+    "build": "tsc",
     "watch": "npx tsc --watch",
     "test": "npx ava",
-    "clean": "rimraf {.turbo,dist,node_modules}"
+    "clean": "rimraf {.turbo,dist,node_modules}",
+    "build-zig": "mkdir -p dist && zig build --summary all",
+    "get-napi": "./scripts/download-node-headers.sh"
   },
   "sideEffects": false,
   "ava": {
@@ -19,6 +21,7 @@
     ]
   },
   "files": [
+    "dist/lib.node",
     "dist/src",
     "README.md",
     "package.json"

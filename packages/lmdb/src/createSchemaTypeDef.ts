@@ -4,7 +4,6 @@ import {
   BasedSchemaType,
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
-import { compile } from 'data-record'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 const lenMap = {
@@ -12,8 +11,8 @@ const lenMap = {
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
   integer: 4, // 32bit Unisgned 4
-  boolean: 1, // 1bit (bit overhead)
-  string: 0,
+  boolean: 1, // 1bit (7 bits overhead)
+  string: 0, // var length
 }
 
 export type FieldDef = {
@@ -31,6 +30,10 @@ export type SchemaTypeDef = {
   fields: {
     [keyof: string]: FieldDef
   }
+  meta: {
+    total: number
+    lastId: number
+  }
   dbMap: {
     prefix: string
     _len: number
@@ -45,6 +48,10 @@ export const createSchemaTypeDef = (
   result: any = {
     _cnt: 0,
     fields: {},
+    meta: {
+      total: 0,
+      lastId: 0,
+    },
     dbMap: {
       _len: 0,
       tree: {},
@@ -97,24 +104,6 @@ export const createSchemaTypeDef = (
       f.index = i
       i++
 
-      // reference will be changed in schema
-
-      // result.dbMap.dataRecordDef.push({
-      //   name: f.index,
-      //   type:
-      //     f.type === 'integer'
-      //       ? 'uint32_le'
-      //       : f.type === 'timestamp'
-      //         ? 'double_le'
-      //         : f.type === 'number'
-      //           ? 'double_le'
-      //           : f.type === 'boolean'
-      //             ? 'uint8'
-      //             : f.type === 'string'
-      //               ? 'cstring_p'
-      //               : '????',
-      // })
-
       const len = f.len
       if (len) {
         if (!result.dbMap._) {
@@ -132,8 +121,6 @@ export const createSchemaTypeDef = (
         result.dbMap[f.index] = f
       }
     }
-
-    // result.dbMap.record = compile(result.dbMap.dataRecordDef)
   }
 
   return result
