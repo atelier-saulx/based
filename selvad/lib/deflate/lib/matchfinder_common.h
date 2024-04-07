@@ -1,5 +1,9 @@
 /*
  * matchfinder_common.h - common code for Lempel-Ziv matchfinding
+ *
+ * Copyright 2016 Eric Biggers
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef LIB_MATCHFINDER_COMMON_H

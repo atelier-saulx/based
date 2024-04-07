@@ -1,5 +1,10 @@
 /*
  * deflate_constants.h - constants for the DEFLATE compression format
+ *
+ * Copyright (c) 2024 SAULX
+ * Copyright 2016 Eric Biggers
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef LIB_DEFLATE_CONSTANTS_H

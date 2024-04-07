@@ -1,6 +1,8 @@
 /*
  * deflate_decompress.c - a decompressor for DEFLATE
  *
+ * Copyright (c) 2024 SAULX
+ * Copyright 2023-2024 housisong
  * Copyright 2016 Eric Biggers
  *
  * Permission is hereby granted, free of charge, to any person

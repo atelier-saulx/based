@@ -1,3 +1,8 @@
+/*
+ * Copyright 2016 Eric Biggers
+ *
+ * SPDX-License-Identifier: MIT
+ */
 #ifndef LIB_X86_DECOMPRESS_IMPL_H
 #define LIB_X86_DECOMPRESS_IMPL_H
 
