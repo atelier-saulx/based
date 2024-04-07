@@ -12,7 +12,9 @@ const lenMap = {
   number: 8, // 64bit
   integer: 4, // 32bit Unisgned 4
   boolean: 1, // 1bit (7 bits overhead)
-  string: 0, // var length
+  reference: 4,
+  string: 0, // var length fixed length will be different
+  references: 0,
 }
 
 export type FieldDef = {

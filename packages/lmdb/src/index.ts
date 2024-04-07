@@ -1,4 +1,3 @@
-import lmdb from 'node-lmdb'
 import { createBuffer } from './set.js'
 import { parseBuffer } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
@@ -21,9 +20,6 @@ const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
 }
 
 export class BasedDb {
-  env: lmdb.Env
-  dbis: { [key: string]: lmdb.Dbi } = {}
-
   writes: [string, any, Buffer][] = []
 
   writeListeners: ((x?: any) => void)[] = []
@@ -40,30 +36,12 @@ export class BasedDb {
     path: string
     memSize?: number
   }) {
-    const env = new lmdb.Env()
-    env.open({
-      path: path,
-      mapSize: memSize,
-      maxDbs: 200,
-    })
-    this.env = env
-
-    // type counter
-    this.dbis.config = env.openDbi({
-      name: 'config',
-      create: true, // will create if database did not exist
-    })
-    this.dbis.main = env.openDbi({
-      name: 'main',
-      create: true, // will create if database did not exist
-    })
-    const txn = env.beginTxn()
-    const schema = txn.getBinaryUnsafe(this.dbis.config, 'schema')
-    if (schema) {
-      this.schema = JSON.parse(inflateSync(schema).toString())
-      this.updateTypeDefs()
-    }
-    txn.commit()
+    // const schema = txn.getBinaryUnsafe(this.dbis.config, 'schema')
+    // if (schema) {
+    //   this.schema = JSON.parse(inflateSync(schema).toString())
+    //   this.updateTypeDefs()
+    // }
+    // txn.commit()
   }
 
   updateTypeDefs() {
@@ -90,13 +68,13 @@ export class BasedDb {
   updateSchema(schema: BasedSchemaPartial): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
-    const txn = this.env.beginTxn()
-    txn.putBinary(
-      this.dbis.config,
-      'schema',
-      deflateSync(JSON.stringify(this.schema)),
-    )
-    txn.commit()
+    // const txn = this.env.beginTxn()
+    // txn.putBinary(
+    //   this.dbis.config,
+    //   'schema',
+    //   deflateSync(JSON.stringify(this.schema)),
+    // )
+    // txn.commit()
     return this.schema
   }
 

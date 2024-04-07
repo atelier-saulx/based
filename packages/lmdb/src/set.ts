@@ -1,7 +1,5 @@
 import { BasedDb } from './index.js'
-import { addWrite } from './batch.js'
-
-console.log('??/', addWrite)
+import { addWrite } from './operations.js'
 
 const writeFromSetObj = (obj, tree, schema, buf: Buffer) => {
   for (const key in obj) {
@@ -41,5 +39,7 @@ type Value = ValueInner | ValueInner[]
 // keep index in mem
 
 export const set = (db: BasedDb, value: Value) => {
-  // const buf = createBuffer(value, db.schemaTypesParsed.vote)
+  // first check what you are setting might need multiple fields
+
+  const buf = createBuffer(value, db.schemaTypesParsed.vote)
 }
