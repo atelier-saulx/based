@@ -27,7 +27,7 @@ void teardown(void)
 }
 
 
-static char *fn(struct libdeflate_decompressor *d, const char *in_buf, size_t in_len, char *out_buf, size_t out_len)
+static char *full_decompress(struct libdeflate_decompressor *d, const char *in_buf, size_t in_len, char *out_buf, size_t out_len)
 {
     const size_t kMaxDeflateBlockSize = 8 * 1024 * 1024;
     register struct libdeflate_block_def def = libdeflate_block_def_init(kMaxDeflateBlockSize);
@@ -87,12 +87,9 @@ PU_TEST(test_deflate_stream)
     char output[sizeof(input)];
 
     compressed_len = libdeflate_compress(c, input, sizeof(input), compressed, libdeflate_compress_bound(sizeof(input)));
-    fn(d, compressed, compressed_len, output, sizeof(output));
+    full_decompress(d, compressed, compressed_len, output, sizeof(output));
 
     pu_assert_str_equal("strings equal", input, output);
-#if 0
-    printf("%s\n", output);
-#endif
 
     return NULL;
 }
