@@ -23,6 +23,7 @@ OBJ := \
 	lib/block_state.o \
 	lib/deflate_compress.o \
 	lib/deflate_decompress.o \
+	lib/strings.o \
 	lib/utils.o
 
 ifeq ($(uname_M),arm64)

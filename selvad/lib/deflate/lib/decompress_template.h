@@ -289,8 +289,9 @@ next_block:
         in_next += 4;
 
         SAFETY_CHECK(len == (u16)~nlen);
-        if (unlikely(len > out_end - out_next))
+        if (unlikely(len > out_end - out_next)) {
             return LIBDEFLATE_INSUFFICIENT_SPACE;
+        }
         SAFETY_CHECK(len <= in_end - in_next);
 
         memcpy(out_next, in_next, len);
@@ -712,16 +713,19 @@ generic_loop:
         }
         length = entry >> 16;
         if (entry & HUFFDEC_LITERAL) {
-            if (unlikely(out_next == out_end))
+            if (unlikely(out_next == out_end)) {
                 return LIBDEFLATE_INSUFFICIENT_SPACE;
+            }
             *out_next++ = length;
             continue;
         }
-        if (unlikely(entry & HUFFDEC_END_OF_BLOCK))
+        if (unlikely(entry & HUFFDEC_END_OF_BLOCK)) {
             goto block_done;
+        }
         length += EXTRACT_VARBITS8(saved_bitbuf, entry) >> (u8)(entry >> 8);
-        if (unlikely(length > out_end - out_next))
+        if (unlikely(length > out_end - out_next)) {
             return LIBDEFLATE_INSUFFICIENT_SPACE;
+        }
 
         if (!CAN_CONSUME(LENGTH_MAXBITS + OFFSET_MAXBITS))
             REFILL_BITS();
