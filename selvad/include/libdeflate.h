@@ -29,7 +29,7 @@
 
 struct libdeflate_compressor;
 
-/*
+/**
  * libdeflate_alloc_compressor() allocates a new compressor.
  * 'compression_level' is the compression level on a zlib-like scale but with a
  * higher maximum value (1 = fastest, 6 = medium/default, 9 = slow, 12 = slowest).
@@ -50,7 +50,7 @@ struct libdeflate_compressor;
 LIBDEFLATEEXPORT struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level);
 
-/*
+/**
  * libdeflate_compress() performs raw DEFLATE compression on a buffer of
  * data.  The function attempts to compress 'in_nbytes' bytes of data located at
  * 'in' and write the results to 'out', which has space for 'out_nbytes_avail'
@@ -62,7 +62,7 @@ libdeflate_compress(struct libdeflate_compressor *compressor,
 			    const void *in, size_t in_nbytes,
 			    void *out, size_t out_nbytes_avail);
 
-/*
+/**
  * libdeflate_compress_bound() returns a worst-case upper bound on the
  * number of bytes of compressed data that may be produced by compressing any
  * buffer of length less than or equal to 'in_nbytes' using
@@ -92,10 +92,10 @@ libdeflate_compress_bound_block(size_t in_block_nbytes)
     return libdeflate_compress_bound(in_block_nbytes) + 5;
 }
 
-/*
+/**
  * libdeflate_free_compressor() frees a compressor that was allocated with
- * libdeflate_alloc_compressor().  If a NULL pointer is passed in, no action is
- * taken.
+ * libdeflate_alloc_compressor().
+ * If a NULL pointer is passed in, no action is taken.
  */
 LIBDEFLATEEXPORT void
 libdeflate_free_compressor(struct libdeflate_compressor *compressor);
@@ -106,7 +106,7 @@ libdeflate_free_compressor(struct libdeflate_compressor *compressor);
 
 struct libdeflate_decompressor;
 
-/*
+/**
  * libdeflate_alloc_decompressor() allocates a new decompressor.
  * The return value is a pointer to
  * the new decompressor, or NULL if out of memory.
@@ -121,30 +121,38 @@ struct libdeflate_decompressor;
 LIBDEFLATEEXPORT struct libdeflate_decompressor *
 libdeflate_alloc_decompressor(void);
 
-/*
+/**
  * Result of a call to libdeflate_decompress().
  */
 enum libdeflate_result {
-	/* Decompression was successful.  */
+	/**
+     * Decompression was successful.
+     */
 	LIBDEFLATE_SUCCESS = 0,
 
-	/* Decompressed failed because the compressed data was invalid, corrupt,
-	 * or otherwise unsupported.  */
+	/**
+     * Decompressed failed because the compressed data was invalid, corrupt,
+	 * or otherwise unsupported.
+     */
 	LIBDEFLATE_BAD_DATA = 1,
 
-	/* A NULL 'actual_out_nbytes_ret' was provided, but the data would have
-	 * decompressed to fewer than 'out_nbytes_avail' bytes.  */
+	/**
+     * A NULL 'actual_out_nbytes_ret' was provided, but the data would have
+	 * decompressed to fewer than 'out_nbytes_avail' bytes.
+     */
 	LIBDEFLATE_SHORT_OUTPUT = 2,
 
-	/* The data would have decompressed to more than 'out_nbytes_avail'
-	 * bytes.  */
+	/**
+     * The data would have decompressed to more than 'out_nbytes_avail'
+	 * bytes.
+     */
 	LIBDEFLATE_INSUFFICIENT_SPACE = 3,
 };
 
-/*
+/**
  * libdeflate_decompress() decompresses the DEFLATE-compressed stream
- * from the buffer 'in' with compressed size up to 'in_nbytes' bytes.  The
- * uncompressed data is written to 'out', a buffer with size 'out_nbytes_avail'
+ * from the buffer 'in' with compressed size up to 'in_nbytes' bytes.
+ * The uncompressed data is written to 'out', a buffer with size 'out_nbytes_avail'
  * bytes.  If decompression succeeds, then 0 (LIBDEFLATE_SUCCESS) is returned.
  * Otherwise, a nonzero result code such as LIBDEFLATE_BAD_DATA is returned.  If
  * a nonzero result code is returned, then the contents of the output buffer are
@@ -179,9 +187,10 @@ libdeflate_decompress(struct libdeflate_decompressor *decompressor,
 			      void *out, size_t out_nbytes_avail,
 			      size_t *actual_out_nbytes_ret);
 
-/*
+/**
  * Like libdeflate_decompress(), but adds the 'actual_in_nbytes_ret'
- * argument.  If decompression succeeds and 'actual_in_nbytes_ret' is not NULL,
+ * argument.
+ * If decompression succeeds and 'actual_in_nbytes_ret' is not NULL,
  * then the actual compressed size of the DEFLATE stream (aligned to the next
  * byte boundary) is written to *actual_in_nbytes_ret.
  */
@@ -192,7 +201,9 @@ libdeflate_decompress_ex(struct libdeflate_decompressor *decompressor,
 				 size_t *actual_in_nbytes_ret,
 				 size_t *actual_out_nbytes_ret);
 
-/* ctrl libdeflate_decompress_block() stop condition */
+/**
+ * ctrl libdeflate_decompress_block() stop condition
+ */
 enum libdeflate_decompress_stop_by {
     LIBDEFLATE_STOP_BY_FINAL_BLOCK                = 0,
     LIBDEFLATE_STOP_BY_ANY_BLOCK                  = 1,
@@ -201,7 +212,8 @@ enum libdeflate_decompress_stop_by {
     LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN = 4,
 };
 
-/*
+/**
+ * Decompress a DEFLATE block.
  * Large stream data can be decompress by calling libdeflate_decompress_block()
  * multiple times.  Each time call this function, 'out_block_with_in_dict' have
  * 'in_dict_nbytes' repeat of the last called's tail outputted uncompressed data
@@ -226,17 +238,19 @@ libdeflate_decompress_block(struct libdeflate_decompressor *decompressor,
                  size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
                  enum libdeflate_decompress_stop_by stop_type, bool *is_final_block_ret);
 
-/*
+/**
+ * Clear the block decompressor save state.
  * Clear the state saved between calls libdeflate_decompress_block();
- * if you know the next block does not depend on the inputed data of the previous
+ * if you know the next block does not depend on the inputted data of the previous
  * block, you can call this function reset 'decompressor';
- * Note: if next block depend on the inputed data of the previous block, reset will
+ * Note: if next block depend on the inputted data of the previous block, reset will
  * cause libdeflate_decompress_block() to fail.
  */
 LIBDEFLATEEXPORT void
 libdeflate_decompress_block_reset(struct libdeflate_decompressor *decompressor);
 
-/*
+/**
+ * Free a decompressor.
  * libdeflate_free_decompressor() frees a decompressor that was allocated with
  * libdeflate_alloc_decompressor().  If a NULL pointer is passed in, no action
  * is taken.
@@ -248,9 +262,10 @@ libdeflate_free_decompressor(struct libdeflate_decompressor *decompressor);
 /*                           Custom memory allocator                          */
 /* ========================================================================== */
 
-/*
+/**
  * Install a custom memory allocator which libdeflate will use for all memory
- * allocations.  'malloc_func' is a function that must behave like malloc(), and
+ * allocations.
+ * 'malloc_func' is a function that must behave like malloc(), and
  * 'free_func' is a function that must behave like free().
  *
  * There must not be any libdeflate_compressor or libdeflate_decompressor
