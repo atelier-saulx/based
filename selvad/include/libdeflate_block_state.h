@@ -36,7 +36,7 @@ static inline struct libdeflate_block_state libdeflate_block_state_init(struct l
 LIBDEFLATEEXPORT uint8_t *
 libdeflate_block_state_alloc_buf(struct libdeflate_block_def def);
 
-static inline bool is_out_block_ready(struct libdeflate_block_def def, struct libdeflate_block_state state)
+static inline bool libdeflate_block_state_is_out_block_ready(struct libdeflate_block_def def, struct libdeflate_block_state state)
 {
     return state.data_cur > def.cur_block_size + def.k_dict_size;
 }
@@ -46,7 +46,10 @@ static inline size_t dict_size_avail(struct libdeflate_block_def def, uint64_t u
     return (uncompressed_pos < def.k_dict_size) ? (size_t)uncompressed_pos : def.k_dict_size;
 }
 
-static inline struct libdeflate_block_state libdeflate_block_state_next_state(struct libdeflate_block_def def, uint8_t *data_buf, struct libdeflate_block_state state)
+/**
+ * Get the next state after libdeflate_block_state_is_out_block_ready().
+ */
+static inline struct libdeflate_block_state libdeflate_block_state_next(struct libdeflate_block_def def, uint8_t *data_buf, struct libdeflate_block_state state)
 {
     size_t dict_size;
 

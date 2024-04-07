@@ -56,7 +56,7 @@ static char *fn(struct libdeflate_decompressor *d, const char *in_buf, size_t in
 		in_cur += actual_in_nbytes_ret;
 		state.data_cur += actual_out_nbytes_ret;
 
-		if (final_block || is_out_block_ready(def, state)) {
+		if (final_block || libdeflate_block_state_is_out_block_ready(def, state)) {
             const size_t dlen = state.data_cur - def.k_dict_size;
 
             pu_assert("no overrun", out_i + dlen <= out_len);
@@ -64,7 +64,7 @@ static char *fn(struct libdeflate_decompressor *d, const char *in_buf, size_t in
             memmove(out_buf + out_i, data_buf + def.k_dict_size, dlen);
             out_i += dlen;
 
-            state = libdeflate_block_state_next_state(def, data_buf, state);
+            state = libdeflate_block_state_next(def, data_buf, state);
 		}
 	} while (!final_block);
 
