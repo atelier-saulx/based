@@ -1,6 +1,15 @@
 const std = @import("std");
 const c = @import("c.zig");
 
+pub fn jsThrow(env: c.napi_env, message: [:0]const u8) c.napi_value {
+    const result = c.napi_throw_error(env, null, message);
+    switch (result) {
+        c.napi_ok, c.napi_pending_exception => {},
+        else => unreachable,
+    }
+    return null;
+}
+
 pub const Error = error{
     // OS errors
     INVAL,
@@ -37,12 +46,10 @@ pub const Error = error{
     MDB_BAD_DBI,
 
     // Other errors
-    NO_DB_ENV,
-
     UNKNOWN_ERROR,
 };
 
-pub fn CtoZigError(rc: c_int) Error!void {
+pub fn mdbThrow(rc: c_int) Error!void {
     // errors enum is never 0 so this return void when rc == 0
     try switch (rc) {
         c.MDB_SUCCESS => {},
