@@ -24,6 +24,8 @@ test('create server', async (t) => {
     types: {
       vote: {
         fields: {
+          refs: { type: 'references' },
+          user: { type: 'reference', allowedTypes: ['user'] },
           vectorClock: { type: 'integer' },
           location: {
             type: 'object',
@@ -118,12 +120,19 @@ test('create server', async (t) => {
 
   console.info(db.get('complex', id))
 
+  const arr = []
+  for (let i = 0; i < 1e4; i++) {
+    arr.push(i)
+  }
+
   const id2 = db.create('vote', {
+    user: 1,
     vectorClock: 20,
     location: {
       long: 52.0123,
       lat: 52.213,
     },
+    refs: arr,
   })
 
   console.info(db.get('vote', id2))
