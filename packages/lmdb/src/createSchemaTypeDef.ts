@@ -38,6 +38,7 @@ export type SchemaTypeDef = {
   }
   dbMap: {
     prefix: string
+    entries: Map<number, any>
     _len: number
     tree: SchemaFieldTree
   }
@@ -50,12 +51,12 @@ export const createSchemaTypeDef = (
     fields: {},
     meta: {
       total: 0,
-      lastId: 0,
+      lastId: -1,
     },
     dbMap: {
       _len: 0,
+      entries: new Map(),
       tree: {},
-      dataRecordDef: [],
     },
     _checksum: hashObjectIgnoreKeyOrder(type),
   },
@@ -118,7 +119,7 @@ export const createSchemaTypeDef = (
         setByPath(result.dbMap.tree, f.path, f)
         f.start = 0
         f.seperate = true
-        result.dbMap[f.index] = f
+        result.dbMap.entries.set(f.index, f)
       }
     }
   }

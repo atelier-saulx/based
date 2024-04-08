@@ -13,7 +13,7 @@ var dbEnvIsDefined: bool = false;
 
 const TranslationError = error{ExceptionThrown};
 
-const KEY_LEN = 8;
+const KEY_LEN = 4;
 
 pub fn JsThrow(env: c.napi_env, comptime message: [:0]const u8) TranslationError {
     const result = c.napi_throw_error(env, null, message);
@@ -369,8 +369,8 @@ fn cursorSet(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
             .{
                 .integer_key = true,
                 .create = true,
-                .dup_sort = true,
-                .integer_dup = true,
+                // .dup_sort = true,
+                // .integer_dup = true,
                 // .dup_fixed = true,
             },
         ) catch |err| {
@@ -383,8 +383,8 @@ fn cursorSet(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
             .{
                 .integer_key = true,
                 .create = true,
-                .dup_sort = true,
-                .integer_dup = true,
+                // .dup_sort = true,
+                // .integer_dup = true,
                 // .dup_fixed = true,
             },
         ) catch return statusOk(env, false);
@@ -451,26 +451,29 @@ fn cursorGet(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
 
     var db: Database = undefined;
 
-    const txn = Transaction.init(dbEnv, .{ .mode = .ReadOnly }) catch {
+    const txn = Transaction.init(dbEnv, .{ .mode = .ReadWrite }) catch {
         JsThrow(env, "Failed Transaction.init") catch return null;
     };
 
     if (hasDbi) {
+        std.debug.print("Hello dbi {s}", .{@as([*:0]u8, @ptrCast(dbi_name))});
+
         db = txn.database(@ptrCast(dbi_name), .{
             .integer_key = true,
             .create = true,
-            .dup_sort = true,
-            .integer_dup = true,
+            // .dup_sort = true,
+            // .integer_dup = true,
             // .dup_fixed = true,
-        }) catch {
+        }) catch |err| {
+            std.debug.print("{s}", .{@errorName(err)});
             JsThrow(env, "Failed txn.database") catch return null;
         };
     } else {
         db = txn.database(null, .{
             .integer_key = true,
             .create = true,
-            .dup_sort = true,
-            .integer_dup = true,
+            // .dup_sort = true,
+            // .integer_dup = true,
             // .dup_fixed = true,
         }) catch {
             JsThrow(env, "Failed txn.database") catch return null;
@@ -498,11 +501,13 @@ fn cursorGet(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
 
         // while()
 
+        // std.debug.print("\nDOIBK", .{});
+
         k.mv_data = &(@as([*]u8, @ptrCast(buffer_contents.?))[i]);
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         dbthrow(c.mdb_cursor_get(cur.ptr, &k, &v, c.MDB_SET)) catch |err| {
-            std.debug.print("Err = {s}\n", .{errorToStr(err)});
-            JsThrow(env, "Failed mdb_get") catch return null;
+            std.debug.print("\nErr = {s}\n", .{errorToStr(err)});
+            // JsThrow(env, "DOES NOT EXIST mdb_get") catch {};
         };
 
         values.append(v) catch {
@@ -511,6 +516,8 @@ fn cursorGet(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
 
         total_data_length += v.mv_size + 2;
     }
+
+    // std.debug.print("\nDOIBK2", .{});
 
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;

@@ -1,11 +1,12 @@
-import { createBuffer } from './set.js'
-import { parseBuffer } from './get.js'
+import { create, createBuffer } from './set.js'
+import { parseBuffer, get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { SchemaTypeDef, createSchemaTypeDef } from './createSchemaTypeDef.js'
 import { inflateSync, deflateSync } from 'node:zlib'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
+import dbZig from './db.js'
 
 export * from './createSchemaTypeDef.js'
 export * from './get.js'
@@ -36,6 +37,8 @@ export class BasedDb {
     path: string
     memSize?: number
   }) {
+    dbZig.createEnv(path)
+
     // LATER
   }
 
@@ -74,11 +77,13 @@ export class BasedDb {
 
   create(type: string, value: any) {
     // return set(this, value)
+    return create(this, type, value)
   }
 
   remove(type: string, id: number) {}
 
   get(type: string, id: number, include?: string[], exclude?: string[]) {
     // get all except ref if no include
+    return get(this, type, id)
   }
 }
