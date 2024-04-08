@@ -21,14 +21,16 @@ const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
 }
 
 export class BasedDb {
-  writes: [string, any, Buffer][] = []
-
-  writeListeners: ((x?: any) => void)[] = []
-
   isDraining: boolean = false
 
   schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+
+  lastDbi: number = 0
+  dbiIndex: Map<number, Buffer> = new Map()
+
+  getQueueByDbi: Map<number, Buffer[]> = new Map()
+  setQueueByDbi: Map<number, Buffer[]> = new Map()
 
   constructor({
     path,

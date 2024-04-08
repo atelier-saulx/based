@@ -5,6 +5,7 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { BasedDb } from './index.js'
 
 const lenMap = {
   timestamp: 8, // 64bit
@@ -22,6 +23,46 @@ export type FieldDef = {
   type: BasedSchemaFieldType
   path: string[]
   len: number
+  dbi?: number[]
+}
+
+const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+
+let dbiIndex = 0
+
+const createDbiHandle = (prefix: string, field: number, shard: number) => {
+  const fieldAlphaNumeric =
+    CHARS[field % 62] + CHARS[Math.floor(field / 62) % 62]
+  const shardAlphaNumeric =
+    CHARS[shard % 62] + CHARS[Math.floor(shard / 62) % 62]
+  const dbi = prefix + fieldAlphaNumeric + shardAlphaNumeric + '\0'
+
+  return Buffer.from(dbi)
+}
+
+export const getDbiHandler = (
+  db: BasedDb,
+  dbMap,
+  shard: number,
+  field: number,
+): number => {
+  if (field === 0) {
+    if (!dbMap.dbi[shard]) {
+      dbiIndex++
+      const buffer = createDbiHandle(dbMap.prefix, field, shard)
+      db.dbiIndex.set(dbiIndex, buffer)
+      dbMap.dbi[shard] = dbiIndex
+    }
+    return dbMap.dbi[shard]
+  }
+  const f = dbMap.entries.get(field)
+  if (!f.dbi[shard]) {
+    dbiIndex++
+    const buffer = createDbiHandle(dbMap.prefix, field, shard)
+    db.dbiIndex.set(dbiIndex, buffer)
+    f.dbi[shard] = dbiIndex
+  }
+  return f.dbi[shard]
 }
 
 export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
@@ -30,13 +71,14 @@ export type SchemaTypeDef = {
   _cnt: number
   _checksum: number
   fields: {
-    [keyof: string]: FieldDef
+    [key: string]: FieldDef
   }
   meta: {
     total: number
     lastId: number
   }
   dbMap: {
+    dbi: number[]
     prefix: string
     entries: Map<number, any>
     _len: number
@@ -57,6 +99,7 @@ export const createSchemaTypeDef = (
       _len: 0,
       entries: new Map(),
       tree: {},
+      dbi: [],
     },
     _checksum: hashObjectIgnoreKeyOrder(type),
   },
@@ -100,7 +143,8 @@ export const createSchemaTypeDef = (
       return a.type === 'timestamp' || a.type === 'number' ? -1 : 1
     })
 
-    let i = 0
+    let i = 1
+
     for (const f of vals) {
       f.index = i
       i++
@@ -119,6 +163,7 @@ export const createSchemaTypeDef = (
         setByPath(result.dbMap.tree, f.path, f)
         f.start = 0
         f.seperate = true
+        f.dbi = []
         result.dbMap.entries.set(f.index, f)
       }
     }
