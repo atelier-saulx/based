@@ -147,15 +147,21 @@ test('set and simple get', async (t) => {
     },
   })
 
+  console.log(id1)
+  console.log(db.get('simple', id1))
+  // t.is(~~(db.get('simple', id1).location.long * 1000) / 1000, 52.0123)
+
   const id2 = db.create('vote', {
     user: 1,
-    vectorClock: 20,
+    vectorClock: 22,
     location: {
-      long: 52.0123,
-      lat: 52.213,
+      long: 52.1,
+      lat: 52.2,
     },
     refs: arr,
   })
+  await wait(0)
+  t.is(db.get('vote', id2).vectorClock, 22)
 
   let d = Date.now()
   let lId = 0
@@ -170,7 +176,7 @@ test('set and simple get', async (t) => {
     })
   }
   await wait(0)
-  console.info(Date.now() - d, 'ms', '2M sets')
+  console.info('perf', Date.now() - d, 'ms', '2M inserts (2 dbis)')
 
   t.deepEqual(db.get('simple', lId), {
     user: 1,
