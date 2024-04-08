@@ -2,9 +2,12 @@ const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Envs = @import("env.zig");
+const globals = @import("globals.zig");
 
 const mdbThrow = errors.mdbThrow;
 const jsThrow = errors.jsThrow;
+
+const SIZE_BYTES = globals.SIZE_BYTES;
 
 pub fn getBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getBatchInternal(env, info, 8);
@@ -88,7 +91,7 @@ fn getBatchInternal(
 
         values.append(v) catch return jsThrow(env, "OOM");
 
-        total_data_length += v.mv_size + 2;
+        total_data_length += v.mv_size + SIZE_BYTES;
     }
 
     var data: ?*anyopaque = undefined;
@@ -101,8 +104,8 @@ fn getBatchInternal(
     var last_pos: usize = 0;
     for (values.items) |*val| {
         // copy size
-        @memcpy(@as([*]u8, @ptrCast(@alignCast(data)))[last_pos .. last_pos + 2], @as([*]u8, @ptrCast(&val.mv_size))[0..2]);
-        last_pos += 2;
+        @memcpy(@as([*]u8, @ptrCast(@alignCast(data)))[last_pos .. last_pos + SIZE_BYTES], @as([*]u8, @ptrCast(&val.mv_size))[0..SIZE_BYTES]);
+        last_pos += SIZE_BYTES;
 
         @memcpy(
             @as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size],

@@ -2,9 +2,11 @@ const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Envs = @import("env.zig");
+const globals = @import("globals.zig");
 
 const mdbThrow = errors.mdbThrow;
 const jsThrow = errors.jsThrow;
+const SIZE_BYTES = globals.SIZE_BYTES;
 
 pub fn setBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return setBatchInternal(env, info, 8);
@@ -19,8 +21,6 @@ fn setBatchInternal(
     comptime KEY_LEN: comptime_int,
 ) c.napi_value {
     // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
-
-    std.debug.print("IN SET ENV PTR= {any}\n", .{Envs.env});
 
     var argc: usize = 2;
     var argv: [2]c.napi_value = undefined;
@@ -55,13 +55,10 @@ fn setBatchInternal(
 
     const flags: c_uint = 0;
 
-    std.debug.print("Hello", .{});
-
     // _ = c.mdb_txn_begin(Envs.env, parentPtr, flags, &txn);
     mdbThrow(c.mdb_txn_begin(Envs.env, parentPtr, flags, &txn)) catch |err| {
         return jsThrow(env, @errorName(err));
     };
-    std.debug.print("Hello2", .{});
 
     if (hasDbi) {
         mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
@@ -83,11 +80,13 @@ fn setBatchInternal(
 
         const size_byte1 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN];
         const size_byte2 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 1];
-        const size_arr: [2]u8 = .{ size_byte1, size_byte2 };
+        const size_byte3 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 2];
+        const size_byte4 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 3];
+        const size_arr: [SIZE_BYTES]u8 = .{ size_byte1, size_byte2, size_byte3, size_byte4 };
 
-        const value_size: u16 = std.mem.readInt(u16, &size_arr, .little);
+        const value_size: u32 = std.mem.readInt(u32, &size_arr, .little);
 
-        const value = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 2 .. i + KEY_LEN + 2 + @as(usize, value_size)];
+        const value = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + SIZE_BYTES .. i + KEY_LEN + SIZE_BYTES + @as(usize, value_size)];
 
         var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = @as([*]u8, @ptrCast(@alignCast(key.ptr))) };
         var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @as([*]u8, @ptrCast(@alignCast(value.ptr))) };
@@ -103,7 +102,7 @@ fn setBatchInternal(
         // std.debug.print("VALUE= {x}\n", .{value});
         // std.debug.print("VALUE= {s}\n", .{value});
         // std.debug.print("=================\n", .{});
-        i = i + KEY_LEN + 2 + value_size;
+        i = i + KEY_LEN + SIZE_BYTES + value_size;
     }
 
     mdbThrow(c.mdb_txn_commit(txn)) catch |err| {

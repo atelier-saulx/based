@@ -57,13 +57,3 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     register_function(env, exports, "setBatch8", setBatch8) catch return null;
     return exports;
 }
-
-fn statusOk(env: c.napi_env, isOk: bool) c.napi_value {
-    var number: c.napi_value = undefined;
-    if (isOk == true) {
-        _ = c.napi_create_uint32(env, 1, &number);
-    } else {
-        _ = c.napi_create_uint32(env, 0, &number);
-    }
-    return number;
-}

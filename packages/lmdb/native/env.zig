@@ -20,8 +20,6 @@ pub fn createEnv(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
 
     const path = memory[0..strlen];
 
-    std.debug.print("ENV PTR= {any}\n", .{env});
-
     if (dbEnvIsDefined) {
         c.mdb_env_close(env);
     }
@@ -30,8 +28,6 @@ pub fn createEnv(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
         return jsThrow(napi_env, @errorName(err));
     };
     errdefer c.mdb_env_close(env);
-
-    std.debug.print("ENV PTR= {any}\n", .{env});
 
     mdbThrow(c.mdb_env_set_mapsize(env, 1000 * 1024 * 1024 * 1024)) catch |err| {
         return jsThrow(napi_env, @errorName(err));
