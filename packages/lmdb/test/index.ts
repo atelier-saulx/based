@@ -77,6 +77,7 @@ test('set and simple get', async (t) => {
           snurp: {
             type: 'object',
             properties: {
+              refTime: { type: 'references', allowedTypes: ['vote'] },
               ups: { type: 'references', allowedTypes: ['vote'] },
               derp: { type: 'integer' },
               bla: { type: 'string' },
@@ -97,43 +98,18 @@ test('set and simple get', async (t) => {
     },
   })
 
-  // const buf = createBuffer({ value: 1e3 }, db.schemaTypesParsed.vote)
-
-  // console.log('fix', buf)
-
-  // console.log(parseBuffer(buf, db.schemaTypesParsed.vote))
-
-  // const buf2 = createBuffer({ value: 1e3 }, db.schemaTypesParsed.complex)
-
-  // console.log('fix', buf2)
-
-  // console.log(parseBuffer(buf2, db.schemaTypesParsed.complex))
-
-  // snurp.bla = "yuzi"
-
-  // const bufPower = createBuffer(
-  //   0,
-  //   { value: 666, gerp: 999, snurp: { bla: 'yuzi', ups: [1, 2, 3] } },
-  //   db.schemaTypesParsed.complex,
-  // )
-
-  // for (const key in bufPower) {
-  //   bufPower[key] = bufPower[key].slice(6)
-  // }
-
-  // console.log(parseBuffer(bufPower, db.schemaTypesParsed.complex))
-
   const id = db.create('complex', {
     value: 666,
     nip: 'FRANKO!',
     gerp: 999,
-    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
+    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5], refTime: [] },
   })
 
   await wait(0)
 
   t.deepEqual(db.get('complex', id), {
     snurp: {
+      refTime: [],
       hup: { start: 0, x: 0, isDope: false },
       ups: [1, 2, 3, 4, 5],
       derp: 0,
