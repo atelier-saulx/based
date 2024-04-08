@@ -17,10 +17,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifndef LIBDEFLATEEXPORT
 #ifdef BUILDING_LIBDEFLATE
 #define LIBDEFLATEEXPORT __attribute__((visibility("default")))
 #else
 #define LIBDEFLATEEXPORT
+#endif
 #endif
 
 /* ========================================================================== */
@@ -248,6 +250,31 @@ libdeflate_decompress_block(struct libdeflate_decompressor *decompressor,
  */
 LIBDEFLATEEXPORT void
 libdeflate_decompress_block_reset(struct libdeflate_decompressor *decompressor);
+
+struct libdeflate_block_state {
+    size_t cur_block_size;
+    size_t data_cur;
+    size_t out_cur;
+    size_t data_buf_size;
+    uint8_t *data_buf;
+};
+
+LIBDEFLATEEXPORT struct libdeflate_block_state
+libdeflate_block_state_init(size_t max_block_size);
+
+LIBDEFLATEEXPORT bool
+libdeflate_block_state_growbuf(struct libdeflate_block_state *state);
+
+LIBDEFLATEEXPORT void
+libdeflate_block_state_deinit(struct libdeflate_block_state *state);
+
+LIBDEFLATEEXPORT enum libdeflate_result
+libdeflate_decompress_stream(
+        struct libdeflate_decompressor *decompressor,
+        struct libdeflate_block_state *state,
+        const char *in_buf, size_t in_len,
+        int (*cb)(void * restrict ctx, uint8_t * restrict buf, size_t len), void *ctx,
+        int *result);
 
 /**
  * Free a decompressor.

@@ -20,9 +20,9 @@ CFLAGS += -fPIC -fvisibility=hidden -I../../include \
 LDFLAGS += -g -L../
 
 OBJ := \
-	lib/block_state.o \
 	lib/deflate_compress.o \
 	lib/deflate_decompress.o \
+	lib/deflate_decompress_stream.o \
 	lib/strings.o \
 	lib/utils.o
 

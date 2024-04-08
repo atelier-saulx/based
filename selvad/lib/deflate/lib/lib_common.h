@@ -14,8 +14,8 @@
 
 #include "common_defs.h"
 
-void *libdeflate_malloc(size_t size);
-void libdeflate_free(void *ptr);
+extern void *(*libdeflate_malloc)(size_t);
+extern void (*libdeflate_free)(void *);
 
 void *libdeflate_aligned_malloc(size_t alignment, size_t size);
 void libdeflate_aligned_free(void *ptr);

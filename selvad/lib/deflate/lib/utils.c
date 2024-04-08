@@ -29,20 +29,8 @@
 #include "libdeflate.h"
 #include <stdlib.h>
 
-static void *(*libdeflate_malloc_func)(size_t) = malloc;
-static void (*libdeflate_free_func)(void *) = free;
-
-void *
-libdeflate_malloc(size_t size)
-{
-    return (*libdeflate_malloc_func)(size);
-}
-
-void
-libdeflate_free(void *ptr)
-{
-    (*libdeflate_free_func)(ptr);
-}
+void *(*libdeflate_malloc)(size_t) = malloc;
+void (*libdeflate_free)(void *) = free;
 
 void *
 libdeflate_aligned_malloc(size_t alignment, size_t size)
@@ -67,6 +55,6 @@ LIBDEFLATEEXPORT void
 libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
                 void (*free_func)(void *))
 {
-    libdeflate_malloc_func = malloc_func;
-    libdeflate_free_func = free_func;
+    libdeflate_malloc = malloc_func;
+    libdeflate_free = free_func;
 }

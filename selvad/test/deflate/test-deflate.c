@@ -9,7 +9,6 @@
 #include <string.h>
 #include <punit.h>
 #include "libdeflate.h"
-#include "libdeflate_block_state.h"
 #include "libdeflate_strings.h"
 
 static struct libdeflate_compressor *c;
@@ -29,58 +28,45 @@ void teardown(void)
     libdeflate_free_decompressor(d);
 }
 
+struct full_decompress_ctx {
+    char *out_buf;
+    size_t out_i;
+    size_t out_len;
+};
+
+static int full_decompress_cb(void * restrict ctx, uint8_t * restrict buf, size_t len)
+{
+    struct full_decompress_ctx *c = (struct full_decompress_ctx *)ctx;
+
+    if (c->out_i + len > c->out_len) {
+        return -1;
+    }
+
+    memmove(c->out_buf + c->out_i, buf, len);
+    c->out_i += len;
+
+    return 0;
+}
+
 static char *full_decompress(struct libdeflate_decompressor *d, const char *in_buf, size_t in_len, char *out_buf, size_t out_len)
 {
     const size_t kMaxDeflateBlockSize = 64 * 1024;
     struct libdeflate_block_state state = libdeflate_block_state_init(kMaxDeflateBlockSize);
-	size_t in_cur = 0;
-	size_t actual_in_nbytes_ret;
-    bool final_block = false;
-	int ret;
-    size_t out_i = 0;
+    enum libdeflate_result res;
+    int result = 1;
 
-retry:
-    libdeflate_decompress_block_reset(d);
-	do {
-		size_t actual_out_nbytes_ret;
+    do {
+        struct full_decompress_ctx ctx = {
+            .out_buf = out_buf,
+            .out_i = 0,
+            .out_len = out_len,
+        };
 
-#if 0
-        printf("cur_block_size: %zu\n", state.cur_block_size);
-#endif
+        res = libdeflate_decompress_stream(d, &state, in_buf, in_len, full_decompress_cb, &ctx, &result);
+    } while (res == LIBDEFLATE_INSUFFICIENT_SPACE && libdeflate_block_state_growbuf(&state));
 
-        ret = libdeflate_decompress_block_wstate(
-                d, &state,
-                in_buf + in_cur, in_len - in_cur,
-                &actual_in_nbytes_ret, &actual_out_nbytes_ret, &final_block);
-        if (ret == LIBDEFLATE_INSUFFICIENT_SPACE &&
-            libdeflate_block_state_growbuf(&state)) {
-            in_cur = 0;
-            out_i = 0;
-            goto retry;
-        }
-
-        pu_assert_equal("SUCCESS", ret, LIBDEFLATE_SUCCESS);
-
-		in_cur += actual_in_nbytes_ret;
-		state.data_cur += actual_out_nbytes_ret;
-
-#if 0
-        printf("final: %d\n", final_block);
-#endif
-		if (final_block || libdeflate_block_state_is_out_block_ready(&state)) {
-            const size_t dlen = state.data_cur - state.k_dict_size;
-#if 0
-            printf("data_len: %zu\n", state.data_cur - state.k_dict_size);
-#endif
-
-            pu_assert("no overrun", out_i + dlen <= out_len);
-
-            memmove(out_buf + out_i, state.data_buf + state.k_dict_size, dlen);
-            out_i += dlen;
-
-            libdeflate_block_state_next(&state);
-		}
-	} while (!final_block);
+    pu_assert_equal("", res, 0);
+    pu_assert_equal("", result, 0);
 
     libdeflate_block_state_deinit(&state);
 
@@ -105,6 +91,7 @@ PU_TEST(test_deflate_stream)
 
 PU_TEST(test_deflate_memcmp)
 {
+    struct libdeflate_block_state state = libdeflate_block_state_init(1024);
     char compressed[libdeflate_compress_bound(sizeof(book))];
     size_t compressed_len;
 
@@ -113,8 +100,10 @@ PU_TEST(test_deflate_memcmp)
     printf("book_len: %zu comp_len: %zu\n", sizeof(book), compressed_len);
 #endif
     pu_assert("", compressed_len != 0);
-    int res = libdeflate_memcmp(d, compressed, compressed_len, book, sizeof(book));
+    int res = libdeflate_memcmp(d, &state, compressed, compressed_len, book, sizeof(book));
     pu_assert_equal("Strings equal", res, 0);
+
+    libdeflate_block_state_deinit(&state);
 
     return NULL;
 }
