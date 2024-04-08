@@ -123,20 +123,39 @@ test('set and simple get', async (t) => {
 
   // console.log(parseBuffer(bufPower, db.schemaTypesParsed.complex))
 
-  // const id = db.create('complex', {
-  //   value: 666,
-  //   nip: 'FRANKO!',
-  //   gerp: 999,
-  //   snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
+  const id = db.create('complex', {
+    value: 666,
+    nip: 'FRANKO!',
+    gerp: 999,
+    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
+  })
+
+  await wait(0)
+
+  t.deepEqual(db.get('complex', id), {
+    snurp: {
+      hup: { start: 0, x: 0, isDope: false },
+      ups: [1, 2, 3, 4, 5],
+      derp: 0,
+      bla: 'yuzi',
+    },
+    updated: 0,
+    created: 0,
+    mep: 0,
+    flap: 0,
+    value: 666,
+    nip: 'FRANKO!',
+    gerp: 999,
+  })
+
+  // const doesNotExist = db.get('simple', 0)
+
+  // // TODO franky when DBI does not exist and error zig will never work again...
+  // t.deepEqual(doesNotExist, {
+  //   location: { lat: 0, long: 0 },
+  //   user: 0,
+  //   vectorClock: 0,
   // })
-
-  // console.log(id)
-  // console.info(db.get('complex', id))
-
-  const arr = []
-  for (let i = 0; i < 1e4; i++) {
-    arr.push(i)
-  }
 
   const id1 = db.create('simple', {
     user: 1,
@@ -147,9 +166,13 @@ test('set and simple get', async (t) => {
     },
   })
 
-  console.log(id1)
-  console.log(db.get('simple', id1))
-  // t.is(~~(db.get('simple', id1).location.long * 1000) / 1000, 52.0123)
+  await wait(0)
+  t.is(Math.round(db.get('simple', id1).location.long * 10000) / 10000, 52.0123)
+
+  const refs = []
+  for (let i = 0; i < 1e4; i++) {
+    refs.push(i)
+  }
 
   const id2 = db.create('vote', {
     user: 1,
@@ -158,10 +181,11 @@ test('set and simple get', async (t) => {
       long: 52.1,
       lat: 52.2,
     },
-    refs: arr,
+    refs,
   })
   await wait(0)
   t.is(db.get('vote', id2).vectorClock, 22)
+  t.is(db.get('vote', id2).refs.length, 1e4)
 
   let d = Date.now()
   let lId = 0

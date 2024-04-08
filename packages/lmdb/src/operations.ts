@@ -30,8 +30,12 @@ export const addWrite = (db: BasedDb, dbi: number, value: Buffer) => {
 }
 
 export const addRead = (db: BasedDb, dbi: number, key: Buffer) => {
-  const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))
-  return res
+  try {
+    const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))
+    return res
+  } catch (e) {
+    return null
+  }
 }
 
 // export const addWriteBatch = (db: BasedDb, value: Buffer) => {
