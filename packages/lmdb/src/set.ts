@@ -11,36 +11,36 @@ const writeFromSetObj = (id, obj, tree, schema, buf: Buffers) => {
     } else {
       if (t.type === 'references') {
         const refLen = 4 * value.length
-        const valBuf = Buffer.alloc(refLen + 6)
+        const valBuf = Buffer.alloc(refLen + 8)
         valBuf.writeUint32LE(id)
-        valBuf.writeUint16LE(refLen, 4)
+        valBuf.writeUint32LE(refLen, 4)
         for (let i = 0; i < value.length; i++) {
-          valBuf.writeUint32LE(value[i], i * 4 + 6)
+          valBuf.writeUint32LE(value[i], i * 4 + 8)
         }
         buf.set(t.index, valBuf)
       } else if (t.type === 'string') {
-        const valBuf = Buffer.alloc(6)
+        const valBuf = Buffer.alloc(8)
         const strBuf = Buffer.from(value)
         valBuf.writeUint32LE(id)
-        valBuf.writeUint16LE(strBuf.byteLength, 4)
+        valBuf.writeUint32LE(strBuf.byteLength, 4)
         // TODO shitty
         buf.set(t.index, Buffer.concat([valBuf, strBuf]))
       } else {
         let b
         if (!buf.has(0)) {
-          b = Buffer.alloc(schema.dbMap._len + 6)
+          b = Buffer.alloc(schema.dbMap._len + 8)
           b.writeUint32LE(id)
-          b.writeUint16LE(schema.dbMap._len, 4)
+          b.writeUint32LE(schema.dbMap._len, 4)
           buf.set(0, b)
         } else {
           b = buf.get(0)
         }
         if (t.type === 'timestamp' || t.type === 'number') {
-          b.writeFloatLE(value, t.start + 6)
+          b.writeFloatLE(value, t.start + 8)
         } else if (t.type === 'integer' || t.type === 'reference') {
-          b.writeUint32LE(value, t.start + 6)
+          b.writeUint32LE(value, t.start + 8)
         } else if (t.type === 'boolean') {
-          b.writeInt8(value ? 1 : 0, t.start + 6)
+          b.writeInt8(value ? 1 : 0, t.start + 8)
         }
       }
     }

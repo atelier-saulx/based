@@ -12,27 +12,27 @@ const readFromBuffers = (bufs: Buffers, tree: any): any => {
     if (t.type === 'references') {
       if (bufs.has(t.index)) {
         const b = bufs.get(t.index)
-        const len = b.byteLength - 2
+        const len = b.byteLength - 4
         const refLen = len / 4
         const refs: number[] = new Array(refLen)
         for (let i = 0; i < refLen; i++) {
-          refs[i] = b.readUint32LE(i * 4 + 2)
+          refs[i] = b.readUint32LE(i * 4 + 4)
         }
         obj[key] = refs
       }
     } else if (t.type === 'string') {
       if (bufs.has(t.index)) {
-        obj[key] = bufs.get(t.index).toString('utf8', 2)
+        obj[key] = bufs.get(t.index).toString('utf8', 4)
       }
     } else if (!mainB) {
       continue
     } else if (t.type === 'boolean') {
-      obj[key] = mainB.readUInt8(t.start + 2) ? true : false
+      obj[key] = mainB.readUInt8(t.start + 4) ? true : false
     } else if (t.type === 'number' || t.type === 'timestamp') {
-      obj[key] = mainB.readFloatLE(t.start + 2)
+      obj[key] = mainB.readFloatLE(t.start + 4)
     } else if (t.type === 'integer' || t.type === 'reference') {
       // different sizes for ints letsss goooo
-      obj[key] = mainB.readUint32LE(t.start + 2)
+      obj[key] = mainB.readUint32LE(t.start + 4)
     } else {
       obj[key] = readFromBuffers(bufs, tree[key])
     }

@@ -20,7 +20,10 @@ const drain = (db: BasedDb) => {
       let d = Date.now()
       // fix this concat is shitty
       let bx = Buffer.concat(v)
-      const res = dbZig.cursorSet(bx, dbiBuffer)
+
+      console.info(bx)
+
+      const res = dbZig.setBatch4(bx, dbiBuffer)
       console.info(Date.now() - d, 'ms')
     })
 
@@ -51,7 +54,7 @@ export const addWrite = (db: BasedDb, dbi: number, value: Buffer) => {
 
 // add read multiple
 export const addRead = (db: BasedDb, dbi: number, key: Buffer) => {
-  const res = dbZig.cursorGet(key, db.dbiIndex.get(dbi))
+  const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))
   return res
 }
 
