@@ -26,6 +26,9 @@ struct libdeflate_decompressor;
 LIBDEFLATEEXPORT int
 libdeflate_memcmp(struct libdeflate_decompressor *decompressor, struct libdeflate_block_state *state, const char *in_buf, size_t in_len, const void *ptr2_buf, size_t ptr2_len);
 
+LIBDEFLATEEXPORT int64_t
+libdeflate_memmem(struct libdeflate_decompressor *decompressor, struct libdeflate_block_state *state, const char *in_buf, size_t in_len, const void *needle_buf, size_t needle_len);
+
 /**
  * Test if the compressed string in_buf includes the string needle_buf.
  * @return  <0 error;
