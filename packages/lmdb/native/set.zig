@@ -53,22 +53,23 @@ fn setBatchInternal(
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
-    const flags: c_uint = 0;
-
     // _ = c.mdb_txn_begin(Envs.env, parentPtr, flags, &txn);
-    mdbThrow(c.mdb_txn_begin(Envs.env, parentPtr, flags, &txn)) catch |err| {
+    mdbThrow(c.mdb_txn_begin(Envs.env, parentPtr, 0, &txn)) catch |err| {
         return jsThrow(env, @errorName(err));
     };
 
-    if (hasDbi) {
-        mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
-            std.debug.print("flap flap", .{});
-            std.debug.print("Hello dbi {s}\n", .{@as([*:0]u8, @ptrCast(dbi_name))});
+    var flags: c_uint = 0;
 
+    flags |= c.MDB_INTEGERKEY;
+    flags |= c.MDB_CREATE;
+
+    if (hasDbi) {
+        mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), flags, &dbi)) catch |err| {
+            std.debug.print("Hello dbi {s}\n", .{@as([*:0]u8, @ptrCast(dbi_name))});
             return jsThrow(env, @errorName(err));
         };
     } else {
-        mdbThrow(c.mdb_dbi_open(txn, null, c.MDB_INTEGERKEY, &dbi)) catch |err| {
+        mdbThrow(c.mdb_dbi_open(txn, null, flags, &dbi)) catch |err| {
             return jsThrow(env, @errorName(err));
         };
     }
