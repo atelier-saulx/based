@@ -31,7 +31,7 @@ endif
 ifeq ($(uname_S),Darwin)
 LDFLAGS := -Wl,-rpath,@executable_path/../../../lib
 endif
-LDFLAGS += -L ../../lib -ldeflate
+LDFLAGS += -L ../../lib -ldeflate -lz
 
 # Location of punit makefile
 # Do not touch
