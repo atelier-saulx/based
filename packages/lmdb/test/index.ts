@@ -48,9 +48,14 @@ test('create server', async (t) => {
           updated: {
             type: 'timestamp',
           },
+          gerp: {
+            type: 'reference',
+            allowedTypes: ['vote'],
+          },
           snurp: {
             type: 'object',
             properties: {
+              ups: { type: 'references', allowedTypes: ['vote'] },
               derp: { type: 'integer' },
               bla: { type: 'string' },
               hup: {
@@ -70,17 +75,28 @@ test('create server', async (t) => {
     },
   })
 
-  const buf = createBuffer({ value: 1e3 }, db.schemaTypesParsed.vote)
+  console.dir(db.schemaTypesParsed, { depth: 10 })
 
-  console.log('fix', buf)
+  // const buf = createBuffer({ value: 1e3 }, db.schemaTypesParsed.vote)
 
-  console.log(parseBuffer(buf, db.schemaTypesParsed.vote))
+  // console.log('fix', buf)
 
-  const buf2 = createBuffer({ value: 1e3 }, db.schemaTypesParsed.complex)
+  // console.log(parseBuffer(buf, db.schemaTypesParsed.vote))
 
-  console.log('fix', buf2)
+  // const buf2 = createBuffer({ value: 1e3 }, db.schemaTypesParsed.complex)
 
-  console.log(parseBuffer(buf2, db.schemaTypesParsed.complex))
+  // console.log('fix', buf2)
+
+  // console.log(parseBuffer(buf2, db.schemaTypesParsed.complex))
+
+  // snurp.bla = "yuzi"
+
+  const bufPower = createBuffer(
+    { value: 666, gerp: 999, snurp: { bla: 'yuzi', ups: [1, 2, 3] } },
+    db.schemaTypesParsed.complex,
+  )
+
+  console.log(parseBuffer(bufPower, db.schemaTypesParsed.complex))
 
   await wait(1e3)
 

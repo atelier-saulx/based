@@ -36,13 +36,10 @@ export class BasedDb {
     path: string
     memSize?: number
   }) {
-    // const schema = txn.getBinaryUnsafe(this.dbis.config, 'schema')
-    // if (schema) {
-    //   this.schema = JSON.parse(inflateSync(schema).toString())
-    //   this.updateTypeDefs()
-    // }
-    // txn.commit()
+    // LATER
   }
+
+  // queryID thing with conditions etc
 
   updateTypeDefs() {
     for (const field in this.schema.types) {
@@ -68,19 +65,20 @@ export class BasedDb {
   updateSchema(schema: BasedSchemaPartial): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
-    // const txn = this.env.beginTxn()
-    // txn.putBinary(
-    //   this.dbis.config,
-    //   'schema',
-    //   deflateSync(JSON.stringify(this.schema)),
-    // )
-    // txn.commit()
     return this.schema
   }
 
-  set(value: any[] | any) {
+  update(type: string, id: number, value: any) {
     // return set(this, value)
   }
 
-  get(key: string) {}
+  create(type: string, value: any) {
+    // return set(this, value)
+  }
+
+  remove(type: string, id: number) {}
+
+  get(type: string, id: number, include?: string[], exclude?: string[]) {
+    // get all except ref if no include
+  }
 }

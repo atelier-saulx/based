@@ -1,28 +1,41 @@
 import { BasedDb } from './index.js'
 import { addWrite } from './operations.js'
+import { Buffers } from './types.js'
 
-const writeFromSetObj = (obj, tree, schema, buf: Buffer) => {
+const writeFromSetObj = (obj, tree, schema, buf: Buffers) => {
   for (const key in obj) {
     const t = tree[key]
     const value = obj[key]
-    if (typeof value === 'object') {
+    if (!t.type) {
       writeFromSetObj(value, t, schema, buf)
     } else {
-      if (t.type === 'timestamp' || t.type === 'number') {
-        buf.writeFloatLE(value, t.start)
-      } else if (t.type === 'integer') {
-        buf.writeUint32LE(value, t.start)
-      } else if (t.type === 'boolean') {
-        buf.writeInt8(value ? 1 : 0, t.start)
+      if (t.type === 'references') {
+        const valBuf = Buffer.alloc(4 * value.length)
+        for (let i = 0; i < value.length; i++) {
+          valBuf.writeUint32LE(value[i], i * 4)
+        }
+        buf[t.index] = valBuf
+      } else if (t.type === 'string') {
+        buf[t.index] = Buffer.from(value)
+      } else {
+        if (!buf.main) {
+          buf.main = Buffer.alloc(schema.dbMap._len)
+        }
+        if (t.type === 'timestamp' || t.type === 'number') {
+          buf.main.writeFloatLE(value, t.start)
+        } else if (t.type === 'integer' || t.type === 'reference') {
+          buf.main.writeUint32LE(value, t.start)
+        } else if (t.type === 'boolean') {
+          buf.main.writeInt8(value ? 1 : 0, t.start)
+        }
       }
-      // else if type is string add extra key to write
     }
   }
 }
 
-export const createBuffer = (obj, schema, buf?: Buffer) => {
+export const createBuffer = (obj, schema, buf?: Buffers) => {
   if (!buf) {
-    buf = Buffer.alloc(schema.dbMap._len)
+    buf = {}
   } else {
     // use buff offset
   }

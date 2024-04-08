@@ -40,8 +40,6 @@ export type SchemaTypeDef = {
     prefix: string
     _len: number
     tree: SchemaFieldTree
-    // dataRecordDef: { name: number | string; type: string }[]
-    // record: ReturnType<typeof compile>
   }
 }
 
