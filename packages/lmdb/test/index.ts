@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('create server', async (t) => {
+test('set and simple get', async (t) => {
   try {
     await fs.rmdir(dbFolder, { recursive: true })
   } catch (err) {}
@@ -134,18 +134,18 @@ test('create server', async (t) => {
   // console.info(db.get('complex', id))
 
   const arr = []
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 1e4; i++) {
     arr.push(i)
   }
 
-  // db.create('simple', {
-  //   user: 1,
-  //   vectorClock: 20,
-  //   location: {
-  //     long: 52.0123,
-  //     lat: 52.213,
-  //   },
-  // })
+  const id1 = db.create('simple', {
+    user: 1,
+    vectorClock: 20,
+    location: {
+      long: 52.0123,
+      lat: 52.213,
+    },
+  })
 
   const id2 = db.create('vote', {
     user: 1,
@@ -157,32 +157,29 @@ test('create server', async (t) => {
     refs: arr,
   })
 
+  let d = Date.now()
   let lId = 0
   for (let i = 0; i < 2e6; i++) {
     lId = db.create('simple', {
       user: 1,
       vectorClock: i,
       location: {
-        long: 52.0123,
-        lat: 52.213,
+        long: 52,
+        lat: 52,
       },
     })
   }
-
   await wait(0)
+  console.info(Date.now() - d, 'ms', '2M sets')
 
-  console.info(db.get('simple', lId))
-
-  // for (let i = 0; i < 1e6; i++) {
-  //   db.create('simple', {
-  //     user: 1,
-  //     vectorClock: 20,
-  //     location: {
-  //       long: 52.0123,
-  //       lat: 52.213,
-  //     },
-  //   })
-  // }
+  t.deepEqual(db.get('simple', lId), {
+    user: 1,
+    vectorClock: 2e6 - 1,
+    location: {
+      long: 52,
+      lat: 52,
+    },
+  })
 
   t.pass()
 })
