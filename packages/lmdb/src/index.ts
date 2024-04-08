@@ -1,11 +1,12 @@
-import { createBuffer } from './set.js'
-import { parseBuffer } from './get.js'
+import { create, createBuffer } from './set.js'
+import { parseBuffer, get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { SchemaTypeDef, createSchemaTypeDef } from './createSchemaTypeDef.js'
 import { inflateSync, deflateSync } from 'node:zlib'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
+import dbZig from './db.js'
 
 export * from './createSchemaTypeDef.js'
 export * from './get.js'
@@ -36,13 +37,12 @@ export class BasedDb {
     path: string
     memSize?: number
   }) {
-    // const schema = txn.getBinaryUnsafe(this.dbis.config, 'schema')
-    // if (schema) {
-    //   this.schema = JSON.parse(inflateSync(schema).toString())
-    //   this.updateTypeDefs()
-    // }
-    // txn.commit()
+    dbZig.createEnv(path)
+
+    // LATER
   }
+
+  // queryID thing with conditions etc
 
   updateTypeDefs() {
     for (const field in this.schema.types) {
@@ -68,19 +68,22 @@ export class BasedDb {
   updateSchema(schema: BasedSchemaPartial): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
-    // const txn = this.env.beginTxn()
-    // txn.putBinary(
-    //   this.dbis.config,
-    //   'schema',
-    //   deflateSync(JSON.stringify(this.schema)),
-    // )
-    // txn.commit()
     return this.schema
   }
 
-  set(value: any[] | any) {
+  update(type: string, id: number, value: any) {
     // return set(this, value)
   }
 
-  get(key: string) {}
+  create(type: string, value: any) {
+    // return set(this, value)
+    return create(this, type, value)
+  }
+
+  remove(type: string, id: number) {}
+
+  get(type: string, id: number, include?: string[], exclude?: string[]) {
+    // get all except ref if no include
+    return get(this, type, id)
+  }
 }
