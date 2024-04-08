@@ -259,15 +259,37 @@ struct libdeflate_block_state {
     uint8_t *data_buf;
 };
 
+/**
+ * Initialize a block state struct.
+ * struct libdeflate_block_state is used with libdeflate_decompress_stream().
+ */
 LIBDEFLATEEXPORT struct libdeflate_block_state
 libdeflate_block_state_init(size_t max_block_size);
 
+/**
+ * Increase the buffer size in a struct libdeflate_block_state.
+ * This function should be called if libdeflate_decompress_stream() returns with
+ * LIBDEFLATE_INSUFFICIENT_SPACE. Decompression should be retried only if this
+ * function returns `true`.
+ * @return value `true` if a larger buffer was allocated;
+ *               `false` if the buffer wasn't changed.
+ */
 LIBDEFLATEEXPORT bool
 libdeflate_block_state_growbuf(struct libdeflate_block_state *state);
 
+/**
+ * Deinitialize struct libdeflate_block_state.
+ * This frees data_buf.
+ */
 LIBDEFLATEEXPORT void
 libdeflate_block_state_deinit(struct libdeflate_block_state *state);
 
+/**
+ * Decompress deflated string in_buf block by block.
+ * @param cb is a callback that will be called for each decompressed block.
+ *           Decompression is interrupted if the callback returns a non-zero value.
+ * @param result returns the non-zero return value of cb.
+ */
 LIBDEFLATEEXPORT enum libdeflate_result
 libdeflate_decompress_stream(
         struct libdeflate_decompressor *decompressor,
