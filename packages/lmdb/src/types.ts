@@ -1,4 +1,1 @@
-export type Buffers = {
-  main?: Buffer
-  [field: number]: Buffer
-}
+export type Buffers = Map<number, Buffer>

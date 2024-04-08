@@ -1,4 +1,4 @@
-import { BasedDb } from './index.js'
+import { BasedDb, getDbiHandler } from './index.js'
 import { addWrite } from './operations.js'
 import { Buffers } from './types.js'
 
@@ -17,26 +17,30 @@ const writeFromSetObj = (id, obj, tree, schema, buf: Buffers) => {
         for (let i = 0; i < value.length; i++) {
           valBuf.writeUint32LE(value[i], i * 4 + 6)
         }
-        buf[t.index] = valBuf
+        buf.set(t.index, valBuf)
       } else if (t.type === 'string') {
-        // TODO: OPTMIZE
         const valBuf = Buffer.alloc(6)
         const strBuf = Buffer.from(value)
         valBuf.writeUint32LE(id)
         valBuf.writeUint16LE(strBuf.byteLength, 4)
-        buf[t.index] = Buffer.concat([valBuf, strBuf])
+        // TODO shitty
+        buf.set(t.index, Buffer.concat([valBuf, strBuf]))
       } else {
-        if (!buf.main) {
-          buf.main = Buffer.alloc(schema.dbMap._len + 6)
-          buf.main.writeUint32LE(id)
-          buf.main.writeUint16LE(schema.dbMap._len, 4)
+        let b
+        if (!buf.has(0)) {
+          b = Buffer.alloc(schema.dbMap._len + 6)
+          b.writeUint32LE(id)
+          b.writeUint16LE(schema.dbMap._len, 4)
+          buf.set(0, b)
+        } else {
+          b = buf.get(0)
         }
         if (t.type === 'timestamp' || t.type === 'number') {
-          buf.main.writeFloatLE(value, t.start + 6)
+          b.writeFloatLE(value, t.start + 6)
         } else if (t.type === 'integer' || t.type === 'reference') {
-          buf.main.writeUint32LE(value, t.start + 6)
+          b.writeUint32LE(value, t.start + 6)
         } else if (t.type === 'boolean') {
-          buf.main.writeInt8(value ? 1 : 0, t.start + 6)
+          b.writeInt8(value ? 1 : 0, t.start + 6)
         }
       }
     }
@@ -45,42 +49,34 @@ const writeFromSetObj = (id, obj, tree, schema, buf: Buffers) => {
 
 export const createBuffer = (id: number, obj, schema, buf?: Buffers) => {
   if (!buf) {
-    buf = {}
+    buf = new Map()
   } else {
     // use buff offset
   }
-
   writeFromSetObj(id, obj, schema.dbMap.tree, schema, buf)
-
   return buf
 }
-
-// keep index in mem
-
-/*
- update(type: string, id: number, value: any) {
-    // return set(this, value)
-  }
-
-  create(type: string, value: any) {
-    // return set(this, value)
-  }
-*/
 
 export const create = (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.meta.lastId
   def.meta.total++
-  // also add id to buf
   const buf = createBuffer(id, value, def)
-  const shard = id % 1e6
-  for (const b in buf) {
-    addWrite(db, Buffer.from(def.dbMap.prefix + b + '_' + shard + '\0'), buf[b])
-  }
+  const shard = ~~(id / 1e6)
+
+  buf.forEach((v, k) => {
+    addWrite(db, getDbiHandler(db, def.dbMap, shard, k), v)
+  })
   return id
 }
 
 export const update = (db: BasedDb, type: string, id: number, value: any) => {
-  // do a get also pretty poopie make in zig (zero merge to start)
-  const buf = createBuffer(id, value, db.schemaTypesParsed[type])
+  const def = db.schemaTypesParsed[type]
+  const buf = createBuffer(id, value, def)
+  const shard = ~~(id / 1e6)
+  buf.forEach((v, k) => {
+    addWrite(db, getDbiHandler(db, def.dbMap, shard, k), v)
+  })
 }
+
+// optmize schema def

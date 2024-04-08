@@ -1,9 +1,10 @@
 import { BasedDb } from './index.js'
 
+const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+
 export const genPrefix = (db: BasedDb): string => {
   const cnt = ++db.schema.prefixCounter
-  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-  const prefix = chars[cnt % 62] + chars[Math.floor(cnt / 62) % 62]
+  const prefix = CHARS[cnt % 62] + CHARS[Math.floor(cnt / 62) % 62]
   if (db.schema.prefixToTypeMapping[prefix]) {
     return genPrefix(db)
   }
