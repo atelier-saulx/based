@@ -21,8 +21,6 @@ const drain = (db: BasedDb) => {
       // fix this concat is shitty
       let bx = Buffer.concat(v)
 
-      console.info(bx)
-
       const res = dbZig.setBatch4(bx, dbiBuffer)
       console.info(Date.now() - d, 'ms')
     })

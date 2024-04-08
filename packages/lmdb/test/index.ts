@@ -157,21 +157,21 @@ test('create server', async (t) => {
     refs: arr,
   })
 
-  // let lId = 0
-  // for (let i = 0; i < 2e6; i++) {
-  //   lId = db.create('simple', {
-  //     user: 1,
-  //     vectorClock: i,
-  //     location: {
-  //       long: 52.0123,
-  //       lat: 52.213,
-  //     },
-  //   })
-  // }
+  let lId = 0
+  for (let i = 0; i < 2e6; i++) {
+    lId = db.create('simple', {
+      user: 1,
+      vectorClock: i,
+      location: {
+        long: 52.0123,
+        lat: 52.213,
+      },
+    })
+  }
 
   await wait(0)
 
-  // console.info(db.get('simple', lId))
+  console.info(db.get('simple', lId))
 
   // for (let i = 0; i < 1e6; i++) {
   //   db.create('simple', {
