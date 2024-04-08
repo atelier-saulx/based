@@ -51,8 +51,8 @@ pub fn register_function(
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     register_function(env, exports, "createEnv", createEnv) catch return null;
-    register_function(env, exports, "getBatch8", getBatch8) catch return null;
     register_function(env, exports, "getBatch4", getBatch4) catch return null;
+    register_function(env, exports, "getBatch8", getBatch8) catch return null;
     register_function(env, exports, "setBatch4", setBatch4) catch return null;
     register_function(env, exports, "setBatch8", setBatch8) catch return null;
     return exports;
