@@ -25,8 +25,12 @@ test('create server', async (t) => {
       vote: {
         fields: {
           vectorClock: { type: 'integer' },
-          value: {
-            type: 'integer',
+          location: {
+            type: 'object',
+            properties: {
+              long: { type: 'number' },
+              lat: { type: 'number' },
+            },
           },
         },
       },
@@ -113,6 +117,16 @@ test('create server', async (t) => {
   console.log(id)
 
   console.info(db.get('complex', id))
+
+  const id2 = db.create('vote', {
+    vectorClock: 20,
+    location: {
+      long: 52.0123,
+      lat: 52.213,
+    },
+  })
+
+  console.info(db.get('vote', id2))
 
   await wait(2e3)
 
