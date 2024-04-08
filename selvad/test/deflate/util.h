@@ -31,8 +31,6 @@
 
 typedef size_t machine_word_t;
 
-void begin_performance_test(void);
-
 void alloc_guarded_buffer(size_t size, uint8_t **start_ret, uint8_t **end_ret);
 void free_guarded_buffer(uint8_t *start, uint8_t *end);
 

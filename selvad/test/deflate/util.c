@@ -38,14 +38,6 @@
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void
-begin_performance_test(void)
-{
-	/* Skip performance tests by default, since they can be flaky. */
-	if (getenv("INCLUDE_PERF_TESTS") == NULL)
-		exit(0);
-}
-
 static size_t
 get_page_size(void)
 {
