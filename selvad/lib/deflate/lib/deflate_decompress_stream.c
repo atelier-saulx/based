@@ -190,6 +190,5 @@ libdeflate_decompress_stream(
 		}
 	} while (!final_block);
 
-    *result = 0;
     return LIBDEFLATE_SUCCESS;
 }

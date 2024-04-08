@@ -32,5 +32,5 @@ libdeflate_memcmp(struct libdeflate_decompressor *decompressor, struct libdeflat
  *          0 no match;
  *          1 match found.
  */
-LIBDEFLATEEXPORT int
+LIBDEFLATEEXPORT bool
 libdeflate_includes(struct libdeflate_decompressor *decompressor, struct libdeflate_block_state *state, const char *in_buf, size_t in_len, const void *needle_buf, size_t needle_len);

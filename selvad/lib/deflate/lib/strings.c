@@ -26,8 +26,9 @@ static int cb_memcmp(void * restrict ctx, uint8_t * restrict buf, size_t len)
     if (res) {
         return res;
     } else if (c->ptr2_i + len > c->ptr2_len) {
-        return buf[len - 1] - '\0';
+        return buf[test_len] - '\0';
     } else {
+        c->ptr2_i += test_len;
         return 0;
     }
 }
@@ -38,7 +39,7 @@ static int cb_memcmp(void * restrict ctx, uint8_t * restrict buf, size_t len)
 LIBDEFLATEEXPORT int
 libdeflate_memcmp(struct libdeflate_decompressor *decompressor, struct libdeflate_block_state *state, const char *in_buf, size_t in_len, const void *ptr2_buf, size_t ptr2_len)
 {
-    int result = 0;
+    int result;
     enum libdeflate_result res;
 
     do {
@@ -48,9 +49,11 @@ libdeflate_memcmp(struct libdeflate_decompressor *decompressor, struct libdeflat
             .ptr2_i = 0,
         };
 
+        result = 0;
         res = libdeflate_decompress_stream(decompressor, state, in_buf, in_len, cb_memcmp, &ctx, &result);
     } while (res == LIBDEFLATE_INSUFFICIENT_SPACE && libdeflate_block_state_growbuf(state));
-    return result;
+
+    return res != LIBDEFLATE_SUCCESS ? -1 : result;
 }
 
 struct includes_ctx {
@@ -65,7 +68,7 @@ static int cb_includes(void * restrict ctx, uint8_t * restrict buf, size_t len)
 
     for (size_t i = 0; i < len; i++) {
         if (buf[i] == c->s[c->match_len]) {
-            if (++c->match_len == len) {
+            if (++c->match_len == c->len) {
                 return 1;
             }
         } else {
@@ -76,10 +79,10 @@ static int cb_includes(void * restrict ctx, uint8_t * restrict buf, size_t len)
     return 0;
 }
 
-LIBDEFLATEEXPORT int
+LIBDEFLATEEXPORT bool
 libdeflate_includes(struct libdeflate_decompressor *decompressor, struct libdeflate_block_state *state, const char *in_buf, size_t in_len, const void *needle_buf, size_t needle_len)
 {
-    int result = 0;
+    int result;
     enum libdeflate_result res;
 
     if (in_len == 0 || needle_len == 0) {
@@ -93,8 +96,9 @@ libdeflate_includes(struct libdeflate_decompressor *decompressor, struct libdefl
             .match_len = 0,
         };
 
+        result = 0;
         res = libdeflate_decompress_stream(decompressor, state, in_buf, in_len, cb_includes, &ctx, &result);
     } while (res == LIBDEFLATE_INSUFFICIENT_SPACE && libdeflate_block_state_growbuf(state));
 
-    return result;
+    return res == LIBDEFLATE_SUCCESS && result;
 }

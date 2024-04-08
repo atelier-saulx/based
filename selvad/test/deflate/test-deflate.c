@@ -53,7 +53,7 @@ static char *full_decompress(struct libdeflate_decompressor *d, const char *in_b
     const size_t kMaxDeflateBlockSize = 64 * 1024;
     struct libdeflate_block_state state = libdeflate_block_state_init(kMaxDeflateBlockSize);
     enum libdeflate_result res;
-    int result = 1;
+    int result = 0;
 
     do {
         struct full_decompress_ctx ctx = {
@@ -100,8 +100,27 @@ PU_TEST(test_deflate_memcmp)
     printf("book_len: %zu comp_len: %zu\n", sizeof(book), compressed_len);
 #endif
     pu_assert("", compressed_len != 0);
+
     int res = libdeflate_memcmp(d, &state, compressed, compressed_len, book, sizeof(book));
     pu_assert_equal("Strings equal", res, 0);
+
+    libdeflate_block_state_deinit(&state);
+
+    return NULL;
+}
+
+PU_TEST(test_deflate_includes)
+{
+    struct libdeflate_block_state state = libdeflate_block_state_init(1024);
+    char compressed[libdeflate_compress_bound(sizeof(book))];
+    size_t compressed_len;
+    const char find[] = "Everything material soon disappears in the substance of the whole";
+
+    compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
+    pu_assert("", compressed_len != 0);
+
+    bool res = libdeflate_includes(d, &state, compressed, compressed_len, find, sizeof(find) - 1);
+    pu_assert_equal("Match found", res, true);
 
     libdeflate_block_state_deinit(&state);
 
