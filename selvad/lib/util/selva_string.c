@@ -12,11 +12,26 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
+#include "libdeflate_strings.h"
 #include "cdefs.h"
 #include "selva_error.h"
 #include "util/crc32c.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
+
+/**
+ * Don't use libdeflate_strings functions for compressed strings under this size.
+ * This is a questimate of the minimum heap space required to use the block
+ * stream API. We could be ok in most cases with a smaller buffer but there is
+ * no way to know the size of the biggest DEFLATE block we'll see and there is
+ * no standard limit. So, if we'd use a very small buffer here it would cause a
+ * perf hit for those cases that actually do need a larger block buffer because
+ * the lib will need to do guess work and grow the buffer until it's big enough
+ * to fit the biggest block in the DEFLATE stream.
+ * Anyway, it's probably just faster to decompress small strings straight away,
+ * rather than using the block streaming API.
+ */
+#define DEFLATE_STRINGS_THRESHOLD_SIZE 65536
 
 #define SELVA_STRING_QP(T, F, S, ...) \
     STATIC_IF(IS_POINTER_CONST((S)), \
@@ -303,20 +318,30 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
     return s;
 }
 
+static const void *get_compressed_data(const struct selva_string *s, size_t *compressed_size, size_t *uncompressed_size)
+{
+    struct selva_string_compressed_hdr hdr;
+    const char *buf = get_buf(s);
+
+    memcpy(&hdr, buf, sizeof(hdr));
+    *compressed_size = s->len - sizeof(hdr);
+    *uncompressed_size = hdr.uncompressed_size;
+    return buf + sizeof(hdr);
+}
+
 int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
         struct selva_string_compressed_hdr hdr;
         const void *data;
         size_t data_len;
+        size_t uncompressed_size;
 
         if (!verify_parity(s)) {
             abort();
         }
 
-        memcpy(&hdr, get_buf(s), sizeof(hdr));
-        data = get_buf(s) + sizeof(hdr);
-        data_len = s->len - sizeof(hdr);
+        data = get_compressed_data(s, &data_len, &uncompressed_size);
 
         size_t nbytes_out = 0;
         enum libdeflate_result res;
@@ -625,6 +650,7 @@ void selva_string_set_compress(struct selva_string *s)
 
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
 {
+    /* TODO Uncompress the smaller string and use libdeflate_memcmp() if len > DEFLATE_STRINGS_THRESHOLD_SIZE */
     bool must_free_a, must_free_b;
     char *a_str = get_comparable_buf(a, NULL, &must_free_a);
     char *b_str = get_comparable_buf(b, NULL, &must_free_b);
@@ -645,27 +671,49 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
 {
     const size_t lensuffix = strlen(suffix);
-    size_t len;
-    const char *str = selva_string_to_str(s, &len);
+    size_t len = selva_string_getz_ulen(s);
 
-    return (lensuffix > len)
-        ? 0
-        : !strcmp(str + len - lensuffix, suffix);
+    if (lensuffix > len) {
+        return 0;
+    }
+
+    bool must_free;
+    char *str = get_comparable_buf(s, NULL, &must_free);
+    int res = !memcmp(str + len - lensuffix, suffix, lensuffix);
+
+    if (must_free) {
+        selva_free(str);
+    }
+
+    return res;
 }
 
 ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
 {
-    bool must_free;
-    size_t len;
-    char *str = get_comparable_buf(s, &len, &must_free);
-    char *pos;
+    size_t len = selva_string_getz_ulen(s);
     ssize_t i;
 
-    pos = memmem(str, len, sub_str, sub_len);
-    i = pos ? (ssize_t)(pos - str) : -1;
+    if (s->flags & SELVA_STRING_COMPRESS && len > DEFLATE_STRINGS_THRESHOLD_SIZE) {
+        struct libdeflate_block_state state = libdeflate_block_state_init(DEFLATE_STRINGS_THRESHOLD_SIZE);
+        size_t compressed_len;
+        size_t uncompressed_len;
+        const char *compressed;
 
-    if (must_free) {
-        selva_free(str);
+        compressed = get_compressed_data(s, &compressed_len, &uncompressed_len);
+        i = libdeflate_memmem(decompressor, &state, compressed, compressed_len, sub_str, sub_len);
+
+        libdeflate_block_state_deinit(&state);
+    } else {
+        bool must_free;
+        char *str = get_comparable_buf(s, NULL, &must_free);
+        char *pos;
+
+        pos = memmem(str, len, sub_str, sub_len);
+        i = pos ? (ssize_t)(pos - str) : -1;
+
+        if (must_free) {
+            selva_free(str);
+        }
     }
 
     return i;

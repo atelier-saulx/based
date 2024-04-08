@@ -296,6 +296,10 @@ void selva_string_set_compress(struct selva_string *s)
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     __attribute__((access(read_only, 1), access(read_only, 2)));
 
+/**
+ * Test if a string ends with suffix.
+ * This function works correctly with compressed strings.
+ */
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
     __attribute__((access(read_only, 1), access(read_only, 2)));
 
