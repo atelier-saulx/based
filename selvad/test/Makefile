@@ -1,6 +1,6 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
-targets := util db
+targets := util db deflate
 
 all: $(targets)
 

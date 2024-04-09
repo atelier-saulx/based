@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <ctype.h>
@@ -460,7 +460,7 @@ int selva_proto_scanf(struct finalizer * restrict fin, const void * restrict buf
                         enum libdeflate_result res;
 
                         size_t copy_size = min((size_t)ps.width, (size_t)uncompressed_size);
-                        res = libdeflate_deflate_decompress(decompressor, data, data_len, dest, copy_size, &nbytes_out);
+                        res = libdeflate_decompress(decompressor, data, data_len, dest, copy_size, &nbytes_out);
                         if (res != 0 || nbytes_out != (size_t)uncompressed_size) {
                             return SELVA_PROTO_EBADMSG;
                         }

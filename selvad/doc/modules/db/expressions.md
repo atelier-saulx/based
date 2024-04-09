@@ -93,7 +93,7 @@ hierarchy.find test dfs descendants "grphnode_1" '"field" f $1 c' "test"
 
 | Prefix | Description                      | Example        |
 | ------ | -------------------------------- | -------------- |
-| `@`    | Read an integer from a register. | `@1 => reg[1]` |
+| `@`    | Read an number from a register.  | `@1 => reg[1]` |
 | `$`    | Read a string from a register.   | `$1 => reg[1]` |
 | `&`    | Read a set from a register.      | `&1 => reg[1]` |
 

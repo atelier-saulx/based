@@ -91,7 +91,7 @@ static int zsdb_writeout(struct selva_io *io)
 
     assert(zbuf->block_buf_i == ZBLOCK_BUF_SIZE);
 
-    out_nbytes = libdeflate_deflate_compress(io->compressor, zbuf->block_buf, ZBLOCK_BUF_SIZE, zbuf->compressed_buf, zbuf->compressed_buf_size);
+    out_nbytes = libdeflate_compress(io->compressor, zbuf->block_buf, ZBLOCK_BUF_SIZE, zbuf->compressed_buf, zbuf->compressed_buf_size);
     if (unlikely(out_nbytes == 0)) {
         /*
          * This shouldn't happen as the buffer is (should be) always big enough.
@@ -168,7 +168,7 @@ static int file_zsdb_readin(struct selva_io *io)
     /* Just to be sure that there is never any garbage left. */
     memset(zbuf->compressed_buf + in_nbytes, 0, zbuf->compressed_buf_size - in_nbytes);
 
-    res = libdeflate_deflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
+    res = libdeflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
     if (res) {
         return SELVA_EINVAL;
     }
@@ -199,7 +199,7 @@ static int string_zsdb_readin(struct selva_io *io)
     /* Just to be sure that there is never any garbage left. */
     memset(zbuf->compressed_buf + in_nbytes, 0, zbuf->compressed_buf_size - in_nbytes);
 
-    res = libdeflate_deflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
+    res = libdeflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
     if (res) {
         return SELVA_EINVAL;
     }
@@ -403,7 +403,7 @@ void sdb_init(struct selva_io *io)
         io->compressor = libdeflate_alloc_compressor(6);
         io->decompressor = libdeflate_alloc_decompressor();
 
-        const size_t compressed_buf_size = libdeflate_deflate_compress_bound(io->compressor, ZBLOCK_BUF_SIZE);
+        const size_t compressed_buf_size = libdeflate_compress_bound(ZBLOCK_BUF_SIZE);
         struct selva_io_zbuf *zbuf = selva_malloc(sizeof(*zbuf) + compressed_buf_size);
         zbuf->compressed_buf_size = compressed_buf_size;
         zbuf->block_buf_i = (io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;

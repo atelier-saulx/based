@@ -15,39 +15,51 @@ struct selva_string;
 enum selva_string_flags {
     /**
      * CRC enabled.
+     * Note that the CRC is always calculated from the data that's stored
+     * in-mem and not the uncompressed string if SELVA_STRING_COMPRESS is
+     * used. The CRC is calculated first over the metadata and then the
+     * stored string. It's possible to use the calculated CRC for
+     * comparisons but it's not possible to verify it with plain CRC.
+     * The function selva_string_verify_crc() is provided to verify the CRC.
+     *
+     * If verifying that decompressed is the same as the original uncompressed
+     * data is deemoed necessary then a separate verification step should be
+     * implemented outside of selva_string.
      */
-    SELVA_STRING_CRC = 0x01,
+    SELVA_STRING_CRC = 0x0001,
     /**
      * Permanently shared string; Shouldn't be freed.
      */
-    SELVA_STRING_FREEZE = 0x02,
+    SELVA_STRING_FREEZE = 0x0002,
     /**
      * A mutable string.
      */
-    SELVA_STRING_MUTABLE = 0x04,
+    SELVA_STRING_MUTABLE = 0x0004,
     /**
      * Fixed size mutable string.
      * Mutable only with selva_string_replace() and selva_string_to_mstr().
      */
-    SELVA_STRING_MUTABLE_FIXED = 0x08,
-    /**
-     * Intern the string.
-     * Similar to SELVA_STRING_FREEZE but tracked and shared internally.
-     * Implies SELVA_STRING_FREEZE.
-     */
-    SELVA_STRING_INTERN = 0x10,
+    SELVA_STRING_MUTABLE_FIXED = 0x0008,
     /**
      * Compressed string.
      */
-    SELVA_STRING_COMPRESS = 0x20,
-    _SELVA_STRING_LAST_FLAG = 0x40,
+    SELVA_STRING_COMPRESS = 0x0020,
+    SELVA_STRING_LEN_PARITY =  0x8000,
 };
 
+#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_COMPRESS))
+
 /**
- * Find already interned string.
+ * Header before compressed string.
+ * This is stored just before the actual string.
+ * Currently the compression used is raw DEFLATE.
  */
-struct selva_string *selva_string_find_intern(const char *str, size_t len)
-    __attribute__((access(read_only, 1, 2)));
+struct selva_string_compressed_hdr {
+    /**
+     * Uncompressed size of the string.
+     */
+    uint32_t uncompressed_size;
+} __packed;
 
 /**
  * Create a new string.
@@ -247,15 +259,6 @@ void selva_string_freeze(struct selva_string *s)
     __attribute((access(read_write, 1)));
 
 /**
- * Enable CRC checking for the strings s.
- * This function can be called even if the string is immutable.
- * If the string is compressed the CRC is computed from the compressed data.
- * @param s is a pointer to a selva_string.
- */
-void selva_string_en_crc(struct selva_string *s)
-    __attribute__((access(read_write, 1)));
-
-/**
  * Verify the CRC of the string s.
  * If the string is compressed the CRC is computed from the compressed data.
  * @param s is a pointer to a selva_string.
@@ -293,6 +296,10 @@ void selva_string_set_compress(struct selva_string *s)
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     __attribute__((access(read_only, 1), access(read_only, 2)));
 
+/**
+ * Test if a string ends with suffix.
+ * This function works correctly with compressed strings.
+ */
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
     __attribute__((access(read_only, 1), access(read_only, 2)));
 

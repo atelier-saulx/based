@@ -1,35 +1,53 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
-LIBDEFLATE_VER ?= 1.14
+include ../../common.mk
+
+# TODO Move this to common?
+cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null \
+	      1>&2 2>/dev/null; then echo $(1); fi)
+
+CFLAGS += -fPIC -fvisibility=hidden -I../../include \
+	-O2 -fomit-frame-pointer -Wall -Wundef	\
+	$(call cc-option,-Wimplicit-fallthrough) \
+	$(call cc-option,-Wmissing-prototypes) \
+	$(call cc-option,-Wpedantic) \
+	$(call cc-option,-Wshadow) \
+	$(call cc-option,-Wstrict-prototypes) \
+	$(call cc-option,-Wvla) \
+	$(call cc-option,-Wno-keyword-macro) \
+	$(call cc-option,-Wno-constant-logical-operand) \
+	-DNDEBUG
+LDFLAGS += -g -L../
+
+OBJ := \
+	lib/deflate_compress.o \
+	lib/deflate_decompress.o \
+	lib/deflate_decompress_stream.o \
+	lib/strings.o \
+	lib/utils.o
+
+ifeq ($(uname_M),arm64)
+	OBJ += lib/arm/cpu_features.o
+endif
+ifeq ($(uname_M),x86_64)
+	OBJ += lib/x86/cpu_features.o
+endif
 
 ifeq ($(uname_S),Linux)
-	LDFLAGS := -z relro -z now
-	TARGET := libdeflate.so
+	LDFLAGS += -shared -fPIC -z relro -z now
 endif
 ifeq ($(uname_S),Darwin)
-	TARGET := libdeflate.dylib
-endif
-ifndef TARGET
-$(error TARGET is not set)
+	LDFLAGS += -shared -Wl,-install_name,@rpath/libdeflate$(LIB_SUFFIX)
 endif
 
-CUSTOM_CFLAGS := -fPIC $(TARGET_CFLAGS)
-
-deflate:
-	$(MAKE) "CFLAGS=$(CUSTOM_CFLAGS)" "LDFLAGS=$(LDFLAGS)" DISABLE_GZIP=1 DISABLE_ZLIB=1 -C ./libdeflate-$(LIBDEFLATE_VER) $(TARGET)
-	rsync --checksum "./libdeflate-$(LIBDEFLATE_VER)/libdeflate.h" "../../include/libdeflate.h"
-ifeq ($(uname_S),Linux)
-	cp -P libdeflate-$(LIBDEFLATE_VER)/libdeflate.so.0 "../"
-	cp -P libdeflate-$(LIBDEFLATE_VER)/libdeflate.so "../"
+ifndef LIB_SUFFIX
+$(error LIB_SUFFIX is not set)
 endif
-ifeq ($(uname_S),Darwin)
-	install_name_tool -id @rpath/libdeflate.dylib libdeflate-$(LIBDEFLATE_VER)/libdeflate.dylib
-	install_name_tool -id @rpath/libdeflate.0.dylib libdeflate-$(LIBDEFLATE_VER)/libdeflate.0.dylib
-	cp -P libdeflate-$(LIBDEFLATE_VER)/libdeflate.0.dylib "../"
-	cd .. && ln -s "libdeflate.0.dylib" "libdeflate.dylib" || true
-endif
+TARGET := ../libdeflate$(LIB_SUFFIX)
 
-clean: 
-	$(MAKE) -C ./libdeflate-$(LIBDEFLATE_VER) clean
+DEP := $(OBJ:%.o=%.d)
 
-.PHONY: clean deflate
+$(TARGET): $(OBJ)
+	$(CC) -o $@ $(LDFLAGS) $^
+
+-include $(DEP)

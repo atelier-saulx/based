@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -12,14 +12,26 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
-#include "tree.h"
+#include "libdeflate_strings.h"
 #include "cdefs.h"
 #include "selva_error.h"
 #include "util/crc32c.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
 
-#define INVALID_FLAGS_MASK (~((_SELVA_STRING_LAST_FLAG - 1) | _SELVA_STRING_LAST_FLAG))
+/**
+ * Don't use libdeflate_strings functions for compressed strings under this size.
+ * This is a questimate of the minimum heap space required to use the block
+ * stream API. We could be ok in most cases with a smaller buffer but there is
+ * no way to know the size of the biggest DEFLATE block we'll see and there is
+ * no standard limit. So, if we'd use a very small buffer here it would cause a
+ * perf hit for those cases that actually do need a larger block buffer because
+ * the lib will need to do guess work and grow the buffer until it's big enough
+ * to fit the biggest block in the DEFLATE stream.
+ * Anyway, it's probably just faster to decompress small strings straight away,
+ * rather than using the block streaming API.
+ */
+#define DEFLATE_STRINGS_THRESHOLD_SIZE 65536
 
 #define SELVA_STRING_QP(T, F, S, ...) \
     STATIC_IF(IS_POINTER_CONST((S)), \
@@ -27,41 +39,50 @@
               (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
 struct selva_string {
-    enum selva_string_flags flags;
-    uint32_t crc;
-    RB_ENTRY(selva_string) intern_entry;
-    size_t len;
+    struct {
+        uint64_t len: 48;
+        enum selva_string_flags flags: 16;
+    };
+    /* Don't add __counted_by(len) here because it's not the real size. */
     union {
         char *p;
         char emb[sizeof(char *)];
     };
 };
 
-/**
- * Header before compressed string.
- * This is stored just before the actual string.
- */
-struct compressed_string_header {
-    /**
-     * Uncompressed size of the string.
-     */
-    uint32_t uncompressed_size;
-} __packed;
-
-RB_HEAD(selva_string_rbtree, selva_string);
-RB_PROTOTYPE_STATIC(selva_string_rbtree ,selva_string, intern_entry, selva_string_cmp)
-
-static struct selva_string_rbtree intern_head = RB_INITIALIZER(&intern_head);
 static struct libdeflate_compressor *compressor;
 static struct libdeflate_decompressor *decompressor;
 
-RB_GENERATE_STATIC(selva_string_rbtree, selva_string, intern_entry, selva_string_cmp)
+/**
+ * Test that only one or none of excl flags are set in flags.
+ */
+static inline bool test_mutually_exclusive_flags(enum selva_string_flags flags, enum selva_string_flags excl)
+{
+    return __builtin_popcount(flags & excl) > 1;
+}
+
+static inline enum selva_string_flags len_parity(size_t len)
+{
+    return _Generic(len,
+            unsigned int: __builtin_parity,
+            unsigned long: __builtin_parityl,
+            unsigned long long: __builtin_parityll)(len) << (__builtin_ffsll(SELVA_STRING_LEN_PARITY) - 1);
+}
+
+static inline bool verify_parity(const struct selva_string *hdr)
+{
+    return len_parity(hdr->len) == (hdr->flags & SELVA_STRING_LEN_PARITY);
+}
 
 /**
  * Get a pointer to the string buffer.
  */
 static inline char *get_buf(const struct selva_string *s)
 {
+    if (!verify_parity(s)) {
+        abort();
+    }
+
     return (s->flags & SELVA_STRING_MUTABLE) ? (char *)s->p : (char *)s->emb;
 }
 
@@ -73,7 +94,7 @@ static inline char *get_buf(const struct selva_string *s)
  * buffer. must_free is set to indicate that the returned buffer must be freed
  * with selva_free().
  */
-static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, int *must_free)
+static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, bool *must_free)
 {
     size_t len = selva_string_getz_ulen(s);
     char *buf;
@@ -82,10 +103,10 @@ static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, i
         buf = selva_malloc(len + 1);
         selva_string_decompress(s, buf); /* RFE Should we return a NULL on error? */
         buf[len] = '\0';
-        *must_free = 1;
+        *must_free = true;
     } else {
         buf = get_buf((struct selva_string *)s);
-        *must_free = 0;
+        *must_free = false;
     }
 
     if (buf_len) {
@@ -95,9 +116,35 @@ static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, i
 }
 
 /**
+ * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
+ */
+static uint32_t get_crc(const struct selva_string *s) __attribute__((pure, access (read_only, 1)));
+static uint32_t get_crc(const struct selva_string *s)
+{
+    uint32_t csum;
+
+    memcpy(&csum, get_buf(s) + s->len + 1, sizeof(csum));
+
+    return csum;
+}
+
+/**
+ * DO NOT CALL THIS FUNCTION IF CRC is not enabled.
+ */
+static void set_crc(struct selva_string *s, uint32_t csum)
+{
+    /*
+     * Space for the CRC was hopefully allocated when alloc_immutable() or
+     * alloc_mutable() was called.
+     */
+    memcpy(get_buf(s) + s->len + 1, &csum, sizeof(csum));
+}
+
+/**
  * Calculate the CRC of a selva_string.
  * @param hdr is the header part of a selva_string i.e. without the actual string.
  */
+static uint32_t calc_crc(const struct selva_string *hdr, const char *str) __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 static uint32_t calc_crc(const struct selva_string *hdr, const char *str)
 {
     uint32_t res;
@@ -110,11 +157,11 @@ static uint32_t calc_crc(const struct selva_string *hdr, const char *str)
 static void update_crc(struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_CRC) {
-        s->crc = 0;
-        s->crc = calc_crc(s, get_buf(s));
+        set_crc(s, calc_crc(s, get_buf(s)));
     }
 }
 
+[[nodiscard]]
 static struct selva_string *alloc_mutable(size_t len)
 {
     struct selva_string *s;
@@ -139,6 +186,7 @@ static size_t calc_immutable_alloc_size(size_t len)
 /**
  * Allocate an immutable selva_string.
  */
+[[nodiscard]]
 static struct selva_string *alloc_immutable(size_t len)
 {
     struct selva_string *s;
@@ -153,7 +201,7 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
 {
     char *buf;
 
-    s->flags = flags;
+    s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
     s->len = len;
 
     buf = get_buf(s);
@@ -168,51 +216,18 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
     return s;
 }
 
-struct selva_string *selva_string_find_intern(const char *str, size_t len)
-{
-    struct selva_string n = {
-        .flags = SELVA_STRING_MUTABLE,
-        .len = len,
-        .p = (char *)str,
-    };
-
-    return RB_FIND(selva_string_rbtree, &intern_head, &n);
-}
-
-static void intern(struct selva_string *s)
-{
-    (void)RB_INSERT(selva_string_rbtree, &intern_head, s);
-}
-
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
-    struct selva_string *s;
-    enum selva_string_flags xor_mask = SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE;
+    const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
-    if (flags & SELVA_STRING_INTERN) {
-        if (!str) {
-            return NULL;
-        }
-        flags |= SELVA_STRING_FREEZE;
-    }
-
-    if ((flags & INVALID_FLAGS_MASK) || __builtin_popcount(flags & xor_mask) > 1) {
+    if ((flags & INVALID_FLAGS_MASK) ||
+        test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
         return NULL; /* Invalid flags */
     }
 
-    if (flags & SELVA_STRING_MUTABLE) {
-        s = set_string(alloc_mutable(len), str, len, flags);
-    } else if ((flags & SELVA_STRING_INTERN)) {
-        s = selva_string_find_intern(str, len);
-        if (!s) {
-            s = set_string(alloc_immutable(len), str, len, flags);
-            intern(s);
-        }
-    } else {
-        s = set_string(alloc_immutable(len), str, len, flags);
-    }
-
-    return s;
+    return (flags & SELVA_STRING_MUTABLE)
+        ? set_string(alloc_mutable(len + trail), str, len, flags)
+        : set_string(alloc_immutable(len + trail), str, len, flags);
 }
 
 struct selva_string *selva_string_createf(const char *fmt, ...)
@@ -253,6 +268,7 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
     }
 
     s->len = fread(get_buf(s), 1, size, fp);
+    flags |= len_parity(s->len);
 
     update_crc(s);
     return s;
@@ -260,17 +276,18 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
 
 struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags)
 {
+    const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
     struct selva_string *s;
     size_t compressed_size;
     struct selva_string *tmp;
 
-    if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_INTERN | SELVA_STRING_MUTABLE_FIXED)) ||
+    if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
         (flags & INVALID_FLAGS_MASK)) {
         return NULL; /* Invalid flags */
     }
 
-    s = alloc_immutable(sizeof(struct compressed_string_header) + in_len);
-    compressed_size = libdeflate_deflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct compressed_string_header), in_len);
+    s = alloc_immutable(sizeof(struct selva_string_compressed_hdr) + in_len + trail);
+    compressed_size = libdeflate_compress(compressor, in_str, in_len, get_buf(s) + sizeof(struct selva_string_compressed_hdr), in_len);
     if (compressed_size == 0) {
         /*
          * No compression was achieved.
@@ -281,11 +298,11 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
         /*
          * The string was compressed.
          */
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
         char *buf = get_buf(s);
 
-        s->flags = flags | SELVA_STRING_COMPRESS;
         s->len = sizeof(hdr) + compressed_size;
+        s->flags = flags | SELVA_STRING_COMPRESS | len_parity(s->len);
         memset(buf + s->len, '\0', sizeof(char));
 
         hdr.uncompressed_size = in_len;
@@ -301,21 +318,35 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
     return s;
 }
 
+static const void *get_compressed_data(const struct selva_string *s, size_t *compressed_size, size_t *uncompressed_size)
+{
+    struct selva_string_compressed_hdr hdr;
+    const char *buf = get_buf(s);
+
+    memcpy(&hdr, buf, sizeof(hdr));
+    *compressed_size = s->len - sizeof(hdr);
+    *uncompressed_size = hdr.uncompressed_size;
+    return buf + sizeof(hdr);
+}
+
 int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
         const void *data;
         size_t data_len;
+        size_t uncompressed_size;
 
-        memcpy(&hdr, get_buf(s), sizeof(hdr));
-        data = get_buf(s) + sizeof(hdr);
-        data_len = s->len - sizeof(hdr);
+        if (!verify_parity(s)) {
+            abort();
+        }
+
+        data = get_compressed_data(s, &data_len, &uncompressed_size);
 
         size_t nbytes_out = 0;
         enum libdeflate_result res;
 
-        res = libdeflate_deflate_decompress(decompressor, data, data_len, buf, hdr.uncompressed_size, &nbytes_out);
+        res = libdeflate_decompress(decompressor, data, data_len, buf, hdr.uncompressed_size, &nbytes_out);
         if (res != 0 || nbytes_out != (size_t)hdr.uncompressed_size) {
             return SELVA_EINVAL;
         }
@@ -328,6 +359,7 @@ int selva_string_decompress(const struct selva_string * restrict s, char * restr
 
 struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_string_flags flags)
 {
+    /* TODO Decompress the original if (s->flags & SELVA_STRING_COMPRESS) is set but (flags & SELVA_STRING_COMPRESS) is not set. */
     return selva_string_create(get_buf(s), s->len, flags);
 }
 
@@ -344,8 +376,9 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
         return SELVA_EINVAL;
     } else if (newlen < oldlen) {
         s->len = newlen;
-        s->p = selva_realloc(s->p, s->len + 1);
-        s->p[s->len] = '\0';
+        s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(newlen);
+        s->p = selva_realloc(s->p, newlen + 1);
+        s->p[newlen] = '\0';
 
         update_crc(s);
     }
@@ -365,6 +398,7 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
         size_t old_len = s->len;
 
         s->len += len;
+        s->flags = (s->flags & ~SELVA_STRING_LEN_PARITY) | len_parity(s->len);
         s->p = selva_realloc(s->p, s->len + 1);
         if (str) {
             memcpy(s->p + old_len, str, len);
@@ -395,6 +429,7 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
 
     if (flags & SELVA_STRING_MUTABLE) {
         s->len = len;
+        s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
         s->p = selva_realloc(s->p, len + 1);
         memcpy(s->p, str, len);
 
@@ -434,17 +469,25 @@ enum selva_string_flags selva_string_get_flags(const struct selva_string *s)
 
 size_t selva_string_get_len(const struct selva_string *s)
 {
+    if (!verify_parity(s)) {
+        abort();
+    }
+
     return s->len;
 }
 
 size_t selva_string_getz_ulen(const struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
 
         memcpy(&hdr, get_buf(s), sizeof(hdr));
         return hdr.uncompressed_size;
     } else {
+        if (!verify_parity(s)) {
+            abort();
+        }
+
         return s->len;
     }
 }
@@ -452,7 +495,7 @@ size_t selva_string_getz_ulen(const struct selva_string *s)
 double selva_string_getz_cratio(const struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct compressed_string_header hdr;
+        struct selva_string_compressed_hdr hdr;
 
         memcpy(&hdr, get_buf(s), sizeof(hdr));
 
@@ -586,29 +629,18 @@ void selva_string_freeze(struct selva_string *s)
     s->flags |= SELVA_STRING_FREEZE;
 }
 
-void selva_string_en_crc(struct selva_string *s)
-{
-    s->flags |= SELVA_STRING_CRC;
-    update_crc(s);
-}
-
 int selva_string_verify_crc(const struct selva_string *s)
 {
-    struct selva_string hdr;
-
-    if (!(s->flags & SELVA_STRING_CRC)) {
-        return 0;
-    }
-
-    memcpy(&hdr, s, sizeof(*s));
-    hdr.crc = 0;
-
-    return s->crc == calc_crc(&hdr, get_buf(s));
+    return verify_parity(s) && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s, get_buf(s));
 }
 
 uint32_t selva_string_get_crc(const struct selva_string *s)
 {
-    return s->crc;
+    if (!(s->flags & SELVA_STRING_CRC)) {
+        return 0;
+    }
+
+    return get_crc(s);
 }
 
 void selva_string_set_compress(struct selva_string *s)
@@ -618,7 +650,8 @@ void selva_string_set_compress(struct selva_string *s)
 
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
 {
-    int must_free_a, must_free_b;
+    /* TODO Uncompress the smaller string and use libdeflate_memcmp() if len > DEFLATE_STRINGS_THRESHOLD_SIZE */
+    bool must_free_a, must_free_b;
     char *a_str = get_comparable_buf(a, NULL, &must_free_a);
     char *b_str = get_comparable_buf(b, NULL, &must_free_b);
     int res;
@@ -638,27 +671,49 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
 {
     const size_t lensuffix = strlen(suffix);
-    size_t len;
-    const char *str = selva_string_to_str(s, &len);
+    size_t len = selva_string_getz_ulen(s);
 
-    return (lensuffix > len)
-        ? 0
-        : !strcmp(str + len - lensuffix, suffix);
+    if (lensuffix > len) {
+        return 0;
+    }
+
+    bool must_free;
+    char *str = get_comparable_buf(s, NULL, &must_free);
+    int res = !memcmp(str + len - lensuffix, suffix, lensuffix);
+
+    if (must_free) {
+        selva_free(str);
+    }
+
+    return res;
 }
 
 ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
 {
-    int must_free;
-    size_t len;
-    char *str = get_comparable_buf(s, &len, &must_free);
-    char *pos;
+    size_t len = selva_string_getz_ulen(s);
     ssize_t i;
 
-    pos = memmem(str, len, sub_str, sub_len);
-    i = pos ? (ssize_t)(pos - str) : -1;
+    if (s->flags & SELVA_STRING_COMPRESS && len > DEFLATE_STRINGS_THRESHOLD_SIZE) {
+        struct libdeflate_block_state state = libdeflate_block_state_init(DEFLATE_STRINGS_THRESHOLD_SIZE);
+        size_t compressed_len;
+        size_t uncompressed_len;
+        const char *compressed;
 
-    if (must_free) {
-        selva_free(str);
+        compressed = get_compressed_data(s, &compressed_len, &uncompressed_len);
+        i = libdeflate_memmem(decompressor, &state, compressed, compressed_len, sub_str, sub_len);
+
+        libdeflate_block_state_deinit(&state);
+    } else {
+        bool must_free;
+        char *str = get_comparable_buf(s, NULL, &must_free);
+        char *pos;
+
+        pos = memmem(str, len, sub_str, sub_len);
+        i = pos ? (ssize_t)(pos - str) : -1;
+
+        if (must_free) {
+            selva_free(str);
+        }
     }
 
     return i;
