@@ -35,10 +35,11 @@ fn getQueryInternal(
         return jsThrow(env, "Failed to get args.");
     }
 
-    var type_prefix: [2]u8 = null;
+    var type_prefix: [2]u8 = undefined;
+    // var type_size: usize = undefined;
 
-    if (c.napi_get_value_string_utf8(env, argv[1], &type_prefix) != c.napi_ok) {
-        return jsThrow(env, "Failed to get args.");
+    if (c.napi_get_value_string_utf8(env, argv[1], @ptrCast(&type_prefix), 3, null) != c.napi_ok) {
+        return jsThrow(env, "Failed to get args. (str)");
     }
 
     var last_id: u32 = undefined;
@@ -75,9 +76,10 @@ fn getQueryInternal(
 
     // type_prefix
 
-    const dbi_name = type_prefix + "0" + "00";
+    const dbi_name = "10000";
 
-    std.debug.print(" {s}", .{dbi_name});
+    std.debug.print(" {s}\n", .{dbi_name});
+    std.debug.print("SIZE {s}\n", .{type_prefix});
 
     // dbi_name.
 

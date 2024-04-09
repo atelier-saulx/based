@@ -140,9 +140,11 @@ export class Query {
       this.conditions.length > 1
         ? Buffer.concat(this.conditions)
         : this.conditions[0],
-      Buffer.from(this.type.dbMap.prefix),
+      this.type.dbMap.prefix,
       this.type.meta.lastId,
     )
+
+    console.log(this.type.dbMap.prefix)
 
     const arr = new Array(x.byteLength / 4)
 
