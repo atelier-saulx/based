@@ -104,10 +104,21 @@ export class Query {
     // 0-9
     // [30] [0] [00]
 
-    // dbZig.query(filter, typePrefix, lastId)
+    console.log('???', this.db.dbiIndex.get(this.type.dbMap.dbi[0]).toString())
 
-    // bla
-    return []
+    const x = dbZig.getQuery(
+      this.conditions[0],
+      Buffer.from(this.type.dbMap.prefix),
+      this.type.meta.lastId,
+    )
+
+    const arr = new Array(x.byteLength / 4)
+
+    for (let i = 0; i < x.byteLength; i += 4) {
+      arr[i / 4] = x.readUint32LE(i)
+    }
+
+    return arr
   }
 }
 

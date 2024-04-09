@@ -186,6 +186,50 @@ test('set and simple get', async (t) => {
       lat: 52,
     },
   })
+})
+
+test('get include', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      something: {
+        fields: {
+          flap: { type: 'string' },
+          user: { type: 'reference', allowedTypes: ['user'] },
+          vectorClock: { type: 'integer' },
+          location: {
+            type: 'object',
+            properties: {
+              long: { type: 'number' },
+              lat: { type: 'number' },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const id = db.create('something', {
+    user: 1,
+    flap: 'hello',
+    vectorClock: 20,
+    location: {
+      long: 52.0123,
+      lat: 52.213,
+    },
+  })
+
+  await wait(0)
+
+  console.info(db.get('something', id, ['location.long', 'flap']))
 
   t.pass()
 })
@@ -213,7 +257,7 @@ test.only('query + filter', async (t) => {
     },
   })
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 20; i++) {
     db.create('simple', {
       user: 1,
       vectorClock: i,

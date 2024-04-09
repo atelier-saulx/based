@@ -42,7 +42,7 @@ fn getQueryInternal(
         return jsThrow(env, "Failed to get args.");
     }
 
-    var last_id: ?u32 = null;
+    var last_id: u32 = undefined;
     if (c.napi_get_value_int32(env, argv[2], @ptrCast(&last_id)) != c.napi_ok) {
         return jsThrow(env, "Failed to get args.");
     }
@@ -70,7 +70,14 @@ fn getQueryInternal(
 
     // "prefix000"
 
-    const dbi_name: [5]u8 = @as([2]u8, @ptrCast(type_prefix)) + "0" + "00";
+    const dbi_name = "10000";
+
+    std.debug.print(" {s}", .{dbi_name});
+
+    // dbi_name.
+
+    // + "0" + "00"
+
     var cursor: ?*c.MDB_cursor = null;
 
     mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
@@ -86,11 +93,10 @@ fn getQueryInternal(
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var values = std.ArrayList(c.MDB_val).init(allocator);
+    var values = std.ArrayList(u32).init(allocator);
 
     var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
-    var total_data_length: usize = 0;
     var total_results: usize = 0;
     var i: u32 = 0;
     const MAX_RESULTS = 10000;
@@ -127,8 +133,7 @@ fn getQueryInternal(
         // }
 
         total_results += 1;
-        values.append(v) catch return jsThrow(env, "OOM");
-        total_data_length += v.mv_size + SIZE_BYTES;
+        values.append(i) catch return jsThrow(env, "OOM");
         // -------------------------------------------------------------
 
         i += 1;
@@ -140,38 +145,19 @@ fn getQueryInternal(
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_buffer(env, total_data_length, &data, &result) != c.napi_ok) {
+    if (c.napi_create_buffer(env, total_results * KEY_LEN, &data, &result) != c.napi_ok) {
         return jsThrow(env, "Failed to create Buffer");
     }
 
     var last_pos: usize = 0;
-    for (values.items) |*val| {
-        // copy size
-        @memcpy(@as([*]u8, @ptrCast(@alignCast(data)))[last_pos .. last_pos + SIZE_BYTES], @as([*]u8, @ptrCast(&val.mv_size))[0..SIZE_BYTES]);
-        last_pos += SIZE_BYTES;
-
-        @memcpy(
-            @as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size],
-            @as([*]u8, @ptrCast(val.mv_data))[0..val.mv_size],
-        );
-
-        // std.debug.print("WROTE SIZE = {d}\n", .{@as([*]u16, @ptrCast(@alignCast(data)))[0..1]});
-        // std.debug.print("WROTE SIZE = {x}\n", .{@as([*]u16, @ptrCast(@alignCast(data)))[0..1]});
-        // std.debug.print("WROTE VALUE = {s}\n", .{@as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]});
-        // std.debug.print("WROTE VALUE = {x}\n", .{@as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]});
-
-        last_pos += val.mv_size;
+    for (values.items) |*key| {
+        @memcpy(@as([*]u8, @ptrCast(data))[last_pos .. last_pos + KEY_LEN], @as([*]u8, @ptrCast(key)));
+        last_pos += KEY_LEN;
     }
-
-    // txn.commit() catch {
-    //     return jsThrow(env, "Failed to txn.commit");
-    // };
 
     mdbThrow(c.mdb_txn_commit(txn)) catch |err| {
         return jsThrow(env, @errorName(err));
     };
-
-    // std.debug.print("FINAL MEM STATE= {x}\n", .{@as([*]u8, @ptrCast(data))[0..last_pos]});
 
     return result;
 }

@@ -87,7 +87,7 @@ export class BasedDb {
 
   get(type: string, id: number, include?: string[], exclude?: string[]) {
     // get all except ref if no include
-    return get(this, type, id)
+    return get(this, type, id, include)
   }
 
   query(target: string): Query {

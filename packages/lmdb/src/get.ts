@@ -48,12 +48,23 @@ export const parseBuffer = (buf: Buffers, schema) => {
   return readFromBuffers(buf, schema.dbMap.tree)
 }
 
-export const get = (db: BasedDb, type: string, id: number) => {
+export const get = (
+  db: BasedDb,
+  type: string,
+  id: number,
+  include?: string[],
+) => {
   const def = db.schemaTypesParsed[type]
   const shard = ~~(id / 1e6)
   const key = Buffer.alloc(4)
   key.writeUint32LE(id)
   const bufs: Buffers = new Map()
+
+  // if (include) {
+
+  // }
+
+  // get all
   const mainBuff = addRead(db, getDbiHandler(db, def.dbMap, shard, 0), key)
   if (!mainBuff) {
     bufs.set(0, Buffer.alloc(def.dbMap._len + 4))
