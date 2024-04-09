@@ -62,7 +62,7 @@ export class Query {
 
           const buf = Buffer.alloc(9)
           buf[0] = operationToByte(filter[1])
-          buf.writeInt16LE(6, 1)
+          buf.writeInt16LE(4, 1)
           // only for head
           buf.writeInt16LE(field.start, 3)
           buf.writeInt32LE(filter[2], 5)
