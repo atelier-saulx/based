@@ -82,13 +82,7 @@ fn setBatchInternal(
     while (i < data_length) {
         const key = @as([*]u8, @ptrCast(data.?))[i .. i + KEY_LEN];
 
-        const size_byte1 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN];
-        const size_byte2 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 1];
-        const size_byte3 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 2];
-        const size_byte4 = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + 3];
-        const size_arr: [SIZE_BYTES]u8 = .{ size_byte1, size_byte2, size_byte3, size_byte4 };
-
-        const value_size: u32 = std.mem.readInt(u32, &size_arr, .little);
+        const value_size = std.mem.readInt(u32, @as([*]const u8, @ptrCast(data.?))[i + KEY_LEN ..][0..4], .little);
 
         const value = @as([*]u8, @ptrCast(data.?))[i + KEY_LEN + SIZE_BYTES .. i + KEY_LEN + SIZE_BYTES + @as(usize, value_size)];
 
