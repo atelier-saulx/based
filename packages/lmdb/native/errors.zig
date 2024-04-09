@@ -10,7 +10,7 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) c.napi_value {
     return null;
 }
 
-pub const Error = error{
+pub const MdbError = error{
     // OS errors
     INVAL,
     ACCES,
@@ -49,82 +49,82 @@ pub const Error = error{
     UNKNOWN_ERROR,
 };
 
-pub fn mdbThrow(rc: c_int) Error!void {
+pub fn mdbThrow(rc: c_int) MdbError!void {
     // errors enum is never 0 so this return void when rc == 0
     try switch (rc) {
         c.MDB_SUCCESS => {},
 
         // Key/data pair already exists
-        c.MDB_KEYEXIST => Error.MDB_KEYEXIST,
+        c.MDB_KEYEXIST => MdbError.MDB_KEYEXIST,
 
         // No matching key/data pair found
-        c.MDB_NOTFOUND => Error.MDB_NOTFOUND,
+        c.MDB_NOTFOUND => MdbError.MDB_NOTFOUND,
 
         // Requested page not found
-        c.MDB_PAGE_NOTFOUND => Error.MDB_PAGE_NOTFOUND,
+        c.MDB_PAGE_NOTFOUND => MdbError.MDB_PAGE_NOTFOUND,
 
         // Located page was wrong type
-        c.MDB_CORRUPTED => Error.MDB_CORRUPTED,
+        c.MDB_CORRUPTED => MdbError.MDB_CORRUPTED,
 
         // Update of meta page failed or environment had fatal error
-        c.MDB_PANIC => Error.MDB_PANIC,
+        c.MDB_PANIC => MdbError.MDB_PANIC,
 
         // Database environment version mismatch
-        c.MDB_VERSION_MISMATCH => Error.MDB_VERSION_MISMATCH,
+        c.MDB_VERSION_MISMATCH => MdbError.MDB_VERSION_MISMATCH,
 
         // File is not an LMDB file
-        c.MDB_INVALID => Error.MDB_INVALID,
+        c.MDB_INVALID => MdbError.MDB_INVALID,
 
         // Environment mapsize limit reached
-        c.MDB_MAP_FULL => Error.MDB_MAP_FULL,
+        c.MDB_MAP_FULL => MdbError.MDB_MAP_FULL,
 
         // Environment maxdbs limit reached
-        c.MDB_DBS_FULL => Error.MDB_DBS_FULL,
+        c.MDB_DBS_FULL => MdbError.MDB_DBS_FULL,
 
         // Environment maxreaders limit reached
-        c.MDB_READERS_FULL => Error.MDB_READERS_FULL,
+        c.MDB_READERS_FULL => MdbError.MDB_READERS_FULL,
 
         // Thread-local storage keys full - too many environments open
-        c.MDB_TLS_FULL => Error.MDB_TLS_FULL,
+        c.MDB_TLS_FULL => MdbError.MDB_TLS_FULL,
 
         // Transaction has too many dirty pages - transaction too big
-        c.MDB_TXN_FULL => Error.MDB_TXN_FULL,
+        c.MDB_TXN_FULL => MdbError.MDB_TXN_FULL,
 
         // Internal error - cursor stack limit reached
-        c.MDB_CURSOR_FULL => Error.MDB_CURSOR_FULL,
+        c.MDB_CURSOR_FULL => MdbError.MDB_CURSOR_FULL,
 
         // Internal error - page has no more space
-        c.MDB_PAGE_FULL => Error.MDB_PAGE_FULL,
+        c.MDB_PAGE_FULL => MdbError.MDB_PAGE_FULL,
 
         // Database contents grew beyond environment mapsize
-        c.MDB_MAP_RESIZED => Error.MDB_MAP_RESIZED,
+        c.MDB_MAP_RESIZED => MdbError.MDB_MAP_RESIZED,
 
         // Operation and DB incompatible, or DB flags changed
-        c.MDB_INCOMPATIBLE => Error.MDB_INCOMPATIBLE,
+        c.MDB_INCOMPATIBLE => MdbError.MDB_INCOMPATIBLE,
 
         // Invalid reuse of reader locktable slot
-        c.MDB_BAD_RSLOT => Error.MDB_BAD_RSLOT,
+        c.MDB_BAD_RSLOT => MdbError.MDB_BAD_RSLOT,
 
         // Transaction must abort, has a child, or is invalid
-        c.MDB_BAD_TXN => Error.MDB_BAD_TXN,
+        c.MDB_BAD_TXN => MdbError.MDB_BAD_TXN,
 
         // Unsupported size of key/DB name/data, or wrong DUPFIXED size
-        c.MDB_BAD_VALSIZE => Error.MDB_BAD_VALSIZE,
+        c.MDB_BAD_VALSIZE => MdbError.MDB_BAD_VALSIZE,
 
         // The specified DBI handle was closed/changed unexpectedly
-        c.MDB_BAD_DBI => Error.MDB_BAD_DBI,
+        c.MDB_BAD_DBI => MdbError.MDB_BAD_DBI,
 
-        @intFromEnum(std.os.E.INVAL) => Error.INVAL,
-        @intFromEnum(std.os.E.ACCES) => Error.ACCES,
-        @intFromEnum(std.os.E.NOMEM) => Error.NOMEM,
-        @intFromEnum(std.os.E.NOENT) => Error.NOENT,
-        @intFromEnum(std.os.E.AGAIN) => Error.AGAIN,
-        @intFromEnum(std.os.E.NOSPC) => Error.NOSPC,
-        @intFromEnum(std.os.E.BUSY) => Error.BUSY,
-        @intFromEnum(std.os.E.INTR) => Error.INTR,
-        @intFromEnum(std.os.E.PIPE) => Error.PIPE,
-        @intFromEnum(std.os.E.IO) => Error.IO,
+        @intFromEnum(std.os.E.INVAL) => MdbError.INVAL,
+        @intFromEnum(std.os.E.ACCES) => MdbError.ACCES,
+        @intFromEnum(std.os.E.NOMEM) => MdbError.NOMEM,
+        @intFromEnum(std.os.E.NOENT) => MdbError.NOENT,
+        @intFromEnum(std.os.E.AGAIN) => MdbError.AGAIN,
+        @intFromEnum(std.os.E.NOSPC) => MdbError.NOSPC,
+        @intFromEnum(std.os.E.BUSY) => MdbError.BUSY,
+        @intFromEnum(std.os.E.INTR) => MdbError.INTR,
+        @intFromEnum(std.os.E.PIPE) => MdbError.PIPE,
+        @intFromEnum(std.os.E.IO) => MdbError.IO,
 
-        else => Error.UNKNOWN_ERROR,
+        else => MdbError.UNKNOWN_ERROR,
     };
 }

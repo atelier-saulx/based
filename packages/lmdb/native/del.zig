@@ -4,20 +4,20 @@ const errors = @import("errors.zig");
 const Envs = @import("env.zig");
 const globals = @import("globals.zig");
 
+const MdbError = errors.MdbError;
 const mdbThrow = errors.mdbThrow;
 const jsThrow = errors.jsThrow;
-const MdbError = errors.MdbError;
 
 const SIZE_BYTES = globals.SIZE_BYTES;
 
-pub fn getBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getBatchInternal(env, info, 8);
+pub fn delBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return delBatchInternal(env, info, 8);
 }
-pub fn getBatch4(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getBatchInternal(env, info, 4);
+pub fn delBatch4(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return delBatchInternal(env, info, 4);
 }
 
-fn getBatchInternal(
+fn delBatchInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
     comptime KEY_LEN: comptime_int,
@@ -48,18 +48,16 @@ fn getBatchInternal(
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
-    mdbThrow(c.mdb_txn_begin(Envs.env, null, c.MDB_RDONLY, &txn)) catch |err| {
+    mdbThrow(c.mdb_txn_begin(Envs.env, null, 0, &txn)) catch |err| {
         return jsThrow(env, @errorName(err));
     };
 
     if (hasDbi) {
         mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
-            c.mdb_txn_abort(txn);
             return jsThrow(env, @errorName(err));
         };
     } else {
         mdbThrow(c.mdb_dbi_open(txn, null, c.MDB_INTEGERKEY, &dbi)) catch |err| {
-            c.mdb_txn_abort(txn);
             return jsThrow(env, @errorName(err));
         };
     }
@@ -68,14 +66,7 @@ fn getBatchInternal(
         return jsThrow(env, @errorName(err));
     };
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    // TODO: this can be severely optimized by reducing the number of allocations,
-    // perhaps allocating big chunks less often
-    // check impl of ArrayList to see if that already happens there
-    var values = std.ArrayList(c.MDB_val).init(allocator);
+    var deleted_keys: i64 = 0;
 
     var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
@@ -89,49 +80,25 @@ fn getBatchInternal(
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
         mdbThrow(c.mdb_cursor_get(cursor, &k, &v, c.MDB_SET)) catch |err| {
-            if (err != MdbError.MDB_NOTFOUND) {
-                return jsThrow(env, @errorName(err));
+            switch (err) {
+                MdbError.MDB_NOTFOUND => continue,
+                else => return jsThrow(env, @errorName(err)),
             }
-            // switch (err) {
-            //     MdbError.MDB_NOTFOUND => continue,
-            //     else => return jsThrow(env, @errorName(err)),
-            // }
         };
 
-        values.append(v) catch return jsThrow(env, "OOM");
+        mdbThrow(c.mdb_cursor_del(cursor, 0)) catch |err| {
+            return jsThrow(env, @errorName(err));
+        };
 
+        deleted_keys += 1;
         total_data_length += v.mv_size + SIZE_BYTES;
     }
 
-    var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_buffer(env, total_data_length, &data, &result) != c.napi_ok) {
-        return jsThrow(env, "Failed to create Buffer");
+    if (c.napi_create_int64(env, deleted_keys, &result) != c.napi_ok) {
+        return jsThrow(env, "Failed to create int64");
     }
-
-    var last_pos: usize = 0;
-    for (values.items) |*val| {
-        // copy size
-        @memcpy(@as([*]u8, @ptrCast(@alignCast(data)))[last_pos .. last_pos + SIZE_BYTES], @as([*]u8, @ptrCast(&val.mv_size))[0..SIZE_BYTES]);
-        last_pos += SIZE_BYTES;
-
-        @memcpy(
-            @as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size],
-            @as([*]u8, @ptrCast(val.mv_data))[0..val.mv_size],
-        );
-
-        // std.debug.print("WROTE SIZE = {d}\n", .{@as([*]u16, @ptrCast(@alignCast(data)))[0..1]});
-        // std.debug.print("WROTE SIZE = {x}\n", .{@as([*]u16, @ptrCast(@alignCast(data)))[0..1]});
-        // std.debug.print("WROTE VALUE = {s}\n", .{@as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]});
-        // std.debug.print("WROTE VALUE = {x}\n", .{@as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]});
-
-        last_pos += val.mv_size;
-    }
-
-    // txn.commit() catch {
-    //     return jsThrow(env, "Failed to txn.commit");
-    // };
 
     mdbThrow(c.mdb_txn_commit(txn)) catch |err| {
         return jsThrow(env, @errorName(err));

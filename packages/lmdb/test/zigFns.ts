@@ -28,7 +28,7 @@ test.serial('set and get 4', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -81,7 +81,7 @@ test.serial('set and get 8', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -135,7 +135,7 @@ test.serial('set and get with DBI ', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -199,7 +199,7 @@ test.serial('get from non existing dbi', (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -241,5 +241,85 @@ test.serial('get from non existing dbi', (t) => {
     // console.log(data.toString(), values[i].toString())
 
     t.deepEqual(data, values[i])
+  }
+})
+
+test.serial.only('delete 8', (t) => {
+  const KEY_LEN = 8
+
+  const keys = []
+  const values = []
+  let totalLen = 0
+  const entries = 20
+  const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
+
+  const deleteBuffer = Buffer.allocUnsafe(~~(entries / 2) * KEY_LEN)
+
+  for (let i = 0; i < 0 + entries; i++) {
+    let key = Buffer.alloc(KEY_LEN)
+    key.writeUInt32LE(i)
+    key.copy(get_buffer, i * KEY_LEN)
+    if (!(i % 2)) {
+      key.copy(deleteBuffer, ~~(i / 2) * KEY_LEN)
+      console.log('delete key ', key)
+    }
+    const value = Buffer.from('AMAZINGVALUE' + i)
+    values.push(value)
+    keys.push(key)
+    totalLen += 4 + value.byteLength + KEY_LEN
+  }
+
+  console.log(deleteBuffer)
+
+  const buf = Buffer.allocUnsafe(totalLen)
+
+  let prevWritten = 0
+  for (let i = 0; i < values.length; i++) {
+    // key | size | value
+    keys[i].copy(buf, prevWritten)
+    prevWritten += KEY_LEN
+    const bla = values[i].byteLength
+    buf.writeUInt32LE(bla, prevWritten)
+    prevWritten += 4
+    values[i].copy(buf, prevWritten)
+    prevWritten += bla
+  }
+
+  addon.setBatch8(buf)
+
+  let get_res = addon.getBatch8(get_buffer)
+
+  let last_read = 0
+  for (let i = 0; i < entries; i++) {
+    let data_len = get_res.subarray(last_read, last_read + 4).readInt32LE()
+
+    // console.log('data len = ', data_len)
+
+    last_read += 4
+    const data = get_res.subarray(last_read, last_read + data_len)
+    // console.log('data val = ', data)
+    last_read += data_len
+
+    // console.log(data.toString(), values[i].toString())
+
+    t.deepEqual(data, values[i])
+  }
+
+  addon.delBatch8(deleteBuffer)
+
+  get_res = addon.getBatch8(get_buffer)
+
+  last_read = 0
+  for (let i = 0; i < entries; i++) {
+    let data_len = get_res.subarray(last_read, last_read + 4).readInt32LE()
+
+    last_read += 4
+    const data = get_res.subarray(last_read, last_read + data_len)
+    last_read += data_len
+    if (!(i % 2)) {
+      t.deepEqual(data, Buffer.from([]))
+    } else {
+      t.deepEqual(data, values[i])
+    }
   }
 })
