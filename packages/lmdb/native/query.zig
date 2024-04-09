@@ -158,14 +158,14 @@ fn getQueryInternal(
                 if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
                     // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
                     //     byte,
-                    //     @as([*]u8, @ptrCast(v.mv_data))[index + j],
+                    //     @as([*]u8, @ptrCast(v.mv_data))[index + z],
                     // });
 
                     break :query_loop;
                 }
                 if (index + z == v.mv_size - 1) {
                     // we reached the end without breaking, means we have a hit
-                    std.debug.print("WE REACHED THE END< GOT A HIT WITH KEY {d}\n", .{i});
+                    std.debug.print("GOT A HIT WITH KEY {d}\n", .{i});
 
                     total_results += 1;
                     values.append(i) catch return jsThrow(env, "OOM");
