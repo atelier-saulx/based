@@ -53,10 +53,12 @@ fn getBatchInternal(
 
     if (hasDbi) {
         mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
+            c.mdb_txn_abort(txn);
             return jsThrow(env, @errorName(err));
         };
     } else {
         mdbThrow(c.mdb_dbi_open(txn, null, c.MDB_INTEGERKEY, &dbi)) catch |err| {
+            c.mdb_txn_abort(txn);
             return jsThrow(env, @errorName(err));
         };
     }
