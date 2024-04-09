@@ -1,19 +1,22 @@
 const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
-const Error = errors.Error;
+const Error = errors.MdbError;
 const Gets = @import("get.zig");
 const Envs = @import("env.zig");
 const Sets = @import("set.zig");
+const Dels = @import("del.zig");
 
 const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
 const dbEnv = Envs.env;
 const dbEnvIsDefined = Envs.dbEnvIsDefined;
-const getBatch8 = Gets.getBatch8;
 const getBatch4 = Gets.getBatch4;
-const setBatch8 = Sets.setBatch8;
+const getBatch8 = Gets.getBatch8;
 const setBatch4 = Sets.setBatch4;
+const setBatch8 = Sets.setBatch8;
+const delBatch4 = Dels.delBatch4;
+const delBatch8 = Dels.delBatch8;
 
 const dbthrow = errors.mdbThrow;
 
@@ -28,7 +31,7 @@ pub fn throwError(env: c.napi_env, err: Error) c.napi_value {
     return null;
 }
 
-pub fn register_function(
+pub fn registerFunction(
     env: c.napi_env,
     exports: c.napi_value,
     comptime name: [:0]const u8,
@@ -50,10 +53,12 @@ pub fn register_function(
 }
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    register_function(env, exports, "createEnv", createEnv) catch return null;
-    register_function(env, exports, "getBatch4", getBatch4) catch return null;
-    register_function(env, exports, "getBatch8", getBatch8) catch return null;
-    register_function(env, exports, "setBatch4", setBatch4) catch return null;
-    register_function(env, exports, "setBatch8", setBatch8) catch return null;
+    registerFunction(env, exports, "createEnv", createEnv) catch return null;
+    registerFunction(env, exports, "getBatch4", getBatch4) catch return null;
+    registerFunction(env, exports, "getBatch8", getBatch8) catch return null;
+    registerFunction(env, exports, "setBatch4", setBatch4) catch return null;
+    registerFunction(env, exports, "setBatch8", setBatch8) catch return null;
+    registerFunction(env, exports, "delBatch4", delBatch4) catch return null;
+    registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
     return exports;
 }
