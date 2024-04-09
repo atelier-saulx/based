@@ -7,6 +7,7 @@ import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import dbZig from './db.js'
+import { Query, query } from './query.js'
 
 export * from './createSchemaTypeDef.js'
 export * from './get.js'
@@ -87,5 +88,9 @@ export class BasedDb {
   get(type: string, id: number, include?: string[], exclude?: string[]) {
     // get all except ref if no include
     return get(this, type, id)
+  }
+
+  query(target: string): Query {
+    return query(this, target)
   }
 }

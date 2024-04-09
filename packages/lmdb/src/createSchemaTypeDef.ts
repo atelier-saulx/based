@@ -20,8 +20,11 @@ const lenMap = {
 
 export type FieldDef = {
   __sValue: true
+  index: number
   type: BasedSchemaFieldType
+  seperate: boolean
   path: string[]
+  start: number
   len: number
   dbi?: number[]
 }
@@ -31,12 +34,10 @@ const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 let dbiIndex = 0
 
 const createDbiHandle = (prefix: string, field: number, shard: number) => {
-  const fieldAlphaNumeric =
-    CHARS[field % 62] + CHARS[Math.floor(field / 62) % 62]
+  const fieldAlphaNumeric = CHARS[field % 62]
   const shardAlphaNumeric =
     CHARS[shard % 62] + CHARS[Math.floor(shard / 62) % 62]
   const dbi = prefix + fieldAlphaNumeric + shardAlphaNumeric + '\0'
-
   return Buffer.from(dbi)
 }
 

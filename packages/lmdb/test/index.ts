@@ -12,7 +12,7 @@ const dbFolder = resolve(join(__dirname, relativePath))
 
 test('set and simple get', async (t) => {
   try {
-    await fs.rmdir(dbFolder, { recursive: true })
+    await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
   await fs.mkdir(dbFolder)
 
@@ -189,4 +189,47 @@ test('set and simple get', async (t) => {
   })
 
   t.pass()
+})
+
+test.only('query + filter', async (t) => {
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      simple: {
+        fields: {
+          user: { type: 'reference', allowedTypes: ['user'] },
+          vectorClock: { type: 'integer' },
+          location: {
+            type: 'object',
+            properties: {
+              long: { type: 'number' },
+              lat: { type: 'number' },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 1000; i++) {
+    db.create('simple', {
+      user: 1,
+      vectorClock: i,
+      location: {
+        long: 52,
+        lat: 52,
+      },
+    })
+  }
+
+  const ids = db.query('simple').filter(['vectorClock', '=', 500])
+
+  console.info(ids)
+
+  // .range(0, 10)
+
+  t.true(true)
 })
