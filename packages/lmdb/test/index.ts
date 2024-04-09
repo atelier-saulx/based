@@ -102,6 +102,7 @@ test('set and simple get', async (t) => {
     value: 666,
     nip: 'FRANKO!',
     gerp: 999,
+    // TODO franko refTime is undefined will hang the zig process
     snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5], refTime: [] },
   })
 
