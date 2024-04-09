@@ -13,6 +13,7 @@ export * from './createSchemaTypeDef.js'
 export * from './get.js'
 export * from './set.js'
 
+// @ts-ignore
 const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
   $defs: {},
   language: 'en',

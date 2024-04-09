@@ -101,7 +101,7 @@ fn getQueryInternal(
     var i: u32 = 1;
     const MAX_RESULTS = 10000;
 
-    while (total_results < MAX_RESULTS and i < last_id) {
+    keys_loop: while (total_results < MAX_RESULTS and i < last_id + 1) : (i += 1) {
         k.mv_data = &i;
 
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -110,35 +110,74 @@ fn getQueryInternal(
             if (err != MdbError.MDB_NOTFOUND) {
                 // TODO instead of throwing just send an empty buffer
                 return jsThrow(env, @errorName(err));
+            } else {
+                continue :keys_loop;
             }
         };
 
-        std.debug.print("{any}\n", .{v});
+        // std.debug.print("key = {d},{x}\n", .{ i, @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size] });
 
         // -------------------------------------------------------------
         // query loop
-        // var byteLength = buffer_size;
-        // while (i < byteLength) {
-        //     const operation = @as([*]u8, @ptrCast(buffer_contents.?))[i];
+        var j: usize = 0;
+        query_loop: while (j < buffer_size) {
+            // op 1,
+            // size 6, 0,
+            // index 20, 0,
+            // value 1, 0, 0, 0
 
-        //     // 2 bytes
-        //     const filter_size: u16 = std.mem.readInt(
-        //         u16,
-        //         @as([*]const u8, @ptrCast(buffer_contents.?))[i..][0..2],
-        //         .little,
-        //     );
+            // op 1 byte
+            const operation = @as([*]u8, @ptrCast(buffer_contents.?))[j]; // 1 aka "="
+            _ = operation; // TODO
+            // std.debug.print("op = {d}\n", .{operation});
 
-        //     var j = 0;
-        //     while (j < filter_size) {}
+            // 2 bytes
+            const filter_size: u16 = std.mem.readInt(
+                u16,
+                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 1 ..][0..2],
+                .little,
+            );
 
-        //     i += filter_size + 3;
-        // }
+            // std.debug.print("filter_size = {d}\n", .{filter_size});
 
-        total_results += 1;
-        values.append(i) catch return jsThrow(env, "OOM");
+            // index where to look 2 bytes
+            const index: u16 = std.mem.readInt(
+                u16,
+                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 3 ..][0..2],
+                .little,
+            );
+
+            // std.debug.print("index = {d}\n", .{index});
+
+            // value filter_size - 2 bytes
+            // make loop filter_size - 5 bytes long and compare each byte
+            for (
+                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 5 .. j + 5 + filter_size - 2],
+                0..,
+            ) |byte, z| {
+                if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
+                    // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
+                    //     byte,
+                    //     @as([*]u8, @ptrCast(v.mv_data))[index + j],
+                    // });
+
+                    break :query_loop;
+                }
+                if (index + z == v.mv_size - 1) {
+                    // we reached the end without breaking, means we have a hit
+                    std.debug.print("WE REACHED THE END< GOT A HIT WITH KEY {d}\n", .{i});
+
+                    total_results += 1;
+                    values.append(i) catch return jsThrow(env, "OOM");
+                    break :query_loop;
+                }
+            }
+
+            j += filter_size + 3;
+        }
+
         // -------------------------------------------------------------
 
-        i += 1;
         if (i > last_id) {
             break;
         }
