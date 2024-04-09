@@ -62,6 +62,7 @@ fn getQueryInternal(
     //
 
     var txn: ?*c.MDB_txn = null;
+
     var dbi: c.MDB_dbi = 0;
 
     mdbThrow(c.mdb_txn_begin(Envs.env, null, c.MDB_RDONLY, &txn)) catch |err| {
@@ -70,6 +71,7 @@ fn getQueryInternal(
 
     // "prefix000"
 
+    //
     const dbi_name = "10000";
 
     std.debug.print(" {s}", .{dbi_name});
@@ -91,6 +93,7 @@ fn getQueryInternal(
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
+
     const allocator = arena.allocator();
 
     var values = std.ArrayList(u32).init(allocator);
@@ -121,10 +124,16 @@ fn getQueryInternal(
         // query loop
         var j: usize = 0;
         query_loop: while (j < buffer_size) {
+            // op 0 field 0
+
             // op 1,
             // size 6, 0,
             // index 20, 0,
             // value 1, 0, 0, 0
+
+            // op 0
+            // field: 1
+            // -> get dbi type 20 1 00
 
             // op 1 byte
             const operation = @as([*]u8, @ptrCast(buffer_contents.?))[j]; // 1 aka "="
@@ -177,6 +186,8 @@ fn getQueryInternal(
         }
 
         // -------------------------------------------------------------
+
+        // if i > 1e6 select correct shard and the same later
 
         if (i > last_id) {
             break;
