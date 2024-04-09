@@ -1,7 +1,7 @@
-import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
+import { BasedDb, FieldDef, SchemaTypeDef, getDbiHandler } from './index.js'
 import dbZig from './db.js'
 
-type Operation = '='
+type Operation = '=' | 'has'
 
 /*
 -> 0 next field -> FIELD
@@ -30,8 +30,13 @@ const operationToByte = (op: Operation) => {
   if (op === '=') {
     return 1
   }
+  if (op === 'has') {
+    return 7
+  }
   return 0
 }
+
+const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 export class Query {
   db: BasedDb
@@ -53,24 +58,51 @@ export class Query {
       const field = <FieldDef>this.type.dbMap.tree[filter[0]]
 
       if (field.seperate === true) {
+        if (field.type === 'references') {
+          const op = operationToByte(filter[1])
+          let buf: Buffer
+
+          if (op === 7) {
+            // 1 byte [operation] (= 1)
+            // 2 bytes [size of filter]
+            // 2 bytes [index to read]
+            // 4 bytes [equal integer]
+
+            const matches = filter[2]
+            const len = matches.length
+            buf = Buffer.alloc(5 + len * 4)
+            buf[0] = 0
+            buf[1] = CHARS[field.index % 62].charCodeAt(0)
+            buf[2] = op
+            buf.writeInt16LE(len, 3)
+            for (let i = 0; i < len; i++) {
+              buf.writeInt32LE(matches[i], i * 4 + 5)
+            }
+          }
+
+          this.conditions ??= []
+          this.conditions.push(buf)
+        }
       } else {
         if (field.type === 'integer') {
-          // 1 byte [operation] (= 1)
-          // 2 bytes [size of filter]
-          // 2 bytes [index to read]
-          // 4 bytes [equal integer]
-
-          const buf = Buffer.alloc(9)
-          buf[0] = operationToByte(filter[1])
-          buf.writeInt16LE(4, 1)
-          // only for head
-          buf.writeInt16LE(field.start, 3)
-          buf.writeInt32LE(filter[2], 5)
+          const op = operationToByte(filter[1])
+          let buf: Buffer
+          if (op === 1) {
+            // 1 byte [operation] (= 1)
+            // 2 bytes [size of filter]
+            // 2 bytes [index to read]
+            // 4 bytes [equal integer]
+            buf = Buffer.alloc(9)
+            buf[0] = op
+            buf.writeInt16LE(4, 1)
+            // only for head
+            buf.writeInt16LE(field.start, 3)
+            buf.writeInt32LE(filter[2], 5)
+          }
 
           // 0 2 -> go to dbi 2
 
           this.conditions ??= []
-
           this.conditions.push(buf)
         }
       }
@@ -99,10 +131,15 @@ export class Query {
 
     // console.log('???', this.db.dbiIndex.get(this.type.dbMap.dbi[0]).toString())
 
-    console.log('---> conditions', new Uint8Array(this.conditions[0]))
+    console.log(
+      '---> conditions',
+      new Uint8Array(Buffer.concat(this.conditions)),
+    )
 
     const x = dbZig.getQuery(
-      this.conditions[0],
+      this.conditions.length > 1
+        ? Buffer.concat(this.conditions)
+        : this.conditions[0],
       Buffer.from(this.type.dbMap.prefix),
       this.type.meta.lastId,
     )

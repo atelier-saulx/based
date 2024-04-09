@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.only('set and simple get', async (t) => {
+test('set and simple get', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -243,6 +243,7 @@ test.only('query + filter', async (t) => {
     types: {
       simple: {
         fields: {
+          refs: { type: 'references', allowedTypes: ['user'] },
           user: { type: 'reference', allowedTypes: ['user'] },
           vectorClock: { type: 'integer' },
           location: {
@@ -260,6 +261,7 @@ test.only('query + filter', async (t) => {
   for (let i = 0; i < 20; i++) {
     db.create('simple', {
       user: 1,
+      refs: [1, 2, 3],
       vectorClock: i,
       location: {
         long: 52,
@@ -268,11 +270,14 @@ test.only('query + filter', async (t) => {
     })
   }
 
-  const ids = db.query('simple').filter(['vectorClock', '=', 3]).get()
+  const ids = db
+    .query('simple')
+    .filter(['vectorClock', '=', 3])
+    .filter(['refs', 'has', [1, 2, 3]])
+    // .range()
+    .get()
 
   console.info('query result ==', ids)
-
-  // .range(0, 10)
 
   t.true(true)
 })

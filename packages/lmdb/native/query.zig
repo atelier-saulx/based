@@ -35,10 +35,9 @@ fn getQueryInternal(
         return jsThrow(env, "Failed to get args.");
     }
 
-    var type_prefix: ?*anyopaque = null;
-    var type_prefix_len: usize = undefined;
+    var type_prefix: [2]u8 = null;
 
-    if (c.napi_get_buffer_info(env, argv[1], @ptrCast(&type_prefix), &type_prefix_len) != c.napi_ok) {
+    if (c.napi_get_value_string_utf8(env, argv[1], &type_prefix) != c.napi_ok) {
         return jsThrow(env, "Failed to get args.");
     }
 
@@ -71,8 +70,12 @@ fn getQueryInternal(
 
     // "prefix000"
 
-    //
-    const dbi_name = "10000";
+    //check first byte if ! zero -> select field 0
+    // if zero
+
+    // type_prefix
+
+    const dbi_name = type_prefix + "0" + "00";
 
     std.debug.print(" {s}", .{dbi_name});
 
