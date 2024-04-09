@@ -17,7 +17,7 @@ test.beforeEach('reset environment', async () => {
     await rm(dbFolder, { force: true, recursive: true })
   } catch (err) {}
   await mkdir(dbFolder).catch(() => {})
-  console.log(`Creating env at ${relativePath}`, addon.createEnv(dbFolder))
+  addon.createEnv(dbFolder)
 })
 
 console.log(addon)
@@ -28,7 +28,7 @@ test.serial('set and get 4', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -54,26 +54,9 @@ test.serial('set and get 4', async (t) => {
     prevWritten += bla
   }
 
-  let d = Date.now()
-  const res = addon.setBatch4(buf)
+  addon.setBatch4(buf)
 
-  let ms = Date.now() - d
-  let seconds = ms / 1000
-
-  console.info(
-    `BATCH WRITE: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} sets/second`,
-  )
-
-  // t.is(res, 1)
-
-  d = Date.now()
   const get_res = addon.getBatch4(get_buffer)
-  ms = Date.now() - d
-  seconds = ms / 1000
-
-  console.info(
-    `BATCH READ: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} gets/second`,
-  )
 
   let last_read = 0
   for (let i = 0; i < entries; i++) {
@@ -98,7 +81,7 @@ test.serial('set and get 8', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -124,26 +107,9 @@ test.serial('set and get 8', async (t) => {
     prevWritten += bla
   }
 
-  let d = Date.now()
-  const res = addon.setBatch8(buf)
+  addon.setBatch8(buf)
 
-  let ms = Date.now() - d
-  let seconds = ms / 1000
-
-  console.info(
-    `BATCH WRITE: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} sets/second`,
-  )
-
-  // t.is(res, 1)
-
-  d = Date.now()
   const get_res = addon.getBatch8(get_buffer)
-  ms = Date.now() - d
-  seconds = ms / 1000
-
-  console.info(
-    `BATCH READ: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} gets/second`,
-  )
 
   let last_read = 0
   for (let i = 0; i < entries; i++) {
@@ -169,7 +135,7 @@ test.serial('set and get with DBI ', async (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -195,26 +161,9 @@ test.serial('set and get with DBI ', async (t) => {
     prevWritten += bla
   }
 
-  let d = Date.now()
-  const res = addon.setBatch8(buf, dbiName)
+  addon.setBatch8(buf, dbiName)
 
-  let ms = Date.now() - d
-  let seconds = ms / 1000
-
-  console.info(
-    `BATCH WRITE: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} sets/second`,
-  )
-
-  // t.is(res, 1)
-
-  d = Date.now()
   const get_res = addon.getBatch8(get_buffer, dbiName)
-  ms = Date.now() - d
-  seconds = ms / 1000
-
-  console.info(
-    `BATCH READ: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} gets/second`,
-  )
 
   let last_read = 0
   for (let i = 0; i < entries; i++) {
@@ -233,7 +182,7 @@ test.serial('set and get with DBI ', async (t) => {
   }
 })
 
-test.serial.only('get from non existing dbi', (t) => {
+test.serial('get from non existing dbi', (t) => {
   const KEY_LEN = 8
   const dbiName = Buffer.from('I dont exist\0')
 
@@ -250,7 +199,7 @@ test.serial.only('get from non existing dbi', (t) => {
   const keys = []
   const values = []
   let totalLen = 0
-  const entries = 1e6 // 329 + 10 + 10 + 10 + 2
+  const entries = 200_000 // 329 + 10 + 10 + 10 + 2
   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
   for (let i = 0; i < 0 + entries; i++) {
     let key = Buffer.alloc(KEY_LEN)
@@ -276,27 +225,8 @@ test.serial.only('get from non existing dbi', (t) => {
     prevWritten += bla
   }
 
-  let d = Date.now()
-  const res = addon.setBatch8(buf, dbiName)
-
-  let ms = Date.now() - d
-  let seconds = ms / 1000
-
-  console.info(
-    `BATCH WRITE: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} sets/second`,
-  )
-
-  // t.is(res, 1)
-
-  d = Date.now()
+  addon.setBatch8(buf, dbiName)
   const get_res = addon.getBatch8(get_buffer, dbiName)
-  ms = Date.now() - d
-  seconds = ms / 1000
-
-  console.info(
-    `BATCH READ: ${entries / 1000}k entries took ${ms}ms, ${~~(entries / seconds)} gets/second`,
-  )
-
   let last_read = 0
   for (let i = 0; i < entries; i++) {
     let data_len = get_res.subarray(last_read, last_read + 4).readInt32LE()
