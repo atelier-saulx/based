@@ -59,10 +59,12 @@ export class Query {
           // 2 bytes [index to read]
           // 4 bytes [equal integer]
 
-          const buf = Buffer.alloc(7)
+          const buf = Buffer.alloc(9)
           buf[0] = operationToByte(filter[1])
-          buf.writeInt16LE(field.start, 1)
-          buf.writeInt32LE(filter[2], 3)
+          buf.writeInt16LE(6, 1)
+          // only for head
+          buf.writeInt16LE(field.start, 3)
+          buf.writeInt32LE(filter[2], 5)
 
           // 0 2 -> go to dbi 2
 
@@ -84,7 +86,17 @@ export class Query {
       // this.prefix
     }
 
-    // const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))
+    // typePrefix field shard
+
+    // type [16bit integer u]
+    // field [8bit integer u]
+    // shard [16 bit integer u]
+    //
+
+    // 0-9
+    // [30] [0] [00]
+
+    // dbZig.query(filter, typePrefix, totalShards)
 
     // bla
     return []

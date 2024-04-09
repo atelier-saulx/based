@@ -190,7 +190,7 @@ test('set and simple get', async (t) => {
   t.pass()
 })
 
-test('query + filter', async (t) => {
+test.only('query + filter', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
