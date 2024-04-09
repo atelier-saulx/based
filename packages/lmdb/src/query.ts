@@ -5,6 +5,7 @@ type Operation = '='
 
 /*
 -> 0 next field -> FIELD
+// -> base 62
 -> 1 =
 -> 2 !=
 -> 3 >
@@ -55,7 +56,7 @@ export class Query {
       } else {
         if (field.type === 'integer') {
           // 1 byte [operation] (= 1)
-
+          // 2 bytes [size of filter]
           // 2 bytes [index to read]
           // 4 bytes [equal integer]
 
@@ -84,7 +85,7 @@ export class Query {
       console.info(
         new Uint8Array(this.conditions[0]),
         this.type.dbMap.prefix,
-        Math.ceil(this.type.meta.total / 1e6),
+        this.type.meta.lastId,
       )
 
       // 0-9
@@ -103,7 +104,7 @@ export class Query {
     // 0-9
     // [30] [0] [00]
 
-    // dbZig.query(filter, typePrefix, totalShards)
+    // dbZig.query(filter, typePrefix, lastId)
 
     // bla
     return []

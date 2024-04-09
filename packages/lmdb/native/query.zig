@@ -16,12 +16,14 @@ pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi
 
 const KEY_LEN = 4;
 
+// dbZig.query(filter, typePrefix, totalShards)
+
 fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) c.napi_value {
-    var argc: usize = 2;
-    var argv: [2]c.napi_value = undefined;
+    var argc: usize = 3;
+    var argv: [3]c.napi_value = undefined;
 
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
         return jsThrow(env, "Failed to get args.");
@@ -33,36 +35,48 @@ fn getQueryInternal(
         return jsThrow(env, "Failed to get args.");
     }
 
-    var dbi_name: ?*anyopaque = null;
-    var dbi_name_length: usize = undefined;
+    var type_prefix: ?*anyopaque = null;
+    var type_prefix_len: usize = undefined;
 
-    var hasDbi: bool = false;
-    if (argc > 1) {
-        _ = c.napi_get_buffer_info(env, argv[1], @ptrCast(&dbi_name), &dbi_name_length);
-        hasDbi = true;
+    if (c.napi_get_buffer_info(env, argv[1], @ptrCast(&type_prefix), &type_prefix_len) != c.napi_ok) {
+        return jsThrow(env, "Failed to get args.");
     }
+
+    var last_id: ?u32 = null;
+    if (c.napi_get_value_int32(env, argv[2], @ptrCast(&last_id)) != c.napi_ok) {
+        return jsThrow(env, "Failed to get args.");
+    }
+
+    // 1 byte [operation] (= 1)
+    // 2 bytes [size of filter]
+    // 2 bytes [index to read]
+    // 4 bytes [equal integer]
+
+    // read from dbi
+
+    // vectorClock 20 0 00   // 20 0 01
+    // name 20 1 00          // 20 1 01
+
+    // get id from 20 0 00 condition pass ? yes get from 20 1 00
+
+    //
 
     var txn: ?*c.MDB_txn = null;
     var dbi: c.MDB_dbi = 0;
-    var cursor: ?*c.MDB_cursor = null;
-
-    std.debug.print("Hello dbi {s}\n", .{@as([*:0]u8, @ptrCast(dbi_name))});
 
     mdbThrow(c.mdb_txn_begin(Envs.env, null, c.MDB_RDONLY, &txn)) catch |err| {
         return jsThrow(env, @errorName(err));
     };
 
-    if (hasDbi) {
-        mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
-            c.mdb_txn_abort(txn);
-            return jsThrow(env, @errorName(err));
-        };
-    } else {
-        mdbThrow(c.mdb_dbi_open(txn, null, c.MDB_INTEGERKEY, &dbi)) catch |err| {
-            c.mdb_txn_abort(txn);
-            return jsThrow(env, @errorName(err));
-        };
-    }
+    // "prefix000"
+
+    const dbi_name: [5]u8 = @as([2]u8, @ptrCast(type_prefix)) + "0" + "00";
+    var cursor: ?*c.MDB_cursor = null;
+
+    mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
+        c.mdb_txn_abort(txn);
+        return jsThrow(env, @errorName(err));
+    };
 
     mdbThrow(c.mdb_cursor_open(txn, dbi, &cursor)) catch |err| {
         return jsThrow(env, @errorName(err));
@@ -72,19 +86,17 @@ fn getQueryInternal(
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    // TODO: this can be severely optimized by reducing the number of allocations,
-    // perhaps allocating big chunks less often
-    // check impl of ArrayList to see if that already happens there
     var values = std.ArrayList(c.MDB_val).init(allocator);
 
     var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
     var total_data_length: usize = 0;
-    var i: usize = 0;
-    while (i < buffer_size) : (i += KEY_LEN) {
-        k.mv_data = &(@as([*]u8, @ptrCast(buffer_contents.?))[i]);
+    var total_results: usize = 0;
+    var i: u32 = 0;
+    const MAX_RESULTS = 10000;
 
-        // std.debug.print("KEY = {x}\n", .{@as([*]u8, @ptrCast(buffer_contents.?))[i .. i + 4]});
+    while (total_results < MAX_RESULTS and i < last_id) {
+        k.mv_data = &i;
 
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
@@ -95,9 +107,34 @@ fn getQueryInternal(
             }
         };
 
-        values.append(v) catch return jsThrow(env, "OOM");
+        // -------------------------------------------------------------
+        // query loop
+        // var byteLength = buffer_size;
+        // while (i < byteLength) {
+        //     const operation = @as([*]u8, @ptrCast(buffer_contents.?))[i];
 
+        //     // 2 bytes
+        //     const filter_size: u16 = std.mem.readInt(
+        //         u16,
+        //         @as([*]const u8, @ptrCast(buffer_contents.?))[i..][0..2],
+        //         .little,
+        //     );
+
+        //     var j = 0;
+        //     while (j < filter_size) {}
+
+        //     i += filter_size + 3;
+        // }
+
+        total_results += 1;
+        values.append(v) catch return jsThrow(env, "OOM");
         total_data_length += v.mv_size + SIZE_BYTES;
+        // -------------------------------------------------------------
+
+        i += 1;
+        if (i > last_id) {
+            break;
+        }
     }
 
     var data: ?*anyopaque = undefined;

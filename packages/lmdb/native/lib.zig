@@ -6,6 +6,7 @@ const Gets = @import("get.zig");
 const Envs = @import("env.zig");
 const Sets = @import("set.zig");
 const Dels = @import("del.zig");
+const Query = @import("query.zig");
 
 const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
@@ -17,6 +18,7 @@ const setBatch4 = Sets.setBatch4;
 const setBatch8 = Sets.setBatch8;
 const delBatch4 = Dels.delBatch4;
 const delBatch8 = Dels.delBatch8;
+const query = Query.getQuery;
 
 const dbthrow = errors.mdbThrow;
 
@@ -60,5 +62,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "setBatch8", setBatch8) catch return null;
     registerFunction(env, exports, "delBatch4", delBatch4) catch return null;
     registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
+    registerFunction(env, exports, "getQuery", query) catch return null;
+
     return exports;
 }
