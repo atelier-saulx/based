@@ -161,7 +161,7 @@ fn getQueryInternal(
             // value filter_size - 2 bytes
             // make loop filter_size - 5 bytes long and compare each byte
             for (
-                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 5 .. j + 5 + filter_size - 2],
+                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 5 .. j + 5 + filter_size],
                 0..,
             ) |byte, z| {
                 if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
