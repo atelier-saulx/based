@@ -102,8 +102,7 @@ test('set and simple get', async (t) => {
     value: 666,
     nip: 'FRANKO!',
     gerp: 999,
-    // TODO franko refTime is undefined will hang the zig process
-    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5], refTime: [] },
+    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
   })
 
   await wait(0)
@@ -125,14 +124,14 @@ test('set and simple get', async (t) => {
     gerp: 999,
   })
 
-  // const doesNotExist = db.get('simple', 0)
+  const doesNotExist = db.get('simple', 0)
 
-  // // TODO franky when DBI does not exist and error zig will never work again...
-  // t.deepEqual(doesNotExist, {
-  //   location: { lat: 0, long: 0 },
-  //   user: 0,
-  //   vectorClock: 0,
-  // })
+  // TODO franky when DBI does not exist and error zig will never work again...
+  t.deepEqual(doesNotExist, {
+    location: { lat: 0, long: 0 },
+    user: 0,
+    vectorClock: 0,
+  })
 
   const id1 = db.create('simple', {
     user: 1,
@@ -191,7 +190,7 @@ test('set and simple get', async (t) => {
   t.pass()
 })
 
-test.only('query + filter', async (t) => {
+test('query + filter', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
