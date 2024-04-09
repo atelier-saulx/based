@@ -98,7 +98,7 @@ fn getQueryInternal(
     var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
     var total_results: usize = 0;
-    var i: u32 = 0;
+    var i: u32 = 1;
     const MAX_RESULTS = 10000;
 
     while (total_results < MAX_RESULTS and i < last_id) {
@@ -112,6 +112,8 @@ fn getQueryInternal(
                 return jsThrow(env, @errorName(err));
             }
         };
+
+        std.debug.print("{any}\n", .{v});
 
         // -------------------------------------------------------------
         // query loop

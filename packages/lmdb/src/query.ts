@@ -82,15 +82,8 @@ export class Query {
     // run filter
 
     if (this.conditions) {
-      console.info(
-        new Uint8Array(this.conditions[0]),
-        this.type.dbMap.prefix,
-        this.type.meta.lastId,
-      )
-
       // 0-9
       // [30] [0] [00]
-
       // this.prefix
     }
 
@@ -104,7 +97,9 @@ export class Query {
     // 0-9
     // [30] [0] [00]
 
-    console.log('???', this.db.dbiIndex.get(this.type.dbMap.dbi[0]).toString())
+    // console.log('???', this.db.dbiIndex.get(this.type.dbMap.dbi[0]).toString())
+
+    console.log('---> conditions', new Uint8Array(this.conditions[0]))
 
     const x = dbZig.getQuery(
       this.conditions[0],
