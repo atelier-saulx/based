@@ -54,30 +54,34 @@ export class Query {
       if (field.seperate === true) {
       } else {
         if (field.type === 'integer') {
-          // 1 byte
-          // 2 bytes
-          // 4 bytes
+          // 1 byte [operation] (= 1)
+
+          // 2 bytes [index to read]
+          // 4 bytes [equal integer]
 
           const buf = Buffer.alloc(7)
           buf[0] = operationToByte(filter[1])
           buf.writeInt16LE(field.start, 1)
           buf.writeInt32LE(filter[2], 3)
 
+          // 0 2 -> go to dbi 2
+
           this.conditions ??= []
 
           this.conditions.push(buf)
-
-          //   console.info(new Uint8Array(buf.buffer))
         }
       }
 
-      // const Buffer =
+      return this
     }
   }
   get(): number[] {
     // run filter
 
     if (this.conditions) {
+      console.info(new Uint8Array(this.conditions[0]), this.type.dbMap.prefix)
+
+      // this.prefix
     }
 
     // const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))

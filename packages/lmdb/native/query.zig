@@ -10,17 +10,15 @@ const MdbError = errors.MdbError;
 
 const SIZE_BYTES = globals.SIZE_BYTES;
 
-pub fn getBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getBatchInternal(env, info, 8);
-}
-pub fn getBatch4(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getBatchInternal(env, info, 4);
+pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(env, info);
 }
 
-fn getBatchInternal(
+const KEY_LEN = 4;
+
+fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
-    comptime KEY_LEN: comptime_int,
 ) c.napi_value {
     var argc: usize = 2;
     var argv: [2]c.napi_value = undefined;

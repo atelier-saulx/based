@@ -224,7 +224,7 @@ test('query + filter', async (t) => {
     })
   }
 
-  const ids = db.query('simple').filter(['vectorClock', '=', 500])
+  const ids = db.query('simple').filter(['vectorClock', '=', 500]).get()
 
   console.info(ids)
 
