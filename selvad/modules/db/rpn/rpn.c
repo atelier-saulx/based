@@ -1257,7 +1257,7 @@ static enum rpn_error rpn_op_ffirst(struct rpn_ctx *ctx) {
             enum rpn_error err;
 
             /*
-             * If we'd be care careful we could potentially reuse the original
+             * If we'd be careful enough we could potentially reuse the original
              * string, but let's be on the safe side because you never know how
              * the original string was created.
              */
