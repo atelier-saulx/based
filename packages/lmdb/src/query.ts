@@ -81,7 +81,14 @@ export class Query {
     // run filter
 
     if (this.conditions) {
-      console.info(new Uint8Array(this.conditions[0]), this.type.dbMap.prefix)
+      console.info(
+        new Uint8Array(this.conditions[0]),
+        this.type.dbMap.prefix,
+        Math.ceil(this.type.meta.total / 1e6),
+      )
+
+      // 0-9
+      // [30] [0] [00]
 
       // this.prefix
     }
