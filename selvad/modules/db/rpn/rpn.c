@@ -427,7 +427,7 @@ static enum rpn_error push_empty_value(struct rpn_ctx *ctx) {
 }
 
 /**
- * Push a RedisModuleString to the stack.
+ * Push a selva_string to the stack.
  * Note that the string must not be freed while it's still in use by rpn.
  */
 static enum rpn_error push_selva_string_result(struct rpn_ctx *ctx, const struct selva_string *s) {
