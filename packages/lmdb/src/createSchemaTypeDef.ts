@@ -11,8 +11,8 @@ const lenMap = {
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
-  integer: 4, // 32bit Unisgned 4
-  boolean: 1, // 1bit (7 bits overhead)
+  integer: 4, // 32bit Unisgned 4  16bit
+  boolean: 1, // 1bit (6 bits overhead)
   reference: 4,
   string: 0, // var length fixed length will be different
   references: 0,
@@ -93,7 +93,7 @@ export const createSchemaTypeDef = (
     fields: {},
     meta: {
       total: 0,
-      lastId: -1,
+      lastId: 0,
     },
     dbMap: {
       _len: 0,

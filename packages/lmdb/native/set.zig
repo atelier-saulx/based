@@ -65,6 +65,7 @@ fn setBatchInternal(
 
     if (hasDbi) {
         mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), flags, &dbi)) catch |err| {
+            std.debug.print("Hello dbi {s}\n", .{@as([*:0]u8, @ptrCast(dbi_name))});
             return jsThrow(env, @errorName(err));
         };
     } else {

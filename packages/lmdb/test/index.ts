@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('create server', async (t) => {
+test('set and simple get', async (t) => {
   try {
     await fs.rmdir(dbFolder, { recursive: true })
   } catch (err) {}
@@ -77,6 +77,7 @@ test('create server', async (t) => {
           snurp: {
             type: 'object',
             properties: {
+              refTime: { type: 'references', allowedTypes: ['vote'] },
               ups: { type: 'references', allowedTypes: ['vote'] },
               derp: { type: 'integer' },
               bla: { type: 'string' },
@@ -97,92 +98,95 @@ test('create server', async (t) => {
     },
   })
 
-  // const buf = createBuffer({ value: 1e3 }, db.schemaTypesParsed.vote)
+  const id = db.create('complex', {
+    value: 666,
+    nip: 'FRANKO!',
+    gerp: 999,
+    // TODO franko refTime is undefined will hang the zig process
+    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5], refTime: [] },
+  })
 
-  // console.log('fix', buf)
+  await wait(0)
 
-  // console.log(parseBuffer(buf, db.schemaTypesParsed.vote))
+  t.deepEqual(db.get('complex', id), {
+    snurp: {
+      refTime: [],
+      hup: { start: 0, x: 0, isDope: false },
+      ups: [1, 2, 3, 4, 5],
+      derp: 0,
+      bla: 'yuzi',
+    },
+    updated: 0,
+    created: 0,
+    mep: 0,
+    flap: 0,
+    value: 666,
+    nip: 'FRANKO!',
+    gerp: 999,
+  })
 
-  // const buf2 = createBuffer({ value: 1e3 }, db.schemaTypesParsed.complex)
+  // const doesNotExist = db.get('simple', 0)
 
-  // console.log('fix', buf2)
-
-  // console.log(parseBuffer(buf2, db.schemaTypesParsed.complex))
-
-  // snurp.bla = "yuzi"
-
-  // const bufPower = createBuffer(
-  //   0,
-  //   { value: 666, gerp: 999, snurp: { bla: 'yuzi', ups: [1, 2, 3] } },
-  //   db.schemaTypesParsed.complex,
-  // )
-
-  // for (const key in bufPower) {
-  //   bufPower[key] = bufPower[key].slice(6)
-  // }
-
-  // console.log(parseBuffer(bufPower, db.schemaTypesParsed.complex))
-
-  // const id = db.create('complex', {
-  //   value: 666,
-  //   nip: 'FRANKO!',
-  //   gerp: 999,
-  //   snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
+  // // TODO franky when DBI does not exist and error zig will never work again...
+  // t.deepEqual(doesNotExist, {
+  //   location: { lat: 0, long: 0 },
+  //   user: 0,
+  //   vectorClock: 0,
   // })
 
-  // console.log(id)
-  // console.info(db.get('complex', id))
-
-  const arr = []
-  for (let i = 0; i < 1; i++) {
-    arr.push(i)
-  }
-
-  // db.create('simple', {
-  //   user: 1,
-  //   vectorClock: 20,
-  //   location: {
-  //     long: 52.0123,
-  //     lat: 52.213,
-  //   },
-  // })
-
-  const id2 = db.create('vote', {
+  const id1 = db.create('simple', {
     user: 1,
     vectorClock: 20,
     location: {
       long: 52.0123,
       lat: 52.213,
     },
-    refs: arr,
   })
 
+  await wait(0)
+  t.is(Math.round(db.get('simple', id1).location.long * 10000) / 10000, 52.0123)
+
+  const refs = []
+  for (let i = 0; i < 1e4; i++) {
+    refs.push(i)
+  }
+
+  const id2 = db.create('vote', {
+    user: 1,
+    vectorClock: 22,
+    location: {
+      long: 52.1,
+      lat: 52.2,
+    },
+    refs,
+  })
+  await wait(0)
+  t.is(db.get('vote', id2).vectorClock, 22)
+  t.is(db.get('vote', id2).refs.length, 1e4)
+
+  let d = Date.now()
   let lId = 0
   for (let i = 0; i < 2e6; i++) {
     lId = db.create('simple', {
       user: 1,
       vectorClock: i,
       location: {
-        long: 52.0123,
-        lat: 52.213,
+        long: 52,
+        lat: 52,
       },
     })
   }
-
   await wait(0)
+  console.info('perf', Date.now() - d, 'ms', '2M inserts (2 dbis)')
 
-  console.info(db.get('simple', lId))
-
-  // for (let i = 0; i < 1e6; i++) {
-  //   db.create('simple', {
-  //     user: 1,
-  //     vectorClock: 20,
-  //     location: {
-  //       long: 52.0123,
-  //       lat: 52.213,
-  //     },
-  //   })
-  // }
+  t.deepEqual(db.get('simple', lId), {
+    user: 1,
+    vectorClock: 2e6 - 1,
+    location: {
+      long: 52,
+      lat: 52,
+    },
+  })
 
   t.pass()
 })
