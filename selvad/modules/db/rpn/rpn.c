@@ -436,12 +436,13 @@ static struct rpn_operand *selva_string_to_op(const struct selva_string *s) {
         v = alloc_rpn_operand(slen);
         v->s_size = slen;
         selva_string_decompress(s, v->s);
+        v->d = strtod_s(v->s, v->s_size);
     } else {
         v = alloc_rpn_operand(sizeof(char *));
         v->flags.spused = true;
         v->sp = selva_string_to_str(s, &v->s_size);
+        v->d = strtod_s(v->sp, v->s_size);
     }
-    v->d = nan_undefined();
 
     return v;
 }
@@ -612,7 +613,7 @@ enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, const struct se
     } else {
         memcpy(r->s, selva_string_to_str(s, NULL), slen);
     }
-    r->d = nan_undefined();
+    r->d = strtod_s(r->s, r->s_size);
     r->flags.regist = true;
 
     ctx->reg[i] = r;
