@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <tgmath.h>
@@ -31,7 +31,7 @@ long long ts_now(void)
      * Don't bother checking the error because it never fails
      * in a working system.
      */
-    clock_gettime(CLOCK_REALTIME, &ts);
+    (void)clock_gettime(CLOCK_REALTIME, &ts);
     now = ts.tv_sec * 1000 + lround((double)ts.tv_nsec / 1.0e6);
 
     return now;
@@ -39,12 +39,12 @@ long long ts_now(void)
 
 void ts_monotime(struct timespec *spec)
 {
-    clock_gettime(MONOTIME_SOURCE, spec);
+    (void)clock_gettime(MONOTIME_SOURCE, spec);
 }
 
 void ts_monorealtime(struct timespec *spec)
 {
-    clock_gettime(TAI_SOURCE, spec);
+    (void)clock_gettime(TAI_SOURCE, spec);
 }
 
 long long ts_monorealtime_now(void)
@@ -52,7 +52,7 @@ long long ts_monorealtime_now(void)
     struct timespec ts;
     long long now;
 
-    clock_gettime(TAI_SOURCE, &ts);
+    (void)clock_gettime(TAI_SOURCE, &ts);
     now = ts.tv_sec * 1000 + lround((double)ts.tv_nsec / 1.0e6);
 
     return now;
