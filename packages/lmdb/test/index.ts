@@ -258,11 +258,11 @@ test.only('query + filter', async (t) => {
     },
   })
 
-  for (let i = 0; i < 2e6; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('simple', {
       user: 1,
       refs: [1, 2, 3],
-      vectorClock: i,
+      vectorClock: 3,
       location: {
         long: 52,
         lat: 52,
@@ -277,7 +277,7 @@ test.only('query + filter', async (t) => {
     .query('simple')
     .filter(['vectorClock', '=', 3])
     .filter(['refs', 'has', [1, 2, 3]])
-    .range(0, 1e4)
+    .range(10, 10)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')

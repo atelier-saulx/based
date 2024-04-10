@@ -22,8 +22,8 @@ fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) c.napi_value {
-    var argc: usize = 3;
-    var argv: [3]c.napi_value = undefined;
+    var argc: usize = 5;
+    var argv: [5]c.napi_value = undefined;
 
     if (c.napi_get_cb_info(env, info, &argc, &argv, null, null) != c.napi_ok) {
         return jsThrow(env, "Failed to get args.");
@@ -36,7 +36,6 @@ fn getQueryInternal(
     }
 
     var type_prefix: [2]u8 = undefined;
-    // var type_size: usize = undefined;
 
     if (c.napi_get_value_string_utf8(env, argv[1], @ptrCast(&type_prefix), 3, null) != c.napi_ok) {
         return jsThrow(env, "Failed to get args. (str)");
@@ -47,19 +46,15 @@ fn getQueryInternal(
         return jsThrow(env, "Failed to get args.");
     }
 
-    // 1 byte [operation] (= 1)
-    // 2 bytes [size of filter]
-    // 2 bytes [index to read]
-    // 4 bytes [equal integer]
+    var start: u32 = undefined;
+    if (c.napi_get_value_int32(env, argv[3], @ptrCast(&start)) != c.napi_ok) {
+        return jsThrow(env, "Failed to get args.");
+    }
 
-    // read from dbi
-
-    // vectorClock 20 0 00   // 20 0 01
-    // name 20 1 00          // 20 1 01
-
-    // get id from 20 0 00 condition pass ? yes get from 20 1 00
-
-    //
+    var end: u32 = undefined;
+    if (c.napi_get_value_int32(env, argv[4], @ptrCast(&end)) != c.napi_ok) {
+        return jsThrow(env, "Failed to get args.");
+    }
 
     var txn: ?*c.MDB_txn = null;
 
@@ -69,21 +64,10 @@ fn getQueryInternal(
         return jsThrow(env, @errorName(err));
     };
 
-    // "prefix000"
-
-    //check first byte if ! zero -> select field 0
-    // if zero
-
-    // type_prefix
-
     const dbi_name = "10000";
 
     std.debug.print(" {s}\n", .{dbi_name});
     std.debug.print("SIZE {s}\n", .{type_prefix});
-
-    // dbi_name.
-
-    // + "0" + "00"
 
     var cursor: ?*c.MDB_cursor = null;
 
@@ -106,10 +90,11 @@ fn getQueryInternal(
     var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
     var total_results: usize = 0;
-    var i: u32 = 1;
-    const MAX_RESULTS = 10000;
+    var i: u32 = start + 1;
 
-    keys_loop: while (total_results < MAX_RESULTS and i < last_id + 1) : (i += 1) {
+    const query: [*]u8 = @as([*]u8, @ptrCast(buffer_contents.?));
+
+    keys_loop: while (total_results < end and i < last_id + 1) : (i += 1) {
         k.mv_data = &i;
 
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -141,53 +126,84 @@ fn getQueryInternal(
             // -> get dbi type 20 1 00
 
             // op 1 byte
-            const operation = @as([*]u8, @ptrCast(buffer_contents.?))[j]; // 1 aka "="
-            _ = operation; // TODO
-            // std.debug.print("op = {d}\n", .{operation});
+            const operation = query[j]; // 1 aka "="
 
-            // 2 bytes
-            const filter_size: u16 = std.mem.readInt(
-                u16,
-                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 1 ..][0..2],
-                .little,
-            );
+            if (operation == 1) {
 
-            // std.debug.print("filter_size = {d}\n", .{filter_size});
+                // std.debug.print("op = {d}\n", .{operation});
 
-            // index where to look 2 bytes
-            const index: u16 = std.mem.readInt(
-                u16,
-                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 3 ..][0..2],
-                .little,
-            );
+                // 2 bytes
+                const filter_size: u16 = std.mem.readInt(
+                    u16,
+                    query[j + 1 ..][0..2],
+                    .little,
+                );
 
-            // std.debug.print("index = {d}\n", .{index});
+                // std.debug.print("filter_size = {d}\n", .{filter_size});
 
-            // value filter_size - 2 bytes
-            // make loop filter_size - 5 bytes long and compare each byte
-            for (
-                @as([*]const u8, @ptrCast(buffer_contents.?))[j + 5 .. j + 5 + filter_size],
-                0..,
-            ) |byte, z| {
-                if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
-                    // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
-                    //     byte,
-                    //     @as([*]u8, @ptrCast(v.mv_data))[index + z],
-                    // });
+                // index where to look 2 bytes
+                const index: u16 = std.mem.readInt(
+                    u16,
+                    query[j + 3 ..][0..2],
+                    .little,
+                );
 
-                    break :query_loop;
+                // IS EQUAL
+                for (
+                    query[j + 5 .. j + 5 + filter_size],
+                    0..,
+                ) |byte, z| {
+                    if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
+                        // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
+                        //     byte,
+                        //     @as([*]u8, @ptrCast(v.mv_data))[index + z],
+                        // });
+
+                        break :query_loop;
+                    }
+                    if (index + z == v.mv_size - 1) {
+                        // we reached the end without breaking, means we have a hit
+                        std.debug.print("GOT A HIT WITH KEY {d}\n", .{i});
+
+                        total_results += 1;
+                        values.append(i) catch return jsThrow(env, "OOM");
+                        break :query_loop;
+                    }
                 }
-                if (index + z == v.mv_size - 1) {
-                    // we reached the end without breaking, means we have a hit
-                    std.debug.print("GOT A HIT WITH KEY {d}\n", .{i});
+                j += filter_size + 3;
+            } else if (operation == 0) {
+                const field = query[j + 1]; // 1 aka "="
 
-                    total_results += 1;
-                    values.append(i) catch return jsThrow(env, "OOM");
-                    break :query_loop;
-                }
+                std.debug.print("FIELD BITCH = {d}\n", .{field});
+
+                // MAKE DBI
+
+                j += 2;
+
+                // // value filter_size - 2 bytes
+                // // make loop filter_size - 5 bytes long and compare each byte
+                // for (
+                //     @as([*]const u8, @ptrCast(buffer_contents.?))[j + 5 .. j + 5 + filter_size],
+                //     0..,
+                // ) |byte, z| {
+                //     if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
+                //         // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
+                //         //     byte,
+                //         //     @as([*]u8, @ptrCast(v.mv_data))[index + z],
+                //         // });
+
+                //         break :query_loop;
+                //     }
+                //     if (index + z == v.mv_size - 1) {
+                //         // we reached the end without breaking, means we have a hit
+                //         std.debug.print("GOT A HIT WITH KEY {d}\n", .{i});
+
+                //         total_results += 1;
+                //         values.append(i) catch return jsThrow(env, "OOM");
+                //         break :query_loop;
+                //     }
+                // }
             }
-
-            j += filter_size + 3;
         }
 
         // -------------------------------------------------------------
