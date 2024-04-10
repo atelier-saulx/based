@@ -43,7 +43,9 @@ export class Query {
   type: SchemaTypeDef
   id: number | void
   conditions: Buffer[]
-  constructor(db: BasedDb, target: string) {
+  start: number
+  end: number
+  constructor(db: BasedDb, target: string, previous?: Query) {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
     if (typeDef) {
@@ -52,6 +54,7 @@ export class Query {
       // is ID check prefix
     }
   }
+
   filter(filter: [string, Operation, any]) {
     if (this.id) {
     } else {
@@ -110,7 +113,14 @@ export class Query {
       return this
     }
   }
-  get(): number[] {
+
+  range(start: number, end: number): Query {
+    this.start = start
+    this.end = end
+    return this
+  }
+
+  get(): { items: number[]; total: number; start: number; end: number } {
     // run filter
 
     if (this.conditions) {
@@ -136,13 +146,20 @@ export class Query {
       new Uint8Array(Buffer.concat(this.conditions)),
     )
 
+    const start = this.start ?? 0
+    const end = this.end ?? 1e3
+
     const x = dbZig.getQuery(
       this.conditions.length > 1
         ? Buffer.concat(this.conditions)
         : this.conditions[0],
       this.type.dbMap.prefix,
       this.type.meta.lastId,
+      start,
+      end, // def 1k ?
     )
+
+    // maybe return page and total
 
     console.log(this.type.dbMap.prefix)
 
@@ -152,7 +169,7 @@ export class Query {
       arr[i / 4] = x.readUint32LE(i)
     }
 
-    return arr
+    return { items: arr, total: this.type.meta.total, start, end }
   }
 }
 
