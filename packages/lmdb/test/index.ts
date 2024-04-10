@@ -263,7 +263,7 @@ test.only('query + filter', async (t) => {
     db.create('simple', {
       user: 1,
       refs: [1, 2, 3],
-      flap: 'my flap ' + (i % 2),
+      flap: 'my flap ' + (i % 4),
       vectorClock: 3,
       location: {
         long: 52,
@@ -277,10 +277,10 @@ test.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['vectorClock', '=', 3])
     .filter(['flap', '=', 'my flap 1'])
+    .filter(['vectorClock', '=', 3])
     .filter(['refs', '=', [1, 2, 3]])
-    .range(100, 10e6) // -10 , 25
+    .range(10, 1e3) // -10 , 25
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')

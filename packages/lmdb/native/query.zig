@@ -72,29 +72,21 @@ fn getQueryInternal(
 
     const allocator = arena.allocator();
 
+    //
+
     var keys = std.ArrayList(u32).init(allocator);
+    // var keys = try std.ArrayList(u32).initCapacity(allocator, 1_000_000);
     var keysPrev: ?std.ArrayList(u32) = null;
 
     var total_results: usize = 0;
 
     const queries: [*]u8 = @as([*]u8, @ptrCast(buffer_contents.?));
 
-    // var i: u32 = start + 1;
-
-    //     [
-    //   48, 9, 0,  1,  4, 0, 20, 0, 3,
-    //    0, 0, 0, 51, 15, 0,  7, 3, 0,
-    //    1, 0, 0,  0,  2, 0,  0, 0, 3,
-    //    0, 0, 0
-    // ]
-
     var x: usize = 0;
     var currentShard: u8 = 0;
     const maxShards: u32 = @divFloor(last_id, 1_000_000);
-    // 48 = 0
-    // 49 = 1
 
-    while (x < buffer_size) {
+    outside: while (x < buffer_size) {
         const dbiChar = queries[x];
         var dbi: c.MDB_dbi = 0;
         var all_together: [5]u8 = undefined;
@@ -153,13 +145,18 @@ fn getQueryInternal(
         var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
         if (x == 0) {
-            var i: u32 = 1;
+            var i: u32 = @as(u32, currentShard) * 1_000_000 + 1;
+
+            var len: usize = last_id;
+            if (len > @as(usize, currentShard + 1) * 1_000_000) {
+                len = @as(usize, currentShard + 1) * 1_000_000;
+            }
+
             while (i < last_id + 1 and (!is_last or total_results < end + start)) : (i += 1) {
                 k.mv_data = &i;
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 mdbThrow(c.mdb_cursor_get(cursor, &k, &v, c.MDB_SET)) catch |err| {
                     if (err != MdbError.MDB_NOTFOUND) {
-                        // TODO instead of throwing just send an empty buffer
                         return jsThrow(env, @errorName(err));
                     } else {
                         continue;
@@ -176,10 +173,16 @@ fn getQueryInternal(
                     try keys.replaceRange(0, start, &.{});
                     total_results -= start;
                 }
+                c.mdb_cursor_close(cursor);
+                break :outside;
             }
         } else {
-            var i: usize = 0;
-            const len: usize = keysPrev.?.items.len;
+            var i: usize = @as(usize, currentShard) * 1_000_000;
+            //
+            var len: usize = keysPrev.?.items.len;
+            if (len > @as(usize, currentShard + 1) * 1_000_000) {
+                len = @as(usize, currentShard + 1) * 1_000_000;
+            }
             while (i < len) : (i += 1) {
                 var key = keysPrev.?.items[i];
 
@@ -215,18 +218,20 @@ fn getQueryInternal(
                         }
                     }
                 }
+                c.mdb_cursor_close(cursor);
+                break :outside;
             }
         }
 
         c.mdb_cursor_close(cursor);
 
-        if (is_last and total_results >= end + start) {
-            break;
-        }
-
         if (currentShard < maxShards) {
             currentShard += 1;
+            std.debug.print("select next shard keys: {d} shard: {d}\n", .{ keys.items.len, currentShard });
         } else {
+            std.debug.print("select next dbi\n", .{});
+            std.debug.print(" keys: {d}\n", .{keys.items.len});
+
             if (keys.items.len == 0) {
                 break;
             }
