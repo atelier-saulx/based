@@ -86,17 +86,24 @@ static ssize_t sendbufs_flush(int fd, struct server_sendbufs *sendbufs)
 {
     ssize_t res;
     size_t n = sendbufs->i;
+    uint16_t free_map = 0;
 
-    res = tcp_writev(fd, sendbufs->vec, sendbufs->i);
+    /*
+     * We need to make a bit mask now because sendbufs->vec will be
+     * modifed by tcp_writev().
+     * TODO We assume here that vecs 0 to n are in use but what if that's not the case?
+     */
+    for (size_t i = 0; i < n; i++) {
+        size_t buf_i = (size_t)(((ptrdiff_t)sendbufs->vec[i].iov_base - (ptrdiff_t)sendbufs->buf) / SELVA_PROTO_FRAME_SIZE_MAX);
+        free_map |= 1 << buf_i;
+    }
+
+    res = tcp_writev(fd, sendbufs->vec, n);
     if (res < 0) {
         return res;
     }
     sendbufs->i = 0;
-
-    for (size_t i = 0; i < n; i++) {
-        size_t buf_i = (size_t)(((ptrdiff_t)sendbufs->vec[i].iov_base - (ptrdiff_t)sendbufs->buf) / SELVA_PROTO_FRAME_SIZE_MAX);
-        sendbufs->buf_res_map |= 1 << buf_i; /* Mark it free. */
-    }
+    sendbufs->buf_res_map |= free_map;
 
     return 0;
 }
@@ -307,7 +314,7 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
         realloc_ctx_msg_buf(ctx, ctx->recv.msg_buf_size + SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX);
     }
 
-    const struct iovec rd[2] = {
+    struct iovec rd[2] = {
         {
             .iov_base = &ctx->recv_frame_hdr_buf,
             .iov_len = sizeof(ctx->recv_frame_hdr_buf),

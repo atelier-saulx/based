@@ -239,7 +239,7 @@ void recv_message(int fd)
             }, NULL);
 
     do {
-        const struct iovec rd_vec[2] = {
+        struct iovec rd_vec[2] = {
             {
                 .iov_base = &resp_hdr,
                 .iov_len = sizeof(resp_hdr),

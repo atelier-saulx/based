@@ -380,7 +380,7 @@ static struct seq_state *recv_frame(int fd)
 {
     struct selva_proto_header hdr;
     char payload[SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX];
-    const struct iovec rd_vec[2] = {
+    struct iovec rd_vec[2] = {
         {
             .iov_base = &hdr,
             .iov_len = sizeof(hdr),

@@ -475,7 +475,7 @@ int recv_message(int fd)
     size_t i = 0;
 
     do {
-        const struct iovec rd_vec[2] = {
+        struct iovec rd_vec[2] = {
             {
                 .iov_base = &resp_hdr,
                 .iov_len = sizeof(resp_hdr),
