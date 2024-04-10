@@ -162,7 +162,7 @@ fn getQueryInternal(
                         continue;
                     }
                 };
-                if (runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, buffer_size)) {
+                if (runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, querySize)) {
                     total_results += 1;
                     keys.append(i) catch return jsThrow(env, "OOM");
                 }
@@ -199,7 +199,7 @@ fn getQueryInternal(
                     }
                 };
 
-                if (runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, buffer_size)) {
+                if (runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, querySize)) {
                     total_results += 1;
                     keys.append(key) catch return jsThrow(env, "OOM");
                     if (is_last and total_results >= start + end) {

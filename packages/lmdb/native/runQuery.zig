@@ -2,8 +2,9 @@ const std = @import("std");
 
 pub fn runQuery(value: []u8, query: [*]u8, size: usize) bool {
     var j: usize = 0;
-    while (j < size) {
+    outside: while (j < size) {
         const operation = query[j];
+
         if (operation == 1) {
             const filter_size: u16 = std.mem.readInt(
                 u16,
@@ -23,10 +24,11 @@ pub fn runQuery(value: []u8, query: [*]u8, size: usize) bool {
                     return false;
                 }
                 if (index + z == value.len - 1) {
-                    return true;
+                    j += filter_size + 3;
+                    continue :outside;
                 }
             }
-            j += filter_size + 3;
+            return false;
         } else if (operation == 2) {
             const filter_size: u16 = std.mem.readInt(
                 u16,
@@ -44,11 +46,47 @@ pub fn runQuery(value: []u8, query: [*]u8, size: usize) bool {
                     return false;
                 }
                 if (z == value.len - 1) {
-                    return true;
+                    j += filter_size + 3;
+                    continue :outside;
                 }
             }
-            j += filter_size + 3;
+            return false;
+        } else if (operation == 7) {
+            const filter_size: u16 = std.mem.readInt(
+                u16,
+                query[j + 1 ..][0..2],
+                .little,
+            );
+
+            var i: u16 = 0;
+
+            while (i < value.len) : (i += 4) {
+                var p: usize = j + 3;
+                while (p < filter_size * 4 + j + 3) : (p += 4) {
+                    if (value[i] != query[p]) {
+                        continue;
+                    }
+                    if (value[i + 1] != query[p + 1]) {
+                        continue;
+                    }
+                    if (value[i + 2] != query[p + 2]) {
+                        continue;
+                    }
+                    if (value[i + 3] != query[p + 3]) {
+                        continue;
+                    }
+
+                    j += filter_size * 4 + 3;
+                    continue :outside;
+                }
+            }
+            return false;
+        } else {
+            std.debug.print("WRONG\n", .{});
+
+            return true;
         }
     }
-    return false;
+
+    return true;
 }

@@ -260,11 +260,11 @@ test.only('query + filter', async (t) => {
   })
 
   const refs = []
-  for (let i = 1; i < 1e3 - 1; i++) {
+  for (let i = 1; i < 10 - 1; i++) {
     refs.push(i)
   }
 
-  for (let i = 0; i < 1e5 - 1; i++) {
+  for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: 1,
       refs: i % 4 ? refs : [100, 1],
@@ -287,7 +287,7 @@ test.only('query + filter', async (t) => {
 
     // .filter(['flap', '=', 'my flap flap flap 1'])
     // .filter(['vectorClock', '=', 3])
-    .filter(['refs', '=', refs])
+    .filter(['refs', 'has', [100]])
     .range(0, 100) // -10 , 25
     .get()
 
