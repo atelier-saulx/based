@@ -503,8 +503,11 @@ static struct SelvaObjectKey *alloc_key(struct SelvaObject *obj, const char *nam
         key = selva_malloc(key_size);
     }
 
-    memset(key, 0, key_size);
+    key->type = SELVA_OBJECT_NULL;
+    key->subtype = SELVA_OBJECT_NULL;
+    key->user_meta = 0;
     key->container = obj;
+    key->name[name_len] = '\0';
     memcpy(key->name, name_str, name_len);
     key->name_len = (typeof(key->name_len))name_len;
 
