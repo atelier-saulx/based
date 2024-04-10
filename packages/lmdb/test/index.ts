@@ -278,9 +278,9 @@ test.only('query + filter', async (t) => {
   const ids = db
     .query('simple')
     .filter(['flap', '=', 'my flap 1'])
-    .filter(['vectorClock', '=', 3])
+    // .filter(['vectorClock', '=', 3])
     .filter(['refs', '=', [1, 2, 3]])
-    .range(10, 1e3) // -10 , 25
+    .range(10, 10) // -10 , 25
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
