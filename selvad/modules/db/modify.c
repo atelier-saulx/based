@@ -1655,6 +1655,22 @@ static int op_fixup(struct SelvaModifyFieldOp *op, const char *buf, size_t len)
     return 0;
 }
 
+/**
+ * field_name_str should be alaways within a page.
+ */
+static size_t get_short_field_name_len(const char field_name_str[SELVA_SHORT_FIELD_NAME_LEN])
+{
+    uint64_t x;
+
+    static_assert(SELVA_SHORT_FIELD_NAME_LEN == 8);
+    memcpy(&x, field_name_str, sizeof(x));
+#define haszero(v) (((v) - 0x0101010101010101UL) & ~(v) & 0x8080808080808080UL)
+    uint64_t y = haszero(x);
+#undef haszero
+
+    return y == 0 ? sizeof(x) : __builtin_ctzl(y) / 8;
+}
+
 static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t data_len)
 {
     struct SelvaModifyFieldOp op;
@@ -1721,7 +1737,7 @@ static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t d
         ctx->cur_field.name_len = res;
     } else {
         memcpy(ctx->cur_field.name_str, op.field_name, sizeof(ctx->cur_field.name_str));
-        ctx->cur_field.name_len = strnlen(op.field_name, SELVA_SHORT_FIELD_NAME_LEN);
+        ctx->cur_field.name_len = get_short_field_name_len(op.field_name);
     }
 
     return modify_op_fn[op.op](ctx, &op);
