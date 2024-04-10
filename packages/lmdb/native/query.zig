@@ -89,6 +89,11 @@ fn getQueryInternal(
     // ]
 
     var x: usize = 0;
+    var currentShard: u8 = 0;
+    const maxShards: u32 = @divFloor(last_id, 1_000_000);
+    // 48 = 0
+    // 49 = 1
+
     while (x < buffer_size) {
         const dbiChar = queries[x];
         var dbi: c.MDB_dbi = 0;
@@ -100,19 +105,43 @@ fn getQueryInternal(
             .little,
         );
 
-        const dbi_name = try std.fmt.bufPrint(all_together[0..5], "{s}{c}{s}", .{ type_prefix, dbiChar, "00" });
+        const dbi_name = try std.fmt.bufPrint(all_together[0..5], "{s}{c}{c}{s}", .{ type_prefix, dbiChar, currentShard + 48, "0" });
 
         std.debug.print("get from dbi_name {s}\n", .{dbi_name});
 
         var cursor: ?*c.MDB_cursor = null;
+        const is_last = x + querySize + 3 == buffer_size;
 
+        // make a variable and an if
         mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
             if (err != MdbError.MDB_NOTFOUND) {
                 c.mdb_txn_abort(txn);
                 return jsThrow(env, @errorName(err));
             } else {
                 c.mdb_cursor_close(cursor);
+
+                if (is_last) {
+                    if (keys.items.len != 0) {
+                        keysPrev.?.deinit();
+                        if (keys.items.len < start) {
+                            keys.clearAndFree();
+                            total_results = 0;
+                        } else {
+                            if (start > 0) {
+                                try keys.replaceRange(0, start, &.{});
+                                total_results -= start;
+                            }
+                        }
+                        if (keys.items.len > end) {
+                            try keys.replaceRange(end, keys.items.len - end, &.{});
+                            total_results = end;
+                        }
+                    }
+                }
+
                 x += querySize + 3;
+                std.debug.print("cannot find shard x {s}\n", .{dbi_name});
+
                 continue;
             }
         };
@@ -123,11 +152,7 @@ fn getQueryInternal(
         };
         var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
-        const is_last = x + querySize + 3 == buffer_size;
-
         if (x == 0) {
-
-            // then we can check for end
             var i: u32 = 1;
             while (i < last_id + 1 and (!is_last or total_results < end + start)) : (i += 1) {
                 k.mv_data = &i;
@@ -144,69 +169,47 @@ fn getQueryInternal(
                     total_results += 1;
                     keys.append(i) catch return jsThrow(env, "OOM");
                 }
-                if (i > last_id) {
-                    break;
-                }
             }
 
-            // if (is_last and keys.items.len != 0) {
-            //     if (start > 0) {
-            //         try keys.replaceRange(0, start, &.{});
-            //         total_results -= start;
-            //     }
-            // }
-        } else {
-            if (keysPrev != null) {
-                keysPrev.?.deinit();
+            if (is_last and keys.items.len != 0 and (currentShard == maxShards or total_results >= end + start)) {
+                if (start > 0) {
+                    try keys.replaceRange(0, start, &.{});
+                    total_results -= start;
+                }
             }
-            keysPrev = keys;
-            keys = std.ArrayList(u32).init(allocator);
-            total_results = 0;
+        } else {
             var i: usize = 0;
             const len: usize = keysPrev.?.items.len;
             while (i < len) : (i += 1) {
                 var key = keysPrev.?.items[i];
+
                 k.mv_data = &key;
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 mdbThrow(c.mdb_cursor_get(cursor, &k, &v, c.MDB_SET)) catch |err| {
                     if (err != MdbError.MDB_NOTFOUND) {
-                        // TODO instead of throwing just send an empty buffer
                         return jsThrow(env, @errorName(err));
                     } else {
-                        // total_results -= 1;
-                        // _ = keys.swapRemove(i);
-                        // len -= 1;
-                        // i -= 1;
-                        // keys.items[i] = 0;
                         continue;
                     }
                 };
 
-                if (!runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, buffer_size)) {
-                    // total_results -= 1;
-                    // keys.items[i] = 0;
-
-                    // _ = keys.swapRemove(i);
-                    // len -= 1;
-                    // i -= 1;
-                } else {
+                if (runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, buffer_size)) {
                     total_results += 1;
                     keys.append(key) catch return jsThrow(env, "OOM");
-
-                    if (is_last and total_results > start + end) {
+                    if (is_last and total_results >= start + end) {
                         break;
                     }
                 }
             }
 
-            if (is_last) {
+            if (is_last and (currentShard == maxShards or total_results >= end + start)) {
                 if (keys.items.len != 0) {
                     keysPrev.?.deinit();
-                    if (keys.items.len < start) {
-                        keys.clearAndFree();
-                        total_results = 0;
-                    } else {
-                        if (start > 0) {
+                    if (start > 0) {
+                        if (keys.items.len < start) {
+                            keys.clearAndFree();
+                            total_results = 0;
+                        } else {
                             try keys.replaceRange(0, start, &.{});
                             total_results -= start;
                         }
@@ -217,11 +220,31 @@ fn getQueryInternal(
 
         c.mdb_cursor_close(cursor);
 
-        if (keys.items.len == 0) {
+        if (is_last and total_results >= end + start) {
             break;
         }
 
-        x += querySize + 3;
+        if (currentShard < maxShards) {
+            currentShard += 1;
+        } else {
+            if (keys.items.len == 0) {
+                break;
+            }
+            x += querySize + 3;
+
+            if (keysPrev != null) {
+                keysPrev.?.deinit();
+            }
+
+            if (x >= buffer_size) {
+                break;
+            }
+
+            keysPrev = keys;
+            keys = std.ArrayList(u32).init(allocator);
+            total_results = 0;
+            currentShard = 0;
+        }
     }
 
     var data: ?*anyopaque = undefined;

@@ -8,6 +8,9 @@ const drain = (db: BasedDb) => {
     db.setQueueByDbi = new Map()
     setQ.forEach((v, k) => {
       const dbiBuffer = db.dbiIndex.get(k)
+
+      console.log('WRITE', dbiBuffer.toString(), v.length)
+
       // fix this concat is shitty
       dbZig.setBatch4(Buffer.concat(v), dbiBuffer)
     })
@@ -18,6 +21,7 @@ const drain = (db: BasedDb) => {
 
 export const addWrite = (db: BasedDb, dbi: number, value: Buffer) => {
   let q = db.setQueueByDbi.get(dbi)
+
   if (!q) {
     q = []
     db.setQueueByDbi.set(dbi, q)
