@@ -3,6 +3,7 @@ const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Envs = @import("env.zig");
 const globals = @import("globals.zig");
+const runQuery = @import("runQuery.zig").runQuery;
 
 const mdbThrow = errors.mdbThrow;
 const jsThrow = errors.jsThrow;
@@ -11,17 +12,21 @@ const MdbError = errors.MdbError;
 const SIZE_BYTES = globals.SIZE_BYTES;
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(env, info);
+    return getQueryInternal(env, info) catch return null;
 }
 
 const KEY_LEN = 4;
 
 // dbZig.query(filter, typePrefix, totalShards)
 
+// for DBI
+// make simple list of ids
+//
+
 fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
-) c.napi_value {
+) !c.napi_value {
     var argc: usize = 5;
     var argv: [5]c.napi_value = undefined;
 
@@ -58,25 +63,7 @@ fn getQueryInternal(
 
     var txn: ?*c.MDB_txn = null;
 
-    var dbi: c.MDB_dbi = 0;
-
     mdbThrow(c.mdb_txn_begin(Envs.env, null, c.MDB_RDONLY, &txn)) catch |err| {
-        return jsThrow(env, @errorName(err));
-    };
-
-    const dbi_name = "10000";
-
-    std.debug.print(" {s}\n", .{dbi_name});
-    std.debug.print("SIZE {s}\n", .{type_prefix});
-
-    var cursor: ?*c.MDB_cursor = null;
-
-    mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
-        c.mdb_txn_abort(txn);
-        return jsThrow(env, @errorName(err));
-    };
-
-    mdbThrow(c.mdb_cursor_open(txn, dbi, &cursor)) catch |err| {
         return jsThrow(env, @errorName(err));
     };
 
@@ -85,134 +72,156 @@ fn getQueryInternal(
 
     const allocator = arena.allocator();
 
-    var values = std.ArrayList(u32).init(allocator);
-
-    var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
+    var keys = std.ArrayList(u32).init(allocator);
+    var keysPrev: ?std.ArrayList(u32) = null;
 
     var total_results: usize = 0;
-    var i: u32 = start + 1;
 
-    const query: [*]u8 = @as([*]u8, @ptrCast(buffer_contents.?));
+    const queries: [*]u8 = @as([*]u8, @ptrCast(buffer_contents.?));
 
-    keys_loop: while (total_results < end and i < last_id + 1) : (i += 1) {
-        k.mv_data = &i;
+    // var i: u32 = start + 1;
 
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+    //     [
+    //   48, 9, 0,  1,  4, 0, 20, 0, 3,
+    //    0, 0, 0, 51, 15, 0,  7, 3, 0,
+    //    1, 0, 0,  0,  2, 0,  0, 0, 3,
+    //    0, 0, 0
+    // ]
 
-        mdbThrow(c.mdb_cursor_get(cursor, &k, &v, c.MDB_SET)) catch |err| {
+    var x: usize = 0;
+    while (x < buffer_size) {
+        const dbiChar = queries[x];
+        var dbi: c.MDB_dbi = 0;
+        var all_together: [5]u8 = undefined;
+
+        const querySize: u16 = std.mem.readInt(
+            u16,
+            queries[x + 1 ..][0..2],
+            .little,
+        );
+
+        const dbi_name = try std.fmt.bufPrint(all_together[0..5], "{s}{c}{s}", .{ type_prefix, dbiChar, "00" });
+
+        std.debug.print("get from dbi_name {s}\n", .{dbi_name});
+
+        var cursor: ?*c.MDB_cursor = null;
+
+        mdbThrow(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi)) catch |err| {
             if (err != MdbError.MDB_NOTFOUND) {
-                // TODO instead of throwing just send an empty buffer
+                c.mdb_txn_abort(txn);
                 return jsThrow(env, @errorName(err));
             } else {
-                continue :keys_loop;
+                c.mdb_cursor_close(cursor);
+                x += querySize + 3;
+                continue;
             }
         };
 
-        // std.debug.print("key = {d},{x}\n", .{ i, @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size] });
+        mdbThrow(c.mdb_cursor_open(txn, dbi, &cursor)) catch |err| {
+            c.mdb_txn_abort(txn);
+            return jsThrow(env, @errorName(err));
+        };
+        var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
-        // -------------------------------------------------------------
-        // query loop
-        var j: usize = 0;
-        query_loop: while (j < buffer_size) {
-            // op 0 field 0
+        const is_last = x + querySize + 3 == buffer_size;
 
-            // op 1,
-            // size 6, 0,
-            // index 20, 0,
-            // value 1, 0, 0, 0
+        if (x == 0) {
 
-            // op 0
-            // field: 1
-            // -> get dbi type 20 1 00
-
-            // op 1 byte
-            const operation = query[j]; // 1 aka "="
-
-            if (operation == 1) {
-
-                // std.debug.print("op = {d}\n", .{operation});
-
-                // 2 bytes
-                const filter_size: u16 = std.mem.readInt(
-                    u16,
-                    query[j + 1 ..][0..2],
-                    .little,
-                );
-
-                // std.debug.print("filter_size = {d}\n", .{filter_size});
-
-                // index where to look 2 bytes
-                const index: u16 = std.mem.readInt(
-                    u16,
-                    query[j + 3 ..][0..2],
-                    .little,
-                );
-
-                // IS EQUAL
-                for (
-                    query[j + 5 .. j + 5 + filter_size],
-                    0..,
-                ) |byte, z| {
-                    if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
-                        // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
-                        //     byte,
-                        //     @as([*]u8, @ptrCast(v.mv_data))[index + z],
-                        // });
-
-                        break :query_loop;
+            // then we can check for end
+            var i: u32 = 1;
+            while (i < last_id + 1 and (!is_last or total_results < end + start)) : (i += 1) {
+                k.mv_data = &i;
+                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                mdbThrow(c.mdb_cursor_get(cursor, &k, &v, c.MDB_SET)) catch |err| {
+                    if (err != MdbError.MDB_NOTFOUND) {
+                        // TODO instead of throwing just send an empty buffer
+                        return jsThrow(env, @errorName(err));
+                    } else {
+                        continue;
                     }
-                    if (index + z == v.mv_size - 1) {
-                        // we reached the end without breaking, means we have a hit
-                        std.debug.print("GOT A HIT WITH KEY {d}\n", .{i});
+                };
+                if (runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, buffer_size)) {
+                    total_results += 1;
+                    keys.append(i) catch return jsThrow(env, "OOM");
+                }
+                if (i > last_id) {
+                    break;
+                }
+            }
 
-                        total_results += 1;
-                        values.append(i) catch return jsThrow(env, "OOM");
-                        break :query_loop;
+            // if (is_last and keys.items.len != 0) {
+            //     if (start > 0) {
+            //         try keys.replaceRange(0, start, &.{});
+            //         total_results -= start;
+            //     }
+            // }
+        } else {
+            if (keysPrev != null) {
+                keysPrev.?.deinit();
+            }
+            keysPrev = keys;
+            keys = std.ArrayList(u32).init(allocator);
+            total_results = 0;
+            var i: usize = 0;
+            const len: usize = keysPrev.?.items.len;
+            while (i < len) : (i += 1) {
+                var key = keysPrev.?.items[i];
+                k.mv_data = &key;
+                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                mdbThrow(c.mdb_cursor_get(cursor, &k, &v, c.MDB_SET)) catch |err| {
+                    if (err != MdbError.MDB_NOTFOUND) {
+                        // TODO instead of throwing just send an empty buffer
+                        return jsThrow(env, @errorName(err));
+                    } else {
+                        // total_results -= 1;
+                        // _ = keys.swapRemove(i);
+                        // len -= 1;
+                        // i -= 1;
+                        // keys.items[i] = 0;
+                        continue;
+                    }
+                };
+
+                if (!runQuery(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[x + 3 .. x + 3 + querySize].ptr, buffer_size)) {
+                    // total_results -= 1;
+                    // keys.items[i] = 0;
+
+                    // _ = keys.swapRemove(i);
+                    // len -= 1;
+                    // i -= 1;
+                } else {
+                    total_results += 1;
+                    keys.append(key) catch return jsThrow(env, "OOM");
+
+                    if (is_last and total_results > start + end) {
+                        break;
                     }
                 }
-                j += filter_size + 3;
-            } else if (operation == 0) {
-                const field = query[j + 1]; // 1 aka "="
+            }
 
-                std.debug.print("FIELD BITCH = {d}\n", .{field});
-
-                // MAKE DBI
-
-                j += 2;
-
-                // // value filter_size - 2 bytes
-                // // make loop filter_size - 5 bytes long and compare each byte
-                // for (
-                //     @as([*]const u8, @ptrCast(buffer_contents.?))[j + 5 .. j + 5 + filter_size],
-                //     0..,
-                // ) |byte, z| {
-                //     if (byte != @as([*]u8, @ptrCast(v.mv_data))[index + z]) {
-                //         // std.debug.print("COMPARISON FAILED BYTE {x} == {x}\n", .{
-                //         //     byte,
-                //         //     @as([*]u8, @ptrCast(v.mv_data))[index + z],
-                //         // });
-
-                //         break :query_loop;
-                //     }
-                //     if (index + z == v.mv_size - 1) {
-                //         // we reached the end without breaking, means we have a hit
-                //         std.debug.print("GOT A HIT WITH KEY {d}\n", .{i});
-
-                //         total_results += 1;
-                //         values.append(i) catch return jsThrow(env, "OOM");
-                //         break :query_loop;
-                //     }
-                // }
+            if (is_last) {
+                if (keys.items.len != 0) {
+                    keysPrev.?.deinit();
+                    if (keys.items.len < start) {
+                        keys.clearAndFree();
+                        total_results = 0;
+                    } else {
+                        if (start > 0) {
+                            try keys.replaceRange(0, start, &.{});
+                            total_results -= start;
+                        }
+                    }
+                }
             }
         }
 
-        // -------------------------------------------------------------
+        c.mdb_cursor_close(cursor);
 
-        // if i > 1e6 select correct shard and the same later
-
-        if (i > last_id) {
+        if (keys.items.len == 0) {
             break;
         }
+
+        x += querySize + 3;
     }
 
     var data: ?*anyopaque = undefined;
@@ -223,7 +232,7 @@ fn getQueryInternal(
     }
 
     var last_pos: usize = 0;
-    for (values.items) |*key| {
+    for (keys.items) |*key| {
         @memcpy(@as([*]u8, @ptrCast(data))[last_pos .. last_pos + KEY_LEN], @as([*]u8, @ptrCast(key)));
         last_pos += KEY_LEN;
     }

@@ -243,6 +243,7 @@ test.only('query + filter', async (t) => {
     types: {
       simple: {
         fields: {
+          flap: { type: 'string' },
           refs: { type: 'references', allowedTypes: ['user'] },
           user: { type: 'reference', allowedTypes: ['user'] },
           vectorClock: { type: 'integer' },
@@ -262,6 +263,7 @@ test.only('query + filter', async (t) => {
     db.create('simple', {
       user: 1,
       refs: [1, 2, 3],
+      flap: 'my flap ' + (i % 2),
       vectorClock: 3,
       location: {
         long: 52,
@@ -275,9 +277,10 @@ test.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['vectorClock', '=', 3])
-    .filter(['refs', 'has', [1, 2, 3]])
-    .range(10, 10)
+    // .filter(['vectorClock', '=', 3])
+    .filter(['flap', '=', 'my flap 1'])
+    // .filter(['refs', '=', [1, 2, 3]])
+    .range(10, 25)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
