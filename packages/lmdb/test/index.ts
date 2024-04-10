@@ -260,7 +260,7 @@ test.only('query + filter', async (t) => {
   })
 
   const refs = []
-  for (let i = 0; i < 1e3 - 1; i++) {
+  for (let i = 1; i < 1e3 - 1; i++) {
     refs.push(i)
   }
 
