@@ -918,7 +918,7 @@ static int get_key(struct SelvaObject *obj, const char *key_name_str, size_t key
         key_name_len = ary_err;
     }
 
-    if (memmem(key_name_str, key_name_len, ".", 1)) {
+    if (memchr(key_name_str, key_name_len, '.')) {
         /* Look for a nested object. */
         return get_key_obj(obj, key_name_str, key_name_len, flags, out);
     }
