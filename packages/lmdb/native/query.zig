@@ -177,6 +177,9 @@ fn getQueryInternal(
                 break :outside;
             }
         } else {
+
+            // still wrong you want to check where the key is
+
             var i: usize = @as(usize, currentShard) * 1_000_000;
             //
             var len: usize = keysPrev.?.items.len;

@@ -259,11 +259,16 @@ test.only('query + filter', async (t) => {
     },
   })
 
-  for (let i = 0; i < 2e6 - 1; i++) {
+  const refs = []
+  for (let i = 0; i < 1e3 - 1; i++) {
+    refs.push(i)
+  }
+
+  for (let i = 0; i < 1e5 - 1; i++) {
     db.create('simple', {
       user: 1,
-      refs: [1, 2, 3],
-      flap: 'my flap ' + (i % 4),
+      refs,
+      flap: 'my flap flap flap ' + (i % 1000),
       vectorClock: 3,
       location: {
         long: 52,
@@ -277,10 +282,13 @@ test.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['flap', '=', 'my flap 1'])
-    // .filter(['vectorClock', '=', 3])
-    .filter(['refs', '=', [1, 2, 3]])
-    .range(10, 10) // -10 , 25
+
+    //
+
+    .filter(['flap', '=', 'my flap flap flap 1'])
+    .filter(['vectorClock', '=', 3])
+    .filter(['refs', '=', refs])
+    .range(10, 10000) // -10 , 25
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')

@@ -4,9 +4,6 @@ pub fn runQuery(value: []u8, query: [*]u8, size: usize) bool {
     var j: usize = 0;
     while (j < size) {
         const operation = query[j];
-
-        // if (op)
-
         if (operation == 1) {
             const filter_size: u16 = std.mem.readInt(
                 u16,
