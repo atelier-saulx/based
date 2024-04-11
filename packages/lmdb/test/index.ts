@@ -269,8 +269,8 @@ test.only('query + filter', async (t) => {
   for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: 1,
-      refs: i % 4 ? refs : [100, 1, i],
-      flap: 'my flap flap flap ' + (i % 1000),
+      refs: [100, 1, i],
+      flap: 'my flap flap flap 1',
       vectorClock: 3,
       location: {
         long: 52,
@@ -281,19 +281,16 @@ test.only('query + filter', async (t) => {
 
   await wait(100)
 
-  // const d = Date.now()
-  // const ids = db
-  //   .query('simple')
+  const d = Date.now()
+  const ids = db
+    .query('simple')
+    .filter(['flap', '=', 'my flap flap flap 1'])
+    .filter(['vectorClock', '=', 3])
+    .filter(['refs', 'has', [100]])
+    .range(10, 20) // -10 , 25
+    .get()
 
-  //   //
-
-  //   // .filter(['flap', '=', 'my flap flap flap 1'])
-  //   // .filter(['vectorClock', '=', 3])
-  //   .filter(['refs', 'has', [100, 1e3]])
-  //   .range(0, 100000) // -10 , 25
-  //   .get()
-
-  // console.info('query result ==', ids, Date.now() - d, 'ms')
+  console.info('query result ==', ids, Date.now() - d, 'ms')
 
   t.true(true)
 })

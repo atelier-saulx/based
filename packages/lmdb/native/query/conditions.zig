@@ -25,7 +25,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                         return false;
                     }
                     if (index + z == v.len - 1) {
-                        j += filter_size + 3;
+                        j += filter_size + 5;
                         continue :outside;
                     }
                 }
@@ -77,7 +77,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             else => {
-                std.debug.print("Incorrectly encoded condition (operation not handled)", .{});
+                std.debug.print("\nIncorrectly encoded condition (operation not handled)", .{});
                 return false;
             },
         }
