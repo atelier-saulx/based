@@ -31,7 +31,7 @@ fn createEnvInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_v
     try mdbCheck(c.mdb_env_set_maxreaders(env, 126));
 
     var flags: c_uint = 0;
-    // flags |= c.MDB_RDONLY;
+
     // flags |= c.MDB_RDONLY;
     // flags |= c.MDB_NOLOCK;
     // flags |= c.MDB_NOTLS;

@@ -10,10 +10,10 @@ const jsThrow = errors.jsThrow;
 const SIZE_BYTES = globals.SIZE_BYTES;
 
 pub fn setBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return setBatchInternal(env, info, 8) catch return null;
+    return setBatchInternal(env, info, 8) catch |err| return jsThrow(env, @errorName(err));
 }
 pub fn setBatch4(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return setBatchInternal(env, info, 4) catch return null;
+    return setBatchInternal(env, info, 4) catch |err| return jsThrow(env, @errorName(err));
 }
 
 fn setBatchInternal(
@@ -47,18 +47,16 @@ fn setBatchInternal(
     errdefer c.mdb_dbi_close(Envs.env, dbi);
 
     try mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
-    defer c.mdb_cursor_close(cursor);
+    errdefer c.mdb_cursor_close(cursor);
 
     var i: usize = 0;
     while (i < batch.len) {
-        const key = @as([*]u8, @ptrCast(batch))[i .. i + KEY_LEN];
-
+        const key = batch[i .. i + KEY_LEN];
         const value_size = std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
-
         const value = batch[i + KEY_LEN + SIZE_BYTES .. i + KEY_LEN + SIZE_BYTES + @as(usize, value_size)];
 
-        var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = @as([*]u8, @ptrCast(@alignCast(key.ptr))) };
-        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = @as([*]u8, @ptrCast(@alignCast(value.ptr))) };
+        var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = key.ptr };
+        var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = value.ptr };
 
         try mdbCheck(c.mdb_cursor_put(cursor, &k, &v, 0));
 

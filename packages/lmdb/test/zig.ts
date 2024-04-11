@@ -172,3 +172,55 @@ test.serial('get from non existing dbi', (t) => {
     t.deepEqual(data, values[i])
   }
 })
+
+// test.serial('del8 ', async (t) => {
+//   const KEY_LEN = 8
+//   const dbiName = Buffer.from('hello\0')
+
+//   const keys = []
+//   const values = []
+//   let totalLen = 0
+//   const entries = 1e6
+//   const get_buffer = Buffer.allocUnsafe(entries * KEY_LEN)
+//   const del_buffer = Buffer.allocUnsafe(~~((entries * KEY_LEN) / 2))
+
+//   for (let i = 0; i < 0 + entries; i++) {
+//     let key = Buffer.alloc(KEY_LEN)
+//     key.writeUInt32LE(i)
+//     key.copy(get_buffer, i * KEY_LEN)
+//     const value = Buffer.from('AMAZINGVALUE' + i)
+//     values.push(value)
+//     keys.push(key)
+//     totalLen += 4 + value.byteLength + KEY_LEN
+//   }
+
+//   const buf = Buffer.allocUnsafe(totalLen)
+
+//   let prevWritten = 0
+//   for (let i = 0; i < values.length; i++) {
+//     // key | size | value
+//     keys[i].copy(buf, prevWritten)
+//     prevWritten += KEY_LEN
+//     const bla = values[i].byteLength
+//     buf.writeUInt32LE(bla, prevWritten)
+//     prevWritten += 4
+//     values[i].copy(buf, prevWritten)
+//     prevWritten += bla
+//   }
+
+//   addon.setBatch8(buf, dbiName)
+
+//   const get_res = addon.getBatch8(get_buffer, dbiName)
+
+//   let last_read = 0
+//   for (let i = 0; i < entries; i++) {
+//     let data_len = get_res.subarray(last_read, last_read + 4).readInt32LE()
+
+//     last_read += 4
+//     const data = get_res.subarray(last_read, last_read + data_len)
+
+//     last_read += data_len
+
+//     t.deepEqual(data, values[i])
+//   }
+// })
