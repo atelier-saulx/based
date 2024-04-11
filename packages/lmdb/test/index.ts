@@ -236,6 +236,14 @@ test('get include', async (t) => {
   t.pass()
 })
 
+function generateRandomArray() {
+  var array = []
+  for (var i = 0; i < 5; i++) {
+    array.push(Math.floor(Math.random() * 20) + 1)
+  }
+  return array
+}
+
 test.only('query + filter', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
@@ -269,7 +277,7 @@ test.only('query + filter', async (t) => {
   for (let i = 0; i < 4e6 - 1; i++) {
     db.create('simple', {
       user: 1,
-      refs: [100, 1, i],
+      refs: generateRandomArray(),
       flap: 'my flap flap flap 1',
       vectorClock: 3,
       location: {
@@ -284,10 +292,10 @@ test.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['refs', 'has', [4e6 - 2]])
+    .filter(['refs', 'has', [20, 30, 10]])
     .filter(['flap', '=', 'my flap flap flap 1'])
     .filter(['vectorClock', '=', 3])
-    .range(10, 20) // -10 , 25
+    .range(10, 200)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
