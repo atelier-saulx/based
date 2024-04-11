@@ -56,7 +56,7 @@ pub const MdbError = error{
     UNKNOWN_ERROR,
 };
 
-pub fn mdbThrow(rc: c_int) MdbError!void {
+pub fn mdbCheck(rc: c_int) MdbError!void {
     // errors enum is never 0 so this return void when rc == 0
     try switch (rc) {
         c.MDB_SUCCESS => {},

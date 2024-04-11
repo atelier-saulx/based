@@ -1,11 +1,11 @@
 const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
-const Envs = @import("env.zig");
+const Envs = @import("env/env.zig");
 const globals = @import("globals.zig");
 const runQuery = @import("runQuery.zig").runQuery;
 
-const mdbThrow = errors.mdbThrow;
+const mdbThrow = errors.mdbCheck;
 const jsThrow = errors.jsThrow;
 const MdbError = errors.MdbError;
 
