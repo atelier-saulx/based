@@ -10,6 +10,13 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) c.napi_value {
     return null;
 }
 
+pub const Napi = error{
+    CannotGetBuffer,
+    CannotInitCtx,
+    CannotGetString,
+    CannotGetInt32,
+};
+
 pub const MdbError = error{
     // OS errors
     INVAL,

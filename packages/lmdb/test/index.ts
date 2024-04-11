@@ -5,6 +5,8 @@ import fs from 'node:fs/promises'
 import { BasedDb, createBuffer, parseBuffer } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
+import dbZig from '../src/db.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 const relativePath = '../tmp'
@@ -239,6 +241,8 @@ test.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
+  console.log(dbZig.power(Buffer.from('012345'), 'BA', 25))
+
   db.updateSchema({
     types: {
       simple: {
@@ -267,7 +271,7 @@ test.only('query + filter', async (t) => {
   for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: 1,
-      refs: i % 4 ? refs : [100, 1],
+      refs: i % 4 ? refs : [100, 1, i],
       flap: 'my flap flap flap ' + (i % 1000),
       vectorClock: 3,
       location: {
@@ -287,8 +291,8 @@ test.only('query + filter', async (t) => {
 
     // .filter(['flap', '=', 'my flap flap flap 1'])
     // .filter(['vectorClock', '=', 3])
-    .filter(['refs', 'has', [100]])
-    .range(0, 100) // -10 , 25
+    .filter(['refs', 'has', [100, 1e3]])
+    .range(0, 100000) // -10 , 25
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
