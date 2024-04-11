@@ -6,9 +6,7 @@ const Gets = @import("get/get.zig");
 const Envs = @import("env/env.zig");
 const Sets = @import("set/set.zig");
 const Dels = @import("del/del.zig");
-const Query = @import("query.zig");
-
-const PowerQuery = @import("./query/query.zig");
+const Query = @import("./query/query.zig");
 
 const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
@@ -65,7 +63,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "delBatch4", delBatch4) catch return null;
     registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
     registerFunction(env, exports, "getQuery", query) catch return null;
-    registerFunction(env, exports, "power", PowerQuery.getQuery) catch return null;
 
     return exports;
 }

@@ -158,7 +158,7 @@ export class Query {
       const end = this.limit ?? 1e3
 
       console.info('helloo', 'power', conditions)
-      const x = dbZig.power(
+      const x = dbZig.getQuery(
         conditions,
         this.type.dbMap.prefix,
         this.type.meta.lastId,
