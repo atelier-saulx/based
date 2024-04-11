@@ -26,18 +26,35 @@ struct event_loop_state event_loop_state;
 static void handle_pending_event(struct event *ev)
 {
     const enum event_type mask = ev->mask;
+    const int fd = ev->fd;
+    struct fd_reg *fdr = &event_loop_state.fds[fd];
 
-    if (mask & (EVENT_TYPE_FD_READABLE | EVENT_TYPE_FD_WRITABLE)) {
-        const int fd = ev->fd;
-        struct fd_reg *fdr = &event_loop_state.fds[fd];
-
-        if ((mask & EVENT_TYPE_FD_READABLE) && fdr->rd_cb) {
-            fdr->rd_cb(ev, fdr->arg);
-        }
-        if ((mask & EVENT_TYPE_FD_WRITABLE) && fdr->wr_cb) {
-            fdr->wr_cb(ev, fdr->arg);
+    if ((mask & EVENT_TYPE_FD_READABLE) && fdr->rd_cb) {
+        if (!fdr->rd_cb(ev, fdr->arg)) {
+            ev->mask ^= EVENT_TYPE_FD_READABLE;
         }
     }
+    if ((mask & EVENT_TYPE_FD_WRITABLE) && fdr->wr_cb) {
+        if (!fdr->wr_cb(ev, fdr->arg)) {
+            ev->mask ^= EVENT_TYPE_FD_WRITABLE;
+        }
+    }
+}
+
+static void loop_handle_pending_events(void)
+{
+    bool more;
+    int limit = 100;
+
+    do {
+        more = false;
+        for (size_t i = 0; i < event_loop_state.nr_pending; i++) {
+            if (event_loop_state.pending[i].mask & (EVENT_TYPE_FD_READABLE | EVENT_TYPE_FD_WRITABLE)) {
+                handle_pending_event(&event_loop_state.pending[i]);
+                more |= !!(event_loop_state.pending[i].mask & (EVENT_TYPE_FD_READABLE | EVENT_TYPE_FD_WRITABLE));
+            }
+        }
+    } while (more && --limit > 0);
 }
 
 void evl_init(void)
@@ -79,7 +96,7 @@ static int get_fdr(struct fd_reg **fdr, int fd)
     return 0;
 }
 
-int evl_wait_fd(int fd, evl_event_cb rd_cb, evl_event_cb wr_cb, evl_event_cb close_cb, void *arg)
+int evl_wait_fd(int fd, evl_fd_event_cb rd_cb, evl_fd_event_cb wr_cb, evl_event_cb close_cb, void *arg)
 {
     enum event_type prev_mask;
     const enum event_type mask = (!rd_cb ? 0 : EVENT_TYPE_FD_READABLE) |
@@ -220,9 +237,7 @@ void evl_start(void)
         /*
          * 2. Call pending event callbacks.
          */
-        for (size_t i = 0; i < event_loop_state.nr_pending; i++) {
-            handle_pending_event(&event_loop_state.pending[i]);
-        }
+        loop_handle_pending_events();
         event_loop_state.nr_pending = 0;
 
         /*

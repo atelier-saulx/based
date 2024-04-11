@@ -37,6 +37,7 @@ struct event {
 };
 
 typedef void (*evl_event_cb)(struct event *event, void *arg);
+typedef bool (*evl_fd_event_cb)(struct event *event, void *arg);
 
 void evl_init(void);
 void evl_deinit(void);
@@ -54,7 +55,7 @@ EVL_EXPORT(void, evl_clear_timeout, int timer_id, void **arg);
  * Listen for events for fd.
  * Can be called multiple times for the same fd to modify the callbacks.
  */
-EVL_EXPORT(int, evl_wait_fd, int fd, evl_event_cb rd_cb, evl_event_cb wr_cb, evl_event_cb close_cb, void *arg);
+EVL_EXPORT(int, evl_wait_fd, int fd, evl_fd_event_cb rd_cb, evl_fd_event_cb wr_cb, evl_event_cb close_cb, void *arg);
 
 /**
  * Stop receiving events for fd.

@@ -692,7 +692,7 @@ static enum repl_proto_state handle_exec_sdb(void)
     return REPL_PROTO_STATE_FIN;
 }
 
-static void on_data(struct event *event, void *arg __unused)
+static bool on_data(struct event *event, void *arg __unused)
 {
     const int fd = event->fd;
     struct seq_state *ss = NULL;
@@ -738,7 +738,7 @@ static void on_data(struct event *event, void *arg __unused)
                  * Return for now to allow processing of other
                  * incoming connections.
                  */
-                return;
+                return false;
             }
             continue;
         case REPL_PROTO_STATE_RECEIVING_SDB_HEADER:
@@ -751,7 +751,7 @@ static void on_data(struct event *event, void *arg __unused)
                  * Return for now to allow processing of other
                  * incoming connections.
                  */
-                return;
+                return false;
             }
             continue;
         case REPL_PROTO_STATE_EXEC_CMD:
@@ -781,13 +781,13 @@ static void on_data(struct event *event, void *arg __unused)
                 fclose(sv.sdb_file);
             }
             reinit_state(ss);
-            return;
+            return false;
 state_err:
         case REPL_PROTO_STATE_ERR:
             SELVA_LOG(SELVA_LOGL_WARN, "Closing connection to origin");
             evl_end_fd(fd);
             reinit_all();
-            return;
+            return false;
         }
     }
 }

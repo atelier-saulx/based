@@ -489,7 +489,11 @@ int recv_message(int fd)
 
         r = tcp_readv(fd, rd_vec, num_elem(rd_vec));
         if (r != SELVA_PROTO_FRAME_SIZE_MAX) {
-            fprintf(stderr, "Reading selva_proto frame failed. result: %d\n", (int)r);
+            if (r < 0) {
+                fprintf(stderr, "Reading selva_proto frame failed: %s\n", selva_strerror(r));
+            } else {
+                fprintf(stderr, "Reading selva_proto frame failed. result: %d\n", (int)r);
+            }
             return 1;
         }
 
@@ -743,12 +747,15 @@ int main(int argc, char *argv[])
     timespec_sub(&ts_diff, &ts_end, &ts_start);
     t = timespec2ms(&ts_diff);
 
+    if (threaded) {
+        pthread_join(thread, NULL);
+    }
+
     v = ((double)seqno / t) * 1000.0;
     if (t > 1000.0) {
         t /= 1000.0;
         unit = "s";
     }
-
 
     shutdown(sock, SHUT_RDWR);
     close(sock);

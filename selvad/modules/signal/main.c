@@ -17,14 +17,14 @@
 #include "trace.h"
 #include "selva_reaper.h"
 
-static void handle_signal(struct event *ev, void *arg __unused)
+static bool handle_signal(struct event *ev, void *arg __unused)
 {
     struct evl_siginfo esig;
     int signo;
 
     if (evl_read_sigfd(&esig, ev->fd)) {
         fprintf(stderr, "Failed to read sigfd\n");
-        return;
+        return false;
     }
 
     signo = esig.esi_signo;
@@ -35,6 +35,8 @@ static void handle_signal(struct event *ev, void *arg __unused)
     case SIGTERM:
         exit(EXIT_SUCCESS);
     }
+
+    return false;
 }
 
 /**

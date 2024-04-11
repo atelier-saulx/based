@@ -114,8 +114,10 @@ void evl_poll(struct event_loop_state *state, const struct timespec *timeout)
 
             if (i + 1 == num_elem(state->pending)) {
                 /*
-                 * Just to be sure.
-                 * RFE What if there was something left?
+                 * The pending array is indeed smaller than the maximum number
+                 * of fds or even events in general. It's not optimal to break
+                 * it like this but we'll get back to here and will hopefully
+                 * catch all events eventually.
                  */
                 break;
             }
