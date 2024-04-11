@@ -281,19 +281,19 @@ test.only('query + filter', async (t) => {
 
   await wait(0)
 
-  const d = Date.now()
-  const ids = db
-    .query('simple')
+  // const d = Date.now()
+  // const ids = db
+  //   .query('simple')
 
-    //
+  //   //
 
-    // .filter(['flap', '=', 'my flap flap flap 1'])
-    // .filter(['vectorClock', '=', 3])
-    .filter(['refs', 'has', [100, 1e3]])
-    .range(0, 100000) // -10 , 25
-    .get()
+  //   // .filter(['flap', '=', 'my flap flap flap 1'])
+  //   // .filter(['vectorClock', '=', 3])
+  //   .filter(['refs', 'has', [100, 1e3]])
+  //   .range(0, 100000) // -10 , 25
+  //   .get()
 
-  console.info('query result ==', ids, Date.now() - d, 'ms')
+  // console.info('query result ==', ids, Date.now() - d, 'ms')
 
   t.true(true)
 })
