@@ -44,11 +44,6 @@ fn getQueryInternal(
 
     checkItem: while (i <= last_id and total_results <= offset + limit) : (i += 1) {
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
-            var it = shards.iterator();
-            while (it.next()) |shard| {
-                std.debug.print("CLOSE SHARD {any}", .{shard.value_ptr});
-                db.closeShard(shard.value_ptr);
-            }
             currentShard += 1;
         }
 

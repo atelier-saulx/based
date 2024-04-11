@@ -27,6 +27,9 @@ pub fn getShardKey(field: u8, shard: u8) [3]u8 {
 
 pub fn openDbi(name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
     var dbi: c.MDB_dbi = 0;
+
+    // std.debug.print("dbi {s}\n", .{name});
+
     try errors.mdbCheck(c.mdb_dbi_open(txn, @ptrCast(name), c.MDB_INTEGERKEY, &dbi));
     return dbi;
 }

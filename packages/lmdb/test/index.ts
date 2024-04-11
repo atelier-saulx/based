@@ -266,7 +266,7 @@ test.only('query + filter', async (t) => {
     refs.push(i)
   }
 
-  for (let i = 0; i < 1e6 - 1; i++) {
+  for (let i = 0; i < 4e6 - 1; i++) {
     db.create('simple', {
       user: 1,
       refs: [100, 1, i],
@@ -284,9 +284,9 @@ test.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
+    .filter(['refs', 'has', [4e6 - 2]])
     .filter(['flap', '=', 'my flap flap flap 1'])
     .filter(['vectorClock', '=', 3])
-    .filter(['refs', 'has', [100]])
     .range(10, 20) // -10 , 25
     .get()
 
