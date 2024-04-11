@@ -27,8 +27,6 @@ fn delBatchInternal(
     const batch = try napi.getBuffer("del_batch", env, args[0]);
     const dbi_name = try napi.getBuffer("del_dbi_name", env, args[1]);
 
-    var cursor: ?*c.MDB_cursor = null;
-
     if (!Envs.dbEnvIsDefined) {
         return error.MDN_ENV_UNDEFINED;
     }
@@ -36,9 +34,11 @@ fn delBatchInternal(
     const txn = try db.createTransaction(false);
     errdefer c.mdb_txn_abort(txn);
 
-    const dbi = try db.openDbi(dbi_name, txn);
+    var dbi: c.MDB_dbi = 0;
+    try errors.mdbCheck(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi));
     errdefer c.mdb_dbi_close(Envs.env, dbi);
 
+    var cursor: ?*c.MDB_cursor = null;
     try mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
     defer c.mdb_cursor_close(cursor);
 

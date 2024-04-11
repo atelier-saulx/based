@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub fn execConditions(v: []u8, q: []u8) bool {
+pub fn runConditions(v: []u8, q: []u8) bool {
     var j: usize = 0;
     outside: while (j < q.len) {
         const operation = q[j];
@@ -66,6 +66,7 @@ pub fn execConditions(v: []u8, q: []u8) bool {
                 while (i < v.len) : (i += 4) {
                     var p: usize = j + 3;
                     while (p < filter_size * 4 + j + 3) : (p += 4) {
+                        // TODO simD operations would be great here...
                         if (v[i] != q[p] or v[i + 1] != q[p + 1] or v[i + 2] != q[p + 2] or v[i + 3] != q[p + 3]) {
                             continue;
                         }

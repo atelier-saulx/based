@@ -142,6 +142,7 @@ fn getQueryInternal(
             c.mdb_txn_abort(txn);
             return jsThrow(env, @errorName(err));
         };
+
         var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = null };
 
         if (x == 0) {

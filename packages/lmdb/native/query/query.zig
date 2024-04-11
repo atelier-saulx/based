@@ -3,6 +3,7 @@ const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db.zig");
+const runCondition = @import("./conditions.zig").runConditions;
 
 const mdbThrow = errors.mdbThrow;
 
@@ -31,20 +32,67 @@ fn getQueryInternal(
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    const cursors = std.AutoHashMap([2]u8, ?*c.MDB_cursor).init(allocator);
-
-    // const txn = try db.createTransaction();
-
-    std.debug.print("\nCURSORS {any}", .{cursors});
-
-    // loop trough the "main" dbi index including shards
-    // prob want to make a function for this
-
-    // var currentShard: u8 = 0;
-    // const maxShards: u32 = @divFloor(last_id, 1_000_000);
+    var shards = std.AutoHashMap([3]u8, db.Shard).init(allocator);
+    const txn = try db.createTransaction(true);
 
     // this is only if oyu dont want to include the extra data
     // var results = std.ArrayList(u32).init(allocator);
+
+    // const maxShards: u32 = @divFloor(last_id, 1_000_000);
+    var i: u32 = 1;
+    var currentShard: u8 = 0;
+
+    while (i <= last_id) : (i += 1) {
+        if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
+            var it = shards.iterator();
+            while (it.next()) |shard| {
+                std.debug.print("CLOSE SHARD {any}", .{shard.value_ptr});
+                db.closeShard(shard.value_ptr);
+            }
+            currentShard += 1;
+        }
+
+        var fieldIndex: usize = 0;
+        while (fieldIndex < queries.len) {
+            const querySize: u16 = std.mem.readInt(
+                u16,
+                queries[fieldIndex + 1 ..][0..2],
+                .little,
+            );
+            const field = queries[fieldIndex];
+            const shardKey = db.getShardKey(field, currentShard);
+            var shard = shards.get(shardKey);
+
+            std.debug.print("SHARD {s} {d}", .{ type_prefix, shardKey });
+
+            if (shard == null) {
+                shard = db.openShard(type_prefix, shardKey, txn) catch null;
+                if (shard != null) {
+                    try shards.put(shardKey, shard.?);
+                }
+            }
+
+            // if (runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], queries[fieldIndex + 3 .. x + 3 + querySize].ptr, querySize)) {
+            //     total_results += 1;
+            //     keys.append(i) catch return jsThrow(env, "OOM");
+            // }
+
+            fieldIndex += querySize + 3;
+        }
+
+        // const sKey = db.getShardKey();
+
+        // shards.get()
+
+        // Loop trough queries
+        // all conditions!
+        // get shard from hashmap
+        // if ! exsit create shard
+
+        // shards.get();
+
+        // and break when rdy ofc
+    }
 
     return null;
 }
