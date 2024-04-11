@@ -241,61 +241,61 @@ test.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
-  console.log(dbZig.power(Buffer.from('012345'), 'BA', 25))
+  console.log(dbZig.power(Buffer.from('012345'), 'BA', 2, 0, 0))
 
-  db.updateSchema({
-    types: {
-      simple: {
-        fields: {
-          flap: { type: 'string' },
-          refs: { type: 'references', allowedTypes: ['user'] },
-          user: { type: 'reference', allowedTypes: ['user'] },
-          vectorClock: { type: 'integer' },
-          location: {
-            type: 'object',
-            properties: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
-            },
-          },
-        },
-      },
-    },
-  })
+  // db.updateSchema({
+  //   types: {
+  //     simple: {
+  //       fields: {
+  //         flap: { type: 'string' },
+  //         refs: { type: 'references', allowedTypes: ['user'] },
+  //         user: { type: 'reference', allowedTypes: ['user'] },
+  //         vectorClock: { type: 'integer' },
+  //         location: {
+  //           type: 'object',
+  //           properties: {
+  //             long: { type: 'number' },
+  //             lat: { type: 'number' },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  // })
 
-  const refs = []
-  for (let i = 1; i < 10 - 1; i++) {
-    refs.push(i)
-  }
+  // const refs = []
+  // for (let i = 1; i < 10 - 1; i++) {
+  //   refs.push(i)
+  // }
 
-  for (let i = 0; i < 1e6 - 1; i++) {
-    db.create('simple', {
-      user: 1,
-      refs: i % 4 ? refs : [100, 1, i],
-      flap: 'my flap flap flap ' + (i % 1000),
-      vectorClock: 3,
-      location: {
-        long: 52,
-        lat: 52,
-      },
-    })
-  }
+  // for (let i = 0; i < 1e6 - 1; i++) {
+  //   db.create('simple', {
+  //     user: 1,
+  //     refs: i % 4 ? refs : [100, 1, i],
+  //     flap: 'my flap flap flap ' + (i % 1000),
+  //     vectorClock: 3,
+  //     location: {
+  //       long: 52,
+  //       lat: 52,
+  //     },
+  //   })
+  // }
 
-  await wait(0)
+  // await wait(0)
 
-  const d = Date.now()
-  const ids = db
-    .query('simple')
+  // const d = Date.now()
+  // const ids = db
+  //   .query('simple')
 
-    //
+  //   //
 
-    // .filter(['flap', '=', 'my flap flap flap 1'])
-    // .filter(['vectorClock', '=', 3])
-    .filter(['refs', 'has', [100, 1e3]])
-    .range(0, 100000) // -10 , 25
-    .get()
+  //   // .filter(['flap', '=', 'my flap flap flap 1'])
+  //   // .filter(['vectorClock', '=', 3])
+  //   .filter(['refs', 'has', [100, 1e3]])
+  //   .range(0, 100000) // -10 , 25
+  //   .get()
 
-  console.info('query result ==', ids, Date.now() - d, 'ms')
+  // console.info('query result ==', ids, Date.now() - d, 'ms')
 
   t.true(true)
 })
