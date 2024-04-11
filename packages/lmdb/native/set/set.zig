@@ -54,19 +54,9 @@ fn setBatchInternal(
         const key = batch[i .. i + KEY_LEN];
         const value_size = std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
         const value = batch[i + KEY_LEN + SIZE_BYTES .. i + KEY_LEN + SIZE_BYTES + @as(usize, value_size)];
-
         var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = key.ptr };
         var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = value.ptr };
-
         try mdbCheck(c.mdb_cursor_put(cursor, &k, &v, 0));
-
-        // std.debug.print("\n=================\n", .{});
-        // std.debug.print("KEY= {x}\n", .{key});
-        // std.debug.print("value_size bits = 0x{x}\n", .{value_size});
-        // std.debug.print("value_size= {d}\n", .{value_size});
-        // std.debug.print("VALUE= {x}\n", .{value});
-        // std.debug.print("VALUE= {s}\n", .{value});
-        // std.debug.print("=================\n", .{});
         i = i + KEY_LEN + SIZE_BYTES + value_size;
     }
 

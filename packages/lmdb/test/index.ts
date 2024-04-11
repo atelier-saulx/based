@@ -279,7 +279,7 @@ test.only('query + filter', async (t) => {
     })
   }
 
-  await wait(0)
+  await wait(100)
 
   // const d = Date.now()
   // const ids = db
