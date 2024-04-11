@@ -9,6 +9,8 @@ const MdbError = errors.MdbError;
 const mdbCheck = errors.mdbCheck;
 const jsThrow = errors.jsThrow;
 
+const db = @import("../db.zig");
+
 pub fn delBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return delBatchInternal(env, info, 8) catch return null;
 }
@@ -25,18 +27,16 @@ fn delBatchInternal(
     const batch = try napi.getBuffer("del_batch", env, args[0]);
     const dbi_name = try napi.getBuffer("del_dbi_name", env, args[1]);
 
-    var txn: ?*c.MDB_txn = null;
-    var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
     if (!Envs.dbEnvIsDefined) {
         return error.MDN_ENV_UNDEFINED;
     }
 
-    try mdbCheck(c.mdb_txn_begin(Envs.env, null, 0, &txn));
+    const txn = try db.createTransaction(false);
     errdefer c.mdb_txn_abort(txn);
 
-    try mdbCheck(c.mdb_dbi_open(txn, @ptrCast(dbi_name), c.MDB_INTEGERKEY, &dbi));
+    const dbi = try db.openDbi(dbi_name, txn);
     errdefer c.mdb_dbi_close(Envs.env, dbi);
 
     try mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));

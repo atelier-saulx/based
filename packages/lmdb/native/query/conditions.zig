@@ -6,7 +6,7 @@ pub fn execConditions(v: []u8, q: []u8) bool {
         const operation = q[j];
         switch (operation) {
             // head equality
-            (1) => {
+            1 => {
                 const filter_size: u16 = std.mem.readInt(
                     u16,
                     q[j + 1 ..][0..2],
@@ -32,7 +32,7 @@ pub fn execConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             // seperate field equality
-            (2) => {
+            2 => {
                 const filter_size: u16 = std.mem.readInt(
                     u16,
                     q[j + 1 ..][0..2],
@@ -56,7 +56,7 @@ pub fn execConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             // seperate field has check
-            (7) => {
+            7 => {
                 const filter_size: u16 = std.mem.readInt(
                     u16,
                     q[j + 1 ..][0..2],
