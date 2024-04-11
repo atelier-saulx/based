@@ -2,10 +2,10 @@ const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Error = errors.MdbError;
-const Gets = @import("get.zig");
-const Envs = @import("env.zig");
-const Sets = @import("set.zig");
-const Dels = @import("del.zig");
+const Gets = @import("get/get.zig");
+const Envs = @import("env/env.zig");
+const Sets = @import("set/set.zig");
+const Dels = @import("del/del.zig");
 const Query = @import("query.zig");
 
 const PowerQuery = @import("./query/query.zig");
@@ -22,7 +22,7 @@ const delBatch4 = Dels.delBatch4;
 const delBatch8 = Dels.delBatch8;
 const query = Query.getQuery;
 
-const dbthrow = errors.mdbThrow;
+const dbthrow = errors.mdbCheck;
 
 const NapiError = error{NapiError};
 
