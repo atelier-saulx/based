@@ -37,7 +37,6 @@ fn getQueryInternal(
 
     var results = std.ArrayList(u32).init(allocator);
 
-    // const maxShards: u32 = @divFloor(last_id, 1_000_000);
     var i: u32 = offset + 1;
     var currentShard: u8 = 0;
     var total_results: usize = 0;
@@ -57,7 +56,6 @@ fn getQueryInternal(
             const field = queries[fieldIndex];
             const shardKey = db.getShardKey(field, currentShard);
             var shard = shards.get(shardKey);
-
             if (shard == null) {
                 shard = db.openShard(type_prefix, shardKey, txn) catch null;
                 if (shard != null) {
@@ -91,8 +89,6 @@ fn getQueryInternal(
         total_results += 1;
         try results.append(i);
     }
-
-    std.debug.print("\nFLAP RESULTS {d}", .{total_results});
 
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
