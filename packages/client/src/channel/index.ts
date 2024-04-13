@@ -8,7 +8,6 @@ import {
 } from '../outgoing/index.js'
 import { ChannelMessageFunction } from '../types/index.js'
 import { cleanUpChannels } from './cleanUp.js'
-import { BasedError } from '@based/errors'
 
 export class BasedChannel<P = any, K = any> {
   public id: number
@@ -25,7 +24,7 @@ export class BasedChannel<P = any, K = any> {
 
   subscribe(
     onMessage: ChannelMessageFunction,
-    onError?: (err: BasedError) => void
+    onError?: (err: Error) => void,
   ): () => void {
     let subscriberId: number
     if (
