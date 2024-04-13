@@ -1,5 +1,5 @@
 import { genObserveId } from './genObserveId.js'
-import { BasedClient } from './index.js'
+import { BasedClient, BasedQuery } from './index.js'
 import { CacheValue } from './types/cache.js'
 
 export const createCacheObject = (
@@ -44,12 +44,11 @@ export const createInlineFromCurrentCache = (
 
 export const createInlineCache = async (
   client: BasedClient,
-  queries: { endpoint: string; payload?: any }[],
+  queries: BasedQuery[],
 ): Promise<string> => {
   const m = {}
   await Promise.all(
-    queries.map(async ({ endpoint, payload }) => {
-      const query = client.query(endpoint, payload)
+    queries.map(async (query) => {
       await query.get()
       m[query.id] = client.cache.get(query.id)
     }),
