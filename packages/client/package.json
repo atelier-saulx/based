@@ -4,14 +4,9 @@
   "license": "MIT",
   "scripts": {
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts",
-    "test-stream": "npx ts-node ./test/browser/upload-file.ts",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "npx ava",
-    "microBuild": "microbundle -i dist/src/index.js -o test/browser/bundle.js --no-pkg-main -f modern --visualize",
-    "browserBuildConsole": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window",
-    "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window",
-    "browser": "node ./test/browser/server.js"
+    "test": "npx ava"
   },
   "type": "module",
   "main": "./dist/src/index.js",
@@ -48,8 +43,6 @@
   },
   "devDependencies": {
     "get-port": "7.0.0",
-    "microbundle": "^0.15.1",
-    "esbuild": "^0.19.5",
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",
     "@based/functions": "^3.0.1",

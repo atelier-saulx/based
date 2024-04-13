@@ -16,9 +16,11 @@ test.beforeEach(async (t: T) => {
 })
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+const TMP = join(__dirname, '../../tmp/')
 
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
-  const persistentStorage = join(__dirname, '/browser/tmp/')
+
+  const persistentStorage = join(TMP, '1m')
 
   await mkdir(persistentStorage).catch(() => {})
   const opts = {
@@ -147,7 +149,10 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
 })
 
 test('auth persist', async (t: T) => {
-  const persistentStorage = join(__dirname, '/browser/tmp/')
+
+  const persistentStorage = join(TMP, 'auth')
+
+
   await mkdir(persistentStorage).catch(() => {})
 
   const token = 'this is token'
