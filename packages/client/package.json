@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "6.0.1",
+  "version": "6.1.0",
   "license": "MIT",
   "scripts": {
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts",
@@ -31,7 +31,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@saulx/diff": "^2.0.1",
+    "@saulx/diff": "^2.0.2",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^5.0.0",
     "@based/fetch": "^2.0.3",
