@@ -16,13 +16,16 @@ test.beforeEach(async (t: T) => {
 })
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const TMP = join(__dirname, '../../tmp/')
+const TMP = join(__dirname, '../tmp/')
+
+console.log(TMP)
 
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
-
   const persistentStorage = join(TMP, '1m')
 
-  await mkdir(persistentStorage).catch(() => {})
+  await mkdir(persistentStorage, { recursive: true }).catch((err) => {
+    console.log(err)
+  })
   const opts = {
     url: async () => {
       return t.context.ws
@@ -75,7 +78,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
       {
         myQuery: 123,
       },
-      { persistent: true }
+      { persistent: true },
     )
     .subscribe((d) => {
       r.push(d)
@@ -87,7 +90,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
       {
         myQuery: 123,
       },
-      { persistent: true }
+      { persistent: true },
     )
     .subscribe(() => {})
 
@@ -113,12 +116,12 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
         {
           myQuery: 123,
         },
-        { persistent: true }
+        { persistent: true },
       )
       .subscribe((d) => {
         fromStorage = d
         resolve(d)
-      })
+      }),
   )
 
   let x: any
@@ -130,12 +133,12 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
         {
           myQuery: 123,
         },
-        { persistent: true }
+        { persistent: true },
       )
       .subscribe((d) => {
         resolve(d)
         x = d
-      })
+      }),
   )
 
   t.is(fromStorage, 3)
@@ -149,9 +152,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
 })
 
 test('auth persist', async (t: T) => {
-
   const persistentStorage = join(TMP, 'auth')
-
 
   await mkdir(persistentStorage).catch(() => {})
 
@@ -209,7 +210,7 @@ test('auth persist', async (t: T) => {
     {},
     {
       persistentStorage,
-    }
+    },
   )
 
   await client.connect(opts)
