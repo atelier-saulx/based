@@ -75,7 +75,7 @@ const UseWindowTester = () => {
       path: ['things'], // where are the items in the response?
       pages, // array of page numbers - starts at 1
       size, // amount of items per page
-    }
+    },
   )
 
   return (
@@ -97,7 +97,7 @@ const UseWindowTester = () => {
           setPages(
             pages.map((n) => {
               return n + 3
-            })
+            }),
           )
         }}
       >

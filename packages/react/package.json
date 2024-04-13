@@ -6,8 +6,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc",
-    "server": "npx ts-node-esm ./test/based-server.ts",
-    "browser": "vite -t ./test/browser.tsx",
+    "server": "node ./test/based-server.js",
+    "browser": "npx vite ./test/browser",
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
@@ -19,11 +19,11 @@
   "devDependencies": {
     "@types/react": "^18.0.29",
     "rimraf": "^3.0.2",
-    "ts-node": "10.9.1",
     "typescript": "^5.2.2",
     "react-dom": "^18.2.0",
     "@based/client": "^6.0.1",
-    "vite": "^5.2.8"
+    "vite": "^5.2.8",
+    "@saulx/tsconfig": "^1.1.0"
   },
   "peerDependencies": {
     "@based/client": "*",

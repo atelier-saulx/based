@@ -149,7 +149,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   })
 })
 
-test('auth persist', async (t: T) => {
+test.serial('auth persist', async (t: T) => {
   const persistentStorage = join(TMP, 'auth')
 
   await mkdir(persistentStorage, { recursive: true }).catch(() => {})
