@@ -183,7 +183,7 @@ export const uploadFileStream = async (
   let id = Math.random().toString(16);
   const dcHandler = () => {
     // HANDLE THIS
-    console.error("CLIENT DC -> ABORT STREAM", Date.now(), id);
+    // console.error("CLIENT DC -> ABORT STREAM", Date.now(), id);
   };
 
   client.once("disconnect", dcHandler);
