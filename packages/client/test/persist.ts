@@ -23,9 +23,7 @@ console.log(TMP)
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   const persistentStorage = join(TMP, '1m')
 
-  await mkdir(persistentStorage, { recursive: true }).catch((err) => {
-    console.log(err)
-  })
+  await mkdir(persistentStorage, { recursive: true }).catch((err) => {})
   const opts = {
     url: async () => {
       return t.context.ws
@@ -154,7 +152,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
 test('auth persist', async (t: T) => {
   const persistentStorage = join(TMP, 'auth')
 
-  await mkdir(persistentStorage).catch(() => {})
+  await mkdir(persistentStorage, { recursive: true }).catch(() => {})
 
   const token = 'this is token'
   const server = new BasedServer({
