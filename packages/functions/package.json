@@ -12,7 +12,7 @@
   "sideEffects": false,
   "dependencies": {
     "utility-types": "^3.10.0",
-    "@saulx/utils": "^4.1.0"
+    "@saulx/utils": "^5.0.0"
   },
   "devDependencies": {
     "ts-node": "10.9.1",

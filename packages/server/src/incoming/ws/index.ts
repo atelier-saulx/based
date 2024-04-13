@@ -128,5 +128,6 @@ export const message = (
       return;
     }
     next = n;
+    // TODO if next > len illegal request abort & block
   }
 };
