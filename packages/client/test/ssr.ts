@@ -3,7 +3,7 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import getPort from 'get-port'
-import { createCacheScriptTag } from '../src/ssr.js'
+import { createInlineFromCurrentCache, createInlineCache } from '../src/ssr.js'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -48,18 +48,29 @@ test('query cache', async (t: T) => {
   await client.query('counter').get()
   await client.query('counter', { bla: true }).get()
 
-  const script = createCacheScriptTag(client, [{ endpoint: 'counter' }])
+  const script = createInlineFromCurrentCache(client, [{ endpoint: 'counter' }])
 
   t.deepEqual(
     script,
     '<script>window.__basedcache__={"5609164081779":{"v":["flap 0","flap 1","flap 2"],"c":2931330242745,"s":28}}</script>',
   )
 
-  const scriptAll = createCacheScriptTag(client)
+  const scriptAll = createInlineFromCurrentCache(client)
 
   t.deepEqual(
     scriptAll,
     '<script>window.__basedcache__={"5609164081779":{"v":["flap 0","flap 1","flap 2"],"c":2931330242745,"s":28},"12895924860639":{"v":["flap 0","flap 1","flap 2"],"c":2931330242745,"s":28}}</script>',
+  )
+
+  client.cache.clear()
+
+  const selectiveGet = await createInlineCache(client, [
+    { endpoint: 'counter' },
+  ])
+
+  t.deepEqual(
+    selectiveGet,
+    '<script>window.__basedcache__={"5609164081779":{"v":["flap 0","flap 1","flap 2"],"c":2931330242745,"s":28}}</script>',
   )
 
   await wait(1500)
