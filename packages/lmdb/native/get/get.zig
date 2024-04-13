@@ -31,7 +31,7 @@ fn getBatchInternal(
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
-    std.debug.print("Hello dbi {s}\n", .{@as([*:0]u8, @ptrCast(dbi_name))});
+    // std.debug.print("Hello dbi {s}\n", .{@as([*:0]u8, @ptrCast(dbi_name))});
 
     try mdbCheck(c.mdb_txn_begin(Envs.env, null, c.MDB_RDONLY, &txn));
     errdefer c.mdb_txn_abort(txn);

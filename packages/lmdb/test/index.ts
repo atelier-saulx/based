@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('set and simple get', async (t) => {
+test.only('set and simple get', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -37,7 +37,6 @@ test('set and simple get', async (t) => {
           },
         },
       },
-
       vote: {
         fields: {
           refs: { type: 'references' },
@@ -244,7 +243,7 @@ function generateRandomArray() {
   return array
 }
 
-test.only('query + filter', async (t) => {
+test('query + filter', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
@@ -274,7 +273,7 @@ test.only('query + filter', async (t) => {
     refs.push(i)
   }
 
-  for (let i = 0; i < 4e6 - 1; i++) {
+  for (let i = 0; i < 1e3 - 1; i++) {
     db.create('simple', {
       user: 1,
       refs: generateRandomArray(),

@@ -272,8 +272,6 @@ fn setBatchBuffer(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
 
         //   @as([*]u8, @ptrCast(data))[last_pos .. last_pos + val.mv_size]
 
-        // std.debug.print("Hello dbi {s}", .{@as([*]u8, @ptrCast(dbi_name))[0..dbi_name_length]});
-
         db = txn.database(
             @ptrCast(dbi_name),
             .{ .integer_key = true, .create = true },
