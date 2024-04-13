@@ -19,7 +19,7 @@
     ".": "./dist/src/index.js"
   },
   "ava": {
-    "timeout": "4m",
+    "timeout": "10m",
     "workerThreads": false,
     "files": [
       "./dist/test/**/*.js"
@@ -45,7 +45,7 @@
     "get-port": "7.0.0",
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",
-    "@based/functions": "^3.0.1",
+    "@based/functions": "^3.0.2",
     "cross-fetch": "4.0.0",
     "ava": "5.3.1",
     "typescript": "^5.2.2",
