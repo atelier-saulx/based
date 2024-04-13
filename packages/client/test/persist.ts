@@ -9,16 +9,14 @@ import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+const TMP = join(__dirname, '../tmp/')
+
 test.beforeEach(async (t: T) => {
   t.context.port = await getPort()
   t.context.ws = `ws://localhost:${t.context.port}`
   t.context.http = `http://localhost:${t.context.port}`
 })
-
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const TMP = join(__dirname, '../tmp/')
-
-console.log(TMP)
 
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   const persistentStorage = join(TMP, '1m')
@@ -234,7 +232,7 @@ test.serial('auth persist', async (t: T) => {
   await t.notThrowsAsync(client2.call('hello'))
 
   t.teardown(async () => {
-    await wait(300)
+    await wait(100)
     await client.clearStorage()
     await server.destroy()
     await client2.clearStorage()
