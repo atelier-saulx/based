@@ -1,32 +1,15 @@
-import { BasedDb, FieldDef, SchemaTypeDef, getDbiHandler } from './index.js'
+import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
 import dbZig from './db.js'
 
 type Operation = '=' | 'has' | '<' | '>'
 
-/*
--> 0 next field -> FIELD
-// -> base 62
--> 1 =
--> 2 !=
--> 3 >
--> 4 <
--> 5 refCheck (get id + field after) -> FIELD
--> 6 go back to previous id (start next operation)
-// can also look like 6 -> 6 (2 back)
-———————————————
--> 7 has [len][len] x4 HAS  // 0,2,3
-———————————————
--> 8 exist 
--> 9 !exist
-———————————————
-// ————— number
-// boolean 0|1
-// int default 0
-// enum default 0 (undefined)
-// number + timestamp 1 extra byte for extra info e.g. undefined
-*/
+// TODO
+// write down each operation
+// use char codes in parsed schema
+// type parsed schema
 
-const zeroChar = '0'.charCodeAt(0)
+const ZERO_CHAR = '0'.charCodeAt(0)
+const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 // const opToByte = {
 //   string: {
@@ -51,8 +34,6 @@ const operationToByte = (op: Operation) => {
   }
   return 0
 }
-
-const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 export class Query {
   db: BasedDb
@@ -93,19 +74,16 @@ export class Query {
           }
         } else if (field.type === 'references') {
           const op = operationToByte(filter[1])
+          const matches = filter[2]
+          const len = matches.length
+          buf = Buffer.alloc(3 + len * 4)
           if (op === 1) {
-            const matches = filter[2]
-            const len = matches.length
-            buf = Buffer.alloc(3 + len * 4)
             buf[0] = 2
             buf.writeInt16LE(len * 4, 1)
             for (let i = 0; i < len; i++) {
               buf.writeInt32LE(matches[i], i * 4 + 3)
             }
           } else if (op === 7) {
-            const matches = filter[2]
-            const len = matches.length
-            buf = Buffer.alloc(3 + len * 4)
             buf[0] = op
             buf.writeInt16LE(len, 1)
             for (let i = 0; i < len; i++) {
@@ -114,7 +92,7 @@ export class Query {
           }
         }
       } else {
-        fieldIndexChar = zeroChar
+        fieldIndexChar = ZERO_CHAR
         if (field.type === 'integer') {
           const op = operationToByte(filter[1])
           if (op === 1 || op === 3 || op === 4) {
@@ -126,7 +104,6 @@ export class Query {
           }
         }
       }
-
       this.conditions ??= new Map()
       let arr = this.conditions.get(fieldIndexChar)
       if (!arr) {
@@ -136,7 +113,6 @@ export class Query {
       }
       this.totalConditionSize += buf.byteLength
       arr.push(buf)
-
       return this
     }
   }
@@ -147,12 +123,13 @@ export class Query {
     return this
   }
 
+  // subscribe
+
   get(): { items: number[]; total: number; offset: number; limit: number } {
     if (this.conditions) {
       const conditions = Buffer.allocUnsafe(this.totalConditionSize)
       let lastWritten = 0
       this.conditions.forEach((v, k) => {
-        console.log('GO PUT', k, 'c', v)
         conditions[lastWritten] = k
         let sizeIndex = lastWritten + 1
         lastWritten += 3
@@ -165,12 +142,9 @@ export class Query {
         conditions.writeInt16LE(conditionSize, sizeIndex)
       })
 
-      console.log('---> conditions', new Uint8Array(conditions))
-
       const start = this.offset ?? 0
       const end = this.limit ?? 1e3
 
-      console.info('helloo', 'power', conditions)
       const x = dbZig.getQuery(
         conditions,
         this.type.dbMap.prefix,
@@ -196,8 +170,4 @@ export class Query {
   }
 }
 
-export const query = (db: BasedDb, target: string) => {
-  const q = new Query(db, target)
-
-  return q
-}
+export const query = (db: BasedDb, target: string) => new Query(db, target)

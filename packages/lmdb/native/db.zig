@@ -3,6 +3,8 @@ const errors = @import("./errors.zig");
 const Envs = @import("./env/env.zig");
 const std = @import("std");
 
+pub const Shard = struct { dbi: c.MDB_dbi, key: [3]u8, cursor: ?*c.MDB_cursor };
+
 pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     var txn: ?*c.MDB_txn = null;
     if (readOnly == true) {
@@ -13,28 +15,23 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     return txn;
 }
 
-// shard needs to be [2]u8
+// TODO shard needs to be [2]u8
 pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: u8) ![5]u8 {
     var all_together: [5]u8 = undefined;
     _ = try std.fmt.bufPrint(all_together[0..5], "{s}{c}{c}{s}", .{ type_prefix, field, shard + 48, "0" });
     return all_together;
 }
 
-// shard needs to be [2]u8
+// TODO shard needs to be [2]u8
 pub fn getShardKey(field: u8, shard: u8) [3]u8 {
     return .{ field, shard, 0 };
 }
 
 pub fn openDbi(name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
     var dbi: c.MDB_dbi = 0;
-
-    // std.debug.print("dbi {s}\n", .{name});
-
     try errors.mdbCheck(c.mdb_dbi_open(txn, @ptrCast(name), c.MDB_INTEGERKEY, &dbi));
     return dbi;
 }
-
-pub const Shard = struct { dbi: c.MDB_dbi, key: [3]u8, cursor: ?*c.MDB_cursor };
 
 pub fn openShard(type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
     var dbiName = try createDbiName(type_prefix, shardKey[0], shardKey[1]);

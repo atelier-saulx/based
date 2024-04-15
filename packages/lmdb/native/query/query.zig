@@ -79,7 +79,6 @@ fn getQueryInternal(
                     continue :checkItem;
                 }
             } else {
-                // std.debug.print("\nSHARD DOES NOT EXIST {s} {d}", .{ type_prefix, shardKey });
                 continue :checkItem;
             }
 

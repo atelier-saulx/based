@@ -38,10 +38,7 @@ const createDbiHandle = (prefix: string, field: number, shard: number) => {
   const shardAlphaNumeric =
     CHARS[shard % 62] + CHARS[Math.floor(shard / 62) % 62]
 
-  //
-
   const dbi = prefix + fieldAlphaNumeric + shardAlphaNumeric + '\0'
-  console.log(new Uint8Array(Buffer.from(dbi)))
   return Buffer.from(dbi)
 }
 
