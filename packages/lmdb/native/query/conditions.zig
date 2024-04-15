@@ -17,19 +17,27 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     q[j + 3 ..][0..2],
                     .little,
                 );
-                for (
-                    q[j + 5 .. j + 5 + filter_size],
-                    0..,
-                ) |byte, z| {
-                    if (byte != v[index + z]) {
-                        return false;
-                    }
-                    if (index + z == v.len - 1) {
-                        j += filter_size + 5;
-                        continue :outside;
-                    }
+
+                const hit = std.mem.eql(u8, q[j + 5 .. j + 5 + filter_size], v[index .. index + filter_size]);
+                if (!hit) {
+                    return false;
                 }
-                return false;
+                j += filter_size + 5;
+                continue :outside;
+
+                // for (
+                //     q[j + 5 .. j + 5 + filter_size],
+                //     0..,
+                // ) |byte, z| {
+                //     if (byte != v[index + z]) {
+                //         return false;
+                //     }
+                //     if (index + z == v.len - 1) {
+                //         j += filter_size + 5;
+                //         continue :outside;
+                //     }
+                // }
+                // return false;
             },
             // seperate field equality
             2 => {
@@ -41,19 +49,110 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 if (v.len != filter_size) {
                     return false;
                 }
-                for (
-                    q[j + 3 .. j + 3 + filter_size],
-                    0..,
-                ) |byte, z| {
-                    if (byte != v[z]) {
-                        return false;
-                    }
-                    if (z == v.len - 1) {
-                        j += filter_size + 3;
-                        continue :outside;
-                    }
+                const hit = std.mem.eql(u8, q[j + 3 .. j + 3 + filter_size], v[0..filter_size]);
+                if (!hit) {
+                    return false;
                 }
-                return false;
+                j += filter_size + 3;
+                continue :outside;
+
+                // for (
+                //     q[j + 3 .. j + 3 + filter_size],
+                //     0..,
+                // ) |byte, z| {
+                //     if (byte != v[z]) {
+                //         return false;
+                //     }
+                //     if (z == v.len - 1) {
+                //         j += filter_size + 3;
+                //         continue :outside;
+                //     }
+                // }
+                // return false;
+            },
+            3 => {
+                // >, greater than
+                const filter_size: u16 = std.mem.readInt(
+                    u16,
+                    q[j + 1 ..][0..2],
+                    .little,
+                );
+                const index: u16 = std.mem.readInt(
+                    u16,
+                    q[j + 3 ..][0..2],
+                    .little,
+                );
+                // std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
+
+                switch (filter_size) {
+                    4 => {
+                        const query = std.mem.readInt(i32, q[j + 5 ..][0..4], .little);
+                        const value = std.mem.readInt(i32, v[index..][0..4], .little);
+                        if (value > query) {
+                            j += filter_size + 5;
+                            continue :outside;
+                        }
+                        return false;
+                    },
+                    8 => {
+                        const query = std.mem.readInt(i64, q[j + 5 ..][0..8], .little);
+                        const value = std.mem.readInt(i64, v[index..][0..8], .little);
+                        if (value > query) {
+                            j += filter_size + 5;
+                            continue :outside;
+                        }
+                        return false;
+                    },
+                    else => {
+                        std.log.err(
+                            "Unexpected filter size \"{}\" for operation \"{}\", ignoring filter.\n",
+                            .{ filter_size, operation },
+                        );
+                        return false;
+                    },
+                }
+            },
+            4 => {
+                // <, less than
+                const filter_size: u16 = std.mem.readInt(
+                    u16,
+                    q[j + 1 ..][0..2],
+                    .little,
+                );
+                const index: u16 = std.mem.readInt(
+                    u16,
+                    q[j + 3 ..][0..2],
+                    .little,
+                );
+                // std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
+
+                switch (filter_size) {
+                    4 => {
+                        const query = std.mem.readInt(i32, q[j + 5 ..][0..4], .little);
+                        const value = std.mem.readInt(i32, v[index..][0..4], .little);
+                        if (value < query) {
+                            j += filter_size + 5;
+                            continue :outside;
+                        }
+                        return false;
+                    },
+                    8 => {
+                        const query = std.mem.readInt(i64, q[j + 5 ..][0..8], .little);
+                        const value = std.mem.readInt(i64, v[index..][0..8], .little);
+                        if (value < query) {
+                            j += filter_size + 5;
+                            continue :outside;
+                        }
+                        return false;
+                    },
+                    else => {
+                        std.log.err(
+                            "Unexpected filter size \"{}\" for operation \"{}\", ignoring filter.\n",
+                            .{ filter_size, operation },
+                        );
+                        return false;
+                    },
+                }
             },
             // seperate field has check
             7 => {

@@ -1,7 +1,7 @@
 import { BasedDb, FieldDef, SchemaTypeDef, getDbiHandler } from './index.js'
 import dbZig from './db.js'
 
-type Operation = '=' | 'has'
+type Operation = '=' | 'has' | '<' | '>'
 
 /*
 -> 0 next field -> FIELD
@@ -28,11 +28,24 @@ type Operation = '=' | 'has'
 
 const zeroChar = '0'.charCodeAt(0)
 
+// const opToByte = {
+//   string: {
+//     '=': 2,
+//   },
+// }
+
 const operationToByte = (op: Operation) => {
   if (op === '=') {
     return 1
   }
   // 2 is non fixed length check
+  if (op === '>') {
+    return 3
+  }
+  if (op === '<') {
+    return 4
+  }
+
   if (op === 'has') {
     return 7
   }
@@ -104,7 +117,7 @@ export class Query {
         fieldIndexChar = zeroChar
         if (field.type === 'integer') {
           const op = operationToByte(filter[1])
-          if (op === 1) {
+          if (op === 1 || op === 3 || op === 4) {
             buf = Buffer.alloc(9)
             buf[0] = op
             buf.writeInt16LE(4, 1)

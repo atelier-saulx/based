@@ -274,12 +274,12 @@ test.only('query + filter', async (t) => {
     refs.push(i)
   }
 
-  for (let i = 0; i < 4e6 - 1; i++) {
+  for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: 1,
       refs: generateRandomArray(),
       flap: 'my flap flap flap 1',
-      vectorClock: 3,
+      vectorClock: i % 4,
       location: {
         long: 52,
         lat: 52,
@@ -294,8 +294,10 @@ test.only('query + filter', async (t) => {
     .query('simple')
     .filter(['refs', 'has', [20, 30, 10]])
     .filter(['flap', '=', 'my flap flap flap 1'])
-    .filter(['vectorClock', '=', 3])
-    .range(10, 200)
+    // .filter(['vectorClock', '=', 1])
+    .filter(['vectorClock', '>', 1])
+    // .filter(['vectorClock', '<', 1])
+    // .range(10, 200)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
