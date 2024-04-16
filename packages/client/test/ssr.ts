@@ -69,7 +69,7 @@ test('query cache', async (t: T) => {
   ])
 
   t.deepEqual(
-    selectiveGet,
+    selectiveGet.scriptTag,
     '<script>window.__basedcache__={"5609164081779":{"v":["flap 0","flap 1","flap 2"],"c":2931330242745,"s":28}}</script>',
   )
 

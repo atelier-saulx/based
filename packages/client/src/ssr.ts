@@ -45,13 +45,17 @@ export const createInlineFromCurrentCache = (
 export const createInlineCache = async (
   client: BasedClient,
   queries: BasedQuery[],
-): Promise<string> => {
+): Promise<{ scriptTag: string; results: any[] }> => {
   const m = {}
-  await Promise.all(
+  const results = await Promise.all(
     queries.map(async (query) => {
-      await query.get()
+      const r = await query.get()
       m[query.id] = client.cache.get(query.id)
+      return r
     }),
   )
-  return `<script>window.__basedcache__=${JSON.stringify(m)}</script>`
+  return {
+    scriptTag: `<script>window.__basedcache__=${JSON.stringify(m)}</script>`,
+    results,
+  }
 }
