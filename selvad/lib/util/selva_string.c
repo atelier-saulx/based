@@ -647,9 +647,13 @@ void selva_string_set_compress(struct selva_string *s)
     s->flags |= SELVA_STRING_COMPRESS;
 }
 
-int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
+static int selva_string_cmp_unz(const struct selva_string *a, const struct selva_string *b)
 {
-    /* TODO Uncompress the smaller string and use libdeflate_memcmp() if len > DEFLATE_STRINGS_THRESHOLD_SIZE */
+    return strcmp(get_buf(a), get_buf(b));
+}
+
+static int selva_string_cmp_shortz(const struct selva_string *a, const struct selva_string *b)
+{
     bool must_free_a, must_free_b;
     char *a_str = get_comparable_buf(a, NULL, &must_free_a);
     char *b_str = get_comparable_buf(b, NULL, &must_free_b);
@@ -665,6 +669,89 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     }
 
     return res;
+}
+
+static int selva_string_cmp_alongz(const struct selva_string *a, const struct selva_string *b)
+{
+    size_t a_zlen;
+    size_t a_ulen;
+    const char *a_zstr = get_compressed_data(a, &a_zlen, &a_ulen);
+    bool must_free_b;
+    size_t b_ulen;
+    char *b_str = get_comparable_buf(b, &b_ulen, &must_free_b);
+    struct libdeflate_block_state state;
+    int res;
+
+    state = libdeflate_block_state_init(DEFLATE_STRINGS_THRESHOLD_SIZE);
+    res = libdeflate_memcmp(decompressor, &state, a_zstr, a_zlen, b_str, b_ulen);
+    libdeflate_block_state_deinit(&state);
+
+    if (must_free_b) {
+        selva_free(b_str);
+    }
+
+    return res;
+}
+
+static int selva_string_cmp_blongz(const struct selva_string *a, const struct selva_string *b)
+{
+    return selva_string_cmp_alongz(b, a);
+}
+
+/**
+ *
+ * - 0: a is compressed
+ * - 1: b is compressed
+ * - 2: a_ulen > DEFLATE_STRINGS_THRESHOLD_SIZE
+ * - 3: b_len > DEFLATE_STRINGS_THRESHOLD_SIZE
+ * - 4: b >= a
+ */
+static int (*selva_string_cmp_fn[])(const struct selva_string *a, const struct selva_string *b) = {
+    [0x00] = selva_string_cmp_unz, /* 00000, neither is compressed and b < a. */
+    [0x04] = selva_string_cmp_unz, /* 00100. */
+    [0x08] = selva_string_cmp_unz, /* 01000. */
+    [0x0c] = selva_string_cmp_unz, /* 01100. */
+    [0x10] = selva_string_cmp_unz, /* 10000, neither is compressed and b <= a. */
+    [0x14] = selva_string_cmp_unz, /* 10100. */
+    [0x18] = selva_string_cmp_unz, /* 11000. */
+    [0x1c] = selva_string_cmp_unz, /* 11100. */
+    [0x01] = selva_string_cmp_shortz, /* 00001, a is compressed and b < a. */
+    [0x09] = selva_string_cmp_shortz, /* 01001. */
+    [0x11] = selva_string_cmp_shortz, /* 10001, a is compressed and b >= a. */
+    [0x19] = selva_string_cmp_shortz, /* 11001. */
+    [0x06] = selva_string_cmp_shortz, /* 00110. */
+    [0x02] = selva_string_cmp_shortz, /* 00010, b is compressed and b < a. */
+    [0x12] = selva_string_cmp_shortz, /* 10010, b is compressed and b >= a. */
+    [0x16] = selva_string_cmp_shortz, /* 10110. */
+    [0x03] = selva_string_cmp_shortz, /* 00011, a and b are compressed and b < a. */
+    [0x13] = selva_string_cmp_shortz, /* 10011, a and b are compressed and b >= a. */
+    [0x05] = selva_string_cmp_alongz, /* 00101, a is compressed and a_uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b < a. */
+    [0x0d] = selva_string_cmp_alongz, /* 01101, */
+    [0x15] = selva_string_cmp_alongz, /* 10101, a is compressed and a_uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b >= a */
+    [0x1d] = selva_string_cmp_alongz, /* 11101 */
+    [0x0a] = selva_string_cmp_blongz, /* 01010, b is comressed and b_uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b < a. */
+    [0x0e] = selva_string_cmp_blongz, /* 01110, */
+    [0x1a] = selva_string_cmp_blongz, /* 11010, b is comressed and b_uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b <= a. */
+    [0x1e] = selva_string_cmp_blongz, /* 11110, */
+    [0x07] = selva_string_cmp_alongz, /* 00111, and b are compressed and a_uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE. */
+    [0x0b] = selva_string_cmp_blongz, /* 01011, a and b are compressed and b_uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b < a. */
+    [0x0f] = selva_string_cmp_alongz, /* 01111, a and b are compressed and uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b < a. */
+    [0x17] = selva_string_cmp_alongz, /* 10111. */
+    [0x1b] = selva_string_cmp_blongz, /* 11011, */
+    [0x1f] = selva_string_cmp_blongz, /* 11111, a and b are compressed and uzlen > DEFLATE_STRINGS_THRESHOLD_SIZE and b >= a. */
+};
+
+int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
+{
+    const unsigned z = !!(a->flags & SELVA_STRING_COMPRESS) | ((!!(b->flags & SELVA_STRING_COMPRESS)) << 1);
+    const size_t a_ulen = selva_string_getz_ulen(a);
+    const size_t b_ulen = selva_string_getz_ulen(b);
+    const unsigned aget = (a_ulen > DEFLATE_STRINGS_THRESHOLD_SIZE) << 2;
+    const unsigned bget = (b_ulen > DEFLATE_STRINGS_THRESHOLD_SIZE) << 3;
+    const unsigned bgea = (b_ulen >= a_ulen) << 4;
+    unsigned selector = z | aget | bget | bgea;
+
+    return selva_string_cmp_fn[selector](a, b);
 }
 
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
