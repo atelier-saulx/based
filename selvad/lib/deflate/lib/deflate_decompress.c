@@ -242,7 +242,7 @@ do {                                    \
 #define REFILL_BITS()                           \
 do {                                    \
     if (UNALIGNED_ACCESS_IS_FAST &&                 \
-        likely(in_end - in_next >= sizeof(bitbuf_t))) {     \
+        likely(in_end - in_next >= (ptrdiff_t)sizeof(bitbuf_t))) {     \
         REFILL_BITS_BRANCHLESS();               \
     } else {                            \
         while ((u8)bitsleft < CONSUMABLE_NBITS) {       \
