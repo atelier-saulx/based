@@ -165,6 +165,7 @@ static size_t get_emb_res_mask(const struct SelvaObject *obj) {
 
 static void init_obj(struct SelvaObject *obj) {
     obj->obj_size = 0;
+    obj->ref_count = 0;
     RB_INIT(&obj->keys_head);
 }
 
