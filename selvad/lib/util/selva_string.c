@@ -332,7 +332,6 @@ static const void *get_compressed_data(const struct selva_string *s, size_t *com
 int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
-        struct selva_string_compressed_hdr hdr;
         const void *data;
         size_t data_len;
         size_t uncompressed_size;
@@ -346,8 +345,8 @@ int selva_string_decompress(const struct selva_string * restrict s, char * restr
         size_t nbytes_out = 0;
         enum libdeflate_result res;
 
-        res = libdeflate_decompress(decompressor, data, data_len, buf, hdr.uncompressed_size, &nbytes_out);
-        if (res != 0 || nbytes_out != (size_t)hdr.uncompressed_size) {
+        res = libdeflate_decompress(decompressor, data, data_len, buf, uncompressed_size, &nbytes_out);
+        if (res != 0 || nbytes_out != uncompressed_size) {
             return SELVA_EINVAL;
         }
     } else {
