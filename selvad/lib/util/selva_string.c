@@ -711,7 +711,7 @@ static int (*selva_string_cmp_fn[])(const struct selva_string *a, const struct s
     [0x04] = selva_string_cmp_unz, /* 00100. */
     [0x08] = selva_string_cmp_unz, /* 01000. */
     [0x0c] = selva_string_cmp_unz, /* 01100. */
-    [0x10] = selva_string_cmp_unz, /* 10000, neither is compressed and b <= a. */
+    [0x10] = selva_string_cmp_unz, /* 10000, neither is compressed and b >= a. */
     [0x14] = selva_string_cmp_unz, /* 10100. */
     [0x18] = selva_string_cmp_unz, /* 11000. */
     [0x1c] = selva_string_cmp_unz, /* 11100. */
