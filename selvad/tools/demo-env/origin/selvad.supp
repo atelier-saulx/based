@@ -1,7 +1,0 @@
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Cond
-   fun:memchr
-   fun:get_key
-   ...
-}
