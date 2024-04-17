@@ -1,7 +1,8 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -13,17 +14,7 @@
 #include "selva_set.h"
 
 static int SelvaSet_CompareString(struct SelvaSetElement *a, struct SelvaSetElement *b) {
-    struct selva_string *ra = a->value_string;
-    struct selva_string *rb = b->value_string;
-    TO_STR(ra, rb);
-
-    if (ra_len < rb_len) {
-        return -1;
-    }
-    if (ra_len > rb_len) {
-        return 1;
-    }
-    return memcmp(ra_str, rb_str, ra_len);
+    return selva_string_cmp(a->value_string, b->value_string);
 }
 
 static int SelvaSet_CompareDouble(struct SelvaSetElement *a, struct SelvaSetElement *b) {
