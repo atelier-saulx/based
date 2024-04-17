@@ -429,8 +429,11 @@ int SelvaSet_Union(struct SelvaSet *res, ...) {
                 err = SelvaSet_Add(res, string);
                 if (err) {
                     selva_string_free(string);
-                    goto out;
+                    if (err != SELVA_EEXIST) {
+                        goto out;
+                    }
                 }
+                err = 0;
             }
         }
     } else if (type == SELVA_SET_TYPE_DOUBLE) {
@@ -445,9 +448,10 @@ int SelvaSet_Union(struct SelvaSet *res, ...) {
 
             SELVA_SET_DOUBLE_FOREACH(el, set) {
                 err = SelvaSet_Add(res, el->value_d);
-                if (err) {
+                if (err && err != SELVA_EEXIST) {
                     goto out;
                 }
+                err = 0;
             }
         }
     } else if (type == SELVA_SET_TYPE_LONGLONG) {
@@ -462,9 +466,10 @@ int SelvaSet_Union(struct SelvaSet *res, ...) {
 
             SELVA_SET_LONGLONG_FOREACH(el, set) {
                 err = SelvaSet_Add(res, el->value_ll);
-                if (err) {
+                if (err && err != SELVA_EEXIST) {
                     goto out;
                 }
+                err = 0;
             }
         }
     } else if (type == SELVA_SET_TYPE_NODEID) {
@@ -479,9 +484,10 @@ int SelvaSet_Union(struct SelvaSet *res, ...) {
 
             SELVA_SET_NODEID_FOREACH(el, set) {
                 err = SelvaSet_Add(res, el->value_nodeId);
-                if (err) {
+                if (err && err != SELVA_EEXIST) {
                     goto out;
                 }
+                err = 0;
             }
         }
     }
