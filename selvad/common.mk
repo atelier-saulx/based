@@ -25,7 +25,9 @@ CFLAGS += -fstack-protector
 LDFLAGS += -pthread
 
 # Add these for valgrind
-#CFLAGS += $(EN_VALGRIND_CFLAGS)
+ifeq ($(EN_VALGRIND),1)
+CFLAGS += $(EN_VALGRIND_CFLAGS)
+endif
 
 ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize
