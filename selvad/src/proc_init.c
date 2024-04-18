@@ -59,5 +59,5 @@ void proc_init(int main_cpu)
      * In case the caller gave us something that's actually readable, we'll
      * get rid of it now.
      */
-    freopen("/dev/null", "r", stdin);
+    stdin = freopen("/dev/null", "r", stdin);
 }
