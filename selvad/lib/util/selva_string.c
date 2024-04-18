@@ -743,7 +743,7 @@ static int (*selva_string_cmp_fn[])(const struct selva_string *a, const struct s
 
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
 {
-    const unsigned z = !!(a->flags & SELVA_STRING_COMPRESS) | ((!!(b->flags & SELVA_STRING_COMPRESS)) << 1);
+    const unsigned z = (!!(a->flags & SELVA_STRING_COMPRESS)) | ((!!(b->flags & SELVA_STRING_COMPRESS)) << 1);
     const size_t a_ulen = selva_string_getz_ulen(a);
     const size_t b_ulen = selva_string_getz_ulen(b);
     const unsigned aget = (a_ulen > DEFLATE_STRINGS_THRESHOLD_SIZE) << 2;
