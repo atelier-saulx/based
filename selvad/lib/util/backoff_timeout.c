@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <math.h>
@@ -17,7 +17,7 @@ const struct backoff_timeout backoff_timeout_defaults = {
 void backoff_timeout_init(struct backoff_timeout *s)
 {
     unsigned int seed = time(NULL);
-#if __APPLE__
+#if defined(__APPLE__) && defined(__MACH__)
     initstate(seed, s->rnd_state_buf, sizeof(s->rnd_state_buf));
 #else
     initstate_r(seed, s->rnd_state_buf, sizeof(s->rnd_state_buf), &s->rnd_state);
@@ -41,7 +41,7 @@ void backoff_timeout_next(struct backoff_timeout *s, struct timespec *ts)
     double rv;
     double timeout;
 
-#if __APPLE__
+#if defined(__APPLE__) && defined(__MACH__)
     rv = (double)(random() % 100) / 100.0 + 1.0;
 #else
     rv = (double)(get_rnd(&s->rnd_state) % 100) / 100.0 + 1.0;

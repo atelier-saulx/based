@@ -10,7 +10,7 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#if __APPLE__ /* sendfile on MacOs */
+#if defined(__APPLE__) /* sendfile on MacOs */
 #include <sys/types.h>
 #endif
 #include <errno.h>

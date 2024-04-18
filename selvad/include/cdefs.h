@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
@@ -128,7 +128,7 @@
 #define __section(x) __attribute__((__section__(x)))
 #endif
 
-#if __APPLE__
+#if defined(__APPLE__)
 #define __lazy_alloc_glob
 #else
 /**
