@@ -254,7 +254,7 @@ static int send_sync_req(int sock)
             struct selva_proto_string sdb_hash_hdr;
             uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
             struct selva_proto_longlong sdb_eid;
-        } msg __packed;
+        } msg;
         char pad[SELVA_PROTO_FRAME_SIZE_MAX];
     } buf;
 
@@ -305,7 +305,7 @@ static int send_full_sync_req(int sock)
     union {
         struct {
             struct selva_proto_header hdr;
-        } msg __packed;
+        } msg;
         char pad[SELVA_PROTO_FRAME_SIZE_MAX];
     } buf;
     static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
@@ -341,7 +341,7 @@ static int send_status(int sock, uint64_t eid)
         struct {
             struct selva_proto_header hdr;
             struct selva_proto_longlong eid;
-        } msg __packed;
+        } msg;
         char pad[SELVA_PROTO_FRAME_SIZE_MAX];
     } buf;
     static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
