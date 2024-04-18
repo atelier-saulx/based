@@ -1668,7 +1668,7 @@ static size_t get_short_field_name_len(const char field_name_str[SELVA_SHORT_FIE
     uint64_t y = haszero(x);
 #undef haszero
 
-    return y == 0 ? sizeof(x) : __builtin_ctzl(y) / 8;
+    return y == 0 ? sizeof(x) : (size_t)(__builtin_ctzl(y) / 8);
 }
 
 static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t data_len)
