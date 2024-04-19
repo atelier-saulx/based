@@ -25,6 +25,7 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "../../modules/db/include/find_cmd.h"
+#include "../../modules/db/include/modify.h"
 #include "../../commands.h"
 
 #define MSG_BUF_SIZE 100 * 1048576
@@ -177,47 +178,10 @@ static int send_schema(int fd, int seqno)
 
 static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
-    /* TODO The structs should come from headers */
-    struct SelvaModifyFieldOp {
-        enum SelvaModifyOpCode {
-            SELVA_MODIFY_OP_DEL = 0, /*!< Delete field. */
-            SELVA_MODIFY_OP_STRING = 1,
-            SELVA_MODIFY_OP_STRING_DEFAULT = 2,
-            SELVA_MODIFY_OP_LONGLONG = 3,
-            SELVA_MODIFY_OP_LONGLONG_DEFAULT = 4,
-            SELVA_MODIFY_OP_LONGLONG_INCREMENT = 5,
-            SELVA_MODIFY_OP_DOUBLE = 6,
-            SELVA_MODIFY_OP_DOUBLE_DEFAULT = 7,
-            SELVA_MODIFY_OP_DOUBLE_INCREMENT = 8,
-            SELVA_MODIFY_OP_SET_VALUE = 9,
-            SELVA_MODIFY_OP_SET_INSERT = 10,
-            SELVA_MODIFY_OP_SET_REMOVE = 11,
-            SELVA_MODIFY_OP_SET_ASSIGN = 12,
-            SELVA_MODIFY_OP_SET_MOVE = 13,
-            SELVA_MODIFY_OP_EDGE_META = 14, /*!< Value is `struct SelvaModifyEdgeMeta`. */
-        } __packed op;
-        enum {
-            SELVA_MODIFY_OP_FLAGS_VALUE_IS_DEFLATED = 0x01,
-        } __packed flags;
-        char lang[2];
-        uint32_t index;
-        char field_name[SELVA_SHORT_FIELD_NAME_LEN];
-        const char *value_str;
-        size_t value_len;
-    };
     struct {
         struct selva_proto_header hdr;
         struct selva_proto_string modify_hdr;
-        /* modify_header */
-        struct {
-            char node_id[SELVA_NODE_ID_SIZE];
-            enum {
-                FLAG_NO_MERGE = 0x01,
-                FLAG_CREATE =   0x02,
-                FLAG_UPDATE =   0x04,
-            } flags;
-            uint32_t nr_changes;
-        } modify;
+        struct modify_header modify;
         /* field 1 */
         struct selva_proto_string field1_hdr;
         struct SelvaModifyFieldOp field1_op;
