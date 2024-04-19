@@ -54,7 +54,7 @@ struct pipe_mat_el {
     pipe_glue_t pipe_glue;
 };
 
-static pipe_glue_t find_pipe_glue(cmd_t src_cmd_id, cmd_t dst_cmd_id, enum pipe_glue_id glue_id)
+static pipe_glue_t get_glue(cmd_t src_cmd_id, cmd_t dst_cmd_id, enum pipe_glue_id glue_id)
 {
     static const struct pipe_mat_el pipe_mat[] = {
         {
@@ -184,7 +184,7 @@ static void cmd_pipe(struct selva_server_response_out *resp, const void *buf, si
             p = (const char *)p + res;
         }
 
-        glue = find_pipe_glue(prev_cmd_id, op.cmd, op.pipe_glue_id);
+        glue = get_glue(prev_cmd_id, op.cmd, op.pipe_glue_id);
         if (!glue) {
             selva_send_errorf(resp, SELVA_ENOENT, "Glue not found");
             return;
