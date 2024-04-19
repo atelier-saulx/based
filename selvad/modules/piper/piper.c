@@ -23,6 +23,7 @@
 enum pipe_glue_id {
     PIPE_GLUE_NIL = 0,
     PIPE_GLUE_FIND2FIND,
+    PIPE_GLUE_FIND2MODIFY,
 };
 
 struct pipe_op {
@@ -61,6 +62,12 @@ static pipe_glue_t find_pipe_glue(cmd_t src_cmd_id, cmd_t dst_cmd_id, enum pipe_
             .dst = CMD_ID_HIERARCHY_FIND,
             .pipe_glue_id = PIPE_GLUE_FIND2FIND,
             .pipe_glue = find2find_glue,
+        },
+        {
+            .src = CMD_ID_HIERARCHY_FIND,
+            .dst = CMD_ID_MODIFY,
+            .pipe_glue_id = PIPE_GLUE_FIND2MODIFY,
+            .pipe_glue = find2modify_glue,
         },
         {
             .pipe_glue_id = PIPE_GLUE_NIL /* end of list */

@@ -32,7 +32,6 @@
 #include "db_config.h"
 #include "edge.h"
 #include "field_lookup.h"
-#include "modify.h"
 #include "parsers.h"
 #include "rpn.h"
 #include "selva_index.h"

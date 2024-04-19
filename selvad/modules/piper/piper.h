@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -16,5 +16,12 @@ void find2find_glue(
         int64_t ts,
         const char *template_str,
         size_t template_len,
-        struct selva_string *in_buf,
-        struct selva_string *out_buf);
+        struct selva_string * restrict in_buf,
+        struct selva_string * restrict out_buf);
+void find2modify_glue(
+        cmd_t cmd_id,
+        int64_t ts,
+        const char *template_str,
+        size_t template_len,
+        struct selva_string * restrict in_buf,
+        struct selva_string * restrict out_buf);

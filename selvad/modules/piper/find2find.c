@@ -87,8 +87,8 @@ void find2find_glue(
         int64_t ts,
         const char *template_str,
         size_t template_len,
-        struct selva_string *in_buf,
-        struct selva_string *out_buf)
+        struct selva_string * restrict in_buf,
+        struct selva_string * restrict out_buf)
 {
     __auto_finalizer struct finalizer fin;
     TO_STR(in_buf);
