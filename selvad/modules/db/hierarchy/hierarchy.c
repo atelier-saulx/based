@@ -57,9 +57,6 @@ struct SelvaHierarchySearchFilter {
     Selva_NodeId id;
 };
 
-#define GET_NODE_OBJ(_node_) \
-    ((struct SelvaObject *)((_node_)->_obj_data))
-
 /**
  * Structure for traversal cb of verifyDetachableSubtree().
  */
@@ -388,7 +385,7 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
         dtor(hierarchy, node, &node->metadata);
     }
 
-    SelvaObject_Destroy(GET_NODE_OBJ(node));
+    SelvaObject_Destroy(SelvaHierarchy_GetNodeObject(node));
 #if MEM_DEBUG
     memset(node, 0, sizeof(*node));
 #endif
@@ -415,7 +412,7 @@ static void new_detached_node(SelvaHierarchy *hierarchy, const Selva_NodeId node
     if (!err) {
         err = SelvaModify_AddHierarchyP(hierarchy, node, nr_parents, parents, 0, NULL);
         node->flags |= SELVA_NODE_FLAGS_DETACHED;
-        SelvaObject_Destroy(GET_NODE_OBJ(node));
+        SelvaObject_Destroy(SelvaHierarchy_GetNodeObject(node));
     }
 
     if (unlikely(err < 0)) {
@@ -503,10 +500,6 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
     } else {
         return NULL;
     }
-}
-
-struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node) {
-    return GET_NODE_OBJ(node);
 }
 
 struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
@@ -599,7 +592,7 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
 
 static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const int send_events = !isLoading();
-    struct SelvaObject *obj = GET_NODE_OBJ(node);
+    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     Selva_NodeId id;
     int is_root;
 
@@ -1829,7 +1822,7 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
         return err;
     }
 
-    if (!SelvaObjectTypeLoadTo(io, encver, GET_NODE_OBJ(node), NULL)) {
+    if (!SelvaObjectTypeLoadTo(io, encver, SelvaHierarchy_GetNodeObject(node), NULL)) {
         return SELVA_ENOENT;
     }
 
@@ -2060,7 +2053,7 @@ static void save_metadata(struct selva_io *io, SelvaHierarchyNode *node) {
      */
 
     Edge_Save(io, node);
-    SelvaObjectTypeSave(io, GET_NODE_OBJ(node), NULL);
+    SelvaObjectTypeSave(io, SelvaHierarchy_GetNodeObject(node), NULL);
 }
 
 /**

@@ -357,7 +357,9 @@ static inline char *SelvaHierarchy_GetNodeType(char type[SELVA_NODE_TYPE_SIZE], 
  * Get the SelvaObject of a hierarchy node.
  * @returns a pointer to the SelvaObject of node.
  */
-struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node);
+static inline struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node) {
+    return ((struct SelvaObject *)((node)->_obj_data));
+}
 
 /**
  * Get node metadata by nodeId.
