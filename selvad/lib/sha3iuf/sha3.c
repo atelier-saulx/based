@@ -76,6 +76,28 @@ static const unsigned keccakf_piln[24] = {
     14, 22, 9, 6, 1
 };
 
+typedef uint64_t v16u_t __attribute__ ((vector_size (64)));
+
+static void theta(uint64_t r[25], uint64_t s[25])
+{
+    v16u_t bc;
+    v16u_t bd;
+
+    for (int i = 0; i < 5; i++)
+        bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
+
+    bd[0] = bc[4] ^ SHA3_ROTL64(bc[1], 1);
+    bd[1] = bc[0] ^ SHA3_ROTL64(bc[2], 1);
+    bd[2] = bc[1] ^ SHA3_ROTL64(bc[3], 1);
+    bd[3] = bc[2] ^ SHA3_ROTL64(bc[4], 1);
+    bd[4] = bc[3] ^ SHA3_ROTL64(bc[0], 1);
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 25; j += 5) {
+            r[j + i] = s[j + i] ^ bd[i];
+        }
+    }
+}
+
 /* generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words
  * are XORed into the state s
  */
@@ -83,7 +105,7 @@ static void
 keccakf(uint64_t s[25], int keccak_rounds)
 {
     for (int round = 0; round < keccak_rounds; round++) {
-        uint64_t t, bc[5], bd[5];
+        uint64_t t;
         /*
          * You may wonder if it makes any sense to have temp buffer here.
          * The answer is: Yes, it cuts about 60% of the time consumed here.
@@ -91,19 +113,7 @@ keccakf(uint64_t s[25], int keccak_rounds)
         uint64_t tmp[25];
 
         /* Theta */
-        for (int i = 0; i < 5; i++)
-            bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
-
-        bd[0] = bc[4] ^ SHA3_ROTL64(bc[1], 1);
-        bd[1] = bc[0] ^ SHA3_ROTL64(bc[2], 1);
-        bd[2] = bc[1] ^ SHA3_ROTL64(bc[3], 1);
-        bd[3] = bc[2] ^ SHA3_ROTL64(bc[4], 1);
-        bd[4] = bc[3] ^ SHA3_ROTL64(bc[0], 1);
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 25; j += 5) {
-                tmp[j + i] = s[j + i] ^ bd[i];
-            }
-        }
+        theta(tmp, s);
 
         /* Rho Pi */
         t = tmp[1];
