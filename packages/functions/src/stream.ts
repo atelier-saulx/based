@@ -1,7 +1,6 @@
-import { Duplex, Readable } from "stream";
-import util from "util";
+import { Duplex, Readable } from "node:stream";
+import util from "node:util";
 
-// prob want to move this to based functions
 export class BasedDataStream extends Duplex {
   public size: number = 0;
   public paused: boolean = false;

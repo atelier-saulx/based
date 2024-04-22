@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import based from '@based/client'
 import { createRoot } from 'react-dom/client'
-import { Provider, useQuery, useLoading, useWindow } from '../src'
+import { Provider, useQuery, useLoading, useWindow } from '../../src'
 
 const client = based({
   url: 'ws://localhost:8081',
@@ -75,7 +75,7 @@ const UseWindowTester = () => {
       path: ['things'], // where are the items in the response?
       pages, // array of page numbers - starts at 1
       size, // amount of items per page
-    }
+    },
   )
 
   return (
@@ -97,7 +97,7 @@ const UseWindowTester = () => {
           setPages(
             pages.map((n) => {
               return n + 3
-            })
+            }),
           )
         }}
       >
@@ -133,5 +133,5 @@ function App() {
   )
 }
 
-const root = createRoot(document.body)
+const root = createRoot(document.getElementById('root'))
 root.render(<App />)

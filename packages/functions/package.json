@@ -1,6 +1,6 @@
 {
   "name": "@based/functions",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,7 @@
   "sideEffects": false,
   "dependencies": {
     "utility-types": "^3.10.0",
-    "@saulx/utils": "^4.1.0"
+    "@saulx/utils": "^5.0.0"
   },
   "devDependencies": {
     "ts-node": "10.9.1",

@@ -1,8 +1,9 @@
-import { BasedClient } from './index.js'
+import { genObserveId } from './genObserveId.js'
+import { BasedClient, BasedQuery } from './index.js'
 import { CacheValue } from './types/cache.js'
 
 export const createCacheObject = (
-  client: BasedClient
+  client: BasedClient,
 ): {
   [key: string]: CacheValue
 } => {
@@ -13,8 +14,48 @@ export const createCacheObject = (
   return m
 }
 
-export const createCacheScriptTag = (client: BasedClient): string => {
+export const createCacheObjectFiltered = (
+  client: BasedClient,
+  queries?: { endpoint: string; payload?: any }[],
+): {
+  [key: string]: CacheValue
+} => {
+  const m: any = {}
+  for (const q of queries) {
+    const key = genObserveId(q.endpoint, q.payload)
+    if (client.cache.has(key)) {
+      m[key] = client.cache.get(key)
+    }
+  }
+  return m
+}
+
+export const createInlineFromCurrentCache = (
+  client: BasedClient,
+  queries?: { endpoint: string; payload?: any }[],
+): string => {
+  if (queries) {
+    return `<script>window.__basedcache__=${JSON.stringify(createCacheObjectFiltered(client, queries))}</script>`
+  }
   return `<script>window.__basedcache__=${JSON.stringify(
-    createCacheObject(client)
+    createCacheObject(client),
   )}</script>`
+}
+
+export const createInlineCache = async (
+  client: BasedClient,
+  queries: BasedQuery[],
+): Promise<{ scriptTag: string; results: any[] }> => {
+  const m = {}
+  const results = await Promise.all(
+    queries.map(async (query) => {
+      const r = await query.get()
+      m[query.id] = client.cache.get(query.id)
+      return r
+    }),
+  )
+  return {
+    scriptTag: `<script>window.__basedcache__=${JSON.stringify(m)}</script>`,
+    results,
+  }
 }

@@ -44,8 +44,6 @@ import { hashObjectIgnoreKeyOrder } from "@saulx/hash";
 import { deepEqual } from "@saulx/utils";
 import parseOpts from "@based/opts";
 import { freeCacheMemory } from "./cache.js";
-import { isStream } from "./stream/nodeStream.js";
-import { StreamFunctionStream, isStreamFunctionOpts } from "@based/functions";
 
 export * from "./authState/parseAuthState.js";
 

@@ -15,16 +15,18 @@ import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue } from '../types/index.js'
 import { freeCacheMemory } from '../cache.js'
-import { convertDataToBasedError } from '@based/errors'
+import { convertDataToBasedError } from '@based/errors/client'
 
 const decodeAndDeflate = (
   start: number,
   end: number,
   isDeflate: boolean,
-  buffer: Uint8Array
+  buffer: Uint8Array,
 ): any => {
   return new TextDecoder().decode(
-    isDeflate ? inflateSync(buffer.slice(start, end)) : buffer.slice(start, end)
+    isDeflate
+      ? inflateSync(buffer.slice(start, end))
+      : buffer.slice(start, end),
   )
 }
 
@@ -252,7 +254,7 @@ export const incoming = async (client: BasedClient, data: any) => {
           client.streamFunctionResponseListeners.has(payload.streamRequestId)
         ) {
           const [, reject] = client.streamFunctionResponseListeners.get(
-            payload.streamRequestId
+            payload.streamRequestId,
           )
           reject(convertDataToBasedError(payload))
           client.streamFunctionResponseListeners.delete(payload.streamRequestId)
@@ -262,7 +264,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       if (payload.requestId) {
         if (client.functionResponseListeners.has(payload.requestId)) {
           const [, reject, stack] = client.functionResponseListeners.get(
-            payload.requestId
+            payload.requestId,
           )
           reject(convertDataToBasedError(payload, stack))
           client.functionResponseListeners.delete(payload.requestId)
@@ -279,7 +281,7 @@ export const incoming = async (client: BasedClient, data: any) => {
             } else {
               console.error(
                 getTargetInfo(client, payload.channelId, 'channel'),
-                error
+                error,
               )
             }
           }
@@ -297,7 +299,7 @@ export const incoming = async (client: BasedClient, data: any) => {
             } else {
               console.error(
                 getTargetInfo(client, payload.observableId, 'sub'),
-                error
+                error,
               )
             }
           }
@@ -409,7 +411,7 @@ export const incoming = async (client: BasedClient, data: any) => {
           client.streamFunctionResponseListeners.get(id)[2](
             seqId,
             code,
-            maxChunkSize
+            maxChunkSize,
           )
         }
       }

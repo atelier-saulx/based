@@ -9,18 +9,19 @@ import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+const TMP = join(__dirname, '../tmp/')
+
 test.beforeEach(async (t: T) => {
   t.context.port = await getPort()
   t.context.ws = `ws://localhost:${t.context.port}`
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
-  const persistentStorage = join(__dirname, '/browser/tmp/')
+  const persistentStorage = join(TMP, '1m')
 
-  await mkdir(persistentStorage).catch(() => {})
+  await mkdir(persistentStorage, { recursive: true }).catch((err) => {})
   const opts = {
     url: async () => {
       return t.context.ws
@@ -73,7 +74,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
       {
         myQuery: 123,
       },
-      { persistent: true }
+      { persistent: true },
     )
     .subscribe((d) => {
       r.push(d)
@@ -85,7 +86,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
       {
         myQuery: 123,
       },
-      { persistent: true }
+      { persistent: true },
     )
     .subscribe(() => {})
 
@@ -111,12 +112,12 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
         {
           myQuery: 123,
         },
-        { persistent: true }
+        { persistent: true },
       )
       .subscribe((d) => {
         fromStorage = d
         resolve(d)
-      })
+      }),
   )
 
   let x: any
@@ -128,12 +129,12 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
         {
           myQuery: 123,
         },
-        { persistent: true }
+        { persistent: true },
       )
       .subscribe((d) => {
         resolve(d)
         x = d
-      })
+      }),
   )
 
   t.is(fromStorage, 3)
@@ -146,9 +147,10 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   })
 })
 
-test('auth persist', async (t: T) => {
-  const persistentStorage = join(__dirname, '/browser/tmp/')
-  await mkdir(persistentStorage).catch(() => {})
+test.serial('auth persist', async (t: T) => {
+  const persistentStorage = join(TMP, 'auth')
+
+  await mkdir(persistentStorage, { recursive: true }).catch(() => {})
 
   const token = 'this is token'
   const server = new BasedServer({
@@ -204,7 +206,7 @@ test('auth persist', async (t: T) => {
     {},
     {
       persistentStorage,
-    }
+    },
   )
 
   await client.connect(opts)
@@ -230,7 +232,7 @@ test('auth persist', async (t: T) => {
   await t.notThrowsAsync(client2.call('hello'))
 
   t.teardown(async () => {
-    await wait(300)
+    await wait(100)
     await client.clearStorage()
     await server.destroy()
     await client2.clearStorage()

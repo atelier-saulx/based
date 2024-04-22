@@ -1,11 +1,6 @@
 import { BasedServer } from '@based/server'
-import { BasedQueryFunction } from '@based/functions'
 
-const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
-  _based,
-  payload,
-  update
-) => {
+const counter = (_based, payload, update) => {
   let cnt = 0
   // update({ cnt })
   const int = setInterval(() => {

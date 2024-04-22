@@ -1,4 +1,4 @@
-import { BasedError } from '@based/errors'
+import { BasedError } from '@based/errors/client'
 
 export type ObserveOpts = {
   localStorage?: boolean
@@ -40,16 +40,16 @@ export type ObserveType = 1 | 2
 
 export type ObserveQueueItem =
   | [
-    1,
-    string, // name
-    number, // checksum
-    any // payload
-  ]
+      1,
+      string, // name
+      number, // checksum
+      any, // payload
+    ]
   | [
-    1,
-    string, // name
-    number // checksum
-  ]
+      1,
+      string, // name
+      number, // checksum
+    ]
   | [2]
 
 // fix this format dont need an array ay all object makes more sense...
@@ -62,16 +62,16 @@ export type ObserveQueue = Map<
 // 3 = get
 export type GetObserveQueueItem =
   | [
-    3,
-    string, // name
-    number, // checksum
-    any // payload
-  ]
+      3,
+      string, // name
+      number, // checksum
+      any, // payload
+    ]
   | [
-    3,
-    string, // name
-    number // checksum,
-  ]
+      3,
+      string, // name
+      number, // checksum,
+    ]
 
 export type GetObserveQueue = Map<
   number, // id
