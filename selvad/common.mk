@@ -19,7 +19,7 @@ CC += -fdiagnostics-color=always
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
 CFLAGS := -std=gnu2x -pthread -O2 -MMD -fstack-protector \
-		  -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes -Wstrict-aliasing=3 \
+		  -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes \
 		  -DDCACHE_LINESIZE=64
 
 LDFLAGS += -pthread
@@ -30,7 +30,7 @@ CFLAGS += $(EN_VALGRIND_CFLAGS)
 endif
 
 ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
-	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize
+	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize - -Wstrict-aliasing=3
 	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
 	#CFLAGS += -opt-info-vec-optimized
 	#CFLAGS += -ftree-vectorizer-verbose=5 -fopt-info-vec-missed
@@ -41,6 +41,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 
 	ifeq ($(uname_M),x86_64)
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
+		# TODO add -mavx512f if supported
 		CFLAGS += -fcf-protection=full
 	endif
 
