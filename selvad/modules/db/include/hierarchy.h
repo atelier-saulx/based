@@ -406,25 +406,6 @@ int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node)
 void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj)
     __attribute__((access(read_write, 1)));
 
-enum SelvaModify_SetFlags {
-    SELVA_MODIFY_SET_FLAG_NO_ROOT = 0x01,
-};
-
-/**
- * Set node relationships relative to other existing nodes.
- * Previously existing connections to and from other nodes are be removed.
- * If a node with id doesn't exist it will be created.
- * TODO This should be removed in favor of UsertNode().
- * @param parents   Sets these nodes and only these nodes as parents of this node.
- * @param children  Sets these nodes and only these nodes as children of this node.
- */
-int SelvaModify_SetHierarchy(
-        SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        enum SelvaModify_SetFlags flags,
-        struct SelvaHierarchyNode **node_out)
-    __attribute__((access(read_write, 1), access(read_only, 2), access(write_only, 4)));
-
 int SelvaHierarchy_UpsertNode(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
