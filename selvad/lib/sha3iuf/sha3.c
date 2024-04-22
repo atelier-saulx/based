@@ -16,7 +16,7 @@
  * Aug 2015. Andrey Jivsov. crypto@brainhub.org
  *
  * Copyright (c) 2020 brainhub
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  *
  * SPDX-License-Identifier: MIT
  * ---------------------------------------------------------------------- */
