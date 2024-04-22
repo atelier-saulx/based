@@ -575,17 +575,6 @@ int SelvaHierarchy_TraverseExpressionBfs(
     __attribute__((access(read_only, 2)));
 
 /**
- * Foreach value in a set field.
- */
-int SelvaHierarchy_TraverseSet(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        const char *field_str,
-        size_t field_len,
-        const struct SelvaObjectSetForeachCallback *cb)
-    __attribute__((access(read_only, 2), access(read_only, 3, 4)));
-
-/**
  * Foreach value in a set-like field.
  * Traverse each value (foreach) in a field.
  * Supported fields:

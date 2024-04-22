@@ -1492,24 +1492,6 @@ int SelvaHierarchy_TraverseExpressionBfs(
     return bfs_expression(hierarchy, head, rpn_ctx, rpn_expr, edge_filter_ctx, edge_filter, cb);
 }
 
-int SelvaHierarchy_TraverseSet(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        const char *field_str,
-        size_t field_len,
-        const struct SelvaObjectSetForeachCallback *cb) {
-    struct SelvaHierarchyNode *head;
-
-    head = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!head) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    Trx_Sync(&hierarchy->trx_state, &head->trx_label);
-
-    return SelvaObject_SetForeach(GET_NODE_OBJ(head), field_str, field_len, cb);
-}
-
 int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const char *field_str, size_t field_len) {
     if (field_len == 0) {
         return 0;
