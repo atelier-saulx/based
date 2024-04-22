@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -35,24 +35,6 @@ void SelvaSubscriptions_ClearAllMarkers(
 
 int SelvaSubscriptions_hasActiveMarkers(const struct SelvaHierarchyMetadata *node_metadata) {
     return 0;
-}
-
-void SelvaSubscriptions_InheritParent(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId node_id,
-        struct SelvaHierarchyMetadata *node_metadata,
-        size_t node_nr_children,
-        struct SelvaHierarchyNode *parent) {
-    return;
-}
-
-void SelvaSubscriptions_InheritChild(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId node_id,
-        struct SelvaHierarchyMetadata *node_metadata,
-        size_t node_nr_parents,
-        struct SelvaHierarchyNode *child) {
-    return;
 }
 
 void SelvaSubscriptions_InheritEdge(
