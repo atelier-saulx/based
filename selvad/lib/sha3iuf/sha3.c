@@ -84,6 +84,10 @@ keccakf(uint64_t s[25], int keccak_rounds)
 {
     for (int round = 0; round < keccak_rounds; round++) {
         uint64_t t, bc[5], bd[5];
+        /*
+         * You may wonder if it makes any sense to have temp buffer here.
+         * The answer is: Yes, it cuts about 60% of the time consumed here.
+         */
         uint64_t tmp[25];
 
         /* Theta */
