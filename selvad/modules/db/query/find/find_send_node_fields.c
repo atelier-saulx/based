@@ -214,7 +214,7 @@ static int send_edge_field(
         size_t field_len,
         struct selva_string *excluded_fields)
 {
-    struct SelvaHierarchyMetadata *metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
     struct SelvaObject *edges = metadata->edge_fields.edges;
     struct EdgeField *edge_field;
     void *p;

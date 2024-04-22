@@ -509,14 +509,6 @@ struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode
     return GET_NODE_OBJ(node);
 }
 
-const struct SelvaHierarchyMetadata *_SelvaHierarchy_GetNodeMetadataByConstPtr(const SelvaHierarchyNode *node) {
-    return &node->metadata;
-}
-
-struct SelvaHierarchyMetadata *_SelvaHierarchy_GetNodeMetadataByPtr(SelvaHierarchyNode *node) {
-    return &node->metadata;
-}
-
 struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id) {

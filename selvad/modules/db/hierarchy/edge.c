@@ -237,7 +237,7 @@ static struct SelvaObject *get_edges(const struct SelvaHierarchyNode *node) {
     /*
      * The edges object is allocated lazily so the called might need to allocate it.
      */
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    metadata = &node->metadata;
     edges = metadata->edge_fields.edges;
 
     return edges;
@@ -394,7 +394,7 @@ __attribute__((nonnull (1, 4))) static struct EdgeField *Edge_NewField(
     struct EdgeField *edge_field;
 
     SelvaHierarchy_GetNodeId(node_id, node);
-    node_metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    node_metadata = &node->metadata;
 
     edges = node_metadata->edge_fields.edges;
     if (!edges) {
@@ -414,13 +414,12 @@ __attribute__((nonnull (1, 4))) static struct EdgeField *Edge_NewField(
 }
 
 static struct SelvaObject *upsert_origins(struct SelvaHierarchyNode *node) {
-    struct SelvaHierarchyMetadata *node_metadata;
+    struct SelvaHierarchyMetadata *node_metadata = &node->metadata;
 
     /*
      * Add origin reference.
      * Note that we must ensure that this insertion is only ever done once.
      */
-    node_metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 
     if (!node_metadata->edge_fields.origins) {
         /* The edge origin refs struct is initialized lazily. */
@@ -522,7 +521,7 @@ static int get_or_create_EdgeField(
 }
 
 int Edge_Usage(const struct SelvaHierarchyNode *node) {
-    const struct EdgeFieldContainer *efc = &SelvaHierarchy_GetNodeMetadataByPtr(node)->edge_fields;
+    const struct EdgeFieldContainer *efc = &node->metadata.edge_fields;
     int res = 0;
 
     if (efc->edges && SelvaObject_Len(efc->edges, NULL) > 0) {
@@ -762,7 +761,7 @@ static int remove_origin_ref(struct EdgeField *src_edge_field, struct SelvaHiera
     SVector *origin_fields; /* type: struct EdgeField */
     int err;
 
-    dst_metadata = SelvaHierarchy_GetNodeMetadataByPtr(dst_node);
+    dst_metadata = &dst_node->metadata;
     err = SelvaObject_GetArrayStr(dst_metadata->edge_fields.origins, src_edge_field->src_node_id, SELVA_NODE_ID_SIZE, &out_subtype, &origin_fields);
     if (err) {
         return err;
@@ -952,7 +951,7 @@ static void _clear_all_fields(
  * Clear all edge fields of node.
  */
 static void clear_all_fields(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    struct SelvaObject *edges = SelvaHierarchy_GetNodeMetadataByPtr(node)->edge_fields.edges;
+    struct SelvaObject *edges = node->metadata.edge_fields.edges;
 
     if (edges) {
         _clear_all_fields(hierarchy, node, edges);
@@ -996,7 +995,7 @@ static int delete_field(
         return res;
     }
 
-    edges = SelvaHierarchy_GetNodeMetadataByPtr(src_node)->edge_fields.edges;
+    edges = src_node->metadata.edge_fields.edges;
     if (!edges) {
         return SELVA_ENOENT;
     }
@@ -1098,10 +1097,8 @@ int Edge_DeleteAll(
 }
 
 size_t Edge_Refcount(const struct SelvaHierarchyNode *node) {
-    const struct SelvaHierarchyMetadata *metadata;
+    const struct SelvaHierarchyMetadata *metadata = &node->metadata;
     size_t refcount = 0;
-
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 
     if (metadata->edge_fields.origins) {
         refcount = SelvaObject_Len(metadata->edge_fields.origins, NULL);
@@ -1277,9 +1274,7 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
 }
 
 int Edge_Load(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    struct SelvaHierarchyMetadata *metadata;
-
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
 
     /*
      * We use the SelvaObject loader to load the object which will then
@@ -1327,7 +1322,7 @@ static void EdgeField_Save(struct selva_io *io, void *value, __unused void *save
 }
 
 void Edge_Save(struct selva_io *io, struct SelvaHierarchyNode *node) {
-    struct SelvaHierarchyMetadata *metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
 
     SelvaObjectTypeSave2(io, metadata->edge_fields.edges, NULL);
 }

@@ -359,18 +359,6 @@ static inline char *SelvaHierarchy_GetNodeType(char type[SELVA_NODE_TYPE_SIZE], 
  */
 struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node);
 
-const struct SelvaHierarchyMetadata *_SelvaHierarchy_GetNodeMetadataByConstPtr(const struct SelvaHierarchyNode *node)
-    __attribute__((pure, access(read_only, 1)));
-struct SelvaHierarchyMetadata *_SelvaHierarchy_GetNodeMetadataByPtr(struct SelvaHierarchyNode *node)
-    __attribute__((pure, access(read_only, 1)));
-/**
- * Get node metadata by a pointer to the node.
- */
-#define SelvaHierarchy_GetNodeMetadataByPtr(node) _Generic((node), \
-        const struct SelvaHierarchyNode *: _SelvaHierarchy_GetNodeMetadataByConstPtr, \
-        struct SelvaHierarchyNode *: _SelvaHierarchy_GetNodeMetadataByPtr \
-        )(node)
-
 /**
  * Get node metadata by nodeId.
  */

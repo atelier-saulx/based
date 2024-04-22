@@ -1400,7 +1400,7 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
     }
 
     /* RFE Is it possible to know if this is a record? */
-    edges = SelvaHierarchy_GetNodeMetadataByPtr(ctx->data.node)->edge_fields.edges;
+    edges = ctx->data.node->metadata.edge_fields.edges;
     if (!edges) {
         return push_empty_value(ctx);
     }

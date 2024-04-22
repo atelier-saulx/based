@@ -553,7 +553,7 @@ static int set_node_marker_cb(
         void *arg) {
     struct set_node_marker_data *data = (struct set_node_marker_data *)arg;
     struct Selva_SubscriptionMarker *marker = data->marker;
-    struct SelvaHierarchyMetadata *metadata;
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
 
 #if 0
     Selva_NodeId node_id;
@@ -564,7 +564,6 @@ static int set_node_marker_cb(
               (int)SELVA_NODE_ID_SIZE, node_id);
 #endif
 
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
     set_marker(&metadata->sub_markers, marker);
 
     if (marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_REFRESH) {
@@ -581,10 +580,9 @@ static int clear_node_marker_cb(
         const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
-    struct SelvaHierarchyMetadata *metadata;
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
     struct Selva_SubscriptionMarker *marker = (struct Selva_SubscriptionMarker*)arg;
 
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 #if 0
     Selva_NodeId id;
 
@@ -1291,7 +1289,7 @@ void SelvaSubscriptions_Delete(
 void SelvaSubscriptions_ClearAllMarkers(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node) {
-    struct SelvaHierarchyMetadata *metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
     const size_t nr_markers = SVector_Size(&metadata->sub_markers.vec);
     struct SVectorIterator it;
     struct Selva_SubscriptionMarker *marker;
@@ -1335,8 +1333,8 @@ void SelvaSubscriptions_InheritEdge(
         size_t field_len) {
     Selva_NodeId src_node_id;
     Selva_NodeId dst_node_id;
-    struct SelvaHierarchyMetadata *src_metadata = SelvaHierarchy_GetNodeMetadataByPtr(src_node);
-    struct SelvaHierarchyMetadata *dst_metadata = SelvaHierarchy_GetNodeMetadataByPtr(dst_node);
+    struct SelvaHierarchyMetadata *src_metadata = &src_node->metadata;
+    struct SelvaHierarchyMetadata *dst_metadata = &dst_node->metadata;
     struct Selva_SubscriptionMarkers *src_markers = &src_metadata->sub_markers;
     struct Selva_SubscriptionMarkers *dst_markers = &dst_metadata->sub_markers;
     struct SVectorIterator it;
@@ -1477,7 +1475,7 @@ static void defer_event_for_traversing_markers(
     defer_traversing(hierarchy, node, &hierarchy->subs.detached_markers);
 
     /* Markers on the node. */
-    defer_traversing(hierarchy, node, &SelvaHierarchy_GetNodeMetadataByPtr(node)->sub_markers);
+    defer_traversing(hierarchy, node, &node->metadata.sub_markers);
 }
 
 static void defer_alias_change_events(
@@ -1544,13 +1542,12 @@ static void field_change_precheck(
 void SelvaSubscriptions_FieldChangePrecheck(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node) {
-    const struct SelvaHierarchyMetadata *metadata;
+    const struct SelvaHierarchyMetadata *metadata = &node->metadata;
 
     /* Detached markers. */
     field_change_precheck(hierarchy, node, &hierarchy->subs.detached_markers);
 
     /* Markers on the node. */
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
     field_change_precheck(hierarchy, node, &metadata->sub_markers);
 }
 
@@ -1630,21 +1627,15 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
         /* Detached markers. */
         defer_field_change_events(hierarchy, node, &hierarchy->subs.detached_markers, field_str, ary_field_len);
 
-        const struct SelvaHierarchyMetadata *metadata;
-        metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
-
         /* Markers on the node. */
-        defer_field_change_events(hierarchy, node, &metadata->sub_markers, field_str, ary_field_len);
+        defer_field_change_events(hierarchy, node, &node->metadata.sub_markers, field_str, ary_field_len);
     } else {
         /* Regular field */
         /* Detached markers. */
         defer_field_change_events(hierarchy, node, &hierarchy->subs.detached_markers, field_str, field_len);
 
-        const struct SelvaHierarchyMetadata *metadata;
-        metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
-
         /* Markers on the node. */
-        defer_field_change_events(hierarchy, node, &metadata->sub_markers, field_str, field_len);
+        defer_field_change_events(hierarchy, node, &node->metadata.sub_markers, field_str, field_len);
     }
 }
 
@@ -1660,7 +1651,7 @@ void SelvaSubscriptions_DeferAliasChangeEvents(
         return;
     }
 
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    metadata = &node->metadata;
     if (!metadata) {
         Selva_NodeId node_id;
 
