@@ -8,11 +8,10 @@ import { join, dirname, resolve } from 'path'
 import dbZig from '../src/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.only('set and simple get', async (t) => {
+test.serial('set and simple get', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -189,7 +188,7 @@ test.only('set and simple get', async (t) => {
   })
 })
 
-test('get include', async (t) => {
+test.serial('get include', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -243,7 +242,11 @@ function generateRandomArray() {
   return array
 }
 
-test('query + filter', async (t) => {
+test.serial('query + filter', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
   const db = new BasedDb({
     path: dbFolder,
   })

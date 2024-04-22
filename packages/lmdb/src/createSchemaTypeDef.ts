@@ -7,6 +7,9 @@ import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { BasedDb } from './index.js'
 
+// TODO: type this
+// TODO2: make dbi's with 8 length keys
+
 const lenMap = {
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value
