@@ -112,22 +112,22 @@ test.serial.only('set and simple get', async (t) => {
     str += 'bla ' + i
   }
 
-  // console.log('---------------------------')
+  console.log('---------------------------')
 
   var d = Date.now()
-  // for (let i = 0; i < 1e5; i++) {
-  //   db.create('complex', {
-  //     nip: str, //'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
-  //   })
-  // }
+  for (let i = 0; i < 1e5; i++) {
+    db.create('complex', {
+      nip: str, //'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
+    })
+  }
 
-  // await wait(0)
-  // console.log('old', Date.now() - d, 'ms')
+  await wait(0)
+  console.log('old', Date.now() - d, 'ms')
 
   await wait(100)
   console.log('---------------------------')
   d = Date.now()
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e5; i++) {
     db.createFast('complex', {
       nip: str, //'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
     })

@@ -62,7 +62,15 @@ const addModify = (db, id, obj, tree, schema) => {
         // }
         // buf.set(t.index, valBuf)
       } else if (t.type === 'string') {
+        console.log('|->', value.length)
+
         setCursor(db, schema, t, id)
+        modifyBuffer.buffer[modifyBuffer.len] = 3
+        modifyBuffer.buffer.writeUint32LE(value.length, modifyBuffer.len + 1)
+        modifyBuffer.len += 5
+        modifyBuffer.buffer.write(value, modifyBuffer.len, 'utf8')
+        modifyBuffer.len += value.length
+
         // const valBuf = Buffer.alloc(8)
         // const strBuf = Buffer.from(value)
         // valBuf.writeUint32LE(id)
@@ -72,6 +80,8 @@ const addModify = (db, id, obj, tree, schema) => {
         // nBuf.set(strBuf, 8)
         // buf.set(t.index, nBuf)
       } else {
+        // setCursor for this will add the operation as well
+
         // let b
         // if currentDbi && currentKey are the same
 

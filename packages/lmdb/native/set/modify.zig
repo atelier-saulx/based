@@ -40,36 +40,63 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     var i: usize = 0;
     var keySize: u8 = undefined;
     var field: u8 = undefined;
-    var type_prefix: *[2]u8 = undefined;
+    var type_prefix: [2]u8 = undefined;
     var id: u32 = undefined;
+    var currentShard: u8 = 0;
 
     // type_prefix: [2]u8, field: u8, shard: u8
 
     while (i < size) {
         const operation = batch[i];
 
-        if (operation == 2) {
-            // SWITCH TYPE
-            type_prefix = batch[i + 1 ..][0..2];
-            std.debug.print("got type selection type: {any}\n", .{type_prefix});
-            i = i + 1 + 2;
-        } else if (operation == 1) {
-            // SWITCH KEY
-            id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            std.debug.print("got id selection id: '{d}'\n", .{id});
-            i = i + 1 + 4;
-        } else if (operation == 0) {
+        if (operation == 0) {
             // SWITCH FIELD
             field = batch[i + 1];
             keySize = batch[i + 2];
             std.debug.print("got field selection keysize: {d} field: {d}\n", .{ keySize, field });
             i = i + 1 + 2;
-        } else {
+        } else if (operation == 1) {
+            // SWITCH KEY
+            id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+            currentShard = @truncate(@divFloor(id, 1_000_000));
+
+            // std.debug.print("got id selection id: '{d}'\n", .{id});
+            i = i + 1 + 4;
+        } else if (operation == 2) {
+            // SWITCH TYPE
+            type_prefix[0] = batch[i + 1];
+            type_prefix[1] = batch[1 + 2];
+            std.debug.print("got type selection type: {any}\n", .{type_prefix});
+            i = i + 1 + 2;
+        } else if (operation == 3) {
+
+            // full set
+
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
 
-            std.debug.print("got operation size {d}\n", .{operationSize});
+            // std.debug.print("got operation size {d}\n", .{operationSize});
+
+            const shardKey = db.getShardKey(field, currentShard);
+            var shard = shards.get(shardKey);
+            if (shard == null) {
+                shard = db.openShard(type_prefix, shardKey, txn) catch null;
+                if (shard != null) {
+                    try shards.put(shardKey, shard.?);
+                }
+            }
+
+            if (shard != null) {
+                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = null };
+                k.mv_data = &id;
+                var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
+                try errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
+            }
 
             i = i + operationSize + 1 + 4;
+        } else {
+            // ERROR
+            std.debug.print("SOMETHING WENT WRONG INCORRECT OPERATION!\n", .{});
+            break;
         }
 
         // const key = batch[i .. i + KEY_LEN];
