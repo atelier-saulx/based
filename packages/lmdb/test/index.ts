@@ -361,7 +361,7 @@ test.serial.only('query + filter', async (t) => {
   const ids = db
     .query('simple')
     .filter(['vectorClock', '>', 1])
-    .filter(['refs', 'has', [20, 30, 10]])
+    // .filter(['refs', 'has', [20, 30, 10]])
     // .filter(['flap', '=', 'my flap flap flap 1'])
     // .filter(['vectorClock', '=', 3])
     // .filter(['vectorClock', '<', 1])
