@@ -310,11 +310,11 @@ sha3_Finalize(struct sha3_context *ctx)
             SHA3_CONST(0x8000000000000000UL);
     keccakf(ctx->u.s, ctx->keccak_rounds);
 
-    /* Return first bytes of the ctx->s. This conversion is not needed for
-     * little-endian platforms e.g. wrap with #if !defined(__BYTE_ORDER__)
-     * || !defined(__ORDER_LITTLE_ENDIAN__) || __BYTE_ORDER__!=__ORDER_LITTLE_ENDIAN__
-     *    ... the conversion below ...
-     * #endif */
+    /*
+     * Return first bytes of the ctx->s. This conversion is not needed for
+     * little-endian platforms.
+     */
+#if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
     for (unsigned i = 0; i < SHA3_KECCAK_SPONGE_WORDS; i++) {
         const unsigned t1 = (uint32_t) ctx->u.s[i];
         const unsigned t2 = (uint32_t) ((ctx->u.s[i] >> 16) >> 16);
@@ -327,6 +327,7 @@ sha3_Finalize(struct sha3_context *ctx)
         ctx->u.sb[i * 8 + 6] = (uint8_t) (t2 >> 16);
         ctx->u.sb[i * 8 + 7] = (uint8_t) (t2 >> 24);
     }
+#endif
 
     SHA3_TRACE_BUF("Hash: (first 32 bytes)", ctx->u.sb, 256 / 8);
 
