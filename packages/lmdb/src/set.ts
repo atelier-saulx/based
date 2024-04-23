@@ -229,3 +229,16 @@ export const createFast = (db: BasedDb, type: string, value: any) => {
 
   return id
 }
+
+export const updateFast = (
+  db: BasedDb,
+  type: string,
+  id: number,
+  value: any,
+) => {
+  const def = db.schemaTypesParsed[type]
+  addModify(db, id, value, def.dbMap.tree, def)
+  if (!db.isDraining) {
+    startDrain(db)
+  }
+}

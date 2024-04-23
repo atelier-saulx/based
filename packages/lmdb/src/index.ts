@@ -1,4 +1,4 @@
-import { create, createFast } from './set.js'
+import { create, createFast, updateFast } from './set.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { SchemaTypeDef, createSchemaTypeDef } from './createSchemaTypeDef.js'
@@ -74,10 +74,6 @@ export class BasedDb {
     return this.schema
   }
 
-  update(type: string, id: number, value: any) {
-    // return set(this, value)
-  }
-
   create(type: string, value: any) {
     // return set(this, value)
     return create(this, type, value)
@@ -87,7 +83,14 @@ export class BasedDb {
     return createFast(this, type, value)
   }
 
-  remove(type: string, id: number) {}
+  update(type: string, id: number, value: any) {
+    return updateFast(this, type, id, value)
+  }
+
+  // REMOVE FAST
+  remove(type: string, id: number) {
+    // goes into the same buffer as modify make a modify command for this
+  }
 
   get(type: string, id: number, include?: string[], exclude?: string[]) {
     // get all except ref if no include

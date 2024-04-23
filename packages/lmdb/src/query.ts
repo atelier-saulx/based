@@ -71,6 +71,13 @@ export class Query {
             buf[0] = 2
             buf.writeInt16LE(matches.byteLength, 1)
             buf.set(matches, 3)
+          } else if (op === 7) {
+            // add later...
+            // buf[0] = op
+            // buf.writeInt16LE(len, 1)
+            // for (let i = 0; i < len; i++) {
+            //   buf.writeInt32LE(matches[i], i * 4 + 3)
+            // }
           }
         } else if (field.type === 'references') {
           const op = operationToByte(filter[1])

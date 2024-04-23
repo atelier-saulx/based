@@ -337,16 +337,17 @@ test.serial.only('query + filter', async (t) => {
 
   var dx = Date.now()
   console.log('GO!')
-  for (let i = 0; i < 8e6 - 1; i++) {
+  // 2.5GB structured (8M nodes 4.5sec)
+  for (let i = 0; i < 2e6 - 1; i++) {
     db.createFast('simple', {
       user: 1,
-      // refs: [1, 2, 3],
-      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      refs: generateRandomArray(),
+      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       vectorClock: i % 4,
-      // location: {
-      // long: 52,
-      // lat: 52,
-      // },
+      location: {
+        long: 52,
+        lat: 52,
+      },
     })
   }
 
@@ -361,7 +362,7 @@ test.serial.only('query + filter', async (t) => {
   const ids = db
     .query('simple')
     .filter(['vectorClock', '>', 1])
-    // .filter(['refs', 'has', [20, 30, 10]])
+    .filter(['refs', 'has', [1]])
     // .filter(['flap', '=', 'my flap flap flap 1'])
     // .filter(['vectorClock', '=', 3])
     // .filter(['vectorClock', '<', 1])
