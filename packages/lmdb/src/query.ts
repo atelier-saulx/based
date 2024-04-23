@@ -9,13 +9,14 @@ type Operation = '=' | 'has' | '<' | '>'
 // type parsed schema
 
 const ZERO_CHAR = '0'.charCodeAt(0)
-const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 // const opToByte = {
 //   string: {
 //     '=': 2,
 //   },
 // }
+
+// clean this up
 
 const operationToByte = (op: Operation) => {
   if (op === '=') {
@@ -61,7 +62,8 @@ export class Query {
       let buf: Buffer
 
       if (field.seperate === true) {
-        fieldIndexChar = CHARS[field.index % 62].charCodeAt(0)
+        // make this nice...
+        fieldIndexChar = field.index + 48
 
         if (field.type === 'string') {
           const op = operationToByte(filter[1])
@@ -173,6 +175,8 @@ export class Query {
 
   subscribe(fn: (value: any, checksum: number, err: Error) => void) {
     console.log('hello sub')
+    // sub will all wil fire on any field
+    // maybe start with this?
     // this is also where we will create diffs
     // idea use  PROXY object as a view to the buffer
   }
