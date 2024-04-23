@@ -26,6 +26,8 @@ const readFromBuffers = (bufs: Buffers, tree: any): any => {
       }
     } else if (t.type === 'string') {
       if (bufs.has(t.index)) {
+        // console.log('READ', t, '???', bufs.get(t.index).toString('utf8', 4))
+
         obj[key] = bufs.get(t.index).toString('utf8', 4)
       }
     } else if (!mainB) {
@@ -72,6 +74,11 @@ export const get = (
     bufs.set(0, mainBuff)
   }
   def.dbMap.entries.forEach((v, k) => {
+    // console.log(
+    //   'DBI HANDLER',
+    //   db.dbiIndex.get(getDbiHandler(db, def.dbMap, shard, k)).toString(),
+    // )
+
     addRead(db, getDbiHandler(db, def.dbMap, shard, k), key)
     const result = addRead(db, getDbiHandler(db, def.dbMap, shard, k), key)
     if (result) {

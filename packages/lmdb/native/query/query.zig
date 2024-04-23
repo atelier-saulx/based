@@ -57,7 +57,7 @@ fn getQueryInternal(
             const shardKey = db.getShardKey(field, currentShard);
             var shard = shards.get(shardKey);
             if (shard == null) {
-                shard = db.openShard(type_prefix, shardKey, txn) catch null;
+                shard = db.openShard(false, type_prefix, shardKey, txn) catch null;
                 if (shard != null) {
                     try shards.put(shardKey, shard.?);
                 }

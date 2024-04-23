@@ -27,15 +27,25 @@ pub fn getShardKey(field: u8, shard: u8) [3]u8 {
     return .{ field, shard, 0 };
 }
 
-pub fn openDbi(name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
+pub fn openDbi(comptime create: bool, name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
     var dbi: c.MDB_dbi = 0;
-    try errors.mdbCheck(c.mdb_dbi_open(txn, @ptrCast(name), c.MDB_INTEGERKEY, &dbi));
+
+    var flags: c_uint = c.MDB_INTEGERKEY;
+
+    if (create) {
+        flags |= c.MDB_CREATE;
+    }
+
+    try errors.mdbCheck(c.mdb_dbi_open(txn, @ptrCast(name), flags, &dbi));
     return dbi;
 }
 
-pub fn openShard(type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
+pub fn openShard(comptime create: bool, type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
     var dbiName = try createDbiName(type_prefix, shardKey[0], shardKey[1]);
-    const dbi = try openDbi(&dbiName, txn);
+
+    const dbi = try openDbi(create, &dbiName, txn);
+    std.debug.print("DBI: {s}\n", .{dbiName});
+
     errdefer c.mdb_dbi_close(Envs.env, dbi);
     var cursor: ?*c.MDB_cursor = null;
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
@@ -45,6 +55,14 @@ pub fn openShard(type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
 }
 
 pub fn closeShard(shard: *Shard) void {
+    c.mdb_cursor_close(shard.cursor);
     c.mdb_dbi_close(Envs.env, shard.dbi);
+}
+
+pub fn closeDbi(shard: *Shard) void {
+    c.mdb_dbi_close(Envs.env, shard.dbi);
+}
+
+pub fn closeCursor(shard: *Shard) void {
     c.mdb_cursor_close(shard.cursor);
 }

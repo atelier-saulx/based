@@ -37,7 +37,7 @@ const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 let dbiIndex = 0
 
 const createDbiHandle = (prefix: string, field: number, shard: number) => {
-  const fieldAlphaNumeric = CHARS[field % 62]
+  const fieldAlphaNumeric = String.fromCharCode(field + 48) // CHARS[field % 62]
   const shardAlphaNumeric =
     CHARS[shard % 62] + CHARS[Math.floor(shard / 62) % 62]
 
@@ -138,8 +138,8 @@ export const createSchemaTypeDef = (
   if (top) {
     if (!('type' in type && 'properties' in type)) {
       result.dbMap.prefix = type.prefix ?? ''
-      result.dbMap.prefixUint[0] = type.prefix.charAt(0)
-      result.dbMap.prefixUint[1] = type.prefix.charAt(1)
+      result.dbMap.prefixUint[0] = type.prefix.charCodeAt(0)
+      result.dbMap.prefixUint[1] = type.prefix.charCodeAt(1)
     }
 
     const vals: any = Object.values(result.fields)

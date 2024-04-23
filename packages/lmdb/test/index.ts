@@ -9,9 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-console.log('YO')
-
-test.serial.only('set and simple get', async (t) => {
+test.serial('set and simple get', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -98,59 +96,73 @@ test.serial.only('set and simple get', async (t) => {
     },
   })
 
-  const id2 = db.create('vote', {
-    user: 15,
-    vectorClock: 12,
-    location: {
-      long: 1,
-      lat: 1,
-    },
-  })
+  // const id2 = db.create('vote', {
+  //   user: 15,
+  //   vectorClock: 12,
+  //   location: {
+  //     long: 1,
+  //     lat: 1,
+  //   },
+  // })
 
   var str = 'flap'
   for (let i = 0; i < 1e3; i++) {
     str += 'bla ' + i
   }
 
+  // console.info(str)
   console.log('---------------------------')
 
   var d = Date.now()
-  for (let i = 0; i < 1e5; i++) {
-    db.create('complex', {
-      nip: str, //'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
-    })
-  }
+  // for (let i = 0; i < 1e9; i++) {
+  //   db.create('complex', {
+  //     flap: 1,
+  //     // nip: 'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
+  //     snurp: {
+  //       derp: i,
+  //     },
+  //   })
+  // }
 
-  await wait(0)
-  console.log('old', Date.now() - d, 'ms')
+  // await wait(0)
+  // console.log('old', Date.now() - d, 'ms')
 
   await wait(100)
   console.log('---------------------------')
   d = Date.now()
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 10e6; i++) {
     db.createFast('complex', {
-      nip: str, //'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
+      flap: 1,
+      snurp: {
+        derp: i + 1,
+        hup: { start: 1000 },
+        bla: 'BLA!',
+      },
+      nip: 'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
     })
   }
 
   await wait(0)
+  const bla = db.get('complex', 1)
+  console.log(bla)
+
   console.log('new', Date.now() - d, 'ms')
 
-  const id = db.create('complex', {
-    value: 666,
-    nip: 'FRANKO!',
-    gerp: 999,
-    snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
-  })
-  console.log('---------------------------')
+  // const id = db.create('complex', {
+  //   value: 666,
+  //   nip: 'FRANKO!',
+  //   gerp: 999,
+  //   snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
+  // })
+  // console.log('---------------------------')
 
-  console.info('??', id)
+  // console.info('??', id)
 
-  await wait(0)
+  await wait(1e3)
 
-  const doesNotExist = db.get('simple', 0)
+  // const doesNotExist = db.get('simple', 0)
 
-  console.info('snurp', doesNotExist)
+  // console.info('snurp', doesNotExist)
 
   // t.deepEqual(db.get('complex', id), {
   //   snurp: {
@@ -289,7 +301,7 @@ function generateRandomArray() {
   return array
 }
 
-test.serial('query + filter', async (t) => {
+test.serial.only('query + filter', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -325,16 +337,16 @@ test.serial('query + filter', async (t) => {
 
   var dx = Date.now()
   console.log('GO!')
-  for (let i = 0; i < 4e6 - 1; i++) {
-    db.create('simple', {
+  for (let i = 0; i < 8e6 - 1; i++) {
+    db.createFast('simple', {
       user: 1,
-      refs: generateRandomArray(),
-      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      // refs: [1, 2, 3],
+      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       vectorClock: i % 4,
-      location: {
-        long: 52,
-        lat: 52,
-      },
+      // location: {
+      // long: 52,
+      // lat: 52,
+      // },
     })
   }
 
@@ -348,12 +360,12 @@ test.serial('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    // .filter(['vectorClock', '>', 1])
+    .filter(['vectorClock', '>', 1])
     .filter(['refs', 'has', [20, 30, 10]])
     // .filter(['flap', '=', 'my flap flap flap 1'])
-    // .filter(['vectorClock', '=', 1])
+    // .filter(['vectorClock', '=', 3])
     // .filter(['vectorClock', '<', 1])
-    .range(10, 3e6)
+    .range(10, 1e5)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')

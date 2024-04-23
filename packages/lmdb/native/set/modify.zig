@@ -28,13 +28,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+
+    // needs type as well... (5 in total)
     var shards = std.AutoHashMap([3]u8, db.Shard).init(allocator);
     defer {
         var it = shards.iterator();
         while (it.next()) |shard| {
-            db.closeShard(shard.value_ptr);
+            db.closeDbi(shard.value_ptr);
         }
     }
+
     const txn = try db.createTransaction(false);
 
     var i: usize = 0;
@@ -48,64 +51,58 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     while (i < size) {
         const operation = batch[i];
-
         if (operation == 0) {
             // SWITCH FIELD
             field = batch[i + 1];
             keySize = batch[i + 2];
-            std.debug.print("got field selection keysize: {d} field: {d}\n", .{ keySize, field });
+            // std.debug.print("got field selection keysize: {d} field: {d} id:{d}\n", .{ keySize, field, id });
             i = i + 1 + 2;
         } else if (operation == 1) {
             // SWITCH KEY
             id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+            // todo can be optmized
             currentShard = @truncate(@divFloor(id, 1_000_000));
-
-            // std.debug.print("got id selection id: '{d}'\n", .{id});
             i = i + 1 + 4;
         } else if (operation == 2) {
             // SWITCH TYPE
             type_prefix[0] = batch[i + 1];
-            type_prefix[1] = batch[1 + 2];
-            std.debug.print("got type selection type: {any}\n", .{type_prefix});
+            type_prefix[1] = batch[i + 2];
+            // std.debug.print("got type selection type: {any}\n", .{type_prefix});
             i = i + 1 + 2;
         } else if (operation == 3) {
-
-            // full set
-
+            // 4 will be MERGE
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-
-            // std.debug.print("got operation size {d}\n", .{operationSize});
-
             const shardKey = db.getShardKey(field, currentShard);
+
             var shard = shards.get(shardKey);
             if (shard == null) {
-                shard = db.openShard(type_prefix, shardKey, txn) catch null;
+                shard = try db.openShard(true, type_prefix, shardKey, txn);
+
                 if (shard != null) {
                     try shards.put(shardKey, shard.?);
                 }
             }
-
             if (shard != null) {
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = null };
                 k.mv_data = &id;
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
+
                 try errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
             }
-
             i = i + operationSize + 1 + 4;
         } else {
             // ERROR
             std.debug.print("SOMETHING WENT WRONG INCORRECT OPERATION!\n", .{});
             break;
         }
+    }
 
-        // const key = batch[i .. i + KEY_LEN];
-        // const value = batch[i + KEY_LEN + SIZE_BYTES .. i + KEY_LEN + SIZE_BYTES + @as(usize, value_size)];
-        // var k: c.MDB_val = .{ .mv_size = KEY_LEN, .mv_data = key.ptr };
-        // var v: c.MDB_val = .{ .mv_size = value_size, .mv_data = value.ptr };
-        // try mdbCheck(c.mdb_cursor_put(cursor, &k, &v, 0));
+    var it = shards.iterator();
+    while (it.next()) |shard| {
+        db.closeCursor(shard.value_ptr);
     }
 
     try errors.mdbCheck(c.mdb_txn_commit(txn));
+
     return null;
 }
