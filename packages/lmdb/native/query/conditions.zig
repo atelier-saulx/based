@@ -24,20 +24,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 }
                 j += filter_size + 5;
                 continue :outside;
-
-                // for (
-                //     q[j + 5 .. j + 5 + filter_size],
-                //     0..,
-                // ) |byte, z| {
-                //     if (byte != v[index + z]) {
-                //         return false;
-                //     }
-                //     if (index + z == v.len - 1) {
-                //         j += filter_size + 5;
-                //         continue :outside;
-                //     }
-                // }
-                // return false;
             },
             // seperate field equality
             2 => {
@@ -55,20 +41,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 }
                 j += filter_size + 3;
                 continue :outside;
-
-                // for (
-                //     q[j + 3 .. j + 3 + filter_size],
-                //     0..,
-                // ) |byte, z| {
-                //     if (byte != v[z]) {
-                //         return false;
-                //     }
-                //     if (z == v.len - 1) {
-                //         j += filter_size + 3;
-                //         continue :outside;
-                //     }
-                // }
-                // return false;
             },
             3 => {
                 // >, greater than
@@ -124,7 +96,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     q[j + 3 ..][0..2],
                     .little,
                 );
-                // std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
 
                 switch (filter_size) {
                     4 => {
@@ -165,7 +136,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 while (i < v.len) : (i += 4) {
                     var p: usize = j + 3;
                     while (p < filter_size * 4 + j + 3) : (p += 4) {
-                        // TODO simD operations would be great here...
                         if (v[i] != q[p] or v[i + 1] != q[p + 1] or v[i + 2] != q[p + 2] or v[i + 3] != q[p + 3]) {
                             continue;
                         }

@@ -101,6 +101,7 @@ export const createSchemaTypeDef = (
       lastId: 0,
     },
     dbMap: {
+      prefixUint: new Uint8Array([0, 0]),
       _len: 0,
       entries: new Map(),
       tree: {},
@@ -137,6 +138,8 @@ export const createSchemaTypeDef = (
   if (top) {
     if (!('type' in type && 'properties' in type)) {
       result.dbMap.prefix = type.prefix ?? ''
+      result.dbMap.prefixUint[0] = type.prefix.charAt(0)
+      result.dbMap.prefixUint[1] = type.prefix.charAt(1)
     }
 
     const vals: any = Object.values(result.fields)

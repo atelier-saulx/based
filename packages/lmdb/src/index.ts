@@ -1,4 +1,4 @@
-import { create } from './set.js'
+import { create, createFast } from './set.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { SchemaTypeDef, createSchemaTypeDef } from './createSchemaTypeDef.js'
@@ -81,6 +81,10 @@ export class BasedDb {
   create(type: string, value: any) {
     // return set(this, value)
     return create(this, type, value)
+  }
+
+  createFast(type: string, value: any) {
+    return createFast(this, type, value)
   }
 
   remove(type: string, id: number) {}

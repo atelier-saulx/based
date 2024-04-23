@@ -12,6 +12,7 @@ const SIZE_BYTES = globals.SIZE_BYTES;
 pub fn setBatch8(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return setBatchInternal(env, info, 8) catch |err| return jsThrow(env, @errorName(err));
 }
+
 pub fn setBatch4(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return setBatchInternal(env, info, 4) catch |err| return jsThrow(env, @errorName(err));
 }
