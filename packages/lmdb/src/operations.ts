@@ -2,7 +2,7 @@ import dbZig from './db.js'
 import { BasedDb } from './index.js'
 
 export const modifyBuffer = {
-  buffer: Buffer.allocUnsafe(20 * 50 * 1e3 * 1e3),
+  buffer: Buffer.allocUnsafe(50 * 1e3 * 1e3),
   len: 0,
   field: -1,
   typePrefix: new Uint8Array([0, 0]),
