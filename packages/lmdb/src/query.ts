@@ -72,12 +72,7 @@ export class Query {
             buf.writeInt16LE(matches.byteLength, 1)
             buf.set(matches, 3)
           } else if (op === 7) {
-            // add later...
-            // buf[0] = op
-            // buf.writeInt16LE(len, 1)
-            // for (let i = 0; i < len; i++) {
-            //   buf.writeInt32LE(matches[i], i * 4 + 3)
-            // }
+            // TODO MAKE HAS
           }
         } else if (field.type === 'references') {
           const op = operationToByte(filter[1])
@@ -174,6 +169,12 @@ export class Query {
       }
     } else {
     }
+  }
+
+  subscribe(fn: (value: any, checksum: number, err: Error) => void) {
+    console.log('hello sub')
+    // this is also where we will create diffs
+    // idea use  PROXY object as a view to the buffer
   }
 }
 

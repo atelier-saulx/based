@@ -363,9 +363,6 @@ test.serial.only('query + filter', async (t) => {
     .query('simple')
     .filter(['vectorClock', '>', 1])
     .filter(['refs', 'has', [1]])
-    // .filter(['flap', '=', 'my flap flap flap 1'])
-    // .filter(['vectorClock', '=', 3])
-    // .filter(['vectorClock', '<', 1])
     .range(10, 1e5)
     .get()
 
