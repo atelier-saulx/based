@@ -62,7 +62,7 @@ const addModify = (db, id, obj, tree, schema) => {
         // }
         // buf.set(t.index, valBuf)
       } else if (t.type === 'string') {
-        console.log('|->', value.length)
+        // console.log('|->', value.length)
 
         setCursor(db, schema, t, id)
         modifyBuffer.buffer[modifyBuffer.len] = 3
