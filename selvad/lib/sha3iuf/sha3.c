@@ -50,6 +50,8 @@
 	(((x) << (y)) | ((x) >> ((sizeof(uint64_t)*8) - (y))))
 #endif
 
+typedef uint64_t v16u_t __attribute__((vector_size(64)));
+
 static const uint64_t keccakf_rndc[24] = {
     SHA3_CONST(0x0000000000000001UL), SHA3_CONST(0x0000000000008082UL),
     SHA3_CONST(0x800000000000808aUL), SHA3_CONST(0x8000000080008000UL),
@@ -65,9 +67,7 @@ static const uint64_t keccakf_rndc[24] = {
     SHA3_CONST(0x0000000080000001UL), SHA3_CONST(0x8000000080008008UL)
 };
 
-typedef uint64_t v16u_t __attribute__ ((vector_size (64)));
-
-static void theta(uint64_t r[25], uint64_t s[25])
+static uint64_t *theta(uint64_t r[25], uint64_t s[25])
 {
     v16u_t bc;
     v16u_t bd;
@@ -92,9 +92,11 @@ static void theta(uint64_t r[25], uint64_t s[25])
             r[j + i] = s[j + i] ^ bd[i];
         }
     }
+
+    return r;
 }
 
-static void rho_pi(uint64_t tmp[25])
+static uint64_t *rho_pi(uint64_t tmp[25])
 {
     static const size_t keccakf_rotc[24] = {
         1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62,
@@ -113,6 +115,21 @@ static void rho_pi(uint64_t tmp[25])
         tmp[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
         t = prev;
     }
+
+    return tmp;
+}
+
+static void chi(uint64_t s[25], uint64_t in[25])
+{
+    for (int j = 0; j < 25; j += 5) {
+        uint64_t *p = &in[j];
+
+        s[j + 0] = p[0] ^ ((~p[1]) & p[2]);
+        s[j + 1] = p[1] ^ ((~p[2]) & p[3]);
+        s[j + 2] = p[2] ^ ((~p[3]) & p[4]);
+        s[j + 3] = p[3] ^ ((~p[4]) & p[0]);
+        s[j + 4] = p[4] ^ ((~p[0]) & p[1]);
+    }
 }
 
 /* generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words
@@ -124,26 +141,12 @@ keccakf(uint64_t s[25], size_t keccak_rounds)
     for (size_t round = 0; round < keccak_rounds; round++) {
         /*
          * You may wonder if it makes any sense to have temp buffer here.
-         * The answer is: Yes, it cuts about 60% of the time consumed here.
+         * The answer is: Yes, it cuts about 60% of the time consumed here
+         * compared to manipulatin s directly.
          */
         uint64_t tmp[25];
 
-        /* Theta */
-        theta(tmp, s);
-
-        /* Rho Pi */
-        rho_pi(tmp);
-
-        /* Chi */
-        for (int j = 0; j < 25; j += 5) {
-            uint64_t *p = &tmp[j];
-
-            s[j + 0] = p[0] ^ ((~p[1]) & p[2]);
-            s[j + 1] = p[1] ^ ((~p[2]) & p[3]);
-            s[j + 2] = p[2] ^ ((~p[3]) & p[4]);
-            s[j + 3] = p[3] ^ ((~p[4]) & p[0]);
-            s[j + 4] = p[4] ^ ((~p[0]) & p[1]);
-        }
+        chi(s, rho_pi(theta(tmp, s)));
 
         /* Iota */
         s[0] ^= keccakf_rndc[round];
