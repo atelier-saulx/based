@@ -1,16 +1,13 @@
 import {
+  BasedSchemaField,
   BasedSchemaFieldObject,
   BasedSchemaFieldType,
   BasedSchemaType,
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { BasedDb } from './index.js'
 
-// TODO: type this
-// TODO2: make dbi's with 8 length keys
-
-const lenMap = {
+const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
@@ -22,97 +19,64 @@ const lenMap = {
 }
 
 export type FieldDef = {
-  __sValue: true
-  index: number
+  __isField: true
+  field: number // (0-255 - 1) to start?
   type: BasedSchemaFieldType
   seperate: boolean
   path: string[]
   start: number
   len: number
-  dbi?: number[]
-}
-
-const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
-let dbiIndex = 0
-
-const createDbiHandle = (prefix: string, field: number, shard: number) => {
-  const fieldAlphaNumeric = String.fromCharCode(field + 48) // CHARS[field % 62]
-  const shardAlphaNumeric =
-    CHARS[shard % 62] + CHARS[Math.floor(shard / 62) % 62]
-
-  const dbi = prefix + fieldAlphaNumeric + shardAlphaNumeric + '\0'
-  return Buffer.from(dbi)
-}
-
-export const getDbiHandler = (
-  db: BasedDb,
-  dbMap,
-  shard: number,
-  field: number,
-): number => {
-  if (field === 0) {
-    if (!dbMap.dbi[shard]) {
-      dbiIndex++
-      const buffer = createDbiHandle(dbMap.prefix, field, shard)
-      db.dbiIndex.set(dbiIndex, buffer)
-      dbMap.dbi[shard] = dbiIndex
-    }
-    return dbMap.dbi[shard]
-  }
-  const f = dbMap.entries.get(field)
-  if (!f.dbi[shard]) {
-    dbiIndex++
-    const buffer = createDbiHandle(dbMap.prefix, field, shard)
-    db.dbiIndex.set(dbiIndex, buffer)
-    f.dbi[shard] = dbiIndex
-  }
-  return f.dbi[shard]
 }
 
 export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
 
 export type SchemaTypeDef = {
-  _cnt: number
-  _checksum: number
+  cnt: number
+  checksum: number
+  total: number
+  lastId: number
+  mainLen: number
   fields: {
+    // path including .
     [key: string]: FieldDef
   }
-  meta: {
-    total: number
-    lastId: number
+  prefixString: string
+  prefix: Uint8Array
+  seperate: FieldDef[]
+  tree: SchemaFieldTree
+}
+
+const prefixStringToUint8 = (
+  type: BasedSchemaType | BasedSchemaFieldObject,
+): Uint8Array => {
+  if (!('type' in type && 'properties' in type)) {
+    return new Uint8Array([
+      type.prefix.charCodeAt(0),
+      type.prefix.charCodeAt(1),
+    ])
   }
-  dbMap: {
-    dbi: number[]
-    prefix: string
-    entries: Map<number, any>
-    _len: number
-    tree: SchemaFieldTree
-  }
+  return new Uint8Array([0, 0])
 }
 
 export const createSchemaTypeDef = (
   type: BasedSchemaType | BasedSchemaFieldObject,
-  result: any = {
-    _cnt: 0,
+  result: SchemaTypeDef = {
+    cnt: 0,
+    checksum: hashObjectIgnoreKeyOrder(type),
+    total: 0,
+    lastId: 0,
     fields: {},
-    meta: {
-      total: 0,
-      lastId: 0,
-    },
-    dbMap: {
-      prefixUint: new Uint8Array([0, 0]),
-      _len: 0,
-      entries: new Map(),
-      tree: {},
-      dbi: [],
-    },
-    _checksum: hashObjectIgnoreKeyOrder(type),
+    prefix: prefixStringToUint8(type),
+    mainLen: 0,
+    prefixString: 'prefix' in type ? type.prefix : '',
+    seperate: [],
+    tree: {},
   },
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
-  let target: any
+  let target: { [key: string]: BasedSchemaField }
+
   if ('type' in type && 'properties' in type) {
     target = type.properties
   } else {
@@ -125,56 +89,36 @@ export const createSchemaTypeDef = (
     if (f.type === 'object') {
       createSchemaTypeDef(f, result, p, false)
     } else {
-      result.fields[p.join('.')] = {
-        __sValue: true,
-        type: f.type,
-        path: p,
-        len: lenMap[f.type],
+      const len = SIZE_MAP[f.type]
+      const isSeperate = len === 0
+      if (isSeperate) {
+        result.cnt++
       }
-      result._cnt++
+      result.fields[p.join('.')] = {
+        __isField: true,
+        type: f.type,
+        seperate: isSeperate,
+        path: p,
+        start: 0,
+        len,
+        field: isSeperate ? result.cnt : 0,
+      }
     }
   }
 
   if (top) {
-    if (!('type' in type && 'properties' in type)) {
-      result.dbMap.prefix = type.prefix ?? ''
-      result.dbMap.prefixUint[0] = type.prefix.charCodeAt(0)
-      result.dbMap.prefixUint[1] = type.prefix.charCodeAt(1)
-    }
-
-    const vals: any = Object.values(result.fields)
-
-    vals.sort((a: any, b: any) => {
-      if (!a.type) {
-        return -1
-      }
-      return a.type === 'timestamp' || a.type === 'number' ? -1 : 1
-    })
-
-    let i = 1
-
+    const vals = Object.values(result.fields)
     for (const f of vals) {
-      f.index = i
-      i++
-
-      const len = f.len
-      if (len) {
-        if (!result.dbMap._) {
-          result.dbMap._ = []
-        }
-        f.start = result.dbMap._len
-        result.dbMap._len += len
-        result.dbMap._.push(f)
-        f.seperate = false
-        setByPath(result.dbMap.tree, f.path, f)
+      if (f.seperate) {
+        setByPath(result.tree, f.path, f)
       } else {
-        setByPath(result.dbMap.tree, f.path, f)
-        f.start = 0
-        f.seperate = true
-        f.dbi = []
-        result.dbMap.entries.set(f.index, f)
+        f.start = result.mainLen
+        result.mainLen += f.len
+        setByPath(result.tree, f.path, f)
       }
     }
+
+    console.dir(result, { depth: 10 })
   }
 
   return result

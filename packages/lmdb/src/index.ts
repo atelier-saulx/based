@@ -1,4 +1,4 @@
-import { create, createFast, updateFast } from './set.js'
+import { create, update } from './set.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { SchemaTypeDef, createSchemaTypeDef } from './createSchemaTypeDef.js'
@@ -27,22 +27,9 @@ export class BasedDb {
   schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 
-  lastDbi: number = 0
-  dbiIndex: Map<number, Buffer> = new Map()
-
-  getQueueByDbi: Map<number, Buffer[]> = new Map()
-  setQueueByDbi: Map<number, Buffer[]> = new Map()
-
-  constructor({
-    path,
-    memSize = 100 * 1024 * 1024 * 1024,
-  }: {
-    path: string
-    memSize?: number
-  }) {
+  constructor({ path }: { path: string; writeBufferSize?: number }) {
     dbZig.createEnv(path)
-
-    // LATER
+    // writeBufferSize
   }
 
   // queryID thing with conditions etc
@@ -52,7 +39,7 @@ export class BasedDb {
       const type = this.schema.types[field]
       if (
         this.schemaTypesParsed[field] &&
-        this.schemaTypesParsed[field]._checksum ===
+        this.schemaTypesParsed[field].checksum ===
           hashObjectIgnoreKeyOrder(type)
       ) {
         continue
@@ -75,16 +62,11 @@ export class BasedDb {
   }
 
   create(type: string, value: any) {
-    // return set(this, value)
     return create(this, type, value)
   }
 
-  createFast(type: string, value: any) {
-    return createFast(this, type, value)
-  }
-
-  update(type: string, id: number, value: any) {
-    return updateFast(this, type, id, value)
+  update(type: string, id: number, value: any, merge?: boolean) {
+    return update(this, type, id, value, merge)
   }
 
   // REMOVE FAST

@@ -131,7 +131,7 @@ test.serial('set and simple get', async (t) => {
   console.log('---------------------------')
   d = Date.now()
   for (let i = 0; i < 10e6; i++) {
-    db.createFast('complex', {
+    db.create('complex', {
       flap: 1,
       snurp: {
         derp: i + 1,
@@ -313,8 +313,10 @@ test.serial.only('query + filter', async (t) => {
   db.updateSchema({
     types: {
       simple: {
+        prefix: 'aa',
         fields: {
           flap: { type: 'string' },
+          // from: { type: 'user', field: 'bla' }
           refs: { type: 'references', allowedTypes: ['user'] },
           user: { type: 'reference', allowedTypes: ['user'] },
           vectorClock: { type: 'integer' },
@@ -338,18 +340,21 @@ test.serial.only('query + filter', async (t) => {
   var dx = Date.now()
   console.log('GO!')
   // 2.5GB structured (8M nodes 4.5sec)
-  for (let i = 0; i < 2e6 - 1; i++) {
-    db.createFast('simple', {
-      user: 1,
-      refs: generateRandomArray(),
-      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      vectorClock: i % 4,
-      location: {
-        long: 52,
-        lat: 52,
-      },
+  for (let i = 0; i < 8e6 - 1; i++) {
+    db.create('simple', {
+      // user: i,
+      // refs: refs, //generateRandomArray(),
+      flap: 'AMAZING 123',
+      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      // vectorClock: i,
+      // location: {
+      //   long: 52,
+      //   lat: 52,
+      // },
     })
   }
+
+  // { set Id, amount: 10 } , checksum
 
   await wait(0)
   console.log(Date.now() - dx, 'ms')
@@ -360,9 +365,12 @@ test.serial.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['vectorClock', '>', 1])
-    .filter(['refs', 'has', [1]])
-    .range(10, 1e5)
+    .filter(['vectorClock', '>', 0])
+    // .filter(['vectorClock', '>', 1])
+    // .filter(['refs', 'has', [1]])
+    // .filter(['location.long', '=', 52])
+
+    .range(10, 8e6 - 1000)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')

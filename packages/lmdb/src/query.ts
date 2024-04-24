@@ -8,8 +8,6 @@ type Operation = '=' | 'has' | '<' | '>'
 // use char codes in parsed schema
 // type parsed schema
 
-const ZERO_CHAR = '0'.charCodeAt(0)
-
 // const opToByte = {
 //   string: {
 //     '=': 2,
@@ -57,14 +55,11 @@ export class Query {
   filter(filter: [string, Operation, any]) {
     if (this.id) {
     } else {
-      const field = <FieldDef>this.type.dbMap.tree[filter[0]]
-      let fieldIndexChar: number
+      const field = <FieldDef>this.type.tree[filter[0]]
+      let fieldIndexChar = field.field
       let buf: Buffer
 
       if (field.seperate === true) {
-        // make this nice...
-        fieldIndexChar = field.index + 48
-
         if (field.type === 'string') {
           const op = operationToByte(filter[1])
           if (op === 1) {
@@ -96,7 +91,6 @@ export class Query {
           }
         }
       } else {
-        fieldIndexChar = ZERO_CHAR
         if (field.type === 'integer') {
           const op = operationToByte(filter[1])
           if (op === 1 || op === 3 || op === 4) {
@@ -127,8 +121,6 @@ export class Query {
     return this
   }
 
-  // subscribe
-
   get(): { items: number[]; total: number; offset: number; limit: number } {
     if (this.conditions) {
       const conditions = Buffer.allocUnsafe(this.totalConditionSize)
@@ -149,23 +141,25 @@ export class Query {
       const start = this.offset ?? 0
       const end = this.limit ?? 1e3
 
-      const x = dbZig.getQuery(
+      const result = dbZig.getQuery(
         conditions,
-        this.type.dbMap.prefix,
-        this.type.meta.lastId,
+        this.type.prefixString,
+        this.type.lastId,
         start,
         end, // def 1k ?
       )
 
-      const arr = new Array(x.byteLength / 4)
+      // will be actual results!
 
-      for (let i = 0; i < x.byteLength; i += 4) {
-        arr[i / 4] = x.readUint32LE(i)
+      const arr = new Array(result.byteLength / 4)
+
+      for (let i = 0; i < result.byteLength; i += 4) {
+        arr[i / 4] = result.readUint32LE(i)
       }
 
       return {
         items: arr,
-        total: this.type.meta.total,
+        total: this.type.total,
         offset: start,
         limit: end,
       }

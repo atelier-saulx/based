@@ -14,7 +14,6 @@ export const modifyBuffer = {
 
 export const flushBuffer = (db: BasedDb) => {
   if (modifyBuffer.len) {
-    // console.info('FLUSH DAT', modifyBuffer.len, modifyBuffer.buffer)
     dbZig.modify(modifyBuffer.buffer, modifyBuffer.len)
     modifyBuffer.len = 0
     modifyBuffer.typePrefix = new Uint8Array([0, 0])
@@ -33,48 +32,37 @@ export const startDrain = (db: BasedDb) => {
   })
 }
 
-const drain = (db: BasedDb) => {
-  db.isDraining = true
-  process.nextTick(() => {
-    const setQ = db.setQueueByDbi
-    db.setQueueByDbi = new Map()
-    setQ.forEach((v, k) => {
-      const dbiBuffer = db.dbiIndex.get(k)
-      var l = 0
-      for (var bytes of v) {
-        l += bytes.byteLength
-      }
-      const bufUnsafe = Buffer.allocUnsafe(l)
-      let lWritten = 0
-      for (var i = 0; i < v.length; i++) {
-        bufUnsafe.set(v[i], lWritten)
-        lWritten += v[i].byteLength
-      }
-      dbZig.setBatch4(bufUnsafe, dbiBuffer)
-    })
-    db.isDraining = false
-  })
-}
-
-export const addWrite = (db: BasedDb, dbi: number, value: Buffer) => {
-  let q = db.setQueueByDbi.get(dbi)
-  if (!q) {
-    q = []
-    db.setQueueByDbi.set(dbi, q)
-  }
-  q.push(value)
-  if (!db.isDraining) {
-    drain(db)
-  }
-}
+// const drain = (db: BasedDb) => {
+//   db.isDraining = true
+//   process.nextTick(() => {
+//     const setQ = db.setQueueByDbi
+//     db.setQueueByDbi = new Map()
+//     setQ.forEach((v, k) => {
+//       const dbiBuffer = db.dbiIndex.get(k)
+//       var l = 0
+//       for (var bytes of v) {
+//         l += bytes.byteLength
+//       }
+//       const bufUnsafe = Buffer.allocUnsafe(l)
+//       let lWritten = 0
+//       for (var i = 0; i < v.length; i++) {
+//         bufUnsafe.set(v[i], lWritten)
+//         lWritten += v[i].byteLength
+//       }
+//       dbZig.setBatch4(bufUnsafe, dbiBuffer)
+//     })
+//     db.isDraining = false
+//   })
+// }
 
 export const addRead = (db: BasedDb, dbi: number, key: Buffer) => {
-  try {
-    const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))
-    return res
-  } catch (e) {
-    return null
-  }
+  // fix this
+  // try {
+  //   const res = dbZig.getBatch4(key, db.dbiIndex.get(dbi))
+  //   return res
+  // } catch (e) {
+  //   return null
+  // }
 }
 
 // export const addWriteBatch = (db: BasedDb, value: Buffer) => {

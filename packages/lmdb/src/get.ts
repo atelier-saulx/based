@@ -1,8 +1,8 @@
-import { Buffers } from './types.js'
-import { BasedDb, getDbiHandler } from './index.js'
-import { addRead } from './operations.js'
+// import { Buffers } from './types.js'
+import { BasedDb } from './index.js'
+// import { addRead } from './operations.js'
 
-const readFromBuffers = (bufs: Buffers, tree: any): any => {
+const readFromBuffers = (bufs: any, tree: any): any => {
   const obj = {}
   const mainB = bufs.get(0)
 
@@ -46,7 +46,7 @@ const readFromBuffers = (bufs: Buffers, tree: any): any => {
   return obj
 }
 
-export const parseBuffer = (buf: Buffers, schema) => {
+export const parseBuffer = (buf: any, schema) => {
   return readFromBuffers(buf, schema.dbMap.tree)
 }
 
@@ -56,36 +56,32 @@ export const get = (
   id: number,
   include?: string[],
 ) => {
-  const def = db.schemaTypesParsed[type]
-  const shard = ~~(id / 1e6)
-  const key = Buffer.alloc(4)
-  key.writeUint32LE(id)
-  const bufs: Buffers = new Map()
-
-  // if (include) {
-
+  // const def = db.schemaTypesParsed[type]
+  // const shard = ~~(id / 1e6)
+  // const key = Buffer.alloc(4)
+  // key.writeUint32LE(id)
+  // const bufs: Buffers = new Map()
+  // // if (include) {
+  // // }
+  // // get all
+  // const mainBuff = addRead(db, getDbiHandler(db, def.dbMap, shard, 0), key)
+  // if (!mainBuff) {
+  //   bufs.set(0, Buffer.alloc(def.dbMap._len + 4))
+  // } else {
+  //   bufs.set(0, mainBuff)
   // }
-
-  // get all
-  const mainBuff = addRead(db, getDbiHandler(db, def.dbMap, shard, 0), key)
-  if (!mainBuff) {
-    bufs.set(0, Buffer.alloc(def.dbMap._len + 4))
-  } else {
-    bufs.set(0, mainBuff)
-  }
-  def.dbMap.entries.forEach((v, k) => {
-    // console.log(
-    //   'DBI HANDLER',
-    //   db.dbiIndex.get(getDbiHandler(db, def.dbMap, shard, k)).toString(),
-    // )
-
-    addRead(db, getDbiHandler(db, def.dbMap, shard, k), key)
-    const result = addRead(db, getDbiHandler(db, def.dbMap, shard, k), key)
-    if (result) {
-      bufs.set(k, result)
-    } else {
-      bufs.set(k, Buffer.alloc(4))
-    }
-  })
-  return parseBuffer(bufs, def)
+  // def.dbMap.entries.forEach((v, k) => {
+  //   // console.log(
+  //   //   'DBI HANDLER',
+  //   //   db.dbiIndex.get(getDbiHandler(db, def.dbMap, shard, k)).toString(),
+  //   // )
+  //   addRead(db, getDbiHandler(db, def.dbMap, shard, k), key)
+  //   const result = addRead(db, getDbiHandler(db, def.dbMap, shard, k), key)
+  //   if (result) {
+  //     bufs.set(k, result)
+  //   } else {
+  //     bufs.set(k, Buffer.alloc(4))
+  //   }
+  // })
+  // return parseBuffer(bufs, def)
 }
