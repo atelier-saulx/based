@@ -355,7 +355,6 @@ test.serial.only('query + filter', async (t) => {
   console.log(Date.now() - dx, 'ms')
 
   // orderded DBIs
-
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
 
   const d = Date.now()
