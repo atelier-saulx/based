@@ -5,7 +5,6 @@ import {
   MAX_MODIFY_BUFFER,
   flushBuffer,
 } from './operations.js'
-// import { deflateSync } from 'node:zlib'
 
 const setCursor = (
   db: BasedDb,
@@ -17,9 +16,7 @@ const setCursor = (
   // 0 switch field
   // 1 switch id
   // 2 switch type
-
   const prefix = schema.prefix
-
   if (
     modifyBuffer.typePrefix[0] !== prefix[0] ||
     modifyBuffer.typePrefix[1] !== prefix[1]
@@ -58,7 +55,6 @@ const setCursor = (
 }
 
 // modifyBuffer
-
 const addModify = (
   db: BasedDb,
   id: number,

@@ -316,7 +316,6 @@ test.serial.only('query + filter', async (t) => {
         prefix: 'aa',
         fields: {
           flap: { type: 'string' },
-          // from: { type: 'user', field: 'bla' }
           refs: { type: 'references', allowedTypes: ['user'] },
           user: { type: 'reference', allowedTypes: ['user'] },
           vectorClock: { type: 'integer' },
@@ -340,13 +339,18 @@ test.serial.only('query + filter', async (t) => {
   var dx = Date.now()
   console.log('GO!')
   // 2.5GB structured (8M nodes 4.5sec)
-  for (let i = 0; i < 8e6 - 1; i++) {
-    db.create('simple', {
+
+  // 8 / 1.3
+
+  //
+
+  for (let i = 0; i < 1e6 - 1; i++) {
+    db.update('simple', i, {
       // user: i,
       // refs: refs, //generateRandomArray(),
-      flap: 'AMAZING 123',
-      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      // vectorClock: i,
+      // flap: 'AMAZING 123',
+      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      // vectorClock: i % 4,
       // location: {
       //   long: 52,
       //   lat: 52,
@@ -362,18 +366,23 @@ test.serial.only('query + filter', async (t) => {
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
 
+  // READ CACHE SIZE []
+
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['vectorClock', '>', 0])
-    // .filter(['vectorClock', '>', 1])
-    // .filter(['refs', 'has', [1]])
-    // .filter(['location.long', '=', 52])
+    .filter(['vectorClock', '>', 2])
+    .filter(['refs', 'has', [1]])
 
-    .range(10, 8e6 - 1000)
+    // .sort('vectorClock', 'asc')
+
+    // .filter(['location.long', '=', 52])
+    .range(10, 1000)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
+
+  // .get()
 
   t.true(true)
 })
