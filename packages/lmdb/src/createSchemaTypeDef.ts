@@ -118,7 +118,7 @@ export const createSchemaTypeDef = (
       }
     }
 
-    console.dir(result, { depth: 10 })
+    // make buffers as well
   }
 
   return result

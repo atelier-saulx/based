@@ -313,7 +313,7 @@ test.serial.only('query + filter', async (t) => {
   db.updateSchema({
     types: {
       simple: {
-        prefix: 'aa',
+        // prefix: 'aa',
         fields: {
           flap: { type: 'string' },
           refs: { type: 'references', allowedTypes: ['user'] },
@@ -344,13 +344,13 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 1e6 - 1; i++) {
-    db.update('simple', i, {
+  for (let i = 0; i < 2e6 - 1; i++) {
+    db.create('simple', {
       // user: i,
-      // refs: refs, //generateRandomArray(),
+      // refs: [0, 1, 2], //generateRandomArray(),
       // flap: 'AMAZING 123',
-      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      // vectorClock: i % 4,
+      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      vectorClock: i % 4,
       // location: {
       //   long: 52,
       //   lat: 52,
@@ -371,18 +371,14 @@ test.serial.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['vectorClock', '>', 2])
-    .filter(['refs', 'has', [1]])
-
+    .filter(['vectorClock', '>', 1])
+    // .filter(['refs', 'has', [2]])
+    // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
-
-    // .filter(['location.long', '=', 52])
-    .range(10, 1000)
+    .range(0, 1000)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
-
-  // .get()
 
   t.true(true)
 })

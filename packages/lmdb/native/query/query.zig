@@ -57,7 +57,7 @@ fn getQueryInternal(
             const shardKey = db.getShardKey(field, currentShard);
             var shard = shards.get(shardKey);
             if (shard == null) {
-                shard = db.openShard(false, type_prefix, shardKey, txn) catch null;
+                shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
                 if (shard != null) {
                     try shards.put(shardKey, shard.?);
                 }
@@ -75,6 +75,7 @@ fn getQueryInternal(
                     continue :checkItem;
                 };
 
+                // here put ASM
                 if (runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {} else {
                     continue :checkItem;
                 }

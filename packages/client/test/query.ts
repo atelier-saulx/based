@@ -98,3 +98,45 @@ test('query functions', async (t: T) => {
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
 })
+
+test.only('many client', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    functions: {
+      configs: {
+        counter: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  let connectedCount = 0
+  for (let i = 0; i < 500; i++) {
+    const client = new BasedClient()
+
+    client.connect({
+      url: async () => {
+        return t.context.ws
+      },
+    })
+    client.once('connect', (isConnected) => {
+      connectedCount++
+      console.info('   connect', connectedCount)
+    })
+  }
+  await wait(10e3)
+
+  t.true(true)
+})

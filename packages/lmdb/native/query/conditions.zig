@@ -1,6 +1,7 @@
 const std = @import("std");
 
 pub fn runConditions(v: []u8, q: []u8) bool {
+    // TODO EXEC ASEMBLY! yeey
     var j: usize = 0;
     outside: while (j < q.len) {
         const operation = q[j];

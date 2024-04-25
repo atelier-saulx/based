@@ -1,7 +1,19 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
 import dbZig from './db.js'
 
-type Operation = '=' | 'has' | '<' | '>'
+type Operation =
+  | '='
+  | 'has'
+  | '<'
+  | '>'
+  | '!='
+  | 'like'
+  | '>='
+  | '<='
+  | 'exists'
+  | '!exists'
+
+// TIMESTAMP: 'now + 1w'
 
 // TODO
 // write down each operation
@@ -54,6 +66,7 @@ export class Query {
 
   filter(filter: [string, Operation, any]) {
     if (this.id) {
+      // bla
     } else {
       const field = <FieldDef>this.type.tree[filter[0]]
       let fieldIndexChar = field.field
@@ -140,6 +153,8 @@ export class Query {
 
       const start = this.offset ?? 0
       const end = this.limit ?? 1e3
+
+      console.log(new Uint8Array(conditions))
 
       const result = dbZig.getQuery(
         conditions,

@@ -40,6 +40,12 @@ db.query('article').filter(['publishedDate', '>', 'now-1week'])
 // )
 
 db.query('article')
+  .traverse('children', 'contributors', 'bla', true)
+  .include('name', 'bank')
+  .filter('name', 'includes', 'A')
+  .range(0, 10)
+
+db.query('article')
   .filter('publishedDate', '>', 'now-1week')
   .traverse('contributors.creditcards')
   .include('name', 'bank')
@@ -65,7 +71,7 @@ db.query('article')
   .filter('publishedDate', '>', 'now-1week')
   .sort('hits', 'desc')
   .range(0, 100)
-  .include('img.src', 'title', 'abstract')
+  .include('img.src', 'title', 'abstract', 'section.title', 'articleType.title')
 
 db.query('article')
   .filter('publishedDate', '>', 'now-1week')
@@ -120,13 +126,13 @@ db.query('article')
 
 // with conditionals
 db.query('co1.articles')
-  .include('id', 'name', 'publishDate')
   .filter(
     ['sections', 'has', ['se123', 'se321']],
     ['published', '=', true],
     ['publishedDate', '>', 'now - 1week'],
   )
-  .or('publishedDate', '>', 'now - 1h')
+  // .or('publishedDate', '>', 'now - 1h')
+  .include('id', 'name', 'publishDate')
   .range(0, 100)
 
 db.query('article')
