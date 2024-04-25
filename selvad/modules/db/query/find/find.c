@@ -140,7 +140,7 @@ static void send_node(
         Selva_NodeId nodeId;
 
         SelvaHierarchy_GetNodeId(nodeId, node);
-        selva_send_str(resp, nodeId, Selva_NodeIdLen(nodeId));
+        selva_send_str(resp, nodeId, SELVA_NODE_ID_SIZE);
         err = 0;
     }
 
