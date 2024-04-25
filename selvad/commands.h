@@ -145,8 +145,10 @@
  */
 #define CMD_ID_HIERARCHY_AGGREGATE 21
 
+#define CMD_ID_SELFAST 22
+
 /*
- * HOLE 22, 23, 24
+ * HOLE 23, 24
  */
 
 /**
