@@ -28,7 +28,8 @@ static ssize_t buf_send_buf(
         const void *restrict buf, size_t len,
         enum server_send_flags flags __unused)
 {
-    return selva_string_append(resp->msg_buf, buf, len);
+    selva_string_append(resp->msg_buf, buf, len);
+    return len;
 }
 
 static ssize_t buf_send_file(
