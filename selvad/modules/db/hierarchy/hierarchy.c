@@ -1213,7 +1213,9 @@ int SelvaHierarchy_TraverseAll(struct SelvaHierarchy *hierarchy, const struct Se
 
     RB_FOREACH(node, hierarchy_index_tree, &hierarchy->index_head) {
         if (Trx_Visit(&trx_cur, &node->trx_label)) {
-            cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, node, cb->node_arg);
+            if (cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, node, cb->node_arg)) {
+                break;
+            }
         }
     }
 
