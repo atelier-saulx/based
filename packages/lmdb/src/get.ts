@@ -87,7 +87,11 @@ export const get = (
 }
 
 /*
-BUFFER GET
+BUFFER GET [type type][id][0][4][1][size][size]str...[2][size]
 // ==============
 PROXY OBJECT
+
+
+const Proxy = new 
+
 */
