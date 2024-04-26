@@ -85,3 +85,9 @@ export const get = (
   // })
   // return parseBuffer(bufs, def)
 }
+
+/*
+BUFFER GET
+// ==============
+PROXY OBJECT
+*/

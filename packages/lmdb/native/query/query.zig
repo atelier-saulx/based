@@ -103,6 +103,8 @@ fn getQueryInternal(
         last_pos += 4;
     }
 
+    // GET
+
     try errors.mdbCheck(c.mdb_txn_commit(txn));
 
     return result;

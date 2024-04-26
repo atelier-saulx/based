@@ -380,5 +380,60 @@ test.serial.only('query + filter', async (t) => {
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
 
+  // -----------------------------------------
+  const target = new Uint8Array([1, 2, 3, 4, 5])
+
+  // classes
+  const handler3 = {
+    field: '',
+    get(target, prop, receiver) {
+      //uint8
+      const schemaDef = db.schemaTypesParsed['simple']
+
+      // const { data }
+      console.log('DERP', prop, this.field)
+
+      //  schemaDef.tree
+      // console.log(prop)
+
+      if (prop === 'id' && !this.field) {
+        return schemaDef.prefixString + target[0]
+      }
+
+      const tree = this.field ? schemaDef.tree[this.field] : schemaDef.tree
+
+      if (tree[prop]) {
+        if (!tree[prop].type) {
+          return new Proxy(target, {
+            ...handler3,
+            // @ts-ignore
+            field: prop,
+          })
+        }
+
+        // console.log(schemaDef.tree[prop])
+        return target[2]
+      } else {
+        return undefined
+      }
+
+      // console.log
+      // return Reflect.get(...arguments)
+    },
+  }
+
+  // { data: [], err } //
+  const node1 = new Proxy(target, handler3)
+
+  console.log(node1)
+  console.log(
+    'vectorClock',
+    node1.vectorClock,
+    'id',
+    node1.id,
+    'long',
+    node1.location.long,
+  ) // hello
+
   t.true(true)
 })

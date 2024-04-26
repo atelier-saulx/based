@@ -18,6 +18,12 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   references: 0,
 }
 
+/*
+[58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
+// make buffer
+[“MYTYPE”,“flap”,”xx”,”bla.bla”,”bla.x”]
+*/
+
 export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
