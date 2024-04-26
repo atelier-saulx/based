@@ -44,7 +44,7 @@ struct sha3_context {
                                  * (starts from 0) */
     unsigned capacityWords;     /* the double size of the hash output in
                                  * words (e.g. 16 for Keccak 512) */
-    int keccak_rounds;
+    uint64_t keccak_rounds;
 };
 
 enum sha3_flags {

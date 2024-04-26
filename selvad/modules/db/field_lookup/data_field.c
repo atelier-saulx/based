@@ -24,7 +24,7 @@ static int get_from_edge_field(
         size_t field_len,
         struct SelvaObjectAny *any)
 {
-    struct SelvaHierarchyMetadata *metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
+    struct SelvaHierarchyMetadata *metadata = &node->metadata;
     struct SelvaObject *edges = metadata->edge_fields.edges;
     void *p;
 

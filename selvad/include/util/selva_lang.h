@@ -6,7 +6,7 @@
 #ifndef SELVA_LANG_H
 #define SELVA_LANG_H
 
-#if __APPLE__ && __MACH__
+#if defined(__APPLE__) && __MACH__
 #include <xlocale.h>
 #endif
 #include <locale.h>

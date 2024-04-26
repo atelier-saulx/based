@@ -16,8 +16,8 @@ ssize_t tcp_recv(int fd, void *buf, size_t n, int flags);
 ssize_t tcp_read(int fd, void *buf, size_t n);
 ssize_t tcp_write(int fd, void *buf, size_t n);
 
-ssize_t tcp_readv(int fd, const struct iovec *vec, size_t count);
-ssize_t tcp_writev(int fd, const struct iovec *vec, size_t count);
+ssize_t tcp_readv(int fd, struct iovec *vec, size_t count);
+ssize_t tcp_writev(int fd, struct iovec *vec, size_t count);
 
 /**
  * Send a regular file over a TCP socket.

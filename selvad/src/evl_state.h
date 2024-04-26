@@ -26,8 +26,8 @@ enum event_loop_run_state {
 
 struct fd_reg {
     enum event_type mask;
-    evl_event_cb rd_cb;
-    evl_event_cb wr_cb;
+    evl_fd_event_cb rd_cb;
+    evl_fd_event_cb wr_cb;
     evl_event_cb close_cb;
     void *arg;
 };

@@ -165,6 +165,7 @@ static size_t get_emb_res_mask(const struct SelvaObject *obj) {
 
 static void init_obj(struct SelvaObject *obj) {
     obj->obj_size = 0;
+    obj->ref_count = 0;
     RB_INIT(&obj->keys_head);
 }
 
@@ -503,8 +504,11 @@ static struct SelvaObjectKey *alloc_key(struct SelvaObject *obj, const char *nam
         key = selva_malloc(key_size);
     }
 
-    memset(key, 0, key_size);
+    key->type = SELVA_OBJECT_NULL;
+    key->subtype = SELVA_OBJECT_NULL;
+    key->user_meta = 0;
     key->container = obj;
+    key->name[name_len] = '\0';
     memcpy(key->name, name_str, name_len);
     key->name_len = (typeof(key->name_len))name_len;
 
@@ -915,7 +919,7 @@ static int get_key(struct SelvaObject *obj, const char *key_name_str, size_t key
         key_name_len = ary_err;
     }
 
-    if (memmem(key_name_str, key_name_len, ".", 1)) {
+    if (memchr(key_name_str, '.', key_name_len)) {
         /* Look for a nested object. */
         return get_key_obj(obj, key_name_str, key_name_len, flags, out);
     }

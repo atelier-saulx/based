@@ -5,7 +5,7 @@
  *
  * @brief   Linker sets.
  * @section LICENSE
- * Copyright (c) 2020, 2023 SAULX
+ * Copyright (c) 2020, 2023-2024 SAULX
  * Copyright (c) 2018 Olli Vanhoja <olli.vanhoja@gmail.com>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1999 John D. Polstra
@@ -50,7 +50,7 @@
 /*
  * Private macros, not to be used outside this header file.
  */
-#if __APPLE__ && __MACH__
+#if defined(__APPLE__) && __MACH__
 #define __MAKE_SET(set, sym)                            \
     static void const * const __set_##set##_sym_##sym   \
     __section("__DATA,set_" #set) __used = &sym
@@ -70,7 +70,7 @@
 /*
  * Initialize before referring to a given linker set.
  */
-#if __APPLE__ && __MACH__
+#if defined(__APPLE__) && __MACH__
 #define SET_DECLARE(set, ptype)                 \
     extern ptype *__CONCAT(__start_set_,set) __asm("section$start$__DATA$set_" #set); \
     extern ptype *__CONCAT(__stop_set_,set)  __asm("section$end$__DATA$set_" #set);

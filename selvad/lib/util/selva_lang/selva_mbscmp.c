@@ -7,7 +7,7 @@
 #include <wchar.h>
 #include <wctype.h>
 #include <locale.h>
-#if __APPLE__
+#if defined(__APPLE__)
 #include <xlocale.h>
 #endif
 #include "util/selva_lang.h"
@@ -17,7 +17,7 @@ static size_t readsym(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_
     wchar_t tmp;
     size_t nbytes;
 
-#if __APPLE__
+#if defined(__APPLE__)
     nbytes = mbrtowc_l(&tmp, mbs_str, mbs_len, ps, loc);
 #else
     nbytes = mbrtowc(&tmp, mbs_str, mbs_len, ps);

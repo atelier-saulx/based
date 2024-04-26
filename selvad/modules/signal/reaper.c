@@ -73,7 +73,7 @@ static void selva_reaper_reap(void)
     }
 }
 
-static void handle_signal(struct event *ev, void *arg __unused)
+static bool handle_signal(struct event *ev, void *arg __unused)
 {
     struct evl_siginfo esig;
     int err, signo;
@@ -83,14 +83,14 @@ static void handle_signal(struct event *ev, void *arg __unused)
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to read sigfd. fd: %d err: \"%s\"",
                   ev->fd,
                   selva_strerror(err));
-        return;
+        return false;
     }
 
     signo = esig.esi_signo;
 
     if (unlikely(signo != SIGCHLD)) {
         SELVA_LOG(SELVA_LOGL_WARN, "Received unexpected signal (%d): %s", signo, strsignal(esig.esi_signo));
-        return;
+        return false;
     }
 
     /*
@@ -100,6 +100,8 @@ static void handle_signal(struct event *ev, void *arg __unused)
      */
 
     selva_reaper_reap();
+
+    return false;
 }
 
 /**

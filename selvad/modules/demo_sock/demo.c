@@ -45,7 +45,7 @@ static int new_server(int port)
     return sockfd;
 }
 
-static void on_data(struct event *event, void *arg __unused)
+static bool on_data(struct event *event, void *arg __unused)
 {
     const int fd = event->fd;
     char buf[128];
@@ -54,7 +54,7 @@ static void on_data(struct event *event, void *arg __unused)
     r = read(fd, buf, sizeof(buf));
     if (r <= 0) {
         evl_end_fd(fd);
-        return;
+        return false;
     } else if (r > 0) {
         SELVA_LOG(SELVA_LOGL_INFO, "Received msg: \"%.*s\"", (int)r, buf);
     }
@@ -67,9 +67,11 @@ static void on_data(struct event *event, void *arg __unused)
         evl_end_fd(fd);
         evl_end_fd(server_sockfd);
     }
+
+    return false;
 }
 
-static void on_connection(struct event *event, void *arg __unused)
+static bool on_connection(struct event *event, void *arg __unused)
 {
     const int fd = event->fd;
     int c = sizeof(struct sockaddr_in);
@@ -86,6 +88,8 @@ static void on_connection(struct event *event, void *arg __unused)
     SELVA_LOG(SELVA_LOGL_INFO, "Received a connection from %s", buf);
 
     evl_wait_fd(new_sockfd, on_data, NULL, NULL, NULL);
+
+    return false;
 }
 
 IMPORT() {

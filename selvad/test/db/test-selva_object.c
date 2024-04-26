@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -174,7 +174,7 @@ PU_TEST(nested_object)
 
 PU_TEST(replace_string_with_object)
 {
-    struct selva_string *key_name_1 = selva_string_create("a", 3, 0);
+    struct selva_string *key_name_1 = selva_string_create("a", 1, 0);
     struct selva_string *key_name_2 = selva_string_create("a.b", 3, 0);
     struct selva_string *key_name_3 = selva_string_create("a.b.c", 5, 0);
     struct selva_string *orig_1 = selva_string_create("hello", 5, 0);
@@ -226,7 +226,7 @@ PU_TEST(replace_object_with_string)
 {
     struct selva_string *key_name_1 = selva_string_create("a.b.c", 5, 0);
     struct selva_string *key_name_2 = selva_string_create("a.b", 3, 0);
-    struct selva_string *key_name_3 = selva_string_create("a", 3, 0);
+    struct selva_string *key_name_3 = selva_string_create("a", 1, 0);
     struct selva_string *orig_1 = selva_string_create("ciao", 4, 0);
     struct selva_string *orig_2 = selva_string_create("hallo", 5, 0);
     struct selva_string *orig_3 = selva_string_create("hello", 5, 0);

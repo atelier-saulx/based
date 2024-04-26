@@ -10,7 +10,7 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#if __APPLE__ /* sendfile on MacOs */
+#if defined(__APPLE__) /* sendfile on MacOs */
 #include <sys/types.h>
 #endif
 #include <errno.h>
@@ -201,15 +201,12 @@ retry:
 	return i;
 }
 
-static size_t tcp_iov_op(int fd, const struct iovec *vec, size_t count, ssize_t (*iov_fn)(int filedes, const struct iovec *vector, int count))
+static size_t tcp_iov_op(int fd, struct iovec *remain_vec, size_t count, ssize_t (*iov_fn)(int filedes, const struct iovec *vector, int count))
 {
     int retries = 0;
-    struct iovec remain_vec[count];
     struct iovec *remain_p = remain_vec;
     size_t remain_count = count;
     ssize_t tot_bytes = 0;
-
-    memcpy(remain_vec, vec, count * sizeof(struct iovec));
 
     while (remain_count > 0) {
         ssize_t bytes;
@@ -256,12 +253,12 @@ retry:
     return tot_bytes;
 }
 
-ssize_t tcp_readv(int fd, const struct iovec *vec, size_t count)
+ssize_t tcp_readv(int fd, struct iovec *vec, size_t count)
 {
     return tcp_iov_op(fd, vec, count, readv);
 }
 
-ssize_t tcp_writev(int fd, const struct iovec *vec, size_t count)
+ssize_t tcp_writev(int fd, struct iovec *vec, size_t count)
 {
     return tcp_iov_op(fd, vec, count, writev);
 }

@@ -3,6 +3,7 @@
 
 OBJ := \
 	   find2find.o \
+	   find2modify.o \
 	   piper.o \
 	   piper_error.o
 DEP := $(OBJ:%.o=%.d)

@@ -762,60 +762,59 @@ static int handle_query_fork_exit(pid_t pid, int status __unused, int selva_err)
     return 1;
 }
 
-static void on_data(struct event *event, void *arg)
+static void dispatch_cmd(struct conn_ctx *ctx)
+{
+    const uint32_t seqno = le32toh(ctx->recv_frame_hdr_buf.seqno);
+    struct selva_server_response_out resp = {
+        .ctx = ctx,
+        .cork = 1, /* Cork the full response (lazy). This will be turned off if a stream is started. */
+        .resp_msg_handler = SERVER_MESSAGE_HANDLER_SOCK,
+        .cmd = ctx->recv_frame_hdr_buf.cmd,
+        .frame_flags = SELVA_PROTO_HDR_FFIRST,
+        .seqno = seqno,
+        .last_error = 0,
+        .ts = ts_now(),
+        .buf_i = 0,
+    };
+    struct command *cmd;
+
+    cmd = get_command(resp.cmd);
+    if (cmd) {
+        if (cmd->cmd_mode & SELVA_CMD_MODE_MUTATE && readonly_server) {
+            static const char msg[] = "read-only server";
+
+            (void)selva_send_error(&resp, SELVA_PROTO_ENOTSUP, msg, sizeof(msg) - 1);
+#ifdef USE_QUERY_FORK
+        } else if ((cmd->cmd_mode & SELVA_CMD_MODE_QUERY_FORK) &&
+                !query_fork.disabled && query_fork.count < MAX_QUERY_FORKS &&
+                cmd->query_fork_eligible(ctx->recv.msg_buf, ctx->recv.msg_buf_i)) {
+            mk_query_fork(&resp, cmd);
+            return;
+#endif
+        } else {
+            cmd->cmd_fn(&resp, ctx->recv.msg_buf, ctx->recv.msg_buf_i);
+        }
+    } else {
+        static const char msg[] = "Invalid command";
+
+        (void)selva_send_error(&resp, SELVA_PROTO_EINVAL, msg, sizeof(msg) - 1);
+    }
+
+    if (!(resp.frame_flags & SELVA_PROTO_HDR_STREAM)) {
+        selva_send_end(&resp);
+    } /* The sequence doesn't end for streams. */
+}
+
+static bool on_data(struct event *event, void *arg)
 {
     const int fd = event->fd;
     struct conn_ctx *ctx = (struct conn_ctx *)arg;
     int res;
 
-    while ((res = server_recv_message(ctx)) >= 0) {
-        if (res == 0) {
-            /* A frame was received. */
-            continue;
-        }
-
-        /* A message was received. */
-        const uint32_t seqno = le32toh(ctx->recv_frame_hdr_buf.seqno);
-        struct selva_server_response_out resp = {
-            .ctx = ctx,
-            .cork = 1, /* Cork the full response (lazy). This will be turned off if a stream is started. */
-            .resp_msg_handler = SERVER_MESSAGE_HANDLER_SOCK,
-            .cmd = ctx->recv_frame_hdr_buf.cmd,
-            .frame_flags = SELVA_PROTO_HDR_FFIRST,
-            .seqno = seqno,
-            .last_error = 0,
-            .ts = ts_now(),
-            .buf_i = 0,
-        };
-        struct command *cmd;
-
-        cmd = get_command(resp.cmd);
-        if (cmd) {
-            if (cmd->cmd_mode & SELVA_CMD_MODE_MUTATE && readonly_server) {
-                static const char msg[] = "read-only server";
-
-                (void)selva_send_error(&resp, SELVA_PROTO_ENOTSUP, msg, sizeof(msg) - 1);
-#ifdef USE_QUERY_FORK
-            } else if ((cmd->cmd_mode & SELVA_CMD_MODE_QUERY_FORK) &&
-                       !query_fork.disabled && query_fork.count < MAX_QUERY_FORKS &&
-                       cmd->query_fork_eligible(ctx->recv.msg_buf, ctx->recv.msg_buf_i)) {
-                mk_query_fork(&resp, cmd);
-                return;
-#endif
-            } else {
-                cmd->cmd_fn(&resp, ctx->recv.msg_buf, ctx->recv.msg_buf_i);
-            }
-        } else {
-            static const char msg[] = "Invalid command";
-
-            (void)selva_send_error(&resp, SELVA_PROTO_EINVAL, msg, sizeof(msg) - 1);
-        }
-
-        if (!(resp.frame_flags & SELVA_PROTO_HDR_STREAM)) {
-            selva_send_end(&resp);
-        } /* The sequence doesn't end for streams. */
-    }
-    if (res < 0 && res != SELVA_PROTO_EAGAIN) {
+    res = server_recv_message(ctx);
+    if (res == 1) {
+        dispatch_cmd(ctx);
+    } else if (res < 0 && res != SELVA_PROTO_EAGAIN) {
         /*
          * Drop the connection on error.
          * We can't send an error message because we don't know if the header
@@ -823,6 +822,8 @@ static void on_data(struct event *event, void *arg)
          */
         evl_end_fd(fd);
     }
+
+    return res >= 0;
 }
 
 static void on_close(struct event *event, void *arg)
@@ -840,7 +841,7 @@ static void on_close(struct event *event, void *arg)
     free_conn_ctx(ctx);
 }
 
-static void on_connection(struct event *event, void *arg __unused)
+static bool on_connection(struct event *event, void *arg __unused)
 {
     int c = sizeof(struct sockaddr_in);
     struct sockaddr_in client;
@@ -850,7 +851,7 @@ static void on_connection(struct event *event, void *arg __unused)
 
     if (!conn_ctx) {
         SELVA_LOG(SELVA_LOGL_WARN, "Maximum number of client connections reached");
-        return;
+        return false;
     }
 
     /*
@@ -859,7 +860,7 @@ static void on_connection(struct event *event, void *arg __unused)
     new_sockfd = accept(event->fd, (struct sockaddr *)&client, (socklen_t*)&c);
     if (new_sockfd < 0) {
         SELVA_LOG(SELVA_LOGL_ERR, "Accept failed");
-        return;
+        return false;
     }
 
     tcp_set_nodelay(new_sockfd);
@@ -881,6 +882,8 @@ static void on_connection(struct event *event, void *arg __unused)
     conn_ctx->app.tim_hrt = SELVA_EINVAL;
 
     evl_wait_fd(new_sockfd, on_data, NULL, on_close, conn_ctx);
+
+    return false;
 }
 
 size_t selva_resp_to_str(const struct selva_server_response_out *resp, char *buf, size_t bsize)

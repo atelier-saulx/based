@@ -32,7 +32,6 @@
 #include "db_config.h"
 #include "edge.h"
 #include "field_lookup.h"
-#include "modify.h"
 #include "parsers.h"
 #include "rpn.h"
 #include "selva_index.h"
@@ -57,9 +56,6 @@
 struct SelvaHierarchySearchFilter {
     Selva_NodeId id;
 };
-
-#define GET_NODE_OBJ(_node_) \
-    ((struct SelvaObject *)((_node_)->_obj_data))
 
 /**
  * Structure for traversal cb of verifyDetachableSubtree().
@@ -389,7 +385,7 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
         dtor(hierarchy, node, &node->metadata);
     }
 
-    SelvaObject_Destroy(GET_NODE_OBJ(node));
+    SelvaObject_Destroy(SelvaHierarchy_GetNodeObject(node));
 #if MEM_DEBUG
     memset(node, 0, sizeof(*node));
 #endif
@@ -416,7 +412,7 @@ static void new_detached_node(SelvaHierarchy *hierarchy, const Selva_NodeId node
     if (!err) {
         err = SelvaModify_AddHierarchyP(hierarchy, node, nr_parents, parents, 0, NULL);
         node->flags |= SELVA_NODE_FLAGS_DETACHED;
-        SelvaObject_Destroy(GET_NODE_OBJ(node));
+        SelvaObject_Destroy(SelvaHierarchy_GetNodeObject(node));
     }
 
     if (unlikely(err < 0)) {
@@ -504,18 +500,6 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
     } else {
         return NULL;
     }
-}
-
-struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node) {
-    return GET_NODE_OBJ(node);
-}
-
-const struct SelvaHierarchyMetadata *_SelvaHierarchy_GetNodeMetadataByConstPtr(const SelvaHierarchyNode *node) {
-    return &node->metadata;
-}
-
-struct SelvaHierarchyMetadata *_SelvaHierarchy_GetNodeMetadataByPtr(SelvaHierarchyNode *node) {
-    return &node->metadata;
 }
 
 struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
@@ -608,7 +592,7 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
 
 static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const int send_events = !isLoading();
-    struct SelvaObject *obj = GET_NODE_OBJ(node);
+    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     Selva_NodeId id;
     int is_root;
 
@@ -1493,24 +1477,6 @@ int SelvaHierarchy_TraverseExpressionBfs(
     return bfs_expression(hierarchy, head, rpn_ctx, rpn_expr, edge_filter_ctx, edge_filter, cb);
 }
 
-int SelvaHierarchy_TraverseSet(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        const char *field_str,
-        size_t field_len,
-        const struct SelvaObjectSetForeachCallback *cb) {
-    struct SelvaHierarchyNode *head;
-
-    head = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!head) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    Trx_Sync(&hierarchy->trx_state, &head->trx_label);
-
-    return SelvaObject_SetForeach(GET_NODE_OBJ(head), field_str, field_len, cb);
-}
-
 int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const char *field_str, size_t field_len) {
     if (field_len == 0) {
         return 0;
@@ -1856,7 +1822,7 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
         return err;
     }
 
-    if (!SelvaObjectTypeLoadTo(io, encver, GET_NODE_OBJ(node), NULL)) {
+    if (!SelvaObjectTypeLoadTo(io, encver, SelvaHierarchy_GetNodeObject(node), NULL)) {
         return SELVA_ENOENT;
     }
 
@@ -2087,7 +2053,7 @@ static void save_metadata(struct selva_io *io, SelvaHierarchyNode *node) {
      */
 
     Edge_Save(io, node);
-    SelvaObjectTypeSave(io, GET_NODE_OBJ(node), NULL);
+    SelvaObjectTypeSave(io, SelvaHierarchy_GetNodeObject(node), NULL);
 }
 
 /**

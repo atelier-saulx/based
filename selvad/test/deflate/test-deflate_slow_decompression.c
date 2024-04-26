@@ -474,3 +474,9 @@ PU_SKIP(slow_decompression)
 
     return NULL;
 }
+
+/* Just to fix the build error. */
+PU_TEST(none)
+{
+    return NULL;
+}

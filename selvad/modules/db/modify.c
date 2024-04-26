@@ -30,124 +30,7 @@
 #include "selva_onload.h"
 #include "subscriptions.h"
 #include "typestr.h"
-
-struct SelvaModifyFieldOp {
-    enum SelvaModifyOpCode {
-        SELVA_MODIFY_OP_DEL = 0, /*!< Delete field. */
-        SELVA_MODIFY_OP_STRING = 1,
-        SELVA_MODIFY_OP_STRING_DEFAULT = 2,
-        SELVA_MODIFY_OP_LONGLONG = 3,
-        SELVA_MODIFY_OP_LONGLONG_DEFAULT = 4,
-        SELVA_MODIFY_OP_LONGLONG_INCREMENT = 5,
-        SELVA_MODIFY_OP_DOUBLE = 6,
-        SELVA_MODIFY_OP_DOUBLE_DEFAULT = 7,
-        SELVA_MODIFY_OP_DOUBLE_INCREMENT = 8,
-        SELVA_MODIFY_OP_SET_VALUE = 9,
-        SELVA_MODIFY_OP_SET_INSERT = 10,
-        SELVA_MODIFY_OP_SET_REMOVE = 11,
-        SELVA_MODIFY_OP_SET_ASSIGN = 12,
-        SELVA_MODIFY_OP_SET_MOVE = 13,
-        SELVA_MODIFY_OP_EDGE_META = 14, /*!< Value is `struct SelvaModifyEdgeMeta`. */
-    } __packed op;
-    enum {
-        SELVA_MODIFY_OP_FLAGS_VALUE_DEFLATED = 0x01,
-    } __packed flags;
-    char lang[2];
-    uint32_t index;
-    char field_name[SELVA_SHORT_FIELD_NAME_LEN];
-    /**
-     * Field value.
-     * Expected format depends on the op code.
-     */
-    const char *value_str;
-    size_t value_len;
-};
-
-/**
- * SELVA_MODIFY_OP_LONGLONG_INCREMENT.
- */
-struct SelvaModifyLongLongIncrement {
-    long long default_value;
-    long long increment;
-};
-
-/**
- * SELVA_MODIFY_OP_DOUBLE_INCREMENT.
- */
-struct SelvaModifyDoubleIncrement {
-    double default_value;
-    long long increment;
-};
-
-/**
- * Set operations.
- */
-struct SelvaModifySet {
-    enum SelvaModifySetType {
-        SELVA_MODIFY_SET_TYPE_CHAR = 0,
-        SELVA_MODIFY_SET_TYPE_REFERENCE = 1, /*!< Items are of size SELVA_NODE_ID_SIZE. */
-        SELVA_MODIFY_SET_TYPE_DOUBLE = 2,
-        SELVA_MODIFY_SET_TYPE_LONG_LONG = 3,
-    } __packed type;
-
-    /**
-     * Index for ordered set.
-     * Must be less than or equal to the size of the current set.
-     * Can be negative for counting from the last item.
-     */
-    ssize_t index;
-
-    /**
-     * Insert these elements to the ordered set starting from index.
-     *
-     * **Insert**
-     * List of nodes to be inserted starting from `index`. If the EdgeField
-     * doesn't exist, it will be created.
-     *
-     * **Assign**
-     *
-     * List of nodes to be replaced starting from `index`.
-     * If the edgeField doesn't exist yet then `index` must be set 0.
-     *
-     * **Delete**
-     * List of nodes to be deleted starting from `index`. The nodes must exist
-     * on the edgeField in the exact order starting from `index`.
-     *
-     * **Move**
-     * Move listed nodes to `index`. The nodes must exist but they don't need to
-     * be consecutive. The move will happen in reverse order.
-     * E.g. `[1, 2, 3]` will be inserted as `[3, 2, 1]`.
-     */
-    const char *value_str;
-    size_t value_len;
-};
-
-/**
- * SELVA_MODIFY_OP_EDGE_META.
- */
-struct SelvaModifyEdgeMeta {
-    enum SelvaModifyOpCode op;
-    int8_t delete_all; /*!< Delete all metadata from this edge field. */
-
-    char dst_node_id[SELVA_NODE_ID_SIZE];
-
-    const char *meta_field_name_str;
-    size_t meta_field_name_len;
-
-    const char *meta_field_value_str;
-    size_t meta_field_value_len;
-};
-
-struct modify_header {
-    Selva_NodeId node_id;
-    enum {
-        FLAG_NO_MERGE = 0x01, /*!< Clear any existing fields. */
-        FLAG_CREATE =   0x02, /*!< Only create a new node or fail. */
-        FLAG_UPDATE =   0x04, /*!< Only update an existing node. */
-        FLAG_ALIAS =    0x08, /*!< An alias query follows this header. */
-    } flags;
-    uint32_t nr_changes;
-};
+#include "modify.h"
 
 struct modify_ctx {
     struct selva_server_response_out *resp;
@@ -1655,6 +1538,22 @@ static int op_fixup(struct SelvaModifyFieldOp *op, const char *buf, size_t len)
     return 0;
 }
 
+/**
+ * field_name_str should be alaways within a page.
+ */
+static size_t get_short_field_name_len(const char field_name_str[SELVA_SHORT_FIELD_NAME_LEN])
+{
+    uint64_t x;
+
+    static_assert(SELVA_SHORT_FIELD_NAME_LEN == 8);
+    memcpy(&x, field_name_str, sizeof(x));
+#define haszero(v) (((v) - 0x0101010101010101UL) & ~(v) & 0x8080808080808080UL)
+    uint64_t y = haszero(x);
+#undef haszero
+
+    return y == 0 ? sizeof(x) : (size_t)(__builtin_ctzl(y) / 8);
+}
+
 static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t data_len)
 {
     struct SelvaModifyFieldOp op;
@@ -1721,7 +1620,7 @@ static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t d
         ctx->cur_field.name_len = res;
     } else {
         memcpy(ctx->cur_field.name_str, op.field_name, sizeof(ctx->cur_field.name_str));
-        ctx->cur_field.name_len = strnlen(op.field_name, SELVA_SHORT_FIELD_NAME_LEN);
+        ctx->cur_field.name_len = get_short_field_name_len(op.field_name);
     }
 
     return modify_op_fn[op.op](ctx, &op);

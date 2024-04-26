@@ -16,13 +16,12 @@
  * Aug 2015. Andrey Jivsov. crypto@brainhub.org
  *
  * Copyright (c) 2020 brainhub
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  *
  * SPDX-License-Identifier: MIT
  * ---------------------------------------------------------------------- */
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -51,6 +50,8 @@
 	(((x) << (y)) | ((x) >> ((sizeof(uint64_t)*8) - (y))))
 #endif
 
+typedef uint64_t v16u_t __attribute__((vector_size(64)));
+
 static const uint64_t keccakf_rndc[24] = {
     SHA3_CONST(0x0000000000000001UL), SHA3_CONST(0x0000000000008082UL),
     SHA3_CONST(0x800000000000808aUL), SHA3_CONST(0x8000000080008000UL),
@@ -66,61 +67,86 @@ static const uint64_t keccakf_rndc[24] = {
     SHA3_CONST(0x0000000080000001UL), SHA3_CONST(0x8000000080008008UL)
 };
 
-static const unsigned keccakf_rotc[24] = {
-    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62,
-    18, 39, 61, 20, 44
-};
+static uint64_t *theta(uint64_t r[25], uint64_t s[25])
+{
+    v16u_t bc;
+    v16u_t bd;
 
-static const unsigned keccakf_piln[24] = {
-    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20,
-    14, 22, 9, 6, 1
-};
+    for (int i = 0; i < 5; i++)
+        bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
+
+    /*
+     * This optimizes quite well for AVX2 and AVX512.
+     */
+    bd[0] = bc[4] ^ SHA3_ROTL64(bc[1], 1);
+    bd[1] = bc[0] ^ SHA3_ROTL64(bc[2], 1);
+    bd[2] = bc[1] ^ SHA3_ROTL64(bc[3], 1);
+    bd[3] = bc[2] ^ SHA3_ROTL64(bc[4], 1);
+    bd[4] = bc[3] ^ SHA3_ROTL64(bc[0], 1);
+
+    /*
+     * This is practically optimized away.
+     */
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 25; j += 5) {
+            r[j + i] = s[j + i] ^ bd[i];
+        }
+    }
+
+    return r;
+}
+
+static uint64_t *rho_pi(uint64_t tmp[25])
+{
+    static const size_t keccakf_rotc[24] = {
+        1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62,
+        18, 39, 61, 20, 44
+    };
+    static const size_t keccakf_piln[24] = {
+        10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20,
+        14, 22, 9, 6, 1
+    };
+    uint64_t t = tmp[1];
+
+    for (size_t i = 0; i < 24; i++) {
+        size_t j = keccakf_piln[i];
+        uint64_t prev = tmp[j];
+
+        tmp[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
+        t = prev;
+    }
+
+    return tmp;
+}
+
+static void chi(uint64_t s[25], uint64_t in[25])
+{
+    for (int j = 0; j < 25; j += 5) {
+        uint64_t *p = &in[j];
+
+        s[j + 0] = p[0] ^ ((~p[1]) & p[2]);
+        s[j + 1] = p[1] ^ ((~p[2]) & p[3]);
+        s[j + 2] = p[2] ^ ((~p[3]) & p[4]);
+        s[j + 3] = p[3] ^ ((~p[4]) & p[0]);
+        s[j + 4] = p[4] ^ ((~p[0]) & p[1]);
+    }
+}
 
 /* generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words
  * are XORed into the state s
  */
 static void
-keccakf(uint64_t s[25], int keccak_rounds)
+keccakf(uint64_t s[25], size_t keccak_rounds)
 {
-    for (int round = 0; round < keccak_rounds; round++) {
-        uint64_t t, bc[5], bd[5];
+    for (size_t round = 0; round < keccak_rounds; round++) {
+        /*
+         * You may wonder if it makes any sense to have temp buffer here.
+         * The answer is: Yes, it cuts about 60% of the time consumed here
+         * compared to manipulatin s directly.
+         */
         uint64_t tmp[25];
 
-        /* Theta */
-        for (int i = 0; i < 5; i++)
-            bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
-
-        bd[0] = bc[4] ^ SHA3_ROTL64(bc[1], 1);
-        bd[1] = bc[0] ^ SHA3_ROTL64(bc[2], 1);
-        bd[2] = bc[1] ^ SHA3_ROTL64(bc[3], 1);
-        bd[3] = bc[2] ^ SHA3_ROTL64(bc[4], 1);
-        bd[4] = bc[3] ^ SHA3_ROTL64(bc[0], 1);
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 25; j += 5) {
-                tmp[j + i] = s[j + i] ^ bd[i];
-            }
-        }
-
-        /* Rho Pi */
-        t = tmp[1];
-        for (int i = 0; i < 24; i++) {
-            int j = keccakf_piln[i];
-            uint64_t prev = tmp[j];
-
-            tmp[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
-            t = prev;
-        }
-
-        /* Chi */
-        for (int j = 0; j < 25; j += 5) {
-            uint64_t *p = &tmp[j];
-
-            s[j + 0] = p[0] ^ ((~p[1]) & p[2]);
-            s[j + 1] = p[1] ^ ((~p[2]) & p[3]);
-            s[j + 2] = p[2] ^ ((~p[3]) & p[4]);
-            s[j + 3] = p[3] ^ ((~p[4]) & p[0]);
-            s[j + 4] = p[4] ^ ((~p[0]) & p[1]);
-        }
+        chi(s, rho_pi(theta(tmp, s)));
 
         /* Iota */
         s[0] ^= keccakf_rndc[round];
@@ -287,11 +313,11 @@ sha3_Finalize(struct sha3_context *ctx)
             SHA3_CONST(0x8000000000000000UL);
     keccakf(ctx->u.s, ctx->keccak_rounds);
 
-    /* Return first bytes of the ctx->s. This conversion is not needed for
-     * little-endian platforms e.g. wrap with #if !defined(__BYTE_ORDER__)
-     * || !defined(__ORDER_LITTLE_ENDIAN__) || __BYTE_ORDER__!=__ORDER_LITTLE_ENDIAN__
-     *    ... the conversion below ...
-     * #endif */
+    /*
+     * Return first bytes of the ctx->s. This conversion is not needed for
+     * little-endian platforms.
+     */
+#if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
     for (unsigned i = 0; i < SHA3_KECCAK_SPONGE_WORDS; i++) {
         const unsigned t1 = (uint32_t) ctx->u.s[i];
         const unsigned t2 = (uint32_t) ((ctx->u.s[i] >> 16) >> 16);
@@ -304,6 +330,7 @@ sha3_Finalize(struct sha3_context *ctx)
         ctx->u.sb[i * 8 + 6] = (uint8_t) (t2 >> 16);
         ctx->u.sb[i * 8 + 7] = (uint8_t) (t2 >> 24);
     }
+#endif
 
     SHA3_TRACE_BUF("Hash: (first 32 bytes)", ctx->u.sb, 256 / 8);
 

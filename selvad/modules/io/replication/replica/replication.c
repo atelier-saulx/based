@@ -254,7 +254,7 @@ static int send_sync_req(int sock)
             struct selva_proto_string sdb_hash_hdr;
             uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
             struct selva_proto_longlong sdb_eid;
-        } msg __packed;
+        } msg;
         char pad[SELVA_PROTO_FRAME_SIZE_MAX];
     } buf;
 
@@ -305,7 +305,7 @@ static int send_full_sync_req(int sock)
     union {
         struct {
             struct selva_proto_header hdr;
-        } msg __packed;
+        } msg;
         char pad[SELVA_PROTO_FRAME_SIZE_MAX];
     } buf;
     static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
@@ -341,7 +341,7 @@ static int send_status(int sock, uint64_t eid)
         struct {
             struct selva_proto_header hdr;
             struct selva_proto_longlong eid;
-        } msg __packed;
+        } msg;
         char pad[SELVA_PROTO_FRAME_SIZE_MAX];
     } buf;
     static_assert(sizeof(buf) == SELVA_PROTO_FRAME_SIZE_MAX);
@@ -380,7 +380,7 @@ static struct seq_state *recv_frame(int fd)
 {
     struct selva_proto_header hdr;
     char payload[SELVA_PROTO_FRAME_PAYLOAD_SIZE_MAX];
-    const struct iovec rd_vec[2] = {
+    struct iovec rd_vec[2] = {
         {
             .iov_base = &hdr,
             .iov_len = sizeof(hdr),
@@ -692,7 +692,7 @@ static enum repl_proto_state handle_exec_sdb(void)
     return REPL_PROTO_STATE_FIN;
 }
 
-static void on_data(struct event *event, void *arg __unused)
+static bool on_data(struct event *event, void *arg __unused)
 {
     const int fd = event->fd;
     struct seq_state *ss = NULL;
@@ -738,7 +738,7 @@ static void on_data(struct event *event, void *arg __unused)
                  * Return for now to allow processing of other
                  * incoming connections.
                  */
-                return;
+                return false;
             }
             continue;
         case REPL_PROTO_STATE_RECEIVING_SDB_HEADER:
@@ -751,7 +751,7 @@ static void on_data(struct event *event, void *arg __unused)
                  * Return for now to allow processing of other
                  * incoming connections.
                  */
-                return;
+                return false;
             }
             continue;
         case REPL_PROTO_STATE_EXEC_CMD:
@@ -781,13 +781,13 @@ static void on_data(struct event *event, void *arg __unused)
                 fclose(sv.sdb_file);
             }
             reinit_state(ss);
-            return;
+            return false;
 state_err:
         case REPL_PROTO_STATE_ERR:
             SELVA_LOG(SELVA_LOGL_WARN, "Closing connection to origin");
             evl_end_fd(fd);
             reinit_all();
-            return;
+            return false;
         }
     }
 }

@@ -2381,7 +2381,7 @@ static forceinline const u8 *
 choose_max_block_end(const u8 *in_block_begin, const u8 *in_end,
              size_t soft_max_len)
 {
-    if (in_end - in_block_begin < soft_max_len + MIN_BLOCK_LENGTH)
+    if (in_end - in_block_begin < (ptrdiff_t)(soft_max_len + MIN_BLOCK_LENGTH))
         return in_end;
     return in_block_begin + soft_max_len;
 }
@@ -2421,7 +2421,7 @@ deflate_compress_none(const u8 *in, size_t in_nbytes,
             bfinal = 1;
             len = in_end - in_next;
         }
-        if (out_end - out_next < 5 + len)
+        if (out_end - out_next < (ptrdiff_t)(5 + len))
             return 0;
         /*
          * Output BFINAL and BTYPE.  The stream is already byte-aligned
@@ -3599,7 +3599,7 @@ deflate_compress_near_optimal(struct libdeflate_compressor * restrict c,
     const u8 *in_end = in_next + in_nbytes;
     const u8 *in_cur_base = in_next;
     const u8 *in_next_slide =
-        in_next + MIN(in_end - in_next, MATCHFINDER_WINDOW_SIZE);
+        in_next + MIN((size_t)(in_end - in_next), MATCHFINDER_WINDOW_SIZE);
     unsigned max_len = DEFLATE_MAX_MATCH_LEN;
     unsigned nice_len = MIN(c->nice_match_length, max_len);
     struct lz_match *cache_ptr = c->p.n.match_cache;
