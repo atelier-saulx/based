@@ -121,17 +121,16 @@ pub fn mdbCheck(rc: c_int) MdbError!void {
         // The specified DBI handle was closed/changed unexpectedly
         c.MDB_BAD_DBI => MdbError.MDB_BAD_DBI,
 
-        // TODO: franky fix
-        // @intFromEnum(std.errors.INVAL) => MdbError.INVAL,
-        // @intFromEnum(error.ACCES) => MdbError.ACCES,
-        // @intFromEnum(error.NOMEM) => MdbError.NOMEM,
-        // @intFromEnum(error.NOENT) => MdbError.NOENT,
-        // @intFromEnum(error.AGAIN) => MdbError.AGAIN,
-        // @intFromEnum(error.NOSPC) => MdbError.NOSPC,
-        // @intFromEnum(error.BUSY) => MdbError.BUSY,
-        // @intFromEnum(error.INTR) => MdbError.INTR,
-        // @intFromEnum(error.PIPE) => MdbError.PIPE,
-        // @intFromEnum(error.IO) => MdbError.IO,
+        @intFromEnum(std.posix.E.INVAL) => MdbError.INVAL,
+        @intFromEnum(std.posix.E.ACCES) => MdbError.ACCES,
+        @intFromEnum(std.posix.E.NOMEM) => MdbError.NOMEM,
+        @intFromEnum(std.posix.E.NOENT) => MdbError.NOENT,
+        @intFromEnum(std.posix.E.AGAIN) => MdbError.AGAIN,
+        @intFromEnum(std.posix.E.NOSPC) => MdbError.NOSPC,
+        @intFromEnum(std.posix.E.BUSY) => MdbError.BUSY,
+        @intFromEnum(std.posix.E.INTR) => MdbError.INTR,
+        @intFromEnum(std.posix.E.PIPE) => MdbError.PIPE,
+        @intFromEnum(std.posix.E.IO) => MdbError.IO,
 
         else => MdbError.UNKNOWN_ERROR,
     };
