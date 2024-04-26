@@ -54,10 +54,12 @@ typedef struct SelvaHierarchy SelvaHierarchy;
  * declared structures.
  */
 struct SelvaHierarchyMetadata {
+#if 0
     /**
      * Subscription markers.
      */
     struct Selva_SubscriptionMarkers sub_markers;
+#endif
     struct EdgeFieldContainer edge_fields;
 };
 
