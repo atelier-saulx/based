@@ -18,6 +18,15 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   references: 0,
 }
 
+const TYPE_INDEX: Map<BasedSchemaFieldType, number> = new Map()
+
+let index = 0
+for (const key in SIZE_MAP) {
+  // @ts-ignore
+  TYPE_INDEX.set(key, index)
+  index++
+}
+
 /*
 [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
 // make buffer
@@ -28,6 +37,7 @@ export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
   type: BasedSchemaFieldType
+  typeByte: number
   seperate: boolean
   path: string[]
   start: number
@@ -42,6 +52,7 @@ export type SchemaTypeDef = {
   total: number
   lastId: number
   mainLen: number
+  buf: Buffer
   fields: {
     // path including .
     [key: string]: FieldDef
@@ -66,7 +77,7 @@ const prefixStringToUint8 = (
 
 export const createSchemaTypeDef = (
   type: BasedSchemaType | BasedSchemaFieldObject,
-  result: SchemaTypeDef = {
+  result: Partial<SchemaTypeDef> = {
     cnt: 0,
     checksum: hashObjectIgnoreKeyOrder(type),
     total: 0,
@@ -101,6 +112,7 @@ export const createSchemaTypeDef = (
         result.cnt++
       }
       result.fields[p.join('.')] = {
+        typeByte: TYPE_INDEX.get(f.type),
         __isField: true,
         type: f.type,
         seperate: isSeperate,
@@ -114,18 +126,44 @@ export const createSchemaTypeDef = (
 
   if (top) {
     const vals = Object.values(result.fields)
+
+    // prefix
+    let len = 2
+
     for (const f of vals) {
       if (f.seperate) {
+        len += 2
         setByPath(result.tree, f.path, f)
       } else {
+        if (!result.mainLen) {
+          len += 2
+        }
+        len += 1
         f.start = result.mainLen
         result.mainLen += f.len
         setByPath(result.tree, f.path, f)
       }
     }
 
+    result.buf = Buffer.allocUnsafe(len)
+
+    result.buf[0] = result.prefix[0]
+    result.buf[1] = result.prefix[1]
+
+    if (result.mainLen) {
+      result.buf[2] = 0
+
+      let i = 3
+      for (const f of vals) {
+        if (!f.seperate) {
+          // bla
+          result.buf[i] = f.typeByte
+        }
+      }
+    }
+
     // make buffers as well
   }
 
-  return result
+  return result as SchemaTypeDef
 }
