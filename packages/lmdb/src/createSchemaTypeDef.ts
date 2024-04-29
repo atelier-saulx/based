@@ -127,7 +127,7 @@ export const createSchemaTypeDef = (
   if (top) {
     const vals = Object.values(result.fields)
 
-    // prefix
+    // PREFIX [2] | 0 = main ,
     let len = 2
 
     for (const f of vals) {
