@@ -374,7 +374,7 @@ test.serial.only('query + filter', async (t) => {
     .query('simple')
     .filter(['vectorClock', '>', 1])
     // .include()
-    // .filter(['refs', 'has', [2]])
+    .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
     .range(0, 1)

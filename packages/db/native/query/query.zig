@@ -115,15 +115,21 @@ fn getQueryInternal(
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
             errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-            const s: Result = .{ .id = i, .field = field, .val = v };
 
-            if (field != 0) {
-                total_size += (v.mv_size + 4 + 1 + 2);
+            if (includeIterator == 1) {
+                total_size += 1 + 4;
+                const s: Result = .{ .id = i, .field = field, .val = v };
+                try results.append(s);
             } else {
-                total_size += (v.mv_size + 4 + 1);
+                const s: Result = .{ .id = null, .field = field, .val = v };
+                try results.append(s);
             }
 
-            try results.append(s);
+            if (field != 0) {
+                total_size += (v.mv_size + 1 + 2);
+            } else {
+                total_size += (v.mv_size + 1);
+            }
         }
         // ----------------------------------
     }
@@ -139,10 +145,13 @@ fn getQueryInternal(
     for (results.items) |*key| {
         var dataU8 = @as([*]u8, @ptrCast(data));
 
-        @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
-        last_pos += 4;
-
-        std.debug.print("got id: {any}\n", .{key.id});
+        if (key.id != null) {
+            dataU8[last_pos] = 255;
+            last_pos += 1;
+            @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
+            last_pos += 4;
+            std.debug.print("got id: {any}\n", .{key.id});
+        }
 
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;

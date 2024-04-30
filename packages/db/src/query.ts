@@ -204,26 +204,39 @@ export class Query {
       // const arr = new Array(result.byteLength / 4)
 
       const arr = []
+      let lastTarget
       // console.log(new Uint8Array(result))
       let i = 0
       while (i < result.byteLength) {
         // read
-        // read from tree
-        const obj = {
-          // last id is what we want...
-          id: result.readUint32LE(i),
-        }
-        i += 4
         const index = result[i]
         i++
-        if (index === 0) {
+
+        // read from tree
+        if (index === 255) {
+          lastTarget = {
+            // last id is what we want...
+            id: result.readUint32LE(i),
+          }
+          arr.push(lastTarget)
+
+          i += 4
+        } else if (index === 0) {
           for (const f in this.type.fields) {
             const field = this.type.fields[f]
             if (!field.seperate) {
               if (field.type === 'integer' || field.type === 'reference') {
-                setByPath(obj, field.path, result.readUint32LE(i + field.start))
+                setByPath(
+                  lastTarget,
+                  field.path,
+                  result.readUint32LE(i + field.start)
+                )
               } else if (field.type === 'number') {
-                setByPath(obj, field.path, result.readFloatLE(i + field.start))
+                setByPath(
+                  lastTarget,
+                  field.path,
+                  result.readFloatLE(i + field.start)
+                )
               }
             }
           }
@@ -240,7 +253,7 @@ export class Query {
               if (field.field === index) {
                 if (field.type === 'string') {
                   setByPath(
-                    obj,
+                    lastTarget,
                     field.path,
                     result.toString('utf8', i, size + i)
                   )
@@ -249,7 +262,7 @@ export class Query {
                   for (let j = i; j < size / 4; j += 4) {
                     x[j / 4] = result.readUint32LE(j)
                   }
-                  setByPath(obj, field.path, x)
+                  setByPath(lastTarget, field.path, x)
                 }
                 break
               }
@@ -259,8 +272,6 @@ export class Query {
           // lullz
           i += size
         }
-
-        arr.push(obj)
       }
 
       return {
