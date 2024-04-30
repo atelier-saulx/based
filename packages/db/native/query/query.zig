@@ -104,7 +104,7 @@ fn getQueryInternal(
             const field: u8 = include[includeIterator];
             includeIterator += 1;
 
-            std.debug.print("\nFIELD {d} include {any}\n", .{ field, include });
+            // std.debug.print("\nFIELD {d} include {any}\n", .{ field, include });
             const shardKey = db.getShardKey(field, @bitCast(currentShard));
             var shard = shards.get(shardKey);
             if (shard == null) {
@@ -150,7 +150,7 @@ fn getQueryInternal(
             last_pos += 1;
             @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
             last_pos += 4;
-            std.debug.print("got id: {any}\n", .{key.id});
+            // std.debug.print("got id: {any}\n", .{key.id});
         }
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
