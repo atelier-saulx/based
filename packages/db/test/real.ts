@@ -24,6 +24,7 @@ test.serial.only('query + filter', async (t) => {
     },
     getQuery: (...args) => {
       console.log('lullllz', args)
+      return Buffer.allocUnsafe(0)
     },
   }
 
@@ -50,6 +51,7 @@ test.serial.only('query + filter', async (t) => {
 
   console.log(
     'SCHEMA',
+    db.schemaTypesParsed.simple.cnt,
     db.schemaTypesParsed.simple.buf,
     db.schemaTypesParsed.simple.fieldNames
   )
@@ -59,7 +61,7 @@ test.serial.only('query + filter', async (t) => {
     readSchemaTypeDefFromBuffer(
       db.schemaTypesParsed.simple.buf,
       db.schemaTypesParsed.simple.fieldNames
-    ).fields
+    ).cnt
   )
 
   const refs = []

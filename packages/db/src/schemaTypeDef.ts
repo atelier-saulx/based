@@ -205,25 +205,20 @@ export const readSchemaTypeDefFromBuffer = (
   buf: Buffer,
   fieldNames: Buffer
 ): SchemaTypeDef => {
-  // hello
   const tree: SchemaFieldTree = {}
   const fields: {
-    // path including .
     [key: string]: FieldDef
   } = {}
   const prefix = String.fromCharCode(buf[0]) + String.fromCharCode(buf[1])
   const names: string[] = []
   const seperate: FieldDef[] = []
-
   let i = 0
   const decoder = new TextDecoder()
-
   while (i < fieldNames.byteLength) {
     const len = fieldNames[i]
     names.push(decoder.decode(fieldNames.slice(i + 1, i + len + 1)))
     i += len + 1
   }
-
   let j = 2
   let isMain = false
   if (buf[j] === 0) {
@@ -231,6 +226,7 @@ export const readSchemaTypeDefFromBuffer = (
     j++
   }
   let currentName = 0
+  let cnt = 0
   let mainLen = 0
   while (j < buf.byteLength) {
     if (isMain) {
@@ -258,6 +254,7 @@ export const readSchemaTypeDefFromBuffer = (
       setByPath(tree, path, field)
       mainLen += len
       currentName++
+
       j++
     } else {
       const fieldIndex = buf[j]
@@ -280,6 +277,7 @@ export const readSchemaTypeDefFromBuffer = (
       seperate.push(field)
       setByPath(tree, path, field)
       currentName++
+      cnt++
       j += 2
     }
   }
@@ -290,7 +288,7 @@ export const readSchemaTypeDefFromBuffer = (
     tree,
     fields,
     seperate,
-    cnt: 0,
+    cnt,
     buf,
     fieldNames,
     checksum: 0,
