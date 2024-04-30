@@ -47,7 +47,11 @@ test.serial.only('query + filter', async (t) => {
     },
   })
 
-  console.log('SCHEMA', db.schemaTypesParsed.simple.buf)
+  console.log(
+    'SCHEMA',
+    db.schemaTypesParsed.simple.buf,
+    db.schemaTypesParsed.simple.fieldNames
+  )
 
   const refs = []
   for (let i = 1; i < 10 - 1; i++) {
