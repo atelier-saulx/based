@@ -70,7 +70,6 @@ static struct query_fork_ctrl {
         uint8_t buf[QUERY_FORK_CMD_BUF_SIZE];
     } (*ret_channel)[MAX_QUERY_FORKS];
 } query_fork;
-static bool hierarchy_auto_compress_period_ms; /* Only used to check that this is not enabled when query_fork is enabled. */
 static struct command {
     selva_cmd_function cmd_fn;
     selva_cmd_query_fork_test query_fork_eligible;
@@ -85,7 +84,6 @@ static const struct config server_cfg_map[] = {
     { "SERVER_MAX_CLIENTS",                 CONFIG_INT, &max_clients },
     { "SERVER_SO_REUSE",                    CONFIG_BOOL, &so_reuse },
     { "SERVER_DISABLE_QUERY_FORK",          CONFIG_INT, &query_fork.disabled },
-    { "HIERARCHY_AUTO_COMPRESS_PERIOD_MS",  CONFIG_INT, &hierarchy_auto_compress_period_ms },
 };
 
 void selva_server_set_readonly(void)
@@ -995,9 +993,6 @@ __used static void query_fork_init(void)
 #else
         const int mmap_flags = MAP_SHARED | MAP_ANONYMOUS;
 #endif
-        if (hierarchy_auto_compress_period_ms > 0) {
-            SELVA_LOG(SELVA_LOGL_CRIT, "query_fork and auto compression are mutually exclusive");
-        }
 
         query_fork.ret_channel = mmap(NULL, sizeof(*query_fork.ret_channel),
                                       PROT_READ | PROT_WRITE, mmap_flags,

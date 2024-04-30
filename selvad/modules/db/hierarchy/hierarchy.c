@@ -43,8 +43,6 @@
 #include "traversal.h"
 #include "schema.h"
 #include "hierarchy.h"
-#include "hierarchy_detached.h"
-#include "hierarchy_inactive.h"
 
 #define TO_EXPIRE(_ts_) ((uint32_t)((_ts_) - SELVA_HIERARCHY_EXPIRE_EPOCH))
 #define FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
@@ -94,13 +92,6 @@ static void SelvaHierarchy_DestroyNode(
 static void hierarchy_expire_tim_proc(struct event *e __unused, void *data);
 static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, time_t expire);
 RB_PROTOTYPE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, SelvaHierarchyNode_Compare)
-static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type);
-static int restore_subtree(SelvaHierarchy *hierarchy, const Selva_NodeId id);
-#if 0
-static void auto_compress_proc(struct event *, void *data);
-static void Hierarchy_SubtreeLoad(SelvaHierarchy *hierarchy, struct selva_string *s);
-static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node);
-#endif
 
 /* Node metadata constructors. */
 SET_DECLARE(selva_HMCtor, SelvaHierarchyMetadataConstructorHook);
@@ -112,9 +103,6 @@ __nonstring static const Selva_NodeId HIERARCHY_SERIALIZATION_EOF;
 SelvaHierarchy *main_hierarchy;
 
 SELVA_TRACE_HANDLE(find_inmem);
-SELVA_TRACE_HANDLE(find_detached);
-SELVA_TRACE_HANDLE(restore_subtree);
-SELVA_TRACE_HANDLE(auto_compress_proc);
 SELVA_TRACE_HANDLE(traverse_edge_field);
 SELVA_TRACE_HANDLE(traverse_bfs_ancestors);
 SELVA_TRACE_HANDLE(traverse_bfs_descendants);
@@ -199,46 +187,11 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
-    (void)init_node(hierarchy, &hierarchy->root, ROOT_NODE_ID);
-    assert(!memcmp(hierarchy->root.id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)); /* should be set by now. */
-
-    /*
-     * Initialize auto compression.
-     */
-    if (selva_glob_config.hierarchy_auto_compress_period_ms > 0) {
-        struct timespec timeout;
-
-        if (SelvaHierarchy_InitInactiveNodes(hierarchy, HIERARCHY_AUTO_COMPRESS_INACT_NODES_LEN)) {
-            SelvaHierarchy_Destroy(hierarchy);
-            hierarchy = NULL;
-            goto fail;
-        }
-
-        msec2timespec(&timeout, selva_glob_config.hierarchy_auto_compress_period_ms);
-#if 0
-        hierarchy->inactive.auto_compress_timer = evl_set_timeout(&timeout, auto_compress_proc, hierarchy);
-        if (hierarchy->inactive.auto_compress_timer < 0) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to setup a timer for auto compression: %s",
-                      selva_strerror(hierarchy->inactive.auto_compress_timer));
-        }
-#endif
-    } else {
-        hierarchy->inactive.auto_compress_timer = SELVA_ENOENT;
-    }
-
     SVector_Init(&hierarchy->expiring.list, 0, SVector_HierarchyNode_expire_compare);
     hierarchy->expiring.next = HIERARCHY_EXPIRING_NEVER;
     hierarchy->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
 
-fail:
     return hierarchy;
-}
-
-static void end_auto_compress(SelvaHierarchy *hierarchy) {
-    if (hierarchy->inactive.auto_compress_timer >= 0) {
-        evl_clear_timeout(hierarchy->inactive.auto_compress_timer, NULL);
-    }
-    SelvaHierarchy_DeinitInactiveNodes(hierarchy);
 }
 
 void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
@@ -266,7 +219,6 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
     selva_free(hierarchy->types);
     SelvaSchema_Destroy(hierarchy->schema);
 
-    end_auto_compress(hierarchy);
     deinit_nodepools(hierarchy);
 
     memset(hierarchy, 0, sizeof(*hierarchy));
@@ -324,15 +276,6 @@ static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHier
                       (int)SELVA_NODE_ID_SIZE, id,
                       selva_strerror(err));
         }
-
-    if (likely(!isLoading())) {
-        /*
-         * Every node is implicit unless it isn't. Modify should clear this flag
-         * when explicitly creating a node, that can happen on a later command
-         * call. This flag will be also persisted in the serialized format.
-         */
-        node->flags |= SELVA_NODE_FLAGS_IMPLICIT;
-    }
 
     SelvaHierarchyMetadataConstructorHook **metadata_ctor_p;
 
@@ -395,113 +338,27 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
     mempool_return(get_nodepool_by_type(hierarchy, type), node);
 }
 
-#if 0
-/**
- * Create a new detached node with given parents.
- */
-static void new_detached_node(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, Selva_NodeId *parents, size_t nr_parents) {
-    const int prevIsDecompressingSubtree = isDecompressingSubtree;
-    struct SelvaHierarchyNode *node;
-    int err;
-
-    /*
-     * We are not actually decompressing but we need to make it look like we are.
-     */
-    isDecompressingSubtree = 1;
-    err = SelvaHierarchy_UpsertNode(hierarchy, node_id, &node);
-    isDecompressingSubtree = prevIsDecompressingSubtree;
-
-    if (!err) {
-        err = SelvaModify_AddHierarchyP(hierarchy, node, nr_parents, parents, 0, NULL);
-        node->flags |= SELVA_NODE_FLAGS_DETACHED;
-        SelvaObject_Destroy(SelvaHierarchy_GetNodeObject(node));
-    }
-
-    if (unlikely(err < 0)) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Fatal error while creating a detached node %.*s. err: \"%s\"",
-                  (int)SELVA_NODE_ID_SIZE, node_id,
-                  selva_strerror(err));
-        abort();
-    }
-}
-
-/**
- * Reinit everything that was removed when the subtree head was made detached.
- * There should be no need to ever call this function from anywhere else but
- * SelvaHierarchy_FindNode().
- */
-static int repopulate_detached_head(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
-    int err;
-
-    err = create_node_object(hierarchy, node);
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to repopulate a detached dummy node %.*s. err: \"%s\"",
-                  (int)SELVA_NODE_ID_SIZE, node->id,
-                  selva_strerror(err));
-        return err;
-    }
-
-    node->flags &= ~SELVA_NODE_FLAGS_DETACHED;
-
-    return 0;
-}
-#endif
-
 /**
  * Search from the normal node index.
- * This function doesn't decompress subtrees nor checks if the node exists in
- * the detached node index.
  */
 static SelvaHierarchyNode *find_node_index(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
-    if (!memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        return &hierarchy->root;
-    } else {
-        struct SelvaHierarchySearchFilter filter;
-        SelvaHierarchyNode *node;
+    struct SelvaHierarchySearchFilter filter;
+    SelvaHierarchyNode *node;
 
-        memcpy(&filter.id, id, SELVA_NODE_ID_SIZE);
-        node = RB_FIND(hierarchy_index_tree, &hierarchy->index_head, (SelvaHierarchyNode *)(&filter));
+    memcpy(&filter.id, id, SELVA_NODE_ID_SIZE);
+    node = RB_FIND(hierarchy_index_tree, &hierarchy->index_head, (SelvaHierarchyNode *)(&filter));
 
-        return node;
-    }
+    return node;
 }
 
 SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
     SelvaHierarchyNode *node;
-    int err;
 
     SELVA_TRACE_BEGIN(find_inmem);
     node = find_node_index(hierarchy, id);
     SELVA_TRACE_END(find_inmem);
 
-    if (node && !(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
-        return node;
-    } else if (node && isDecompressingSubtree) {
-#if 0
-        err = repopulate_detached_head(hierarchy, node);
-        if (err) {
-            return NULL;
-        }
-#endif
-        return (node = NULL);
-    } else if (!isDecompressingSubtree && SelvaHierarchyDetached_IndexExists(hierarchy)) {
-        SELVA_TRACE_BEGIN(find_detached);
-        err = restore_subtree(hierarchy, id);
-        SELVA_TRACE_END(find_detached);
-        if (err) {
-            if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
-                          (int)SELVA_NODE_ID_SIZE, id,
-                          selva_strerror(err));
-            }
-
-            return NULL;
-        }
-
-        return SelvaHierarchy_FindNode(hierarchy, id);
-    } else {
-        return NULL;
-    }
+    return node;
 }
 
 struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
@@ -578,16 +435,6 @@ static const char * const excluded_fields[] = {
     NULL
 };
 
-int SelvaHierarchy_ClearNodeFlagImplicit(SelvaHierarchyNode *node) {
-    const int v = !!(node->flags & SELVA_NODE_FLAGS_IMPLICIT);
-
-    if (v) {
-        node->flags &= ~SELVA_NODE_FLAGS_IMPLICIT;
-    }
-
-    return v;
-}
-
 void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
     SelvaObject_Clear(obj, excluded_fields);
 }
@@ -595,36 +442,21 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
 static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const int send_events = !isLoading();
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-    Selva_NodeId id;
-    int is_root;
-
-    memcpy(id, node->id, SELVA_NODE_ID_SIZE);
-    is_root = !memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE);
 
     if (send_events) {
         SelvaSubscriptions_DeferTriggerEvents(hierarchy, node, SELVA_SUBSCRIPTION_TRIGGER_TYPE_DELETED);
     }
 
     delete_all_node_aliases(hierarchy, obj);
+    RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
+    SelvaHierarchy_DestroyNode(hierarchy, node);
 
-    /*
-     * Never delete the root node.
-     */
-    if (is_root) {
-        SelvaHierarchy_ClearNodeFields(obj);
-
-        /*
-         * There might be something to collect if this was a large hierarchy.
-         * Regardless, running the gc is a relatively cheap operation and makes
-         * sense here.
-         */
+    /* TODO Do this sometimes. */
+#if 0
         for (size_t i = 0; i < HIERARCHY_NODEPOOL_COUNT; i++) {
             mempool_gc(&hierarchy->nodepool[i]);
         }
-    } else {
-        RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
-        SelvaHierarchy_DestroyNode(hierarchy, node);
-    }
+#endif
 }
 
 /**
@@ -714,21 +546,6 @@ static int SelvaHierarchy_DelNodeP(
 
     assert(hierarchy);
     assert(node);
-
-    if (flags & DEL_HIERARCHY_NODE_DETACH) {
-        if (!opt_arg) {
-            return SELVA_HIERARCHY_EINVAL;
-        }
-
-        /* Add to the detached nodes. */
-        SelvaHierarchyDetached_AddNode(hierarchy, node->id, opt_arg);
-    } else if (node->flags & SELVA_NODE_FLAGS_DETACHED) {
-        /*
-         * This should only happen if we have failed to restore the
-         * subtree.
-         */
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
 
     SelvaSubscriptions_ClearAllMarkers(hierarchy, node);
 
@@ -888,25 +705,6 @@ static int SelvaHierarchyChildCallback_Dummy(
     return 0;
 }
 
-#if 0
-/**
- * Returns true if calling SelvaHierarchy_AddInactiveNodeId() is safe.
- * I.e. true if we should track inactive nodes for auto compression.
- */
-static bool SelvaHierarchy_CanTrackInactiveNodes(struct SelvaHierarchy *hierarchy)
-{
-    return
-        /* No need to track if auto compression is disabled. */
-        selva_glob_config.hierarchy_auto_compress_period_ms > 0 &&
-        /*
-         * Track only in the dump process.
-         * This should also prevent query_forks from writing the
-         * tracking data.
-         */
-        hierarchy->flag_isSaving;
-}
-#endif
-
 #define BFS_TRAVERSE(hierarchy, head, cb) \
     SelvaHierarchyNodeCallback head_cb = (cb)->head_cb ? (cb)->head_cb : SelvaHierarchyHeadCallback_Dummy; \
     SelvaHierarchyNodeCallback node_cb = (cb)->node_cb ? (cb)->node_cb : HierarchyNode_Callback_Dummy; \
@@ -948,13 +746,6 @@ static bool SelvaHierarchy_CanTrackInactiveNodes(struct SelvaHierarchy *hierarch
 
 #define BFS_VISIT_ADJACENT(hierarchy, cb, _origin_field_tag, _adj_vec, adj_node) do { \
         if (Trx_Visit(&trx_cur, &(adj_node)->trx_label)) { \
-            if ((adj_node)->flags & SELVA_NODE_FLAGS_DETACHED) { \
-                int subtree_err = restore_subtree((hierarchy), (adj_node)->id); \
-                if (subtree_err) { \
-                    Trx_End(&(hierarchy)->trx_state, &trx_cur); \
-                    return subtree_err; \
-                } \
-            } \
             const void *_origin_field_svec_tagp = PTAG((_adj_vec), (_origin_field_tag)); \
             const struct SelvaHierarchyTraversalMetadata _child_cb_metadata = { \
                 .origin_field_svec_tagp = _origin_field_svec_tagp, \
@@ -1497,316 +1288,6 @@ int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const 
     return Edge_GetFieldLength(edge_field);
 }
 
-#if 0
-/**
- * DO NOT CALL DIRECTLY. USE verifyDetachableSubtree().
- */
-static int verifyDetachableSubtreeNodeCb(
-        struct SelvaHierarchy *hierarchy __unused,
-        const struct SelvaHierarchyTraversalMetadata *,
-        struct SelvaHierarchyNode *node,
-        void *arg) {
-    struct verifyDetachableSubtree *data = (struct verifyDetachableSubtree *)arg;
-    struct SVectorIterator it;
-    const SelvaHierarchyNode *parent;
-
-    /*
-     * If edges from other nodes are pointing to this node, we want to
-     * verify it later that all those edges are within the subtree.
-     */
-    if (Edge_Usage(node) & 2) {
-        struct SelvaObject *origins = node->metadata.edge_fields.origins;
-        SelvaObject_Iterator *it;
-        const char *origin;
-
-        it = SelvaObject_ForeachBegin(origins);
-        while ((origin = SelvaObject_ForeachKey(origins, &it))) {
-            Selva_NodeId origin_id;
-
-            Selva_NodeIdCpy(origin_id, origin);
-            SelvaSet_Add(&data->edge_origin_node_ids, origin_id);
-        }
-    }
-
-    /*
-     * Check that there are no active subscription markers on the node.
-     * Subs starting from root can be ignored.
-     */
-    if (SelvaSubscriptions_hasActiveMarkers(&node->metadata)) {
-        data->err = "markers";
-        return 1;
-    }
-
-    /*
-     * A subtree is allowed be a acyclic but `node` must be its true parent,
-     * i.e. the whole subtree has only a single root node that is `node`.
-     */
-    SVector_ForeachBegin(&it, &node->parents);
-    if (node != data->head) {
-        while ((parent = SVector_Foreach(&it))) {
-            if (!Trx_HasVisited(&data->trx_cur, &parent->trx_label)) {
-                data->err = "not_tree";
-                return 1; /* not a proper subtree. */
-            }
-        }
-    }
-
-    Trx_Visit(&data->trx_cur, &node->trx_label);
-
-    return 0;
-}
-
-/**
- * Verify that the children of node can be safely detached.
- * Detachable subtree is subnetwork that the descendants of node can be safely
- * removed from the hierarchy, serialized and freed from memory.
- * This function checks that the children of node form a proper subtree that
- * and there are no active subscription markers or other live dependencies on
- * any of the nodes.
- * @return 0 is returned if the subtree is detachable;
- *         Otherwise a SelvaError is returned.
- */
-static int verifyDetachableSubtree(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    struct trx_state * restrict trx_state = &hierarchy->trx_state;
-    struct verifyDetachableSubtree data = {
-        .err = NULL,
-        .head = node,
-    };
-    const struct SelvaHierarchyCallback cb = {
-        .head_cb = NULL,
-        .head_arg = NULL,
-        .node_cb = verifyDetachableSubtreeNodeCb,
-        .node_arg = &data,
-        .child_cb = NULL,
-        .child_arg = NULL,
-    };
-    int err;
-
-    if (!Trx_Fin(trx_state)) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Cannot compress a subtree of the node %.*s while another transaction is being executed",
-                  (int)SELVA_NODE_ID_SIZE, node->id);
-        return SELVA_HIERARCHY_ETRMAX;
-    }
-
-    if (Trx_Begin(trx_state, &data.trx_cur)) {
-        return SELVA_HIERARCHY_ETRMAX;
-    }
-    SelvaSet_Init(&data.edge_origin_node_ids, SELVA_SET_TYPE_NODEID);
-
-    err = bfs_descendants(hierarchy, node, &cb);
-    if (!err && data.err) {
-        err = SELVA_HIERARCHY_ENOTSUP;
-    }
-
-    /*
-     * Verify that all edge sources were visited by the traversal.
-     * TODO It would be good to allow referenced nodes that are not
-     * children in the subtree but still contained within the subgraph.
-     */
-    if (!err && SelvaSet_Size(&data.edge_origin_node_ids) > 0) {
-        struct SelvaSetElement *el;
-
-        SELVA_SET_NODEID_FOREACH(el, &data.edge_origin_node_ids) {
-            SelvaHierarchyNode *node;
-
-            node = find_node_index(hierarchy, el->value_nodeId);
-            if (!node ||
-                node->trx_label.id != data.trx_cur.id ||
-                ((data.trx_cur.cl << 1) & node->trx_label.cl) == 0) {
-                err = SELVA_HIERARCHY_ENOTSUP;
-            }
-        }
-    }
-
-    SelvaSet_Destroy(&data.edge_origin_node_ids);
-    Trx_End(trx_state, &data.trx_cur);
-
-    return err;
-}
-
-/**
- * Compress a subtree using DFS starting from node.
- * @returns The compressed tree is returned as a compressed selva_string.
- */
-static struct selva_string *compress_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    int err;
-
-    err = verifyDetachableSubtree(hierarchy, node);
-    if (err) {
-        /* Not a valid subtree. */
-        SELVA_LOG(SELVA_LOGL_DBG, "%.*s is not a valid subtree for compression: %s",
-                  (int)SELVA_NODE_ID_SIZE, node->id,
-                  selva_strerror(err));
-
-        return NULL;
-    }
-
-
-    return Hierarchy_SubtreeSave(hierarchy, node);
-}
-#endif
-
-static int detach_subtree(SelvaHierarchy *hierarchy __unused, struct SelvaHierarchyNode *node __unused, enum SelvaHierarchyDetachedType type __unused) {
-    return SELVA_HIERARCHY_ENOTSUP;
-#if 0
-    Selva_NodeId node_id;
-    Selva_NodeId *parents = NULL;
-    const size_t nr_parents = SVector_Size(&node->parents);
-    void *tag_compressed;
-    int err;
-
-    if (!memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
-
-    if (node->flags & SELVA_NODE_FLAGS_DETACHED) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Node already detached: %.*s",
-                  (int)SELVA_NODE_ID_SIZE, node->id);
-        return SELVA_HIERARCHY_EINVAL;
-    }
-
-    if (nr_parents > 0) {
-        parents = alloca(nr_parents * SELVA_NODE_ID_SIZE);
-        copy_nodeIds(parents, &node->parents);
-    }
-
-    memcpy(node_id, node->id, SELVA_NODE_ID_SIZE);
-    tag_compressed = SelvaHierarchyDetached_Store(
-            node_id,
-            compress_subtree(hierarchy, node),
-            type);
-    if (!tag_compressed) {
-        return SELVA_HIERARCHY_EGENERAL;
-    }
-
-    /*
-     * Now delete the compressed nodes.
-     */
-    err = SelvaHierarchy_DelNodeP(
-            NULL, hierarchy, node,
-            DEL_HIERARCHY_NODE_FORCE | DEL_HIERARCHY_NODE_DETACH,
-            tag_compressed);
-    err = err < 0 ? err : 0;
-    node = NULL;
-    /*
-     * Note that `compressed` must not be freed as it's actually stored now in
-     * the detached hierarchy for now.
-     */
-
-    /*
-     * Create a new dummy node with the detached flag set.
-     */
-    new_detached_node(hierarchy, node_id, parents, nr_parents);
-
-    if (!err) {
-        SELVA_LOG(SELVA_LOGL_DBG,
-                  "Compressed and detached the subtree of %.*s",
-                  (int)SELVA_NODE_ID_SIZE, node_id);
-    }
-
-    return err;
-#endif
-}
-
-#if 0
-static int restore_compressed_subtree(SelvaHierarchy *hierarchy, struct selva_string *compressed) {
-    isDecompressingSubtree = 1;
-    Hierarchy_SubtreeLoad(hierarchy, compressed);
-    isDecompressingSubtree = 0;
-
-    return 0;
-}
-#endif
-
-/**
- * FIXME
- * Restore a compressed subtree back to hierarchy from the detached hierarchy subtree storage.
- * @param id can be the id of any node within a compressed subtree.
- * @returns SELVA_ENOENT if id is not a member of any detached subtree.
- */
-static int restore_subtree(SelvaHierarchy *hierarchy __unused, const Selva_NodeId id __unused) {
-#if 0
-    struct selva_string *compressed;
-    int err;
-
-    SELVA_TRACE_BEGIN(restore_subtree);
-
-    err = SelvaHierarchyDetached_Get(hierarchy, id, &compressed, NULL);
-    if (!err) {
-        err = restore_compressed_subtree(hierarchy, compressed);
-        if (!err) {
-            selva_string_free(compressed);
-        }
-    }
-
-    SELVA_TRACE_END(restore_subtree);
-
-    SELVA_LOG(SELVA_LOGL_DBG, "Restored the subtree of %.*s",
-              (int)SELVA_NODE_ID_SIZE, id);
-
-    return err;
-#endif
-    return SELVA_HIERARCHY_ENOTSUP;
-}
-
-#if 0
-static void auto_compress_proc(struct event *, void *data) {
-    static struct backoff_timeout backoff;
-    struct timespec timeout;
-    SelvaHierarchy *hierarchy = (struct SelvaHierarchy *)data;
-
-    if (selva_server_is_query_fork()) {
-        /* Never do auto compression in a query_fork. */
-        return;
-    }
-
-    SELVA_TRACE_BEGIN_AUTO(auto_compress_proc);
-
-    if (unlikely(backoff.factor == 0.0)) {
-        backoff.t_min = (double)selva_glob_config.hierarchy_auto_compress_period_ms,
-        backoff.t_max = (double)(selva_glob_config.hierarchy_auto_compress_period_ms + 300),
-        backoff.factor = 1.5;
-        backoff_timeout_init(&backoff);
-    }
-
-    /*
-     * We can't run this if a backup is still running because we share the
-     * inactive nodes data structure with the backup process.
-     */
-    if (selva_io_get_dump_state() == SELVA_DB_DUMP_NONE) {
-        HIERARCHY_INACTIVE_FOREACH(hierarchy) {
-            const char *node_id = HIERARCHY_INACTIVE_FOREACH_NODE_ID;
-            struct SelvaHierarchyNode *node;
-
-            node = find_node_index(hierarchy, node_id);
-            if (!node || node->flags & SELVA_NODE_FLAGS_DETACHED) {
-                /* This should be unlikely to occur at this point. */
-                SELVA_LOG(SELVA_LOGL_DBG, "Ignoring (%p) %.*s",
-                          node, (int)SELVA_NODE_ID_SIZE, node_id);
-                continue;
-            }
-
-            /*
-             * Note that calling detach_subtree() should also update the trx
-             * struct, meaning that in case detaching the node fails, we
-             * still won't see it here again any time soon.
-             */
-            (void)detach_subtree(hierarchy, node, SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM);
-        }
-
-        SelvaHierarchy_ClearInactiveNodeIds(hierarchy);
-        backoff.attempt = 0;
-    }
-
-    backoff_timeout_next(&backoff, &timeout);
-    hierarchy->inactive.auto_compress_timer = evl_set_timeout(&timeout, auto_compress_proc, hierarchy);
-    if (hierarchy->inactive.auto_compress_timer < 0) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to setup a timer for auto compression: %s",
-                  selva_strerror(hierarchy->inactive.auto_compress_timer));
-    }
-}
-#endif
-
 static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     int err;
 
@@ -1829,53 +1310,6 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
     }
 
     return 0;
-}
-
-static int load_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy __unused, Selva_NodeId node_id __unused) {
-    enum SelvaHierarchyDetachedType type;
-    struct selva_string *compressed;
-#if 0
-    SelvaHierarchyNode *node;
-    int err;
-#endif
-
-    type = selva_io_load_signed(io);
-    compressed = selva_io_load_string(io);
-    selva_string_set_compress(compressed);
-
-    /* TODO Remove */
-    (void)type;
-    (void)compressed;
-
-    /*
-     * It would be cleaner and faster to just attach this node as detached and
-     * compressed directly but we don't know the nodeIds inside this compressed
-     * subtree and thus can't add them to the detached hierarchy structure. We
-     * could save that information separately but at the moment we don't, and
-     * therefore it's easier, albeit time and memory intensive, to restore the
-     * subtree first and detach it again.
-     */
-
-    return SELVA_HIERARCHY_ENOTSUP;
-    /* TODO */
-#if 0
-    err = restore_compressed_subtree(hierarchy, compressed);
-    if (err) {
-        goto out;
-    }
-
-    node = SelvaHierarchy_FindNode(hierarchy, node_id);
-    if (!node) {
-        err = SELVA_HIERARCHY_ENOENT;
-        goto out;
-    }
-
-    err = detach_subtree(hierarchy, node, type);
-
-out:
-    selva_string_free(compressed);
-    return err;
-#endif
 }
 
 static int load_hierarchy_node(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
@@ -1903,10 +1337,6 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
     SelvaHierarchyNode *node;
     int err;
 
-    if (isDecompressingSubtree) {
-        SelvaHierarchyDetached_RemoveNode(fin, hierarchy, node_id);
-    }
-
     /*
      * Upsert the node.
      */
@@ -1918,23 +1348,8 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
         return err;
     }
 
-    node->flags = selva_io_load_unsigned(io);
     node->expire = selva_io_load_unsigned(io);
-
-    if ((node->flags & SELVA_NODE_FLAGS_DETACHED) && !isDecompressingSubtree) {
-        /*
-         * This node and its subtree was compressed.
-         * In this case we are supposed to load the subtree as detached and
-         * keep it compressed.
-         * SELVA_NODE_FLAGS_DETACHED should never be set if
-         * isDecompressingSubtree is set but the code looks cleaner this way.
-         */
-        err = load_detached_node(io, hierarchy, node_id);
-    } else {
-        err = load_hierarchy_node(io, encver, hierarchy, node);
-    }
-
-    return err;
+    return load_hierarchy_node(io, encver, hierarchy, node);
 }
 
 /**
@@ -2024,31 +1439,6 @@ error:
     return NULL;
 }
 
-static void save_detached_node(struct selva_io *io, SelvaHierarchy *hierarchy, const Selva_NodeId id) {
-    struct selva_string *compressed;
-    enum SelvaHierarchyDetachedType type;
-    int err;
-
-    /*
-     * Technically we point to the same compressed subtree multiple times in the
-     * detached hierarchy. However, we should only point to it once in the
-     * actual hierarchy as these are proper subtrees. This means that we'll only
-     * store the compressed subtree once. The down side is that the only way to
-     * rebuild the SelvaHierarchyDetached structure is by decompressing the
-     * subtrees temporarily.
-     */
-
-    err = SelvaHierarchyDetached_Get(hierarchy, id, &compressed, &type);
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to save a compressed subtree: %s",
-                  selva_strerror(err));
-        return;
-    }
-
-    selva_io_save_signed(io, type);
-    selva_io_save_string(io, compressed);
-}
-
 static void save_metadata(struct selva_io *io, SelvaHierarchyNode *node) {
     /*
      * Note that the metadata must be loaded and saved in a predefined order.
@@ -2071,41 +1461,11 @@ static int HierarchySaveNode(
     struct selva_io *io = args->io;
 
     selva_io_save_str(io, node->id, SELVA_NODE_ID_SIZE);
-    selva_io_save_unsigned(io, node->flags);
-    selva_io_save_unsigned(io, node->expire);
-
-    if (node->flags & SELVA_NODE_FLAGS_DETACHED) {
-        save_detached_node(io, hierarchy, node->id);
-    } else {
-        save_metadata(io, node);
-    }
-
-    return 0;
-}
-
-#if 0
-/**
- * Save a node from a subtree.
- * Used by Hierarchy_SubtreeSave() when saving a subtree into a string.
- * This function should match with HierarchySaveNode() but we don't want
- * to do save_detached() here.
- */
-static int HierarchySaveSubtreeNode(
-        struct SelvaHierarchy *hierarchy __unused,
-        const struct SelvaHierarchyTraversalMetadata *,
-        struct SelvaHierarchyNode *node,
-        void *arg) {
-    struct selva_io *io = (struct selva_io *)arg;
-
-    selva_io_save_str(io, node->id, SELVA_NODE_ID_SIZE);
-    selva_io_save_unsigned(io, node->flags & ~SELVA_NODE_FLAGS_DETACHED);
     selva_io_save_unsigned(io, node->expire);
     save_metadata(io, node);
-    selva_io_save_unsigned(io, SVector_Size(&node->children));
 
     return 0;
 }
-#endif
 
 static void save_hierarchy(struct selva_io *io, SelvaHierarchy *hierarchy) {
     struct HierarchySaveNode args = {
@@ -2144,100 +1504,6 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
     save_aliases(io, hierarchy);
     hierarchy->flag_isSaving = 0;
 }
-
-#if 0
-static int load_nodeId(struct selva_io *io, Selva_NodeId nodeId) {
-    __selva_autofree const char *buf = NULL;
-    size_t len;
-
-    buf = selva_io_load_str(io, &len);
-    if (!buf || len != SELVA_NODE_ID_SIZE) {
-        return SELVA_HIERARCHY_EINVAL;
-    }
-
-    memcpy(nodeId, buf, SELVA_NODE_ID_SIZE);
-    return 0;
-}
-
-/**
- * Load a subtree from the serialization format back into the hierarchy.
- * This function should never be called directly.
- */
-static void Hierarchy_SubtreeLoad(SelvaHierarchy *hierarchy, struct selva_string *s) {
-    __auto_finalizer struct finalizer fin;
-    struct selva_io io;
-    Selva_NodeId nodeId;
-    int encver, err;
-
-    finalizer_init(&fin);
-    selva_io_init_string_read(&io, s, 0);
-
-    /*
-     * 1. Load encoding version
-     * 2. Read nodeId
-     * 3. Load the children normally
-     */
-
-    encver = selva_io_load_signed(&io);
-    if (encver > HIERARCHY_ENCODING_VERSION) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "selva_hierarchy encoding version %d not supported", encver);
-        return;
-    }
-
-    /*
-     * Read nodeId.
-     */
-    if (load_nodeId(&io, nodeId)) {
-        return;
-    }
-
-    SelvaHierarchyDetached_RemoveNode(&fin, hierarchy, nodeId);
-
-    err = load_tree(&fin, &io, encver, hierarchy);
-    if (err) {
-        return;
-    }
-
-    selva_io_end(&io, NULL, NULL);
-}
-
-/**
- * Serialize a subtree of a hierarchy.
- */
-static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    struct selva_io io;
-    struct selva_string *raw = selva_io_init_string_write(&io, SELVA_IO_FLAGS_COMPRESSED);
-    const struct SelvaHierarchyCallback cb = {
-        .head_cb = NULL,
-        .head_arg = NULL,
-        .node_cb = HierarchySaveSubtreeNode,
-        .node_arg = &io,
-        .child_cb = HierarchySaveChild,
-        .child_arg = &io,
-    };
-
-    /*
-     * Save encoding version.
-     * This needs to be stored separately because we need to be able to read
-     * compressed subtrees from the disk and those files don't contain the
-     * encoding version and Redis gives us version 0 on read.
-     */
-    selva_io_save_signed(&io, HIERARCHY_ENCODING_VERSION);
-
-    /* Save nodeId. */
-    selva_io_save_str(&io, node->id, SELVA_NODE_ID_SIZE);
-
-    /*
-     * Save the children.
-     */
-    (void)dfs(hierarchy, node, RELATIONSHIP_CHILD, &cb);
-    selva_io_save_str(&io, HIERARCHY_SERIALIZATION_EOF, sizeof(HIERARCHY_SERIALIZATION_EOF));
-
-    selva_io_end(&io, NULL, NULL);
-
-    return raw;
-}
-#endif
 
 /*
  * HIERARCHY.DEL FLAGS [NODE_ID1[, NODE_ID2, ...]]
@@ -2512,81 +1778,12 @@ static void SelvaHierarchy_EdgeGetMetadataCommand(struct selva_server_response_o
     SelvaObject_ReplyWithObject(resp, NULL, edge_metadata, NULL, 0);
 }
 
-static void SelvaHierarchy_CompressCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
-    enum SelvaHierarchyDetachedType type = SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM;
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    __auto_finalizer struct finalizer fin;
-    Selva_NodeId nodeId;
-    int argc, err;
-
-    finalizer_init(&fin);
-
-    argc = selva_proto_scanf(&fin, buf, len, "%" SELVA_SCA_NODE_ID ", %d",
-                             nodeId, &type);
-    if (argc != 1 && argc != 2) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
-        } else {
-            selva_send_error_arity(resp);
-        }
-        return;
-    }
-
-    if (type != SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM &&
-        type != SELVA_HIERARCHY_DETACHED_COMPRESSED_DISK) {
-        selva_send_error(resp, SELVA_EINVAL, "type", 4);
-        return;
-    }
-
-    /*
-     * Find the node.
-     */
-    SelvaHierarchyNode *node = SelvaHierarchy_FindNode(hierarchy, nodeId);
-    if (!node) {
-        selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
-        return;
-    }
-
-    err = detach_subtree(hierarchy, node, type);
-    if (err) {
-        selva_send_error(resp, err, NULL, 0);
-        return;
-    }
-
-    selva_send_ll(resp, 1);
-    selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
-}
-
-static void SelvaHierarchy_ListCompressedCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    SelvaObject_Iterator *it;
-    const char *id;
-
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
-
-    if (!hierarchy->detached.obj) {
-        selva_send_array(resp, 0);
-        return;
-    }
-
-    selva_send_array(resp, SelvaObject_Len(hierarchy->detached.obj, NULL));
-    it = SelvaObject_ForeachBegin(hierarchy->detached.obj);
-    while ((id = SelvaObject_ForeachKey(hierarchy->detached.obj, &it))) {
-        selva_send_str(resp, id, strlen(id));
-    }
-}
-
 static int Hierarchy_OnLoad(void) {
     selva_mk_command(CMD_ID_HIERARCHY_DEL, SELVA_CMD_MODE_MUTATE, "hierarchy.del", SelvaHierarchy_DelNodeCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EXPIRE, SELVA_CMD_MODE_MUTATE, "hierarchy.expire", SelvaHierarchy_ExpireCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_LIST, SELVA_CMD_MODE_PURE, "hierarchy.edgeList", SelvaHierarchy_EdgeListCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_GET, SELVA_CMD_MODE_PURE, "hierarchy.edgeGet", SelvaHierarchy_EdgeGetCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EDGE_GET_METADATA, SELVA_CMD_MODE_PURE, "hierarchy.edgeGetMetadata", SelvaHierarchy_EdgeGetMetadataCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_COMPRESS, SELVA_CMD_MODE_PURE, "hierarchy.compress", SelvaHierarchy_CompressCommand); /* Pure or not? */
-    selva_mk_command(CMD_ID_HIERARCHY_LIST_COMPRESSED, SELVA_CMD_MODE_PURE, "hierarchy.listCompressed", SelvaHierarchy_ListCompressedCommand);
 
     return 0;
 }
