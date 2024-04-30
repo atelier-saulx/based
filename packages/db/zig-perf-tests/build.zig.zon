@@ -1,0 +1,16 @@
+.{
+    .paths = .{ "src", "build.zig", "build.zig.zon" },
+    // the name of your project
+    .name = "based-db-zig",
+    // the version of your project
+    .version = "0.0.1",
+
+    // the actual packages you need as dependencies of your project
+    .dependencies = .{
+        // the name of the package
+        .lmdb = .{
+            .url = "https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_0.9.31.tar.gz",
+            .hash = "12209bfdbf43d479c2cac0ca2212853ab2136f1621f49461f62c7932a7819bc29110",
+        },
+    },
+}

@@ -1,0 +1,43 @@
+{
+  "name": "@based/db",
+  "version": "0.0.1",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "npx tsc --watch",
+    "test": "npx ava",
+    "clean": "rimraf {.turbo,dist,node_modules}",
+    "build-zig": "mkdir -p dist && zig build --summary all",
+    "get-napi": "./scripts/download-node-headers.sh"
+  },
+  "sideEffects": false,
+  "ava": {
+    "timeout": "2m",
+    "workerThreads": false,
+    "files": [
+      "./dist/test/**/*.js"
+    ]
+  },
+  "files": [
+    "dist/lib.node",
+    "dist/src",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "@saulx/hash": "^3.0.0",
+    "@based/schema": "^3.1.0",
+    "@saulx/utils": "^4.3.2",
+    "@based/server": "^8.0.0",
+    "@based/client": "^6.0.0"
+  },
+  "devDependencies": {
+    "lorem-ipsum": "^2.0.8",
+    "ts-node": "10.9.1",
+    "ava": "5.3.1",
+    "typescript": "^4.3.5",
+    "rimraf": "^3.0.2"
+  }
+}
