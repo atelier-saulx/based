@@ -348,8 +348,8 @@ test.serial.only('query + filter', async (t) => {
   for (let i = 0; i < 1e5 - 1; i++) {
     db.create('simple', {
       user: i,
-      // refs: [0, 1, 2], //generateRandomArray(),
-      // flap: 'AMAZING 123',
+      refs: [0, 1, 2], //generateRandomArray(),
+      flap: 'AMAZING 123',
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       vectorClock: 5,
       location: {
