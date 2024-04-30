@@ -54,10 +54,12 @@ typedef struct SelvaHierarchy SelvaHierarchy;
  * declared structures.
  */
 struct SelvaHierarchyMetadata {
+#if 0
     /**
      * Subscription markers.
      */
     struct Selva_SubscriptionMarkers sub_markers;
+#endif
     struct EdgeFieldContainer edge_fields;
 };
 
@@ -113,16 +115,14 @@ enum SelvaNodeFlags {
  */
 typedef struct SelvaHierarchyNode {
     Selva_NodeId id; /* Must be first. */
-    enum SelvaNodeFlags flags;
+    enum SelvaNodeFlags flags: 2;
+#define SELVA_HIERARCHY_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.
-     * epoch = UNIX 2023-01-01T00:00:00Z = 1672531200000 (UNIX)
      * 0 = never expires
-     * As this is a 32-bit unsigned integer, it means that we should be good
-     * until the year 2106.
-     * 1970+(2^32)/60/60/24/365 = 2106
+     * max_life = <epoch year>+(2^<bits>)/60/60/24/365
      */
-    uint32_t expire;
+    uint32_t expire: 30;
     struct trx_label trx_label;
     struct SelvaHierarchyMetadata metadata;
     RB_ENTRY(SelvaHierarchyNode) _index_entry;

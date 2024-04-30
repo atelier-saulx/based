@@ -46,7 +46,9 @@
 #include "hierarchy_detached.h"
 #include "hierarchy_inactive.h"
 
-#define IS_EXPIRED(_ts_, _now_) ((time_t)(_ts_) <= (time_t)(_now_))
+#define TO_EXPIRE(_ts_) ((uint32_t)((_ts_) - SELVA_HIERARCHY_EXPIRE_EPOCH))
+#define FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
+#define IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
 
 /**
  * Filter struct used for RB searches from hierarchy_index_tree.
@@ -90,7 +92,7 @@ static void SelvaHierarchy_DestroyNode(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node);
 static void hierarchy_expire_tim_proc(struct event *e __unused, void *data);
-static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, uint32_t expire);
+static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, time_t expire);
 RB_PROTOTYPE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, SelvaHierarchyNode_Compare)
 static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type);
 static int restore_subtree(SelvaHierarchy *hierarchy, const Selva_NodeId id);
@@ -774,17 +776,15 @@ static bool expire_node(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyN
     return false;
 }
 
-static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, uint32_t expire) {
-    uint32_t prev;
+static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, time_t expire) {
     bool updated = false;
 
-    prev = node->expire;
-    if (prev != 0) {
+    if (node->expire != 0) {
         (void)SVector_Remove(&hierarchy->expiring.list, node);
         updated = true;
     }
 
-    node->expire = expire;
+    node->expire = TO_EXPIRE(expire);
     if (expire != 0) {
         (void)SVector_Insert(&hierarchy->expiring.list, node);
         updated = true;
@@ -1213,7 +1213,9 @@ int SelvaHierarchy_TraverseAll(struct SelvaHierarchy *hierarchy, const struct Se
 
     RB_FOREACH(node, hierarchy_index_tree, &hierarchy->index_head) {
         if (Trx_Visit(&trx_cur, &node->trx_label)) {
-            cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, node, cb->node_arg);
+            if (cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, node, cb->node_arg)) {
+                break;
+            }
         }
     }
 
@@ -2314,10 +2316,10 @@ static void SelvaHierarchy_DelNodeCommand(struct selva_server_response_out *resp
 static void SelvaHierarchy_ExpireCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_NodeId nodeId;
-    uint32_t prev, expire = 0;
+    uint64_t prev, expire = 0;
     int argc;
 
-    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID ", %" PRIu32, nodeId, &expire);
+    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID ", %" PRIu64, nodeId, &expire);
     if (argc != 1 && argc != 2) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
@@ -2336,7 +2338,7 @@ static void SelvaHierarchy_ExpireCommand(struct selva_server_response_out *resp,
         return;
     }
 
-    prev = node->expire;
+    prev = FROM_EXPIRE(node->expire);
     if (argc == 2) {
         hierarchy_set_expire(hierarchy, node, expire);
         selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
