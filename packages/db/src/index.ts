@@ -24,6 +24,21 @@ const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
 export class BasedDb {
   isDraining: boolean = false
 
+  native = {
+    modify: (buffer: Buffer, len: number): any => {
+      return dbZig.modify(buffer, len)
+    },
+    getQuery: (
+      conditions: Buffer,
+      prefix: string,
+      lastId: number,
+      offset: number,
+      limit: number // def 1k ?
+    ): any => {
+      return dbZig.getQuery(conditions, prefix, lastId, offset, limit)
+    },
+  }
+
   schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 

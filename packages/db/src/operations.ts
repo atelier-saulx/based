@@ -1,4 +1,3 @@
-import dbZig from './db.js'
 import { BasedDb } from './index.js'
 
 export const MAX_MODIFY_BUFFER = 100 * 1e3 * 1e3
@@ -14,7 +13,7 @@ export const modifyBuffer = {
 
 export const flushBuffer = (db: BasedDb) => {
   if (modifyBuffer.len) {
-    dbZig.modify(modifyBuffer.buffer, modifyBuffer.len)
+    db.native.modify(modifyBuffer.buffer, modifyBuffer.len)
     modifyBuffer.len = 0
     modifyBuffer.typePrefix = new Uint8Array([0, 0])
     modifyBuffer.field = -1

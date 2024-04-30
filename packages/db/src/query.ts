@@ -156,12 +156,12 @@ export class Query {
 
       console.log(new Uint8Array(conditions))
 
-      const result = dbZig.getQuery(
+      const result = this.db.native.getQuery(
         conditions,
         this.type.prefixString,
         this.type.lastId,
         start,
-        end, // def 1k ?
+        end // def 1k ?
       )
 
       // will be actual results!
