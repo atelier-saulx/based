@@ -27,12 +27,6 @@ for (const key in SIZE_MAP) {
   index++
 }
 
-/*
-[58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
-// make buffer
-[“MYTYPE”,“flap”,”xx”,”bla.bla”,”bla.x”]
-*/
-
 export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
@@ -53,6 +47,7 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
+  fieldNames: string[]
   fields: {
     // path including .
     [key: string]: FieldDef
@@ -64,7 +59,7 @@ export type SchemaTypeDef = {
 }
 
 const prefixStringToUint8 = (
-  type: BasedSchemaType | BasedSchemaFieldObject,
+  type: BasedSchemaType | BasedSchemaFieldObject
 ): Uint8Array => {
   if (!('type' in type && 'properties' in type)) {
     return new Uint8Array([
@@ -82,6 +77,7 @@ export const createSchemaTypeDef = (
     checksum: hashObjectIgnoreKeyOrder(type),
     total: 0,
     lastId: 0,
+    fieldNames: [],
     fields: {},
     prefix: prefixStringToUint8(type),
     mainLen: 0,
@@ -90,7 +86,7 @@ export const createSchemaTypeDef = (
     tree: {},
   },
   path: string[] = [],
-  top: boolean = true,
+  top: boolean = true
 ): SchemaTypeDef => {
   let target: { [key: string]: BasedSchemaField }
 
@@ -145,24 +141,38 @@ export const createSchemaTypeDef = (
       }
     }
 
+    /*
+      [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
+      // make buffer
+      [“MYTYPE”,“flap”,”xx”,”bla.bla”,”bla.x”]
+    */
     result.buf = Buffer.allocUnsafe(len)
-
     result.buf[0] = result.prefix[0]
     result.buf[1] = result.prefix[1]
-
+    let i = 2
     if (result.mainLen) {
-      result.buf[2] = 0
-
-      let i = 3
+      result.buf[i] = 0
       for (const f of vals) {
         if (!f.seperate) {
-          // bla
+          i++
           result.buf[i] = f.typeByte
+          result.fieldNames.push(f.path.join('.'))
         }
+      }
+      i++
+      result.buf[i] = 0
+    }
+    for (const f of vals) {
+      if (f.seperate) {
+        i++
+        result.buf[i] = f.field
+        i++
+        result.buf[i] = f.typeByte
+        result.fieldNames.push(f.path.join('.'))
       }
     }
 
-    // make buffers as well
+    console.log('LAST WRITTEN 2', i, result)
   }
 
   return result as SchemaTypeDef

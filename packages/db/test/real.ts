@@ -30,7 +30,6 @@ test.serial.only('query + filter', async (t) => {
   db.updateSchema({
     types: {
       simple: {
-        // prefix: 'aa',
         fields: {
           flap: { type: 'string' },
           refs: { type: 'references', allowedTypes: ['user'] },
@@ -55,11 +54,6 @@ test.serial.only('query + filter', async (t) => {
 
   var dx = Date.now()
   console.log('GO!')
-  // 2.5GB structured (8M nodes 4.5sec)
-
-  // 8 / 1.3
-
-  //
 
   for (let i = 0; i < 100e6 - 1; i++) {
     db.create('simple', {
