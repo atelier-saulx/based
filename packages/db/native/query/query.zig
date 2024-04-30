@@ -98,26 +98,32 @@ fn getQueryInternal(
         total_results += 1;
         // make this into a fn
         var includeIterator: u8 = 0;
+        // collect all in s
         while (includeIterator < include.len) {
-            includeIterator += 1;
             const field: u8 = include[includeIterator];
+            includeIterator += 1;
+
             std.debug.print("\nFIELD {d} include {any}\n", .{ field, include });
-            if (includeIterator == 1) {
-                const shardKey = db.getShardKey(field, @bitCast(currentShard));
-                var shard = shards.get(shardKey);
-                if (shard == null) {
-                    shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
-                    if (shard != null) {
-                        try shards.put(shardKey, shard.?);
-                    }
+            const shardKey = db.getShardKey(field, @bitCast(currentShard));
+            var shard = shards.get(shardKey);
+            if (shard == null) {
+                shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
+                if (shard != null) {
+                    try shards.put(shardKey, shard.?);
                 }
-                var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-                const s: Result = .{ .id = i, .field = field, .val = v };
-                total_size += (v.mv_size + 4 + 1);
-                try results.append(s);
             }
+            var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
+            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+            const s: Result = .{ .id = i, .field = field, .val = v };
+
+            if (field != 0) {
+                total_size += (v.mv_size + 4 + 1 + 2);
+            } else {
+                total_size += (v.mv_size + 4 + 1);
+            }
+
+            try results.append(s);
         }
         // ----------------------------------
     }
@@ -139,10 +145,14 @@ fn getQueryInternal(
         std.debug.print("got id: {any}\n", .{key.id});
 
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
-        if (key.field != 0) {
-            std.debug.print("not first field", .{});
-        }
         last_pos += 1;
+
+        if (key.field != 0) {
+            const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
+            dataU8[last_pos] = x[0];
+            dataU8[last_pos + 1] = x[1];
+            last_pos += 2;
+        }
 
         @memcpy(
             dataU8[last_pos .. last_pos + key.val.?.mv_size],

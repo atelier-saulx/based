@@ -142,27 +142,29 @@ export class Query {
   }
 
   get(): { items: number[]; total: number; offset: number; limit: number } {
-    let includeBuffer: Buffer = Buffer.from([0])
+    let includeBuffer: Buffer
     let len = 0
 
-    // if (!this.includeFields) {
-    //   len = 1
-    //   const fields = this.type.fields
-    //   for (const f in fields) {
-    //     if (fields.seperate) {
-    //       len++
-    //     }
-    //   }
-    //   includeBuffer = Buffer.allocUnsafe(len)
-    //   includeBuffer[0] = 0
-    //   let i = 0
-    //   for (const f in fields) {
-    //     if (fields.seperate) {
-    //       i++
-    //       includeBuffer[i] = fields[f].field
-    //     }
-    //   }
-    // }
+    if (!this.includeFields) {
+      len = 1
+      const fields = this.type.fields
+      for (const f in fields) {
+        const field = fields[f]
+        if (field.seperate) {
+          len++
+        }
+      }
+      includeBuffer = Buffer.allocUnsafe(len)
+      includeBuffer[0] = 0
+      let i = 0
+      for (const f in fields) {
+        const field = fields[f]
+        if (field.seperate) {
+          i++
+          includeBuffer[i] = field.field
+        }
+      }
+    }
 
     if (this.conditions) {
       const conditions = Buffer.allocUnsafe(this.totalConditionSize)
@@ -208,16 +210,13 @@ export class Query {
         // read
         // read from tree
         const obj = {
+          // last id is what we want...
           id: result.readUint32LE(i),
         }
-
         i += 4
-
-        const field = result[i]
-
+        const index = result[i]
         i++
-
-        if (field === 0) {
+        if (index === 0) {
           for (const f in this.type.fields) {
             const field = this.type.fields[f]
             if (!field.seperate) {
@@ -229,14 +228,40 @@ export class Query {
             }
           }
           i += this.type.mainLen
+        } else {
+          // lets go
+
+          const size = result.readUInt16LE(i)
+          i += 2
+
+          for (const f in this.type.fields) {
+            const field = this.type.fields[f]
+            if (field.seperate) {
+              if (field.field === index) {
+                if (field.type === 'string') {
+                  setByPath(
+                    obj,
+                    field.path,
+                    result.toString('utf8', i, size + i)
+                  )
+                } else if (field.type === 'references') {
+                  const x = new Array(size / 4)
+                  for (let j = i; j < size / 4; j += 4) {
+                    x[j / 4] = result.readUint32LE(j)
+                  }
+                  setByPath(obj, field.path, x)
+                }
+                break
+              }
+            }
+          }
+
+          // lullz
+          i += size
         }
 
         arr.push(obj)
       }
-
-      // for (let i = 0; i < result.byteLength; i += 4) {
-      //   arr[i / 4] = result.readUint32LE(i)
-      // }
 
       return {
         items: arr,
