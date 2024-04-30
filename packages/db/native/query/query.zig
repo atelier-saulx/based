@@ -115,7 +115,7 @@ fn getQueryInternal(
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
                 const s: Result = .{ .id = i, .field = field, .val = v };
-                total_size += v.mv_size + 4;
+                total_size += (v.mv_size + 4 + 1);
                 try results.append(s);
             }
         }
@@ -136,13 +136,13 @@ fn getQueryInternal(
         @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
         last_pos += 4;
 
-        std.debug.print("id: {any}\n", .{key.id});
+        std.debug.print("got id: {any}\n", .{key.id});
 
-        // @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
-        // if (key.field != 0) {
-        //     std.debug.print("not first field", .{});
-        // }
-        // last_pos += 1;
+        @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
+        if (key.field != 0) {
+            std.debug.print("not first field", .{});
+        }
+        last_pos += 1;
 
         @memcpy(
             dataU8[last_pos .. last_pos + key.val.?.mv_size],

@@ -203,31 +203,32 @@ export class Query {
 
       const arr = []
       // console.log(new Uint8Array(result))
-
-      for (let i = 0; i < result.byteLength; i += 4 + this.type.mainLen) {
+      let i = 0
+      while (i < result.byteLength) {
         // read
         // read from tree
         const obj = {
           id: result.readUint32LE(i),
         }
 
-        for (const f in this.type.fields) {
-          const field = this.type.fields[f]
-          if (!field.seperate) {
-            if (field.type === 'integer' || field.type === 'reference') {
-              setByPath(
-                obj,
-                field.path,
-                result.readUint32LE(i + 4 + field.start)
-              )
-            } else if (field.type === 'number') {
-              setByPath(
-                obj,
-                field.path,
-                result.readFloatLE(i + 4 + field.start)
-              )
+        i += 4
+
+        const field = result[i]
+
+        i++
+
+        if (field === 0) {
+          for (const f in this.type.fields) {
+            const field = this.type.fields[f]
+            if (!field.seperate) {
+              if (field.type === 'integer' || field.type === 'reference') {
+                setByPath(obj, field.path, result.readUint32LE(i + field.start))
+              } else if (field.type === 'number') {
+                setByPath(obj, field.path, result.readFloatLE(i + field.start))
+              }
             }
           }
+          i += this.type.mainLen
         }
 
         arr.push(obj)
