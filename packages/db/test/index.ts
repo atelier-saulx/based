@@ -344,7 +344,7 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 2e6 - 1; i++) {
+  for (let i = 0; i < 100e6 - 1; i++) {
     db.create('simple', {
       // user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
@@ -368,17 +368,18 @@ test.serial.only('query + filter', async (t) => {
 
   // READ CACHE SIZE []
 
-  const d = Date.now()
-  const ids = db
-    .query('simple')
-    .filter(['vectorClock', '>', 1])
-    // .filter(['refs', 'has', [2]])
-    // .or(['refs', 'has', [1234]])
-    // .sort('vectorClock', 'asc')
-    .range(0, 1000)
-    .get()
+  // const d = Date.now()
+  // const ids = db
+  //   .query('simple')
+  //   .filter(['vectorClock', '>', 1])
+  //   // .filter(['refs', 'has', [2]])
+  //   // .or(['refs', 'has', [1234]])
+  //   // .sort('vectorClock', 'asc')
+  //   .range(0, 1000)
+  //   .get()
 
-  console.info('query result ==', ids, Date.now() - d, 'ms')
+  // console.info('query result ==', ids, Date.now() - d, 'ms')
 
+  await wait(10e3)
   t.true(true)
 })

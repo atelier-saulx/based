@@ -14,6 +14,7 @@ export const modifyBuffer = {
 
 export const flushBuffer = (db: BasedDb) => {
   if (modifyBuffer.len) {
+    console.log('flush')
     dbZig.modify(modifyBuffer.buffer, modifyBuffer.len)
     modifyBuffer.len = 0
     modifyBuffer.typePrefix = new Uint8Array([0, 0])

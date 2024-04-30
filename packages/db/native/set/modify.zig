@@ -6,6 +6,9 @@ const globals = @import("../globals.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db.zig");
 
+var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+const allocator = arena.allocator();
+
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
@@ -21,32 +24,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const batch = try napi.getBuffer("modifyBatch", env, args[0]);
     const size = try napi.getInt32("batchSize", env, args[1]);
 
-    if (!Envs.dbEnvIsDefined) {
-        return error.MDN_ENV_UNDEFINED;
-    }
-
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    // needs type as well... (5 in total)
-    var shards = std.AutoHashMap([3]u8, db.Shard).init(allocator);
-    defer {
-        var it = shards.iterator();
-        while (it.next()) |shard| {
-            db.closeDbi(shard.value_ptr);
-        }
-    }
-
-    const txn = try db.createTransaction(false);
+    var typesAndFields = std.AutoHashMap([3]u8, std.AutoHashMap(u32, []const u8)).init(allocator);
 
     var i: usize = 0;
     var keySize: u8 = undefined;
     var field: u8 = undefined;
     var type_prefix: [2]u8 = undefined;
     var id: u32 = undefined;
-    var currentShard: u8 = 0;
+    // var currentShard: u8 = 0;
 
+    var currentNodes: ?std.AutoHashMap(u32, []const u8) = undefined;
     // type_prefix: [2]u8, field: u8, shard: u8
 
     while (i < size) {
@@ -55,40 +42,39 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // SWITCH FIELD
             field = batch[i + 1];
             keySize = batch[i + 2];
-            // std.debug.print("got field selection keysize: {d} field: {d} id:{d}\n", .{ keySize, field, id });
+
+            const typeField = .{ type_prefix[0], type_prefix[1], field };
+            std.debug.print("typeField {any}\n", .{typeField});
+
+            currentNodes = typesAndFields.get(typeField);
+
+            if (currentNodes == null) {
+                try typesAndFields.put(typeField, std.AutoHashMap(u32, []const u8).init(allocator));
+                currentNodes = typesAndFields.get(typeField);
+                std.debug.print("make currentNodes {any}", .{typeField});
+            }
+
             i = i + 1 + 2;
         } else if (operation == 1) {
             // SWITCH KEY
             id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             // todo can be optmized
-            currentShard = @truncate(@divFloor(id, 1_000_000));
+            // currentShard = @truncate(@divFloor(id, 1_000_000));
             i = i + 1 + 4;
         } else if (operation == 2) {
             // SWITCH TYPE
             type_prefix[0] = batch[i + 1];
             type_prefix[1] = batch[i + 2];
+
             // std.debug.print("got type selection type: {any}\n", .{type_prefix});
             i = i + 1 + 2;
         } else if (operation == 3) {
             // 4 will be MERGE
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const shardKey = db.getShardKey(field, currentShard);
 
-            var shard = shards.get(shardKey);
-            if (shard == null) {
-                shard = try db.openShard(true, type_prefix, shardKey, txn);
+            // auto copies
+            try currentNodes.?.put(id, batch[i + 5 .. i + 5 + operationSize]);
 
-                if (shard != null) {
-                    try shards.put(shardKey, shard.?);
-                }
-            }
-            if (shard != null) {
-                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = null };
-                k.mv_data = &id;
-                var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
-
-                try errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
-            }
             i = i + operationSize + 1 + 4;
         } else {
             // ERROR
@@ -96,13 +82,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             break;
         }
     }
-
-    var it = shards.iterator();
-    while (it.next()) |shard| {
-        db.closeCursor(shard.value_ptr);
-    }
-
-    try errors.mdbCheck(c.mdb_txn_commit(txn));
 
     return null;
 }

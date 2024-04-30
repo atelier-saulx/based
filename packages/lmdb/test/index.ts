@@ -344,7 +344,7 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 2e6 - 1; i++) {
+  for (let i = 0; i < 100e6 - 1; i++) {
     db.create('simple', {
       // user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
