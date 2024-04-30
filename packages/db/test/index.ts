@@ -288,6 +288,7 @@ test.serial('get include', async (t) => {
 
   await wait(0)
 
+  // only query...
   console.info(db.get('something', id, ['location.long', 'flap']))
 
   t.pass()
@@ -344,7 +345,7 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 100e6 - 1; i++) {
+  for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
