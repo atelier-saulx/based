@@ -17,17 +17,12 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
 
 // TODO shard needs to be [2]u8
 pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: u8, shard2: u8) ![5]u8 {
+    if (shard == 0 and shard2 != 0) {
+        // this will be a 2M shard (too bad...)
 
-    // fix
-
-    const all_together: [5]u8 = .{ type_prefix[0], type_prefix[1], field, shard + 48, shard2 + 48 };
-    // _ = try std.fmt.bufPrint(all_together[0..5], "{s}{c}{s}{c}", .{
-    //     type_prefix,
-    //     field + 48, // field prob 2 as well
-    //     "s",
-    //     shard + 48, // shard should be 2 PRIORITY
-    // });
-    return all_together;
+        return .{ type_prefix[0], type_prefix[1], field, 255, 255 - shard2 };
+    }
+    return .{ type_prefix[0], type_prefix[1], field, shard, shard2 };
 }
 
 // TODO shard needs to be [2]u8
@@ -50,7 +45,7 @@ pub fn openDbi(comptime create: bool, name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi
 
 pub fn openShard(comptime create: bool, type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
     var dbiName = try createDbiName(type_prefix, shardKey[0], shardKey[1], shardKey[2]);
-    std.debug.print("DBI: {s}\n", .{dbiName});
+    std.debug.print("DBI: {any}\n", .{dbiName});
 
     const dbi = try openDbi(create, &dbiName, txn);
 
