@@ -137,14 +137,15 @@ export class Query {
   }
 
   include(fields: string[]) {
-    // step 1
+    this.includeFields = this.includeFields
+      ? [...this.includeFields, ...fields]
+      : fields
     return this
   }
 
   get(): { items: number[]; total: number; offset: number; limit: number } {
     let includeBuffer: Buffer
     let len = 0
-
     if (!this.includeFields) {
       len = 1
       const fields = this.type.fields
@@ -164,6 +165,26 @@ export class Query {
           includeBuffer[i] = field.field
         }
       }
+    } else {
+      let includesMain = false
+      const arr = []
+      for (const f of this.includeFields) {
+        const field = this.type.fields[f]
+        if (!field) {
+          continue
+        }
+        if (field.seperate) {
+          len += 1
+          arr.push(field.field)
+        } else {
+          if (!includesMain) {
+            includesMain = true
+            len += 1
+            arr.push(0)
+          }
+        }
+      }
+      includeBuffer = Buffer.from(arr)
     }
 
     if (this.conditions) {
@@ -201,8 +222,7 @@ export class Query {
 
       // will be actual results!
 
-      // const arr = new Array(result.byteLength / 4)
-
+      // --------- OPTIMIZATION NEEDED ------------------
       const arr = []
       let lastTarget
       // console.log(new Uint8Array(result))
@@ -225,6 +245,11 @@ export class Query {
           for (const f in this.type.fields) {
             const field = this.type.fields[f]
             if (!field.seperate) {
+              if (this.includeFields) {
+                if (!this.includeFields.includes(f)) {
+                  continue
+                }
+              }
               if (field.type === 'integer' || field.type === 'reference') {
                 setByPath(
                   lastTarget,
@@ -242,8 +267,6 @@ export class Query {
           }
           i += this.type.mainLen
         } else {
-          // lets go
-
           const size = result.readUInt16LE(i)
           i += 2
 
@@ -268,11 +291,10 @@ export class Query {
               }
             }
           }
-
-          // lullz
           i += size
         }
       }
+      // -----------------------------------------------------------------
 
       return {
         items: arr,
