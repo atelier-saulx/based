@@ -123,13 +123,6 @@ struct SelvaHierarchy {
     struct hierarchy_index_tree index_head;
     struct mempool nodepool[HIERARCHY_NODEPOOL_COUNT];
 
-    /**
-     * Root node.
-     */
-    struct SelvaHierarchyNode root;
-#define HIERARCHY_ROOT_NR_EMB_FIELDS 2
-    char root_emb_fields[SELVA_OBJECT_EMB_SIZE(HIERARCHY_ROOT_NR_EMB_FIELDS)];
-
     /*
      * Schema.
      */

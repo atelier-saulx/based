@@ -49,11 +49,13 @@ struct SelvaNodeSchema *SelvaSchema_FindNodeSchema(struct SelvaHierarchy *hierar
     ssize_t idx;
 
     idx = find_node_type(hierarchy->types, type);
-    if (idx >= 0) {
-        return &hierarchy->schema->node[idx];
+    if (idx < 0) {
+        /* FIXME We should make sure we verify type before entering here. */
+        SELVA_LOG(SELVA_LOGL_CRIT, "Schema not found");
+        exit(EXIT_SUCCESS);
     }
 
-    return SelvaSchema_FindNodeSchema(hierarchy, "ro");
+    return &hierarchy->schema->node[idx];
 }
 
 struct SelvaFieldSchema *SelvaSchema_FindFieldSchema(struct SelvaNodeSchema *ns, char field_name[SELVA_SHORT_FIELD_NAME_LEN])
@@ -107,16 +109,6 @@ static struct SelvaSchema *alloc_schema(size_t nr_types)
     schema->count = nr_types;
 
     return schema;
-}
-
-static void apply_root_schema(struct SelvaNodeSchema *ns)
-{
-    *ns = (struct SelvaNodeSchema){
-        .nr_emb_fields = HIERARCHY_ROOT_NR_EMB_FIELDS,
-        .created_en = true,
-        .updated_en = true,
-    };
-    Edge_InitEdgeFieldConstraints(&ns->efc);
 }
 
 /**
@@ -173,6 +165,7 @@ static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TY
     return 0;
 }
 
+/* TODO New schema must be a super set of old schema or all old nodes must have been deleted. */
 static void schema_set(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     struct SelvaHierarchy *hierarchy = main_hierarchy;
@@ -188,8 +181,6 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
         return;
     }
 
-    bool implicit_root = true;
-
     for (size_t i = 0; i < (size_t)argc; i++) {
         size_t len;
         const char *buf = selva_string_to_str(argv[i], &len);
@@ -197,10 +188,6 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
         if (len < sizeof(struct client_node_schema)) {
             selva_send_errorf(resp, SELVA_EINVAL, "Invalid schema argument at %zu", i);
             return;
-        }
-
-        if (!memcmp("ro", &buf[offsetof(struct client_node_schema, type)], SELVA_NODE_TYPE_SIZE)) {
-            implicit_root = false;
         }
 
         const size_t field_schemas_len = letoh(*(size_t *)memcpy(&(size_t){0}, &buf[offsetof(struct client_node_schema, field_schemas_len)], sizeof(size_t)));
@@ -216,7 +203,7 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
         }
     }
 
-    const size_t nr_types = argc + implicit_root;
+    const size_t nr_types = argc;
     char *types = alloc_types(nr_types);
     struct SelvaSchema *schema = alloc_schema(nr_types);
 
@@ -233,13 +220,6 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
             selva_send_errorf(resp, SELVA_EINVAL, "Invalid field_schema at %zu", i);
             return;
         }
-    }
-
-    if (implicit_root) {
-        size_t i = nr_types - 1;
-        types[i * SELVA_NODE_TYPE_SIZE] = 'r';
-        types[i * SELVA_NODE_TYPE_SIZE + 1] = 'o';
-        apply_root_schema(&schema->node[i]);
     }
 
     selva_free(hierarchy->types);
@@ -294,12 +274,8 @@ static void schema_get(struct selva_server_response_out *resp, const void *buf _
 
 void SelvaSchema_SetDefaultSchema(struct SelvaHierarchy *hierarchy)
 {
-    char *types = alloc_types(1);
-    struct SelvaSchema  *schema = alloc_schema(1);
-
-    types[0] = 'r';
-    types[1] = 'o';
-    apply_root_schema(&schema->node[0]);
+    char *types = alloc_types(0);
+    struct SelvaSchema  *schema = alloc_schema(0);
 
     hierarchy->types = types;
     hierarchy->schema = schema;

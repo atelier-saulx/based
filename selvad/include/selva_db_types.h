@@ -23,10 +23,6 @@
  */
 #define SELVA_SCA_NODE_TYPE     "2s"
 /**
- * NodeId of the root node.
- */
-#define ROOT_NODE_ID            "root\0\0\0\0\0\0\0\0\0\0\0\0"
-/**
  * An empty nodeId.
  */
 #define EMPTY_NODE_ID           "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"

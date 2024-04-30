@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -24,12 +24,6 @@ int SelvaResolve_NodeId(
         Selva_NodeId node_id) {
     int res = SELVA_ENOENT;
 
-    if (nr_ids == 0) {
-        memcpy(node_id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE);
-
-        return 0;
-    }
-
     for (size_t i = 0; i < nr_ids; i++) {
         const struct selva_string *id = ids[i];
         TO_STR(id);
@@ -47,12 +41,6 @@ int SelvaResolve_NodeId(
         /* Check if we have a node with this id. */
         if (id_len <= SELVA_NODE_ID_SIZE) {
             Selva_NodeIdCpy(node_id, id_str);
-
-            /* We assume that root always exists. */
-            if (!memcmp(node_id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-                res = SELVA_RESOLVE_NODE_ID | i;
-                break;
-            }
 
             if (SelvaHierarchy_NodeExists(hierarchy, node_id)) {
                 res = SELVA_RESOLVE_NODE_ID | i;
@@ -147,11 +135,7 @@ static void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, c
         selva_send_null(resp);
         selva_send_null(resp);
     } else {
-        if (nr_ids == 0) {
-            selva_send_str(resp, ROOT_NODE_ID, Selva_NodeIdLen(ROOT_NODE_ID));
-        } else {
-            selva_send_string(resp, ids[(resolved & ~SELVA_RESOLVE_FLAGS)]);
-        }
+        selva_send_string(resp, ids[(resolved & ~SELVA_RESOLVE_FLAGS)]);
         selva_send_str(resp, node_id, Selva_NodeIdLen(node_id));
     }
 }

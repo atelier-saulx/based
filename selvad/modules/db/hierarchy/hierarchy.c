@@ -187,9 +187,6 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
-    (void)init_node(hierarchy, &hierarchy->root, ROOT_NODE_ID);
-    assert(!memcmp(hierarchy->root.id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)); /* should be set by now. */
-
     SVector_Init(&hierarchy->expiring.list, 0, SVector_HierarchyNode_expire_compare);
     hierarchy->expiring.next = HIERARCHY_EXPIRING_NEVER;
     hierarchy->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
@@ -345,17 +342,13 @@ static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchy
  * Search from the normal node index.
  */
 static SelvaHierarchyNode *find_node_index(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
-    if (!memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        return &hierarchy->root;
-    } else {
-        struct SelvaHierarchySearchFilter filter;
-        SelvaHierarchyNode *node;
+    struct SelvaHierarchySearchFilter filter;
+    SelvaHierarchyNode *node;
 
-        memcpy(&filter.id, id, SELVA_NODE_ID_SIZE);
-        node = RB_FIND(hierarchy_index_tree, &hierarchy->index_head, (SelvaHierarchyNode *)(&filter));
+    memcpy(&filter.id, id, SELVA_NODE_ID_SIZE);
+    node = RB_FIND(hierarchy_index_tree, &hierarchy->index_head, (SelvaHierarchyNode *)(&filter));
 
-        return node;
-    }
+    return node;
 }
 
 SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
@@ -449,36 +442,21 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
 static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const int send_events = !isLoading();
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
-    Selva_NodeId id;
-    int is_root;
-
-    memcpy(id, node->id, SELVA_NODE_ID_SIZE);
-    is_root = !memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE);
 
     if (send_events) {
         SelvaSubscriptions_DeferTriggerEvents(hierarchy, node, SELVA_SUBSCRIPTION_TRIGGER_TYPE_DELETED);
     }
 
     delete_all_node_aliases(hierarchy, obj);
+    RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
+    SelvaHierarchy_DestroyNode(hierarchy, node);
 
-    /*
-     * Never delete the root node.
-     */
-    if (is_root) {
-        SelvaHierarchy_ClearNodeFields(obj);
-
-        /*
-         * There might be something to collect if this was a large hierarchy.
-         * Regardless, running the gc is a relatively cheap operation and makes
-         * sense here.
-         */
+    /* TODO Do this sometimes. */
+#if 0
         for (size_t i = 0; i < HIERARCHY_NODEPOOL_COUNT; i++) {
             mempool_gc(&hierarchy->nodepool[i]);
         }
-    } else {
-        RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
-        SelvaHierarchy_DestroyNode(hierarchy, node);
-    }
+#endif
 }
 
 /**
