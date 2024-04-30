@@ -47,6 +47,7 @@ export type SchemaTypeDef = {
   cnt: number
   checksum: number
   total: number
+  type: string
   lastId: number
   mainLen: number
   buf: Buffer
@@ -74,11 +75,12 @@ const prefixStringToUint8 = (
 }
 
 export const createSchemaTypeDef = (
+  typeName: string,
   type: BasedSchemaType | BasedSchemaFieldObject,
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
     checksum: hashObjectIgnoreKeyOrder(type),
-
+    type: typeName,
     fields: {},
     prefix: prefixStringToUint8(type),
     mainLen: 0,
@@ -108,7 +110,7 @@ export const createSchemaTypeDef = (
     const f = target[key]
     const p = [...path, key]
     if (f.type === 'object') {
-      createSchemaTypeDef(f, result, p, false)
+      createSchemaTypeDef(typeName, f, result, p, false)
     } else {
       const len = SIZE_MAP[f.type]
       const isSeperate = len === 0
@@ -160,8 +162,10 @@ export const createSchemaTypeDef = (
     result.buf[1] = result.prefix[1]
 
     const fieldNames = []
+    const tNameBuf = encoder.encode(typeName)
+    fieldNames.push(tNameBuf)
 
-    let fieldNameLen = 0
+    let fieldNameLen = tNameBuf.byteLength + 1
     let i = 2
     if (result.mainLen) {
       result.buf[i] = 0
@@ -225,7 +229,8 @@ export const readSchemaTypeDefFromBuffer = (
     isMain = true
     j++
   }
-  let currentName = 0
+  const type = names[0]
+  let currentName = 1
   let cnt = 0
   let mainLen = 0
   while (j < buf.byteLength) {
@@ -290,6 +295,7 @@ export const readSchemaTypeDefFromBuffer = (
     seperate,
     cnt,
     buf,
+    type,
     fieldNames,
     checksum: 0,
     mainLen,

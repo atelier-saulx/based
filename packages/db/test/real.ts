@@ -52,6 +52,7 @@ test.serial.only('query + filter', async (t) => {
   console.log(
     'SCHEMA',
     db.schemaTypesParsed.simple.cnt,
+    // 66 length
     db.schemaTypesParsed.simple.buf,
     db.schemaTypesParsed.simple.fieldNames
   )
