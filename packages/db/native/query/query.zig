@@ -94,7 +94,8 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
-        // ----------------------------------
+        // ---------------- this needs a lot of optmization... --------------------------
+        // like copying directly into the node buffer...
         total_results += 1;
         // make this into a fn
         var includeIterator: u8 = 0;
@@ -131,7 +132,7 @@ fn getQueryInternal(
                 total_size += (v.mv_size + 1);
             }
         }
-        // ----------------------------------
+        // --------------------------------------------------------------------------------
     }
 
     var data: ?*anyopaque = undefined;
@@ -144,7 +145,6 @@ fn getQueryInternal(
     var last_pos: usize = 0;
     for (results.items) |*key| {
         var dataU8 = @as([*]u8, @ptrCast(data));
-
         if (key.id != null) {
             dataU8[last_pos] = 255;
             last_pos += 1;
@@ -152,25 +152,19 @@ fn getQueryInternal(
             last_pos += 4;
             std.debug.print("got id: {any}\n", .{key.id});
         }
-
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
-
         if (key.field != 0) {
             const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
             dataU8[last_pos] = x[0];
             dataU8[last_pos + 1] = x[1];
             last_pos += 2;
         }
-
         @memcpy(
             dataU8[last_pos .. last_pos + key.val.?.mv_size],
             @as([*]u8, @ptrCast(key.val.?.mv_data)),
         );
-
         last_pos += key.val.?.mv_size;
-
-        // @memcpy(dataU8[last_pos .. last_pos + key.size], @as([*]u8, @ptrCast(&key.val)));
     }
 
     // GET
