@@ -373,7 +373,7 @@ test.serial.only('query + filter', async (t) => {
   const ids = db
     .query('simple')
     .filter(['vectorClock', '>', 1])
-    .include(['user'])
+    .include(['flap', 'refs']) // now support location (getting the whole object)
     .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
