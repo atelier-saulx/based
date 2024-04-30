@@ -19,11 +19,14 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
 }
 
 const TYPE_INDEX: Map<BasedSchemaFieldType, number> = new Map()
+const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map()
 
 let index = 0
 for (const key in SIZE_MAP) {
   // @ts-ignore
   TYPE_INDEX.set(key, index)
+  // @ts-ignore
+  REVERSE_TYPE_INDEX.set(index, key)
   index++
 }
 
@@ -47,7 +50,7 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
-  fieldNames: string[]
+  fieldNames: Buffer
   fields: {
     // path including .
     [key: string]: FieldDef
@@ -75,19 +78,24 @@ export const createSchemaTypeDef = (
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
     checksum: hashObjectIgnoreKeyOrder(type),
-    total: 0,
-    lastId: 0,
-    fieldNames: [],
+
     fields: {},
     prefix: prefixStringToUint8(type),
     mainLen: 0,
     prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
     tree: {},
+
+    // temporary
+    total: 0,
+    // also temprorary
+    lastId: 0,
   },
   path: string[] = [],
   top: boolean = true
 ): SchemaTypeDef => {
+  const encoder = new TextEncoder()
+
   let target: { [key: string]: BasedSchemaField }
 
   if ('type' in type && 'properties' in type) {
@@ -143,12 +151,17 @@ export const createSchemaTypeDef = (
 
     /*
       [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
+      // [type, type][field if 0 means main][if main fieldType]...[if 0 ends main][fieldName 1][fieldType]...
       // make buffer
       [“MYTYPE”,“flap”,”xx”,”bla.bla”,”bla.x”]
     */
     result.buf = Buffer.allocUnsafe(len)
     result.buf[0] = result.prefix[0]
     result.buf[1] = result.prefix[1]
+
+    const fieldNames = []
+
+    let fieldNameLen = 0
     let i = 2
     if (result.mainLen) {
       result.buf[i] = 0
@@ -156,7 +169,9 @@ export const createSchemaTypeDef = (
         if (!f.seperate) {
           i++
           result.buf[i] = f.typeByte
-          result.fieldNames.push(f.path.join('.'))
+          const name = encoder.encode(f.path.join('.'))
+          fieldNames.push(name)
+          fieldNameLen += name.byteLength + 1
         }
       }
       i++
@@ -168,10 +183,120 @@ export const createSchemaTypeDef = (
         result.buf[i] = f.field
         i++
         result.buf[i] = f.typeByte
-        result.fieldNames.push(f.path.join('.'))
+        const name = encoder.encode(f.path.join('.'))
+        fieldNames.push(name)
+        fieldNameLen += name.byteLength + 1
       }
+    }
+
+    result.fieldNames = Buffer.allocUnsafe(fieldNameLen)
+    let lastWritten = 0
+    for (const f of fieldNames) {
+      result.fieldNames[lastWritten] = f.byteLength
+      result.fieldNames.set(f, lastWritten + 1)
+      lastWritten += f.byteLength + 1
     }
   }
 
   return result as SchemaTypeDef
+}
+
+export const readSchemaTypeDefFromBuffer = (
+  buf: Buffer,
+  fieldNames: Buffer
+): SchemaTypeDef => {
+  // hello
+  const tree: SchemaFieldTree = {}
+  const fields: {
+    // path including .
+    [key: string]: FieldDef
+  } = {}
+  const prefix = String.fromCharCode(buf[0]) + String.fromCharCode(buf[1])
+  const names: string[] = []
+  const seperate: FieldDef[] = []
+
+  let i = 0
+  const decoder = new TextDecoder()
+
+  while (i < fieldNames.byteLength) {
+    const len = fieldNames[i]
+    names.push(decoder.decode(fieldNames.slice(i + 1, i + len + 1)))
+    i += len + 1
+  }
+
+  let j = 2
+  let isMain = false
+  if (buf[j] === 0) {
+    isMain = true
+    j++
+  }
+  let currentName = 0
+  let mainLen = 0
+  while (j < buf.byteLength) {
+    if (isMain) {
+      const typeByte = buf[j]
+      if (typeByte === 0) {
+        isMain = false
+        j++
+        continue
+      }
+      const typeName = REVERSE_TYPE_INDEX.get(typeByte)
+      const name = names[currentName]
+      const path = name.split('.')
+      const len = SIZE_MAP[typeName]
+      const field: FieldDef = {
+        __isField: true,
+        field: 0,
+        type: typeName,
+        typeByte,
+        seperate: false,
+        path,
+        start: mainLen,
+        len,
+      }
+      fields[name] = field
+      setByPath(tree, path, field)
+      mainLen += len
+      currentName++
+      j++
+    } else {
+      const fieldIndex = buf[j]
+      const typeByte = buf[j + 1]
+      const typeName = REVERSE_TYPE_INDEX.get(typeByte)
+      const name = names[currentName]
+      const path = name.split('.')
+      const len = SIZE_MAP[typeName]
+      const field: FieldDef = {
+        __isField: true,
+        field: fieldIndex,
+        type: typeName,
+        typeByte,
+        seperate: false,
+        path,
+        start: mainLen,
+        len,
+      }
+      fields[name] = field
+      seperate.push(field)
+      setByPath(tree, path, field)
+      currentName++
+      j += 2
+    }
+  }
+
+  return {
+    prefix: new Uint8Array([buf[0], buf[1]]),
+    prefixString: prefix,
+    tree,
+    fields,
+    seperate,
+    cnt: 0,
+    buf,
+    fieldNames,
+    checksum: 0,
+    mainLen,
+    // this is tmp
+    total: 0,
+    lastId: 0,
+  }
 }

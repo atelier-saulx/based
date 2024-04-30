@@ -2,7 +2,7 @@ import test from 'ava'
 import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
-import { BasedDb } from '../src/index.js'
+import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -30,6 +30,7 @@ test.serial.only('query + filter', async (t) => {
   db.updateSchema({
     types: {
       simple: {
+        prefix: 'aa',
         fields: {
           flap: { type: 'string' },
           refs: { type: 'references', allowedTypes: ['user'] },
@@ -53,6 +54,14 @@ test.serial.only('query + filter', async (t) => {
     db.schemaTypesParsed.simple.fieldNames
   )
 
+  console.log(
+    'SCHEMA BACK',
+    readSchemaTypeDefFromBuffer(
+      db.schemaTypesParsed.simple.buf,
+      db.schemaTypesParsed.simple.fieldNames
+    ).fields
+  )
+
   const refs = []
   for (let i = 1; i < 10 - 1; i++) {
     refs.push(i)
@@ -61,7 +70,7 @@ test.serial.only('query + filter', async (t) => {
   var dx = Date.now()
   console.log('GO!')
 
-  for (let i = 0; i < 100e6 - 1; i++) {
+  for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: i,
       // refs: [0, 1, 2], //generateRandomArray(),

@@ -6,7 +6,7 @@ const results = db
   .filter(
     ['sections', 'has', ['se123', 'se321']],
     ['published', '=', true],
-    ['publishedDate', '>', 'now - 1week'],
+    ['publishedDate', '>', 'now - 1week']
   )
   .range(0, 100)
 
@@ -18,13 +18,14 @@ db.query('article')
       .filter(['age', '>', 12])
       .includeReferences('friends', (friends) => {
         friends.include(['age'])
-      }),
+      })
   )
   .includeReferences('sections', (sections) => {
     sections.include(['name', 'age']).filter(['age', '>', 12])
   })
 
 db.query('article').filter(['publishedDate', '>', 'now-1week'])
+
 // not nessecary traverse escpases context
 // .traverseReferences('contributors', (contributors) =>
 //   contributors
@@ -60,7 +61,7 @@ db.query('article')
   .traverse('bank.country')
   .include('name', 'code', { transactions: 'count(transactions)' })
   .references('banks', (banks) =>
-    banks.sort('transactions').include('website', 'name').range(0, 10),
+    banks.sort('transactions').include('website', 'name').range(0, 10)
   )
 
 // countries: [ { name: 'netherlands', code: 'NL', transactions: 1e6, banks: [{name: 'ing', website: 'ing.nl'}] }  ]
@@ -129,7 +130,7 @@ db.query('co1.articles')
   .filter(
     ['sections', 'has', ['se123', 'se321']],
     ['published', '=', true],
-    ['publishedDate', '>', 'now - 1week'],
+    ['publishedDate', '>', 'now - 1week']
   )
   // .or('publishedDate', '>', 'now - 1h')
   .include('id', 'name', 'publishDate')
@@ -140,14 +141,14 @@ db.query('article')
   .filter(
     ['publishedDate', '>', 'now-1week'],
     ['section', 'includes', sections],
-    ['articleType', 'includes', articleTypes],
+    ['articleType', 'includes', articleTypes]
   )
   .exclude('body')
   .references('section', (section) =>
-    section.filter('hidden', '=', false).include('title'),
+    section.filter('hidden', '=', false).include('title')
   )
   .references('articleType', (articleType) =>
-    articleType.filter('hidden', '=', false).include('title'),
+    articleType.filter('hidden', '=', false).include('title')
   )
   .sort(mostRead ? 'hits' : 'publishedDate')
   .range(0, 10)

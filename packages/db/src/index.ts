@@ -1,14 +1,14 @@
 import { create, update } from './set.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
-import { SchemaTypeDef, createSchemaTypeDef } from './createSchemaTypeDef.js'
+import { SchemaTypeDef, createSchemaTypeDef } from './schemaTypeDef.js'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import dbZig from './db.js'
 import { Query, query } from './query.js'
 
-export * from './createSchemaTypeDef.js'
+export * from './schemaTypeDef.js'
 export * from './get.js'
 export * from './set.js'
 
