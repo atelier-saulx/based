@@ -171,8 +171,6 @@ export const createSchemaTypeDef = (
         result.fieldNames.push(f.path.join('.'))
       }
     }
-
-    console.log('LAST WRITTEN 2', i, result)
   }
 
   return result as SchemaTypeDef
