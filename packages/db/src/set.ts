@@ -11,7 +11,7 @@ const setCursor = (
   schema: SchemaTypeDef,
   t: FieldDef,
   id: number,
-  ignoreField?: boolean,
+  ignoreField?: boolean
 ) => {
   // 0 switch field
   // 1 switch id
@@ -60,7 +60,7 @@ const addModify = (
   id: number,
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
-  schema: SchemaTypeDef,
+  schema: SchemaTypeDef
 ) => {
   for (const key in obj) {
     const leaf = tree[key]
@@ -105,7 +105,7 @@ const addModify = (
           modifyBuffer.buffer[modifyBuffer.len] = 3
           modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
-            modifyBuffer.len + 1,
+            modifyBuffer.len + 1
           )
           mainIndex = modifyBuffer.lastMain = modifyBuffer.len + 1 + 4
           modifyBuffer.len += nextLen
@@ -113,6 +113,7 @@ const addModify = (
         if (t.type === 'timestamp' || t.type === 'number') {
           modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
         } else if (t.type === 'integer' || t.type === 'reference') {
+          // enum
           modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
         } else if (t.type === 'boolean') {
           modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
@@ -138,7 +139,7 @@ export const update = (
   type: string,
   id: number,
   value: any,
-  merge?: boolean,
+  merge?: boolean
 ) => {
   const def = db.schemaTypesParsed[type]
   addModify(db, id, value, def.tree, def)

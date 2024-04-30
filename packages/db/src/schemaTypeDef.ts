@@ -14,6 +14,7 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   integer: 4, // 32bit Unisgned 4  16bit
   boolean: 1, // 1bit (6 bits overhead)
   reference: 4,
+  enum: 4, // enum
   string: 0, // var length fixed length will be different
   references: 0,
 }
@@ -205,6 +206,7 @@ export const createSchemaTypeDef = (
   return result as SchemaTypeDef
 }
 
+// TODO add enum in fields names!!!
 export const readSchemaTypeDefFromBuffer = (
   buf: Buffer,
   fieldNames: Buffer
@@ -297,9 +299,10 @@ export const readSchemaTypeDefFromBuffer = (
     buf,
     type,
     fieldNames,
+    // TODO this is still incorrect
     checksum: 0,
     mainLen,
-    // this is tmp
+    // this is tmp has to be removed
     total: 0,
     lastId: 0,
   }

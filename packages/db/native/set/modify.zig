@@ -45,7 +45,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     var field: u8 = undefined;
     var type_prefix: [2]u8 = undefined;
     var id: u32 = undefined;
-    var currentShard: u8 = 0;
+    var currentShard: [2]u8 = .{ 0, 0 };
 
     // type_prefix: [2]u8, field: u8, shard: u8
 
@@ -61,7 +61,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // SWITCH KEY
             id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             // todo can be optmized
-            currentShard = @truncate(@divFloor(id, 1_000_000));
+            currentShard = @bitCast(@as(u16, @truncate(@divFloor(id, 1_000_000))));
             i = i + 1 + 4;
         } else if (operation == 2) {
             // SWITCH TYPE

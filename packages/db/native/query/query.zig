@@ -38,7 +38,7 @@ fn getQueryInternal(
     var results = std.ArrayList(u32).init(allocator);
 
     var i: u32 = offset + 1;
-    var currentShard: u8 = 0;
+    var currentShard: u16 = 0;
     var total_results: usize = 0;
 
     checkItem: while (i <= last_id and total_results <= offset + limit) : (i += 1) {
@@ -54,7 +54,7 @@ fn getQueryInternal(
                 .little,
             );
             const field = queries[fieldIndex];
-            const shardKey = db.getShardKey(field, currentShard);
+            const shardKey = db.getShardKey(field, @bitCast(currentShard));
             var shard = shards.get(shardKey);
             if (shard == null) {
                 shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
