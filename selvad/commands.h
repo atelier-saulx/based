@@ -186,19 +186,10 @@
  */
 #define CMD_ID_HIERARCHY_EDGE_GET_METADATA 32
 
-/**
- * Compress a hierarchy subtree.
- * module: db
- * cmd: hierarchy.compress
- */
-#define CMD_ID_HIERARCHY_COMPRESS 33
 
-/**
- * List compressed hierarchy subtrees.
- * module: db
- * cmd: hierarchy.listCompressed
+/*
+ * HOLE 33, 34
  */
-#define CMD_ID_HIERARCHY_LIST_COMPRESSED 34
 
 /**
  * Get io version information.

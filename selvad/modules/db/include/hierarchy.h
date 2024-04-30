@@ -92,37 +92,17 @@ RB_HEAD(hierarchy_subscriptions_tree, Selva_Subscription);
 RB_HEAD(hierarchy_subscription_markers_tree, Selva_SubscriptionMarker);
 
 /**
- * Node flags changing the node behavior.
- */
-enum SelvaNodeFlags {
-    /**
-     * Detached node.
-     * When set this is the head of a compressed subtree stored in
-     * hierarchy_detached. Some information has been removed from the node
-     * and the subtree must be restored to make this node usable.
-     */
-    SELVA_NODE_FLAGS_DETACHED = 0x01,
-    /**
-     * Implicitly created node.
-     * Nodes that are created through child or references lists are implicit.
-     * The flag should be cleared when the node is actually taken into use.
-     */
-    SELVA_NODE_FLAGS_IMPLICIT = 0x02,
-} __packed;
-
-/**
  * The core type of Selva hierarchy.
  */
 typedef struct SelvaHierarchyNode {
     Selva_NodeId id; /* Must be first. */
-    enum SelvaNodeFlags flags: 2;
 #define SELVA_HIERARCHY_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.
      * 0 = never expires
      * max_life = <epoch year>+(2^<bits>)/60/60/24/365
      */
-    uint32_t expire: 30;
+    uint32_t expire;
     struct trx_label trx_label;
     struct SelvaHierarchyMetadata metadata;
     RB_ENTRY(SelvaHierarchyNode) _index_entry;
@@ -229,10 +209,6 @@ struct SelvaHierarchy {
      * These are nodes potentially moving to the detached hierarchy.
      */
     struct {
-        /**
-         * A timer used by auto compression.
-         */
-        int auto_compress_timer;
         size_t nr_nodes; /*!< Size of nodes. */
         /**
          * Inactive nodeIds.
@@ -386,9 +362,6 @@ int SelvaHierarchy_GetEdgeMetadata(
 struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node);
-
-int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node)
-    __attribute((access(read_write, 1)));
 
 /**
  * Clear all user fields of a node SelvaObject.

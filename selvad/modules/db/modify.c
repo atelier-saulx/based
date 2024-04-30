@@ -1421,9 +1421,13 @@ static int parse_head_get_node(struct modify_ctx *ctx)
         int err;
 upsert:
         err = SelvaHierarchy_UpsertNode(ctx->hierarchy, ctx->head.node_id, &node);
-        if (err < 0 && err != SELVA_HIERARCHY_EEXIST) {
+        if (err == SELVA_HIERARCHY_EEXIST) {
+            ctx->created = false;
+        } else if (err < 0) {
             selva_send_errorf(ctx->resp, err, "Failed to initialize the node");
             return err;
+        } else {
+            ctx->created = true;
         }
     } else if (ctx->head.flags & (FLAG_CREATE | FLAG_UPDATE)) {
         node = SelvaHierarchy_FindNode(ctx->hierarchy, ctx->head.node_id);
@@ -1443,7 +1447,6 @@ upsert:
     }
     assert(node);
 
-    ctx->created = ctx->updated = SelvaHierarchy_ClearNodeFlagImplicit(node);
     SelvaSubscriptions_FieldChangePrecheck(ctx->hierarchy, node);
 
     if (!ctx->created && (ctx->head.flags & FLAG_NO_MERGE)) {

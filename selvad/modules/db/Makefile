@@ -10,8 +10,6 @@ OBJ := \
 	   hierarchy/edge.o \
 	   hierarchy/field_set.o \
 	   hierarchy/hierarchy.o \
-	   hierarchy/hierarchy_detached.o \
-	   hierarchy/hierarchy_inactive.o \
 	   hierarchy/hierarchy_reply.o \
 	   hierarchy/traversal.o \
 	   hierarchy/traversal_order.o \

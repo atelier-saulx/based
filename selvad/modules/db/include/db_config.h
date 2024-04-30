@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -29,15 +29,6 @@ struct selva_glob_config {
      * Range: 1 - 12
      */
     int hierarchy_compression_level;
-    /**
-     * Attempt to compress inactive nodes in-memory.
-     * 0 Disables automatic compression.
-     */
-    int hierarchy_auto_compress_period_ms;
-    /**
-     * Hierarchy auto compression transaction age limit.
-     */
-    int hierarchy_auto_compress_old_age_lim;
     /**
      * Maximum number of indices.
      * 0 = disable indexing.
