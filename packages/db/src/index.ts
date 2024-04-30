@@ -33,9 +33,17 @@ export class BasedDb {
       prefix: string,
       lastId: number,
       offset: number,
-      limit: number // def 1k ?
+      limit: number, // def 1k ?
+      includeBuffer: Buffer
     ): any => {
-      return dbZig.getQuery(conditions, prefix, lastId, offset, limit)
+      return dbZig.getQuery(
+        conditions,
+        prefix,
+        lastId,
+        offset,
+        limit,
+        includeBuffer
+      )
     },
   }
 

@@ -16,12 +16,13 @@ fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
-    const args = try napi.getArgs(5, env, info);
+    const args = try napi.getArgs(6, env, info);
     const queries = try napi.getBuffer("queries", env, args[0]);
     const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
     const last_id = try napi.getInt32("last_id", env, args[2]);
     const offset = try napi.getInt32("offset", env, args[3]);
     const limit = try napi.getInt32("limit", env, args[4]);
+    const include = try napi.getBuffer("include", env, args[5]);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -35,13 +36,18 @@ fn getQueryInternal(
     }
     const txn = try db.createTransaction(true);
 
-    var results = std.ArrayList(u32).init(allocator);
+    const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val };
+
+    var results = std.ArrayList(Result).init(allocator);
 
     var i: u32 = offset + 1;
     var currentShard: u16 = 0;
     var total_results: usize = 0;
+    var total_size: usize = 0;
 
-    checkItem: while (i <= last_id and total_results <= offset + limit) : (i += 1) {
+    std.debug.print("total: {d}\n", .{offset + limit});
+
+    checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
             currentShard += 1;
         }
@@ -76,7 +82,9 @@ fn getQueryInternal(
                 };
 
                 // here put ASM
-                if (runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {} else {
+                if (runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
+                    // keep it in mem or not?
+                } else {
                     continue :checkItem;
                 }
             } else {
@@ -86,21 +94,64 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
+        // ----------------------------------
         total_results += 1;
-        try results.append(i);
+        // make this into a fn
+        var includeIterator: u8 = 0;
+        while (includeIterator < include.len) {
+            includeIterator += 1;
+            const field: u8 = include[includeIterator];
+            std.debug.print("\nFIELD {d} include {any}\n", .{ field, include });
+            if (includeIterator == 1) {
+                const shardKey = db.getShardKey(field, @bitCast(currentShard));
+                var shard = shards.get(shardKey);
+                if (shard == null) {
+                    shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
+                    if (shard != null) {
+                        try shards.put(shardKey, shard.?);
+                    }
+                }
+                var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
+                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+                const s: Result = .{ .id = i, .field = field, .val = v };
+                total_size += v.mv_size + 4;
+                try results.append(s);
+            }
+        }
+        // ----------------------------------
     }
 
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_buffer(env, total_results * 4, &data, &result) != c.napi_ok) {
+    if (c.napi_create_buffer(env, total_size, &data, &result) != c.napi_ok) {
         return null;
     }
 
     var last_pos: usize = 0;
     for (results.items) |*key| {
-        @memcpy(@as([*]u8, @ptrCast(data))[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(key)));
+        var dataU8 = @as([*]u8, @ptrCast(data));
+
+        @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
         last_pos += 4;
+
+        std.debug.print("id: {any}\n", .{key.id});
+
+        // @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
+        // if (key.field != 0) {
+        //     std.debug.print("not first field", .{});
+        // }
+        // last_pos += 1;
+
+        @memcpy(
+            dataU8[last_pos .. last_pos + key.val.?.mv_size],
+            @as([*]u8, @ptrCast(key.val.?.mv_data)),
+        );
+
+        last_pos += key.val.?.mv_size;
+
+        // @memcpy(dataU8[last_pos .. last_pos + key.size], @as([*]u8, @ptrCast(&key.val)));
     }
 
     // GET

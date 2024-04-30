@@ -1,5 +1,6 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
 import dbZig from './db.js'
+import { setByPath } from '@saulx/utils'
 
 type Operation =
   | '='
@@ -53,6 +54,7 @@ export class Query {
   conditions: Map<number, Buffer[]>
   offset: number
   limit: number
+  includeFields: string[]
   totalConditionSize: number = 0
   constructor(db: BasedDb, target: string, previous?: Query) {
     this.db = db
@@ -134,7 +136,34 @@ export class Query {
     return this
   }
 
+  include(fields: string[]) {
+    // step 1
+    return this
+  }
+
   get(): { items: number[]; total: number; offset: number; limit: number } {
+    let includeBuffer: Buffer = Buffer.from([0])
+    let len = 0
+
+    // if (!this.includeFields) {
+    //   len = 1
+    //   const fields = this.type.fields
+    //   for (const f in fields) {
+    //     if (fields.seperate) {
+    //       len++
+    //     }
+    //   }
+    //   includeBuffer = Buffer.allocUnsafe(len)
+    //   includeBuffer[0] = 0
+    //   let i = 0
+    //   for (const f in fields) {
+    //     if (fields.seperate) {
+    //       i++
+    //       includeBuffer[i] = fields[f].field
+    //     }
+    //   }
+    // }
+
     if (this.conditions) {
       const conditions = Buffer.allocUnsafe(this.totalConditionSize)
       let lastWritten = 0
@@ -154,23 +183,59 @@ export class Query {
       const start = this.offset ?? 0
       const end = this.limit ?? 1e3
 
-      console.log(new Uint8Array(conditions))
+      console.log({
+        conditions: new Uint8Array(conditions),
+        include: new Uint8Array(includeBuffer),
+      })
 
-      const result = this.db.native.getQuery(
+      const result: Buffer = this.db.native.getQuery(
         conditions,
         this.type.prefixString,
         this.type.lastId,
         start,
-        end // def 1k ?
+        end, // def 1k ?
+        includeBuffer
       )
 
       // will be actual results!
 
-      const arr = new Array(result.byteLength / 4)
+      // const arr = new Array(result.byteLength / 4)
 
-      for (let i = 0; i < result.byteLength; i += 4) {
-        arr[i / 4] = result.readUint32LE(i)
+      const arr = []
+      // console.log(new Uint8Array(result))
+
+      for (let i = 0; i < result.byteLength; i += 4 + this.type.mainLen) {
+        // read
+        // read from tree
+        const obj = {
+          id: result.readUint32LE(i),
+        }
+
+        for (const f in this.type.fields) {
+          const field = this.type.fields[f]
+          if (!field.seperate) {
+            if (field.type === 'integer' || field.type === 'reference') {
+              setByPath(
+                obj,
+                field.path,
+                result.readUint32LE(i + 4 + field.start)
+              )
+            } else if (field.type === 'number') {
+              setByPath(
+                obj,
+                field.path,
+                result.readFloatLE(i + 4 + field.start)
+              )
+            }
+          }
+        }
+
+        arr.push(obj)
       }
+
+      // for (let i = 0; i < result.byteLength; i += 4) {
+      //   arr[i / 4] = result.readUint32LE(i)
+      // }
 
       return {
         items: arr,
