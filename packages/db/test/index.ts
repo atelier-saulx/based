@@ -345,17 +345,17 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 1e5 - 1; i++) {
+  for (let i = 0; i < 10e6 - 1; i++) {
     db.create('simple', {
-      user: i,
-      refs: [0, 1, 2], //generateRandomArray(),
+      // user: i,
+      // refs: [0, 1, 2], //generateRandomArray(),
       flap: 'AMAZING 123',
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      vectorClock: 5,
-      location: {
-        long: 52,
-        lat: 52,
-      },
+      // vectorClock: i % 4,
+      // location: {
+      // long: 52,
+      // lat: 52,
+      // },
     })
   }
 
@@ -377,7 +377,7 @@ test.serial.only('query + filter', async (t) => {
     .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
-    .range(0, 10)
+    .range(0, 1e5)
     .get()
 
   console.info('query result ==', ids, Date.now() - d, 'ms')
