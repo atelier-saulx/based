@@ -139,7 +139,7 @@ export const addToFunctionQueue = (
   payload: GenericObject,
   name: string,
   resolve: (response: any) => void,
-  reject: (err: Error) => void
+  reject: (err: Error) => void,
 ) => {
   client.requestId++
   // 3 bytes
@@ -172,7 +172,7 @@ export const addChannelSubscribeToQueue = (
   client: BasedClient,
   name: string,
   id: number,
-  payload: GenericObject
+  payload: GenericObject,
 ) => {
   const type = client.cQ.get(id)?.[0]
   if (type === 5) {
@@ -186,7 +186,7 @@ export const addChannelPublishIdentifier = (
   client: BasedClient,
   name: string,
   id: number,
-  payload: GenericObject
+  payload: GenericObject,
 ) => {
   const type = client.cQ.get(id)?.[0]
   if (type === 5 || type === 6) {
@@ -203,7 +203,7 @@ export const addChannelPublishIdentifier = (
 export const addToPublishQueue = (
   client: BasedClient,
   id: number,
-  payload: any
+  payload: any,
 ) => {
   // TODO: make this configurable at some point
   if (client.pQ.length > client.maxPublishQueue) {
@@ -228,7 +228,7 @@ export const addObsToQueue = (
   name: string,
   id: number,
   payload: GenericObject,
-  checksum: number = 0
+  checksum: number = 0,
 ) => {
   const type = client.oQ.get(id)?.[0]
   if (type === 1) {
@@ -243,7 +243,7 @@ export const addGetToQueue = (
   name: string,
   id: number,
   payload: GenericObject,
-  checksum: number = 0
+  checksum: number = 0,
 ) => {
   if (client.gQ.has(id)) {
     return
@@ -255,12 +255,12 @@ export const addGetToQueue = (
 // ------------ Auth ---------------
 export const sendAuth = async (
   client: BasedClient,
-  authState: AuthState
+  authState: AuthState,
 ): Promise<AuthState> => {
   if (deepEqual(authState, client.authState)) {
     console.warn(
       '[Based] Trying to send the same authState twice',
-      client.authState
+      client.authState,
     )
     return client.authRequest.inProgress
       ? client.authRequest.promise
@@ -269,7 +269,7 @@ export const sendAuth = async (
 
   if (client.authRequest.inProgress) {
     console.warn(
-      '[Based] Authentication still in progress - waiting until done'
+      '[Based] Authentication still in progress - waiting until done',
     )
     await client.authRequest.promise
   }
@@ -303,7 +303,7 @@ export const addStreamRegister = (
   mimeType: string,
   extension: string,
   fnName: string,
-  payload: any
+  payload: any,
 ) => {
   client.sQ.push([
     1,
@@ -323,7 +323,7 @@ export const addStreamChunk = (
   reqId: number,
   seqId: number,
   chunk: Uint8Array,
-  deflate: boolean
+  deflate: boolean,
 ) => {
   // lets send the chunks of streams directly
   // also need to keep the amount we push in here to a minimum

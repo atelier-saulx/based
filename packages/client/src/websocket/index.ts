@@ -6,7 +6,7 @@ import { isStreaming } from '../stream/index.js'
 
 import WebSocket from 'isomorphic-ws'
 
-type ActiveFn = (isActive: boolean) => void
+type ActiveFn = (isActive: boolean, isOffline: boolean) => void
 
 const activityListeners: Map<Connection, ActiveFn> = new Map()
 
@@ -14,17 +14,36 @@ let activeTimer: NodeJS.Timeout
 
 // Disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof document !== 'undefined') {
+  let putToOffline = false
+  window.addEventListener('offline', () => {
+    activityListeners.forEach((fn) => {
+      putToOffline = true
+      fn(false, true)
+    })
+  })
+
+  window.addEventListener('online', () => {
+    if (putToOffline) {
+      putToOffline = false
+      if (!document.hidden) {
+        activityListeners.forEach((fn) => {
+          fn(true, false)
+        })
+      }
+    }
+  })
+
   document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
     if (document.hidden) {
       activeTimer = setTimeout(() => {
         activityListeners.forEach((fn) => {
-          fn(false)
+          fn(false, false)
         })
       }, 30e3)
     } else {
       activityListeners.forEach((fn) => {
-        fn(true)
+        fn(true, false)
       })
     }
   })
@@ -39,7 +58,7 @@ const connect = (
     },
   },
   time = 0,
-  reconnect = false
+  reconnect = false,
 ): Connection => {
   urlLoader(url, (realUrl) => {
     setTimeout(() => {
@@ -49,20 +68,25 @@ const connect = (
 
       let isActive = true
 
-      activityListeners.set(connection, (active) => {
+      activityListeners.set(connection, (active, isOffline) => {
         if (!connection.disconnected) {
-          if (!active && isActive) {
+          if (!active && isOffline) {
+            isActive = false
+            client.onClose()
+            ws.close()
+            // add online listener as well
+          } else if (!active && isActive) {
             if (
               client.functionResponseListeners.size ||
               isStreaming.streaming
             ) {
               console.warn(
-                'Send to background - streams or functions in progress try again in 10 seconds...'
+                'Send to background - streams or functions in progress try again in 10 seconds...',
               )
               clearTimeout(activeTimer)
               activeTimer = setTimeout(() => {
                 activityListeners.forEach((fn) => {
-                  fn(false)
+                  fn(false, false)
                 })
               }, 10e3)
             } else {
@@ -124,7 +148,7 @@ const connect = (
             isError
               ? 5e3
               : Math.min(2500, time + ~~(Math.random() * 500) + 100),
-            true
+            true,
           )
         }
       })
