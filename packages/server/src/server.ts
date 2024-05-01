@@ -41,7 +41,7 @@ type QueryEvents = {
   unsubscribe: (obs: ActiveObservable, ctx?: Context<WebSocketSession>) => void
   get: (
     obs: ActiveObservable,
-    ctx?: Context<WebSocketSession | HttpSession>
+    ctx?: Context<WebSocketSession | HttpSession>,
   ) => void
 }
 
@@ -192,6 +192,8 @@ export class BasedServer {
 
   public channelCleanupCycle: number = 30e3
 
+  public restFallbackPath: string
+
   public activeChannels: {
     [name: string]: Map<number, ActiveChannel>
   } = {}
@@ -222,6 +224,28 @@ export class BasedServer {
     }
 
     this.clients = opts.clients ?? {}
+
+    if (!opts.functions) {
+      opts.functions = {}
+    }
+
+    if (!opts.functions.configs) {
+      opts.functions.configs = {}
+    }
+
+    let restPath =
+      '1' +
+      (~~(Math.random() * 99999999)).toString(16) +
+      (~~(Math.random() * 99999999)).toString(16)
+    this.restFallbackPath = restPath
+    opts.functions.configs['based:rpstatus'] = {
+      type: 'function',
+      public: true,
+      fn: async () => {
+        return restPath
+      },
+    }
+
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
 
@@ -251,7 +275,7 @@ export class BasedServer {
     type: Event,
     client: Context,
     val: EventMap[Event],
-    err?: Error | string
+    err?: Error | string,
   ) {
     if (this.listeners[type]) {
       this.listeners[type].forEach((fn) => fn(client, val, err))
@@ -312,7 +336,7 @@ export class BasedServer {
         } else {
           console.info(
             picocolors.red('🤮  Based-server error on port:'),
-            this.port
+            this.port,
           )
           reject(new Error('Cannot start based-server on port: ' + this.port))
         }

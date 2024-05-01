@@ -11,6 +11,7 @@ export type BasedOpts = {
   env?: string
   project?: string
   org?: string
+
   cluster?: string
   name?: string
   key?: string
@@ -25,4 +26,7 @@ export type BasedOpts = {
 export type Settings = {
   maxCacheSize?: number
   persistentStorage?: string
+  restFallBack?: {
+    pollInverval?: number
+  }
 }

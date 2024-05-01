@@ -108,7 +108,7 @@ export type Context<S extends Session = Session> = {
 }
 
 export const isHttpContext = (
-  ctx: Context<Session>
+  ctx: Context<Session>,
 ): ctx is Context<HttpSession> => {
   if ('res' in ctx?.session) {
     return true
@@ -117,7 +117,7 @@ export const isHttpContext = (
 }
 
 export const isWsContext = (
-  ctx: Context<Session>
+  ctx: Context<Session>,
 ): ctx is Context<WebSocketSession> => {
   if (ctx.session && isWsSession(ctx.session)) {
     return true
@@ -126,7 +126,7 @@ export const isWsContext = (
 }
 
 export const isClientContext = (
-  ctx: Context<Session>
+  ctx: Context<Session>,
 ): ctx is Context<WebSocketSession | HttpSession> => {
   if (ctx.session && (isWsSession(ctx.session) || isHttpSession(ctx.session))) {
     return true
@@ -135,7 +135,7 @@ export const isClientContext = (
 }
 
 export const isHttpSession = (
-  session: Session | undefined
+  session: Session | undefined,
 ): session is HttpSession => {
   if (session && 'res' in session) {
     return true
@@ -144,7 +144,7 @@ export const isHttpSession = (
 }
 
 export const isWsSession = (
-  session: Session | undefined
+  session: Session | undefined,
 ): session is WebSocketSession => {
   if (session && 'send' in session) {
     return true

@@ -1,5 +1,5 @@
-var http = require('http'),
-  httpProxy = require('http-proxy')
+import http from 'http'
+import httpProxy from 'http-proxy'
 
 //
 // Create a proxy server with custom application logic
@@ -14,7 +14,8 @@ var proxy = httpProxy.createProxyServer({})
 var server = http.createServer(function (req, res) {
   // You can define here your custom logic to handle the request
   // and then proxy the request.
-  proxy.web(req, res, { target: 'http://127.0.0.1:5050' })
+  // console.log('lullz', req.headers)
+  proxy.web(req, res, { target: 'http://127.0.0.1:9910' })
 })
 
 console.log('listening on port 5050')

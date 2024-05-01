@@ -64,10 +64,17 @@ export class BasedClient extends Emitter {
     if (settings?.maxCacheSize) {
       this.maxCacheSize = settings.maxCacheSize
     }
+
+    if (settings?.restFallBack) {
+      this.restFallBack = settings.restFallBack
+    }
+
     if (opts) {
       this.connect(opts)
     }
   }
+
+  restFallBack?: Settings['restFallBack']
 
   // --------- Persistent Storage
   storageSize: number = 0

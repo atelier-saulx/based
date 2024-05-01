@@ -71,6 +71,19 @@ const start = async () => {
             }
           },
         },
+        hello: {
+          type: 'function',
+          public: true,
+          fn: async (based, payload, ctx) => {
+            return 'world'
+          },
+        },
+        helloSecure: {
+          type: 'function',
+          fn: async (based, payload, ctx) => {
+            return 'world'
+          },
+        },
         counter: {
           type: 'query',
           closeAfterIdleTime: 60e3,

@@ -16,18 +16,23 @@ import { authorize } from '../../authorize.js'
 import { end } from '../../sendHttpResponse.js'
 import { httpPublish } from './publish.js'
 import { handleRequest } from './handleRequest.js'
+import { handleFakeWs } from './fakeWs/index.js'
 
 let clientId = 0
 
 export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
-  res: uws.HttpResponse
+  res: uws.HttpResponse,
 ) => {
+  let ctx: Context<HttpSession>
+
   res.onAborted(() => {
-    ctx.session.res = null
-    ctx.session.req = null
-    ctx.session = null
+    if (ctx) {
+      ctx.session.res = null
+      ctx.session.req = null
+      ctx.session = null
+    }
   })
 
   const ip = server.getIp(res, req)
@@ -39,6 +44,38 @@ export const httpHandler = (
   const method = req.getMethod()
   const url = req.getUrl()
   const path = url.split('/')
+
+  if (server.restFallbackPath && path[1] === server.restFallbackPath) {
+    if (method !== 'post') {
+      res.end()
+      return
+    }
+    let authorization: string = path[2]
+    if (!authorization || authorization.length > 5e3) {
+      res.end()
+      return
+    }
+    ctx = {
+      session: {
+        url,
+        res,
+        req,
+        method,
+        origin: req.getHeader('origin'),
+        ua: req.getHeader('user-agent'),
+        ip,
+        id: ++clientId,
+        authState: parseAuthState(authorization),
+        // @ts-ignore
+        headers: {
+          'content-length': Number(req.getHeader('content-length')),
+        },
+      },
+    }
+    handleFakeWs(server, ctx)
+    return
+  }
+
   const route = server.functions.route(path[1], url)
 
   if (route === null || route.internalOnly === true) {
@@ -61,7 +98,7 @@ export const httpHandler = (
       BasedErrorCode.FunctionNotFound,
       path[1]
         ? { route: { name: path[1], type: 'function' } }
-        : { route: { name: '', path: url, type: 'function' } }
+        : { route: { name: '', path: url, type: 'function' } },
     )
     return
   }
@@ -89,7 +126,7 @@ export const httpHandler = (
             },
           },
           BasedErrorCode.PayloadTooLarge,
-          { route: { name: 'authorize', type: 'function' } }
+          { route: { name: 'authorize', type: 'function' } },
         )
         return
       }
@@ -103,7 +140,7 @@ export const httpHandler = (
     }
   }
 
-  const ctx: Context<HttpSession> = {
+  ctx = {
     session: {
       url,
       res,
@@ -131,7 +168,7 @@ export const httpHandler = (
       ctx.session.res.cork(() => {
         ctx.session.res.writeHeader(
           'Access-Control-Allow-Headers',
-          defHeaders + ',' + route.headers.join(',')
+          defHeaders + ',' + route.headers.join(','),
         )
         ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
         ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
@@ -232,7 +269,7 @@ export const httpHandler = (
         httpPublish,
         undefined,
         undefined,
-        route.publicPublisher || route.public
+        route.publicPublisher || route.public,
       )
     })
     return

@@ -3,8 +3,9 @@ import { Connection } from './types.js'
 import { BasedClient } from '../index.js'
 import { encodeAuthState } from '../authState/parseAuthState.js'
 import { isStreaming } from '../stream/index.js'
-
+import fetch from '@based/fetch'
 import WebSocket from 'isomorphic-ws'
+import { FakeWebsocket } from './FakeWebsocket.js'
 
 type ActiveFn = (isActive: boolean, isOffline: boolean) => void
 
@@ -12,7 +13,6 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
-// Disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof document !== 'undefined') {
   let putToOffline = false
   window.addEventListener('offline', () => {
@@ -33,6 +33,7 @@ if (typeof document !== 'undefined') {
     }
   })
 
+  // Disconnect in the browser when a window is inactive (on the background) for 30 seconds
   document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
     if (document.hidden) {
@@ -47,6 +48,43 @@ if (typeof document !== 'undefined') {
       })
     }
   })
+}
+
+// remove the logs here
+const restPing = (
+  ms: number = 500,
+  realUrl: string,
+  connection: Connection,
+  fallback: (t: string) => void,
+) => {
+  connection.fallBackTimer = setTimeout(() => {
+    if (!connection.disconnected) {
+      console.warn(`Cannot connect to ws in ${ms}ms`)
+      let d = Date.now()
+      connection.fallBackInProgress = true
+      const url = `${realUrl.replace(/^ws/, 'http')}/based:rpstatus`
+      fetch(url).then(async (r) => {
+        if (connection.fallBackInProgress) {
+          connection.fallBackInProgress = false
+          const t = await r.text()
+          if (t && t[0] === '1') {
+            const timeEllapsed = Date.now() - d
+            console.warn(`Took ${timeEllapsed}ms for rest`)
+            if (timeEllapsed < ms) {
+              console.warn(
+                `was able to connect to rpstatus within ${ms}ms need to fallback to rest`,
+              )
+              fallback(t)
+            } else {
+              restPing(timeEllapsed + 100, realUrl, connection, fallback)
+            }
+          }
+        } else {
+          console.warn('Connected while trying RP - skip')
+        }
+      })
+    }
+  }, ms)
 }
 
 const connect = (
@@ -74,7 +112,6 @@ const connect = (
             isActive = false
             client.onClose()
             ws.close()
-            // add online listener as well
           } else if (!active && isActive) {
             if (
               client.functionResponseListeners.size ||
@@ -102,14 +139,26 @@ const connect = (
         }
       })
 
-      const ws = (connection.ws = new WebSocket(realUrl, [
-        encodeAuthState(client.authState),
-      ]))
+      const ws = (connection.ws = connection.useFallback
+        ? new FakeWebsocket(realUrl, connection.useFallback, client)
+        : new WebSocket(realUrl, [encodeAuthState(client.authState)]))
+
+      ws.binaryType = 'blob'
 
       let isError = false
 
-      ws.binaryType = 'blob'
+      if (!connection.useFallback && client.restFallBack) {
+        restPing(300, realUrl, connection, (t) => {
+          connection.useFallback = t
+          ws.close()
+        })
+      }
+
       ws.addEventListener('error', (err) => {
+        clearTimeout(connection.fallBackTimer)
+        // maybe this is a bad idea
+        connection.fallBackInProgress = false
+
         // TODO: add a websocket close number
         // also for rateLimit
         if (err.message && err.message.includes('401')) {
@@ -122,6 +171,9 @@ const connect = (
       })
 
       ws.addEventListener('open', () => {
+        clearTimeout(connection.fallBackTimer)
+        connection.fallBackInProgress = false
+
         if (isActive) {
           if (connection.disconnected) {
             return
@@ -135,6 +187,9 @@ const connect = (
       })
 
       ws.addEventListener('close', () => {
+        clearTimeout(connection.fallBackTimer)
+        connection.fallBackInProgress = false
+
         if (isActive) {
           if (connection.disconnected) {
             return

@@ -35,13 +35,13 @@ const sendCacheSwapEncoding = async (
   buffer: Uint8Array,
   checksum: number,
   headers?: HttpHeaders,
-  status: string = '200 OK'
+  status: string = '200 OK',
 ) => {
   try {
     const inflated = await inflate(buffer.slice(20))
     const { payload, encoding } = await compress(
       inflated,
-      ctx.session.headers.encoding
+      ctx.session.headers.encoding,
     )
     if (!ctx.session.res) {
       return
@@ -68,7 +68,7 @@ const sendCache = (
   checksum: number,
   isDeflate: boolean,
   headers?: HttpHeaders,
-  status: string = '200 OK'
+  status: string = '200 OK',
 ) => {
   ctx.session.res.cork(() => {
     if (headers) {
@@ -86,7 +86,7 @@ const sendCache = (
 const sendNotModified = (
   ctx: Context<HttpSession>,
   headers?: HttpHeaders,
-  status: string = '304 Not Modified'
+  status: string = '304 Not Modified',
 ) => {
   ctx.session.res.cork(() => {
     if (headers) {
@@ -105,7 +105,7 @@ const sendGetResponseInternal = (
   checksum: number,
   ctx: Context<HttpSession>,
   headers?: HttpHeaders,
-  status?: string
+  status?: string,
 ) => {
   if (!ctx.session) {
     destroyObs(server, id)
@@ -129,7 +129,7 @@ const sendGetResponseInternal = (
           obs.cache,
           obs.checksum,
           headers,
-          status
+          status,
         )
       }
     } else {
@@ -148,7 +148,7 @@ const sendGetResponse = (
   id: number,
   obs: ActiveObservable,
   checksum: number,
-  ctx: Context<HttpSession>
+  ctx: Context<HttpSession>,
 ) => {
   if ('httpResponse' in spec) {
     // response data does not work for query responses
@@ -161,7 +161,7 @@ const sendGetResponse = (
         checksum,
         ctx,
         headers,
-        typeof status === 'string' ? status : String(status)
+        typeof status === 'string' ? status : String(status),
       )
     }
     spec.httpResponse(server.client, obs.payload, obs.cache, send, ctx)
@@ -177,7 +177,7 @@ const getFromExisting = (
   ctx: Context<HttpSession>,
   route: BasedRoute<'query'>,
   spec: BasedFunctionConfig<'query'>,
-  checksum: number
+  checksum: number,
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
@@ -214,7 +214,7 @@ const isAuthorized: IsAuthorizedHandler<HttpSession, BasedRoute<'query'>> = (
   ctx,
   payload,
   id,
-  checksum
+  checksum,
 ) => {
   const name = route.name
 
@@ -244,7 +244,7 @@ export const httpGet = (
   payload: any,
   ctx: Context<HttpSession>,
   server: BasedServer,
-  checksum: number
+  checksum: number,
 ): void => {
   if (!ctx.session) {
     return
@@ -257,6 +257,6 @@ export const httpGet = (
     payload,
     isAuthorized,
     genObservableId(route.name, payload),
-    checksum
+    checksum,
   )
 }

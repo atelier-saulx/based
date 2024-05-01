@@ -1,10 +1,35 @@
 import based from '@based/client'
-const client = based({
-  url: 'ws://localhost:9910',
+const client = based(
+  {
+    url: 'ws://localhost:5050',
+  },
+  {
+    restFallBack: {
+      pollInverval: 500,
+    },
+  },
+)
+
+client.on('authstate-change', (v) => {
+  console.log('auth change', v)
 })
 
 export const app = () => {
   const body = document.body
+
+  const hello = document.createElement('button')
+  hello.innerHTML = 'HELLO'
+  body.appendChild(hello)
+  hello.onclick = () => {
+    client.call('hello').then(alert)
+  }
+
+  const helloSecure = document.createElement('button')
+  helloSecure.innerHTML = 'HELLO SECURE'
+  body.appendChild(helloSecure)
+  helloSecure.onclick = () => {
+    client.call('helloSecure').then(alert)
+  }
 
   const login = document.createElement('button')
 

@@ -7,5 +7,5 @@ export type BinaryMessageHandler = (
   len: number,
   isDeflate: boolean,
   ctx: Context<WebSocketSession>,
-  server: BasedServer
+  server: BasedServer,
 ) => boolean

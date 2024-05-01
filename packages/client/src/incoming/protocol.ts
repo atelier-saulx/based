@@ -2,7 +2,7 @@ import { BasedClient } from '../index.js'
 import { addGetToQueue } from '../outgoing/index.js'
 
 export const decodeHeader = (
-  nr: number
+  nr: number,
 ): { type: number; isDeflate: boolean; len: number } => {
   // 4 bytes
   // type (3 bits)
@@ -32,7 +32,7 @@ export const decodeHeader = (
 export const readUint8 = (
   buff: Uint8Array,
   start: number,
-  len: number
+  len: number,
 ): number => {
   let n = 0
   const s = len - 1 + start
@@ -43,6 +43,10 @@ export const readUint8 = (
 }
 
 export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
+  if (d instanceof Uint8Array) {
+    return d
+  }
+
   // needed for CF workers which return array buffers
   if (d instanceof ArrayBuffer) {
     return new Uint8Array(d)
