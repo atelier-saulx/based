@@ -49,9 +49,9 @@ export const httpHandler = (
 
   if (path[1] === 'based:rpstatus') {
     res.cork(() => {
-      res.session.res.writeHeader('Access-Control-Allow-Headers', defHeaders)
-      res.session.res.writeHeader('Access-Control-Expose-Headers', '*')
-      res.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      res.writeHeader('Access-Control-Allow-Headers', defHeaders)
+      res.writeHeader('Access-Control-Expose-Headers', '*')
+      res.writeHeader('Access-Control-Allow-Origin', '*')
       res.end(server.restFallbackPath)
     })
     return
