@@ -62,7 +62,8 @@ const restPing = (
       console.warn(`Cannot connect to ws in ${ms}ms`)
       let d = Date.now()
       connection.fallBackInProgress = true
-      const url = `${realUrl.replace(/^ws/, 'http')}/based:rpstatus`
+      const x = realUrl.replace(/^wss?:\/\//, '').split('/')
+      const url = `http${realUrl.startsWith('wss') ? 's' : ''}://${x[0]}/based:rpstatus`
       fetch(url).then(async (r) => {
         if (connection.fallBackInProgress) {
           connection.fallBackInProgress = false

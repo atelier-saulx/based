@@ -20,6 +20,8 @@ import { handleFakeWs } from './fakeWs/index.js'
 
 let clientId = 0
 
+const defHeaders = 'Authorization,Content-Type'
+
 export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
@@ -44,6 +46,16 @@ export const httpHandler = (
   const method = req.getMethod()
   const url = req.getUrl()
   const path = url.split('/')
+
+  if (path[1] === 'based:rpstatus') {
+    res.cork(() => {
+      res.session.res.writeHeader('Access-Control-Allow-Headers', defHeaders)
+      res.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+      res.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      res.end(server.restFallbackPath)
+    })
+    return
+  }
 
   if (server.restFallbackPath && path[1] === server.restFallbackPath) {
     if (method !== 'post') {
@@ -160,7 +172,6 @@ export const httpHandler = (
   }
 
   if (method === 'options') {
-    const defHeaders = 'Authorization,Content-Type'
     if (route.headers) {
       for (const header of route.headers) {
         ctx.session.headers[header] = req.getHeader(header)

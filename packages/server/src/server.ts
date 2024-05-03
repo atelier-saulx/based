@@ -233,21 +233,14 @@ export class BasedServer {
       opts.functions.configs = {}
     }
 
+    this.functions = new BasedFunctions(this, opts.functions)
+    this.auth = new BasedAuth(this, opts.auth)
+
     let restPath =
       '1' +
       (~~(Math.random() * 99999999)).toString(16) +
       (~~(Math.random() * 99999999)).toString(16)
     this.restFallbackPath = restPath
-    opts.functions.configs['based:rpstatus'] = {
-      type: 'function',
-      public: true,
-      fn: async () => {
-        return restPath
-      },
-    }
-
-    this.functions = new BasedFunctions(this, opts.functions)
-    this.auth = new BasedAuth(this, opts.auth)
 
     if (opts.client) {
       // @ts-ignore - allow different ones if you want a special client
