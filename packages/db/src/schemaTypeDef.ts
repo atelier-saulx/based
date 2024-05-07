@@ -20,23 +20,27 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
 }
 const TYPE_INDEX: Map<BasedSchemaFieldType, number> = new Map([
   ['timestamp', 1],
-  ['number', 2],
-  ['integer', 3],
-  ['boolean', 4],
-  ['reference', 5],
-  ['enum', 6],
-  ['string', 7],
-  ['references', 8],
+  ['created', 2],
+  ['updated', 3],
+  ['number', 4],
+  ['integer', 5],
+  ['boolean', 6],
+  ['reference', 7],
+  ['enum', 8],
+  ['string', 9],
+  ['references', 10],
 ]);
 const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map([
   [1, 'timestamp'],
-  [2, 'number'],
-  [3, 'integer'],
-  [4, 'boolean'],
-  [5, 'reference'],
-  [6, 'enum'],
-  [7, 'string'],
-  [8, 'references'],
+  [2, 'created'],
+  [3, 'updated'],
+  [4, 'number'],
+  [5, 'integer'],
+  [6, 'boolean'],
+  [7, 'reference'],
+  [8, 'enum'],
+  [9, 'string'],
+  [10, 'references'],
 ])
 
 export type FieldDef = {

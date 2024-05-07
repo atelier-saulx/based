@@ -37,6 +37,8 @@ export const basedSchemaFieldTypes = [
   'json',
   'integer',
   'timestamp',
+  'created',
+  'updated',
   'reference',
   'references',
   'text',
