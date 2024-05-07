@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include "jemalloc.h"
@@ -46,8 +47,195 @@
  * references: 0,
  */
 
-struct SelvaObject;
+enum schemabuf_type {
+    SCHEMA_TIMESTAMP = 1,
+    SCHEMA_CREATED = 2,
+    SCHEMA_UPDATED = 3,
+    SCHEMA_NUMBER = 4,
+    SCHEMA_INTEGER = 5,
+    SCHEMA_BOOLEAN = 6,
+    SCHEMA_REFERENCE = 7,
+    SCHEMA_ENUM = 8,
+    SCHEMA_STRING = 9,
+    SCHEMA_REFERENCES = 1,
+} __packed type;
 
+static int type2fs_reserved(struct SelvaFieldSchema *, enum schemabuf_type)
+{
+    return SELVA_EINTYPE;
+}
+
+static int type2fs_timestamp(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+        .type2 = SELVA_OBJECT_LONGLONG,
+    };
+
+    return 0;
+}
+
+static int type2fs_number(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+        .type2 = SELVA_OBJECT_DOUBLE,
+    };
+
+    return 0;
+}
+
+static int type2fs_integer(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+        .type2 = SELVA_OBJECT_LONGLONG,
+    };
+
+    return 0;
+}
+
+static int type2fs_boolean(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+        .type2 = SELVA_OBJECT_LONGLONG,
+    };
+
+    return 0;
+}
+
+static int type2fs_reference(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_EDGE,
+        .type2 = SELVA_OBJECT_NULL,
+    };
+
+    return 0;
+}
+
+static int type2fs_enum(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+        .type2 = SELVA_OBJECT_LONGLONG,
+    };
+
+    return 0;
+}
+
+static int type2fs_string(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
+        .type2 = SELVA_OBJECT_STRING,
+    };
+
+    return 0;
+}
+
+static int type2fs_references(struct SelvaFieldSchema *fs, enum schemabuf_type)
+{
+    *fs = (struct SelvaFieldSchema){
+        .type1 = SELVA_FIELD_SCHEMA_TYPE_EDGE,
+        .type2 = SELVA_OBJECT_NULL,
+    };
+
+    return 0;
+}
+
+static struct schemabuf_parser {
+    enum schemabuf_type __packed type;
+    char name[11];
+    int (*type2fs)(struct SelvaFieldSchema *fs, enum schemabuf_type);
+} __designated_init schemabuf_parsers[] = {
+    {
+        .type = 0,
+        .name = "reserved",
+        .type2fs = type2fs_reserved,
+    },
+    {
+        .type = SCHEMA_TIMESTAMP,
+        .name = "timestamp",
+        .type2fs = type2fs_timestamp,
+    },
+    {
+        .type = SCHEMA_CREATED,
+        .name = "created",
+        .type2fs = type2fs_timestamp,
+    },
+    {
+        .type = SCHEMA_UPDATED,
+        .name = "updated",
+        .type2fs = type2fs_timestamp,
+    },
+    {
+        .type = SCHEMA_NUMBER,
+        .name = "number",
+        .type2fs = type2fs_number,
+    },
+    {
+        .type = SCHEMA_INTEGER,
+        .name = "integer",
+        .type2fs = type2fs_integer,
+    },
+    {
+        .type = SCHEMA_BOOLEAN,
+        .name = "boolean",
+        .type2fs = type2fs_boolean,
+    },
+    {
+        .type = SCHEMA_REFERENCE,
+        .name = "reference",
+        .type2fs = type2fs_reference,
+    },
+    {
+        .type = SCHEMA_ENUM,
+        .name = "enum",
+        .type2fs = type2fs_enum,
+    },
+    {
+        .type = SCHEMA_STRING,
+        .name = "string",
+        .type2fs = type2fs_string,
+    },
+    {
+        .type = SCHEMA_REFERENCES,
+        .name = "references",
+        .type2fs = type2fs_references,
+    },
+};
+
+struct fields_count {
+    size_t nr_main_fields;
+    size_t nr_fields;
+};
+
+static int schemabuf_count_fields(struct fields_count *count, const char *buf, size_t size)
+{
+    bool mf = false;
+
+    if (size < SELVA_NODE_TYPE_SIZE + 1) {
+        return SELVA_EINVAL;
+    }
+
+    count->nr_main_fields = 0;
+    count->nr_fields = 0;
+
+    for (size_t i = 2; i < size; i++) {
+        if (buf[i] == '\0') {
+            mf = !mf;
+        } else {
+            if (mf) {
+                count->nr_main_fields++;
+            }
+            count->nr_fields++;
+        }
+    }
+
+    return 0;
+}
 
 struct client_node_schema {
     uint32_t nr_emb_fields;
@@ -145,41 +333,50 @@ static struct SelvaSchema *alloc_schema(size_t nr_types)
  */
 static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TYPE_SIZE], const char *buf, size_t len)
 {
-    struct client_node_schema cs;
+    struct fields_count counts;
+    int err;
 
-    if (len < sizeof(cs)) {
+    if (len < SELVA_NODE_TYPE_SIZE) {
         return SELVA_EINVAL;
     }
 
-    /* Fixup. */
-    memcpy(&cs, buf, sizeof(cs));
-    cs.nr_emb_fields = letoh(cs.nr_emb_fields);
-    DATA_RECORD_FIXUP_CSTRING_P(&cs, buf, len, field_schemas, edge_constraints);
+    memcpy(type, buf, SELVA_NODE_TYPE_SIZE);
 
-    /* Copy the type prefix. */
-    memcpy(type, cs.type, sizeof(cs.type));
+    err = schemabuf_count_fields(&counts, buf, len);
+    if (err) {
+        return err;
+    }
 
     *ns = (struct SelvaNodeSchema){
-        .nr_emb_fields = cs.nr_emb_fields,
-        .nr_fields = cs.field_schemas_len / sizeof(struct SelvaFieldSchema),
-        .created_en = !!cs.created_en,
-        .updated_en = !!cs.updated_en,
+        .nr_emb_fields = counts.nr_main_fields,
+        .nr_fields = counts.nr_fields,
+        .created_en = false, /* TODO */
+        .updated_en = false, /* TODO */
     };
 
-    /*
-     * Parse field schemas.
-     */
-    ns->field_schemas = selva_malloc(cs.field_schemas_len);
-    memcpy(ns->field_schemas, cs.field_schemas_str, cs.field_schemas_len);
-    for (size_t i = 0; i < ns->nr_fields; i++) {
-        struct SelvaFieldSchema *fs = &ns->field_schemas[i];
+    ns->field_schemas = selva_malloc(counts.nr_fields * sizeof(struct SelvaFieldSchema));
 
-        fs->meta = htole(fs->meta);
+    bool main_fields = false;
+    for (size_t i = 2; i < len; i++) {
+        if (buf[i] == '\0') {
+            main_fields = !main_fields;
+        } else {
+            struct SelvaFieldSchema *fs = &ns->field_schemas[i];
+            size_t field_type = buf[i];
+
+            if (field_type >= num_elem(schemabuf_parsers)) {
+                return SELVA_EINTYPE;
+            }
+
+            schemabuf_parsers[field_type].type2fs(fs, (enum schemabuf_type)field_type);
+            snprintf(fs->field_name, SELVA_SHORT_FIELD_NAME_LEN, "%zu", i);
+        }
     }
 
     /*
-     * Parse edge constraints.
+     * TODO Parse edge constraints.
      */
+#if 0
     Edge_InitEdgeFieldConstraints(&ns->efc);
     for (size_t i = 0; i < cs.edge_constraints_len; i += sizeof(struct EdgeFieldDynConstraintParams)) {
         int err;
@@ -189,6 +386,7 @@ static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TY
             return SELVA_EINVAL;
         }
     }
+#endif
 
     return 0;
 }
@@ -207,28 +405,6 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
     if (argc < 0) {
         selva_send_errorf(resp, argc, "Failed to parse args");
         return;
-    }
-
-    for (size_t i = 0; i < (size_t)argc; i++) {
-        size_t len;
-        const char *buf = selva_string_to_str(argv[i], &len);
-
-        if (len < sizeof(struct client_node_schema)) {
-            selva_send_errorf(resp, SELVA_EINVAL, "Invalid schema argument at %zu", i);
-            return;
-        }
-
-        const size_t field_schemas_len = letoh(*(size_t *)memcpy(&(size_t){0}, &buf[offsetof(struct client_node_schema, field_schemas_len)], sizeof(size_t)));
-        if (!!(field_schemas_len % sizeof(struct SelvaFieldSchema))) {
-            selva_send_errorf(resp, SELVA_EINVAL, "Invalid field schemas at %zu", i);
-            return;
-        }
-
-        const size_t edge_constraints_len = letoh(*(size_t *)memcpy(&(size_t){0}, &buf[offsetof(struct client_node_schema, edge_constraints_len)], sizeof(size_t)));
-        if (!!(edge_constraints_len % sizeof(struct EdgeFieldDynConstraintParams))) {
-            selva_send_errorf(resp, SELVA_EINVAL, "Invalid edge constraints at %zu", i);
-            return;
-        }
     }
 
     const size_t nr_types = argc;

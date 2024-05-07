@@ -36,7 +36,6 @@ OBJ := \
 	   rpn/rpn_eval.o \
 	   schema/edge_constraint.o \
 	   schema/schema.o \
-	   schema/readbuf.o \
 	   selva_object/selva_object.o \
 	   selva_object/selva_object_commands.o \
 	   selva_object/selva_object_foreach.o \

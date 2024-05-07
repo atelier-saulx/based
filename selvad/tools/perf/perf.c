@@ -103,6 +103,7 @@ static int send_message(int fd, const void *buf, size_t size, bool flush)
 
 static int send_schema(int fd, int seqno)
 {
+    /* TODO new schema style */
     struct SelvaFieldSchema { /* from db/include/schema.h */
         char field_name[SELVA_SHORT_FIELD_NAME_LEN];
         enum SelvaFieldSchemaType {

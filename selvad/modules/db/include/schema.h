@@ -13,19 +13,6 @@ struct SelvaHierarchy;
 struct SelvaSchema;
 struct selva_io;
 
-enum schema_type {
-    SCHEMA_TIMESTAMP = 1,
-    SCHEMA_CREATED = 2,
-    SCHEMA_UPDATED = 3,
-    SCHEMA_NUMBER = 4,
-    SCHEMA_INTEGER = 5,
-    SCHEMA_BOOLEAN = 6,
-    SCHEMA_REFERENCE = 7,
-    SCHEMA_ENUM = 8,
-    SCHEMA_STRING = 9,
-    SCHEMA_REFERENCES = 1,
-} __packed;
-
 /**
  * EdgeFieldConstraint Flags.
  *
@@ -143,8 +130,3 @@ int Edge_NewDynConstraint(struct EdgeFieldConstraints *efc, const struct EdgeFie
 
 int EdgeConstraint_Load(struct selva_io *io, int encver, struct EdgeFieldConstraints *data);
 void EdgeConstraint_Save(struct selva_io *io, const struct EdgeFieldConstraints *data);
-
-/**
- * Read data from a client buffer according to the schema.
- */
-int schema_readbuf(struct SelvaHierarchyNode *node, const char *buf, size_t size);
