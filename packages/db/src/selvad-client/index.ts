@@ -38,8 +38,8 @@ function encode(cmdId: number, seqno: number, payload: Buffer | null): Buffer[] 
     const chunk = payload.slice(i, i + chunkSize)
     const frame = Buffer.from(frameTemplate)
 
-    frameTemplate.writeInt8((i == 0 ? SELVA_PROTO_HDR_FFIRST : 0) | (i + chunkSize >= payload.length ? SELVA_PROTO_HDR_FLAST : 0), 1) // flags
-    frameTemplate.writeUint16LE(16 + chunk.length, 6) // frame_bsize
+    frame.writeInt8((i == 0 ? SELVA_PROTO_HDR_FFIRST : 0) | (i + chunkSize >= payload.length ? SELVA_PROTO_HDR_FLAST : 0), 1) // flags
+    frame.writeUint16LE(16 + chunk.length, 6) // frame_bsize
     chunk.copy(frame, 16)
     frame.writeUInt32LE(crc32(frame, 0, 16 + chunk.length), SELVA_PROTO_HDR_CHECK_OFFSET)
     frames.push(frame)
