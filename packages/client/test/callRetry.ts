@@ -50,6 +50,21 @@ test('Call retry option', async (t: T) => {
 
   t.is(retry, 5)
   t.is(res, 'ok')
+
+  cnt = 0
+  let check
+  try {
+    await client.call('hello', '', {
+      retryStrategy: (err, time, retries) => {
+        return false
+      },
+    })
+  } catch (e) {
+    check = true
+  }
+
+  t.true(check)
+
   client.disconnect()
   await server.destroy()
 })

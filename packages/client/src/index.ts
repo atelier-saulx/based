@@ -356,7 +356,7 @@ export class BasedClient extends Emitter {
   call(name: string, payload?: any, opts?: CallOptions): Promise<any> {
     const retryStrategy = opts?.retryStrategy
     if (retryStrategy) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         let time = 0
         let retries = 0
         const retryReject = (err: Error) => {
@@ -371,6 +371,8 @@ export class BasedClient extends Emitter {
                 addToFunctionQueue(this, payload, name, resolve, retryReject)
               }, newTime)
             }
+          } else {
+            reject(err)
           }
         }
         return addToFunctionQueue(this, payload, name, resolve, retryReject)
