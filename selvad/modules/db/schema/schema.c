@@ -237,17 +237,6 @@ static int schemabuf_count_fields(struct fields_count *count, const char *buf, s
     return 0;
 }
 
-struct client_node_schema {
-    uint32_t nr_emb_fields;
-    char type[SELVA_NODE_TYPE_SIZE];
-    uint8_t created_en;
-    uint8_t updated_en;
-    const char *field_schemas_str; /*!< n * struct struct SelvaFieldSchema */
-    size_t field_schemas_len;
-    const char *edge_constraints_str; /*!< n * EdgeFieldDynConstraintParams */
-    size_t edge_constraints_len;
-};
-
 static ssize_t find_node_type(const char types[], const Selva_NodeType type)
 {
     size_t i = 0;
@@ -357,11 +346,12 @@ static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TY
     ns->field_schemas = selva_malloc(counts.nr_fields * sizeof(struct SelvaFieldSchema));
 
     bool main_fields = false;
+    int field_idx = 0;
     for (size_t i = 2; i < len; i++) {
         if (buf[i] == '\0') {
             main_fields = !main_fields;
         } else {
-            struct SelvaFieldSchema *fs = &ns->field_schemas[i];
+            struct SelvaFieldSchema *fs = &ns->field_schemas[field_idx];
             size_t field_type = buf[i];
 
             if (field_type >= num_elem(schemabuf_parsers)) {
@@ -369,7 +359,8 @@ static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TY
             }
 
             schemabuf_parsers[field_type].type2fs(fs, (enum schemabuf_type)field_type);
-            snprintf(fs->field_name, SELVA_SHORT_FIELD_NAME_LEN, "%zu", i);
+            snprintf(fs->field_name, SELVA_SHORT_FIELD_NAME_LEN, "%d", field_idx);
+            field_idx++;
         }
     }
 
