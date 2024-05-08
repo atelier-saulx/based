@@ -343,7 +343,7 @@ static ssize_t sock_recv_frame(struct conn_ctx *ctx)
 
     if (frame_payload_size > SELVA_PROTO_FRAME_SIZE_MAX) {
 #if SERVER_MESSAGE_SOCK_ENABLE_DBG
-        SELVA_LOG(SELVA_LOGL_DBG, "Frame too large: %zu", frame_payload_size);
+        SELVA_LOG(SELVA_LOGL_DBG, "Frame too large: %zu/%zu", frame_payload_size, frame_bsize);
 #endif
         return SELVA_PROTO_EBADMSG;
     }
