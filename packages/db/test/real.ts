@@ -3,6 +3,8 @@ import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
+import create from '../src/selvad-client/index.js'
+import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js';
 import { join, dirname, resolve } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -18,6 +20,8 @@ test.serial.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
+  // @ts-ignore
+  db.client = create(3000, '127.0.0.1')
   db.native = {
     modify: (buff: Buffer, len: number) => {
       console.log('lullz flush buffer', len)
@@ -48,6 +52,16 @@ test.serial.only('query + filter', async (t) => {
       },
     },
   })
+  const schemaHead = Buffer.alloc(2 * 8)
+  schemaHead.writeUInt8(5, 0)
+  schemaHead.writeUInt8(1, 4)
+  schemaHead.writeUInt8(4, 8)
+  schemaHead.writeUint32LE(db.schemaTypesParsed.simple.buf.length, 8 + 4)
+  // @ts-ignore
+  const schemaResp = decodeMessageWithValues(await db.client.sendRequest(36, Buffer.concat([schemaHead, db.schemaTypesParsed.simple.buf])))
+  console.log('schema write:', schemaResp)
+  // @ts-ignore
+  console.log('schema read:', await db.client.sendRequest(37));
 
   console.log(
     'SCHEMA',
