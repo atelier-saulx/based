@@ -28,7 +28,7 @@
 #define EMPTY_NODE_ID           "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
 #define SELVA_NULL_TYPE         "\0"
 
-#define SELVA_SHORT_FIELD_NAME_LEN 8
+#define SELVA_SHORT_FIELD_NAME_LEN 4
 
 /**
  * Reserved field names.
@@ -36,14 +36,14 @@
  * @{
  */
 #define SELVA_ID_FIELD          "id"
-#define SELVA_ALIASES_FIELD     "aliases"
-#define SELVA_CREATED_AT_FIELD  "created"
-#define SELVA_UPDATED_AT_FIELD  "updated"
+#define SELVA_ALIASES_FIELD     "alia"
+#define SELVA_CREATED_AT_FIELD  "crea"
+#define SELVA_UPDATED_AT_FIELD  "upda"
 /**
  * Pseudo field name for retrieving edge metadata.
  */
-#define SELVA_EDGE_META_FIELD   "$edgeMeta"
-#define SELVA_DEPTH_FIELD       "$depth"
+#define SELVA_EDGE_META_FIELD   "$eMe"
+#define SELVA_DEPTH_FIELD       "$dep"
 /**
  * @}
  */
