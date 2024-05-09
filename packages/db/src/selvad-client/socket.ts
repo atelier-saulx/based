@@ -36,6 +36,7 @@ const connect = (
         if (connection.disconnected) {
           return
         }
+        socket.setNoDelay(true);
         time = 200
         if (reconnect) {
           callbacks.onReconnect()
