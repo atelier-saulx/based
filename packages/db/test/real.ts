@@ -3,7 +3,8 @@ import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
-import create from '../src/selvad-client/index.js'
+import newClient from '../src/selvad-client/index.js'
+import { create, update } from '../src/set2.js'
 import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js';
 import { join, dirname, resolve } from 'path'
 
@@ -21,7 +22,7 @@ test.serial.only('query + filter', async (t) => {
   })
 
   // @ts-ignore
-  db.client = create(3000, '127.0.0.1')
+  db.client = newClient(3000, '127.0.0.1')
   db.native = {
     modify: (buff: Buffer, len: number) => {
       console.log('lullz flush buffer', len)
@@ -88,8 +89,8 @@ test.serial.only('query + filter', async (t) => {
   console.log('GO!')
 
   for (let i = 0; i < 1e6 - 1; i++) {
-    db.create('simple', {
-      user: i,
+    const id = await create(db, 'simple', {
+      //user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
       // flap: 'AMAZING 123',
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
@@ -99,6 +100,7 @@ test.serial.only('query + filter', async (t) => {
         lat: 52,
       },
     })
+    console.log('created', id)
   }
 
   // { set Id, amount: 10 } , checksum
