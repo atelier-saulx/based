@@ -41,7 +41,7 @@ const modify = (
 
           // SelvaModifyFieldOp
           buf.writeUint8(1, bufIndex)
-          console.log('string', t.field)
+          console.log('string', t.field) // TODO t.field is 0 for "mainfields", this won't work for multiple reasons
           buf.write(`${t.field}`, bufIndex + 8)
           buf.writeBigUint64LE(32n, bufIndex + 16)
           buf.writeBigUint64LE(BigInt(byteLen), bufIndex + 24)
