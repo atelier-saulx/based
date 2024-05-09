@@ -117,10 +117,19 @@ export default function createSelvaProtoClient(port: number, host: string) {
 
   function sendRequest(cmdId: number, payload: Buffer | null): Promise<Buffer> {
     const seqno = nextSeqno++
-    const bufs = encode(cmdId, seqno, payload) // TODO This is probably stupid, why doesn't it just make a single buffer?
+    const bufs = encode(cmdId, seqno, payload)
 
     return new Promise((resolve, reject) => {
       setTimeout(() => {
+        // TODO I dunno if we should even have an array of buffers. It allows us to inject
+          // more urgent commands in the middle if we want but otherwise we probably just
+          // want to pass a single buffer here, in which case this is suboptimal
+        //conn.socket.write(Buffer.concat(bufs), (err: Error) => {
+        //    if (err) {
+        //        reject(err)
+        //        return
+        //    }
+        //})
         for (const buf of bufs) {
           conn.socket.write(buf, (err: Error) => {
             if (err) {
