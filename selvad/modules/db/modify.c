@@ -1675,7 +1675,7 @@ static void modify(struct selva_server_response_out *resp, const void *buf, size
         i += off;
 
         if (sp_type != SELVA_PROTO_STRING) {
-            selva_send_errorf(resp, SELVA_EINTYPE, "Unexpected message type");
+            selva_send_errorf(resp, SELVA_EINTYPE, "Unexpected message type: %d", sp_type);
             break;
         }
 
