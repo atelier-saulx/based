@@ -88,8 +88,10 @@ test.serial.only('query + filter', async (t) => {
   var dx = Date.now()
   console.log('GO!')
 
-  for (let i = 0; i < 1e6 - 1; i++) {
-    const id = await create(db, 'simple', {
+  const p = []
+  //for (let i = 0; i < 1e6 - 1; i++) {
+  for (let i = 0; i < 1e3 - 1; i++) {
+    p.push(create(db, 'simple', {
       //user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
       // flap: 'AMAZING 123',
@@ -99,9 +101,10 @@ test.serial.only('query + filter', async (t) => {
         long: 52,
         lat: 52,
       },
-    })
-    console.log('created', id)
+    }))
+    if (i % 1000 === 0) await wait(0)
   }
+  await Promise.all(p)
 
   // { set Id, amount: 10 } , checksum
 
