@@ -87,9 +87,12 @@ export const create = async (db: BasedDb, type: string, value: any) => {
   modify(db, type, id, value, def.tree, def)
   buf.writeUint32LE(nrChanges, 8 + 12)
   // @ts-ignore
-  const resp = await db.client.sendRequest(70, buf)
+  const p = db.client.sendRequest(70, buf)
   bufIndex = 0
   nrChanges = 0
+  console.log('id', id)
+  await p // TODO We probably should parse and return errors
+  console.log('idrdy', id)
   return id
 }
 
@@ -104,7 +107,8 @@ export const update = async (
   modify(db, type, id, value, def.tree, def)
   buf.writeUint32LE(nrChanges, 8 + 12)
   // @ts-ignore
-  await db.client.sendRequest(70, buf.subarray(0, bufIndex))
+  const p = db.client.sendRequest(70, buf.subarray(0, bufIndex))
   bufIndex = 0
   nrChanges = 0
+  await p // TODO We probably should parse and return errors
 }
