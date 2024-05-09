@@ -41,8 +41,7 @@ const modify = (
 
           // SelvaModifyFieldOp
           buf.writeUint8(1, bufIndex)
-          console.log('string', t.field) // TODO t.field is 0 for "mainfields", this won't work for multiple reasons
-          buf.write(`${t.field}`, bufIndex + 8)
+          buf.write(`${t.selvaField}`, bufIndex + 8)
           buf.writeBigUint64LE(32n, bufIndex + 16)
           buf.writeBigUint64LE(BigInt(byteLen), bufIndex + 24)
           buf.write(value, bufIndex + 32)
@@ -54,8 +53,7 @@ const modify = (
 
           // SelvaModifyFieldOp
           buf.writeUint8(6, bufIndex)
-          buf.write(`${t.field}`, bufIndex + 8)
-          console.log('num', t.field)
+          buf.write(`${t.selvaField}`, bufIndex + 8)
           buf.writeBigUint64LE(32n, bufIndex + 16)
           buf.writeBigUint64LE(8n, bufIndex + 24)
           buf.writeDoubleLE(value, bufIndex + 32)
@@ -67,8 +65,7 @@ const modify = (
 
           // SelvaModifyFieldOp
           buf.writeUint8(3, bufIndex)
-          buf.write(`${t.field}`, bufIndex + 8)
-          console.log('num', t.field)
+          buf.write(`${t.selvaField}`, bufIndex + 8)
           buf.writeBigUint64LE(32n, bufIndex + 16)
           buf.writeBigUint64LE(8n, bufIndex + 24)
           buf.writeBigInt64LE(BigInt(value), bufIndex + 32)
@@ -91,7 +88,6 @@ export const create = async (db: BasedDb, type: string, value: any) => {
   buf.writeUint32LE(nrChanges, 8 + 12)
   // @ts-ignore
   const resp = await db.client.sendRequest(70, buf)
-  console.log(decodeMessageWithValues(resp))
   bufIndex = 0
   nrChanges = 0
   return id
