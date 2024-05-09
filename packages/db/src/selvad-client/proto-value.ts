@@ -27,7 +27,7 @@ const VALUE_PARSERS: Record<ValueType, ParserFn> = {
     return [null, 1]
   },
   [ValueType.error]: (buf) => {
-    const code = buf.readUint16LE(2)
+    const code = buf.readInt16LE(2)
     const msgLen = buf.readUint16LE(4)
     const msg = buf.subarray(6, 6 + msgLen)
 
