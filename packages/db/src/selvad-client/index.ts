@@ -1,7 +1,7 @@
 import connect, { Connection } from './socket.js'
 import { crc32 } from './crc32c.js'
 
-const SELVA_PROTO_FRAME_SIZE_MAX = 2048
+const SELVA_PROTO_FRAME_SIZE = 2048
 const SELVA_PROTO_MSG_SIZE_MAX = 1073741824
 
 const SELVA_PROTO_HDR_SIZE = 16
@@ -12,49 +12,43 @@ const SELVA_PROTO_HDR_FLAST = 0x40 /*!< This is the last frame of the sequence. 
 const SELVA_PROTO_HDR_STREAM = 0x10
 const SELVA_PROTO_HDR_BATCH = 0x08
 const SELVA_PROTO_HDR_FDEFLATE = 0x01
-const SELVA_PROTO_HDR_CHECK_OFFSET = 12
 
-function encode(cmdId: number, seqno: number, payload: Buffer | null): Buffer[] {
-  const chunkSize = SELVA_PROTO_FRAME_SIZE_MAX - SELVA_PROTO_HDR_SIZE
-  const frameTemplate = Buffer.allocUnsafe(SELVA_PROTO_FRAME_SIZE_MAX)
+const HDR_OFF_CMDID = 0
+const HDR_OFF_FLAGS = 1
+const HDR_OFF_SEQNO = 2
+const HDR_OFF_FBSIZE = 6
+const HDR_OFF_CHK = 12
 
-  frameTemplate.writeInt8(cmdId, 0)
-  //frameTemplate.writeInt8(flags, 1)
-  frameTemplate.writeUint32LE(seqno, 2)
-  //frameTemplate.writeUint16LE(frame_bsize, 6)
-  frameTemplate.writeUint32LE(payload?.length || 0, 8) // msg_bsize
-  frameTemplate.writeUint32LE(0, SELVA_PROTO_HDR_CHECK_OFFSET) // chk must be zeroed initially
+export function buf2payloadChunks(buf: Buffer): Buffer[] {
+  const chunkSize = SELVA_PROTO_FRAME_SIZE - SELVA_PROTO_HDR_SIZE
+  const chunks: Buffer[] = []
 
-  // Some commands don't take any payload
-  if (!payload || payload.length == 0) {
-    frameTemplate.writeInt8(SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST, 1)
-    frameTemplate.writeUint16LE(16, 6) // frame_size
-    frameTemplate.writeUInt32LE(crc32(frameTemplate, 0, SELVA_PROTO_HDR_SIZE), SELVA_PROTO_HDR_CHECK_OFFSET)
-    return [frameTemplate]
-  }
+ for (let i = 0; i < buf.length; i += chunkSize) {
+   const chunk = buf.subarray(i, i + chunkSize)
+   chunks.push(chunk)
+ }
 
-  const frames: Buffer[] = []
-  for (let i = 0; i < payload.length; i += chunkSize) {
-    const chunk = payload.slice(i, i + chunkSize)
-    const frame = Buffer.from(frameTemplate)
+ return chunks
+}
 
-    frame.writeInt8((i == 0 ? SELVA_PROTO_HDR_FFIRST : 0) | (i + chunkSize >= payload.length ? SELVA_PROTO_HDR_FLAST : 0), 1) // flags
-    frame.writeUint16LE(16 + chunk.length, 6) // frame_bsize
-    chunk.copy(frame, 16)
-    frame.writeUInt32LE(crc32(frame, 0, 16 + chunk.length), SELVA_PROTO_HDR_CHECK_OFFSET)
-    frames.push(frame)
-  }
-
-  return frames
+function iniFrame(frame: Buffer, cmdId: number, seqno: number) {
+  frame.writeInt8(cmdId, HDR_OFF_CMDID)
+  frame.writeInt8(0, HDR_OFF_FLAGS)
+  frame.writeUint32LE(seqno, HDR_OFF_SEQNO)
+  frame.writeUint32LE(0, HDR_OFF_CHK) // chk must be zeroed initially
 }
 
 export default function createSelvaProtoClient(port: number, host: string) {
+  const outgoingBuf = Buffer.allocUnsafe(100 * 1024 * 1024)
+  let outgoingBufIndex = 0
   let nextSeqno = 0
   let partialIncomingBuf: null | Buffer = null
   const incoming = new Map<number, Array<Buffer>>()
   const waiting = new Map<number, (msg: Buffer | null, err?: Error) => void>()
   const conn: Connection = connect(port, host, {
-    onOpen: () => {}, // TODO
+    onOpen: () => {
+        maybeSendAll(true)
+    },
     onData: (buf: Buffer) => {
         let frame: Buffer | null = partialIncomingBuf ? Buffer.concat([partialIncomingBuf, buf]) : buf
         let left = frame.length
@@ -63,8 +57,8 @@ export default function createSelvaProtoClient(port: number, host: string) {
 
         do {
             const frameBsize = frame.readUint32LE(6)
-            const origChk = frame.readUint32LE(SELVA_PROTO_HDR_CHECK_OFFSET)
-            frame.writeUInt32LE(0, SELVA_PROTO_HDR_CHECK_OFFSET)
+            const origChk = frame.readUint32LE(HDR_OFF_CHK)
+            frame.writeUInt32LE(0, HDR_OFF_CHK)
             const newChk = crc32(frame, 0, frameBsize)
 
             if (origChk != newChk) {
@@ -97,14 +91,15 @@ export default function createSelvaProtoClient(port: number, host: string) {
               }
             }
 
-            left -= SELVA_PROTO_FRAME_SIZE_MAX
-            frame = frame.subarray(SELVA_PROTO_FRAME_SIZE_MAX)
-        } while (left >= SELVA_PROTO_FRAME_SIZE_MAX)
+            left -= SELVA_PROTO_FRAME_SIZE
+            frame = frame.subarray(SELVA_PROTO_FRAME_SIZE)
+        } while (left >= SELVA_PROTO_FRAME_SIZE)
         if (left) {
             partialIncomingBuf = frame
         }
     },
     onReconnect: () => { // TODO
+        outgoingBufIndex = 0
         nextSeqno = 0
         incoming.clear()
         for (const wait of waiting.values()) {
@@ -115,34 +110,78 @@ export default function createSelvaProtoClient(port: number, host: string) {
     onClose: () => {}, // TODO
   })
 
-  function sendRequest(cmdId: number, payload: Buffer | null): Promise<Buffer> {
-    const seqno = nextSeqno++
-    const bufs = encode(cmdId, seqno, payload)
-
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // TODO I dunno if we should even have an array of buffers. It allows us to inject
-          // more urgent commands in the middle if we want but otherwise we probably just
-          // want to pass a single buffer here, in which case this is suboptimal
-        //conn.socket.write(Buffer.concat(bufs), (err: Error) => {
-        //    if (err) {
-        //        reject(err)
-        //        return
-        //    }
-        //})
-        for (const buf of bufs) {
-          conn.socket.write(buf, (err: Error) => {
+  const maybeSendAll = async (flush?: boolean) => {
+    return new Promise<boolean>((resolve, reject) => {
+      if (conn.disconnected || !conn.socket) {
+          console.log('Not connected') // TODO ???
+          resolve(false)
+      } else if (flush || outgoingBufIndex + SELVA_PROTO_FRAME_SIZE >= outgoingBuf.length) {
+        conn.socket.write(outgoingBuf.subarray(0, outgoingBufIndex), (err: Error) => {
             if (err) {
+              // TODO fail those seqs that were waiting
               reject(err)
-              return
+            } else {
+              outgoingBufIndex = 0
+              resolve(true)
             }
-          })
-        }
-
-        waiting.set(seqno, (buf: Buffer, err?: Error) => buf ? resolve(buf) : reject(err))
-      }, 0)
+        })
+      }
     })
   }
 
-  return { sendRequest }
+  const newSeqno = (): number => nextSeqno++
+
+  const newFrame = async (cmdId: number, seqno: number): Promise<[Buffer, Buffer]> => {
+    do {
+        if (await maybeSendAll(true)) break
+    } while (outgoingBufIndex)
+
+    const start = outgoingBufIndex + SELVA_PROTO_HDR_SIZE
+    const end = outgoingBufIndex + SELVA_PROTO_FRAME_SIZE
+    const frame = outgoingBuf.subarray(outgoingBufIndex, end)
+    const payload = outgoingBuf.subarray(start, end)
+    outgoingBufIndex += SELVA_PROTO_FRAME_SIZE
+
+    iniFrame(frame, cmdId, seqno)
+    return [frame, payload]
+  }
+
+  const frameCRC = (frame: Buffer) => {
+    frame.writeUInt32LE(0, HDR_OFF_CHK)
+    frame.writeUInt32LE(crc32(frame, 0, frame.readUint16LE(HDR_OFF_FBSIZE)), HDR_OFF_CHK)
+  }
+
+  const finiFrame = (frame: Buffer, len: number, flags?: { firstFrame?: boolean; lastFrame?: boolean; batch?: boolean; }) => {
+    frame.writeUint8(frame.readUint8(HDR_OFF_FLAGS)
+      | (flags?.firstFrame ? SELVA_PROTO_HDR_FFIRST : 0)
+      | (flags?.lastFrame ? SELVA_PROTO_HDR_FLAST : 0)
+      | (flags?.batch ? SELVA_PROTO_HDR_BATCH : 0), HDR_OFF_FLAGS)
+    frame.writeUint16LE(SELVA_PROTO_HDR_SIZE + len, HDR_OFF_FBSIZE)
+    frameCRC(frame)
+  }
+
+  const sendFrame = (frame: Buffer, len: number, flags: { firstFrame?: boolean; lastFrame?: boolean; batch?: boolean; }): Promise<Buffer> | null => {
+    finiFrame(frame, len, flags)
+
+    const p = flags?.lastFrame ? new Promise<Buffer>((resolve, reject) =>
+        waiting.set(frame.readUint32LE(HDR_OFF_SEQNO),
+                    (buf: Buffer, err?: Error) => buf ? resolve(buf) : reject(err))) : null
+    maybeSendAll(!flags?.batch).catch(console.error) // TODO
+    return p
+  }
+
+  const sendPing = async () => {
+    const seqno = newSeqno()
+    const [frame] = await newFrame(0, seqno)
+    await sendFrame(frame, 0, { firstFrame: true, lastFrame: true, batch: false })
+  }
+
+  const flush = async () => {
+    const lastFrame = outgoingBuf.subarray(outgoingBufIndex - SELVA_PROTO_FRAME_SIZE);
+    lastFrame.writeUint8(lastFrame.readUint8(HDR_OFF_FLAGS) & ~SELVA_PROTO_HDR_BATCH, HDR_OFF_FLAGS)
+    frameCRC(lastFrame)
+    await sendPing()
+  }
+
+  return { newSeqno, newFrame, sendFrame, flush }
 }

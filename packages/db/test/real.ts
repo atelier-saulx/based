@@ -3,7 +3,7 @@ import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
-import newClient from '../src/selvad-client/index.js'
+import newClient, {buf2payloadChunks} from '../src/selvad-client/index.js'
 import { create, update } from '../src/set2.js'
 import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js';
 import { join, dirname, resolve } from 'path'
@@ -11,6 +11,30 @@ import { join, dirname, resolve } from 'path'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
+
+async function sendSchema(client: ReturnType<typeof newClient>, schema: Buffer) {
+  const seqno = client.newSeqno()
+  const chunks = buf2payloadChunks(schema)
+  let p: Promise<Buffer> | null
+
+  // TODO We should have a little smaller first chunk
+  const [headFrame, headBuf] = await client.newFrame(36, seqno)
+  headBuf.writeUInt8(5, 0)
+  headBuf.writeUInt8(1, 4)
+  headBuf.writeUInt8(4, 8)
+  headBuf.writeUint32LE(schema.length, 8 + 4)
+  client.sendFrame(headFrame, 16, { firstFrame: true, lastFrame: false, batch: true })
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i]
+    const [frame, payload] = await client.newFrame(36, seqno)
+    chunk.copy(payload)
+    const lastFrame = i === chunks.length - 1
+    p = client.sendFrame(frame, chunk.length, { lastFrame, batch: !lastFrame })
+  }
+
+  const resp = p ? decodeMessageWithValues(await p) : null
+  console.log('schema write:', resp)
+}
 
 test.serial.only('query + filter', async (t) => {
   try {
@@ -21,8 +45,9 @@ test.serial.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
+  const sClient = newClient(3000, '127.0.0.1')
   // @ts-ignore
-  db.client = newClient(3000, '127.0.0.1')
+  db.client = sClient
   db.native = {
     modify: (buff: Buffer, len: number) => {
       console.log('lullz flush buffer', len)
@@ -32,6 +57,7 @@ test.serial.only('query + filter', async (t) => {
       return Buffer.allocUnsafe(0)
     },
   }
+  await wait(1)
 
   db.updateSchema({
     types: {
@@ -53,16 +79,9 @@ test.serial.only('query + filter', async (t) => {
       },
     },
   })
-  const schemaHead = Buffer.alloc(2 * 8)
-  schemaHead.writeUInt8(5, 0)
-  schemaHead.writeUInt8(1, 4)
-  schemaHead.writeUInt8(4, 8)
-  schemaHead.writeUint32LE(db.schemaTypesParsed.simple.buf.length, 8 + 4)
+  await sendSchema(sClient, db.schemaTypesParsed.simple.buf)
   // @ts-ignore
-  const schemaResp = decodeMessageWithValues(await db.client.sendRequest(36, Buffer.concat([schemaHead, db.schemaTypesParsed.simple.buf])))
-  console.log('schema write:', schemaResp)
-  // @ts-ignore
-  console.log('schema read:', await db.client.sendRequest(37));
+  //console.log('schema read:', await db.client.sendRequest(37));
 
   console.log(
     'SCHEMA',
@@ -89,8 +108,8 @@ test.serial.only('query + filter', async (t) => {
   console.log('GO!')
 
   const p = []
-  //for (let i = 0; i < 1e6 - 1; i++) {
-  for (let i = 0; i < 1e3 - 1; i++) {
+  for (let i = 0; i < 1e6 - 1; i++) {
+  // for (let i = 0; i < 2000; i++) {
     p.push(create(db, 'simple', {
       //user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
@@ -102,9 +121,14 @@ test.serial.only('query + filter', async (t) => {
         lat: 52,
       },
     }))
-    if (i % 1000 === 0) await wait(0)
+    if (i % 1000 === 0) {
+      //console.log('flush')
+      // @ts-ignore
+      await db.client.flush()
+      await Promise.all(p)
+      p.length = 0
+    }
   }
-  await Promise.all(p)
 
   // { set Id, amount: 10 } , checksum
 

@@ -1,81 +1,78 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
-import {decodeMessageWithValues} from './selvad-client/proto-value.js'
-import {SELVA_PROTO_LONGLONG, SELVA_PROTO_STRING} from './selvad-client/selva_proto.js'
-
-const buf = Buffer.alloc(1024 * 1024)
-let bufIndex = 0
-let nrChanges = 0
+import {SELVA_PROTO_STRING} from './selvad-client/selva_proto.js'
 
 const modify = (
   db: BasedDb,
+  state: { buf: Buffer; bufIndex: number; nrChanges: number; },
   type: string,
   id: number,
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef
 ) => {
-  if (bufIndex === 0) {
+  const buf = state.buf
+  if (state.bufIndex === 0) {
       buf.writeUint8(SELVA_PROTO_STRING, 0)
       buf.writeUint32LE(16, 4)
-      bufIndex += 8 // selva_proto_string
+      state.bufIndex += 8 // selva_proto_string
 
       // modify_header
-      const selvaId = `${schema.prefixString}${id}`
-      buf.write(selvaId, bufIndex)
-      bufIndex += 16
+      const selvaId = `${schema.prefixString}${id}`.padEnd(8, '\0')
+      buf.write(selvaId, state.bufIndex)
+      state.bufIndex += 16
   }
 
   for (const key in obj) {
     const leaf = tree[key]
     const value = obj[key]
     if (!leaf.type && !leaf.__isField) {
-      modify(db, type, id, value, leaf as SchemaTypeDef['tree'], schema)
+      modify(db, state, type, id, value, leaf as SchemaTypeDef['tree'], schema)
     } else {
       const t = leaf as FieldDef
       if (t.type === 'string') {
           const byteLen = Buffer.byteLength(value, 'utf8')
 
-          buf.writeUint8(SELVA_PROTO_STRING, bufIndex)
-          buf.writeUint32LE(32 + byteLen, bufIndex + 4)
-          bufIndex += 8 // selva_proto_string
+          buf.writeUint8(SELVA_PROTO_STRING, state.bufIndex)
+          buf.writeUint32LE(32 + byteLen, state.bufIndex + 4)
+          state.bufIndex += 8 // selva_proto_string
 
           // SelvaModifyFieldOp
-          buf.writeUint8(1, bufIndex)
-          buf.write(`${t.selvaField}`, bufIndex + 8)
-          buf.writeBigUint64LE(32n, bufIndex + 16)
-          buf.writeBigUint64LE(BigInt(byteLen), bufIndex + 24)
-          buf.write(value, bufIndex + 32)
-          bufIndex += 32 + byteLen
+          buf.writeUint8(1, state.bufIndex)
+          buf.write(`${t.selvaField}`, state.bufIndex + 8)
+          buf.writeBigUint64LE(32n, state.bufIndex + 16)
+          buf.writeBigUint64LE(BigInt(byteLen), state.bufIndex + 24)
+          buf.write(value, state.bufIndex + 32)
+          state.bufIndex += 32 + byteLen
       } else if (t.type === 'number') {
-          buf.writeUint8(SELVA_PROTO_STRING, bufIndex)
-          buf.writeUint32LE(32 + 8, bufIndex + 4)
-          bufIndex += 8 // selva_proto_string
+          buf.writeUint8(SELVA_PROTO_STRING, state.bufIndex)
+          buf.writeUint32LE(32 + 8, state.bufIndex + 4)
+          state.bufIndex += 8 // selva_proto_string
 
           // SelvaModifyFieldOp
-          buf.writeUint8(6, bufIndex)
-          buf.write(`${t.selvaField}`, bufIndex + 8)
-          buf.writeBigUint64LE(32n, bufIndex + 16)
-          buf.writeBigUint64LE(8n, bufIndex + 24)
-          buf.writeDoubleLE(value, bufIndex + 32)
-          bufIndex += 32 + 8
+          buf.writeUint8(6, state.bufIndex)
+          buf.write(`${t.selvaField}`, state.bufIndex + 8)
+          buf.writeBigUint64LE(32n, state.bufIndex + 16)
+          buf.writeBigUint64LE(8n, state.bufIndex + 24)
+          buf.writeDoubleLE(value, state.bufIndex + 32)
+          state.bufIndex += 32 + 8
       } else if (t.type === 'timestamp' || t.type === 'integer' || t.type === 'boolean') {
-          buf.writeUint8(SELVA_PROTO_STRING, bufIndex)
-          buf.writeUint32LE(32 + 8, bufIndex + 4)
-          bufIndex += 8 // selva_proto_string
+          buf.writeUint8(SELVA_PROTO_STRING, state.bufIndex)
+          buf.writeUint32LE(32 + 8, state.bufIndex + 4)
+          state.bufIndex += 8 // selva_proto_string
 
           // SelvaModifyFieldOp
-          buf.writeUint8(3, bufIndex)
-          buf.write(`${t.selvaField}`, bufIndex + 8)
-          buf.writeBigUint64LE(32n, bufIndex + 16)
-          buf.writeBigUint64LE(8n, bufIndex + 24)
-          buf.writeBigInt64LE(BigInt(value), bufIndex + 32)
-          bufIndex += 32 + 8
+          buf.writeUint8(3, state.bufIndex)
+          buf.write(`${t.selvaField}`, state.bufIndex + 8)
+          buf.writeBigUint64LE(32n, state.bufIndex + 16)
+          buf.writeBigUint64LE(8n, state.bufIndex + 24)
+          buf.writeBigInt64LE(BigInt(value), state.bufIndex + 32)
+          state.bufIndex += 32 + 8
       } else if (t.type === 'reference') {
           // TODO
       } else if (t.type === 'references') {
           // TODO
       }
-      nrChanges++
+      state.nrChanges++
     }
   }
 }
@@ -84,15 +81,20 @@ export const create = async (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
   def.total++
-  modify(db, type, id, value, def.tree, def)
-  buf.writeUint32LE(nrChanges, 8 + 12)
+
+  // TODO We often need more frames
   // @ts-ignore
-  const p = db.client.sendRequest(70, buf)
-  bufIndex = 0
-  nrChanges = 0
-  console.log('id', id)
+  const [frame, payload] = await db.client.newFrame(70, db.client.newSeqno())
+  const state = {
+      buf: payload,
+      bufIndex: 0,
+      nrChanges: 0,
+  }
+  modify(db, state, type, id, value, def.tree, def)
+  payload.writeUint32LE(state.nrChanges, 8 + 12)
+  // @ts-ignore
+  const p = db.client.sendFrame(frame, state.bufIndex, { firstFrame: true, lastFrame: true, batch: true })
   await p // TODO We probably should parse and return errors
-  console.log('idrdy', id)
   return id
 }
 
@@ -104,11 +106,19 @@ export const update = async (
   merge?: boolean
 ) => {
   const def = db.schemaTypesParsed[type]
-  modify(db, type, id, value, def.tree, def)
-  buf.writeUint32LE(nrChanges, 8 + 12)
+
+  // TODO We often need more frames
   // @ts-ignore
-  const p = db.client.sendRequest(70, buf.subarray(0, bufIndex))
-  bufIndex = 0
-  nrChanges = 0
+  const [frame, payload] = await db.client.newFrame(70, db.client.newSeqno())
+  const state = {
+      buf: payload,
+      bufIndex: 0,
+      nrChanges: 0,
+  }
+  modify(db, state, type, id, value, def.tree, def)
+  payload.writeUint32LE(state.nrChanges, 8 + 12)
+
+  // @ts-ignore
+  const p = db.client.sendFrame(frame, state.bufIndex, { firstFrame: true, lastFrame: true, batch: true })
   await p // TODO We probably should parse and return errors
 }
