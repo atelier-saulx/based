@@ -7,29 +7,36 @@ import newClient, {buf2payloadChunks} from '../src/selvad-client/index.js'
 import { create, update } from '../src/set2.js'
 import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js';
 import { join, dirname, resolve } from 'path'
+import {SELVA_PROTO_ARRAY, SELVA_PROTO_STRING} from '../src/selvad-client/selva_proto.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-async function sendSchema(client: ReturnType<typeof newClient>, schema: Buffer) {
+async function sendSchema(client: ReturnType<typeof newClient>, schema: Buffer[]) {
+  const cmdid = 36
   const seqno = client.newSeqno()
-  const chunks = buf2payloadChunks(schema)
+  let firstFrame = true
   let p: Promise<Buffer> | null
 
-  // TODO We should have a little smaller first chunk
-  const [headFrame, headBuf] = await client.newFrame(36, seqno)
-  headBuf.writeUInt8(5, 0)
-  headBuf.writeUInt8(1, 4)
-  headBuf.writeUInt8(4, 8)
-  headBuf.writeUint32LE(schema.length, 8 + 4)
-  client.sendFrame(headFrame, 16, { firstFrame: true, lastFrame: false, batch: true })
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i]
-    const [frame, payload] = await client.newFrame(36, seqno)
-    chunk.copy(payload)
-    const lastFrame = i === chunks.length - 1
-    p = client.sendFrame(frame, chunk.length, { lastFrame, batch: !lastFrame })
+  for (const nodeSchema of schema) {
+    const chunks = buf2payloadChunks(nodeSchema, 8)
+
+    for (let i = 0; i < chunks.length; i++) {
+      const [frame, payload] = await client.newFrame(cmdid, seqno)
+      const lastFrame = i === chunks.length - 1
+
+      const chunk = chunks[i]
+      if (i === 0) { // Write header just once for each node type
+        payload.writeUInt8(SELVA_PROTO_STRING, 0)
+        payload.writeUint32LE(nodeSchema.length, 4)
+        chunk.copy(payload, 8)
+      } else {
+        chunk.copy(payload)
+      }
+      p = client.sendFrame(frame, chunk.length, { firstFrame, lastFrame, batch: !lastFrame })
+      firstFrame = false
+    }
   }
 
   const resp = p ? decodeMessageWithValues(await p) : null
@@ -79,7 +86,7 @@ test.serial.only('query + filter', async (t) => {
       },
     },
   })
-  await sendSchema(sClient, db.schemaTypesParsed.simple.buf)
+  await sendSchema(sClient, Object.values(db.schemaTypesParsed).map(({buf}) => buf))
   // @ts-ignore
   //console.log('schema read:', await db.client.sendRequest(37));
 

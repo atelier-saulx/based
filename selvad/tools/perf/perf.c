@@ -106,7 +106,6 @@ static int send_schema(int fd, int seqno)
 #define SCHEMA {'m', 'a', 0, 9 /* SCHEMA_STRING */, 5 /* SCHEMA_INTEGER */, 0}
     struct {
         struct selva_proto_header hdr;
-        struct selva_proto_array arr;
         struct selva_proto_string type0_hdr;
         char type0[sizeof((char [])SCHEMA)];
     } __packed buf = {
@@ -115,11 +114,6 @@ static int send_schema(int fd, int seqno)
             .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
             .seqno = htole32(seqno),
             .frame_bsize = htole16(sizeof(buf)),
-        },
-        .arr = {
-            .type = SELVA_PROTO_ARRAY,
-            .flags = 0,
-            .length = htole32(1),
         },
         .type0_hdr = {
             .type = SELVA_PROTO_STRING,

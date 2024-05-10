@@ -19,16 +19,24 @@ const HDR_OFF_SEQNO = 2
 const HDR_OFF_FBSIZE = 6
 const HDR_OFF_CHK = 12
 
-export function buf2payloadChunks(buf: Buffer): Buffer[] {
+export function buf2payloadChunks(buf: Buffer, hdrSize?: number): Buffer[] {
   const chunkSize = SELVA_PROTO_FRAME_SIZE - SELVA_PROTO_HDR_SIZE
   const chunks: Buffer[] = []
+  let i = 0
 
- for (let i = 0; i < buf.length; i += chunkSize) {
-   const chunk = buf.subarray(i, i + chunkSize)
-   chunks.push(chunk)
- }
+  if (hdrSize) {
+    const size = chunkSize - hdrSize
+    const chunk = buf.subarray(0, size)
+    chunks.push(chunk)
+    i = size
+  }
 
- return chunks
+  for (; i < buf.length; i += chunkSize) {
+    const chunk = buf.subarray(i, i + chunkSize)
+    chunks.push(chunk)
+  }
+
+  return chunks
 }
 
 function iniFrame(frame: Buffer, cmdId: number, seqno: number) {
