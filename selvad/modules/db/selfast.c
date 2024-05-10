@@ -28,54 +28,21 @@
 
 #define N_MODIFY 2000000
 //#define N_MODIFY 10000000
+#define OP_SCHEMA {'o', 'p', 0, 5 /* SCHEMA_INTEGER */, 0}
 
 /* TODO Would be nice to have a C API */
 static void set_schema(void)
 {
-    struct client_schema { /* from db/hierarchy/schema.c */
-        uint32_t nr_emb_fields;
-        char type[SELVA_NODE_TYPE_SIZE];
-        uint8_t created_en;
-        uint8_t updated_en;
-        const char *field_schema_str;
-        size_t field_schema_len;
-        const char *edge_constraints_str; /* n * EdgeFieldDynConstraintParams */
-        size_t edge_constraints_len;
-    };
     struct {
-        struct selva_proto_array arr;
         struct selva_proto_string type0_hdr;
-        struct client_schema type0;
-        /* Flexible/heap data for type0 */
-        char type0_fs[1 * sizeof(struct SelvaFieldSchema)];
+        char type0[sizeof((char [])OP_SCHEMA)];
     } __packed buf = {
-        .arr = {
-            .type = SELVA_PROTO_ARRAY,
-            .flags = 0,
-            .length = htole32(1),
-        },
         .type0_hdr = {
             .type = SELVA_PROTO_STRING,
-            .bsize = htole32(sizeof(buf.type0) + sizeof(buf.type0_fs)),
+            .bsize = htole32(sizeof(buf.type0)),
         },
-        .type0 = {
-            .type = "op",
-            .nr_emb_fields = 1,
-            .created_en = false,
-            .updated_en = false,
-            .edge_constraints_len = 0,
-            .field_schema_str = (void *)sizeof(struct client_schema), /* offset */
-            .field_schema_len = sizeof(buf.type0_fs),
-        },
+        .type0 = OP_SCHEMA,
     };
-
-    memcpy(buf.type0_fs,
-           &(struct SelvaFieldSchema){
-               .field_name = "vc",
-               .type1 = SELVA_FIELD_SCHEMA_TYPE_DATA,
-               .type2 = SELVA_OBJECT_LONGLONG,
-               .meta = 0,
-           }, sizeof(struct SelvaFieldSchema));
 
     int err = selva_server_run_cmd(CMD_ID_HIERARCHY_SCHEMA_SET, 0, &buf, sizeof(buf));
     if (err) {
@@ -85,7 +52,7 @@ static void set_schema(void)
 
 static void do_find(struct selva_string *out_buf)
 {
-#define FIND_EXPRESSION "#1 \"vc\" g I"
+#define FIND_EXPRESSION "#1 \"0\" g I"
     struct {
         struct selva_proto_string lang_hdr;
         struct selva_proto_string query_opts_hdr;
@@ -158,7 +125,7 @@ static int fast_find_cb(
 static void do_fast_find(struct selva_string *out_buf)
 {
     __auto_free_rpn_ctx struct rpn_ctx *rpn_ctx = rpn_init(1);
-    __auto_free_rpn_expression struct rpn_expression *filter = rpn_compile("#1 \"vc\" g I");
+    __auto_free_rpn_expression struct rpn_expression *filter = rpn_compile("#1 \"0\" g I");
     struct SelvaHierarchyCallback cb = {
         .node_cb = fast_find_cb,
         .node_arg = &(struct fast_find_ctx){
@@ -192,7 +159,7 @@ static void selfast(struct selva_server_response_out *resp, const void *buf, siz
             SELVA_LOG(SELVA_LOGL_ERR, "UpsertNode(\"%.*s\") failed: %s", (int)SELVA_NODE_ID_SIZE, node_id, selva_strerror(err));
             return;
         }
-        (void)SelvaObject_SetLongLongStr(SelvaHierarchy_GetNodeObject(node), "vc", 2, i % 4);
+        (void)SelvaObject_SetLongLongStr(SelvaHierarchy_GetNodeObject(node), "0", 2, i % 4);
     }
     ts_monotime(&ts_end);
 
