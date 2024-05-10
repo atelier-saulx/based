@@ -98,6 +98,40 @@ export const create = async (db: BasedDb, type: string, value: any) => {
   return id
 }
 
+export const createBatch = async (db: BasedDb, type: string, values: any[]) => {
+  const def = db.schemaTypesParsed[type]
+  const cmdid = 70
+  // @ts-ignore
+  const seqno = db.client.newSeqno()
+
+  await new Promise(async (resolve) => {
+    const errors = []
+
+    for (let i = 0; i < values.length; i++) {
+      const value = values[i]
+      const id = ++def.lastId
+      def.total++
+      // @ts-ignore
+      const [frame, payload] = await db.client.newFrame(cmdid, seqno)
+      const state = {
+          buf: payload,
+          bufIndex: 0,
+          nrChanges: 0,
+      }
+      // TODO Large modify support
+      modify(db, state, type, id, value, def.tree, def)
+      payload.writeUint32LE(state.nrChanges, 8 + 12)
+      // @ts-ignore
+      db.client.sendFrameWithCb(frame, state.bufIndex, { firstFrame: true, lastFrame: true, batch: i != values.length - 1 }, (buf: Buffer, err?: Error) => {
+          if (err) {
+            errors.push({ id, err })
+          }
+          if (i == values.length - 1) resolve(errors)
+      })
+    }
+  })
+}
+
 export const update = async (
   db: BasedDb,
   type: string,

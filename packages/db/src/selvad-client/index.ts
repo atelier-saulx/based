@@ -47,7 +47,7 @@ function iniFrame(frame: Buffer, cmdId: number, seqno: number) {
 }
 
 export default function createSelvaProtoClient(port: number, host: string) {
-  const outgoingBuf = Buffer.allocUnsafe(100 * 1024 * 1024)
+  const outgoingBuf = Buffer.allocUnsafe(512 * 1024 * 1024)
   let outgoingBufIndex = 0
   let nextSeqno = 0
   let partialIncomingBuf: null | Buffer = null
@@ -175,9 +175,18 @@ export default function createSelvaProtoClient(port: number, host: string) {
 
     const p = flags?.lastFrame ? new Promise<Buffer>((resolve, reject) =>
         waiting.set(frame.readUint32LE(HDR_OFF_SEQNO),
-                    (buf: Buffer, err?: Error) => buf ? resolve(buf) : reject(err))) : null
+                    (buf: Buffer | null, err?: Error) => buf ? resolve(buf) : reject(err))) : null
     maybeSendAll(!flags?.batch).catch(console.error) // TODO
     return p
+  }
+
+  const sendFrameWithCb = (frame: Buffer, len: number, flags: { firstFrame?: boolean; lastFrame?: boolean; batch?: boolean; }, cb: (buf: Buffer, err?: Error) => void): void => {
+    finiFrame(frame, len, flags)
+
+    if (flags?.lastFrame) {
+      waiting.set(frame.readUint32LE(HDR_OFF_SEQNO), cb)
+    }
+    maybeSendAll(!flags?.batch).catch(console.error)
   }
 
   const sendPing = async () => {
@@ -193,5 +202,5 @@ export default function createSelvaProtoClient(port: number, host: string) {
     await sendPing()
   }
 
-  return { newSeqno, newFrame, sendFrame, flush }
+  return { newSeqno, newFrame, sendFrame, sendFrameWithCb, flush }
 }

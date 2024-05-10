@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
 import newClient, {buf2payloadChunks} from '../src/selvad-client/index.js'
-import { create, update } from '../src/set2.js'
+import { create, createBatch, update } from '../src/set2.js'
 import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js';
 import { join, dirname, resolve } from 'path'
 import {SELVA_PROTO_ARRAY, SELVA_PROTO_STRING} from '../src/selvad-client/selva_proto.js'
@@ -114,6 +114,7 @@ test.serial.only('query + filter', async (t) => {
   var dx = Date.now()
   console.log('GO!')
 
+  /*
   const p = []
   for (let i = 0; i < 1e6 - 1; i++) {
   // for (let i = 0; i < 2000; i++) {
@@ -136,6 +137,20 @@ test.serial.only('query + filter', async (t) => {
       p.length = 0
     }
   }
+  */
+
+  const t1 = Date.now()
+  const objs = Array.from({ length: 1e6 }, (_, i) => ({
+    vectorClock: i % 4,
+    location: {
+      long: 52,
+      lat: 52,
+    },
+  }))
+  console.log(Date.now() - t1, 'ms')
+  const t2 = Date.now()
+  await createBatch(db, 'simple', objs)
+  console.log(Date.now() - t2, 'ms')
 
   // { set Id, amount: 10 } , checksum
 
