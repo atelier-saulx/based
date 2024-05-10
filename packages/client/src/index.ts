@@ -359,16 +359,19 @@ export class BasedClient extends Emitter {
       return new Promise((resolve, reject) => {
         let time = 0
         let retries = 0
-        const retryReject = (err: Error) => {
-          const newTime = retryStrategy(err, time, retries)
+        const retryReject = async (err: Error) => {
+          const result = await retryStrategy(err, time, retries)
+          const isObj = typeof result === 'object'
+          const newPayload = (isObj ? result.payload : payload) ?? payload
+          const newTime = isObj ? result.time : result
           retries++
           if (typeof newTime === 'number' && !isNaN(newTime)) {
             time = newTime
             if (newTime === 0) {
-              addToFunctionQueue(this, payload, name, resolve, retryReject)
+              addToFunctionQueue(this, newPayload, name, resolve, retryReject)
             } else {
               setTimeout(() => {
-                addToFunctionQueue(this, payload, name, resolve, retryReject)
+                addToFunctionQueue(this, newPayload, name, resolve, retryReject)
               }, newTime)
             }
           } else {
