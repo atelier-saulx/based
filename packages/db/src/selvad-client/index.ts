@@ -140,9 +140,11 @@ export default function createSelvaProtoClient(port: number, host: string) {
   const newSeqno = (): number => nextSeqno++
 
   const newFrame = async (cmdId: number, seqno: number): Promise<[Buffer, Buffer]> => {
-    do {
-        if (await maybeSendAll(true)) break
-    } while (outgoingBufIndex)
+    if (outgoingBufIndex + SELVA_PROTO_FRAME_SIZE >= outgoingBuf.length) {
+      do {
+          if (await maybeSendAll(true)) break
+      } while (outgoingBufIndex)
+    }
 
     const start = outgoingBufIndex + SELVA_PROTO_HDR_SIZE
     const end = outgoingBufIndex + SELVA_PROTO_FRAME_SIZE
