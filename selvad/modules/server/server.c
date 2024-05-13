@@ -2,7 +2,9 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#if defined(__linux__)
 #define _GNU_SOURCE
+#endif
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -553,7 +555,7 @@ static int new_server(int port)
     }
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     server.sin_port = htons(port);
 
     if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
