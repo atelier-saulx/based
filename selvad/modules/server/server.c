@@ -5,6 +5,7 @@
 #if defined(__linux__)
 #define _GNU_SOURCE
 #endif
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -862,6 +863,14 @@ static bool on_connection(struct event *event, void *arg __unused)
         SELVA_LOG(SELVA_LOGL_ERR, "Accept failed");
         return false;
     }
+
+#if defined(__APPLE__)
+    /*
+     * Loopback doesn't need any TCP options. On MacOs this avoids TCP timestamps.
+     * Interestingly, if this was enabled before bind then handshakes would fail.
+     */
+    (void)setsockopt(new_sockfd, IPPROTO_TCP, TCP_NOOPT, &(int){1}, sizeof(int));
+#endif
 
     tcp_set_nodelay(new_sockfd);
     tcp_set_keepalive(new_sockfd, TCP_KEEPALIVE_TIME, TCP_KEEPALIVE_INTVL, TCP_KEEPALIVE_PROBES);

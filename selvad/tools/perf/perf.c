@@ -71,6 +71,10 @@ static int connect_to_server(const char *addr, int port)
         return -1;
     }
 
+#if defined(__APPLE__)
+    (void)setsockopt(sock, IPPROTO_TCP, TCP_NOOPT, &(int){1}, sizeof(int));
+#endif
+
     return sock;
 }
 
