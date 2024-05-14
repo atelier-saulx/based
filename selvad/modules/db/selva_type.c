@@ -28,8 +28,11 @@ struct protected_field {
 static const struct protected_field protected_fields[] = {
     PROT_FIELD(SELVA_ID_FIELD, SELVA_OBJECT_STRING, 0),
     PROT_FIELD(SELVA_ALIASES_FIELD, SELVA_OBJECT_SET, SELVA_FIELD_PROT_WRITE | SELVA_FIELD_PROT_DEL),
+    /* FIXME Protect created and updated fields */
+#if 0
     PROT_FIELD(SELVA_CREATED_AT_FIELD, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE),
     PROT_FIELD(SELVA_UPDATED_AT_FIELD, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE),
+#endif
 };
 static __nonstring char prot_bloom[num_elem(protected_fields)];
 
@@ -101,6 +104,34 @@ int selva_string2node_id(Selva_NodeId nodeId, const struct selva_string *s)
     }
 
     return err;
+}
+
+/**
+ * field_name_str should be alaways within a page.
+ */
+size_t selva_short_field_len(const char field_name_str[SELVA_SHORT_FIELD_NAME_LEN])
+{
+#if SELVA_SHORT_FIELD_NAME_LEN == 4
+    uint32_t x;
+
+    memcpy(&x, field_name_str, sizeof(x));
+#define haszero(v) (((v) - 0x1010101U) & ~(v) & 0x80808080U)
+    uint32_t y = haszero(x);
+#undef haszero
+
+    return y == 0 ? sizeof(x) : (size_t)(__builtin_ctz(y) / 8);
+#elif SELVA_SHORT_FIELD_NAME_LEN == 8
+    uint64_t x;
+
+    memcpy(&x, field_name_str, sizeof(x));
+#define haszero(v) (((v) - 0x0101010101010101UL) & ~(v) & 0x8080808080808080UL)
+    uint64_t y = haszero(x);
+#undef haszero
+
+    return y == 0 ? sizeof(x) : (size_t)(__builtin_ctzl(y) / 8);
+#else
+#error "Invalid SELVA_SHORT_FIELD_NAME_LEN"
+#endif
 }
 
 __constructor static void init_selva_type(void)

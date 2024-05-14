@@ -339,8 +339,6 @@ static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TY
     *ns = (struct SelvaNodeSchema){
         .nr_emb_fields = counts.nr_main_fields,
         .nr_fields = counts.nr_fields,
-        .created_en = false, /* TODO */
-        .updated_en = false, /* TODO */
     };
 
     ns->field_schemas = selva_malloc(counts.nr_fields * sizeof(struct SelvaFieldSchema));
@@ -360,6 +358,18 @@ static int parse_node_schema(struct SelvaNodeSchema *ns, char type[SELVA_NODE_TY
 
             schemabuf_parsers[field_type].type2fs(fs, (enum schemabuf_type)field_type);
             snprintf(fs->field_name, SELVA_SHORT_FIELD_NAME_LEN, "%d", field_idx);
+
+            switch ((enum schemabuf_type)field_type) {
+            case SCHEMA_CREATED:
+                memcpy(ns->created_field, fs->field_name, SELVA_SHORT_FIELD_NAME_LEN);
+                break;
+            case SCHEMA_UPDATED:
+                memcpy(ns->updated_field, fs->field_name, SELVA_SHORT_FIELD_NAME_LEN);
+                break;
+            default:
+                break;
+            }
+
             field_idx++;
         }
     }
@@ -441,15 +451,11 @@ static void schema_get(struct selva_server_response_out *resp, const void *buf _
     size_t i = 0;
     while (memcmp(SELVA_NULL_TYPE, types + i, SELVA_NODE_TYPE_SIZE)) {
         size_t idx = i / SELVA_NODE_TYPE_SIZE;
-        selva_send_array(resp, 2 * 5);
+        selva_send_array(resp, 2 * 3);
         selva_send_str(resp, "type", 4);
         selva_send_str(resp, types + i, SELVA_NODE_TYPE_SIZE);
         selva_send_str(resp, "nr_emb_fields", 13);
         selva_send_ll(resp, nodes[idx].nr_emb_fields);
-        selva_send_str(resp, "created_en", 10);
-        selva_send_ll(resp, nodes[idx].created_en);
-        selva_send_str(resp, "updated_en", 10);
-        selva_send_ll(resp, nodes[idx].updated_en);
         selva_send_str(resp, "fields", 6);
         selva_send_array(resp, nodes[idx].nr_fields);
         for (size_t field = 0; field < nodes[idx].nr_fields; field++) {
@@ -485,13 +491,11 @@ int SelvaSchema_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hie
 
     for (size_t i = 0; i < nr_types; i++) {
         struct SelvaNodeSchema *ns = &schema->node[i];
-        uint64_t flags;
         int err;
 
         ns->nr_emb_fields = selva_io_load_unsigned(io);
-        flags = selva_io_load_unsigned(io);
-        ns->created_en = flags & 1;
-        ns->updated_en = flags & 2;
+        selva_io_load_str_fixed(io, ns->created_field, SELVA_SHORT_FIELD_NAME_LEN);
+        selva_io_load_str_fixed(io, ns->updated_field, SELVA_SHORT_FIELD_NAME_LEN);
 
         err = EdgeConstraint_Load(io, encver, &ns->efc);
         if (err) {
@@ -519,7 +523,8 @@ void SelvaSchema_Save(struct selva_io *io, struct SelvaHierarchy *hierarchy)
         const struct SelvaNodeSchema *ns = &nodes[i];
 
         selva_io_save_unsigned(io, ns->nr_emb_fields);
-        selva_io_save_unsigned(io, (ns->updated_en << 1) | ns->created_en);
+        selva_io_save_str(io, ns->created_field, SELVA_SHORT_FIELD_NAME_LEN);
+        selva_io_save_str(io, ns->updated_field, SELVA_SHORT_FIELD_NAME_LEN);
         EdgeConstraint_Save(io, &ns->efc);
     }
 }

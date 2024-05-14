@@ -19,6 +19,7 @@
 #include "selva_server.h"
 #include "selva_db.h"
 #include "hierarchy.h"
+#include "schema.h"
 #include "subscriptions.h"
 #include "selva_onload.h"
 #include "selva_set.h"
@@ -32,9 +33,16 @@ static void publish_field_change_str(struct SelvaHierarchyNode *node, const char
     SelvaSubscriptions_SendDeferredEvents(hierarchy);
 }
 
-static void touch_updated_at(struct selva_server_response_out *resp, struct SelvaObject *root_obj)
+static void touch_updated_at(
+        struct selva_server_response_out *resp,
+        struct SelvaHierarchyNode *node,
+        struct SelvaObject *root_obj)
 {
-    SelvaObject_SetLongLongStr(root_obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, selva_resp_to_ts(resp));
+    struct SelvaNodeSchema *ns = SelvaSchema_FindNodeSchema(main_hierarchy, node->id);
+
+    if (ns->updated_field[0] != '\0') {
+        SelvaObject_SetLongLongStr(root_obj, ns->updated_field, selva_short_field_len(ns->updated_field), selva_resp_to_ts(resp));
+    }
 }
 
 #define so_send_x(resp, x) _Generic((x), \
@@ -44,7 +52,7 @@ static void touch_updated_at(struct selva_server_response_out *resp, struct Selv
         )((resp), (x))
 
 #define MODIFIED(resp, resp_value) \
-    touch_updated_at(resp, obj); \
+    touch_updated_at(resp, node, obj); \
     so_send_x((resp), (resp_value)); \
     selva_io_set_dirty(); \
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len); \

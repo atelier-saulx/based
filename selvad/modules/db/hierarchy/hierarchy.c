@@ -82,10 +82,6 @@ static const struct timespec hierarchy_expire_period = {
     .tv_sec = 1,
 };
 
-/**
- * You should almost never call thsi function.
- */
-static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, const Selva_NodeId id);
 static void SelvaHierarchy_DestroyNode(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node);
@@ -227,10 +223,8 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
 
 /**
  * Create the default fields of a node object.
- * This function should be called when creating a new node but not when loading
- * nodes from a serialized data.
  */
-static int create_node_object(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
+static void create_node_object(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
     const long long now = ts_now();
     struct SelvaNodeSchema *ns;
     struct SelvaObject *obj;
@@ -238,14 +232,12 @@ static int create_node_object(struct SelvaHierarchy *hierarchy, struct SelvaHier
     ns = SelvaSchema_FindNodeSchema(hierarchy, node->id);
     obj = SelvaObject_Init(node->_obj_data, SELVA_OBJECT_EMB_SIZE(ns->nr_emb_fields));
 
-    if (ns->updated_en) {
-        SelvaObject_SetLongLongStr(obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, now);
+    if (ns->updated_field[0] != '\0') {
+        SelvaObject_SetLongLongStr(obj, ns->updated_field, selva_short_field_len(ns->updated_field), now);
     }
-    if (ns->created_en) {
-        SelvaObject_SetLongLongStr(obj, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1, now);
+    if (ns->created_field[0] != '\0') {
+        SelvaObject_SetLongLongStr(obj, ns->created_field, selva_short_field_len(ns->created_field), now);
     }
-
-    return 0;
 }
 
 /*
@@ -260,8 +252,6 @@ static void node_metadata_init(
 SELVA_MODIFY_HIERARCHY_METADATA_CONSTRUCTOR(node_metadata_init);
 
 static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, const Selva_NodeId id) {
-    int err;
-
     memset(node, 0, sizeof(*node));
     memcpy(node->id, id, SELVA_NODE_ID_SIZE);
 
@@ -270,12 +260,7 @@ static SelvaHierarchyNode *init_node(struct SelvaHierarchy *hierarchy, SelvaHier
               (int)SELVA_NODE_ID_SIZE, id);
 #endif
 
-        err = create_node_object(hierarchy, node);
-        if (err) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a node object for \"%.*s\". err: \"%s\"",
-                      (int)SELVA_NODE_ID_SIZE, id,
-                      selva_strerror(err));
-        }
+    create_node_object(hierarchy, node);
 
     SelvaHierarchyMetadataConstructorHook **metadata_ctor_p;
 
@@ -428,14 +413,25 @@ struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(const struct Selva
     return get_edge_metadata(node, field_type, PTAG_GETP(traversal_metadata->origin_field_svec_tagp));
 }
 
-static const char * const excluded_fields[] = {
-    SELVA_ID_FIELD,
-    SELVA_CREATED_AT_FIELD,
-    SELVA_ALIASES_FIELD,
-    NULL
-};
+void SelvaHierarchy_ClearNodeFields(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
+    struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
+    struct SelvaNodeSchema *ns = SelvaSchema_FindNodeSchema(hierarchy, node->id);
+    const char *excluded_fields[] = {
+        SELVA_ID_FIELD,
+        SELVA_ALIASES_FIELD,
+        NULL, /* TODO Created field */
+        NULL, /* TODO Updated field */
+        NULL,
+    };
+    size_t i = 2;
 
-void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
+    if (ns->created_field[0] != '\0') {
+        excluded_fields[i++] = ns->created_field;
+    }
+    if (ns->updated_field[0] != '\0') {
+        excluded_fields[i++] = ns->updated_field;
+    }
+
     SelvaObject_Clear(obj, excluded_fields);
 }
 
@@ -465,11 +461,15 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
  */
 static void publishNewNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     if (!isLoading()) {
-        /* FIXME created and updated fields are not always enabled */
-#if 0
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1);
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1);
-#endif
+        struct SelvaNodeSchema *ns;
+
+        ns = SelvaSchema_FindNodeSchema(hierarchy, node->id);
+        if (ns->created_field[0] != '\0') {
+            SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, ns->created_field, selva_short_field_len(ns->created_field));
+        }
+        if (ns->updated_field[0] != '\0') {
+            SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, ns->updated_field, selva_short_field_len(ns->updated_field));
+        }
         SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, node->id, SELVA_NODE_ID_SIZE);
     }
 }
@@ -1333,7 +1333,7 @@ static int load_hierarchy_node(struct selva_io *io, int encver, SelvaHierarchy *
  * Load a node and its children.
  * Should be only called by load_tree().
  */
-static int load_node(struct finalizer *fin, struct selva_io *io, int encver, SelvaHierarchy *hierarchy, Selva_NodeId node_id) {
+static int load_node(struct selva_io *io, int encver, SelvaHierarchy *hierarchy, Selva_NodeId node_id) {
     SelvaHierarchyNode *node;
     int err;
 
@@ -1358,7 +1358,7 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
  * NODE_ID2 | FLAGS | METADATA | NR_CHILDREN | ...
  * HIERARCHY_SERIALIZATION_EOF
  */
-static int load_tree(struct finalizer *fin, struct selva_io *io, int encver, SelvaHierarchy *hierarchy) {
+static int load_tree(struct selva_io *io, int encver, SelvaHierarchy *hierarchy) {
     while (1) {
         Selva_NodeId node_id;
         int err;
@@ -1372,7 +1372,7 @@ static int load_tree(struct finalizer *fin, struct selva_io *io, int encver, Sel
             break;
         }
 
-        err = load_node(fin, io, encver, hierarchy, node_id);
+        err = load_node(io, encver, hierarchy, node_id);
         if (err) {
             return err;
         }
@@ -1388,12 +1388,9 @@ static int load_aliases(struct selva_io *io,int encver, SelvaHierarchy *hierarch
 }
 
 SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
-    __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = NULL;
     int encver;
     int err;
-
-    finalizer_init(&fin);
 
     flag_isLoading = 1;
 
@@ -1418,7 +1415,7 @@ SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
         goto error;
     }
 
-    err = load_tree(&fin, io, encver, hierarchy);
+    err = load_tree(io, encver, hierarchy);
     if (err) {
         goto error;
     }
@@ -1453,7 +1450,7 @@ static void save_metadata(struct selva_io *io, SelvaHierarchyNode *node) {
  * Used by Hierarchy_Save() when doing a dump.
  */
 static int HierarchySaveNode(
-        struct SelvaHierarchy *hierarchy,
+        struct SelvaHierarchy *,
         const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {

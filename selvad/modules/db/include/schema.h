@@ -74,13 +74,10 @@ struct EdgeFieldConstraints {
 struct SelvaSchema {
     size_t count;
     struct SelvaNodeSchema {
-        struct {
-            uint32_t nr_emb_fields: 16;
-            uint32_t created_en: 1;
-            uint32_t updated_en: 1;
-            uint32_t _spare: 14;
-        };
-        size_t nr_fields;
+        uint16_t nr_emb_fields;
+        uint16_t nr_fields;
+        char created_field[SELVA_SHORT_FIELD_NAME_LEN];
+        char updated_field[SELVA_SHORT_FIELD_NAME_LEN];
         struct SelvaFieldSchema {
             char field_name[SELVA_SHORT_FIELD_NAME_LEN];
             enum SelvaFieldSchemaType {

@@ -359,7 +359,7 @@ struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(
 /**
  * Clear all user fields of a node SelvaObject.
  */
-void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj)
+void SelvaHierarchy_ClearNodeFields(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node)
     __attribute__((access(read_write, 1)));
 
 int SelvaHierarchy_UpsertNode(

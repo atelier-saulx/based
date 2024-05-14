@@ -1450,7 +1450,7 @@ upsert:
     SelvaSubscriptions_FieldChangePrecheck(ctx->hierarchy, node);
 
     if (!ctx->created && (ctx->head.flags & FLAG_NO_MERGE)) {
-        SelvaHierarchy_ClearNodeFields(SelvaHierarchy_GetNodeObject(node));
+        SelvaHierarchy_ClearNodeFields(ctx->hierarchy, node);
     }
 
     ctx->node = node;
@@ -1541,34 +1541,6 @@ static int op_fixup(struct SelvaModifyFieldOp *op, const char *buf, size_t len)
     return 0;
 }
 
-/**
- * field_name_str should be alaways within a page.
- */
-static size_t get_short_field_name_len(const char field_name_str[SELVA_SHORT_FIELD_NAME_LEN])
-{
-#if SELVA_SHORT_FIELD_NAME_LEN == 4
-    uint32_t x;
-
-    memcpy(&x, field_name_str, sizeof(x));
-#define haszero(v) (((v) - 0x1010101U) & ~(v) & 0x80808080U)
-    uint32_t y = haszero(x);
-#undef haszero
-
-    return y == 0 ? sizeof(x) : (size_t)(__builtin_ctz(y) / 8);
-#elif SELVA_SHORT_FIELD_NAME_LEN == 8
-    uint64_t x;
-
-    memcpy(&x, field_name_str, sizeof(x));
-#define haszero(v) (((v) - 0x0101010101010101UL) & ~(v) & 0x8080808080808080UL)
-    uint64_t y = haszero(x);
-#undef haszero
-
-    return y == 0 ? sizeof(x) : (size_t)(__builtin_ctzl(y) / 8);
-#else
-#error "Invalid SELVA_SHORT_FIELD_NAME_LEN"
-#endif
-}
-
 static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t data_len)
 {
     struct SelvaModifyFieldOp op;
@@ -1635,7 +1607,7 @@ static int parse_field_change(struct modify_ctx *ctx, const void *data, size_t d
         ctx->cur_field.name_len = res;
     } else {
         memcpy(ctx->cur_field.name_str, op.field_name, sizeof(ctx->cur_field.name_str));
-        ctx->cur_field.name_len = get_short_field_name_len(op.field_name);
+        ctx->cur_field.name_len = selva_short_field_len(op.field_name);
     }
 
     return modify_op_fn[op.op](ctx, &op);
@@ -1732,18 +1704,19 @@ static void modify(struct selva_server_response_out *resp, const void *buf, size
          */
         SelvaSubscriptions_DeferTriggerEvents(ctx.hierarchy, ctx.node, SELVA_SUBSCRIPTION_TRIGGER_TYPE_UPDATED);
 
-        /* FIXME updated_en */
-        if (selva_replication_get_mode() == SELVA_REPLICATION_MODE_REPLICA && ctx.ns && ctx.ns->updated_en) {
+        if (selva_replication_get_mode() == SELVA_REPLICATION_MODE_REPLICA && ctx.ns && ctx.ns->updated_field[0] != '\0') {
             struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(ctx.node);
             const int64_t now = selva_resp_to_ts(resp);
+            const char *updated_str = ctx.ns->updated_field;
+            size_t updated_len = selva_short_field_len(ctx.ns->updated_field);
 
             /*
              * If the node was created then the field was already updated by hierarchy.
              * If the command was replicated then the master should send us the correct
              * timestamp.
              */
-            SelvaObject_SetLongLongStr(obj, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1, now);
-            SelvaSubscriptions_DeferFieldChangeEvents(ctx.hierarchy, ctx.node, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1);
+            SelvaObject_SetLongLongStr(obj, updated_str, updated_len, now);
+            SelvaSubscriptions_DeferFieldChangeEvents(ctx.hierarchy, ctx.node, updated_str, updated_len);
         }
     }
 

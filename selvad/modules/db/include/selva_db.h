@@ -60,6 +60,10 @@ static inline void Selva_NodeIdCpy(Selva_NodeId dest, const char *src) {
  */
 int selva_string2node_id(Selva_NodeId nodeId, const struct selva_string *s);
 
+/**
+ * field_name_str should be alaways within a page.
+ */
+size_t selva_short_field_len(const char field_name_str[SELVA_SHORT_FIELD_NAME_LEN]);
 
 /**
  * Initialize a string array from a node_id or node type string.
