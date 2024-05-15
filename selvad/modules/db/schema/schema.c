@@ -256,7 +256,7 @@ struct SelvaFieldSchema *SelvaSchema_FindFieldSchema(struct SelvaNodeSchema *ns,
     return NULL;
 }
 
-void SelvaSchema_Destroy(struct SelvaSchema *schema)
+static void destroy_schema(struct SelvaSchema *schema)
 {
     for (size_t i = 0; i < schema->count; i++) {
         struct SelvaNodeSchema *ns = &schema->node[i];
@@ -398,15 +398,13 @@ static void schema_set(struct selva_server_response_out *resp, const void *buf, 
         err = parse_node_schema(ns, &types[i * SELVA_NODE_TYPE_SIZE], cs_buf, cs_len);
         if (err) {
             selva_free(types);
-            SelvaSchema_Destroy(schema);
+            destroy_schema(schema);
             selva_send_errorf(resp, SELVA_EINVAL, "Invalid field_schema at %zu", i);
             return;
         }
     }
 
-    selva_free(hierarchy->types);
-    SelvaSchema_Destroy(hierarchy->schema);
-
+    SelvaSchema_Destroy(hierarchy);
     hierarchy->types = types;
     hierarchy->schema = schema;
 
@@ -459,6 +457,14 @@ void SelvaSchema_SetDefaultSchema(struct SelvaHierarchy *hierarchy)
     hierarchy->schema = schema;
 }
 
+void SelvaSchema_Destroy(struct SelvaHierarchy *hierarchy)
+{
+    selva_free(hierarchy->types);
+    destroy_schema(hierarchy->schema);
+    hierarchy->types = NULL;
+    hierarchy->schema = NULL;
+}
+
 int SelvaSchema_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy)
 {
     size_t nr_types = selva_io_load_unsigned(io);
@@ -480,8 +486,7 @@ int SelvaSchema_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hie
         }
     }
 
-    selva_free(hierarchy->types);
-    SelvaSchema_Destroy(hierarchy->schema);
+    SelvaSchema_Destroy(hierarchy);
     hierarchy->types = (char *)types;
     hierarchy->schema = schema;
 

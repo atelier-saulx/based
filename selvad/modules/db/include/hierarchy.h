@@ -197,7 +197,6 @@ struct SelvaHierarchy {
         struct SelvaObject *index_map;
     } dyn_index;
 
-
     /**
      * Expiring nodes.
      */

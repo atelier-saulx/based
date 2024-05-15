@@ -212,8 +212,7 @@ void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy) {
      * bother about cleaning up subscriptions used by the indexing.
      */
     SelvaIndex_Deinit(hierarchy);
-    selva_free(hierarchy->types);
-    SelvaSchema_Destroy(hierarchy->schema);
+    SelvaSchema_Destroy(hierarchy);
 
     deinit_nodepools(hierarchy);
 

@@ -91,7 +91,7 @@ struct SelvaSchema {
     } node[] __counted_by(count);
 };
 
-void SelvaSchema_Destroy(struct SelvaSchema *schema);
+void SelvaSchema_Destroy(struct SelvaHierarchy *hierarchy);
 void SelvaSchema_SetDefaultSchema(struct SelvaHierarchy *hierarchy);
 struct SelvaNodeSchema *SelvaSchema_FindNodeSchema(struct SelvaHierarchy *hierarchy, const Selva_NodeType type);
 struct SelvaFieldSchema *SelvaSchema_FindFieldSchema(struct SelvaNodeSchema *ns, char field_name[SELVA_SHORT_FIELD_NAME_LEN]);
