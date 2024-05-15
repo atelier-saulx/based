@@ -29,6 +29,7 @@
 #define SELVA_NULL_TYPE         "\0"
 
 static_assert(sizeof(EMPTY_NODE_ID) == SELVA_NODE_ID_SIZE);
+static_assert(sizeof(SELVA_NULL_TYPE) == SELVA_NODE_TYPE_SIZE);
 
 #define SELVA_SHORT_FIELD_NAME_LEN 4
 
@@ -48,13 +49,8 @@ static_assert(sizeof(EMPTY_NODE_ID) == SELVA_NODE_ID_SIZE);
  * @}
  */
 
-#define SELVA_IS_ID_FIELD(_s, _len) \
-    ((_len) == (sizeof(SELVA_ID_FIELD) - 1) && !__builtin_memcmp((_s), SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1))
-
 #define SELVA_IS_ALIASES_FIELD(_s, _len) \
     ((_len) == (sizeof(SELVA_ALIASES_FIELD) - 1) && !__builtin_memcmp((_s), SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1))
-
-struct selva_string;
 
 /**
  * Type for Selva NodeId.

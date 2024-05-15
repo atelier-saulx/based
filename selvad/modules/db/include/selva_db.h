@@ -13,6 +13,8 @@
 #include "selva_object_type.h"
 #include "selva_db_types.h"
 
+struct selva_string;
+
 /**
  * Field protection modes.
  */
