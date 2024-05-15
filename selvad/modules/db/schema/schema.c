@@ -233,7 +233,6 @@ struct SelvaNodeSchema *SelvaSchema_FindNodeSchema(struct SelvaHierarchy *hierar
 
     idx = find_node_type(hierarchy->types, type);
     if (idx < 0) {
-        /* FIXME We should make sure we verify type before entering here. */
         SELVA_LOG(SELVA_LOGL_CRIT, "Schema not found for \"%.*s\"", (int)SELVA_NODE_TYPE_SIZE, type);
         exit(EXIT_SUCCESS);
     }

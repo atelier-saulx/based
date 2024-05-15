@@ -419,8 +419,8 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaHierarchy *hierarchy, struct Sel
     const char *excluded_fields[] = {
         SELVA_ID_FIELD,
         SELVA_ALIASES_FIELD,
-        NULL, /* TODO Created field */
-        NULL, /* TODO Updated field */
+        NULL,
+        NULL,
         NULL,
     };
     size_t i = 2;
