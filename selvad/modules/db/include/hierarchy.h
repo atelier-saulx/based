@@ -197,39 +197,6 @@ struct SelvaHierarchy {
         struct SelvaObject *index_map;
     } dyn_index;
 
-    /**
-     * State for inactive nodes tracking.
-     * These are nodes potentially moving to the detached hierarchy.
-     */
-    struct {
-        size_t nr_nodes; /*!< Size of nodes. */
-        /**
-         * Inactive nodeIds.
-         * Inactive node ids are listed here during serialization for further
-         * processing. This is a pointer to a memory region shared with the
-         * serialization child process. We can access it lock free because we
-         * know exactly when it's being read and thus can avoid writing it at
-         * those times. NodeIds listed here have been inactive for a long time
-         * and are potential candidates for compression.
-         */
-        Selva_NodeId *nodes __counted_by(nr_nodes);
-        size_t next; /*!< Next empty slot in inactive_nodes. */
-    } inactive;
-
-    /**
-     * Storage descriptor for detached nodes.
-     * It's possible to determine if a node exists in a detached subtree and restore
-     * the node and its subtree using this structure.
-     */
-    struct {
-        /**
-         * The object maps each detached nodeId to a pointer that describes where
-         * the detached subtree containing the nodeId is located. E.g. it can be
-         * a tagged pointer to a selva_string that contains a compressed
-         * subtree string.
-         */
-        struct SelvaObject *obj;
-    } detached;
 
     /**
      * Expiring nodes.
