@@ -22,31 +22,9 @@
 #include "hierarchy.h"
 #include "schema.h"
 
-/*
- * TODO Type map and type size map
- * TODO Add updated and created types
- * [1, 'timestamp'],
- * [2, 'number'],
- * [3, 'integer'],
- * [4, 'boolean'],
- * [5, 'reference'],
- * [6, 'enum'],
- * [7, 'string'],
- * [8, 'references'],
- *
- * TODO This is the format we are receiving from the client
- * const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
- * timestamp: 8, // 64bit
- * // double-precision 64-bit binary format IEEE 754 value
- * number: 8, // 64bit
- * integer: 4, // 32bit Unsigned 4  16bit
- * boolean: 1, // 1bit (6 bits overhead)
- * reference: 4,
- * enum: 4, // enum
- * string: 0, // var length fixed length will be different
- * references: 0,
+/**
+ * The schema types as known by the client.
  */
-
 enum schemabuf_type {
     SCHEMA_TIMESTAMP = 1,
     SCHEMA_CREATED = 2,
