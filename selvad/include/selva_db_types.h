@@ -25,8 +25,10 @@
 /**
  * An empty nodeId.
  */
-#define EMPTY_NODE_ID           "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+#define EMPTY_NODE_ID           "\0\0\0\0\0\0\0"
 #define SELVA_NULL_TYPE         "\0"
+
+static_assert(sizeof(EMPTY_NODE_ID) == SELVA_NODE_ID_SIZE);
 
 #define SELVA_SHORT_FIELD_NAME_LEN 4
 
