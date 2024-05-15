@@ -39,12 +39,17 @@ static_assert(sizeof(SELVA_NULL_TYPE) == SELVA_NODE_TYPE_SIZE);
  * @{
  */
 #define SELVA_ID_FIELD          "id"
-#define SELVA_ALIASES_FIELD     "alia"
+#define SELVA_ALIASES_FIELD     "ali"
 /**
  * Pseudo field name for retrieving edge metadata.
  */
-#define SELVA_EDGE_META_FIELD   "$eMe"
-#define SELVA_DEPTH_FIELD       "$dep"
+#define SELVA_EDGE_META_FIELD   "$eM"
+#define SELVA_DEPTH_FIELD       "$de"
+
+static_assert(sizeof(SELVA_ID_FIELD) <= SELVA_SHORT_FIELD_NAME_LEN);
+static_assert(sizeof(SELVA_ALIASES_FIELD) <= SELVA_SHORT_FIELD_NAME_LEN);
+static_assert(sizeof(SELVA_EDGE_META_FIELD) <= SELVA_SHORT_FIELD_NAME_LEN);
+static_assert(sizeof(SELVA_DEPTH_FIELD) <= SELVA_SHORT_FIELD_NAME_LEN);
 /**
  * @}
  */
