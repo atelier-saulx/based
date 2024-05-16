@@ -173,6 +173,19 @@ static inline double ledoubletoh(const char buf[8]) {
 #if __linux__
 
 /**
+ * Type generic Host to BE.
+ */
+#define htobe(v) _Generic((v), \
+        uint16_t: htobe16(v), \
+        int16_t: (int16_t)htobe16(v), \
+        uint32_t: htobe32(v), \
+        int32_t: (int32_t)htobe32(v), \
+        uint64_t: htobe64(v), \
+        int64_t: (int64_t)htobe64(v), \
+        unsigned long long: (unsigned long long)htobe64(v), \
+        long long: (int64_t)htobe64(v))
+
+/**
  * Type generic Host to LE.
  */
 #define htole(v) _Generic((v), \
@@ -215,6 +228,19 @@ static inline double ledoubletoh(const char buf[8]) {
 static_assert(sizeof(long long) == sizeof(uint64_t));
 
 #else
+
+/**
+ * Type generic Host to BE.
+ */
+#define htobe(v) _Generic((v), \
+        uint16_t: htobe16(v), \
+        int16_t: (int16_t)htobe16(v), \
+        uint32_t: htobe32(v), \
+        int32_t: (int32_t)htobe32(v), \
+        uint64_t: htobe64(v), \
+        size_t: htobe64(v), \
+        ssize_t: htobe64(v), \
+        int64_t: (int64_t)htobe64(v))
 
 /**
  * Type generic Host to LE.
