@@ -198,7 +198,7 @@ static int add_set_values_char(
         if (err == 0) {
             finalizer_forget(&fin, ref);
 
-            /* Add to the global aliases hash. */
+            /* Add to the global aliases. */
             if (is_aliases) {
                 update_alias(hierarchy, node_id, ref);
             }
@@ -472,7 +472,7 @@ static int del_set_values_char(
         err = SelvaObject_RemStringSetStr(obj, field_str, field_len, ref);
         if (!err) {
             /*
-             * Remove from the global aliases hash.
+             * Remove from the global aliases.
              */
             if (is_aliases) {
                 delete_alias(hierarchy, ref);
@@ -1459,8 +1459,6 @@ upsert:
 
 static int parse_head(struct modify_ctx *ctx, const void *data, size_t data_len)
 {
-    int err;
-
     assert(ctx->head.nr_changes == 0);
 
     if (data_len != sizeof(ctx->head)) {
@@ -1479,6 +1477,21 @@ static int parse_head(struct modify_ctx *ctx, const void *data, size_t data_len)
 #endif
 
     if (!(ctx->head.flags & FLAG_ALIAS)) {
+        int err;
+
+        /*
+         * Automatic nodeId.
+         */
+        if (!memcmp(ctx->head.node_id + SELVA_NODE_TYPE_SIZE, EMPTY_NODE_ID, SELVA_NODE_ID_SIZE - SELVA_NODE_TYPE_SIZE)) {
+            int err;
+
+            err = SelvaHierarchy_NewNodeId(ctx->hierarchy, ctx->head.node_id, ctx->head.node_id);
+            if (err) {
+                selva_send_errorf(ctx->resp, err, "Failed to generate new nodeId");
+                return err;
+            }
+        }
+
         err = parse_head_get_node(ctx);
         if (err) {
             return err;
@@ -1504,6 +1517,7 @@ static int parse_alias_query(struct modify_ctx *ctx, const void *data, size_t da
     size_t j = 0;
     struct SelvaHierarchyNode *node = NULL;
 
+    /* FIXME Where is the alias part? */
     while ((s = sztok(data, data_len, &j))) {
         Selva_NodeId node_id = {};
 
@@ -1683,6 +1697,10 @@ static void modify(struct selva_server_response_out *resp, const void *buf, size
 
         if (++arg_idx > ctx.head.nr_changes) {
             break;
+        }
+
+        if ((parse_arg == parse_head || parse_arg == parse_alias_query) && ctx.node) {
+            selva_send_str(resp, ctx.node->id, SELVA_NODE_ID_SIZE);
         }
 
         /*

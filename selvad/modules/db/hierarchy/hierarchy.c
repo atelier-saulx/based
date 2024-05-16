@@ -11,9 +11,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "endian.h"
 #include "jemalloc.h"
 #include "util/auto_free.h"
 #include "util/backoff_timeout.h"
+#include "util/base64url.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
 #include "util/ptag.h"
@@ -173,6 +175,11 @@ static void deinit_nodepools(struct SelvaHierarchy *hierarchy) {
     }
 }
 
+static void init_next_ids(struct SelvaHierarchy *hierarchy) {
+    assert(hierarchy->schema);
+    hierarchy->next_id = selva_calloc(hierarchy->schema->count, sizeof(*hierarchy->next_id));
+}
+
 SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     struct SelvaHierarchy *hierarchy = selva_calloc(1, sizeof(*hierarchy));
 
@@ -180,6 +187,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     RB_INIT(&hierarchy->index_head);
     SelvaObject_Init(hierarchy->aliases._obj_data, 0);
     SelvaSchema_SetDefaultSchema(hierarchy);
+    init_next_ids(hierarchy);
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaIndex_Init(hierarchy);
 
@@ -283,6 +291,33 @@ static struct mempool *get_nodepool_by_type(struct SelvaHierarchy *hierarchy, co
     return &hierarchy->nodepool[HIERARCHY_NODEPOOL_COUNT - 1];
 
 #undef FIND_BEST_POOL
+}
+
+int SelvaHierarchy_NewNodeId(struct SelvaHierarchy *hierarchy, Selva_NodeType type, Selva_NodeId id_out) {
+    const char *types = hierarchy->types;
+
+    for (size_t i = 0; memcmp(SELVA_NULL_TYPE, &types[i], SELVA_NODE_TYPE_SIZE); i += SELVA_NODE_TYPE_SIZE) {
+        if (!memcmp(type, &types[i], SELVA_NODE_TYPE_SIZE)) {
+            uint32_t *next = &hierarchy->next_id[i];
+            char next_str[sizeof(uint32_t)];
+            char encoded[9];
+
+            if (*next == UINT32_MAX) {
+                return SELVA_ENOBUFS;
+            }
+
+            memcpy(next_str, &(uint32_t){ htobe(*next) }, sizeof(uint32_t));
+            base64url_encode_s(encoded, next_str, sizeof(next_str), 0);
+            memmove(id_out, type, SELVA_NODE_TYPE_SIZE);
+            memcpy(id_out + SELVA_NODE_TYPE_SIZE, encoded, SELVA_NODE_ID_SIZE - SELVA_NODE_TYPE_SIZE);
+            static_assert(SELVA_NODE_ID_SIZE - SELVA_NODE_TYPE_SIZE == 6);
+
+            *next = *next + 1;
+            return 0;
+        }
+    }
+
+    return SELVA_EINTYPE;
 }
 
 /**

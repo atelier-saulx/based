@@ -117,17 +117,18 @@ struct SelvaHierarchy {
 
     int flag_isSaving;
 
-    /**
-     * Index of all hierarchy nodes by ID.
-     */
-    struct hierarchy_index_tree index_head;
-    struct mempool nodepool[HIERARCHY_NODEPOOL_COUNT];
-
     /*
      * Schema.
      */
     char *types; /*!< List of all type prefixes terminated with the SELVA_NULL_TYPE. */
     struct SelvaSchema *schema;
+    uint32_t *next_id; /*!< Array of next ids. */
+
+    /**
+     * Index of all hierarchy nodes by ID.
+     */
+    struct hierarchy_index_tree index_head;
+    struct mempool nodepool[HIERARCHY_NODEPOOL_COUNT];
 
     /**
      * Aliases.
@@ -258,6 +259,8 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void);
  * Free a hierarchy.
  */
 void SelvaHierarchy_Destroy(SelvaHierarchy *hierarchy);
+
+int SelvaHierarchy_NewNodeId(struct SelvaHierarchy *hierarchy, Selva_NodeType type, Selva_NodeId id_out);
 
 /**
  * Copy nodeId to a buffer.
