@@ -5,7 +5,7 @@ const modify = (
   db: BasedDb,
   state: { buf: Buffer; bufIndex: number; nrChanges: number; },
   type: string,
-  id: number,
+  id: number | null,
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef
@@ -17,7 +17,7 @@ const modify = (
       state.bufIndex += 8 // selva_proto_string
 
       // modify_header
-      const selvaId = `${schema.prefixString}${id}`.padEnd(8, '\0')
+      const selvaId = `${schema.prefixString}${id || ''}`.padEnd(8, '\0')
       buf.write(selvaId, state.bufIndex)
       state.bufIndex += 16
   }
@@ -109,7 +109,7 @@ export const createBatch = async (db: BasedDb, type: string, values: any[]) => {
 
     for (let i = 0; i < values.length; i++) {
       const value = values[i]
-      const id = ++def.lastId
+      //const id = ++def.lastId
       def.total++
       // @ts-ignore
       const [frame, payload] = await db.client.newFrame(cmdid, seqno)
@@ -119,12 +119,13 @@ export const createBatch = async (db: BasedDb, type: string, values: any[]) => {
           nrChanges: 0,
       }
       // TODO Large modify support
-      modify(db, state, type, id, value, def.tree, def)
+      modify(db, state, type, null, value, def.tree, def)
       payload.writeUint32LE(state.nrChanges, 8 + 12)
       // @ts-ignore
       db.client.sendFrameWithCb(frame, state.bufIndex, { firstFrame: true, lastFrame: true, batch: i != values.length - 1 }, (buf: Buffer, err?: Error) => {
           if (err) {
-            errors.push({ id, err })
+            // TODO
+            errors.push({ id: 0, err })
           }
           if (i == values.length - 1) resolve(errors)
       })
