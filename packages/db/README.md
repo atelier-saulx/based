@@ -10,14 +10,138 @@ const results = db
   )
   .range(0, 100)
 
+// string: 'search', 'includes', '!includes', '=', '!=', 'exists', '!exists', 'like', '!like  // Levenshtein distance
+//
+
+// references: 'has', '!has', '=', '!=', 'exists', '!exists' // EDGE BOYS
+// reference: '=', '!=', 'exists', '!exists'
+
+/*
+{
+  distance: 2,
+  transform: 'normalize',
+}
+
+
+{
+
+  $refs: {
+    bla: {
+      type: 'object
+    }
+  },
+  // bla
+§
+  types: {
+    root: {
+      properties: {
+        topArticle: {
+          type: 'article',
+        }
+
+        bestPeople: {
+          type: 'user',
+          list: true,
+          edge: { enum: ['contributor', 'leecher'], unique: true }
+        }
+
+        count: {
+          type: 'number',
+        }
+      }
+    }
+
+    vote: {
+      properties: {
+        amount: { type: 'number' }
+        article: { type: 'article' }
+      }
+    },
+
+    article: {
+      writer: { type: 'user' },
+      fields: {
+        votes: { type: 'vote', multi: true, edge: { type: 'string' }, field: 'article' }
+      }
+    }
+
+    user: {
+      fields: {
+      }
+    }
+
+  }
+
+}
+
+*/
+
+const searchTerm = 'ukrain e'
+
+const results = db
+  .query('article')
+  .include('name', 'publishDate', 'contributors.name', 'people[0].name')
+  .filter('published', true)
+  .filter(['title', 'abstract'], 'search', searchTerm)
+
+  // count, sum, avarage, median, unique, min, max
+  .filter('countries.votes', '>', 5, { aggregate: 'min' })
+  .filter('countries.votes', '<', 10, { aggregate: 'max' })
+
+  .filter('countries.votes', '>', 5e6, {
+    aggregate: 'count',
+  })
+
+  // edge value is number
+  .filter('votes[0].amount', '>', 10)
+
+  .filter('votes[0].amount', '..', [1, 2])
+
+  // now - 1s
+  // now + 1w
+  //
+
+  //   // val = bla
+  // .filter('countries.votes(=bla)')
+  // // key = bla
+  // .filter('countries.votes(.bla)')
+  // // val = bla
+  // .filter('countries.votes[=bla]')
+  // // key = bla
+  // .filter('countries.votes[bla]')
+
+  // edge value is { type: 'number', }
+  .filter('countries.votes[1]', '>', 5)
+
+  // edge value is { type: 'string' }
+  .filter('countries.votes[bla].price', '>', 5)
+
+  // edge value is { type: 'objct', prop:{ x, y } }
+  .filter('countries.votes[x]', '>', 5)
+  .filter('countries.votes[y]', '>', 5)
+
+  // edge value is { type: 'number' }
+  .filter('countries.votes[]', '>', 5)
+
+  // edge value is enum [contributor / llecher]
+  .filter('bestPeople[contributor].articles', '>', 10)
+
+  .filter('contributors.name', '=', ['ale', 'jim'])
+  .filter('publishDate', '>', 'now')
+  .filter((filter) =>
+    filter('snurp', true).and('gurp', false).or('name', '=', 'yuzi')
+  )
+  .sort('publishedDate', 'desc')
+  .range(0, 100)
+
 db.query('article')
-  .include(['name', 'publishDate', 'tags'])
+  .include('name', 'publishDate', 'tags')
   .includeReferences('contributors', (contributors) =>
     contributors
-      .include(['name', 'age'])
-      .filter(['age', '>', 12])
+      .include('name', 'age')
+      .filter('age', '>', 12)
       .includeReferences('friends', (friends) => {
-        friends.include(['age'])
+        friends.include('age')
       })
   )
   .includeReferences('sections', (sections) => {
@@ -156,6 +280,44 @@ db.query('article')
 db.query('articleType').filter('hidden', 'is', false).include('title.en')
 
 db.query('section').filter('hidden', 'is', false).include('title.en')
+
+// const data = await client
+//   .query("db", {
+//     $id: "te896706b5",
+//     ancestors: {
+//       id: true,
+//       $list: {
+//         $find: {
+//           $recursive: true,
+//           $traverse: {
+//             $any: "parents",
+//           },
+//           $filter: [
+//             {
+//               $field: "archived",
+//               $operator: "!=",
+//               $value: true,
+//             },
+//           ],
+//         },
+//       },
+//     },
+//   })
+// .get();
+
+db.query('te896706b5')
+  .include('id'),
+  .filter('orgs', 'has', user.orgs)
+  .or('contributors', 'has', user.id)
+  // .traverse('parents', {
+  //   recursive: true,
+  //   field: 'parents'
+  // })
+  // .traverse('parents', (parents) => parents.filter('archived', false), {
+  //   recursive: true,
+  // })
+
+
 ```
 
 // .include('section.title', 'articleType.title')
