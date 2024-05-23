@@ -66,7 +66,7 @@ const convertOldToNewMeta = (props) => {
 
 const convertNewFieldToOldField = (newField: BasedSchemaField): FieldSchema => {
   // @ts-ignore
-  const { type, properties, values, items, ...props } = newField
+  const { type, bidirectional, properties, values, items, ...props } = newField
   const meta = convertNewToOldMeta(props)
   // @ts-ignore
   const overwrite = newToOldType[type] || newToOldType[props.format]
@@ -79,6 +79,12 @@ const convertNewFieldToOldField = (newField: BasedSchemaField): FieldSchema => {
   if (meta) {
     oldField.meta = meta
   }
+
+  if (bidirectional) {
+    // @ts-ignore
+    oldField.bidirectional = bidirectional
+  }
+
   if (properties) {
     // @ts-ignore
     oldField.properties = {}
@@ -155,7 +161,7 @@ export const convertNewToOld = (newSchema: BasedSchemaPartial): OldSchema => {
 
 const convertOldFieldToNewField = (oldField: FieldSchema): BasedSchemaField => {
   // @ts-ignore
-  const { type, properties, values, items, meta = {} } = oldField
+  const { type, bidirectional, properties, values, items, meta = {} } = oldField
   const overwrite = oldToNewType[type] || oldToNewType[meta.format]
   const newField: BasedSchemaField = overwrite
     ? {
@@ -166,6 +172,11 @@ const convertOldFieldToNewField = (oldField: FieldSchema): BasedSchemaField => {
         type,
         ...convertOldToNewMeta(meta),
       }
+
+  if (bidirectional) {
+    // @ts-ignore
+    newField.bidirectional = bidirectional
+  }
 
   if (properties) {
     // @ts-ignore
