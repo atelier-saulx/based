@@ -31,4 +31,4 @@
 - [ ] Do we need type?
 - [ ] Make aliases custom field?
 - [ ] Handle upsert/insert/update etc operations
-- [ ] Batch modify/create commands
+- [ ] Bulk modify/create commands

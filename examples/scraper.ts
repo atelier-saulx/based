@@ -3,7 +3,12 @@ const schema: any = {
   types: {
     article: {
       properties: {
+        friendlyUrl: {
+          // /youzi-goes-to-town
+          type: 'alias',
+        },
         externalId: {
+          // 987908g-987sf9fsd-kcjshg1
           type: 'alias',
         },
       },
@@ -27,6 +32,16 @@ setInterval(async () => {
     allArticles.map(async ({ uuid, ...props }) => {
       // MAYBE DO THIS?
       // return db.setByAlias(uuid, props)
+
+      /*
+        // is this better?
+        db.set({
+          type: 'article',
+          $alias: uuid,
+          ...props
+        })
+      */
+
       return db
         .query('article')
         .filter('externalId', '=', uuid)
