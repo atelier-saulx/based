@@ -1,6 +1,7 @@
 {
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
+    "jsx": "react",
     "rootDir": "src",
     "outDir": "dist"
   },
