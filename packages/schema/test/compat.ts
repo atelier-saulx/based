@@ -56,6 +56,35 @@ test('refTypes', async (t) => {
   t.is(oldSchema.types.youzi.fields.image.meta.refTypes[0], 'youzi')
 })
 
+test('bidirectional', async (t) => {
+  const newSchema = convertOldToNew({
+    types: {
+      youzi: {
+        fields: {
+          image: {
+            type: 'reference',
+            bidirectional: {
+              fromField: 'success',
+            },
+            meta: {
+              refTypes: ['youzi'],
+            },
+          },
+        },
+      },
+    },
+  })
+
+  console.log(newSchema.types.youzi.fields.image)
+  // @ts-ignore
+  t.is(newSchema.types.youzi.fields.image.bidirectional.fromField, 'success')
+
+  const oldSchema = convertNewToOld(newSchema)
+
+  // @ts-ignore
+  t.is(oldSchema.types.youzi.fields.image.bidirectional.fromField, 'success')
+})
+
 test('old schema compat mode', async (t) => {
   for (let i = 0; i < oldSchemas.length - 1; i++) {
     const oldSchema = oldSchemas[i]
