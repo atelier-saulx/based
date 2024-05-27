@@ -305,19 +305,7 @@ db.query('section').filter('hidden', 'is', false).include('title.en')
 //   })
 // .get();
 
-db.query('te896706b5')
-  .include('id'),
-  .filter('orgs', 'has', user.orgs)
-  .or('contributors', 'has', user.id)
-  // .traverse('parents', {
-  //   recursive: true,
-  //   field: 'parents'
-  // })
-  // .traverse('parents', (parents) => parents.filter('archived', false), {
-  //   recursive: true,
-  // })
-
-
+db.query('te896706b5').filter('members[admin]', 'has', user.id).boolean()
 ```
 
 // .include('section.title', 'articleType.title')
