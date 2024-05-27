@@ -6,9 +6,84 @@ const results = db
   .filter(
     ['sections', 'has', ['se123', 'se321']],
     ['published', '=', true],
-    ['publishedDate', '>', 'now - 1week']
-  )
+    ['publishDate', '>', 'now - 1week']
+  ).range(0, 100)
+
+  const results = db
+  .query('article')
+  .include('name', 'publishDate', 'contributors.@.roles')//, 'contributors.@.roles')
+  .filter('sections', 'has', ['se123', 'se321'])
+  .filter('published', true)
+  .filter('publishDate', '>', 'now - 1week')
+  .sort('publishDate', {
+    order: 'desc',
+    multipleOf: 'year'
+  })
   .range(0, 100)
+
+  db.query('users').include('name', 'orgs[@roles:admin].name')
+
+
+
+
+
+  [{
+    id: 'us1',
+    name: 'Youri',
+    orgs: [{
+      id: 'or1',
+      name: 'Saulx',
+      // createdAt: 49827423890,
+      // edge: {
+      //   roles: ['boss']
+      // }
+    }, {
+      id: 'or2',
+      name: 'Once',
+      createdAt: 49827423891,
+      edge: {
+        roles: ['director']
+      }
+    }]
+  }]
+
+
+
+  [{
+    name: 'article1',
+    publishDate: 1,
+    contributors: [{
+      name: 'Rob'
+    }]
+  }, {
+    name: 'article1',
+    publishDate: 1,
+    contributors: [{
+      id: 'a123',
+      name: 'Rob',
+      edge: {
+        roles: ['developer']
+      }
+    }]
+  }]
+
+
+
+
+  {
+    '@':
+  }
+
+const results = db
+  .query('article')
+  .properties('name', 'publishDate')
+
+
+  .has('sections', ['se123', 'se321'])
+
+  .where('sections').has('se123', 'se321')
+  .and('published').is(true)
+  .and('publishDate').gt('now-1w')
 
 // string: 'search', 'includes', '!includes', '=', '!=', 'exists', '!exists', 'like', '!like  // Levenshtein distance
 //

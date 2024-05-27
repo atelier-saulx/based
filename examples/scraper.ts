@@ -5,7 +5,7 @@ const schema: any = {
       properties: {
         friendlyUrl: {
           // /youzi-goes-to-town
-          type: 'alias',
+          type: 'alias', // 'uuid'
         },
         externalId: {
           // 987908g-987sf9fsd-kcjshg1
@@ -18,7 +18,6 @@ const schema: any = {
 
 /*
 {
-  
   attributes: {
     title: 'youzi'
   }
