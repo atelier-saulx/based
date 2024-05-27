@@ -3,7 +3,7 @@
   "version": "5.0.2",
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "npx tsc",
     "server": "node ./test/based-server.js",
