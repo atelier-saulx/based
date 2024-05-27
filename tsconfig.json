@@ -1,6 +1,7 @@
 {
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
+    "jsx": "preserve",
     "outDir": "dist"
   },
   "include": ["src", "test"]
