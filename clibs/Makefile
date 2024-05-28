@@ -13,7 +13,8 @@ export TARGET_CFLAGS
 LIBS := \
 		lib/jemalloc \
 		lib/deflate \
-		lib/util
+		lib/util \
+		lib/selva
 
 # Build all libraries (ordered)
 all: | $(LIBS)

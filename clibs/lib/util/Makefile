@@ -61,9 +61,6 @@ ifeq ($(uname_S),Darwin)
 	LDFLAGS += -ljemalloc_selva -ldeflate
 endif
 
-ifndef LIB_SUFFIX
-$(error LIB_SUFFIX is not set)
-endif
 TARGET := ../libutil$(LIB_SUFFIX)
 
 DEP := $(OBJ:%.o=%.d)

@@ -40,9 +40,6 @@ ifeq ($(uname_S),Darwin)
 	LDFLAGS += -shared -Wl,-install_name,@rpath/libdeflate$(LIB_SUFFIX)
 endif
 
-ifndef LIB_SUFFIX
-$(error LIB_SUFFIX is not set)
-endif
 TARGET := ../libdeflate$(LIB_SUFFIX)
 
 DEP := $(OBJ:%.o=%.d)

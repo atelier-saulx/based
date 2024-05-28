@@ -70,3 +70,7 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 	LIB_SUFFIX := .dylib
 	MOD_SUFFIX := .so
 endif
+
+ifndef LIB_SUFFIX
+$(error LIB_SUFFIX is not set)
+endif
