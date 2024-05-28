@@ -42,7 +42,7 @@ export const updateTypesPath = async (
       ${abstractPrefix}call(
         name: '${fn.config.name}',
         payload: Parameters<typeof ${name}>[1],
-        ${opts.isAbstract ? "ctx?: Context" : "opts?: CallOptions"}
+        ${opts.isAbstract ? "ctx?: BasedProvider" : "opts?: CallOptions"}
       ): ReturnType<typeof ${name}>;      
     `
       } else {
@@ -50,7 +50,7 @@ export const updateTypesPath = async (
         ${abstractPrefix}call(
           name: '${fn.config.name}',
           payload: ${fn.payload},
-          ${opts.isAbstract ? "ctx?: Context" : "opts?: CallOptions"}
+          ${opts.isAbstract ? "ctx?: BasedProvider" : "opts?: CallOptions"}
         ): Promise<${fn.result}>      
       `
       }
@@ -76,7 +76,7 @@ export const updateTypesPath = async (
     if (fnCnt > 0) {
       if (opts.isAbstract) {
         x = x.replace(
-          "abstract call(name: string, payload?: any, ctx?: Context): Promise<any>;",
+          "abstract call(name: string, payload?: any, ctx?: BasedProvider): Promise<any>;",
           callFns
         )
       } else {

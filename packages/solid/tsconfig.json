@@ -3,7 +3,13 @@
   "compilerOptions": {
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "outDir": "dist"
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/components/*"]
+    }
   },
   "include": ["./src", "./test"],
   "exclude": ["./dist/test", "./dist/src"]

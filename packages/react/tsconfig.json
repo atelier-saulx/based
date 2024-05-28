@@ -5,6 +5,6 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src/**/*", "src/**/*.json"],
-  "exclude": ["node_modules", "test", "dist", "tmp", "examples"]
+  "include": ["./src", "./test"],
+  "exclude": ["./dist/test", "./dist/src"]
 }
