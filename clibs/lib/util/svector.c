@@ -8,9 +8,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "../tunables.h"
 #include "util/mempool.h"
 #include "util/svector.h"
+
+/**
+ * Threshold to migrate from an SVECTOR_MODE_ARRAY to SVECTOR_MODE_RBTREE.
+ */
+#define SVECTOR_THRESHOLD 100
+
+/**
+ * How much memory to allocate when more memory is needed in
+ * SVECTOR_MODE_RBTREE mode.
+ */
+#define SVECTOR_SLAB_SIZE 4194304
 
 #define VEC_SIZE(_len) (sizeof(void *) * (_len))
 #define VEC_COMPAR(_fn) ((int (*)(const void *, const void *))(_fn))

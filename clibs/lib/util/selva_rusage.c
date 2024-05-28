@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdint.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include "endian.h"
+#include "util/endian.h"
 #include "util/selva_rusage.h"
 
 static int get_rusage_who(enum selva_rusage_who who)

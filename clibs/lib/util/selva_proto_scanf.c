@@ -11,9 +11,9 @@
 #include <sys/types.h>
 #include "libdeflate.h"
 #include "cdefs.h"
-#include "endian.h"
-#include "util/selva_string.h"
+#include "util/endian.h"
 #include "util/fast_parsei.h"
+#include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <inttypes.h>
@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "cdefs.h"
-#include "endian.h"
+#include "util/endian.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 

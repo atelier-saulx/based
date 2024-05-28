@@ -8,8 +8,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include "cdefs.h"
-#include "endian.h"
 #include "util/crc32c.h"
+#include "util/endian.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_proto.h"

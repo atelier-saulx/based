@@ -6,7 +6,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "endian.h"
+#include "util/endian.h"
 
 #ifdef __clang__
 #pragma clang diagnostic push
