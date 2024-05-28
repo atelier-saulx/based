@@ -3,7 +3,7 @@
 Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into react hooks
 
 ```jsx
-import { useBasedQuery, useBasedClient, useAuthState,  Provider } from '@based/react'
+import { useQuery, useClient, useAuthState,  Provider } from '@based/react'
 import based from '@based/client'
 
 // Create client
@@ -18,7 +18,7 @@ export const Authenticate = ({ children }) => {
   const authState = useAuthState()
 
   // Returns the based client from the provider
-  const client = useBasedClient()
+  const client = useClient()
 
   if (authState.token) {
     // When authenticated render the app
@@ -36,7 +36,7 @@ export const Authenticate = ({ children }) => {
 
 export const Something = () => {
   // Subscribes to data
-  const { data, error, loading } = useBasedQuery('db', {
+  const { data, error, loading } = useQuery('db', {
     children: { $list: true, id: true, name: true },
   })
 
@@ -55,16 +55,16 @@ export const App = () => {
 
 ```
 
-## useBasedQuery
+## useQuery
 
 Subscribes when a component gets mounted / unsubscribes when a comment gets unmounted.
 Query hooks are automaticly cached and share remote active subscriptions.
 
 ```js
-import { useBasedQuery } from '@based/react'
+import { useQuery } from '@based/react'
 
 export const Something = () => {
-  const { data, error, loading } = useBasedQuery('someQueryFunction')
+  const { data, error, loading } = useQuery('someQueryFunction')
   if (error) {
     return error.message
   }
@@ -75,7 +75,7 @@ export const Something = () => {
 The `persistent` option will store the cached result of a query in `localStorage`.
 
 ```js
-const { data: userInfo } = useBasedQuery(
+const { data: userInfo } = useQuery(
   'someUserInfo',
   {
     id: client.authState.userId,
@@ -84,14 +84,14 @@ const { data: userInfo } = useBasedQuery(
 )
 ```
 
-`useBasedQuery` allows passing a `null` value to the function name - this is usefull when you have a query depending on other data
+`useQuery` allows passing a `null` value to the function name - this is usefull when you have a query depending on other data
 
 ```js
-const { data: userInfo } = useBasedQuery('someUserInfo', {
+const { data: userInfo } = useQuery('someUserInfo', {
   id: client.authState.userId,
 })
 
-const { data } = useBasedQuery(
+const { data } = useQuery(
   userInfo.preferedLanguage ? 'someQueryFunction' : null,
   {
     preferedLanguage: userInfo.preferedLanguage,
@@ -99,12 +99,12 @@ const { data } = useBasedQuery(
 )
 ```
 
-## useBasedClient
+## useClient
 
 Returns the based client from the `Provider`
 
 ```js
-import { useBasedClient, Provider } from '@based/react'
+import { useClient, Provider } from '@based/react'
 import based from '@based/client'
 
 // Create client
@@ -115,7 +115,7 @@ const client = based({
 })
 
 export const Something = () => {
-  const client = useBasedClient()
+  const client = useClient()
   useEffect(() => {
     client.call('domSomething')
   }, [])
@@ -148,7 +148,7 @@ export const Something = () => {
 
 ## useLoading
 
-Observes if any active `useBasedQuery` hook is loading.
+Observes if any active `useQuery` hook is loading.
 
 ```js
 import { useLoading } from '@based/react'

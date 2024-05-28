@@ -1,7 +1,8 @@
-# @based/react
+# @based/solid
 
-Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into react hooks
+Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into SolidJS hooks and signals
 
+# W.I.P.
 ```jsx
 import { useBasedQuery, useBasedClient, useAuthState,  Provider } from '@based/react'
 import based from '@based/client'
