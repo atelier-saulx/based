@@ -1,0 +1,10 @@
+USE_SHARED_LIB=
+DISABLE_SHARED=
+DECOMPRESSION_ONLY=
+DISABLE_GZIP=1
+DISABLE_ZLIB=1
+FREESTANDING=
+CC=cc
+CFLAGS=-O2 -fomit-frame-pointer -std=c99 -I. -Wall -Wundef -Wdeclaration-after-statement -Wimplicit-fallthrough -Wmissing-prototypes -Wpedantic -Wshadow -Wstrict-prototypes -Wvla -fPIC -mcpu=apple-m1 -mbranch-protection=standard
+CPPFLAGS=
+LDFLAGS=
