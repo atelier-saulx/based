@@ -12,7 +12,7 @@
 #include "util/svector.h"
 #include "util/trx.h"
 
-RB_HEAD(selva_node_index_tree, SelvaNode);
+RB_HEAD(SelvaNodeIndex, SelvaNode);
 
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_EDGE = 0,
@@ -63,6 +63,7 @@ struct SelvaNode {
     uint32_t expire;
     uint16_t ns_index; /*!< Index to SelvDb.type[] to get the NodeSchema. */
     struct trx_label trx_label;
+    RB_ENTRY(SelvaNode) _index_entry;
     char *dyn_fields;
     char emb_fields[]; /*!< This is counted by nr_emb_fields in SelvaNodeSchema. */
 };
@@ -78,8 +79,8 @@ struct SelvaDb {
 
     size_t nr_types;
     struct {
-        struct selva_node_schema *ns;
-        struct selva_node_index_tree index_head;
+        struct SelvaNodeSchema *ns;
+        struct SelvaNodeIndex index_head;
 #if 0
         struct {
             STATIC_SELVA_OBJECT(_obj_data);
