@@ -16,7 +16,7 @@ const schema = {
                 type: 'set',
                 required: true,
                 items: {
-                  enum: ['owner', 'developer', 'viewer'],
+                  enum: ['owner', 'developer', 'viewer', 'clown'],
                 },
               },
             },
@@ -24,7 +24,6 @@ const schema = {
           inverseProperty: 'memberOf',
         },
         fileFolders: {
-          // RECON
           type: 'fileFolder',
           list: true,
           inverseProperty: 'org',
@@ -45,9 +44,50 @@ const schema = {
       },
     },
 
+    landing: {
+      unique: true,
+      properties: {
+        powerRooms: { type: 'room', list: true },
+      },
+    },
+
+    room: {
+      properties: {
+        messages: {
+          type: 'msg',
+          list: true,
+          inverseProperty: 'room',
+        },
+        org: { type: 'org', dependant: true },
+        members: {
+          type: 'user',
+          list: true,
+          inverseProperty: 'rooms',
+        },
+      },
+    },
+
+    msg: {
+      properties: {
+        text: { type: 'string' },
+        user: { type: 'user' },
+        room: {
+          type: 'room',
+          inverseProperty: 'messages',
+          dependant: true,
+        },
+      },
+    },
+
     user: {
       properties: {
+        rooms: {
+          type: 'room',
+          list: true,
+          inverseProperty: 'members',
+        },
         memberOf: {
+          requiredRelationship: true,
           type: 'org',
           inverseProperty: 'members',
         },
@@ -73,13 +113,9 @@ const userId = 'us1'
 const folderId = 'fo1'
 
 db.query('article')
-  .language('en')
-  .properties('id', 'abstract', 'body') // props
-  .excludeProperties('id', 'abstract', 'body') // excludeProps
-  .where('published')
-  .is(true)
-  .and('publishDate')
-  .gt('now-1w')
+  .include('abstract.en', 'body') // props
+  .exclude('id') // excludeProps
+  .filter('published')
 
 // ['published']
 
@@ -99,25 +135,19 @@ db.query('user[email:beerdejim@gmail.com]').set({
 
 db.query('article[friendlyUrl:world-politics]')
 
-db.query(folderId)
-  // value is on the edge
-
-  //
-
-  .select(`org.members[email:beerdejim@gmail.com].@roles`)
-  .has(['owner', 'developer'])
-  .select()
-
-  // .filter(`org.members.@${userId}.roles`, 'has', ['owner', 'developer'])
+db.query('fo123')
+  .filter(`org.members[email:beerdejim@gmail.com].@roles`, 'has', [
+    'owner',
+    'developer',
+  ])
   .boolean()
-// .is(1)
 
 // maybe do testrunner style assertions?
 
 // OR
 db.query('userIdA.memberOf')
   // TODO what do we do for iteration variables?
-  .filter('fileFolders.fileFolderIdA.@{%}.roles', 'has', ['owner', 'developer'])
+  .filter('fileFolders[id:fileFolderIdA].@roles', 'has', ['owner', 'developer'])
   .boolean()
 
 export {}

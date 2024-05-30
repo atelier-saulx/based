@@ -2,26 +2,72 @@
 //
 const results = db
   .query('article')
-  .include(['name', 'publishDate'])
-  .filter(
-    ['sections', 'has', ['se123', 'se321']],
-    ['published', '=', true],
-    ['publishDate', '>', 'now - 1week']
-  ).range(0, 100)
-
-  const results = db
-  .query('article')
-  .include('name', 'publishDate', 'contributors.@.roles')//, 'contributors.@.roles')
+  .include('name', 'publishDate')
   .filter('sections', 'has', ['se123', 'se321'])
   .filter('published', true)
   .filter('publishDate', '>', 'now - 1week')
+  .range(0, 100)
+
+  const results = db
+  .query('article')
+  .include('name', 'publishDate', 'contributors.@roles'))
+  .filter('sections', 'has', ['se123', 'se321'])
+  .filter('published', true)
   .sort('publishDate', {
     order: 'desc',
     multipleOf: 'year'
   })
+  .sort('views')
   .range(0, 100)
 
-  db.query('users').include('name', 'orgs[@roles:admin].name')
+
+  const results = db
+  .query('article')
+  .filter('published', '>', 'now - 1week')
+  .sort('views')
+  .range(0, 10)
+  .traverse('publishers')
+  .filter('amountEarned', '>', 100, { aggregate: 'sum' })
+  .traverse('members')
+  .filter('@roles', 'has', 'director')
+  .include('name')
+
+  db.query('users')
+  .include('name', 'orgs[@roles:admin].name')
+  .update({
+    paid: 0
+  })
+
+
+  db.upsert('article[url:ursela]', {
+    name: 'xxx'
+  })
+
+  db.query('users')
+    .include('name')
+    .include(select => {
+      select('orgs').filter('@roles', '=', 'admin').include('name')
+    })
+    .subscribe(() => {
+  })
+
+
+  db.query('article[url:ursala-is-fun]').include('name').get()
+
+  db.query('article').include('name')
+  .filter('url', 'has', 'ursula-is-fun')
+  .update({
+    name: 'URSULA IS FUN!'
+  })
+
+
+  db.query('ar123').include('name').get()
+
+  const x = await db.query('ar123.contributors')
+    .filter('@roles', 'has', 'writer')
+    .include('name', 'avatar.src').get(({ name }) => {
+      return { POWERFUL_NAME: name }
+    })
 
 
 
@@ -33,21 +79,11 @@ const results = db
     orgs: [{
       id: 'or1',
       name: 'Saulx',
-      // createdAt: 49827423890,
-      // edge: {
-      //   roles: ['boss']
-      // }
     }, {
       id: 'or2',
       name: 'Once',
-      createdAt: 49827423891,
-      edge: {
-        roles: ['director']
-      }
     }]
   }]
-
-
 
   [{
     name: 'article1',
@@ -156,15 +192,17 @@ const searchTerm = 'ukrain e'
 const results = db
   .query('article')
   .include('name', 'publishDate', 'contributors.name', 'people[0].name')
+  .include((select) => {
+    select('countries').aggregate('votes', 'sum', 'votes')
+  })
   .filter('published', true)
   .filter(['title', 'abstract'], 'search', searchTerm)
-
   // count, sum, avarage, median, unique, min, max
   .filter('countries.votes', '>', 5, { aggregate: 'min' })
   .filter('countries.votes', '<', 10, { aggregate: 'max' })
 
   .filter('countries.votes', '>', 5e6, {
-    aggregate: 'count',
+    aggregate: 'sum',
   })
 
   // edge value is number
@@ -189,23 +227,24 @@ const results = db
   .filter('countries.votes[1]', '>', 5)
 
   // edge value is { type: 'string' }
-  .filter('countries.votes[bla].price', '>', 5)
+  .filter('countries.votes[@key:bla].price', '>', 5)
 
   // edge value is { type: 'objct', prop:{ x, y } }
-  .filter('countries.votes[x]', '>', 5)
-  .filter('countries.votes[y]', '>', 5)
+  .filter('countries.votes.@x', '>', 5)
+  .filter('countries.votes.@y', '>', 5)
 
   // edge value is { type: 'number' }
-  .filter('countries.votes[]', '>', 5)
+  .filter('countries.votes.@index', '>', 5)
 
   // edge value is enum [contributor / llecher]
-  .filter('bestPeople[contributor].articles', '>', 10)
+  .filter('bestPeople[@roles:contributor].articles', '>', 10)
 
   .filter('contributors.name', '=', ['ale', 'jim'])
   .filter('publishDate', '>', 'now')
   .filter((filter) =>
     filter('snurp', true).and('gurp', false).or('name', '=', 'yuzi')
   )
+  .or('flap', false)
   .sort('publishedDate', 'desc')
   .range(0, 100)
 
@@ -254,7 +293,7 @@ db.query('article')
 
 // edge filters
 db.query('article')
-  .filter(['publishedDate', '>', 'now-1week'])
+  .filter('publishedDate', '>', 'now-1week')
   .traverse('contributors.creditcards')
   .filter(['name', 'includes', 'A'])
   .traverse('bank.country')
@@ -380,7 +419,7 @@ db.query('section').filter('hidden', 'is', false).include('title.en')
 //   })
 // .get();
 
-db.query('te896706b5').filter('members[admin]', 'has', user.id).boolean()
+db.query('te896706b5').filter('members[@roles:admin]', 'has', user.id).boolean()
 ```
 
 // .include('section.title', 'articleType.title')

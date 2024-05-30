@@ -29,7 +29,7 @@ const TYPE_INDEX: Map<BasedSchemaFieldType, number> = new Map([
   ['enum', 8],
   ['string', 9],
   ['references', 10],
-]);
+])
 const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map([
   [1, 'timestamp'],
   [2, 'created'],
