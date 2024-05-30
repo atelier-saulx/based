@@ -1,6 +1,0 @@
-mit:
-- This
-
-Unspecified:
-- git https://github.com/lithdew/lmdb-zig
-- git https://git.openldap.org/openldap/openldap

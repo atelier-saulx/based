@@ -350,7 +350,7 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 100e6 - 1; i++) {
+  for (let i = 0; i < 5e6 - 1; i++) {
     db.create('simple', {
       // user: i,
       vectorClock: i + 10,
@@ -368,7 +368,7 @@ test.serial.only('query + filter', async (t) => {
   // { set Id, amount: 10 } , checksum
 
   await wait(0)
-  console.log('TIME (10M)', Date.now() - dx, 'ms')
+  console.log('TIME (5M)', Date.now() - dx, 'ms')
 
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
@@ -383,7 +383,7 @@ test.serial.only('query + filter', async (t) => {
     // .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
-    .range(0, 10)
+    .range(0, 499)
     .get()
 
   // PROXY
@@ -391,8 +391,10 @@ test.serial.only('query + filter', async (t) => {
   // result.items
   // util.inspect symbol
 
+  // data getter()
+
   // for (const bla of result) {
-  // console.log(bla)
+  // console.log(bla.x)
   // }
 
   // REFERENCE & . notation
@@ -404,10 +406,21 @@ test.serial.only('query + filter', async (t) => {
 
   console.info(
     'query result ==',
-    JSON.stringify(result, null, 2),
+    // JSON.stringify(result.items, null, 2),
     Date.now() - d,
     'ms',
   )
+
+  const xxx = Date.now()
+
+  const x = result.flap.data
+
+  // include length from zig
+  // for (const d of x) {
+  // console.log(d)
+  // }
+
+  console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms', x[0])
 
   t.true(true)
 })

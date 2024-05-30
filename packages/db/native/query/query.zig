@@ -138,13 +138,24 @@ fn getQueryInternal(
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
+    total_size += 2;
+
     if (c.napi_create_buffer(env, total_size, &data, &result) != c.napi_ok) {
         return null;
     }
 
-    var last_pos: usize = 0;
+    var dataU8 = @as([*]u8, @ptrCast(data));
+
+    // TODO: make this a bit nicer...
+    const s: [4]u8 = @bitCast(@as(u32, @truncate(total_results)));
+    dataU8[0] = s[0];
+    dataU8[1] = s[1];
+    dataU8[2] = s[2];
+    dataU8[3] = s[3];
+
+    var last_pos: usize = 4;
+
     for (results.items) |*key| {
-        var dataU8 = @as([*]u8, @ptrCast(data));
         if (key.id != null) {
             dataU8[last_pos] = 255;
             last_pos += 1;
