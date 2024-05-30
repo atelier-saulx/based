@@ -1,4 +1,4 @@
-import useBasedStatus, { BasedStatus } from './UseBasedStatus.ts'
+import useBasedStatus, { useStatus, BasedStatus } from './UseBasedStatus.ts'
 
-export { BasedStatus }
+export { useStatus, BasedStatus }
 export default useBasedStatus

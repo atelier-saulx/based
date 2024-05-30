@@ -1,4 +1,4 @@
-import {Component, createEffect} from 'solid-js'
+import { Component, createEffect } from 'solid-js'
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import based, { BasedClient } from '@based/client'
@@ -25,11 +25,13 @@ const queries: FakeQueryPayloads[] = [
 
 const BasedContextChecker: Component = () => {
     const context: BasedClient = useBasedClient()
+    const { status, connected } = useBasedStatus()
 
     return (
         <div>
             <div>URL: {context.opts.url.toString()}</div>
-            <div>CONNECTED: {useBasedStatus().toString()}</div>
+            <div>CONNECTED: {connected.toString()}</div>
+            <div>STATUS: {status.toString()}</div>
         </div>
     )
 }

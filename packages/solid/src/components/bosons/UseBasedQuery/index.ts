@@ -1,3 +1,4 @@
-import useBasedQuery from "./UseBasedQuery"
+import useBasedQuery, { useQuery } from "./UseBasedQuery"
 
+export { useQuery }
 export default useBasedQuery

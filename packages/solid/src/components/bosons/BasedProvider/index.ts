@@ -1,4 +1,4 @@
-import BasedProvider, { BasedContext } from "./BasedProvider";
+import BasedProvider, { Provider, BasedContext } from "./BasedProvider";
 
-export { BasedContext }
+export { Provider, BasedContext }
 export default BasedProvider

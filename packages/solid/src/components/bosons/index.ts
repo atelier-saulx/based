@@ -1,13 +1,17 @@
-import BasedProvider, { BasedContext } from "./BasedProvider"
-import useBasedClient from "./UseBasedClient"
-import useBasedStatus, { BasedStatus } from "./UseBasedStatus"
-import useBasedQuery from "./UseBasedQuery"
+import BasedProvider, { Provider, BasedContext } from "./BasedProvider"
+import useBasedClient, { useClient } from "./UseBasedClient"
+import useBasedStatus, { useStatus, BasedStatus } from "./UseBasedStatus"
+import useBasedQuery, { useQuery } from "./UseBasedQuery"
 
 export {
     BasedProvider,
+    Provider,
     BasedContext,
     useBasedClient,
+    useClient,
     useBasedStatus,
     BasedStatus,
-    useBasedQuery
+    useStatus,
+    useBasedQuery,
+    useQuery
 }
