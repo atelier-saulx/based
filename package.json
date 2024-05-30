@@ -15,7 +15,8 @@
   "description": "Based DB",
   "keywords": [
     "based",
-    "saulx"
+    "database",
+    "once.net"
   ],
   "workspaces": [
     "packages/*"
@@ -31,7 +32,6 @@
     "testSubs": "cd packages/subs && npm run test",
     "clean": "turbo run clean && rimraf node_modules"
   },
-  "packageManager": "npm@8.1.0",
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
