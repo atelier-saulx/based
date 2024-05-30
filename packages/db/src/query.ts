@@ -28,6 +28,10 @@ type Operation =
 
 // clean this up
 
+class ProxyArray {
+  __response: BasedQueryResponse
+}
+
 export class BasedQueryResponse {
   buffer: Buffer
   query: Query
@@ -41,92 +45,96 @@ export class BasedQueryResponse {
     const result = this.buffer
     const schema = this.query.type
     // make nodes from schemaTypeDef
-    const arr = []
     let lastTarget
     // console.log(new Uint8Array(result))
-    let i = 4
 
     const len = result.readUint32LE(0)
 
     console.log('ARRAY IS LEN', len)
 
-    while (i < result.byteLength) {
-      // read
-      const index = result[i]
-      i++
+    const arr = new Array(len)
 
-      // read from tree
-      if (index === 255) {
-        // lastTarget = {
-        //   // last id is what we want...
-        //   id: result.readUint32LE(i),
-        // }
-        // @ts-ignore
-        arr.push(new schema.ResponseClass(this.buffer, i))
+    let i = 4
+    let lastItem = -1
 
-        // arr.push({
-        //   id: result.readUint32LE(i),
-        //   results: 'flap flap',
-        //   long: {
-        //     lat: 0,
-        //     long: 0,
-        //   },
-        // })
-        i += 4
-      } else if (index === 0) {
-        // for (const f in schema.fields) {
-        //   const field = schema.fields[f]
-        //   if (!field.seperate) {
-        //     if (this.query.includeFields) {
-        //       if (!this.query.includeFields.includes(f)) {
-        //         continue
-        //       }
-        //     }
-        //     if (field.type === 'integer' || field.type === 'reference') {
-        //       setByPath(
-        //         lastTarget,
-        //         field.path,
-        //         result.readUint32LE(i + field.start),
-        //       )
-        //     } else if (field.type === 'number') {
-        //       setByPath(
-        //         lastTarget,
-        //         field.path,
-        //         result.readFloatLE(i + field.start),
-        //       )
-        //     }
-        //   }
+    const readClass = new schema.ResponseClass(result)
+
+    var myProxy = new Proxy(arr, {
+      get: function (target, name) {
+        // doSomething()
+
+        // if (shadowArr[name]) {
+        //   return shadowArr[name]
         // }
-        i += schema.mainLen
-      } else {
-        const size = result.readUInt16LE(i)
-        i += 2
-        // // MAKE THIS FAST
-        // for (const f in schema.fields) {
-        //   const field = schema.fields[f]
-        //   if (field.seperate) {
-        //     if (field.field === index) {
-        //       if (field.type === 'string') {
-        //         setByPath(
-        //           lastTarget,
-        //           field.path,
-        //           result.toString('utf8', i, size + i),
-        //         )
-        //       } else if (field.type === 'references') {
-        //         const x = new Array(size / 4)
-        //         for (let j = i; j < size / 4; j += 4) {
-        //           x[j / 4] = result.readUint32LE(j)
-        //         }
-        //         setByPath(lastTarget, field.path, x)
-        //       }
-        //       break
-        //     }
-        //   }
-        // }
-        i += size
-      }
-    }
-    return arr
+
+        if (arr[name] === undefined) {
+          // flap
+
+          while (i < result.byteLength && arr[name] === undefined) {
+            // read
+            const index = result[i]
+
+            i++
+            // read from tree
+            if (index === 255) {
+              lastItem++
+              arr[lastItem] = i
+
+              // @ts-ignore
+              // yield new schema.ResponseClass(result, i)
+              i += 4
+            } else if (index === 0) {
+              i += schema.mainLen
+            } else {
+              const size = result.readUInt16LE(i)
+              i += 2
+              i += size
+            }
+          }
+        }
+
+        console.log('--->', name, arr[name])
+
+        readClass.__offset__ = arr[name]
+        return readClass
+
+        // // @ts-ignore
+        // return (shadowArr[name] = new schema.ResponseClass(
+        //   result,
+        //   // @ts-ignore
+        //   target[name],
+        // ))
+      },
+    })
+
+    return myProxy
+
+    // const myIterable = {
+    //   *[Symbol.iterator]() {
+    //     let i = 4
+    //     while (i < result.byteLength) {
+    //       // read
+    //       const index = result[i]
+    //       i++
+    //       // read from tree
+    //       if (index === 255) {
+    //         // @ts-ignore
+    //         yield new schema.ResponseClass(result, i)
+    //         i += 4
+    //       } else if (index === 0) {
+    //         i += schema.mainLen
+    //       } else {
+    //         const size = result.readUInt16LE(i)
+    //         i += 2
+    //         i += size
+    //       }
+    //     }
+    //   },
+    //   length: len,
+    // }
+    // return myIterable
+
+    // return arr
   }
   // length next etc fun times!
 }

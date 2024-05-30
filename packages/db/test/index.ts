@@ -383,7 +383,7 @@ test.serial.only('query + filter', async (t) => {
     // .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
-    .range(0, 499)
+    .range(0, 1e6)
     .get()
 
   // PROXY
@@ -413,14 +413,17 @@ test.serial.only('query + filter', async (t) => {
 
   const xxx = Date.now()
 
-  const x = result.flap.data
+  // result.flap.data[100].read()
+
+  console.log('YO', result.flap.data[100].id)
+  // const [x] = result.flap.data
 
   // include length from zig
   // for (const d of x) {
   // console.log(d)
   // }
 
-  console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms', x[0])
+  console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
   t.true(true)
 })
