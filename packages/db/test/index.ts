@@ -332,6 +332,11 @@ test.serial.only('query + filter', async (t) => {
     },
   })
 
+  console.log(
+    db.schemaTypesParsed.simple.buf,
+    db.schemaTypesParsed.simple.fieldNames,
+  )
+
   const refs = []
   for (let i = 1; i < 10 - 1; i++) {
     refs.push(i)
@@ -345,18 +350,18 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
-  for (let i = 0; i < 10e6 - 1; i++) {
+  for (let i = 0; i < 100e6 - 1; i++) {
     db.create('simple', {
       // user: i,
       vectorClock: i + 10,
-      refs: [0, 1, 2], //generateRandomArray(),
+      // refs: [0, 1, 3], //generateRandomArray(),
       flap: 'AMAZING 123',
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       // vectorClock: i % 4,
-      // location: {
-      // long: 52,
-      // lat: 52,
-      // },
+      location: {
+        long: 52,
+        lat: 52,
+      },
     })
   }
 
@@ -371,19 +376,35 @@ test.serial.only('query + filter', async (t) => {
   // READ CACHE SIZE []
 
   const d = Date.now()
-  const ids = db
+  const result = db
     .query('simple')
     .filter(['vectorClock', '>', 1])
-    .include(['flap', 'refs']) // now support location (getting the whole object)
+    .include(['flap', 'vectorClock']) // now support location (getting the whole object)
     // .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
     .range(0, 10)
     .get()
 
+  // PROXY
+
+  // result.items
+  // util.inspect symbol
+
+  // for (const bla of result) {
+  // console.log(bla)
+  // }
+
+  // REFERENCE & . notation
+  // edges // how store?
+
+  // sort indexes + sort
+
+  // then we see
+
   console.info(
     'query result ==',
-    JSON.stringify(ids, null, 2),
+    JSON.stringify(result, null, 2),
     Date.now() - d,
     'ms',
   )

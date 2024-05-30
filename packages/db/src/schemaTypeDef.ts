@@ -57,6 +57,18 @@ export type FieldDef = {
 
 export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
 
+export class BasedNodeBase {
+  __buffer__: Buffer // enum false
+  __offset__: number // enum false
+  __schema__: SchemaTypeDef
+  constructor(buffer: Buffer, offset: number) {
+    this.__buffer__ = buffer
+    this.__offset__ = offset
+  }
+  // keys
+  // util inspect
+}
+
 export type SchemaTypeDef = {
   cnt: number
   checksum: number
@@ -74,10 +86,11 @@ export type SchemaTypeDef = {
   prefix: Uint8Array
   seperate: FieldDef[]
   tree: SchemaFieldTree
+  ResponseClass: typeof BasedNodeBase
 }
 
 const prefixStringToUint8 = (
-  type: BasedSchemaType | BasedSchemaFieldObject
+  type: BasedSchemaType | BasedSchemaFieldObject,
 ): Uint8Array => {
   if (!('type' in type && 'properties' in type)) {
     return new Uint8Array([
@@ -86,6 +99,21 @@ const prefixStringToUint8 = (
     ])
   }
   return new Uint8Array([0, 0])
+}
+
+export const createBasedNodeClass = (schema: SchemaTypeDef) => {
+  class BasedNode extends BasedNodeBase {
+    override __schema__ = schema
+  }
+  // BasedNode.
+
+  for (const field in schema.fields) {
+    console.log(field)
+    // BasedNode.prototype[]
+    // make getter
+  }
+
+  return BasedNode
 }
 
 export const createSchemaTypeDef = (
@@ -108,7 +136,7 @@ export const createSchemaTypeDef = (
     lastId: 0,
   },
   path: string[] = [],
-  top: boolean = true
+  top: boolean = true,
 ): SchemaTypeDef => {
   const encoder = new TextEncoder()
 
@@ -216,6 +244,8 @@ export const createSchemaTypeDef = (
       result.fieldNames.set(f, lastWritten + 1)
       lastWritten += f.byteLength + 1
     }
+
+    result.ResponseClass = createBasedNodeClass(result as SchemaTypeDef)
   }
 
   return result as SchemaTypeDef
@@ -224,7 +254,7 @@ export const createSchemaTypeDef = (
 // TODO add enum in fields names!!!
 export const readSchemaTypeDefFromBuffer = (
   buf: Buffer,
-  fieldNames: Buffer
+  fieldNames: Buffer,
 ): SchemaTypeDef => {
   const tree: SchemaFieldTree = {}
   const fields: {
@@ -307,7 +337,7 @@ export const readSchemaTypeDefFromBuffer = (
     }
   }
 
-  return {
+  const schemaTypeDef: SchemaTypeDef = {
     prefix: new Uint8Array([buf[0], buf[1]]),
     prefixString: prefix,
     tree,
@@ -323,5 +353,11 @@ export const readSchemaTypeDefFromBuffer = (
     // this is tmp has to be removed
     total: 0,
     lastId: 0,
+    // dirty ts
+    ResponseClass: BasedNodeBase,
   }
+
+  schemaTypeDef.ResponseClass = createBasedNodeClass(schemaTypeDef)
+
+  return schemaTypeDef
 }

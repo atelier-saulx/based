@@ -28,6 +28,16 @@ type Operation =
 
 // clean this up
 
+export class BasedQueryResponse {
+  buffer: Buffer
+  schema: SchemaTypeDef
+  get data() {
+    // make nodes from schemaTypeDef
+    return []
+  }
+  // length next etc fun times!
+}
+
 const operationToByte = (op: Operation) => {
   if (op === '=') {
     return 1
@@ -221,6 +231,8 @@ export class Query {
 
       // will be actual results!
 
+      console.log('DERP', new Uint8Array(result))
+
       // --------- OPTIMIZATION NEEDED ------------------
       const arr = []
       let lastTarget
@@ -269,6 +281,7 @@ export class Query {
           const size = result.readUInt16LE(i)
           i += 2
 
+          // MAKE THIS FAST
           for (const f in this.type.fields) {
             const field = this.type.fields[f]
             if (field.seperate) {
