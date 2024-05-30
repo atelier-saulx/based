@@ -113,10 +113,7 @@ const results = db
 const results = db
   .query('article')
   .properties('name', 'publishDate')
-
-
   .has('sections', ['se123', 'se321'])
-
   .where('sections').has('se123', 'se321')
   .and('published').is(true)
   .and('publishDate').gt('now-1w')
