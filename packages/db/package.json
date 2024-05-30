@@ -27,6 +27,7 @@
     "package.json"
   ],
   "dependencies": {
+    "data-record": "^2.0.0",
     "@saulx/hash": "^3.0.0",
     "@based/schema": "^3.1.0",
     "@saulx/utils": "^4.3.2",

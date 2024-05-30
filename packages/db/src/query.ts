@@ -1,5 +1,4 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
-import dbZig from './db.js'
 import { setByPath } from '@saulx/utils'
 
 type Operation =
@@ -217,7 +216,7 @@ export class Query {
         this.type.lastId,
         start,
         end, // def 1k ?
-        includeBuffer
+        includeBuffer,
       )
 
       // will be actual results!
@@ -254,13 +253,13 @@ export class Query {
                 setByPath(
                   lastTarget,
                   field.path,
-                  result.readUint32LE(i + field.start)
+                  result.readUint32LE(i + field.start),
                 )
               } else if (field.type === 'number') {
                 setByPath(
                   lastTarget,
                   field.path,
-                  result.readFloatLE(i + field.start)
+                  result.readFloatLE(i + field.start),
                 )
               }
             }
@@ -278,7 +277,7 @@ export class Query {
                   setByPath(
                     lastTarget,
                     field.path,
-                    result.toString('utf8', i, size + i)
+                    result.toString('utf8', i, size + i),
                   )
                 } else if (field.type === 'references') {
                   const x = new Array(size / 4)
@@ -303,6 +302,7 @@ export class Query {
         limit: end,
       }
     } else {
+      //
     }
   }
 
