@@ -10,7 +10,8 @@
     "test": "npx ava",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "build-zig": "mkdir -p dist && zig build --summary all",
-    "get-napi": "./scripts/download-node-headers.sh"
+    "get-napi": "./scripts/download-node-headers.sh",
+    "test-simple": "zig build && npm run build && npm run test -- ./dist/test/index.js"
   },
   "sideEffects": false,
   "ava": {

@@ -348,6 +348,7 @@ test.serial.only('query + filter', async (t) => {
   for (let i = 0; i < 10e6 - 1; i++) {
     db.create('simple', {
       // user: i,
+      vectorClock: i + 10,
       // refs: [0, 1, 2], //generateRandomArray(),
       flap: 'AMAZING 123',
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
@@ -362,7 +363,7 @@ test.serial.only('query + filter', async (t) => {
   // { set Id, amount: 10 } , checksum
 
   await wait(0)
-  console.log(Date.now() - dx, 'ms')
+  console.log('TIME (10M)', Date.now() - dx, 'ms')
 
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
@@ -374,7 +375,7 @@ test.serial.only('query + filter', async (t) => {
     .query('simple')
     .filter(['vectorClock', '>', 1])
     .include(['flap', 'refs']) // now support location (getting the whole object)
-    .filter(['refs', 'has', [2]])
+    // .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
     .range(0, 1e5)
