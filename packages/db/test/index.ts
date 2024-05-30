@@ -349,7 +349,7 @@ test.serial.only('query + filter', async (t) => {
     db.create('simple', {
       // user: i,
       vectorClock: i + 10,
-      // refs: [0, 1, 2], //generateRandomArray(),
+      refs: [0, 1, 2], //generateRandomArray(),
       flap: 'AMAZING 123',
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       // vectorClock: i % 4,
@@ -378,10 +378,15 @@ test.serial.only('query + filter', async (t) => {
     // .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
-    .range(0, 1e5)
+    .range(0, 10)
     .get()
 
-  console.info('query result ==', ids, Date.now() - d, 'ms')
+  console.info(
+    'query result ==',
+    JSON.stringify(ids, null, 2),
+    Date.now() - d,
+    'ms',
+  )
 
   t.true(true)
 })
