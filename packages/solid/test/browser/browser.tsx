@@ -38,7 +38,7 @@ const BasedContextChecker: Component = () => {
 
 const Tester = () => {
     const [query, setQuery] = createSignal(queries[0])
-    const [results, setResults] = createSignal([])
+    // const [results, setResults] = createSignal([])
 
     createEffect(() => {
         const result = useBasedQuery(query().name, query().payload)
