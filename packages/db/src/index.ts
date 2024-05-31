@@ -11,6 +11,7 @@ import { Query, query } from './query.js'
 export * from './schemaTypeDef.js'
 export * from './get.js'
 export * from './set.js'
+export * from './basedNode.js'
 
 // @ts-ignore
 const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
@@ -34,7 +35,7 @@ export class BasedDb {
       lastId: number,
       offset: number,
       limit: number, // def 1k ?
-      includeBuffer: Buffer
+      includeBuffer: Buffer,
     ): any => {
       return dbZig.getQuery(
         conditions,
@@ -42,7 +43,7 @@ export class BasedDb {
         lastId,
         offset,
         limit,
-        includeBuffer
+        includeBuffer,
       )
     },
   }

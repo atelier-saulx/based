@@ -1,5 +1,4 @@
-import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
-import { setByPath } from '@saulx/utils'
+import { BasedDb, BasedNode, FieldDef, SchemaTypeDef } from './index.js'
 
 type Operation =
   | '='
@@ -13,130 +12,64 @@ type Operation =
   | 'exists'
   | '!exists'
 
-// TIMESTAMP: 'now + 1w'
+class BasedIterable {
+  constructor(buffer: Buffer, query: Query) {
+    this.#buffer = buffer
+    this.#query = query
+    // @ts-ignore
+    this.#reader = new this.#query.type.ResponseClass(this.#buffer, 0)
+  }
 
-// TODO
-// write down each operation
-// use char codes in parsed schema
-// type parsed schema
+  #buffer: Buffer
+  #query: Query
+  #reader: BasedNode;
 
-// const opToByte = {
-//   string: {
-//     '=': 2,
-//   },
-// }
+  *[Symbol.iterator]() {
+    let i = 4
+    while (i < this.#buffer.byteLength) {
+      // read
+      const index = this.#buffer[i]
+      i++
+      // read from tree
+      if (index === 255) {
+        // @ts-ignore
+        this.#reader.__offset__ = i
+        yield this.#reader
+        i += 4
+      } else if (index === 0) {
+        i += this.#query.type.mainLen
+      } else {
+        const size = this.#buffer.readUInt16LE(i)
+        i += 2
+        i += size
+      }
+    }
+  }
 
-// clean this up
+  map(callbackFn) {
+    const arr = new Array(this.length)
+    let i = 0
+    for (const item of this) {
+      arr[i++] = callbackFn(item)
+    }
+    return arr
+  }
 
-class ProxyArray {
-  __response: BasedQueryResponse
+  get length() {
+    return this.#buffer.readUint32LE(0)
+  }
 }
 
 export class BasedQueryResponse {
   buffer: Buffer
   query: Query
-
   constructor(query: Query, buffer: Buffer) {
     this.buffer = buffer
     this.query = query
   }
-
   get data() {
-    const result = this.buffer
-    const schema = this.query.type
-    // make nodes from schemaTypeDef
-    let lastTarget
-    // console.log(new Uint8Array(result))
-
-    const len = result.readUint32LE(0)
-
-    console.log('ARRAY IS LEN', len)
-
-    const arr = new Array(len)
-
-    let i = 4
-    let lastItem = -1
-
-    const readClass = new schema.ResponseClass(result)
-
-    var myProxy = new Proxy(arr, {
-      get: function (target, name) {
-        // doSomething()
-
-        // if (shadowArr[name]) {
-        //   return shadowArr[name]
-        // }
-
-        if (arr[name] === undefined) {
-          // flap
-
-          while (i < result.byteLength && arr[name] === undefined) {
-            // read
-            const index = result[i]
-
-            i++
-            // read from tree
-            if (index === 255) {
-              lastItem++
-              arr[lastItem] = i
-
-              // @ts-ignore
-              // yield new schema.ResponseClass(result, i)
-              i += 4
-            } else if (index === 0) {
-              i += schema.mainLen
-            } else {
-              const size = result.readUInt16LE(i)
-              i += 2
-              i += size
-            }
-          }
-        }
-
-        console.log('--->', name, arr[name])
-
-        readClass.__offset__ = arr[name]
-        return readClass
-
-        // // @ts-ignore
-        // return (shadowArr[name] = new schema.ResponseClass(
-        //   result,
-        //   // @ts-ignore
-        //   target[name],
-        // ))
-      },
-    })
-
-    return myProxy
-
-    // const myIterable = {
-    //   *[Symbol.iterator]() {
-    //     let i = 4
-    //     while (i < result.byteLength) {
-    //       // read
-    //       const index = result[i]
-    //       i++
-    //       // read from tree
-    //       if (index === 255) {
-    //         // @ts-ignore
-    //         yield new schema.ResponseClass(result, i)
-    //         i += 4
-    //       } else if (index === 0) {
-    //         i += schema.mainLen
-    //       } else {
-    //         const size = result.readUInt16LE(i)
-    //         i += 2
-    //         i += size
-    //       }
-    //     }
-    //   },
-    //   length: len,
-    // }
-    // return myIterable
-
-    // return arr
+    return new BasedIterable(this.buffer, this.query)
   }
-  // length next etc fun times!
 }
 
 const operationToByte = (op: Operation) => {
@@ -253,13 +186,7 @@ export class Query {
     return this
   }
 
-  get(): {
-    items: number[]
-    total: number
-    offset: number
-    limit: number
-    flap: BasedQueryResponse
-  } {
+  get(): BasedQueryResponse {
     let includeBuffer: Buffer
     let len = 0
     if (!this.includeFields) {
@@ -336,94 +263,9 @@ export class Query {
         includeBuffer,
       )
 
-      // will be actual results!
-
-      console.log('DERP', new Uint8Array(result))
-
-      // // --------- OPTIMIZATION NEEDED ------------------
-      const arr = []
-      // let lastTarget
-      // // console.log(new Uint8Array(result))
-      // let i = 4
-      // while (i < result.byteLength) {
-      //   // read
-      //   const index = result[i]
-      //   i++
-
-      //   // read from tree
-      //   if (index === 255) {
-      //     lastTarget = {
-      //       // last id is what we want...
-      //       id: result.readUint32LE(i),
-      //     }
-      //     arr.push(lastTarget)
-
-      //     i += 4
-      //   } else if (index === 0) {
-      //     for (const f in this.type.fields) {
-      //       const field = this.type.fields[f]
-      //       if (!field.seperate) {
-      //         if (this.includeFields) {
-      //           if (!this.includeFields.includes(f)) {
-      //             continue
-      //           }
-      //         }
-      //         if (field.type === 'integer' || field.type === 'reference') {
-      //           setByPath(
-      //             lastTarget,
-      //             field.path,
-      //             result.readUint32LE(i + field.start),
-      //           )
-      //         } else if (field.type === 'number') {
-      //           setByPath(
-      //             lastTarget,
-      //             field.path,
-      //             result.readFloatLE(i + field.start),
-      //           )
-      //         }
-      //       }
-      //     }
-      //     i += this.type.mainLen
-      //   } else {
-      //     const size = result.readUInt16LE(i)
-      //     i += 2
-
-      //     // MAKE THIS FAST
-      //     for (const f in this.type.fields) {
-      //       const field = this.type.fields[f]
-      //       if (field.seperate) {
-      //         if (field.field === index) {
-      //           if (field.type === 'string') {
-      //             setByPath(
-      //               lastTarget,
-      //               field.path,
-      //               result.toString('utf8', i, size + i),
-      //             )
-      //           } else if (field.type === 'references') {
-      //             const x = new Array(size / 4)
-      //             for (let j = i; j < size / 4; j += 4) {
-      //               x[j / 4] = result.readUint32LE(j)
-      //             }
-      //             setByPath(lastTarget, field.path, x)
-      //           }
-      //           break
-      //         }
-      //       }
-      //     }
-      //     i += size
-      //   }
-      // }
-      // -----------------------------------------------------------------
-
-      return {
-        items: arr,
-        total: this.type.total,
-        offset: start,
-        limit: end,
-        flap: new BasedQueryResponse(this, result),
-      }
+      return new BasedQueryResponse(this, result)
     } else {
-      //
+      // what?
     }
   }
 

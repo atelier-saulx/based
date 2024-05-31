@@ -415,13 +415,15 @@ test.serial.only('query + filter', async (t) => {
 
   // result.flap.data[100].read()
 
-  console.log('YO', result.flap.data[100].id)
-  // const [x] = result.flap.data
-
-  // include length from zig
-  // for (const d of x) {
-  // console.log(d)
+  // let s
+  // for (const x of result.flap.data) {
+  //   // console.info(x.id)
+  //   s = x.id
   // }
+
+  const bla = result.data.map((f) => {
+    return f.flap // { id: f.id, str: f.flap }
+  })
 
   console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 

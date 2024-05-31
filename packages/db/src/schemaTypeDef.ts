@@ -6,6 +6,7 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { BasedNode, createBasedNodeClass } from './basedNode.js'
 
 const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   timestamp: 8, // 64bit
@@ -57,26 +58,6 @@ export type FieldDef = {
 
 export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
 
-function BasedNodeBase(schema: SchemaTypeDef) {
-  this.__schema__ = schema
-}
-Object.defineProperty(BasedNodeBase.prototype, '__buffer__', {
-  writable: true,
-  enumerable: false,
-})
-Object.defineProperty(BasedNodeBase.prototype, '__offset__', {
-  writable: true,
-  enumerable: false,
-})
-Object.defineProperty(BasedNodeBase.prototype, '__schema__', {
-  enumerable: false,
-  writable: true,
-})
-
-export class BasedNode extends Object {
-  [key: string]: any
-}
-
 export type SchemaTypeDef = {
   cnt: number
   checksum: number
@@ -107,67 +88,6 @@ const prefixStringToUint8 = (
     ])
   }
   return new Uint8Array([0, 0])
-}
-
-export const createBasedNodeClass = (
-  schema: SchemaTypeDef,
-): typeof BasedNode => {
-  const Node = function (buffer: Buffer, offset: number) {
-    this.__buffer__ = buffer
-    this.__offset__ = offset
-  }
-  Node.prototype = new BasedNodeBase(schema)
-
-  Object.defineProperty(Node.prototype, 'id', {
-    enumerable: true,
-    set() {
-      // flap
-    },
-    get() {
-      return this.__buffer__.readUint32LE(this.__offset__)
-    },
-  })
-
-  for (const field in schema.fields) {
-    if (field.includes('.')) {
-      // flap make
-    } else if (schema.fields[field].type === 'string') {
-      Object.defineProperty(Node.prototype, field, {
-        enumerable: true,
-        set() {
-          // flap
-        },
-        get() {
-          return 'STRING'
-        },
-      })
-    } else if (schema.fields[field].type === 'number') {
-      Object.defineProperty(Node.prototype, field, {
-        enumerable: true,
-        // writable: true,
-        set() {
-          // flap
-        },
-        get() {
-          return 9000
-        },
-      })
-    } else if (schema.fields[field].type === 'reference') {
-      Object.defineProperty(Node.prototype, field, {
-        enumerable: true,
-        set() {
-          // flap
-        },
-        get() {
-          // return instance of ref
-          return { id: 'some REF return instanceOf' }
-        },
-      })
-    }
-  }
-
-  // @ts-ignore
-  return Node as typeof BasedNode
 }
 
 export const createSchemaTypeDef = (
