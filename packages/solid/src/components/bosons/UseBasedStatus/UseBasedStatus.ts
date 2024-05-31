@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from 'solid-js'
+import { createSignal, createEffect, Accessor } from 'solid-js'
 import { BasedClient } from '@based/client'
 import { useBasedClient } from '@/bosons'
 
@@ -16,9 +16,9 @@ export enum BasedStatus {
  */
 type BasedConnection = {
   /** If the connection is established or not. **/
-  connected: boolean
+  connected: Accessor<boolean>
   /** One of the three possible status. **/
-  status: BasedStatus
+  status: Accessor<BasedStatus>
 }
 
 /**
@@ -39,16 +39,19 @@ const useBasedStatus = (): BasedConnection => {
     setConnected(client.connected)
 
     const onDisconnect = (): void => {
+      console.log('onDisconnect')
       setConnected(client.connected)
       setStatus(BasedStatus.DISCONNECT)
     }
 
     const onReconnect = (): void => {
+      console.log('onReconnect')
       setConnected(client.connected)
       setStatus(BasedStatus.RECONNECT)
     }
 
     const onConnect = (): void => {
+      console.log('onConnect')
       setConnected(client.connected)
       setStatus(BasedStatus.CONNECT)
     }
@@ -65,8 +68,8 @@ const useBasedStatus = (): BasedConnection => {
   }, [client])
 
   return {
-    connected: connected(),
-    status: status(),
+    connected,
+    status,
   }
 }
 

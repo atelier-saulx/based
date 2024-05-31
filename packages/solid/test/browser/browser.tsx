@@ -35,8 +35,8 @@ const BasedContextChecker: Component = () => {
   return (
     <div>
       <div>URL: {context.opts.url.toString()}</div>
-      <div>CONNECTED: {connected.toString()}</div>
-      <div>STATUS: {status.toString()}</div>
+      <div>CONNECTED: {connected().toString()}</div>
+      <div>STATUS: {status().toString()}</div>
     </div>
   )
 }
