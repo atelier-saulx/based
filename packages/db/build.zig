@@ -23,6 +23,20 @@ pub fn build(b: *std.Build) void {
 
     lib.linkLibC();
 
+    const make_clibs = b.addSystemCommand(
+        &[_][]const u8{
+            "make",
+            "-C",
+            "./clibs",
+        },
+    );
+    b.getInstallStep().dependOn(&make_clibs.step);
+
+    lib.addIncludePath(b.path("clibs/include"));
+    lib.addLibraryPath(b.path("clibs/lib"));
+    lib.addRPath(b.path("clibs/lib"));
+    lib.linkSystemLibrary("util");
+
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "./lib.node",
     });
