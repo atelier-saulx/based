@@ -61,7 +61,7 @@ Solid Component that inject the `BasedClient` context thought the application.
     {/*slot*/}
 </BasedProvider>
 ```
-or
+or (**in deprecation process**)
 ```tsx
 <Provider client={client}>
     {/*slot*/}
@@ -92,6 +92,52 @@ const App: Component = () => {
 }
 ```
 
+## useBasedClient
+The `BasedClient` object with the information about the connection with the `Based` server. You cal also call functions using the client object.
+
+### Aliasing
+```ts
+const client = useBasedClient()
+```
+or (**in deprecation process**)
+```ts
+const client = useClient()
+```
+
+### Params
+None
+
+### Response
+The `BasedClient` object.
+
+```tsx
+import { useBasedClient, BasedProvider } from '@based/solidjs'
+import based, { BasedClient } from '@based/client'
+import type { Component } from 'solid-js'
+
+const client: BasedClient = based({
+    env: 'myEnv',
+    org: 'myOrg',
+    project: 'myProject'
+})
+
+const doSomething = (): void => {
+    const client = useBasedClient()
+    client.call('doSomething')
+}
+
+const context: BasedClient = useBasedClient()
+
+const App: Component = () => {
+    return (
+        <BasedProvider client={client}>
+            <button onClick={() => doSomething()}/>
+            <p>WebSockets URL: {context.opts.url.toString()}</p>
+        </BasedProvider>
+    )
+}
+```
+
 ## useBasedQuery
 Subscribes when a component gets mounted / unsubscribes when a comment gets unmounted
 
@@ -106,7 +152,7 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
 ```ts
 const { data, error, loading } = useBasedQuery('myQueryFunction')
 ```
-or
+or (**in deprecation process**)
 ```ts
 const { data, error, loading } = useQuery('myQueryFunction')
 ```
@@ -217,49 +263,43 @@ const { data } = useBasedQuery(
 )
 ```
 
-## useBasedClient
-The `BasedClient` object with the information about the connection with the `Based` server. You cal also call functions using the client object.
+## useBasedAuth
+Check the authorization state from the `Based` client.
 
 ### Aliasing
 ```ts
-const client = useBasedClient()
+const auth = useBasedAuth()
 ```
-or
+or (**in deprecation process**)
+
 ```ts
-const client = useClient()
+const auth = useAuthState()
 ```
 
 ### Params
 None
 
 ### Response
-The `BasedClient` object.
+| Key            | Type      | Always present | Description                                                    |
+|----------------|-----------|----------------|----------------------------------------------------------------|
+| `token`        | `string`  | `false`        | The connection token                                           |
+| `userId`       | `string`  | `false`        | The connected userID.                                          |
+| `refreshToken` | `string`  | `false`        | If there is a new token provided.                              |
+| `error`        | `string`  | `false`        | If the auth fails, an error message will be provided.          |
+| `persistent`   | `string`  | `false`        | If the auth values are being stored locally on `localStorage`. |
+| `type`         | `string`  | `false`        | N/A.                                                           |
 
-```tsx
-import { useBasedClient, BasedProvider } from '@based/solidjs'
-import based, { BasedClient } from '@based/client'
-import type { Component } from 'solid-js'
+```ts
+import { useBasedAuth } from '@based/solidjs'
 
-const client: BasedClient = based({
-    env: 'myEnv',
-    org: 'myOrg',
-    project: 'myProject'
-})
-
-const doSomething = (): void => {
-    const client = useBasedClient()
-    client.call('doSomething')
-}
-
-const context: BasedClient = useBasedClient()
-
-const App: Component = () => {
-    return (
-        <BasedProvider client={client}>
-            <button onClick={() => doSomething()}/>
-            <p>WebSockets URL: {context.opts.url.toString()}</p>
-        </BasedProvider>
-    )
+const IsUserAuthorized = () => {
+    const { error, token, userId } = useBasedAuth()
+    
+    if (!error || !token || !userId) {
+        return 'Not authorized 😭'
+    }
+    
+    return 'Authorized! 🎉'
 }
 ```
 
@@ -270,7 +310,7 @@ Get the connection status from the `Based` client.
 ```ts
 const client = useBasedStatus()
 ```
-or
+or (**in deprecation process**)
 ```ts
 const client = useStatus()
 ```

@@ -32,33 +32,35 @@ const useBasedStatus = (): BasedConnection => {
   const [status, setStatus] = createSignal<BasedStatus>(BasedStatus.DISCONNECT)
 
   createEffect(() => {
-    if (client) {
+    if (!client) {
+      return
+    }
+
+    setConnected(client.connected)
+
+    const onDisconnect = (): void => {
       setConnected(client.connected)
+      setStatus(BasedStatus.DISCONNECT)
+    }
 
-      const onDisconnect = (): void => {
-        setConnected(client.connected)
-        setStatus(BasedStatus.DISCONNECT)
-      }
+    const onReconnect = (): void => {
+      setConnected(client.connected)
+      setStatus(BasedStatus.RECONNECT)
+    }
 
-      const onReconnect = (): void => {
-        setConnected(client.connected)
-        setStatus(BasedStatus.RECONNECT)
-      }
+    const onConnect = (): void => {
+      setConnected(client.connected)
+      setStatus(BasedStatus.CONNECT)
+    }
 
-      const onConnect = (): void => {
-        setConnected(client.connected)
-        setStatus(BasedStatus.CONNECT)
-      }
+    client.on(BasedStatus.DISCONNECT, onDisconnect)
+    client.on(BasedStatus.RECONNECT, onReconnect)
+    client.on(BasedStatus.CONNECT, onConnect)
 
-      client.on(BasedStatus.DISCONNECT, onDisconnect)
-      client.on(BasedStatus.RECONNECT, onReconnect)
-      client.on(BasedStatus.CONNECT, onConnect)
-
-      return () => {
-        client.off(BasedStatus.DISCONNECT, onDisconnect)
-        client.off(BasedStatus.RECONNECT, onReconnect)
-        client.off(BasedStatus.CONNECT, onConnect)
-      }
+    return () => {
+      client.off(BasedStatus.DISCONNECT, onDisconnect)
+      client.off(BasedStatus.RECONNECT, onReconnect)
+      client.off(BasedStatus.CONNECT, onConnect)
     }
   }, [client])
 
@@ -70,8 +72,8 @@ const useBasedStatus = (): BasedConnection => {
 
 /**
  * Alias to `useBasedStatus`.
+ *
+ * @deprecated `useStatus` is still working, but we're moving to use `useBasedStatus` instead.
  */
-const useStatus = useBasedStatus
-
-export { useStatus }
+export const useStatus = useBasedStatus
 export default useBasedStatus
