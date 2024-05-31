@@ -36,7 +36,7 @@ const BasedContextChecker: Component = () => {
     <div>
       <div>URL: {context.opts.url.toString()}</div>
       <div>CONNECTED: {connected().toString()}</div>
-      <div>STATUS: {status().toString()}</div>
+      <div>STATUS: {status()}</div>
     </div>
   )
 }
@@ -73,6 +73,12 @@ const Tester = () => {
       </div>
     </div>
   )
+}
+
+const Tester2 = () => {
+  const { data } = useQuery('counter')
+
+  return <pre>{JSON.stringify(data(), null, 2)}</pre>
 }
 
 const App: Component = () => {
