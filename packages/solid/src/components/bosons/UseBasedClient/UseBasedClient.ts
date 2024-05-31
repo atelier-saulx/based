@@ -15,5 +15,6 @@ const useBasedClient = (): BasedClient => useContext(BasedContext)
  *
  * @deprecated `useClient` is still working, but we're moving to use `useBasedClient` instead.
  */
-export const useClient = useBasedClient
-export default useBasedClient
+const useClient = useBasedClient
+
+export { useClient, useBasedClient }

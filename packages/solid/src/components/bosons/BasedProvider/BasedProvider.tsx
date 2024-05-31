@@ -30,5 +30,6 @@ const BasedProvider: Component<BasedProviderProps> = (
  *
  * @deprecated `Provider` is still working, but we're moving to use `BasedProvider` instead.
  */
-export const Provider = BasedProvider
-export default BasedProvider
+const Provider = BasedProvider
+
+export { Provider, BasedProvider }

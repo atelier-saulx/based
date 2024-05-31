@@ -102,5 +102,6 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
  *
  * @deprecated `useQuery` is still working, but we're moving to use `useBasedQuery` instead.
  */
-export const useQuery = useBasedQuery
-export default useBasedQuery
+const useQuery = useBasedQuery
+
+export { useQuery, useBasedQuery }

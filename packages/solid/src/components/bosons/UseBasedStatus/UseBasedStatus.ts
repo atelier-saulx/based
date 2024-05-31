@@ -75,5 +75,6 @@ const useBasedStatus = (): BasedConnection => {
  *
  * @deprecated `useStatus` is still working, but we're moving to use `useBasedStatus` instead.
  */
-export const useStatus = useBasedStatus
-export default useBasedStatus
+const useStatus = useBasedStatus
+
+export { useStatus, useBasedStatus }

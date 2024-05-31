@@ -35,5 +35,6 @@ const useBasedAuth = (): AuthState => {
  *
  * @deprecated `useAuthState` is still working, but we're moving to use `useBasedAuth` instead.
  */
-export const useAuthState = useBasedAuth
-export default useBasedAuth
+const useAuthState = useBasedAuth
+
+export { useAuthState, useBasedAuth }
