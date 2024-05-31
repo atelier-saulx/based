@@ -1,6 +1,6 @@
 import { useContext } from 'solid-js'
 import { BasedClient } from '@based/client'
-import { BasedContext } from "@/bosons"
+import { BasedContext } from '@/bosons'
 
 /**
  * Hook to get the `BasedClient` context from the `BasedProvider` component.
@@ -8,9 +8,7 @@ import { BasedContext } from "@/bosons"
  *
  * @returns The `BasedClient` object with the information about the connection with the `Based` server. You cal also call functions using the client object.
  */
-const useBasedClient = (): BasedClient => {
-  return useContext(BasedContext)
-}
+const useBasedClient = (): BasedClient => useContext(BasedContext)
 
 /**
  * Alias to `useBasedClient`.

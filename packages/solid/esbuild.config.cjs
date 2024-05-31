@@ -1,7 +1,8 @@
-const esbuild = require('esbuild');
-const { solidPlugin } = require('esbuild-plugin-solid');
+const esbuild = require('esbuild')
+const { solidPlugin } = require('esbuild-plugin-solid')
 
-esbuild.build({
+esbuild
+  .build({
     entryPoints: ['./test/browser/browser.tsx'],
     bundle: true,
     outfile: './dist/test/browser/browser.js',
@@ -9,14 +10,15 @@ esbuild.build({
     sourcemap: true,
     target: 'ESNext',
     define: {
-        'process.env.NODE_ENV': '"production"',
+      'process.env.NODE_ENV': '"production"',
     },
     loader: {
-        '.js': 'jsx',
-        '.ts': 'ts',
-        '.tsx': 'tsx',
+      '.js': 'jsx',
+      '.ts': 'ts',
+      '.tsx': 'tsx',
     },
     jsxFactory: 'h',
     jsxFragment: 'Fragment',
     plugins: [solidPlugin()],
-}).catch(() => process.exit(1));
+  })
+  .catch(() => process.exit(1))
