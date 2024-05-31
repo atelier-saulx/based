@@ -17,7 +17,7 @@ CFLAGS += -fPIC -fvisibility=hidden -I../../include \
 	$(call cc-option,-Wno-keyword-macro) \
 	$(call cc-option,-Wno-constant-logical-operand) \
 	-DNDEBUG
-LDFLAGS += -g -L../
+LDFLAGS += -g -L../../../zig-out/lib
 
 OBJ := \
 	lib/deflate_compress.o \
@@ -40,7 +40,7 @@ ifeq ($(uname_S),Darwin)
 	LDFLAGS += -shared -Wl,-install_name,@rpath/libdeflate$(LIB_SUFFIX)
 endif
 
-TARGET := ../libdeflate$(LIB_SUFFIX)
+TARGET := $(LIB_PATH)/libdeflate$(LIB_SUFFIX)
 
 DEP := $(OBJ:%.o=%.d)
 

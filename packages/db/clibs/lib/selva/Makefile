@@ -3,7 +3,8 @@
 include ../../common.mk
 
 CFLAGS += -fPIC -fvisibility=hidden -I../../include
-LDFLAGS += -shared -g -L../ \
+LDFLAGS += -shared -g \
+		   -L../../../zig-out/lib \
 		   -ljemalloc_selva -ldeflate
 
 OBJ := \
@@ -16,7 +17,7 @@ ifeq ($(uname_S),Darwin)
 	LDFLAGS += -Wl,-install_name,@rpath/libselva$(LIB_SUFFIX)
 endif
 
-TARGET := ../libselva$(LIB_SUFFIX)
+TARGET := $(LIB_PATH)/libselva$(LIB_SUFFIX)
 
 DEP := $(OBJ:%.o=%.d)
 

@@ -8,7 +8,7 @@ CFLAGS += -Wno-unused-value
 ifeq ($(uname_S),Darwin)
 CFLAGS += -Wunused-comparison
 endif
-LDFLAGS += -g -L../
+LDFLAGS += -g -L../../../zig-out/lib
 
 OBJ := \
 	array_field.o \
@@ -61,7 +61,7 @@ ifeq ($(uname_S),Darwin)
 	LDFLAGS += -ljemalloc_selva -ldeflate
 endif
 
-TARGET := ../libutil$(LIB_SUFFIX)
+TARGET := $(LIB_PATH)/libutil$(LIB_SUFFIX)
 
 DEP := $(OBJ:%.o=%.d)
 
