@@ -1,1 +1,1 @@
-export * from '@/bosons'
+export * from './components/bosons'
