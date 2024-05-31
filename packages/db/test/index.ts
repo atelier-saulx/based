@@ -352,12 +352,10 @@ test.serial.only('query + filter', async (t) => {
 
   for (let i = 0; i < 5e6 - 1; i++) {
     db.create('simple', {
-      // user: i,
       vectorClock: i + 10,
-      // refs: [0, 1, 3], //generateRandomArray(),
-      flap: 'AMAZING 123 ' + i,
+      refs: generateRandomArray(),
+      flap: 'AMAZING ' + i,
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      // vectorClock: i % 4,
       location: {
         long: 52,
         lat: 52,
@@ -379,29 +377,36 @@ test.serial.only('query + filter', async (t) => {
   const result = db
     .query('simple')
     .filter(['vectorClock', '>', 1])
+    .filter(['refs', 'has', [1]])
     .include(['flap', 'vectorClock']) // now support location (getting the whole object)
-    .range(0, 1e6)
+    .range(0, 100)
     .get()
 
-  console.info('query result ==', Date.now() - d, 'ms')
+  console.info(
+    'query result ==',
+    Date.now() - d,
+    'ms',
+    result.buffer.byteLength,
+  )
 
   const xxx = Date.now()
 
-  // result.flap.data[100].read()
-
-  // let s
-  // for (const x of result.flap.data) {
-  //   // console.info(x.id)
-  //   s = x.id
-  // }
-
   const bla = result.data.map((f) => {
-    return f.id
+    return { id: f.id }
   })
 
   // console.log(bla)
-
   console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
+
+  // 4378 4bk
+  console.log(result.buffer.byteLength)
+
+  /*
+  {
+    BUFFER 1mb // 4 bytes 
+    [4]
+  }
+  */
 
   t.true(true)
 })

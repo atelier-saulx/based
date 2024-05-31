@@ -29,8 +29,14 @@ const readSeperateFieldFromBuffer = (
 ) => {
   while (i < buffer.byteLength) {
     const index = buffer[i]
+    if (index === 255) {
+      return // cant find...
+    }
     i += 1
     if (index === 0) {
+      if (requestedField.field === 0) {
+        console.log('lullz')
+      }
       // for (const f in this.type.fields) {
       //   const field = this.type.fields[f]
       //   if (!field.seperate) {
@@ -118,7 +124,12 @@ export const createBasedNodeClass = (
           // flap
         },
         get() {
-          return 9000
+          return readSeperateFieldFromBuffer(
+            fieldDef,
+            this.__buffer__,
+            schema,
+            this.__offset__ + 4,
+          )
         },
       })
     } else if (type === 'reference') {

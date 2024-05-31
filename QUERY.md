@@ -114,7 +114,7 @@ db.query('article').traverse('contributors')
 // recursive
 db.query('article').traverse(
   (traverse) => traverse('contributors').traverse('articles'),
-  { recursive: 2 }
+  { recursive: 2 },
 )
 ```
 
@@ -156,7 +156,7 @@ unsubscribe()
 const MyComponent = ({ id }) => {
   const { data, loading, error } = useQuery(
     (db) => db.query(id).include('headline', 'abstract', 'contributors'),
-    [id]
+    [id],
   )
 
   if (loading) {
@@ -176,3 +176,5 @@ const MyComponent = ({ id }) => {
   )
 }
 ```
+
+// ADD TRIM FN FOR STRING IN INCLUDE

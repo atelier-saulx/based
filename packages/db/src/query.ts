@@ -263,6 +263,8 @@ export class Query {
         includeBuffer,
       )
 
+      console.log({ result })
+
       return new BasedQueryResponse(this, result)
     } else {
       // what?

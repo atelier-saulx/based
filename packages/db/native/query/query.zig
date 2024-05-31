@@ -135,48 +135,72 @@ fn getQueryInternal(
         // --------------------------------------------------------------------------------
     }
 
-    var data: ?*anyopaque = undefined;
+    // var data: ?*anyopaque = undefined;
+
     var result: c.napi_value = undefined;
 
-    total_size += 2;
+    // MEMPOOL
+    // if (c.napi_create_buffer(env, total_size, &data, &result) != c.napi_ok) {
+    //     return null;
+    // }
 
-    if (c.napi_create_buffer(env, total_size, &data, &result) != c.napi_ok) {
+    if (c.napi_create_array_with_length(env, 100, &result) != c.napi_ok) {
         return null;
     }
 
-    var dataU8 = @as([*]u8, @ptrCast(data));
+    var bla: u8 = 0;
 
-    // TODO: make this a bit nicer...
-    const s: [4]u8 = @bitCast(@as(u32, @truncate(total_results)));
-    dataU8[0] = s[0];
-    dataU8[1] = s[1];
-    dataU8[2] = s[2];
-    dataU8[3] = s[3];
+    while (bla < 100) {
+        var data: ?*anyopaque = undefined;
+        var dataU8 = @as([*]u8, @ptrCast(data));
+        dataU8[0] = bla;
+        var x: c.napi_value = undefined;
+        _ = c.napi_create_buffer(env, 1, &data, &x);
+        // result[bla] = x;
 
-    var last_pos: usize = 4;
-
-    for (results.items) |*key| {
-        if (key.id != null) {
-            dataU8[last_pos] = 255;
-            last_pos += 1;
-            @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
-            last_pos += 4;
-            // std.debug.print("got id: {any}\n", .{key.id});
-        }
-        @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
-        last_pos += 1;
-        if (key.field != 0) {
-            const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
-            dataU8[last_pos] = x[0];
-            dataU8[last_pos + 1] = x[1];
-            last_pos += 2;
-        }
-        @memcpy(
-            dataU8[last_pos .. last_pos + key.val.?.mv_size],
-            @as([*]u8, @ptrCast(key.val.?.mv_data)),
-        );
-        last_pos += key.val.?.mv_size;
+        _ = c.napi_set_element(env, result, bla, x);
+        bla += 1;
     }
+
+    total_size += 2;
+
+    // var size things put in array with buffers
+
+    // for each string make new buffer
+
+    // var dataU8 = @as([*]u8, @ptrCast(data));
+
+    // // TODO: make this a bit nicer...
+    // const s: [4]u8 = @bitCast(@as(u32, @truncate(total_results)));
+    // dataU8[0] = s[0];
+    // dataU8[1] = s[1];
+    // dataU8[2] = s[2];
+    // dataU8[3] = s[3];
+
+    // var last_pos: usize = 4;
+
+    // for (results.items) |*key| {
+    //     if (key.id != null) {
+    //         dataU8[last_pos] = 255;
+    //         last_pos += 1;
+    //         @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
+    //         last_pos += 4;
+    //         // std.debug.print("got id: {any}\n", .{key.id});
+    //     }
+    //     @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
+    //     last_pos += 1;
+    //     if (key.field != 0) {
+    //         const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
+    //         dataU8[last_pos] = x[0];
+    //         dataU8[last_pos + 1] = x[1];
+    //         last_pos += 2;
+    //     }
+    //     @memcpy(
+    //         dataU8[last_pos .. last_pos + key.val.?.mv_size],
+    //         @as([*]u8, @ptrCast(key.val.?.mv_data)),
+    //     );
+    //     last_pos += key.val.?.mv_size;
+    // }
 
     // GET
 
