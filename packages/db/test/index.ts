@@ -355,7 +355,7 @@ test.serial.only('query + filter', async (t) => {
       // user: i,
       vectorClock: i + 10,
       // refs: [0, 1, 3], //generateRandomArray(),
-      flap: 'AMAZING 123',
+      flap: 'AMAZING 123 ' + i,
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       // vectorClock: i % 4,
       location: {
@@ -380,36 +380,10 @@ test.serial.only('query + filter', async (t) => {
     .query('simple')
     .filter(['vectorClock', '>', 1])
     .include(['flap', 'vectorClock']) // now support location (getting the whole object)
-    // .filter(['refs', 'has', [2]])
-    // .or(['refs', 'has', [1234]])
-    // .sort('vectorClock', 'asc')
     .range(0, 1e6)
     .get()
 
-  // PROXY
-
-  // result.items
-  // util.inspect symbol
-
-  // data getter()
-
-  // for (const bla of result) {
-  // console.log(bla.x)
-  // }
-
-  // REFERENCE & . notation
-  // edges // how store?
-
-  // sort indexes + sort
-
-  // then we see
-
-  console.info(
-    'query result ==',
-    // JSON.stringify(result.items, null, 2),
-    Date.now() - d,
-    'ms',
-  )
+  console.info('query result ==', Date.now() - d, 'ms')
 
   const xxx = Date.now()
 
@@ -422,8 +396,10 @@ test.serial.only('query + filter', async (t) => {
   // }
 
   const bla = result.data.map((f) => {
-    return f.flap // { id: f.id, str: f.flap }
+    return f.id
   })
+
+  // console.log(bla)
 
   console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
