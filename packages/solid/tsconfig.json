@@ -3,14 +3,15 @@
   "compilerOptions": {
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "allowImportingTsExtensions": true,
+    "module": "ESNext",
     "moduleResolution": "Node",
+    "isolatedModules": true,
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/components/*"]
     }
   },
-  "include": ["./src", "./test"],
-  "exclude": ["./dist/test", "./dist/src"]
+  "include": ["./src", "./test/browser"],
+  "exclude": ["./dist"]
 }

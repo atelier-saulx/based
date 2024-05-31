@@ -42,7 +42,7 @@ const Tester = () => {
 
     createEffect(() => {
         const result = useBasedQuery(query().name, query().payload)
-        console.log(result)
+        console.log('Query result', result)
     })
 
     return (
@@ -81,5 +81,5 @@ const App: Component = () => {
   )
 }
 
-const root = document.getElementById('root')
+const root = document.getElementById('app')
 render(() => <App />, root!)

@@ -9,6 +9,7 @@
     "server": "node ./test/based-server.js",
     "browser": "npx vite -c ./vite.config.ts ./test/browser",
     "watch": "npm run build -- --watch",
+    "esbuild": "node esbuild.config.cjs",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "sideEffects": false,
@@ -24,7 +25,9 @@
     "typescript": "^5.3.3",
     "vite": "^5.2.8",
     "vite-plugin-solid": "^2.8.2",
-    "vite-tsconfig-paths": "^4.3.2"
+    "vite-tsconfig-paths": "^4.3.2",
+    "esbuild": "^0.21.4",
+    "esbuild-plugin-solid": "^0.6.0"
   },
   "peerDependencies": {
     "@based/client": "*",

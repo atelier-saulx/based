@@ -2,9 +2,10 @@
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
     "jsx": "react",
-    "rootDir": "src",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "outDir": "dist"
   },
-  "include": ["./src", "./test"],
-  "exclude": ["./dist/test", "./dist/src"]
+  "include": ["./src", "./test/browser"],
+  "exclude": ["./dist"]
 }

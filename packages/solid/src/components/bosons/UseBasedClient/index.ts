@@ -1,4 +1,4 @@
-import useBasedClient, { useClient } from "./UseBasedClient.ts";
+import useBasedClient, { useClient } from "./UseBasedClient";
 
 export { useClient }
 export default useBasedClient
