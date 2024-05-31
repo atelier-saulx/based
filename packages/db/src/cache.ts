@@ -6,6 +6,8 @@ export const store: {
   cnt: 0,
 }
 
+// pre allocated a buffer for a query estimate size
+
 export const createSlab = (size: number): number => {
   const buf = Buffer.allocUnsafe(size)
   buf.writeUint32LE(0, 0)

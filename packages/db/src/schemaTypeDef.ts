@@ -103,7 +103,6 @@ export const createSchemaTypeDef = (
     prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
     tree: {},
-
     // temporary
     total: 0,
     // also temprorary

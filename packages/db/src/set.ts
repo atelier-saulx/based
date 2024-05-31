@@ -5,6 +5,7 @@ import {
   MAX_MODIFY_BUFFER,
   flushBuffer,
 } from './operations.js'
+// import { deflateRawSync } from 'node:zlib'
 
 const setCursor = (
   db: BasedDb,
@@ -83,6 +84,8 @@ const addModify = (
         }
         modifyBuffer.len += refLen
       } else if (t.type === 'string') {
+        // const deflated = deflateRawSync(value)
+
         const byteLen = Buffer.byteLength(value, 'utf8')
         if (byteLen + 5 + modifyBuffer.len + 11 > MAX_MODIFY_BUFFER) {
           flushBuffer(db)
@@ -147,81 +150,3 @@ export const update = (
     startDrain(db)
   }
 }
-
-/*
-
-      // // --------- OPTIMIZATION NEEDED ------------------
-      const arr = []
-      // let lastTarget
-      // // console.log(new Uint8Array(result))
-      // let i = 4
-      // while (i < result.byteLength) {
-      //   // read
-      //   const index = result[i]
-      //   i++
-
-      //   // read from tree
-      //   if (index === 255) {
-      //     lastTarget = {
-      //       // last id is what we want...
-      //       id: result.readUint32LE(i),
-      //     }
-      //     arr.push(lastTarget)
-
-      //     i += 4
-      //   } else if (index === 0) {
-      //     for (const f in this.type.fields) {
-      //       const field = this.type.fields[f]
-      //       if (!field.seperate) {
-      //         if (this.includeFields) {
-      //           if (!this.includeFields.includes(f)) {
-      //             continue
-      //           }
-      //         }
-      //         if (field.type === 'integer' || field.type === 'reference') {
-      //           setByPath(
-      //             lastTarget,
-      //             field.path,
-      //             result.readUint32LE(i + field.start),
-      //           )
-      //         } else if (field.type === 'number') {
-      //           setByPath(
-      //             lastTarget,
-      //             field.path,
-      //             result.readFloatLE(i + field.start),
-      //           )
-      //         }
-      //       }
-      //     }
-      //     i += this.type.mainLen
-      //   } else {
-      //     const size = result.readUInt16LE(i)
-      //     i += 2
-
-      //     // MAKE THIS FAST
-      //     for (const f in this.type.fields) {
-      //       const field = this.type.fields[f]
-      //       if (field.seperate) {
-      //         if (field.field === index) {
-      //           if (field.type === 'string') {
-      //             setByPath(
-      //               lastTarget,
-      //               field.path,
-      //               result.toString('utf8', i, size + i),
-      //             )
-      //           } else if (field.type === 'references') {
-      //             const x = new Array(size / 4)
-      //             for (let j = i; j < size / 4; j += 4) {
-      //               x[j / 4] = result.readUint32LE(j)
-      //             }
-      //             setByPath(lastTarget, field.path, x)
-      //           }
-      //           break
-      //         }
-      //       }
-      //     }
-      //     i += size
-      //   }
-      // }
-      // -----------------------------------------------------------------
-*/

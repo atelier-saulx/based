@@ -372,35 +372,38 @@ test.serial.only('query + filter', async (t) => {
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
 
   // READ CACHE SIZE []
+  const bla = async () => {
+    const d = Date.now()
+    const result = db
+      .query('simple')
+      .filter(['vectorClock', '>', 1])
+      // .filter(['refs', 'has', [1]])
+      .include(['flap', 'vectorClock', 'user', 'refs', 'location']) // now support location (getting the whole object)
+      .range(0, 1e6)
+      .get()
 
-  const d = Date.now()
-  const result = db
-    .query('simple')
-    .filter(['vectorClock', '>', 1])
-    .filter(['refs', 'has', [1]])
-    .include(['flap', 'vectorClock']) // now support location (getting the whole object)
-    .range(0, 100)
-    .get()
+    console.info(
+      'query result ==',
+      Date.now() - d,
+      'ms',
+      result.buffer.byteLength,
+    )
 
-  console.info(
-    'query result ==',
-    Date.now() - d,
-    'ms',
-    result.buffer.byteLength,
-  )
+    const xxx = Date.now()
 
-  const xxx = Date.now()
+    // const bla = result.data.map((f) => {
+    //   return { id: f.id }
+    // })
 
-  const bla = result.data.map((f) => {
-    return { id: f.id }
-  })
+    console.log(result.data)
+    console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-  // console.log(bla)
-  console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
+    console.log(result.buffer.byteLength)
+  }
 
-  // 4378 4bk
-  console.log(result.buffer.byteLength)
+  await bla()
 
+  await wait(5000)
   /*
   {
     BUFFER 1mb // 4 bytes 

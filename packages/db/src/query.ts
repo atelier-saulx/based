@@ -1,4 +1,5 @@
 import { BasedDb, BasedNode, FieldDef, SchemaTypeDef } from './index.js'
+import { inspect } from 'node:util'
 
 type Operation =
   | '='
@@ -23,6 +24,20 @@ class BasedIterable {
   #buffer: Buffer
   #query: Query
   #reader: BasedNode;
+
+  [inspect.custom]() {
+    const arr = []
+    let i = 0
+    for (const x of this) {
+      i++
+      arr.push(`  { id: ${x.id} }`)
+      if (i > 50) {
+        arr.push(`  ... ${this.length - 50} more items`)
+        break
+      }
+    }
+    return `BasedIterable[${this.#query.type.type}] (${this.length}) [\n${arr.join(',\n')}\n]`
+  }
 
   *[Symbol.iterator]() {
     let i = 4
@@ -263,7 +278,15 @@ export class Query {
         includeBuffer,
       )
 
-      console.log({ result })
+      console.log(result)
+
+      // size estimator pretty nice to add
+
+      // buffer.toString('utf8', i, size + i)
+      // @ts-ignore
+      // console.log({ result, x: result.map((v) => v.toString('utf8')) })
+
+      // result.rem
 
       return new BasedQueryResponse(this, result)
     } else {
