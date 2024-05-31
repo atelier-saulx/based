@@ -26,17 +26,20 @@ class BasedIterable {
   #reader: BasedNode;
 
   [inspect.custom]() {
-    const arr = []
+    const arr = new Array(this.length)
     let i = 0
     for (const x of this) {
+      arr[i] = { id: x.id }
       i++
-      arr.push(`  { id: ${x.id} }`)
-      if (i > 50) {
-        arr.push(`  ... ${this.length - 50} more items`)
+      if (i > 100) {
+        // arr.push(`... ${this.length - 50} more items`)
         break
       }
     }
-    return `BasedIterable[${this.#query.type.type}] (${this.length}) [\n${arr.join(',\n')}\n]`
+
+    const x = inspect(arr)
+
+    return `BasedIterable[${this.#query.type.type}] (${this.length}) ${x}`
   }
 
   *[Symbol.iterator]() {
