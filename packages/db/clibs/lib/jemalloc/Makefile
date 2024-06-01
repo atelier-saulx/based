@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 JEMALLOC_VER := 5.3.0
-JEMALLOC_CONFIG := --with-version=$(JEMALLOC_VER)-0-g54eaed1d8b56b1aa528be3bdd1877e59c56fa90c \
+JEMALLOC_CONFIG := --with-version=VERSION \
 				   --with-lg-quantum=3 \
 				   --disable-cxx \
 				   --enable-xmalloc \
