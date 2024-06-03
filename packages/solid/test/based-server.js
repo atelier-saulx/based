@@ -1,9 +1,8 @@
 import { BasedServer } from '@based/server'
 
 const counter = (_based, payload, update) => {
-  let cnt = 0
-
   if (payload.count) {
+    let cnt = 0
     const int = setInterval(() => {
       update({ count: ++cnt })
     }, payload.speed ?? 1e3)

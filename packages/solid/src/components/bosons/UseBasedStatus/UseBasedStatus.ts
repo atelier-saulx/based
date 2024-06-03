@@ -39,19 +39,16 @@ const useBasedStatus = (): BasedConnection => {
     setConnected(client.connected)
 
     const onDisconnect = (): void => {
-      console.log('onDisconnect')
       setConnected(client.connected)
       setStatus(BasedStatus.DISCONNECT)
     }
 
     const onReconnect = (): void => {
-      console.log('onReconnect')
       setConnected(client.connected)
       setStatus(BasedStatus.RECONNECT)
     }
 
     const onConnect = (): void => {
-      console.log('onConnect')
       setConnected(client.connected)
       setStatus(BasedStatus.CONNECT)
     }

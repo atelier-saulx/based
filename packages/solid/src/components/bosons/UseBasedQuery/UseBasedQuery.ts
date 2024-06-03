@@ -1,9 +1,5 @@
-import { createSignal, createEffect } from 'solid-js'
-import {
-  BasedClient,
-  QueryMap as BasedQueryMap,
-  BasedQuery,
-} from '@based/client'
+import { Accessor, createSignal, onCleanup } from 'solid-js'
+import { BasedClient, QueryMap as BasedQueryMap } from '@based/client'
 import { BasedError } from '@based/errors'
 import { useBasedClient } from '@/bosons'
 
@@ -19,19 +15,20 @@ import { useBasedClient } from '@/bosons'
  *   "data": {
  *      "name": "John Doe"
  *   },
- *   "checksum": 120823798
+ *   "checksum": 120823798,
+ *   "error": null
  * }
  * ```
  */
 type BasedQueryResult<T> = {
   /** If the query is still loading. **/
-  loading: boolean
+  loading: Accessor<boolean>
   /** The data coming from your filters. **/
-  data?: T
+  data?: Accessor<T> | Accessor<null>
   /** The `BasedError` object containing the `statusMessage` and `code` from your error. **/
-  error?: BasedError
+  error?: Accessor<BasedError> | Accessor<null>
   /** A calculated value used to verify data integrity and detect errors. Each response has a unique checksum. **/
-  checksum?: number
+  checksum?: Accessor<number> | Accessor<null>
 }
 
 type BasedQueryOptions = {
@@ -42,59 +39,58 @@ type BasedQueryOptions = {
 /**
  * Hook to declare a query that invoke a `Based` function.
  *
- * @param db - The function name that you want to invoke.
+ * @param name - The function name that you want to invoke.
  * @param payload - The filters and mutations that you want to apply to you data.
  * @param opts - You can set `persistent` to true to store the cached result of a query in `localStorage` on the client-side.
  *
- * @returns The `BasedQueryResult` object with you data or an error message.
+ * @returns The `BasedQueryResult` object with 4 signals to be consumed: `loading()`, `data()`, `error()` and `checksum()`.
+ *
+ * @remarks
+ * You need to destruct the returned object to get access to the signals.
+ *
+ * @example
+ * const result = useBasedQuery('counter', {
+ *   count: true,
+ * })
  */
 const useBasedQuery = <N extends keyof BasedQueryMap>(
-  db: N,
+  name: N,
   payload?: BasedQueryMap[N]['payload'],
   opts?: BasedQueryOptions,
 ): BasedQueryResult<BasedQueryMap[N]['result']> => {
+  const [loading, setLoading] = createSignal<boolean>(true)
+  const [checksum, setChecksum] = createSignal<number | null>(null)
+  const [error, setError] = createSignal<BasedError | null>(null)
+  const [data, setData] = createSignal<any | null>(null)
+
+  const onData = (data: any, checksum: number) => {
+    setLoading(false)
+    setChecksum(checksum)
+    setData({ ...data })
+  }
+
+  const onError = (error: BasedError) => {
+    setLoading(false)
+    setError({ ...error })
+  }
+
   const client: BasedClient = useBasedClient()
-  const dbName: string = db as string
 
-  if (!client || !dbName) {
-    return { loading: true }
+  if (!client || !name) {
+    return
   }
 
-  const query: BasedQuery<any, any> = client.query(dbName, payload, opts)
-  const { cache } = query
+  const basedQuery = client.query(
+    name as string,
+    payload,
+    opts as BasedQueryOptions,
+  )
 
-  const [checksum, setChecksum] = createSignal<number>(cache?.c)
-  const [error, setError] = createSignal<BasedError>(cache?.c)
+  const unsubscribe = basedQuery.subscribe(onData, onError)
 
-  createEffect(() => {
-    const unsubscribe = query.subscribe(
-      (_, checksum) => {
-        setChecksum(checksum)
-      },
-      (err) => {
-        setError(err)
-      },
-    )
+  onCleanup(() => unsubscribe())
 
-    return () => {
-      unsubscribe()
-      setChecksum(0)
-    }
-  })
-
-  if (!checksum() && !error()) {
-    return { loading: true }
-  }
-
-  if (checksum()) {
-    if (!cache) {
-      return { loading: true }
-    }
-
-    return { loading: false, data: cache.v, checksum: checksum() }
-  }
-
-  return { loading: false, error: error() }
+  return { loading, checksum, error, data }
 }
 
 /**
