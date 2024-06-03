@@ -1,6 +1,6 @@
-import { useContext, createSignal, createEffect } from 'solid-js'
-import { BasedContext } from '../BasedProvider'
+import { createSignal, createEffect } from 'solid-js'
 import { BasedClient, AuthState } from '@based/client'
+import { useBasedClient } from '../useBasedClient'
 
 /**
  * Hook to check and get the Auth state from the client
@@ -8,7 +8,7 @@ import { BasedClient, AuthState } from '@based/client'
  * @returns the `AuthState` object containing all the information about the current state of the authorization with the `Based` cloud.
  */
 const useBasedAuth = (): AuthState => {
-  const client: BasedClient = useContext(BasedContext)
+  const client: BasedClient = useBasedClient()
   const [auth, setAuth] = createSignal<AuthState>(client?.authState || {})
 
   createEffect(() => {

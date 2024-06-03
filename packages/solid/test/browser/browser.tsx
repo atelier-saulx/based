@@ -72,7 +72,7 @@ const MultipleCounter = () => {
             display: 'flex',
           }}
         >
-          {queries.map((_query, _index) => (
+          {queries.map((_query) => (
             <div
               style={{
                 'margin-right': '10px',
