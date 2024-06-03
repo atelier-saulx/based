@@ -52,41 +52,68 @@ const MultipleCounter = () => {
   const query = createMemo(() => useBasedQuery(name(), payload()))
 
   return (
-    <div>
+    <div
+      style={{
+        display: 'flex',
+        'flex-direction': 'row',
+      }}
+    >
       <div
         style={{
           'margin-top': '30px',
           display: 'flex',
-          // 'flex-direction': 'column',
+          'flex-direction': 'column',
         }}
       >
-        {queries.map((_query, _index) => (
-          <div
-            style={{
-              'margin-right': '10px',
-              cursor: 'pointer',
-              border: '1px solid black',
-            }}
-            onClick={() => {
-              setName(_query.name)
-              setPayload(_query.payload)
-            }}
-          >
-            <pre
+        <h3>Dynamic Queries</h3>
+        <div
+          style={{
+            'margin-top': '10px',
+            display: 'flex',
+          }}
+        >
+          {queries.map((_query, _index) => (
+            <div
               style={{
-                padding: '30px',
-                height: '140px',
+                'margin-right': '10px',
+                cursor: 'pointer',
+                border: '1px solid black',
+              }}
+              onClick={() => {
+                setName(_query.name)
+                setPayload(_query.payload)
               }}
             >
-              {JSON.stringify(_query, null, 2)}
-            </pre>
-          </div>
-        ))}
+              <pre
+                style={{
+                  padding: '30px',
+                  height: '280px',
+                  'align-content': 'center',
+                }}
+              >
+                {JSON.stringify(_query, null, 2)}
+              </pre>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div
+        style={{
+          'margin-top': '30px',
+          display: 'flex',
+          'flex-direction': 'column',
+        }}
+      >
+        <h3>Live Result</h3>
         <pre
           style={{
             padding: '30px',
             background: 'black',
             color: 'white',
+            width: '250px',
+            'margin-top': '10px',
+            height: '280px',
+            'align-content': 'center',
           }}
         >
           {JSON.stringify(
@@ -115,13 +142,20 @@ const SimpleCounter = () => {
     <div
       style={{
         'margin-top': '30px',
-        border: '1px solid',
-        padding: '30px',
-        width: '250px',
-        height: 'auto',
+        display: 'flex',
+        'flex-direction': 'column',
       }}
     >
-      <pre>
+      <h3>Static Query - Live Result</h3>
+      <pre
+        style={{
+          padding: '30px',
+          'margin-top': '10px',
+          'align-content': 'center',
+          border: '1px solid black',
+          width: '250px',
+        }}
+      >
         {JSON.stringify(
           {
             data: data(),
