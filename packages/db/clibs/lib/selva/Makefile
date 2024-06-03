@@ -5,7 +5,7 @@ include ../../common.mk
 CFLAGS += -fPIC -fvisibility=hidden -I../../include
 LDFLAGS += -shared -g \
 		   -L../../../zig-out/lib \
-		   -ljemalloc_selva -ldeflate
+		   -ljemalloc_selva -ldeflate -lutil
 
 OBJ := \
 	main.o

@@ -14,6 +14,7 @@
 #include "selva_object.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
+RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
@@ -31,6 +32,7 @@ enum SelvaFieldType {
 
 typedef int8_t field_t;
 typedef uint64_t node_id_t;
+typedef uint16_t node_type_t;
 
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
@@ -74,7 +76,7 @@ struct SelvaNodeSchema {
  * hierarchy.
  */
 struct EdgeField {
-    struct SVector arcs; /*!< Pointers to hierarchy nodes. */
+    struct SVector arcs; /*!< Pointers to nodes. */
     /**
      * Metadata organized by dst_node_id.
      * This object should not be accessed directly but by using functions
@@ -125,17 +127,31 @@ struct SelvaNode {
     node_id_t node_id;
     RB_ENTRY(SelvaNode) _index_entry;
     struct trx_label trx_label;
-#define SELVA_HIERARCHY_EXPIRE_EPOCH 1704067200000
+#define SELVA_NODE_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.
      * 0 = never expires
      * max_life = <epoch year>+(2^<bits>)/60/60/24/365
      */
     uint32_t expire;
-    uint16_t ns_index; /*!< Index to SelvDb.type[] to get the NodeSchema. */
+    node_type_t type;
     struct EdgeFieldContainer edge_fields;
     char *dyn_fields;
     char emb_fields[]; /*!< This is counted by nr_emb_fields in SelvaNodeSchema. */
+};
+
+/**
+ * Entry for each node type supported by the schema.
+ */
+struct SelvaTypeEntry {
+    node_type_t type;
+    struct SelvaNodeSchema *ns; /*!< Schema for this node type. */
+    struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
+    struct {
+        STATIC_SELVA_OBJECT(_obj_data);
+    } aliases;
+    struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
+    RB_ENTRY(SelvaTypeEntry) _type_entry;
 };
 
 /**
@@ -147,31 +163,26 @@ struct SelvaDb {
      */
     struct trx_state trx_state;
 
-    size_t nr_types;
     struct {
-        struct SelvaNodeSchema *ns;
-        struct SelvaNodeIndex index_head;
-        struct {
-            STATIC_SELVA_OBJECT(_obj_data);
-        } aliases;
-        struct mempool nodepool;
-    } *type __counted_by(nr_types);
+        struct SelvaTypeIndex index;
+        struct mempool pool;
+    } types;
 
     /**
      * Expiring nodes.
      */
     struct {
         SVector list; /*!< List of all expiring nodes. */
-#define HIERARCHY_EXPIRING_NEVER UINT32_MAX
+#define SELVA_NODE_EXPIRE_NEVER UINT32_MAX
         int tim_id; /*!< 1 sec timer. */
         /**
          * Timestamp of the node expiring next.
-         * Set to HIERARCHY_EXPIRING_NEVER if nothing is expiring.
+         * Set to SELVA_NODE_EXPIRE_NEVER if nothing is expiring.
          */
         uint32_t next;
     } expiring;
 };
 
-__attribute__((visibility("default"))) struct SelvaDb *selva_db_create(char *schema_buf, size_t schema_len);
+__attribute__((visibility("default"))) struct SelvaDb *selva_db_create(void);
 __attribute__((visibility("default"))) void selva_db_delete(struct SelvaDb *db);
 __attribute__((visibility("default"))) int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_len);
