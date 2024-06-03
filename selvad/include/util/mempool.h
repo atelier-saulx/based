@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
 #ifndef _UTIL_MEMPOOL_H_
 #define _UTIL_MEMPOOL_H_
 
+#include <stddef.h>
 #include <stdint.h>
 #include "cdefs.h"
 #include "queue.h"

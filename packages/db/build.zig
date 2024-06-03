@@ -33,8 +33,9 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&make_clibs.step);
 
     lib.addIncludePath(b.path("clibs/include"));
-    lib.addLibraryPath(b.path("clibs/lib"));
-    lib.addRPath(b.path("clibs/lib"));
+    lib.addLibraryPath(b.path("zig-out/lib"));
+    // TODO Linux rpath
+    lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("util");
 
     const install_lib = b.addInstallArtifact(lib, .{
