@@ -64,7 +64,7 @@ void selva_db_delete(struct SelvaDb *db)
 int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_len)
 {
     struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e));
-    size_t dyn_fields_size = 0; /* FIXME */
+    size_t emb_fields_size = 0; /* FIXME */
 
     RB_INIT(&e->nodes);
 
@@ -73,7 +73,7 @@ int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_l
 #if 0
     SelvaObject_Init(e->aliases._obj_data, 0);
 #endif
-    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + dyn_fields_size, alignof(size_t));
+    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + emb_fields_size, alignof(size_t));
 
     RB_INSERT(SelvaTypeIndex, &db->types.index, e);
     return 0;

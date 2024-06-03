@@ -13,9 +13,6 @@
 #include "util/trx.h"
 #include "selva_object.h"
 
-RB_HEAD(SelvaNodeIndex, SelvaNode);
-RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
-
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
     SELVA_FIELD_TYPE_TIMESTAMP = 1,
@@ -30,9 +27,14 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_REFERENCES = 10,
 };
 
+struct SelvaObject;
+
 typedef int8_t field_t;
 typedef uint64_t node_id_t;
 typedef uint16_t node_type_t;
+
+RB_HEAD(SelvaNodeIndex, SelvaNode);
+RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
@@ -136,7 +138,7 @@ struct SelvaNode {
     uint32_t expire;
     node_type_t type;
     struct EdgeFieldContainer edge_fields;
-    char *dyn_fields;
+    char *dyn_fields; /* TODO */
     char emb_fields[]; /*!< This is counted by nr_emb_fields in SelvaNodeSchema. */
 };
 

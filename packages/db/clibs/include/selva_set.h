@@ -103,7 +103,7 @@ int SelvaSet_AddLongLong(struct SelvaSet *set, long long l);
 #define SelvaSet_Add(set, x) _Generic((x), \
         struct selva_string *: SelvaSet_AddString, \
         double: SelvaSet_AddDouble, \
-        long long: SelvaSet_AddLongLong, \
+        long long: SelvaSet_AddLongLong \
         )((set), (x))
 
 /**
@@ -119,7 +119,7 @@ int SelvaSet_HasLongLong(struct SelvaSet *set, long long ll);
 #define SelvaSet_Has(set, x) _Generic((x), \
         struct selva_string *: SelvaSet_HasString, \
         double: SelvaSet_HasDouble, \
-        long long: SelvaSet_HasLongLong, \
+        long long: SelvaSet_HasLongLong \
         )((set), (x))
 
 struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, const struct selva_string *s);
@@ -129,7 +129,7 @@ struct SelvaSetElement *SelvaSet_RemoveLongLong(struct SelvaSet *set, long long 
         struct selva_string *: SelvaSet_RemoveString, \
         const struct selva_string *: SelvaSet_RemoveString, \
         double: SelvaSet_RemoveDouble, \
-        long long: SelvaSet_RemoveLongLong, \
+        long long: SelvaSet_RemoveLongLong \
         )((set), (x))
 
 #define SELVA_SET_STRING_FOREACH(el, set) \

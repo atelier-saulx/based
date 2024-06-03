@@ -13,15 +13,11 @@
 #include "selva_set.h"
 #include "selva_object_type.h"
 
-/* FIXME prob delete */
-#if 0
 /*
  * Common SelvaObject user meta types.
  */
 #define SELVA_OBJECT_META_SUBTYPE_OBJECT 0 /*!< Regular object. */
 #define SELVA_OBJECT_META_SUBTYPE_TEXT 2 /*!< The object is a text field. */
-#define SELVA_OBJECT_META_SUBTYPE_TIMESERIES 3 /*!< A timeseries field. */
-#endif
 
 enum SelvaObjectReplyFlags {
     SELVA_OBJECT_REPLY_SPLICE_FLAG = 0x01, /*!< Set if the path should be spliced to start from the first wildcard. */

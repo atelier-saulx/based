@@ -2,13 +2,16 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
-CFLAGS += -fPIC -fvisibility=hidden -I../../include
+CFLAGS += -fPIC -fvisibility=hidden -I../../include -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
 		   -L../../../zig-out/lib \
 		   -ljemalloc_selva -ldeflate -lutil
 
 OBJ := \
-	main.o
+	main.o \
+	selva_object/selva_object.o \
+	selva_object/selva_object_foreach.o \
+	selva_set/selva_set.o
 
 ifeq ($(uname_S),Linux)
 	LDFLAGS += -fPIC
