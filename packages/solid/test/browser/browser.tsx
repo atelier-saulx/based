@@ -7,7 +7,8 @@ import {
   useBasedClient,
   useBasedStatus,
   useBasedQuery,
-} from '@/bosons'
+  useQuery,
+} from '../../src'
 
 type FakeQueryPayloads = {
   name: string | null
@@ -112,7 +113,7 @@ const MultipleCounter = () => {
 }
 
 const SimpleCounter = () => {
-  const { data, error, checksum, loading } = useBasedQuery('counter', {
+  const { data, error, checksum, loading } = useQuery('counter', {
     count: true,
   })
 
@@ -146,7 +147,7 @@ const App: Component = () => {
   return (
     <div>
       <BasedProvider client={client}>
-        <h1>Based.io Solid Demo</h1>
+        <h1>Based.io Solidjs Demo</h1>
         <BasedContextChecker />
         <MultipleCounter />
         <SimpleCounter />

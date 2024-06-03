@@ -1,6 +1,6 @@
 import { useContext } from 'solid-js'
 import { BasedClient } from '@based/client'
-import { BasedContext } from '@/bosons'
+import { BasedContext } from '../BasedProvider'
 
 /**
  * Hook to get the `BasedClient` context from the `BasedProvider` component.

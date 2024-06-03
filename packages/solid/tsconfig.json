@@ -7,10 +7,7 @@
     "moduleResolution": "Node",
     "isolatedModules": true,
     "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/components/*"]
-    }
+    "baseUrl": "."
   },
   "include": ["./src", "./test/browser"],
   "exclude": ["./dist"]

@@ -1,7 +1,7 @@
 import { Accessor, createSignal, onCleanup } from 'solid-js'
 import { BasedClient, QueryMap as BasedQueryMap } from '@based/client'
 import { BasedError } from '@based/errors'
-import { useBasedClient } from '@/bosons'
+import { useBasedClient } from '../UseBasedClient'
 
 /**
  * The query result type from `Based` functions.

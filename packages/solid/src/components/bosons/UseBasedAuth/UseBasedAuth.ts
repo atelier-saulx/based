@@ -1,5 +1,5 @@
 import { useContext, createSignal, createEffect } from 'solid-js'
-import { BasedContext } from '@/bosons'
+import { BasedContext } from '../BasedProvider'
 import { BasedClient, AuthState } from '@based/client'
 
 /**

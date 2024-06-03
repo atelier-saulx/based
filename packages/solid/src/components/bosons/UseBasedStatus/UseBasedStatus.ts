@@ -1,6 +1,6 @@
 import { createSignal, createEffect, Accessor } from 'solid-js'
 import { BasedClient } from '@based/client'
-import { useBasedClient } from '@/bosons'
+import { useBasedClient } from '../UseBasedClient'
 
 /**
  * The three possible connection status with `Based`.
