@@ -1,5 +1,4 @@
-import { Component, createEffect, createSignal } from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { Component, createMemo, createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import based, { BasedClient } from '@based/client'
 import {
@@ -50,22 +49,7 @@ const BasedContextChecker: Component = () => {
 const MultipleCounter = () => {
   const [name, setName] = createSignal<string>(queries[0].name)
   const [payload, setPayload] = createSignal<any>(queries[0].payload)
-  const [response, setResponse] = createStore<any>({
-    loading: true,
-    data: null,
-    error: null,
-    checksum: null,
-  })
-
-  createEffect(() => {
-    const { data, error, checksum, loading } = useBasedQuery(name(), payload())
-    setResponse({
-      data: data(),
-      error: error(),
-      checksum: checksum(),
-      loading: loading(),
-    })
-  }, [name, payload])
+  const query = createMemo(() => useBasedQuery(name(), payload()))
 
   return (
     <div>
@@ -105,7 +89,17 @@ const MultipleCounter = () => {
             color: 'white',
           }}
         >
-          {JSON.stringify(response, null, 2)}
+          {JSON.stringify(
+            {
+              payload: payload(),
+              data: query().data(),
+              error: query().error(),
+              checksum: query().checksum(),
+              loading: query().loading(),
+            },
+            null,
+            2,
+          )}
         </pre>
       </div>
     </div>

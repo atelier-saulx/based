@@ -1,7 +1,7 @@
-import { Accessor, createSignal, onCleanup } from 'solid-js'
+import { Accessor, createEffect, createSignal, onCleanup } from 'solid-js'
 import { BasedClient, QueryMap as BasedQueryMap } from '@based/client'
 import { BasedError } from '@based/errors'
-import { useBasedClient } from '../UseBasedClient'
+import { useBasedClient } from '../useBasedClient'
 
 /**
  * The query result type from `Based` functions.
@@ -63,32 +63,25 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
   const [error, setError] = createSignal<BasedError | null>(null)
   const [data, setData] = createSignal<any | null>(null)
 
-  const onData = (data: any, checksum: number) => {
-    setLoading(false)
-    setChecksum(checksum)
-    setData({ ...data })
-  }
-
-  const onError = (error: BasedError) => {
-    setLoading(false)
-    setError({ ...error })
-  }
-
   const client: BasedClient = useBasedClient()
 
-  if (!client || !name) {
-    return { loading, checksum, error, data }
+  if (client && name) {
+    const onData = (data: any, checksum: number) => {
+      setLoading(false)
+      setChecksum(checksum)
+      setData({ ...data })
+    }
+
+    const onError = (error: BasedError) => {
+      setLoading(false)
+      setError({ ...error })
+    }
+
+    createEffect(() => {
+      const basedQuery = client.query(name as string, payload, opts)
+      onCleanup(basedQuery.subscribe(onData, onError))
+    })
   }
-
-  const basedQuery = client.query(
-    name as string,
-    payload,
-    opts as BasedQueryOptions,
-  )
-
-  const unsubscribe = basedQuery.subscribe(onData, onError)
-
-  onCleanup(() => unsubscribe())
 
   return { loading, checksum, error, data }
 }

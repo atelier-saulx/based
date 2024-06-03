@@ -20,14 +20,14 @@
   "devDependencies": {
     "@based/client": "^6.0.1",
     "@saulx/tsconfig": "^1.1.0",
+    "esbuild": "^0.21.4",
+    "esbuild-plugin-solid": "^0.6.0",
     "rimraf": "^3.0.2",
-    "solid-devtools": "^0.29.2",
+    "solid-devtools": "^0.29.3",
     "typescript": "^5.3.3",
     "vite": "^5.2.8",
     "vite-plugin-solid": "^2.8.2",
-    "vite-tsconfig-paths": "^4.3.2",
-    "esbuild": "^0.21.4",
-    "esbuild-plugin-solid": "^0.6.0"
+    "vite-tsconfig-paths": "^4.3.2"
   },
   "peerDependencies": {
     "@based/client": "*",
