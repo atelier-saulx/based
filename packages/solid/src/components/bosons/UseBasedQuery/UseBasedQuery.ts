@@ -77,7 +77,7 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
   const client: BasedClient = useBasedClient()
 
   if (!client || !name) {
-    return
+    return { loading, checksum, error, data }
   }
 
   const basedQuery = client.query(
