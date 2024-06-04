@@ -16,9 +16,9 @@ export enum BasedStatus {
  * The response from the `useBasedStatus`/`useStatus` hook.
  */
 type BasedConnection = {
-  /** If the connection is established or not. **/
+  /** If the connection is established or not. */
   connected: Ref<boolean>
-  /** One of the three possible status. **/
+  /** One of the three possible status. */
   status: Ref<BasedStatus>
 }
 

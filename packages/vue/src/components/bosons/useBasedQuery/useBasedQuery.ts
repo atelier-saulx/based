@@ -23,18 +23,18 @@ import { BasedContext } from '../BasedProvider'
  * ```
  */
 type BasedQueryResult<T> = {
-  /** If the query is still loading. **/
+  /** If the query is still loading. */
   loading: Ref<boolean>
-  /** The data coming from your filters. **/
+  /** The data coming from your filters. */
   data?: Ref<T> | Ref<null>
-  /** The `BasedError` object containing the `statusMessage` and `code` from your error. **/
+  /** The `BasedError` object containing the `statusMessage` and `code` from your error. */
   error?: Ref<BasedError> | Ref<null>
-  /** A calculated value used to verify data integrity and detect errors. Each response has a unique checksum. **/
+  /** A calculated value used to verify data integrity and detect errors. Each response has a unique checksum. */
   checksum?: Ref<number> | Ref<null>
 }
 
 type BasedQueryOptions = {
-  /** When is **true** will store the cached result of a query in `localStorage` on the client-side. Otherwise, the cache is only in volatile memory. **/
+  /** When is **true** will store the cached result of a query in `localStorage` on the client-side. Otherwise, the cache is only in volatile memory. */
   persistent: boolean
 }
 
