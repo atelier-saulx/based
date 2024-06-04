@@ -1,9 +1,9 @@
 const esbuild = require('esbuild')
-const { solidPlugin } = require('esbuild-plugin-solid')
+const vuePlugin = require('esbuild-plugin-vue3')
 
 esbuild
   .build({
-    entryPoints: ['./test/browser/index.tsx'],
+    entryPoints: ['./test/browser/index.ts'],
     bundle: true,
     outfile: './dist/test/browser/index.js',
     minify: true,
@@ -17,8 +17,6 @@ esbuild
       '.ts': 'ts',
       '.tsx': 'tsx',
     },
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
-    plugins: [solidPlugin()],
+    plugins: [vuePlugin()],
   })
   .catch(() => process.exit(1))

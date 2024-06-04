@@ -12,8 +12,7 @@ type BasedProviderProps = {
   children: JSX.Element | JSX.Element[]
 }
 
-export const BasedContext: SolidContext<BasedClient> =
-  createContext<BasedClient>()
+const BasedContext: SolidContext<BasedClient> = createContext<BasedClient>()
 
 const BasedProvider: Component<BasedProviderProps> = (
   props: BasedProviderProps,
@@ -32,4 +31,4 @@ const BasedProvider: Component<BasedProviderProps> = (
  */
 const Provider = BasedProvider
 
-export { Provider, BasedProvider }
+export { Provider, BasedProvider, BasedContext }

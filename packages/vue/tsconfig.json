@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "@saulx/tsconfig/default.json",
+    "@vue/tsconfig/tsconfig.json",
+    "@vue/tsconfig/tsconfig.lib.json",
+    "@tsconfig/node18/tsconfig.json",
+  ],
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "vue",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "isolatedModules": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "types": ["node"]
+  },
+  "include": ["./src", "./test/browser"],
+  "exclude": ["./dist"]
+}
