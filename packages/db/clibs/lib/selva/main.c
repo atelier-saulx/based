@@ -76,18 +76,6 @@ int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_l
     return 0;
 }
 
-static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
-{
-    struct SelvaNode *node = mempool_get(&type->nodepool);
-
-    memset(node, 0, sizeof(*node) + type->ns->emb_fields_size);
-    node->node_id = id;
-    node->type = type->type;
-
-    RB_INSERT(SelvaNodeIndex, &type->nodes, node);
-    return node;
-}
-
 static struct SelvaTypeEntry *get_type_by_index(struct SelvaDb *db, node_type_t type)
 {
     struct SelvaTypeEntry find = {
@@ -108,8 +96,32 @@ static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaN
 
 static struct SelvaNodeSchema *get_ns_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
-    struct SelvaTypeEntry *e;
-
-    e = get_type_by_node(db, node);
+    struct SelvaTypeEntry *e = get_type_by_node(db, node);
     return e ? e->ns : NULL;
+}
+
+static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
+{
+    struct SelvaNode *node = mempool_get(&type->nodepool);
+
+    memset(node, 0, sizeof(*node) + type->ns->emb_fields_size);
+    node->node_id = id;
+    node->type = type->type;
+
+    RB_INSERT(SelvaNodeIndex, &type->nodes, node);
+    return node;
+}
+
+static void del_node(struct SelvaDb *db, struct SelvaNode *node)
+{
+    struct SelvaTypeEntry *e = get_type_by_node(db, node);
+
+    RB_REMOVE(SelvaNodeIndex, &e->nodes, node);
+
+    if (node->expire) {
+        /* TODO clear expire */
+    }
+
+    SelvaObject_Destroy(node->dyn_fields);
+    mempool_return(&e->nodepool, node);
 }

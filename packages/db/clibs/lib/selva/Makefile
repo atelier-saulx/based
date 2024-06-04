@@ -8,6 +8,7 @@ LDFLAGS += -shared -g \
 		   -ljemalloc_selva -ldeflate -lutil
 
 OBJ := \
+	edge.o \
 	main.o \
 	selva_object/selva_object.o \
 	selva_object/selva_object_foreach.o \

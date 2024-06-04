@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include "util/selva_lang.h"
+#include "linker_set.h"
 #include "selva_set.h"
 #include "selva_object_type.h"
 
@@ -61,10 +62,8 @@ struct SelvaObjectPointerOpts {
      */
     enum {
         SELVA_OBJECT_POINTER_NOP = 0, /*!< No operation. No serialization will happen. */
-        SELVA_OBJECT_POINTER_EDGE = 1,
-        SELVA_OBJECT_POINTER_EDGE_CONSTRAINTS = 2,
-        SELVA_OBJECT_POINTER_LANG = 3,
-        SELVA_OBJECT_POINTER_SUBS_MISSING = 4,
+        SELVA_OBJECT_POINTER_EDGE_SINGLE = 1,
+        SELVA_OBJECT_POINTER_EDGE_MULTI = 2,
     } ptr_type_id;
 
     /**
