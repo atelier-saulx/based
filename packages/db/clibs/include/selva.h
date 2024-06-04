@@ -31,7 +31,7 @@ struct SelvaObject;
 
 typedef int8_t field_t;
 typedef uint64_t node_id_t;
-typedef uint16_t node_type_t;
+typedef uint32_t node_type_t;
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
@@ -44,6 +44,7 @@ struct EdgeFieldConstraint {
         EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF       = 0x01,
         /**
          * Bidirectional reference.
+         * TODO Is this needed if edges are always bidir.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02,
         /**
@@ -61,6 +62,7 @@ struct SelvaNodeSchema {
     uint16_t nr_emb_fields;
     uint16_t nr_dyn_fields;
     uint16_t nr_fields; /* !< nr_emb_fields + nr_dyn_fields. */
+    size_t emb_fields_size;
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
@@ -72,12 +74,17 @@ struct SelvaNodeSchema {
     } field_schemas[] __counted_by(nr_fields);
 };
 
+struct EdgeFieldSingle {
+    struct SelvaNode *dst;
+    struct SelvaObject *metadata;
+};
+
 /**
  * A struct for edge fields.
  * This struct contains the actual arcs pointing directly to other nodes in the
  * hierarchy.
  */
-struct EdgeField {
+struct EdgeFieldMulti {
     struct SVector arcs; /*!< Pointers to nodes. */
     /**
      * Metadata organized by dst_node_id.
@@ -90,38 +97,6 @@ struct EdgeField {
     struct SelvaObject *metadata;
 };
 
-/*
- * Hierarchy node metadata structure for storing edges and references to the
- * origin EdgeFields.
- */
-struct EdgeFieldContainer {
-    /**
-     * Custom edge fields.
-     *
-     * A.field -> B
-     * {
-     *   custom.field: <struct EdgeField>
-     * }
-     */
-    struct SelvaObject *edges;
-
-    /**
-     * Custom edge field origin references.
-     * This object contains pointers to each field pointing to this node. As
-     * it's organized per nodeId the size of the object tells how many nodes
-     * are pointing to this node via edge fields.
-     *
-     * A.field <- B
-     * {
-     *   nodeId1: [     // The node pointing to this node
-     *     fieldPtr1,   // A pointer to the edgeField pointing to this node
-     *     fieldPtr2,
-     *   ],
-     * }
-     */
-    struct SelvaObject *origins;
-};
-
 /**
  * Selva node.
  */
@@ -129,6 +104,7 @@ struct SelvaNode {
     node_id_t node_id;
     RB_ENTRY(SelvaNode) _index_entry;
     struct trx_label trx_label;
+    node_type_t type;
 #define SELVA_NODE_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.
@@ -136,9 +112,7 @@ struct SelvaNode {
      * max_life = <epoch year>+(2^<bits>)/60/60/24/365
      */
     uint32_t expire;
-    node_type_t type;
-    struct EdgeFieldContainer edge_fields;
-    char *dyn_fields; /* TODO */
+    struct SelvaObject *dyn_fields;
     char emb_fields[]; /*!< This is counted by nr_emb_fields in SelvaNodeSchema. */
 };
 

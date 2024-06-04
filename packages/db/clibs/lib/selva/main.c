@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include "jemalloc.h"
+#include "selva_object.h"
 #include "selva.h"
 
 #define NODEPOOL_SLAB_SIZE 33554432
@@ -52,6 +53,7 @@ struct SelvaDb *selva_db_create(void)
 #if 0
     db->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
 #endif
+    mempool_init(&db->types.pool, 4096, sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
 
     return db;
 }
@@ -67,14 +69,47 @@ int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_l
     size_t emb_fields_size = 0; /* FIXME */
 
     RB_INIT(&e->nodes);
-
-    RB_INIT(&e->nodes);
-    /* FIXME aliases */
-#if 0
     SelvaObject_Init(e->aliases._obj_data, 0);
-#endif
     mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + emb_fields_size, alignof(size_t));
 
     RB_INSERT(SelvaTypeIndex, &db->types.index, e);
     return 0;
+}
+
+static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
+{
+    struct SelvaNode *node = mempool_get(&type->nodepool);
+
+    memset(node, 0, sizeof(*node) + type->ns->emb_fields_size);
+    node->node_id = id;
+    node->type = type->type;
+
+    RB_INSERT(SelvaNodeIndex, &type->nodes, node);
+    return node;
+}
+
+static struct SelvaTypeEntry *get_type_by_index(struct SelvaDb *db, node_type_t type)
+{
+    struct SelvaTypeEntry find = {
+        .type = type,
+    };
+
+    return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
+}
+
+static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+{
+    struct SelvaTypeEntry find = {
+        .type = node->type,
+    };
+
+    return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
+}
+
+static struct SelvaNodeSchema *get_ns_by_node(struct SelvaDb *db, struct SelvaNode *node)
+{
+    struct SelvaTypeEntry *e;
+
+    e = get_type_by_node(db, node);
+    return e ? e->ns : NULL;
 }
