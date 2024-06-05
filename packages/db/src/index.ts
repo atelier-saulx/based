@@ -25,6 +25,17 @@ const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
 export class BasedDb {
   isDraining: boolean = false
 
+  maxModifySize: number = 100 * 1e3 * 1e3
+
+  modifyBuffer: {
+    buffer: Buffer
+    len: number
+    field: number
+    typePrefix: Uint8Array
+    id: number
+    lastMain: number
+  }
+
   native = {
     modify: (buffer: Buffer, len: number): any => {
       return dbZig.modify(buffer, len)
@@ -49,11 +60,29 @@ export class BasedDb {
   }
 
   schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
+
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 
-  constructor({ path }: { path: string; writeBufferSize?: number }) {
+  constructor({
+    path,
+    maxModifySize,
+  }: {
+    path: string
+    maxModifySize?: number
+  }) {
+    if (maxModifySize) {
+      this.maxModifySize = maxModifySize
+    }
+    const max = this.maxModifySize
+    this.modifyBuffer = {
+      buffer: Buffer.allocUnsafe(max),
+      len: 0,
+      field: -1,
+      typePrefix: new Uint8Array([0, 0]),
+      id: -1,
+      lastMain: -1,
+    }
     dbZig.createEnv(path)
-    // writeBufferSize
   }
 
   // queryID thing with conditions etc

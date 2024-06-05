@@ -46,6 +46,7 @@ export class Query {
   }
 
   subscribe(fn: (value: any, checksum: number, err: Error) => void) {
+    // TODO: add to active subs
     console.log('hello sub')
     // sub will all wil fire on any field
     // maybe start with this?

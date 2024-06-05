@@ -1,11 +1,5 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
-import {
-  startDrain,
-  modifyBuffer,
-  MAX_MODIFY_BUFFER,
-  flushBuffer,
-} from './operations.js'
-// import { deflateRawSync } from 'node:zlib'
+import { startDrain, flushBuffer } from './operations.js'
 
 const setCursor = (
   db: BasedDb,
@@ -19,39 +13,39 @@ const setCursor = (
   // 2 switch type
   const prefix = schema.prefix
   if (
-    modifyBuffer.typePrefix[0] !== prefix[0] ||
-    modifyBuffer.typePrefix[1] !== prefix[1]
+    db.modifyBuffer.typePrefix[0] !== prefix[0] ||
+    db.modifyBuffer.typePrefix[1] !== prefix[1]
   ) {
-    const len = modifyBuffer.len
-    modifyBuffer.buffer[len] = 2
-    modifyBuffer.buffer[len + 1] = prefix[0]
-    modifyBuffer.buffer[len + 2] = prefix[1]
-    modifyBuffer.len += 3
-    modifyBuffer.typePrefix = prefix
-    modifyBuffer.field = -1
-    modifyBuffer.id = -1
-    modifyBuffer.lastMain = -1
+    const len = db.modifyBuffer.len
+    db.modifyBuffer.buffer[len] = 2
+    db.modifyBuffer.buffer[len + 1] = prefix[0]
+    db.modifyBuffer.buffer[len + 2] = prefix[1]
+    db.modifyBuffer.len += 3
+    db.modifyBuffer.typePrefix = prefix
+    db.modifyBuffer.field = -1
+    db.modifyBuffer.id = -1
+    db.modifyBuffer.lastMain = -1
   }
 
   const field = t.field
 
-  if (!ignoreField && modifyBuffer.field !== field) {
-    const len = modifyBuffer.len
-    modifyBuffer.buffer[len] = 0
+  if (!ignoreField && db.modifyBuffer.field !== field) {
+    const len = db.modifyBuffer.len
+    db.modifyBuffer.buffer[len] = 0
     // make field 2 bytes
-    modifyBuffer.buffer[len + 1] = field // 1 byte (max size 255 - 1)
-    modifyBuffer.buffer[len + 2] = 4
-    modifyBuffer.len += 3
-    modifyBuffer.field = field
+    db.modifyBuffer.buffer[len + 1] = field // 1 byte (max size 255 - 1)
+    db.modifyBuffer.buffer[len + 2] = 4
+    db.modifyBuffer.len += 3
+    db.modifyBuffer.field = field
   }
 
-  if (modifyBuffer.id !== id) {
-    const len = modifyBuffer.len
-    modifyBuffer.buffer[len] = 1
-    modifyBuffer.buffer.writeUInt32LE(id, len + 1)
-    modifyBuffer.len += 5
-    modifyBuffer.id = id
-    modifyBuffer.lastMain = -1
+  if (db.modifyBuffer.id !== id) {
+    const len = db.modifyBuffer.len
+    db.modifyBuffer.buffer[len] = 1
+    db.modifyBuffer.buffer.writeUInt32LE(id, len + 1)
+    db.modifyBuffer.len += 5
+    db.modifyBuffer.id = id
+    db.modifyBuffer.lastMain = -1
   }
 }
 
@@ -72,54 +66,56 @@ const addModify = (
       const t = leaf as FieldDef
       if (t.type === 'references') {
         const refLen = 4 * value.length
-        if (refLen + 5 + modifyBuffer.len + 11 > MAX_MODIFY_BUFFER) {
+        if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
         setCursor(db, schema, t, id)
-        modifyBuffer.buffer[modifyBuffer.len] = 3
-        modifyBuffer.buffer.writeUint32LE(refLen, modifyBuffer.len + 1)
-        modifyBuffer.len += 5
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+        db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+        db.modifyBuffer.len += 5
         for (let i = 0; i < value.length; i++) {
-          modifyBuffer.buffer.writeUint32LE(value[i], i * 4 + modifyBuffer.len)
+          db.modifyBuffer.buffer.writeUint32LE(
+            value[i],
+            i * 4 + db.modifyBuffer.len,
+          )
         }
-        modifyBuffer.len += refLen
+        db.modifyBuffer.len += refLen
       } else if (t.type === 'string') {
         // const deflated = deflateRawSync(value)
-
         const byteLen = Buffer.byteLength(value, 'utf8')
-        if (byteLen + 5 + modifyBuffer.len + 11 > MAX_MODIFY_BUFFER) {
+        if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
         setCursor(db, schema, t, id)
-        modifyBuffer.buffer[modifyBuffer.len] = 3
-        modifyBuffer.buffer.writeUint32LE(byteLen, modifyBuffer.len + 1)
-        modifyBuffer.len += 5
-        modifyBuffer.buffer.write(value, modifyBuffer.len, 'utf8')
-        modifyBuffer.len += byteLen
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+        db.modifyBuffer.buffer.writeUint32LE(byteLen, db.modifyBuffer.len + 1)
+        db.modifyBuffer.len += 5
+        db.modifyBuffer.buffer.write(value, db.modifyBuffer.len, 'utf8')
+        db.modifyBuffer.len += byteLen
       } else {
         setCursor(db, schema, t, id, true)
-        let mainIndex = modifyBuffer.lastMain
+        let mainIndex = db.modifyBuffer.lastMain
         if (mainIndex === -1) {
           const nextLen = schema.mainLen + 1 + 4
-          if (modifyBuffer.len + nextLen > MAX_MODIFY_BUFFER) {
+          if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
             flushBuffer(db)
           }
           setCursor(db, schema, t, id)
-          modifyBuffer.buffer[modifyBuffer.len] = 3
-          modifyBuffer.buffer.writeUint32LE(
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+          db.modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
-            modifyBuffer.len + 1,
+            db.modifyBuffer.len + 1,
           )
-          mainIndex = modifyBuffer.lastMain = modifyBuffer.len + 1 + 4
-          modifyBuffer.len += nextLen
+          mainIndex = db.modifyBuffer.lastMain = db.modifyBuffer.len + 1 + 4
+          db.modifyBuffer.len += nextLen
         }
         if (t.type === 'timestamp' || t.type === 'number') {
-          modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
+          db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
         } else if (t.type === 'integer' || t.type === 'reference') {
           // enum
-          modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
+          db.modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
         } else if (t.type === 'boolean') {
-          modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
+          db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
         }
       }
     }
