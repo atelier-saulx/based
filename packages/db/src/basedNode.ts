@@ -36,12 +36,19 @@ const readSeperateFieldFromBuffer = (
     i += 1
     if (index === 0) {
       const fIndex = query.mainIncludes.get(requestedField.start)
+      if (fIndex === undefined) {
+        return // mep
+      }
       if (
         requestedField.type === 'integer' ||
         requestedField.type === 'reference'
       ) {
         return buffer.readUint32LE(i + fIndex)
       }
+      if (requestedField.type === 'boolean') {
+        return Boolean(buffer[i + fIndex])
+      }
+
       if (requestedField.type === 'number') {
         return buffer.readFloatLE(i + fIndex)
       }
@@ -68,11 +75,33 @@ const readSeperateFieldFromBuffer = (
   }
 }
 
+const readObjectFromTree = (
+  tree: SchemaFieldTree,
+  node: any,
+  schema: SchemaTypeDef,
+) => {
+  const obj = {}
+  for (const key in tree) {
+    const leaf = tree[key]
+    if (!leaf.type && !leaf.__isField) {
+      obj[key] = readObjectFromTree(tree[key] as SchemaFieldTree, node, schema)
+    } else {
+      // dont include key if more specific...
+      obj[key] = readSeperateFieldFromBuffer(
+        leaf as FieldDef,
+        node.__buffer__,
+        schema,
+        node.__offset__ + 4,
+        node.__query__,
+      )
+    }
+  }
+  return obj
+}
+
 export const createBasedNodeClass = (
   schema: SchemaTypeDef,
-  path?: string[],
 ): typeof BasedNode => {
-  // just 1 object thah you return
   // DONT MAKE A CLASS DONT MAKE AN INSTANCE
 
   const Node = function (buffer: Buffer, offset: number, query: any) {
@@ -95,80 +124,20 @@ export const createBasedNodeClass = (
   for (const field in schema.fields) {
     const fieldDef = schema.fields[field]
     const { type, path } = fieldDef
-
     if (path.length > 1) {
-      let str = ''
-      for (let i = 0; i < path.length; i++) {
-        if (!str) {
-          str = path[i]
-        } else {
-          str += '.' + path[i]
-        }
-
-        if (Object.getOwnPropertyDescriptor(Node.prototype, str)) {
-          // console.log(str, 'allrdy defined..')
-        } else {
-          // console.log('DEFINE', str)
-
-          if (i === 0) {
-            // FIRST
-            const tree = schema.tree[str]
-            Object.defineProperty(Node.prototype, str, {
-              enumerable: true,
-              set() {
-                // flap
-              },
-              get() {
-                // make a bit nicer...
-                // console.log({ tree }, str)
-                // if (i === path.length - 2) {
-                // return 1 thing
-                const x = {}
-
-                // nested had to happen as well...
-
-                for (const k in tree) {
-                  x[k] = readSeperateFieldFromBuffer(
-                    tree[k],
-                    this.__buffer__,
-                    schema,
-                    this.__offset__ + 4,
-                    this.__query__,
-                  )
-                }
-                return x
-                // }
-              },
-            })
-          } else if (i === path.length - 1) {
-            // END
-            // Object.defineProperty(Node.prototype, str, {
-            //   enumerable: false,
-            //   set() {
-            //     // flap
-            //   },
-            //   get() {
-            //     return readSeperateFieldFromBuffer(
-            //       fieldDef,
-            //       this.__buffer__,
-            //       schema,
-            //       this.__offset__ + 4,
-            //     )
-            //   },
-            // })
-          } else {
-            // MIDDLE
-            Object.defineProperty(Node.prototype, str, {
-              enumerable: false,
-              set() {
-                // flap
-              },
-              get() {
-                return {}
-              },
-            })
-          }
-        }
+      if (Object.getOwnPropertyDescriptor(Node.prototype, path[0])) {
+        // console.log(str, 'allrdy defined..')
+      } else {
+        Object.defineProperty(Node.prototype, path[0], {
+          enumerable: true,
+          set() {
+            // flap
+          },
+          get() {
+            const tree = schema.tree[path[0]]
+            return readObjectFromTree(tree as SchemaFieldTree, this, schema)
+          },
+        })
       }
     } else if (type === 'string') {
       Object.defineProperty(Node.prototype, field, {
