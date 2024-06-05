@@ -125,6 +125,7 @@ export const createBasedNodeClass = (
     const fieldDef = schema.fields[field]
     const { type, path } = fieldDef
     if (path.length > 1) {
+      // TMP needs to destructure etc nested objects as well !!!
       if (Object.getOwnPropertyDescriptor(Node.prototype, path[0])) {
         // console.log(str, 'allrdy defined..')
       } else {

@@ -1,7 +1,8 @@
-import { BasedDb, FieldDef, SchemaTypeDef } from '../index.js'
+import { BasedDb, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { Operation, operationToByte } from './types.js'
+import { Operation } from './types.js'
 import { get } from './get.js'
+import { filter } from './filter.js'
 
 export class Query {
   db: BasedDb
@@ -23,68 +24,8 @@ export class Query {
     }
   }
 
-  filter(...filter: [string, Operation, any]) {
-    if (this.id) {
-      // bla
-    } else {
-      const field = <FieldDef>this.type.tree[filter[0]]
-      let fieldIndexChar = field.field
-      let buf: Buffer
-
-      if (field.seperate === true) {
-        if (field.type === 'string') {
-          const op = operationToByte(filter[1])
-          if (op === 1) {
-            const matches = Buffer.from(filter[2])
-            buf = Buffer.allocUnsafe(3 + matches.byteLength)
-            buf[0] = 2
-            buf.writeInt16LE(matches.byteLength, 1)
-            buf.set(matches, 3)
-          } else if (op === 7) {
-            // TODO MAKE HAS
-          }
-        } else if (field.type === 'references') {
-          const op = operationToByte(filter[1])
-          const matches = filter[2]
-          const len = matches.length
-          buf = Buffer.alloc(3 + len * 4)
-          if (op === 1) {
-            buf[0] = 2
-            buf.writeInt16LE(len * 4, 1)
-            for (let i = 0; i < len; i++) {
-              buf.writeInt32LE(matches[i], i * 4 + 3)
-            }
-          } else if (op === 7) {
-            buf[0] = op
-            buf.writeInt16LE(len, 1)
-            for (let i = 0; i < len; i++) {
-              buf.writeInt32LE(matches[i], i * 4 + 3)
-            }
-          }
-        }
-      } else {
-        if (field.type === 'integer') {
-          const op = operationToByte(filter[1])
-          if (op === 1 || op === 3 || op === 4) {
-            buf = Buffer.alloc(9)
-            buf[0] = op
-            buf.writeInt16LE(4, 1)
-            buf.writeInt16LE(field.start, 3)
-            buf.writeInt32LE(filter[2], 5)
-          }
-        }
-      }
-      this.conditions ??= new Map()
-      let arr = this.conditions.get(fieldIndexChar)
-      if (!arr) {
-        this.totalConditionSize += 3
-        arr = []
-        this.conditions.set(fieldIndexChar, arr)
-      }
-      this.totalConditionSize += buf.byteLength
-      arr.push(buf)
-      return this
-    }
+  filter(field: string, operator: Operation, value: any) {
+    return filter(this, field, operator, value)
   }
 
   range(offset: number, limit: number): Query {
@@ -97,7 +38,6 @@ export class Query {
     this.includeFields = this.includeFields
       ? [...this.includeFields, ...fields]
       : fields
-
     return this
   }
 
