@@ -403,14 +403,15 @@ test.serial.only('query + filter', async (t) => {
       .query('simple')
       .filter('vectorClock', '>', 1)
       .include('flap', 'vectorClock', 'user', 'refs', 'location', 'smurp') // now support location (getting the whole object)
-      .range(0, 1e6)
+      .range(0, 2e6)
       .get()
 
     console.info(
       'query result ==',
       Date.now() - d,
       'ms',
-      result.buffer.byteLength,
+      result.buffer.byteLength / 1000 / 1000,
+      'mb',
     )
 
     const xxx = Date.now()

@@ -1,4 +1,4 @@
-import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
+import { FieldDef, SchemaFieldTree } from '../schemaTypeDef.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Query } from './query.js'
 
@@ -6,7 +6,6 @@ const getAllFieldFromObject = (
   tree: SchemaFieldTree | FieldDef,
   arr: string[] = [],
 ) => {
-  // make fn and optmize...
   for (const key in tree) {
     const leaf = tree[key]
     if (!leaf.type && !leaf.__isField) {
@@ -38,7 +37,6 @@ const parseInclude = (
     }
     return
   }
-
   if (field.seperate) {
     arr.push(field.field)
   } else {
@@ -47,7 +45,6 @@ const parseInclude = (
       includesMain = true
       arr.push(0)
     }
-    // start /w field.start (this allows us to skip pieces of the buffer in zig (later!))
     query.mainIncludes.set(field.start, field.start)
     return true
   }
@@ -76,8 +73,7 @@ export const get = (query: Query): BasedQueryResponse => {
       }
     }
   } else {
-    // include main is tmp...
-    let includesMain = false // Buffer [0, ]
+    let includesMain = false
     const arr = []
     for (const f of query.includeFields) {
       if (parseInclude(query, f, arr, includesMain)) {
@@ -120,16 +116,6 @@ export const get = (query: Query): BasedQueryResponse => {
       end, // def 1k ?
       includeBuffer,
     )
-
-    // console.log(result)
-
-    // size estimator pretty nice to add
-
-    // buffer.toString('utf8', i, size + i)
-    // @ts-ignore
-    // console.log({ result, x: result.map((v) => v.toString('utf8')) })
-
-    // result.rem
 
     return new BasedQueryResponse(query, result)
   } else {
