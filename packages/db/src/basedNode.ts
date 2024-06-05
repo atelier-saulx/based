@@ -124,6 +124,9 @@ export const createBasedNodeClass = (
                 // if (i === path.length - 2) {
                 // return 1 thing
                 const x = {}
+
+                // nested had to happen as well...
+
                 for (const k in tree) {
                   x[k] = readSeperateFieldFromBuffer(
                     tree[k],

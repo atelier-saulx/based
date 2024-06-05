@@ -1,6 +1,7 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Operation, operationToByte } from './types.js'
+import { get } from './get.js'
 
 export class Query {
   db: BasedDb
@@ -101,107 +102,7 @@ export class Query {
   }
 
   get(): BasedQueryResponse {
-    let includeBuffer: Buffer
-    let len = 0
-    if (!this.includeFields) {
-      len = 1
-      const fields = this.type.fields
-      for (const f in fields) {
-        const field = fields[f]
-        if (field.seperate) {
-          len++
-        }
-      }
-      includeBuffer = Buffer.allocUnsafe(len)
-      includeBuffer[0] = 0
-      let i = 0
-      for (const f in fields) {
-        const field = fields[f]
-        if (field.seperate) {
-          i++
-          includeBuffer[i] = field.field
-        }
-      }
-    } else {
-      let includesMain = false // Buffer [0, ]
-      const arr = []
-
-      for (const f of this.includeFields) {
-        const field = this.type.fields[f]
-        if (!field) {
-          // make fn and optmize...
-          if (this.type.tree[f]) {
-            for (const x in this.type.tree[f]) {
-              this.includeFields.push(this.type.tree[f][x].path.join('.'))
-            }
-          }
-          continue
-        }
-        if (field.seperate) {
-          len += 1
-          arr.push(field.field)
-        } else {
-          if (!includesMain) {
-            this.mainIncludes = new Map()
-            includesMain = true
-            len += 1
-            arr.push(0)
-          }
-          // start /w field.start (this allows us to skip pieces of the buffer in zig (later!))
-          this.mainIncludes.set(field.start, field.start)
-        }
-      }
-
-      includeBuffer = Buffer.from(arr)
-    }
-
-    if (this.conditions) {
-      const conditions = Buffer.allocUnsafe(this.totalConditionSize)
-      let lastWritten = 0
-      this.conditions.forEach((v, k) => {
-        conditions[lastWritten] = k
-        let sizeIndex = lastWritten + 1
-        lastWritten += 3
-        let conditionSize = 0
-        for (const condition of v) {
-          conditionSize += condition.byteLength
-          conditions.set(condition, lastWritten)
-          lastWritten += condition.byteLength
-        }
-        conditions.writeInt16LE(conditionSize, sizeIndex)
-      })
-
-      const start = this.offset ?? 0
-      const end = this.limit ?? 1e3
-
-      // console.log({
-      //   conditions: new Uint8Array(conditions),
-      //   include: new Uint8Array(includeBuffer),
-      // })
-
-      const result: Buffer = this.db.native.getQuery(
-        conditions,
-        this.type.prefixString,
-        this.type.lastId,
-        start,
-        end, // def 1k ?
-        includeBuffer,
-      )
-
-      // console.log(result)
-
-      // size estimator pretty nice to add
-
-      // buffer.toString('utf8', i, size + i)
-      // @ts-ignore
-      // console.log({ result, x: result.map((v) => v.toString('utf8')) })
-
-      // result.rem
-
-      return new BasedQueryResponse(this, result)
-    } else {
-      // what?
-    }
+    return get(this)
   }
 
   subscribe(fn: (value: any, checksum: number, err: Error) => void) {

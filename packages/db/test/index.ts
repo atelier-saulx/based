@@ -327,6 +327,20 @@ test.serial.only('query + filter', async (t) => {
               lat: { type: 'number' },
             },
           },
+          smurp: {
+            type: 'object',
+            properties: {
+              hello: { type: 'boolean' },
+              ts: { type: 'timestamp' },
+              pos: {
+                type: 'object',
+                properties: {
+                  x: { type: 'integer' },
+                  y: { type: 'integer' },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -350,6 +364,8 @@ test.serial.only('query + filter', async (t) => {
 
   //
 
+  const now = Date.now()
+
   for (let i = 0; i < 5e6 - 1; i++) {
     db.create('simple', {
       vectorClock: i + 10,
@@ -360,6 +376,14 @@ test.serial.only('query + filter', async (t) => {
       location: {
         long: 52,
         lat: 52,
+      },
+      smurp: {
+        hello: true,
+        ts: now,
+        pos: {
+          x: 1,
+          y: 2,
+        },
       },
     })
   }
@@ -378,7 +402,7 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 1)
-      .include('flap', 'vectorClock', 'user', 'refs', 'location') // now support location (getting the whole object)
+      .include('flap', 'vectorClock', 'user', 'refs', 'location', 'smurp') // now support location (getting the whole object)
       .range(0, 1e6)
       .get()
 
@@ -403,6 +427,7 @@ test.serial.only('query + filter', async (t) => {
         flap: x.flap,
         user: x.user,
         vectorClock: x.vectorClock,
+        smurp: x.smurp,
       })
       break
     }
