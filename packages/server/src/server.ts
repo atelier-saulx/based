@@ -76,6 +76,7 @@ export type ServerOptions = {
     open?: (client: Context<HttpSession>) => void
     close?: (client: Context<HttpSession>) => void
   }
+
   getIp?: GetIp
 }
 
@@ -136,6 +137,13 @@ export class BasedServer {
   }
 
   public listenSocket: any
+
+  public forceReload(conditions?: (client: WebSocketSession) => boolean) {
+    console.log('force the reload', this.clients)
+    for (const key in this.clients) {
+      console.log(this.clients[key])
+    }
+  }
 
   public geo: (ctx: Context) => Promise<Geo> = async (ctx: Context) => {
     if (!ctx.session) {

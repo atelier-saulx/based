@@ -414,6 +414,9 @@ export const incoming = async (client: BasedClient, data: any) => {
             maxChunkSize,
           )
         }
+      } else if (subType === 3) {
+        // | 4 header | 1 subType
+        console.info('force reload')
       }
     }
     // ---------------------------------
