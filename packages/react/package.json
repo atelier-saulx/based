@@ -1,14 +1,15 @@
 {
   "name": "@based/react",
-  "version": "5.0.2",
+  "version": "6.0.0",
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "npx tsc",
     "server": "node ./test/based-server.js",
-    "browser": "npx vite ./test/browser",
+    "browser": "npx vite -c ./vite.config.ts ./test/browser",
     "watch": "npm run build -- --watch",
+    "esbuild": "node esbuild.config.cjs",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "sideEffects": false,
@@ -21,6 +22,7 @@
     "@saulx/tsconfig": "^1.1.0",
     "@types/react": "^18.0.29",
     "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.21.4",
     "react-dom": "^18.2.0",
     "rimraf": "^3.0.2",
     "typescript": "^5.2.2",

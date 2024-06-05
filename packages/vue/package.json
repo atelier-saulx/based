@@ -1,11 +1,11 @@
 {
   "name": "@based/vue",
-  "version": "5.0.2",
+  "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "main": "dist/src/index.js",
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx vue-tsc && tsc",
     "server": "node ./test/based-server.js",
     "browser": "npx vite -c ./vite.config.ts ./test/browser",
     "watch": "npm run build -- --watch",
@@ -30,7 +30,9 @@
     "rimraf": "^3.0.2",
     "typescript": "^5.3.3",
     "vite": "^5.2.8",
-    "vite-tsconfig-paths": "^4.3.2"
+    "vite-plugin-checker": "^0.6.4",
+    "vite-tsconfig-paths": "^4.3.2",
+    "vue-tsc": "^2.0.19"
   },
   "peerDependencies": {
     "@based/client": "*",

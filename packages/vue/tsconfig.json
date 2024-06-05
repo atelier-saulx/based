@@ -2,12 +2,12 @@
   "extends": [
     "@saulx/tsconfig/default.json",
     "@vue/tsconfig/tsconfig.json",
-    "@vue/tsconfig/tsconfig.lib.json",
     "@tsconfig/node18/tsconfig.json",
   ],
   "compilerOptions": {
     "jsx": "preserve",
     "jsxImportSource": "vue",
+    "noEmit": false,
     "module": "ESNext",
     "moduleResolution": "Node",
     "isolatedModules": true,

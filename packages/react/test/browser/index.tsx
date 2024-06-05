@@ -1,6 +1,6 @@
-import { Component, createMemo, createSignal } from 'solid-js'
-import { render } from 'solid-js/web'
+import React, { useState } from 'react'
 import based, { BasedClient } from '@based/client'
+import { createRoot } from 'react-dom/client'
 import {
   BasedProvider,
   useBasedClient,
@@ -28,53 +28,54 @@ const queries: FakeQueryPayloads[] = [
   { name: 'counter', payload: { id: 2, count: true, speed: 3000 } },
 ]
 
-const BasedContextChecker: Component = () => {
+const BasedContextChecker = () => {
   const context: BasedClient = useBasedClient()
   const { status, connected } = useBasedStatus()
 
   return (
     <div
       style={{
-        'margin-top': '10px',
+        marginTop: '10px',
       }}
     >
       <p>URL: {context.opts.url.toString()}</p>
-      <p>CONNECTED: {connected().toString()}</p>
-      <p>STATUS: {status()}</p>
+      <p>CONNECTED: {connected.toString()}</p>
+      <p>STATUS: {status}</p>
     </div>
   )
 }
 
 const MultipleCounter = () => {
-  const [name, setName] = createSignal<string>(queries[0].name)
-  const [payload, setPayload] = createSignal<any>(queries[0].payload)
-  const query = createMemo(() => useBasedQuery(name(), payload()))
+  const [name, setName] = useState<string>(queries[0].name)
+  const [payload, setPayload] = useState<any>(queries[0].payload)
+  const { data, loading, error, checksum } = useBasedQuery(name, payload)
 
   return (
     <div
       style={{
         display: 'flex',
-        'flex-direction': 'row',
+        flexDirection: 'row',
       }}
     >
       <div
         style={{
-          'margin-top': '30px',
+          marginTop: '30px',
           display: 'flex',
-          'flex-direction': 'column',
+          flexDirection: 'column',
         }}
       >
         <h3>Dynamic Queries</h3>
         <div
           style={{
-            'margin-top': '10px',
+            marginTop: '10px',
             display: 'flex',
           }}
         >
-          {queries.map((_query) => (
+          {queries.map((_query, index) => (
             <div
+              key={index}
               style={{
-                'margin-right': '10px',
+                marginRight: '10px',
                 cursor: 'pointer',
                 border: '1px solid black',
               }}
@@ -87,7 +88,7 @@ const MultipleCounter = () => {
                 style={{
                   padding: '30px',
                   height: '280px',
-                  'align-content': 'center',
+                  alignContent: 'center',
                 }}
               >
                 {JSON.stringify(_query, null, 2)}
@@ -98,9 +99,9 @@ const MultipleCounter = () => {
       </div>
       <div
         style={{
-          'margin-top': '30px',
+          marginTop: '30px',
           display: 'flex',
-          'flex-direction': 'column',
+          flexDirection: 'column',
         }}
       >
         <h3>Live Result</h3>
@@ -110,18 +111,18 @@ const MultipleCounter = () => {
             background: 'black',
             color: 'white',
             width: '250px',
-            'margin-top': '10px',
+            marginTop: '10px',
             height: '280px',
-            'align-content': 'center',
+            alignContent: 'center',
           }}
         >
           {JSON.stringify(
             {
-              payload: payload(),
-              data: query().data(),
-              error: query().error(),
-              checksum: query().checksum(),
-              loading: query().loading(),
+              payload,
+              data,
+              error,
+              checksum,
+              loading,
             },
             null,
             2,
@@ -140,27 +141,27 @@ const SimpleCounter = () => {
   return (
     <div
       style={{
-        'margin-top': '30px',
+        marginTop: '30px',
         display: 'flex',
-        'flex-direction': 'column',
+        flexDirection: 'column',
       }}
     >
       <h3>Static Query - Live Result</h3>
       <pre
         style={{
           padding: '30px',
-          'margin-top': '10px',
-          'align-content': 'center',
+          marginTop: '10px',
+          alignContent: 'center',
           border: '1px solid black',
           width: '250px',
         }}
       >
         {JSON.stringify(
           {
-            data: data(),
-            error: error(),
-            checksum: checksum(),
-            loading: loading(),
+            data,
+            error,
+            checksum,
+            loading,
           },
           null,
           2,
@@ -170,11 +171,11 @@ const SimpleCounter = () => {
   )
 }
 
-const App: Component = () => {
+function App() {
   return (
     <div>
       <BasedProvider client={client}>
-        <h1>Based.io Solidjs Demo</h1>
+        <h1>Based.io React Demo</h1>
         <BasedContextChecker />
         <MultipleCounter />
         <SimpleCounter />
@@ -183,5 +184,5 @@ const App: Component = () => {
   )
 }
 
-const root = document.getElementById('app')
-render(() => <App />, root!)
+const root = createRoot(document.getElementById('app'))
+root.render(<App />)

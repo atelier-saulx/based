@@ -1,5 +1,6 @@
-import { createContext, JSX } from 'solid-js'
-import type { Component, Context as SolidContext } from 'solid-js'
+import React from 'react'
+import { createContext, FC } from 'react'
+import type { Context } from 'react'
 import { BasedClient } from '@based/client'
 
 /**
@@ -15,7 +16,7 @@ type BasedProviderProps = {
 /**
  * The helper that provide the context to be used across the app.
  */
-const BasedContext: SolidContext<BasedClient> = createContext<BasedClient>()
+const BasedContext: Context<BasedClient> = createContext<BasedClient>(null)
 
 /**
  * The component that wrap and inject the context to all children components
@@ -27,12 +28,10 @@ const BasedContext: SolidContext<BasedClient> = createContext<BasedClient>()
  * </BasedProvider>
  * ```
  */
-const BasedProvider: Component<BasedProviderProps> = (
-  props: BasedProviderProps,
-) => {
+const BasedProvider: FC<BasedProviderProps> = ({ client, children }) => {
   return (
-    <BasedContext.Provider value={props.client}>
-      <div className="based-io">{props.children}</div>
+    <BasedContext.Provider value={client}>
+      <div className="based-io">{children}</div>
     </BasedContext.Provider>
   )
 }

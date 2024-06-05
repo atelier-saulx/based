@@ -1,6 +1,6 @@
 {
   "name": "@based/solidjs",
-  "version": "5.0.2",
+  "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "main": "dist/src/index.js",

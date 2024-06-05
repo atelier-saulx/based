@@ -63,9 +63,9 @@ Solid Component that inject the `BasedClient` context thought the application.
 ```
 or (**in deprecation process**)
 ```tsx
-<Provider client={client}>
+<BasedProvider client={client}>
     {/*slot*/}
-</Provider>
+</BasedProvider>
 ```
 
 ### Props
@@ -86,7 +86,7 @@ Basic example:
 const App: Component = () => {
     return (
         <BasedProvider client={client}>
-            <UsersList/> // Will receive the BasedClient context injected by the Provider.
+            <UsersList/> // Will receive the BasedClient context injected by the BasedProvider.
         </BasedProvider>
     )
 }
@@ -101,7 +101,7 @@ const client = useBasedClient()
 ```
 or (**in deprecation process**)
 ```ts
-const client = useClient()
+const client = useBasedClient()
 ```
 
 ### Params
@@ -154,7 +154,7 @@ const { data, error, loading } = useBasedQuery('myQueryFunction')
 ```
 or (**in deprecation process**)
 ```ts
-const { data, error, loading } = useQuery('myQueryFunction')
+const { data, error, loading } = useBasedQuery('myQueryFunction')
 ```
 
 ### Types
@@ -273,7 +273,7 @@ const auth = useBasedAuth()
 or (**in deprecation process**)
 
 ```ts
-const auth = useAuthState()
+const auth = useBasedAuth()
 ```
 
 ### Params

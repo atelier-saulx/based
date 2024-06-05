@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import { inject } from 'vue'
-import { useBasedStatus } from '../../src'
+import { useBasedStatus, BasedContext } from '../../src'
+import type { BasedClient } from '@based/client'
 
 const { status, connected } = useBasedStatus()
 
-const context = inject('client')
+const context: BasedClient = inject(BasedContext.CLIENT)
 </script>
 
 <template>
