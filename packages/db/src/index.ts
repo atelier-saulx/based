@@ -25,7 +25,7 @@ const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {
 export class BasedDb {
   isDraining: boolean = false
 
-  maxModifySize: number = 50 * 1e3 * 1e3
+  maxModifySize: number = 100 * 1e3 * 1e3
 
   modifyBuffer: {
     buffer: Buffer
