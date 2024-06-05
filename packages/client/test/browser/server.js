@@ -78,6 +78,13 @@ const start = async () => {
             return 'world'
           },
         },
+        forceReload: {
+          type: 'function',
+          public: true,
+          fn: async (based) => {
+            based.server.forceReload()
+          },
+        },
         helloSecure: {
           type: 'function',
           fn: async (based, payload, ctx) => {

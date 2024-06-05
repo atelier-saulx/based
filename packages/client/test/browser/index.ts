@@ -1,7 +1,7 @@
 import based from '@based/client'
 const client = based(
   {
-    url: 'ws://localhost:5050',
+    url: 'ws://localhost:9910',
   },
   {
     restFallBack: {
@@ -22,6 +22,13 @@ export const app = () => {
   body.appendChild(hello)
   hello.onclick = () => {
     client.call('hello').then(alert)
+  }
+
+  const forceReload = document.createElement('button')
+  hello.innerHTML = 'forceReload'
+  body.appendChild(forceReload)
+  hello.onclick = () => {
+    client.call('forceReload')
   }
 
   const helloSecure = document.createElement('button')

@@ -44,14 +44,24 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 import parseOpts from '@based/opts'
 import { freeCacheMemory } from './cache.js'
+import { cacheId } from './incoming/forceReload.js'
 
 export * from './authState/parseAuthState.js'
 
+export { cacheId }
+
 export { AuthState, BasedQuery }
 
-// global polyfill
-if (typeof window !== 'undefined' && typeof global === 'undefined') {
-  window.global = window
+const isBrowser = typeof window !== 'undefined'
+if (isBrowser) {
+  if (typeof global === 'undefined') {
+    window.global = window
+  }
+  const loc = window.location.href
+  if (loc.includes(cacheId)) {
+    const [url] = loc.split(cacheId)
+    window.history.replaceState(null, document.title, url)
+  }
 }
 
 export class BasedClient extends Emitter {
