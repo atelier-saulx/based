@@ -10,6 +10,7 @@ export class Query {
   offset: number
   limit: number
   includeFields: string[]
+  mainIncludes: Map<number, number>
   totalConditionSize: number = 0
   constructor(db: BasedDb, target: string, previous?: Query) {
     this.db = db
@@ -95,6 +96,7 @@ export class Query {
     this.includeFields = this.includeFields
       ? [...this.includeFields, ...fields]
       : fields
+
     return this
   }
 
@@ -121,11 +123,18 @@ export class Query {
         }
       }
     } else {
-      let includesMain = false
+      let includesMain = false // Buffer [0, ]
       const arr = []
+
       for (const f of this.includeFields) {
         const field = this.type.fields[f]
         if (!field) {
+          // make fn and optmize...
+          if (this.type.tree[f]) {
+            for (const x in this.type.tree[f]) {
+              this.includeFields.push(this.type.tree[f][x].path.join('.'))
+            }
+          }
           continue
         }
         if (field.seperate) {
@@ -133,12 +142,16 @@ export class Query {
           arr.push(field.field)
         } else {
           if (!includesMain) {
+            this.mainIncludes = new Map()
             includesMain = true
             len += 1
             arr.push(0)
           }
+          // start /w field.start (this allows us to skip pieces of the buffer in zig (later!))
+          this.mainIncludes.set(field.start, field.start)
         }
       }
+
       includeBuffer = Buffer.from(arr)
     }
 

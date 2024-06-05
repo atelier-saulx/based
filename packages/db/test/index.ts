@@ -355,6 +355,7 @@ test.serial.only('query + filter', async (t) => {
       vectorClock: i + 10,
       refs: generateRandomArray(),
       flap: 'AMAZING ' + i,
+      user: 541,
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
         long: 52,
@@ -396,7 +397,13 @@ test.serial.only('query + filter', async (t) => {
 
     for (const x of result.data) {
       // incpect on x as well
-      console.log({ id: x.id, location: x.location })
+      console.log({
+        id: x.id,
+        location: x.location,
+        flap: x.flap,
+        user: x.user,
+        vectorClock: x.vectorClock,
+      })
       break
     }
 

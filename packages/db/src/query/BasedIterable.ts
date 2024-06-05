@@ -7,7 +7,7 @@ export class BasedIterable {
     this.#buffer = buffer
     this.#query = query
     // @ts-ignore
-    this.#reader = new this.#query.type.ResponseClass(this.#buffer, 0)
+    this.#reader = new this.#query.type.ResponseClass(this.#buffer, 0, query)
   }
 
   #buffer: Buffer

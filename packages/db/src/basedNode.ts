@@ -26,6 +26,7 @@ const readSeperateFieldFromBuffer = (
   buffer: Buffer,
   type: SchemaTypeDef,
   i: number,
+  query: any,
 ) => {
   while (i < buffer.byteLength) {
     const index = buffer[i]
@@ -34,28 +35,19 @@ const readSeperateFieldFromBuffer = (
     }
     i += 1
     if (index === 0) {
-      if (requestedField.field === 0) {
-        console.log('lullz')
+      const fIndex = query.mainIncludes.get(requestedField.start)
+      if (
+        requestedField.type === 'integer' ||
+        requestedField.type === 'reference'
+      ) {
+        return buffer.readUint32LE(i + fIndex)
       }
-      // for (const f in this.type.fields) {
-      //   const field = this.type.fields[f]
-      //   if (!field.seperate) {
-      //     if (this.includeFields) {
-      //       if (!this.includeFields.includes(f)) {
-      //         continue
-      //       }
-      //     }
-      //     if (field.type === 'integer' || field.type === 'reference') {
-      //       setByPath(
-      //         lastTarget,
-      //         field.path,
-      //         result.readUint32LE(i + field.start),
-      //       )
-      //     } else if (field.type === 'number') {
-      //       setByPath(lastTarget, field.path, result.readFloatLE(i + field.start))
-      //     }
-      //   }
-      // }
+      if (requestedField.type === 'number') {
+        return buffer.readFloatLE(i + fIndex)
+      }
+      if (requestedField.type === 'timestamp') {
+        return buffer.readFloatLE(i + fIndex)
+      }
       i += type.mainLen
     } else {
       const size = buffer.readUInt16LE(i)
@@ -81,11 +73,12 @@ export const createBasedNodeClass = (
   path?: string[],
 ): typeof BasedNode => {
   // just 1 object thah you return
+  // DONT MAKE A CLASS DONT MAKE AN INSTANCE
 
-  const Node = function (buffer: Buffer, offset: number) {
+  const Node = function (buffer: Buffer, offset: number, query: any) {
     this.__buffer__ = buffer
     this.__offset__ = offset
-    this.__path__ = []
+    this.__query__ = query
   }
   Node.prototype = new BasedNodeBase(schema)
 
@@ -112,11 +105,10 @@ export const createBasedNodeClass = (
           str += '.' + path[i]
         }
 
-        console.log('YO', str)
         if (Object.getOwnPropertyDescriptor(Node.prototype, str)) {
-          console.log(str, 'allrdy defined..')
+          // console.log(str, 'allrdy defined..')
         } else {
-          console.log('DEFINE', str)
+          // console.log('DEFINE', str)
 
           if (i === 0) {
             // FIRST
@@ -128,20 +120,21 @@ export const createBasedNodeClass = (
               },
               get() {
                 // make a bit nicer...
-                console.log({ tree }, str)
-                if (i === path.length - 2) {
-                  // return 1 thing
-                  // const x = {}
-                  // for (const k in tree) {
-                  //   x[k] = readSeperateFieldFromBuffer(
-                  //     tree[k],
-                  //     this.__buffer__,
-                  //     schema,
-                  //     this.__offset__ + 4,
-                  //   )
-                  // }
-                  // return x
+                // console.log({ tree }, str)
+                // if (i === path.length - 2) {
+                // return 1 thing
+                const x = {}
+                for (const k in tree) {
+                  x[k] = readSeperateFieldFromBuffer(
+                    tree[k],
+                    this.__buffer__,
+                    schema,
+                    this.__offset__ + 4,
+                    this.__query__,
+                  )
                 }
+                return x
+                // }
               },
             })
           } else if (i === path.length - 1) {
@@ -186,6 +179,7 @@ export const createBasedNodeClass = (
             this.__buffer__,
             schema,
             this.__offset__ + 4,
+            this.__query__,
           )
         },
       })
@@ -202,6 +196,7 @@ export const createBasedNodeClass = (
             this.__buffer__,
             schema,
             this.__offset__ + 4,
+            this.__query__,
           )
         },
       })
@@ -213,7 +208,34 @@ export const createBasedNodeClass = (
         },
         get() {
           // return instance of ref
-          return { id: 'some REF return instanceOf' }
+          return {
+            // this get id...
+            id: readSeperateFieldFromBuffer(
+              fieldDef,
+              this.__buffer__,
+              schema,
+              this.__offset__ + 4,
+              this.__query__,
+            ),
+          }
+        },
+      })
+    } else if (type === 'integer') {
+      console.log({ field })
+      Object.defineProperty(Node.prototype, field, {
+        enumerable: true,
+        set() {
+          // flap
+        },
+        get() {
+          // return instance of ref
+          return readSeperateFieldFromBuffer(
+            fieldDef,
+            this.__buffer__,
+            schema,
+            this.__offset__ + 4,
+            this.__query__,
+          )
         },
       })
     }
