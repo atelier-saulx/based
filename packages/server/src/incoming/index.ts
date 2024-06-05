@@ -10,7 +10,14 @@ import { sendAndVerifyAuthMessage } from './ws/auth.js'
 
 export default (
   server: BasedServer,
-  { key, cert, port, ws: wsOptions = {}, disableRest, disableWs }: ServerOptions
+  {
+    key,
+    cert,
+    port,
+    ws: wsOptions = {},
+    disableRest,
+    disableWs,
+  }: ServerOptions,
 ) => {
   const app =
     key && cert
@@ -64,6 +71,8 @@ export default (
           const ctx: Context<WebSocketSession> = {
             session,
           }
+          // allways
+          ws.subscribe('reload')
           session.ws = ws
           session.c = ctx
           wsOptions.open(ctx)

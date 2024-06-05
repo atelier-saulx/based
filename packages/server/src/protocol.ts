@@ -5,7 +5,7 @@ const textDecoder = new TextDecoder()
 export const COMPRESS_FROM_BYTES = 150
 
 export const decodeHeader = (
-  nr: number
+  nr: number,
 ): { type: number; isDeflate: boolean; len: number } => {
   // 4 bytes
   // type (3 bits)
@@ -34,7 +34,7 @@ export const storeUint8 = (
   buff: Uint8Array,
   n: number,
   start: number,
-  len: number
+  len: number,
 ) => {
   for (let index = start; index < start + len; index++) {
     const byte = n & 0xff
@@ -46,7 +46,7 @@ export const storeUint8 = (
 export const readUint8 = (
   buff: Uint8Array,
   start: number,
-  len: number
+  len: number,
 ): number => {
   let n = 0
   const s = len - 1 + start
@@ -59,7 +59,7 @@ export const readUint8 = (
 export const encodeHeader = (
   type: number,
   isDeflate: boolean,
-  len: number
+  len: number,
 ): number => {
   // 4 bytes
   // type (3 bits)
@@ -111,7 +111,7 @@ export const parsePayload = (payload: any): any => {
 export const decodeName = (
   arr: Uint8Array,
   start: number,
-  end: number
+  end: number,
 ): string => {
   const name = new Uint8Array(arr.slice(start, end))
   return textDecoder.decode(name)
@@ -119,7 +119,7 @@ export const decodeName = (
 
 export const encodeFunctionResponse = (
   id: number,
-  buffer: Buffer
+  buffer: Buffer,
 ): Uint8Array => {
   // Type 0
   // | 4 header | 3 id | * payload |
@@ -156,7 +156,7 @@ export const encodeFunctionResponse = (
 
 export const encodeStreamFunctionResponse = (
   id: number,
-  buffer: Buffer
+  buffer: Buffer,
 ): Uint8Array => {
   // Type 7
   // | 4 header | 1 subType | 3 id | * payload |
@@ -197,7 +197,7 @@ export const encodeStreamFunctionChunkResponse = (
   id: number,
   seqId: number,
   code: number = 0,
-  maxChunkSize: number = 0
+  maxChunkSize: number = 0,
 ): Uint8Array => {
   // Type 7.2
   // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize?
@@ -243,7 +243,7 @@ export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
 export const encodeObservableResponse = (
   id: number,
   checksum: number,
-  buffer: Buffer
+  buffer: Buffer,
 ): [Uint8Array, boolean] => {
   // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
@@ -271,7 +271,7 @@ export const encodeObservableDiffResponse = (
   id: number,
   checksum: number,
   previousChecksum: number,
-  buffer: Buffer
+  buffer: Buffer,
 ): Uint8Array => {
   // Type 2 (diff data)
   // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
@@ -327,7 +327,7 @@ export const encodeErrorResponse = (buffer: Buffer): Uint8Array => {
 
 export const encodeChannelMessage = (
   id: number,
-  buffer: Buffer
+  buffer: Buffer,
 ): Uint8Array => {
   // Type 7.0 (fill data)
   // | 4 header | 1 subType | 8 id | * payload |
@@ -345,6 +345,21 @@ export const encodeChannelMessage = (
   if (buffer.length) {
     array.set(buffer, 13)
   }
+  return array
+}
+
+export const encodeReload = (type: number): Uint8Array => {
+  // Type 7.3 (fill data)
+  // 0 = all
+  // 1 = browser
+  // 2 = non-browser
+  // | 4 header | 1 subType | 1 type \
+  const msgSize = 6
+  const header = encodeHeader(7, false, msgSize)
+  const array = new Uint8Array(4 + msgSize)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, 3, 4, 1)
+  storeUint8(array, type, 5, 1)
   return array
 }
 

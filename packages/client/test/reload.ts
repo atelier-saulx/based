@@ -14,6 +14,8 @@ test.beforeEach(async (t: T) => {
 
 test('reload protocol', async (t: T) => {
   const client = new BasedClient()
+  const client2 = new BasedClient()
+
   const server = new BasedServer({
     port: t.context.port,
     auth: {
@@ -41,6 +43,7 @@ test('reload protocol', async (t: T) => {
   })
 
   await server.start()
+  let cnt = 0
 
   client.connect({
     url: async () => {
@@ -48,27 +51,33 @@ test('reload protocol', async (t: T) => {
     },
   })
 
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
+  client2.connect({
+    url: async () => {
+      return t.context.ws
+    },
   })
-  const obs1Results: any[] = []
 
-  const close = client
-    .query('counter', {
-      myQuery: 123,
-    })
-    .subscribe((d) => {
-      obs1Results.push(d)
-    })
+  client2.on('connect', (isConnected) => {
+    cnt++
+  })
+
+  client.on('connect', (isConnected) => {
+    cnt++
+  })
+
+  await wait(1000)
+
+  server.forceReload()
+
+  await wait(500)
+
+  t.is(cnt, 4)
 
   await wait(2000)
 
-  t.is(obs1Results.length, 3)
+  t.true(true)
 
-  close()
-
-  await wait(2000)
-
+  await client2.destroy()
   await server.destroy()
   await client.destroy()
 })

@@ -16,6 +16,7 @@ import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue } from '../types/index.js'
 import { freeCacheMemory } from '../cache.js'
 import { convertDataToBasedError } from '@based/errors/client'
+import { forceReload } from './forceReload.js'
 
 const decodeAndDeflate = (
   start: number,
@@ -39,6 +40,7 @@ export const incoming = async (client: BasedClient, data: any) => {
     const d = data.data
     const buffer = await parseArrayBuffer(d)
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
+
     // reader for batched replies
     // ------- Function
     if (type === 0) {
@@ -415,8 +417,8 @@ export const incoming = async (client: BasedClient, data: any) => {
           )
         }
       } else if (subType === 3) {
-        // | 4 header | 1 subType
-        console.info('force reload')
+        // | 4 header | 1 subType | 1 type
+        forceReload(client, readUint8(buffer, 5, 1))
       }
     }
     // ---------------------------------

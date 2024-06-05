@@ -17,6 +17,7 @@ import picocolors from 'picocolors'
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi/index.js'
 import { ActiveChannel } from './channel/index.js'
 import util from 'node:util'
+import { encodeReload } from './protocol.js'
 
 type EventMap = {
   error: BasedErrorData | BasedErrorCode
@@ -138,11 +139,8 @@ export class BasedServer {
 
   public listenSocket: any
 
-  public forceReload(conditions?: (client: WebSocketSession) => boolean) {
-    console.log('force the reload', this.clients)
-    for (const key in this.clients) {
-      console.log(this.clients[key])
-    }
+  public forceReload(type: number = 0) {
+    this.uwsApp.publish('reload', encodeReload(type), true, false)
   }
 
   public geo: (ctx: Context) => Promise<Geo> = async (ctx: Context) => {
