@@ -78,10 +78,14 @@ const readSeperateFieldFromBuffer = (
 
 export const createBasedNodeClass = (
   schema: SchemaTypeDef,
+  path?: string[],
 ): typeof BasedNode => {
+  // just 1 object thah you return
+
   const Node = function (buffer: Buffer, offset: number) {
     this.__buffer__ = buffer
     this.__offset__ = offset
+    this.__path__ = []
   }
   Node.prototype = new BasedNodeBase(schema)
 
@@ -100,7 +104,76 @@ export const createBasedNodeClass = (
     const { type, path } = fieldDef
 
     if (path.length > 1) {
-      // flap make
+      let str = ''
+      for (let i = 0; i < path.length; i++) {
+        if (!str) {
+          str = path[i]
+        } else {
+          str += '.' + path[i]
+        }
+
+        console.log('YO', str)
+        if (Object.getOwnPropertyDescriptor(Node.prototype, str)) {
+          console.log(str, 'allrdy defined..')
+        } else {
+          console.log('DEFINE', str)
+
+          if (i === 0) {
+            // FIRST
+            const tree = schema.tree[str]
+            Object.defineProperty(Node.prototype, str, {
+              enumerable: true,
+              set() {
+                // flap
+              },
+              get() {
+                // make a bit nicer...
+                console.log({ tree }, str)
+                if (i === path.length - 2) {
+                  // return 1 thing
+                  // const x = {}
+                  // for (const k in tree) {
+                  //   x[k] = readSeperateFieldFromBuffer(
+                  //     tree[k],
+                  //     this.__buffer__,
+                  //     schema,
+                  //     this.__offset__ + 4,
+                  //   )
+                  // }
+                  // return x
+                }
+              },
+            })
+          } else if (i === path.length - 1) {
+            // END
+            // Object.defineProperty(Node.prototype, str, {
+            //   enumerable: false,
+            //   set() {
+            //     // flap
+            //   },
+            //   get() {
+            //     return readSeperateFieldFromBuffer(
+            //       fieldDef,
+            //       this.__buffer__,
+            //       schema,
+            //       this.__offset__ + 4,
+            //     )
+            //   },
+            // })
+          } else {
+            // MIDDLE
+            Object.defineProperty(Node.prototype, str, {
+              enumerable: false,
+              set() {
+                // flap
+              },
+              get() {
+                return {}
+              },
+            })
+          }
+        }
+      }
     } else if (type === 'string') {
       Object.defineProperty(Node.prototype, field, {
         enumerable: true,

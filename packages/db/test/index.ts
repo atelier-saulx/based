@@ -376,9 +376,8 @@ test.serial.only('query + filter', async (t) => {
     const d = Date.now()
     const result = db
       .query('simple')
-      .filter(['vectorClock', '>', 1])
-      // .filter(['refs', 'has', [1]])
-      .include(['flap', 'vectorClock', 'user', 'refs', 'location']) // now support location (getting the whole object)
+      .filter('vectorClock', '>', 1)
+      .include('flap', 'vectorClock', 'user', 'refs', 'location') // now support location (getting the whole object)
       .range(0, 1e6)
       .get()
 
@@ -395,7 +394,12 @@ test.serial.only('query + filter', async (t) => {
     //   return { id: f.id }
     // })
 
-    console.log(result.data)
+    for (const x of result.data) {
+      // incpect on x as well
+      console.log({ id: x.id, location: x.location })
+      break
+    }
+
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
     console.log(result.buffer.byteLength)
@@ -404,6 +408,13 @@ test.serial.only('query + filter', async (t) => {
   await bla()
 
   await wait(5000)
+
+  // make new buffer if does not fit...
+
+  // subscription map
+
+  //
+
   /*
   {
     BUFFER 1mb // 4 bytes 

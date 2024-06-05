@@ -6,7 +6,7 @@ import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import dbZig from './db.js'
-import { Query, query } from './query.js'
+import { Query, query } from './query/query.js'
 
 export * from './schemaTypeDef.js'
 export * from './get.js'

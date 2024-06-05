@@ -1,112 +1,6 @@
-import { BasedDb, BasedNode, FieldDef, SchemaTypeDef } from './index.js'
-import { inspect } from 'node:util'
-
-type Operation =
-  | '='
-  | 'has'
-  | '<'
-  | '>'
-  | '!='
-  | 'like'
-  | '>='
-  | '<='
-  | 'exists'
-  | '!exists'
-
-class BasedIterable {
-  constructor(buffer: Buffer, query: Query) {
-    this.#buffer = buffer
-    this.#query = query
-    // @ts-ignore
-    this.#reader = new this.#query.type.ResponseClass(this.#buffer, 0)
-  }
-
-  #buffer: Buffer
-  #query: Query
-  #reader: BasedNode;
-
-  [inspect.custom]() {
-    const arr = new Array(this.length)
-    let i = 0
-    for (const x of this) {
-      arr[i] = { id: x.id }
-      i++
-      if (i > 100) {
-        // arr.push(`... ${this.length - 50} more items`)
-        break
-      }
-    }
-
-    const x = inspect(arr)
-
-    return `BasedIterable[${this.#query.type.type}] (${this.length}) ${x}`
-  }
-
-  *[Symbol.iterator]() {
-    let i = 4
-    while (i < this.#buffer.byteLength) {
-      // read
-      const index = this.#buffer[i]
-      i++
-      // read from tree
-      if (index === 255) {
-        // @ts-ignore
-        this.#reader.__offset__ = i
-        yield this.#reader
-        i += 4
-      } else if (index === 0) {
-        i += this.#query.type.mainLen
-      } else {
-        const size = this.#buffer.readUInt16LE(i)
-        i += 2
-        i += size
-      }
-    }
-  }
-
-  map(callbackFn) {
-    const arr = new Array(this.length)
-    let i = 0
-    for (const item of this) {
-      arr[i++] = callbackFn(item)
-    }
-    return arr
-  }
-
-  get length() {
-    return this.#buffer.readUint32LE(0)
-  }
-}
-
-export class BasedQueryResponse {
-  buffer: Buffer
-  query: Query
-  constructor(query: Query, buffer: Buffer) {
-    this.buffer = buffer
-    this.query = query
-  }
-  get data() {
-    return new BasedIterable(this.buffer, this.query)
-  }
-}
-
-const operationToByte = (op: Operation) => {
-  if (op === '=') {
-    return 1
-  }
-  // 2 is non fixed length check
-  if (op === '>') {
-    return 3
-  }
-  if (op === '<') {
-    return 4
-  }
-
-  if (op === 'has') {
-    return 7
-  }
-  return 0
-}
+import { BasedDb, FieldDef, SchemaTypeDef } from '../index.js'
+import { BasedQueryResponse } from './BasedQueryResponse.js'
+import { Operation, operationToByte } from './types.js'
 
 export class Query {
   db: BasedDb
@@ -127,7 +21,7 @@ export class Query {
     }
   }
 
-  filter(filter: [string, Operation, any]) {
+  filter(...filter: [string, Operation, any]) {
     if (this.id) {
       // bla
     } else {
@@ -197,7 +91,7 @@ export class Query {
     return this
   }
 
-  include(fields: string[]) {
+  include(...fields: string[]) {
     this.includeFields = this.includeFields
       ? [...this.includeFields, ...fields]
       : fields
@@ -267,10 +161,10 @@ export class Query {
       const start = this.offset ?? 0
       const end = this.limit ?? 1e3
 
-      console.log({
-        conditions: new Uint8Array(conditions),
-        include: new Uint8Array(includeBuffer),
-      })
+      // console.log({
+      //   conditions: new Uint8Array(conditions),
+      //   include: new Uint8Array(includeBuffer),
+      // })
 
       const result: Buffer = this.db.native.getQuery(
         conditions,
@@ -281,7 +175,7 @@ export class Query {
         includeBuffer,
       )
 
-      console.log(result)
+      // console.log(result)
 
       // size estimator pretty nice to add
 

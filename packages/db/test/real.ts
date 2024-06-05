@@ -3,17 +3,23 @@ import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
-import newClient, {buf2payloadChunks} from '../src/selvad-client/index.js'
+import newClient, { buf2payloadChunks } from '../src/selvad-client/index.js'
 import { create, createBatch, update } from '../src/set2.js'
-import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js';
+import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js'
 import { join, dirname, resolve } from 'path'
-import {SELVA_PROTO_ARRAY, SELVA_PROTO_STRING} from '../src/selvad-client/selva_proto.js'
+import {
+  SELVA_PROTO_ARRAY,
+  SELVA_PROTO_STRING,
+} from '../src/selvad-client/selva_proto.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-async function sendSchema(client: ReturnType<typeof newClient>, schema: Buffer[]) {
+async function sendSchema(
+  client: ReturnType<typeof newClient>,
+  schema: Buffer[],
+) {
   const cmdid = 36
   const seqno = client.newSeqno()
   let firstFrame = true
@@ -27,14 +33,19 @@ async function sendSchema(client: ReturnType<typeof newClient>, schema: Buffer[]
       const lastFrame = i === chunks.length - 1
 
       const chunk = chunks[i]
-      if (i === 0) { // Write header just once for each node type
+      if (i === 0) {
+        // Write header just once for each node type
         payload.writeUInt8(SELVA_PROTO_STRING, 0)
         payload.writeUint32LE(nodeSchema.length, 4)
         chunk.copy(payload, 8)
       } else {
         chunk.copy(payload)
       }
-      p = client.sendFrame(frame, chunk.length, { firstFrame, lastFrame, batch: !lastFrame })
+      p = client.sendFrame(frame, chunk.length, {
+        firstFrame,
+        lastFrame,
+        batch: !lastFrame,
+      })
       firstFrame = false
     }
   }
@@ -86,7 +97,10 @@ test.serial.only('query + filter', async (t) => {
       },
     },
   })
-  await sendSchema(sClient, Object.values(db.schemaTypesParsed).map(({buf}) => buf))
+  await sendSchema(
+    sClient,
+    Object.values(db.schemaTypesParsed).map(({ buf }) => buf),
+  )
   // @ts-ignore
   //console.log('schema read:', await db.client.sendRequest(37));
 
@@ -95,15 +109,15 @@ test.serial.only('query + filter', async (t) => {
     db.schemaTypesParsed.simple.cnt,
     // 66 length
     db.schemaTypesParsed.simple.buf,
-    db.schemaTypesParsed.simple.fieldNames
+    db.schemaTypesParsed.simple.fieldNames,
   )
 
   console.log(
     'SCHEMA BACK',
     readSchemaTypeDefFromBuffer(
       db.schemaTypesParsed.simple.buf,
-      db.schemaTypesParsed.simple.fieldNames
-    ).cnt
+      db.schemaTypesParsed.simple.fieldNames,
+    ).cnt,
   )
 
   const refs = []
@@ -165,7 +179,7 @@ test.serial.only('query + filter', async (t) => {
   const d = Date.now()
   const ids = db
     .query('simple')
-    .filter(['vectorClock', '>', 1])
+    .filter('vectorClock', '>', 1)
     // .filter(['refs', 'has', [2]])
     // .or(['refs', 'has', [1234]])
     // .sort('vectorClock', 'asc')
