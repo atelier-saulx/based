@@ -388,15 +388,9 @@ test.serial.only('query + filter', async (t) => {
     })
   }
 
-  // { set Id, amount: 10 } , checksum
-
   await wait(0)
   console.log('TIME (5M)', Date.now() - dx, 'ms')
 
-  // orderded DBIs
-  // in mem in DB add if query is active this will also create DBIS for SORTING if required
-
-  // READ CACHE SIZE []
   const bla = async () => {
     const d = Date.now()
     const result = db
@@ -421,7 +415,7 @@ test.serial.only('query + filter', async (t) => {
     // })
 
     for (const x of result.data) {
-      // incpect on x as well
+      // inspect on x as well
       console.log({
         id: x.id,
         location: x.location,

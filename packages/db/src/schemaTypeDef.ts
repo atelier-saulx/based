@@ -6,7 +6,7 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { BasedNode, createBasedNodeClass } from './basedNode.js'
+import { BasedNode, createBasedNodeClass } from './basedNode/basedNode.js'
 
 const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   timestamp: 8, // 64bit
@@ -75,7 +75,7 @@ export type SchemaTypeDef = {
   prefix: Uint8Array
   seperate: FieldDef[]
   tree: SchemaFieldTree
-  ResponseClass: typeof BasedNode
+  responseCtx: BasedNode
 }
 
 const prefixStringToUint8 = (
@@ -218,7 +218,7 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
-    result.ResponseClass = createBasedNodeClass(result as SchemaTypeDef)
+    result.responseCtx = createBasedNodeClass(result as SchemaTypeDef)
   }
 
   return result as SchemaTypeDef
@@ -331,7 +331,7 @@ export const readSchemaTypeDefFromBuffer = (
     // ResponseClass: ,
   }
 
-  schemaTypeDef.ResponseClass = createBasedNodeClass(schemaTypeDef)
+  schemaTypeDef.responseCtx = createBasedNodeClass(schemaTypeDef)
 
   return schemaTypeDef
 }

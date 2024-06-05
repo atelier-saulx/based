@@ -1,9 +1,9 @@
-import { FieldDef, SchemaFieldTree, SchemaTypeDef } from './schemaTypeDef.js'
+import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
+import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
 
-function BasedNodeBase(schema: SchemaTypeDef) {
-  this.__schema__ = schema
-}
-Object.defineProperty(BasedNodeBase.prototype, '__buffer__', {
+function BasedNodeBase() {}
+
+Object.defineProperty(BasedNodeBase.prototype, '__queryResponse__', {
   writable: true,
   enumerable: false,
 })
@@ -11,31 +11,26 @@ Object.defineProperty(BasedNodeBase.prototype, '__offset__', {
   writable: true,
   enumerable: false,
 })
-Object.defineProperty(BasedNodeBase.prototype, '__schema__', {
-  enumerable: false,
-  writable: true,
-})
 
 export class BasedNode extends Object {
   [key: string]: any
 }
 
 const readSeperateFieldFromBuffer = (
-  // make 1 for multuple as well
   requestedField: FieldDef,
-  buffer: Buffer,
+  queryResponse: BasedQueryResponse,
   type: SchemaTypeDef,
   i: number,
-  query: any,
 ) => {
+  const buffer = queryResponse.buffer
   while (i < buffer.byteLength) {
     const index = buffer[i]
     if (index === 255) {
-      return // cant find...
+      return
     }
     i += 1
     if (index === 0) {
-      const fIndex = query.mainIncludes.get(requestedField.start)
+      const fIndex = queryResponse.query.mainIncludes.get(requestedField.start)
       if (fIndex === undefined) {
         return // mep
       }
@@ -89,10 +84,9 @@ const readObjectFromTree = (
       // dont include key if more specific...
       obj[key] = readSeperateFieldFromBuffer(
         leaf as FieldDef,
-        node.__buffer__,
+        node.__queryResponse__,
         schema,
         node.__offset__ + 4,
-        node.__query__,
       )
     }
   }
@@ -102,14 +96,7 @@ const readObjectFromTree = (
 export const createBasedNodeClass = (
   schema: SchemaTypeDef,
 ): typeof BasedNode => {
-  // DONT MAKE A CLASS DONT MAKE AN INSTANCE
-
-  const Node = function (buffer: Buffer, offset: number, query: any) {
-    this.__buffer__ = buffer
-    this.__offset__ = offset
-    this.__query__ = query
-  }
-  Node.prototype = new BasedNodeBase(schema)
+  const ctx = new BasedNodeBase()
 
   Object.defineProperty(Node.prototype, 'id', {
     enumerable: true,
@@ -125,7 +112,7 @@ export const createBasedNodeClass = (
     const fieldDef = schema.fields[field]
     const { type, path } = fieldDef
     if (path.length > 1) {
-      // TMP needs to destructure etc nested objects as well !!!
+      // TMP needs to destructure etc nested objects as well!!!
       if (Object.getOwnPropertyDescriptor(Node.prototype, path[0])) {
         // console.log(str, 'allrdy defined..')
       } else {
@@ -149,27 +136,24 @@ export const createBasedNodeClass = (
         get() {
           return readSeperateFieldFromBuffer(
             fieldDef,
-            this.__buffer__,
+            this.__queryResponse__,
             schema,
             this.__offset__ + 4,
-            this.__query__,
           )
         },
       })
     } else if (type === 'number') {
       Object.defineProperty(Node.prototype, field, {
         enumerable: true,
-        // writable: true,
         set() {
           // flap
         },
         get() {
           return readSeperateFieldFromBuffer(
             fieldDef,
-            this.__buffer__,
+            this.__queryResponse__,
             schema,
             this.__offset__ + 4,
-            this.__query__,
           )
         },
       })
@@ -180,15 +164,12 @@ export const createBasedNodeClass = (
           // flap
         },
         get() {
-          // return instance of ref
           return {
-            // this get id...
             id: readSeperateFieldFromBuffer(
               fieldDef,
-              this.__buffer__,
+              this.__queryResponse__,
               schema,
               this.__offset__ + 4,
-              this.__query__,
             ),
           }
         },
@@ -201,21 +182,18 @@ export const createBasedNodeClass = (
           // flap
         },
         get() {
-          // return instance of ref
           return readSeperateFieldFromBuffer(
             fieldDef,
-            this.__buffer__,
+            this.__queryResponse__,
             schema,
             this.__offset__ + 4,
-            this.__query__,
           )
         },
       })
     }
   }
 
-  // @ts-ignore
-  return Node as typeof BasedNode
+  return ctx
 }
 
 // // --------- OPTIMIZATION NEEDED ------------------

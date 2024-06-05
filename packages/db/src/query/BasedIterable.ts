@@ -1,18 +1,15 @@
-import { BasedNode } from '../index.js'
 import { inspect } from 'node:util'
 import { Query } from './query.js'
+import { BasedQueryResponse } from './BasedQueryResponse.js'
 
 export class BasedIterable {
-  constructor(buffer: Buffer, query: Query) {
+  constructor(buffer: Buffer, query: BasedQueryResponse) {
     this.#buffer = buffer
     this.#query = query
-    // @ts-ignore
-    this.#reader = new this.#query.type.ResponseClass(this.#buffer, 0, query)
   }
 
   #buffer: Buffer
-  #query: Query
-  #reader: BasedNode;
+  #query: BasedQueryResponse;
 
   [inspect.custom]() {
     const arr = new Array(this.length)
@@ -28,7 +25,7 @@ export class BasedIterable {
 
     const x = inspect(arr)
 
-    return `BasedIterable[${this.#query.type.type}] (${this.length}) ${x}`
+    return `BasedIterable[${this.#query.query.type}] (${this.length}) ${x}`
   }
 
   *[Symbol.iterator]() {
@@ -39,12 +36,14 @@ export class BasedIterable {
       i++
       // read from tree
       if (index === 255) {
+        const ctx = this.#query.query.type.responseCtx
         // @ts-ignore
-        this.#reader.__offset__ = i
-        yield this.#reader
+        ctx.__offset__ = i
+        ctx.__query__ = this.#query
+        yield ctx
         i += 4
       } else if (index === 0) {
-        i += this.#query.type.mainLen
+        i += this.#query.query.type.mainLen
       } else {
         const size = this.#buffer.readUInt16LE(i)
         i += 2

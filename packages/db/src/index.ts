@@ -11,7 +11,7 @@ import { Query, query } from './query/query.js'
 export * from './schemaTypeDef.js'
 export * from './get.js'
 export * from './set.js'
-export * from './basedNode.js'
+export * from './basedNode/basedNode.js'
 
 // @ts-ignore
 const DEFAULT_SCHEMA: BasedSchema & { prefixCounter: number } = {

@@ -9,6 +9,6 @@ export class BasedQueryResponse {
     this.query = query
   }
   get data() {
-    return new BasedIterable(this.buffer, this.query)
+    return new BasedIterable(this.buffer, this)
   }
 }
