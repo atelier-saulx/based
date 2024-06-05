@@ -10,7 +10,7 @@ export const forceReload = (client: BasedClient, type: number) => {
     // prob browser...
     if (type === 1 || type === 0) {
       window.location.href =
-        window.location.href + cacheId + (~~(Math.random() * 1e6)).toString(16)
+        window.location.href + cacheId + ~~(Math.random() * 9999)
     }
   } else {
     if (type === 2 || type === 0) {
