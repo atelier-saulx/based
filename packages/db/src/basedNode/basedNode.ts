@@ -1,3 +1,4 @@
+import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 import { prop } from './utils.js'
 
 export function BasedNodeBase() {}
@@ -22,4 +23,6 @@ prop(BasedNodeBase.prototype, 'id', {
 
 export class BasedNode extends Object {
   [key: string]: any
+  '__q': BasedQueryResponse
+  '__o': number
 }

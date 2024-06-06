@@ -5,10 +5,8 @@ import { prop } from './utils.js'
 
 export * from './BasedNode.js'
 
-export const createBasedNodeReader = (
-  schema: SchemaTypeDef,
-): typeof BasedNode => {
-  const ctx = new BasedNodeBase()
+export const createBasedNodeReader = (schema: SchemaTypeDef): BasedNode => {
+  const ctx: BasedNode = new BasedNodeBase()
   for (const field in schema.fields) {
     const fieldDef = schema.fields[field]
     const { type, path } = fieldDef
@@ -28,27 +26,27 @@ export const createBasedNodeReader = (
     } else if (type === 'string') {
       prop(ctx, field, {
         get() {
-          return readSeperateFieldFromBuffer(fieldDef, this.__q, this.__o + 4)
+          return readSeperateFieldFromBuffer(fieldDef, this)
         },
       })
     } else if (type === 'number') {
       prop(ctx, field, {
         get() {
-          return readSeperateFieldFromBuffer(fieldDef, this.__q, this.__o + 4)
+          return readSeperateFieldFromBuffer(fieldDef, this)
         },
       })
     } else if (type === 'reference') {
       prop(ctx, field, {
         get() {
           return {
-            id: readSeperateFieldFromBuffer(fieldDef, this.__q, this.__o + 4),
+            id: readSeperateFieldFromBuffer(fieldDef, this),
           }
         },
       })
     } else if (type === 'integer') {
       prop(ctx, field, {
         get() {
-          return readSeperateFieldFromBuffer(fieldDef, this.__q, this.__o + 4)
+          return readSeperateFieldFromBuffer(fieldDef, this)
         },
       })
     }

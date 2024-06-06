@@ -1,12 +1,12 @@
-import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
-import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
+import { FieldDef, SchemaFieldTree } from '../schemaTypeDef.js'
+import { BasedNode } from './BasedNode.js'
 
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,
-  queryResponse: BasedQueryResponse,
-  // mainIncludes
-  i: number,
+  basedNode: BasedNode,
 ) => {
+  const queryResponse = basedNode.__q
+  let i = 4 + basedNode.__o
   const buffer = queryResponse.buffer
   while (i < buffer.byteLength) {
     const index = buffer[i]
@@ -55,18 +55,14 @@ export const readSeperateFieldFromBuffer = (
   }
 }
 
-export const readObjectFromTree = (tree: SchemaFieldTree, node: any) => {
+export const readObjectFromTree = (tree: SchemaFieldTree, node: BasedNode) => {
   const obj = {}
   for (const key in tree) {
     const leaf = tree[key]
     if (!leaf.type && !leaf.__isField) {
       obj[key] = readObjectFromTree(tree[key] as SchemaFieldTree, node)
     } else {
-      obj[key] = readSeperateFieldFromBuffer(
-        leaf as FieldDef,
-        node.__q,
-        node.__o + 4,
-      )
+      obj[key] = readSeperateFieldFromBuffer(leaf as FieldDef, node)
     }
   }
   return obj
