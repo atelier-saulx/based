@@ -75,7 +75,10 @@ export default (
           ws.subscribe('reload')
 
           // or if lastReloadSeqId
-          if (server.sendInitialForceReload) {
+          if (
+            server.sendInitialForceReload ||
+            (session.authState.t === 1 && server.encodedForceReload)
+          ) {
             ws.send(server.encodedForceReload, true, false)
           }
 

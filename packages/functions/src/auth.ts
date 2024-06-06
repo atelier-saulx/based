@@ -9,13 +9,14 @@ export type AuthState = {
   error?: string
   persistent?: boolean
   type?: string
+  t?: 0 | 1
 }
 
 export type Authorize = (
   based: BasedFunctionClient,
   context: Context<HttpSession | WebSocketSession>,
   name: string, // name as generic dope
-  payload?: any
+  payload?: any,
 ) => Promise<boolean>
 
 // True - its the same all good
@@ -24,11 +25,11 @@ export type Authorize = (
 export type VerifyAuthState = (
   based: BasedFunctionClient,
   context: Context<HttpSession | WebSocketSession>,
-  authState: AuthState
+  authState: AuthState,
 ) => Promise<true | AuthState>
 
 export type AuthorizeConnection = (
   based: BasedFunctionClient,
   req: HttpRequest,
-  ip: string
+  ip: string,
 ) => Promise<boolean>

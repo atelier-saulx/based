@@ -67,6 +67,11 @@ export const httpHandler = (
       res.end()
       return
     }
+    const authState = parseAuthState(authorization)
+    if (authState.error === 'Invalid token') {
+      res.end()
+      return
+    }
     ctx = {
       session: {
         url,
@@ -77,7 +82,8 @@ export const httpHandler = (
         ua: req.getHeader('user-agent'),
         ip,
         id: ++clientId,
-        authState: parseAuthState(authorization),
+        type: authState.t ?? 0,
+        authState,
         // @ts-ignore
         headers: {
           'content-length': Number(req.getHeader('content-length')),

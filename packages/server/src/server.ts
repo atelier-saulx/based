@@ -148,11 +148,11 @@ export class BasedServer {
   public forceReloadTimer: ReturnType<typeof setTimeout>
 
   // handle reconnect
+  // maybe add seqId as optional version hash as well (to force same versions)
   public forceReload(type: number = 0, validTime: number = 6e3) {
     if (this.forceReloadTimer) {
       clearTimeout(this.forceReloadTimer)
     }
-
     this.forceReloadLastSeqId++
     if (this.forceReloadLastSeqId > 255) {
       this.forceReloadLastSeqId = 0

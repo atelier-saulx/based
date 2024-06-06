@@ -12,7 +12,7 @@ const upgradeInternal = (
   req: uws.HttpRequest,
   // eslint-disable-next-line
   ctx: uws.us_socket_context_t,
-  ip: string
+  ip: string,
 ) => {
   const secWebSocketProtocol = req.getHeader('sec-websocket-protocol')
   const ua = req.getHeader('user-agent')
@@ -40,22 +40,25 @@ const upgradeInternal = (
   const origin = req.getHeader('origin')
 
   res.writeStatus('101 Switching Protocols')
+
+  const authState = secWebSocketProtocol
+    ? parseAuthState(secWebSocketProtocol)
+    : {}
   res.upgrade(
     {
       query,
       ua,
       ip,
       id: ++clientId,
-      authState: secWebSocketProtocol
-        ? parseAuthState(secWebSocketProtocol)
-        : {},
+      authState,
+      type: authState.t ?? 0,
       origin,
       obs: new Set(),
     },
     secWebSocketKey,
     secWebSocketProtocol,
     secWebSocketExtensions,
-    ctx
+    ctx,
   )
 }
 
@@ -64,7 +67,7 @@ export const upgrade = (
   res: uws.HttpResponse,
   req: uws.HttpRequest,
   // eslint-disable-next-line
-  ctx: uws.us_socket_context_t
+  ctx: uws.us_socket_context_t,
 ) => {
   const ip = server.getIp(res, req)
   if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 10)) {
@@ -78,7 +81,7 @@ export const upgradeAuthorize = (
   res: uws.HttpResponse,
   req: uws.HttpRequest,
   // eslint-disable-next-line
-  ctx: uws.us_socket_context_t
+  ctx: uws.us_socket_context_t,
 ) => {
   let aborted = false
   res.onAborted(() => {

@@ -13,6 +13,7 @@ export type WebSocketSession = {
   id: number // client-id
   method: string
   authState: AuthState
+  type: '0' | '1'
   origin: string
   obs: Set<number>
   unauthorizedObs?: Set<{

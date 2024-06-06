@@ -142,6 +142,10 @@ const connect = (
         }
       })
 
+      if (reconnect) {
+        client.authState.t = 1
+      }
+
       const ws = (connection.ws = connection.useFallback
         ? new FakeWebsocket(realUrl, connection.useFallback, client)
         : new WebSocket(realUrl, [encodeAuthState(client.authState)]))

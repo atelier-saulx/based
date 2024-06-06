@@ -82,7 +82,7 @@ const start = async () => {
           type: 'function',
           public: true,
           fn: async (based) => {
-            based.server.forceReload()
+            based.server.forceReload(1, 1e3)
           },
         },
         helloSecure: {

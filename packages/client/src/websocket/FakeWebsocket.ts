@@ -32,6 +32,7 @@ export class FakeWebsocket {
   client: BasedClient
   _c: boolean
   _r: string
+  _t: string
   _om: (x?: any) => void
   _oe: (x?: any) => void
   _oc: (x?: any) => void
@@ -58,7 +59,12 @@ export class FakeWebsocket {
       return
     }
     fetch(
-      this.url + '/' + this._r + '/' + encodeAuthState(this.client.authState),
+      this.url +
+        '/' +
+        this._r +
+        '/' +
+        this._t +
+        encodeAuthState(this.client.authState),
       {
         method: 'post',
         body: binary,
