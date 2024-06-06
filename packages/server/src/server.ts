@@ -139,8 +139,36 @@ export class BasedServer {
 
   public listenSocket: any
 
-  public forceReload(type: number = 0) {
-    this.uwsApp.publish('reload', encodeReload(type), true, false)
+  public forceReloadLastSeqId: number = -1
+
+  public encodedForceReload: Uint8Array
+
+  public sendInitialForceReload: boolean = false
+
+  public forceReloadTimer: ReturnType<typeof setTimeout>
+
+  // handle reconnect
+  public forceReload(type: number = 0, validTime: number = 6e3) {
+    if (this.forceReloadTimer) {
+      clearTimeout(this.forceReloadTimer)
+    }
+
+    this.forceReloadLastSeqId++
+    if (this.forceReloadLastSeqId > 255) {
+      this.forceReloadLastSeqId = 0
+    }
+    this.encodedForceReload = encodeReload(type, this.forceReloadLastSeqId)
+    this.uwsApp.publish('reload', this.encodedForceReload, true, false)
+    this.sendInitialForceReload = true
+
+    if (validTime === 0) {
+      this.sendInitialForceReload = false
+    } else {
+      this.forceReloadTimer = setTimeout(() => {
+        this.sendInitialForceReload = false
+        this.forceReloadTimer = null
+      }, validTime)
+    }
   }
 
   public geo: (ctx: Context) => Promise<Geo> = async (ctx: Context) => {

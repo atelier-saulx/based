@@ -53,14 +53,19 @@ export { cacheId }
 export { AuthState, BasedQuery }
 
 const isBrowser = typeof window !== 'undefined'
+let lastReloadSeqId = -1
+
 if (isBrowser) {
   if (typeof global === 'undefined') {
     window.global = window
   }
   const loc = window.location.href
   if (loc.includes(cacheId)) {
-    const [url] = loc.split(cacheId)
-    window.history.replaceState(null, document.title, url)
+    const [url, lastSeqId] = loc.split(cacheId)
+    if (lastSeqId) {
+      lastReloadSeqId = Number(lastSeqId)
+      window.history.replaceState(null, document.title, url)
+    }
   }
 }
 
@@ -86,6 +91,8 @@ export class BasedClient extends Emitter {
 
   restFallBack?: Settings['restFallBack']
 
+  // --------- Force reconnect
+  lastForceId: number = lastReloadSeqId
   // --------- Persistent Storage
   storageSize: number = 0
   maxStorageSize: number = 5e6 - 500 // ~5mb

@@ -27,6 +27,6 @@ export type Settings = {
   maxCacheSize?: number
   persistentStorage?: string
   restFallBack?: {
-    pollInverval?: number
+    pollInterval?: number
   }
 }

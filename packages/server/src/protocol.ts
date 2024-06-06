@@ -348,18 +348,19 @@ export const encodeChannelMessage = (
   return array
 }
 
-export const encodeReload = (type: number): Uint8Array => {
+export const encodeReload = (type: number, seqId: number): Uint8Array => {
   // Type 7.3 (fill data)
   // 0 = all
   // 1 = browser
   // 2 = non-browser
-  // | 4 header | 1 subType | 1 type \
-  const msgSize = 6
+  // | 4 header | 1 subType | 1 type \ 1 seqId
+  const msgSize = 7
   const header = encodeHeader(7, false, msgSize)
   const array = new Uint8Array(4 + msgSize)
   storeUint8(array, header, 0, 4)
   storeUint8(array, 3, 4, 1)
   storeUint8(array, type, 5, 1)
+  storeUint8(array, seqId, 6, 1)
   return array
 }
 

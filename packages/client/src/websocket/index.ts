@@ -52,7 +52,7 @@ if (typeof document !== 'undefined') {
 
 // remove the logs here
 const restPing = (
-  ms: number = 500,
+  ms: number = 1000,
   realUrl: string,
   connection: Connection,
   fallback: (t: string) => void,

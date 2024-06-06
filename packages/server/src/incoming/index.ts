@@ -71,11 +71,19 @@ export default (
           const ctx: Context<WebSocketSession> = {
             session,
           }
-          // allways
+          // allways - or make it a flag
           ws.subscribe('reload')
+
+          // or if lastReloadSeqId
+          if (server.sendInitialForceReload) {
+            ws.send(server.encodedForceReload, true, false)
+          }
+
           session.ws = ws
           session.c = ctx
           wsOptions.open(ctx)
+
+          // lastReloadSeqId
           if (session.authState.token || session.authState.refreshToken) {
             sendAndVerifyAuthMessage(server, ctx)
           }

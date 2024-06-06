@@ -417,14 +417,14 @@ export const incoming = async (client: BasedClient, data: any) => {
           )
         }
       } else if (subType === 3) {
-        // | 4 header | 1 subType | 1 type
-        forceReload(client, readUint8(buffer, 5, 1))
+        // | 4 header | 1 subType | 1 type | 1 seqId
+        forceReload(client, readUint8(buffer, 5, 1), readUint8(buffer, 6, 1))
       }
     }
     // ---------------------------------
   } catch (err) {
     // just code can load error codes as well
     // 981 - cannot parse data
-    console.error(981, err)
+    console.error(981, err, data)
   }
 }

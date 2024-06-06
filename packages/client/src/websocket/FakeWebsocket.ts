@@ -15,7 +15,7 @@ const syncSubs = (ws: FakeWebsocket) => {
         addObsToQueue(ws.client, v.name, k, v.payload, c?.c ?? 0)
       })
       syncSubs(ws)
-    }, ws.client.restFallBack.pollInverval ?? 1e3)
+    }, ws.client.restFallBack.pollInterval ?? 1e3)
   }
 }
 
