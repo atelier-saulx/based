@@ -410,22 +410,22 @@ test.serial.only('query + filter', async (t) => {
 
     const xxx = Date.now()
 
-    // const bla = result.data.map((f) => {
-    //   return { id: f.id }
-    // })
+    const bla = result.data.map((f) => {
+      return { id: f.id, location: f.location }
+    })
 
-    for (const x of result.data) {
-      // inspect on x as well
-      console.log({
-        id: x.id,
-        location: x.location,
-        flap: x.flap,
-        user: x.user,
-        vectorClock: x.vectorClock,
-        smurp: x.smurp,
-      })
-      break
-    }
+    // for (const x of result.data) {
+    //   // inspect on x as well
+    //   console.log({
+    //     id: x.id,
+    //     location: x.location,
+    //     flap: x.flap,
+    //     user: x.user,
+    //     vectorClock: x.vectorClock,
+    //     smurp: x.smurp,
+    //   })
+    //   break
+    // }
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 

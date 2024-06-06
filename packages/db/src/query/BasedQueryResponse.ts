@@ -3,6 +3,7 @@ import { BasedIterable } from './BasedIterable.js'
 
 export class BasedQueryResponse {
   buffer: Buffer
+  // add mainLen thats included
   query: Query
   constructor(query: Query, buffer: Buffer) {
     this.buffer = buffer

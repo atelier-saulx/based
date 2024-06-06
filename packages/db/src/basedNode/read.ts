@@ -1,0 +1,73 @@
+import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
+import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
+
+export const readSeperateFieldFromBuffer = (
+  requestedField: FieldDef,
+  queryResponse: BasedQueryResponse,
+  // mainIncludes
+  i: number,
+) => {
+  const buffer = queryResponse.buffer
+  while (i < buffer.byteLength) {
+    const index = buffer[i]
+    if (index === 255) {
+      return
+    }
+    i += 1
+    if (index === 0) {
+      const fIndex = queryResponse.query.mainIncludes.get(requestedField.start)
+      if (fIndex === undefined) {
+        return // mep
+      }
+      if (
+        requestedField.type === 'integer' ||
+        requestedField.type === 'reference'
+      ) {
+        return buffer.readUint32LE(i + fIndex)
+      }
+      if (requestedField.type === 'boolean') {
+        return Boolean(buffer[i + fIndex])
+      }
+      if (requestedField.type === 'number') {
+        return buffer.readFloatLE(i + fIndex)
+      }
+      if (requestedField.type === 'timestamp') {
+        return buffer.readFloatLE(i + fIndex)
+      }
+      // TODO remove incorrect want smaller buffers
+      i += queryResponse.query.type.mainLen
+    } else {
+      const size = buffer.readUInt16LE(i)
+      i += 2
+      if (requestedField.field === index) {
+        if (requestedField.type === 'string') {
+          return buffer.toString('utf8', i, size + i)
+        } else if (requestedField.type === 'references') {
+          const x = new Array(size / 4)
+          for (let j = i; j < size / 4; j += 4) {
+            x[j / 4] = buffer.readUint32LE(j)
+          }
+          return x
+        }
+      }
+      i += size
+    }
+  }
+}
+
+export const readObjectFromTree = (tree: SchemaFieldTree, node: any) => {
+  const obj = {}
+  for (const key in tree) {
+    const leaf = tree[key]
+    if (!leaf.type && !leaf.__isField) {
+      obj[key] = readObjectFromTree(tree[key] as SchemaFieldTree, node)
+    } else {
+      obj[key] = readSeperateFieldFromBuffer(
+        leaf as FieldDef,
+        node.__q,
+        node.__o + 4,
+      )
+    }
+  }
+  return obj
+}

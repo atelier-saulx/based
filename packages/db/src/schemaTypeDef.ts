@@ -6,7 +6,7 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { BasedNode, createBasedNodeClass } from './basedNode/basedNode.js'
+import { createBasedNodeReader, BasedNode } from './basedNode/index.js'
 
 const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   timestamp: 8, // 64bit
@@ -218,7 +218,7 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
-    result.responseCtx = createBasedNodeClass(result as SchemaTypeDef)
+    result.responseCtx = createBasedNodeReader(result as SchemaTypeDef)
   }
 
   return result as SchemaTypeDef
@@ -331,7 +331,7 @@ export const readSchemaTypeDefFromBuffer = (
     // ResponseClass: ,
   }
 
-  schemaTypeDef.responseCtx = createBasedNodeClass(schemaTypeDef)
+  schemaTypeDef.responseCtx = createBasedNodeReader(schemaTypeDef)
 
   return schemaTypeDef
 }

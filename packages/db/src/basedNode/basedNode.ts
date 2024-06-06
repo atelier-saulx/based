@@ -1,185 +1,25 @@
-import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
-import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
+import { prop } from './utils.js'
 
-function BasedNodeBase() {}
-
-const prop = (
-  obj: Object,
-  field: string,
-  settings: {
-    get: () => any
-    set?: () => any
-  },
-) => {
-  Object.defineProperty(obj, field, {
-    enumerable: true,
-    set: settings.set ?? (() => undefined),
-    get: settings.get,
-  })
-}
-
-Object.defineProperty(BasedNodeBase.prototype, '__queryResponse__', {
+export function BasedNodeBase() {}
+// TREE (for nested objects)
+Object.defineProperty(BasedNodeBase.prototype, '__t', {
   writable: true,
   enumerable: false,
 })
-Object.defineProperty(BasedNodeBase.prototype, '__offset__', {
+Object.defineProperty(BasedNodeBase.prototype, '__q', {
+  writable: true,
+  enumerable: false,
+})
+Object.defineProperty(BasedNodeBase.prototype, '__o', {
   writable: true,
   enumerable: false,
 })
 prop(BasedNodeBase.prototype, 'id', {
   get() {
-    return this.__queryResponse__.buffer.readUint32LE(this.__offset__)
+    return this.__q.buffer.readUint32LE(this.__offset__)
   },
 })
 
 export class BasedNode extends Object {
   [key: string]: any
-}
-
-const readSeperateFieldFromBuffer = (
-  requestedField: FieldDef,
-  queryResponse: BasedQueryResponse,
-  type: SchemaTypeDef,
-  i: number,
-) => {
-  const buffer = queryResponse.buffer
-  while (i < buffer.byteLength) {
-    const index = buffer[i]
-    if (index === 255) {
-      return
-    }
-    i += 1
-    if (index === 0) {
-      const fIndex = queryResponse.query.mainIncludes.get(requestedField.start)
-      if (fIndex === undefined) {
-        return // mep
-      }
-      if (
-        requestedField.type === 'integer' ||
-        requestedField.type === 'reference'
-      ) {
-        return buffer.readUint32LE(i + fIndex)
-      }
-      if (requestedField.type === 'boolean') {
-        return Boolean(buffer[i + fIndex])
-      }
-
-      if (requestedField.type === 'number') {
-        return buffer.readFloatLE(i + fIndex)
-      }
-      if (requestedField.type === 'timestamp') {
-        return buffer.readFloatLE(i + fIndex)
-      }
-      i += type.mainLen
-    } else {
-      const size = buffer.readUInt16LE(i)
-      i += 2
-      if (requestedField.field === index) {
-        if (requestedField.type === 'string') {
-          return buffer.toString('utf8', i, size + i)
-        } else if (requestedField.type === 'references') {
-          const x = new Array(size / 4)
-          for (let j = i; j < size / 4; j += 4) {
-            x[j / 4] = buffer.readUint32LE(j)
-          }
-          return x
-        }
-      }
-      i += size
-    }
-  }
-}
-
-const readObjectFromTree = (
-  tree: SchemaFieldTree,
-  node: any,
-  schema: SchemaTypeDef,
-) => {
-  const obj = {}
-  for (const key in tree) {
-    const leaf = tree[key]
-    if (!leaf.type && !leaf.__isField) {
-      obj[key] = readObjectFromTree(tree[key] as SchemaFieldTree, node, schema)
-    } else {
-      // dont include key if more specific...
-      obj[key] = readSeperateFieldFromBuffer(
-        leaf as FieldDef,
-        node.__queryResponse__,
-        schema,
-        node.__offset__ + 4,
-      )
-    }
-  }
-  return obj
-}
-
-export const createBasedNodeClass = (
-  schema: SchemaTypeDef,
-): typeof BasedNode => {
-  const ctx = new BasedNodeBase()
-
-  for (const field in schema.fields) {
-    const fieldDef = schema.fields[field]
-    const { type, path } = fieldDef
-    if (path.length > 1) {
-      // TMP needs to destructure etc nested objects as well!!!
-      if (Object.getOwnPropertyDescriptor(ctx, path[0])) {
-        // console.log(str, 'allrdy defined..')
-      } else {
-        prop(ctx, path[0], {
-          get() {
-            const tree = schema.tree[path[0]]
-            return readObjectFromTree(tree as SchemaFieldTree, this, schema)
-          },
-        })
-      }
-    } else if (type === 'string') {
-      prop(ctx, field, {
-        get() {
-          return readSeperateFieldFromBuffer(
-            fieldDef,
-            this.__queryResponse__,
-            schema,
-            this.__offset__ + 4,
-          )
-        },
-      })
-    } else if (type === 'number') {
-      prop(ctx, field, {
-        get() {
-          return readSeperateFieldFromBuffer(
-            fieldDef,
-            this.__queryResponse__,
-            schema,
-            this.__offset__ + 4,
-          )
-        },
-      })
-    } else if (type === 'reference') {
-      prop(ctx, field, {
-        get() {
-          return {
-            id: readSeperateFieldFromBuffer(
-              fieldDef,
-              this.__queryResponse__,
-              schema,
-              this.__offset__ + 4,
-            ),
-          }
-        },
-      })
-    } else if (type === 'integer') {
-      prop(ctx, field, {
-        get() {
-          return readSeperateFieldFromBuffer(
-            fieldDef,
-            this.__queryResponse__,
-            schema,
-            this.__offset__ + 4,
-          )
-        },
-      })
-    }
-  }
-  return ctx
 }
