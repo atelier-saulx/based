@@ -25,4 +25,5 @@ export class BasedNode extends Object {
   [key: string]: any
   '__q': BasedQueryResponse
   '__o': number
+  '__t'?: { [key: string]: BasedNode }
 }
