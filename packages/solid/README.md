@@ -1,6 +1,6 @@
 # @based/solidjs
 
-Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into SolidJS hooks and signals
+Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into SolidJS hooks and signals.
 
 ```tsx
 import { Show } from 'solid-js'
@@ -30,14 +30,13 @@ const UsersList: Component = () => {
     )
 
     return (
-        <Show when={data.children.length && !loading} fallback={LoadingData}>
+        <Show when={data().children.length && !loading()} fallback={LoadingData}>
             <div>
-                {(
-                    data =>
-                        data.children.map(({id, name}) =>
-                            <p onClick={() => { client.call('db:delete', {id})}}>{name}</p>
-                        )
-                )}
+                {
+                  data().children.map(({id, name}) => 
+                      <p onClick={() => { client.call('db:delete', {id})}}>{name}</p>
+                  )
+                }
             </div>
         </Show>
     )
@@ -63,9 +62,9 @@ Solid Component that inject the `BasedClient` context thought the application.
 ```
 or (**in deprecation process**)
 ```tsx
-<BasedProvider client={client}>
+<Provider client={client}>
     {/*slot*/}
-</BasedProvider>
+</Provider>
 ```
 
 ### Props
@@ -101,7 +100,7 @@ const client = useBasedClient()
 ```
 or (**in deprecation process**)
 ```ts
-const client = useBasedClient()
+const client = useClient()
 ```
 
 ### Params
@@ -111,9 +110,9 @@ None
 The `BasedClient` object.
 
 ```tsx
+import type { Component } from 'solid-js'
 import { useBasedClient, BasedProvider } from '@based/solidjs'
 import based, { BasedClient } from '@based/client'
-import type { Component } from 'solid-js'
 
 const client: BasedClient = based({
     env: 'myEnv',
@@ -122,7 +121,6 @@ const client: BasedClient = based({
 })
 
 const doSomething = (): void => {
-    const client = useBasedClient()
     client.call('doSomething')
 }
 
@@ -154,7 +152,7 @@ const { data, error, loading } = useBasedQuery('myQueryFunction')
 ```
 or (**in deprecation process**)
 ```ts
-const { data, error, loading } = useBasedQuery('myQueryFunction')
+const { data, error, loading } = useQuery('myQueryFunction')
 ```
 
 ### Types
@@ -218,27 +216,56 @@ class BasedError extends Error {
 | `error`    | `BasedError` | `false`        | The `BasedError` object containing the `statusMessage` and `code` from your error.                       |
 | `checksum` | `number`     | `false`        | A calculated value used to verify data integrity and detect errors. Each response has a unique checksum. |
 
-Basic example:
+Basic example with static parameters:
 ```tsx
-import { useBasedQuery } from '@based/solidjs'
 import type { Component } from 'solid-js'
+import { useBasedQuery } from '@based/solidjs'
 
 const ProcessData: Component = () => {
+    // With static parameters you may destruct the returned object.
+    // The returned object will contain { data, loading, error, checksum } as reactive signals.
     const { data, error, loading } = useBasedQuery('myQueryFunction')
     
-    if (error) {
+    if (error()) {
         return error.message
     }
     
     return (
-        <Show when={data.text && !loading} fallback={<div>Loading data...</div>}>
-            <div>data.text</div>
+        <Show when={data().text && !loading()} fallback={<div>Loading data...</div>}>
+            <div>data().text</div>
+        </Show>
+    )
+}
+```
+Basic example with dynamic parameters:
+```tsx
+import { createMemo } from 'solid-js'
+import type { Component } from 'solid-js'
+import { useBasedQuery } from '@based/solidjs'
+
+const ProcessData: Component = () => {
+  // Update these values anywhere in your component.
+  const [name, setName] = createSignal<string>()
+  const [payload, setPayload] = createSignal<any>()
+  
+  // Don't destruct the returned object, will break the reactivity.
+  // The returned object will contain { data, loading, error, checksum } as reactive signals.
+  // Use as 'query().data()', 'query().loading()', 'query().error()', 'query().checksum()'.
+  const query = createMemo(() => useBasedQuery(name(), payload()))
+    
+    if (error()) {
+        return error.message
+    }
+    
+    return (
+        <Show when={query().data().text && !query().loading()} fallback={<div>Loading data...</div>}>
+            <div>data().text</div>
         </Show>
     )
 }
 ```
 
-To persist the result of the query on `localStorage` on the client-side, pass `persistent` as true.
+To persist the result of the query on `localStorage` on the client-side, pass `persistent` as `true`.
 ```ts
 const { data: userInfo } = useBasedQuery(
     'someUserInfo',
@@ -273,7 +300,7 @@ const auth = useBasedAuth()
 or (**in deprecation process**)
 
 ```ts
-const auth = useBasedAuth()
+const auth = useAuthState()
 ```
 
 ### Params
@@ -293,10 +320,13 @@ None
 import { useBasedAuth } from '@based/solidjs'
 
 const IsUserAuthorized = () => {
-    const { error, token, userId } = useBasedAuth()
+    // The returned object is a signal.
+    // Don't destruct the returned object, will break the reactivity.
+    // Use as 'auth().token', 'auth().userId', 'auth().error'...
+    const auth = useBasedAuth()
     
-    if (!error || !token || !userId) {
-        return 'Not authorized 😭'
+    if (!auth().error || !auth().token || !auth().userId) {
+    return 'Not authorized 😭'
     }
     
     return 'Authorized! 🎉'
@@ -341,9 +371,10 @@ None
 import { useBasedStatus } from '@based/solidjs'
 
 const IsBasedConnected = () => {
+    // The returned object will contain { connected, status } as reactive signals.
     const { connected } = useBasedStatus()
     
-    if (!connected) {
+    if (!connected()) {
         return 'Not connected 😭'
     }
     

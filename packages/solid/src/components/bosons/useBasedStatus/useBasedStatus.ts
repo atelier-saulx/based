@@ -1,4 +1,4 @@
-import { createSignal, createEffect, Accessor } from 'solid-js'
+import { createSignal, createEffect, Accessor, onCleanup } from 'solid-js'
 import { BasedClient } from '@based/client'
 import { useBasedClient } from '../useBasedClient'
 
@@ -27,42 +27,40 @@ type BasedConnection = {
  * @returns The `BasedConnection` object with the status of the connection.
  */
 const useBasedStatus = (): BasedConnection => {
-  const client: BasedClient = useBasedClient()
-  const [connected, setConnected] = createSignal(client.connected)
+  const [client] = createSignal<BasedClient>(useBasedClient())
+  const [connected, setConnected] = createSignal(client().connected)
   const [status, setStatus] = createSignal<BasedStatus>(BasedStatus.DISCONNECT)
 
-  createEffect(() => {
-    if (!client) {
-      return
-    }
-
-    setConnected(client.connected)
+  if (client()) {
+    setConnected(client().connected)
 
     const onDisconnect = (): void => {
-      setConnected(client.connected)
+      setConnected(client().connected)
       setStatus(BasedStatus.DISCONNECT)
     }
 
     const onReconnect = (): void => {
-      setConnected(client.connected)
+      setConnected(client().connected)
       setStatus(BasedStatus.RECONNECT)
     }
 
     const onConnect = (): void => {
-      setConnected(client.connected)
+      setConnected(client().connected)
       setStatus(BasedStatus.CONNECT)
     }
 
-    client.on(BasedStatus.DISCONNECT, onDisconnect)
-    client.on(BasedStatus.RECONNECT, onReconnect)
-    client.on(BasedStatus.CONNECT, onConnect)
+    createEffect(() => {
+      client().on(BasedStatus.DISCONNECT, onDisconnect)
+      client().on(BasedStatus.RECONNECT, onReconnect)
+      client().on(BasedStatus.CONNECT, onConnect)
 
-    return () => {
-      client.off(BasedStatus.DISCONNECT, onDisconnect)
-      client.off(BasedStatus.RECONNECT, onReconnect)
-      client.off(BasedStatus.CONNECT, onConnect)
-    }
-  }, [client])
+      onCleanup(() => {
+        client().off(BasedStatus.DISCONNECT, onDisconnect)
+        client().off(BasedStatus.RECONNECT, onReconnect)
+        client().off(BasedStatus.CONNECT, onConnect)
+      })
+    })
+  }
 
   return {
     connected,

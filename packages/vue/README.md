@@ -1,71 +1,47 @@
-# @based/solidjs
+# @based/vue
 
-Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into SolidJS hooks and signals
+Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into Vue3 hooks and refs.
 
-```tsx
-import { Show } from 'solid-js'
-import type { Component } from 'solid-js'
-import { useBasedQuery, useBasedClient, BasedProvider } from '@based/solidjs'
-import based, { BasedClient } from '@based/client'
+```vue
+<script lang="ts" setup>
+  import { inject } from 'vue'
+  import type { BasedClient } from '@based/client'
+  import { BasedContext, useBasedQuery } from '@based/vue'
 
-const client: BasedClient = based({
-    env: 'myEnv',
-    org: 'myOrg',
-    project: 'myProject'
-})
+  const client: BasedClient = inject(BasedContext.CLIENT)
 
-const LoadingData: Component = () => {
-    return (
-        <div>Loading data...</div>
-    )
-}
+  const { data, error, loading } = useBasedQuery(
+      'counter',
+      {
+        count: true,
+        speed: 3000
+      }
+  )
+</script>
 
-const UsersList: Component = () => {
-    const {data, error, loading} = useBasedQuery(
-        'counter',
-        {
-            count: true,
-            speed: 3000
-        }
-    )
-
-    return (
-        <Show when={data.children.length && !loading} fallback={LoadingData}>
-            <div>
-                {(
-                    data =>
-                        data.children.map(({id, name}) =>
-                            <p onClick={() => { client.call('db:delete', {id})}}>{name}</p>
-                        )
-                )}
-            </div>
-        </Show>
-    )
-}
-
-const App: Component = () => {
-    return (
-        <BasedProvider client={client}>
-            <UsersList/>
-        </BasedProvider>
-    )
-}
+<template>
+  <div v-if="data.children.length && !loading">
+    <div v-for="(child in data.children)">
+      <p @click="client.call('db:delete', {id: child.id})">{{child.name}}</p>
+    </div>
+  </div>
+</template>
 ```
 
 ## BasedProvider
 Solid Component that inject the `BasedClient` context thought the application.
 
 ### Aliasing
-```tsx
-<BasedProvider client={client}>
-    {/*slot*/}
+```vue
+<BasedProvider :client="client">
+  {/*slot*/}
 </BasedProvider>
 ```
 or (**in deprecation process**)
-```tsx
-<BasedProvider client={client}>
-    {/*slot*/}
-</BasedProvider>
+```vue
+<Provider :client="client">
+  {/*slot*/}
+</Provider>
 ```
 
 ### Props
@@ -82,60 +58,24 @@ or (**in deprecation process**)
 None
 
 Basic example:
-```tsx
-const App: Component = () => {
-    return (
-        <BasedProvider client={client}>
-            <UsersList/> // Will receive the BasedClient context injected by the BasedProvider.
-        </BasedProvider>
-    )
-}
-```
+```vue
+<script lang="ts" setup>
+  import based, { BasedClient } from '@based/client'
+  import { BasedProvider } from '@based/vue'
 
-## useBasedClient
-The `BasedClient` object with the information about the connection with the `Based` server. You cal also call functions using the client object.
-
-### Aliasing
-```ts
-const client = useBasedClient()
-```
-or (**in deprecation process**)
-```ts
-const client = useBasedClient()
-```
-
-### Params
-None
-
-### Response
-The `BasedClient` object.
-
-```tsx
-import { useBasedClient, BasedProvider } from '@based/solidjs'
-import based, { BasedClient } from '@based/client'
-import type { Component } from 'solid-js'
-
-const client: BasedClient = based({
+  const client: BasedClient = based({
     env: 'myEnv',
     org: 'myOrg',
     project: 'myProject'
-})
+  })
+</script>
 
-const doSomething = (): void => {
-    const client = useBasedClient()
-    client.call('doSomething')
-}
-
-const context: BasedClient = useBasedClient()
-
-const App: Component = () => {
-    return (
-        <BasedProvider client={client}>
-            <button onClick={() => doSomething()}/>
-            <p>WebSockets URL: {context.opts.url.toString()}</p>
-        </BasedProvider>
-    )
-}
+<template>
+  <BasedProvider :client="client">
+    <!-- Your app goes here. -->
+    <!-- You'll can use inject to get the client context in any child component. -->
+  </BasedProvider>
+</template>
 ```
 
 ## useBasedQuery
@@ -154,7 +94,7 @@ const { data, error, loading } = useBasedQuery('myQueryFunction')
 ```
 or (**in deprecation process**)
 ```ts
-const { data, error, loading } = useBasedQuery('myQueryFunction')
+const { data, error, loading } = useQuery('myQueryFunction')
 ```
 
 ### Types
@@ -218,27 +158,36 @@ class BasedError extends Error {
 | `error`    | `BasedError` | `false`        | The `BasedError` object containing the `statusMessage` and `code` from your error.                       |
 | `checksum` | `number`     | `false`        | A calculated value used to verify data integrity and detect errors. Each response has a unique checksum. |
 
-Basic example:
-```tsx
-import { useBasedQuery } from '@based/solidjs'
-import type { Component } from 'solid-js'
+Basic example with static parameters:
+```vue
+<script lang="ts" setup>
+  import { useBasedQuery } from '@based/vue'
 
-const ProcessData: Component = () => {
-    const { data, error, loading } = useBasedQuery('myQueryFunction')
-    
-    if (error) {
-        return error.message
-    }
-    
-    return (
-        <Show when={data.text && !loading} fallback={<div>Loading data...</div>}>
-            <div>data.text</div>
-        </Show>
-    )
-}
+  // With static parameters you may destruct the returned object.
+  // The returned object will contain { data, loading, error, checksum } as reactive Refs.
+  const { data, loading, error, checksum } = useBasedQuery('counter', {
+    count: true,
+  })
+</script>
+```
+Basic example with dynamic parameters:
+```vue
+<script lang="ts" setup>
+  import { computed, ref } from 'vue'
+  import { useBasedQuery } from '@based/vue'
+
+  // Update these values anywhere in your component.
+  const name = ref<string>()
+  const payload = ref<any>()
+
+  // Don't destruct the returned object, will break the reactivity.
+  // The returned object will contain { data, loading, error, checksum } as reactive Refs.
+  // Use as 'query.data.value', 'query.loading.value', 'query.error.value', 'query.checksum.value'.
+  const query = computed(() => useBasedQuery(name.value, payload.value))
+</script>
 ```
 
-To persist the result of the query on `localStorage` on the client-side, pass `persistent` as true.
+To persist the result of the query on `localStorage` on the client-side, pass `persistent` as `true`.
 ```ts
 const { data: userInfo } = useBasedQuery(
     'someUserInfo',
@@ -273,7 +222,7 @@ const auth = useBasedAuth()
 or (**in deprecation process**)
 
 ```ts
-const auth = useBasedAuth()
+const auth = useAuthState()
 ```
 
 ### Params
@@ -290,16 +239,19 @@ None
 | `type`         | `string`  | `false`        | N/A.                                                           |
 
 ```ts
-import { useBasedAuth } from '@based/solidjs'
+import { useBasedAuth } from '@based/vue'
 
 const IsUserAuthorized = () => {
-    const { error, token, userId } = useBasedAuth()
-    
-    if (!error || !token || !userId) {
-        return 'Not authorized 😭'
-    }
-    
-    return 'Authorized! 🎉'
+  // The returned object is a Ref.
+  // Don't destruct the returned object, will break the reactivity.
+  // Use as 'auth.value.token', 'auth.value.userId', 'auth.value.error'...
+  const auth = useBasedAuth()
+
+  if (!auth.value.error || !auth.value.token || !auth.value.userId) {
+    return 'Not authorized 😭'
+  }
+
+  return 'Authorized! 🎉'
 }
 ```
 
@@ -321,9 +273,9 @@ const client = useStatus()
 
 ```ts
 enum BasedStatus {
-    DISCONNECT = 'disconnect',
-    RECONNECT = 'reconnect',
-    CONNECT = 'connect'
+  DISCONNECT = 'disconnect',
+  RECONNECT = 'reconnect',
+  CONNECT = 'connect'
 }
 ```
 </details>
@@ -338,15 +290,16 @@ None
 | `status`    | `BasedStatus` | `true`         | One of the three possible status.        |
 
 ```ts
-import { useBasedStatus } from '@based/solidjs'
+import { useBasedStatus } from '@based/vue'
 
 const IsBasedConnected = () => {
-    const { connected } = useBasedStatus()
-    
-    if (!connected) {
-        return 'Not connected 😭'
-    }
-    
-    return 'Connected! 🎉'
+  // The returned object will contain { connected, status } as reactive Refs.
+  const { connected } = useBasedStatus()
+
+  if (!connected.value) {
+    return 'Not connected 😭'
+  }
+
+  return 'Connected! 🎉'
 }
 ```

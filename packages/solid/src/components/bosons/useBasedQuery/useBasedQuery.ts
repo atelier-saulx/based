@@ -58,14 +58,13 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
   payload?: BasedQueryMap[N]['payload'],
   opts?: BasedQueryOptions,
 ): BasedQueryResult<BasedQueryMap[N]['result']> => {
+  const [client] = createSignal<BasedClient>(useBasedClient())
   const [loading, setLoading] = createSignal<boolean>(true)
   const [checksum, setChecksum] = createSignal<number | null>(null)
   const [error, setError] = createSignal<BasedError | null>(null)
   const [data, setData] = createSignal<any | null>(null)
 
-  const client: BasedClient = useBasedClient()
-
-  if (client && name) {
+  if (client() && name) {
     const onData = (data: any, checksum: number) => {
       setLoading(false)
       setChecksum(checksum)
@@ -77,10 +76,13 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
       setError({ ...error })
     }
 
-    createEffect(() => {
-      const basedQuery = client.query(name as string, payload, opts)
-      onCleanup(basedQuery.subscribe(onData, onError))
-    })
+    createEffect(() =>
+      onCleanup(
+        client()
+          .query(name as string, payload, opts)
+          .subscribe(onData, onError),
+      ),
+    )
   }
 
   return { loading, checksum, error, data }

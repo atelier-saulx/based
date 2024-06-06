@@ -10,24 +10,21 @@ import { BasedContext } from '../BasedProvider'
  * @returns the `AuthState` Ref object containing all the information about the current state of the authorization with the `Based` cloud.
  */
 const useBasedAuth = (): Ref<AuthState> => {
-  const client: BasedClient = inject(BasedContext.CLIENT)
-  const auth = ref<AuthState>(client?.authState || {})
+  const client = ref<BasedClient>(inject(BasedContext.CLIENT))
+  const auth = ref<AuthState>(client?.value.authState || {})
 
-  watchEffect((onCleanup) => {
-    if (!client) {
-      return
-    }
-
-    auth.value = client.authState
+  if (client.value) {
+    auth.value = client.value.authState
 
     const listener = (authState: AuthState) => {
       auth.value = authState
     }
 
-    client.on('authstate-change', listener)
-
-    onCleanup(() => client.off('authstate-change', listener))
-  })
+    watchEffect((onCleanup) => {
+      client.value.on('authstate-change', listener)
+      onCleanup(() => client.value.off('authstate-change', listener))
+    })
+  }
 
   return auth
 }
