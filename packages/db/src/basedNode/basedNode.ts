@@ -12,6 +12,14 @@ Object.defineProperty(BasedNodeBase.prototype, '__offset__', {
   enumerable: false,
 })
 
+Object.defineProperty(BasedNodeBase.prototype, 'id', {
+  enumerable: true,
+  set() {},
+  get() {
+    return this.__queryResponse__.buffer.readUint32LE(this.__offset__)
+  },
+})
+
 export class BasedNode extends Object {
   [key: string]: any
 }
@@ -98,25 +106,15 @@ export const createBasedNodeClass = (
 ): typeof BasedNode => {
   const ctx = new BasedNodeBase()
 
-  Object.defineProperty(Node.prototype, 'id', {
-    enumerable: true,
-    set() {
-      // flap
-    },
-    get() {
-      return this.__buffer__.readUint32LE(this.__offset__)
-    },
-  })
-
   for (const field in schema.fields) {
     const fieldDef = schema.fields[field]
     const { type, path } = fieldDef
     if (path.length > 1) {
       // TMP needs to destructure etc nested objects as well!!!
-      if (Object.getOwnPropertyDescriptor(Node.prototype, path[0])) {
+      if (Object.getOwnPropertyDescriptor(ctx, path[0])) {
         // console.log(str, 'allrdy defined..')
       } else {
-        Object.defineProperty(Node.prototype, path[0], {
+        Object.defineProperty(ctx, path[0], {
           enumerable: true,
           set() {
             // flap
@@ -128,7 +126,7 @@ export const createBasedNodeClass = (
         })
       }
     } else if (type === 'string') {
-      Object.defineProperty(Node.prototype, field, {
+      Object.defineProperty(ctx, field, {
         enumerable: true,
         set() {
           // flap
@@ -143,7 +141,7 @@ export const createBasedNodeClass = (
         },
       })
     } else if (type === 'number') {
-      Object.defineProperty(Node.prototype, field, {
+      Object.defineProperty(ctx, field, {
         enumerable: true,
         set() {
           // flap
@@ -158,7 +156,7 @@ export const createBasedNodeClass = (
         },
       })
     } else if (type === 'reference') {
-      Object.defineProperty(Node.prototype, field, {
+      Object.defineProperty(ctx, field, {
         enumerable: true,
         set() {
           // flap
@@ -176,7 +174,7 @@ export const createBasedNodeClass = (
       })
     } else if (type === 'integer') {
       console.log({ field })
-      Object.defineProperty(Node.prototype, field, {
+      Object.defineProperty(ctx, field, {
         enumerable: true,
         set() {
           // flap

@@ -37,9 +37,8 @@ export class BasedIterable {
       // read from tree
       if (index === 255) {
         const ctx = this.#query.query.type.responseCtx
-        // @ts-ignore
         ctx.__offset__ = i
-        ctx.__query__ = this.#query
+        ctx.__queryResponse__ = this.#query
         yield ctx
         i += 4
       } else if (index === 0) {
