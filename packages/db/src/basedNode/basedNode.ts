@@ -3,6 +3,21 @@ import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
 
 function BasedNodeBase() {}
 
+const prop = (
+  obj: Object,
+  field: string,
+  settings: {
+    get: () => any
+    set?: () => any
+  },
+) => {
+  Object.defineProperty(obj, field, {
+    enumerable: true,
+    set: settings.set ?? (() => undefined),
+    get: settings.get,
+  })
+}
+
 Object.defineProperty(BasedNodeBase.prototype, '__queryResponse__', {
   writable: true,
   enumerable: false,
@@ -11,10 +26,7 @@ Object.defineProperty(BasedNodeBase.prototype, '__offset__', {
   writable: true,
   enumerable: false,
 })
-
-Object.defineProperty(BasedNodeBase.prototype, 'id', {
-  enumerable: true,
-  set() {},
+prop(BasedNodeBase.prototype, 'id', {
   get() {
     return this.__queryResponse__.buffer.readUint32LE(this.__offset__)
   },
@@ -114,11 +126,7 @@ export const createBasedNodeClass = (
       if (Object.getOwnPropertyDescriptor(ctx, path[0])) {
         // console.log(str, 'allrdy defined..')
       } else {
-        Object.defineProperty(ctx, path[0], {
-          enumerable: true,
-          set() {
-            // flap
-          },
+        prop(ctx, path[0], {
           get() {
             const tree = schema.tree[path[0]]
             return readObjectFromTree(tree as SchemaFieldTree, this, schema)
@@ -126,11 +134,7 @@ export const createBasedNodeClass = (
         })
       }
     } else if (type === 'string') {
-      Object.defineProperty(ctx, field, {
-        enumerable: true,
-        set() {
-          // flap
-        },
+      prop(ctx, field, {
         get() {
           return readSeperateFieldFromBuffer(
             fieldDef,
@@ -141,11 +145,7 @@ export const createBasedNodeClass = (
         },
       })
     } else if (type === 'number') {
-      Object.defineProperty(ctx, field, {
-        enumerable: true,
-        set() {
-          // flap
-        },
+      prop(ctx, field, {
         get() {
           return readSeperateFieldFromBuffer(
             fieldDef,
@@ -156,11 +156,7 @@ export const createBasedNodeClass = (
         },
       })
     } else if (type === 'reference') {
-      Object.defineProperty(ctx, field, {
-        enumerable: true,
-        set() {
-          // flap
-        },
+      prop(ctx, field, {
         get() {
           return {
             id: readSeperateFieldFromBuffer(
@@ -173,12 +169,7 @@ export const createBasedNodeClass = (
         },
       })
     } else if (type === 'integer') {
-      console.log({ field })
-      Object.defineProperty(ctx, field, {
-        enumerable: true,
-        set() {
-          // flap
-        },
+      prop(ctx, field, {
         get() {
           return readSeperateFieldFromBuffer(
             fieldDef,
@@ -190,7 +181,6 @@ export const createBasedNodeClass = (
       })
     }
   }
-
   return ctx
 }
 
