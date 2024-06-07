@@ -1,3 +1,9 @@
+# Mac OS
+.DS_Store
+
+# Typescript
+tsconfig.tsbuildinfo
+
 # Logs
 logs
 *.log

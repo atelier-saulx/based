@@ -1,0 +1,45 @@
+{
+  "name": "@based/cli",
+  "version": "1.0.0",
+  "description": "based cli",
+  "type": "module",
+  "main": "dist/index.js",
+  "private": true,
+  "bin": "bin/cmd.js",
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch",
+    "test": "c8 ava --verbose"
+  },
+  "ava": {
+    "files": [
+      "./test/**/*.js",
+      "!./test/examples/**/*"
+    ]
+  },
+  "prettier": "@saulx/prettier-config",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@saulx/prettier-config": "^2.0.0",
+    "@saulx/tsconfig": "^1.1.3",
+    "@types/node": "^20.14.2",
+    "ava": "^6.1.3",
+    "c8": "^9.1.0",
+    "prettier": "^3.3.1",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@based/bundle": "../bundle",
+    "commander": "^12.1.0",
+    "find-up": "^7.0.0",
+    "fs-extra": "^11.2.0",
+    "gitignore-parser": "^0.0.2",
+    "picocolors": "^1.0.1"
+  }
+}
