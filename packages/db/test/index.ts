@@ -391,13 +391,14 @@ test.serial.only('query + filter', async (t) => {
   await wait(0)
   console.log('TIME (5M)', Date.now() - dx, 'ms')
 
+  // 2 buffers
   const bla = async () => {
     const d = Date.now()
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 1)
-      .include('flap', 'vectorClock', 'user', 'refs', 'location', 'smurp') // now support location (getting the whole object)
-      .range(0, 1e6)
+      .include('vectorClock', 'user', 'location', 'smurp') // now support location (getting the whole object)
+      .range(0, 1e5)
       .get()
 
     console.info(
@@ -411,7 +412,9 @@ test.serial.only('query + filter', async (t) => {
     const xxx = Date.now()
 
     const bla = result.data.map((f) => {
-      return { id: f.id, location: f.location }
+      // fix this...
+      // return f.location
+      // return JSON.stringify(f)
     })
 
     // for (const x of result.data) {

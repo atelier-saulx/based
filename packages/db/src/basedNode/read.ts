@@ -45,6 +45,7 @@ export const readSeperateFieldFromBuffer = (
         } else if (requestedField.type === 'references') {
           const x = new Array(size / 4)
           for (let j = i; j < size / 4; j += 4) {
+            // TODO FIX
             x[j / 4] = buffer.readUint32LE(j)
           }
           return x
