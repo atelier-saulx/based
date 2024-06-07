@@ -397,7 +397,7 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      .include('vectorClock', 'location.long') // now support location (getting the whole object)
+      .include('smurp.pos') // now support location (getting the whole object)
       .range(0, 1e6)
       .get()
 
@@ -415,8 +415,9 @@ test.serial.only('query + filter', async (t) => {
       // long: f.location.long
       return {
         id: f.id,
-        vectorClock: f.vectorClock,
-        long: f.location.long,
+        // vectorClock: f.vectorClock,
+        // long: f.location.long,
+        ...f.smurp.pos,
       }
     })
 
@@ -435,7 +436,7 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    // console.log(bla)
+    console.log(bla)
 
     console.log(result.buffer.byteLength)
   }

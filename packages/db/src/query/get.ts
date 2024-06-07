@@ -25,7 +25,8 @@ const parseInclude = (
 ): boolean => {
   const field = query.type.fields[f]
   if (!field) {
-    const tree = query.type.tree[f]
+    const path = f.split('.')
+    const tree = query.type.tree[path[0]]
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
@@ -88,19 +89,23 @@ export const get = (query: Query): BasedQueryResponse => {
     len += arr.length
     includeBuffer = Buffer.from(arr)
     // 16 start and end
-    if (query.mainLen === query.type.mainLen) {
-      mainBuffer = Buffer.from([0])
+    if (includesMain) {
+      if (query.mainLen === query.type.mainLen) {
+        mainBuffer = Buffer.from([0])
+      } else {
+        const size = query.mainIncludes.size
+        mainBuffer = Buffer.allocUnsafe(size * 6 + 1 + 4)
+        mainBuffer[0] = 1
+        mainBuffer.writeUint32LE(query.mainLen, 1)
+        let i = 5
+        query.mainIncludes.forEach((v, k) => {
+          mainBuffer.writeUint16LE(k, i)
+          mainBuffer.writeUint16LE(v[1], i + 2)
+          i += 4
+        })
+      }
     } else {
-      const size = query.mainIncludes.size
-      mainBuffer = Buffer.allocUnsafe(size * 6 + 1 + 4)
-      mainBuffer[0] = 1
-      mainBuffer.writeUint32LE(query.mainLen, 1)
-      let i = 5
-      query.mainIncludes.forEach((v, k) => {
-        mainBuffer.writeUint16LE(k, i)
-        mainBuffer.writeUint16LE(v[1], i + 2)
-        i += 4
-      })
+      mainBuffer = Buffer.from([0])
     }
   }
 
@@ -124,11 +129,11 @@ export const get = (query: Query): BasedQueryResponse => {
     const start = query.offset ?? 0
     const end = query.limit ?? 1e3
 
-    // console.log({
-    //   conditions: new Uint8Array(conditions),
-    //   include: new Uint8Array(includeBuffer),
-    //   mainBuffer: new Uint8Array(mainBuffer)
-    // })
+    console.log({
+      conditions: new Uint8Array(conditions),
+      include: new Uint8Array(includeBuffer),
+      mainBuffer: new Uint8Array(mainBuffer),
+    })
 
     const result: Buffer = query.db.native.getQuery(
       conditions,
