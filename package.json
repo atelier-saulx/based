@@ -36,10 +36,13 @@
   },
   "dependencies": {
     "@based/bundle": "../bundle",
+    "@based/client": "^6.8.0",
+    "@inquirer/input": "^2.1.9",
     "commander": "^12.1.0",
     "find-up": "^7.0.0",
     "fs-extra": "^11.2.0",
     "gitignore-parser": "^0.0.2",
+    "inquirer": "^9.2.23",
     "picocolors": "^1.0.1"
   }
 }

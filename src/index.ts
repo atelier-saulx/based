@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { version } from './version.js'
-import { deploy } from './deploy.js'
+import { deploy } from './deploy/index.js'
 import { globalOptions } from './globalOptions.js'
 
 export const init = async () => {
