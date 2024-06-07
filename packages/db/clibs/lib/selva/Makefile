@@ -8,12 +8,14 @@ LDFLAGS += -shared -g \
 		   -ljemalloc_selva -ldeflate -lutil
 
 OBJ := \
+	db.o \
 	edge.o \
 	fields.o \
 	selva.o \
 	selva_object/selva_object.o \
 	selva_object/selva_object_foreach.o \
-	selva_set/selva_set.o
+	selva_set/selva_set.o \
+	update.o
 
 ifeq ($(uname_S),Linux)
 	LDFLAGS += -fPIC

@@ -166,6 +166,7 @@ struct SelvaDb {
     } expiring;
 };
 
-__attribute__((visibility("default"))) struct SelvaDb *selva_db_create(void);
-__attribute__((visibility("default"))) void selva_db_delete(struct SelvaDb *db);
-__attribute__((visibility("default"))) int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_len);
+__attribute__((visibility("default"))) int selva_db_create(void);
+__attribute__((visibility("default"))) int selva_db_delete(int db_id);
+__attribute__((visibility("default"))) int selva_db_schema_update(int db_id, char *schema_buf, size_t schema_len);
+__attribute__((visibility("default"))) int selva_db_update(int db_id, node_type_t type, node_id_t node_id, char *buf, size_t len);
