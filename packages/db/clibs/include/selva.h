@@ -21,11 +21,12 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_NUMBER = 4,
     SELVA_FIELD_TYPE_INTEGER = 5,
     SELVA_FIELD_TYPE_BOOLEAN = 6,
-    SELVA_FIELD_TYPE_REFERENCE = 7,
-    SELVA_FIELD_TYPE_ENUM = 8,
-    SELVA_FIELD_TYPE_STRING = 9,
-    SELVA_FIELD_TYPE_REFERENCES = 10,
-};
+    SELVA_FIELD_TYPE_ENUM = 7,
+    SELVA_FIELD_TYPE_STRING = 8,
+    SELVA_FIELD_TYPE_TEXT = 9,
+    SELVA_FIELD_TYPE_REFERENCE = 10,
+    SELVA_FIELD_TYPE_REFERENCES = 11,
+} __packed;
 
 struct SelvaObject;
 
@@ -59,10 +60,7 @@ struct EdgeFieldConstraint {
 } edge_constraint;
 
 struct SelvaNodeSchema {
-    uint16_t nr_emb_fields;
-    uint16_t nr_dyn_fields;
-    uint16_t nr_fields; /* !< nr_emb_fields + nr_dyn_fields. */
-    size_t emb_fields_size;
+    uint16_t nr_fields;
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
@@ -112,8 +110,17 @@ struct SelvaNode {
      * max_life = <epoch year>+(2^<bits>)/60/60/24/365
      */
     uint32_t expire;
-    struct SelvaObject *dyn_fields;
-    char emb_fields[]; /*!< This is counted by nr_emb_fields in SelvaNodeSchema. */
+    struct SelvaFields {
+        void *data;
+        struct {
+            uint32_t size: 24; /*!< Size of data. */
+            field_t nr_fields: 8;
+        };
+        struct SelvaFieldInfo {
+            enum SelvaFieldType type: 4;
+            uint16_t off: 12; /*!< Offset in data in 8-byte blocks. */
+        } __packed fields_map[] __counted_by(nr_fields);
+    } fields;
 };
 
 /**

@@ -13,6 +13,7 @@
 RB_PROTOTYPE_STATIC(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
 RB_PROTOTYPE_STATIC(SelvaTypeIndex, SelvaTypeEntry, _type_entry, SelvaTypeEntry_Compare);
 
+
 static int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b)
 {
     return a->node_id - b->node_id;
@@ -66,11 +67,11 @@ void selva_db_delete(struct SelvaDb *db)
 int selva_db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_len)
 {
     struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e));
-    size_t emb_fields_size = 0; /* FIXME */
+    size_t fields_map_size = 0; /* FIXME */
 
     RB_INIT(&e->nodes);
     SelvaObject_Init(e->aliases._obj_data, 0);
-    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + emb_fields_size, alignof(size_t));
+    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + fields_map_size, alignof(size_t));
 
     RB_INSERT(SelvaTypeIndex, &db->types.index, e);
     return 0;
@@ -100,11 +101,24 @@ static struct SelvaNodeSchema *get_ns_by_node(struct SelvaDb *db, struct SelvaNo
     return e ? e->ns : NULL;
 }
 
+static struct SelvaFieldSchema *get_fs(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+{
+    struct SelvaNodeSchema *ns;
+
+    ns = get_ns_by_node(db, node);
+    if (!ns || field >= ns->nr_fields) {
+        return NULL;
+    }
+
+    return &ns->field_schemas[field];
+}
+
 static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
-    memset(node, 0, sizeof(*node) + type->ns->emb_fields_size);
+    /* TODO Clean fields map */
+    memset(node, 0, sizeof(*node));
     node->node_id = id;
     node->type = type->type;
 
@@ -122,6 +136,6 @@ static void del_node(struct SelvaDb *db, struct SelvaNode *node)
         /* TODO clear expire */
     }
 
-    SelvaObject_Destroy(node->dyn_fields);
+    /* TODO Destroy fields */
     mempool_return(&e->nodepool, node);
 }
