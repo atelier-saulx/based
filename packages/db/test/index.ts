@@ -397,7 +397,7 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      .include('vectorClock', 'location') // now support location (getting the whole object)
+      .include('vectorClock', 'location.long') // now support location (getting the whole object)
       .range(0, 2)
       .get()
 

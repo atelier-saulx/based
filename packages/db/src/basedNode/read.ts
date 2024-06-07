@@ -15,9 +15,18 @@ export const readSeperateFieldFromBuffer = (
     }
     i += 1
     if (index === 0) {
-      const fIndex =
-        queryResponse.query.mainIncludes?.get(requestedField.start)[0] ??
-        requestedField.start
+      let fIndex: number
+
+      if (queryResponse.query.mainIncludes) {
+        const t = queryResponse.query.mainIncludes?.get(requestedField.start)
+        if (!t) {
+          return undefined
+        }
+        fIndex = t[0]
+      } else {
+        fIndex = requestedField.start
+      }
+
       if (fIndex === undefined) {
         return // mep
       }

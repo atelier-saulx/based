@@ -6,6 +6,7 @@ import { prop } from './utils.js'
 const defineLeafProp = (leaf: FieldDef, node: BasedNode, obj: any) => {
   prop(obj, leaf.path[leaf.path.length - 1], {
     get: () => {
+      // if (node.__q.query.includeFields)
       return readSeperateFieldFromBuffer(leaf, node)
     },
   })
