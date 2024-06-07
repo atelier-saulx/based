@@ -78,7 +78,7 @@ int db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_len)
     return 0;
 }
 
-static struct SelvaTypeEntry *get_type_by_index(struct SelvaDb *db, node_type_t type)
+struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type)
 {
     struct SelvaTypeEntry find = {
         .type = type,
@@ -96,25 +96,34 @@ static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaN
     return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
 }
 
-static struct SelvaNodeSchema *get_ns_by_node(struct SelvaDb *db, struct SelvaNode *node)
+struct SelvaNodeSchema *db_get_ns_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     struct SelvaTypeEntry *e = get_type_by_node(db, node);
     return e ? e->ns : NULL;
 }
 
-static struct SelvaFieldSchema *get_fs(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+struct SelvaFieldSchema *db_get_fs_by_ns(struct SelvaNodeSchema *ns, field_t field)
 {
-    struct SelvaNodeSchema *ns;
-
-    ns = get_ns_by_node(db, node);
-    if (!ns || field >= ns->nr_fields) {
+    if (field >= ns->nr_fields) {
         return NULL;
     }
 
     return &ns->field_schemas[field];
 }
 
-struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
+static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+{
+    struct SelvaNodeSchema *ns;
+
+    ns = db_get_ns_by_node(db, node);
+    if (!ns) {
+        return NULL;
+    }
+
+    return db_get_fs_by_ns(ns, field);
+}
+
+static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
@@ -139,4 +148,19 @@ void del_node(struct SelvaDb *db, struct SelvaNode *node)
 
     /* TODO Destroy fields */
     mempool_return(&e->nodepool, node);
+}
+
+struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id, bool upsert)
+{
+    struct SelvaNode find = {
+        .node_id = node_id,
+    };
+    struct SelvaNode *node;
+
+    node = RB_FIND(SelvaNodeIndex, &type->nodes, &find);
+    if (!node && upsert) {
+        node = new_node(db, type, node_id);
+    }
+
+    return node;
 }

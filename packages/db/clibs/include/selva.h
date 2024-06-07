@@ -31,7 +31,7 @@ enum SelvaFieldType {
 struct SelvaObject;
 
 typedef int8_t field_t;
-typedef uint64_t node_id_t;
+typedef uint32_t node_id_t;
 typedef uint32_t node_type_t;
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);

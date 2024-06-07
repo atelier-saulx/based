@@ -2,6 +2,7 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include "selva_error.h"
 #include "selva.h"
 #include "db.h"
@@ -46,6 +47,17 @@ int selva_db_schema_update(int db_id, char *schema_buf, size_t schema_len)
 int selva_db_update(int db_id, node_type_t type, node_id_t node_id, char *buf, size_t len)
 {
     CHECK_DB_ID(db_id);
+    struct SelvaDb *db = dbs[db_id];
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
 
-    return update(dbs[db_id], type, node_id, buf, len);
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return SELVA_EINTYPE;
+    }
+
+    node = db_get_node(db, te, node_id, true);
+    assert(node);
+
+    return update(db, te, node, buf, len);
 }
