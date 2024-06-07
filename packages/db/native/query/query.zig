@@ -186,7 +186,9 @@ fn getQueryInternal(
                 while (selectiveMainPos < mainIncludes.len - 4) {
                     const start: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos .. selectiveMainPos + 2]), .little);
                     const end: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos + 2 .. selectiveMainPos + 2]), .little);
-                    std.debug.print("yesh:  s: {d} e: {d} a: {any} \n", .{ start, end, mainU8[start..end] });
+                    std.debug.print("yesh:  s: {d} e: {d}  \n", .{ start, end });
+
+                    // std.debug.print("yesh:  s: {d} e: {d} a: {any} \n", .{ start, end, mainU8[start..end] });
                     @memcpy(dataU8[last_pos .. last_pos + mainLen], mainU8[start..end].ptr);
                     last_pos += end;
                     selectiveMainPos += 4;

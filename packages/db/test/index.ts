@@ -374,7 +374,7 @@ test.serial.only('query + filter', async (t) => {
       user: 541,
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
-        long: 52,
+        long: 14.12,
         lat: 52,
       },
       smurp: {
@@ -397,7 +397,7 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      .include('vectorClock') // now support location (getting the whole object)
+      .include('vectorClock', 'location') // now support location (getting the whole object)
       .range(0, 2)
       .get()
 
@@ -413,7 +413,11 @@ test.serial.only('query + filter', async (t) => {
 
     const bla = result.data.map((f) => {
       // long: f.location.long
-      return { id: f.id, vectorClock: f.vectorClock }
+      return {
+        id: f.id,
+        vectorClock: f.vectorClock,
+        location: { ...f.location },
+      }
     })
 
     // for (const x of result.data) {
