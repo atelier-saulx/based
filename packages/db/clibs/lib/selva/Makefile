@@ -9,7 +9,8 @@ LDFLAGS += -shared -g \
 
 OBJ := \
 	edge.o \
-	main.o \
+	fields.o \
+	selva.o \
 	selva_object/selva_object.o \
 	selva_object/selva_object_foreach.o \
 	selva_set/selva_set.o
