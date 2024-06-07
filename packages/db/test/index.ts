@@ -372,7 +372,7 @@ test.serial.only('query + filter', async (t) => {
       // refs: generateRandomArray(),
       // flap: 'AMAZING ' + i,
       user: 541,
-      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
         long: 14.12,
         lat: 52,
@@ -397,7 +397,7 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      .include('smurp.pos') // now support location (getting the whole object)
+      .include('flap', 'smurp.pos', 'location', 'vectorClock') // now support location (getting the whole object)
       .range(0, 1e6)
       .get()
 
@@ -415,8 +415,8 @@ test.serial.only('query + filter', async (t) => {
       // long: f.location.long
       return {
         id: f.id,
-        // vectorClock: f.vectorClock,
-        // long: f.location.long,
+        vectorClock: f.vectorClock,
+        long: f.location.long,
         ...f.smurp.pos,
       }
     })
