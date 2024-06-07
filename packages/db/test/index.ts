@@ -365,11 +365,10 @@ test.serial.only('query + filter', async (t) => {
 
   const now = Date.now()
 
-  for (let i = 0; i < 1e5 - 1; i++) {
+  for (let i = 0; i < 5e6 - 1; i++) {
     db.create('simple', {
       vectorClock: 2,
-
-      flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
         long: 14.12,
         lat: 52,
@@ -386,7 +385,7 @@ test.serial.only('query + filter', async (t) => {
   }
 
   await wait(0)
-  console.log('TIME (100k)', Date.now() - dx, 'ms')
+  console.log('TIME (5M)', Date.now() - dx, 'ms')
 
   // 2 buffers
   const bla = async () => {
@@ -396,8 +395,8 @@ test.serial.only('query + filter', async (t) => {
       .filter('vectorClock', '>', 0)
       // .filter('refs', 'has', [2, 19])
       // 'flap', 'location'
-      .include('smurp') // now support location (getting the whole object)
-      .range(0, 1e2) // max len not good
+      .include('vectorClock', 'location.long', 'smurp.pos') // now support location (getting the whole object)
+      .range(0, 1e6) // max len not good
       .get()
 
     console.info(
@@ -414,8 +413,13 @@ test.serial.only('query + filter', async (t) => {
 
     const arr = []
     for (const bla of result.data) {
-      arr.push({ ...bla.smurp })
-      if (bla.id > 1000) {
+      arr.push({
+        vectorClock: bla.vectorClock,
+        id: bla.id,
+        location: { ...bla.location },
+        pos: { ...bla.smurp.pos },
+      })
+      if (bla.id > 3) {
         break
       }
     }
@@ -446,7 +450,7 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    // console.log(arr)
+    console.log(result.data)
 
     console.log(result.buffer.byteLength)
   }
