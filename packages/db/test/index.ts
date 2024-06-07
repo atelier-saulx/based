@@ -398,7 +398,7 @@ test.serial.only('query + filter', async (t) => {
       .query('simple')
       .filter('vectorClock', '>', 0)
       .include('vectorClock', 'location.long') // now support location (getting the whole object)
-      .range(0, 2)
+      .range(0, 1e6)
       .get()
 
     console.info(
@@ -416,7 +416,7 @@ test.serial.only('query + filter', async (t) => {
       return {
         id: f.id,
         vectorClock: f.vectorClock,
-        location: { ...f.location },
+        long: f.location.long,
       }
     })
 
@@ -435,7 +435,7 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    console.log(bla)
+    // console.log(bla)
 
     console.log(result.buffer.byteLength)
   }

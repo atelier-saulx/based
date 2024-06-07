@@ -33,8 +33,8 @@ fn getQueryInternal(
     }
     // index len
 
-    std.debug.print("\nhello mainIncludes -> {any}", .{mainIncludes});
-    std.debug.print("  INCLUDES -> {any} SIZE[{d}]\n", .{ include, mainLen });
+    // std.debug.print("\nhello mainIncludes -> {any}", .{mainIncludes});
+    // std.debug.print("  INCLUDES -> {any} SIZE[{d}]\n", .{ include, mainLen });
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -57,7 +57,7 @@ fn getQueryInternal(
     var total_results: usize = 0;
     var total_size: usize = 0;
 
-    std.debug.print("total: {d}\n", .{offset + limit});
+    // std.debug.print("total: {d}\n", .{offset + limit});
 
     checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
@@ -186,9 +186,6 @@ fn getQueryInternal(
                 while (selectiveMainPos < mainIncludes.len - 4) {
                     const start: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos .. selectiveMainPos + 2]), .little);
                     const end: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos + 2 .. selectiveMainPos + 2]), .little);
-                    std.debug.print("yesh:  s: {d} e: {d}  \n", .{ start, end });
-
-                    // std.debug.print("yesh:  s: {d} e: {d} a: {any} \n", .{ start, end, mainU8[start..end] });
                     @memcpy(dataU8[last_pos .. last_pos + mainLen], mainU8[start..end].ptr);
                     last_pos += end;
                     selectiveMainPos += 4;
