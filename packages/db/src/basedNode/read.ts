@@ -55,16 +55,3 @@ export const readSeperateFieldFromBuffer = (
     }
   }
 }
-
-export const readObjectFromTree = (tree: SchemaFieldTree, node: BasedNode) => {
-  const obj = {}
-  for (const key in tree) {
-    const leaf = tree[key]
-    if (!leaf.type && !leaf.__isField) {
-      obj[key] = readObjectFromTree(tree[key] as SchemaFieldTree, node)
-    } else {
-      obj[key] = readSeperateFieldFromBuffer(leaf as FieldDef, node)
-    }
-  }
-  return obj
-}

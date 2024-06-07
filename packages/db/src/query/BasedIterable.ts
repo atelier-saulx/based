@@ -1,6 +1,7 @@
 import { inspect } from 'node:util'
 import { Query } from './query.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
+import { BasedNode } from '../basedNode/BasedNode.js'
 
 export class BasedIterable {
   constructor(buffer: Buffer, query: BasedQueryResponse) {
@@ -51,11 +52,18 @@ export class BasedIterable {
     }
   }
 
-  map(callbackFn) {
+  forEach(fn: (item: BasedNode, key: number) => void) {
+    let i = 0
+    for (const item of this) {
+      fn(item, ++i)
+    }
+  }
+
+  map(fn: (item: BasedNode, key: number) => any): any[] {
     const arr = new Array(this.length)
     let i = 0
     for (const item of this) {
-      arr[i++] = callbackFn(item)
+      arr[i++] = fn(item, i)
     }
     return arr
   }
