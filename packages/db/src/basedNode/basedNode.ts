@@ -21,7 +21,7 @@ Object.defineProperty(proto, '__p', {
 })
 prop(proto, 'id', {
   get() {
-    return this.__q.buffer.readUint32LE(this.__offset__)
+    return this.__q.buffer.readUint32LE(this.__o)
   },
 })
 

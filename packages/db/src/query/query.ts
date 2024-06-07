@@ -12,6 +12,7 @@ export class Query {
   offset: number
   limit: number
   includeFields: string[]
+  mainLen: number
   mainIncludes: Map<number, number>
   totalConditionSize: number = 0
   constructor(db: BasedDb, target: string, previous?: Query) {

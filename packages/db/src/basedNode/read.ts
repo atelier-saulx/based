@@ -15,7 +15,9 @@ export const readSeperateFieldFromBuffer = (
     }
     i += 1
     if (index === 0) {
-      const fIndex = queryResponse.query.mainIncludes.get(requestedField.start)
+      const fIndex =
+        queryResponse.query.mainIncludes?.get(requestedField.start) ??
+        requestedField.start
       if (fIndex === undefined) {
         return // mep
       }
@@ -35,7 +37,7 @@ export const readSeperateFieldFromBuffer = (
         return buffer.readFloatLE(i + fIndex)
       }
       // TODO remove incorrect want smaller buffers
-      i += queryResponse.query.type.mainLen
+      i += queryResponse.query.mainLen
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2

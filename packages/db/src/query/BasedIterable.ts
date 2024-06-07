@@ -26,7 +26,7 @@ export class BasedIterable {
 
     const x = inspect(arr)
 
-    return `BasedIterable[${this.#query.query.type}] (${this.length}) ${x}`
+    return `BasedIterable[${this.#query.query.type.type}] (${this.length}) ${x}`
   }
 
   *[Symbol.iterator]() {

@@ -368,7 +368,7 @@ test.serial.only('query + filter', async (t) => {
     db.create('simple', {
       vectorClock: i + 10,
       // refs: generateRandomArray(),
-      flap: 'AMAZING ' + i,
+      // flap: 'AMAZING ' + i,
       user: 541,
       // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
@@ -395,8 +395,8 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 1)
-      .include('vectorClock', 'user', 'location', 'smurp') // now support location (getting the whole object)
-      .range(0, 1e6)
+      // .include('vectorClock', 'user', 'location', 'smurp') // now support location (getting the whole object)
+      .range(0, 1e3)
       .get()
 
     console.info(
@@ -410,7 +410,7 @@ test.serial.only('query + filter', async (t) => {
     const xxx = Date.now()
 
     const bla = result.data.map((f) => {
-      return { id: f.id }
+      return { id: f.id, vectorClock: f.vectorClock }
     })
 
     // for (const x of result.data) {
@@ -428,7 +428,7 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    // console.log(bla)
+    console.log(bla)
 
     console.log(result.buffer.byteLength)
   }

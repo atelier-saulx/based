@@ -16,13 +16,17 @@ fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
-    const args = try napi.getArgs(6, env, info);
+    const args = try napi.getArgs(7, env, info);
     const queries = try napi.getBuffer("queries", env, args[0]);
     const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
     const last_id = try napi.getInt32("last_id", env, args[2]);
     const offset = try napi.getInt32("offset", env, args[3]);
     const limit = try napi.getInt32("limit", env, args[4]);
     const include = try napi.getBuffer("include", env, args[5]);
+    const mainIncludes = try napi.getBuffer("mainIncludes", env, args[6]);
+
+    std.debug.print("hello mainIncludes -> {any}", .{mainIncludes});
+    // index len
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();

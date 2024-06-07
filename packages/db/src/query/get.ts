@@ -42,6 +42,7 @@ const parseInclude = (
   } else {
     if (!includesMain) {
       query.mainIncludes = new Map()
+      // add number
       includesMain = true
       arr.push(0)
     }
@@ -53,6 +54,8 @@ const parseInclude = (
 export const get = (query: Query): BasedQueryResponse => {
   let includeBuffer: Buffer
   let len = 0
+  let mainBuffer: Buffer
+
   if (!query.includeFields) {
     len = 1
     const fields = query.type.fields
@@ -72,6 +75,8 @@ export const get = (query: Query): BasedQueryResponse => {
         includeBuffer[i] = field.field
       }
     }
+    mainBuffer = Buffer.from([0])
+    query.mainLen = query.type.mainLen
   } else {
     let includesMain = false
     const arr = []
@@ -82,7 +87,12 @@ export const get = (query: Query): BasedQueryResponse => {
     }
     len += arr.length
     includeBuffer = Buffer.from(arr)
+
+    mainBuffer = Buffer.from([1])
+    query.mainLen = query.type.mainLen
   }
+
+  // also without conditions has to work....
 
   if (query.conditions) {
     const conditions = Buffer.allocUnsafe(query.totalConditionSize)
@@ -106,6 +116,7 @@ export const get = (query: Query): BasedQueryResponse => {
     // console.log({
     //   conditions: new Uint8Array(conditions),
     //   include: new Uint8Array(includeBuffer),
+    //   mainBuffer: new Uint8Array(mainBuffer)
     // })
 
     const result: Buffer = query.db.native.getQuery(
@@ -115,6 +126,7 @@ export const get = (query: Query): BasedQueryResponse => {
       start,
       end, // def 1k ?
       includeBuffer,
+      mainBuffer,
     )
 
     return new BasedQueryResponse(query, result)
