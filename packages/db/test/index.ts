@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import { text } from './examples.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
@@ -314,12 +315,9 @@ test.serial.only('query + filter', async (t) => {
   db.updateSchema({
     types: {
       simple: {
-        // prefix: 'aa',
         fields: {
           user: { type: 'reference', allowedTypes: ['user'] },
-
           vectorClock: { type: 'integer' },
-
           flap: { type: 'string' },
           refs: { type: 'references', allowedTypes: ['user'] },
           location: {
@@ -351,6 +349,7 @@ test.serial.only('query + filter', async (t) => {
   console.log(
     db.schemaTypesParsed.simple.buf,
     db.schemaTypesParsed.simple.fieldNames,
+    db.schemaTypesParsed.simple.tree,
   )
 
   const refs = []
@@ -366,13 +365,13 @@ test.serial.only('query + filter', async (t) => {
 
   const now = Date.now()
 
-  for (let i = 0; i < 5e6 - 1; i++) {
+  for (let i = 0; i < 1e5 - 1; i++) {
     db.create('simple', {
       vectorClock: 2,
       // refs: generateRandomArray(),
       // flap: 'AMAZING ' + i,
-      user: 541,
-      flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      // user: 666,
+      flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
         long: 14.12,
         lat: 52,
@@ -381,7 +380,7 @@ test.serial.only('query + filter', async (t) => {
         hello: true,
         ts: now,
         pos: {
-          x: 1,
+          x: i,
           y: 2,
         },
       },
@@ -389,7 +388,7 @@ test.serial.only('query + filter', async (t) => {
   }
 
   await wait(0)
-  console.log('TIME (5M)', Date.now() - dx, 'ms')
+  console.log('TIME (100k)', Date.now() - dx, 'ms')
 
   // 2 buffers
   const bla = async () => {
@@ -397,8 +396,10 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      .include('flap', 'smurp.pos', 'location', 'vectorClock') // now support location (getting the whole object)
-      .range(0, 1e6)
+      // .filter('refs', 'has', [2, 19])
+      // 'flap', 'location'
+      .include('smurp') // now support location (getting the whole object)
+      .range(0, 1e2) // max len not good
       .get()
 
     console.info(
@@ -411,15 +412,26 @@ test.serial.only('query + filter', async (t) => {
 
     const xxx = Date.now()
 
-    const bla = result.data.map((f) => {
-      // long: f.location.long
-      return {
-        id: f.id,
-        vectorClock: f.vectorClock,
-        long: f.location.long,
-        ...f.smurp.pos,
+    // console.log(result.data)
+
+    const arr = []
+    for (const bla of result.data) {
+      arr.push({ ...bla.smurp })
+      if (bla.id > 1000) {
+        break
       }
-    })
+    }
+
+    // const bla = result.data.map((f) => {
+    //   // long: f.location.long
+    //   return {
+    //     id: f.id,
+    //     // vectorClock: f.vectorClock,
+    //     // long: f.location.long,
+    //     x: f.smurp.pos.x,
+    //     flap: f.flap,
+    //   }
+    // })
 
     // for (const x of result.data) {
     //   // inspect on x as well
@@ -436,7 +448,7 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    console.log(bla)
+    // console.log(arr)
 
     console.log(result.buffer.byteLength)
   }
