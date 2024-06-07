@@ -410,7 +410,7 @@ test.serial.only('query + filter', async (t) => {
     const xxx = Date.now()
 
     const bla = result.data.map((f) => {
-      return { location: { ...f.location } }
+      return { id: f.id }
     })
 
     // for (const x of result.data) {
@@ -428,7 +428,7 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    console.log(bla)
+    // console.log(bla)
 
     console.log(result.buffer.byteLength)
   }
