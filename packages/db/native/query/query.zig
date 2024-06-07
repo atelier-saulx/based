@@ -25,8 +25,16 @@ fn getQueryInternal(
     const include = try napi.getBuffer("include", env, args[5]);
     const mainIncludes = try napi.getBuffer("mainIncludes", env, args[6]);
 
-    std.debug.print("hello mainIncludes -> {any}", .{mainIncludes});
+    const selectiveMain = mainIncludes[0] != 0;
+    var mainLen: usize = undefined;
+
+    if (selectiveMain) {
+        mainLen = std.mem.readInt(u32, mainIncludes[1..5], .little);
+    }
     // index len
+
+    std.debug.print("\nhello mainIncludes -> {any}", .{mainIncludes});
+    std.debug.print("  INCLUDES -> {any} SIZE[{d}]\n", .{ include, mainLen });
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -132,7 +140,11 @@ fn getQueryInternal(
             if (field != 0) {
                 total_size += (v.mv_size + 1 + 2);
             } else {
-                total_size += (v.mv_size + 1);
+                if (selectiveMain) {
+                    total_size += (mainLen + 1);
+                } else {
+                    total_size += (v.mv_size + 1);
+                }
             }
         }
         // --------------------------------------------------------------------------------
@@ -167,17 +179,36 @@ fn getQueryInternal(
         }
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
-        if (key.field != 0) {
+        if (key.field == 0) {
+            if (selectiveMain) {
+                var selectiveMainPos: usize = 5;
+                var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
+                while (selectiveMainPos < mainIncludes.len - 4) {
+                    const start: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos .. selectiveMainPos + 2]), .little);
+                    const end: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos + 2 .. selectiveMainPos + 2]), .little);
+                    std.debug.print("yesh:  s: {d} e: {d} a: {any} \n", .{ start, end, mainU8[start..end] });
+                    @memcpy(dataU8[last_pos .. last_pos + mainLen], mainU8[start..end].ptr);
+                    last_pos += end;
+                    selectiveMainPos += 4;
+                }
+            } else {
+                @memcpy(
+                    dataU8[last_pos .. last_pos + key.val.?.mv_size],
+                    @as([*]u8, @ptrCast(key.val.?.mv_data)),
+                );
+                last_pos += key.val.?.mv_size;
+            }
+        } else {
             const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
             dataU8[last_pos] = x[0];
             dataU8[last_pos + 1] = x[1];
             last_pos += 2;
+            @memcpy(
+                dataU8[last_pos .. last_pos + key.val.?.mv_size],
+                @as([*]u8, @ptrCast(key.val.?.mv_data)),
+            );
+            last_pos += key.val.?.mv_size;
         }
-        @memcpy(
-            dataU8[last_pos .. last_pos + key.val.?.mv_size],
-            @as([*]u8, @ptrCast(key.val.?.mv_data)),
-        );
-        last_pos += key.val.?.mv_size;
     }
 
     try errors.mdbCheck(c.mdb_txn_commit(txn));

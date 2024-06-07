@@ -316,10 +316,12 @@ test.serial.only('query + filter', async (t) => {
       simple: {
         // prefix: 'aa',
         fields: {
+          user: { type: 'reference', allowedTypes: ['user'] },
+
+          vectorClock: { type: 'integer' },
+
           flap: { type: 'string' },
           refs: { type: 'references', allowedTypes: ['user'] },
-          user: { type: 'reference', allowedTypes: ['user'] },
-          vectorClock: { type: 'integer' },
           location: {
             type: 'object',
             properties: {
@@ -366,7 +368,7 @@ test.serial.only('query + filter', async (t) => {
 
   for (let i = 0; i < 5e6 - 1; i++) {
     db.create('simple', {
-      vectorClock: i + 10,
+      vectorClock: 2,
       // refs: generateRandomArray(),
       // flap: 'AMAZING ' + i,
       user: 541,
@@ -394,9 +396,9 @@ test.serial.only('query + filter', async (t) => {
     const d = Date.now()
     const result = db
       .query('simple')
-      .filter('vectorClock', '>', 1)
-      // .include('vectorClock', 'user', 'location', 'smurp') // now support location (getting the whole object)
-      .range(0, 1e3)
+      .filter('vectorClock', '>', 0)
+      .include('vectorClock') // now support location (getting the whole object)
+      .range(0, 2)
       .get()
 
     console.info(
@@ -410,6 +412,7 @@ test.serial.only('query + filter', async (t) => {
     const xxx = Date.now()
 
     const bla = result.data.map((f) => {
+      // long: f.location.long
       return { id: f.id, vectorClock: f.vectorClock }
     })
 

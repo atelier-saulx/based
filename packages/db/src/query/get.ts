@@ -42,11 +42,11 @@ const parseInclude = (
   } else {
     if (!includesMain) {
       query.mainIncludes = new Map()
-      // add number
       includesMain = true
       arr.push(0)
     }
-    query.mainIncludes.set(field.start, field.start)
+    query.mainIncludes.set(field.start, [query.mainLen, field.len])
+    query.mainLen += field.len
     return true
   }
 }
@@ -87,13 +87,24 @@ export const get = (query: Query): BasedQueryResponse => {
     }
     len += arr.length
     includeBuffer = Buffer.from(arr)
-
-    mainBuffer = Buffer.from([1])
-    query.mainLen = query.type.mainLen
+    // 16 start and end
+    if (query.mainLen === query.type.mainLen) {
+      mainBuffer = Buffer.from([0])
+    } else {
+      const size = query.mainIncludes.size
+      mainBuffer = Buffer.allocUnsafe(size * 6 + 1 + 4)
+      mainBuffer[0] = 1
+      mainBuffer.writeUint32LE(query.mainLen, 1)
+      let i = 5
+      query.mainIncludes.forEach((v, k) => {
+        mainBuffer.writeUint16LE(k, i)
+        mainBuffer.writeUint16LE(v[1], i + 2)
+        i += 4
+      })
+    }
   }
 
-  // also without conditions has to work....
-
+  // TODO also without conditions has to work....
   if (query.conditions) {
     const conditions = Buffer.allocUnsafe(query.totalConditionSize)
     let lastWritten = 0
@@ -128,6 +139,8 @@ export const get = (query: Query): BasedQueryResponse => {
       includeBuffer,
       mainBuffer,
     )
+
+    console.log('RESULT', new Uint8Array(result))
 
     return new BasedQueryResponse(query, result)
   } else {

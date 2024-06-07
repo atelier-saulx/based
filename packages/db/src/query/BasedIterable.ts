@@ -43,7 +43,7 @@ export class BasedIterable {
         yield ctx
         i += 4
       } else if (index === 0) {
-        i += this.#query.query.type.mainLen
+        i += this.#query.query.mainLen
       } else {
         const size = this.#buffer.readUInt16LE(i)
         i += 2
