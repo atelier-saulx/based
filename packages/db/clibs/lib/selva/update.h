@@ -6,4 +6,12 @@
 
 #include "selva.h"
 
+struct Update {
+    uint32_t size;
+    field_t field;
+    char value[];
+} __packed;
+
+static_assert(alignof(struct Update) == 1);
+
 int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, char *buf, size_t len);

@@ -9,30 +9,19 @@
 #include "fields.h"
 #include "update.h"
 
-struct Update {
-    uint32_t size;
-    field_t field;
-    char value[];
-} __packed;
-
 #define READ_AS(TYPE, BUF) \
     ((TYPE){ *(TYPE *)memcpy(&(TYPE){ 0 }, (BUF), sizeof(TYPE)) })
 
-int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, char *buf, size_t len)
+int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node, char *buf, size_t len)
 {
-    struct SelvaNodeSchema *ns;
+    struct SelvaNodeSchema *ns = type->ns;
 
-    ns = db_get_ns_by_node(db, node);
-    if (!ns) {
-        return SELVA_EINTYPE;
-    }
-
-    /* TODO Prealloc fields data */
+    /* TODO Prealloc fields data? */
 
     for (size_t i = 0; i < len;) {
         const struct Update *ud = (const struct Update *)(buf + i);
         const struct SelvaFieldSchema *fs;
-        int err;
+        int err = 0;
 
         fs = db_get_fs_by_ns(ns, ud->field);
         switch (fs->type) {
