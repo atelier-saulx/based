@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import dbZig from '../src/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
@@ -18,6 +19,10 @@ test.serial.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
+  console.log(dbZig.selva_db_create())
+  console.log(dbZig.selva_db_create())
+  console.log(dbZig.selva_db_create())
+  console.log("created");
   db.native = {
     modify: (buff: Buffer, len: number) => {
       console.log('lullz flush buffer', len)

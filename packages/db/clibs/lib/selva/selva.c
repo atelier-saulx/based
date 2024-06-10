@@ -37,14 +37,14 @@ int selva_db_delete(int db_id)
     return 0;
 }
 
-int selva_db_schema_update(int db_id, char *schema_buf, size_t schema_len)
+int selva_db_schema_update(int db_id, const char *schema_buf, size_t schema_len)
 {
     CHECK_DB_ID(db_id);
 
     return db_schema_update(dbs[db_id], schema_buf, schema_len);
 }
 
-int selva_db_update(int db_id, node_type_t type, node_id_t node_id, char *buf, size_t len)
+int selva_db_update(int db_id, node_type_t type, node_id_t node_id, const char *buf, size_t len)
 {
     CHECK_DB_ID(db_id);
     struct SelvaDb *db = dbs[db_id];

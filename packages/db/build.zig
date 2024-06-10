@@ -37,6 +37,7 @@ pub fn build(b: *std.Build) void {
     // TODO Linux rpath
     lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("util");
+    lib.linkSystemLibrary("selva");
 
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "./lib.node",

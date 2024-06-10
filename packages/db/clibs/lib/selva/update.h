@@ -14,4 +14,4 @@ struct Update {
 
 static_assert(alignof(struct Update) == 1);
 
-int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, char *buf, size_t len);
+int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, const char *buf, size_t len);

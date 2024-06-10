@@ -168,5 +168,5 @@ struct SelvaDb {
 
 __attribute__((visibility("default"))) int selva_db_create(void);
 __attribute__((visibility("default"))) int selva_db_delete(int db_id);
-__attribute__((visibility("default"))) int selva_db_schema_update(int db_id, char *schema_buf, size_t schema_len);
-__attribute__((visibility("default"))) int selva_db_update(int db_id, node_type_t type, node_id_t node_id, char *buf, size_t len);
+__attribute__((visibility("default"))) int selva_db_schema_update(int db_id, const char *schema_buf, size_t schema_len);
+__attribute__((visibility("default"))) int selva_db_update(int db_id, node_type_t type, node_id_t node_id, const char *buf, size_t len);

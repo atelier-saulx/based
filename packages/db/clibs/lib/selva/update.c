@@ -12,7 +12,7 @@
 #define READ_AS(TYPE, BUF) \
     ((TYPE){ *(TYPE *)memcpy(&(TYPE){ 0 }, (BUF), sizeof(TYPE)) })
 
-int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node, char *buf, size_t len)
+int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node, const char *buf, size_t len)
 {
     struct SelvaNodeSchema *ns = type->ns;
 
