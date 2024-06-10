@@ -3,56 +3,11 @@ import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
-import newClient, { buf2payloadChunks } from '../src/selvad-client/index.js'
-import { create, createBatch, update } from '../src/set2.js'
-import { decodeMessageWithValues } from '../src/selvad-client/proto-value.js'
 import { join, dirname, resolve } from 'path'
-import {
-  SELVA_PROTO_ARRAY,
-  SELVA_PROTO_STRING,
-} from '../src/selvad-client/selva_proto.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
-
-async function sendSchema(
-  client: ReturnType<typeof newClient>,
-  schema: Buffer[],
-) {
-  const cmdid = 36
-  const seqno = client.newSeqno()
-  let firstFrame = true
-  let p: Promise<Buffer> | null
-
-  for (const nodeSchema of schema) {
-    const chunks = buf2payloadChunks(nodeSchema, 8)
-
-    for (let i = 0; i < chunks.length; i++) {
-      const [frame, payload] = await client.newFrame(cmdid, seqno)
-      const lastFrame = i === chunks.length - 1
-
-      const chunk = chunks[i]
-      if (i === 0) {
-        // Write header just once for each node type
-        payload.writeUInt8(SELVA_PROTO_STRING, 0)
-        payload.writeUint32LE(nodeSchema.length, 4)
-        chunk.copy(payload, 8)
-      } else {
-        chunk.copy(payload)
-      }
-      p = client.sendFrame(frame, chunk.length, {
-        firstFrame,
-        lastFrame,
-        batch: !lastFrame,
-      })
-      firstFrame = false
-    }
-  }
-
-  const resp = p ? decodeMessageWithValues(await p) : null
-  console.log('schema write:', resp)
-}
 
 test.serial.only('query + filter', async (t) => {
   try {
@@ -63,9 +18,6 @@ test.serial.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
-  const sClient = newClient(3000, '127.0.0.1')
-  // @ts-ignore
-  db.client = sClient
   db.native = {
     modify: (buff: Buffer, len: number) => {
       console.log('lullz flush buffer', len)
@@ -97,12 +49,6 @@ test.serial.only('query + filter', async (t) => {
       },
     },
   })
-  await sendSchema(
-    sClient,
-    Object.values(db.schemaTypesParsed).map(({ buf }) => buf),
-  )
-  // @ts-ignore
-  //console.log('schema read:', await db.client.sendRequest(37));
 
   console.log(
     'SCHEMA',
@@ -163,8 +109,6 @@ test.serial.only('query + filter', async (t) => {
   }))
   console.log(Date.now() - t1, 'ms')
   const t2 = Date.now()
-  await createBatch(db, 'simple', objs)
-  console.log(Date.now() - t2, 'ms')
 
   // { set Id, amount: 10 } , checksum
 
