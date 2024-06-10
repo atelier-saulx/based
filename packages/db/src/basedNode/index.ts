@@ -1,10 +1,10 @@
 import { readSeperateFieldFromBuffer } from './read.js'
 import { SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
-import { BasedNode, BasedNodeBase } from './BasedNode.js'
+import { BasedNode, BasedNodeBase } from './basedNode.js'
 import { prop } from './utils.js'
 import { createObjectProp } from './createObjectProp.js'
 
-export * from './BasedNode.js'
+export * from './basedNode.js'
 
 export const createBasedNodeReader = (schema: SchemaTypeDef): BasedNode => {
   const ctx: BasedNode = new BasedNodeBase()

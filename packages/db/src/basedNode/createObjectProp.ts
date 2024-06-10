@@ -1,5 +1,5 @@
 import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
-import { BasedNode } from './BasedNode.js'
+import { BasedNode } from './basedNode.js'
 import { readSeperateFieldFromBuffer } from './read.js'
 import { prop } from './utils.js'
 
