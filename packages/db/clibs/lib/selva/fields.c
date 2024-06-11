@@ -30,7 +30,7 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
     struct SelvaFieldInfo *nfo;
     void *p;
 
-    if (field >= fields->nr_fields) {
+    if (field >= selva_fields_get_nr_fields(fields)) {
         return SELVA_ENOENT;
     }
 
@@ -75,7 +75,7 @@ int selva_field_del(struct SelvaNode *node, field_t field)
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
 
-    if (field <= fields->nr_fields) {
+    if (field <= selva_fields_get_nr_fields(fields)) {
         return SELVA_ENOENT;
     }
 
@@ -112,13 +112,13 @@ static void prealloc_data(struct SelvaFields *fields, size_t new_size)
 
 static size_t alloc_block(struct SelvaFields *fields, enum SelvaFieldType type)
 {
-    size_t off = fields->size;
-    size_t new_size = off + field_data_size[type];
+    const size_t off = selva_fields_get_data_len(fields);
+    const size_t new_size = off + field_data_size[type];
 
     if (selva_sallocx(fields->data, 0) < new_size) {
         fields->data = selva_realloc(fields->data, new_size);
     }
-    fields->size = new_size;
+    selva_fields_set_data_len(fields, new_size);
 
     return off;
 }
@@ -128,7 +128,7 @@ int selva_fields_set_number(struct SelvaNode *node, field_t field, double value)
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
 
-    if (field <= fields->nr_fields) {
+    if (field <= selva_fields_get_nr_fields(fields)) {
         return SELVA_ENOENT;
     }
 

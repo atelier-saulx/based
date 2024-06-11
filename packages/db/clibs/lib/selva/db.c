@@ -131,6 +131,7 @@ static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *typ
     memset(node, 0, sizeof(*node));
     node->node_id = id;
     node->type = type->type;
+    selva_fields_set_nr_fields(&node->fields, 0); /* TODO */
 
     RB_INSERT(SelvaNodeIndex, &type->nodes, node);
     return node;

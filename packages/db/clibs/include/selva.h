@@ -112,16 +112,50 @@ struct SelvaNode {
     uint32_t expire;
     struct SelvaFields {
         void *data;
-        struct {
-            uint32_t size: 24; /*!< Size of data. */
-            field_t nr_fields: 8;
-        };
+        //unsigned _BitInt(32) len_bits;
+        uint32_t len_bits;
+#if 0
+        uint32_t size: 24; /*!< Size of data. */
+        field_t nr_fields: 8;
+#endif
         struct SelvaFieldInfo {
-            enum SelvaFieldType type: 4;
-            uint16_t off: 12; /*!< Offset in data in 8-byte blocks. */
+            uint8_t type;
+            uint16_t off;
+            //enum SelvaFieldType type: 4;
+            //uint16_t off: 12; /*!< Offset in data in 8-byte blocks. */
         } __packed fields_map[] __counted_by(nr_fields);
     } fields;
 };
+
+static inline size_t selva_fields_get_data_len(struct SelvaFields *fields)
+{
+    return fields->len_bits & 0xFFFFFF;
+}
+
+static inline field_t selva_fields_get_nr_fields(struct SelvaFields *fields)
+{
+    return fields->len_bits >> 24;
+}
+
+static inline void selva_fields_set_data_len(struct SelvaFields *fields, size_t len)
+{
+    unsigned _BitInt(32) len_bits = fields->len_bits;
+
+    len_bits &= 0xFFFFFF;
+    len_bits |= len & 0xFFFFFF;
+
+    fields->len_bits = len_bits;
+}
+
+static inline void selva_fields_set_nr_fields(struct SelvaFields *fields, field_t nr_fields)
+{
+    unsigned _BitInt(32) len_bits = fields->len_bits;
+
+    len_bits &= 0xFF000000;
+    len_bits |= (nr_fields & 0xFF) << 24;
+
+    fields->len_bits = len_bits;
+}
 
 /**
  * Entry for each node type supported by the schema.
