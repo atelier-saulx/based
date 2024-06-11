@@ -49,7 +49,7 @@ struct SelvaDb *db_create(void)
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
     RB_INIT(&db->types.index);
-    SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
+    SVector_Init(SVectorOpaqueCast(&db->expiring.list), 0, SVector_SelvaNode_expire_compare);
     db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
     /* TODO Expiring nodes timer */
 #if 0
