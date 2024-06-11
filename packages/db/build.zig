@@ -23,22 +23,6 @@ pub fn build(b: *std.Build) void {
 
     lib.linkLibC();
 
-    const make_clibs = b.addSystemCommand(
-        &[_][]const u8{
-            "make",
-            "-C",
-            "./clibs",
-        },
-    );
-    b.getInstallStep().dependOn(&make_clibs.step);
-
-    lib.addIncludePath(b.path("clibs/include"));
-    lib.addLibraryPath(b.path("zig-out/lib"));
-    // TODO Linux rpath
-    lib.root_module.addRPathSpecial("@loader_path");
-    lib.linkSystemLibrary("util");
-    lib.linkSystemLibrary("selva");
-
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "./lib.node",
     });
