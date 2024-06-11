@@ -76,15 +76,6 @@ typedef struct SVector {
     int (*vec_compar)(const void **a, const void **b);
 } SVector;
 
-struct SVectorOpaque {
-    alignas(struct SVector) char _data[sizeof(struct SVector)];
-};
-
-static inline struct SVector *SVectorOpaqueCast(struct SVectorOpaque *ovec)
-{
-    return (struct SVector *)ovec->_data;
-}
-
 static inline int SVector_IsInitialized(const SVector *vec) {
     return vec->vec_mode != SVECTOR_MODE_NONE;
 }

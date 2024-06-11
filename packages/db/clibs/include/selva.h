@@ -189,8 +189,7 @@ struct SelvaDb {
      * Expiring nodes.
      */
     struct {
-        // FIXME
-        struct SVectorOpaque list; /*!< List of all expiring nodes. */
+        SVector list; /*!< List of all expiring nodes. */
 #define SELVA_NODE_EXPIRE_NEVER UINT32_MAX
         int tim_id; /*!< 1 sec timer. */
         /**
