@@ -16,7 +16,7 @@ LIBS := \
 		lib/util \
 		lib/selva
 
-LIB_PATH := ../../../zig-out/lib
+LIB_PATH := ../../../build
 export LIB_PATH
 
 # Build all libraries (ordered)

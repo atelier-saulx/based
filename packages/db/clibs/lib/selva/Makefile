@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
-CFLAGS += -fPIC -fvisibility=hidden -I../../include -include ../../include/cdefs.h
+CFLAGS += -fPIC -fvisibility=hidden -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
 		   -L../../../zig-out/lib \
 		   -ljemalloc_selva -ldeflate -lutil
+LIB_SUFFIX := .node
 
 OBJ := \
 	db.o \
@@ -21,7 +22,9 @@ ifeq ($(uname_S),Linux)
 	LDFLAGS += -fPIC
 endif
 ifeq ($(uname_S),Darwin)
-	LDFLAGS += -Wl,-install_name,@rpath/libselva$(LIB_SUFFIX)
+	LDFLAGS += -undefined dynamic_lookup \
+			   -Wl,-install_name,@rpath/libselva$(LIB_SUFFIX) \
+			   -Wl,-rpath,@loader_path
 endif
 
 TARGET := $(LIB_PATH)/libselva$(LIB_SUFFIX)

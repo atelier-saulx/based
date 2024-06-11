@@ -65,7 +65,7 @@ void db_destroy(struct SelvaDb *db)
     /* FIXME */
 }
 
-int db_schema_update(struct SelvaDb *db, char *schema_buf, size_t schema_len)
+int db_schema_update(struct SelvaDb *db, const char *schema_buf, size_t schema_len)
 {
     struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e));
     size_t fields_map_size = 0; /* FIXME */

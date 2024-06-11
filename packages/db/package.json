@@ -11,6 +11,7 @@
     "clean": "rimraf {.turbo,dist,node_modules}",
     "build-zig": "mkdir -p dist && zig build --summary all",
     "get-napi": "./scripts/download-node-headers.sh",
+    "build-selva": "mkdir -p build && cd clibs && make",
     "test-simple": "zig build && npm run build && npm run test -- ./dist/test/index.js"
   },
   "sideEffects": false,
