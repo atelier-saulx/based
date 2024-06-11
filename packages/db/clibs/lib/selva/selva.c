@@ -126,6 +126,7 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
     struct SelvaDb *db = npointer2db(env, argv[0]);
     node_type_t type;
     node_id_t node_id;
+    void *p;
     const char *buf;
     size_t len;
 
@@ -134,7 +135,8 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
     status = napi_get_value_uint32(env, argv[2], &node_id);
     assert(status == napi_ok);
     static_assert(sizeof(node_id) == sizeof(uint32_t));
-    status = napi_get_buffer_info(env, argv[3], &buf, &len);
+    status = napi_get_buffer_info(env, argv[3], &p, &len);
+    buf = p;
     assert(status == napi_ok);
 
     struct SelvaTypeEntry *te;
