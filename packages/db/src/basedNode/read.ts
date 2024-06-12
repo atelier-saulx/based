@@ -1,5 +1,5 @@
 import { FieldDef, SchemaFieldTree } from '../schemaTypeDef.js'
-import { BasedNode } from './basedNode.js'
+import { BasedNode } from './basedNodeClass.js'
 
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,

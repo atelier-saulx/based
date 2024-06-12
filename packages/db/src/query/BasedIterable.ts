@@ -1,7 +1,6 @@
 import { inspect } from 'node:util'
-import { Query } from './query.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { BasedNode } from '../basedNode/basedNode.js'
+import { BasedNode } from '../basedNode/index.js'
 
 export class BasedIterable {
   constructor(buffer: Buffer, query: BasedQueryResponse) {
