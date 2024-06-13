@@ -14,7 +14,7 @@
 
 int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node, const char *buf, size_t len)
 {
-    struct SelvaNodeSchema *ns = type->ns;
+    struct SelvaNodeSchema *ns = &type->ns;
 
     /* TODO Prealloc fields data? */
 

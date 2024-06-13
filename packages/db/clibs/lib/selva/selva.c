@@ -86,7 +86,7 @@ static napi_value selva_db_destroy(napi_env env, napi_callback_info info)
     return res2napi(env, 0);
 }
 
-// selva_db_schema_update(db, schema): number
+// selva_db_schema_update(db, type, schema): number
 static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
 {
     int err;
@@ -99,15 +99,18 @@ static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
         return res2napi(env, err);
     }
 
+    node_type_t type;
     void *p;
     const char *schema_buf;
     size_t schema_len;
 
-    status = napi_get_buffer_info(env, argv[1], &p, &schema_len);
+    status = napi_get_value_uint32(env, argv[1], &type);
+    assert(status == napi_ok);
+    status = napi_get_buffer_info(env, argv[2], &p, &schema_len);
     schema_buf = p;
     assert(status == napi_ok);
 
-    return res2napi(env, db_schema_update(npointer2db(env, argv[0]), schema_buf, schema_len));
+    return res2napi(env, db_schema_update(npointer2db(env, argv[0]), type, schema_buf, schema_len));
 }
 
 // selva_db_update(db, type, node_id, buf): number

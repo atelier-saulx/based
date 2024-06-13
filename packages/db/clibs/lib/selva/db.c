@@ -7,6 +7,7 @@
 #include "jemalloc.h"
 #include "selva_object.h"
 #include "selva.h"
+#include "schema.h"
 #include "db.h"
 
 #define NODEPOOL_SLAB_SIZE 33554432
@@ -65,14 +66,30 @@ void db_destroy(struct SelvaDb *db)
     /* FIXME */
 }
 
-int db_schema_update(struct SelvaDb *db, const char *schema_buf, size_t schema_len)
+int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
-    struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e));
-    size_t fields_map_size = 0; /* FIXME */
+    struct fields_count count;
+    int err;
+
+    err = schemabuf_count_fields(&count, schema_buf, schema_len);
+    if (err) {
+        return err;
+    }
+
+    struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e) + count.nr_fields * sizeof(struct SelvaFieldSchema));
+
+    e->ns.nr_fields = count.nr_fields;
+    err = schemabuf_parse(&e->ns, schema_buf, schema_len);
+    if (err) {
+        selva_free(e);
+        return err;
+    }
 
     RB_INIT(&e->nodes);
     SelvaObject_Init(e->aliases._obj_data, 0);
-    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + fields_map_size, alignof(size_t));
+
+    const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
+    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
 
     RB_INSERT(SelvaTypeIndex, &db->types.index, e);
     return 0;
@@ -96,12 +113,6 @@ static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaN
     return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
 }
 
-struct SelvaNodeSchema *db_get_ns_by_node(struct SelvaDb *db, struct SelvaNode *node)
-{
-    struct SelvaTypeEntry *e = get_type_by_node(db, node);
-    return e ? e->ns : NULL;
-}
-
 struct SelvaFieldSchema *db_get_fs_by_ns(struct SelvaNodeSchema *ns, field_t field)
 {
     if (field >= ns->nr_fields) {
@@ -113,14 +124,15 @@ struct SelvaFieldSchema *db_get_fs_by_ns(struct SelvaNodeSchema *ns, field_t fie
 
 static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
+    struct SelvaTypeEntry *type;
     struct SelvaNodeSchema *ns;
 
-    ns = db_get_ns_by_node(db, node);
-    if (!ns) {
+    type = get_type_by_node(db, node);
+    if (!type) {
         return NULL;
     }
 
-    return db_get_fs_by_ns(ns, field);
+    return db_get_fs_by_ns(&type->ns, field);
 }
 
 static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
