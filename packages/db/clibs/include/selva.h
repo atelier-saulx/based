@@ -60,7 +60,8 @@ struct EdgeFieldConstraint {
 } edge_constraint;
 
 struct SelvaNodeSchema {
-    uint16_t nr_fields;
+    field_t nr_fields;
+    field_t nr_main_fields;
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
@@ -111,7 +112,7 @@ struct SelvaNode {
     struct SelvaFields {
         void *data;
         struct {
-            uint32_t size: 24; /*!< Size of data. */
+            uint32_t data_len: 24;
             field_t nr_fields: 8;
         };
         alignas(uint16_t) struct SelvaFieldInfo {
@@ -132,7 +133,12 @@ struct SelvaTypeEntry {
     } aliases;
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     RB_ENTRY(SelvaTypeEntry) _type_entry;
-    struct SelvaNodeSchema ns; /*!< Schema for this node type. */
+    struct {
+        void *buf;
+        size_t len;
+        size_t main_data_size;
+    } field_map_template;
+    struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 };
 
 /**

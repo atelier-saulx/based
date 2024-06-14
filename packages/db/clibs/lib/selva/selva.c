@@ -9,6 +9,12 @@
 #include "db.h"
 #include "update.h"
 
+/* TODO REMOVE */
+#include <stdio.h>
+#include <sys/time.h>
+#include "util/ctime.h"
+#include "util/timestamp.h"
+
 static napi_value db2npointer(napi_env env, struct SelvaDb *db)
 {
     napi_value pointer;
@@ -156,6 +162,49 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
     return res2napi(env, update(db, te, node, buf, len));
 }
 
+// selva_db_update_batch(db, type, buf): number
+static napi_value selva_db_update_batch(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 3;
+    napi_value argv[3];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type;
+    void *p;
+    const char *buf;
+    size_t len;
+
+    status = napi_get_value_uint32(env, argv[1], &type);
+    assert(status == napi_ok);
+    status = napi_get_buffer_info(env, argv[2], &p, &len);
+    buf = p;
+    assert(status == napi_ok);
+
+    struct timespec start;
+    ts_monotime(&start);
+
+    struct SelvaTypeEntry *te;
+
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    napi_value r = res2napi(env, update_batch(db, te, buf, len));
+    struct timespec end;
+    ts_monotime(&end);
+    timespec_sub(&end, &end, &start);
+    printf("real time: %d ms\n", (int)timespec2ms(&end));
+    return r;
+}
+
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
 
 static napi_value Init(napi_env env, napi_value exports) {
@@ -164,6 +213,7 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_destroy", selva_db_destroy),
       DECLARE_NAPI_METHOD("db_schema_update", selva_db_schema_update),
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
+      DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
   };
   napi_status status;
 

@@ -2,6 +2,7 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <stdio.h> /* TODO remove */
 #include <string.h>
 #include "selva_error.h"
@@ -23,10 +24,8 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
         int err = 0;
 
         memcpy(&ud, buf + i, sizeof(struct Update));
-        fs = db_get_fs_by_ns(ns, ud.field);
+        fs = db_get_fs_by_ns_field(ns, ud.field);
         if (!fs) {
-            /* FIXME REMOVE log */
-            printf("No type for field %d\n", ud.field);
             return SELVA_EINTYPE;
         }
 
@@ -36,6 +35,29 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
         }
 
         i += ud.len;
+    }
+
+    return 0;
+}
+
+int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *buf, size_t len)
+{
+    for (size_t i = 0; i < len;) {
+        uint32_t ud_len;
+        node_id_t node_id;
+        struct SelvaNode *node;
+        int err;
+
+        memcpy(&ud_len, buf + i + offsetof(struct UpdateBatch, len), sizeof(ud_len));
+        memcpy(&node_id, buf + i + offsetof(struct UpdateBatch, node_id), sizeof(node_id));
+        node = db_get_node(db, type, node_id, true);
+        assert(node);
+        err = update(db, type, node, buf + i + sizeof(struct UpdateBatch), ud_len - sizeof(struct UpdateBatch));
+        if (err) {
+            return err;
+        }
+
+        i += ud_len;
     }
 
     return 0;

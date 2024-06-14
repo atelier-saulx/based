@@ -80,44 +80,50 @@ test.serial.only('query + filter', async (t) => {
   console.log('GO!', process.pid)
   //await wait(10e3)
 
-  const buf = Buffer.allocUnsafe(31)
-  const p = []
-  for (let i = 0; i < 1e6; i++) {
-    const node = {
-      //user: i,
-      // refs: [0, 1, 2], //generateRandomArray(),
-      // flap: 'AMAZING 123',
-      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      vectorClock: i % 4,
-      location: {
-        long: 52,
-        lat: 52,
-      },
-    }
+  const NR_NODES = 5e6
+  const buf = Buffer.allocUnsafe(43 * NR_NODES)
+  let off = 0
+  for (let i = 0; i < NR_NODES; i++) {
+    //const node = {
+    //  //user: i,
+    //  // refs: [0, 1, 2], //generateRandomArray(),
+    //  // flap: 'AMAZING 123',
+    //  // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+    //  vectorClock: i % 4,
+    //  location: {
+    //    long: 52,
+    //    lat: 52,
+    //  },
+    //}
+
+    // UpdateBatch
+    buf.writeUInt32LE(43, off)
+    buf.writeUInt32LE(i, off += 4)
+    off += 4
 
     // vectorClock
-    let off = 0
-    buf.writeInt32LE(9, off) // len
+    buf.writeUInt32LE(9, off) // len
     buf.writeInt8(3, off += 4) // field
     buf.writeInt32LE(i % 4, off += 1)
     off += 4
 
     // long
-    buf.writeInt32LE(13, off) // len
-    buf.writeInt8(4, off + 4) // field
+    buf.writeUInt32LE(13, off) // len
+    buf.writeInt8(4, off += 4) // field
     buf.writeDoubleLE(52, off += 1)
     off += 8
 
     // lat
-    buf.writeInt32LE(13, off) // len
+    buf.writeUInt32LE(13, off) // len
     buf.writeInt8(5, off += 4) // field
     buf.writeDoubleLE(52, off += 1)
     off += 8
-      //console.log(off)
 
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
-    selva.db_update(dbp, 0, i, buf)
+    //selva.db_update(dbp, 0, i, buf)
   }
+    console.log(buf)
+  console.log('batch', selva.db_update_batch(dbp, 0, buf))
 
   console.log(Date.now() - dx, 'ms')
 

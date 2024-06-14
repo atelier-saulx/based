@@ -75,7 +75,7 @@ int selva_field_del(struct SelvaNode *node, field_t field)
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
 
-    if (field <= fields->nr_fields) {
+    if (field >= fields->nr_fields) {
         return SELVA_ENOENT;
     }
 
@@ -105,30 +105,26 @@ int selva_field_del(struct SelvaNode *node, field_t field)
     return 0;
 }
 
-static void prealloc_data(struct SelvaFields *fields, size_t new_size)
-{
-    fields->data = selva_realloc(fields->data, new_size);
-}
-
 static size_t alloc_block(struct SelvaFields *fields, enum SelvaFieldType type)
 {
-    size_t off = fields->size;
+    size_t off = fields->data_len;
     size_t new_size = off + selva_field_data_size[type];
 
     if (!fields->data || selva_sallocx(fields->data, 0) < new_size) {
         fields->data = selva_realloc(fields->data, new_size);
     }
-    fields->size = new_size;
+    fields->data_len = new_size;
 
     return off;
 }
 
+#include <stdio.h>
 int selva_fields_set(struct SelvaNode *node, field_t field, enum SelvaFieldType type, const void *value, size_t len)
 {
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
 
-    if (field <= fields->nr_fields) {
+    if (field >= fields->nr_fields) {
         return SELVA_ENOENT;
     }
 
@@ -137,7 +133,6 @@ int selva_fields_set(struct SelvaNode *node, field_t field, enum SelvaFieldType 
         nfo->type = type;
         nfo->off = alloc_block(fields, type);
     }
-    assert(nfo->type == SELVA_FIELD_TYPE_NUMBER);
 
     memcpy((char *)fields->data + nfo->off, value, len);
     return 0;
