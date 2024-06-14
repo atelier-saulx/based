@@ -77,10 +77,12 @@ test.serial.only('query + filter', async (t) => {
   }
 
   var dx = Date.now()
-  console.log('GO!')
+  console.log('GO!', process.pid)
+  //await wait(10e3)
 
+  const buf = Buffer.allocUnsafe(31)
   const p = []
-  for (let i = 0; i < 1e6 - 1; i++) {
+  for (let i = 0; i < 1e6; i++) {
     const node = {
       //user: i,
       // refs: [0, 1, 2], //generateRandomArray(),
@@ -92,7 +94,29 @@ test.serial.only('query + filter', async (t) => {
         lat: 52,
       },
     }
-    //selva.db_update(dbp, 0, i, buf)
+
+    // vectorClock
+    let off = 0
+    buf.writeInt32LE(9, off) // len
+    buf.writeInt8(3, off += 4) // field
+    buf.writeInt32LE(i % 4, off += 1)
+    off += 4
+
+    // long
+    buf.writeInt32LE(13, off) // len
+    buf.writeInt8(4, off + 4) // field
+    buf.writeDoubleLE(52, off += 1)
+    off += 8
+
+    // lat
+    buf.writeInt32LE(13, off) // len
+    buf.writeInt8(5, off += 4) // field
+    buf.writeDoubleLE(52, off += 1)
+    off += 8
+      //console.log(off)
+
+    //selva.db_update(dbp, 0, i, buf.subarray(0, off))
+    selva.db_update(dbp, 0, i, buf)
   }
 
   console.log(Date.now() - dx, 'ms')
