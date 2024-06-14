@@ -66,6 +66,7 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
+  selvaBuf: Buffer
   fieldNames: Buffer
   fields: {
     // path including .
@@ -167,6 +168,22 @@ export const createSchemaTypeDef = (
         setByPath(result.tree, f.path, f)
       }
     }
+
+    const mainFields: FieldDef[] = []
+    const restFields: FieldDef[] = []
+
+    for (const f of vals) {
+        if (f.seperate) {
+            restFields.push(f)
+        } else {
+            mainFields.push(f)
+        }
+    }
+    result.selvaBuf = Buffer.from([
+      mainFields.length,
+      ...mainFields.map((f) => f.typeByte),
+      ...restFields.map((f) => f.typeByte),
+    ])
 
     /*
       [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]

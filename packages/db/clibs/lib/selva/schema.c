@@ -4,7 +4,6 @@
  */
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include "jemalloc.h"
@@ -179,26 +178,17 @@ static struct schemabuf_parser {
     },
 };
 
-int schemabuf_count_fields(struct fields_count *count, const char *buf, size_t size)
+int schemabuf_count_fields(struct fields_count *count, const char *buf, size_t len)
 {
-    bool mf = false;
-
-    if (size == 0) {
+    if (len < 1) {
         return SELVA_EINVAL;
     }
 
-    count->nr_main_fields = 0;
-    count->nr_fields = 0;
+    count->nr_main_fields = buf[0];
+    count->nr_fields = len - 1;
 
-    for (size_t i = 2; i < size; i++) {
-        if (buf[i] == '\0') {
-            mf = !mf;
-        } else {
-            if (mf) {
-                count->nr_main_fields++;
-            }
-            count->nr_fields++;
-        }
+    if (count->nr_main_fields > count->nr_fields) {
+        return SELVA_EINVAL;
     }
 
     return 0;
@@ -219,34 +209,29 @@ int schemabuf_parse(struct SelvaNodeSchema *ns, const char *buf, size_t len)
         return SELVA_ENOBUFS;
     }
 
-    bool main_fields = false;
     field_t field_idx = 0;
-    for (size_t i = 2; i < len; i++) {
-        if (buf[i] == '\0') {
-            main_fields = !main_fields;
-        } else {
-            struct SelvaFieldSchema *fs = &ns->field_schemas[field_idx];
-            enum schemabuf_type field_type = buf[i];
+    for (size_t i = 1; i < len; i++) {
+        struct SelvaFieldSchema *fs = &ns->field_schemas[field_idx];
+        enum schemabuf_type field_type = buf[i];
 
-            if ((size_t)field_type >= num_elem(schemabuf_parsers)) {
-                return SELVA_EINTYPE;
-            }
-
-            schemabuf_parsers[field_type].type2fs(fs, field_type, field_idx);
-
-            switch (field_type) {
-            case SCHEMA_CREATED:
-                ns->created_field = field_idx;
-                break;
-            case SCHEMA_UPDATED:
-                ns->updated_field = field_idx;
-                break;
-            default:
-                break;
-            }
-
-            field_idx++;
+        if ((size_t)field_type >= num_elem(schemabuf_parsers)) {
+            return SELVA_EINTYPE;
         }
+
+        schemabuf_parsers[field_type].type2fs(fs, field_type, field_idx);
+
+        switch (field_type) {
+        case SCHEMA_CREATED:
+            ns->created_field = field_idx;
+            break;
+        case SCHEMA_UPDATED:
+            ns->updated_field = field_idx;
+            break;
+        default:
+            break;
+        }
+
+        field_idx++;
     }
 
     /*

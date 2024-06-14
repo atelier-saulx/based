@@ -7,7 +7,7 @@
 #include "selva.h"
 
 struct Update {
-    uint32_t size;
+    uint32_t len;
     field_t field;
     char value[];
 } __packed;

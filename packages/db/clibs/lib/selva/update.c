@@ -62,7 +62,7 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
             return err;
         }
 
-        i += ud->size;
+        i += ud->len;
     }
 
     return 0;

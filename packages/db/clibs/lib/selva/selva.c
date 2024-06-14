@@ -90,8 +90,8 @@ static napi_value selva_db_destroy(napi_env env, napi_callback_info info)
 static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 2;
-    napi_value argv[2];
+    size_t argc = 3;
+    napi_value argv[3];
     napi_status status;
 
     err = get_args(env, info, &argc, argv, false);
