@@ -176,12 +176,12 @@ export const createSchemaTypeDef = (
     // TODO main fields are from 0...n
     // TODO rest n+1...m
     for (const f of vals) {
-        if (true || f.seperate) {
-            restFields.push(f)
-        } else {
-            // TODO Doesn't work correctly now
-            //mainFields.push(f)
-        }
+        //if (f.seperate) {
+        //  restFields.push(f)
+        //} else {
+        //  mainFields.push(f)
+        //}
+        restFields.push(f)
     }
 	// TODO Remove this once the types agree
     const typeMap = {
@@ -198,7 +198,7 @@ export const createSchemaTypeDef = (
 	}
     result.selvaBuf = Buffer.from([
       mainFields.length,
-      //...mainFields.map((f) => typeMap[f.type]),
+      ...mainFields.map((f) => typeMap[f.type]),
       ...restFields.map((f) => typeMap[f.type]),
     ])
 
