@@ -314,6 +314,13 @@ test.serial.only('query + filter', async (t) => {
 
   db.updateSchema({
     types: {
+      user: {
+        fields: {
+          name: { type: 'string' },
+          email: { type: 'string' },
+          age: { type: 'integer' },
+        },
+      },
       simple: {
         fields: {
           user: { type: 'reference', allowedTypes: ['user'] },
@@ -364,10 +371,27 @@ test.serial.only('query + filter', async (t) => {
   // 8 / 1.3
   //
 
+  const users = []
+
+  for (let i = 0; i < 100; i++) {
+    users.push(
+      db.create('user', {
+        age: i,
+        name: 'Mr ' + i,
+        email: i + '@once.net',
+      }),
+    )
+  }
+
+  console.log(users)
+
   const now = Date.now()
+
+  // single ref include (step 1)
 
   for (let i = 0; i < 5e6 - 1; i++) {
     db.create('simple', {
+      user: users[Math.floor(Math.random() * 100)].id,
       vectorClock: 2,
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
@@ -375,8 +399,7 @@ test.serial.only('query + filter', async (t) => {
         long: 14.12,
         lat: 52,
       },
-      refs: generateRandomArray(),
-
+      refs: generateRandomArray(), // make
       smurp: {
         hello: true,
         ts: now,
