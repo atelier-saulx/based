@@ -113,6 +113,7 @@ struct SelvaNode {
      */
     uint32_t expire;
     struct SelvaFields {
+#define SELVA_FIELDS_DATA_ALIGN 8
         void *data;
         struct {
             uint32_t data_len: 24;
