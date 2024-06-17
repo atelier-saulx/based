@@ -2,14 +2,14 @@ const std = @import("std");
 const c = @import("./c.zig");
 const napi = @import("./napi.zig");
 
-pub fn zstd(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getZstd(env, info) catch |err| {
+pub fn compress(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return compressInner(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-fn getZstd(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn compressInner(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const total_size = 100;
 
     const args = try napi.getArgs(1, env, info);
