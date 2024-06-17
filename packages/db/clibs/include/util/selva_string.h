@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <sys/types.h>
 
 struct finalizer;
 struct selva_string;

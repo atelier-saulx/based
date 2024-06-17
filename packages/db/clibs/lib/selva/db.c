@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include "jemalloc.h"
+#include "util/align.h"
 #include "selva_object.h"
 #include "selva.h"
 #include "schema.h"
@@ -79,11 +80,13 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
         if (i < nr_main_fields) {
             struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(ns, i);
 
+            assert(fs);
+
             nfo[i] = (struct SelvaFieldInfo){
                 .type = fs->type,
-                .off = main_field_off,
+                .off = main_field_off >> 3,
             };
-            main_field_off += selva_field_data_size[fs->type];
+            main_field_off += ALIGNED_SIZE(selva_field_data_size[fs->type], SELVA_FIELDS_DATA_ALIGN);
         } else {
             nfo[i] = (struct SelvaFieldInfo){
                 .type = 0,
@@ -94,7 +97,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
 
     type->field_map_template.buf = nfo;
     type->field_map_template.len = nr_fields * sizeof(struct SelvaFieldInfo);
-    type->field_map_template.main_data_size = main_field_off;
+    type->field_map_template.main_data_size = ALIGNED_SIZE(main_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
 int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)

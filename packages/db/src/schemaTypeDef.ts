@@ -176,16 +176,30 @@ export const createSchemaTypeDef = (
     // TODO main fields are from 0...n
     // TODO rest n+1...m
     for (const f of vals) {
-        if (f.seperate) {
+        if (true || f.seperate) {
             restFields.push(f)
         } else {
-            mainFields.push(f)
+            // TODO Doesn't work correctly now
+            //mainFields.push(f)
         }
     }
+	// TODO Remove this once the types agree
+    const typeMap = {
+      'timestamp': 1,
+      'created': 2,
+      'updated': 3,
+      'number': 4,
+      'integer': 5,
+      'boolean': 9,
+      'reference': 13,
+      'enum': 10,
+      'string': 11,
+      'references': 14,
+	}
     result.selvaBuf = Buffer.from([
       mainFields.length,
-      ...mainFields.map((f) => f.typeByte),
-      ...restFields.map((f) => f.typeByte),
+      //...mainFields.map((f) => typeMap[f.type]),
+      ...restFields.map((f) => typeMap[f.type]),
     ])
 
     /*

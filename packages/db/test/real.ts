@@ -78,7 +78,7 @@ test.serial.only('query + filter', async (t) => {
 
   var dx = Date.now()
   console.log('GO!', process.pid)
-  //await wait(10e3)
+  //await wait(15e3)
 
   const NR_NODES = 5e6
   const buf = Buffer.allocUnsafe(43 * NR_NODES)
@@ -127,6 +127,12 @@ test.serial.only('query + filter', async (t) => {
 
   console.log(Date.now() - dx, 'ms')
 
+
+  console.log('GET')
+  for (let nodeId = 0; nodeId < 20; nodeId++) {
+    console.log(`${nodeId}.vectorClock`, selva.db_get_field(dbp, 0, nodeId, 3))
+  }
+
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
 
@@ -143,6 +149,7 @@ test.serial.only('query + filter', async (t) => {
   //  .get()
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
+  console.log(process.memoryUsage())
 
   t.true(true)
 })
