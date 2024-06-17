@@ -8,6 +8,7 @@ const Sets = @import("set/set.zig");
 const Dels = @import("del/del.zig");
 const Query = @import("./query/query.zig");
 const Modify = @import("./set/modify.zig");
+const Compress = @import("./zstd.zig");
 
 const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
@@ -21,9 +22,8 @@ const delBatch4 = Dels.delBatch4;
 const delBatch8 = Dels.delBatch8;
 const query = Query.getQuery;
 const modify = Modify.modify;
-
+const zstd = Compress.zstd;
 const dbthrow = errors.mdbCheck;
-
 const NapiError = error{NapiError};
 
 pub fn throwError(env: c.napi_env, err: Error) c.napi_value {
@@ -66,5 +66,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
     registerFunction(env, exports, "getQuery", query) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
+    registerFunction(env, exports, "zstd", zstd) catch return null;
     return exports;
 }
