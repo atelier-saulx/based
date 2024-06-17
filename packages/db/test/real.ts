@@ -20,7 +20,7 @@ test.serial.only('query + filter', async (t) => {
     path: dbFolder,
   })
 
-  console.log('new selvadb', selva.db_create())
+  const dbp = selva.db_create()
   db.native = {
     modify: (buff: Buffer, len: number) => {
       console.log('lullz flush buffer', len)
@@ -57,17 +57,19 @@ test.serial.only('query + filter', async (t) => {
     'SCHEMA',
     db.schemaTypesParsed.simple.cnt,
     // 66 length
-    db.schemaTypesParsed.simple.buf,
+    db.schemaTypesParsed.simple.selvaBuf,
     db.schemaTypesParsed.simple.fieldNames,
   )
+  console.log('schema update', selva.db_schema_update(dbp, 0, db.schemaTypesParsed.simple.selvaBuf))
+    console.dir(db.schemaTypesParsed.simple, { depth: 100 })
 
-  console.log(
-    'SCHEMA BACK',
-    readSchemaTypeDefFromBuffer(
-      db.schemaTypesParsed.simple.buf,
-      db.schemaTypesParsed.simple.fieldNames,
-    ).cnt,
-  )
+  //console.log(
+  //  'SCHEMA BACK',
+  //  readSchemaTypeDefFromBuffer(
+  //    db.schemaTypesParsed.simple.buf,
+  //    db.schemaTypesParsed.simple.fieldNames,
+  //  ).cnt,
+  //)
 
   const refs = []
   for (let i = 1; i < 10 - 1; i++) {
@@ -75,47 +77,54 @@ test.serial.only('query + filter', async (t) => {
   }
 
   var dx = Date.now()
-  console.log('GO!')
+  console.log('GO!', process.pid)
+  //await wait(10e3)
 
-  /*
-  const p = []
-  for (let i = 0; i < 1e6 - 1; i++) {
-  // for (let i = 0; i < 2000; i++) {
-    p.push(create(db, 'simple', {
-      //user: i,
-      // refs: [0, 1, 2], //generateRandomArray(),
-      // flap: 'AMAZING 123',
-      // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      vectorClock: i % 4,
-      location: {
-        long: 52,
-        lat: 52,
-      },
-    }))
-    if (i % 1000 === 0) {
-      //console.log('flush')
-      // @ts-ignore
-      await db.client.flush()
-      await Promise.all(p)
-      p.length = 0
-    }
+  const NR_NODES = 5e6
+  const buf = Buffer.allocUnsafe(43 * NR_NODES)
+  let off = 0
+  for (let i = 0; i < NR_NODES; i++) {
+    //const node = {
+    //  //user: i,
+    //  // refs: [0, 1, 2], //generateRandomArray(),
+    //  // flap: 'AMAZING 123',
+    //  // flap: 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+    //  vectorClock: i % 4,
+    //  location: {
+    //    long: 52,
+    //    lat: 52,
+    //  },
+    //}
+
+    // UpdateBatch
+    buf.writeUInt32LE(43, off)
+    buf.writeUInt32LE(i, off += 4)
+    off += 4
+
+    // vectorClock
+    buf.writeUInt32LE(9, off) // len
+    buf.writeInt8(3, off += 4) // field
+    buf.writeInt32LE(i % 4, off += 1)
+    off += 4
+
+    // long
+    buf.writeUInt32LE(13, off) // len
+    buf.writeInt8(4, off += 4) // field
+    buf.writeDoubleLE(52, off += 1)
+    off += 8
+
+    // lat
+    buf.writeUInt32LE(13, off) // len
+    buf.writeInt8(5, off += 4) // field
+    buf.writeDoubleLE(52, off += 1)
+    off += 8
+
+    //selva.db_update(dbp, 0, i, buf.subarray(0, off))
+    //selva.db_update(dbp, 0, i, buf)
   }
-  */
+    console.log(buf)
+  console.log('batch', selva.db_update_batch(dbp, 0, buf))
 
-  const t1 = Date.now()
-  const objs = Array.from({ length: 1e6 }, (_, i) => ({
-    vectorClock: i % 4,
-    location: {
-      long: 52,
-      lat: 52,
-    },
-  }))
-  console.log(Date.now() - t1, 'ms')
-  const t2 = Date.now()
-
-  // { set Id, amount: 10 } , checksum
-
-  await wait(0)
   console.log(Date.now() - dx, 'ms')
 
   // orderded DBIs
@@ -123,17 +132,17 @@ test.serial.only('query + filter', async (t) => {
 
   // READ CACHE SIZE []
 
-  const d = Date.now()
-  const ids = db
-    .query('simple')
-    .filter('vectorClock', '>', 1)
-    // .filter(['refs', 'has', [2]])
-    // .or(['refs', 'has', [1234]])
-    // .sort('vectorClock', 'asc')
-    .range(0, 1000)
-    .get()
+  //const d = Date.now()
+  //const ids = db
+  //  .query('simple')
+  //  .filter('vectorClock', '>', 1)
+  //  // .filter(['refs', 'has', [2]])
+  //  // .or(['refs', 'has', [1234]])
+  //  // .sort('vectorClock', 'asc')
+  //  .range(0, 1000)
+  //  .get()
 
-  console.info('query result ==', ids, Date.now() - d, 'ms')
+  //console.info('query result ==', ids, Date.now() - d, 'ms')
 
   t.true(true)
 })

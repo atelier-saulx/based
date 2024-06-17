@@ -60,14 +60,13 @@ struct EdgeFieldConstraint {
 } edge_constraint;
 
 struct SelvaNodeSchema {
-    uint16_t nr_fields;
+    field_t nr_fields;
+    field_t nr_main_fields;
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
         field_t field_index;
         enum SelvaFieldType type;
-        uint32_t offset;
-        size_t size;
         struct EdgeFieldConstraint edge_constraint;
     } field_schemas[] __counted_by(nr_fields);
 };
@@ -113,10 +112,10 @@ struct SelvaNode {
     struct SelvaFields {
         void *data;
         struct {
-            uint32_t size: 24; /*!< Size of data. */
+            uint32_t data_len: 24;
             field_t nr_fields: 8;
         };
-        struct SelvaFieldInfo {
+        alignas(uint16_t) struct SelvaFieldInfo {
             enum SelvaFieldType type: 4;
             uint16_t off: 12; /*!< Offset in data in 8-byte blocks. */
         } __packed fields_map[] __counted_by(nr_fields);
@@ -128,13 +127,18 @@ struct SelvaNode {
  */
 struct SelvaTypeEntry {
     node_type_t type;
-    struct SelvaNodeSchema *ns; /*!< Schema for this node type. */
     struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
     struct {
         STATIC_SELVA_OBJECT(_obj_data);
     } aliases;
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     RB_ENTRY(SelvaTypeEntry) _type_entry;
+    struct {
+        void *buf;
+        size_t len;
+        size_t main_data_size;
+    } field_map_template;
+    struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 };
 
 /**

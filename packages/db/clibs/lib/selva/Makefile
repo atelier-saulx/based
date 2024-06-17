@@ -12,6 +12,7 @@ OBJ := \
 	db.o \
 	edge.o \
 	fields.o \
+	schema.o \
 	selva.o \
 	selva_object/selva_object.o \
 	selva_object/selva_object_foreach.o \

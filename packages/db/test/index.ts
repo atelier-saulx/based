@@ -471,7 +471,7 @@ test.serial.only('query + filter', async (t) => {
 
   /*
   {
-    BUFFER 1mb // 4 bytes 
+    BUFFER 1mb // 4 bytes
     [4]
   }
   */

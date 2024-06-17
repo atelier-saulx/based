@@ -7,6 +7,8 @@
 #include "jemalloc.h"
 #include "selva_object.h"
 #include "selva.h"
+#include "schema.h"
+#include "fields.h"
 #include "db.h"
 
 #define NODEPOOL_SLAB_SIZE 33554432
@@ -65,14 +67,62 @@ void db_destroy(struct SelvaDb *db)
     /* FIXME */
 }
 
-int db_schema_update(struct SelvaDb *db, const char *schema_buf, size_t schema_len)
+static void make_field_map_template(struct SelvaTypeEntry *type)
 {
-    struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e));
-    size_t fields_map_size = 0; /* FIXME */
+    struct SelvaNodeSchema *ns = &type->ns;
+    const size_t nr_fields = ns->nr_fields;
+    const size_t nr_main_fields = ns->nr_main_fields;
+    size_t main_field_off = 0;
+    struct SelvaFieldInfo *nfo = selva_malloc(nr_fields * sizeof(struct SelvaFieldInfo));
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        if (i < nr_main_fields) {
+            struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(ns, i);
+
+            nfo[i] = (struct SelvaFieldInfo){
+                .type = fs->type,
+                .off = main_field_off,
+            };
+            main_field_off += selva_field_data_size[fs->type];
+        } else {
+            nfo[i] = (struct SelvaFieldInfo){
+                .type = 0,
+                .off = 0,
+            };
+        }
+    }
+
+    type->field_map_template.buf = nfo;
+    type->field_map_template.len = nr_fields * sizeof(struct SelvaFieldInfo);
+    type->field_map_template.main_data_size = main_field_off;
+}
+
+int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+{
+    struct fields_count count;
+    int err;
+
+    err = schemabuf_count_fields(&count, schema_buf, schema_len);
+    if (err) {
+        return err;
+    }
+
+    struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e) + count.nr_fields * sizeof(struct SelvaFieldSchema));
+
+    e->ns.nr_fields = count.nr_fields;
+    e->ns.nr_main_fields = count.nr_main_fields;
+    err = schemabuf_parse(&e->ns, schema_buf, schema_len);
+    if (err) {
+        selva_free(e);
+        return err;
+    }
+    make_field_map_template(e);
 
     RB_INIT(&e->nodes);
     SelvaObject_Init(e->aliases._obj_data, 0);
-    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, sizeof(struct SelvaNode) + fields_map_size, alignof(size_t));
+
+    const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
+    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
 
     RB_INSERT(SelvaTypeIndex, &db->types.index, e);
     return 0;
@@ -96,13 +146,7 @@ static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaN
     return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
 }
 
-struct SelvaNodeSchema *db_get_ns_by_node(struct SelvaDb *db, struct SelvaNode *node)
-{
-    struct SelvaTypeEntry *e = get_type_by_node(db, node);
-    return e ? e->ns : NULL;
-}
-
-struct SelvaFieldSchema *db_get_fs_by_ns(struct SelvaNodeSchema *ns, field_t field)
+struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
 {
     if (field >= ns->nr_fields) {
         return NULL;
@@ -113,25 +157,33 @@ struct SelvaFieldSchema *db_get_fs_by_ns(struct SelvaNodeSchema *ns, field_t fie
 
 static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
-    struct SelvaNodeSchema *ns;
+    struct SelvaTypeEntry *type;
 
-    ns = db_get_ns_by_node(db, node);
-    if (!ns) {
+    type = get_type_by_node(db, node);
+    if (!type) {
         return NULL;
     }
 
-    return db_get_fs_by_ns(ns, field);
+    return db_get_fs_by_ns_field(&type->ns, field);
 }
 
 static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
 {
+    struct SelvaNodeSchema *ns = &type->ns;
+    const size_t nr_fields = ns->nr_fields;
+    const size_t nr_main_fields = ns->nr_main_fields;
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
-    /* TODO Clean fields map */
     memset(node, 0, sizeof(*node));
     node->node_id = id;
     node->type = type->type;
-    node->fields.nr_fields = 0; /* FIXME */
+    node->fields.nr_fields = ns->nr_fields;
+
+    memcpy(node->fields.fields_map, type->field_map_template.buf, type->field_map_template.len);
+    if (type->field_map_template.main_data_size > 0) {
+        node->fields.data = selva_calloc(1, type->field_map_template.main_data_size);
+        node->fields.data_len = type->field_map_template.main_data_size;
+    }
 
     RB_INSERT(SelvaNodeIndex, &type->nodes, node);
     return node;
