@@ -68,6 +68,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
     registerFunction(env, exports, "getQuery", query) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
-    registerFunction(env, exports, "zstd", compress) catch return null;
+    registerFunction(env, exports, "compress", compress) catch return null;
     return exports;
 }

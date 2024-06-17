@@ -6,6 +6,8 @@ import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import { text } from './examples.js'
 
+import native from '../src/db.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
@@ -389,7 +391,7 @@ test.serial.only('query + filter', async (t) => {
 
   // single ref include (step 1)
 
-  for (let i = 0; i < 5e6 - 1; i++) {
+  for (let i = 0; i < 1e6 - 1; i++) {
     db.create('simple', {
       user: users[Math.floor(Math.random() * 100)].id,
       vectorClock: 2,
@@ -483,6 +485,8 @@ test.serial.only('query + filter', async (t) => {
   }
 
   await bla()
+
+  native.compress('AAAAAAA')
 
   // await wait(5000)
 
