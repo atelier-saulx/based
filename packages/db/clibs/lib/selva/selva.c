@@ -70,7 +70,6 @@ static napi_value res2napi(napi_env env, int err)
     return result;
 }
 
-
 static napi_value selva_db_create(napi_env env, napi_callback_info)
 {
     return db2npointer(env, db_create());
