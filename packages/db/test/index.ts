@@ -323,6 +323,7 @@ test.serial.only('query + filter', async (t) => {
           location: {
             type: 'object',
             properties: {
+              bla: { type: 'number' },
               long: { type: 'number' },
               lat: { type: 'number' },
             },
@@ -370,9 +371,12 @@ test.serial.only('query + filter', async (t) => {
       vectorClock: 2,
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
+        bla: i,
         long: 14.12,
         lat: 52,
       },
+      refs: generateRandomArray(),
+
       smurp: {
         hello: true,
         ts: now,
@@ -393,10 +397,10 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      // .filter('refs', 'has', [2, 19])
+      .filter('refs', 'has', [2, 19])
       // 'flap', 'location'
       .include('vectorClock', 'location.long', 'smurp.pos') // now support location (getting the whole object)
-      .range(0, 1e6) // max len not good
+      .range(0, 100) // max len not good
       .get()
 
     console.info(
