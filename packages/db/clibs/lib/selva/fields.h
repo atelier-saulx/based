@@ -7,14 +7,19 @@
 struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
     union {
-        bool b;
-        double d;
-        long long ll;
-        struct selva_string *s;
+        bool boolean;
+        double number;
+        int64_t timestamp;
+        long long integer;
+        struct selva_string *string;
+        uint32_t uint32;
+        uint64_t uint64;
+        uint8_t uint8;
+        uint8_t enu;
         void *p;
     };
 };
-extern const size_t selva_field_data_size[12];
+extern const size_t selva_field_data_size[15];
 
 int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any);
 int selva_field_del(struct SelvaNode *node, field_t field);

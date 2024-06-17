@@ -172,6 +172,9 @@ export const createSchemaTypeDef = (
     const mainFields: FieldDef[] = []
     const restFields: FieldDef[] = []
 
+    // TODO Correct index mapping
+    // TODO main fields are from 0...n
+    // TODO rest n+1...m
     for (const f of vals) {
         if (f.seperate) {
             restFields.push(f)

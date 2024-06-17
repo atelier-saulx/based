@@ -9,15 +9,18 @@
 #include "selva.h"
 #include "fields.h"
 
-const size_t selva_field_data_size[12] = {
+const size_t selva_field_data_size[15] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
-    [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(uint64_t),
-    [SELVA_FIELD_TYPE_CREATED] = sizeof(uint64_t),
-    [SELVA_FIELD_TYPE_UPDATED] = sizeof(uint64_t),
+    [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(int64_t), // time_t
+    [SELVA_FIELD_TYPE_CREATED] = sizeof(int64_t),
+    [SELVA_FIELD_TYPE_UPDATED] = sizeof(int64_t),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof(double),
-    [SELVA_FIELD_TYPE_INTEGER] = sizeof(uint64_t),
-    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(bool),
-    [SELVA_FIELD_TYPE_ENUM] = sizeof(int32_t),
+    [SELVA_FIELD_TYPE_INTEGER] = sizeof(int32_t),
+    [SELVA_FIELD_TYPE_UINT8] = sizeof(uint8_t),
+    [SELVA_FIELD_TYPE_UINT32] = sizeof(uint32_t),
+    [SELVA_FIELD_TYPE_UINT64] = sizeof(uint64_t),
+    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
+    [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
     [SELVA_FIELD_TYPE_STRING] = 0, /* TODO */
     [SELVA_FIELD_TYPE_TEXT] = 0, /* TODO */
     [SELVA_FIELD_TYPE_REFERENCE] = 0, /* TODO */
@@ -45,18 +48,27 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
     case SELVA_FIELD_TYPE_TIMESTAMP:
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
-        memcpy(&any->ll, p, sizeof(any->ll));
+        memcpy(&any->timestamp, p, sizeof(any->timestamp));
         break;
     case SELVA_FIELD_TYPE_NUMBER:
-        memcpy(&any->d, p, sizeof(any->d));
+        memcpy(&any->number, p, sizeof(any->number));
         break;
     case SELVA_FIELD_TYPE_INTEGER:
-        memcpy(&any->ll, p, sizeof(any->ll));
+        memcpy(&any->integer, p, sizeof(any->integer));
+        break;
+    case SELVA_FIELD_TYPE_UINT8:
+        memcpy(&any->uint8, p, sizeof(any->uint8));
+        break;
+    case SELVA_FIELD_TYPE_UINT32:
+        memcpy(&any->uint32, p, sizeof(any->uint32));
+        break;
+    case SELVA_FIELD_TYPE_UINT64:
+        memcpy(&any->uint64, p, sizeof(any->uint64));
         break;
     case SELVA_FIELD_TYPE_BOOLEAN:
-        memcpy(&any->b, p, sizeof(any->b));
+        memcpy(&any->boolean, p, sizeof(any->boolean));
     case SELVA_FIELD_TYPE_ENUM:
-        memcpy(&any->ll, p, sizeof(any->ll));
+        memcpy(&any->enu, p, sizeof(any->enu));
         break;
     case SELVA_FIELD_TYPE_STRING:
     case SELVA_FIELD_TYPE_TEXT:
@@ -88,6 +100,9 @@ int selva_field_del(struct SelvaNode *node, field_t field)
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
         /* NOP */
