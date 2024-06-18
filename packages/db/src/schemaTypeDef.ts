@@ -133,7 +133,6 @@ export const createSchemaTypeDef = (
       if (isSeperate) {
         result.cnt++
       }
-      const selvaField = Object.keys(result.fields).length
       result.fields[p.join('.')] = {
         typeByte: TYPE_INDEX.get(f.type),
         __isField: true,
@@ -143,7 +142,7 @@ export const createSchemaTypeDef = (
         start: 0,
         len,
         field: isSeperate ? result.cnt : 0,
-        selvaField: selvaField,
+        selvaField: 0,
       }
     }
   }
@@ -172,16 +171,19 @@ export const createSchemaTypeDef = (
     const mainFields: FieldDef[] = []
     const restFields: FieldDef[] = []
 
-    // TODO Correct index mapping
-    // TODO main fields are from 0...n
-    // TODO rest n+1...m
     for (const f of vals) {
-        //if (f.seperate) {
-        //  restFields.push(f)
-        //} else {
-        //  mainFields.push(f)
-        //}
-        restFields.push(f)
+        if (f.seperate) {
+          restFields.push(f)
+        } else {
+          mainFields.push(f)
+        }
+    }
+    let selvaField = 0;
+    for (const field of mainFields) {
+        field.selvaField = selvaField++;
+    }
+    for (const field of restFields) {
+        field.selvaField = selvaField++;
     }
 	// TODO Remove this once the types agree
     const typeMap = {

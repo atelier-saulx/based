@@ -79,6 +79,7 @@ test.serial.only('query + filter', async (t) => {
   var dx = Date.now()
   console.log('GO!', process.pid)
   //await wait(15e3)
+  const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
   const buf = Buffer.allocUnsafe(43 * NR_NODES)
@@ -103,19 +104,19 @@ test.serial.only('query + filter', async (t) => {
 
     // vectorClock
     buf.writeUInt32LE(9, off) // len
-    buf.writeInt8(3, off += 4) // field
+    buf.writeInt8(fields.vectorClock.selvaField, off += 4) // field
     buf.writeInt32LE(i % 4, off += 1)
     off += 4
 
     // long
     buf.writeUInt32LE(13, off) // len
-    buf.writeInt8(4, off += 4) // field
+    buf.writeInt8(fields['location.long'].selvaField, off += 4) // field
     buf.writeDoubleLE(52, off += 1)
     off += 8
 
     // lat
     buf.writeUInt32LE(13, off) // len
-    buf.writeInt8(5, off += 4) // field
+    buf.writeInt8(fields['location.lat'].selvaField, off += 4) // field
     buf.writeDoubleLE(52, off += 1)
     off += 8
 
@@ -129,7 +130,7 @@ test.serial.only('query + filter', async (t) => {
 
   console.log('GET')
   for (let nodeId = 0; nodeId < 20; nodeId++) {
-    console.log(`${nodeId}.vectorClock`, selva.db_get_field(dbp, 0, nodeId, 3))
+    console.log(`${nodeId}.vectorClock`, selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField))
   }
 
   // orderded DBIs
