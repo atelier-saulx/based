@@ -17,7 +17,7 @@ CFLAGS += -fPIC -fvisibility=hidden -I../../include \
 	$(call cc-option,-Wno-keyword-macro) \
 	$(call cc-option,-Wno-constant-logical-operand) \
 	-DNDEBUG
-LDFLAGS += -g -L../../../zig-out/lib
+LDFLAGS += -g -L../../../build
 
 OBJ := \
 	lib/deflate_compress.o \
