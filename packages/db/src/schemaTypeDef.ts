@@ -47,7 +47,7 @@ const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map([
 export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
-  selvaField: string
+  selvaField: number
   type: BasedSchemaFieldType
   typeByte: number
   seperate: boolean
@@ -143,7 +143,7 @@ export const createSchemaTypeDef = (
         start: 0,
         len,
         field: isSeperate ? result.cnt : 0,
-        selvaField: '' + selvaField,
+        selvaField: selvaField,
       }
     }
   }
@@ -303,7 +303,7 @@ export const readSchemaTypeDefFromBuffer = (
       const field: FieldDef = {
         __isField: true,
         field: 0,
-        selvaField: '' + selvaField++,
+        selvaField: selvaField++,
         type: typeName,
         typeByte,
         seperate: false,
@@ -327,7 +327,7 @@ export const readSchemaTypeDefFromBuffer = (
       const field: FieldDef = {
         __isField: true,
         field: fieldIndex,
-        selvaField: '' + selvaField++,
+        selvaField: selvaField++,
         type: typeName,
         typeByte,
         seperate: false,
