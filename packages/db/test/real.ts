@@ -122,7 +122,6 @@ test.serial.only('query + filter', async (t) => {
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)
   }
-    console.log(buf)
   console.log('batch', selva.db_update_batch(dbp, 0, buf))
 
   console.log(Date.now() - dx, 'ms')
