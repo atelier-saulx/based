@@ -395,8 +395,8 @@ test.serial.only('query + filter', async (t) => {
     db.create('simple', {
       user: users[Math.floor(Math.random() * 100)].id,
       vectorClock: 2,
-      // flap: 'snap',
-      flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      flap: 'snap',
+      // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
         bla: i,
         long: 14.12,
@@ -423,10 +423,10 @@ test.serial.only('query + filter', async (t) => {
     const result = db
       .query('simple')
       .filter('vectorClock', '>', 0)
-      .filter('refs', 'has', [2, 19])
+      // .filter('refs', 'has', [2, 19])
       // 'flap', 'location'
-      .include('vectorClock', 'location.long', 'smurp.pos') // now support location (getting the whole object)
-      .range(0, 100) // max len not good
+      .include('vectorClock', 'location.long', 'smurp.pos', 'flap') // now support location (getting the whole object)
+      .range(0, 10) // max len not good
       .get()
 
     console.info(
@@ -441,18 +441,18 @@ test.serial.only('query + filter', async (t) => {
 
     // console.log(result.data)
 
-    const arr = []
-    for (const bla of result.data) {
-      arr.push({
-        vectorClock: bla.vectorClock,
-        id: bla.id,
-        location: { ...bla.location },
-        pos: { ...bla.smurp.pos },
-      })
-      if (bla.id > 3) {
-        break
-      }
-    }
+    // const arr = []
+    // for (const bla of result.data) {
+    //   arr.push({
+    //     vectorClock: bla.vectorClock,
+    //     id: bla.id,
+    //     location: { ...bla.location },
+    //     pos: { ...bla.smurp.pos },
+    //   })
+    //   if (bla.id > 3) {
+    //     break
+    //   }
+    // }
 
     // const bla = result.data.map((f) => {
     //   // long: f.location.long
@@ -465,22 +465,22 @@ test.serial.only('query + filter', async (t) => {
     //   }
     // })
 
-    // for (const x of result.data) {
-    //   // inspect on x as well
-    //   console.log({
-    //     id: x.id,
-    //     location: x.location,
-    //     flap: x.flap,
-    //     user: x.user,
-    //     vectorClock: x.vectorClock,
-    //     smurp: x.smurp,
-    //   })
-    //   break
-    // }
+    for (const x of result.data) {
+      // inspect on x as well
+      console.log({
+        id: x.id,
+        location: x.location,
+        flap: x.flap,
+        user: x.user,
+        vectorClock: x.vectorClock,
+        smurp: x.smurp,
+      })
+      break
+    }
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    // console.log(result.data)
+    console.log(result.data)
 
     // console.log(result.buffer.byteLength)
   }

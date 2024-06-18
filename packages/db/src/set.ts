@@ -91,29 +91,18 @@ const addModify = (
         // 782 - 821
         // const deflated = zlib.deflateRawSync(value)
         // const x = dbZig.deflate.compress(Buffer.from(value)) (1.5 sec)
-        // console.info('derp', x)
         // const buf = Buffer.from(value)
         // const x = compressSync(Buffer.from(value))
-
         // const x = snappy.compressSync(value)
-        // const x = dbZig.deflate.compress(compressor, buf)
         // const deflated = zlib.deflateRawSync(buf)
-
-        // console.log(x?.byteLength)
-        // 8445 3354
-        // 8445 3107
-
-        // 24s vs 32s
-        // 19547
-
         // const compressed = Buffer.allocUnsafe(Buffer.byteLength(uncompressed))
-
+        // const byteLen = buf.byteLength
         const l = value.length
         const byteLen = l + l
-        // if len > then max buffer size throw error
-
         // const byteLen =//Buffer.byteLength(value, 'utf8')
         // const byteLen = x.byteLength
+
+        // if len > then max buffer size throw error
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
@@ -121,12 +110,19 @@ const addModify = (
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.len += 5
 
-        // x.copy(db.modifyBuffer.buffer, db.modifyBuffer.len)
+        // deflated.copy(db.modifyBuffer.buffer, db.modifyBuffer.len)
+        // const size = byteLen
         const size = db.modifyBuffer.buffer.write(
           value,
           db.modifyBuffer.len,
           'utf8',
         )
+        // const size = nodeflate.compress(
+        //   compressor,
+        //   value,
+        //   db.modifyBuffer.buffer,
+        //   db.modifyBuffer.len,
+        // )
         db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
 
         db.modifyBuffer.len += size
