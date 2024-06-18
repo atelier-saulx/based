@@ -3,6 +3,11 @@ import { startDrain, flushBuffer } from './operations.js'
 import snappy from 'snappy'
 import zlib from 'node:zlib'
 
+import { createRequire } from 'node:module'
+const nodeflate = createRequire(import.meta.url)('../../build/nodeflate.node')
+const compressor = nodeflate.newCompressor(3)
+const decompressor = nodeflate.newDecompressor()
+
 const setCursor = (
   db: BasedDb,
   schema: SchemaTypeDef,
@@ -101,6 +106,8 @@ const addModify = (
         // 24s vs 32s
         // 19547
 
+        // const compressed = Buffer.allocUnsafe(Buffer.byteLength(uncompressed))
+
         const l = value.length
         const byteLen = l + l
         // if len > then max buffer size throw error
@@ -113,6 +120,7 @@ const addModify = (
         setCursor(db, schema, t, id)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.len += 5
+
         // x.copy(db.modifyBuffer.buffer, db.modifyBuffer.len)
         const size = db.modifyBuffer.buffer.write(
           value,

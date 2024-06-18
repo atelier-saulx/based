@@ -415,7 +415,7 @@ test.serial.only('query + filter', async (t) => {
   }
 
   await wait(0)
-  console.log('TIME (5M)', Date.now() - dx, 'ms')
+  console.log('TIME (100k)', Date.now() - dx, 'ms')
 
   // 2 buffers
   const bla = async () => {
