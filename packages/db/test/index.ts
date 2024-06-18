@@ -486,7 +486,7 @@ test.serial.only('query + filter', async (t) => {
 
   await bla()
 
-  native.compress('AAAAAAA')
+  native.compress('ab')
 
   // await wait(5000)
 

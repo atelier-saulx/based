@@ -23,6 +23,13 @@ pub fn build(b: *std.Build) void {
 
     lib.linkLibC();
 
+    const dep2 = b.dependency("zstd", .{ .create = true });
+
+    lib.addIncludePath(dep2.path("lib/compress"));
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_fast.c") });
+
+    lib.linkLibC();
+
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "./lib.node",
     });

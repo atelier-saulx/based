@@ -16,9 +16,17 @@ fn compressInner(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     const str = try napi.getString("string", env, args[0]);
 
-    std.debug.print("hello {any}", .{str.ptr});
+    std.debug.print("elem? {any}\n", .{str.ptr});
 
-    std.compress.flate.deflate()
+    // c.
+
+    // c.zstd
+
+    // for (str) |elem| {
+    // std.debug.print("elem? {}\n", .{elem});
+    // }
+
+    // std.compress.flate.deflate();
 
     // std.compress.zstd.
 

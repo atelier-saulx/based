@@ -46,9 +46,7 @@ pub fn openDbi(comptime create: bool, name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi
 pub fn openShard(comptime create: bool, type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
     var dbiName = try createDbiName(type_prefix, shardKey[0], shardKey[1], shardKey[2]);
     // std.debug.print("DBI: {any}\n", .{dbiName});
-
     const dbi = try openDbi(create, &dbiName, txn);
-
     errdefer c.mdb_dbi_close(Envs.env, dbi);
     var cursor: ?*c.MDB_cursor = null;
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));

@@ -27,22 +27,21 @@ pub fn getBuffer(comptime name: []const u8, env: c.napi_env, value: c.napi_value
         jsThrow(env, "Cannot get buffer for variable: " ++ name);
         return errors.Napi.CannotGetBuffer;
     }
-    return @as([*]u8, buffer)[0..size];
+    return buffer[0..size];
 }
 
 pub fn getString(comptime name: []const u8, env: c.napi_env, value: c.napi_value) ![]u8 {
     var size: usize = undefined;
-    if (c.napi_get_value_string_utf8(env, value, null, 0, &size) != c.napi_ok) {
-        jsThrow(env, "Cannot get size " ++ name);
+    if (c.napi_get_value_string_utf8(env, value, null, 0, @ptrCast(&size)) != c.napi_ok) {
+        jsThrow(env, "Cannot get size for: " ++ name);
         return errors.Napi.CannotGetString;
     }
     var buffer: [*]u8 = undefined;
-    var copied: usize = undefined;
-    if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size + 1, &copied) != c.napi_ok) {
+    if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size + 1, null) != c.napi_ok) {
         jsThrow(env, "Cannot get fixed length string for variable: " ++ name);
         return errors.Napi.CannotGetString;
     }
-    return @as([*]u8, buffer)[0 .. size + 1];
+    return buffer[0..size];
 }
 
 pub fn getStringFixedLength(comptime name: []const u8, comptime len: comptime_int, env: c.napi_env, value: c.napi_value) ![len]u8 {
