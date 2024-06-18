@@ -8,7 +8,7 @@ CFLAGS += -Wno-unused-value
 ifeq ($(uname_S),Darwin)
 CFLAGS += -Wunused-comparison
 endif
-LDFLAGS += -g -L../../../zig-out/lib
+LDFLAGS += -g -L../../../build
 
 OBJ := \
 	array_field.o \
