@@ -103,6 +103,8 @@ const addModify = (
 
         const l = value.length
         const byteLen = l + l
+        // if len > then max buffer size throw error
+
         // const byteLen =//Buffer.byteLength(value, 'utf8')
         // const byteLen = x.byteLength
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
