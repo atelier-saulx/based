@@ -76,13 +76,14 @@ test.serial.only('query + filter', async (t) => {
     refs.push(i)
   }
 
-  var dx = Date.now()
+  //var dx = Date.now()
   console.log('GO!', process.pid)
   //await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
-  const buf = Buffer.allocUnsafe(43 * NR_NODES)
+  const DATA_SIZE = 84
+  const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
   let off = 0
   for (let i = 0; i < NR_NODES; i++) {
     //const node = {
@@ -98,7 +99,7 @@ test.serial.only('query + filter', async (t) => {
     //}
 
     // UpdateBatch
-    buf.writeUInt32LE(43, off)
+    buf.writeUInt32LE(DATA_SIZE, off)
     buf.writeUInt32LE(i, off += 4)
     off += 4
 
@@ -107,6 +108,12 @@ test.serial.only('query + filter', async (t) => {
     buf.writeInt8(fields.vectorClock.selvaField, off += 4) // field
     buf.writeInt32LE(i % 4, off += 1)
     off += 4
+
+    // flap
+    buf.writeUint32LE(41, off) // len
+    buf.writeInt8(fields.flap.selvaField, off += 4) // field
+    buf.write('Hippity hoppity there is no property', off += 1)
+    off += 36
 
     // long
     buf.writeUInt32LE(13, off) // len
@@ -123,6 +130,7 @@ test.serial.only('query + filter', async (t) => {
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)
   }
+  var dx = Date.now()
   console.log('batch', selva.db_update_batch(dbp, 0, buf))
 
   console.log(Date.now() - dx, 'ms')
@@ -132,6 +140,7 @@ test.serial.only('query + filter', async (t) => {
   for (let nodeId = 0; nodeId < 20; nodeId++) {
     console.log(`${nodeId}.vectorClock`, selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField))
   }
+  console.log('now get flap', selva.db_get_field(dbp, 0, 10, fields.flap.selvaField))
 
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required

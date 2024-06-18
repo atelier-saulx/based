@@ -24,13 +24,13 @@ const size_t selva_field_data_size[15] = {
     [SELVA_FIELD_TYPE_UINT64] = sizeof(uint64_t),
     [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
     [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
-    [SELVA_FIELD_TYPE_STRING] = sizeof(void *),
+    [SELVA_FIELD_TYPE_STRING] = sizeof(struct selva_string *),
     [SELVA_FIELD_TYPE_TEXT] = 0, /* TODO */
-    [SELVA_FIELD_TYPE_REFERENCE] = 0, /* TODO */
-    [SELVA_FIELD_TYPE_REFERENCES] = 0, /* TODO */
+    [SELVA_FIELD_TYPE_REFERENCE] = sizeof(void *),
+    [SELVA_FIELD_TYPE_REFERENCES] = sizeof(void *),
 };
 
-static inline void *nfo2p(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
+static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
     return (char *)fields->data + (nfo->off << 3);
 }
@@ -86,8 +86,10 @@ int selva_fields_set(struct SelvaNode *node, field_t field, enum SelvaFieldType 
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
-        memcpy(nfo2p(fields, nfo), selva_string_create(value, len, 0), sizeof(void *));
-        static_assert(sizeof(void *) == sizeof(struct selva_string *));
+        do {
+            struct selva_string *string = selva_string_create(value, len, 0);
+            memcpy(nfo2p(fields, nfo), &string, sizeof(struct selva_string *));
+        } while (0);
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* TODO */
@@ -99,6 +101,7 @@ int selva_fields_set(struct SelvaNode *node, field_t field, enum SelvaFieldType 
         /* TODO */
         break;
     }
+
     return 0;
 }
 
@@ -120,7 +123,7 @@ int selva_fields_set_integer(struct SelvaNode *node, field_t field, int32_t valu
 int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any)
 {
     struct SelvaFields *fields = &node->fields;
-    struct SelvaFieldInfo *nfo;
+    const struct SelvaFieldInfo *nfo;
     void *p;
 
     if (field >= fields->nr_fields) {
@@ -162,6 +165,9 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
         break;
     case SELVA_FIELD_TYPE_STRING:
         memcpy(&any->string, p, sizeof(struct selva_string *));
+        if (!any->string) {
+            any->type = SELVA_FIELD_TYPE_NULL;
+        }
         break;
     case SELVA_FIELD_TYPE_TEXT:
     case SELVA_FIELD_TYPE_REFERENCE:
