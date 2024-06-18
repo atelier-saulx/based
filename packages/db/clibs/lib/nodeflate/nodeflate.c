@@ -19,7 +19,7 @@ static napi_value voidp2npointer(napi_env env, void *p)
     return np;
 }
 
-static void *npointer2db(napi_env env, napi_value np)
+static void *npointer2voidp(napi_env env, napi_value np)
 {
     uint64_t result;
     bool lossless;
@@ -107,7 +107,7 @@ static napi_value destroy_compressor(napi_env env, napi_callback_info info)
         return result;
     }
 
-    libdeflate_free_compressor(npointer2db(env, argv[0]));
+    libdeflate_free_compressor(npointer2voidp(env, argv[0]));
     return result;
 }
 
@@ -126,53 +126,76 @@ static napi_value destroy_decompressor(napi_env env, napi_callback_info info)
         return result;
     }
 
-    libdeflate_free_decompressor(npointer2db(env, argv[0]));
+    libdeflate_free_decompressor(npointer2voidp(env, argv[0]));
     return result;
 }
 
-// compress(compressor, in): out
+static size_t get_in(napi_env env, napi_value in, void **out, bool *must_free)
+{
+    napi_status status;
+    bool result;
+    char *buf;
+    size_t len;
+
+    status = napi_is_buffer(env, in, &result);
+    assert(status == napi_ok);
+    if (result) {
+        status = napi_get_buffer_info(env, in, out, &len);
+        assert(status == napi_ok);
+        *must_free = false;
+        goto out;
+    }
+
+    status = napi_get_value_string_utf8(env, in, NULL, 0, &len);
+    buf = malloc(len + 1);
+    status = napi_get_value_string_utf8(env, in, buf, len + 1, NULL);
+    *out = buf;
+    *must_free = true;
+
+out:
+    return len;
+}
+
+// compress(compressor, in, out: Buffer, off?: number): out
 static napi_value compress(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 2;
-    napi_value argv[2];
+    size_t argc = 4;
+    napi_value argv[4];
     napi_status status;
-    napi_value result;
     napi_value null_p;
 
     napi_get_null(env, &null_p);
-    err = get_args(env, info, &argc, argv, false);
-    if (err) {
+    err = get_args(env, info, &argc, argv, true);
+    if (err || argc < 3) {
         return null_p;
     }
 
-    void *cp;
-    struct libdeflate_compressor *compressor;
     void *in_buf;
     size_t in_len;
+    bool must_free_in_buf = false;
+    void *out_buf;
+    size_t out_len;
+    uint32_t off = 0;
 
-    status = napi_get_buffer_info(env, argv[0], &cp, &in_len);
-    compressor = cp;
+    in_len = get_in(env, argv[1], &in_buf, &must_free_in_buf);
+    status = napi_get_buffer_info(env, argv[2], &out_buf, &out_len);
     assert(status == napi_ok);
-    status = napi_get_buffer_info(env, argv[1], &in_buf, &in_len);
-    assert(status == napi_ok);
-
-    void *out_buf = malloc(in_len);
-    const size_t out_len = libdeflate_compress(compressor, in_buf, in_len, out_buf, in_len);
-
-    if (out_len >= in_len) {
-        free(out_buf);
-        return null_p;
+    if (argc >= 4) {
+        status = napi_get_value_uint32(env, argv[3], &off);
+        assert(status == napi_ok);
     }
 
-    status = napi_create_buffer_copy(env, out_len, out_buf, NULL, &result);
-    assert(status == napi_ok);
-    free(out_buf);
+    const size_t act_out_len = libdeflate_compress(npointer2voidp(env, argv[0]), in_buf, in_len, (char *)out_buf + (size_t)off, out_len - (size_t)off);
 
-    return result;
+    if (must_free_in_buf) {
+        free(in_buf);
+    }
+
+    return res2napi(env, act_out_len < in_len ? act_out_len : 0);
 }
 
-// decompress(decompressor, in, out): number
+// decompress(decompressor, in: Buffer, out: Buffer): number
 static napi_value decompress(napi_env env, napi_callback_info info)
 {
     int err;
@@ -187,22 +210,18 @@ static napi_value decompress(napi_env env, napi_callback_info info)
         return null_p;
     }
 
-    void *dcp;
-    struct libdeflate_decompressor *decompressor;
     void *in_buf;
     size_t in_len;
     void *out_buf;
     size_t out_len;
 
-    status = napi_get_buffer_info(env, argv[0], &dcp, &in_len);
-    decompressor = dcp;
-    assert(status == napi_ok);
     status = napi_get_buffer_info(env, argv[1], &in_buf, &in_len);
     assert(status == napi_ok);
     status = napi_get_buffer_info(env, argv[2], &out_buf, &out_len);
     assert(status == napi_ok);
 
-    const enum libdeflate_result dresult = libdeflate_decompress(decompressor,
+    const enum libdeflate_result dresult = libdeflate_decompress(
+            npointer2voidp(env, argv[0]),
             in_buf, in_len,
             out_buf, out_len,
             NULL);
