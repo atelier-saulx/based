@@ -21,6 +21,7 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
         struct Update ud;
         const struct SelvaFieldSchema *fs;
         const void *value = buf + i + sizeof(struct Update);
+        size_t value_len;
         int err = 0;
 
         memcpy(&ud, buf + i, sizeof(struct Update));
@@ -29,7 +30,16 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
             return SELVA_EINTYPE;
         }
 
-        err = selva_fields_set(node, ud.field, fs->type, value, selva_field_data_size[fs->type]);
+        switch (fs->type) {
+        case SELVA_FIELD_TYPE_STRING:
+            value_len = len;
+            break;
+        default:
+            value_len = selva_field_data_size[fs->type];
+            break;
+        }
+
+        err = selva_fields_set(node, ud.field, fs->type, value, value_len);
         if (err) {
             return err;
         }
