@@ -391,11 +391,12 @@ test.serial.only('query + filter', async (t) => {
 
   // single ref include (step 1)
 
-  for (let i = 0; i < 1e6 - 1; i++) {
+  for (let i = 0; i < 1e5 - 1; i++) {
     db.create('simple', {
       user: users[Math.floor(Math.random() * 100)].id,
       vectorClock: 2,
-      // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      // flap: 'snap',
+      flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
         bla: i,
         long: 14.12,
@@ -479,9 +480,9 @@ test.serial.only('query + filter', async (t) => {
 
     console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-    console.log(result.data)
+    // console.log(result.data)
 
-    console.log(result.buffer.byteLength)
+    // console.log(result.buffer.byteLength)
   }
 
   await bla()
