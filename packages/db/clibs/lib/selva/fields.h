@@ -19,6 +19,10 @@ struct SelvaFieldsAny {
         void *p;
     };
 };
+
+/**
+ * Size of each type in fields.data.
+ */
 extern const size_t selva_field_data_size[15];
 
 int selva_fields_set(struct SelvaNode *node, field_t field, enum SelvaFieldType type, const void *value, size_t len);
