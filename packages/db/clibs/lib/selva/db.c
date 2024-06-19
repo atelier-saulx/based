@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/align.h"
@@ -140,7 +142,7 @@ struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type
     return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
 }
 
-static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     struct SelvaTypeEntry find = {
         .type = node->type,
@@ -162,7 +164,7 @@ static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaN
 {
     struct SelvaTypeEntry *type;
 
-    type = get_type_by_node(db, node);
+    type = db_get_type_by_node(db, node);
     if (!type) {
         return NULL;
     }
@@ -198,7 +200,7 @@ static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *typ
 
 void del_node(struct SelvaDb *db, struct SelvaNode *node)
 {
-    struct SelvaTypeEntry *e = get_type_by_node(db, node);
+    struct SelvaTypeEntry *e = db_get_type_by_node(db, node);
 
     RB_REMOVE(SelvaNodeIndex, &e->nodes, node);
 
@@ -223,4 +225,21 @@ struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, n
     }
 
     return node;
+}
+
+
+[[noreturn]]
+void db_panic_fn(const char * restrict where, const char * restrict func, const char * restrict fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    fprintf(stderr, "%s:%s: ", where, func);
+    vfprintf(stderr, fmt, args);
+    if (fmt[strlen(fmt) - 1] != '\n') {
+        fputc('\n', stderr);
+    }
+    va_end(args);
+
+    abort();
 }

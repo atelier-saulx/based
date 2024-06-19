@@ -58,8 +58,8 @@ struct EdgeFieldConstraint {
         EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
     } __packed flags;
     field_t inverse_field;
-    struct SelvaNodeSchema *src_node;
-    struct SelvaNodeSchema *dst_node;
+    node_type_t src_node_type;
+    node_type_t dst_node_type;
 } edge_constraint;
 
 struct SelvaNodeSchema {
@@ -68,7 +68,7 @@ struct SelvaNodeSchema {
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
-        field_t field_index;
+        field_t field;
         enum SelvaFieldType type;
         struct EdgeFieldConstraint edge_constraint;
     } field_schemas[] __counted_by(nr_fields);

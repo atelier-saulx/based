@@ -76,7 +76,7 @@ test.serial.only('query + filter', async (t) => {
     refs.push(i)
   }
 
-  //var dx = Date.now()
+  //const dx = Date.now()
   console.log('GO!', process.pid)
   //await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
@@ -140,7 +140,7 @@ test.serial.only('query + filter', async (t) => {
   for (let nodeId = 0; nodeId < 20; nodeId++) {
     console.log(`${nodeId}.vectorClock`, selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField))
   }
-  console.log('now get flap', selva.db_get_field(dbp, 0, 10, fields.flap.selvaField))
+  console.log(`now get flap: "${selva.db_get_field(dbp, 0, 10, fields.flap.selvaField)}"`)
 
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
