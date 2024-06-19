@@ -34,6 +34,36 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
         case SELVA_FIELD_TYPE_STRING:
             value_len = ud.len - 5;
             break;
+        case SELVA_FIELD_TYPE_REFERENCE:
+            do {
+                struct {
+                    node_type_t type_id;
+                    node_id_t node_id;
+                } __packed dst_node;
+                struct SelvaTypeEntry *type;
+                struct SelvaNode *dst;
+
+                if (ud.len - 5 != sizeof(dst_node)) {
+                    return SELVA_EINVAL;
+                }
+
+                memcpy(&dst_node, value, sizeof(dst_node));
+
+                type = db_get_type_by_index(db, dst_node.type_id);
+                if (!type) {
+                    return SELVA_EINVAL;
+                }
+
+                dst = db_get_node(db, type, dst_node.node_id, false);
+                if (!dst) {
+                    return SELVA_ENOENT;
+                }
+
+                /* Found the destination. */
+                value = dst;
+                value_len = sizeof(struct SelvaNode *);
+            } while (0);
+            break;
         default:
             value_len = selva_field_data_size[fs->type];
             break;
