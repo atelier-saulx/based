@@ -9,7 +9,7 @@ import { useBasedClient } from '../useBasedClient'
  */
 const useBasedAuth = (): Accessor<AuthState> => {
   const [client] = createSignal<BasedClient>(useBasedClient())
-  const [auth, setAuth] = createSignal<AuthState>(client?.authState || {})
+  const [auth, setAuth] = createSignal<AuthState>(client()?.authState || {})
 
   if (client()) {
     setAuth(client().authState)

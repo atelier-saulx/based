@@ -6,9 +6,9 @@ import { BasedClient } from '@based/client'
  * The props from the `BasedProvider` component.
  */
 type BasedProviderProps = {
-  /** All the connection information that identifies you in the `Based` cloud. **/
+  /** All the connection information that identifies you in the `Based` cloud. */
   client: BasedClient
-  /** Any component that you want to inject the `BasedClient` context. **/
+  /** Any component that you want to inject the `BasedClient` context. */
   children: JSX.Element | JSX.Element[]
 }
 
@@ -29,13 +29,11 @@ const BasedContext: SolidContext<BasedClient> = createContext<BasedClient>()
  */
 const BasedProvider: Component<BasedProviderProps> = (
   props: BasedProviderProps,
-) => {
-  return (
-    <BasedContext.Provider value={props.client}>
-      <div className="based-io">{props.children}</div>
-    </BasedContext.Provider>
-  )
-}
+) => (
+  <BasedContext.Provider value={props.client}>
+    <div class="based-io">{props.children}</div>
+  </BasedContext.Provider>
+)
 
 /**
  * Alias to `BasedProvider`.

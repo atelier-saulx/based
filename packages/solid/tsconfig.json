@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
     "moduleResolution": "Node",
     "isolatedModules": true,
