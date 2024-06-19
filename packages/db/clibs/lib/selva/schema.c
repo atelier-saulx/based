@@ -239,7 +239,7 @@ static struct schemabuf_parser {
     },
 };
 
-int schemabuf_count_fields(struct fields_count *count, const char *buf, size_t len)
+int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, size_t len)
 {
     if (len < 1) {
         return SELVA_EINVAL;

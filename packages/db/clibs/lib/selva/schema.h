@@ -4,10 +4,10 @@
  */
 #pragma once
 
-struct fields_count {
+struct schema_fields_count {
     size_t nr_main_fields;
     size_t nr_fields;
 };
 
-int schemabuf_count_fields(struct fields_count *count, const char *buf, size_t len);
+int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, size_t len);
 int schemabuf_parse(struct SelvaNodeSchema *ns, const char *buf, size_t len);

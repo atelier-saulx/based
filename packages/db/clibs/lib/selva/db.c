@@ -102,7 +102,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
 
 int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
-    struct fields_count count;
+    struct schema_fields_count count;
     int err;
 
     err = schemabuf_count_fields(&count, schema_buf, schema_len);
