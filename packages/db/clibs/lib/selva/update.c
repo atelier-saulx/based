@@ -32,7 +32,7 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
 
         switch (fs->type) {
         case SELVA_FIELD_TYPE_STRING:
-            value_len = len;
+            value_len = ud.len - 5;
             break;
         default:
             value_len = selva_field_data_size[fs->type];
