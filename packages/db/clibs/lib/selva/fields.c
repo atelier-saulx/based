@@ -75,6 +75,7 @@ static void set_value_string(struct SelvaFields *fields, struct SelvaFieldInfo *
 /**
  * Write a ref to fields data.
  * Note that this function doesn't touch the destination node.
+ * TODO meta
  */
 static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, struct SelvaNode * restrict dst)
 {
@@ -97,6 +98,7 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
 /**
  * Delete a reference field edge.
  * Clears both ways.
+ * TODO meta
  */
 static void remove_reference(const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src)
 {
