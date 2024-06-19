@@ -26,7 +26,7 @@ const size_t selva_field_data_size[15] = {
     [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
     [SELVA_FIELD_TYPE_STRING] = sizeof(struct selva_string *),
     [SELVA_FIELD_TYPE_TEXT] = 0, /* TODO */
-    [SELVA_FIELD_TYPE_REFERENCE] = sizeof(void *),
+    [SELVA_FIELD_TYPE_REFERENCE] = 2 * sizeof(void *),
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(void *),
 };
 
