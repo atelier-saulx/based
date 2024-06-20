@@ -121,6 +121,12 @@ static int type2fs_reference(struct SelvaNodeSchema *ns, enum SelvaFieldType, fi
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_REFERENCE,
+        .edge_constraint = {
+            .flags = 0,
+            .inverse_field = 0, /* TODO */
+            .src_node_type = 0,
+            .dst_node_type = 0,
+        },
     };
 
     return 0;

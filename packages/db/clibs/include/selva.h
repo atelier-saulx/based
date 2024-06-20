@@ -40,28 +40,6 @@ typedef uint32_t node_type_t;
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 
-struct EdgeFieldConstraint {
-    enum EdgeFieldConstraintFlag {
-        /**
-         * Single reference edge.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF       = 0x01,
-        /**
-         * Bidirectional reference.
-         * TODO Is this needed if edges are always bidir.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02,
-        /**
-         * Edge field array mode.
-         * By default an edge field acts like a set. This flag makes the field work like an array.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
-    } __packed flags;
-    field_t inverse_field;
-    node_type_t src_node_type;
-    node_type_t dst_node_type;
-} edge_constraint;
-
 struct SelvaNodeSchema {
     field_t nr_fields;
     field_t nr_main_fields;
@@ -70,31 +48,24 @@ struct SelvaNodeSchema {
     struct SelvaFieldSchema {
         field_t field;
         enum SelvaFieldType type;
-        struct EdgeFieldConstraint edge_constraint;
+        struct EdgeFieldConstraint {
+            enum EdgeFieldConstraintFlag {
+                /**
+                 * Bidirectional reference.
+                 * TODO Is this needed if edges are always bidir.
+                 */
+                EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
+                /**
+                 * Edge field array mode.
+                 * By default an edge field acts like a set. This flag makes the field work like an array.
+                 */
+                EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
+            } __packed flags;
+            field_t inverse_field;
+            node_type_t src_node_type;
+            node_type_t dst_node_type;
+        } edge_constraint;
     } field_schemas[] __counted_by(nr_fields);
-};
-
-struct EdgeFieldSingle {
-    struct SelvaNode *dst;
-    struct SelvaObject *metadata;
-};
-
-/**
- * A struct for edge fields.
- * This struct contains the actual arcs pointing directly to other nodes in the
- * hierarchy.
- */
-struct EdgeFieldMulti {
-    struct SVector arcs; /*!< Pointers to nodes. */
-    /**
-     * Metadata organized by dst_node_id.
-     * This object should not be accessed directly but by using functions
-     * provided in this header:
-     * - Edge_GetFieldEdgeMetadata()
-     * - Edge_DeleteFieldMetadata()
-     * Can be NULL.
-     */
-    struct SelvaObject *metadata;
 };
 
 /**

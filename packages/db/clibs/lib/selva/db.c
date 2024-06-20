@@ -179,8 +179,6 @@ static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaN
 static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
 {
     struct SelvaNodeSchema *ns = &type->ns;
-    const size_t nr_fields = ns->nr_fields;
-    const size_t nr_main_fields = ns->nr_main_fields;
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
     node->node_id = id;
