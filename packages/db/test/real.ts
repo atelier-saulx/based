@@ -51,6 +51,7 @@ test.serial.only('query + filter', async (t) => {
         },
       },
       user: {
+        prefix: 'us',
         fields: {
           name: { type: 'string' },
         }
@@ -58,30 +59,26 @@ test.serial.only('query + filter', async (t) => {
     },
   })
 
-  //console.log(
-  //  'SCHEMA',
-  //  db.schemaTypesParsed.simple.cnt,
-  //  // 66 length
-  //  db.schemaTypesParsed.simple.selvaBuf,
-  //  db.schemaTypesParsed.simple.fieldNames,
-  //)
-  console.log('schema update: simple', selva.db_schema_update(dbp, 0, db.schemaTypesParsed.simple.selvaBuf))
+  console.log('schema update: simple', selva.db_schema_create(dbp, 0, db.schemaTypesParsed.simple.selvaBuf))
   console.dir(db.schemaTypesParsed.simple, { depth: 100 })
-  console.log('schema update: user', selva.db_schema_update(dbp, 0, db.schemaTypesParsed.user.selvaBuf))
+  console.log('schema update: user', selva.db_schema_create(dbp, 1, db.schemaTypesParsed.user.selvaBuf))
   console.dir(db.schemaTypesParsed.user, { depth: 100 })
 
-  //console.log(
-  //  'SCHEMA BACK',
-  //  readSchemaTypeDefFromBuffer(
-  //    db.schemaTypesParsed.simple.buf,
-  //    db.schemaTypesParsed.simple.fieldNames,
-  //  ).cnt,
-  //)
+  const createUser = (id: number, name: string) => {
+    const fields = db.schemaTypesParsed.user.fields
+    const nameLen = Buffer.byteLength(name)
+    const buf = Buffer.allocUnsafe(5 + nameLen)
+    let off = 0
 
-  const refs = []
-  for (let i = 1; i < 10 - 1; i++) {
-    refs.push(i)
+    // name
+    buf.writeUInt32LE(5 + nameLen, off) // len
+    buf.writeInt8(fields.name.selvaField, off += 4) // field
+    buf.write(name, off += 1)
+    off += nameLen
+
+    console.log(`create user ${name}:`, selva.db_update(dbp, 1, id, buf))
   }
+  createUser(0, 'Synergy Greg')
 
   //const dx = Date.now()
   console.log('GO!', process.pid)
@@ -133,6 +130,12 @@ test.serial.only('query + filter', async (t) => {
     buf.writeInt8(fields['location.lat'].selvaField, off += 4) // field
     buf.writeDoubleLE(52, off += 1)
     off += 8
+
+    // user ref
+    //buf.writeUInt32LE(0, off) // len
+    //buf.writeInt8(fields['user'].selvaField, off += 4) // field
+    //buf.writeDoubleLE(52, off += 1)
+    //off += 8
 
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)
