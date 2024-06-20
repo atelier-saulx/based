@@ -144,7 +144,7 @@ static napi_value selva_db_destroy(napi_env env, napi_callback_info info)
 }
 
 // selva_db_schema_update(db, type, schema): number
-static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
+static napi_value selva_db_schema_create(napi_env env, napi_callback_info info)
 {
     int err;
     size_t argc = 3;
@@ -167,7 +167,7 @@ static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
     schema_buf = p;
     assert(status == napi_ok);
 
-    return res2napi(env, db_schema_update(npointer2db(env, argv[0]), type, schema_buf, schema_len));
+    return res2napi(env, db_schema_create(npointer2db(env, argv[0]), type, schema_buf, schema_len));
 }
 
 // selva_db_update(db, type, node_id, buf): number
@@ -304,7 +304,7 @@ static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
       DECLARE_NAPI_METHOD("db_create", selva_db_create),
       DECLARE_NAPI_METHOD("db_destroy", selva_db_destroy),
-      DECLARE_NAPI_METHOD("db_schema_update", selva_db_schema_update),
+      DECLARE_NAPI_METHOD("db_schema_create", selva_db_schema_create),
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),

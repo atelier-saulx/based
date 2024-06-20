@@ -102,7 +102,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
     type->field_map_template.main_data_size = ALIGNED_SIZE(main_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
-int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_fields_count count;
     int err;
@@ -114,6 +114,7 @@ int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_bu
 
     struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e) + count.nr_fields * sizeof(struct SelvaFieldSchema));
 
+    e->type = type;
     e->ns.nr_fields = count.nr_fields;
     e->ns.nr_main_fields = count.nr_main_fields;
     err = schemabuf_parse(&e->ns, schema_buf, schema_len);
@@ -129,7 +130,10 @@ int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_bu
     const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
     mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
 
-    RB_INSERT(SelvaTypeIndex, &db->types.index, e);
+    struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types.index, e);
+    if (prev) {
+        db_panic("Schema update not supported");
+    }
     return 0;
 }
 

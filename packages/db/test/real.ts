@@ -50,18 +50,25 @@ test.serial.only('query + filter', async (t) => {
           },
         },
       },
+      user: {
+        fields: {
+          name: { type: 'string' },
+        }
+      },
     },
   })
 
-  console.log(
-    'SCHEMA',
-    db.schemaTypesParsed.simple.cnt,
-    // 66 length
-    db.schemaTypesParsed.simple.selvaBuf,
-    db.schemaTypesParsed.simple.fieldNames,
-  )
-  console.log('schema update', selva.db_schema_update(dbp, 0, db.schemaTypesParsed.simple.selvaBuf))
-    console.dir(db.schemaTypesParsed.simple, { depth: 100 })
+  //console.log(
+  //  'SCHEMA',
+  //  db.schemaTypesParsed.simple.cnt,
+  //  // 66 length
+  //  db.schemaTypesParsed.simple.selvaBuf,
+  //  db.schemaTypesParsed.simple.fieldNames,
+  //)
+  console.log('schema update: simple', selva.db_schema_update(dbp, 0, db.schemaTypesParsed.simple.selvaBuf))
+  console.dir(db.schemaTypesParsed.simple, { depth: 100 })
+  console.log('schema update: user', selva.db_schema_update(dbp, 0, db.schemaTypesParsed.user.selvaBuf))
+  console.dir(db.schemaTypesParsed.user, { depth: 100 })
 
   //console.log(
   //  'SCHEMA BACK',
