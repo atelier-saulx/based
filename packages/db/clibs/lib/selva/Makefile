@@ -10,7 +10,6 @@ LIB_SUFFIX := .node
 
 OBJ := \
 	db.o \
-	edge.o \
 	fields.o \
 	schema.o \
 	selva.o \
