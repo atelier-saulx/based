@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
-#include <stdio.h> /* TODO remove */
 #include <string.h>
 #include "selva_error.h"
 #include "selva.h"
@@ -32,6 +31,9 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
 
         switch (fs->type) {
         case SELVA_FIELD_TYPE_STRING:
+            if (ud.len < 5) {
+                return SELVA_EINVAL;
+            }
             value_len = ud.len - 5;
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
@@ -68,7 +70,9 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             value_len = selva_field_data_size[fs->type];
             break;
         }
-        /* TODO check ud.len vs selva_field_data_size */
+        if (value_len > len) {
+            return SELVA_EINVAL;
+        }
 
         err = selva_fields_set(db, node, fs, value, value_len);
         if (err) {
