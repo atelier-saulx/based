@@ -33,34 +33,9 @@ const typeIsAllowed = (
   args: ArgsClass<BasedSetTarget, 'reference'>,
   type: string
 ): boolean => {
-  if ('allowedTypes' in args.fieldSchema) {
-    let typeMatches = false
-    for (const t of args.fieldSchema.allowedTypes) {
-      if (typeof t === 'string') {
-        if (t === type) {
-          return true
-        }
-      } else {
-        if (t.type && t.type === type) {
-          typeMatches = true
-          if (t.$filter) {
-            // stage on requires validation in target
-            // TODO: ASYNC REQUIRED HOOK
-            // if(!(await args.target.referenceFilterCondition(value, t.$filter))){
-            //     error(args, ParseError.referenceIsIncorrectType)
-            //     return
-            // }
-          }
-        } else if (!t.type && t.$filter) {
-          // if(!(await args.target.referenceFilterCondition))
-          // error(args, ParseError.referenceIsIncorrectType, )
-          // return
-        }
-      }
-    }
-    if (typeMatches === false) {
-      return false
-    }
+  if ('allowedType' in args.fieldSchema) {
+    const t = args.fieldSchema.allowedType
+    return typeof t === 'string' && t === type
   }
   return true
 }

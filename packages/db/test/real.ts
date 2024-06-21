@@ -38,8 +38,8 @@ test.serial.only('query + filter', async (t) => {
         prefix: 'aa',
         fields: {
           flap: { type: 'string' },
-          refs: { type: 'references', allowedTypes: ['user'] },
-          user: { type: 'reference', allowedTypes: ['user'] },
+          refs: { type: 'references', allowedType: 'user' },
+          user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
           location: {
             type: 'object',
@@ -54,6 +54,7 @@ test.serial.only('query + filter', async (t) => {
         prefix: 'us',
         fields: {
           name: { type: 'string' },
+          simples: { type: 'references', allowedType: 'simple' },
         }
       },
     },
@@ -86,7 +87,7 @@ test.serial.only('query + filter', async (t) => {
   const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
-  const DATA_SIZE = 84
+  const DATA_SIZE = 84 + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
   let off = 0
   for (let i = 0; i < NR_NODES; i++) {
@@ -132,10 +133,10 @@ test.serial.only('query + filter', async (t) => {
     off += 8
 
     // user ref
-    //buf.writeUInt32LE(0, off) // len
-    //buf.writeInt8(fields['user'].selvaField, off += 4) // field
-    //buf.writeDoubleLE(52, off += 1)
-    //off += 8
+    buf.writeUInt32LE(0, off) // len
+    buf.writeInt8(fields['user'].selvaField, off += 4) // field
+    buf.writeUint32LE(0, off += 1)
+    off += 4
 
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)

@@ -16,17 +16,19 @@ const schema: BasedSchema = {
       fields: {
         ref: {
           type: 'reference',
+          allowedType: 'bla',
         },
         children: {
           type: 'references',
+          allowedType: 'bla',
         },
         referencesToThings: {
           type: 'references',
-          allowedTypes: ['thing'],
+          allowedType: 'thing',
         },
         referenceToThing: {
           type: 'reference',
-          allowedTypes: ['thing'],
+          allowedType: 'thing',
         },
       },
     },

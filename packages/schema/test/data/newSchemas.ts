@@ -68,7 +68,7 @@ const testSchema: BasedSchemaPartial = {
         },
         winner: {
           type: 'reference',
-          allowedTypes: ['contestant'],
+          allowedType: 'contestant',
         },
         countries: {
           type: 'references',
@@ -90,7 +90,7 @@ const testSchema: BasedSchemaPartial = {
         },
         image: {
           type: 'reference',
-          allowedTypes: ['file'],
+          allowedType: 'file',
         },
         startTime: {
           type: 'timestamp',
@@ -102,11 +102,11 @@ const testSchema: BasedSchemaPartial = {
         },
         producer: {
           type: 'reference',
-          allowedTypes: ['broadcaster'],
+          allowedType: 'broadcaster',
         },
         distributors: {
           type: 'references',
-          allowedTypes: ['broadcaster'],
+          allowedType: 'broadcaster',
         },
       },
     },
@@ -144,7 +144,7 @@ const testSchema: BasedSchemaPartial = {
         },
         image: {
           type: 'reference',
-          allowedTypes: ['file'],
+          allowedType: 'file',
         },
         content: {
           type: 'text',
@@ -165,7 +165,7 @@ const testSchema: BasedSchemaPartial = {
         },
         image: {
           type: 'reference',
-          allowedTypes: ['file'],
+          allowedType: 'file',
         },
       },
     },
@@ -373,7 +373,7 @@ export const newSchemas: BasedSchemaPartial[] = [
         fields: {
           usedIn: {
             type: 'references',
-            bidirectional: { fromField: 'img' },
+            inverseProperty: 'img',
           },
           caption: {
             // needs translation?
@@ -395,13 +395,13 @@ export const newSchemas: BasedSchemaPartial[] = [
           seen: { type: 'timestamp' },
           charges: {
             type: 'references',
-            bidirectional: { fromField: 'user' },
-            allowedTypes: ['charge'],
+            inverseProperty: 'user',
+            allowedType: 'charge',
           },
           articles: {
             type: 'references',
-            bidirectional: { fromField: 'contributors' },
-            allowedTypes: ['article'],
+            inverseProperty: 'contributors',
+            allowedType: 'article',
           },
         },
       },
@@ -410,8 +410,8 @@ export const newSchemas: BasedSchemaPartial[] = [
           // does this have a user?
           user: {
             type: 'reference',
-            bidirectional: { fromField: 'charges' },
-            allowedTypes: ['user'],
+            inverseProperty: 'charges',
+            allowedType: 'user',
           },
           token: { type: 'string' },
           description: { type: 'string' },
@@ -424,7 +424,7 @@ export const newSchemas: BasedSchemaPartial[] = [
           title: { type: 'text' },
           children: {
             type: 'references',
-            allowedTypes: ['article'],
+            allowedType: 'article',
           },
         },
       },
@@ -438,7 +438,7 @@ export const newSchemas: BasedSchemaPartial[] = [
           // meta_keywords: { type: 'array', values: { type: 'string' } },
           children: {
             type: 'references',
-            allowedTypes: ['article', 'category'],
+            allowedType: 'article' // FIXME Can't have both 'category'],
           },
         },
       },
@@ -449,10 +449,8 @@ export const newSchemas: BasedSchemaPartial[] = [
             title: 'Writers',
             description: 'Writers or people involved with the article.',
             type: 'references',
-            allowedTypes: ['user'],
-            bidirectional: {
-              fromField: 'articles',
-            },
+            allowedType: 'user',
+            inverseProperty: 'articles',
           },
           contributorsText: {
             title: 'Contributors text',
@@ -479,8 +477,8 @@ export const newSchemas: BasedSchemaPartial[] = [
           },
           img: {
             type: 'reference',
-            allowedTypes: ['file'],
-            bidirectional: { fromField: 'usedIn' },
+            allowedType: 'file',
+            inverseProperty: 'usedIn',
           },
           hits: { type: 'number' }, // get a bit more going here maybe? what does this mean
           // membership: { enum: ['Need membership', 'Free'] },

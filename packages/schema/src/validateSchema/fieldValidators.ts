@@ -443,11 +443,11 @@ export const basedSchemaFieldSetValidator: Validator<BasedSchemaFieldSet> = {
 export const basedSchemaFieldReferenceValidator: Validator<BasedSchemaFieldReference> =
   {
     ...basedSchemaFieldSharedValidator,
-    bidirectional: {
+    inverseProperty: {
       validator: mustBeBidirectional,
       optional: true,
     },
-    allowedTypes: {
+    allowedType: {
       // TODO: validator
       optional: true,
     },
@@ -456,11 +456,11 @@ export const basedSchemaFieldReferenceValidator: Validator<BasedSchemaFieldRefer
 export const basedSchemaFieldReferencesValidator: Validator<BasedSchemaFieldReferences> =
   {
     ...basedSchemaFieldSharedValidator,
-    bidirectional: {
+    inverseProperty: {
       validator: mustBeBidirectional,
       optional: true,
     },
-    allowedTypes: {
+    allowedType: {
       // TODO: validator
       optional: true,
     },
