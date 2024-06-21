@@ -2,7 +2,7 @@ import test from 'ava'
 import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
-import { BasedDb, readSchemaTypeDefFromBuffer } from '../src/index.js'
+import { BasedDb, FieldDef, SchemaTypeDef, readSchemaTypeDefFromBuffer } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import { createRequire } from "node:module"
 const selva = createRequire(import.meta.url)("../../build/libselva.node")
@@ -10,6 +10,64 @@ const selva = createRequire(import.meta.url)("../../build/libselva.node")
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
+
+function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
+    const typeNames = Object.keys(schema)
+    const types = Object.values(schema)
+    const selvaSchema: Buffer[] = []
+
+    for (let i = 0; i < types.length; i++) {
+      const t = types[i]
+      const vals = Object.values(t.fields)
+      const mainFields: FieldDef[] = []
+      const restFields: FieldDef[] = []
+
+      for (const f of vals) {
+        if (f.seperate) {
+          restFields.push(f)
+        } else {
+          mainFields.push(f)
+        }
+      }
+
+      console.log(mainFields)
+      console.log(restFields)
+
+	  // TODO Remove this once the types agree
+      const typeMap = {
+        'timestamp': 1,
+        'created': 2,
+        'updated': 3,
+        'number': 4,
+        'integer': 5,
+        'boolean': 9,
+        'reference': 13,
+        'enum': 10,
+        'string': 11,
+        'references': 14,
+	  }
+      const toSelvaSchemaBuf = (f: FieldDef): number[] => {
+        if (f.type == 'reference' || f.type == 'references') {
+          const dstType: SchemaTypeDef = schema[f.allowedType]
+          const buf = Buffer.allocUnsafe(6)
+
+          buf.writeUInt8(typeMap[f.type], 0)
+          buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
+          buf.writeUInt32LE(typeNames.indexOf(f.allowedType), 2)
+          return [...buf.values()]
+        } else {
+          return [typeMap[f.type]]
+        }
+      }
+      selvaSchema.push(Buffer.from([
+        mainFields.length,
+        ...mainFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+        ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+      ]))
+    }
+
+    return selvaSchema
+}
 
 test.serial.only('query + filter', async (t) => {
   try {
@@ -38,8 +96,11 @@ test.serial.only('query + filter', async (t) => {
         prefix: 'aa',
         fields: {
           flap: { type: 'string' },
-          refs: { type: 'references', allowedType: 'user' },
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simples',
+          },
           vectorClock: { type: 'integer' },
           location: {
             type: 'object',
@@ -54,16 +115,22 @@ test.serial.only('query + filter', async (t) => {
         prefix: 'us',
         fields: {
           name: { type: 'string' },
-          simples: { type: 'references', allowedType: 'simple' },
+          simples: {
+            type: 'references',
+            allowedType: 'simple',
+            inverseProperty: 'user'
+          },
         }
       },
     },
   })
 
-  console.log('schema update: simple', selva.db_schema_create(dbp, 0, db.schemaTypesParsed.simple.selvaBuf))
-  console.dir(db.schemaTypesParsed.simple, { depth: 100 })
-  console.log('schema update: user', selva.db_schema_create(dbp, 1, db.schemaTypesParsed.user.selvaBuf))
-  console.dir(db.schemaTypesParsed.user, { depth: 100 })
+  const schemaBufs = schema2selva(db.schemaTypesParsed)
+  //console.dir(db.schemaTypesParsed, { depth: 100 })
+  console.log('bufs', schemaBufs)
+  for (let i = 0; i < schemaBufs.length; i++) {
+    console.log(`schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`)
+  }
 
   const createUser = (id: number, name: string) => {
     const fields = db.schemaTypesParsed.user.fields
@@ -133,7 +200,7 @@ test.serial.only('query + filter', async (t) => {
     off += 8
 
     // user ref
-    buf.writeUInt32LE(0, off) // len
+    buf.writeUInt32LE(9, off) // len
     buf.writeInt8(fields['user'].selvaField, off += 4) // field
     buf.writeUint32LE(0, off += 1)
     off += 4

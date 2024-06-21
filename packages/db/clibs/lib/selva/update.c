@@ -2,6 +2,7 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <stdio.h> // FIXME REMOVE
 #include <assert.h>
 #include <string.h>
 #include "selva_error.h"
@@ -29,6 +30,10 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             return SELVA_EINTYPE;
         }
 
+        if (ud.len == 0 || i + ud.len > len) {
+            return SELVA_EINVAL;
+        }
+
         switch (fs->type) {
         case SELVA_FIELD_TYPE_STRING:
             if (ud.len < 5) {
@@ -38,25 +43,22 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             do {
-                struct {
-                    node_type_t type_id;
-                    node_id_t node_id;
-                } __packed dst_node;
+                node_id_t dst_node_id;
                 struct SelvaTypeEntry *type;
                 struct SelvaNode *dst;
 
-                if (ud.len - 5 != sizeof(dst_node)) {
+                if (ud.len - 5 != sizeof(dst_node_id)) {
                     return SELVA_EINVAL;
                 }
 
-                memcpy(&dst_node, value, sizeof(dst_node));
+                memcpy(&dst_node_id, value, sizeof(dst_node_id));
 
-                type = db_get_type_by_index(db, dst_node.type_id);
+                type = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
                 if (!type) {
                     return SELVA_EINVAL;
                 }
 
-                dst = db_get_node(db, type, dst_node.node_id, false);
+                dst = db_get_node(db, type, dst_node_id, false);
                 if (!dst) {
                     return SELVA_ENOENT;
                 }
@@ -70,7 +72,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             value_len = selva_field_data_size[fs->type];
             break;
         }
-        if (value_len > len) {
+        if ((ptrdiff_t)((const char *)value - (const char *)buf) + value_len > len) {
             return SELVA_EINVAL;
         }
 

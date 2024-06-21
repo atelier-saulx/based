@@ -62,7 +62,6 @@ struct SelvaNodeSchema {
                 EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
             } __packed flags;
             field_t inverse_field;
-            node_type_t src_node_type;
             node_type_t dst_node_type;
         } edge_constraint;
     } field_schemas[] __counted_by(nr_fields);

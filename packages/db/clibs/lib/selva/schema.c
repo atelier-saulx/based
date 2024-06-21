@@ -13,12 +13,12 @@
 #include "selva.h"
 #include "schema.h"
 
-static int type2fs_reserved(struct SelvaNodeSchema *, enum SelvaFieldType, field_t)
+static int type2fs_reserved(struct SelvaNodeSchema *, const char *, size_t, enum SelvaFieldType, field_t)
 {
     return SELVA_EINTYPE;
 }
 
-static int type2fs_timestamp(struct SelvaNodeSchema *ns, enum SelvaFieldType field_type, field_t field)
+static int type2fs_timestamp(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType field_type, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -39,10 +39,10 @@ static int type2fs_timestamp(struct SelvaNodeSchema *ns, enum SelvaFieldType fie
         break;
     }
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_number(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_number(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -51,10 +51,10 @@ static int type2fs_number(struct SelvaNodeSchema *ns, enum SelvaFieldType, field
         .type = SELVA_FIELD_TYPE_NUMBER,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_integer(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_integer(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -63,10 +63,10 @@ static int type2fs_integer(struct SelvaNodeSchema *ns, enum SelvaFieldType, fiel
         .type = SELVA_FIELD_TYPE_INTEGER,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_uint8(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_uint8(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -75,10 +75,10 @@ static int type2fs_uint8(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_
         .type = SELVA_FIELD_TYPE_UINT8,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_uint32(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_uint32(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -87,10 +87,10 @@ static int type2fs_uint32(struct SelvaNodeSchema *ns, enum SelvaFieldType, field
         .type = SELVA_FIELD_TYPE_UINT32,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_uint64(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_uint64(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -99,10 +99,10 @@ static int type2fs_uint64(struct SelvaNodeSchema *ns, enum SelvaFieldType, field
         .type = SELVA_FIELD_TYPE_UINT64,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_boolean(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_boolean(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -111,28 +111,10 @@ static int type2fs_boolean(struct SelvaNodeSchema *ns, enum SelvaFieldType, fiel
         .type = SELVA_FIELD_TYPE_BOOLEAN,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_reference(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
-{
-    struct SelvaFieldSchema *fs = &ns->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_REFERENCE,
-        .edge_constraint = {
-            .flags = 0,
-            .inverse_field = 0, /* TODO */
-            .src_node_type = 0,
-            .dst_node_type = 0,
-        },
-    };
-
-    return 0;
-}
-
-static int type2fs_enum(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_enum(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -141,10 +123,10 @@ static int type2fs_enum(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t
         .type = SELVA_FIELD_TYPE_ENUM,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_string(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_string(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
@@ -153,25 +135,67 @@ static int type2fs_string(struct SelvaNodeSchema *ns, enum SelvaFieldType, field
         .type = SELVA_FIELD_TYPE_STRING,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_references(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_reference(struct SelvaNodeSchema *ns, const char *buf, size_t len, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
+    struct {
+        field_t inverse_field;
+        node_type_t dst_node_type;
+    } __packed constraints;
+
+    if (len < 1 + sizeof(constraints)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&constraints, buf + 1, sizeof(constraints));
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_REFERENCE,
+        .edge_constraint = {
+            .flags = 0,
+            .inverse_field = constraints.inverse_field,
+            .dst_node_type = constraints.dst_node_type,
+        },
+    };
+
+    return 1 + sizeof(constraints);
+}
+
+static int type2fs_references(struct SelvaNodeSchema *ns, const char *buf, size_t len, enum SelvaFieldType, field_t field)
+{
+    struct SelvaFieldSchema *fs = &ns->field_schemas[field];
+    struct {
+        field_t inverse_field;
+        node_type_t dst_node_type;
+    } __packed constraints;
+
+    if (len < 1 + sizeof(constraints)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&constraints, buf + 1, sizeof(constraints));
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_REFERENCES,
+        .edge_constraint = {
+            .flags = 0,
+            .inverse_field = constraints.inverse_field,
+            .dst_node_type = constraints.dst_node_type,
+        },
     };
 
-    return 0;
+    return 1 + sizeof(constraints);
 }
 
 static struct schemabuf_parser {
     enum SelvaFieldType __packed type;
     char name[11];
-    int (*type2fs)(struct SelvaNodeSchema *fs, enum SelvaFieldType, field_t field_idx);
+    int (*type2fs)(struct SelvaNodeSchema *fs, const char *buf, size_t len, enum SelvaFieldType, field_t field_idx);
 } __designated_init schemabuf_parsers[] = {
     [SELVA_FIELD_TYPE_NULL] = {
         .type = 0,
@@ -277,15 +301,20 @@ int schemabuf_parse(struct SelvaNodeSchema *ns, const char *buf, size_t len)
     }
 
     field_t field_idx = 0;
-    for (size_t i = 1; i < len; i++) {
+    for (size_t i = 1; i < len;) {
         enum SelvaFieldType field_type = buf[i];
+        int res;
 
         if ((size_t)field_type >= num_elem(schemabuf_parsers)) {
             return SELVA_EINTYPE;
         }
 
-        schemabuf_parsers[field_type].type2fs(ns, field_type, field_idx);
+        res = schemabuf_parsers[field_type].type2fs(ns, buf + i, len - i, field_type, field_idx);
+        if (res < 0) {
+            return res;
+        }
 
+        i += res;
         field_idx++;
     }
 
