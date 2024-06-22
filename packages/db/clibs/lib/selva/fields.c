@@ -84,9 +84,13 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
     const field_t field = fs->field;
     struct SelvaFieldInfo *nfo;
 
+    assert(type == SELVA_FIELD_TYPE_REFERENCE || type == SELVA_FIELD_TYPE_REFERENCES);
+
     nfo = &fields->fields_map[field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
         *nfo = alloc_block(fields, type);
+        memset(nfo2p(fields, nfo), 0,
+               (type == SELVA_FIELD_TYPE_REFERENCE) ? sizeof(struct SelvaNodeReference) : sizeof(struct SelvaNodeReferences));
     } else if (nfo->type != type) {
         return SELVA_EINVAL;
     }
@@ -96,7 +100,7 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
         /* TODO comment out */
         assert(!memcmp(nfo2p(fields, nfo), &(struct SelvaNode *){NULL}, sizeof(struct SelvaNode *)));
         memcpy(nfo2p(fields, nfo), (void *)&dst, sizeof(struct SelvaNode *));
-    } else if (type == SELVA_FIELD_TYPE_REFERENCES) {
+    } else { // type == SELVA_FIELD_TYPE_REFERENCES
         struct SelvaNodeReferences refs;
         void *vp = nfo2p(fields, nfo);
 
@@ -106,8 +110,6 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
             .dst = dst,
         };
         memcpy(vp, &refs, sizeof(refs));
-    } else {
-        db_panic("Invalid field type: %d", type);
     }
 
     return 0;

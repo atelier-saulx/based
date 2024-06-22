@@ -72,9 +72,6 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             value_len = selva_field_data_size[fs->type];
             break;
         }
-        if ((ptrdiff_t)((const char *)value - (const char *)buf) + value_len > len) {
-            return SELVA_EINVAL;
-        }
 
         err = selva_fields_set(db, node, fs, value, value_len);
         if (err) {
