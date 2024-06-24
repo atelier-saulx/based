@@ -148,9 +148,9 @@ test.serial.only('query + filter', async (t) => {
   }
   createUser(0, 'Synergy Greg')
 
-  //const dx = Date.now()
+  //const dx = peroformance.now()
   console.log('GO!', process.pid)
-  //await wait(15e3)
+  await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
@@ -208,10 +208,9 @@ test.serial.only('query + filter', async (t) => {
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)
   }
-  var dx = Date.now()
+  const dx = performance.now()
   console.log('batch', selva.db_update_batch(dbp, 0, buf))
-
-  console.log(Date.now() - dx, 'ms')
+  console.log(Math.round(performance.now() - dx), 'ms')
 
 
   console.log('GET')
