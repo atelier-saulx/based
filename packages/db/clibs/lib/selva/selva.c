@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <stdio.h>
 #include <node_api.h>
 #include "util/selva_string.h"
 #include "selva_error.h"
@@ -84,10 +85,32 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
     case SELVA_FIELD_TYPE_TEXT:
         /* TODO */
     case SELVA_FIELD_TYPE_REFERENCE:
-        /* TODO */
+        if (any->reference && any->reference->dst) {
+            char buf[1 + 20 + 2 + 20 + 1];
+
+            napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->reference->dst->type, any->reference->dst->node_id), &result);
+        } else {
+            napi_get_null(env, &result);
+        }
+        break;
     case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO */
-        napi_get_undefined(env, &result);
+        if (any->references && any->references->refs) {
+            napi_status status;
+
+            status = napi_create_array_with_length(env, any->references->nr_refs, &result);
+            assert(status == napi_ok);
+            for (size_t i = 0; i < any->references->nr_refs; i++) {
+                char buf[1 + 20 + 2 + 20 + 1];
+                napi_value value;
+
+                status = napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->references->refs[i].dst->type, any->references->refs[i].dst->node_id), &value);
+                assert(status == napi_ok);
+                status = napi_set_element(env, result, i, value);
+                assert(status == napi_ok);
+            }
+        } else {
+            napi_get_null(env, &result);
+        }
         break;
     }
 

@@ -4,6 +4,16 @@
  */
 #pragma once
 
+struct SelvaNodeReference {
+    struct SelvaNode *dst;
+    struct SelvaFields *edge_value; /* TODO */
+};
+
+struct SelvaNodeReferences { /* TODO */
+    size_t nr_refs;
+    struct SelvaNodeReference *refs __counted_by(nr_refs);
+};
+
 struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
     union {
@@ -16,7 +26,8 @@ struct SelvaFieldsAny {
         uint64_t uint64;
         uint8_t uint8;
         uint8_t enu;
-        void *p;
+        struct SelvaNodeReference *reference;
+        struct SelvaNodeReferences *references;
     };
 };
 

@@ -13,16 +13,6 @@
 #include "db.h"
 #include "fields.h"
 
-struct SelvaNodeReference {
-    struct SelvaNode *dst;
-    struct SelvaFields *edge_value; /* TODO */
-};
-
-struct SelvaNodeReferences { /* TODO */
-    size_t nr_refs;
-    struct SelvaNodeReference *refs __counted_by(nr_refs);
-};
-
 const size_t selva_field_data_size[15] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(int64_t), // time_t
@@ -305,7 +295,7 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
 
     switch (nfo->type) {
     case SELVA_FIELD_TYPE_NULL:
-        any->p = NULL;
+        memset(any, 0, sizeof(*any));
         break;
     case SELVA_FIELD_TYPE_TIMESTAMP:
     case SELVA_FIELD_TYPE_CREATED:
@@ -340,9 +330,20 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
         break;
     case SELVA_FIELD_TYPE_TEXT:
     case SELVA_FIELD_TYPE_REFERENCE:
+        do {
+            struct SelvaNodeReference *ref = (struct SelvaNodeReference *)p;
+
+            assert(((uintptr_t)ref & 7) == 0);
+            any->reference = ref;
+        } while (0);
+        break;
     case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO Get var type */
-        any->p = NULL;
+        do {
+            struct SelvaNodeReferences *refs = (struct SelvaNodeReferences *)p;
+
+            assert(((uintptr_t)refs & 7) == 0);
+            any->references = refs;
+        } while (0);
         break;
     }
 
