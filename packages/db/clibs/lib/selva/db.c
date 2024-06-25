@@ -53,21 +53,55 @@ struct SelvaDb *db_create(void)
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
-    RB_INIT(&db->types.index);
+    RB_INIT(&db->types);
     SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
     db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
     /* TODO Expiring nodes timer */
 #if 0
     db->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
 #endif
-    mempool_init(&db->types.pool, 4096, sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
 
     return db;
+}
+
+/**
+ * Delete all nodes under this type.
+ */
+static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
+{
+    struct SelvaNode *node;
+    struct SelvaNode *tmp;
+
+    RB_FOREACH_SAFE(node, SelvaNodeIndex, &type->nodes, tmp) {
+        db_del_node(db, node);
+    }
+}
+
+static void del_type(struct SelvaDb *db, struct SelvaTypeEntry *type)
+{
+    del_all_nodes(db, type);
+
+    /* TODO Destroy aliases */
+    (void)RB_REMOVE(SelvaTypeIndex, &db->types, type);
+
+    mempool_destroy(&type->nodepool);
+    selva_free(type->field_map_template.buf);
+    selva_free(type);
 }
 
 void db_destroy(struct SelvaDb *db)
 {
     /* FIXME */
+    struct SelvaTypeEntry *type;
+    struct SelvaTypeEntry *tmp;
+
+    /* TODO Destroy timers */
+
+    RB_FOREACH_SAFE(type, SelvaTypeIndex, &db->types, tmp) {
+        del_type(db, type);
+    }
+
+    selva_free(db);
 }
 
 static void make_field_map_template(struct SelvaTypeEntry *type)
@@ -130,7 +164,7 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
     mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
 
-    struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types.index, e);
+    struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types, e);
     if (prev) {
         db_panic("Schema update not supported");
     }
@@ -143,7 +177,7 @@ struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type
         .type = type,
     };
 
-    return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
+    return RB_FIND(SelvaTypeIndex, &db->types, &find);
 }
 
 struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
@@ -152,7 +186,7 @@ struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode 
         .type = node->type,
     };
 
-    return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
+    return RB_FIND(SelvaTypeIndex, &db->types, &find);
 }
 
 struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)

@@ -124,10 +124,7 @@ struct SelvaDb {
      */
     struct trx_state trx_state;
 
-    struct {
-        struct SelvaTypeIndex index;
-        struct mempool pool;
-    } types;
+    struct SelvaTypeIndex types;
 
     /**
      * Expiring nodes.
