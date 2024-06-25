@@ -41,8 +41,8 @@ RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 
 struct SelvaNodeSchema {
-    field_t nr_fields;
-    field_t nr_main_fields;
+    field_t nr_fields; /*!< The total number of fields for this node type. */
+    field_t nr_main_fields; /*!< Number of main fields that are always allocated. */
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
