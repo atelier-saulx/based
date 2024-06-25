@@ -22,7 +22,15 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
 struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type);
 struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
 struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field);
-void del_node(struct SelvaDb *db, struct SelvaNode *node);
+
+/**
+ * Delete a node.
+ */
+void db_del_node(struct SelvaDb *db, struct SelvaNode *node);
+
+/**
+ * Get or create a node by id.
+ */
 struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id, bool upsert);
 
 [[noreturn]]

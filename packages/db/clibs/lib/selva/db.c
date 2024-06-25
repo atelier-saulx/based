@@ -200,7 +200,7 @@ static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *typ
     return node;
 }
 
-void del_node(struct SelvaDb *db, struct SelvaNode *node)
+void db_del_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     struct SelvaTypeEntry *e = db_get_type_by_node(db, node);
 
