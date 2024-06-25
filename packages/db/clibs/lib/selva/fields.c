@@ -409,7 +409,10 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
             }
 
             while (any.references->nr_refs > 0) {
-                node_id_t dst_node_id = any.references->refs[0].dst->node_id;
+                /*
+                 * Deleting the last ref first is faster because a memmove() is not needed.
+                 */
+                node_id_t dst_node_id = any.references->refs[any.references->nr_refs - 1].dst->node_id;
 
                 remove_reference(fs, node, dst_node_id);
             }
