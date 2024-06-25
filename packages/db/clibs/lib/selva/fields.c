@@ -33,7 +33,13 @@ const size_t selva_field_data_size[15] = {
 
 static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
-    return (char *)fields->data + (nfo->off << 3);
+    void *p = (char *)fields->data + (nfo->off << 3);
+
+    if (unlikely((char *)p > (char *)fields->data + fields->data_len)) {
+        db_panic("Invalid field data access");
+    }
+
+    return p;
 }
 
 static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, enum SelvaFieldType type)
