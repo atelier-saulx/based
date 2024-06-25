@@ -446,6 +446,13 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, f
     return 0;
 }
 
+static void clear_fields_map(struct SelvaFields *fields)
+{
+    for (field_t i = 0; i < fields->nr_fields; i++) {
+        fields->fields_map[i] = (struct SelvaFieldInfo){ 0 };
+    }
+}
+
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node)
 {
     const field_t nr_fields = node->fields.nr_fields;
@@ -458,6 +465,11 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node)
             if (err) {
                 db_panic("Failed to remove a field: %s", selva_strerror(err));
             }
+
         }
     }
+
+    clear_fields_map(&node->fields);
+    node->fields.nr_fields = 0;
+    selva_free(node->fields.data);
 }
