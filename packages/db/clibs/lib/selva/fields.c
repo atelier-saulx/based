@@ -419,8 +419,8 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
         break;
     }
 
-    /* TODO Shoild a main string field always have a string? */
-    memcpy(nfo2p(fields, nfo), 0, selva_field_data_size[field]);
+    /* TODO Should a main string field always have a string? */
+    memset(nfo2p(fields, nfo), 0, selva_field_data_size[field]);
 
     return 0;
 }
