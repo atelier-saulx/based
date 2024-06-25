@@ -220,6 +220,10 @@ test.serial.only('query + filter', async (t) => {
   console.log(`now get flap: "${selva.db_get_field(dbp, 0, 10, fields.flap.selvaField)}"`)
   console.log('ref', selva.db_get_field(dbp, 0, 10, fields.user.selvaField))
 
+  //const trefstart = performance.now()
+  //console.log('refs', selva.db_get_field(dbp, 1, 0, db.schemaTypesParsed.user.fields.simples.selvaField))
+  //console.log(`took: ${Math.round(performance.now() - trefstart)} ms`)
+
   // orderded DBIs
   // in mem in DB add if query is active this will also create DBIS for SORTING if required
 
