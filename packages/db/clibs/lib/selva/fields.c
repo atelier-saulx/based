@@ -350,7 +350,7 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
     return 0;
 }
 
-int selva_field_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
@@ -379,6 +379,8 @@ int selva_field_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
         selva_string_free(nfo2p(fields, nfo));
         break;
     case SELVA_FIELD_TYPE_TEXT:
+        /* TODO */
+        break;
     case SELVA_FIELD_TYPE_REFERENCE:
         do {
             struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
@@ -388,7 +390,26 @@ int selva_field_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
         } while (0);
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO Cleanup on del */
+        do {
+            struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
+            struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&type->ns, field);
+            struct SelvaFieldsAny any;
+            int err;
+
+            assert(fs);
+            err = selva_fields_get(node, field, &any);
+            if (err | !any.references) {
+                return err;
+            }
+
+            while (any.references->nr_refs > 0) {
+                node_id_t dst_node_id = any.references->refs[0].dst->node_id;
+
+                remove_reference(fs, node, dst_node_id);
+            }
+
+            selva_free(any.references->refs);
+        } while (0);
         break;
     }
 
@@ -397,8 +418,35 @@ int selva_field_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
     return 0;
 }
 
-int selva_field_remove_ref(struct SelvaDb *db, struct SelvaNode * restrict node, field_t field, struct SelvaNode * restrict dst)
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, field_t field, node_id_t dst_node_id)
 {
-    /* TODO */
-    return SELVA_ENOTSUP;
+    struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
+    struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&type->ns, field);
+    struct SelvaFieldsAny any;
+    int err;
+
+    assert(fs);
+    err = selva_fields_get(node, field, &any);
+    if (err | !any.references) {
+        return err;
+    }
+
+    remove_reference(fs, node, dst_node_id);
+    return 0;
+}
+
+void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node)
+{
+    const field_t nr_fields = node->fields.nr_fields;
+
+    for (field_t i = 0; i < nr_fields; i++) {
+        if (node->fields.fields_map[i].type != SELVA_FIELD_TYPE_NULL) {
+            int err;
+
+            err = selva_fields_del(db, node, i);
+            if (err) {
+                db_panic("Failed to remove a field: %s", selva_strerror(err));
+            }
+        }
+    }
 }

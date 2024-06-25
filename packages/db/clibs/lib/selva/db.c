@@ -210,7 +210,7 @@ void del_node(struct SelvaDb *db, struct SelvaNode *node)
         /* TODO clear expire */
     }
 
-    /* TODO Destroy fields */
+    selva_fields_destroy(db, node);
     mempool_return(&e->nodepool, node);
 }
 
