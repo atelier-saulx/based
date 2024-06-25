@@ -69,6 +69,17 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     return selvaSchema
 }
 
+test.serial.skip('create and destroy a db', async (t) => {
+  const dbp = selva.db_create()
+
+  console.log('Destroy the db')
+  const startDbDel = performance.now()
+  selva.db_destroy(dbp)
+  console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
+
+  t.true(true)
+})
+
 test.serial.only('query + filter', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
@@ -150,7 +161,7 @@ test.serial.only('query + filter', async (t) => {
 
   //const dx = peroformance.now()
   console.log('GO!', process.pid)
-  await wait(15e3)
+  //await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
@@ -241,6 +252,11 @@ test.serial.only('query + filter', async (t) => {
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())
+
+  console.log('Destroy the db')
+  const startDbDel = performance.now()
+  selva.db_destroy(dbp)
+  console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
 
   t.true(true)
 })
