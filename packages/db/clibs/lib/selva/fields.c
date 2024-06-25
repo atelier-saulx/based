@@ -425,9 +425,13 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, f
     struct SelvaFieldsAny any;
     int err;
 
+    if (fs->type != SELVA_FIELD_TYPE_REFERENCES) {
+        return SELVA_EINTYPE;
+    }
+
     assert(fs);
     err = selva_fields_get(node, field, &any);
-    if (err | !any.references) {
+    if (err || any.type != SELVA_FIELD_TYPE_REFERENCES || !any.references) {
         return err;
     }
 
