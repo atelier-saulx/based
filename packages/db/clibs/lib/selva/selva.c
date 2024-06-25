@@ -84,6 +84,8 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* TODO */
+        napi_get_undefined(env, &result);
+        break;
     case SELVA_FIELD_TYPE_REFERENCE:
         if (any->reference && any->reference->dst) {
             char buf[1 + 20 + 2 + 20 + 1];
