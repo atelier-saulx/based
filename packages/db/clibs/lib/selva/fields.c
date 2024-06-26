@@ -482,6 +482,6 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node)
 
     clear_fields_map(&node->fields);
     node->fields.nr_fields = 0;
-    /* FIXME freeing data causes SEGFAULT in node.js */
-    //selva_free(node->fields.data);
+    node->fields.data_len = 0;
+    selva_free(node->fields.data);
 }

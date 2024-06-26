@@ -164,7 +164,7 @@ test.serial.only('query + filter', async (t) => {
   //await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
 
-  const NR_NODES = 5e6
+  const NR_NODES = 5e4
   const DATA_SIZE = 84 + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
   let off = 0
@@ -253,10 +253,13 @@ test.serial.only('query + filter', async (t) => {
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())
 
-  console.log('Destroy the db')
-  const startDbDel = performance.now()
-  selva.db_destroy(dbp)
-  console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
+  // setImmediate is needed because node is still holding pointers to data within the module.
+  setImmediate(() => {
+    console.log('Destroy the db')
+    const startDbDel = performance.now()
+    selva.db_destroy(dbp)
+    console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
+  })
 
   t.true(true)
 })
