@@ -26,7 +26,7 @@ struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field
 /**
  * Delete a node.
  */
-void db_del_node(struct SelvaDb *db, struct SelvaNode *node);
+void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 /**
  * Get or create a node by id.

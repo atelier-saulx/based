@@ -73,7 +73,7 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
     struct SelvaNode *tmp;
 
     RB_FOREACH_SAFE(node, SelvaNodeIndex, &type->nodes, tmp) {
-        db_del_node(db, node);
+        db_del_node(db, type, node);
     }
 }
 
@@ -212,7 +212,6 @@ static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaN
 
 static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
 {
-    struct SelvaNodeSchema *ns = &type->ns;
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
     node->node_id = id;
@@ -234,18 +233,16 @@ static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *typ
     return node;
 }
 
-void db_del_node(struct SelvaDb *db, struct SelvaNode *node)
+void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    struct SelvaTypeEntry *e = db_get_type_by_node(db, node);
-
-    RB_REMOVE(SelvaNodeIndex, &e->nodes, node);
+    RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
 
     if (node->expire) {
         /* TODO clear expire */
     }
 
     selva_fields_destroy(db, node);
-    mempool_return(&e->nodepool, node);
+    mempool_return(&type->nodepool, node);
 }
 
 struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id, bool upsert)
