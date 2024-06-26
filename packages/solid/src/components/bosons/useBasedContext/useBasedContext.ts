@@ -8,13 +8,21 @@ import { BasedContext } from '../BasedProvider'
  *
  * @returns The `BasedClient` object with the information about the connection with the `Based` server. You cal also call functions using the client object.
  */
-const useBasedClient = (): BasedClient => useContext(BasedContext)
+const useBasedContext = (): BasedClient => {
+  const context: BasedClient = useContext(BasedContext)
+
+  if (!context) {
+    throw new Error('useBasedContext: cannot find a BasedContext')
+  }
+
+  return context
+}
 
 /**
- * Alias to `useBasedClient`.
+ * Alias to `useBasedContext`.
  *
- * @deprecated `useClient` is still working, but we're moving to use `useBasedClient` instead.
+ * @deprecated `useClient` is still working, but we're moving to use `useBasedContext` instead.
  */
-const useClient = useBasedClient
+const useClient = useBasedContext
 
-export { useClient, useBasedClient }
+export { useClient, useBasedContext }

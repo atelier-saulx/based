@@ -1,6 +1,6 @@
 import { createSignal, createEffect, onCleanup, Accessor } from 'solid-js'
 import { BasedClient, AuthState } from '@based/client'
-import { useBasedClient } from '../useBasedClient'
+import { useBasedContext } from '../useBasedContext'
 
 /**
  * Hook to check and get the Auth state from the client
@@ -8,7 +8,7 @@ import { useBasedClient } from '../useBasedClient'
  * @returns the `AuthState` object containing all the information about the current state of the authorization with the `Based` cloud.
  */
 const useBasedAuth = (): Accessor<AuthState> => {
-  const [client] = createSignal<BasedClient>(useBasedClient())
+  const [client] = createSignal<BasedClient>(useBasedContext())
   const [auth, setAuth] = createSignal<AuthState>(client()?.authState || {})
 
   if (client()) {

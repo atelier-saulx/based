@@ -38,7 +38,7 @@ const BasedProvider: Component<BasedProviderProps> = (
 /**
  * Alias to `BasedProvider`.
  *
- * @deprecated `BasedProvider` is still working, but we're moving to use `BasedProvider` instead.
+ * @deprecated `Provider` is still working, but we're moving to use `BasedProvider` instead.
  */
 const Provider = BasedProvider
 

@@ -1,5 +1,5 @@
 export * from './BasedProvider'
-export * from './useBasedClient'
+export * from './useBasedContext'
 export * from './useBasedStatus'
 export * from './useBasedQuery'
 export * from './useBasedAuth'

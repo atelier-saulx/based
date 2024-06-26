@@ -1,9 +1,9 @@
 import { createSignal, createEffect, Accessor, onCleanup } from 'solid-js'
 import { BasedClient } from '@based/client'
-import { useBasedClient } from '../useBasedClient'
+import { useBasedContext } from '../useBasedContext'
 
 /**
- * The three possible connection status with `Based`.
+ * The three possible connection statuses with `Based`.
  */
 export enum BasedStatus {
   DISCONNECT = 'disconnect',
@@ -17,7 +17,7 @@ export enum BasedStatus {
 type BasedConnection = {
   /** If the connection is established or not. **/
   connected: Accessor<boolean>
-  /** One of the three possible status. **/
+  /** One of the three possible statuses. **/
   status: Accessor<BasedStatus>
 }
 
@@ -27,7 +27,7 @@ type BasedConnection = {
  * @returns The `BasedConnection` object with the status of the connection.
  */
 const useBasedStatus = (): BasedConnection => {
-  const [client] = createSignal<BasedClient>(useBasedClient())
+  const [client] = createSignal<BasedClient>(useBasedContext())
   const [connected, setConnected] = createSignal(client().connected)
   const [status, setStatus] = createSignal<BasedStatus>(BasedStatus.DISCONNECT)
 

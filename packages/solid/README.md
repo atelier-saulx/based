@@ -6,7 +6,7 @@ signals.
 ```tsx
 import { Show } from 'solid-js'
 import type { Component } from 'solid-js'
-import { useBasedQuery, useBasedClient, BasedProvider } from '@based/solidjs'
+import { useBasedQuery, BasedProvider } from '@based/solidjs'
 import based, { BasedClient } from '@based/client'
 
 const client: BasedClient = based({
@@ -102,7 +102,7 @@ const App: Component = () => {
 }
 ```
 
-## useBasedClient
+## useBasedContext
 
 The `BasedClient` object with the information about the connection with the `Based` server. You cal also call functions
 using the client object.
@@ -110,7 +110,7 @@ using the client object.
 ### Aliasing
 
 ```ts
-const client = useBasedClient()
+const client = useBasedContext()
 ```
 
 or (**in deprecation process**)
@@ -129,7 +129,7 @@ The `BasedClient` object.
 
 ```tsx
 import type { Component } from 'solid-js'
-import { useBasedClient, BasedProvider } from '@based/solidjs'
+import { useBasedContext, BasedProvider } from '@based/solidjs'
 import based, { BasedClient } from '@based/client'
 
 const client: BasedClient = based({
@@ -142,7 +142,7 @@ const doSomething = (): void => {
   client.call('doSomething')
 }
 
-const context: BasedClient = useBasedClient()
+const context: BasedClient = useBasedContext()
 
 const App: Component = () => {
   return (
@@ -156,7 +156,7 @@ const App: Component = () => {
 
 ## useBasedQuery
 
-Subscribes when a component gets mounted / unsubscribes when a comment gets unmounted
+Subscribe when a component gets mounted / unsubscribes when a comment gets unmounted
 
 ```ts
 const useBasedQuery = <N extends keyof BasedQueryMap>(

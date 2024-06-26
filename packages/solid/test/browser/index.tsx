@@ -3,7 +3,7 @@ import { render } from 'solid-js/web'
 import based, { BasedClient } from '@based/client'
 import {
   BasedProvider,
-  useBasedClient,
+  useBasedContext,
   useBasedStatus,
   useBasedQuery,
 } from '../../src'
@@ -29,7 +29,7 @@ const queries: FakeQueryPayloads[] = [
 ]
 
 const BasedContextChecker: Component = () => {
-  const context: BasedClient = useBasedClient()
+  const context: BasedClient = useBasedContext()
   const { status, connected } = useBasedStatus()
 
   return (

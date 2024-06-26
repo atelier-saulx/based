@@ -1,7 +1,7 @@
 import { Accessor, createEffect, createSignal, onCleanup } from 'solid-js'
 import { BasedClient, QueryMap as BasedQueryMap } from '@based/client'
 import { BasedError } from '@based/errors'
-import { useBasedClient } from '../useBasedClient'
+import { useBasedContext } from '../useBasedContext'
 
 /**
  * The query result type from `Based` functions.
@@ -43,7 +43,7 @@ type BasedQueryOptions = {
  * @param payload - The filters and mutations that you want to apply to you data.
  * @param opts - You can set `persistent` to true to store the cached result of a query in `localStorage` on the client-side.
  *
- * @returns The `BasedQueryResult` object with 4 signals to be consumed: `loading()`, `data()`, `error()` and `checksum()`.
+ * @returns The `BasedQueryResult` object with four signals to be consumed: `loading()`, `data()`, `error()` and `checksum()`.
  *
  * @remarks
  * You need to destruct the returned object to get access to the signals.
@@ -58,7 +58,7 @@ const useBasedQuery = <N extends keyof BasedQueryMap>(
   payload?: BasedQueryMap[N]['payload'],
   opts?: BasedQueryOptions,
 ): BasedQueryResult<BasedQueryMap[N]['result']> => {
-  const [client] = createSignal<BasedClient>(useBasedClient())
+  const [client] = createSignal<BasedClient>(useBasedContext())
   const [loading, setLoading] = createSignal<boolean>(true)
   const [checksum, setChecksum] = createSignal<number | null>(null)
   const [error, setError] = createSignal<BasedError | null>(null)
