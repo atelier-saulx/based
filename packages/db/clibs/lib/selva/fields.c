@@ -449,6 +449,14 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, f
     return 0;
 }
 
+void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode * restrict node)
+{
+    node->fields.nr_fields = type->ns.nr_fields;
+    node->fields.data_len = type->field_map_template.main_data_size;
+    node->fields.data = (node->fields.data_len > 0) ? selva_calloc(1, node->fields.data_len) : NULL;
+    memcpy(node->fields.fields_map, type->field_map_template.buf, type->field_map_template.len);
+}
+
 static void clear_fields_map(struct SelvaFields *fields)
 {
     for (field_t i = 0; i < fields->nr_fields; i++) {

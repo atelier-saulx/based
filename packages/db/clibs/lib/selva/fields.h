@@ -57,6 +57,8 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field);
  */
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, field_t field, node_id_t dst_node_id);
 
+void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode * restrict node);
+
 /**
  * Destroy all fields of a node.
  * This will set nr_fields = 0, making setting new field values impossible despite

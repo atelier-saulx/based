@@ -218,16 +218,8 @@ static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *typ
     node->type = type->type;
     memset(&node->trx_label, 0, sizeof(node->trx_label));
     node->expire = 0;
-    node->fields.nr_fields = ns->nr_fields;
 
-    memcpy(node->fields.fields_map, type->field_map_template.buf, type->field_map_template.len);
-    if (type->field_map_template.main_data_size > 0) {
-        node->fields.data = selva_calloc(1, type->field_map_template.main_data_size);
-        node->fields.data_len = type->field_map_template.main_data_size;
-    } else {
-        node->fields.data = NULL;
-        node->fields.data_len = 0;
-    }
+    selva_fields_init(type, node);
 
     RB_INSERT(SelvaNodeIndex, &type->nodes, node);
     return node;
