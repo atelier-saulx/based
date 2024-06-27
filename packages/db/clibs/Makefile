@@ -14,8 +14,8 @@ LIBS := \
 		lib/deflate \
 		lib/jemalloc \
 		lib/nodeflate \
-		lib/selva \
-		lib/util
+		lib/util \
+		lib/selva
 
 LIB_PATH := ../../../build
 export LIB_PATH
