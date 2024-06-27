@@ -1,0 +1,38 @@
+{
+  "name": "@based/vscode",
+  "displayName": "Based.io Autocomplete",
+  "description": "Provides autocomplete names for Based.io functions.",
+  "version": "0.1.0",
+  "publisher": "Based.io",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atelier-saulx/based.git"
+  },
+  "homepage": "https://github.com/atelier-saulx/based/tree/main/packages/vscode",
+  "bugs": {
+    "url": "https://github.com/atelier-saulx/based/issues"
+  },
+  "private": false,
+  "sideEffects": false,
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact"
+  ],
+  "main": "./dist/index.js",
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/vscode": "^1.90.0",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.2"
+  }
+}
