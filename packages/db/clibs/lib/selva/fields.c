@@ -405,7 +405,7 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 
             assert(fs);
             err = selva_fields_get(node, field, &any);
-            if (err | !any.references) {
+            if (err || !any.references) {
                 return err;
             }
 
