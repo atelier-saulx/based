@@ -19,7 +19,7 @@ OBJ := \
 	update.o
 
 ifeq ($(uname_S),Linux)
-	LDFLAGS += -fPIC -rdynamic -ldl -Wl,-rpath,'$$ORIGIN'
+	LDFLAGS += -ldl -fPIC -rdynamic -Wl,-rpath,'$$ORIGIN'
 endif
 ifeq ($(uname_S),Darwin)
 	LDFLAGS += -undefined dynamic_lookup \
