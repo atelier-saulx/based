@@ -48,17 +48,17 @@ OBJ := \
 	timestamp.o \
 	trx.o
 
+LDFLAGS += -ljemalloc_selva -ldeflate
 ifeq ($(uname_S),Linux)
 	OBJ += \
 		selva_cpu_linux.o
-	LDFLAGS += -shared -fPIC -z nodelete
+	LDFLAGS += -shared -fPIC -z nodelete -ldl -Wl,-rpath,'$$ORIGIN'
 endif
 ifeq ($(uname_S),Darwin)
 	OBJ += \
 		memrchr.o \
 		selva_cpu_darwin.o
 	LDFLAGS += -shared -Wl,-install_name,@rpath/libutil$(LIB_SUFFIX)
-	LDFLAGS += -ljemalloc_selva -ldeflate
 endif
 
 TARGET := $(LIB_PATH)/libutil$(LIB_SUFFIX)
