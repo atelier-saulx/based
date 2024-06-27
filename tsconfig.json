@@ -1,7 +1,10 @@
 {
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "Node"
   },
-  "include": ["src", "test"]
+  "include": ["src", "test"],
+  "exclude": ["*.md"]
 }

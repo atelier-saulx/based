@@ -1,0 +1,15 @@
+{
+  "extends": "@saulx/tsconfig/default.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "isolatedModules": true,
+    "outDir": "dist",
+    "baseUrl": "."
+  },
+  "include": ["./src", "./test/browser"],
+  "exclude": ["./dist", "**/*.md"]
+}

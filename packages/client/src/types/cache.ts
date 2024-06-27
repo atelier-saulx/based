@@ -1,7 +1,7 @@
 export type CacheValue = {
   v: any // value
   c: number // checksum
-  p?: boolean // persitent
+  p?: boolean // persistent
   s?: number // size
 }
 
