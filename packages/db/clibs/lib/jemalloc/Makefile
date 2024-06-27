@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@ JEMALLOC_CONFIG := --with-version=VERSION \
 				   --with-lg-quantum=3 \
 				   --disable-cxx \
 				   --enable-xmalloc \
+				   --disable-initial-exec-tls \
 				   --enable-prof \
 				   --with-jemalloc-prefix=selva_ \
 				   --with-private-namespace=selva_ \
