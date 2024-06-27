@@ -325,6 +325,7 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
         break;
     case SELVA_FIELD_TYPE_BOOLEAN:
         memcpy(&any->boolean, p, sizeof(any->boolean));
+        break;
     case SELVA_FIELD_TYPE_ENUM:
         memcpy(&any->enu, p, sizeof(any->enu));
         break;
