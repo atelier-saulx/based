@@ -109,10 +109,17 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
         void *vp = nfo2p(fields, nfo);
 
         memcpy(&refs, vp, sizeof(refs));
+
+        if (refs.offset > 0) {
+            memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
+            refs.offset = 0;
+        }
+
         refs.refs = selva_realloc(refs.refs, ++refs.nr_refs * sizeof(*refs.refs));
         refs.refs[refs.nr_refs - 1] = (struct SelvaNodeReference){
             .dst = dst,
         };
+
         memcpy(vp, &refs, sizeof(refs));
     }
 
@@ -138,9 +145,20 @@ static struct SelvaNode *del_single_ref(struct SelvaFields *fields, struct Selva
 static void del_multi_ref(struct SelvaNodeReferences *refs, size_t i)
 {
     if (i < refs->nr_refs - 1) {
-        memmove(&refs->refs[i],
-                &refs->refs[i + 1],
-                (refs->nr_refs - i - 1) * sizeof(struct SelvaNodeReference));
+        if (i == 0) {
+            /*
+             * Head removal can be done by offsetting the pointer.
+             */
+            refs->offset++;
+            refs->refs++;
+        } else if (i + 1 < refs->nr_refs) {
+            /*
+             * Otherwise we must do a slightly expensive memmove().
+             */
+            memmove(&refs->refs[i],
+                    &refs->refs[i + 1],
+                    (refs->nr_refs - i - 1) * sizeof(struct SelvaNodeReference));
+        }
         /* TODO realloc on some condition */
     }
     refs->nr_refs--;
@@ -431,7 +449,7 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
                 remove_reference(fs, node, dst_node_id);
             }
 
-            selva_free(any.references->refs);
+            selva_free(any.references->refs - any.references->offset);
         } while (0);
         break;
     }

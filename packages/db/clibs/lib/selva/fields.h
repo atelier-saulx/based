@@ -10,7 +10,8 @@ struct SelvaNodeReference {
 };
 
 struct SelvaNodeReferences {
-    size_t nr_refs;
+    uint32_t nr_refs;
+    uint32_t offset;
     struct SelvaNodeReference *refs __counted_by(nr_refs);
 };
 
