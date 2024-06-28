@@ -13,6 +13,14 @@
 #include "db.h"
 #include "fields.h"
 
+#if 0
+#define selva_malloc            malloc
+#define selva_calloc            calloc
+#define selva_realloc           realloc
+#define selva_free              free
+#define selva_sallocx(p, v)     0
+#endif
+
 const size_t selva_field_data_size[15] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(int64_t), // time_t
@@ -383,7 +391,12 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
         /* NOP */
         break;
     case SELVA_FIELD_TYPE_STRING:
-        selva_string_free(nfo2p(fields, nfo));
+        do {
+            struct selva_string *s;
+
+            memcpy(&s, nfo2p(fields, nfo), sizeof(struct selva_string *));
+            selva_string_free(s);
+        } while (0);
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* TODO */
