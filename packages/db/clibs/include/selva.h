@@ -58,11 +58,14 @@ struct SelvaNodeSchema {
                 /**
                  * Edge field array mode.
                  * By default an edge field acts like a set. This flag makes the field work like an array.
+                 * FIXME
                  */
                 EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
             } __packed flags;
+            field_t nr_fields;
             field_t inverse_field;
             node_type_t dst_node_type;
+            struct SelvaFieldSchema *field_schemas __counted_by(nr_fields);
         } edge_constraint;
     } field_schemas[] __counted_by(nr_fields);
 };
