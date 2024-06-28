@@ -6,7 +6,7 @@
 
 struct SelvaNodeReference {
     struct SelvaNode *dst;
-    struct SelvaFields *edge_value; /* TODO */
+    struct SelvaFields *meta;
 };
 
 struct SelvaNodeReferences {

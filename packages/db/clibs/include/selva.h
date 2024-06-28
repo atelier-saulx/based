@@ -84,6 +84,11 @@ struct SelvaNode {
     uint32_t expire;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
+        /**
+         * Field data.
+         * This pointer is tagged with PTAG.
+         * - 1 = shared i.e. refcount == 1
+         */
         void *data;
         struct {
             uint32_t data_len: 24;
