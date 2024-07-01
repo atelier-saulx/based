@@ -239,6 +239,30 @@ static void remove_reference(const struct SelvaFieldSchema *fs_src, struct Selva
     }
 }
 
+__attribute__((nonnull (1)))
+static void remove_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs, field_t field)
+{
+    struct SelvaFieldsAny any;
+    int err;
+
+    err = selva_fields_get(node, field, &any);
+    if (err || !any.references) {
+        /* TODO Log error? */
+        return;
+    }
+
+    while (any.references->nr_refs > 0) {
+        /*
+         * Deleting the last ref first is faster because a memmove() is not needed.
+         */
+        node_id_t dst_node_id = any.references->refs[any.references->nr_refs - 1].dst->node_id;
+
+        remove_reference(fs, node, dst_node_id);
+    }
+
+    selva_free(any.references->refs - any.references->offset);
+}
+
 /**
  * Set reference to fields.
  */
@@ -526,40 +550,14 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         /* TODO */
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
-        do {
-            struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
-            struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&type->ns, field);
-
-            remove_reference(fs, node, 0);
-        } while (0);
+        remove_reference(db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field), node, 0);
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
-        do {
-            struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
-            struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&type->ns, field);
-            struct SelvaFieldsAny any;
-            int err;
-
-            assert(fs);
-            err = selva_fields_get(node, field, &any);
-            if (err || !any.references) {
-                return err;
-            }
-
-            while (any.references->nr_refs > 0) {
-                /*
-                 * Deleting the last ref first is faster because a memmove() is not needed.
-                 */
-                node_id_t dst_node_id = any.references->refs[any.references->nr_refs - 1].dst->node_id;
-
-                remove_reference(fs, node, dst_node_id);
-            }
-
-            selva_free(any.references->refs - any.references->offset);
-        } while (0);
+        remove_references(node, db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field), field);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        /* TODO */
+        /* NOP */
+        break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
         break;
