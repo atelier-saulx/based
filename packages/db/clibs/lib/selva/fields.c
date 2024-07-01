@@ -26,7 +26,7 @@ static void destroy_fields(struct SelvaFields *fields);
 static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fields);
 static void reference_meta_destroy(struct SelvaNodeReference *ref);
 
-const size_t selva_field_data_size[15] = {
+const size_t selva_field_data_size[17] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
     [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(int64_t), // time_t
     [SELVA_FIELD_TYPE_CREATED] = sizeof(int64_t),
@@ -42,6 +42,8 @@ const size_t selva_field_data_size[15] = {
     [SELVA_FIELD_TYPE_TEXT] = 0, /* TODO */
     [SELVA_FIELD_TYPE_REFERENCE] = sizeof(struct SelvaNodeReference),
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
+    [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
+    [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
 };
 
 static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, enum SelvaFieldType type)
@@ -237,7 +239,10 @@ static void remove_reference(const struct SelvaFieldSchema *fs_src, struct Selva
     }
 }
 
-static int selva_fields_set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dst)
+/**
+ * Set reference to fields.
+ */
+static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dst)
 {
     struct SelvaTypeEntry *type_dst;
     struct SelvaFieldSchema *fs_dst;
@@ -275,17 +280,43 @@ static int selva_fields_set_reference(struct SelvaDb *db, const struct SelvaFiel
     return err;
 }
 
-int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+/**
+ * Set weak reference to fields.
+ */
+static int set_weak_reference(const struct SelvaFieldSchema *fs, struct SelvaFields *fields, struct SelvaNode * restrict dst)
 {
-    struct SelvaFields *fields = &node->fields;
-    const enum SelvaFieldType type = fs->type;
-    const field_t field = fs->field;
     struct SelvaFieldInfo *nfo;
+    struct SelvaNodeWeakReference weak_ref = {
+        .dst_type = dst->type,
+        .dst_id = dst->node_id,
+    };
 
-    nfo = &fields->fields_map[field];
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
+        *nfo = alloc_block(fields, SELVA_FIELD_TYPE_REFERENCE);
+    } else if (nfo->type != SELVA_FIELD_TYPE_REFERENCE) {
+        return SELVA_EINVAL;
+    }
+
+    static_assert(offsetof(struct SelvaNodeReference, dst) == 0);
+    memcpy(nfo2p(fields, nfo), &weak_ref, sizeof(weak_ref));
+    return 0;
+}
+
+/**
+ * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
+ * @param db Can be NULL if field type is not a strong reference.
+ * @param node Can be NULL if field type is not a strong reference.
+ */
+static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
+{
+    struct SelvaFieldInfo *nfo;
+    const enum SelvaFieldType type = fs->type;
+
+    nfo = &fields->fields_map[fs->field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
         *nfo = alloc_block(fields, type);
-    } else if (nfo->type != type) {
+    } else if (nfo->type != fs->type) {
         return SELVA_EINVAL;
     }
 
@@ -311,17 +342,43 @@ int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct Se
         /* TODO */
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
-        return selva_fields_set_reference(db, fs, node, (struct SelvaNode *)value);
+        assert(db && node);
+        return set_reference(db, fs, node, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_REFERENCES:
+        /* TODO */
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        /*
+         * Presumable we want to only use weak refs for edge references that can't use
+         * the normal refs.
+         */
+        return set_weak_reference(fs, fields, (struct SelvaNode *)value);
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
         break;
     }
 
-    return 0;
+    return SELVA_ENOTSUP;
 }
 
+int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+{
+    return fields_set(db, node, fs, &node->fields, value, len);
+}
+
+/**
+ * @param fs field schema of the edge meta field.
+ */
 static int reference_meta_set(struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, const struct SelvaFieldSchema *fs, const void *value, size_t len)
 {
+    if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
+        fs->type == SELVA_FIELD_TYPE_REFERENCES) {
+        /*
+         * Edge metadata can't contain these types because it would be almost
+         * impossible to keep track of the pointers.
+         */
+        return SELVA_ENOTSUP;
+    }
+
     /*
      * Create meta if it's not initialized yet.
      * TODO How to share this with the other end?
@@ -334,47 +391,7 @@ static int reference_meta_set(struct SelvaNodeReference *ref, struct EdgeFieldCo
         reference_meta_create(ref, nr_fields);
     }
 
-    struct SelvaFields *fields = ref->meta;
-    const enum SelvaFieldType type = fs->type;
-    const field_t field = fs->field;
-    struct SelvaFieldInfo *nfo;
-
-    nfo = &fields->fields_map[field];
-    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
-        *nfo = alloc_block(fields, type);
-    } else if (nfo->type != type) {
-        return SELVA_EINVAL;
-    }
-
-    switch (type) {
-    case SELVA_FIELD_TYPE_NULL:
-        break;
-    case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
-    case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INTEGER:
-    case SELVA_FIELD_TYPE_UINT8:
-    case SELVA_FIELD_TYPE_UINT32:
-    case SELVA_FIELD_TYPE_UINT64:
-    case SELVA_FIELD_TYPE_BOOLEAN:
-    case SELVA_FIELD_TYPE_ENUM:
-        memcpy(nfo2p(fields, nfo), value, len);
-        break;
-    case SELVA_FIELD_TYPE_STRING:
-        set_value_string(fields, nfo, value, len);
-        break;
-    case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
-        break;
-    case SELVA_FIELD_TYPE_REFERENCE:
-        /* TODO Set as a (type, id) tuple */
-    case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO etc */
-        break;
-    }
-
-    return 0;
+    return fields_set(NULL, NULL, fs, ref->meta, value, len);
 }
 
 int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any)
@@ -444,6 +461,10 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
             any->references = refs;
         } while (0);
         break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        /* TODO */
+        return SELVA_ENOTSUP;
     }
 
     return 0;
@@ -504,6 +525,10 @@ static int reference_meta_get(struct SelvaNodeReference *ref, field_t field, str
     case SELVA_FIELD_TYPE_REFERENCE:
         /* TODO */
     case SELVA_FIELD_TYPE_REFERENCES:
+        /* TODO */
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        /* TODO */
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
         break;
     }
@@ -583,6 +608,11 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
             selva_free(any.references->refs - any.references->offset);
         } while (0);
         break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        /* TODO */
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        /* TODO */
+        break;
     }
 
     /* TODO Should a main string field always have a string? */
@@ -628,6 +658,10 @@ static int reference_meta_del(struct SelvaNodeReference *ref, field_t field)
         /* TODO */
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
+        /* TODO */
+        break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
         break;
     }

@@ -15,6 +15,18 @@ struct SelvaNodeReferences {
     struct SelvaNodeReference *refs __counted_by(nr_refs);
 };
 
+struct SelvaNodeWeakReference {
+    node_type_t dst_type;
+    node_id_t dst_id;
+};
+
+/* TODO Support */
+struct SelvaNodeWeakReferences {
+    uint32_t nr_refs;
+    uint32_t offset;
+    struct SelvaNodeWeakReference *refs __counted_by(nr_refs);
+};
+
 struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
     union {
@@ -35,7 +47,7 @@ struct SelvaFieldsAny {
 /**
  * Size of each type in fields.data.
  */
-extern const size_t selva_field_data_size[15];
+extern const size_t selva_field_data_size[17];
 
 /**
  * Set field value.

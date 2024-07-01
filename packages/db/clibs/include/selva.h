@@ -29,6 +29,8 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_TEXT = 12,
     SELVA_FIELD_TYPE_REFERENCE = 13,
     SELVA_FIELD_TYPE_REFERENCES = 14,
+    SELVA_FIELD_TYPE_WEAK_REFERENCE = 15,
+    SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
 } __packed;
 
 struct SelvaObject;
@@ -98,8 +100,8 @@ struct SelvaNode {
             field_t nr_fields: 8;
         };
         alignas(uint16_t) struct SelvaFieldInfo {
-            enum SelvaFieldType type: 4;
-            uint16_t off: 12; /*!< Offset in data in 8-byte blocks. */
+            enum SelvaFieldType type: 5;
+            uint16_t off: 11; /*!< Offset in data in 8-byte blocks. */
         } __packed fields_map[] __counted_by(nr_fields);
     } fields;
 };
