@@ -472,6 +472,7 @@ static int fields_get(struct SelvaFields *fields, field_t  field, struct SelvaFi
         do {
             struct SelvaNodeReference *ref = (struct SelvaNodeReference *)p;
 
+            /* Verify proper alignment. */
             assert(((uintptr_t)ref & 7) == 0);
             any->reference = ref;
         } while (0);
@@ -480,11 +481,19 @@ static int fields_get(struct SelvaFields *fields, field_t  field, struct SelvaFi
         do {
             struct SelvaNodeReferences *refs = (struct SelvaNodeReferences *)p;
 
+            /* Verify proper alignment. */
             assert(((uintptr_t)refs & 7) == 0);
             any->references = refs;
         } while (0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        do {
+            struct SelvaNodeWeakReference *weak_ref = (struct SelvaNodeWeakReference *)p;
+
+            static_assert(__builtin_types_compatible_p(typeof(*weak_ref), typeof(any->weak_reference)));
+            memcpy(&any->weak_reference, weak_ref, sizeof(*weak_ref));
+        } while (0);
+        break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
         return SELVA_ENOTSUP;

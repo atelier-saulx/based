@@ -41,6 +41,7 @@ struct SelvaFieldsAny {
         uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
         struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
         struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
+        struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
     };
 };
 
