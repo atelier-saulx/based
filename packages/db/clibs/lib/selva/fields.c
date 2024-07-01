@@ -479,10 +479,8 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
 static int reference_meta_get(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any)
 {
     struct SelvaFields *fields = ref->meta;
-    const struct SelvaFieldInfo *nfo;
-    void *p;
 
-    if (!fields || field >= fields->nr_fields) {
+    if (!fields) {
         return SELVA_ENOENT;
     }
 
@@ -497,9 +495,8 @@ static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *
     selva_string_free(s);
 }
 
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, field_t field)
 {
-    struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
 
     if (field >= fields->nr_fields) {
@@ -574,54 +571,22 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
     return 0;
 }
 
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+{
+    struct SelvaFields *fields = &node->fields;
+
+    return fields_del(db, node, fields, field);
+}
+
 static int reference_meta_del(struct SelvaNodeReference *ref, field_t field)
 {
     struct SelvaFields *fields = ref->meta;
-    struct SelvaFieldInfo *nfo;
 
-    assert(fields);
-
-    if (field >= fields->nr_fields) {
+    if (!fields) {
         return SELVA_ENOENT;
     }
 
-    nfo = &fields->fields_map[field];
-
-    switch (nfo->type) {
-    case SELVA_FIELD_TYPE_NULL:
-    case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
-    case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INTEGER:
-    case SELVA_FIELD_TYPE_UINT8:
-    case SELVA_FIELD_TYPE_UINT32:
-    case SELVA_FIELD_TYPE_UINT64:
-    case SELVA_FIELD_TYPE_BOOLEAN:
-    case SELVA_FIELD_TYPE_ENUM:
-        /* NOP */
-        break;
-    case SELVA_FIELD_TYPE_STRING:
-        del_field_string(fields, nfo);
-        break;
-    case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
-        break;
-    case SELVA_FIELD_TYPE_REFERENCE:
-        /* TODO */
-        break;
-    case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO */
-        break;
-    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO */
-        break;
-    }
-
-    memset(nfo2p(fields, nfo), 0, selva_field_data_size[field]);
-
-    return 0;
+    return fields_del(NULL, NULL, fields, field);
 }
 
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, field_t field, node_id_t dst_node_id)
