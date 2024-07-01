@@ -394,9 +394,8 @@ static int reference_meta_set(struct SelvaNodeReference *ref, struct EdgeFieldCo
     return fields_set(NULL, NULL, fs, ref->meta, value, len);
 }
 
-int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any)
+static int fields_get(struct SelvaFields *fields, field_t  field, struct SelvaFieldsAny *any)
 {
-    struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
     void *p;
 
@@ -470,6 +469,13 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
     return 0;
 }
 
+int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any)
+{
+    struct SelvaFields *fields = &node->fields;
+
+    return fields_get(fields, field, any);
+}
+
 static int reference_meta_get(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any)
 {
     struct SelvaFields *fields = ref->meta;
@@ -480,60 +486,7 @@ static int reference_meta_get(struct SelvaNodeReference *ref, field_t field, str
         return SELVA_ENOENT;
     }
 
-    nfo = &fields->fields_map[field];
-    any->type = nfo->type;
-    p = nfo2p(fields, nfo);
-
-    switch (nfo->type) {
-    case SELVA_FIELD_TYPE_NULL:
-        memset(any, 0, sizeof(*any));
-        break;
-    case SELVA_FIELD_TYPE_TIMESTAMP:
-    case SELVA_FIELD_TYPE_CREATED:
-    case SELVA_FIELD_TYPE_UPDATED:
-        memcpy(&any->timestamp, p, sizeof(any->timestamp));
-        break;
-    case SELVA_FIELD_TYPE_NUMBER:
-        memcpy(&any->number, p, sizeof(any->number));
-        break;
-    case SELVA_FIELD_TYPE_INTEGER:
-        memcpy(&any->integer, p, sizeof(any->integer));
-        break;
-    case SELVA_FIELD_TYPE_UINT8:
-        memcpy(&any->uint8, p, sizeof(any->uint8));
-        break;
-    case SELVA_FIELD_TYPE_UINT32:
-        memcpy(&any->uint32, p, sizeof(any->uint32));
-        break;
-    case SELVA_FIELD_TYPE_UINT64:
-        memcpy(&any->uint64, p, sizeof(any->uint64));
-        break;
-    case SELVA_FIELD_TYPE_BOOLEAN:
-        memcpy(&any->boolean, p, sizeof(any->boolean));
-        break;
-    case SELVA_FIELD_TYPE_ENUM:
-        memcpy(&any->enu, p, sizeof(any->enu));
-        break;
-    case SELVA_FIELD_TYPE_STRING:
-        memcpy(&any->string, p, sizeof(struct selva_string *));
-        if (!any->string) {
-            any->type = SELVA_FIELD_TYPE_NULL;
-        }
-        break;
-    case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
-    case SELVA_FIELD_TYPE_REFERENCE:
-        /* TODO */
-    case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO */
-    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        /* TODO */
-    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO */
-        break;
-    }
-
-    return 0;
+    return fields_get(fields, field, any);
 }
 
 static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
