@@ -357,7 +357,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         break;
     }
 
-    return SELVA_ENOTSUP;
+    return 0;
 }
 
 int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
