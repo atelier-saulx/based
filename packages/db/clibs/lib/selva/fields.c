@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
+ * TODO Set edge metadata to both ends
+ * TODO Remove metadata from both ends
  */
 #include <assert.h>
 #include <stdio.h> /* TODO REMOVE */
@@ -89,7 +91,6 @@ static void set_value_string(struct SelvaFields *fields, struct SelvaFieldInfo *
 /**
  * Write a ref to the fields data.
  * Note that this function doesn't touch the destination node.
- * TODO meta
  */
 static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, struct SelvaNode * restrict dst)
 {
