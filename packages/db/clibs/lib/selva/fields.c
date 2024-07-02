@@ -393,14 +393,14 @@ int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct Se
 /**
  * @param fs field schema of the edge meta field.
  */
-static int reference_meta_set(struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, const struct SelvaFieldSchema *fs, const void *value, size_t len)
 {
+    /*
+     * Edge metadata can't contain these types because it would be almost
+     * impossible to keep track of the pointers.
+     */
     if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
         fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-        /*
-         * Edge metadata can't contain these types because it would be almost
-         * impossible to keep track of the pointers.
-         */
         return SELVA_ENOTSUP;
     }
 
@@ -410,16 +410,48 @@ static int reference_meta_set(struct SelvaNodeReference *ref, struct EdgeFieldCo
      */
     if (!ref->meta) {
         const field_t nr_fields = efc->nr_fields;
+
         if (nr_fields == 0 || fs->field > nr_fields) {
             return SELVA_EINVAL;
         }
+
         reference_meta_create(ref, nr_fields);
+
+        struct SelvaFields *dst_fields = &ref->dst->fields;
+        const struct SelvaFieldInfo *dst_nfo = &dst_fields->fields_map[efc->inverse_field];
+
+        /*
+         * Share the meta fields with the destination node
+         * i.e. set it at the other end of the edge.
+         */
+        if (dst_nfo->type == SELVA_FIELD_TYPE_REFERENCE) {
+            struct SelvaNodeReference dst_ref;
+
+            memcpy(&dst_ref, nfo2p(dst_fields, dst_nfo), sizeof(dst_ref));
+            dst_ref.meta = ref->meta;
+            memcpy(nfo2p(dst_fields, dst_nfo), &dst_ref, sizeof(dst_ref));
+        } else if (dst_nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
+            struct SelvaNodeReferences refs;
+            struct SelvaNode *tmp;
+            node_id_t src_node_id = node->node_id;
+
+            memcpy(&refs, nfo2p(dst_fields, dst_nfo), sizeof(refs));
+            for (size_t i = 0; i < refs.nr_refs; i++) {
+                tmp = refs.refs[i].dst;
+                if (tmp && tmp->node_id == src_node_id) {
+                    refs.refs[i].meta = ref->meta;
+                    break;
+                }
+            }
+        } else {
+            db_panic("Invalid inverse field type: %d", dst_nfo->type);
+        }
     }
 
     return fields_set(NULL, NULL, fs, ref->meta, value, len);
 }
 
-static int fields_get(struct SelvaFields *fields, field_t  field, struct SelvaFieldsAny *any)
+static int fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any)
 {
     const struct SelvaFieldInfo *nfo;
     void *p;
@@ -685,6 +717,7 @@ static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fiel
     struct SelvaFields *fields = selva_calloc(1, sizeof(*fields) + nr_fields * sizeof(struct SelvaFieldInfo));
     fields->nr_fields = nr_fields;
 
+    share_fields(fields);
     ref->meta = fields;
 }
 

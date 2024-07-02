@@ -55,6 +55,8 @@ extern const size_t selva_field_data_size[17];
  */
 int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
 
+int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+
 /**
  * Get field value.
  * Strings and references are returned as direct pointers to the data.

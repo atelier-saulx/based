@@ -198,7 +198,7 @@ struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field
     return &ns->field_schemas[field];
 }
 
-static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
     struct SelvaTypeEntry *type;
 
