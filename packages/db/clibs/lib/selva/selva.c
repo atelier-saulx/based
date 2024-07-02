@@ -117,6 +117,14 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
             napi_get_null(env, &result);
         }
         break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        /* TODO */
+        napi_get_null(env, &result);
+        break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        /* TODO */
+        napi_get_null(env, &result);
+        break;
     }
 
     return result;
