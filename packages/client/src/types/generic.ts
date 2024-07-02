@@ -21,6 +21,8 @@ export type BasedOpts = {
   params?: {
     [key: string]: string | number
   }
+
+  host?: string
 }
 
 export type Settings = {
