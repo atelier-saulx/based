@@ -2,6 +2,9 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 #include <assert.h>
 #include <stdio.h>
 #include <node_api.h>
@@ -343,3 +346,4 @@ static napi_value Init(napi_env env, napi_value exports) {
 }
 
 NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
+#pragma GCC diagnostic pop
