@@ -1,8 +1,6 @@
 /*
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
- * TODO Set edge metadata to both ends
- * TODO Remove metadata from both ends
  */
 #include <assert.h>
 #include <stdio.h> /* TODO REMOVE */
@@ -148,14 +146,15 @@ static struct SelvaNode *del_single_ref(struct SelvaFields *fields, struct Selva
 
     memcpy(&ref, vp, sizeof(ref));
     memset(vp, 0, sizeof(struct SelvaNode *));
-
-    reference_meta_destroy(&ref); /* TODO This should be shared both ways */
+    reference_meta_destroy(&ref);
 
     return ref.dst;
 }
 
 static void del_multi_ref(struct SelvaNodeReferences *refs, size_t i)
 {
+    reference_meta_destroy(&refs->refs[i]);
+
     if (i < refs->nr_refs - 1) {
         if (i == 0) {
             /*
@@ -178,11 +177,11 @@ static void del_multi_ref(struct SelvaNodeReferences *refs, size_t i)
 
 /**
  * Delete a reference field edge.
+ * The caller must invalidate pointers in ref if relevant.
  * Clears both ways.
- * TODO meta
  * @param orig_dst should be given if fs_src is of type SELVA_FIELD_TYPE_REFERENCES.
  */
-static void remove_reference(const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, node_id_t orig_dst)
+static void remove_reference(struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
 {
     struct SelvaFields *fields_src = &src->fields;
     struct SelvaFieldInfo *nfo_src = &fields_src->fields_map[fs_src->field];
@@ -205,7 +204,12 @@ static void remove_reference(const struct SelvaFieldSchema *fs_src, struct Selva
             }
         }
     } else {
-        /* Nothing to do. */
+        /*
+         * NOP:
+         * - Empty field
+         * - SELVA_FIELD_TYPE_WEAK_REFERENCE
+         * - TODO SELVA_FIELD_TYPE_WEAK_REFERENCES
+         */
     }
 
     /*
@@ -258,7 +262,7 @@ static void remove_references(struct SelvaNode *node, const struct SelvaFieldSch
          */
         node_id_t dst_node_id = any.references->refs[any.references->nr_refs - 1].dst->node_id;
 
-        remove_reference(fs, node, dst_node_id);
+        remove_reference(node, fs, dst_node_id);
     }
 
     selva_free(any.references->refs - any.references->offset);
@@ -290,7 +294,7 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
     /*
      * Remove the previous reference if set.
      */
-    remove_reference(fs_src, src, 0);
+    remove_reference(src, fs_src, 0);
 
     err = write_ref(src, fs_src, dst);
     if (err) {
@@ -365,12 +369,13 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* TODO */
-        break;
+        return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
         assert(db && node);
         return set_reference(db, fs, node, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_REFERENCES:
         /* TODO */
+        return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         /*
          * Presumable we want to only use weak refs for edge references that can't use
@@ -379,7 +384,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return set_weak_reference(fs, fields, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
-        break;
+        return SELVA_ENOTSUP;
     }
 
     return 0;
@@ -406,7 +411,6 @@ int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeRefe
 
     /*
      * Create meta if it's not initialized yet.
-     * TODO How to share this with the other end?
      */
     if (!ref->meta) {
         const field_t nr_fields = efc->nr_fields;
@@ -501,6 +505,8 @@ static int fields_get(struct SelvaFields *fields, field_t field, struct SelvaFie
         }
         break;
     case SELVA_FIELD_TYPE_TEXT:
+        /* TODO */
+        return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
         do {
             struct SelvaNodeReference *ref = (struct SelvaNodeReference *)p;
@@ -542,7 +548,7 @@ int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAn
     return fields_get(fields, field, any);
 }
 
-static int reference_meta_get(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any)
+int selva_fields_get_reference_meta(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any)
 {
     struct SelvaFields *fields = ref->meta;
 
@@ -592,13 +598,13 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         /* TODO */
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
-        remove_reference(db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field), node, 0);
+        remove_reference(node, db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field), 0);
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
         remove_references(node, db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field), field);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        /* NOP */
+        remove_reference(node, db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field), 0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO */
@@ -646,7 +652,7 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, f
         return err;
     }
 
-    remove_reference(fs, node, dst_node_id);
+    remove_reference(node, fs, dst_node_id);
     return 0;
 }
 
@@ -669,16 +675,23 @@ static void share_fields(struct SelvaFields *fields)
     fields->data = PTAG(data, 1);
 }
 
+static void unshare_fields(struct SelvaFields *fields)
+{
+    fields->data = PTAG(PTAG_GETP(fields->data), 0);
+}
+
+static bool is_shared_fields(struct SelvaFields *fields)
+{
+    return !!PTAG_GETTAG(fields->data);
+}
+
+/**
+ * Fields must be deleted before calling this function.
+ */
 static void destroy_fields(struct SelvaFields *fields)
 {
-    void *data = PTAG_GETP(fields->data);
-
-    /*
-     * If data is marked as shared we unshare it now and return immediately.
-     */
-    if (PTAG_GETTAG(fields->data)) {
-        fields->data = PTAG(data, 0);
-        return;
+    if (is_shared_fields(fields)) {
+        db_panic("Can't destroy shared fields");
     }
 
     /*
@@ -690,7 +703,7 @@ static void destroy_fields(struct SelvaFields *fields)
 
     fields->nr_fields = 0;
     fields->data_len = 0;
-    selva_free(data);
+    selva_free(PTAG_GETP(fields->data));
 }
 
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node)
@@ -723,13 +736,19 @@ static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fiel
 
 static void reference_meta_destroy(struct SelvaNodeReference *ref)
 {
-    if (!ref->meta) {
+    struct SelvaFields *fields = ref->meta;
+
+    if (!fields) {
+        return;
+    } else if (is_shared_fields(fields)) {
+        /*
+         * If data is marked as shared we unshare it now and return immediately.
+         */
+        unshare_fields(fields);
         return;
     }
 
-    struct SelvaFields *fields = ref->meta;
     const field_t nr_fields = fields->nr_fields;
-
     for (field_t field = 0; field < nr_fields; field++) {
         if (fields->fields_map[field].type != SELVA_FIELD_TYPE_NULL) {
             int err;

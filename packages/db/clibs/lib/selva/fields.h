@@ -63,6 +63,8 @@ int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeRefe
  */
 int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any);
 
+int selva_fields_get_reference_meta(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any);
+
 /**
  * Delete field.
  */

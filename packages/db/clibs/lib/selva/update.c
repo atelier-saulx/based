@@ -42,6 +42,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             value_len = ud.len - 5;
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
             do {
                 node_id_t dst_node_id;
                 struct SelvaTypeEntry *type;
