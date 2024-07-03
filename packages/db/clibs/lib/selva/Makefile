@@ -16,6 +16,7 @@ OBJ := \
 	selva_object/selva_object.o \
 	selva_object/selva_object_foreach.o \
 	selva_set/selva_set.o \
+	traverse.o \
 	update.o
 
 ifeq ($(uname_S),Linux)
