@@ -110,7 +110,6 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
 
     if (type == SELVA_FIELD_TYPE_REFERENCE) {
         static_assert(offsetof(struct SelvaNodeReference, dst) == 0);
-        /* TODO comment out */
         assert(!memcmp(nfo2p(fields, nfo), &(struct SelvaNode *){NULL}, sizeof(struct SelvaNode *)));
         memcpy(nfo2p(fields, nfo), (void *)&dst, sizeof(struct SelvaNode *));
     } else { // type == SELVA_FIELD_TYPE_REFERENCES
