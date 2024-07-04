@@ -38,7 +38,7 @@ static int child_callback_stub(
 
 #define BFS_SVEC_INIT_SIZE 100
 
-#define BFS_TRAVERSE(hierarchy, head, cb) \
+#define BFS_TRAVERSE_BEGIN(hierarchy, head, cb) \
     SelvaTraversalNodeCallback head_cb = (cb)->head_cb ? (cb)->head_cb : head_callback_stub; \
     SelvaTraversalNodeCallback node_cb = (cb)->node_cb ? (cb)->node_cb : node_callback_stub; \
     SelvaTraversalNodeCallback child_cb = (cb)->child_cb ? (cb)->child_cb : child_callback_stub; \
@@ -101,12 +101,12 @@ static int child_callback_stub(
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
-int selva_traverse_bfs(
+int traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
         field_t field,
         const struct SelvaTraversalCallback *cb) {
-    BFS_TRAVERSE(db, head, cb) {
+    BFS_TRAVERSE_BEGIN(db, head, cb) {
         struct SelvaFieldsAny any;
         int err;
 

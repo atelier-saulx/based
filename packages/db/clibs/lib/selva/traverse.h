@@ -53,7 +53,7 @@ struct SelvaTraversalCallback {
 };
 
 
-int selva_traverse_bfs(
+int traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
         field_t field,

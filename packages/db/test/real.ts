@@ -250,6 +250,8 @@ test.serial.only('query + filter', async (t) => {
   //  .range(0, 1000)
   //  .get()
 
+  selva.traverse_field_bfs(dbp, 0, 1, fields.user.selvaField, (type, nodeId) => console.log(`type: ${type} node: ${nodeId}`))
+
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())
 
