@@ -118,11 +118,17 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
 
         memcpy(&refs, vp, sizeof(refs));
 
+        /*
+         * Get rid of any offset first.
+         */
         if (refs.offset > 0) {
             memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
             refs.offset = 0;
         }
 
+        /*
+         * The add the new reference.
+         */
         refs.refs = selva_realloc(refs.refs, ++refs.nr_refs * sizeof(*refs.refs));
         refs.refs[refs.nr_refs - 1] = (struct SelvaNodeReference){
             .dst = dst,
@@ -297,15 +303,15 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
 
     err = write_ref(src, fs_src, dst);
     if (err) {
-        return 0;
+        return err;
     }
 
     err = write_ref(dst, fs_dst, src);
     if (err) {
-        db_panic("Failed");
+        db_panic("Failed to write the inverse reference field");
     }
 
-    return err;
+    return 0;
 }
 
 /**

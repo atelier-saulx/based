@@ -346,6 +346,35 @@ static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
     return any2napi(env, &any);
 }
 
+// selva_db_get_field_p(db, node, field_idx): number
+static napi_value selva_db_get_field_p(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 2;
+    napi_value argv[2];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    /* FIXME Better typing solution */
+    struct SelvaNode *node = (struct SelvaNode *)npointer2db(env, argv[0]);
+    uint32_t field_idx;
+
+    status = napi_get_value_uint32(env, argv[1], &field_idx);
+    assert(status == napi_ok);
+
+    struct SelvaFieldsAny any;
+    err = selva_fields_get(node, field_idx, &any);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    return any2napi(env, &any);
+}
+
 struct node_cb_trampoline {
     napi_env env;
     napi_value this; /*!< js object. */
@@ -356,40 +385,60 @@ static int node_cb_trampoline(struct SelvaDb *, const struct SelvaTraversalMetad
 {
     napi_status status;
     struct node_cb_trampoline *ctx = (struct node_cb_trampoline *)arg;
-    int argc = 2;
-    napi_value argv[2];
+    int argc = 3;
+    napi_value argv[3];
     napi_value result;
 
     napi_create_int32(ctx->env, node->type, &argv[0]);
     napi_create_int32(ctx->env, node->node_id, &argv[1]);
+    napi_create_bigint_uint64(ctx->env, (uint64_t)node, &argv[2]);
 
     status = napi_call_function(ctx->env, ctx->this, ctx->func, argc, argv, &result);
     if (status != napi_ok) {
         const char *code = NULL;
 
-        status = napi_throw_error(ctx->env, code, "traverse callback failed");
+        status = napi_throw_error(ctx->env, code, "Traverse callback failed");
         assert(status == napi_ok);
         return 1;
     }
 
     napi_valuetype result_type;
-    int32_t res = 0;
 
     status = napi_typeof(ctx->env, result, &result_type);
-    if (status == napi_ok && result_type == napi_number) {
-        status = napi_get_value_int32(ctx->env, result, &res);
+    if (status != napi_ok) {
+        const char *code = NULL;
+
+        status = napi_throw_error(ctx->env, code, "Failed the read the return value");
         assert(status == napi_ok);
+        return 1;
     }
 
-    return res;
+    if (result_type == napi_number) {
+        int32_t res;
+
+        status = napi_get_value_int32(ctx->env, result, &res);
+        assert(status == napi_ok);
+
+        return res;
+    } else if (result_type == napi_null || result_type == napi_undefined) {
+        return -1;
+    } else {
+        const char *code = NULL;
+
+        printf("res_type: %d", result_type);
+        /* TODO throw type error? */
+        status = napi_throw_error(ctx->env, code, "Invalid return value type");
+        assert(status == napi_ok);
+        return -2;
+    }
 }
 
-// selva_traverse_field_bfs(db, type, node_id, field, cb): number
+// selva_traverse_field_bfs(db, type, node_id, cb: (type, nodeId, node) => number | null | undefined): number
 static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 5;
-    napi_value argv[5];
+    size_t argc = 4;
+    napi_value argv[4];
     napi_status status;
 
     err = get_args(env, info, &argc, argv, false);
@@ -400,17 +449,14 @@ static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info
     struct SelvaDb *db = npointer2db(env, argv[0]);
     node_type_t type;
     node_id_t node_id;
-    uint32_t field_idx;
 
     status = napi_get_value_uint32(env, argv[1], &type);
     assert(status == napi_ok);
     status = napi_get_value_uint32(env, argv[2], &node_id);
     assert(status == napi_ok);
     static_assert(sizeof(node_id) == sizeof(uint32_t));
-    status = napi_get_value_uint32(env, argv[3], &field_idx);
-    assert(status == napi_ok);
 
-    if (!selva_napi_is_function(env, argv[4])) {
+    if (!selva_napi_is_function(env, argv[3])) {
         return res2napi(env, SELVA_EINVAL);
     }
 
@@ -427,16 +473,16 @@ static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
-    struct SelvaTraversalCallback cb_wrap = {
+    struct SelvaTraversalParam cb_wrap = {
         .node_cb = node_cb_trampoline,
         .node_arg = &(struct node_cb_trampoline){
             .env = env,
             .this = ({ napi_value this; napi_get_global(env, &this); this; }),
-            .func = argv[4], /*!< js function. */
+            .func = argv[3], /*!< js function. */
         },
     };
 
-    err = traverse_field_bfs(db, node, field_idx, &cb_wrap);
+    err = traverse_field_bfs(db, node, &cb_wrap);
     return res2napi(env, err);
 }
 
@@ -450,6 +496,7 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),
+      DECLARE_NAPI_METHOD("db_get_field_p", selva_db_get_field_p),
       DECLARE_NAPI_METHOD("traverse_field_bfs", selva_traverse_field_bfs),
   };
   napi_status status;

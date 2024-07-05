@@ -164,7 +164,8 @@ test.serial.only('query + filter', async (t) => {
   //await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
 
-  const NR_NODES = 5e6
+  //const NR_NODES = 5e6
+  const NR_NODES = 100e3
   const DATA_SIZE = 84 + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
   let off = 0
@@ -251,6 +252,28 @@ test.serial.only('query + filter', async (t) => {
   //  .get()
 
   selva.traverse_field_bfs(dbp, 0, 1, fields.user.selvaField, (type, nodeId) => console.log(`type: ${type} node: ${nodeId}`))
+
+  console.log('filtering:')
+  let matchCount = 0
+  const matchStart = performance.now()
+  selva.traverse_field_bfs(dbp, 1, 0, (type, nodeId, node) => {
+    //console.log(type, nodeId)
+
+    if (type == 0) {
+      //console.log(type, nodeId)
+      const vectorClock = selva.db_get_field_p(node, db.schemaTypesParsed.simple.fields.vectorClock.selvaField)
+      if (vectorClock == 0) {
+        //console.log(`type: ${type} nodeId: ${nodeId} lat: ${selva.db_get_field(node, fields['location.lat'].selvaField)}`)
+        matchCount++
+      }
+
+      return -1; // stop traverse
+    } else if (type == 1) {
+        return db.schemaTypesParsed.user.fields.simples.selvaField
+    }
+  })
+  const matchEnd = performance.now()
+  console.log(`Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms}`)
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())

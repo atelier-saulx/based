@@ -20,7 +20,7 @@ struct SelvaTraversalMetadata {
  * Called for each node found during a traversal.
  * @param node a pointer to the node.
  * @param arg a pointer to node_arg give in SelvaTraversalCallback structure.
- * @returns 0 to continue the traversal; 1 to interrupt the traversal.
+ * @returns -2 to interrupt the whole traversal; -1 to stop the traversal at this level; or a fieldId in node to be traversed.
  */
 typedef int (*SelvaTraversalNodeCallback)(
         struct SelvaDb *db,
@@ -31,9 +31,10 @@ typedef int (*SelvaTraversalNodeCallback)(
 /**
  * Callback descriptor used for traversals.
  */
-struct SelvaTraversalCallback {
+struct SelvaTraversalParam {
     /**
      * Called for each orphan head in the hierarchy.
+     * A return value greater than 0 is ignored and a return value of less than zero stops the traversal.
      */
     SelvaTraversalNodeCallback head_cb;
     void *head_arg;
@@ -46,7 +47,7 @@ struct SelvaTraversalCallback {
 
     /**
      * Called for each child of current node.
-     * The return value of this function is typically ignored/discarded.
+     * The return value of this function is ignored.
      */
     SelvaTraversalNodeCallback child_cb;
     void *child_arg;
@@ -56,5 +57,4 @@ struct SelvaTraversalCallback {
 int traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
-        field_t field,
-        const struct SelvaTraversalCallback *cb);
+        const struct SelvaTraversalParam *cb);
