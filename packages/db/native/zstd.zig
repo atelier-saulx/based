@@ -12,11 +12,14 @@ pub fn compress(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi
 fn compressInner(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // const total_size = 100;
 
-    const args = try napi.getArgs(1, env, info);
+    const args = try napi.getArgs(3, env, info);
+    const src = try napi.getBuffer("src", env, args[0]);
+    const target = try napi.getBuffer("target", env, args[1]);
+    const offset = try napi.getInt32("offset", env, args[2]);
 
-    const str = try napi.getString("string", env, args[0]);
+    std.debug.print("elem? {any} {any} {d}\n", .{ src, target, offset });
 
-    std.debug.print("elem? {any}\n", .{str.ptr});
+    // _ = c.ZSTD_compress(@ptrCast(target.ptr), target.len, @ptrCast(src.ptr), src.len, 4);
 
     // c.
 

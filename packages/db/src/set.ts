@@ -1,12 +1,11 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
 import { startDrain, flushBuffer } from './operations.js'
-import snappy from 'snappy'
-import zlib from 'node:zlib'
+// import snappy from 'snappy'
 
 import { createRequire } from 'node:module'
 const nodeflate = createRequire(import.meta.url)('../../build/nodeflate.node')
-const compressor = nodeflate.newCompressor(3)
-const decompressor = nodeflate.newDecompressor()
+// const compressor = nodeflate.newCompressor(3)
+// const decompressor = nodeflate.newDecompressor()
 
 const setCursor = (
   db: BasedDb,
@@ -88,43 +87,24 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string') {
-        // 782 - 821
-        // const deflated = zlib.deflateRawSync(value)
-        // const x = dbZig.deflate.compress(Buffer.from(value)) (1.5 sec)
-        // const buf = Buffer.from(value)
-        // const x = compressSync(Buffer.from(value))
-        // const x = snappy.compressSync(value)
-        // const deflated = zlib.deflateRawSync(buf)
-        // const compressed = Buffer.allocUnsafe(Buffer.byteLength(uncompressed))
-        // const byteLen = buf.byteLength
-        const l = value.length
-        const byteLen = l + l
-        // const byteLen =//Buffer.byteLength(value, 'utf8')
-        // const byteLen = x.byteLength
+        // const deflated = deflateRawSync(value)
+        // const byteLen = Buffer.byteLength(value, 'utf8')
 
-        // if len > then max buffer size throw error
+        // bit shaky...
+        // add deflate / zstd / snappy?
+        const byteLen = value.length + value.length
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
         setCursor(db, schema, t, id)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.len += 5
-
-        // deflated.copy(db.modifyBuffer.buffer, db.modifyBuffer.len)
-        // const size = byteLen
         const size = db.modifyBuffer.buffer.write(
           value,
           db.modifyBuffer.len,
           'utf8',
         )
-        // const size = nodeflate.compress(
-        //   compressor,
-        //   value,
-        //   db.modifyBuffer.buffer,
-        //   db.modifyBuffer.len,
-        // )
         db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
-
         db.modifyBuffer.len += size
       } else {
         setCursor(db, schema, t, id, true)

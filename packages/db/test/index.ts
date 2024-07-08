@@ -306,6 +306,8 @@ function generateRandomArray() {
 }
 
 test.serial.only('query + filter', async (t) => {
+  await wait(100)
+
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -356,11 +358,11 @@ test.serial.only('query + filter', async (t) => {
     },
   })
 
-  console.log(
-    db.schemaTypesParsed.simple.buf,
-    db.schemaTypesParsed.simple.fieldNames,
-    db.schemaTypesParsed.simple.tree,
-  )
+  // console.log(
+  //   db.schemaTypesParsed.simple.buf,
+  //   db.schemaTypesParsed.simple.fieldNames,
+  //   db.schemaTypesParsed.simple.tree,
+  // )
 
   const refs = []
   for (let i = 1; i < 10 - 1; i++) {
@@ -385,124 +387,108 @@ test.serial.only('query + filter', async (t) => {
     )
   }
 
-  console.log(users)
-
+  const amount = 1000e6
   const now = Date.now()
-
-  // single ref include (step 1)
-
-  for (let i = 0; i < 1e5 - 1; i++) {
+  for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
-      user: users[Math.floor(Math.random() * 100)].id,
-      vectorClock: 2,
-      flap: 'snap',
+      // user: users[Math.floor(Math.random() * 100)].id,
+      // vectorClock: 6,
+      flap: 'abcd',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      location: {
-        bla: i,
-        long: 14.12,
-        lat: 52,
-      },
-      refs: generateRandomArray(), // make
-      smurp: {
-        hello: true,
-        ts: now,
-        pos: {
-          x: i,
-          y: 2,
-        },
-      },
+      // location: {
+      //   bla: i,
+      //   long: 14.12,
+      //   lat: 52,
+      // },
+      // // refs: generateRandomArray(), // make
+      // smurp: {
+      //   hello: true,
+      //   ts: now,
+      //   pos: {
+      //     x: i,
+      //     y: 2,
+      //   },
+      // },
     })
   }
 
   await wait(0)
-  console.log('TIME (100k)', Date.now() - dx, 'ms')
+  console.log(`TIME (${amount}) NODES`, Date.now() - dx, 'ms')
 
   // 2 buffers
-  const bla = async () => {
-    const d = Date.now()
-    const result = db
-      .query('simple')
-      .filter('vectorClock', '>', 0)
-      // .filter('refs', 'has', [2, 19])
-      // 'flap', 'location'
-      .include('vectorClock', 'location.long', 'smurp.pos', 'flap') // now support location (getting the whole object)
-      .range(0, 10) // max len not good
-      .get()
+  const d = Date.now()
+  const result = db
+    .query('simple')
+    .filter('vectorClock', '>', 1)
+    // .filter('refs', 'has', [2, 19])
+    // 'flap', 'location'
+    .include('vectorClock', 'flap') // now support location (getting the whole object)
+    .range(0, 1e6) // max len not good
+    .get()
 
-    console.info(
-      'query result ==',
-      Date.now() - d,
-      'ms',
-      ~~(result.buffer.byteLength / 1000 / 1000),
-      'mb',
-    )
+  console.info(
+    'query result ==',
+    Date.now() - d,
+    'ms',
+    ~~(result.buffer.byteLength / 1000 / 1000),
+    'mb',
+    result.buffer.byteLength,
+  )
 
-    const xxx = Date.now()
+  const xxx = Date.now()
 
-    // console.log(result.data)
+  // console.log(result.data)
 
-    // const arr = []
-    // for (const bla of result.data) {
-    //   arr.push({
-    //     vectorClock: bla.vectorClock,
-    //     id: bla.id,
-    //     location: { ...bla.location },
-    //     pos: { ...bla.smurp.pos },
-    //   })
-    //   if (bla.id > 3) {
-    //     break
-    //   }
-    // }
+  // const arr = []
+  // for (const bla of result.data) {
+  //   arr.push({
+  //     vectorClock: bla.vectorClock,
+  //     id: bla.id,
+  //     location: { ...bla.location },
+  //     pos: { ...bla.smurp.pos },
+  //   })
+  //   if (bla.id > 3) {
+  //     break
+  //   }
+  // }
 
-    // const bla = result.data.map((f) => {
-    //   // long: f.location.long
-    //   return {
-    //     id: f.id,
-    //     // vectorClock: f.vectorClock,
-    //     // long: f.location.long,
-    //     x: f.smurp.pos.x,
-    //     flap: f.flap,
-    //   }
-    // })
+  // const bla = result.data.map((f) => {
+  //   // long: f.location.long
+  //   return {
+  //     id: f.id,
+  //     // vectorClock: f.vectorClock,
+  //     // long: f.location.long,
+  //     x: f.smurp.pos.x,
+  //     flap: f.flap,
+  //   }
+  // })
 
-    for (const x of result.data) {
-      // inspect on x as well
-      console.log({
-        id: x.id,
-        location: x.location,
-        flap: x.flap,
-        user: x.user,
-        vectorClock: x.vectorClock,
-        smurp: x.smurp,
-      })
-      break
-    }
-
-    console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
-
-    console.log(result.data)
-
-    // console.log(result.buffer.byteLength)
+  for (const x of result.data) {
+    // inspect on x as well
+    console.log({
+      id: x.id,
+      // location: x.location,
+      flap: x.flap,
+      // user: x.user,
+      vectorClock: x.vectorClock,
+      // smurp: x.smurp,
+    })
+    break
   }
 
-  await bla()
+  console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
-  native.compress('ab')
+  const buf = Buffer.allocUnsafe(50)
 
-  // await wait(5000)
+  // const size = native.compress(
+  //   Buffer.from('flappper de flap flap flap!'),
+  //   buf,
+  //   5,
+  // )
 
-  // make new buffer if does not fit...
+  // console.info({ buf })
 
-  // subscription map
-
-  //
-
-  /*
-  {
-    BUFFER 1mb // 4 bytes
-    [4]
-  }
-  */
+  await wait(0)
 
   t.true(true)
 })

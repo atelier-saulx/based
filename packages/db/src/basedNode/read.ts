@@ -8,44 +8,51 @@ export const readSeperateFieldFromBuffer = (
   const queryResponse = basedNode.__q
   let i = 4 + basedNode.__o
   const buffer = queryResponse.buffer
+
+  const requestedFieldIndex = requestedField.field
+
   while (i < buffer.byteLength) {
     const index = buffer[i]
+
+    // next node
     if (index === 255) {
       return
     }
     i += 1
+
     if (index === 0) {
-      let fIndex: number
+      if (requestedFieldIndex === index) {
+        let fIndex: number
 
-      if (queryResponse.query.mainIncludes) {
-        const t = queryResponse.query.mainIncludes?.get(requestedField.start)
-        if (!t) {
-          return undefined
+        if (queryResponse.query.mainIncludes) {
+          const t = queryResponse.query.mainIncludes?.get(requestedField.start)
+          if (!t) {
+            return undefined
+          }
+          fIndex = t[0]
+        } else {
+          fIndex = requestedField.start
         }
-        fIndex = t[0]
-      } else {
-        fIndex = requestedField.start
-      }
 
-      if (fIndex === undefined) {
-        return // mep
+        if (fIndex === undefined) {
+          return // mep
+        }
+        if (
+          requestedField.type === 'integer' ||
+          requestedField.type === 'reference'
+        ) {
+          return buffer.readUint32LE(i + fIndex)
+        }
+        if (requestedField.type === 'boolean') {
+          return Boolean(buffer[i + fIndex])
+        }
+        if (requestedField.type === 'number') {
+          return buffer.readFloatLE(i + fIndex)
+        }
+        if (requestedField.type === 'timestamp') {
+          return buffer.readFloatLE(i + fIndex)
+        }
       }
-      if (
-        requestedField.type === 'integer' ||
-        requestedField.type === 'reference'
-      ) {
-        return buffer.readUint32LE(i + fIndex)
-      }
-      if (requestedField.type === 'boolean') {
-        return Boolean(buffer[i + fIndex])
-      }
-      if (requestedField.type === 'number') {
-        return buffer.readFloatLE(i + fIndex)
-      }
-      if (requestedField.type === 'timestamp') {
-        return buffer.readFloatLE(i + fIndex)
-      }
-
       i += queryResponse.query.mainLen
     } else {
       const size = buffer.readUInt16LE(i)

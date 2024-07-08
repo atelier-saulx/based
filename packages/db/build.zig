@@ -26,7 +26,19 @@ pub fn build(b: *std.Build) void {
     const dep2 = b.dependency("zstd", .{ .create = true });
 
     lib.addIncludePath(dep2.path("lib"));
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/zstd.h") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_lazy.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_opt.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_double_fast.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_fast.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/fse_compress.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/hist.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/huf_compress.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress_literals.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress_superblock.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress_sequences.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_ldm.c") });
+    lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstdmt_compress.c") });
 
     lib.linkLibC();
 
