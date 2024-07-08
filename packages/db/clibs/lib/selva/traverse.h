@@ -20,7 +20,7 @@ struct SelvaTraversalMetadata {
  * Called for each node found during a traversal.
  * @param node a pointer to the node.
  * @param arg a pointer to node_arg give in SelvaTraversalCallback structure.
- * @returns -2 to interrupt the whole traversal; -1 to stop the traversal at this level; or a fieldId in node to be traversed.
+ * @returns -2 to interrupt the whole traversal; -1 don't visit any field of this node.
  */
 typedef int (*SelvaTraversalNodeCallback)(
         struct SelvaDb *db,

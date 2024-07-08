@@ -273,7 +273,7 @@ test.serial.only('query + filter', async (t) => {
     }
   })
   const matchEnd = performance.now()
-  console.log(`Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms}`)
+  console.log(`Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms`)
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())

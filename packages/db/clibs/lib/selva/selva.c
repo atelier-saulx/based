@@ -383,8 +383,8 @@ struct node_cb_trampoline {
 
 static int node_cb_trampoline(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
 {
-    napi_status status;
     struct node_cb_trampoline *ctx = (struct node_cb_trampoline *)arg;
+    napi_status status;
     int argc = 3;
     napi_value argv[3];
     napi_value result;
@@ -399,7 +399,7 @@ static int node_cb_trampoline(struct SelvaDb *, const struct SelvaTraversalMetad
 
         status = napi_throw_error(ctx->env, code, "Traverse callback failed");
         assert(status == napi_ok);
-        return 1;
+        return -1;
     }
 
     napi_valuetype result_type;
@@ -410,7 +410,7 @@ static int node_cb_trampoline(struct SelvaDb *, const struct SelvaTraversalMetad
 
         status = napi_throw_error(ctx->env, code, "Failed the read the return value");
         assert(status == napi_ok);
-        return 1;
+        return -1;
     }
 
     if (result_type == napi_number) {
