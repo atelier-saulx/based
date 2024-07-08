@@ -2,8 +2,8 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <stdio.h> // FIXME REMOVE
 #include <assert.h>
-#include <stdio.h> /* TODO remove */
 #include <string.h>
 #include "selva_error.h"
 #include "selva.h"
@@ -11,7 +11,7 @@
 #include "fields.h"
 #include "update.h"
 
-int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node, const char *buf, size_t len)
+int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, const char *buf, size_t len)
 {
     struct SelvaNodeSchema *ns = &type->ns;
 
@@ -30,16 +30,51 @@ int update(struct SelvaDb *, struct SelvaTypeEntry *type, struct SelvaNode *node
             return SELVA_EINTYPE;
         }
 
+        if (ud.len == 0 || i + ud.len > len) {
+            return SELVA_EINVAL;
+        }
+
         switch (fs->type) {
         case SELVA_FIELD_TYPE_STRING:
-            value_len = len;
+            if (ud.len < 5) {
+                return SELVA_EINVAL;
+            }
+            value_len = ud.len - 5;
+            break;
+        case SELVA_FIELD_TYPE_REFERENCE:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+            do {
+                node_id_t dst_node_id;
+                struct SelvaTypeEntry *type;
+                struct SelvaNode *dst;
+
+                if (ud.len - 5 != sizeof(dst_node_id)) {
+                    return SELVA_EINVAL;
+                }
+
+                memcpy(&dst_node_id, value, sizeof(dst_node_id));
+
+                type = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+                if (!type) {
+                    return SELVA_EINVAL;
+                }
+
+                dst = db_get_node(db, type, dst_node_id, false);
+                if (!dst) {
+                    return SELVA_ENOENT;
+                }
+
+                /* Found the destination. */
+                value = dst;
+                value_len = sizeof(struct SelvaNode *);
+            } while (0);
             break;
         default:
             value_len = selva_field_data_size[fs->type];
             break;
         }
 
-        err = selva_fields_set(node, ud.field, fs->type, value, value_len);
+        err = selva_fields_set(db, node, fs, value, value_len);
         if (err) {
             return err;
         }

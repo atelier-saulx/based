@@ -13,17 +13,17 @@
 #include "selva.h"
 #include "schema.h"
 
-static int type2fs_reserved(struct SelvaNodeSchema *, enum SelvaFieldType, field_t)
+static int type2fs_reserved(struct SelvaNodeSchema *, const char *, size_t, enum SelvaFieldType, field_t)
 {
     return SELVA_EINTYPE;
 }
 
-static int type2fs_timestamp(struct SelvaNodeSchema *ns, enum SelvaFieldType field_type, field_t field)
+static int type2fs_timestamp(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType field_type, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_TIMESTAMP,
     };
     static_assert(sizeof(time_t) == sizeof(int64_t));
@@ -39,133 +39,163 @@ static int type2fs_timestamp(struct SelvaNodeSchema *ns, enum SelvaFieldType fie
         break;
     }
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_number(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_number(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_NUMBER,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_integer(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_integer(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_INTEGER,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_uint8(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_uint8(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_UINT8,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_uint32(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_uint32(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_UINT32,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_uint64(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_uint64(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_UINT64,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_boolean(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_boolean(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_BOOLEAN,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_reference(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_enum(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
-        .type = SELVA_FIELD_TYPE_REFERENCE,
-    };
-
-    return 0;
-}
-
-static int type2fs_enum(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
-{
-    struct SelvaFieldSchema *fs = &ns->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_ENUM,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_string(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_string(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
+        .field = field,
         .type = SELVA_FIELD_TYPE_STRING,
     };
 
-    return 0;
+    return 1;
 }
 
-static int type2fs_references(struct SelvaNodeSchema *ns, enum SelvaFieldType, field_t field)
+static int type2fs_reference(struct SelvaNodeSchema *ns, const char *buf, size_t len, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
+    struct {
+        field_t inverse_field;
+        node_type_t dst_node_type;
+    } __packed constraints;
+
+    if (len < 1 + sizeof(constraints)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&constraints, buf + 1, sizeof(constraints));
 
     *fs = (struct SelvaFieldSchema){
-        .field_index = field,
-        .type = SELVA_FIELD_TYPE_REFERENCES,
+        .field = field,
+        .type = SELVA_FIELD_TYPE_REFERENCE,
+        .edge_constraint = {
+            .flags = 0,
+            .inverse_field = constraints.inverse_field,
+            .dst_node_type = constraints.dst_node_type,
+        },
     };
 
-    return 0;
+    return 1 + sizeof(constraints);
+}
+
+static int type2fs_references(struct SelvaNodeSchema *ns, const char *buf, size_t len, enum SelvaFieldType, field_t field)
+{
+    struct SelvaFieldSchema *fs = &ns->field_schemas[field];
+    struct {
+        field_t inverse_field;
+        node_type_t dst_node_type;
+    } __packed constraints;
+
+    if (len < 1 + sizeof(constraints)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&constraints, buf + 1, sizeof(constraints));
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_REFERENCES,
+        .edge_constraint = {
+            .flags = 0,
+            .inverse_field = constraints.inverse_field,
+            .dst_node_type = constraints.dst_node_type,
+        },
+    };
+
+    return 1 + sizeof(constraints);
 }
 
 static struct schemabuf_parser {
     enum SelvaFieldType __packed type;
     char name[11];
-    int (*type2fs)(struct SelvaNodeSchema *fs, enum SelvaFieldType, field_t field_idx);
+    int (*type2fs)(struct SelvaNodeSchema *fs, const char *buf, size_t len, enum SelvaFieldType, field_t field_idx);
 } __designated_init schemabuf_parsers[] = {
     [SELVA_FIELD_TYPE_NULL] = {
         .type = 0,
@@ -239,7 +269,7 @@ static struct schemabuf_parser {
     },
 };
 
-int schemabuf_count_fields(struct fields_count *count, const char *buf, size_t len)
+int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, size_t len)
 {
     if (len < 1) {
         return SELVA_EINVAL;
@@ -271,88 +301,22 @@ int schemabuf_parse(struct SelvaNodeSchema *ns, const char *buf, size_t len)
     }
 
     field_t field_idx = 0;
-    for (size_t i = 1; i < len; i++) {
+    for (size_t i = 1; i < len;) {
         enum SelvaFieldType field_type = buf[i];
+        int res;
 
         if ((size_t)field_type >= num_elem(schemabuf_parsers)) {
             return SELVA_EINTYPE;
         }
 
-        schemabuf_parsers[field_type].type2fs(ns, field_type, field_idx);
+        res = schemabuf_parsers[field_type].type2fs(ns, buf + i, len - i, field_type, field_idx);
+        if (res < 0) {
+            return res;
+        }
 
+        i += res;
         field_idx++;
     }
 
-    /*
-     * TODO Parse edge constraints.
-     */
-#if 0
-    Edge_InitEdgeFieldConstraints(&ns->efc);
-    for (size_t i = 0; i < cs.edge_constraints_len; i += sizeof(struct EdgeFieldDynConstraintParams)) {
-        int err;
-
-        err = Edge_NewDynConstraint(&ns->efc, (const struct EdgeFieldDynConstraintParams *)(cs.edge_constraints_str + i));
-        if (err) {
-            return SELVA_EINVAL;
-        }
-    }
-#endif
-
     return 0;
 }
-
-#if 0
-void SelvaSchema_Destroy(struct SelvaHierarchy *hierarchy)
-{
-    selva_free(hierarchy->types);
-    destroy_schema(hierarchy->schema);
-    hierarchy->types = NULL;
-    hierarchy->schema = NULL;
-}
-
-int SelvaSchema_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy)
-{
-    size_t nr_types = selva_io_load_unsigned(io);
-
-    const char *types = selva_io_load_str(io, NULL);
-    struct SelvaSchema *schema = alloc_schema(nr_types);
-
-    for (size_t i = 0; i < nr_types; i++) {
-        struct SelvaNodeSchema *ns = &schema->node[i];
-        int err;
-
-        ns->nr_emb_fields = selva_io_load_unsigned(io);
-        selva_io_load_str_fixed(io, ns->created_field, SELVA_SHORT_FIELD_NAME_LEN);
-        selva_io_load_str_fixed(io, ns->updated_field, SELVA_SHORT_FIELD_NAME_LEN);
-
-        err = EdgeConstraint_Load(io, encver, &ns->efc);
-        if (err) {
-            return err;
-        }
-    }
-
-    SelvaSchema_Destroy(hierarchy);
-    hierarchy->types = (char *)types;
-    hierarchy->schema = schema;
-
-    return 0;
-}
-
-void SelvaSchema_Save(struct selva_io *io, struct SelvaHierarchy *hierarchy)
-{
-    const struct SelvaSchema *schema = hierarchy->schema;
-    const struct SelvaNodeSchema *nodes = schema->node;
-
-    selva_io_save_unsigned(io, schema->count);
-    selva_io_save_str(io, hierarchy->types, (schema->count + 1) * SELVA_NODE_TYPE_SIZE);
-
-    for (size_t i = 0; i < schema->count; i++) {
-        const struct SelvaNodeSchema *ns = &nodes[i];
-
-        selva_io_save_unsigned(io, ns->nr_emb_fields);
-        selva_io_save_str(io, ns->created_field, SELVA_SHORT_FIELD_NAME_LEN);
-        selva_io_save_str(io, ns->updated_field, SELVA_SHORT_FIELD_NAME_LEN);
-        EdgeConstraint_Save(io, &ns->efc);
-    }
-}
-#endif

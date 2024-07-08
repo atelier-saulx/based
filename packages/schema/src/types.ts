@@ -24,8 +24,6 @@ import { DateFormat } from './display/timestamp.js'
 
 // for refs etc check https://json-schema.org/understanding-json-schema/structuring.html#defs
 
-export type AllowedTypes = (string | { type?: string; $filter: any | any[] })[]
-
 export const basedSchemaFieldTypes = [
   'array',
   'object',
@@ -293,20 +291,16 @@ export type BasedSchemaFieldEnumerable =
 // -------------- Reference ---------------
 export type BasedSchemaFieldReference = {
   type: 'reference'
-  bidirectional?: {
-    fromField: string
-  }
-  allowedTypes?: AllowedTypes
+  allowedType: string
+  inverseProperty?: string,
 } & BasedSchemaFieldShared
 
 // make extra package called based db - query (maybe in based-db)
 export type BasedSchemaFieldReferences = {
   type: 'references'
-  bidirectional?: {
-    fromField: string
-  }
+  allowedType: string
+  inverseProperty?: string,
   sortable?: boolean
-  allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
 // return type can be typed - sort of

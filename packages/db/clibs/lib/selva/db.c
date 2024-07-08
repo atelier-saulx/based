@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/align.h"
@@ -51,21 +53,55 @@ struct SelvaDb *db_create(void)
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
-    RB_INIT(&db->types.index);
+    RB_INIT(&db->types);
     SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
     db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
     /* TODO Expiring nodes timer */
 #if 0
     db->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
 #endif
-    mempool_init(&db->types.pool, 4096, sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
 
     return db;
+}
+
+/**
+ * Delete all nodes under this type.
+ */
+static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
+{
+    struct SelvaNode *node;
+    struct SelvaNode *tmp;
+
+    RB_FOREACH_SAFE(node, SelvaNodeIndex, &type->nodes, tmp) {
+        db_del_node(db, type, node);
+    }
+}
+
+static void del_type(struct SelvaDb *db, struct SelvaTypeEntry *type)
+{
+    del_all_nodes(db, type);
+
+    /* TODO Destroy aliases */
+    (void)RB_REMOVE(SelvaTypeIndex, &db->types, type);
+
+    mempool_destroy(&type->nodepool);
+    selva_free(type->field_map_template.buf);
+    selva_free(type);
 }
 
 void db_destroy(struct SelvaDb *db)
 {
     /* FIXME */
+    struct SelvaTypeEntry *type;
+    struct SelvaTypeEntry *tmp;
+
+    /* TODO Destroy timers */
+
+    RB_FOREACH_SAFE(type, SelvaTypeIndex, &db->types, tmp) {
+        del_type(db, type);
+    }
+
+    selva_free(db);
 }
 
 static void make_field_map_template(struct SelvaTypeEntry *type)
@@ -100,9 +136,9 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
     type->field_map_template.main_data_size = ALIGNED_SIZE(main_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
-int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
-    struct fields_count count;
+    struct schema_fields_count count;
     int err;
 
     err = schemabuf_count_fields(&count, schema_buf, schema_len);
@@ -112,6 +148,7 @@ int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_bu
 
     struct SelvaTypeEntry *e = selva_calloc(1, sizeof(*e) + count.nr_fields * sizeof(struct SelvaFieldSchema));
 
+    e->type = type;
     e->ns.nr_fields = count.nr_fields;
     e->ns.nr_main_fields = count.nr_main_fields;
     err = schemabuf_parse(&e->ns, schema_buf, schema_len);
@@ -127,7 +164,10 @@ int db_schema_update(struct SelvaDb *db, node_type_t type, const char *schema_bu
     const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
     mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
 
-    RB_INSERT(SelvaTypeIndex, &db->types.index, e);
+    struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types, e);
+    if (prev) {
+        db_panic("Schema update not supported");
+    }
     return 0;
 }
 
@@ -137,16 +177,16 @@ struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type
         .type = type,
     };
 
-    return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
+    return RB_FIND(SelvaTypeIndex, &db->types, &find);
 }
 
-static struct SelvaTypeEntry *get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     struct SelvaTypeEntry find = {
         .type = node->type,
     };
 
-    return RB_FIND(SelvaTypeIndex, &db->types.index, &find);
+    return RB_FIND(SelvaTypeIndex, &db->types, &find);
 }
 
 struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
@@ -158,11 +198,11 @@ struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field
     return &ns->field_schemas[field];
 }
 
-static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
     struct SelvaTypeEntry *type;
 
-    type = get_type_by_node(db, node);
+    type = db_get_type_by_node(db, node);
     if (!type) {
         return NULL;
     }
@@ -172,42 +212,29 @@ static struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaN
 
 static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
 {
-    struct SelvaNodeSchema *ns = &type->ns;
-    const size_t nr_fields = ns->nr_fields;
-    const size_t nr_main_fields = ns->nr_main_fields;
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
     node->node_id = id;
     node->type = type->type;
     memset(&node->trx_label, 0, sizeof(node->trx_label));
     node->expire = 0;
-    node->fields.nr_fields = ns->nr_fields;
 
-    memcpy(node->fields.fields_map, type->field_map_template.buf, type->field_map_template.len);
-    if (type->field_map_template.main_data_size > 0) {
-        node->fields.data = selva_calloc(1, type->field_map_template.main_data_size);
-        node->fields.data_len = type->field_map_template.main_data_size;
-    } else {
-        node->fields.data = NULL;
-        node->fields.data_len = 0;
-    }
+    selva_fields_init(type, node);
 
     RB_INSERT(SelvaNodeIndex, &type->nodes, node);
     return node;
 }
 
-void del_node(struct SelvaDb *db, struct SelvaNode *node)
+void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    struct SelvaTypeEntry *e = get_type_by_node(db, node);
-
-    RB_REMOVE(SelvaNodeIndex, &e->nodes, node);
+    RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
 
     if (node->expire) {
         /* TODO clear expire */
     }
 
-    /* TODO Destroy fields */
-    mempool_return(&e->nodepool, node);
+    selva_fields_destroy(db, node);
+    mempool_return(&type->nodepool, node);
 }
 
 struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id, bool upsert)
@@ -223,4 +250,21 @@ struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, n
     }
 
     return node;
+}
+
+
+[[noreturn]]
+void db_panic_fn(const char * restrict where, const char * restrict func, const char * restrict fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    fprintf(stderr, "%s:%s: ", where, func);
+    vfprintf(stderr, fmt, args);
+    if (fmt[strlen(fmt) - 1] != '\n') {
+        fputc('\n', stderr);
+    }
+    va_end(args);
+
+    abort();
 }

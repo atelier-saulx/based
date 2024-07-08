@@ -2,7 +2,11 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+
 #include <assert.h>
+#include <stdio.h>
 #include <node_api.h>
 #include "util/selva_string.h"
 #include "selva_error.h"
@@ -10,6 +14,18 @@
 #include "db.h"
 #include "update.h"
 #include "fields.h"
+#include "traverse.h"
+
+static bool selva_napi_is_function(napi_env env, napi_value arg)
+{
+    napi_status status;
+    napi_valuetype type;
+
+    status = napi_typeof(env, arg, &type);
+    assert(status == napi_ok);
+
+    return (type == napi_function);
+}
 
 static napi_value db2npointer(napi_env env, struct SelvaDb *db)
 {
@@ -83,11 +99,43 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* TODO */
-    case SELVA_FIELD_TYPE_REFERENCE:
-        /* TODO */
-    case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO */
         napi_get_undefined(env, &result);
+        break;
+    case SELVA_FIELD_TYPE_REFERENCE:
+        if (any->reference && any->reference->dst) {
+            char buf[1 + 20 + 2 + 20 + 1];
+
+            napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->reference->dst->type, any->reference->dst->node_id), &result);
+        } else {
+            napi_get_null(env, &result);
+        }
+        break;
+    case SELVA_FIELD_TYPE_REFERENCES:
+        if (any->references && any->references->refs) {
+            napi_status status;
+
+            status = napi_create_array_with_length(env, any->references->nr_refs, &result);
+            assert(status == napi_ok);
+            for (size_t i = 0; i < any->references->nr_refs; i++) {
+                char buf[1 + 20 + 2 + 20 + 1];
+                napi_value value;
+
+                status = napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->references->refs[i].dst->type, any->references->refs[i].dst->node_id), &value);
+                assert(status == napi_ok);
+                status = napi_set_element(env, result, i, value);
+                assert(status == napi_ok);
+            }
+        } else {
+            napi_get_null(env, &result);
+        }
+        break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        /* TODO */
+        napi_get_null(env, &result);
+        break;
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        /* TODO */
+        napi_get_null(env, &result);
         break;
     }
 
@@ -144,7 +192,7 @@ static napi_value selva_db_destroy(napi_env env, napi_callback_info info)
 }
 
 // selva_db_schema_update(db, type, schema): number
-static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
+static napi_value selva_db_schema_create(napi_env env, napi_callback_info info)
 {
     int err;
     size_t argc = 3;
@@ -167,7 +215,7 @@ static napi_value selva_db_schema_update(napi_env env, napi_callback_info info)
     schema_buf = p;
     assert(status == napi_ok);
 
-    return res2napi(env, db_schema_update(npointer2db(env, argv[0]), type, schema_buf, schema_len));
+    return res2napi(env, db_schema_create(npointer2db(env, argv[0]), type, schema_buf, schema_len));
 }
 
 // selva_db_update(db, type, node_id, buf): number
@@ -298,16 +346,158 @@ static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
     return any2napi(env, &any);
 }
 
+// selva_db_get_field_p(db, node, field_idx): number
+static napi_value selva_db_get_field_p(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 2;
+    napi_value argv[2];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    /* FIXME Better typing solution */
+    struct SelvaNode *node = (struct SelvaNode *)npointer2db(env, argv[0]);
+    uint32_t field_idx;
+
+    status = napi_get_value_uint32(env, argv[1], &field_idx);
+    assert(status == napi_ok);
+
+    struct SelvaFieldsAny any;
+    err = selva_fields_get(node, field_idx, &any);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    return any2napi(env, &any);
+}
+
+struct node_cb_trampoline {
+    napi_env env;
+    napi_value this; /*!< js object. */
+    napi_value func; /*!< js function. */
+};
+
+static int node_cb_trampoline(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
+{
+    struct node_cb_trampoline *ctx = (struct node_cb_trampoline *)arg;
+    napi_status status;
+    int argc = 3;
+    napi_value argv[3];
+    napi_value result;
+
+    napi_create_int32(ctx->env, node->type, &argv[0]);
+    napi_create_int32(ctx->env, node->node_id, &argv[1]);
+    napi_create_bigint_uint64(ctx->env, (uint64_t)node, &argv[2]);
+
+    status = napi_call_function(ctx->env, ctx->this, ctx->func, argc, argv, &result);
+    if (status != napi_ok) {
+        const char *code = NULL;
+
+        status = napi_throw_error(ctx->env, code, "Traverse callback failed");
+        assert(status == napi_ok);
+        return -1;
+    }
+
+    napi_valuetype result_type;
+
+    status = napi_typeof(ctx->env, result, &result_type);
+    if (status != napi_ok) {
+        const char *code = NULL;
+
+        status = napi_throw_error(ctx->env, code, "Failed the read the return value");
+        assert(status == napi_ok);
+        return -1;
+    }
+
+    if (result_type == napi_number) {
+        int32_t res;
+
+        status = napi_get_value_int32(ctx->env, result, &res);
+        assert(status == napi_ok);
+
+        return res;
+    } else if (result_type == napi_null || result_type == napi_undefined) {
+        return -1;
+    } else {
+        const char *code = NULL;
+
+        printf("res_type: %d", result_type);
+        /* TODO throw type error? */
+        status = napi_throw_error(ctx->env, code, "Invalid return value type");
+        assert(status == napi_ok);
+        return -2;
+    }
+}
+
+// selva_traverse_field_bfs(db, type, node_id, cb: (type, nodeId, node) => number | null | undefined): number
+static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 4;
+    napi_value argv[4];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type;
+    node_id_t node_id;
+
+    status = napi_get_value_uint32(env, argv[1], &type);
+    assert(status == napi_ok);
+    status = napi_get_value_uint32(env, argv[2], &node_id);
+    assert(status == napi_ok);
+    static_assert(sizeof(node_id) == sizeof(uint32_t));
+
+    if (!selva_napi_is_function(env, argv[3])) {
+        return res2napi(env, SELVA_EINVAL);
+    }
+
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    node = db_get_node(db, te, node_id, false);
+    if (!node) {
+        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+    }
+
+    struct SelvaTraversalParam cb_wrap = {
+        .node_cb = node_cb_trampoline,
+        .node_arg = &(struct node_cb_trampoline){
+            .env = env,
+            .this = ({ napi_value this; napi_get_global(env, &this); this; }),
+            .func = argv[3], /*!< js function. */
+        },
+    };
+
+    err = traverse_field_bfs(db, node, &cb_wrap);
+    return res2napi(env, err);
+}
+
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
 
 static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
       DECLARE_NAPI_METHOD("db_create", selva_db_create),
       DECLARE_NAPI_METHOD("db_destroy", selva_db_destroy),
-      DECLARE_NAPI_METHOD("db_schema_update", selva_db_schema_update),
+      DECLARE_NAPI_METHOD("db_schema_create", selva_db_schema_create),
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),
+      DECLARE_NAPI_METHOD("db_get_field_p", selva_db_get_field_p),
+      DECLARE_NAPI_METHOD("traverse_field_bfs", selva_traverse_field_bfs),
   };
   napi_status status;
 
@@ -318,3 +508,4 @@ static napi_value Init(napi_env env, napi_value exports) {
 }
 
 NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
+#pragma GCC diagnostic pop

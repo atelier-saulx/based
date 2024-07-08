@@ -12,7 +12,7 @@ OBJ := \
 	nodeflate.o
 
 ifeq ($(uname_S),Linux)
-	LDFLAGS += -fPIC
+	LDFLAGS += -fPIC -ldl -Wl,-rpath,'$$ORIGIN'
 endif
 ifeq ($(uname_S),Darwin)
 	LDFLAGS += -undefined dynamic_lookup \

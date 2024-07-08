@@ -10,17 +10,17 @@ LIB_SUFFIX := .node
 
 OBJ := \
 	db.o \
-	edge.o \
 	fields.o \
 	schema.o \
 	selva.o \
 	selva_object/selva_object.o \
 	selva_object/selva_object_foreach.o \
 	selva_set/selva_set.o \
+	traverse.o \
 	update.o
 
 ifeq ($(uname_S),Linux)
-	LDFLAGS += -fPIC
+	LDFLAGS += -ldl -fPIC -rdynamic -Wl,-rpath,'$$ORIGIN'
 endif
 ifeq ($(uname_S),Darwin)
 	LDFLAGS += -undefined dynamic_lookup \

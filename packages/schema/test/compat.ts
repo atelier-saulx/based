@@ -48,7 +48,7 @@ test('refTypes', async (t) => {
   })
 
   // @ts-ignore
-  t.is(newSchema.types.youzi.fields.image.allowedTypes[0], 'youzi')
+  t.is(newSchema.types.youzi.fields.image.allowedType, 'youzi')
 
   const oldSchema = convertNewToOld(newSchema)
 

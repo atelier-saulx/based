@@ -48,6 +48,8 @@ export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
   selvaField: number
+  inverseField?: string
+  allowedType?: string
   type: BasedSchemaFieldType
   typeByte: number
   seperate: boolean
@@ -66,7 +68,6 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
-  selvaBuf: Buffer
   fieldNames: Buffer
   fields: {
     // path including .
@@ -122,6 +123,8 @@ export const createSchemaTypeDef = (
     target = type.fields
   }
 
+  const appendRefProps = () => {
+  }
   for (const key in target) {
     const f = target[key]
     const p = [...path, key]
@@ -142,7 +145,9 @@ export const createSchemaTypeDef = (
         start: 0,
         len,
         field: isSeperate ? result.cnt : 0,
-        selvaField: 0,
+        selvaField: 0, // will be set later
+        inverseField: (f.type === 'reference' || f.type === 'references') && f.inverseProperty,
+        allowedType: (f.type === 'reference' || f.type === 'references') && f.allowedType,
       }
     }
   }
@@ -185,24 +190,6 @@ export const createSchemaTypeDef = (
     for (const field of restFields) {
         field.selvaField = selvaField++;
     }
-	// TODO Remove this once the types agree
-    const typeMap = {
-      'timestamp': 1,
-      'created': 2,
-      'updated': 3,
-      'number': 4,
-      'integer': 5,
-      'boolean': 9,
-      'reference': 13,
-      'enum': 10,
-      'string': 11,
-      'references': 14,
-	}
-    result.selvaBuf = Buffer.from([
-      mainFields.length,
-      ...mainFields.map((f) => typeMap[f.type]),
-      ...restFields.map((f) => typeMap[f.type]),
-    ])
 
     /*
       [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]

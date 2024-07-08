@@ -15,11 +15,11 @@ const schema: BasedSchema = {
       fields: {
         referencesToThings: {
           type: 'references',
-          allowedTypes: ['thing'],
+          allowedType: 'thing',
         },
         referenceToThing: {
           type: 'reference',
-          allowedTypes: ['thing'],
+          allowedType: 'thing',
         },
         enum: {
           enum: ['tony', 'jim'],

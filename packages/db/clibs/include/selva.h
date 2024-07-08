@@ -29,6 +29,8 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_TEXT = 12,
     SELVA_FIELD_TYPE_REFERENCE = 13,
     SELVA_FIELD_TYPE_REFERENCES = 14,
+    SELVA_FIELD_TYPE_WEAK_REFERENCE = 15,
+    SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
 } __packed;
 
 struct SelvaObject;
@@ -40,61 +42,34 @@ typedef uint32_t node_type_t;
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 
-struct EdgeFieldConstraint {
-    enum EdgeFieldConstraintFlag {
-        /**
-         * Single reference edge.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF       = 0x01,
-        /**
-         * Bidirectional reference.
-         * TODO Is this needed if edges are always bidir.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02,
-        /**
-         * Edge field array mode.
-         * By default an edge field acts like a set. This flag makes the field work like an array.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
-    } __packed flags;
-    field_t inverse_field;
-    struct SelvaNodeSchema *src_node;
-    struct SelvaNodeSchema *dst_node;
-} edge_constraint;
-
 struct SelvaNodeSchema {
-    field_t nr_fields;
-    field_t nr_main_fields;
+    field_t nr_fields; /*!< The total number of fields for this node type. */
+    field_t nr_main_fields; /*!< Number of main fields that are always allocated. */
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
-        field_t field_index;
+        field_t field;
         enum SelvaFieldType type;
-        struct EdgeFieldConstraint edge_constraint;
+        struct EdgeFieldConstraint {
+            enum EdgeFieldConstraintFlag {
+                /**
+                 * Bidirectional reference.
+                 * TODO Is this needed if edges are always bidir.
+                 */
+                EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
+                /**
+                 * Edge field array mode.
+                 * By default an edge field acts like a set. This flag makes the field work like an array.
+                 * FIXME
+                 */
+                EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
+            } __packed flags;
+            field_t nr_fields;
+            field_t inverse_field;
+            node_type_t dst_node_type;
+            struct SelvaFieldSchema *field_schemas __counted_by(nr_fields);
+        } edge_constraint;
     } field_schemas[] __counted_by(nr_fields);
-};
-
-struct EdgeFieldSingle {
-    struct SelvaNode *dst;
-    struct SelvaObject *metadata;
-};
-
-/**
- * A struct for edge fields.
- * This struct contains the actual arcs pointing directly to other nodes in the
- * hierarchy.
- */
-struct EdgeFieldMulti {
-    struct SVector arcs; /*!< Pointers to nodes. */
-    /**
-     * Metadata organized by dst_node_id.
-     * This object should not be accessed directly but by using functions
-     * provided in this header:
-     * - Edge_GetFieldEdgeMetadata()
-     * - Edge_DeleteFieldMetadata()
-     * Can be NULL.
-     */
-    struct SelvaObject *metadata;
 };
 
 /**
@@ -114,17 +89,26 @@ struct SelvaNode {
     uint32_t expire;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
+        /**
+         * Field data.
+         * This pointer is tagged with PTAG.
+         * - 1 = shared i.e. refcount == 1
+         */
         void *data;
         struct {
             uint32_t data_len: 24;
             field_t nr_fields: 8;
         };
         alignas(uint16_t) struct SelvaFieldInfo {
-            enum SelvaFieldType type: 4;
-            uint16_t off: 12; /*!< Offset in data in 8-byte blocks. */
+            enum SelvaFieldType type: 5;
+            uint16_t off: 11; /*!< Offset in data in 8-byte blocks. */
         } __packed fields_map[] __counted_by(nr_fields);
     } fields;
 };
+
+#define SELVA_TO_EXPIRE(_ts_) ((uint32_t)((_ts_) - SELVA_HIERARCHY_EXPIRE_EPOCH))
+#define SELVA_FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
+#define SELVA_IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
 
 /**
  * Entry for each node type supported by the schema.
@@ -154,10 +138,7 @@ struct SelvaDb {
      */
     struct trx_state trx_state;
 
-    struct {
-        struct SelvaTypeIndex index;
-        struct mempool pool;
-    } types;
+    struct SelvaTypeIndex types;
 
     /**
      * Expiring nodes.

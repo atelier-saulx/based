@@ -26,7 +26,7 @@ test.serial('set and simple get', async (t) => {
     types: {
       simple: {
         fields: {
-          user: { type: 'reference', allowedTypes: ['user'] },
+          user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
           location: {
             type: 'object',
@@ -40,7 +40,7 @@ test.serial('set and simple get', async (t) => {
       vote: {
         fields: {
           refs: { type: 'references' },
-          user: { type: 'reference', allowedTypes: ['user'] },
+          user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
           location: {
             type: 'object',
@@ -73,13 +73,13 @@ test.serial('set and simple get', async (t) => {
           },
           gerp: {
             type: 'reference',
-            allowedTypes: ['vote'],
+            allowedType: 'vote',
           },
           snurp: {
             type: 'object',
             properties: {
-              refTime: { type: 'references', allowedTypes: ['vote'] },
-              ups: { type: 'references', allowedTypes: ['vote'] },
+              refTime: { type: 'references', allowedType: 'vote' },
+              ups: { type: 'references', allowedType: 'vote' },
               derp: { type: 'integer' },
               bla: { type: 'string' },
               hup: {
@@ -265,7 +265,7 @@ test.serial('get include', async (t) => {
       something: {
         fields: {
           flap: { type: 'string' },
-          user: { type: 'reference', allowedTypes: ['user'] },
+          user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
           location: {
             type: 'object',
@@ -327,10 +327,10 @@ test.serial.only('query + filter', async (t) => {
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedTypes: ['user'] },
+          user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
           flap: { type: 'string' },
-          refs: { type: 'references', allowedTypes: ['user'] },
+          refs: { type: 'references', allowedType: 'user' },
           location: {
             type: 'object',
             properties: {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 SAULX
+ * Copyright (c) 2021-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -31,7 +31,7 @@
  * Get the tag value from a tagged pointer.
  */
 #define PTAG_GETTAG(ptag) \
-    ((uintptr_t)(ptag) & PTAG_MASK)
+    ((int)((uintptr_t)(ptag) & PTAG_MASK))
 
 /**
  * Get the pointer value from a tagged pointer.
