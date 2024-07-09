@@ -29,6 +29,7 @@ const parseInclude = (
     const tree = query.type.tree[path[0]]
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
+
       for (const field of endFields) {
         if (parseInclude(query, field, arr, includesMain)) {
           includesMain = true

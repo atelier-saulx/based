@@ -114,14 +114,21 @@ const addModify = (
           if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
             flushBuffer(db)
           }
+          // haha
           setCursor(db, schema, t, id)
           db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+
           db.modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
             db.modifyBuffer.len + 1,
           )
           mainIndex = db.modifyBuffer.lastMain = db.modifyBuffer.len + 1 + 4
           db.modifyBuffer.len += nextLen
+
+          // TODO: check if this is correct
+          for (let x = 0; x < schema.mainLen; x++) {
+            db.modifyBuffer.buffer[db.modifyBuffer.len - schema.mainLen + x] = 0
+          }
         }
         if (t.type === 'timestamp' || t.type === 'number') {
           db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)

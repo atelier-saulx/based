@@ -110,7 +110,7 @@ fn getQueryInternal(
         // make this into a fn
         var includeIterator: u8 = 0;
         // collect all in s
-        while (includeIterator < include.len) {
+        includeField: while (includeIterator < include.len) {
             const field: u8 = include[includeIterator];
             includeIterator += 1;
 
@@ -124,8 +124,9 @@ fn getQueryInternal(
             }
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
             errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                return null;
+                continue :includeField;
             };
 
             if (includeIterator == 1) {

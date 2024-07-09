@@ -376,23 +376,23 @@ test.serial.only('query + filter', async (t) => {
   // 8 / 1.3
   //
 
-  const users = []
+  // const users = []
 
-  for (let i = 0; i < 1; i++) {
-    users.push(
-      db.create('user', {
-        age: i,
-        name: 'Mr ' + i,
-        email: i + '@once.net',
-      }),
-    )
-  }
+  // for (let i = 0; i < 1; i++) {
+  //   users.push(
+  //     db.create('user', {
+  //       age: i,
+  //       name: 'Mr ' + i,
+  //       email: i + '@once.net',
+  //     }),
+  //   )
+  // }
 
   console.log('GO SIMPLE')
 
-  // await wait(0)
+  await wait(0)
 
-  const amount = 10 * 1
+  const amount = 1 * 1 + 1
   const now = (dx = Date.now())
   for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
@@ -400,11 +400,11 @@ test.serial.only('query + filter', async (t) => {
       vectorClock: 6,
       // flap: 'Hippity hoppity there is no property',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      // location: {
-      //   // bla: i,
-      //   long: 14.12 + i,
-      //   lat: 52,
-      // },
+      location: {
+        // bla: i,
+        long: 14 + i,
+        lat: 52,
+      },
       // // refs: generateRandomArray(), // make
       // smurp: {
       //   hello: true,
@@ -417,7 +417,7 @@ test.serial.only('query + filter', async (t) => {
     })
   }
 
-  await wait(1000)
+  await wait(0)
   console.log(`TIME (${amount}) NODES`, Date.now() - dx, 'ms')
 
   // 2 buffers
@@ -427,7 +427,12 @@ test.serial.only('query + filter', async (t) => {
     .filter('vectorClock', '>', 1)
     // .filter('refs', 'has', [2, 19])
     // 'flap', 'location'
-    .include('vectorClock') // now support location (getting the whole object)
+
+    // user
+    .include('vectorClock', 'location') // now support location (getting the whole object)
+    // .include('vectorClock', 'location.lat', 'location.long') // now support location (getting the whole object)
+
+    // .include('vectorClock', 'flap', 'location') // now support location (getting the whole object)
     .range(0, 2)
     .get()
 

@@ -3,6 +3,7 @@ import { BasedDb } from './index.js'
 export const flushBuffer = (db: BasedDb) => {
   if (db.modifyBuffer.len) {
     const d = Date.now()
+
     db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
     console.log(
       'FLUSH',
