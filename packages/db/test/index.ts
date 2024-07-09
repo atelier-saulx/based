@@ -314,7 +314,7 @@ test.serial.only('query + filter', async (t) => {
   await fs.mkdir(dbFolder)
   const db = new BasedDb({
     path: dbFolder,
-    maxModifySize: 100 * 1e3 * 1e3 * 10,
+    // maxModifySize: 100 * 1e3 * 1e3 * 10,
   })
 
   db.updateSchema({
@@ -388,19 +388,19 @@ test.serial.only('query + filter', async (t) => {
     )
   }
 
-  const amount = 5e6
+  const amount = 1e6 * 5
   const now = (dx = Date.now())
   for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
       user: 1,
-      vectorClock: 6,
-      flap: 'Hippity hoppity there is no property',
+      // vectorClock: 6,
+      // flap: 'Hippity hoppity there is no property',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      location: {
-        // bla: i,
-        long: 14.12 + i,
-        lat: 52,
-      },
+      // location: {
+      //   // bla: i,
+      //   long: 14.12 + i,
+      //   lat: 52,
+      // },
       // // refs: generateRandomArray(), // make
       // smurp: {
       //   hello: true,

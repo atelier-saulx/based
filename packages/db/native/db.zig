@@ -19,7 +19,6 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
 pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: u8, shard2: u8) ![5]u8 {
     if (shard == 0 and shard2 != 0) {
         // this will be a 2M shard (too bad...)
-
         return .{ type_prefix[0], type_prefix[1], field, 255, 255 - shard2 };
     }
     return .{ type_prefix[0], type_prefix[1], field, shard, shard2 };
