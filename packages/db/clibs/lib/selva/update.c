@@ -59,7 +59,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     return SELVA_EINVAL;
                 }
 
-                dst = db_get_node(db, type, dst_node_id, false);
+                dst = db_find_node(db, type, dst_node_id);
                 if (!dst) {
                     return SELVA_ENOENT;
                 }
@@ -95,7 +95,7 @@ int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *bu
 
         memcpy(&ud_len, buf + i + offsetof(struct UpdateBatch, len), sizeof(ud_len));
         memcpy(&node_id, buf + i + offsetof(struct UpdateBatch, node_id), sizeof(node_id));
-        node = db_get_node(db, type, node_id, true);
+        node = db_upsert_node(db, type, node_id);
         assert(node);
         err = update(db, type, node, buf + i + sizeof(struct UpdateBatch), ud_len - sizeof(struct UpdateBatch));
         if (err) {

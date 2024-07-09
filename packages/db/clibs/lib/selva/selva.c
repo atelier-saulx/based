@@ -255,7 +255,7 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = db_get_node(db, te, node_id, true);
+    node = db_upsert_node(db, te, node_id);
     assert(node);
 
     return res2napi(env, update(db, te, node, buf, len));
@@ -332,7 +332,7 @@ static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = db_get_node(db, te, node_id, false);
+    node = db_find_node(db, te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
@@ -468,7 +468,7 @@ static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = db_get_node(db, te, node_id, false);
+    node = db_find_node(db, te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }

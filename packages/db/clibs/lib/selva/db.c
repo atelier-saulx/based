@@ -210,21 +210,6 @@ struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *no
     return db_get_fs_by_ns_field(&type->ns, field);
 }
 
-static struct SelvaNode *new_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t id)
-{
-    struct SelvaNode *node = mempool_get(&type->nodepool);
-
-    node->node_id = id;
-    node->type = type->type;
-    memset(&node->trx_label, 0, sizeof(node->trx_label));
-    node->expire = 0;
-
-    selva_fields_init(type, node);
-
-    RB_INSERT(SelvaNodeIndex, &type->nodes, node);
-    return node;
-}
-
 void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
@@ -237,21 +222,35 @@ void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNo
     mempool_return(&type->nodepool, node);
 }
 
-struct SelvaNode *db_get_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id, bool upsert)
+struct SelvaNode *db_find_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode find = {
         .node_id = node_id,
     };
     struct SelvaNode *node;
 
-    node = RB_FIND(SelvaNodeIndex, &type->nodes, &find);
-    if (!node && upsert) {
-        node = new_node(db, type, node_id);
+    return RB_FIND(SelvaNodeIndex, &type->nodes, &find);
+}
+
+struct SelvaNode *db_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id)
+{
+    struct SelvaNode *node = mempool_get(&type->nodepool);
+    struct SelvaNode *prev;
+
+    node->node_id = node_id;
+    node->type = type->type;
+    prev = RB_INSERT(SelvaNodeIndex, &type->nodes, node);
+    if (prev) {
+        mempool_return(&type->nodepool, node);
+        node = prev;
+    } else {
+        memset(&node->trx_label, 0, sizeof(node->trx_label));
+        node->expire = 0;
+        selva_fields_init(type, node);
     }
 
     return node;
 }
-
 
 [[noreturn]]
 void db_panic_fn(const char * restrict where, const char * restrict func, const char * restrict fmt, ...)
