@@ -314,6 +314,7 @@ test.serial.only('query + filter', async (t) => {
   await fs.mkdir(dbFolder)
   const db = new BasedDb({
     path: dbFolder,
+    maxModifySize: 100 * 1e3 * 1e3 * 10,
   })
 
   db.updateSchema({
