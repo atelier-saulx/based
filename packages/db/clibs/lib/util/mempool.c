@@ -81,6 +81,11 @@ void mempool_init(struct mempool *mempool, size_t slab_size, size_t obj_size, si
     LIST_INIT(&mempool->free_chunks);
 }
 
+void mempool_init2(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align, int advice) {
+    mempool_init(mempool, slab_size, obj_size, obj_align);
+    mempool->advice = advice;
+}
+
 /**
  * Free slab that was allocated in mempool
  */
@@ -156,6 +161,12 @@ static int mempool_new_slab(struct mempool *mempool) {
     if (slab == MAP_FAILED) {
         return 1;
     }
+
+#if __linux__
+    if (mempool->advice) {
+        madvise(slab, mempool->slab_size_kb * 1024, mempool->advice);
+    }
+#endif
 
     const struct slab_info info = slab_info(mempool);
 
