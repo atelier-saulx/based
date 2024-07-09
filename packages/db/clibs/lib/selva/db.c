@@ -15,7 +15,7 @@
 #include "fields.h"
 #include "db.h"
 
-#define NODEPOOL_SLAB_SIZE 33554432
+#define NODEPOOL_SLAB_SIZE 2097152
 
 RB_PROTOTYPE_STATIC(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
 RB_PROTOTYPE_STATIC(SelvaTypeIndex, SelvaTypeEntry, _type_entry, SelvaTypeEntry_Compare);
