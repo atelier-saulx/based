@@ -29,8 +29,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    // needs type as well... (5 in total)
-    var shards = std.AutoHashMap([3]u8, db.Shard).init(allocator);
+    var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
     defer {
         var it = shards.iterator();
         while (it.next()) |shard| {
@@ -55,7 +54,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // SWITCH FIELD
             field = batch[i + 1];
             keySize = batch[i + 2];
-            // std.debug.print("got field selection keysize: {d} field: {d} id:{d}\n", .{ keySize, field, id });
             i = i + 1 + 2;
         } else if (operation == 1) {
             // SWITCH KEY
@@ -67,19 +65,17 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // SWITCH TYPE
             type_prefix[0] = batch[i + 1];
             type_prefix[1] = batch[i + 2];
-            // std.debug.print("got type selection type: {any}\n", .{type_prefix});
             i = i + 1 + 2;
         } else if (operation == 3) {
             // 4 will be MERGE
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             const shardKey = db.getShardKey(field, currentShard);
-
-            var shard = shards.get(shardKey);
+            const dbiShardKey = try db.createDbiName(type_prefix, field, shardKey[0], shardKey[1]);
+            var shard = shards.get(dbiShardKey);
             if (shard == null) {
                 shard = try db.openShard(true, type_prefix, shardKey, txn);
-
                 if (shard != null) {
-                    try shards.put(shardKey, shard.?);
+                    try shards.put(dbiShardKey, shard.?);
                 }
             }
             if (shard != null) {

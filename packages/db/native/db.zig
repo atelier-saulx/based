@@ -51,6 +51,7 @@ pub fn openShard(comptime create: bool, type_prefix: [2]u8, shardKey: [3]u8, txn
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
     errdefer c.mdb_cursor_close(cursor);
     const s: Shard = .{ .dbi = dbi, .key = shardKey, .cursor = cursor };
+
     return s;
 }
 

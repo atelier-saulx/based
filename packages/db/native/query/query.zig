@@ -57,8 +57,6 @@ fn getQueryInternal(
     var total_results: usize = 0;
     var total_size: usize = 0;
 
-    // std.debug.print("total: {d}\n", .{offset + limit});
-
     checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
             currentShard += 1;
@@ -126,11 +124,14 @@ fn getQueryInternal(
             }
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+                return null;
+            };
 
             if (includeIterator == 1) {
                 total_size += 1 + 4;
                 const s: Result = .{ .id = i, .field = field, .val = v };
+
                 try results.append(s);
             } else {
                 const s: Result = .{ .id = null, .field = field, .val = v };

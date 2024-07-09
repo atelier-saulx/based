@@ -141,6 +141,7 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const id = ++def.lastId
   def.total++
   addModify(db, id, value, def.tree, def)
+
   if (!db.isDraining) {
     startDrain(db)
   }

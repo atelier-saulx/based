@@ -378,7 +378,7 @@ test.serial.only('query + filter', async (t) => {
 
   const users = []
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1; i++) {
     users.push(
       db.create('user', {
         age: i,
@@ -388,12 +388,16 @@ test.serial.only('query + filter', async (t) => {
     )
   }
 
-  const amount = 1e6 * 5
+  console.log('GO SIMPLE')
+
+  // await wait(0)
+
+  const amount = 10 * 1
   const now = (dx = Date.now())
   for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
-      user: 1,
-      // vectorClock: 6,
+      // user: users[~~(Math.random() * users.length)],
+      vectorClock: 6,
       // flap: 'Hippity hoppity there is no property',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       // location: {
@@ -413,7 +417,7 @@ test.serial.only('query + filter', async (t) => {
     })
   }
 
-  await wait(0)
+  await wait(1000)
   console.log(`TIME (${amount}) NODES`, Date.now() - dx, 'ms')
 
   // 2 buffers
@@ -423,8 +427,8 @@ test.serial.only('query + filter', async (t) => {
     .filter('vectorClock', '>', 1)
     // .filter('refs', 'has', [2, 19])
     // 'flap', 'location'
-    .include('vectorClock', 'flap', 'location.long') // now support location (getting the whole object)
-    .range(0, 1e6) // max len not good
+    .include('vectorClock') // now support location (getting the whole object)
+    .range(0, 2)
     .get()
 
   console.info(
@@ -438,57 +442,7 @@ test.serial.only('query + filter', async (t) => {
 
   const xxx = Date.now()
 
-  // console.log(result.data)
-
-  // const arr = []
-  // for (const bla of result.data) {
-  //   arr.push({
-  //     vectorClock: bla.vectorClock,
-  //     id: bla.id,
-  //     location: { ...bla.location },
-  //     pos: { ...bla.smurp.pos },
-  //   })
-  //   if (bla.id > 3) {
-  //     break
-  //   }
-  // }
-
-  // const bla = result.data.map((f) => {
-  //   // long: f.location.long
-  //   return {
-  //     id: f.id,
-  //     // vectorClock: f.vectorClock,
-  //     // long: f.location.long,
-  //     x: f.smurp.pos.x,
-  //     flap: f.flap,
-  //   }
-  // })
-
   console.log(result.data)
-
-  // for (const x of result.data) {
-  //   // inspect on x as well
-
-  //   const x = {
-  //     data: result.data,
-  //     len: 100,
-  //   }
-
-  //   // if (x.location.long > 1e6 + 9e5 + 40e3) {
-  //   //   console.log(x.id)
-  //   // }
-
-  //   // console.log({
-  //   //   id: x.id,
-  //   //   // location: x.location,
-  //   //   flap: x.flap,
-  //   //   long: x.location.long,
-  //   //   // user: x.user,
-  //   //   vectorClock: x.vectorClock,
-  //   //   // smurp: x.smurp,
-  //   // })
-  //   // break
-  // }
 
   console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
@@ -505,11 +459,4 @@ test.serial.only('query + filter', async (t) => {
   await wait(0)
 
   t.true(true)
-
-  // global.gc()
-
-  await wait(5e3)
-
-  console.log('flapx')
-  await wait(5e3)
 })

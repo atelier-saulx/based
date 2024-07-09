@@ -145,7 +145,7 @@ export const get = (query: Query): BasedQueryResponse => {
       mainBuffer,
     )
 
-    // console.log('RESULT', new Uint8Array(result))
+    console.log('RESULT', new Uint8Array(result))
 
     return new BasedQueryResponse(query, result)
   } else {
