@@ -2,71 +2,78 @@ import test from 'ava'
 import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
-import { BasedDb, FieldDef, SchemaTypeDef, readSchemaTypeDefFromBuffer } from '../src/index.js'
+import {
+  BasedDb,
+  FieldDef,
+  SchemaTypeDef,
+  readSchemaTypeDefFromBuffer,
+} from '../src/index.js'
 import { join, dirname, resolve } from 'path'
-import { createRequire } from "node:module"
-const selva = createRequire(import.meta.url)("../../build/libselva.node")
+import { createRequire } from 'node:module'
+const selva = createRequire(import.meta.url)('../../build/libselva.node')
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
 function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
-    const typeNames = Object.keys(schema)
-    const types = Object.values(schema)
-    const selvaSchema: Buffer[] = []
+  const typeNames = Object.keys(schema)
+  const types = Object.values(schema)
+  const selvaSchema: Buffer[] = []
 
-    for (let i = 0; i < types.length; i++) {
-      const t = types[i]
-      const vals = Object.values(t.fields)
-      const mainFields: FieldDef[] = []
-      const restFields: FieldDef[] = []
+  for (let i = 0; i < types.length; i++) {
+    const t = types[i]
+    const vals = Object.values(t.fields)
+    const mainFields: FieldDef[] = []
+    const restFields: FieldDef[] = []
 
-      for (const f of vals) {
-        if (f.seperate) {
-          restFields.push(f)
-        } else {
-          mainFields.push(f)
-        }
+    for (const f of vals) {
+      if (f.seperate) {
+        restFields.push(f)
+      } else {
+        mainFields.push(f)
       }
+    }
 
-      console.log(mainFields)
-      console.log(restFields)
+    console.log(mainFields)
+    console.log(restFields)
 
-	  // TODO Remove this once the types agree
-      const typeMap = {
-        'timestamp': 1,
-        'created': 2,
-        'updated': 3,
-        'number': 4,
-        'integer': 5,
-        'boolean': 9,
-        'reference': 13,
-        'enum': 10,
-        'string': 11,
-        'references': 14,
-	  }
-      const toSelvaSchemaBuf = (f: FieldDef): number[] => {
-        if (f.type == 'reference' || f.type == 'references') {
-          const dstType: SchemaTypeDef = schema[f.allowedType]
-          const buf = Buffer.allocUnsafe(6)
+    // TODO Remove this once the types agree
+    const typeMap = {
+      timestamp: 1,
+      created: 2,
+      updated: 3,
+      number: 4,
+      integer: 5,
+      boolean: 9,
+      reference: 13,
+      enum: 10,
+      string: 11,
+      references: 14,
+    }
+    const toSelvaSchemaBuf = (f: FieldDef): number[] => {
+      if (f.type == 'reference' || f.type == 'references') {
+        const dstType: SchemaTypeDef = schema[f.allowedType]
+        const buf = Buffer.allocUnsafe(6)
 
-          buf.writeUInt8(typeMap[f.type], 0)
-          buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
-          buf.writeUInt32LE(typeNames.indexOf(f.allowedType), 2)
-          return [...buf.values()]
-        } else {
-          return [typeMap[f.type]]
-        }
+        buf.writeUInt8(typeMap[f.type], 0)
+        buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
+        buf.writeUInt32LE(typeNames.indexOf(f.allowedType), 2)
+        return [...buf.values()]
+      } else {
+        return [typeMap[f.type]]
       }
-      selvaSchema.push(Buffer.from([
+    }
+    selvaSchema.push(
+      Buffer.from([
         mainFields.length,
         ...mainFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
         ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
-      ]))
-    }
+      ]),
+    )
+  }
 
-    return selvaSchema
+  return selvaSchema
 }
 
 test.serial.skip('create and destroy a db', async (t) => {
@@ -129,9 +136,9 @@ test.serial.only('query + filter', async (t) => {
           simples: {
             type: 'references',
             allowedType: 'simple',
-            inverseProperty: 'user'
+            inverseProperty: 'user',
           },
-        }
+        },
       },
     },
   })
@@ -140,7 +147,9 @@ test.serial.only('query + filter', async (t) => {
   //console.dir(db.schemaTypesParsed, { depth: 100 })
   console.log('bufs', schemaBufs)
   for (let i = 0; i < schemaBufs.length; i++) {
-    console.log(`schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`)
+    console.log(
+      `schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`,
+    )
   }
 
   const createUser = (id: number, name: string) => {
@@ -151,8 +160,8 @@ test.serial.only('query + filter', async (t) => {
 
     // name
     buf.writeUInt32LE(5 + nameLen, off) // len
-    buf.writeInt8(fields.name.selvaField, off += 4) // field
-    buf.write(name, off += 1)
+    buf.writeInt8(fields.name.selvaField, (off += 4)) // field
+    buf.write(name, (off += 1))
     off += nameLen
 
     console.log(`create user ${name}:`, selva.db_update(dbp, 1, id, buf))
@@ -164,9 +173,9 @@ test.serial.only('query + filter', async (t) => {
   //await wait(15e3)
   const fields = db.schemaTypesParsed.simple.fields
 
-  //const NR_NODES = 5e6
-  const NR_NODES = 100e3
-  const DATA_SIZE = 84 + 9
+  const NR_NODES = 5e6
+  // const NR_NODES = 100e3
+  const DATA_SIZE = 84 // + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
   let off = 0
   for (let i = 0; i < NR_NODES; i++) {
@@ -184,52 +193,56 @@ test.serial.only('query + filter', async (t) => {
 
     // UpdateBatch
     buf.writeUInt32LE(DATA_SIZE, off)
-    buf.writeUInt32LE(i, off += 4)
+    buf.writeUInt32LE(i, (off += 4))
     off += 4
 
     // vectorClock
     buf.writeUInt32LE(9, off) // len
-    buf.writeInt8(fields.vectorClock.selvaField, off += 4) // field
-    buf.writeInt32LE(i % 4, off += 1)
+    buf.writeInt8(fields.vectorClock.selvaField, (off += 4)) // field
+    buf.writeInt32LE(i % 4, (off += 1))
     off += 4
 
     // flap
     buf.writeUint32LE(41, off) // len
-    buf.writeInt8(fields.flap.selvaField, off += 4) // field
-    buf.write('Hippity hoppity there is no property', off += 1)
+    buf.writeInt8(fields.flap.selvaField, (off += 4)) // field
+    buf.write('Hippity hoppity there is no property', (off += 1))
     off += 36
 
     // long
     buf.writeUInt32LE(13, off) // len
-    buf.writeInt8(fields['location.long'].selvaField, off += 4) // field
-    buf.writeDoubleLE(52, off += 1)
+    buf.writeInt8(fields['location.long'].selvaField, (off += 4)) // field
+    buf.writeDoubleLE(52, (off += 1))
     off += 8
 
     // lat
     buf.writeUInt32LE(13, off) // len
-    buf.writeInt8(fields['location.lat'].selvaField, off += 4) // field
-    buf.writeDoubleLE(52, off += 1)
+    buf.writeInt8(fields['location.lat'].selvaField, (off += 4)) // field
+    buf.writeDoubleLE(52, (off += 1))
     off += 8
 
     // user ref
-    buf.writeUInt32LE(9, off) // len
-    buf.writeInt8(fields['user'].selvaField, off += 4) // field
-    buf.writeUint32LE(0, off += 1)
-    off += 4
+    // buf.writeUInt32LE(9, off) // len
+    // buf.writeInt8(fields['user'].selvaField, (off += 4)) // field
+    // buf.writeUint32LE(0, (off += 1))
+    // off += 4
 
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)
   }
   const dx = performance.now()
   console.log('batch', selva.db_update_batch(dbp, 0, buf))
-  console.log(Math.round(performance.now() - dx), 'ms')
-
+  console.log('updateBatch', Math.round(performance.now() - dx), 'ms')
 
   console.log('GET')
   for (let nodeId = 0; nodeId < 20; nodeId++) {
-    console.log(`${nodeId}.vectorClock`, selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField))
+    console.log(
+      `${nodeId}.vectorClock`,
+      selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField),
+    )
   }
-  console.log(`now get flap: "${selva.db_get_field(dbp, 0, 10, fields.flap.selvaField)}"`)
+  console.log(
+    `now get flap: "${selva.db_get_field(dbp, 0, 10, fields.flap.selvaField)}"`,
+  )
   console.log('ref', selva.db_get_field(dbp, 0, 10, fields.user.selvaField))
 
   //const trefstart = performance.now()
@@ -251,7 +264,9 @@ test.serial.only('query + filter', async (t) => {
   //  .range(0, 1000)
   //  .get()
 
-  selva.traverse_field_bfs(dbp, 0, 1, fields.user.selvaField, (type, nodeId) => console.log(`type: ${type} node: ${nodeId}`))
+  selva.traverse_field_bfs(dbp, 0, 1, fields.user.selvaField, (type, nodeId) =>
+    console.log(`type: ${type} node: ${nodeId}`),
+  )
 
   console.log('filtering:')
   let matchCount = 0
@@ -261,19 +276,24 @@ test.serial.only('query + filter', async (t) => {
 
     if (type == 0) {
       //console.log(type, nodeId)
-      const vectorClock = selva.db_get_field_p(node, db.schemaTypesParsed.simple.fields.vectorClock.selvaField)
+      const vectorClock = selva.db_get_field_p(
+        node,
+        db.schemaTypesParsed.simple.fields.vectorClock.selvaField,
+      )
       if (vectorClock == 0) {
         //console.log(`type: ${type} nodeId: ${nodeId} lat: ${selva.db_get_field(node, fields['location.lat'].selvaField)}`)
         matchCount++
       }
 
-      return -1; // stop traverse
+      return -1 // stop traverse
     } else if (type == 1) {
-        return db.schemaTypesParsed.user.fields.simples.selvaField
+      return db.schemaTypesParsed.user.fields.simples.selvaField
     }
   })
   const matchEnd = performance.now()
-  console.log(`Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms`)
+  console.log(
+    `Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms`,
+  )
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())
@@ -284,4 +304,11 @@ test.serial.only('query + filter', async (t) => {
   console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
 
   t.true(true)
+
+  // global.gc()
+
+  await wait(5e3)
+
+  console.log('flapx')
+  await wait(5e3)
 })

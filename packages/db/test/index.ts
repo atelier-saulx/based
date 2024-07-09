@@ -12,298 +12,298 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('set and simple get', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
+// test.serial('set and simple get', async (t) => {
+//   try {
+//     await fs.rm(dbFolder, { recursive: true })
+//   } catch (err) {}
+//   await fs.mkdir(dbFolder)
 
-  const db = new BasedDb({
-    path: dbFolder,
-  })
+//   const db = new BasedDb({
+//     path: dbFolder,
+//   })
 
-  db.updateSchema({
-    types: {
-      simple: {
-        fields: {
-          user: { type: 'reference', allowedType: 'user' },
-          vectorClock: { type: 'integer' },
-          location: {
-            type: 'object',
-            properties: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
-            },
-          },
-        },
-      },
-      vote: {
-        fields: {
-          refs: { type: 'references' },
-          user: { type: 'reference', allowedType: 'user' },
-          vectorClock: { type: 'integer' },
-          location: {
-            type: 'object',
-            properties: {
-              long: { type: 'timestamp' },
-              lat: { type: 'timestamp' },
-            },
-          },
-        },
-      },
-      complex: {
-        fields: {
-          flap: {
-            type: 'integer',
-          },
-          value: {
-            type: 'integer',
-          },
-          nip: {
-            type: 'string',
-          },
-          mep: {
-            type: 'number',
-          },
-          created: {
-            type: 'timestamp',
-          },
-          updated: {
-            type: 'timestamp',
-          },
-          gerp: {
-            type: 'reference',
-            allowedType: 'vote',
-          },
-          snurp: {
-            type: 'object',
-            properties: {
-              refTime: { type: 'references', allowedType: 'vote' },
-              ups: { type: 'references', allowedType: 'vote' },
-              derp: { type: 'integer' },
-              bla: { type: 'string' },
-              hup: {
-                type: 'object',
-                properties: {
-                  start: {
-                    type: 'timestamp',
-                  },
-                  x: { type: 'integer' },
-                  isDope: { type: 'boolean' },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
+//   db.updateSchema({
+//     types: {
+//       simple: {
+//         fields: {
+//           user: { type: 'reference', allowedType: 'user' },
+//           vectorClock: { type: 'integer' },
+//           location: {
+//             type: 'object',
+//             properties: {
+//               long: { type: 'number' },
+//               lat: { type: 'number' },
+//             },
+//           },
+//         },
+//       },
+//       vote: {
+//         fields: {
+//           refs: { type: 'references' },
+//           user: { type: 'reference', allowedType: 'user' },
+//           vectorClock: { type: 'integer' },
+//           location: {
+//             type: 'object',
+//             properties: {
+//               long: { type: 'timestamp' },
+//               lat: { type: 'timestamp' },
+//             },
+//           },
+//         },
+//       },
+//       complex: {
+//         fields: {
+//           flap: {
+//             type: 'integer',
+//           },
+//           value: {
+//             type: 'integer',
+//           },
+//           nip: {
+//             type: 'string',
+//           },
+//           mep: {
+//             type: 'number',
+//           },
+//           created: {
+//             type: 'timestamp',
+//           },
+//           updated: {
+//             type: 'timestamp',
+//           },
+//           gerp: {
+//             type: 'reference',
+//             allowedType: 'vote',
+//           },
+//           snurp: {
+//             type: 'object',
+//             properties: {
+//               refTime: { type: 'references', allowedType: 'vote' },
+//               ups: { type: 'references', allowedType: 'vote' },
+//               derp: { type: 'integer' },
+//               bla: { type: 'string' },
+//               hup: {
+//                 type: 'object',
+//                 properties: {
+//                   start: {
+//                     type: 'timestamp',
+//                   },
+//                   x: { type: 'integer' },
+//                   isDope: { type: 'boolean' },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//   })
 
-  // const id2 = db.create('vote', {
-  //   user: 15,
-  //   vectorClock: 12,
-  //   location: {
-  //     long: 1,
-  //     lat: 1,
-  //   },
-  // })
+//   // const id2 = db.create('vote', {
+//   //   user: 15,
+//   //   vectorClock: 12,
+//   //   location: {
+//   //     long: 1,
+//   //     lat: 1,
+//   //   },
+//   // })
 
-  var str = 'flap'
-  for (let i = 0; i < 1e3; i++) {
-    str += 'bla ' + i
-  }
+//   var str = 'flap'
+//   for (let i = 0; i < 1e3; i++) {
+//     str += 'bla ' + i
+//   }
 
-  // console.info(str)
-  console.log('---------------------------')
+//   // console.info(str)
+//   console.log('---------------------------')
 
-  var d = Date.now()
-  // for (let i = 0; i < 1e9; i++) {
-  //   db.create('complex', {
-  //     flap: 1,
-  //     // nip: 'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
-  //     snurp: {
-  //       derp: i,
-  //     },
-  //   })
-  // }
+//   var d = Date.now()
+//   // for (let i = 0; i < 1e9; i++) {
+//   //   db.create('complex', {
+//   //     flap: 1,
+//   //     // nip: 'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
+//   //     snurp: {
+//   //       derp: i,
+//   //     },
+//   //   })
+//   // }
 
-  // await wait(0)
-  // console.log('old', Date.now() - d, 'ms')
+//   // await wait(0)
+//   // console.log('old', Date.now() - d, 'ms')
 
-  await wait(100)
-  console.log('---------------------------')
-  d = Date.now()
-  for (let i = 0; i < 10e6; i++) {
-    db.create('complex', {
-      flap: 1,
-      snurp: {
-        derp: i + 1,
-        hup: { start: 1000 },
-        bla: 'BLA!',
-      },
-      nip: 'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
-    })
-  }
+//   await wait(100)
+//   console.log('---------------------------')
+//   d = Date.now()
+//   for (let i = 0; i < 10e6; i++) {
+//     db.create('complex', {
+//       flap: 1,
+//       snurp: {
+//         derp: i + 1,
+//         hup: { start: 1000 },
+//         bla: 'BLA!',
+//       },
+//       nip: 'flap flap flap flap flap flap flap flap flap flap flap flpa flpa flpal flpa',
+//     })
+//   }
 
-  await wait(0)
-  const bla = db.get('complex', 1)
-  console.log(bla)
+//   await wait(0)
+//   const bla = db.get('complex', 1)
+//   console.log(bla)
 
-  console.log('new', Date.now() - d, 'ms')
+//   console.log('new', Date.now() - d, 'ms')
 
-  // const id = db.create('complex', {
-  //   value: 666,
-  //   nip: 'FRANKO!',
-  //   gerp: 999,
-  //   snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
-  // })
-  // console.log('---------------------------')
+//   // const id = db.create('complex', {
+//   //   value: 666,
+//   //   nip: 'FRANKO!',
+//   //   gerp: 999,
+//   //   snurp: { bla: 'yuzi', ups: [1, 2, 3, 4, 5] },
+//   // })
+//   // console.log('---------------------------')
 
-  // console.info('??', id)
+//   // console.info('??', id)
 
-  await wait(1e3)
+//   await wait(1e3)
 
-  // const doesNotExist = db.get('simple', 0)
+//   // const doesNotExist = db.get('simple', 0)
 
-  // console.info('snurp', doesNotExist)
+//   // console.info('snurp', doesNotExist)
 
-  // t.deepEqual(db.get('complex', id), {
-  //   snurp: {
-  //     refTime: [],
-  //     hup: { start: 0, x: 0, isDope: false },
-  //     ups: [1, 2, 3, 4, 5],
-  //     derp: 0,
-  //     bla: 'yuzi',
-  //   },
-  //   updated: 0,
-  //   created: 0,
-  //   mep: 0,
-  //   flap: 0,
-  //   value: 666,
-  //   nip: 'FRANKO!',
-  //   gerp: 999,
-  // })
+//   // t.deepEqual(db.get('complex', id), {
+//   //   snurp: {
+//   //     refTime: [],
+//   //     hup: { start: 0, x: 0, isDope: false },
+//   //     ups: [1, 2, 3, 4, 5],
+//   //     derp: 0,
+//   //     bla: 'yuzi',
+//   //   },
+//   //   updated: 0,
+//   //   created: 0,
+//   //   mep: 0,
+//   //   flap: 0,
+//   //   value: 666,
+//   //   nip: 'FRANKO!',
+//   //   gerp: 999,
+//   // })
 
-  // const doesNotExist = db.get('simple', 0)
+//   // const doesNotExist = db.get('simple', 0)
 
-  // // TODO franky when DBI does not exist and error zig will never work again...
-  // t.deepEqual(doesNotExist, {
-  //   location: { lat: 0, long: 0 },
-  //   user: 0,
-  //   vectorClock: 0,
-  // })
+//   // // TODO franky when DBI does not exist and error zig will never work again...
+//   // t.deepEqual(doesNotExist, {
+//   //   location: { lat: 0, long: 0 },
+//   //   user: 0,
+//   //   vectorClock: 0,
+//   // })
 
-  // const id1 = db.create('simple', {
-  //   user: 1,
-  //   vectorClock: 20,
-  //   location: {
-  //     long: 52.0123,
-  //     lat: 52.213,
-  //   },
-  // })
+//   // const id1 = db.create('simple', {
+//   //   user: 1,
+//   //   vectorClock: 20,
+//   //   location: {
+//   //     long: 52.0123,
+//   //     lat: 52.213,
+//   //   },
+//   // })
 
-  // await wait(0)
-  // t.is(Math.round(db.get('simple', id1).location.long * 10000) / 10000, 52.0123)
+//   // await wait(0)
+//   // t.is(Math.round(db.get('simple', id1).location.long * 10000) / 10000, 52.0123)
 
-  // const refs = []
-  // for (let i = 0; i < 1e4; i++) {
-  //   refs.push(i)
-  // }
+//   // const refs = []
+//   // for (let i = 0; i < 1e4; i++) {
+//   //   refs.push(i)
+//   // }
 
-  // const id2 = db.create('vote', {
-  //   user: 1,
-  //   vectorClock: 22,
-  //   location: {
-  //     long: 52.1,
-  //     lat: 52.2,
-  //   },
-  //   refs,
-  // })
-  // await wait(0)
-  // t.is(db.get('vote', id2).vectorClock, 22)
-  // t.is(db.get('vote', id2).refs.length, 1e4)
+//   // const id2 = db.create('vote', {
+//   //   user: 1,
+//   //   vectorClock: 22,
+//   //   location: {
+//   //     long: 52.1,
+//   //     lat: 52.2,
+//   //   },
+//   //   refs,
+//   // })
+//   // await wait(0)
+//   // t.is(db.get('vote', id2).vectorClock, 22)
+//   // t.is(db.get('vote', id2).refs.length, 1e4)
 
-  // let d = Date.now()
-  // let lId = 0
-  // for (let i = 0; i < 2e6; i++) {
-  //   lId = db.create('simple', {
-  //     user: 1,
-  //     vectorClock: i,
-  //     location: {
-  //       long: 52,
-  //       lat: 52,
-  //     },
-  //   })
-  // }
-  // await wait(0)
-  // console.info('perf', Date.now() - d, 'ms', '2M inserts (2 dbis)')
+//   // let d = Date.now()
+//   // let lId = 0
+//   // for (let i = 0; i < 2e6; i++) {
+//   //   lId = db.create('simple', {
+//   //     user: 1,
+//   //     vectorClock: i,
+//   //     location: {
+//   //       long: 52,
+//   //       lat: 52,
+//   //     },
+//   //   })
+//   // }
+//   // await wait(0)
+//   // console.info('perf', Date.now() - d, 'ms', '2M inserts (2 dbis)')
 
-  // t.deepEqual(db.get('simple', lId), {
-  //   user: 1,
-  //   vectorClock: 2e6 - 1,
-  //   location: {
-  //     long: 52,
-  //     lat: 52,
-  //   },
-  // })
+//   // t.deepEqual(db.get('simple', lId), {
+//   //   user: 1,
+//   //   vectorClock: 2e6 - 1,
+//   //   location: {
+//   //     long: 52,
+//   //     lat: 52,
+//   //   },
+//   // })
 
-  t.true(true)
-})
+//   t.true(true)
+// })
 
-test.serial('get include', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
+// test.serial('get include', async (t) => {
+//   try {
+//     await fs.rm(dbFolder, { recursive: true })
+//   } catch (err) {}
+//   await fs.mkdir(dbFolder)
 
-  const db = new BasedDb({
-    path: dbFolder,
-  })
+//   const db = new BasedDb({
+//     path: dbFolder,
+//   })
 
-  db.updateSchema({
-    types: {
-      something: {
-        fields: {
-          flap: { type: 'string' },
-          user: { type: 'reference', allowedType: 'user' },
-          vectorClock: { type: 'integer' },
-          location: {
-            type: 'object',
-            properties: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
-            },
-          },
-        },
-      },
-    },
-  })
+//   db.updateSchema({
+//     types: {
+//       something: {
+//         fields: {
+//           flap: { type: 'string' },
+//           user: { type: 'reference', allowedType: 'user' },
+//           vectorClock: { type: 'integer' },
+//           location: {
+//             type: 'object',
+//             properties: {
+//               long: { type: 'number' },
+//               lat: { type: 'number' },
+//             },
+//           },
+//         },
+//       },
+//     },
+//   })
 
-  const id = db.create('something', {
-    user: 1,
-    flap: 'hello',
-    vectorClock: 20,
-    location: {
-      long: 52.0123,
-      lat: 52.213,
-    },
-  })
+//   const id = db.create('something', {
+//     user: 1,
+//     flap: 'hello',
+//     vectorClock: 20,
+//     location: {
+//       long: 52.0123,
+//       lat: 52.213,
+//     },
+//   })
 
-  await wait(0)
+//   await wait(0)
 
-  // only query...
-  console.info(db.get('something', id, ['location.long', 'flap']))
+//   // only query...
+//   console.info(db.get('something', id, ['location.long', 'flap']))
 
-  t.pass()
-})
+//   t.pass()
+// })
 
-function generateRandomArray() {
-  var array = []
-  for (var i = 0; i < 5; i++) {
-    array.push(Math.floor(Math.random() * 20) + 1)
-  }
-  return array
-}
+// function generateRandomArray() {
+//   var array = []
+//   for (var i = 0; i < 5; i++) {
+//     array.push(Math.floor(Math.random() * 20) + 1)
+//   }
+//   return array
+// }
 
 test.serial.only('query + filter', async (t) => {
   await wait(100)
@@ -387,19 +387,19 @@ test.serial.only('query + filter', async (t) => {
     )
   }
 
-  const amount = 1000e6
-  const now = Date.now()
+  const amount = 5e6
+  const now = (dx = Date.now())
   for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
-      // user: users[Math.floor(Math.random() * 100)].id,
-      // vectorClock: 6,
-      flap: 'abcd',
+      user: 1,
+      vectorClock: 6,
+      flap: 'Hippity hoppity there is no property',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
-      // location: {
-      //   bla: i,
-      //   long: 14.12,
-      //   lat: 52,
-      // },
+      location: {
+        // bla: i,
+        long: 14.12 + i,
+        lat: 52,
+      },
       // // refs: generateRandomArray(), // make
       // smurp: {
       //   hello: true,
@@ -422,7 +422,7 @@ test.serial.only('query + filter', async (t) => {
     .filter('vectorClock', '>', 1)
     // .filter('refs', 'has', [2, 19])
     // 'flap', 'location'
-    .include('vectorClock', 'flap') // now support location (getting the whole object)
+    .include('vectorClock', 'flap', 'location.long') // now support location (getting the whole object)
     .range(0, 1e6) // max len not good
     .get()
 
@@ -463,18 +463,31 @@ test.serial.only('query + filter', async (t) => {
   //   }
   // })
 
-  for (const x of result.data) {
-    // inspect on x as well
-    console.log({
-      id: x.id,
-      // location: x.location,
-      flap: x.flap,
-      // user: x.user,
-      vectorClock: x.vectorClock,
-      // smurp: x.smurp,
-    })
-    break
-  }
+  console.log(result.data)
+
+  // for (const x of result.data) {
+  //   // inspect on x as well
+
+  //   const x = {
+  //     data: result.data,
+  //     len: 100,
+  //   }
+
+  //   // if (x.location.long > 1e6 + 9e5 + 40e3) {
+  //   //   console.log(x.id)
+  //   // }
+
+  //   // console.log({
+  //   //   id: x.id,
+  //   //   // location: x.location,
+  //   //   flap: x.flap,
+  //   //   long: x.location.long,
+  //   //   // user: x.user,
+  //   //   vectorClock: x.vectorClock,
+  //   //   // smurp: x.smurp,
+  //   // })
+  //   // break
+  // }
 
   console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
 
@@ -491,4 +504,11 @@ test.serial.only('query + filter', async (t) => {
   await wait(0)
 
   t.true(true)
+
+  // global.gc()
+
+  await wait(5e3)
+
+  console.log('flapx')
+  await wait(5e3)
 })
