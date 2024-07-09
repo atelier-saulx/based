@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -142,8 +142,17 @@ void mempool_gc(struct mempool *mempool) {
  */
 static int mempool_new_slab(struct mempool *mempool) {
     struct mempool_slab *slab;
+    int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
-    slab = mmap(0, mempool->slab_size_kb * 1024, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#if 0
+#if __linux__
+    if (mempool->slab_size_kb >= 2048) {
+        mmap_flags |= MAP_HUGETLB /* | MAP_HUGE_2MB */;
+    }
+#endif
+#endif
+
+    slab = mmap(0, mempool->slab_size_kb * 1024, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
     if (slab == MAP_FAILED) {
         return 1;
     }
