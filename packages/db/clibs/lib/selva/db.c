@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
 #include "jemalloc.h"
 #include "util/align.h"
 #include "selva_object.h"
@@ -14,7 +15,7 @@
 #include "fields.h"
 #include "db.h"
 
-#define NODEPOOL_SLAB_SIZE 33554432
+#define NODEPOOL_SLAB_SIZE 2097152
 
 RB_PROTOTYPE_STATIC(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
 RB_PROTOTYPE_STATIC(SelvaTypeIndex, SelvaTypeEntry, _type_entry, SelvaTypeEntry_Compare);
@@ -162,7 +163,11 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     SelvaObject_Init(e->aliases._obj_data, 0);
 
     const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
+#if __linux__
+    mempool_init2(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MADV_RANDOM);
+#else
     mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
+#endif
 
     struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types, e);
     if (prev) {
@@ -227,7 +232,6 @@ struct SelvaNode *db_find_node(struct SelvaDb *db, struct SelvaTypeEntry *type, 
     struct SelvaNode find = {
         .node_id = node_id,
     };
-    struct SelvaNode *node;
 
     return RB_FIND(SelvaNodeIndex, &type->nodes, &find);
 }

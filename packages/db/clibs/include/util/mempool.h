@@ -38,6 +38,7 @@ struct mempool {
     uint16_t slab_size_kb;
     uint16_t obj_align;
     uint32_t obj_size;
+    int advice;
     SLIST_HEAD(mempool_slab_list, mempool_slab) slabs;
     LIST_HEAD(mempool_free_chunk_list, mempool_chunk) free_chunks;
 };
@@ -48,6 +49,9 @@ struct mempool {
  * @param obj_size is the size of a single object stored in a slab.
  */
 void mempool_init(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align)
+    __attribute__((access(read_write, 1)));
+
+void mempool_init2(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align, int advice)
     __attribute__((access(read_write, 1)));
 
 /**
