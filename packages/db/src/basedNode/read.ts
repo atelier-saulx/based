@@ -78,7 +78,8 @@ export const readSeperateFieldFromBuffer = (
             } else {
               // TODO: means it broken BROKEN
               console.info('Broken reference cannot get id!')
-              x[j] = null
+              // x[j] = null
+              x.splice(j, 1)
             }
           }
           return x

@@ -377,7 +377,8 @@ test.serial.only('query + filter', async (t) => {
     db.create('simple', {
       user: users[~~(Math.random() * users.length)],
       vectorClock: 6 + i,
-      // refs: [1, 2, 3],
+      flap: 'hipperdehappidie flap bird',
+      refs: [1, 2, 3],
       location: {
         bla: 3,
         long: 1,
