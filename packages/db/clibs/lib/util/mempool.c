@@ -188,16 +188,14 @@ retry:
         return 1;
     }
 
-#if __linux__
     if (mempool->advice) {
         madvise(slab, bsize, mempool->advice);
     }
 
-#if HUGE_PAGES == HUGE_PAGES_THP
+#if __linux__ && HUGE_PAGES == HUGE_PAGES_THP
     if (bsize >= 2048 * 1024) {
         (void)madvise(slab, bsize, MADV_HUGEPAGE);
     }
-#endif
 #endif
 
     const struct slab_info info = slab_info(mempool);
