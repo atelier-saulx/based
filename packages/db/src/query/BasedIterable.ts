@@ -15,7 +15,7 @@ export class BasedIterable {
     const arr = new Array(this.length)
     let i = 0
     for (const x of this) {
-      arr[i] = { id: x.id }
+      arr[i] = x.toObject()
       i++
       if (i > 100) {
         // arr.push(`... ${this.length - 50} more items`)
