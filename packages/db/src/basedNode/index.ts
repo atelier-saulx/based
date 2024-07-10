@@ -8,9 +8,7 @@ const toObjectAll = (target: any) => {
   const obj: any = {}
   for (const key in target) {
     const t: any = target[key]
-    if (t instanceof BasedNode) {
-      obj[key] = toObjectAll(t)
-    } else if (typeof t === 'object' && t !== null) {
+    if (typeof t === 'object' && t !== null) {
       obj[key] = toObjectAll(t)
     } else {
       obj[key] = t
