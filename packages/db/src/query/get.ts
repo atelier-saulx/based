@@ -178,6 +178,7 @@ export const get = (query: Query): BasedQueryResponse => {
     conditions = Buffer.alloc(0)
   }
 
+  const d = performance.now()
   const result: Buffer = query.db.native.getQuery(
     conditions,
     query.type.prefixString,
@@ -187,5 +188,8 @@ export const get = (query: Query): BasedQueryResponse => {
     includeBuffer,
     mainBuffer,
   )
-  return new BasedQueryResponse(query, result)
+  const time = performance.now() - d
+  const q = new BasedQueryResponse(query, result)
+  q.execTime = time
+  return q
 }

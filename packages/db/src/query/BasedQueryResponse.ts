@@ -5,12 +5,37 @@ import picocolors from 'picocolors'
 
 const sizeCalc = (size: number) => {
   if (size > 1e6) {
-    return `${~~((size / 1e6) * 100) / 100}mb`
+    return `${~~((size / 1e6) * 100) / 100} mb`
   }
   if (size > 1e3) {
-    return `${~~((size / 1e3) * 100) / 100}kb`
+    return `${~~((size / 1e3) * 100) / 100} kb`
   }
   return `${size} bytes`
+}
+
+const size = (size: number) => {
+  const str = sizeCalc(size)
+  if (size > 1e3 * 1e3 * 10) {
+    return picocolors.red(str)
+  } else {
+    return picocolors.green(str)
+  }
+}
+
+const timeCalc = (time: number) => {
+  if (time > 1e3) {
+    return `${~~((time / 1e3) * 100) / 100} s`
+  }
+  return `${~~(time * 100) / 100} ms`
+}
+
+const time = (time: number) => {
+  const str = timeCalc(time)
+  if (time > 1e3) {
+    return picocolors.red(str)
+  } else {
+    return picocolors.green(str)
+  }
 }
 
 export class BasedQueryResponse {
@@ -43,7 +68,9 @@ export class BasedQueryResponse {
       // str += `\n  Filter: ${this.query.conditions}`
     }
 
-    str += '\n  size: ' + picocolors.dim(sizeCalc(this.size))
+    str += '\n  time: ' + time(this.execTime)
+
+    str += '\n  size: ' + size(this.size)
     // @ts-ignore
     str += '\n  data: ' + inspect(this.data, { nested: true })
 
