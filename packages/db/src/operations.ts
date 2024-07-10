@@ -5,13 +5,13 @@ export const flushBuffer = (db: BasedDb) => {
     const d = Date.now()
 
     db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
-    console.log(
-      'FLUSH',
-      ~~(db.modifyBuffer.len / 1000 / 1000),
-      'mb',
-      Date.now() - d,
-      'ms',
-    )
+    // console.log(
+    //   'FLUSH',
+    //   ~~(db.modifyBuffer.len / 1000 / 1000),
+    //   'mb',
+    //   Date.now() - d,
+    //   'ms',
+    // )
 
     db.modifyBuffer.len = 0
     db.modifyBuffer.typePrefix = new Uint8Array([0, 0])
