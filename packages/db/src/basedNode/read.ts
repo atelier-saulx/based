@@ -68,7 +68,6 @@ export const readSeperateFieldFromBuffer = (
         if (requestedField.type === 'string') {
           return buffer.toString('utf8', i, size + i)
         } else if (requestedField.type === 'references') {
-          console.log('references', size)
           const amount = size / 4
           const x = new Array(amount)
           for (let j = 0; j < amount; j++) {

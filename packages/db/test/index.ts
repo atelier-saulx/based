@@ -104,6 +104,10 @@ test.serial.only('query + filter', async (t) => {
 
   console.log(result.data)
 
+  for (const item of result.data) {
+    console.info(item)
+  }
+
   await wait(0)
 
   t.true(true)

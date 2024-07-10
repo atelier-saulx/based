@@ -3,6 +3,7 @@ import { SchemaTypeDef } from '../schemaTypeDef.js'
 import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 import { Query } from '../query/query.js'
+import { inspect } from 'node:util'
 
 const toObjectAll = (obj, target: any) => {
   for (const key in target) {
@@ -69,6 +70,11 @@ export class BasedNode {
         })
       }
     }
+  }
+
+  [inspect.custom]() {
+    const x = inspect(this.toObject())
+    return `BasedNode[${this.__q.query.type.type}] ${x}`
   }
 
   toObject() {
