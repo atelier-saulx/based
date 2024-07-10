@@ -17,7 +17,8 @@ fn getQueryInternal(
     info: c.napi_callback_info,
 ) !c.napi_value {
     const args = try napi.getArgs(7, env, info);
-    const queries = try napi.getBuffer("queries", env, args[0]);
+
+    const conditions = try napi.getBuffer("conditions", env, args[0]);
     const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
     const last_id = try napi.getInt32("last_id", env, args[2]);
     const offset = try napi.getInt32("offset", env, args[3]);
@@ -63,13 +64,13 @@ fn getQueryInternal(
         }
 
         var fieldIndex: usize = 0;
-        while (fieldIndex < queries.len) {
+        while (fieldIndex < conditions.len) {
             const querySize: u16 = std.mem.readInt(
                 u16,
-                queries[fieldIndex + 1 ..][0..2],
+                conditions[fieldIndex + 1 ..][0..2],
                 .little,
             );
-            const field = queries[fieldIndex];
+            const field = conditions[fieldIndex];
             const shardKey = db.getShardKey(field, @bitCast(currentShard));
             var shard = shards.get(shardKey);
             if (shard == null) {
@@ -80,7 +81,7 @@ fn getQueryInternal(
             }
 
             if (shard != null) {
-                const query = queries[fieldIndex + 3 .. fieldIndex + 3 + querySize];
+                const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
 
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
 

@@ -1,10 +1,10 @@
-import { BasedDb, SchemaTypeDef } from '../index.js'
+import { BasedDb, FieldDef, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Operation } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 
-type IncludeTreeArr = (string | true | IncludeTreeArr)[]
+type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
 
 export class Query {
   db: BasedDb

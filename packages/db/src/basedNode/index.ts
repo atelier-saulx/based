@@ -1,34 +1,56 @@
 import { readSeperateFieldFromBuffer } from './read.js'
-import { SchemaTypeDef } from '../schemaTypeDef.js'
+import { FieldDef, SchemaTypeDef } from '../schemaTypeDef.js'
 import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 import { Query } from '../query/query.js'
 import { inspect } from 'node:util'
+import picocolors from 'picocolors'
 
-const toObjectAll = (obj, target: any) => {
-  for (const key in target) {
-    const t: any = target[key]
-    if (typeof t === 'object' && t !== null) {
-      obj[key] = toObjectAll({}, t)
+const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
+  for (let i = 0; i < arr.length; i++) {
+    const key = arr[i++] as string
+    const item = arr[i] as FieldDef | Query['includeTree']
+    if ('__isField' in item) {
+      const v = target[key]
+      obj[key] = v
     } else {
-      obj[key] = t
+      obj[key] = toObjectIncludeTree({}, target[key], item)
     }
   }
   return obj
 }
 
-const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
+const toObjectIncludeTreePrint = (
+  str: string,
+  target: any,
+  arr: Query['includeTree'],
+  level: number = 0,
+) => {
+  let prefix = ''.padEnd(level * 2 + 2, ' ')
+  str += '{\n'
   for (let i = 0; i < arr.length; i++) {
-    const key = arr[i++]
-    if (arr[i] === true) {
-      // @ts-ignore
-      obj[key] = target[key]
+    const key = arr[i++] as string
+    const item = arr[i] as FieldDef | Query['includeTree']
+    str += prefix + `${key}: `
+    if ('__isField' in item) {
+      let v = target[key]
+      if (item.type === 'string') {
+        if (v.length > 100) {
+          v = v.slice(0, 100) + '...' + (v.length - 100) + ' chars'
+        }
+        str += `"${v}"`
+      } else if (item.type === 'timestamp') {
+        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v) + ''))}`
+      } else {
+        str += v
+      }
+      str += '\n'
     } else {
-      // @ts-ignore
-      obj[key] = toObjectIncludeTree({}, target[key], arr[i])
+      str += toObjectIncludeTreePrint('', target[key], item, level + 1)
     }
   }
-  return obj
+  str += '}\n'.padStart(level * 2 + 2, ' ')
+  return str
 }
 
 export class BasedNode {
@@ -73,19 +95,11 @@ export class BasedNode {
   }
 
   [inspect.custom]() {
-    const x = inspect(this.toObject())
-    return `BasedNode[${this.__q.query.type.type}] ${x}`
+    return `${picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)} ${toObjectIncludeTreePrint('', this, this.__q.query.includeTree)}`
   }
 
-  toObject() {
-    const obj = { id: this.id }
-    if (this.__q.query.includeTree) {
-      toObjectIncludeTree(obj, this, this.__q.query.includeTree)
-    } else {
-      toObjectAll(obj, this)
-    }
-
-    return obj
+  toObject(print: boolean = false) {
+    return toObjectIncludeTree({}, this, this.__q.query.includeTree)
   }
 
   toJSON() {

@@ -2,6 +2,11 @@ import { FieldDef, SchemaFieldTree } from '../schemaTypeDef.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Query } from './query.js'
 
+const idFieldDef = {
+  __isField: true,
+  type: 'id',
+}
+
 const getAllFieldFromObject = (
   tree: SchemaFieldTree | FieldDef,
   arr: string[] = [],
@@ -20,13 +25,30 @@ const getAllFieldFromObject = (
 const convertToIncludeTree = (tree: any) => {
   const arr = []
   for (const key in tree) {
-    if (tree[key] === true) {
-      arr.push(key, true)
+    const item = tree[key]
+    if (item.__isField === true) {
+      arr.push(key, item)
     } else {
-      arr.push(key, convertToIncludeTree(tree[key]))
+      arr.push(key, convertToIncludeTree(item))
     }
   }
   return arr
+}
+
+const addPathToTree = (field: FieldDef, includeTree: any) => {
+  const len = field.path.length - 1
+  let t = includeTree
+  for (let i = 0; i <= len; i++) {
+    const key = field.path[i]
+    if (i === len) {
+      t[key] = field
+    } else {
+      if (!(key in t)) {
+        t[key] = {}
+      }
+      t = t[key]
+    }
+  }
 }
 
 const parseInclude = (
@@ -52,19 +74,7 @@ const parseInclude = (
     return
   }
 
-  const len = field.path.length - 1
-  let t = includeTree
-  for (let i = 0; i <= len; i++) {
-    const key = field.path[i]
-    if (i === len) {
-      t[key] = true
-    } else {
-      if (!(key in t)) {
-        t[key] = {}
-      }
-      t = t[key]
-    }
-  }
+  addPathToTree(field, includeTree)
 
   if (field.seperate) {
     arr.push(field.field)
@@ -84,38 +94,19 @@ export const get = (query: Query): BasedQueryResponse => {
   let includeBuffer: Buffer
   let len = 0
   let mainBuffer: Buffer
-  if (!query.includeFields) {
-    len = 1
-    const fields = query.type.fields
-    for (const f in fields) {
-      const field = fields[f]
-      if (field.seperate) {
-        len++
-      }
-    }
-    includeBuffer = Buffer.allocUnsafe(len)
-    includeBuffer[0] = 0
-    let i = 0
-    for (const f in fields) {
-      const field = fields[f]
-      if (field.seperate) {
-        i++
-        includeBuffer[i] = field.field
-      }
-    }
-    mainBuffer = Buffer.from([0])
-    query.mainLen = query.type.mainLen
-  } else {
+
+  const includeTreeIntermediate = {
+    id: idFieldDef,
+  }
+
+  if (query.includeFields) {
     let includesMain = false
     const arr = []
-    const includeTreeIntermediate = {}
     for (const f of query.includeFields) {
       if (parseInclude(query, f, arr, includesMain, includeTreeIntermediate)) {
         includesMain = true
       }
     }
-
-    query.includeTree = convertToIncludeTree(includeTreeIntermediate)
 
     len += arr.length
     includeBuffer = Buffer.from(arr)
@@ -138,11 +129,38 @@ export const get = (query: Query): BasedQueryResponse => {
     } else {
       mainBuffer = Buffer.from([0])
     }
+  } else {
+    len = 1
+    const fields = query.type.fields
+    for (const f in fields) {
+      const field = fields[f]
+      addPathToTree(field, includeTreeIntermediate)
+      if (field.seperate) {
+        len++
+      }
+    }
+    includeBuffer = Buffer.allocUnsafe(len)
+    includeBuffer[0] = 0
+    let i = 0
+    for (const f in fields) {
+      const field = fields[f]
+      if (field.seperate) {
+        i++
+        includeBuffer[i] = field.field
+      }
+    }
+    mainBuffer = Buffer.from([0])
+    query.mainLen = query.type.mainLen
   }
 
-  // TODO also without conditions has to work....
+  query.includeTree = convertToIncludeTree(includeTreeIntermediate)
+
+  const start = query.offset ?? 0
+  const end = query.limit ?? 1e3
+
+  let conditions
   if (query.conditions) {
-    const conditions = Buffer.allocUnsafe(query.totalConditionSize)
+    conditions = Buffer.allocUnsafe(query.totalConditionSize)
     let lastWritten = 0
     query.conditions.forEach((v, k) => {
       conditions[lastWritten] = k
@@ -156,24 +174,18 @@ export const get = (query: Query): BasedQueryResponse => {
       }
       conditions.writeInt16LE(conditionSize, sizeIndex)
     })
-
-    const start = query.offset ?? 0
-    const end = query.limit ?? 1e3
-
-    const result: Buffer = query.db.native.getQuery(
-      conditions,
-      query.type.prefixString,
-      query.type.lastId,
-      start,
-      end, // def 1k ?
-      includeBuffer,
-      mainBuffer,
-    )
-
-    console.log('RESULT', new Uint8Array(result))
-
-    return new BasedQueryResponse(query, result)
   } else {
-    // what?
+    conditions = Buffer.alloc(0)
   }
+
+  const result: Buffer = query.db.native.getQuery(
+    conditions,
+    query.type.prefixString,
+    query.type.lastId,
+    start,
+    end, // def 1k ?
+    includeBuffer,
+    mainBuffer,
+  )
+  return new BasedQueryResponse(query, result)
 }
