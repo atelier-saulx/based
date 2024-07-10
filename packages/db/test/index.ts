@@ -328,32 +328,32 @@ test.serial.only('query + filter', async (t) => {
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedType: 'user' },
+          // user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
-          flap: { type: 'string' },
-          refs: { type: 'references', allowedType: 'user' },
+          // flap: { type: 'string' },
+          // refs: { type: 'references', allowedType: 'user' },
           location: {
             type: 'object',
             properties: {
-              bla: { type: 'number' },
-              long: { type: 'number' },
-              lat: { type: 'number' },
+              bla: { type: 'integer' },
+              long: { type: 'integer' },
+              lat: { type: 'integer' },
             },
           },
-          smurp: {
-            type: 'object',
-            properties: {
-              hello: { type: 'boolean' },
-              ts: { type: 'timestamp' },
-              pos: {
-                type: 'object',
-                properties: {
-                  x: { type: 'integer' },
-                  y: { type: 'integer' },
-                },
-              },
-            },
-          },
+          // smurp: {
+          //   type: 'object',
+          //   properties: {
+          //     hello: { type: 'boolean' },
+          //     ts: { type: 'timestamp' },
+          //     pos: {
+          //       type: 'object',
+          //       properties: {
+          //         x: { type: 'integer' },
+          //         y: { type: 'integer' },
+          //       },
+          //     },
+          //   },
+          // },
         },
       },
     },
@@ -401,9 +401,9 @@ test.serial.only('query + filter', async (t) => {
       // flap: 'Hippity hoppity there is no property',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
       location: {
-        // bla: i,
-        long: 14 + i,
-        lat: 52,
+        bla: 3,
+        long: 1,
+        lat: 2,
       },
       // // refs: generateRandomArray(), // make
       // smurp: {
@@ -429,7 +429,7 @@ test.serial.only('query + filter', async (t) => {
     // 'flap', 'location'
 
     // user
-    .include('vectorClock', 'location') // now support location (getting the whole object)
+    .include('vectorClock', 'location.lat') // now support location (getting the whole object)
     // .include('vectorClock', 'location.lat', 'location.long') // now support location (getting the whole object)
 
     // .include('vectorClock', 'flap', 'location') // now support location (getting the whole object)

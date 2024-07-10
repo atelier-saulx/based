@@ -95,7 +95,7 @@ export const get = (query: Query): BasedQueryResponse => {
         mainBuffer = Buffer.from([0])
       } else {
         const size = query.mainIncludes.size
-        mainBuffer = Buffer.allocUnsafe(size * 6 + 1 + 4)
+        mainBuffer = Buffer.allocUnsafe(size * 4 + 5)
         mainBuffer[0] = 1
         mainBuffer.writeUint32LE(query.mainLen, 1)
         let i = 5
@@ -104,6 +104,8 @@ export const get = (query: Query): BasedQueryResponse => {
           mainBuffer.writeUint16LE(v[1], i + 2)
           i += 4
         })
+
+        console.log('derp', new Uint8Array(mainBuffer))
       }
     } else {
       mainBuffer = Buffer.from([0])

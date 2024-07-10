@@ -7,6 +7,8 @@ const nodeflate = createRequire(import.meta.url)('../../build/nodeflate.node')
 // const compressor = nodeflate.newCompressor(3)
 // const decompressor = nodeflate.newDecompressor()
 
+const EMPTY_BUFFER = Buffer.alloc(1000)
+
 const setCursor = (
   db: BasedDb,
   schema: SchemaTypeDef,
@@ -114,10 +116,8 @@ const addModify = (
           if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
             flushBuffer(db)
           }
-          // haha
           setCursor(db, schema, t, id)
           db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
-
           db.modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
             db.modifyBuffer.len + 1,
@@ -126,8 +126,14 @@ const addModify = (
           db.modifyBuffer.len += nextLen
 
           // TODO: check if this is correct
-          for (let x = 0; x < schema.mainLen; x++) {
-            db.modifyBuffer.buffer[db.modifyBuffer.len - schema.mainLen + x] = 0
+          const size = db.modifyBuffer.len - schema.mainLen
+
+          if (schema.mainLen < 1e3) {
+            EMPTY_BUFFER.copy(db.modifyBuffer.buffer, size, 0, schema.mainLen)
+          } else {
+            for (let x = 0; x < schema.mainLen; x++) {
+              db.modifyBuffer.buffer[size + x] = 0
+            }
           }
         }
         if (t.type === 'timestamp' || t.type === 'number') {

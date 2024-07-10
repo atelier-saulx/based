@@ -132,7 +132,6 @@ fn getQueryInternal(
             if (includeIterator == 1) {
                 total_size += 1 + 4;
                 const s: Result = .{ .id = i, .field = field, .val = v };
-
                 try results.append(s);
             } else {
                 const s: Result = .{ .id = null, .field = field, .val = v };
@@ -185,11 +184,12 @@ fn getQueryInternal(
             if (selectiveMain) {
                 var selectiveMainPos: usize = 5;
                 var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
-                while (selectiveMainPos < mainIncludes.len - 4) {
+                while (selectiveMainPos < mainIncludes.len) {
                     const start: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos .. selectiveMainPos + 2]), .little);
-                    const end: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos + 2 .. selectiveMainPos + 2]), .little);
-                    @memcpy(dataU8[last_pos .. last_pos + mainLen], mainU8[start..end].ptr);
-                    last_pos += end;
+                    const len: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos + 2 .. selectiveMainPos + 4]), .little);
+                    const end: u16 = len + start;
+                    @memcpy(dataU8[last_pos .. last_pos + len], mainU8[start..end].ptr);
+                    last_pos += len;
                     selectiveMainPos += 4;
                 }
             } else {
