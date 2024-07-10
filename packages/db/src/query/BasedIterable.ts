@@ -30,7 +30,6 @@ export class BasedIterable {
 
   *[Symbol.iterator]() {
     let i = 4
-
     while (i < this.#buffer.byteLength) {
       // read
       const index = this.#buffer[i]

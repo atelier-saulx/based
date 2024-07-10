@@ -1,10 +1,11 @@
 import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
-import { BasedNode } from './basedNodeClass.js'
+import { BasedNode } from './index.js'
 import { readSeperateFieldFromBuffer } from './read.js'
-import { prop } from './utils.js'
 
 const defineLeafProp = (leaf: FieldDef, node: BasedNode, obj: any) => {
-  prop(obj, leaf.path[leaf.path.length - 1], {
+  Object.defineProperty(obj, leaf.path[leaf.path.length - 1], {
+    enumerable: true,
+    set: () => undefined,
     get: () => {
       // if (node.__q.query.includeFields)
       return readSeperateFieldFromBuffer(leaf, node)

@@ -17,11 +17,24 @@ const getAllFieldFromObject = (
   return arr
 }
 
+const convertToIncludeTree = (tree: any) => {
+  const arr = []
+  for (const key in tree) {
+    if (tree[key] === true) {
+      arr.push(key, true)
+    } else {
+      arr.push(key, convertToIncludeTree(tree[key]))
+    }
+  }
+  return arr
+}
+
 const parseInclude = (
   query: Query,
   f: string,
   arr: number[],
   includesMain: boolean,
+  includeTree: any,
 ): boolean => {
   const field = query.type.fields[f]
   if (!field) {
@@ -29,9 +42,8 @@ const parseInclude = (
     const tree = query.type.tree[path[0]]
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
-
       for (const field of endFields) {
-        if (parseInclude(query, field, arr, includesMain)) {
+        if (parseInclude(query, field, arr, includesMain, includeTree)) {
           includesMain = true
         }
       }
@@ -39,6 +51,21 @@ const parseInclude = (
     }
     return
   }
+
+  const len = field.path.length - 1
+  let t = includeTree
+  for (let i = 0; i <= len; i++) {
+    const key = field.path[i]
+    if (i === len) {
+      t[key] = true
+    } else {
+      if (!(key in t)) {
+        t[key] = {}
+      }
+      t = t[key]
+    }
+  }
+
   if (field.seperate) {
     arr.push(field.field)
   } else {
@@ -57,7 +84,6 @@ export const get = (query: Query): BasedQueryResponse => {
   let includeBuffer: Buffer
   let len = 0
   let mainBuffer: Buffer
-
   if (!query.includeFields) {
     len = 1
     const fields = query.type.fields
@@ -82,11 +108,15 @@ export const get = (query: Query): BasedQueryResponse => {
   } else {
     let includesMain = false
     const arr = []
+    const includeTreeIntermediate = {}
     for (const f of query.includeFields) {
-      if (parseInclude(query, f, arr, includesMain)) {
+      if (parseInclude(query, f, arr, includesMain, includeTreeIntermediate)) {
         includesMain = true
       }
     }
+
+    query.includeTree = convertToIncludeTree(includeTreeIntermediate)
+
     len += arr.length
     includeBuffer = Buffer.from(arr)
     // 16 start and end
@@ -104,8 +134,6 @@ export const get = (query: Query): BasedQueryResponse => {
           mainBuffer.writeUint16LE(v[1], i + 2)
           i += 4
         })
-
-        console.log('derp', new Uint8Array(mainBuffer))
       }
     } else {
       mainBuffer = Buffer.from([0])
@@ -131,12 +159,6 @@ export const get = (query: Query): BasedQueryResponse => {
 
     const start = query.offset ?? 0
     const end = query.limit ?? 1e3
-
-    console.log({
-      conditions: new Uint8Array(conditions),
-      include: new Uint8Array(includeBuffer),
-      mainBuffer: new Uint8Array(mainBuffer),
-    })
 
     const result: Buffer = query.db.native.getQuery(
       conditions,

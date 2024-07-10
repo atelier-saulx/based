@@ -314,7 +314,6 @@ test.serial.only('query + filter', async (t) => {
   await fs.mkdir(dbFolder)
   const db = new BasedDb({
     path: dbFolder,
-    // maxModifySize: 100 * 1e3 * 1e3 * 10,
   })
 
   db.updateSchema({
@@ -330,8 +329,8 @@ test.serial.only('query + filter', async (t) => {
         fields: {
           user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
-          // flap: { type: 'string' },
-          // refs: { type: 'references', allowedType: 'user' },
+          flap: { type: 'string' },
+          refs: { type: 'references', allowedType: 'user' },
           location: {
             type: 'object',
             properties: {
@@ -340,41 +339,24 @@ test.serial.only('query + filter', async (t) => {
               lat: { type: 'integer' },
             },
           },
-          // smurp: {
-          //   type: 'object',
-          //   properties: {
-          //     hello: { type: 'boolean' },
-          //     ts: { type: 'timestamp' },
-          //     pos: {
-          //       type: 'object',
-          //       properties: {
-          //         x: { type: 'integer' },
-          //         y: { type: 'integer' },
-          //       },
-          //     },
-          //   },
-          // },
+          smurp: {
+            type: 'object',
+            properties: {
+              hello: { type: 'boolean' },
+              ts: { type: 'timestamp' },
+              pos: {
+                type: 'object',
+                properties: {
+                  x: { type: 'integer' },
+                  y: { type: 'integer' },
+                },
+              },
+            },
+          },
         },
       },
     },
   })
-
-  // console.log(
-  //   db.schemaTypesParsed.simple.buf,
-  //   db.schemaTypesParsed.simple.fieldNames,
-  //   db.schemaTypesParsed.simple.tree,
-  // )
-
-  const refs = []
-  for (let i = 1; i < 10 - 1; i++) {
-    refs.push(i)
-  }
-
-  var dx = Date.now()
-  console.log('GO!')
-  // 2.5GB structured (8M nodes 4.5sec)
-  // 8 / 1.3
-  //
 
   const users = []
 
@@ -388,78 +370,52 @@ test.serial.only('query + filter', async (t) => {
     )
   }
 
-  console.log('GO SIMPLE')
-
   await wait(0)
 
-  const amount = 1 * 1 + 1
-  const now = (dx = Date.now())
+  const amount = 10
   for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
       user: users[~~(Math.random() * users.length)],
-      vectorClock: 6,
-      // flap: 'Hippity hoppity there is no property',
-      // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
+      vectorClock: 6 + i,
       location: {
         bla: 3,
         long: 1,
         lat: 2,
       },
-      // // refs: generateRandomArray(), // make
-      // smurp: {
-      //   hello: true,
-      //   ts: now,
-      //   pos: {
-      //     x: i,
-      //     y: 2,
-      //   },
-      // },
     })
   }
 
   await wait(0)
-  console.log(`TIME (${amount}) NODES`, Date.now() - dx, 'ms')
 
-  // 2 buffers
-  const d = Date.now()
   const result = db
     .query('simple')
     .filter('vectorClock', '>', 1)
-    // .filter('refs', 'has', [2, 19])
-    // 'flap', 'location'
-
-    // user
-    .include('vectorClock', 'location.lat') // now support location (getting the whole object)
-    // .include('vectorClock', 'location.lat', 'location.long') // now support location (getting the whole object)
-
-    // .include('vectorClock', 'flap', 'location') // now support location (getting the whole object)
+    .include('vectorClock', 'location')
     .range(0, 2)
     .get()
 
-  console.info(
-    'query result ==',
-    Date.now() - d,
-    'ms',
-    ~~(result.buffer.byteLength / 1000 / 1000),
-    'mb',
-    result.buffer.byteLength,
-  )
+  for (const x of result.data) {
+    console.log('X', x.toObject())
+  }
 
-  const xxx = Date.now()
+  // const bla = result.data.map((v) => {
+  //   // return { ...v }
+  //   console.log(v.propertyIsEnumerable('__t'))
 
-  console.log(result.data)
+  //   console.log(v, 'x', v.constructor.prototype)
+  // })
 
-  console.log('MAKING THE BASED NODES', Date.now() - xxx, 'ms')
+  // toJSON
+  // toObject
 
-  const buf = Buffer.allocUnsafe(50)
+  // toString
 
-  // const size = native.compress(
-  //   Buffer.from('flappper de flap flap flap!'),
-  //   buf,
-  //   5,
-  // )
+  // util inspect for nodes
 
-  // console.info({ buf })
+  // non enum on node for __o __q
+
+  // iterator
+  // nodes
 
   await wait(0)
 

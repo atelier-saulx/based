@@ -4,6 +4,8 @@ import { Operation } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 
+type IncludeTreeArr = (string | true | IncludeTreeArr)[]
+
 export class Query {
   db: BasedDb
   type: SchemaTypeDef
@@ -12,6 +14,7 @@ export class Query {
   offset: number
   limit: number
   includeFields: string[]
+  includeTree: IncludeTreeArr
   mainLen: number = 0
   mainIncludes: Map<number, [number, number]>
   totalConditionSize: number = 0

@@ -6,7 +6,7 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { createBasedNodeReader, BasedNode } from './basedNode/index.js'
+import { BasedNode } from './basedNode/index.js'
 
 const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   timestamp: 8, // 64bit
@@ -123,8 +123,7 @@ export const createSchemaTypeDef = (
     target = type.fields
   }
 
-  const appendRefProps = () => {
-  }
+  const appendRefProps = () => {}
   for (const key in target) {
     const f = target[key]
     const p = [...path, key]
@@ -146,8 +145,11 @@ export const createSchemaTypeDef = (
         len,
         field: isSeperate ? result.cnt : 0,
         selvaField: 0, // will be set later
-        inverseField: (f.type === 'reference' || f.type === 'references') && f.inverseProperty,
-        allowedType: (f.type === 'reference' || f.type === 'references') && f.allowedType,
+        inverseField:
+          (f.type === 'reference' || f.type === 'references') &&
+          f.inverseProperty,
+        allowedType:
+          (f.type === 'reference' || f.type === 'references') && f.allowedType,
       }
     }
   }
@@ -177,18 +179,18 @@ export const createSchemaTypeDef = (
     const restFields: FieldDef[] = []
 
     for (const f of vals) {
-        if (f.seperate) {
-          restFields.push(f)
-        } else {
-          mainFields.push(f)
-        }
+      if (f.seperate) {
+        restFields.push(f)
+      } else {
+        mainFields.push(f)
+      }
     }
-    let selvaField = 0;
+    let selvaField = 0
     for (const field of mainFields) {
-        field.selvaField = selvaField++;
+      field.selvaField = selvaField++
     }
     for (const field of restFields) {
-        field.selvaField = selvaField++;
+      field.selvaField = selvaField++
     }
 
     /*
@@ -241,7 +243,7 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
-    result.responseCtx = createBasedNodeReader(result as SchemaTypeDef)
+    result.responseCtx = new BasedNode(result as SchemaTypeDef)
   }
 
   return result as SchemaTypeDef
@@ -354,7 +356,7 @@ export const readSchemaTypeDefFromBuffer = (
     // ResponseClass: ,
   }
 
-  schemaTypeDef.responseCtx = createBasedNodeReader(schemaTypeDef)
+  schemaTypeDef.responseCtx = new BasedNode(schemaTypeDef)
 
   return schemaTypeDef
 }
