@@ -266,9 +266,12 @@ static void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
 
 static void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab)
 {
-#ifdef __linux__
     const size_t bsize = mempool->slab_size_kb * 1024;
 
+
+#if defined(__linux__)
     (void)madvise(slab, bsize, MADV_POPULATE_READ);
+#else
+    (void)madvise(slab, bsize, MADV_WILLNEED);
 #endif
 }

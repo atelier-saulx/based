@@ -116,7 +116,15 @@ __purefn struct mempool_slab_info mempool_slab_info(const struct mempool * restr
 char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk);
 struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj);
 
+/**
+ * For each chunk on the slab.
+ * The current chunk will be available as the pointer variable `chunk`.
+ * @param slab_nfo is a `struct slab_info` from `mempool_slab_info()`.
+ * @param slab is a mempool slab. It can be retrieved from any mempool object by calling `mempool_get_slab()`.
+ */
 #define MEMPOOL_FOREACH_BEGIN(slab_nfo, slab) \
+    static_assert(__builtin_types_compatible_p(typeof(slab_nfo), struct mempool_slab_info)); \
+    static_assert(__builtin_types_compatible_p(typeof(slab), struct mempool_slab *)); \
     do { \
         struct mempool_chunk *chunk = get_first_chunk(slab); \
         for (size_t i = 0; i < (slab_nfo).nr_objects; (chunk = (struct mempool_chunk *)((char *)chunk + (slab_nfo).chunk_size)), i++)
