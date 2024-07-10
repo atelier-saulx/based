@@ -328,7 +328,7 @@ test.serial.only('query + filter', async (t) => {
       },
       simple: {
         fields: {
-          // user: { type: 'reference', allowedType: 'user' },
+          user: { type: 'reference', allowedType: 'user' },
           vectorClock: { type: 'integer' },
           // flap: { type: 'string' },
           // refs: { type: 'references', allowedType: 'user' },
@@ -376,17 +376,17 @@ test.serial.only('query + filter', async (t) => {
   // 8 / 1.3
   //
 
-  // const users = []
+  const users = []
 
-  // for (let i = 0; i < 1; i++) {
-  //   users.push(
-  //     db.create('user', {
-  //       age: i,
-  //       name: 'Mr ' + i,
-  //       email: i + '@once.net',
-  //     }),
-  //   )
-  // }
+  for (let i = 0; i < 1; i++) {
+    users.push(
+      db.create('user', {
+        age: i,
+        name: 'Mr ' + i,
+        email: i + '@once.net',
+      }),
+    )
+  }
 
   console.log('GO SIMPLE')
 
@@ -396,7 +396,7 @@ test.serial.only('query + filter', async (t) => {
   const now = (dx = Date.now())
   for (let i = 0; i < amount - 1; i++) {
     db.create('simple', {
-      // user: users[~~(Math.random() * users.length)],
+      user: users[~~(Math.random() * users.length)],
       vectorClock: 6,
       // flap: 'Hippity hoppity there is no property',
       // flap: text, // 'my flap flap flap 1 epofjwpeojfwe oewjfpowe sepofjw pofwejew op mwepofjwe opfwepofj poefjpwofjwepofj wepofjwepofjwepofjwepofjwepofjwpo wepofj wepofjwepo fjwepofj wepofjwepofjwepofjwepofjc pofjpoejfpweojfpowefjpwoe fjewpofjwpo',
