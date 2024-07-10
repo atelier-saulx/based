@@ -102,7 +102,7 @@ const result = db
   .query('simple')
   .filter('vectorClock', '>', 1)
   .include('vectorClock', 'location.bla', 'flap', 'refs', 'user', 'smurp')
-  .range(0, 2e3)
+  .range(0, 50e3)
   .get()
 
 const result2 = db.query('user').range(0, 1e5).get()

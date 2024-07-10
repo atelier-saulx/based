@@ -15,7 +15,7 @@ const sizeCalc = (size: number) => {
 
 const size = (size: number) => {
   const str = sizeCalc(size)
-  if (size > 1e3 * 1e3 * 10) {
+  if (size > 1e3 * 1e3 * 25) {
     return picocolors.red(str)
   } else {
     return picocolors.green(str)
@@ -71,6 +71,7 @@ export class BasedQueryResponse {
     str += '\n  execTime: ' + time(this.execTime)
 
     str += '\n  size: ' + size(this.size)
+
     // @ts-ignore
     str += '\n  data: ' + inspect(this.data, { nested: true })
 
