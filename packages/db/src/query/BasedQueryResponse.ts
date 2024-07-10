@@ -68,7 +68,7 @@ export class BasedQueryResponse {
       // str += `\n  Filter: ${this.query.conditions}`
     }
 
-    str += '\n  time: ' + time(this.execTime)
+    str += '\n  execTime: ' + time(this.execTime)
 
     str += '\n  size: ' + size(this.size)
     // @ts-ignore
