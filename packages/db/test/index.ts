@@ -391,7 +391,7 @@ test.serial.only('query + filter', async (t) => {
   const result = db
     .query('simple')
     .filter('vectorClock', '>', 1)
-    .include('vectorClock', 'location.bla', 'refs', 'user')
+    .include('vectorClock', 'location.bla', 'flap', 'refs', 'user')
     .range(0, 2)
     .get()
 

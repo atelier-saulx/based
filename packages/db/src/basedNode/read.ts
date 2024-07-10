@@ -16,7 +16,7 @@ export const readSeperateFieldFromBuffer = (
 
     // next node
     if (index === 255) {
-      return
+      break
     }
     i += 1
 
@@ -35,7 +35,7 @@ export const readSeperateFieldFromBuffer = (
         }
 
         if (fIndex === undefined) {
-          return // mep
+          break // mep
         }
 
         if (requestedField.type === 'reference') {
@@ -86,5 +86,12 @@ export const readSeperateFieldFromBuffer = (
       }
       i += size
     }
+  }
+
+  if (requestedField.type === 'string') {
+    return ''
+  }
+  if (requestedField.type === 'references') {
+    return []
   }
 }
