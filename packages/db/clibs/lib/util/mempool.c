@@ -96,9 +96,10 @@ void mempool_init(struct mempool *mempool, size_t slab_size, size_t obj_size, si
     mempool->obj_align = (typeof(mempool->obj_align))(obj_align);
     SLIST_INIT(&mempool->slabs);
     LIST_INIT(&mempool->free_chunks);
+    mempool->advice = MEMPOOL_ADV_NORMAL | MEMPOOL_ADV_HP_NO;
 }
 
-void mempool_init2(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align, int advice) {
+void mempool_init2(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align, enum mempool_advice advice) {
     mempool_init(mempool, slab_size, obj_size, obj_align);
     mempool->advice = advice;
 }
@@ -167,19 +168,21 @@ static int mempool_new_slab(struct mempool *mempool) {
     struct mempool_slab *slab;
     int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
-#if __linux__ && HUGE_PAGES == HUGE_PAGES_SOFT || HUGE_PAGES == HUGE_PAGES_HARD
-    if (bsize >= 2048 * 1024) {
+#if __linux__
+    if (bsize >= 2048 * 1024 &&
+        (mempool->advice & (MEMPOOL_ADV_HP_SOFT | MEMPOOL_ADV_HP_HARD))) {
         mmap_flags |= MAP_HUGETLB /* | MAP_HUGE_2MB */;
     }
 #endif
 
-#if __linux__ && HUGE_PAGES == HUGE_PAGES_SOFT
+#if __linux__
 retry:
 #endif
     slab = mmap(0, bsize, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
     if (slab == MAP_FAILED) {
-#if __linux__ && HUGE_PAGES == HUGE_PAGES_SOFT
-        if (mmap_flags & MAP_HUGETLB) {
+#if __linux__
+        if ((mmap_flags & MAP_HUGETLB) &&
+            (mempool->advice & MEMPOOL_ADV_HP_SOFT)) {
             mmap_flags &= ~MAP_HUGETLB;
             goto retry;
         }
@@ -188,12 +191,21 @@ retry:
         return 1;
     }
 
-    if (mempool->advice) {
-        madvise(slab, bsize, mempool->advice);
+    if (mempool->advice & (MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_SEQUENTIAL)) {
+        switch (mempool->advice & (MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_SEQUENTIAL)) {
+        case MEMPOOL_ADV_RANDOM:
+            madvise(slab, bsize, MADV_RANDOM);
+            break;
+        case MEMPOOL_ADV_SEQUENTIAL:
+            madvise(slab, bsize, MADV_SEQUENTIAL);
+            break;
+        default: /* NOP */
+            break;
+        }
     }
 
-#if __linux__ && HUGE_PAGES == HUGE_PAGES_THP
-    if (bsize >= 2048 * 1024) {
+#if __linux__
+    if (bsize >= 2048 * 1024 && (mempool->advice & MEMPOOL_ADV_HP_THP)) {
         (void)madvise(slab, bsize, MADV_HUGEPAGE);
     }
 #endif

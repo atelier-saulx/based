@@ -32,13 +32,29 @@ struct mempool_chunk {
 } __attribute__((aligned(sizeof(size_t))));
 
 /**
+ * Memory use advice bitmask.
+ * You can select on of MEMPOOL_ADV_NORMAL, MEMPOOL_ADV_RANDOM, and MEMPOOL_ADV_SEQUENTIAL.
+ * In addition you can select one of MEMPOOL_ADV_HP_NO, MEMPOOL_ADV_HP_THP, MEMPOOL_ADV_HP_SOFT, and MEMPOOL_ADV_HP_HARD.
+ * The defaults are MEMPOOL_ADV_NORMAL | MEMPOOL_ADV_HP_NO.
+ */
+enum mempool_advice {
+    MEMPOOL_ADV_NORMAL = 0x01,
+    MEMPOOL_ADV_RANDOM = 0x02,
+    MEMPOOL_ADV_SEQUENTIAL = 0x04,
+    MEMPOOL_ADV_HP_NO = 0x10,
+    MEMPOOL_ADV_HP_THP = 0x20, /*!< Enable Transparent Huge Pages. */
+    MEMPOOL_ADV_HP_SOFT = 0x40, /*!< Enable enforced huge pages. Fallback to whatever is the default. */
+    MEMPOOL_ADV_HP_HARD = 0x80, /*!< Enable enforced huge pages. The program is aborted if no huge pages are available. */
+};
+
+/**
  * A structure describing a memory pool.
  */
 struct mempool {
     uint16_t slab_size_kb;
     uint16_t obj_align;
     uint32_t obj_size;
-    int advice;
+    enum mempool_advice advice;
     SLIST_HEAD(mempool_slab_list, mempool_slab) slabs;
     LIST_HEAD(mempool_free_chunk_list, mempool_chunk) free_chunks;
 };
@@ -51,7 +67,7 @@ struct mempool {
 void mempool_init(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align)
     __attribute__((access(read_write, 1)));
 
-void mempool_init2(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align, int advice)
+void mempool_init2(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align, enum mempool_advice advice)
     __attribute__((access(read_write, 1)));
 
 /**
