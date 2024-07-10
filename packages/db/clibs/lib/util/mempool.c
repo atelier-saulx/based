@@ -28,17 +28,6 @@
  */
 #define HUGE_PAGES HUGE_PAGES_SOFT
 
-/**
- * Slab descriptor for a mempool.
- * This struct is used to temporarily hold the slab size information shared by
- * all slabs in a pool.
- */
-struct slab_info {
-    size_t slab_size;
-    size_t chunk_size;
-    size_t obj_size;
-    size_t nr_objects;
-};
 
 /**
  * Get a pointer to the first chunk in a slab.
@@ -50,7 +39,7 @@ static struct mempool_chunk *get_first_chunk(struct mempool_slab * restrict slab
     return (struct mempool_chunk *)p;
 }
 
-static char *get_obj(const struct mempool *mempool, struct mempool_chunk *chunk) {
+char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk) {
     return ((char *)chunk) + sizeof(struct mempool_chunk) + PAD(sizeof(struct mempool_chunk), mempool->obj_align);
 }
 
@@ -60,11 +49,11 @@ static struct mempool_chunk *get_chunk(const struct mempool *mempool, void *obj)
     return (struct mempool_chunk *)p;
 }
 
-/**
- * Calculate slab_info for mempool.
- */
-__purefn static struct slab_info slab_info(const struct mempool * restrict mempool);
-static struct slab_info slab_info(const struct mempool * restrict mempool) {
+struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj) {
+    return get_chunk(mempool, obj)->slab;
+}
+
+struct mempool_slab_info mempool_slab_info(const struct mempool * restrict mempool) {
     const size_t slab_size = mempool->slab_size_kb * 1024;
     const size_t chunk_size = ALIGNED_SIZE(
             sizeof(struct mempool_chunk) +
@@ -75,7 +64,7 @@ static struct slab_info slab_info(const struct mempool * restrict mempool) {
 
     assert(nr_total > 0);
 
-    return (struct slab_info){
+    return (struct mempool_slab_info){
         .slab_size = slab_size,
         .chunk_size = chunk_size,
         .obj_size = mempool->obj_size,
@@ -129,7 +118,7 @@ void mempool_destroy(struct mempool *mempool) {
 }
 
 void mempool_gc(struct mempool *mempool) {
-    struct slab_info info = slab_info(mempool);
+    struct mempool_slab_info info = mempool_slab_info(mempool);
     struct mempool_slab *slab;
     struct mempool_slab *slab_temp;
 
@@ -145,15 +134,9 @@ void mempool_gc(struct mempool *mempool) {
             /*
              * Remove all the objects of this slab from the free list.
              */
-            char *p = (char *)get_first_chunk(slab);
-
-            for (size_t i = 0; i < info.nr_objects; i++) {
-                struct mempool_chunk *chunk;
-
-                chunk = (struct mempool_chunk *)p;
+            MEMPOOL_FOREACH_BEGIN(info, slab) {
                 LIST_REMOVE(chunk, next_free);
-                p += info.chunk_size;
-            }
+            } MEMPOOL_FOREACH_END();
 
             mempool_free_slab(mempool, slab);
         }
@@ -165,8 +148,8 @@ void mempool_gc(struct mempool *mempool) {
  */
 static int mempool_new_slab(struct mempool *mempool) {
     const size_t bsize = mempool->slab_size_kb * 1024;
-    struct mempool_slab *slab;
     int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+    struct mempool_slab *slab;
 
 #if __linux__
     if (bsize >= 2048 * 1024 &&
@@ -210,23 +193,17 @@ retry:
     }
 #endif
 
-    const struct slab_info info = slab_info(mempool);
+    const struct mempool_slab_info info = mempool_slab_info(mempool);
 
     slab->nr_free = info.nr_objects;
 
     /*
      * Add all new objects to the list of free objects in the pool.
      */
-    char *p = (char *)get_first_chunk(slab);
-    for (size_t i = 0; i < info.nr_objects; i++) {
-        struct mempool_chunk *chunk;
-
-        chunk = (struct mempool_chunk *)p;
+    MEMPOOL_FOREACH_BEGIN(info, slab) {
         chunk->slab = slab;
         LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
-
-        p += info.chunk_size;
-    }
+    } MEMPOOL_FOREACH_END();
 
     SLIST_INSERT_HEAD(&mempool->slabs, slab, next_slab);
 
@@ -249,7 +226,7 @@ void *mempool_get(struct mempool *mempool) {
     LIST_REMOVE(next, next_free);
     next->slab->nr_free--;
 
-    return get_obj(mempool, next);
+    return mempool_get_obj(mempool, next);
 }
 
 void mempool_return(struct mempool *mempool, void *p) {
@@ -267,4 +244,31 @@ void mempool_return(struct mempool *mempool, void *p) {
      * with a lot of partially full slabs while the optimal utilization would
      * have mostly full slabs.
      */
+}
+
+static void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
+{
+#ifdef __linux__
+    const size_t bsize = mempool->slab_size_kb * 1024;
+
+    (void)madvise(slab, bsize, MADV_COLD);
+#endif
+}
+
+static void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
+{
+#ifdef __linux__
+    const size_t bsize = mempool->slab_size_kb * 1024;
+
+    (void)madvise(slab, bsize, MADV_PAGEOUT);
+#endif
+}
+
+static void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab)
+{
+#ifdef __linux__
+    const size_t bsize = mempool->slab_size_kb * 1024;
+
+    (void)madvise(slab, bsize, MADV_POPULATE_READ);
+#endif
 }
