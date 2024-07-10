@@ -4,12 +4,11 @@ import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 import { Query } from '../query/query.js'
 
-const toObjectAll = (target: any) => {
-  const obj: any = {}
+const toObjectAll = (obj, target: any) => {
   for (const key in target) {
     const t: any = target[key]
     if (typeof t === 'object' && t !== null) {
-      obj[key] = toObjectAll(t)
+      obj[key] = toObjectAll({}, t)
     } else {
       obj[key] = t
     }
@@ -17,8 +16,7 @@ const toObjectAll = (target: any) => {
   return obj
 }
 
-const toObjectIncludeTree = (target: any, arr: Query['includeTree']) => {
-  const obj: any = {}
+const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++]
     if (arr[i] === true) {
@@ -26,7 +24,7 @@ const toObjectIncludeTree = (target: any, arr: Query['includeTree']) => {
       obj[key] = target[key]
     } else {
       // @ts-ignore
-      obj[key] = toObjectIncludeTree(target[key], arr[i])
+      obj[key] = toObjectIncludeTree({}, target[key], arr[i])
     }
   }
   return obj
@@ -74,10 +72,22 @@ export class BasedNode {
   }
 
   toObject() {
+    const obj = { id: this.id }
     if (this.__q.query.includeTree) {
-      return toObjectIncludeTree(this, this.__q.query.includeTree)
+      toObjectIncludeTree(obj, this, this.__q.query.includeTree)
     } else {
-      return toObjectAll(this)
+      toObjectAll(obj, this)
     }
+
+    return obj
+  }
+
+  toJSON() {
+    // TODO: optimize
+    return JSON.stringify(this.toObject())
+  }
+
+  toString() {
+    return this.toJSON()
   }
 }

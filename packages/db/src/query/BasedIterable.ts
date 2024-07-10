@@ -70,4 +70,22 @@ export class BasedIterable {
   get length() {
     return this.#buffer.readUint32LE(0)
   }
+
+  toObject() {
+    const arr = new Array(this.length)
+    let i = 0
+    for (const item of this) {
+      arr[i++] = item.toObject()
+    }
+    return arr
+  }
+
+  toJSON() {
+    // TODO: optimize
+    return JSON.stringify(this.toObject())
+  }
+
+  toString() {
+    return this.toJSON()
+  }
 }

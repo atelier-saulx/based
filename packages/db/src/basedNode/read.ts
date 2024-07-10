@@ -37,10 +37,16 @@ export const readSeperateFieldFromBuffer = (
         if (fIndex === undefined) {
           return // mep
         }
-        if (
-          requestedField.type === 'integer' ||
-          requestedField.type === 'reference'
-        ) {
+
+        if (requestedField.type === 'reference') {
+          const id = buffer.readUint32LE(i + fIndex)
+          if (!id) {
+            return null
+          }
+          return {
+            id,
+          }
+        } else if (requestedField.type === 'integer') {
           return buffer.readUint32LE(i + fIndex)
         }
         if (requestedField.type === 'boolean') {
@@ -57,14 +63,23 @@ export const readSeperateFieldFromBuffer = (
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2
+      // if no field add size 0
       if (requestedField.field === index) {
         if (requestedField.type === 'string') {
           return buffer.toString('utf8', i, size + i)
         } else if (requestedField.type === 'references') {
-          const x = new Array(size / 4)
-          for (let j = i; j < size / 4; j += 4) {
-            // TODO FIX
-            x[j / 4] = buffer.readUint32LE(j)
+          console.log('references', size)
+          const amount = size / 4
+          const x = new Array(amount)
+          for (let j = 0; j < amount; j++) {
+            const id = buffer.readUint32LE(j * 4 + i)
+            if (id) {
+              x[j] = { id }
+            } else {
+              // TODO: means it broken BROKEN
+              console.info('Broken reference cannot get id!')
+              x[j] = null
+            }
           }
           return x
         }

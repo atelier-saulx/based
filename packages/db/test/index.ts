@@ -377,6 +377,7 @@ test.serial.only('query + filter', async (t) => {
     db.create('simple', {
       user: users[~~(Math.random() * users.length)],
       vectorClock: 6 + i,
+      // refs: [1, 2, 3],
       location: {
         bla: 3,
         long: 1,
@@ -390,9 +391,11 @@ test.serial.only('query + filter', async (t) => {
   const result = db
     .query('simple')
     .filter('vectorClock', '>', 1)
-    .include('vectorClock', 'location')
+    .include('vectorClock', 'location.bla', 'refs', 'user')
     .range(0, 2)
     .get()
+
+  console.log(result.data + ' flap')
 
   for (const x of result.data) {
     console.log('X', x.toObject())
