@@ -151,19 +151,19 @@ static int mempool_new_slab(struct mempool *mempool) {
     int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
     struct mempool_slab *slab;
 
-#if __linux__
+#if defined(__linux__)
     if (bsize >= 2048 * 1024 &&
         (mempool->advice & (MEMPOOL_ADV_HP_SOFT | MEMPOOL_ADV_HP_HARD))) {
         mmap_flags |= MAP_HUGETLB /* | MAP_HUGE_2MB */;
     }
 #endif
 
-#if __linux__
+#if defined(__linux__)
 retry:
 #endif
     slab = mmap(0, bsize, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
     if (slab == MAP_FAILED) {
-#if __linux__
+#if defined(__linux__)
         if ((mmap_flags & MAP_HUGETLB) &&
             (mempool->advice & MEMPOOL_ADV_HP_SOFT)) {
             mmap_flags &= ~MAP_HUGETLB;
@@ -174,6 +174,7 @@ retry:
         return 1;
     }
 
+#if defined(__linux__) || defined(__MACH__)
     if (mempool->advice & (MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_SEQUENTIAL)) {
         switch (mempool->advice & (MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_SEQUENTIAL)) {
         case MEMPOOL_ADV_RANDOM:
@@ -186,8 +187,9 @@ retry:
             break;
         }
     }
+#endif
 
-#if __linux__
+#if defined(__linux__)
     if (bsize >= 2048 * 1024 && (mempool->advice & MEMPOOL_ADV_HP_THP)) {
         (void)madvise(slab, bsize, MADV_HUGEPAGE);
     }
@@ -248,19 +250,23 @@ void mempool_return(struct mempool *mempool, void *p) {
 
 static void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
 {
-#ifdef __linux__
+#if defined(__linux__)
     const size_t bsize = mempool->slab_size_kb * 1024;
 
     (void)madvise(slab, bsize, MADV_COLD);
+#else
+    (void)posix_madvise(slab, bsize, POSIX_MADV_DONTNEED);
 #endif
 }
 
 static void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
 {
-#ifdef __linux__
     const size_t bsize = mempool->slab_size_kb * 1024;
 
+#if defined(__linux__)
     (void)madvise(slab, bsize, MADV_PAGEOUT);
+#else
+    mempool_pagecold(mempool, slab);
 #endif
 }
 
@@ -268,10 +274,9 @@ static void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab)
 {
     const size_t bsize = mempool->slab_size_kb * 1024;
 
-
 #if defined(__linux__)
     (void)madvise(slab, bsize, MADV_POPULATE_READ);
 #else
-    (void)madvise(slab, bsize, MADV_WILLNEED);
+    (void)posix_madvise(slab, bsize, POSIX_MADV_WILLNEED);
 #endif
 }
