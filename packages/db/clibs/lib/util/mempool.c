@@ -2,6 +2,7 @@
  * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <stdio.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -11,13 +12,29 @@
 #include "util/align.h"
 #include "util/mempool.h"
 
+#define HUGE_PAGES_NA   0
+#define HUGE_PAGES_THP  1 /*!< Enable Transparent Huge Pages. */
+#define HUGE_PAGES_SOFT 2 /*!< Enable enforced huge pages. Fallback to whatever is the default. */
+#define HUGE_PAGES_HARD 3 /*!< Enable enforced huge pages. The program is aborted if no huge pages are available. */
+
+/**
+ *
+ * HUGE_PAGES_SOFT,and HUGE_PAGES_HARD requires that the user is a member of the
+ * /proc/sys/vm/hugetlb_shm_group group.
+ * In addition, HUGE_PAGES_HARD requires that /proc/sys/vm/nr_hugepages is set
+ * to greater than equal the number of huge pages that will be required.
+ * HUGE_PAGES_SOFT will always work it but it will slow down slightly if the
+ * system runs out of huge pages.
+ */
+#define HUGE_PAGES HUGE_PAGES_SOFT
+
 /**
  * Slab descriptor for a mempool.
  * This struct is used to temporarily hold the slab size information shared by
  * all slabs in a pool.
  */
 struct slab_info {
-    size_t total_bytes;
+    size_t slab_size;
     size_t chunk_size;
     size_t obj_size;
     size_t nr_objects;
@@ -59,7 +76,7 @@ static struct slab_info slab_info(const struct mempool * restrict mempool) {
     assert(nr_total > 0);
 
     return (struct slab_info){
-        .total_bytes = slab_size,
+        .slab_size = slab_size,
         .chunk_size = chunk_size,
         .obj_size = mempool->obj_size,
         .nr_objects = nr_total,
@@ -146,25 +163,38 @@ void mempool_gc(struct mempool *mempool) {
  * Allocate a new slab using mmap().
  */
 static int mempool_new_slab(struct mempool *mempool) {
+    const size_t bsize = mempool->slab_size_kb * 1024;
     struct mempool_slab *slab;
     int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
-#if 0
-#if __linux__
-    if (mempool->slab_size_kb >= 2048) {
+#if __linux__ && HUGE_PAGES == HUGE_PAGES_SOFT || HUGE_PAGES == HUGE_PAGES_HARD
+    if (bsize >= 2048 * 1024) {
         mmap_flags |= MAP_HUGETLB /* | MAP_HUGE_2MB */;
     }
 #endif
-#endif
 
-    slab = mmap(0, mempool->slab_size_kb * 1024, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
+#if __linux__ && HUGE_PAGES == HUGE_PAGES_SOFT
+retry:
+#endif
+    slab = mmap(0, bsize, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
     if (slab == MAP_FAILED) {
+#if __linux__ && HUGE_PAGES == HUGE_PAGES_SOFT
+        if (mmap_flags & MAP_HUGETLB) {
+            mmap_flags &= ~MAP_HUGETLB;
+            goto retry;
+        }
+#endif
+        perror("Failed to allocate a slab");
         return 1;
     }
 
-#if __linux__
     if (mempool->advice) {
-        madvise(slab, mempool->slab_size_kb * 1024, mempool->advice);
+        madvise(slab, bsize, mempool->advice);
+    }
+
+#if __linux__ && HUGE_PAGES == HUGE_PAGES_THP
+    if (bsize >= 2048 * 1024) {
+        (void)madvise(slab, bsize, MADV_HUGEPAGE);
     }
 #endif
 

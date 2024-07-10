@@ -163,11 +163,7 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     SelvaObject_Init(e->aliases._obj_data, 0);
 
     const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
-#if __linux__
     mempool_init2(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MADV_RANDOM);
-#else
-    mempool_init(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t));
-#endif
 
     struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types, e);
     if (prev) {
