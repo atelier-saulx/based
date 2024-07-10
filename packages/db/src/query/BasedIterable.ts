@@ -13,13 +13,15 @@ export class BasedIterable {
   #query: BasedQueryResponse;
 
   [inspect.custom](depth, { nested }) {
+    const size = nested ? 3 : 10
+
     let str = ''
     let i = 0
     for (const x of this) {
       // @ts-ignore
       str += inspect(x, { nested: true })
       i++
-      if (i > 5) {
+      if (i > size) {
         break
       }
       // str += ','
@@ -30,7 +32,7 @@ export class BasedIterable {
     if (length > 5) {
       str +=
         '  ' +
-        picocolors.dim(picocolors.italic(`...${length - 5} More items\n`))
+        picocolors.dim(picocolors.italic(`...${length - size} More items\n`))
     }
 
     str = `[\n${str.replaceAll('\n  }\n  ', '\n  },\n  ')}]\n`
