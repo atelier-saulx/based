@@ -13,7 +13,7 @@ export class BasedIterable {
   #query: BasedQueryResponse;
 
   [inspect.custom](depth, { nested }) {
-    const size = nested ? 3 : 10
+    const size = nested ? 2 : 10
 
     let str = ''
     let i = 0

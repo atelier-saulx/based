@@ -3,6 +3,16 @@ import { BasedIterable } from './BasedIterable.js'
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 
+const sizeCalc = (size: number) => {
+  if (size > 1e6) {
+    return `${~~((size / 1e6) * 100) / 100}mb`
+  }
+  if (size > 1e3) {
+    return `${~~((size / 1e3) * 100) / 100}kb`
+  }
+  return `${size} bytes`
+}
+
 export class BasedQueryResponse {
   buffer: Buffer
   execTime: number = 0
@@ -33,10 +43,9 @@ export class BasedQueryResponse {
       // str += `\n  Filter: ${this.query.conditions}`
     }
 
-    ;(str +=
-      '\n  size: ' + picocolors.dim(`${~~((this.size / 1e3) * 100) / 100}kb`)),
-      // @ts-ignore
-      (str += '\n  data: ' + inspect(this.data, { nested: true }))
+    str += '\n  size: ' + picocolors.dim(sizeCalc(this.size))
+    // @ts-ignore
+    str += '\n  data: ' + inspect(this.data, { nested: true })
 
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}}`
   }
