@@ -116,6 +116,10 @@ __purefn struct mempool_slab_info mempool_slab_info(const struct mempool * restr
 char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk);
 struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj);
 
+void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab);
+void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab);
+void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab);
+
 /**
  * For each chunk on the slab.
  * The current chunk will be available as the pointer variable `chunk`.

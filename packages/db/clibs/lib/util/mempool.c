@@ -248,7 +248,7 @@ void mempool_return(struct mempool *mempool, void *p) {
      */
 }
 
-static void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
+void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
 {
 #if defined(__linux__)
     const size_t bsize = mempool->slab_size_kb * 1024;
@@ -259,7 +259,7 @@ static void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
 #endif
 }
 
-static void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
+void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
 {
     const size_t bsize = mempool->slab_size_kb * 1024;
 
@@ -270,7 +270,7 @@ static void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
 #endif
 }
 
-static void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab)
+void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab)
 {
     const size_t bsize = mempool->slab_size_kb * 1024;
 
