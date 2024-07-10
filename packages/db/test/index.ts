@@ -78,12 +78,12 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 1e6
+const amount = 70e3
 for (let i = 0; i < amount - 1; i++) {
   db.create('simple', {
     user: users[~~(Math.random() * users.length)],
     vectorClock: 6 + i,
-    flap: 'hipperdehappidie flap bird',
+    flap: text,
     refs: [1, 2, 3],
     smurp: {
       ts: Date.now(),
@@ -102,20 +102,20 @@ const result = db
   .query('simple')
   .filter('vectorClock', '>', 1)
   .include('vectorClock', 'location.bla', 'flap', 'refs', 'user', 'smurp')
-  .range(0, 1e5)
+  .range(0, 2e3)
   .get()
 
 const result2 = db.query('user').range(0, 1e5).get()
 
-// console.log(result.data)
+console.log(result)
 
 // for (const item of result.data) {
 //   console.info(item)
 // }
 
-for (const item of result.data) {
-  console.info(item)
-}
+// for (const item of result.data) {
+//   console.info(item)
+// }
 
 await wait(0)
 

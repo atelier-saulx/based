@@ -1,6 +1,7 @@
 import { inspect } from 'node:util'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { BasedNode } from '../basedNode/index.js'
+import picocolors from 'picocolors'
 
 export class BasedIterable {
   constructor(buffer: Buffer, query: BasedQueryResponse) {
@@ -11,21 +12,34 @@ export class BasedIterable {
   #buffer: Buffer
   #query: BasedQueryResponse;
 
-  [inspect.custom]() {
-    const arr = new Array(this.length)
+  [inspect.custom](depth, { nested }) {
+    let str = ''
     let i = 0
     for (const x of this) {
-      arr[i] = x.toObject()
+      // @ts-ignore
+      str += inspect(x, { nested: true })
       i++
-      if (i > 100) {
-        // arr.push(`... ${this.length - 50} more items`)
+      if (i > 5) {
         break
       }
+      // str += ','
     }
 
-    const x = inspect(arr)
+    const length = this.length
 
-    return `BasedIterable[${this.#query.query.type.type}] (${this.length}) ${x}`
+    if (length > 5) {
+      str +=
+        '  ' +
+        picocolors.dim(picocolors.italic(`...${length - 5} More items\n`))
+    }
+
+    str = `[\n${str.replaceAll('\n  }\n  ', '\n  },\n  ')}]\n`
+
+    if (nested) {
+      return str
+    }
+
+    return `${picocolors.bold(`BasedIterable[${this.#query.query.type.type}]`)} (${this.length}) ${str}`
   }
 
   *[Symbol.iterator]() {

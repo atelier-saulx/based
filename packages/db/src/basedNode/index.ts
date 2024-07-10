@@ -25,9 +25,14 @@ const toObjectIncludeTreePrint = (
   target: any,
   arr: Query['includeTree'],
   level: number = 0,
+  indentPrefix: string = '',
 ) => {
-  let prefix = ''.padEnd(level * 2 + 2, ' ')
+  const prefix = indentPrefix + ''.padEnd(level * 2 + 2, ' ')
+  if (!level) {
+    str += indentPrefix
+  }
   str += '{\n'
+
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++] as string
     const item = arr[i] as FieldDef | Query['includeTree']
@@ -35,21 +40,34 @@ const toObjectIncludeTreePrint = (
     if ('__isField' in item) {
       let v = target[key]
       if (item.type === 'string') {
-        if (v.length > 100) {
-          v = v.slice(0, 100) + '...' + (v.length - 100) + ' chars'
+        if (v.length > 80) {
+          const chars = picocolors.italic(
+            picocolors.dim(
+              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+            ),
+          )
+
+          v = v.slice(0, 80) + picocolors.dim('...') + '" ' + chars
         }
-        str += `"${v}"`
+        str += `"${v}`
       } else if (item.type === 'timestamp') {
-        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v) + ''))}`
+        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {
         str += v
       }
       str += '\n'
     } else {
-      str += toObjectIncludeTreePrint('', target[key], item, level + 1)
+      str += toObjectIncludeTreePrint(
+        '',
+        target[key],
+        item,
+        level + 1,
+        indentPrefix,
+      )
     }
   }
-  str += '}\n'.padStart(level * 2 + 2, ' ')
+
+  str += indentPrefix + '}\n'.padStart(level * 2 + 2, ' ')
   return str
 }
 
@@ -94,7 +112,16 @@ export class BasedNode {
     }
   }
 
-  [inspect.custom]() {
+  [inspect.custom](_depth, { nested }) {
+    if (nested) {
+      return toObjectIncludeTreePrint(
+        '',
+        this,
+        this.__q.query.includeTree,
+        0,
+        '  ',
+      )
+    }
     return `${picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)} ${toObjectIncludeTreePrint('', this, this.__q.query.includeTree)}`
   }
 
