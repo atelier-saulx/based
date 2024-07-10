@@ -1,4 +1,5 @@
 export * from './BasedProvider'
+export * from './BasedLiveStatus'
 export * from './useBasedContext'
 export * from './useBasedStatus'
 export * from './useBasedQuery'

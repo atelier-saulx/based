@@ -3,6 +3,7 @@ import { render } from 'solid-js/web'
 import based, { BasedClient } from '@based/client'
 import {
   BasedProvider,
+  BasedLiveStatus,
   useBasedContext,
   useBasedStatus,
   useBasedQuery,
@@ -175,6 +176,7 @@ const App: Component = () => {
     <div>
       <BasedProvider client={client}>
         <h1>Based.io Solidjs Demo</h1>
+        <BasedLiveStatus />
         <BasedContextChecker />
         <MultipleCounter />
         <SimpleCounter />
