@@ -12,30 +12,30 @@ export class BasedIterable {
   #buffer: Buffer
   #query: BasedQueryResponse;
 
-  [inspect.custom](depth, { nested }) {
-    const size = nested ? 1 : 10
+  [inspect.custom](_depth, { nested }) {
+    const length = this.length
+    const max = Math.min(length, nested ? 2 : 10)
 
     let str = ''
     let i = 0
+
     for (const x of this) {
       // @ts-ignore
       str += inspect(x, { nested: true })
       i++
-      if (i > size) {
+      if (i >= max) {
         break
       }
-      // str += ','
+      str += ',\n'
     }
 
-    const length = this.length
-
-    if (length > 5) {
+    if (length > max) {
       str +=
-        '  ' +
-        picocolors.dim(picocolors.italic(`...${length - size} More items\n`))
+        ',\n' +
+        picocolors.dim(picocolors.italic(`...${length - max} More items`))
     }
 
-    str = `[\n${str.replaceAll('\n  }\n  ', '\n  },\n  ')}]\n`
+    str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
 
     if (nested) {
       return str

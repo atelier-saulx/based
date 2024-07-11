@@ -3,12 +3,14 @@ import { BasedIterable } from './BasedIterable.js'
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 
+const decimals = (v) => ~~(v * 100) / 100
+
 const sizeCalc = (size: number) => {
   if (size > 1e6) {
-    return `${~~((size / 1e6) * 100) / 100} mb`
+    return `${decimals(size / 1e6)} mb`
   }
   if (size > 1e3) {
-    return `${~~((size / 1e3) * 100) / 100} kb`
+    return `${decimals(size / 1e3)} kb`
   }
   return `${size} bytes`
 }
@@ -24,9 +26,9 @@ const size = (size: number) => {
 
 const timeCalc = (time: number) => {
   if (time > 1e3) {
-    return `${~~((time / 1e3) * 100) / 100} s`
+    return `${decimals(time / 1e3)} s`
   }
-  return `${~~(time * 100) / 100} ms`
+  return `${time} ms`
 }
 
 const time = (time: number) => {
@@ -69,12 +71,15 @@ export class BasedQueryResponse {
     }
 
     str += '\n  execTime: ' + time(this.execTime)
-
     str += '\n  size: ' + size(this.size)
 
     // @ts-ignore
-    str += '\n  data: ' + inspect(this.data, { nested: true })
+    const dataStr = inspect(this.data, { nested: true })
+      .replaceAll('\n', '\n  ')
+      .trim()
 
-    return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}}`
+    str += '\n  data: ' + dataStr
+
+    return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}`
   }
 }
