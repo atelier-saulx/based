@@ -101,8 +101,8 @@ await wait(0)
 const result = db
   .query('simple')
   .filter('vectorClock', '>', 1)
-  .include('vectorClock', 'location.bla', 'flap', 'refs', 'user', 'smurp')
-  .range(0, 50e3)
+  .include('vectorClock', 'location.bla', 'smurp')
+  .range(0, 1)
   .get()
 
 const result2 = db.query('user').range(0, 1e5).get()
@@ -114,7 +114,7 @@ console.log(result)
 // }
 
 // for (const item of result.data) {
-//   console.info(item)
+//   console.info(JSON.stringify(item))
 // }
 
 await wait(0)
