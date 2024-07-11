@@ -87,6 +87,10 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
 
 int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *buf, size_t len)
 {
+#if 0
+    struct mempool_slab_info slab_info = mempool_slab_info(&type->nodepool);
+#endif
+
     for (size_t i = 0; i < len;) {
         uint32_t ud_len;
         node_id_t node_id;
@@ -101,6 +105,16 @@ int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *bu
         if (err) {
             return err;
         }
+
+        /*
+         * Immediate swap out test.
+         */
+#if 0
+        if ((node_id % slab_info.nr_objects) == 0) {
+            struct mempool_slab *slab = mempool_get_slab(&type->nodepool, node);
+            mempool_pageout(&type->nodepool, slab);
+        }
+#endif
 
         i += ud_len;
     }

@@ -65,10 +65,10 @@ struct mempool {
  * all slabs in a pool.
  */
 struct mempool_slab_info {
-    size_t slab_size;
-    size_t chunk_size;
-    size_t obj_size;
-    size_t nr_objects;
+    size_t slab_size; /*!< Slab size. */
+    size_t chunk_size; /*!< Chunk size. */
+    size_t obj_size; /*!< Object size. */
+    size_t nr_objects; /*!< Number of objects per slab. */
 };
 
 /**
