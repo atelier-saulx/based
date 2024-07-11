@@ -250,9 +250,9 @@ void mempool_return(struct mempool *mempool, void *p) {
 
 void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
 {
-#if defined(__linux__)
     const size_t bsize = mempool->slab_size_kb * 1024;
 
+#if defined(__linux__)
     (void)madvise(slab, bsize, MADV_COLD);
 #else
     (void)posix_madvise(slab, bsize, POSIX_MADV_DONTNEED);
@@ -261,9 +261,9 @@ void mempool_pagecold(struct mempool *mempool, struct mempool_slab *slab)
 
 void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab)
 {
+#if defined(__linux__)
     const size_t bsize = mempool->slab_size_kb * 1024;
 
-#if defined(__linux__)
     (void)madvise(slab, bsize, MADV_PAGEOUT);
 #else
     mempool_pagecold(mempool, slab);
