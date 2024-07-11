@@ -165,6 +165,22 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
     mempool_init2(&e->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
 
+#if 0
+    struct mempool_slab_info slab_info = mempool_slab_info(&e->nodepool);
+    printf("\ntype: %d\n"
+           "node_size: %zu\n"
+           "slab_size: %zu\n"
+           "chunk_size: %zu\n"
+           "obj_size: %zu\n"
+           "nr_objects: %zu\n",
+           type,
+           node_size,
+           slab_info.slab_size,
+           slab_info.chunk_size,
+           slab_info.obj_size,
+           slab_info.nr_objects);
+#endif
+
     struct SelvaTypeEntry *prev = RB_INSERT(SelvaTypeIndex, &db->types, e);
     if (prev) {
         db_panic("Schema update not supported");
