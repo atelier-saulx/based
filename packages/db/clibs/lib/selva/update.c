@@ -70,7 +70,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             } while (0);
             break;
         default:
-            value_len = selva_field_data_size[fs->type];
+            value_len = fields_get_data_size(fs);
             break;
         }
 

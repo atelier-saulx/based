@@ -42,6 +42,26 @@ typedef uint32_t node_type_t;
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 
+struct EdgeFieldConstraint {
+    enum EdgeFieldConstraintFlag {
+        /**
+         * Bidirectional reference.
+         * TODO Is this needed if edges are always bidir.
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
+        /**
+         * Edge field array mode.
+         * By default an edge field acts like a set. This flag makes the field work like an array.
+         * FIXME
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
+    } __packed flags;
+    field_t nr_fields;
+    field_t inverse_field;
+    node_type_t dst_node_type;
+    struct SelvaFieldSchema *field_schemas __counted_by(nr_fields);
+};
+
 struct SelvaNodeSchema {
     field_t nr_fields; /*!< The total number of fields for this node type. */
     field_t nr_main_fields; /*!< Number of main fields that are always allocated. */
@@ -50,25 +70,12 @@ struct SelvaNodeSchema {
     struct SelvaFieldSchema {
         field_t field;
         enum SelvaFieldType type;
-        struct EdgeFieldConstraint {
-            enum EdgeFieldConstraintFlag {
-                /**
-                 * Bidirectional reference.
-                 * TODO Is this needed if edges are always bidir.
-                 */
-                EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
-                /**
-                 * Edge field array mode.
-                 * By default an edge field acts like a set. This flag makes the field work like an array.
-                 * FIXME
-                 */
-                EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
-            } __packed flags;
-            field_t nr_fields;
-            field_t inverse_field;
-            node_type_t dst_node_type;
-            struct SelvaFieldSchema *field_schemas __counted_by(nr_fields);
-        } edge_constraint;
+        union {
+            struct {
+                size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
+            } string;
+            struct EdgeFieldConstraint edge_constraint;
+        };
     } field_schemas[] __counted_by(nr_fields);
 };
 

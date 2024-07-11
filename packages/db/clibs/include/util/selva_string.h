@@ -42,13 +42,18 @@ enum selva_string_flags {
      */
     SELVA_STRING_MUTABLE_FIXED = 0x0008,
     /**
+     * Static string.
+     * The selva_string structure is not allocated by selva_string.
+     */
+    SELVA_STRING_STATIC = 0x0010,
+    /**
      * Compressed string.
      */
     SELVA_STRING_COMPRESS = 0x0020,
     SELVA_STRING_LEN_PARITY =  0x8000,
 };
 
-#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_COMPRESS | SELVA_STRING_LEN_PARITY))
+#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_STATIC | SELVA_STRING_COMPRESS | SELVA_STRING_LEN_PARITY))
 
 /**
  * Header before compressed string.
@@ -61,6 +66,38 @@ struct selva_string_compressed_hdr {
      */
     uint32_t uncompressed_size;
 } __packed;
+
+struct selva_string {
+    struct {
+        uint64_t len: 48;
+        enum selva_string_flags flags: 16;
+    };
+    /* Don't add __counted_by(len) here because it's not the real size. */
+    union {
+        char *p;
+        char emb[sizeof(char *)];
+    };
+};
+
+#define SELVA_STRING_STATIC_BUF_SIZE(len) \
+    ((len < sizeof(char *)) ? 0 : len - sizeof(char *) + 1)
+
+#define SELVA_STRING_STATIC(name, len) \
+    struct { \
+        struct selva_string name; \
+        char buf[SELVA_STRING_STATIC_BUF_SIZE]; \
+    } name
+
+/**
+ * Initialize a statically allocated selva_string.
+ * Note that the string buffer doesn't need to be statically allocated, just the struct.
+ * The `SELVA_STRING_STATIC` macro should be used to also allocate the buffer statically
+ * with a fixed size.
+ * If `SELVA_STRING_MUTABLE_FIXED` is given then the buffer following the string must be large
+ * enough.
+ * @param str can be NULL if a mutable flag is set.
+ */
+int selva_string_init(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags);
 
 /**
  * Create a new string.
