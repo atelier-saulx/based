@@ -52,7 +52,7 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       references: 14,
     }
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
-      if (f.type == 'reference' || f.type == 'references') {
+      if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
         const buf = Buffer.allocUnsafe(6)
 
@@ -60,6 +60,8 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
         buf.writeUInt32LE(typeNames.indexOf(f.allowedType), 2)
         return [...buf.values()]
+      } else if (f.type === 'string') {
+        return [typeMap[f.type], f.len < 50 ? f.len : 0]
       } else {
         return [typeMap[f.type]]
       }
