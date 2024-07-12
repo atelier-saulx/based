@@ -37,30 +37,30 @@ db.updateSchema({
         name: { type: 'string', maxLength: 20 },
         user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
-        // flap: { type: 'string' },
+        flap: { type: 'string' },
         // refs: { type: 'references', allowedType: 'user' },
-        // location: {
-        //   type: 'object',
-        //   properties: {
-        //     bla: { type: 'integer' },
-        //     long: { type: 'integer' },
-        //     lat: { type: 'integer' },
-        //   },
-        // },
-        // smurp: {
-        //   type: 'object',
-        //   properties: {
-        //     hello: { type: 'boolean' },
-        //     ts: { type: 'timestamp' },
-        //     pos: {
-        //       type: 'object',
-        //       properties: {
-        //         x: { type: 'integer' },
-        //         y: { type: 'integer' },
-        //       },
-        //     },
-        //   },
-        // },
+        location: {
+          type: 'object',
+          properties: {
+            bla: { type: 'integer' },
+            long: { type: 'number' },
+            lat: { type: 'number' },
+          },
+        },
+        smurp: {
+          type: 'object',
+          properties: {
+            hello: { type: 'boolean' },
+            ts: { type: 'timestamp' },
+            pos: {
+              type: 'object',
+              properties: {
+                x: { type: 'integer' },
+                y: { type: 'integer' },
+              },
+            },
+          },
+        },
       },
     },
   },
@@ -80,23 +80,23 @@ const users = []
 
 await wait(0)
 
-const amount = 5e6
+const amount = 200e3
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     name: 'blarP blablablaoiwehfoi:' + i,
     // user: users[~~(Math.random() * users.length)],
     vectorClock: ~~(Math.random() * 10000),
-    // flap: text,
+    flap: text,
     // refs: [1, 2, 3],
-    // smurp: {
-    //   ts: Date.now(),
-    // },
-    // location: {
-    //   bla: 3,
-    //   long: 1,
-    //   lat: 2,
-    // },
+    smurp: {
+      ts: Date.now(),
+    },
+    location: {
+      bla: 3,
+      long: 1,
+      lat: 2,
+    },
   })
 }
 
@@ -105,9 +105,9 @@ console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
-  .filter('vectorClock', '>', 9998)
+  .filter('vectorClock', '>', 2500)
   // fix order...
-  .include('vectorClock', 'name')
+  .include('vectorClock', 'name', 'smurp', 'flap')
   .range(0, 100000)
   .get()
 
