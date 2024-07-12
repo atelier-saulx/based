@@ -8,7 +8,10 @@
     "moduleResolution": "Node",
     "isolatedModules": true,
     "outDir": "dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": [
+      "vite/client",
+    ]
   },
   "include": ["./src", "./test/browser"],
   "exclude": ["./dist", "**/*.md"]

@@ -1,6 +1,7 @@
-import { createContext, JSX } from 'solid-js'
+import { createContext, JSX, Show } from 'solid-js'
 import type { Component, Context as SolidContext } from 'solid-js'
 import { BasedClient } from '@based/client'
+import { BasedLiveStatus } from '../BasedLiveStatus'
 
 /**
  * The props from the `BasedProvider` component.
@@ -8,6 +9,8 @@ import { BasedClient } from '@based/client'
 type BasedProviderProps = {
   /** All the connection information that identifies you in the `Based` cloud. */
   client: BasedClient
+  /** Option to display the BasedLiveStatus component either as an overlay or hide it. */
+  liveStatus?: boolean
   /** Any component that you want to inject the `BasedClient` context. */
   children: JSX.Element | JSX.Element[]
 }
@@ -31,7 +34,10 @@ const BasedProvider: Component<BasedProviderProps> = (
   props: BasedProviderProps,
 ) => (
   <BasedContext.Provider value={props.client}>
-    <div class="based-io">{props.children}</div>
+    <Show when={props.liveStatus}>
+      <BasedLiveStatus />
+    </Show>
+    {props.children}
   </BasedContext.Provider>
 )
 

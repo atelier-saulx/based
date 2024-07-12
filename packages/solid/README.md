@@ -61,7 +61,7 @@ Solid Component that inject the `BasedClient` context thought the application.
 ### Aliasing
 
 ```tsx
-<BasedProvider client={client}>
+<BasedProvider client={client} liveStatus={true}>
   {/*slot*/}
 </BasedProvider>
 ```
@@ -69,16 +69,17 @@ Solid Component that inject the `BasedClient` context thought the application.
 or (**in deprecation process**)
 
 ```tsx
-<Provider client={client}>
+<Provider client={client} liveStatus={true}>
   {/*slot*/}
 </Provider>
 ```
 
 ### Props
 
-| Parameter | Type          | Default | Description                                                              | Required |
-|-----------|---------------|---------|--------------------------------------------------------------------------|----------|
-| `client`  | `BasedClient` | **N/A** | All the connection information that identifies you in the `Based` cloud. | **true** |
+| Parameter    | Type          | Default | Description                                                                      | Required  |
+|--------------|---------------|---------|----------------------------------------------------------------------------------|-----------|
+| `client`     | `BasedClient` | **N/A** | All the connection information that identifies you in the `Based` cloud.         | **true**  |
+| `liveStatus` | `boolean`     | `false` | Option to display the BasedLiveStatus component either as an overlay or hide it. | **false** |
 
 ### Slots
 

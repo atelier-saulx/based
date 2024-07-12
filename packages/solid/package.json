@@ -1,6 +1,6 @@
 {
   "name": "@based/solidjs",
-  "version": "0.1.6",
+  "version": "0.1.12",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -31,9 +31,6 @@
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "concurrently pnpm:test:*",
     "test:client": "vitest",
-    "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\" \"dev/**/*.{js,ts,json,css,tsx,jsx}\"",
-    "lint": "concurrently npm:lint:*",
-    "lint:code": "eslint --ignore-path .gitignore --max-warnings 0 src/**/*.{js,ts,tsx,jsx}",
     "lint:types": "tsc --noEmit",
     "update-deps": "pnpm up -Li",
     "release:patch": "npm version patch",
@@ -42,35 +39,31 @@
   },
   "dependencies": {
     "@based/errors": "^1.3.0",
-    "@saulx/hash": "^3.0.0"
+    "@saulx/hash": "^3.0.0",
+    "solid-styled-components": "^0.28.5"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
-    "@based/client": "^6.0.1",
-    "@saulx/tsconfig": "^1.1.0",
-    "@types/node": "^20.12.12",
-    "@typescript-eslint/eslint-plugin": "^7.9.0",
-    "@typescript-eslint/parser": "^7.9.0",
+    "@based/client": "^6.9.0",
+    "@saulx/tsconfig": "^1.1.3",
+    "@types/node": "^20.14.10",
     "concurrently": "^8.2.2",
-    "esbuild": "^0.21.3",
+    "esbuild": "^0.23.0",
     "esbuild-plugin-solid": "^0.6.0",
-    "eslint": "^8.56.0",
-    "eslint-plugin-eslint-comments": "^3.2.0",
-    "eslint-plugin-no-only-tests": "^3.1.0",
-    "jsdom": "^24.0.0",
-    "prettier": "3.0.0",
-    "solid-js": "^1.8.17",
-    "tsup": "^8.0.2",
+    "jsdom": "^24.1.0",
+    "prettier": "3.3.2",
+    "rimraf": "^6.0.1",
+    "solid-devtools": "^0.30.1",
+    "solid-js": "^1.8.18",
+    "tsup": "^8.1.0",
     "tsup-preset-solid": "^2.2.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.11",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3",
     "vite-plugin-solid": "^2.10.2",
-    "vitest": "^1.6.0",
-    "rimraf": "^3.0.2",
-    "solid-devtools": "^0.29.3",
-    "vite-tsconfig-paths": "^4.3.2"
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^2.0.2"
   },
   "peerDependencies": {
     "@based/client": "*",
