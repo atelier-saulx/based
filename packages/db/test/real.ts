@@ -27,16 +27,23 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     const mainFields: FieldDef[] = []
     const restFields: FieldDef[] = []
 
+    const ALL_MAIN = false
     for (const f of vals) {
-      if (f.seperate) {
-        restFields.push(f)
-      } else {
+      if (ALL_MAIN) {
         mainFields.push(f)
+      } else {
+        if (f.seperate) {
+          restFields.push(f)
+        } else {
+          mainFields.push(f)
+        }
       }
     }
+    mainFields.sort((a, b) => a.selvaField - b.selvaField)
+    restFields.sort((a, b) => a.selvaField - b.selvaField)
 
-    console.log(mainFields)
-    console.log(restFields)
+    console.log('mainFields:', mainFields)
+    console.log('restFields:', restFields)
 
     // TODO Remove this once the types agree
     const typeMap = {
