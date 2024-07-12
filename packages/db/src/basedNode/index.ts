@@ -25,12 +25,8 @@ const toObjectIncludeTreePrint = (
   target: any,
   arr: Query['includeTree'],
   level: number = 0,
-  indentPrefix: string = '',
 ) => {
-  const prefix = indentPrefix + ''.padEnd(level * 2 + 2, ' ')
-  if (!level) {
-    str += indentPrefix
-  }
+  const prefix = ''.padEnd(level * 2 + 2, ' ')
   str += '{\n'
 
   for (let i = 0; i < arr.length; i++) {
@@ -57,17 +53,11 @@ const toObjectIncludeTreePrint = (
       }
       str += '\n'
     } else {
-      str += toObjectIncludeTreePrint(
-        '',
-        target[key],
-        item,
-        level + 1,
-        indentPrefix,
-      )
+      str += toObjectIncludeTreePrint('', target[key], item, level + 1)
     }
   }
 
-  str += indentPrefix + '}\n'.padStart(level * 2 + 2, ' ')
+  str += '}\n'.padStart(level * 2 + 2, ' ')
   return str
 }
 
@@ -113,16 +103,18 @@ export class BasedNode {
   }
 
   [inspect.custom](_depth, { nested }) {
+    const msg = toObjectIncludeTreePrint(
+      '',
+      this,
+      this.__q.query.includeTree,
+    ).trim()
+
     if (nested) {
-      return toObjectIncludeTreePrint(
-        '',
-        this,
-        this.__q.query.includeTree,
-        0,
-        '  ',
-      )
+      return msg
     }
-    return `${picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)} ${toObjectIncludeTreePrint('', this, this.__q.query.includeTree)}`
+
+    const pre = picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)
+    return `${pre} ${msg}`
   }
 
   toObject(print: boolean = false) {
