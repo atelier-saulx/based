@@ -38,18 +38,6 @@
               (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
               (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
-struct selva_string {
-    struct {
-        uint64_t len: 48;
-        enum selva_string_flags flags: 16;
-    };
-    /* Don't add __counted_by(len) here because it's not the real size. */
-    union {
-        char *p;
-        char emb[sizeof(char *)];
-    };
-};
-
 static struct libdeflate_compressor *compressor;
 static struct libdeflate_decompressor *decompressor;
 
@@ -216,11 +204,35 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
     return s;
 }
 
+int selva_string_init(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
+{
+    /* TODO Support compression. */
+    /* TODO Support CRC. */
+    if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_CRC | SELVA_STRING_COMPRESS)) ||
+        test_mutually_exclusive_flags(flags, (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
+        (!(flags & (SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_MUTABLE)) && !str)) {
+        memset(s, 0, sizeof(*s));
+        return SELVA_EINVAL;
+    }
+
+    flags |= SELVA_STRING_STATIC | len_parity(len);
+    if (flags & SELVA_STRING_MUTABLE_FIXED) {
+        set_string(s, str, len, flags);
+    } else if (flags & SELVA_STRING_MUTABLE) {
+        s->p = selva_malloc(len + 1);
+        set_string(s, str, len, flags);
+    } else {
+        set_string(s, str, len, flags);
+    }
+
+    return 0;
+}
+
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
     const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
-    if ((flags & INVALID_FLAGS_MASK) ||
+    if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
         test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
         return NULL; /* Invalid flags */
     }
@@ -281,7 +293,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
     size_t compressed_size;
     struct selva_string *tmp;
 
-    if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
+    if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_STATIC)) ||
         (flags & INVALID_FLAGS_MASK)) {
         return NULL; /* Invalid flags */
     }
@@ -417,16 +429,19 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
     const enum selva_string_flags flags = s->flags;
 
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
-        if (len != s->len) {
+        if (len > s->len) {
             return SELVA_EINVAL;
         }
 
-        memcpy(s->emb, str, len);
+        if (likely(len > 0)) {
+            memcpy(s->emb, str, len);
+        }
+        if (len < s->len) {
+            memset(s->emb + len, 0, s->len - len);
+        }
 
         return 0;
-    }
-
-    if (flags & SELVA_STRING_MUTABLE) {
+    } else if (flags & SELVA_STRING_MUTABLE) {
         s->len = len;
         s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
         s->p = selva_realloc(s->p, len + 1);
@@ -454,6 +469,11 @@ void selva_string_free(_selva_string_ptr_t _s)
     if (flags & SELVA_STRING_MUTABLE) {
         selva_free(s->p);
     }
+
+    if (flags & SELVA_STRING_STATIC) {
+        return;
+    }
+
     selva_free(s);
 }
 

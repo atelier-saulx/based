@@ -126,16 +126,30 @@ static int type2fs_enum(struct SelvaNodeSchema *ns, const char *, size_t, enum S
     return 1;
 }
 
-static int type2fs_string(struct SelvaNodeSchema *ns, const char *, size_t, enum SelvaFieldType, field_t field)
+static int type2fs_string(struct SelvaNodeSchema *ns, const char *buf, size_t len, enum SelvaFieldType, field_t field)
 {
     struct SelvaFieldSchema *fs = &ns->field_schemas[field];
+    uint8_t fixed_len;
+
+    if (len < 1 + sizeof(fixed_len)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&fixed_len, buf + 1, sizeof(fixed_len));
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_STRING,
+        .string = {
+            /*
+             * We only allow very short strings to be stored as fixed embedded
+             * strings. This is best to be aligned to 64-bit boundaries
+             */
+            .fixed_len = fixed_len <= 48 ? fixed_len : 0,
+        },
     };
 
-    return 1;
+    return 1 + sizeof(fixed_len);
 }
 
 static int type2fs_reference(struct SelvaNodeSchema *ns, const char *buf, size_t len, enum SelvaFieldType, field_t field)

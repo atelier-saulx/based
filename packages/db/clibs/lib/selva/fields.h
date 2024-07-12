@@ -31,7 +31,7 @@ struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
     union {
         bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
-        double number; /*!< */
+        double number; /*!< SELVA_FIELD_TYPE_NUMBER */
         int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP */
         long long integer; /*!< SELVA_FIELD_TYPE_INTEGER */
         struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
@@ -45,10 +45,8 @@ struct SelvaFieldsAny {
     };
 };
 
-/**
- * Size of each type in fields.data.
- */
-extern const size_t selva_field_data_size[17];
+[[unsequenced]]
+size_t fields_get_data_size(const struct SelvaFieldSchema *fs);
 
 /**
  * Set field value.

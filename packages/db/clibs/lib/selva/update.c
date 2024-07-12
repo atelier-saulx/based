@@ -15,8 +15,6 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
 {
     struct SelvaNodeSchema *ns = &type->ns;
 
-    /* TODO Prealloc fields data? */
-
     for (size_t i = 0; i < len;) {
         struct Update ud;
         const struct SelvaFieldSchema *fs;
@@ -70,7 +68,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             } while (0);
             break;
         default:
-            value_len = selva_field_data_size[fs->type];
+            value_len = fields_get_data_size(fs);
             break;
         }
 
