@@ -709,6 +709,10 @@ void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode * res
     memcpy(node->fields.fields_map, type->field_map_template.buf, type->field_map_template.len);
 }
 
+/**
+ * Share fields (refocount = 2).
+ * This is used for sharing the fields on an edge.
+ */
 static void share_fields(struct SelvaFields *fields)
 {
     void *data = fields->data;
@@ -720,6 +724,9 @@ static void share_fields(struct SelvaFields *fields)
     fields->data = PTAG(data, 1);
 }
 
+/**
+ * Unshare fields (refcount = 1)
+ */
 static void unshare_fields(struct SelvaFields *fields)
 {
     fields->data = PTAG(PTAG_GETP(fields->data), 0);
