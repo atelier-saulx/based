@@ -88,7 +88,7 @@ const addModify = (
           )
         }
         db.modifyBuffer.len += refLen
-      } else if (t.type === 'string') {
+      } else if (t.type === 'string' && t.seperate === true) {
         // const deflated = deflateRawSync(value)
         // const byteLen = Buffer.byteLength(value, 'utf8')
 
@@ -136,7 +136,17 @@ const addModify = (
             }
           }
         }
-        if (t.type === 'timestamp' || t.type === 'number') {
+        if (t.type === 'string') {
+          const size = db.modifyBuffer.buffer.write(
+            value,
+            t.start + mainIndex,
+            'utf8',
+          )
+          db.modifyBuffer.buffer[t.start + mainIndex + size] = 0
+          if (size + 1 > t.len) {
+            console.warn('String does not fit fixed len', value)
+          }
+        } else if (t.type === 'timestamp' || t.type === 'number') {
           db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
         } else if (t.type === 'integer' || t.type === 'reference') {
           // enum

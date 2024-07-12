@@ -44,8 +44,10 @@ const toObjectIncludeTreePrint = (
           )
 
           v = v.slice(0, 80) + picocolors.dim('...') + '" ' + chars
+          str += `"${v}`
+        } else {
+          str += `"${v}"`
         }
-        str += `"${v}`
       } else if (item.type === 'timestamp') {
         str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {

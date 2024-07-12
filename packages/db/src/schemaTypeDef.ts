@@ -124,18 +124,24 @@ export const createSchemaTypeDef = (
     target = type.fields
   }
 
-  const appendRefProps = () => {}
   for (const key in target) {
     const f = target[key]
     const p = [...path, key]
     if (f.type === 'object') {
       createSchemaTypeDef(typeName, f, result, p, false)
     } else {
-      const len = SIZE_MAP[f.type]
+      let len = SIZE_MAP[f.type]
+
+      if (f.type === 'string' && f.maxLength < 30) {
+        len = f.maxLength * 2 + 1
+      }
+
       const isSeperate = len === 0
+
       if (isSeperate) {
         result.cnt++
       }
+
       result.fields[p.join('.')] = {
         typeByte: TYPE_INDEX.get(f.type),
         __isField: true,
@@ -194,6 +200,8 @@ export const createSchemaTypeDef = (
     }
 
     /*
+      Add FIXED LEN STRING in main
+    
       [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
       // [type, type][field if 0 means main][if main fieldType]...[if 0 ends main][fieldName 1][fieldType]...
       // make buffer

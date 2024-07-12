@@ -16,7 +16,8 @@ export class Query {
   includeFields: string[]
   includeTree: IncludeTreeArr
   mainLen: number = 0
-  mainIncludes: Map<number, [number, number]>
+  mainIncludesSize: number
+  mainIncludes: { [start: string]: [number, FieldDef] }
   totalConditionSize: number = 0
   constructor(db: BasedDb, target: string, previous?: Query) {
     this.db = db

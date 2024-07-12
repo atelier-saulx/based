@@ -32,33 +32,35 @@ db.updateSchema({
       },
     },
     simple: {
+      // min max on string
       fields: {
+        name: { type: 'string', maxLength: 20 },
         user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
-        flap: { type: 'string' },
-        refs: { type: 'references', allowedType: 'user' },
-        location: {
-          type: 'object',
-          properties: {
-            bla: { type: 'integer' },
-            long: { type: 'integer' },
-            lat: { type: 'integer' },
-          },
-        },
-        smurp: {
-          type: 'object',
-          properties: {
-            hello: { type: 'boolean' },
-            ts: { type: 'timestamp' },
-            pos: {
-              type: 'object',
-              properties: {
-                x: { type: 'integer' },
-                y: { type: 'integer' },
-              },
-            },
-          },
-        },
+        // flap: { type: 'string' },
+        // refs: { type: 'references', allowedType: 'user' },
+        // location: {
+        //   type: 'object',
+        //   properties: {
+        //     bla: { type: 'integer' },
+        //     long: { type: 'integer' },
+        //     lat: { type: 'integer' },
+        //   },
+        // },
+        // smurp: {
+        //   type: 'object',
+        //   properties: {
+        //     hello: { type: 'boolean' },
+        //     ts: { type: 'timestamp' },
+        //     pos: {
+        //       type: 'object',
+        //       properties: {
+        //         x: { type: 'integer' },
+        //         y: { type: 'integer' },
+        //       },
+        //     },
+        //   },
+        // },
       },
     },
   },
@@ -66,46 +68,50 @@ db.updateSchema({
 
 const users = []
 
-for (let i = 0; i < 1000; i++) {
-  users.push(
-    db.create('user', {
-      age: i,
-      name: 'Mr ' + i,
-      email: i + '@once.net',
-    }),
-  )
-}
+// for (let i = 0; i < 1000; i++) {
+//   users.push(
+//     db.create('user', {
+//       age: i,
+//       name: 'Mr ' + i,
+//       email: i + '@once.net',
+//     }),
+//   )
+// }
 
 await wait(0)
 
-const amount = 70e3
-for (let i = 0; i < amount - 1; i++) {
+const amount = 5e6
+const d = Date.now()
+for (let i = 0; i < amount; i++) {
   db.create('simple', {
-    user: users[~~(Math.random() * users.length)],
+    name: 'blarP blablablaoiwehfoi:' + i,
+    // user: users[~~(Math.random() * users.length)],
     vectorClock: 6 + i,
-    flap: text,
-    refs: [1, 2, 3],
-    smurp: {
-      ts: Date.now(),
-    },
-    location: {
-      bla: 3,
-      long: 1,
-      lat: 2,
-    },
+    // flap: text,
+    // refs: [1, 2, 3],
+    // smurp: {
+    //   ts: Date.now(),
+    // },
+    // location: {
+    //   bla: 3,
+    //   long: 1,
+    //   lat: 2,
+    // },
   })
 }
 
 await wait(0)
+console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
   .filter('vectorClock', '>', 1)
-  .include('vectorClock', 'location.bla', 'smurp')
+  // fix order...
+  .include('vectorClock', 'name')
   .range(0, 10)
   .get()
 
-const result2 = db.query('user').range(0, 10).get()
+// const result2 = db.query('user').range(0, 10).get()
 
 console.log(result)
 
@@ -115,6 +121,7 @@ console.log(result)
 
 for (const item of result.data) {
   console.info(item)
+  break
 }
 
 // pin // allow query to have an async flag - can add automaticly in building

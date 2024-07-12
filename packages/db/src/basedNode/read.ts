@@ -25,7 +25,7 @@ export const readSeperateFieldFromBuffer = (
         let fIndex: number
 
         if (queryResponse.query.mainIncludes) {
-          const t = queryResponse.query.mainIncludes?.get(requestedField.start)
+          const t = queryResponse.query.mainIncludes?.[requestedField.start]
           if (!t) {
             return undefined
           }
@@ -57,6 +57,14 @@ export const readSeperateFieldFromBuffer = (
         }
         if (requestedField.type === 'timestamp') {
           return buffer.readFloatLE(i + fIndex)
+        }
+        if (requestedField.type === 'string') {
+          const str = buffer.toString(
+            'utf-8',
+            i + fIndex,
+            i + fIndex + requestedField.len,
+          )
+          return str
         }
       }
       i += queryResponse.query.mainLen

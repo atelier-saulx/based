@@ -80,12 +80,14 @@ const parseInclude = (
     arr.push(field.field)
   } else {
     if (!includesMain) {
-      query.mainIncludes = new Map()
+      query.mainIncludes = {}
+      query.mainIncludesSize = 0
       includesMain = true
       arr.push(0)
     }
-    query.mainIncludes.set(field.start, [query.mainLen, field.len])
+    query.mainIncludesSize++
     query.mainLen += field.len
+    query.mainIncludes[field.start] = [0, field]
     return true
   }
 }
@@ -113,18 +115,30 @@ export const get = (query: Query): BasedQueryResponse => {
     // 16 start and end
     if (includesMain) {
       if (query.mainLen === query.type.mainLen) {
+        let m = 0
+        for (const key in query.mainIncludes) {
+          const v = query.mainIncludes[key]
+          const len = v[1].len
+          v[0] = m
+          m += len
+        }
         mainBuffer = Buffer.from([0])
       } else {
-        const size = query.mainIncludes.size
+        const size = query.mainIncludesSize
         mainBuffer = Buffer.allocUnsafe(size * 4 + 5)
         mainBuffer[0] = 1
         mainBuffer.writeUint32LE(query.mainLen, 1)
         let i = 5
-        query.mainIncludes.forEach((v, k) => {
-          mainBuffer.writeUint16LE(k, i)
-          mainBuffer.writeUint16LE(v[1], i + 2)
+        let m = 0
+        for (const key in query.mainIncludes) {
+          const v = query.mainIncludes[key]
+          mainBuffer.writeUint16LE(v[1].start, i)
+          const len = v[1].len
+          v[0] = m
+          mainBuffer.writeUint16LE(len, i + 2)
           i += 4
-        })
+          m += len
+        }
       }
     } else {
       mainBuffer = Buffer.from([0])
