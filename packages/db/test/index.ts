@@ -86,7 +86,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     name: 'blarP blablablaoiwehfoi:' + i,
     // user: users[~~(Math.random() * users.length)],
-    vectorClock: 6 + i,
+    vectorClock: ~~(Math.random() * 10000),
     // flap: text,
     // refs: [1, 2, 3],
     // smurp: {
@@ -105,10 +105,10 @@ console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
-  .filter('vectorClock', '>', 1)
+  .filter('vectorClock', '>', 9998)
   // fix order...
   .include('vectorClock', 'name')
-  .range(0, 10)
+  .range(0, 100000)
   .get()
 
 // const result2 = db.query('user').range(0, 10).get()
