@@ -114,7 +114,7 @@ export class BasedNode {
     }
 
     const pre = picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)
-    return `${pre} ${msg}`
+    return `${pre} ${msg}\n`
   }
 
   toObject(print: boolean = false) {
