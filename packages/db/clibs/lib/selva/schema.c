@@ -142,8 +142,8 @@ static int type2fs_string(struct SelvaNodeSchema *ns, const char *buf, size_t le
         .type = SELVA_FIELD_TYPE_STRING,
         .string = {
             /*
-             * We only allow very short strings here.
-             * This is best to be aligned to 64-bit boundaries
+             * We only allow very short strings to be stored as fixed embedded
+             * strings. This is best to be aligned to 64-bit boundaries
              */
             .fixed_len = fixed_len <= 48 ? fixed_len : 0,
         },
