@@ -31,6 +31,7 @@ const TYPE_INDEX: Map<BasedSchemaFieldType, number> = new Map([
   ['string', 9],
   ['references', 10],
 ])
+
 const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map([
   [1, 'timestamp'],
   [2, 'created'],
@@ -156,7 +157,6 @@ export const createSchemaTypeDef = (
 
   if (top) {
     const vals = Object.values(result.fields)
-
     // PREFIX [2] | 0 = main ,
     let len = 2
 

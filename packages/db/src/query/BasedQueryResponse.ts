@@ -75,6 +75,6 @@ export class BasedQueryResponse {
     // @ts-ignore
     str += '\n  data: ' + inspect(this.data, { nested: true })
 
-    return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}}`
+    return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}}\n`
   }
 }

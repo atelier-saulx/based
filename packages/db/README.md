@@ -139,9 +139,10 @@ const results = db
     }
   },
   // bla
-§
+
   types: {
-    root: {
+      // TODO: get better name for "root"
+    todo: {
       properties: {
         topArticle: {
           type: 'article',
@@ -167,14 +168,29 @@ const results = db
     },
 
     article: {
-      writer: { type: 'user' },
-      fields: {
-        votes: { type: 'vote', multi: true, edge: { type: 'string' }, field: 'article' }
+      properties: {
+        writer: { type: 'user' },
+        reviews: { unique: true, type: 'user', edge: { name: { type: 'string' }, msg: { type: 'string' }, rating: { type: 'number'} }}
+        votes: { entity: 'vote', list: true, edge: { type: 'string' }, field: 'article' }
       }
     }
 
+
+  // entity and type
+
     user: {
-      fields: {
+      properties: {
+        name: { type: 'string', max: 100, min: 5, title: 'Name' },
+        birthDay: { type: 'timestamp', format: 'human', title: 'Birth day', description: 'The birthday of a person' },
+        email: { type: 'string', format: 'email' },
+        address: { type: 'string', format: 'address'},
+        postcalCode: { type: 'string', format: 'postal-code' },
+        creditcard: { type: 'number', format: 'credit-card' },
+        status: { enum: ['published', 'archive', 'draft', { value: 'needs-review', color: 'green', title: 'Needs Review', description: 'This user needs review' } ]  },
+        articles: { field: 'rated', type: 'article', list: true, edge: { rating: { type: 'number', format: 'rating', min: 0, max: 5, steps: 0.1  } }  }
+
+
+
       }
     }
 
@@ -420,3 +436,40 @@ db.query('te896706b5').filter('members[@roles:admin]', 'has', user.id).boolean()
 ```
 
 // .include('section.title', 'articleType.title')
+
+```js
+
+
+  {
+    definitions: {
+      name: {
+        type: 'string',
+        max: 10,
+        min: 3
+      },
+      user: {
+        type: 'entity',
+        properties: {
+          name: { type: 'name' }
+        }
+      },
+      rating: {
+        type: 'number',
+        max: 5,
+        min: 1,
+        step: 0.1
+      },
+      article: {
+        type: 'entity',
+        properties: {
+          user: { type: 'user' },
+          hello: { elements: { type: 'user', edge: {
+            rating: { type: 'rating' }
+          } }, unique: true }
+        }
+      }
+    }
+  }
+
+
+```

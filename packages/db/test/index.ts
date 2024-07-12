@@ -105,7 +105,7 @@ const result = db
   .range(0, 10)
   .get()
 
-const result2 = db.query('user').range(0, 1e5).get()
+const result2 = db.query('user').range(0, 10).get()
 
 console.log(result)
 
