@@ -28,7 +28,7 @@ const timeCalc = (time: number) => {
   if (time > 1e3) {
     return `${decimals(time / 1e3)} s`
   }
-  return `${time} ms`
+  return `${decimals(time)} ms`
 }
 
 const time = (time: number) => {
