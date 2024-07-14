@@ -34,7 +34,13 @@ db.updateSchema({
     simple: {
       // min max on string
       fields: {
-        name: { type: 'string', maxLength: 20 },
+        // add bytelenght as option
+        // also add a bytes field
+        // @ts-ignore
+        countryCode: { type: 'string', maxBytes: 2 },
+        // @ts-ignore
+        countryCode: { type: 'string', maxBytes: 2 },
+        name: { type: 'string', maxLength: 10 },
         user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
@@ -80,14 +86,15 @@ const users = []
 
 await wait(0)
 
-const amount = 200e3
+const amount = 70e3
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
-    name: 'blarP blablablaoiwehfoi:' + i,
+    name: 'Jim de Beer',
     // user: users[~~(Math.random() * users.length)],
-    vectorClock: ~~(Math.random() * 10000),
+    vectorClock: 3000, // ~~(Math.random() * 10000),
     flap: text,
+    countryCode: 'en',
     // refs: [1, 2, 3],
     smurp: {
       ts: Date.now(),
@@ -107,7 +114,7 @@ const result = db
   .query('simple')
   .filter('vectorClock', '>', 2500)
   // fix order...
-  .include('vectorClock', 'name', 'smurp', 'flap')
+  .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap')
   .range(0, 100000)
   .get()
 

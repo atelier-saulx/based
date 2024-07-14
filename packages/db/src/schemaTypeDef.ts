@@ -132,8 +132,14 @@ export const createSchemaTypeDef = (
     } else {
       let len = SIZE_MAP[f.type]
 
-      if (f.type === 'string' && f.maxLength < 30) {
-        len = f.maxLength * 2 + 1
+      if (f.type === 'string') {
+        // @ts-ignore
+        if (f.maxBytes < 60) {
+          // @ts-ignore
+          len = f.maxBytes + 1
+        } else if (f.maxLength < 30) {
+          len = f.maxLength * 2 + 1
+        }
       }
 
       const isSeperate = len === 0
