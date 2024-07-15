@@ -18,7 +18,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     q[j + 3 ..][0..2],
                     .little,
                 );
-
                 const hit = std.mem.eql(u8, q[j + 5 .. j + 5 + filter_size], v[index .. index + filter_size]);
                 if (!hit) {
                     return false;
@@ -126,6 +125,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     },
                 }
             },
+
             // seperate field has check
             7 => {
                 const filter_size: u16 = std.mem.readInt(

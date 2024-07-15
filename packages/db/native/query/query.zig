@@ -19,6 +19,9 @@ fn getQueryInternal(
     const args = try napi.getArgs(7, env, info);
 
     const conditions = try napi.getBuffer("conditions", env, args[0]);
+    // main conditions
+    // or per field
+
     const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
     const last_id = try napi.getInt32("last_id", env, args[2]);
     const offset = try napi.getInt32("offset", env, args[3]);
@@ -64,7 +67,15 @@ fn getQueryInternal(
         }
 
         var fieldIndex: usize = 0;
+
+        // optmize checking in main field
+        // 2 different conditions buffers
+        // if mainInclude
         while (fieldIndex < conditions.len) {
+
+            // get field
+            // then next
+
             const querySize: u16 = std.mem.readInt(
                 u16,
                 conditions[fieldIndex + 1 ..][0..2],
@@ -73,6 +84,7 @@ fn getQueryInternal(
             const field = conditions[fieldIndex];
             const shardKey = db.getShardKey(field, @bitCast(currentShard));
             var shard = shards.get(shardKey);
+
             if (shard == null) {
                 shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
                 if (shard != null) {
@@ -91,6 +103,8 @@ fn getQueryInternal(
                 errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
                     continue :checkItem;
                 };
+
+                // std.debug.print("GET FIELD (and run conds) i:{d} s:{d}, f:{d}\n", .{ i, shardKey, field });
 
                 // here put ASM
                 if (runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
@@ -123,6 +137,8 @@ fn getQueryInternal(
                     try shards.put(shardKey, shard.?);
                 }
             }
+
+            // lots of double getting here...
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 

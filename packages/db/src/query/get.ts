@@ -174,6 +174,9 @@ export const get = (query: Query): BasedQueryResponse => {
 
   let conditions
   if (query.conditions) {
+    // flap
+
+    // add FIELD SWAP
     conditions = Buffer.allocUnsafe(query.totalConditionSize)
     let lastWritten = 0
     query.conditions.forEach((v, k) => {

@@ -34,6 +34,8 @@ db.updateSchema({
     simple: {
       // min max on string
       fields: {
+        // countryCode: { type: 'string' },
+
         // add bytelenght as option
         // also add a bytes field
         // @ts-ignore
@@ -93,8 +95,9 @@ for (let i = 0; i < amount; i++) {
     // user: users[~~(Math.random() * users.length)],
     vectorClock: ~~(Math.random() * 10000),
     // flap: text,
-    // flap: 'x',
+    flap: 'en',
     countryCode: 'en',
+    // countryCode: Math.random() > 0.5 ? 'en' : 'de',
     // refs: [1, 2, 3],
     smurp: {
       ts: Date.now(),
@@ -112,9 +115,14 @@ console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
-  .filter('vectorClock', '>', 9500)
-  // add in
+
+  // add field selection
+
+  .filter('vectorClock', '>', 9990)
   .filter('countryCode', '=', 'en')
+
+  .filter('flap', '=', 'en')
+
   // fix order...
   .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap') // 'flap'
   .range(0, 1000)
