@@ -9,7 +9,7 @@ export const filter = (
   value: any,
 ): Query => {
   if (query.id) {
-    // bla
+    // do things
   } else {
     const field = <FieldDef>query.type.tree[fieldStr]
     let fieldIndexChar = field.field
@@ -46,7 +46,18 @@ export const filter = (
         }
       }
     } else {
-      if (field.type === 'integer') {
+      if (field.type === 'string') {
+        const op = operationToByte(operator)
+        if (op === 1) {
+          const matches = Buffer.from(value)
+          buf = Buffer.allocUnsafe(3 + matches.byteLength)
+          buf[0] = 1
+          buf.writeInt16LE(matches.byteLength, 1)
+          buf.set(matches, 3)
+        } else if (op === 7) {
+          // TODO MAKE HAS
+        }
+      } else if (field.type === 'integer') {
         const op = operationToByte(operator)
         if (op === 1 || op === 3 || op === 4) {
           buf = Buffer.alloc(9)
