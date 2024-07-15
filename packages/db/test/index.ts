@@ -35,7 +35,7 @@ db.updateSchema({
       // min max on string
       fields: {
         // countryCode: { type: 'string' },
-
+        derp: { type: 'integer' },
         // add bytelenght as option
         // also add a bytes field
         // @ts-ignore
@@ -87,6 +87,7 @@ const users = []
 
 await wait(0)
 
+//
 const amount = 10e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
@@ -94,6 +95,7 @@ for (let i = 0; i < amount; i++) {
     name: 'Jim de Beer',
     // user: users[~~(Math.random() * users.length)],
     vectorClock: ~~(Math.random() * 10000),
+    derp: ~~(Math.random() * 10000),
     // flap: text,
     flap: 'en',
     countryCode: 'en',
@@ -126,6 +128,9 @@ const result = db
   // fix order...
   .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap') // 'flap'
   .range(0, 1000)
+
+  // sort()
+
   .get()
 
 // const result2 = db.query('user').range(0, 10).get()
