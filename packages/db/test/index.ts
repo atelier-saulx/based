@@ -37,7 +37,6 @@ db.updateSchema({
         // add bytelenght as option
         // also add a bytes field
         // @ts-ignore
-        countryCode: { type: 'string', maxBytes: 2 },
         // @ts-ignore
         countryCode: { type: 'string', maxBytes: 2 },
         name: { type: 'string', maxLength: 10 },
@@ -92,7 +91,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     name: 'Jim de Beer',
     // user: users[~~(Math.random() * users.length)],
-    vectorClock: 3000, // ~~(Math.random() * 10000),
+    vectorClock: ~~(Math.random() * 10000),
     flap: text,
     countryCode: 'en',
     // refs: [1, 2, 3],
@@ -112,7 +111,10 @@ console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
-  .filter('vectorClock', '>', 2500)
+  .filter('vectorClock', '>', 9500)
+  // add in
+  .filter('countryCode', '=', 'en')
+
   // fix order...
   .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap')
   .range(0, 100000)
