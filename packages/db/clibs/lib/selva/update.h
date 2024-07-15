@@ -13,7 +13,7 @@ struct Update {
 } __packed;
 
 struct UpdateBatch {
-    uint32_t len; /*!< Length off this struct. */
+    uint32_t len; /*!< Length of this struct. */
     node_id_t node_id;
     struct Update ud[];
 } __packed;
