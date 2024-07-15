@@ -45,7 +45,11 @@ struct SelvaFieldsAny {
     };
 };
 
+#if __has_c_attribute(unsequenced)
 [[unsequenced]]
+#else
+__attribute__((const))
+#endif
 size_t fields_get_data_size(const struct SelvaFieldSchema *fs);
 
 /**
