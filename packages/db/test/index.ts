@@ -87,7 +87,7 @@ const users = []
 
 await wait(0)
 
-const amount = 5e6
+const amount = 10e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -118,10 +118,10 @@ const result = db
 
   // add field selection
 
-  .filter('vectorClock', '>', 9990)
+  .filter('vectorClock', '>', 9998)
   .filter('countryCode', '=', 'en')
-
   .filter('flap', '=', 'en')
+  .filter('vectorClock', '=', 9999)
 
   // fix order...
   .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap') // 'flap'
@@ -140,6 +140,8 @@ for (const item of result.data) {
   console.info(item)
   break
 }
+
+// ExecTime: 452.56 ms 5M list
 
 // pin // allow query to have an async flag - can add automaticly in building
 
