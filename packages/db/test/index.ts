@@ -85,14 +85,15 @@ const users = []
 
 await wait(0)
 
-const amount = 70e3
+const amount = 5e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     name: 'Jim de Beer',
     // user: users[~~(Math.random() * users.length)],
     vectorClock: ~~(Math.random() * 10000),
-    flap: text,
+    // flap: text,
+    // flap: 'x',
     countryCode: 'en',
     // refs: [1, 2, 3],
     smurp: {
@@ -114,10 +115,9 @@ const result = db
   .filter('vectorClock', '>', 9500)
   // add in
   .filter('countryCode', '=', 'en')
-
   // fix order...
-  .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap')
-  .range(0, 100000)
+  .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap') // 'flap'
+  .range(0, 1000)
   .get()
 
 // const result2 = db.query('user').range(0, 10).get()
