@@ -2,6 +2,8 @@
 import { BasedDb } from './index.js'
 // import { addRead } from './operations.js'
 
+// TODO REMOVe
+
 const readFromBuffers = (bufs: any, tree: any): any => {
   const obj = {}
   const mainB = bufs.get(0)

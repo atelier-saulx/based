@@ -135,6 +135,12 @@ const result = db
 
 // const result2 = db.query('user').range(0, 10).get()
 
+// INDEX MAKING - reigsiter to index / unregister to index
+// + 1 / - 1
+
+// maybe start with subscription caches before refs
+// make it work with UPDATING the query result
+
 console.log(result)
 
 // for (const item of result.data) {

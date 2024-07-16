@@ -85,6 +85,11 @@ const parseInclude = (
       includesMain = true
       arr.push(0)
     }
+
+    // if REF e.g. user.string need to add more stuff
+    // combine all tings for user in 1 include msg
+    // [type 10].[id]0230 4 // selective main as well ofc     // end ref 255
+
     query.mainIncludesSize++
     query.mainLen += field.len
     query.mainIncludes[field.start] = [0, field]
@@ -180,6 +185,7 @@ export const get = (query: Query): BasedQueryResponse => {
     conditions = Buffer.allocUnsafe(query.totalConditionSize)
     let lastWritten = 0
     query.conditions.forEach((v, k) => {
+      //
       conditions[lastWritten] = k
       let sizeIndex = lastWritten + 1
       lastWritten += 3
