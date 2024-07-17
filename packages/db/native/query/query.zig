@@ -4,6 +4,7 @@ const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db.zig");
 const runCondition = @import("./conditions.zig").runConditions;
+const fields = @import("./getFields.zig");
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(env, info) catch |err| {
@@ -16,7 +17,7 @@ fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
-    const args = try napi.getArgs(7, env, info);
+    const args = try napi.getArgs(8, env, info);
 
     const conditions = try napi.getBuffer("conditions", env, args[0]);
     // main conditions
@@ -28,6 +29,7 @@ fn getQueryInternal(
     const limit = try napi.getInt32("limit", env, args[4]);
     const include = try napi.getBuffer("include", env, args[5]);
     const mainIncludes = try napi.getBuffer("mainIncludes", env, args[6]);
+    const includeSingleRefs = try napi.getBuffer("includeSingleRefs", env, args[7]);
 
     const selectiveMain = mainIncludes[0] != 0;
     var mainLen: usize = undefined;
@@ -35,10 +37,13 @@ fn getQueryInternal(
     if (selectiveMain) {
         mainLen = std.mem.readInt(u32, mainIncludes[1..5], .little);
     }
-    // index len
 
-    // std.debug.print("\nhello mainIncludes -> {any}", .{mainIncludes});
-    // std.debug.print("  INCLUDES -> {any} SIZE[{d}]\n", .{ include, mainLen });
+    const includeSingleRefsBool = includeSingleRefs[0] != 0;
+    var includeRefsLen: usize = undefined;
+
+    if (includeSingleRefsBool) {
+        includeRefsLen = std.mem.readInt(u32, includeSingleRefs[1..5], .little);
+    }
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -52,9 +57,9 @@ fn getQueryInternal(
     }
     const txn = try db.createTransaction(true);
 
-    const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val };
+    // isRef
 
-    var results = std.ArrayList(Result).init(allocator);
+    var results = std.ArrayList(fields.Result).init(allocator);
 
     var i: u32 = offset + 1;
     var currentShard: u16 = 0;
@@ -119,53 +124,11 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
-        // ---------------- this needs a lot of optmization... --------------------------
-        // like copying directly into the node buffer...
+        // go go go
+
+        total_size += try fields.getFields(&results, &i, include, type_prefix, selectiveMain, includeSingleRefsBool, mainLen, currentShard, &shards, txn);
+
         total_results += 1;
-        // make this into a fn
-        var includeIterator: u8 = 0;
-        // collect all in s
-        includeField: while (includeIterator < include.len) {
-            const field: u8 = include[includeIterator];
-            includeIterator += 1;
-
-            const shardKey = db.getShardKey(field, @bitCast(currentShard));
-            var shard = shards.get(shardKey);
-            if (shard == null) {
-                shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
-                if (shard != null) {
-                    try shards.put(shardKey, shard.?);
-                }
-            }
-
-            // lots of double getting here...
-            var k: c.MDB_val = .{ .mv_size = 4, .mv_data = &i };
-            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                continue :includeField;
-            };
-
-            if (includeIterator == 1) {
-                total_size += 1 + 4;
-                const s: Result = .{ .id = i, .field = field, .val = v };
-                try results.append(s);
-            } else {
-                const s: Result = .{ .id = null, .field = field, .val = v };
-                try results.append(s);
-            }
-
-            if (field != 0) {
-                total_size += (v.mv_size + 1 + 2);
-            } else {
-                if (selectiveMain) {
-                    total_size += (mainLen + 1);
-                } else {
-                    total_size += (v.mv_size + 1);
-                }
-            }
-        }
-        // --------------------------------------------------------------------------------
     }
     total_size += 4;
 
@@ -197,6 +160,10 @@ fn getQueryInternal(
         }
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
+
+        // if key.isRef == true
+        // do ref shit
+
         if (key.field == 0) {
             if (selectiveMain) {
                 var selectiveMainPos: usize = 5;

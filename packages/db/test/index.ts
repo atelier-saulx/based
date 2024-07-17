@@ -27,7 +27,7 @@ db.updateSchema({
     user: {
       fields: {
         name: { type: 'string' },
-        email: { type: 'string' },
+        email: { type: 'string', maxLength: 25 },
         age: { type: 'integer' },
       },
     },
@@ -75,15 +75,15 @@ db.updateSchema({
 
 const users = []
 
-// for (let i = 0; i < 1000; i++) {
-//   users.push(
-//     db.create('user', {
-//       age: i,
-//       name: 'Mr ' + i,
-//       email: i + '@once.net',
-//     }),
-//   )
-// }
+for (let i = 0; i < 1000; i++) {
+  users.push(
+    db.create('user', {
+      age: i,
+      name: 'Mr ' + i,
+      email: i + '@once.net',
+    }),
+  )
+}
 
 await wait(0)
 
@@ -93,7 +93,7 @@ const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     name: 'Jim de Beer',
-    // user: users[~~(Math.random() * users.length)],
+    user: users[~~(Math.random() * users.length)],
     vectorClock: ~~(Math.random() * 10000),
     derp: ~~(Math.random() * 10000),
     // flap: text,
@@ -126,7 +126,16 @@ const result = db
   .filter('vectorClock', '=', 9999)
 
   // fix order...
-  .include('countryCode', 'vectorClock', 'name', 'smurp', 'flap') // 'flap'
+  .include(
+    'countryCode',
+    'vectorClock',
+    'name',
+    'smurp',
+    'flap',
+    // 'user.age',
+    // 'user.email',
+    // 'user.name',
+  )
   .range(0, 1000)
 
   // sort()
