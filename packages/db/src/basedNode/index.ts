@@ -93,18 +93,34 @@ export class BasedNode {
           createObjectProp(schema, ctx, path[0])
         }
       } else {
-        Object.defineProperty(ctx, field, {
-          enumerable: true,
-          set: () => undefined,
-          get() {
-            return readSeperateFieldFromBuffer(fieldDef, ctx)
-          },
-        })
+        if (fieldDef.type === 'reference') {
+          Object.defineProperty(ctx, field, {
+            enumerable: true,
+            set: () => undefined,
+            get() {
+              return 'flap REF'
+              // return readSeperateFieldFromBuffer(fieldDef., ctx)
+            },
+          })
+        } else {
+          Object.defineProperty(ctx, field, {
+            enumerable: true,
+            set: () => undefined,
+            get() {
+              return readSeperateFieldFromBuffer(fieldDef, ctx)
+            },
+          })
+        }
       }
     }
   }
 
   [inspect.custom](_depth, { nested }) {
+    if (!this.__q) {
+      const pre = picocolors.bold(`BasedNode[Detached]`)
+      return `${pre}\n`
+    }
+
     const msg = toObjectIncludeTreePrint(
       '',
       this,

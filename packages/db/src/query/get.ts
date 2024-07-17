@@ -7,6 +7,8 @@ const idFieldDef = {
   type: 'id',
 }
 
+const defEmptyBuffer = Buffer.from(new Uint8Array([0]))
+
 const getAllFieldFromObject = (
   tree: SchemaFieldTree | FieldDef,
   arr: string[] = [],
@@ -35,12 +37,19 @@ const convertToIncludeTree = (tree: any) => {
   return arr
 }
 
-const addPathToTree = (field: FieldDef, includeTree: any) => {
-  const len = field.path.length - 1
+const addPathToIntermediateTree = (
+  field: any,
+  includeTree: any,
+  path: string[],
+): boolean => {
+  const len = path.length - 1
   let t = includeTree
   for (let i = 0; i <= len; i++) {
-    const key = field.path[i]
+    const key = path[i]
     if (i === len) {
+      if (t[key]) {
+        return false
+      }
       t[key] = field
     } else {
       if (!(key in t)) {
@@ -49,6 +58,7 @@ const addPathToTree = (field: FieldDef, includeTree: any) => {
       t = t[key]
     }
   }
+  return true
 }
 
 const parseInclude = (
@@ -63,18 +73,75 @@ const parseInclude = (
     const path = f.split('.')
     const tree = query.type.tree[path[0]]
     if (tree) {
-      const endFields = getAllFieldFromObject(tree)
-      for (const field of endFields) {
-        if (parseInclude(query, field, arr, includesMain, includeTree)) {
-          includesMain = true
+      if (tree.type === 'reference') {
+        // go go go
+        let r
+        const refField = tree as FieldDef
+        const refDef2 = {
+          // @ts-ignore (ignore typescript error, TODO: later)
+          main: [],
+          mainIncludes: {},
+          mainLen: 0,
+          fields: [],
+          schema: query.db.schemaTypesParsed[refField.allowedType],
+          ref: refField,
+          __isField: true,
         }
+
+        if (!query.refIncludes) {
+          query.refIncludes = []
+        }
+        query.refIncludes.push(refDef2)
+
+        if (addPathToIntermediateTree(refDef2, includeTree, refField.path)) {
+          // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
+          if (!includesMain) {
+            query.mainIncludes = {}
+            query.mainIncludesSize = 0
+            includesMain = true
+            arr.push(0)
+          }
+          query.mainIncludesSize++
+          query.mainLen += refField.len
+          query.mainIncludes[refField.start] = [0, refField]
+          r = true
+        }
+
+        const fDef = refField.allowedType
+        const refSchema = query.db.schemaTypesParsed[fDef]
+        const fieldP = path[1]
+        const f = includeTree[refField.path[0]]
+
+        // add as ref field
+
+        const x = refSchema.fields[fieldP]
+
+        if (x) {
+          if (x.seperate) {
+            f.fields.push(x)
+          } else {
+            f.mainLen += x.len
+            f.mainIncludes[x.start] = [0, x]
+            f.main.push(x)
+          }
+        }
+
+        return r // result
+      } else {
+        // not returned
+        const endFields = getAllFieldFromObject(tree)
+        for (const field of endFields) {
+          if (parseInclude(query, field, arr, includesMain, includeTree)) {
+            includesMain = true
+          }
+        }
+        return includesMain
       }
-      return includesMain
     }
-    return
+    return // undefined
   }
 
-  addPathToTree(field, includeTree)
+  addPathToIntermediateTree(field, includeTree, field.path)
 
   if (field.seperate) {
     arr.push(field.field)
@@ -83,8 +150,11 @@ const parseInclude = (
       query.mainIncludes = {}
       query.mainIncludesSize = 0
       includesMain = true
+      // do different?
       arr.push(0)
     }
+
+    // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
 
     // if REF e.g. user.string need to add more stuff
     // combine all tings for user in 1 include msg
@@ -95,6 +165,7 @@ const parseInclude = (
     query.mainIncludesSize++
     query.mainLen += field.len
     query.mainIncludes[field.start] = [0, field]
+    // combine all tings for user in 1 include msg
     return true
   }
 }
@@ -119,7 +190,8 @@ export const get = (query: Query): BasedQueryResponse => {
 
     len += arr.length
     includeBuffer = Buffer.from(arr)
-    // 16 start and end
+    // singleRefBuffer
+
     if (includesMain) {
       if (query.mainLen === query.type.mainLen) {
         let m = 0
@@ -148,14 +220,14 @@ export const get = (query: Query): BasedQueryResponse => {
         }
       }
     } else {
-      mainBuffer = Buffer.from([0])
+      mainBuffer = defEmptyBuffer //Buffer.from([0])
     }
   } else {
     len = 1
     const fields = query.type.fields
     for (const f in fields) {
       const field = fields[f]
-      addPathToTree(field, includeTreeIntermediate)
+      addPathToIntermediateTree(field, includeTreeIntermediate, field.path)
       if (field.seperate) {
         len++
       }
@@ -170,24 +242,25 @@ export const get = (query: Query): BasedQueryResponse => {
         includeBuffer[i] = field.field
       }
     }
-    mainBuffer = Buffer.from([0])
+    mainBuffer = defEmptyBuffer
     query.mainLen = query.type.mainLen
   }
 
   query.includeTree = convertToIncludeTree(includeTreeIntermediate)
+
+  // console.dir(
+  //   { includeTreeIntermediate, includeTree: query.includeTree },
+  //   { depth: null },
+  // )
 
   const start = query.offset ?? 0
   const end = query.limit ?? 1e3
 
   let conditions
   if (query.conditions) {
-    // flap
-
-    // add FIELD SWAP
     conditions = Buffer.allocUnsafe(query.totalConditionSize)
     let lastWritten = 0
     query.conditions.forEach((v, k) => {
-      //
       conditions[lastWritten] = k
       let sizeIndex = lastWritten + 1
       lastWritten += 3
@@ -203,6 +276,61 @@ export const get = (query: Query): BasedQueryResponse => {
     conditions = Buffer.alloc(0)
   }
 
+  let refBuffer: Buffer
+  if (query.refIncludes) {
+    const arr = []
+    // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
+
+    for (const ref of query.refIncludes) {
+      // only do main to start...
+      console.info({ ref })
+      let refsingleBuffer: Buffer
+      let size = 6
+      if (ref.mainLen) {
+        size += 2
+        if (ref.mainLen !== ref.schema.mainLen) {
+          size += 1
+          size += ref.main.length * 4
+
+          refsingleBuffer = Buffer.allocUnsafe(size)
+
+          refsingleBuffer.writeUint16LE(size - 6)
+
+          console.log('PREFIX', ref.schema.prefix)
+
+          refsingleBuffer[2] = ref.schema.prefix[0]
+          refsingleBuffer[3] = ref.schema.prefix[1]
+
+          refsingleBuffer.writeUint16LE(ref.ref.start, 4)
+
+          refsingleBuffer[6] = 0
+          refsingleBuffer[7] = 255
+
+          let i = 8
+          for (let x of ref.main) {
+            // lengte van 4
+            // start, len
+
+            refsingleBuffer.writeUint16LE(x.start, i)
+            refsingleBuffer.writeUint16LE(x.len, i + 2)
+
+            i += 4
+          }
+
+          refsingleBuffer[size - 1] = 0
+
+          console.log('HELLO')
+          arr.push(refsingleBuffer)
+        }
+      }
+    }
+    refBuffer = Buffer.concat(arr)
+
+    console.info('>>>', new Uint8Array(refBuffer))
+  } else {
+    refBuffer = defEmptyBuffer
+  }
+
   const d = performance.now()
   const result: Buffer = query.db.native.getQuery(
     conditions,
@@ -212,7 +340,7 @@ export const get = (query: Query): BasedQueryResponse => {
     end, // def 1k ?
     includeBuffer,
     mainBuffer,
-    Buffer.from(new Uint8Array([0])),
+    refBuffer,
   )
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

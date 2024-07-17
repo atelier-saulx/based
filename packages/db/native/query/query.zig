@@ -102,7 +102,7 @@ fn getQueryInternal(
         }
 
         // go go go
-        total_size += try fields.getFields(&results, &i, include, type_prefix, selectiveMain, includeSingleRefsBool, mainLen, currentShard, &shards, txn);
+        total_size += try fields.getFields(&results, &i, null, include, type_prefix, selectiveMain, includeSingleRefsBool, includeSingleRefs, mainLen, currentShard, &shards, txn);
 
         total_results += 1;
     }

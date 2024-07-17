@@ -27,6 +27,7 @@ db.updateSchema({
     user: {
       fields: {
         name: { type: 'string' },
+        flap: { type: 'integer' },
         email: { type: 'string', maxLength: 25 },
         age: { type: 'integer' },
       },
@@ -85,12 +86,16 @@ for (let i = 0; i < 1000; i++) {
   )
 }
 
+console.info({ users, flap: db.schemaTypesParsed.simple })
+
 await wait(0)
 
 //
-const amount = 1e6
+const amount = 1e2
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
+  console.log('HELLO', users[~~(Math.random() * users.length)])
+
   db.create('simple', {
     name: 'Jim de Beer',
     user: users[~~(Math.random() * users.length)],
@@ -120,23 +125,23 @@ const result = db
 
   // add field selection
 
-  .filter('vectorClock', '>', 9998)
+  // .filter('vectorClock', '>', 9998)
   .filter('countryCode', '=', 'en')
   .filter('flap', '=', 'en')
-  .filter('vectorClock', '=', 9999)
+  // .filter('vectorClock', '=', 9999)
 
   // fix order...
   .include(
     'countryCode',
     'vectorClock',
+    'user.email',
     'name',
-    'smurp',
-    'flap',
-    // 'user.age',
-    // 'user.email',
+    // 'smurp',
+    // 'flap',
+    'user.age',
     // 'user.name',
   )
-  .range(0, 1000)
+  .range(0, 4)
 
   // sort()
 

@@ -15,6 +15,7 @@ export class Query {
   limit: number
   includeFields: string[]
   includeTree: IncludeTreeArr
+  refIncludes: any // fix
   mainLen: number = 0
   mainIncludesSize: number
   mainIncludes: { [start: string]: [number, FieldDef] }
