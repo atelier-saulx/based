@@ -90,6 +90,8 @@ const parseInclude = (
     // combine all tings for user in 1 include msg
     // [type 10].[id]0230 4 // selective main as well ofc     // end ref 255
 
+    // [255] // [255]
+
     query.mainIncludesSize++
     query.mainLen += field.len
     query.mainIncludes[field.start] = [0, field]
@@ -210,6 +212,7 @@ export const get = (query: Query): BasedQueryResponse => {
     end, // def 1k ?
     includeBuffer,
     mainBuffer,
+    Buffer.from(new Uint8Array([0])),
   )
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)
