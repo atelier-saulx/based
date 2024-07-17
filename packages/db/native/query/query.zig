@@ -18,11 +18,7 @@ fn getQueryInternal(
     info: c.napi_callback_info,
 ) !c.napi_value {
     const args = try napi.getArgs(8, env, info);
-
     const conditions = try napi.getBuffer("conditions", env, args[0]);
-    // main conditions
-    // or per field
-
     const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
     const last_id = try napi.getInt32("last_id", env, args[2]);
     const offset = try napi.getInt32("offset", env, args[3]);
@@ -57,8 +53,6 @@ fn getQueryInternal(
     }
     const txn = try db.createTransaction(true);
 
-    // isRef
-
     var results = std.ArrayList(fields.Result).init(allocator);
 
     var i: u32 = offset + 1;
@@ -70,17 +64,10 @@ fn getQueryInternal(
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
             currentShard += 1;
         }
-
         var fieldIndex: usize = 0;
 
-        // optmize checking in main field
-        // 2 different conditions buffers
-        // if mainInclude
+        // fn for conditions
         while (fieldIndex < conditions.len) {
-
-            // get field
-            // then next
-
             const querySize: u16 = std.mem.readInt(
                 u16,
                 conditions[fieldIndex + 1 ..][0..2],
@@ -89,32 +76,21 @@ fn getQueryInternal(
             const field = conditions[fieldIndex];
             const shardKey = db.getShardKey(field, @bitCast(currentShard));
             var shard = shards.get(shardKey);
-
             if (shard == null) {
                 shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
                 if (shard != null) {
                     try shards.put(shardKey, shard.?);
                 }
             }
-
             if (shard != null) {
                 const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
-
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
-
                 k.mv_data = &i;
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
                 errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
                     continue :checkItem;
                 };
-
-                // std.debug.print("GET FIELD (and run conds) i:{d} s:{d}, f:{d}\n", .{ i, shardKey, field });
-
-                // here put ASM
-                if (runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
-                    // keep it in mem or not?
-                } else {
+                if (!runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
                     continue :checkItem;
                 }
             } else {
@@ -125,7 +101,6 @@ fn getQueryInternal(
         }
 
         // go go go
-
         total_size += try fields.getFields(&results, &i, include, type_prefix, selectiveMain, includeSingleRefsBool, mainLen, currentShard, &shards, txn);
 
         total_results += 1;
