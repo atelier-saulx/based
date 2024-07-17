@@ -6,7 +6,7 @@ const db = @import("../db.zig");
 
 pub const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val };
 
-pub fn getFields(results: *std.ArrayList(Result), id: *u32, include: []u8, type_prefix: [2]u8, selectiveMain: bool, includeSingleRefsBool: bool, mainLen: usize, currentShard: u16, shards: *std.AutoHashMap([3]u8, db.Shard), txn: ?*c.MDB_txn) !usize {
+pub fn getFields(results: *std.ArrayList(Result), id: *u32, include: []u8, type_prefix: [2]u8, selectiveMain: bool, includeSingleRefsBool: bool, mainLen: usize, currentShard: u16, shards: *std.AutoHashMap([5]u8, db.Shard), txn: ?*c.MDB_txn) !usize {
     var size: usize = 0;
 
     // make this into a fn
@@ -17,15 +17,17 @@ pub fn getFields(results: *std.ArrayList(Result), id: *u32, include: []u8, type_
         includeIterator += 1;
 
         const shardKey = db.getShardKey(field, @bitCast(currentShard));
-        var shard = shards.get(shardKey);
+
+        const dbiShardKey = try db.createDbiName(type_prefix, field, shardKey[0], shardKey[1]);
+
+        var shard = shards.get(dbiShardKey);
         if (shard == null) {
             shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
             if (shard != null) {
-                try shards.put(shardKey, shard.?);
+                try shards.put(dbiShardKey, shard.?);
             }
         }
 
-        // lots of double getting here...
         var k: c.MDB_val = .{ .mv_size = 4, .mv_data = id };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 

@@ -44,7 +44,7 @@ fn getQueryInternal(
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    var shards = std.AutoHashMap([3]u8, db.Shard).init(allocator);
+    var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
     defer {
         var it = shards.iterator();
         while (it.next()) |shard| {
@@ -75,11 +75,14 @@ fn getQueryInternal(
             );
             const field = conditions[fieldIndex];
             const shardKey = db.getShardKey(field, @bitCast(currentShard));
-            var shard = shards.get(shardKey);
+            const dbiShardKey = try db.createDbiName(type_prefix, field, shardKey[0], shardKey[1]);
+
+            var shard = shards.get(dbiShardKey);
+
             if (shard == null) {
                 shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
                 if (shard != null) {
-                    try shards.put(shardKey, shard.?);
+                    try shards.put(dbiShardKey, shard.?);
                 }
             }
             if (shard != null) {
@@ -117,7 +120,6 @@ fn getQueryInternal(
 
     var dataU8 = @as([*]u8, @ptrCast(data));
 
-    // TODO: make this a bit nicer...
     const s: [4]u8 = @bitCast(@as(u32, @truncate(total_results)));
     dataU8[0] = s[0];
     dataU8[1] = s[1];
@@ -135,10 +137,6 @@ fn getQueryInternal(
         }
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
-
-        // if key.isRef == true
-        // do ref shit
-
         if (key.field == 0) {
             if (selectiveMain) {
                 var selectiveMainPos: usize = 5;
