@@ -46,8 +46,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     var id: u32 = undefined;
     var currentShard: [2]u8 = .{ 0, 0 };
 
-    // type_prefix: [2]u8, field: u8, shard: u8
-
     while (i < size) {
         const operation = batch[i];
         if (operation == 0) {
@@ -69,20 +67,18 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operation == 3) {
             // 4 will be MERGE
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const shardKey = db.getShardKey(field, currentShard);
-            const dbiShardKey = try db.createDbiName(type_prefix, field, shardKey[0], shardKey[1]);
-            var shard = shards.get(dbiShardKey);
+            const dbiName = db.createDbiName(type_prefix, field, currentShard);
+            var shard = shards.get(dbiName);
             if (shard == null) {
-                shard = try db.openShard(true, type_prefix, shardKey, txn);
+                shard = try db.openShard(true, dbiName, txn);
                 if (shard != null) {
-                    try shards.put(dbiShardKey, shard.?);
+                    try shards.put(dbiName, shard.?);
                 }
             }
             if (shard != null) {
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = null };
                 k.mv_data = &id;
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
-
                 try errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
             }
             i = i + operationSize + 1 + 4;

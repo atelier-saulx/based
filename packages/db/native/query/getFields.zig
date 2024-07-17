@@ -16,15 +16,13 @@ pub fn getFields(results: *std.ArrayList(Result), id: *u32, include: []u8, type_
         const field: u8 = include[includeIterator];
         includeIterator += 1;
 
-        const shardKey = db.getShardKey(field, @bitCast(currentShard));
+        const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
 
-        const dbiShardKey = try db.createDbiName(type_prefix, field, shardKey[0], shardKey[1]);
-
-        var shard = shards.get(dbiShardKey);
+        var shard = shards.get(dbiName);
         if (shard == null) {
-            shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
+            shard = db.openShard(true, dbiName, txn) catch null;
             if (shard != null) {
-                try shards.put(dbiShardKey, shard.?);
+                try shards.put(dbiName, shard.?);
             }
         }
 

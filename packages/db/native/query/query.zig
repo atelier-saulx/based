@@ -26,7 +26,6 @@ fn getQueryInternal(
     const include = try napi.getBuffer("include", env, args[5]);
     const mainIncludes = try napi.getBuffer("mainIncludes", env, args[6]);
     const includeSingleRefs = try napi.getBuffer("includeSingleRefs", env, args[7]);
-
     const selectiveMain = mainIncludes[0] != 0;
     var mainLen: usize = undefined;
 
@@ -74,15 +73,14 @@ fn getQueryInternal(
                 .little,
             );
             const field = conditions[fieldIndex];
-            const shardKey = db.getShardKey(field, @bitCast(currentShard));
-            const dbiShardKey = try db.createDbiName(type_prefix, field, shardKey[0], shardKey[1]);
+            const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
 
-            var shard = shards.get(dbiShardKey);
+            var shard = shards.get(dbiName);
 
             if (shard == null) {
-                shard = db.openShard(true, type_prefix, shardKey, txn) catch null;
+                shard = db.openShard(true, dbiName, txn) catch null;
                 if (shard != null) {
-                    try shards.put(dbiShardKey, shard.?);
+                    try shards.put(dbiName, shard.?);
                 }
             }
             if (shard != null) {
