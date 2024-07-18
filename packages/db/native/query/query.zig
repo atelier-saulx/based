@@ -26,42 +26,36 @@ fn getQueryInternal(
     const include = try napi.getBuffer("include", env, args[5]);
     const mainIncludes = try napi.getBuffer("mainIncludes", env, args[6]);
     const includeSingleRefs = try napi.getBuffer("includeSingleRefs", env, args[7]);
-    const selectiveMain = mainIncludes[0] != 0;
-    var mainLen: usize = undefined;
-
-    if (selectiveMain) {
-        mainLen = std.mem.readInt(u32, mainIncludes[1..5], .little);
-    }
-
-    const includeSingleRefsBool = includeSingleRefs[0] != 0;
-    var includeRefsLen: usize = undefined;
-
-    if (includeSingleRefsBool) {
-        includeRefsLen = std.mem.readInt(u32, includeSingleRefs[1..5], .little);
-    }
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+
+    var i: u32 = offset + 1;
+    var total_results: usize = 0;
+    var total_size: usize = 0;
     var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
+
     defer {
         var it = shards.iterator();
         while (it.next()) |shard| {
             db.closeShard(shard.value_ptr);
         }
     }
-    const txn = try db.createTransaction(true);
 
     var results = std.ArrayList(fields.Result).init(allocator);
 
-    var i: u32 = offset + 1;
-    var currentShard: u16 = 0;
-    var total_results: usize = 0;
-    var total_size: usize = 0;
+    var ctx: fields.QueryItemCtx = .{ .id = &i, .fromId = null, .include = include, .includeSingleRefs = includeSingleRefs, .type_prefix = type_prefix, .mainLen = undefined, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &results };
+
+    if (mainIncludes[0] != 0) {
+        ctx.mainLen = std.mem.readInt(u32, mainIncludes[1..5], .little);
+    } else {
+        ctx.mainLen = 0;
+    }
 
     checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
-        if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
-            currentShard += 1;
+        if (i > (@as(u32, ctx.currentShard + 1)) * 1_000_000) {
+            ctx.currentShard += 1;
         }
         var fieldIndex: usize = 0;
 
@@ -73,14 +67,12 @@ fn getQueryInternal(
                 .little,
             );
             const field = conditions[fieldIndex];
-            const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
-
-            var shard = shards.get(dbiName);
-
+            const dbiName = db.createDbiName(type_prefix, field, @bitCast(ctx.currentShard));
+            var shard = ctx.shards.get(dbiName);
             if (shard == null) {
-                shard = db.openShard(true, dbiName, txn) catch null;
+                shard = db.openShard(true, dbiName, ctx.txn) catch null;
                 if (shard != null) {
-                    try shards.put(dbiName, shard.?);
+                    try ctx.shards.put(dbiName, shard.?);
                 }
             }
             if (shard != null) {
@@ -97,21 +89,16 @@ fn getQueryInternal(
             } else {
                 continue :checkItem;
             }
-
             fieldIndex += querySize + 3;
         }
 
-        // go go go
-        total_size += try fields.getFields(&results, &i, null, include, type_prefix, selectiveMain, includeSingleRefsBool, includeSingleRefs, mainLen, currentShard, &shards, txn);
-
+        total_size += try fields.getFields(ctx);
         total_results += 1;
     }
-    total_size += 4;
 
+    total_size += 4; // result count
     var data: ?*anyopaque = undefined;
-
     var result: c.napi_value = undefined;
-
     if (c.napi_create_buffer(env, total_size, &data, &result) != c.napi_ok) {
         return null;
     }
@@ -126,7 +113,7 @@ fn getQueryInternal(
 
     var last_pos: usize = 4;
 
-    for (results.items) |*key| {
+    for (ctx.results.items) |*key| {
         if (key.id != null) {
             dataU8[last_pos] = 255;
             last_pos += 1;
@@ -136,7 +123,7 @@ fn getQueryInternal(
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
         if (key.field == 0) {
-            if (selectiveMain) {
+            if (ctx.mainLen != 0) {
                 var selectiveMainPos: usize = 5;
                 var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
                 while (selectiveMainPos < mainIncludes.len) {
@@ -167,7 +154,7 @@ fn getQueryInternal(
         }
     }
 
-    try errors.mdbCheck(c.mdb_txn_commit(txn));
+    try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
 
     return result;
 }
