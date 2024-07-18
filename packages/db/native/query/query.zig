@@ -49,13 +49,7 @@ fn getQueryInternal(
 
     var resultsList = std.ArrayList(results.Result).init(allocator);
 
-    var ctx: QueryCtx = .{ .id = &i, .fromId = null, .include = include, .includeSingleRefs = includeSingleRefs, .includeMain = includeMain, .type_prefix = type_prefix, .mainLen = undefined, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
-
-    if (ctx.includeMain.len != 0) {
-        ctx.mainLen = std.mem.readInt(u32, ctx.includeMain[0..4], .little);
-    } else {
-        ctx.mainLen = 0;
-    }
+    var ctx: QueryCtx = .{ .id = &i, .fromId = null, .include = include, .includeSingleRefs = includeSingleRefs, .includeMain = includeMain, .type_prefix = type_prefix, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
 
     checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
         if (i > (@as(u32, ctx.currentShard + 1)) * 1_000_000) {

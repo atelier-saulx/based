@@ -88,7 +88,7 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 1e2
+const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -136,7 +136,7 @@ const result = db
     'user.age',
     // 'user.name',
   )
-  .range(0, 4)
+  .range(0, 1e6)
 
   // sort()
 

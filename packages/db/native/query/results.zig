@@ -35,7 +35,7 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
         if (key.field == 0) {
-            if (ctx.mainLen != 0) {
+            if (ctx.includeMain.len != 0) {
                 var selectiveMainPos: usize = 4;
                 var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
                 while (selectiveMainPos < ctx.includeMain.len) {

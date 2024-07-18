@@ -42,31 +42,31 @@ pub fn getFields(ctx: QueryCtx) !usize {
             size += (v.mv_size + 1 + 2);
         } else {
             if (v.mv_size > 0 and ctx.includeSingleRefs.len != 0) {
-                var refI: usize = 0;
-                // refLoop:
-                while (refI < ctx.includeSingleRefs.len) {
-                    const len = std.mem.readInt(u16, ctx.includeSingleRefs[refI..][0..2], .little);
-                    const t: [2]u8 = .{ ctx.includeSingleRefs[refI + 2], ctx.includeSingleRefs[refI + 3] };
-                    const start = std.mem.readInt(u16, ctx.includeSingleRefs[refI + 4 ..][0..2], .little);
-                    const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-                    const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
-                    std.debug.print("yo-> LEN: {d} t: {any} start: {d} len: {d} refId: {d}  id: {d} \n", .{ len, t, start, mainSlice.len, refId, ctx.id[0..1] });
-                    refI += len + 6;
+                // var refI: usize = 0;
+                // // refLoop:
+                // while (refI < ctx.includeSingleRefs.len) {
+                //     const len = std.mem.readInt(u16, ctx.includeSingleRefs[refI..][0..2], .little);
+                //     const t: [2]u8 = .{ ctx.includeSingleRefs[refI + 2], ctx.includeSingleRefs[refI + 3] };
+                //     const start = std.mem.readInt(u16, ctx.includeSingleRefs[refI + 4 ..][0..2], .little);
+                //     const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+                //     const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
+                //     std.debug.print("yo-> LEN: {d} t: {any} start: {d} len: {d} refId: {d}  id: {d} \n", .{ len, t, start, mainSlice.len, refId, ctx.id[0..1] });
+                //     refI += len + 6;
 
-                    // --> make more here add struct
-                    // refI +=   ;
-                    // getFields(results, id, true, )
-                }
+                //     // --> make more here add struct
+                //     // refI +=   ;
+                //     // getFields(results, id, true, )
+                // }
 
-                // get id
-                // buffer copy for single ref selection
-                // then main
-                // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
-                // put while loop
+                // // get id
+                // // buffer copy for single ref selection
+                // // then main
+                // // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
+                // // put while loop
             }
 
-            if (ctx.mainLen != 0) {
-                size += (ctx.mainLen + 1);
+            if (ctx.includeMain.len != 0) {
+                size += std.mem.readInt(u32, ctx.includeMain[0..4], .little) + 1;
             } else {
                 size += (v.mv_size + 1);
             }
