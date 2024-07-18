@@ -47,8 +47,8 @@ fn getQueryInternal(
 
     var ctx: fields.QueryItemCtx = .{ .id = &i, .fromId = null, .include = include, .includeSingleRefs = includeSingleRefs, .type_prefix = type_prefix, .mainLen = undefined, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &results };
 
-    if (mainIncludes[0] != 0) {
-        ctx.mainLen = std.mem.readInt(u32, mainIncludes[1..5], .little);
+    if (mainIncludes.len != 0) {
+        ctx.mainLen = std.mem.readInt(u32, mainIncludes[0..4], .little);
     } else {
         ctx.mainLen = 0;
     }
@@ -124,7 +124,7 @@ fn getQueryInternal(
         last_pos += 1;
         if (key.field == 0) {
             if (ctx.mainLen != 0) {
-                var selectiveMainPos: usize = 5;
+                var selectiveMainPos: usize = 4;
                 var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
                 while (selectiveMainPos < mainIncludes.len) {
                     const start: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos .. selectiveMainPos + 2]), .little);
