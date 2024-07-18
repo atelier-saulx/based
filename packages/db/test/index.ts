@@ -86,16 +86,11 @@ for (let i = 0; i < 1000; i++) {
   )
 }
 
-console.info({ users, flap: db.schemaTypesParsed.simple })
-
 await wait(0)
 
-//
 const amount = 1e2
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
-  console.log('HELLO', users[~~(Math.random() * users.length)])
-
   db.create('simple', {
     name: 'Jim de Beer',
     user: users[~~(Math.random() * users.length)],

@@ -121,7 +121,6 @@ export const get = (query: Query): BasedQueryResponse => {
 
     for (const ref of query.refIncludes) {
       // only do main to start...
-      console.info({ ref })
       let refsingleBuffer: Buffer
       let size = 6
       if (ref.mainLen) {
