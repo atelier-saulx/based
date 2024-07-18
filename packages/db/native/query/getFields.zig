@@ -6,7 +6,7 @@ const db = @import("../db.zig");
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 
-pub fn getFields(ctx: QueryCtx) !usize {
+pub fn getFields(ctx: QueryCtx, id: u32, fromId: ?u32) !usize {
     var size: usize = 0;
     var includeIterator: u8 = 0;
     includeField: while (includeIterator < ctx.include.len) {
@@ -22,19 +22,19 @@ pub fn getFields(ctx: QueryCtx) !usize {
             }
         }
 
-        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = ctx.id };
+        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
         errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
             continue :includeField;
         };
 
-        if (includeIterator == 1 and ctx.fromId == null) {
+        if (includeIterator == 1 and fromId == null) {
             size += 1 + 4;
-            const s: results.Result = .{ .id = ctx.id.*, .field = field, .val = v, .fromId = ctx.fromId };
+            const s: results.Result = .{ .id = id, .field = field, .val = v, .fromId = fromId };
             try ctx.results.append(s);
         } else {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .fromId = ctx.fromId };
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .fromId = fromId };
             try ctx.results.append(s);
         }
 
