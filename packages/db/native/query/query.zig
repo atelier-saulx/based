@@ -5,6 +5,8 @@ const std = @import("std");
 const db = @import("../db.zig");
 const runCondition = @import("./conditions.zig").runConditions;
 const fields = @import("./getFields.zig");
+const results = @import("./results.zig");
+const QueryCtx = @import("./ctx.zig").QueryCtx;
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(env, info) catch |err| {
@@ -24,7 +26,7 @@ fn getQueryInternal(
     const offset = try napi.getInt32("offset", env, args[3]);
     const limit = try napi.getInt32("limit", env, args[4]);
     const include = try napi.getBuffer("include", env, args[5]);
-    const mainIncludes = try napi.getBuffer("mainIncludes", env, args[6]);
+    const includeMain = try napi.getBuffer("includeMain", env, args[6]);
     const includeSingleRefs = try napi.getBuffer("includeSingleRefs", env, args[7]);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -43,12 +45,12 @@ fn getQueryInternal(
         }
     }
 
-    var results = std.ArrayList(fields.Result).init(allocator);
+    var resultsList = std.ArrayList(results.Result).init(allocator);
 
-    var ctx: fields.QueryItemCtx = .{ .id = &i, .fromId = null, .include = include, .includeSingleRefs = includeSingleRefs, .type_prefix = type_prefix, .mainLen = undefined, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &results };
+    var ctx: QueryCtx = .{ .id = &i, .fromId = null, .include = include, .includeSingleRefs = includeSingleRefs, .includeMain = includeMain, .type_prefix = type_prefix, .mainLen = undefined, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
 
-    if (mainIncludes.len != 0) {
-        ctx.mainLen = std.mem.readInt(u32, mainIncludes[0..4], .little);
+    if (ctx.includeMain.len != 0) {
+        ctx.mainLen = std.mem.readInt(u32, ctx.includeMain[0..4], .little);
     } else {
         ctx.mainLen = 0;
     }
@@ -96,65 +98,7 @@ fn getQueryInternal(
         total_results += 1;
     }
 
-    total_size += 4; // result count
-    var data: ?*anyopaque = undefined;
-    var result: c.napi_value = undefined;
-    if (c.napi_create_buffer(env, total_size, &data, &result) != c.napi_ok) {
-        return null;
-    }
-
-    var dataU8 = @as([*]u8, @ptrCast(data));
-
-    const s: [4]u8 = @bitCast(@as(u32, @truncate(total_results)));
-    dataU8[0] = s[0];
-    dataU8[1] = s[1];
-    dataU8[2] = s[2];
-    dataU8[3] = s[3];
-
-    var last_pos: usize = 4;
-
-    for (ctx.results.items) |*key| {
-        if (key.id != null) {
-            dataU8[last_pos] = 255;
-            last_pos += 1;
-            @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
-            last_pos += 4;
-        }
-        @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
-        last_pos += 1;
-        if (key.field == 0) {
-            if (ctx.mainLen != 0) {
-                var selectiveMainPos: usize = 4;
-                var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
-                while (selectiveMainPos < mainIncludes.len) {
-                    const start: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos .. selectiveMainPos + 2]), .little);
-                    const len: u16 = std.mem.readInt(u16, @ptrCast(mainIncludes[selectiveMainPos + 2 .. selectiveMainPos + 4]), .little);
-                    const end: u16 = len + start;
-                    @memcpy(dataU8[last_pos .. last_pos + len], mainU8[start..end].ptr);
-                    last_pos += len;
-                    selectiveMainPos += 4;
-                }
-            } else {
-                @memcpy(
-                    dataU8[last_pos .. last_pos + key.val.?.mv_size],
-                    @as([*]u8, @ptrCast(key.val.?.mv_data)),
-                );
-                last_pos += key.val.?.mv_size;
-            }
-        } else {
-            const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
-            dataU8[last_pos] = x[0];
-            dataU8[last_pos + 1] = x[1];
-            last_pos += 2;
-            @memcpy(
-                dataU8[last_pos .. last_pos + key.val.?.mv_size],
-                @as([*]u8, @ptrCast(key.val.?.mv_data)),
-            );
-            last_pos += key.val.?.mv_size;
-        }
-    }
-
     try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
 
-    return result;
+    return results.createResultsBuffer(ctx, env, total_size, total_results);
 }

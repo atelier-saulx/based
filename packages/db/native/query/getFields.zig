@@ -3,12 +3,10 @@ const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db.zig");
+const results = @import("./results.zig");
+const QueryCtx = @import("./ctx.zig").QueryCtx;
 
-pub const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val, fromId: ?u32 };
-
-pub const QueryItemCtx = struct { id: *u32, fromId: ?u32, include: []u8, includeSingleRefs: []u8, type_prefix: [2]u8, mainLen: usize, currentShard: u16, shards: *std.AutoHashMap([5]u8, db.Shard), txn: ?*c.MDB_txn, results: *std.ArrayList(Result) };
-
-pub fn getFields(ctx: QueryItemCtx) !usize {
+pub fn getFields(ctx: QueryCtx) !usize {
     var size: usize = 0;
     var includeIterator: u8 = 0;
     includeField: while (includeIterator < ctx.include.len) {
@@ -33,10 +31,10 @@ pub fn getFields(ctx: QueryItemCtx) !usize {
 
         if (includeIterator == 1 and ctx.fromId == null) {
             size += 1 + 4;
-            const s: Result = .{ .id = ctx.id.*, .field = field, .val = v, .fromId = ctx.fromId };
+            const s: results.Result = .{ .id = ctx.id.*, .field = field, .val = v, .fromId = ctx.fromId };
             try ctx.results.append(s);
         } else {
-            const s: Result = .{ .id = null, .field = field, .val = v, .fromId = ctx.fromId };
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .fromId = ctx.fromId };
             try ctx.results.append(s);
         }
 
