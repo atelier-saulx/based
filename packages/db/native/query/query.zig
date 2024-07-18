@@ -29,13 +29,15 @@ fn getQueryInternal(
     const includeMain = try napi.getBuffer("includeMain", env, args[6]);
     const includeSingleRefs = try napi.getBuffer("includeSingleRefs", env, args[7]);
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
     var i: u32 = offset + 1;
     var total_results: usize = 0;
     var total_size: usize = 0;
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
     var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
 
     defer {
