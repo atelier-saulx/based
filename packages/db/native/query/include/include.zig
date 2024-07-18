@@ -1,0 +1,70 @@
+const c = @import("../../c.zig");
+const errors = @import("../../errors.zig");
+const napi = @import("../../napi.zig");
+const std = @import("std");
+const db = @import("../../db.zig");
+const results = @import("../results.zig");
+const QueryCtx = @import("../ctx.zig").QueryCtx;
+const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
+
+pub fn getFields(
+    ctx: QueryCtx,
+    id: u32,
+    type_prefix: [2]u8,
+    ref: bool,
+    include: []u8,
+    includeSingleRefs: []u8,
+    includeMain: []u8,
+    currentShard: u16,
+) !usize {
+    var size: usize = 0;
+    var includeIterator: u8 = 0;
+    includeField: while (includeIterator < include.len) {
+        const field: u8 = include[includeIterator];
+        includeIterator += 1;
+        const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
+        var shard = ctx.shards.get(dbiName);
+
+        if (shard == null) {
+            shard = db.openShard(true, dbiName, ctx.txn) catch null;
+            if (shard != null) {
+                try ctx.shards.put(dbiName, shard.?);
+            }
+        }
+
+        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
+        errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+            continue :includeField;
+        };
+
+        if (includeIterator == 1 and ref == false) {
+            size += 1 + 4;
+            const s: results.Result = .{ .id = id, .field = field, .val = v, .type_prefix = null };
+            try ctx.results.append(s);
+        } else if (ref == true) {
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .type_prefix = type_prefix };
+            try ctx.results.append(s);
+        } else {
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .type_prefix = null };
+            try ctx.results.append(s);
+        }
+
+        if (field != 0) {
+            size += (v.mv_size + 1 + 2);
+        } else {
+            if (v.mv_size > 0 and includeSingleRefs.len != 0) {
+                size += getSingleRefFields(ctx, includeSingleRefs, v);
+            }
+            if (includeMain.len != 0) {
+                std.debug.print("MAIN LEN {any} \n", .{std.mem.readInt(u32, includeMain[0..4], .little) + 1});
+                size += std.mem.readInt(u32, includeMain[0..4], .little) + 1;
+            } else {
+                size += (v.mv_size + 1);
+            }
+        }
+    }
+
+    return size;
+}

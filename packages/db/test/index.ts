@@ -79,7 +79,7 @@ const users = []
 for (let i = 0; i < 1000; i++) {
   users.push(
     db.create('user', {
-      age: i,
+      age: 66,
       name: 'Mr ' + i,
       email: i + '@once.net',
     }),
@@ -128,18 +128,16 @@ const result = db
   // fix order...
   .include(
     'countryCode',
-    'vectorClock',
-    'user.email',
-    'name',
+    // 'vectorClock',
+    // 'user.email',
+    // 'name',
     // 'smurp',
     // 'flap',
     'user.age',
     // 'user.name',
   )
-  .range(0, 1e6)
-
+  .range(0, 1)
   // sort()
-
   .get()
 
 // const result2 = db.query('user').range(0, 10).get()

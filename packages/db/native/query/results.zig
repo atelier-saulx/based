@@ -6,9 +6,9 @@ const db = @import("../db.zig");
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 
-pub const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val, fromId: ?u32 };
+pub const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val, type_prefix: ?[2]u8 };
 
-pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, total_results: usize) !c.napi_value {
+pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, total_results: usize, includeMain: []u8) !c.napi_value {
     var data: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
     if (c.napi_create_buffer(env, total_size + 4, &data, &result) != c.napi_ok) {
@@ -26,6 +26,18 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
     var last_pos: usize = 4;
 
     for (ctx.results.items) |*key| {
+        if (key.type_prefix != null) {
+            std.debug.print("Snurp {any}\n", .{key});
+            dataU8[last_pos] = 0;
+            last_pos += 1;
+            dataU8[last_pos] = 254;
+            last_pos += 1;
+            dataU8[last_pos] = key.type_prefix.?[0];
+            last_pos += 1;
+            dataU8[last_pos] = key.type_prefix.?[1];
+            //  [0][254][t][t]
+        }
+
         if (key.id != null) {
             dataU8[last_pos] = 255;
             last_pos += 1;
@@ -35,12 +47,12 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));
         last_pos += 1;
         if (key.field == 0) {
-            if (ctx.includeMain.len != 0) {
+            if (includeMain.len != 0) {
                 var selectiveMainPos: usize = 4;
                 var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
-                while (selectiveMainPos < ctx.includeMain.len) {
-                    const start: u16 = std.mem.readInt(u16, @ptrCast(ctx.includeMain[selectiveMainPos .. selectiveMainPos + 2]), .little);
-                    const len: u16 = std.mem.readInt(u16, @ptrCast(ctx.includeMain[selectiveMainPos + 2 .. selectiveMainPos + 4]), .little);
+                while (selectiveMainPos < includeMain.len) {
+                    const start: u16 = std.mem.readInt(u16, @ptrCast(includeMain[selectiveMainPos .. selectiveMainPos + 2]), .little);
+                    const len: u16 = std.mem.readInt(u16, @ptrCast(includeMain[selectiveMainPos + 2 .. selectiveMainPos + 4]), .little);
                     const end: u16 = len + start;
                     @memcpy(dataU8[last_pos .. last_pos + len], mainU8[start..end].ptr);
                     last_pos += len;

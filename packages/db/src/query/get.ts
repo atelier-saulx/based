@@ -117,17 +117,18 @@ export const get = (query: Query): BasedQueryResponse => {
   let refBuffer: Buffer
   if (query.refIncludes) {
     const arr = []
-    // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
+    // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][len][len][offset][offset][len][len]) [1][2]
 
     for (const ref of query.refIncludes) {
       // only do main to start...
       let refsingleBuffer: Buffer
       let size = 6
       if (ref.mainLen) {
-        size += 2
+        size += 3
         if (ref.mainLen !== ref.schema.mainLen) {
-          size += 1
-          size += ref.main.length * 4
+          const mainSelective = ref.main.length * 4
+          size += mainSelective
+          size += 4
 
           refsingleBuffer = Buffer.allocUnsafe(size)
 
@@ -139,18 +140,23 @@ export const get = (query: Query): BasedQueryResponse => {
           refsingleBuffer.writeUint16LE(ref.ref.start, 4)
 
           refsingleBuffer[6] = 0
-          refsingleBuffer[7] = 255
 
-          let i = 8
+          refsingleBuffer.writeUint16LE(mainSelective, 7)
+
+          console.log('GET', { mainSelective })
+
+          refsingleBuffer.writeUint32LE(ref.mainLen, 9)
+
+          let i = 9 + 4
           for (let x of ref.main) {
             refsingleBuffer.writeUint16LE(x.start, i)
             refsingleBuffer.writeUint16LE(x.len, i + 2)
             i += 4
           }
 
-          refsingleBuffer[size - 1] = 0
-
           arr.push(refsingleBuffer)
+        } else {
+          // LATEr (just 0)
         }
       }
     }
@@ -170,6 +176,9 @@ export const get = (query: Query): BasedQueryResponse => {
     mainBuffer,
     refBuffer,
   )
+
+  console.log('RESULT', new Uint8Array(result))
+
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)
   q.execTime = time

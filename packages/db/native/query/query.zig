@@ -4,7 +4,7 @@ const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db.zig");
 const runCondition = @import("./conditions.zig").runConditions;
-const fields = @import("./getFields.zig");
+const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 
@@ -48,12 +48,12 @@ fn getQueryInternal(
     }
 
     var resultsList = std.ArrayList(results.Result).init(allocator);
-
-    var ctx: QueryCtx = .{ .include = include, .includeSingleRefs = includeSingleRefs, .includeMain = includeMain, .type_prefix = type_prefix, .currentShard = 0, .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
+    var currentShard: u16 = 0;
+    var ctx: QueryCtx = .{ .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
 
     checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
-        if (i > (@as(u32, ctx.currentShard + 1)) * 1_000_000) {
-            ctx.currentShard += 1;
+        if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
+            currentShard += 1;
         }
         var fieldIndex: usize = 0;
 
@@ -65,7 +65,7 @@ fn getQueryInternal(
                 .little,
             );
             const field = conditions[fieldIndex];
-            const dbiName = db.createDbiName(type_prefix, field, @bitCast(ctx.currentShard));
+            const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
             var shard = ctx.shards.get(dbiName);
             if (shard == null) {
                 shard = db.openShard(true, dbiName, ctx.txn) catch null;
@@ -90,11 +90,11 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
-        total_size += try fields.getFields(ctx, i, null);
+        total_size += try getFields(ctx, i, type_prefix, false, include, includeSingleRefs, includeMain, currentShard);
         total_results += 1;
     }
 
     try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
 
-    return results.createResultsBuffer(ctx, env, total_size, total_results);
+    return results.createResultsBuffer(ctx, env, total_size, total_results, includeMain);
 }
