@@ -124,35 +124,49 @@ export const get = (query: Query): BasedQueryResponse => {
       let refsingleBuffer: Buffer
       let size = 6
       if (ref.mainLen) {
-        size += 3
         if (ref.mainLen !== ref.schema.mainLen) {
-          const mainSelective = ref.main.length * 4
-          size += mainSelective
+          size += 3
+
+          const mainSelectiveFieldsSize = ref.main.length * 4
+
+          // MAIN SELECT FIELDS SIZE
+          size += mainSelectiveFieldsSize
+
+          // MAIN SIZE
           size += 4
 
           refsingleBuffer = Buffer.allocUnsafe(size)
 
+          // SIZE [0,1]
           refsingleBuffer.writeUint16LE(size - 6)
 
+          // TYPE [2,3]
           refsingleBuffer[2] = ref.schema.prefix[0]
           refsingleBuffer[3] = ref.schema.prefix[1]
 
+          // REF [4,5]
           refsingleBuffer.writeUint16LE(ref.ref.start, 4)
 
+          // MAIN FIELD [6]
           refsingleBuffer[6] = 0
 
-          refsingleBuffer.writeUint16LE(mainSelective, 7)
+          // MAIN SELECTIVE FIELDS [7,8]
+          refsingleBuffer.writeUint16LE(mainSelectiveFieldsSize, 7)
 
-          console.log('GET', { mainSelective })
-
+          // MAIN LEN [9,10,11,12] // can be 16...
           refsingleBuffer.writeUint32LE(ref.mainLen, 9)
 
+          // MAIN SELECT [13 ....]
           let i = 9 + 4
           for (let x of ref.main) {
             refsingleBuffer.writeUint16LE(x.start, i)
             refsingleBuffer.writeUint16LE(x.len, i + 2)
             i += 4
           }
+
+          console.log('GET', {
+            refsingleBuffer: new Uint8Array(refsingleBuffer),
+          })
 
           arr.push(refsingleBuffer)
         } else {

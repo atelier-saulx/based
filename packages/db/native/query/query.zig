@@ -90,11 +90,11 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
-        total_size += try getFields(ctx, i, type_prefix, false, include, includeSingleRefs, includeMain, currentShard);
+        total_size += try getFields(ctx, i, type_prefix, null, include, includeSingleRefs, includeMain, currentShard);
         total_results += 1;
     }
 
     try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
 
-    return results.createResultsBuffer(ctx, env, total_size, total_results, includeMain);
+    return results.createResultsBuffer(ctx, env, total_size, total_results);
 }

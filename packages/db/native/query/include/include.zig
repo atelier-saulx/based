@@ -11,7 +11,7 @@ pub fn getFields(
     ctx: QueryCtx,
     id: u32,
     type_prefix: [2]u8,
-    ref: bool,
+    start: ?u16,
     include: []u8,
     includeSingleRefs: []u8,
     includeMain: []u8,
@@ -39,15 +39,15 @@ pub fn getFields(
             continue :includeField;
         };
 
-        if (includeIterator == 1 and ref == false) {
+        if (includeIterator == 1 and start == null) {
             size += 1 + 4;
-            const s: results.Result = .{ .id = id, .field = field, .val = v, .type_prefix = null };
+            const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = includeMain };
             try ctx.results.append(s);
-        } else if (ref == true) {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .type_prefix = type_prefix };
+        } else if (start != null) {
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = includeMain };
             try ctx.results.append(s);
         } else {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .type_prefix = null };
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = null, .includeMain = includeMain };
             try ctx.results.append(s);
         }
 

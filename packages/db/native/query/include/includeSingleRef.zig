@@ -32,9 +32,9 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
         var mainIncludeNested: []u8 = undefined;
 
         if (buf[i + 6] == 0) {
-            const refMainLen = std.mem.readInt(u16, buf[i + 7 ..][0..2], .little);
-            if (refMainLen > 0) {
-                mainIncludeNested = buf[i + 9 .. i + 9 + refMainLen];
+            const refMainSelectLen = std.mem.readInt(u16, buf[i + 7 ..][0..2], .little);
+            if (refMainSelectLen > 0) {
+                mainIncludeNested = buf[i + 9 .. i + 9 + 4 + refMainSelectLen];
                 std.debug.print("hello its selective main {any} \n", .{mainIncludeNested});
             } else {
                 std.debug.print("hello its ALL main \n", .{});
@@ -45,7 +45,10 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
         }
 
         const shardNested: u16 = @truncate(@divTrunc(refId, 1_000_000));
-        const resultSizeNest = getFields(ctx, refId, type_prefix, true, includeNested, refSingleIncludeNested, mainIncludeNested, shardNested) catch 0;
+
+        std.debug.print("NEW include {any} main {any} \n", .{ includeNested, mainIncludeNested });
+
+        const resultSizeNest = getFields(ctx, refId, type_prefix, start, includeNested, refSingleIncludeNested, mainIncludeNested, shardNested) catch 0;
 
         std.debug.print("hello its REFTIME {d} \n", .{resultSizeNest});
 

@@ -28,7 +28,7 @@ db.updateSchema({
       fields: {
         name: { type: 'string' },
         flap: { type: 'integer' },
-        email: { type: 'string', maxLength: 25 },
+        email: { type: 'string', maxLength: 10 },
         age: { type: 'integer' },
       },
     },
@@ -129,7 +129,7 @@ const result = db
   .include(
     'countryCode',
     // 'vectorClock',
-    // 'user.email',
+    'user.email',
     // 'name',
     // 'smurp',
     // 'flap',
