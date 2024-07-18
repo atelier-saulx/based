@@ -129,7 +129,7 @@ const result = db
   .include(
     'countryCode',
     // 'vectorClock',
-    'user.email',
+    // 'user.email',
     // 'name',
     // 'smurp',
     // 'flap',

@@ -9,6 +9,9 @@ export const readSeperateFieldFromBuffer = (
   let i = 4 + basedNode.__o
   const buffer = queryResponse.buffer
 
+  // reduce to mainLen, mainIncludes else its not good so dont add query but allow setting
+  // main as well for refs...
+
   const requestedFieldIndex = requestedField.field
 
   while (i < buffer.byteLength) {
@@ -18,6 +21,7 @@ export const readSeperateFieldFromBuffer = (
     if (index === 255) {
       break
     }
+
     i += 1
 
     if (index === 0) {
@@ -83,7 +87,6 @@ export const readSeperateFieldFromBuffer = (
             if (id) {
               x[j] = { id }
             } else {
-              // TODO: means it broken BROKEN
               console.info('Broken reference cannot get id!')
               // x[j] = null
               x.splice(j, 1)

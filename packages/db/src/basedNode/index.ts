@@ -98,6 +98,9 @@ export class BasedNode {
             enumerable: true,
             set: () => undefined,
             get() {
+              // we can set the based node here potentialy
+              // create an extra query response for it?
+
               return 'flap REF'
               // return readSeperateFieldFromBuffer(fieldDef., ctx)
             },
