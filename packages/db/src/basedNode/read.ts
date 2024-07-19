@@ -9,19 +9,18 @@ export const readSeperateFieldFromBuffer = (
   let i = 4 + basedNode.__o
   const buffer = queryResponse.buffer
 
-  // reduce to mainLen, mainIncludes else its not good so dont add query but allow setting
-  // main as well for refs...
-
   const requestedFieldIndex = requestedField.field
 
-  console.log('HELLO', basedNode.__r)
-  if (basedNode.__r) {
-    console.info('REF VERY DIFFERENT!')
-    return 'IN REF DIFFERENT!'
-  }
+  const ref = basedNode.__r
+
+  const refStart = ref?.field.start
+
+  let mainIncludes = queryResponse.query.mainIncludes
+  let mainLen = queryResponse.query.mainLen
+  let found = !ref || false
 
   while (i < buffer.byteLength) {
-    const index = buffer[i]
+    let index = buffer[i]
 
     // next node
     if (index === 255) {
@@ -30,12 +29,25 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
+    if (!found && ref && index === 0 && buffer[i] === 254) {
+      const start = buffer.readUint16LE(i + 1)
+      if (start === refStart) {
+        found = true
+        i += 3
+        mainLen = ref.mainLen
+        mainIncludes = ref.mainFields
+        index = buffer[i]
+        i += 1
+        const b = new Uint8Array(buffer)
+      }
+    }
+
     if (index === 0) {
-      if (requestedFieldIndex === index) {
+      if (requestedFieldIndex === index && found) {
         let fIndex: number
 
-        if (queryResponse.query.mainIncludes) {
-          const t = queryResponse.query.mainIncludes?.[requestedField.start]
+        if (mainIncludes) {
+          const t = mainIncludes?.[requestedField.start]
           if (!t) {
             return undefined
           }
@@ -77,12 +89,12 @@ export const readSeperateFieldFromBuffer = (
           return str
         }
       }
-      i += queryResponse.query.mainLen
+      i += mainLen
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2
       // if no field add size 0
-      if (requestedField.field === index) {
+      if (requestedField.field === index && found) {
         if (requestedField.type === 'string') {
           return buffer.toString('utf8', i, size + i)
         } else if (requestedField.type === 'references') {
@@ -105,6 +117,7 @@ export const readSeperateFieldFromBuffer = (
     }
   }
 
+  // not in there...
   if (requestedField.type === 'string') {
     return ''
   }

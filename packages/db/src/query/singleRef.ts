@@ -15,7 +15,7 @@ import { Query } from './query.js'
 // 255,
 // id: 1, 0, 0, 0,
 // field 0,
-// country code: 97, 97, 0,
+// country code: 97, 97, 0,  // give info of start
 // userId: 62, 2, 0, 0,
 // select ref 0, 254, 3, 0, [start 3]
 // field 0,

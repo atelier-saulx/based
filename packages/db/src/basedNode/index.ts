@@ -75,6 +75,7 @@ export class BasedNode {
   __r?: {
     mainLen: number
     mainFields: Query['mainIncludes']
+    field: FieldDef
   }
   __o: number
   __s: SchemaTypeDef

@@ -79,7 +79,7 @@ const users = []
 for (let i = 0; i < 1000; i++) {
   users.push(
     db.create('user', {
-      age: 1,
+      age: 99,
       name: 'Mr ' + i,
       email: i + '@once.net',
     }),
@@ -141,7 +141,9 @@ console.log(result)
 // }
 
 for (const item of result.data) {
-  console.info('| USER--->', item.user)
+  console.info('| USER--->', item.user.name)
+  console.info('| USER AGE--->', item.user.age)
+
   break
 }
 

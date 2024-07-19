@@ -15,20 +15,16 @@ export function singleRefProp(
     enumerable: true,
     set: () => undefined,
     get() {
-      console.log('GET REF FIELD')
       refCtx.__q = this.__q
       // this.__o + more
       refCtx.__o = this.__o
 
-      // make a id for the field for internal mapping...
-      console.log(fieldDef)
-
       refCtx.__r = {
-        mainLen: 0,
-        mainFields: {},
+        mainLen: this.__q.query.refIncludes[0].mainLen,
+        mainFields: this.__q.query.refIncludes[0].mainIncludes,
+        field: fieldDef,
         // fields , wnat to put single ref in a better format
       }
-      console.log('RETURN THIS')
 
       return refCtx
     },

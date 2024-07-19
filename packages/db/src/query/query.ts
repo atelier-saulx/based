@@ -20,6 +20,7 @@ export class Query {
   mainLen: number = 0
   mainIncludes: { [start: string]: [number, FieldDef] }
   totalConditionSize: number = 0
+
   constructor(db: BasedDb, target: string, previous?: Query) {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
