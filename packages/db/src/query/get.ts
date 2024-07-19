@@ -123,6 +123,10 @@ export const get = (query: Query): BasedQueryResponse => {
       // only do main to start...
       let refsingleBuffer: Buffer
       let size = 6
+
+      // add extra ref normal fields now
+      console.info({ ref })
+
       if (ref.mainLen) {
         if (ref.mainLen !== ref.schema.mainLen) {
           size += 3

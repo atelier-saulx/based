@@ -134,7 +134,7 @@ const result = db
     // 'smurp',
     // 'flap',
     'user.age',
-    // 'user.name',
+    'user.name',
   )
   .range(0, 1)
   // sort()
