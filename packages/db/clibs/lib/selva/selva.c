@@ -511,8 +511,8 @@ static int selva_find_cb(struct SelvaDb *, const struct SelvaTraversalMetadata *
 static napi_value selva_find(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 3;
-    napi_value argv[3];
+    size_t argc = 4;
+    napi_value argv[4];
     napi_status status;
 
     err = get_args(env, info, &argc, argv, false);
@@ -521,14 +521,22 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     }
 
     struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type;
-    node_id_t node_id;
 
+    node_type_t type;
     status = napi_get_value_uint32(env, argv[1], &type);
     assert(status == napi_ok);
+
+    node_id_t node_id;
     status = napi_get_value_uint32(env, argv[2], &node_id);
     assert(status == napi_ok);
     static_assert(sizeof(node_id) == sizeof(uint32_t));
+
+    void *buf;
+    const uint8_t *adj_filter_buf;
+    size_t adj_filter_len;
+    status = napi_get_buffer_info(env, argv[3], &buf, &adj_filter_len);
+    adj_filter_buf = buf;
+    assert(status == napi_ok);
 
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
@@ -543,10 +551,12 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
+#if 0
     uint8_t input[] = { FILTER_CONJ_NECESS, FILTER_OP_EQ_TYPE, 0, 0, 0, 0, FILTER_OP_EQ_INTEGER, 1, 0, 0, 0, 0, };
+#endif
     struct FindParam cb_wrap = {
-        .adjacent_filter = input,
-        .adjacent_filter_len = sizeof(input),
+        .adjacent_filter = adj_filter_buf,
+        .adjacent_filter_len = adj_filter_len,
         .node_cb = selva_find_cb,
         .node_arg = &(struct selva_find_cb){
             .env = env,
