@@ -8,13 +8,14 @@ export function singleRefProp(
   schemas: BasedDb['schemaTypesParsed'],
 ) {
   const type = fieldDef.allowedType
-  const refSchema = schemas[type]
-  const refCtx = refSchema.responseCtx
 
   return Object.defineProperty(ctx, field, {
     enumerable: true,
     set: () => undefined,
     get() {
+      const refSchema = schemas[type]
+      const refCtx = refSchema.responseCtx
+
       refCtx.__q = this.__q
       // this.__o + more
       refCtx.__o = this.__o
