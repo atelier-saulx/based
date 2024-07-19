@@ -13,6 +13,7 @@ enum filter_op_code {
     FILTER_CONJ_OR = 0,
     FILTER_CONJ_AND,
     FILTER_CONJ_NECESS,
+    FILTER_CONJ_POSS,
     FILTER_CONJ_OP_BREAK,
     FILTER_OP_SWITCH_TYPE,
     FILTER_OP_EQ_TYPE, /* == */

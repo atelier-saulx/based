@@ -191,6 +191,11 @@ int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len
                     goto out;
                 }
                 break;
+            case FILTER_CONJ_POSS:
+                res = !!op_res.res;
+                if (res) {
+                    goto out;
+                }
             default:
                 abort();
             }
