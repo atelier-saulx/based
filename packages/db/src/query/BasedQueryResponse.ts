@@ -58,17 +58,12 @@ export class BasedQueryResponse {
     return new BasedIterable(this.buffer, this)
   }
 
-  [inspect.custom](_depth, { nested }) {
+  [inspect.custom](_depth) {
     const target = this.query.id
       ? this.query.type.type + ':' + this.query.id
       : this.query.type.type
 
-    let includes = this.query.includeFields
     let str = ''
-    if (this.query.conditions) {
-      // console.log(this.query.conditions)
-      // str += `\n  Filter: ${this.query.conditions}`
-    }
 
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.size)

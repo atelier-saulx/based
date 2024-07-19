@@ -1,8 +1,20 @@
 import { Query } from './query.js'
 
+// type __r
+
+// offset
+
+// { includeTree, mainLen, mainIncludes } // maybe better mainInclude
+
+// type SingleRef = { [start: string]: [number]
+// mainLen: number = 0
+// mainIncludes: { [start: string]: [number, FieldDef] }
+
+// }
+
 export const createSingleRefBuffer = (query: Query) => {
   const arr = []
-  // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][len][len][offset][offset][len][len]) [1][2]
+  // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1] ([0][len][len][offset][offset][len][len]) [1][2]
 
   for (const ref of query.refIncludes) {
     // only do main to start...

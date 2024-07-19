@@ -67,6 +67,7 @@ export const parseInclude = (
     const tree = query.type.tree[path[0]]
     if (tree) {
       if (tree.type === 'reference') {
+        // --------------- SINGLE REF ----------------------
         // go go go
         let r
         const refField = tree as FieldDef
@@ -90,11 +91,9 @@ export const parseInclude = (
           // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
           if (!includesMain) {
             query.mainIncludes = {}
-            query.mainIncludesSize = 0
             includesMain = true
             arr.push(0)
           }
-          query.mainIncludesSize++
           query.mainLen += refField.len
           query.mainIncludes[refField.start] = [0, refField]
           r = true
@@ -141,7 +140,6 @@ export const parseInclude = (
   } else {
     if (!includesMain) {
       query.mainIncludes = {}
-      query.mainIncludesSize = 0
       includesMain = true
       // do different?
       arr.push(0)
@@ -155,7 +153,6 @@ export const parseInclude = (
 
     // [255] // [255]
 
-    query.mainIncludesSize++
     query.mainLen += field.len
     query.mainIncludes[field.start] = [0, field]
     // combine all tings for user in 1 include msg

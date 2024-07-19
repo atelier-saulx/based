@@ -18,7 +18,6 @@ export class Query {
   includeTree: IncludeTreeArr
   refIncludes: any // fix
   mainLen: number = 0
-  mainIncludesSize: number
   mainIncludes: { [start: string]: [number, FieldDef] }
   totalConditionSize: number = 0
   constructor(db: BasedDb, target: string, previous?: Query) {

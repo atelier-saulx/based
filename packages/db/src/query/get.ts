@@ -5,7 +5,7 @@ import {
   addPathToIntermediateTree,
   convertToIncludeTree,
 } from './include.js'
-import { createSingleRefBuffer } from './createSingleRefBuffer.js'
+import { createSingleRefBuffer } from './singleRef.js'
 
 const idFieldDef = {
   __isField: true,
@@ -48,7 +48,7 @@ export const get = (query: Query): BasedQueryResponse => {
         mainBuffer = EMPTY_BUFFER
       } else {
         // GET SOME MAIN FIELDS
-        const size = query.mainIncludesSize
+        const size = Object.keys(query.mainIncludes).length
         mainBuffer = Buffer.allocUnsafe(size * 4 + 4)
         mainBuffer.writeUint32LE(query.mainLen, 0)
         let i = 4
