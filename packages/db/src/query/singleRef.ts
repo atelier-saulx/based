@@ -46,7 +46,7 @@ export const createSingleRefBuffer = (query: Query) => {
       if (ref.mainLen !== ref.schema.mainLen) {
         size += 3
         // MAIN SELECT FIELDS SIZE
-        size += ref.main.length * 4
+        size += Object.keys(ref.mainIncludes).length * 4
         // MAIN SIZE
         size += 4
       } else {
@@ -72,17 +72,25 @@ export const createSingleRefBuffer = (query: Query) => {
         refsingleBuffer[6] = 0
 
         // MAIN SELECTIVE FIELDS [7,8]
-        refsingleBuffer.writeUint16LE(ref.main.length * 4, 7)
+        refsingleBuffer.writeUint16LE(
+          Object.keys(ref.mainIncludes).length * 4,
+          7,
+        )
 
         // MAIN LEN [9,10,11,12] // can be 16...
         refsingleBuffer.writeUint32LE(ref.mainLen, 9)
 
         // MAIN SELECT [13 ....]
         i = 9 + 4
-        for (let x of ref.main) {
-          refsingleBuffer.writeUint16LE(x.start, i)
-          refsingleBuffer.writeUint16LE(x.len, i + 2)
+        let m = 0
+        for (const key in ref.mainIncludes) {
+          const v = ref.mainIncludes[key]
+          refsingleBuffer.writeUint16LE(v[1].start, i)
+          const len = v[1].len
+          v[0] = m
+          refsingleBuffer.writeUint16LE(len, i + 2)
           i += 4
+          m += len
         }
       } else {
         // later

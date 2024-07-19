@@ -80,7 +80,7 @@ export const parseInclude = (
 
         const refDef2 = {
           // @ts-ignore (ignore typescript error, TODO: later)
-          main: [],
+          // main: [],
           mainIncludes: {},
           mainLen: 0,
           fields: [],
@@ -120,8 +120,9 @@ export const parseInclude = (
             f.fields.push(x)
           } else {
             f.mainLen += x.len
+            // set 0...
             f.mainIncludes[x.start] = [0, x]
-            f.main.push(x)
+            // f.main.push(x)
           }
         }
 

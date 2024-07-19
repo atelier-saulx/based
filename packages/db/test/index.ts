@@ -28,9 +28,10 @@ db.updateSchema({
       fields: {
         name: { type: 'string' },
         flap: { type: 'integer' },
-        email: { type: 'string' }, // maxLength: 10
+        email: { type: 'string', maxLength: 10 }, // maxLength: 10
         age: { type: 'integer' },
         snurp: { type: 'string' },
+        burp: { type: 'integer' },
         location: {
           type: 'object',
           properties: {
@@ -90,6 +91,7 @@ for (let i = 0; i < 1000; i++) {
     db.create('user', {
       age: 99,
       name: 'Mr ' + i,
+      burp: 66,
       snurp: 'derp derp',
       email: i + '@once.net',
       location: {
@@ -135,6 +137,7 @@ const result = db
   // .filter('vectorClock', '>', 500)
   .include('countryCode')
   .include('user.age')
+  .include('user.burp')
   // .include('user.name')
   // .include('user.snurp')
   // .include('user.email')
@@ -184,6 +187,8 @@ for (const item of result.data) {
 
   // console.info('| USER NAME--->', item.user.name)
   console.info('| USER AGE--->', item.user.age)
+  console.info('| USER BURP--->', item.user.burp)
+
   // console.info('| USER SNURP--->', item.user.snurp)
   // console.info('| USER EMAIL--->', item.user.email)
   i++

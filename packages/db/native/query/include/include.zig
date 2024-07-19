@@ -43,11 +43,8 @@ pub fn getFields(
             size += 1 + 4;
             const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = includeMain };
             try ctx.results.append(s);
-        } else if (start != null) {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = includeMain };
-            try ctx.results.append(s);
         } else {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = null, .includeMain = includeMain };
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = includeMain };
             try ctx.results.append(s);
         }
 
