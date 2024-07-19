@@ -33,7 +33,7 @@ struct SelvaFieldsAny {
         bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
         double number; /*!< SELVA_FIELD_TYPE_NUMBER */
         int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP */
-        long long integer; /*!< SELVA_FIELD_TYPE_INTEGER */
+        int32_t integer; /*!< SELVA_FIELD_TYPE_INTEGER */
         struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
         uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
         uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */

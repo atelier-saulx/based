@@ -15,6 +15,7 @@
 #include "update.h"
 #include "fields.h"
 #include "traverse.h"
+#include "find.h"
 
 static bool selva_napi_is_function(napi_env env, napi_value arg)
 {
@@ -375,15 +376,15 @@ static napi_value selva_db_get_field_p(napi_env env, napi_callback_info info)
     return any2napi(env, &any);
 }
 
-struct node_cb_trampoline {
+struct node_cb_js_trampoline {
     napi_env env;
     napi_value this; /*!< js object. */
     napi_value func; /*!< js function. */
 };
 
-static int node_cb_trampoline(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
+static int node_cb_js_trampoline(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
 {
-    struct node_cb_trampoline *ctx = (struct node_cb_trampoline *)arg;
+    struct node_cb_js_trampoline *ctx = (struct node_cb_js_trampoline *)arg;
     napi_status status;
     int argc = 3;
     napi_value argv[3];
@@ -474,8 +475,8 @@ static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info
     }
 
     struct SelvaTraversalParam cb_wrap = {
-        .node_cb = node_cb_trampoline,
-        .node_arg = &(struct node_cb_trampoline){
+        .node_cb = node_cb_js_trampoline,
+        .node_arg = &(struct node_cb_js_trampoline){
             .env = env,
             .this = ({ napi_value this; napi_get_global(env, &this); this; }),
             .func = argv[3], /*!< js function. */
@@ -484,6 +485,76 @@ static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info
 
     err = traverse_field_bfs(db, node, &cb_wrap);
     return res2napi(env, err);
+}
+
+struct selva_find_cb {
+    napi_env env;
+    napi_value result;
+    size_t i;
+};
+
+static int selva_find_cb(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
+{
+    struct selva_find_cb *args = (struct selva_find_cb *)arg;
+    napi_value value;
+
+    //napi_create_uint32(args->env, node->node_id, &value);
+    //napi_set_element(args->env, args->result, args->i++, value);
+    args->i++;
+
+    return 0;
+}
+
+// selva_find(db, type, node_id, fields, filter_expression): number
+// fields: { nodeType: [ field, filter], .. }
+static napi_value selva_find(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 3;
+    napi_value argv[3];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type;
+    node_id_t node_id;
+
+    status = napi_get_value_uint32(env, argv[1], &type);
+    assert(status == napi_ok);
+    status = napi_get_value_uint32(env, argv[2], &node_id);
+    assert(status == napi_ok);
+    static_assert(sizeof(node_id) == sizeof(uint32_t));
+
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    node = db_find_node(db, te, node_id);
+    if (!node) {
+        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+    }
+
+    struct SelvaTraversalParam cb_wrap = {
+        .node_cb = selva_find_cb,
+        .node_arg = &(struct selva_find_cb){
+            .env = env,
+            //.result = ({ napi_value res; napi_create_array(env, &res); res; }),
+        },
+    };
+
+    char *fields = NULL;
+    uint8_t filter_expression[1] = { 0 }; /* TODO */
+    err = find(db, node, fields, filter_expression, &cb_wrap);
+    //return (err) ? res2napi(env, err) : ((struct selva_find_cb *)cb_wrap.node_arg)->result;
+    return (err) ? res2napi(env, err) : ({ napi_value res; napi_create_int32(env, ((struct selva_find_cb *)cb_wrap.node_arg)->i, &res); res; });
 }
 
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -498,6 +569,7 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),
       DECLARE_NAPI_METHOD("db_get_field_p", selva_db_get_field_p),
       DECLARE_NAPI_METHOD("traverse_field_bfs", selva_traverse_field_bfs),
+      DECLARE_NAPI_METHOD("find", selva_find),
   };
   napi_status status;
 

@@ -16,6 +16,9 @@ struct SelvaTraversalMetadata {
     long long depth;
 };
 
+#define SELVA_TRAVERSAL_ABORT (-2)
+#define SELVA_TRAVERSAL_STOP (-1)
+
 /**
  * Called for each node found during a traversal.
  * @param node a pointer to the node.

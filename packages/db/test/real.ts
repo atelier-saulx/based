@@ -184,7 +184,7 @@ test.serial.only('query + filter', async (t) => {
 
   const NR_NODES = 5e6
   // const NR_NODES = 100e3
-  const DATA_SIZE = 84 // + 9
+  const DATA_SIZE = 84 + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
   let off = 0
   for (let i = 0; i < NR_NODES; i++) {
@@ -230,10 +230,10 @@ test.serial.only('query + filter', async (t) => {
     off += 8
 
     // user ref
-    // buf.writeUInt32LE(9, off) // len
-    // buf.writeInt8(fields['user'].selvaField, (off += 4)) // field
-    // buf.writeUint32LE(0, (off += 1))
-    // off += 4
+    buf.writeUInt32LE(9, off) // len
+    buf.writeInt8(fields['user'].selvaField, (off += 4)) // field
+    buf.writeUint32LE(0, (off += 1))
+    off += 4
 
     //selva.db_update(dbp, 0, i, buf.subarray(0, off))
     //selva.db_update(dbp, 0, i, buf)
@@ -302,6 +302,14 @@ test.serial.only('query + filter', async (t) => {
   const matchEnd = performance.now()
   console.log(
     `Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms`,
+  )
+
+  console.log('fast filtering:')
+  const match1Start = performance.now()
+  const res = selva.find(dbp, 1, 0)
+  const match1End = performance.now()
+  console.log(
+    `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,
   )
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
