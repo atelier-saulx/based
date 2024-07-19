@@ -93,7 +93,7 @@ for (let i = 0; i < 1000; i++) {
       name: 'Mr ' + i,
       burp: 66,
       snurp: 'derp derp',
-      email: i + '@once.net',
+      email: 'merp_merp_' + i + '@once.net',
       location: {
         label: 'BLA BLA',
       },
@@ -140,7 +140,7 @@ const result = db
   .include('user.burp')
   // .include('user.name')
   // .include('user.snurp')
-  // .include('user.email')
+  .include('user.email')
   // .include('user.location.label')
   .range(0, 2)
   // sort()
@@ -190,7 +190,7 @@ for (const item of result.data) {
   console.info('| USER BURP--->', item.user.burp)
 
   // console.info('| USER SNURP--->', item.user.snurp)
-  // console.info('| USER EMAIL--->', item.user.email)
+  console.info('| USER EMAIL--->', item.user.email)
   i++
   // console.info('| USER LOCATION--->', item.user.location.label)
   // console.info('| USER TOTAL--->', item.user.toObject()) // fix

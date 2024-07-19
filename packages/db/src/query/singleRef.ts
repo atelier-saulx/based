@@ -93,13 +93,12 @@ export const createSingleRefBuffer = (query: Query) => {
           m += len
         }
       } else {
+        // INCLUDE ALL
         // later
       }
 
       i++
       refsingleBuffer[i] = 0
-
-      // add fields
     }
 
     for (const f of ref.fields) {
@@ -122,3 +121,12 @@ export const createSingleRefBuffer = (query: Query) => {
 
   // return Buffer.concat(arr)
 }
+
+/*
+TODO FIRST INCLUDE make it nice
+  support for nested fields
+
+
+MULTI SINGLE REFS writer, admin
+NESTED REF (RECURSIVE)
+*/
