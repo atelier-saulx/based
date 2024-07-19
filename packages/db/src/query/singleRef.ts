@@ -20,17 +20,19 @@ export const createSingleRefBuffer = (query: Query) => {
     // only do main to start...
     let refsingleBuffer: Buffer
     let size = 6
-
+    let i = 0
     // add extra ref normal fields now
-    console.info({ ref })
+    // console.info({ ref })
+
+    size += ref.fields?.length ?? 0
 
     if (ref.mainLen) {
+      size += 1
+
       if (ref.mainLen !== ref.schema.mainLen) {
         size += 3
-
         // MAIN SELECT FIELDS SIZE
         size += ref.main.length * 4
-
         // MAIN SIZE
         size += 4
       } else {
@@ -41,13 +43,14 @@ export const createSingleRefBuffer = (query: Query) => {
       refsingleBuffer = Buffer.allocUnsafe(size)
 
       // SIZE [0,1]
-      refsingleBuffer.writeUint16LE(size - 6)
+
+      // TYPE [2,3]
+      refsingleBuffer[2] = ref.schema.prefix[0]
+      refsingleBuffer[3] = ref.schema.prefix[1]
+
+      i += 6
 
       if (ref.mainLen !== ref.schema.mainLen) {
-        // TYPE [2,3]
-        refsingleBuffer[2] = ref.schema.prefix[0]
-        refsingleBuffer[3] = ref.schema.prefix[1]
-
         // REF [4,5]
         refsingleBuffer.writeUint16LE(ref.ref.start, 4)
 
@@ -61,24 +64,39 @@ export const createSingleRefBuffer = (query: Query) => {
         refsingleBuffer.writeUint32LE(ref.mainLen, 9)
 
         // MAIN SELECT [13 ....]
-        let i = 9 + 4
+        i = 9 + 4
         for (let x of ref.main) {
           refsingleBuffer.writeUint16LE(x.start, i)
           refsingleBuffer.writeUint16LE(x.len, i + 2)
           i += 4
         }
-
-        console.log('GET', {
-          refsingleBuffer: new Uint8Array(refsingleBuffer),
-        })
-
-        arr.push(refsingleBuffer)
       } else {
         // later
       }
 
+      i++
+      refsingleBuffer[i] = 0
+
       // add fields
     }
+
+    for (const f of ref.fields) {
+      refsingleBuffer[i] = f.field
+      console.info(f)
+      i++
+    }
+
+    refsingleBuffer.writeUint16LE(size - 6)
+
+    console.log('GET', {
+      refsingleBuffer: new Uint8Array(refsingleBuffer),
+    })
+
+    return refsingleBuffer
+    // arr.push(refsingleBuffer)
   }
-  return Buffer.concat(arr)
+
+  // console.log('flap', arr)
+
+  // return Buffer.concat(arr)
 }

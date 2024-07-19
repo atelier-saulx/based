@@ -123,6 +123,9 @@ export const get = (query: Query): BasedQueryResponse => {
   }
 
   const d = performance.now()
+
+  console.log('INCLUDE BUFFER:', new Uint8Array(includeBuffer))
+
   const result: Buffer = query.db.native.getQuery(
     conditions,
     query.type.prefixString,

@@ -36,39 +36,39 @@ db.updateSchema({
       // min max on string
       fields: {
         // countryCode: { type: 'string' },
-        derp: { type: 'integer' },
+        // derp: { type: 'integer' },
         // add bytelenght as option
         // also add a bytes field
         // @ts-ignore
         // @ts-ignore
         countryCode: { type: 'string', maxBytes: 2 },
-        name: { type: 'string', maxLength: 10 },
+        // name: { type: 'string', maxLength: 10 },
         user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
         // refs: { type: 'references', allowedType: 'user' },
-        location: {
-          type: 'object',
-          properties: {
-            bla: { type: 'integer' },
-            long: { type: 'number' },
-            lat: { type: 'number' },
-          },
-        },
-        smurp: {
-          type: 'object',
-          properties: {
-            hello: { type: 'boolean' },
-            ts: { type: 'timestamp' },
-            pos: {
-              type: 'object',
-              properties: {
-                x: { type: 'integer' },
-                y: { type: 'integer' },
-              },
-            },
-          },
-        },
+        // location: {
+        //   type: 'object',
+        //   properties: {
+        //     bla: { type: 'integer' },
+        //     long: { type: 'number' },
+        //     lat: { type: 'number' },
+        //   },
+        // },
+        // smurp: {
+        //   type: 'object',
+        //   properties: {
+        //     hello: { type: 'boolean' },
+        //     ts: { type: 'timestamp' },
+        //     pos: {
+        //       type: 'object',
+        //       properties: {
+        //         x: { type: 'integer' },
+        //         y: { type: 'integer' },
+        //       },
+        //     },
+        //   },
+        // },
       },
     },
   },
@@ -88,27 +88,27 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 1e6
+const amount = 1
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
-    name: 'Jim de Beer',
+    // name: 'Jim de Beer',
     user: users[~~(Math.random() * users.length)],
     vectorClock: ~~(Math.random() * 10000),
-    derp: ~~(Math.random() * 10000),
+    // derp: ~~(Math.random() * 10000),
     // flap: text,
-    flap: 'en',
-    countryCode: 'en',
+    flap: 'aa',
+    countryCode: 'aa',
     // countryCode: Math.random() > 0.5 ? 'en' : 'de',
     // refs: [1, 2, 3],
-    smurp: {
-      ts: Date.now(),
-    },
-    location: {
-      bla: 3,
-      long: 1,
-      lat: 2,
-    },
+    // smurp: {
+    //   ts: Date.now(),
+    // },
+    // location: {
+    //   bla: 3,
+    //   long: 1,
+    //   lat: 2,
+    // },
   })
 }
 
@@ -117,25 +117,11 @@ console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
-
-  // add field selection
-
-  // .filter('vectorClock', '>', 9998)
-  .filter('countryCode', '=', 'en')
-  .filter('flap', '=', 'en')
-  // .filter('vectorClock', '=', 9999)
-
-  // fix order...
-  .include(
-    'countryCode',
-    // 'vectorClock',
-    // 'user.email',
-    // 'name',
-    // 'smurp',
-    // 'flap',
-    'user.age',
-    'user.name',
-  )
+  // .filter('countryCode', '=', 'aa')
+  // .filter('flap', '=', 'aa')
+  .include('countryCode')
+  .include('user.age')
+  .include('user.name')
   .range(0, 1)
   // sort()
   .get()

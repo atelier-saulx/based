@@ -71,6 +71,13 @@ export const parseInclude = (
         // go go go
         let r
         const refField = tree as FieldDef
+
+        // REF IN REF TREES
+        // REF TREE
+        // IF REF IN INCLUDE TREE USES THAT (see based node)
+
+        // THEN NESTED PARSING
+
         const refDef2 = {
           // @ts-ignore (ignore typescript error, TODO: later)
           main: [],
@@ -119,6 +126,7 @@ export const parseInclude = (
         }
 
         return r // result
+        // --------------- END SINGLE REF ----------------------
       } else {
         // not returned
         const endFields = getAllFieldFromObject(tree)
