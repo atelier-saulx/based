@@ -11,6 +11,8 @@ LIB_SUFFIX := .node
 OBJ := \
 	db.o \
 	fields.o \
+	filter.o \
+	find.o \
 	schema.o \
 	selva.o \
 	selva_object/selva_object.o \
