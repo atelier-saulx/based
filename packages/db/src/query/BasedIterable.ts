@@ -55,6 +55,7 @@ export class BasedIterable {
         const ctx = this.#query.query.type.responseCtx
         ctx.__o = i
         ctx.__q = this.#query
+        ctx.__r = null
         yield ctx
         i += 4
       } else if (index === 0) {

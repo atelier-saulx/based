@@ -5,6 +5,8 @@ import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 import { Query } from '../query/query.js'
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
+import { BasedDb } from '../index.js'
+import { singleRefProp } from './singleRefProp.js'
 
 const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
   for (let i = 0; i < arr.length; i++) {
@@ -36,6 +38,9 @@ const toObjectIncludeTreePrint = (
     if ('__isField' in item) {
       let v = target[key]
       if (item.type === 'string') {
+        if (v === undefined) {
+          return ''
+        }
         if (v.length > 80) {
           const chars = picocolors.italic(
             picocolors.dim(
@@ -66,9 +71,14 @@ const toObjectIncludeTreePrint = (
 export class BasedNode {
   [key: string]: any
   __q: BasedQueryResponse
+  // have to unser __r
+  __r?: {
+    mainLen: number
+    mainFields: Query['mainIncludes']
+  }
   __o: number
-  __p?: number
-  constructor(schema: SchemaTypeDef) {
+  __s: SchemaTypeDef
+  constructor(schema: SchemaTypeDef, schemas: BasedDb['schemaTypesParsed']) {
     const ctx = this
     const nonEnum = {
       writable: true,
@@ -77,7 +87,7 @@ export class BasedNode {
     Object.defineProperties(ctx, {
       __q: nonEnum,
       __o: nonEnum,
-      __p: nonEnum,
+      __s: nonEnum,
       id: {
         set: () => undefined,
         get() {
@@ -85,6 +95,7 @@ export class BasedNode {
         },
       },
     })
+    this.__s = schema
     for (const field in schema.fields) {
       const fieldDef = schema.fields[field]
       const { path } = fieldDef
@@ -94,17 +105,7 @@ export class BasedNode {
         }
       } else {
         if (fieldDef.type === 'reference') {
-          Object.defineProperty(ctx, field, {
-            enumerable: true,
-            set: () => undefined,
-            get() {
-              // we can set the based node here potentialy
-              // create an extra query response for it?
-
-              return 'flap REF'
-              // return readSeperateFieldFromBuffer(fieldDef., ctx)
-            },
-          })
+          singleRefProp(ctx, field, fieldDef, schemas)
         } else {
           Object.defineProperty(ctx, field, {
             enumerable: true,
@@ -124,21 +125,23 @@ export class BasedNode {
       return `${pre}\n`
     }
 
-    const msg = toObjectIncludeTreePrint(
-      '',
-      this,
-      this.__q.query.includeTree,
-    ).trim()
+    const msg = this.__r
+      ? ' is ref need to fix includeTree'
+      : toObjectIncludeTreePrint('', this, this.__q.query.includeTree).trim()
 
     if (nested) {
       return msg
     }
 
-    const pre = picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)
+    const pre = picocolors.bold(`BasedNode[${this.__s.type}]`)
     return `${pre} ${msg}\n`
   }
 
   toObject(print: boolean = false) {
+    // quite different if you have __r
+    if (this.__r) {
+      return { IS_REF: true }
+    }
     return toObjectIncludeTree({}, this, this.__q.query.includeTree)
   }
 

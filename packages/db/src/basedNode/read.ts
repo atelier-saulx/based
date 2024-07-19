@@ -14,6 +14,12 @@ export const readSeperateFieldFromBuffer = (
 
   const requestedFieldIndex = requestedField.field
 
+  console.log('HELLO', basedNode.__r)
+  if (basedNode.__r) {
+    console.info('REF VERY DIFFERENT!')
+    return 'IN REF DIFFERENT!'
+  }
+
   while (i < buffer.byteLength) {
     const index = buffer[i]
 

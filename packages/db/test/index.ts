@@ -155,7 +155,7 @@ console.log(result)
 // }
 
 for (const item of result.data) {
-  console.info(item)
+  console.info('| USER--->', item.user)
   break
 }
 

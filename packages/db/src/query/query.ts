@@ -3,6 +3,7 @@ import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Operation } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
+import { inspect } from 'node:util'
 
 type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
 
@@ -58,6 +59,10 @@ export class Query {
     // maybe start with this?
     // this is also where we will create diffs
     // idea use  PROXY object as a view to the buffer
+  }
+
+  [inspect.custom](_depth, { nested }) {
+    return `BasedQuery[]`
   }
 }
 

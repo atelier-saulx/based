@@ -107,7 +107,11 @@ export class BasedDb {
           }
           this.schema.prefixToTypeMapping[type.prefix] = field
         }
-        this.schemaTypesParsed[field] = createSchemaTypeDef(field, type)
+        this.schemaTypesParsed[field] = createSchemaTypeDef(
+          field,
+          type,
+          this.schemaTypesParsed,
+        )
       }
     }
   }
