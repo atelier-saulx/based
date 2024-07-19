@@ -39,10 +39,10 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 last_pos += 1;
                 dataU8[last_pos] = last_singleRef[1];
                 last_pos += 1;
-                std.debug.print("zig: set ref... {any} S:{any}\n", .{ key.id, key.start });
+                // std.debug.print("zig: set ref... {any} S:{any}\n", .{ key.id, key.start });
             }
         } else {
-            std.debug.print("zig: reset ref... {any}\n", .{key.id});
+            // std.debug.print("zig: reset ref... {any}\n", .{key.id});
             last_singleRef[0] = 255;
             last_singleRef[1] = 255;
         }

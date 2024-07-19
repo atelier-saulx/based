@@ -134,7 +134,7 @@ const result = db
   .query('simple')
   // .filter('countryCode', '=', 'aa')
   // .filter('flap', '=', 'aa')
-  // .filter('vectorClock', '>', 500)
+  .filter('vectorClock', '>', 500)
   .include('countryCode')
   .include('user.age')
   .include('user.burp')
@@ -142,7 +142,7 @@ const result = db
   // .include('user.snurp')
   .include('user.email')
   // .include('user.location.label')
-  .range(0, 2)
+  .range(0, 1e6)
   // sort()
   .get()
 
@@ -194,7 +194,7 @@ for (const item of result.data) {
   i++
   // console.info('| USER LOCATION--->', item.user.location.label)
   // console.info('| USER TOTAL--->', item.user.toObject()) // fix
-  if (i > 100) {
+  if (i > 3) {
     break
   }
 }
