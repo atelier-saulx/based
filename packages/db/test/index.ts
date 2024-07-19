@@ -30,6 +30,15 @@ db.updateSchema({
         flap: { type: 'integer' },
         email: { type: 'string', maxLength: 10 },
         age: { type: 'integer' },
+        snurp: { type: 'string' },
+        location: {
+          type: 'object',
+          properties: {
+            label: { type: 'string' },
+            x: { type: 'integer' },
+            y: { type: 'integer' },
+          },
+        },
       },
     },
     simple: {
@@ -81,7 +90,11 @@ for (let i = 0; i < 1000; i++) {
     db.create('user', {
       age: 99,
       name: 'Mr ' + i,
+      snurp: 'derp derp',
       email: i + '@once.net',
+      location: {
+        label: 'BLA BLA',
+      },
     }),
   )
 }
@@ -122,6 +135,8 @@ const result = db
   .include('countryCode')
   .include('user.age')
   .include('user.name')
+  .include('user.snurp')
+  // .include('user.location.label')
   .range(0, 1)
   // sort()
   .get()
@@ -143,6 +158,9 @@ console.log(result)
 for (const item of result.data) {
   console.info('| USER--->', item.user.name)
   console.info('| USER AGE--->', item.user.age)
+  console.info('| USER SNURP--->', item.user.snurp)
+  // console.info('| USER LOCATION--->', item.user.location.label)
+  console.info('| USER TOTAL--->', item.user.toObject()) // fix
 
   break
 }
