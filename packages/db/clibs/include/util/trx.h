@@ -8,7 +8,7 @@
 
 #include "cdefs.h"
 
-typedef uint64_t trxid_t;
+typedef uint8_t trxid_t;
 
 /**
  * Global transaction state.

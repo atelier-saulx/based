@@ -37,7 +37,7 @@ struct SelvaObject;
 
 typedef int8_t field_t;
 typedef uint32_t node_id_t;
-typedef uint32_t node_type_t;
+typedef uint16_t node_type_t;
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
@@ -84,9 +84,9 @@ struct SelvaNodeSchema {
  */
 struct SelvaNode {
     node_id_t node_id;
-    RB_ENTRY(SelvaNode) _index_entry;
-    struct trx_label trx_label;
     node_type_t type;
+    struct trx_label trx_label;
+    RB_ENTRY(SelvaNode) _index_entry;
 #define SELVA_NODE_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.

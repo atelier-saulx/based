@@ -61,11 +61,11 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
       if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
-        const buf = Buffer.allocUnsafe(6)
+        const buf = Buffer.allocUnsafe(4)
 
         buf.writeUInt8(typeMap[f.type], 0)
         buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
-        buf.writeUInt32LE(typeNames.indexOf(f.allowedType), 2)
+        buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
         return [...buf.values()]
       } else if (f.type === 'string') {
         return [typeMap[f.type], f.len < 50 ? f.len : 0]
@@ -183,6 +183,7 @@ test.serial.only('query + filter', async (t) => {
   const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
+  //const NR_NODES = 1e6
   // const NR_NODES = 100e3
   const DATA_SIZE = 84 + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
@@ -306,12 +307,13 @@ test.serial.only('query + filter', async (t) => {
 
   const FILTER = {
       CONJ_NECESS: 2,
-      OP_EQ_TYPE: 5,
-      OP_EQ_INTEGER: 6,
+      CONJ_POSS: 3,
+      OP_EQ_TYPE: 6,
+      OP_EQ_INTEGER: 7,
   }
   console.log('fast filtering:')
   const match1Start = performance.now()
-  const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
+  const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
   const res = selva.find(dbp, 1, 0, adj_filter)
   const match1End = performance.now()
   console.log(
