@@ -124,7 +124,7 @@ export const get = (query: Query): BasedQueryResponse => {
 
   const d = performance.now()
 
-  console.log('INCLUDE BUFFER:', new Uint8Array(includeBuffer))
+  // console.log('INCLUDE BUFFER:', new Uint8Array(includeBuffer))
 
   const result: Buffer = query.db.native.getQuery(
     conditions,
@@ -137,7 +137,7 @@ export const get = (query: Query): BasedQueryResponse => {
     refBuffer,
   )
 
-  console.log('RESULT', new Uint8Array(result))
+  // console.log('RESULT', new Uint8Array(result))
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

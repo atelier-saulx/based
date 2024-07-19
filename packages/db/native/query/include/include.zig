@@ -58,7 +58,7 @@ pub fn getFields(
                 size += getSingleRefFields(ctx, includeSingleRefs, v);
             }
             if (includeMain.len != 0) {
-                std.debug.print("MAIN LEN {any} \n", .{std.mem.readInt(u32, includeMain[0..4], .little) + 1});
+                // std.debug.print("zig: MAIN LEN {any} \n", .{std.mem.readInt(u32, includeMain[0..4], .little) + 1});
                 size += std.mem.readInt(u32, includeMain[0..4], .little) + 1;
             } else {
                 size += (v.mv_size + 1);

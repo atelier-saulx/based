@@ -101,7 +101,7 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 1
+const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -134,10 +134,10 @@ const result = db
   // .filter('flap', '=', 'aa')
   .include('countryCode')
   .include('user.age')
-  .include('user.name')
-  .include('user.snurp')
+  // .include('user.name')
+  // .include('user.snurp')
   // .include('user.location.label')
-  .range(0, 1)
+  .range(0, 1e6)
   // sort()
   .get()
 

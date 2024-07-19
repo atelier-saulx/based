@@ -42,7 +42,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
                 mainIncludeNested = buf[i .. i + 4 + refMainSelectLen];
                 i += 4 + refMainSelectLen;
             } else {
-                std.debug.print("zig: hello its ALL main \n", .{});
+                // std.debug.print("zig: hello its ALL main \n", .{});
                 mainIncludeNested = EMPTY[0..0];
             }
         } else {
@@ -51,13 +51,13 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
 
         const includeLen = ((len + 6) - (i - refstartIndex));
 
-        std.debug.print("zig: START {d} i {d} LEN {d} inclLen {d} \n", .{ refstartIndex, i, len, includeLen });
+        // std.debug.print("zig: START {d} i {d} LEN {d} inclLen {d} \n", .{ refstartIndex, i, len, includeLen });
 
         const includeNested: []u8 = buf[i .. i + includeLen];
 
         i += includeLen;
 
-        std.debug.print("zig: hello NEST {any} \n", .{includeNested});
+        // std.debug.print("zig: hello NEST {any} \n", .{includeNested});
 
         const shardNested: u16 = @truncate(@divTrunc(refId, 1_000_000));
 
