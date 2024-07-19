@@ -28,7 +28,7 @@ db.updateSchema({
       fields: {
         name: { type: 'string' },
         flap: { type: 'integer' },
-        email: { type: 'string', maxLength: 10 }, // maxLength: 10
+        email: { type: 'string', maxLength: 15 }, // maxLength: 10
         age: { type: 'integer' },
         snurp: { type: 'string' },
         burp: { type: 'integer' },
@@ -103,12 +103,12 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 1e2
+const amount = 5e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // name: 'Jim de Beer',
-    user: users[~~(Math.random() * users.length)],
+    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: ~~(Math.random() * 10000),
     // derp: ~~(Math.random() * 10000),
     // flap: text,
