@@ -18,15 +18,27 @@
 #include "find.h"
 #include "filter.h"
 
-static bool selva_napi_is_function(napi_env env, napi_value arg)
+static napi_valuetype selva_napi_get_nvaluetype(napi_env env, napi_value value)
 {
     napi_status status;
     napi_valuetype type;
 
-    status = napi_typeof(env, arg, &type);
+    status = napi_typeof(env, value, &type);
     assert(status == napi_ok);
+    return type;
+}
 
-    return (type == napi_function);
+static bool selva_napi_is_null(napi_env env, napi_value value)
+{
+    napi_valuetype type = selva_napi_get_nvaluetype(env, value);
+
+    return type == napi_null ||
+           type == napi_undefined;
+}
+
+static bool selva_napi_is_function(napi_env env, napi_value value)
+{
+    return selva_napi_get_nvaluetype(env, value) == napi_function;
 }
 
 static napi_value db2npointer(napi_env env, struct SelvaDb *db)
@@ -470,13 +482,12 @@ static napi_value selva_traverse_field_bfs(napi_env env, napi_callback_info info
     }
 
     struct SelvaTypeEntry *te;
-    struct SelvaNode *node;
-
     te = db_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
 
+    struct SelvaNode *node;
     node = db_find_node(db, te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
@@ -531,21 +542,23 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     node_type_t type = selva_napi_get_node_type(env, argv[1]);
     node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
 
-    void *buf;
-    const uint8_t *adj_filter_buf;
-    size_t adj_filter_len;
-    status = napi_get_buffer_info(env, argv[3], &buf, &adj_filter_len);
-    assert(status == napi_ok);
-    adj_filter_buf = buf;
+    const uint8_t *adj_filter_buf = NULL;
+    size_t adj_filter_len = 0;
+    if (!selva_napi_is_null(env, argv[3])) {
+        void *buf;
+
+        status = napi_get_buffer_info(env, argv[3], &buf, &adj_filter_len);
+        assert(status == napi_ok);
+        adj_filter_buf = buf;
+    }
 
     struct SelvaTypeEntry *te;
-    struct SelvaNode *node;
-
     te = db_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
 
+    struct SelvaNode *node;
     node = db_find_node(db, te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
