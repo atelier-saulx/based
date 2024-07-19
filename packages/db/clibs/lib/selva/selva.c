@@ -25,6 +25,7 @@ static napi_valuetype selva_napi_get_nvaluetype(napi_env env, napi_value value)
 
     status = napi_typeof(env, value, &type);
     assert(status == napi_ok);
+
     return type;
 }
 
