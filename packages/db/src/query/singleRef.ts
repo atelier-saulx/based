@@ -10,6 +10,20 @@ import { Query } from './query.js'
 // mainLen: number = 0
 // mainIncludes: { [start: string]: [number, FieldDef] }
 
+// ;[
+// 1, 0, 0, 0,
+// 255,
+// id: 1, 0, 0, 0,
+// field 0,
+// country code: 97, 97, 0,
+// userId: 62, 2, 0, 0,
+// select ref 0, 254, 3, 0, [start 3]
+// field 0,
+// user.age 66, 0, 0, 0
+// field 1,
+// 6, 0, 77, 114, 32, 53, 55, 51,
+// ]
+
 // }
 
 export const createSingleRefBuffer = (query: Query) => {
