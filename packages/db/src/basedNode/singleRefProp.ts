@@ -13,6 +13,7 @@ export function singleRefProp(
     enumerable: true,
     set: () => undefined,
     get() {
+      // TODO: fix speed
       const refSchema = schemas[type]
       const refCtx = refSchema.responseCtx
 

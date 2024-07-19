@@ -29,16 +29,34 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
-    if (!found && ref && index === 0 && buffer[i] === 254) {
+    if ((!found || !ref) && index === 0 && buffer[i] === 254) {
       const start = buffer.readUint16LE(i + 1)
-      if (start === refStart) {
+      if (ref && start === refStart) {
         found = true
         i += 3
-        mainLen = ref.mainLen
-        mainIncludes = ref.mainFields
+        if (ref.mainLen) {
+          mainLen = ref.mainLen
+          mainIncludes = ref.mainFields
+        }
         index = buffer[i]
         i += 1
-        const b = new Uint8Array(buffer)
+
+        console.info('     SELECT REF - next')
+      } else {
+        i += 3
+        index = buffer[i]
+        if (queryResponse.query.refIncludes[0].mainLen) {
+          mainLen = queryResponse.query.refIncludes[0].mainLen
+          mainIncludes = queryResponse.query.refIncludes[0].mainFields
+        }
+        i += 1
+        // set these to the correct ref...
+        // mainLen = ref.mainLen
+        // mainIncludes = ref.mainFields
+        // TODO: skip to next ref
+        // get ref leng from includes
+
+        console.info('switch')
       }
     }
 
@@ -90,6 +108,10 @@ export const readSeperateFieldFromBuffer = (
         }
       }
       i += mainLen
+
+      // reset
+      mainLen = queryResponse.query.mainLen
+      mainIncludes = queryResponse.query.mainIncludes
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2

@@ -28,7 +28,7 @@ db.updateSchema({
       fields: {
         name: { type: 'string' },
         flap: { type: 'integer' },
-        email: { type: 'string', maxLength: 10 },
+        email: { type: 'string' }, // maxLength: 10
         age: { type: 'integer' },
         snurp: { type: 'string' },
         location: {
@@ -101,7 +101,7 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 1e6
+const amount = 1e2
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -132,14 +132,34 @@ const result = db
   .query('simple')
   // .filter('countryCode', '=', 'aa')
   // .filter('flap', '=', 'aa')
+  // .filter('vectorClock', '>', 500)
   .include('countryCode')
   .include('user.age')
   // .include('user.name')
   // .include('user.snurp')
+  // .include('user.email')
   // .include('user.location.label')
-  .range(0, 1e6)
+  .range(0, 2)
   // sort()
   .get()
+
+const team = {
+  matches: [1, 2, 5],
+}
+
+// loop
+// id SORT PUBLISHDATE
+//
+
+/*
+[timestamp]: {id}
+[timestamp]: {id}
+
+
+
+
+
+*/
 
 // const result2 = db.query('user').range(0, 10).get()
 
@@ -151,18 +171,27 @@ const result = db
 
 console.log(result)
 
+console.log(new Uint8Array(result.buffer), result.data.length)
+
 // for (const item of result.data) {
 //   console.info(item)
 // }
 
-for (const item of result.data) {
-  console.info('| USER--->', item.user.name)
-  console.info('| USER AGE--->', item.user.age)
-  console.info('| USER SNURP--->', item.user.snurp)
-  // console.info('| USER LOCATION--->', item.user.location.label)
-  console.info('| USER TOTAL--->', item.user.toObject()) // fix
+let i = 0
 
-  break
+for (const item of result.data) {
+  console.info('\n| ITEM ID --->', item.id)
+
+  // console.info('| USER NAME--->', item.user.name)
+  console.info('| USER AGE--->', item.user.age)
+  // console.info('| USER SNURP--->', item.user.snurp)
+  // console.info('| USER EMAIL--->', item.user.email)
+  i++
+  // console.info('| USER LOCATION--->', item.user.location.label)
+  // console.info('| USER TOTAL--->', item.user.toObject()) // fix
+  if (i > 100) {
+    break
+  }
 }
 
 // ExecTime: 452.56 ms 5M list

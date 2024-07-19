@@ -25,12 +25,12 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
 
     var last_pos: usize = 4;
     var last_singleRef: [2]u8 = .{ 255, 255 };
+
     for (ctx.results.items) |*key| {
         if (key.start != null) {
             const x: [2]u8 = @bitCast(key.start.?);
             if (last_singleRef[0] != x[0] or last_singleRef[1] != x[1]) {
                 last_singleRef = x;
-                std.debug.print("Snurp {any}\n", .{key});
                 dataU8[last_pos] = 0;
                 last_pos += 1;
                 dataU8[last_pos] = 254;
@@ -40,6 +40,9 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 dataU8[last_pos] = last_singleRef[1];
                 last_pos += 1;
             }
+        } else {
+            last_singleRef[0] = 255;
+            last_singleRef[1] = 255;
         }
 
         if (key.id != null) {
