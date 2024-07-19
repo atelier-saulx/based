@@ -13,19 +13,13 @@
 #include "traverse.h"
 #include "find.h"
 
-struct find_cb {
-    const char *fields;
-    const uint8_t *filter_expression;
-    struct SelvaTraversalParam *cb;
-};
-
-static int find_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
+static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
 {
-    struct find_cb *args = (struct find_cb *)arg;
+    const struct FindParam *param = (const struct FindParam *)arg;
     node_type_t type = node->type;
 
     if (type == 0) {
-        (void)args->cb->node_cb(db, meta, node, args->cb->node_arg);
+        (void)param->node_cb(db, meta, node, param->node_arg);
 
         return SELVA_TRAVERSAL_STOP;
     } else if (type == 1) {
@@ -35,31 +29,26 @@ static int find_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta
     }
 }
 
-static int find_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
+static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
 {
-    const uint8_t *filter_expression = (const uint8_t *)arg;
+    const struct FindParam *param = (const struct FindParam *)arg;
 
-    uint8_t input[] = { CONJ_NECESS, OP_EQ_TYPE, 0, 0, 0, 0, OP_EQ_INTEGER, 1, 0, 0, 0, 0, };
     bool res = false;
     int err;
 
     __builtin_prefetch(node, 0, 1);
-    err = filter_eval(node, input, sizeof(input), &res);
+    err = filter_eval(node, param->adjacent_filter, param->adjacent_filter_len, &res);
 
     return err ? SELVA_TRAVERSAL_STOP : res ? 0 : SELVA_TRAVERSAL_STOP;
 }
 
-int find(struct SelvaDb *db, struct SelvaNode *node, const char *fields, const uint8_t *filter_expression, struct SelvaTraversalParam *cb)
+int find(struct SelvaDb *db, struct SelvaNode *node, const struct FindParam *param)
 {
     struct SelvaTraversalParam cb_wrap = {
-        .node_cb = find_cb,
-        .node_arg = &(struct find_cb){
-            .fields = fields,
-            .filter_expression = filter_expression,
-            .cb = cb,
-        },
-        .child_cb = find_filter,
-        .child_arg = filter_expression,
+        .node_cb = find_node_cb,
+        .node_arg = (void *)param,
+        .child_cb = param->adjacent_filter_len > 0 ? adj_filter : NULL,
+        .child_arg = (void *)param,
     };
 
     return traverse_field_bfs(db, node, &cb_wrap);

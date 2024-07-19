@@ -44,12 +44,12 @@ struct op_result {
 /**
  * Type for operation function.
  */
-typedef struct op_result (*op_fn_t)(struct SelvaNode *node, uint8_t *in, size_t max_len);
+typedef struct op_result (*op_fn_t)(struct SelvaNode *node, const uint8_t *in, size_t max_len);
 
 /**
  * Jump by offset by node type.
  */
-static struct op_result op_switch_type(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_switch_type(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     const struct {
         uint8_t switch_len;
@@ -76,7 +76,7 @@ static struct op_result op_switch_type(struct SelvaNode *node, uint8_t *in, size
     return OP_RESULT_ERROR(SELVA_ENOENT);
 }
 
-static struct op_result op_eq_type(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_eq_type(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     const struct {
         node_type_t type;
@@ -107,50 +107,50 @@ static struct op_result op_eq_type(struct SelvaNode *node, uint8_t *in, size_t m
         .res = any.integer op args->value, \
     }
 
-static struct op_result op_eq_integer(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_eq_integer(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     OP_TEMPLATE_INTEGER(==);
 }
 
-static struct op_result op_ne_integer(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_ne_integer(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     OP_TEMPLATE_INTEGER(!=);
 }
 
-static struct op_result op_gt_integer(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_gt_integer(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     OP_TEMPLATE_INTEGER(>);
 }
 
-static struct op_result op_lt_integer(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_lt_integer(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     OP_TEMPLATE_INTEGER(<);
 }
 
-static struct op_result op_ge_integer(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_ge_integer(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     OP_TEMPLATE_INTEGER(>=);
 }
 
-static struct op_result op_le_integer(struct SelvaNode *node, uint8_t *in, size_t max_len)
+static struct op_result op_le_integer(struct SelvaNode *node, const uint8_t *in, size_t max_len)
 {
     OP_TEMPLATE_INTEGER(<=);
 }
 
 static const op_fn_t op_fn[] = {
-    [OP_SWITCH_TYPE] = op_switch_type,
-    [OP_EQ_TYPE] = op_eq_type,
-    [OP_EQ_INTEGER] = op_eq_integer,
-    [OP_NE_INTEGER] = op_ne_integer,
-    [OP_GT_INTEGER] = op_gt_integer,
-    [OP_LT_INTEGER] = op_lt_integer,
-    [OP_GE_INTEGER] = op_ge_integer,
-    [OP_LE_INTEGER] = op_le_integer,
+    [FILTER_OP_SWITCH_TYPE] = op_switch_type,
+    [FILTER_OP_EQ_TYPE] = op_eq_type,
+    [FILTER_OP_EQ_INTEGER] = op_eq_integer,
+    [FILTER_OP_NE_INTEGER] = op_ne_integer,
+    [FILTER_OP_GT_INTEGER] = op_gt_integer,
+    [FILTER_OP_LT_INTEGER] = op_lt_integer,
+    [FILTER_OP_GE_INTEGER] = op_ge_integer,
+    [FILTER_OP_LE_INTEGER] = op_le_integer,
 };
 
-int filter_eval(struct SelvaNode *node, uint8_t *expr_buf, size_t expr_len, bool *res_out)
+int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len, bool *res_out)
 {
-    enum filter_op_code conjunction = CONJ_OR;
+    enum filter_op_code conjunction = FILTER_CONJ_OR;
     bool res = false;
 
     /*
@@ -163,9 +163,9 @@ int filter_eval(struct SelvaNode *node, uint8_t *expr_buf, size_t expr_len, bool
     for (size_t i = 0; i < expr_len;) {
         uint8_t byte = expr_buf[i++];
 
-        if (byte < CONJ_OP_BREAK) {
+        if (byte < FILTER_CONJ_OP_BREAK) {
             conjunction = byte;
-        } else if (byte > CONJ_OP_BREAK && byte < OP_LAST) {
+        } else if (byte > FILTER_CONJ_OP_BREAK && byte < FILTER_OP_LAST) {
             struct op_result op_res;
 
             if (unlikely(i >= expr_len)) {
@@ -179,13 +179,13 @@ int filter_eval(struct SelvaNode *node, uint8_t *expr_buf, size_t expr_len, bool
             i += op_res.len;
 
             switch (conjunction) {
-            case CONJ_OR:
+            case FILTER_CONJ_OR:
                 res |= !!op_res.res;
                 break;
-            case CONJ_AND:
+            case FILTER_CONJ_AND:
                 res &= !!op_res.res;
                 break;
-            case CONJ_NECESS:
+            case FILTER_CONJ_NECESS:
                 res = !!op_res.res;
                 if (!res) {
                     goto out;

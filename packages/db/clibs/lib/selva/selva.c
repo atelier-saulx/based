@@ -16,6 +16,7 @@
 #include "fields.h"
 #include "traverse.h"
 #include "find.h"
+#include "filter.h"
 
 static bool selva_napi_is_function(napi_env env, napi_value arg)
 {
@@ -542,7 +543,10 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
-    struct SelvaTraversalParam cb_wrap = {
+    uint8_t input[] = { FILTER_CONJ_NECESS, FILTER_OP_EQ_TYPE, 0, 0, 0, 0, FILTER_OP_EQ_INTEGER, 1, 0, 0, 0, 0, };
+    struct FindParam cb_wrap = {
+        .adjacent_filter = input,
+        .adjacent_filter_len = sizeof(input),
         .node_cb = selva_find_cb,
         .node_arg = &(struct selva_find_cb){
             .env = env,
@@ -550,9 +554,7 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
         },
     };
 
-    char *fields = NULL;
-    uint8_t filter_expression[1] = { 0 }; /* TODO */
-    err = find(db, node, fields, filter_expression, &cb_wrap);
+    err = find(db, node, &cb_wrap);
     //return (err) ? res2napi(env, err) : ((struct selva_find_cb *)cb_wrap.node_arg)->result;
     return (err) ? res2napi(env, err) : ({ napi_value res; napi_create_int32(env, ((struct selva_find_cb *)cb_wrap.node_arg)->i, &res); res; });
 }

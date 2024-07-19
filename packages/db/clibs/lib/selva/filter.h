@@ -10,19 +10,19 @@
  * comparison_expression = { conjunction | comparison_operator, field, constant }
  */
 enum filter_op_code {
-    CONJ_OR = 0,
-    CONJ_AND,
-    CONJ_NECESS,
-    CONJ_OP_BREAK,
-    OP_SWITCH_TYPE,
-    OP_EQ_TYPE, /* == */
-    OP_EQ_INTEGER, /* == */
-    OP_NE_INTEGER, /* != */
-    OP_GT_INTEGER, /* > */
-    OP_LT_INTEGER, /* < */
-    OP_GE_INTEGER, /* >= */
-    OP_LE_INTEGER, /* <= */
-    OP_LAST
+    FILTER_CONJ_OR = 0,
+    FILTER_CONJ_AND,
+    FILTER_CONJ_NECESS,
+    FILTER_CONJ_OP_BREAK,
+    FILTER_OP_SWITCH_TYPE,
+    FILTER_OP_EQ_TYPE, /* == */
+    FILTER_OP_EQ_INTEGER, /* == */
+    FILTER_OP_NE_INTEGER, /* != */
+    FILTER_OP_GT_INTEGER, /* > */
+    FILTER_OP_LT_INTEGER, /* < */
+    FILTER_OP_GE_INTEGER, /* >= */
+    FILTER_OP_LE_INTEGER, /* <= */
+    FILTER_OP_LAST
 } __attribute__((packed));
 
-int filter_eval(struct SelvaNode *node, uint8_t *expr_buf, size_t expr_len, bool *res_out);
+int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len, bool *res_out);

@@ -4,4 +4,16 @@
  */
 #pragma once
 
-int find(struct SelvaDb *db, struct SelvaNode *node, const char *fields, const uint8_t *filter_expression, struct SelvaTraversalParam *cb);
+struct FindParam {
+    SelvaTraversalNodeCallback node_cb;
+    void *node_arg;
+
+    const uint8_t *adjacent_filter;
+    size_t adjacent_filter_len;
+
+    const char *fields;
+    const uint8_t *node_filter;
+    size_t node_filter_len;
+};
+
+int find(struct SelvaDb *db, struct SelvaNode *node, const struct FindParam *param);
