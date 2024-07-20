@@ -17,16 +17,28 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
 {
     const struct FindParam *param = (const struct FindParam *)arg;
     node_type_t type = node->type;
+    bool take = true;
+    int err;
 
-    if (type == 0) {
-        (void)param->node_cb(db, meta, node, param->node_arg);
-
-        return SELVA_TRAVERSAL_STOP;
-    } else if (type == 1) {
-        return 1;
-    } else {
-        return SELVA_TRAVERSAL_STOP;
+    if (param->node_filter_len) {
+        err = filter_eval(node, param->node_filter, param->node_filter_len, &take);
+        if (err) {
+            /* TODO */
+            return SELVA_TRAVERSAL_ABORT;
+        }
     }
+
+    if (take) {
+        switch (type) {
+        case 0:
+            (void)param->node_cb(db, meta, node, param->node_arg);
+            break;
+        case 1:
+            return 1;
+        }
+    }
+
+    return SELVA_TRAVERSAL_STOP;
 }
 
 static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
