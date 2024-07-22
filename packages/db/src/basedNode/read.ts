@@ -29,7 +29,13 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
-    if ((!found || !ref) && index === 0 && buffer[i] === 254) {
+    // REF --------------------------
+    if (
+      (!found || !ref) &&
+      index === 0 &&
+      buffer[i] === 254 &&
+      queryResponse.query.refIncludes
+    ) {
       const start = buffer.readUint16LE(i + 1)
       if (ref && start === refStart) {
         found = true
@@ -59,6 +65,7 @@ export const readSeperateFieldFromBuffer = (
         console.info('switch')
       }
     }
+    // --------------------------
 
     if (index === 0) {
       if (requestedFieldIndex === index && found) {
@@ -75,8 +82,10 @@ export const readSeperateFieldFromBuffer = (
         }
 
         if (fIndex === undefined) {
-          break // mep
+          break
         }
+
+        console.info('-->', fIndex)
 
         if (requestedField.type === 'reference') {
           const id = buffer.readUint32LE(i + fIndex)
@@ -99,10 +108,12 @@ export const readSeperateFieldFromBuffer = (
           return buffer.readFloatLE(i + fIndex)
         }
         if (requestedField.type === 'string') {
+          // read len
+          const len = buffer[i + fIndex]
           const str = buffer.toString(
             'utf-8',
-            i + fIndex,
-            i + fIndex + requestedField.len,
+            i + fIndex + 1,
+            i + fIndex + len + 1,
           )
           return str
         }

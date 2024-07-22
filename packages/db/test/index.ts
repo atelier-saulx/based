@@ -6,6 +6,7 @@ import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import { text } from './examples.js'
 import native from '../src/db.js'
+import zlib from 'node:zlib'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
@@ -51,9 +52,12 @@ db.updateSchema({
         // also add a bytes field
         // @ts-ignore
         // @ts-ignore
+        // countryCode: { type: 'string' },
         countryCode: { type: 'string', maxBytes: 2 },
+        email: { type: 'string', maxLength: 15 }, // maxLength: 10
+
         // name: { type: 'string', maxLength: 10 },
-        user: { type: 'reference', allowedType: 'user' },
+        // user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
         // refs: { type: 'references', allowedType: 'user' },
@@ -108,11 +112,13 @@ const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // name: 'Jim de Beer',
-    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    // user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: ~~(Math.random() * 10000),
     // derp: ~~(Math.random() * 10000),
-    // flap: text,
-    flap: 'aa',
+    // flap: ,
+    flap: '000000000',
+    email: 'bla' + i + '@once.net',
+
     countryCode: 'aa',
     // countryCode: Math.random() > 0.5 ? 'en' : 'de',
     // refs: [1, 2, 3],
@@ -136,13 +142,17 @@ const result = db
   // .filter('flap', '=', 'aa')
   .filter('vectorClock', '>', 500)
   .include('countryCode')
-  .include('user.age')
-  .include('user.burp')
-  // .include('user.name')
-  // .include('user.snurp')
-  .include('user.email')
+  .include('email')
+
+  // same include multuiple time ERROR
+  // .include('user.age')
+  // .include('user.burp')
+  // // .include('user.name')
+  // // .include('user.snurp')
+  // .include('user.email')
   // .include('user.location.label')
-  .range(0, 1e6)
+  .include('vectorClock')
+  .range(0, 2)
   // sort()
   .get()
 
@@ -169,35 +179,46 @@ const team = {
 // INDEX MAKING - reigsiter to index / unregister to index
 // + 1 / - 1
 
+console.log(result)
 // maybe start with subscription caches before refs
 // make it work with UPDATING the query result
 
-console.log(result)
+// console.log(zlib.deflateSync(JSON.stringify(result.data.toObject())))
 
 console.log(new Uint8Array(result.buffer), result.data.length)
+
+let i = 0
+
+console.info(result.data.toObject())
+
+for (const item of result.data) {
+  if (i > 3) {
+    break
+  }
+}
 
 // for (const item of result.data) {
 //   console.info(item)
 // }
 
-let i = 0
+// for (const item of result.data) {
+//   console.info('\n| ITEM ID --->', item.id)
 
-for (const item of result.data) {
-  console.info('\n| ITEM ID --->', item.id)
+//   // console.info('| USER NAME--->', item.user.name)
+//   console.info('| USER AGE--->', item.user.age)
+//   console.info('| USER BURP--->', item.user.burp)
 
-  // console.info('| USER NAME--->', item.user.name)
-  console.info('| USER AGE--->', item.user.age)
-  console.info('| USER BURP--->', item.user.burp)
+//   // console.info('| USER SNURP--->', item.user.snurp)
+//   console.info('| USER EMAIL--->', item.user.email)
+//   i++
+//   // console.info('| USER LOCATION--->', item.user.location.label)
+//   // console.info('| USER TOTAL--->', item.user.toObject()) // fix
+//   if (i > 3) {
+//     break
+//   }
+// }
 
-  // console.info('| USER SNURP--->', item.user.snurp)
-  console.info('| USER EMAIL--->', item.user.email)
-  i++
-  // console.info('| USER LOCATION--->', item.user.location.label)
-  // console.info('| USER TOTAL--->', item.user.toObject()) // fix
-  if (i > 3) {
-    break
-  }
-}
+// console.log(result.)
 
 // ExecTime: 452.56 ms 5M list
 

@@ -139,10 +139,10 @@ const addModify = (
         if (t.type === 'string') {
           const size = db.modifyBuffer.buffer.write(
             value,
-            t.start + mainIndex,
+            t.start + mainIndex + 1,
             'utf8',
           )
-          db.modifyBuffer.buffer[t.start + mainIndex + size] = 0
+          db.modifyBuffer.buffer[t.start + mainIndex] = size
           if (size + 1 > t.len) {
             console.warn('String does not fit fixed len', value)
           }
