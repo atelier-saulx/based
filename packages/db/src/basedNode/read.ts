@@ -85,8 +85,6 @@ export const readSeperateFieldFromBuffer = (
           break
         }
 
-        console.info('-->', fIndex)
-
         if (requestedField.type === 'reference') {
           const id = buffer.readUint32LE(i + fIndex)
           if (!id) {
