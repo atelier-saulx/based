@@ -138,13 +138,14 @@ console.log('TIME', Date.now() - d, 'ms')
 
 const result = db
   .query('simple')
-  // .filter('countryCode', '=', 'aa')
-  // .filter('flap', '=', 'aa')
+
   .filter('vectorClock', '>', 500)
   .include('countryCode')
-  .include('email')
+  .include('countryCode')
 
-  // same include multuiple time ERROR
+  // .include('email')
+
+  // same include multiple time ERROR
   .include('user.age')
   .include('user.burp')
   // .include('user.name')

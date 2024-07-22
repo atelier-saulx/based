@@ -14,7 +14,7 @@ export class Query {
   conditions: Map<number, Buffer[]>
   offset: number
   limit: number
-  includeFields: string[]
+  includeFields: Set<string>
   includeTree: IncludeTreeArr
   refIncludes: any // fix
   mainLen: number = 0
@@ -42,9 +42,12 @@ export class Query {
   }
 
   include(...fields: string[]) {
-    this.includeFields = this.includeFields
-      ? [...this.includeFields, ...fields]
-      : fields
+    if (!this.includeFields) {
+      this.includeFields = new Set()
+    }
+    for (const f of fields) {
+      this.includeFields.add(f)
+    }
     return this
   }
 
