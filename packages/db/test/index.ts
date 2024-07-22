@@ -56,6 +56,8 @@ db.updateSchema({
         countryCode: { type: 'string', maxBytes: 2 },
         email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
+        writer: { type: 'reference', allowedType: 'user' },
+
         // name: { type: 'string', maxLength: 10 },
         user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
@@ -111,6 +113,7 @@ const amount = 5e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
+    writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // name: 'Jim de Beer',
     user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: ~~(Math.random() * 10000),
@@ -207,10 +210,10 @@ for (const item of result.data) {
 
   // console.info('| USER NAME--->', item.user.name)
   console.info('| USER AGE--->', item.user.age)
-  console.info('| USER BURP--->', item.user.burp)
+  // console.info('| USER BURP--->', item.user.burp)
 
   // console.info('| USER SNURP--->', item.user.snurp)
-  console.info('| USER EMAIL--->', item.user.email)
+  // console.info('| USER EMAIL--->', item.user.email)
   i++
   // console.info('| USER LOCATION--->', item.user.location.label)
   // console.info('| USER TOTAL--->', item.user.toObject()) // fix

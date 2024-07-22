@@ -7,6 +7,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { BasedDb } from '../index.js'
 import { singleRefProp } from './singleRefProp.js'
+import { RefQueryField } from '../query/types.js'
 
 const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
   for (let i = 0; i < arr.length; i++) {
@@ -16,6 +17,7 @@ const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
       const v = target[key]
       obj[key] = v
     } else {
+      // refs in here
       obj[key] = toObjectIncludeTree({}, target[key], item)
     }
   }
@@ -47,7 +49,6 @@ const toObjectIncludeTreePrint = (
               `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
             ),
           )
-
           v = v.slice(0, 80) + picocolors.dim('...') + '" ' + chars
           str += `"${v}`
         } else {
@@ -71,12 +72,7 @@ const toObjectIncludeTreePrint = (
 export class BasedNode {
   [key: string]: any
   __q: BasedQueryResponse
-  // have to unser __r
-  __r?: {
-    mainLen: number
-    mainFields: Query['mainIncludes']
-    field: FieldDef
-  }
+  __r?: RefQueryField
   __o: number
   __s: SchemaTypeDef
   constructor(schema: SchemaTypeDef, schemas: BasedDb['schemaTypesParsed']) {

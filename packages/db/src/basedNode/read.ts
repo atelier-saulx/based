@@ -13,7 +13,7 @@ export const readSeperateFieldFromBuffer = (
 
   const ref = basedNode.__r
 
-  const refStart = ref?.field.start
+  const refStart = ref?.ref.start
 
   let mainIncludes = queryResponse.query.mainIncludes
   let mainLen = queryResponse.query.mainLen
@@ -30,39 +30,36 @@ export const readSeperateFieldFromBuffer = (
     i += 1
 
     // REF --------------------------
-    if (
-      (!found || !ref) &&
-      index === 0 &&
-      buffer[i] === 254 &&
-      queryResponse.query.refIncludes
-    ) {
+    if ((!found || !ref) && index === 0 && buffer[i] === 254) {
       const start = buffer.readUint16LE(i + 1)
+      // console.info('HELLO', {
+      //   start,
+      //   refStart,
+      //   ref: ref.ref.path,
+      //   i,
+      //   requestedField: requestedField.path,
+      // })
       if (ref && start === refStart) {
         found = true
         i += 3
         if (ref.mainLen) {
           mainLen = ref.mainLen
-          mainIncludes = ref.mainFields
+          mainIncludes = ref.mainIncludes
         }
-        index = buffer[i]
-        i += 1
 
-        console.info('     SELECT REF - next')
+        index = buffer[i]
+        // console.dir({ mainIncludes }, { depth: 10 })
+        // console.log('FOUND --->', { ref, mainLen, mainIncludes, index })
+
+        i += 1
       } else {
         i += 3
         index = buffer[i]
-        if (queryResponse.query.refIncludes[0].mainLen) {
-          mainLen = queryResponse.query.refIncludes[0].mainLen
-          mainIncludes = queryResponse.query.refIncludes[0].mainFields
+        if (queryResponse.query.refIncludes[start].mainLen) {
+          mainLen = queryResponse.query.refIncludes[start].mainLen
+          mainIncludes = queryResponse.query.refIncludes[start].mainIncludes
         }
         i += 1
-        // set these to the correct ref...
-        // mainLen = ref.mainLen
-        // mainIncludes = ref.mainFields
-        // TODO: skip to next ref
-        // get ref leng from includes
-
-        console.info('switch')
       }
     }
     // --------------------------
@@ -70,6 +67,8 @@ export const readSeperateFieldFromBuffer = (
     if (index === 0) {
       if (requestedFieldIndex === index && found) {
         let fIndex: number
+
+        // console.dir({ mainIncludes }, { depth: 10 })
 
         if (mainIncludes) {
           const t = mainIncludes?.[requestedField.start]
@@ -80,6 +79,8 @@ export const readSeperateFieldFromBuffer = (
         } else {
           fIndex = requestedField.start
         }
+
+        // console.log('INDEX --->', requestedFieldIndex, index, found, { fIndex })
 
         if (fIndex === undefined) {
           break
@@ -94,6 +95,10 @@ export const readSeperateFieldFromBuffer = (
             id,
           }
         } else if (requestedField.type === 'integer') {
+          if (ref && found) {
+            // hello
+            console.info('HELLOOOOOO')
+          }
           return buffer.readUint32LE(i + fIndex)
         }
         if (requestedField.type === 'boolean') {

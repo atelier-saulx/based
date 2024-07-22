@@ -16,18 +16,9 @@ export function singleRefProp(
       // TODO: fix speed
       const refSchema = schemas[type]
       const refCtx = refSchema.responseCtx
-
       refCtx.__q = this.__q
-      // this.__o + more
       refCtx.__o = this.__o
-
-      refCtx.__r = {
-        mainLen: this.__q.query.refIncludes[0].mainLen,
-        mainFields: this.__q.query.refIncludes[0].mainIncludes,
-        field: fieldDef,
-        // fields , wnat to put single ref in a better format
-      }
-
+      refCtx.__r = this.__q.query.refIncludes[fieldDef.start]
       return refCtx
     },
   })

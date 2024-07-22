@@ -1,3 +1,5 @@
+import { FieldDef, SchemaTypeDef } from '../index.js'
+
 export type Operation =
   | '='
   | 'has'
@@ -27,3 +29,16 @@ export const operationToByte = (op: Operation) => {
   }
   return 0
 }
+
+export type MainIncludes = { [start: string]: [number, FieldDef] }
+
+export type RefQueryField = {
+  mainIncludes: MainIncludes
+  mainLen: number
+  fields: FieldDef[]
+  schema: SchemaTypeDef
+  ref: FieldDef
+  __isRef: true
+}
+
+export type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]

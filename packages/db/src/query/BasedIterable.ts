@@ -60,12 +60,10 @@ export class BasedIterable {
         i += 4
       } else if (index === 0) {
         if (this.#buffer[i] === 254 && this.#query.query.refIncludes) {
-          // TODO: get correct ref...
-          // get ref size
-          i += this.#query.query.refIncludes[0].mainLen + 1 + 3
+          const start = this.#buffer.readUint16LE(i + 1)
+          i += this.#query.query.refIncludes[start].mainLen + 4
         } else {
           // more complex
-
           i += this.#query.query.mainLen
         }
       } else {

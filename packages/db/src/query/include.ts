@@ -1,5 +1,6 @@
 import { FieldDef, SchemaFieldTree } from '../schemaTypeDef.js'
 import { Query } from './query.js'
+import { RefQueryField } from './types.js'
 
 const getAllFieldFromObject = (
   tree: SchemaFieldTree | FieldDef,
@@ -68,33 +69,30 @@ export const parseInclude = (
     if (tree) {
       if (tree.type === 'reference') {
         // --------------- SINGLE REF ----------------------
-        // go go go
         let r
         const refField = tree as FieldDef
 
-        // REF IN REF TREES
-        // REF TREE
-        // IF REF IN INCLUDE TREE USES THAT (see based node)
-
-        // THEN NESTED PARSING
-
-        const refDef2 = {
-          // @ts-ignore (ignore typescript error, TODO: later)
-          // main: [],
-          mainIncludes: {},
-          mainLen: 0,
-          fields: [],
-          schema: query.db.schemaTypesParsed[refField.allowedType],
-          ref: refField,
-          __isField: true,
-        }
+        let refQueryField: RefQueryField
 
         if (!query.refIncludes) {
-          query.refIncludes = []
+          query.refIncludes = {}
         }
-        query.refIncludes.push(refDef2)
 
-        if (addPathToIntermediateTree(refDef2, includeTree, refField.path)) {
+        if (!query.refIncludes[refField.start]) {
+          refQueryField = {
+            mainIncludes: {},
+            mainLen: 0,
+            fields: [],
+            schema: query.db.schemaTypesParsed[refField.allowedType],
+            ref: refField,
+            __isRef: true,
+          }
+          query.refIncludes[refField.start] = refQueryField
+        } else {
+          refQueryField = query.refIncludes[refField.start]
+        }
+
+        if (addPathToIntermediateTree(refField, includeTree, refField.path)) {
           // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
           if (!includesMain) {
             query.mainIncludes = {}
@@ -109,20 +107,15 @@ export const parseInclude = (
         const fDef = refField.allowedType
         const refSchema = query.db.schemaTypesParsed[fDef]
         const fieldP = path[1]
-        const f = includeTree[refField.path[0]]
-
-        // add as ref field
 
         const x = refSchema.fields[fieldP]
 
         if (x) {
           if (x.seperate) {
-            f.fields.push(x)
+            refQueryField.fields.push(x)
           } else {
-            f.mainLen += x.len
-            // set 0...
-            f.mainIncludes[x.start] = [0, x]
-            // f.main.push(x)
+            refQueryField.mainLen += x.len
+            refQueryField.mainIncludes[x.start] = [0, x]
           }
         }
 

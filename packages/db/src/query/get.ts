@@ -14,6 +14,8 @@ const idFieldDef = {
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
+// make a simple tree vs arrya format (simplify)
+
 export const get = (query: Query): BasedQueryResponse => {
   let includeBuffer: Buffer
   let len = 0

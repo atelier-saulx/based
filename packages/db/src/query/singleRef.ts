@@ -30,13 +30,14 @@ export const createSingleRefBuffer = (query: Query) => {
   const arr = []
   // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1] ([0][len][len][offset][offset][len][len]) [1][2]
 
-  for (const ref of query.refIncludes) {
+  for (const k in query.refIncludes) {
+    const ref = query.refIncludes[k]
+    console.log({ ref })
+
     // only do main to start...
     let refsingleBuffer: Buffer
     let size = 6
     let i = 0
-    // add extra ref normal fields now
-    // console.info({ ref })
 
     size += ref.fields?.length ?? 0
 

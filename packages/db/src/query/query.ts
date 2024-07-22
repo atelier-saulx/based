@@ -1,11 +1,14 @@
-import { BasedDb, FieldDef, SchemaTypeDef } from '../index.js'
+import { BasedDb, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { Operation } from './types.js'
+import {
+  Operation,
+  MainIncludes,
+  IncludeTreeArr,
+  RefQueryField,
+} from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 import { inspect } from 'node:util'
-
-type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
 
 export class Query {
   db: BasedDb
@@ -16,9 +19,9 @@ export class Query {
   limit: number
   includeFields: Set<string>
   includeTree: IncludeTreeArr
-  refIncludes: any // fix
+  refIncludes: { [start: string]: RefQueryField } // { } tree for refs prob
   mainLen: number = 0
-  mainIncludes: { [start: string]: [number, FieldDef] }
+  mainIncludes: MainIncludes
   totalConditionSize: number = 0
 
   constructor(db: BasedDb, target: string, previous?: Query) {
