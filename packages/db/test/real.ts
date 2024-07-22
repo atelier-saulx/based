@@ -183,7 +183,6 @@ test.serial.only('query + filter', async (t) => {
   const fields = db.schemaTypesParsed.simple.fields
 
   const NR_NODES = 5e6
-  //const NR_NODES = 1e6
   // const NR_NODES = 100e3
   const DATA_SIZE = 84 + 9
   const buf = Buffer.allocUnsafe(DATA_SIZE * NR_NODES)
@@ -314,7 +313,7 @@ test.serial.only('query + filter', async (t) => {
   console.log('fast filtering:')
   const match1Start = performance.now()
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
-  const res = selva.find(dbp, 1, 0, adj_filter)
+  const res = selva.find(dbp, 1, 0, adj_filter, null)
   const match1End = performance.now()
   console.log(
     `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,

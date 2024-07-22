@@ -525,14 +525,30 @@ static int selva_find_cb(struct SelvaDb *, const struct SelvaTraversalMetadata *
     return 0;
 }
 
-// selva_find(db, type, node_id, fields, filter_expression): number
+static const uint8_t *get_filter(napi_env env, napi_value value, size_t *len_out)
+{
+    napi_status status;
+
+    if (!selva_napi_is_null(env, value)) {
+        void *buf;
+
+        status = napi_get_buffer_info(env, value, &buf, len_out);
+        assert(status == napi_ok);
+
+        return buf;
+    }
+
+    *len_out = 0;
+    return NULL;
+}
+
+// selva_find(db, type, node_id, fields, adj_filter | null, node_filter | null): number
 // fields: { nodeType: [ field, filter], .. }
 static napi_value selva_find(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 4;
-    napi_value argv[4];
-    napi_status status;
+    size_t argc = 5;
+    napi_value argv[5];
 
     err = get_args(env, info, &argc, argv, false);
     if (err) {
@@ -543,15 +559,10 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     node_type_t type = selva_napi_get_node_type(env, argv[1]);
     node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
 
-    const uint8_t *adj_filter_buf = NULL;
-    size_t adj_filter_len = 0;
-    if (!selva_napi_is_null(env, argv[3])) {
-        void *buf;
-
-        status = napi_get_buffer_info(env, argv[3], &buf, &adj_filter_len);
-        assert(status == napi_ok);
-        adj_filter_buf = buf;
-    }
+    size_t adj_filter_len;
+    const uint8_t *adj_filter_buf = get_filter(env, argv[3], &adj_filter_len);
+    size_t node_filter_len;
+    const uint8_t *node_filter_buf = get_filter(env, argv[4], &node_filter_len);
 
     struct SelvaTypeEntry *te;
     te = db_get_type_by_index(db, type);
@@ -565,12 +576,11 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
-#if 0
-    uint8_t input[] = { FILTER_CONJ_NECESS, FILTER_OP_EQ_TYPE, 0, 0, 0, 0, FILTER_OP_EQ_INTEGER, 1, 0, 0, 0, 0, };
-#endif
     struct FindParam cb_wrap = {
         .adjacent_filter = adj_filter_buf,
         .adjacent_filter_len = adj_filter_len,
+        .node_filter = node_filter_buf,
+        .node_filter_len = node_filter_len,
         .node_cb = selva_find_cb,
         .node_arg = &(struct selva_find_cb){
             .env = env,
