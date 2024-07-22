@@ -57,7 +57,7 @@ db.updateSchema({
         email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
         // name: { type: 'string', maxLength: 10 },
-        // user: { type: 'reference', allowedType: 'user' },
+        user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
         // refs: { type: 'references', allowedType: 'user' },
@@ -112,7 +112,7 @@ const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // name: 'Jim de Beer',
-    // user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: ~~(Math.random() * 10000),
     // derp: ~~(Math.random() * 10000),
     // flap: ,
@@ -145,11 +145,11 @@ const result = db
   .include('email')
 
   // same include multuiple time ERROR
-  // .include('user.age')
-  // .include('user.burp')
-  // // .include('user.name')
-  // // .include('user.snurp')
-  // .include('user.email')
+  .include('user.age')
+  .include('user.burp')
+  // .include('user.name')
+  // .include('user.snurp')
+  .include('user.email')
   // .include('user.location.label')
   .include('vectorClock')
   .range(0, 2)
@@ -191,32 +191,32 @@ let i = 0
 
 console.info(result.data.toObject())
 
-for (const item of result.data) {
-  if (i > 3) {
-    break
-  }
-}
+// for (const item of result.data) {
+//   if (i > 3) {
+//     break
+//   }
+// }
 
 // for (const item of result.data) {
 //   console.info(item)
 // }
 
-// for (const item of result.data) {
-//   console.info('\n| ITEM ID --->', item.id)
+for (const item of result.data) {
+  console.info('\n| ITEM ID --->', item.id)
 
-//   // console.info('| USER NAME--->', item.user.name)
-//   console.info('| USER AGE--->', item.user.age)
-//   console.info('| USER BURP--->', item.user.burp)
+  // console.info('| USER NAME--->', item.user.name)
+  console.info('| USER AGE--->', item.user.age)
+  console.info('| USER BURP--->', item.user.burp)
 
-//   // console.info('| USER SNURP--->', item.user.snurp)
-//   console.info('| USER EMAIL--->', item.user.email)
-//   i++
-//   // console.info('| USER LOCATION--->', item.user.location.label)
-//   // console.info('| USER TOTAL--->', item.user.toObject()) // fix
-//   if (i > 3) {
-//     break
-//   }
-// }
+  // console.info('| USER SNURP--->', item.user.snurp)
+  console.info('| USER EMAIL--->', item.user.email)
+  i++
+  // console.info('| USER LOCATION--->', item.user.location.label)
+  // console.info('| USER TOTAL--->', item.user.toObject()) // fix
+  if (i > 3) {
+    break
+  }
+}
 
 // console.log(result.)
 
