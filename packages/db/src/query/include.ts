@@ -63,76 +63,72 @@ export const parseInclude = (
   includeTree: any,
 ): boolean => {
   const field = query.type.fields[f]
+
   if (!field) {
     const path = f.split('.')
     const tree = query.type.tree[path[0]]
     if (tree) {
-      if (tree.type === 'reference') {
-        // --------------- SINGLE REF ----------------------
-        let r
-        const refField = tree as FieldDef
-
-        let refQueryField: RefQueryField
-
-        if (!query.refIncludes) {
-          query.refIncludes = {}
+      const endFields = getAllFieldFromObject(tree)
+      for (const field of endFields) {
+        if (parseInclude(query, field, arr, includesMain, includeTree)) {
+          includesMain = true
         }
-
-        if (!query.refIncludes[refField.start]) {
-          refQueryField = {
-            mainIncludes: {},
-            mainLen: 0,
-            fields: [],
-            schema: query.db.schemaTypesParsed[refField.allowedType],
-            ref: refField,
-            __isRef: true,
-          }
-          query.refIncludes[refField.start] = refQueryField
-        } else {
-          refQueryField = query.refIncludes[refField.start]
-        }
-
-        if (addPathToIntermediateTree(refField, includeTree, refField.path)) {
-          // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
-          if (!includesMain) {
-            query.mainIncludes = {}
-            includesMain = true
-            arr.push(0)
-          }
-          query.mainLen += refField.len
-          query.mainIncludes[refField.start] = [0, refField]
-          r = true
-        }
-
-        const fDef = refField.allowedType
-        const refSchema = query.db.schemaTypesParsed[fDef]
-        const fieldP = path[1]
-
-        const x = refSchema.fields[fieldP]
-
-        if (x) {
-          if (x.seperate) {
-            refQueryField.fields.push(x)
-          } else {
-            refQueryField.mainLen += x.len
-            refQueryField.mainIncludes[x.start] = [0, x]
-          }
-        }
-
-        return r // result
-        // --------------- END SINGLE REF ----------------------
-      } else {
-        // not returned
-        const endFields = getAllFieldFromObject(tree)
-        for (const field of endFields) {
-          if (parseInclude(query, field, arr, includesMain, includeTree)) {
-            includesMain = true
-          }
-        }
-        return includesMain
       }
+      return includesMain
     }
     return // undefined
+  }
+
+  if (field.type === 'reference') {
+    console.log('REF!', field)
+    // console.log('REF')
+    // // --------------- SINGLE REF ----------------------
+    // let r
+    // const refField = field
+    // let refQueryField: RefQueryField
+    // if (!query.refIncludes) {
+    //   query.refIncludes = {}
+    // }
+    // if (!query.refIncludes[refField.start]) {
+    //   refQueryField = {
+    //     mainIncludes: {},
+    //     mainLen: 0,
+    //     fields: [],
+    //     schema: query.db.schemaTypesParsed[refField.allowedType],
+    //     ref: refField,
+    //     __isRef: true,
+    //   }
+    //   query.refIncludes[refField.start] = refQueryField
+    // } else {
+    //   refQueryField = query.refIncludes[refField.start]
+    // }
+    // if (addPathToIntermediateTree(refField, includeTree, refField.path)) {
+    //   // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
+    //   if (!includesMain) {
+    //     query.mainIncludes = {}
+    //     includesMain = true
+    //     arr.push(0)
+    //   }
+    //   query.mainLen += refField.len
+    //   query.mainIncludes[refField.start] = [0, refField]
+    //   r = true
+    // }
+    // const fDef = refField.allowedType
+    // const refSchema = query.db.schemaTypesParsed[fDef]
+    // // wrong....
+    // const fieldP = field.path[1]
+    // console.info('???', { fieldP })
+    // const x = refSchema.fields[fieldP]
+    // if (x) {
+    //   if (x.seperate) {
+    //     refQueryField.fields.push(x)
+    //   } else {
+    //     refQueryField.mainLen += x.len
+    //     refQueryField.mainIncludes[x.start] = [0, x]
+    //   }
+    // }
+    // return r // result
+    // // --------------- END SINGLE REF ----------------------
   }
 
   addPathToIntermediateTree(field, includeTree, field.path)
@@ -143,21 +139,10 @@ export const parseInclude = (
     if (!includesMain) {
       query.mainIncludes = {}
       includesMain = true
-      // do different?
       arr.push(0)
     }
-
-    // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
-
-    // if REF e.g. user.string need to add more stuff
-    // combine all tings for user in 1 include msg
-    // [type 10].[id]0230 4 // selective main as well ofc     // end ref 255
-
-    // [255] // [255]
-
     query.mainLen += field.len
     query.mainIncludes[field.start] = [0, field]
-    // combine all tings for user in 1 include msg
     return true
   }
 }

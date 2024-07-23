@@ -62,6 +62,13 @@ db.updateSchema({
         user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
+
+        nested: {
+          type: 'object',
+          properties: {
+            bla: { type: 'reference', allowedType: 'user' },
+          },
+        },
         // refs: { type: 'references', allowedType: 'user' },
         // location: {
         //   type: 'object',
@@ -123,6 +130,10 @@ for (let i = 0; i < amount; i++) {
     email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
+
+    nested: {
+      bla: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    },
     // countryCode: Math.random() > 0.5 ? 'en' : 'de',
     // refs: [1, 2, 3],
     // smurp: {
@@ -150,10 +161,13 @@ const result = db
 
   // same include multiple time ERROR
   .include('user.age')
-  .include('user.burp')
-  // .include('user.name')
-  // .include('user.snurp')
-  .include('user.email')
+  // .include('user.burp')
+  // // .include('user.name')
+  // // .include('user.snurp')
+  // .include('user.email')
+
+  // .include('nested.bla.age')
+
   // .include('user.location.label')
   .include('vectorClock')
   .range(0, 2)
@@ -193,7 +207,7 @@ console.log(new Uint8Array(result.buffer), result.data.length)
 
 let i = 0
 
-console.info(result.data.toObject())
+// console.info(result.data.toObject())
 
 // for (const item of result.data) {
 //   if (i > 3) {
@@ -211,6 +225,8 @@ for (const item of result.data) {
   // console.info('| USER NAME--->', item.user.name)
   console.info('| USER AGE--->', item.user.age)
   // console.info('| USER BURP--->', item.user.burp)
+
+  // console.info('| NESTED BLA AGE--->', item.nested.bla.age)
 
   // console.info('| USER SNURP--->', item.user.snurp)
   // console.info('| USER EMAIL--->', item.user.email)
