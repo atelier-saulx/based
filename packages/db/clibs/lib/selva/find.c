@@ -13,6 +13,20 @@
 #include "traverse.h"
 #include "find.h"
 
+static int find_next_field(const struct FindFields *fields, node_type_t node_type)
+{
+    size_t len = fields->len;
+    for (size_t i = 0; i < len; i++) {
+        typeof(fields->data[0]) *entry = &fields->data[i];
+
+        if (entry->type == node_type) {
+            return entry->field;
+        }
+    }
+
+    return SELVA_TRAVERSAL_STOP;
+}
+
 static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
 {
     const struct FindParam *param = (const struct FindParam *)arg;
@@ -29,16 +43,10 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
     }
 
     if (take) {
-        switch (type) {
-        case 0:
-            (void)param->node_cb(db, meta, node, param->node_arg);
-            break;
-        case 1:
-            return 1;
-        }
+        (void)param->node_cb(db, meta, node, param->node_arg);
     }
 
-    return SELVA_TRAVERSAL_STOP;
+    return find_next_field(param->fields, type);
 }
 
 static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
