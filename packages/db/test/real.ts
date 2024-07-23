@@ -313,7 +313,9 @@ test.serial.only('query + filter', async (t) => {
   console.log('fast filtering:')
   const match1Start = performance.now()
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
-  const res = selva.find(dbp, 1, 0, adj_filter, null)
+  const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, 0, 0])
+  //const node_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
+  const res = selva.find(dbp, 1, 0, adj_filter, node_filter, Buffer.from([1, 1, 0, 1])) // len = 1, [ type1, field1 ]
   const match1End = performance.now()
   console.log(
     `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,

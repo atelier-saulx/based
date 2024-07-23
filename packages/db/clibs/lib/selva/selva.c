@@ -542,13 +542,33 @@ static const uint8_t *get_filter(napi_env env, napi_value value, size_t *len_out
     return NULL;
 }
 
+static const struct FindFields *get_find_fields(napi_env env, napi_value value)
+{
+    napi_status status;
+    struct FindFields *fields = NULL;
+
+    if (!selva_napi_is_null(env, value)) {
+        void *buf;
+        size_t len;
+
+        status = napi_get_buffer_info(env, value, &buf, &len);
+        assert(status == napi_ok);
+
+        if (buf && len > 0 && len >= *((uint8_t *)buf) * sizeof(typeof(fields->data[0]))) {
+            fields = buf;
+        }
+    }
+
+    return fields;
+}
+
 // selva_find(db, type, node_id, fields, adj_filter | null, node_filter | null): number
 // fields: { nodeType: [ field, filter], .. }
 static napi_value selva_find(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 5;
-    napi_value argv[5];
+    size_t argc = 6;
+    napi_value argv[6];
 
     err = get_args(env, info, &argc, argv, false);
     if (err) {
@@ -563,6 +583,11 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     const uint8_t *adj_filter_buf = get_filter(env, argv[3], &adj_filter_len);
     size_t node_filter_len;
     const uint8_t *node_filter_buf = get_filter(env, argv[4], &node_filter_len);
+    const struct FindFields *fields = get_find_fields(env, argv[5]);
+
+    if (!fields) {
+        return res2napi(env, SELVA_EINVAL);
+    }
 
     struct SelvaTypeEntry *te;
     te = db_get_type_by_index(db, type);
@@ -586,6 +611,7 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
             .env = env,
             //.result = ({ napi_value res; napi_create_array(env, &res); res; }),
         },
+        .fields = fields,
     };
 
     err = find(db, node, &cb_wrap);

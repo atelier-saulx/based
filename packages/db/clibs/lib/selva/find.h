@@ -11,7 +11,13 @@ struct FindParam {
     const uint8_t *adjacent_filter;
     size_t adjacent_filter_len;
 
-    const char *fields;
+    const struct FindFields {
+        uint8_t len;
+        struct {
+            node_type_t type;
+            field_t field;
+        } __packed data[];
+    } __packed *fields;
     const uint8_t *node_filter;
     size_t node_filter_len;
 };
