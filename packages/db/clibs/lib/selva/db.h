@@ -35,6 +35,10 @@ void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNo
 struct SelvaNode *db_find_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id);
 struct SelvaNode *db_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id);
 
+void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name);
+void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);
+void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);
+
 [[noreturn]]
 void db_panic_fn(const char * restrict where, const char * restrict func, const char * restrict fmt, ...) __attribute__((format(printf, 3, 4)));
 
