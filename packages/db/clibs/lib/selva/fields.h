@@ -42,7 +42,6 @@ struct SelvaFieldsAny {
         struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
         struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
         struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
-        struct SelvaAlias *alias; /*!< SELVA_FIELD_TYPE_ALIAS */
     };
 };
 

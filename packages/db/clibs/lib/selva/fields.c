@@ -47,7 +47,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
     [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
-    [SELVA_FIELD_TYPE_ALIAS] = 0,
 };
 
 size_t fields_get_data_size(const struct SelvaFieldSchema *fs)
@@ -425,9 +424,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO Implement weak ref */
         return SELVA_ENOTSUP;
-    case SELVA_FIELD_TYPE_ALIAS:
-        /* TODO variable. */
-        return SELVA_ENOTSUP;
     }
 
     return 0;
@@ -579,9 +575,6 @@ static int fields_get(struct SelvaFields *fields, field_t field, struct SelvaFie
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO Implement weak ref */
         return SELVA_ENOTSUP;
-    case SELVA_FIELD_TYPE_ALIAS:
-        /* TODO Implement aliases */
-        return SELVA_ENOENT;
     }
 
     return 0;
@@ -661,9 +654,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO weak ref */
-        break;
-    case SELVA_FIELD_TYPE_ALIAS:
-        /* TODO alias */
         break;
     }
 

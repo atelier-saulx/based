@@ -31,7 +31,6 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_REFERENCES = 14,
     SELVA_FIELD_TYPE_WEAK_REFERENCE = 15,
     SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
-    SELVA_FIELD_TYPE_ALIAS = 17,
 } __packed;
 
 typedef int8_t field_t;
