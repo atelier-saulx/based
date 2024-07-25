@@ -152,6 +152,8 @@ test.serial.only('query + filter', async (t) => {
     },
   })
 
+  console.log('Schema', process.pid)
+  //await wait(15e3)
   const schemaBufs = schema2selva(db.schemaTypesParsed)
   //console.dir(db.schemaTypesParsed, { depth: 100 })
   console.log('bufs', schemaBufs)
@@ -332,9 +334,4 @@ test.serial.only('query + filter', async (t) => {
   t.true(true)
 
   // global.gc()
-
-  await wait(5e3)
-
-  console.log('flapx')
-  await wait(5e3)
 })

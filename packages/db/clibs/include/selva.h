@@ -38,7 +38,6 @@ typedef uint32_t node_id_t;
 typedef uint16_t node_type_t;
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
-RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
@@ -136,14 +135,13 @@ struct SelvaTypeEntry {
         struct SelvaAliasesByDest alias_by_dest;
     } aliases;
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
-    RB_ENTRY(SelvaTypeEntry) _type_entry;
     struct {
         void *buf;
         size_t len;
         size_t main_data_size;
     } field_map_template;
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
-};
+} __attribute__((aligned(65536)));
 
 /**
  * Database instance.
@@ -154,7 +152,7 @@ struct SelvaDb {
      */
     struct trx_state trx_state;
 
-    struct SelvaTypeIndex types;
+    SVector type_list;
 
     /**
      * Expiring nodes.
