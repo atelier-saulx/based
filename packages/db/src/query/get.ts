@@ -14,8 +14,6 @@ const idFieldDef = {
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
-// make a simple tree vs arrya format (simplify)
-
 export const get = (query: Query): BasedQueryResponse => {
   let includeBuffer: Buffer
   let len = 0
@@ -126,8 +124,6 @@ export const get = (query: Query): BasedQueryResponse => {
 
   const d = performance.now()
 
-  // console.log('INCLUDE BUFFER:', new Uint8Array(includeBuffer))
-
   const result: Buffer = query.db.native.getQuery(
     conditions,
     query.type.prefixString,
@@ -138,8 +134,6 @@ export const get = (query: Query): BasedQueryResponse => {
     mainBuffer,
     refBuffer,
   )
-
-  // console.log('RESULT', new Uint8Array(result))
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)
