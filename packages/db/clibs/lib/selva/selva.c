@@ -295,6 +295,7 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
     struct SelvaNode *node;
 
     te = db_get_type_by_index(db, type);
+    assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -361,6 +362,7 @@ static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
     struct SelvaNode *node;
 
     te = db_get_type_by_index(db, type);
+    assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -454,7 +456,6 @@ static int node_cb_js_trampoline(struct SelvaDb *, const struct SelvaTraversalMe
     } else {
         const char *code = NULL;
 
-        printf("res_type: %d", result_type);
         /* TODO throw type error? */
         status = napi_throw_error(ctx->env, code, "Invalid return value type");
         assert(status == napi_ok);
