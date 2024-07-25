@@ -149,7 +149,7 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         } while (0);
         break;
     case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
+        /* TODO text field */
         napi_get_undefined(env, &result);
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
@@ -181,11 +181,11 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         }
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        /* TODO */
+        /* TODO weak ref */
         napi_get_null(env, &result);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO */
+        /* TODO weak ref */
         napi_get_null(env, &result);
         break;
     }
@@ -563,7 +563,6 @@ static const struct FindFields *get_find_fields(napi_env env, napi_value value)
 }
 
 // selva_find(db, type, node_id, fields, adj_filter | null, node_filter | null): number
-// fields: { nodeType: [ field, filter], .. }
 static napi_value selva_find(napi_env env, napi_callback_info info)
 {
     int err;

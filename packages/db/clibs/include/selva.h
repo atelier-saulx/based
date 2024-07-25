@@ -33,14 +33,14 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
 } __packed;
 
-struct SelvaObject;
-
 typedef int8_t field_t;
 typedef uint32_t node_id_t;
 typedef uint16_t node_type_t;
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
+RB_HEAD(SelvaAliasesByName, SelvaAlias);
+RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
@@ -117,6 +117,14 @@ struct SelvaNode {
 #define SELVA_FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
 #define SELVA_IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
 
+struct SelvaAlias {
+    RB_ENTRY(SelvaAlias) _entry;
+    struct SelvaAlias *prev;
+    struct SelvaAlias *next; /*!< Next alias for the same destination. */
+    node_id_t dest;
+    char name[];
+};
+
 /**
  * Entry for each node type supported by the schema.
  */
@@ -124,7 +132,8 @@ struct SelvaTypeEntry {
     node_type_t type;
     struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
     struct {
-        STATIC_SELVA_OBJECT(_obj_data);
+        struct SelvaAliasesByName alias_by_name;
+        struct SelvaAliasesByDest alias_by_dest;
     } aliases;
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     RB_ENTRY(SelvaTypeEntry) _type_entry;

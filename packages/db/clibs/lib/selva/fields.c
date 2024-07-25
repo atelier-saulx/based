@@ -407,7 +407,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         set_field_string(fields, fs, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
+        /* TODO Implement text fields */
         return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
         assert(db && node);
@@ -422,7 +422,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
          */
         return set_weak_reference(fs, fields, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO */
+        /* TODO Implement weak ref */
         return SELVA_ENOTSUP;
     }
 
@@ -573,7 +573,7 @@ static int fields_get(struct SelvaFields *fields, field_t field, struct SelvaFie
         } while (0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO */
+        /* TODO Implement weak ref */
         return SELVA_ENOTSUP;
     }
 
@@ -641,7 +641,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         del_field_string(fields, nfo);
         return 0; /* Don't clear. */
     case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
+        /* TODO Text fields */
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
         remove_reference(node, fs, 0);
@@ -653,7 +653,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         remove_reference(node, fs, 0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO */
+        /* TODO weak ref */
         break;
     }
 
