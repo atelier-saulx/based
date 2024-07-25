@@ -1,11 +1,6 @@
 import { BasedDb, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import {
-  Operation,
-  MainIncludes,
-  IncludeTreeArr,
-  RefQueryField,
-} from './types.js'
+import { Operation, QueryIncludeDef } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 import { inspect } from 'node:util'
@@ -17,11 +12,9 @@ export class Query {
   conditions: Map<number, Buffer[]>
   offset: number
   limit: number
-  includeFields: Set<string>
-  includeTree: IncludeTreeArr
-  refIncludes: { [start: string]: RefQueryField } // { } tree for refs prob
-  mainLen: number = 0
-  mainIncludes: MainIncludes
+
+  includeDef: QueryIncludeDef
+
   totalConditionSize: number = 0
 
   constructor(db: BasedDb, target: string, previous?: Query) {
@@ -45,11 +38,18 @@ export class Query {
   }
 
   include(...fields: string[]) {
-    if (!this.includeFields) {
-      this.includeFields = new Set()
+    if (!this.includeDef) {
+      this.includeDef = {
+        schema: this.type,
+        includeFields: new Set(),
+        mainLen: 0,
+        mainIncludes: {},
+        fields: [],
+        includeTree: [],
+      }
     }
     for (const f of fields) {
-      this.includeFields.add(f)
+      this.includeDef.includeFields.add(f)
     }
     return this
   }

@@ -63,6 +63,13 @@ db.updateSchema({
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
 
+        smuro: {
+          type: 'object',
+          properties: {
+            flap: { type: 'string' },
+          },
+        },
+
         nested: {
           type: 'object',
           properties: {
@@ -116,7 +123,7 @@ for (let i = 0; i < 1000; i++) {
 
 await wait(0)
 
-const amount = 5e6
+const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -130,7 +137,9 @@ for (let i = 0; i < amount; i++) {
     email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
-
+    smuro: {
+      flap: 'flap',
+    },
     nested: {
       bla: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     },
@@ -156,19 +165,21 @@ const result = db
   .filter('vectorClock', '>', 500)
   .include('countryCode')
   .include('countryCode')
+  .include('smuro.flap')
 
   // .include('email')
 
   // same include multiple time ERROR
   .include('user.age')
+
   // .include('user.burp')
   // // .include('user.name')
   // // .include('user.snurp')
   // .include('user.email')
 
-  // .include('nested.bla.age')
+  .include('nested.bla.age')
 
-  // .include('user.location.label')
+  .include('user.location.label')
   .include('vectorClock')
   .range(0, 2)
   // sort()

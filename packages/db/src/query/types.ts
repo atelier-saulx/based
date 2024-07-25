@@ -32,13 +32,15 @@ export const operationToByte = (op: Operation) => {
 
 export type MainIncludes = { [start: string]: [number, FieldDef] }
 
-export type RefQueryField = {
+export type QueryIncludeDef = {
   mainIncludes: MainIncludes
   mainLen: number
   fields: FieldDef[]
   schema: SchemaTypeDef
-  ref: FieldDef
-  __isRef: true
+  fromRef?: FieldDef
+  includeFields: Set<string>
+  includeTree: IncludeTreeArr // meh
+  refIncludes?: { [start: string]: QueryIncludeDef } // { } tree for refs prob
 }
 
 export type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]

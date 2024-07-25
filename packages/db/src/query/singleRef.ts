@@ -1,4 +1,5 @@
 import { Query } from './query.js'
+import { QueryIncludeDef } from './types.js'
 
 // type __r
 
@@ -26,12 +27,16 @@ import { Query } from './query.js'
 
 // }
 
-export const createSingleRefBuffer = (query: Query) => {
+export const createSingleRefBuffer = (include: QueryIncludeDef) => {
   const arr = []
   // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1] ([0][len][len][offset][offset][len][len]) [1][2]
 
-  for (const k in query.refIncludes) {
-    const ref = query.refIncludes[k]
+  if (!include.refIncludes) {
+    include.refIncludes = {}
+  }
+
+  for (const k in include.refIncludes) {
+    const ref = include.refIncludes[k]
     console.log({ ref })
 
     // only do main to start...
@@ -67,7 +72,7 @@ export const createSingleRefBuffer = (query: Query) => {
 
       if (ref.mainLen !== ref.schema.mainLen) {
         // REF [4,5]
-        refsingleBuffer.writeUint16LE(ref.ref.start, 4)
+        refsingleBuffer.writeUint16LE(ref.fromRef.start, 4)
 
         // MAIN FIELD [6]
         refsingleBuffer[6] = 0
