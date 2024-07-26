@@ -35,7 +35,8 @@ export type MainIncludes = { [start: string]: [number, FieldDef] }
 export type QueryIncludeDef = {
   mainIncludes: MainIncludes
   mainLen: number
-  fields: FieldDef[]
+  // fields: FieldDef[] // REMOVE THIS...
+  includeArr: number[]
   schema: SchemaTypeDef
   fromRef?: FieldDef
   includeFields: Set<string>

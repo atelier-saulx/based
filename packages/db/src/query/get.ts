@@ -2,8 +2,6 @@ import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Query } from './query.js'
 import { addInclude } from './include.js'
 
-const EMPTY_BUFFER = Buffer.alloc(0)
-
 export const get = (query: Query): BasedQueryResponse => {
   const start = query.offset ?? 0
   const end = query.limit ?? 1e3
@@ -30,18 +28,20 @@ export const get = (query: Query): BasedQueryResponse => {
 
   const d = performance.now()
 
-  const { includeBuffer, mainBuffer, refBuffer } = addInclude(query.includeDef)
+  const includeBuffer = addInclude(query, query.includeDef)
 
-  const result: Buffer = query.db.native.getQuery(
-    conditions,
-    query.type.prefixString,
-    query.type.lastId,
-    start,
-    end, // def 1k ?
-    includeBuffer,
-    mainBuffer,
-    refBuffer,
-  )
+  console.log(new Uint8Array(includeBuffer))
+
+  // const result: Buffer = query.db.native.getQuery(
+  //   conditions,
+  //   query.type.prefixString,
+  //   query.type.lastId,
+  //   start,
+  //   end, // def 1k ?
+  //   includeBuffer,
+  // )
+
+  const result = Buffer.alloc(0)
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

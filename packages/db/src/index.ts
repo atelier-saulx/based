@@ -47,8 +47,6 @@ export class BasedDb {
       offset: number,
       limit: number, // def 1k ?
       includeBuffer: Buffer,
-      mainInclude: Buffer,
-      singleRefInclude: Buffer,
     ): any => {
       return dbZig.getQuery(
         conditions,
@@ -57,8 +55,6 @@ export class BasedDb {
         offset,
         limit,
         includeBuffer,
-        mainInclude,
-        singleRefInclude,
       )
     },
   }

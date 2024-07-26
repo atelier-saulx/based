@@ -54,28 +54,28 @@ db.updateSchema({
         // @ts-ignore
         // countryCode: { type: 'string' },
         countryCode: { type: 'string', maxBytes: 2 },
-        email: { type: 'string', maxLength: 15 }, // maxLength: 10
+        // email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
-        writer: { type: 'reference', allowedType: 'user' },
+        // writer: { type: 'reference', allowedType: 'user' },
 
-        // name: { type: 'string', maxLength: 10 },
-        user: { type: 'reference', allowedType: 'user' },
+        // // name: { type: 'string', maxLength: 10 },
+        // user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
 
-        smuro: {
-          type: 'object',
-          properties: {
-            flap: { type: 'string' },
-          },
-        },
+        // smuro: {
+        //   type: 'object',
+        //   properties: {
+        //     flap: { type: 'string' },
+        //   },
+        // },
 
-        nested: {
-          type: 'object',
-          properties: {
-            bla: { type: 'reference', allowedType: 'user' },
-          },
-        },
+        // nested: {
+        //   type: 'object',
+        //   properties: {
+        //     bla: { type: 'reference', allowedType: 'user' },
+        //   },
+        // },
         // refs: { type: 'references', allowedType: 'user' },
         // location: {
         //   type: 'object',
@@ -127,22 +127,22 @@ const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
-    writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    // name: 'Jim de Beer',
-    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    vectorClock: ~~(Math.random() * 10000),
-    // derp: ~~(Math.random() * 10000),
-    // flap: ,
+    // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    // // name: 'Jim de Beer',
+    // user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    // vectorClock: ~~(Math.random() * 10000),
+    // // derp: ~~(Math.random() * 10000),
+    // // flap: ,
     flap: '000000000',
-    email: 'bla' + i + '@once.net',
+    // email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
-    smuro: {
-      flap: 'flap',
-    },
-    nested: {
-      bla: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    },
+    // smuro: {
+    //   flap: 'flap',
+    // },
+    // nested: {
+    //   bla: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    // },
     // countryCode: Math.random() > 0.5 ? 'en' : 'de',
     // refs: [1, 2, 3],
     // smurp: {
@@ -162,25 +162,26 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
 
-  .filter('vectorClock', '>', 500)
+  // .filter('vectorClock', '>', 500)
   .include('countryCode')
-  .include('countryCode')
-  .include('smuro.flap')
+  .include('flap')
+  // .include('countryCode')
+  // .include('smuro.flap')
 
   // .include('email')
 
   // same include multiple time ERROR
-  .include('user.age')
+  // .include('user.age')
 
   // .include('user.burp')
   // // .include('user.name')
   // // .include('user.snurp')
   // .include('user.email')
 
-  .include('nested.bla.age')
+  // .include('nested.bla.age')
 
-  .include('user.location.label')
-  .include('vectorClock')
+  // .include('user.location.label')
+  // .include('vectorClock')
   .range(0, 2)
   // sort()
   .get()

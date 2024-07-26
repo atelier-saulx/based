@@ -14,12 +14,12 @@ export function singleRefProp(
     set: () => undefined,
     get() {
       // TODO: fix speed
-      const refSchema = schemas[type]
-      const refCtx = refSchema.responseCtx
-      refCtx.__q = this.__q
-      refCtx.__o = this.__o
-      refCtx.__r = this.__q.query.refIncludes[fieldDef.start]
-      return refCtx
+      // const refSchema = schemas[type]
+      // const refCtx = refSchema.responseCtx
+      // refCtx.__q = this.__q
+      // refCtx.__o = this.__o
+      // refCtx.__r = this.__q.query.refIncludes[fieldDef.start]
+      return 'bla'
     },
   })
 }

@@ -41,10 +41,10 @@ export class Query {
     if (!this.includeDef) {
       this.includeDef = {
         schema: this.type,
+        includeArr: [],
         includeFields: new Set(),
         mainLen: 0,
         mainIncludes: {},
-        fields: [],
         includeTree: [],
       }
     }

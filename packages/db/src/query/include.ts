@@ -1,6 +1,6 @@
-import { FieldDef, SchemaFieldTree, SchemaTypeDef } from '../schemaTypeDef.js'
+import { FieldDef, SchemaFieldTree, isFieldDef } from '../schemaTypeDef.js'
 import { QueryIncludeDef } from './types.js'
-import { createSingleRefBuffer } from './singleRef.js'
+import { Query } from './query.js'
 
 const idFieldDef = {
   __isField: true,
@@ -9,7 +9,7 @@ const idFieldDef = {
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
-export const addInclude = (include: QueryIncludeDef) => {
+export const addInclude = (query: Query, include: QueryIncludeDef) => {
   let includeBuffer: Buffer
   let len = 0
   let mainBuffer: Buffer
@@ -21,17 +21,13 @@ export const addInclude = (include: QueryIncludeDef) => {
   // has to go to include
   if (include.includeFields) {
     let includesMain = false
-    const arr = []
     for (const f of include.includeFields) {
       if (
-        parseInclude(include, f, arr, includesMain, includeTreeIntermediate)
+        parseInclude(query, include, f, includesMain, includeTreeIntermediate)
       ) {
         includesMain = true
       }
     }
-
-    len += arr.length
-    includeBuffer = Buffer.from(arr)
 
     if (includesMain) {
       if (include.mainLen === include.schema.mainLen) {
@@ -47,9 +43,9 @@ export const addInclude = (include: QueryIncludeDef) => {
       } else {
         // GET SOME MAIN FIELDS
         const size = Object.keys(include.mainIncludes).length
-        mainBuffer = Buffer.allocUnsafe(size * 4 + 4)
-        mainBuffer.writeUint32LE(include.mainLen, 0)
-        let i = 4
+        mainBuffer = Buffer.allocUnsafe(size * 4 + 2)
+        mainBuffer.writeUint16LE(include.mainLen, 0)
+        let i = 2
         let m = 0
         for (const key in include.mainIncludes) {
           const v = include.mainIncludes[key]
@@ -61,50 +57,65 @@ export const addInclude = (include: QueryIncludeDef) => {
           m += len
         }
       }
-    } else {
-      mainBuffer = EMPTY_BUFFER
     }
-  } else {
-    len = 1
-    const fields = include.schema.fields
-    for (const f in fields) {
-      const field = fields[f]
-      addPathToIntermediateTree(field, includeTreeIntermediate, field.path)
-      if (field.seperate) {
-        len++
+
+    include.includeTree = convertToIncludeTree(includeTreeIntermediate)
+
+    if (mainBuffer) {
+      len = mainBuffer.byteLength + 1 + 2 + include.includeArr.length
+      includeBuffer = Buffer.allocUnsafe(len)
+      includeBuffer[0] = 0
+      includeBuffer.writeInt16LE(mainBuffer.byteLength, 1)
+
+      console.info(len, {
+        mainBuffer,
+        arr: include.includeArr,
+        mainLen: include.mainLen,
+      })
+
+      const offset = 3 + mainBuffer.byteLength
+
+      mainBuffer.copy(includeBuffer, 3)
+
+      for (let i = 0; i < include.includeArr.length; i++) {
+        includeBuffer[i + offset] = include.includeArr[i]
       }
+      return includeBuffer
     }
-    includeBuffer = Buffer.allocUnsafe(len)
-    includeBuffer[0] = 0
-    let i = 0
-    for (const f in fields) {
-      const field = fields[f]
-      if (field.seperate) {
-        i++
-        includeBuffer[i] = field.field
-      }
-    }
-    mainBuffer = EMPTY_BUFFER
-    include.mainLen = include.schema.mainLen
-  }
 
-  include.includeTree = convertToIncludeTree(includeTreeIntermediate)
-
-  let refBuffer: Buffer
-  if (include.refIncludes) {
-    refBuffer = createSingleRefBuffer(include)
+    return Buffer.from(new Uint8Array(include.includeArr))
   } else {
-    refBuffer = EMPTY_BUFFER
+    return EMPTY_BUFFER
   }
 
-  return {
-    includeBuffer,
-    len,
-    mainBuffer,
-    refBuffer,
-  }
+  // ATTACH AT END [255]
+  // let refBuffer: Buffer
+  // if (include.refIncludes) {
+  //   // const arr: Buffer[] = []
+  //   for (const key in include.refIncludes) {
+  //     const refInclude = include.refIncludes[key]
+
+  //     const buffers = addInclude(query, refInclude)
+
+  //     console.log({ buffers, refInclude })
+
+  //     //
+
+  //     // include buffer same for everything
+
+  //     // arr.push(createSingleRefBuffer(refInclude))
+  //   }
+  //   refBuffer = EMPTY_BUFFER
+  // } else {
+  //   refBuffer = EMPTY_BUFFER
+  // }
+
+  // if (mainBuffer.byteLength) {
+  //   includeBuffer
+  // }
 }
 
+// REF IN BUFFER AT THE (single Buffer)
 const getAllFieldFromObject = (
   tree: SchemaFieldTree | FieldDef,
   arr: string[] = [],
@@ -165,9 +176,9 @@ const addPathToIntermediateTree = (
 
 // clean up other file
 const parseInclude = (
+  query: Query,
   include: QueryIncludeDef, // make a INCLUDE thing
   f: string,
-  arr: number[],
   includesMain: boolean,
   includeTree: any,
 ): boolean => {
@@ -175,95 +186,69 @@ const parseInclude = (
 
   const path = f.split('.')
 
-  // let s = field
-  // for (const p of path) {
-  //   console.log(p)
-  //   if (s && s.type === 'reference') {
-  //     console.log('yo ref')
-  //   }
-  //   // s =
-  // }
+  let t: FieldDef | SchemaFieldTree = include.schema.tree
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i]
+    t = t[p]
+    if (!t) {
+      return
+    }
+    if (isFieldDef(t) && t.type === 'reference') {
+      const ref: FieldDef = t as FieldDef
+
+      if (!include.refIncludes) {
+        include.refIncludes = {}
+      }
+
+      const start = ref.start
+
+      if (!include.refIncludes[start]) {
+        include.refIncludes[start] = {
+          schema: query.db.schemaTypesParsed[ref.allowedType],
+          includeArr: [],
+          includeFields: new Set(),
+          mainLen: 0,
+          mainIncludes: {},
+          includeTree: [],
+          fromRef: ref,
+        }
+      }
+
+      const refIncludeDef = include.refIncludes[start]
+
+      const field = path.slice(i + 1).join('.')
+      refIncludeDef.includeFields.add(field)
+      return
+    }
+  }
 
   if (!field) {
     const tree = include.schema.tree[path[0]]
 
-    if (tree.type === 'reference') {
-      console.log('do something...')
-    }
-
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
-        if (parseInclude(include, field, arr, includesMain, includeTree)) {
+        if (parseInclude(query, include, field, includesMain, includeTree)) {
           includesMain = true
         }
       }
       return includesMain
     }
-    return // undefined
-  }
-
-  if (field.type === 'reference') {
-    console.log('REF!', field)
-    // console.log('REF')
-    // // --------------- SINGLE REF ----------------------
-    // let r
-    // const refField = field
-    // let refQueryField: RefQueryField
-    // if (!query.refIncludes) {
-    //   query.refIncludes = {}
-    // }
-    // if (!query.refIncludes[refField.start]) {
-    //   refQueryField = {
-    //     mainIncludes: {},
-    //     mainLen: 0,
-    //     fields: [],
-    //     schema: query.db.schemaTypesParsed[refField.allowedType],
-    //     ref: refField,
-    //     __isRef: true,
-    //   }
-    //   query.refIncludes[refField.start] = refQueryField
-    // } else {
-    //   refQueryField = query.refIncludes[refField.start]
-    // }
-    // if (addPathToIntermediateTree(refField, includeTree, refField.path)) {
-    //   // [len][len][type][type][start][start] [255][len][len][type][type][start][start][1]   ([0][0] | [0][255][offset][offset][len][len][0]) [1][2]
-    //   if (!includesMain) {
-    //     query.mainIncludes = {}
-    //     includesMain = true
-    //     arr.push(0)
-    //   }
-    //   query.mainLen += refField.len
-    //   query.mainIncludes[refField.start] = [0, refField]
-    //   r = true
-    // }
-    // const fDef = refField.allowedType
-    // const refSchema = query.db.schemaTypesParsed[fDef]
-    // // wrong....
-    // const fieldP = field.path[1]
-    // console.info('???', { fieldP })
-    // const x = refSchema.fields[fieldP]
-    // if (x) {
-    //   if (x.seperate) {
-    //     refQueryField.fields.push(x)
-    //   } else {
-    //     refQueryField.mainLen += x.len
-    //     refQueryField.mainIncludes[x.start] = [0, x]
-    //   }
-    // }
-    // return r // result
-    // // --------------- END SINGLE REF ----------------------
+    return
   }
 
   addPathToIntermediateTree(field, includeTree, field.path)
 
+  if (field.type === 'reference') {
+    console.info('TODO: HANDLE INCLUDE TOTAL REF')
+  }
+
   if (field.seperate) {
-    arr.push(field.field)
+    include.includeArr.push(field.field)
   } else {
     if (!includesMain) {
       include.mainIncludes = {}
       includesMain = true
-      arr.push(0)
     }
     include.mainLen += field.len
     include.mainIncludes[field.start] = [0, field]

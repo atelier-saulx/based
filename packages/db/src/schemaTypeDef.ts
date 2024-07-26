@@ -94,6 +94,15 @@ const prefixStringToUint8 = (
   return new Uint8Array([0, 0])
 }
 
+export const isFieldDef = (
+  tree: SchemaFieldTree | FieldDef,
+): tree is FieldDef => {
+  if ('__isField' in tree && tree.__isField === true) {
+    return true
+  }
+  return false
+}
+
 export const createSchemaTypeDef = (
   typeName: string,
   type: BasedSchemaType | BasedSchemaFieldObject,
