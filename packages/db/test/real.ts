@@ -279,6 +279,10 @@ test.serial.only('query + filter', async (t) => {
     console.log(`type: ${type} node: ${nodeId}`),
   )
 
+  console.log('alias:')
+  selva.db_set_alias(dbp, 0, 0, Buffer.from('bestalias\0'))
+  console.log(selva.db_get_alias(dbp, 0, Buffer.from('bestalias\0')))
+
   console.log('filtering:')
   let matchCount = 0
   const matchStart = performance.now()

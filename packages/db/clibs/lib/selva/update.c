@@ -57,7 +57,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     return SELVA_EINVAL;
                 }
 
-                dst = db_find_node(db, type, dst_node_id);
+                dst = db_find_node(type, dst_node_id);
                 if (!dst) {
                     return SELVA_ENOENT;
                 }

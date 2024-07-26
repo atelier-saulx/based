@@ -281,7 +281,7 @@ void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNo
     mempool_return(&type->nodepool, node);
 }
 
-struct SelvaNode *db_find_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode find = {
         .node_id = node_id,
@@ -313,13 +313,14 @@ struct SelvaNode *db_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type
 void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
 {
     size_t name_len = strlen(name);
-    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len);
+    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
     struct SelvaAlias *old_alias;
 
     new_alias->prev = NULL;
     new_alias->next = NULL;
     new_alias->dest = dest;
     memcpy(new_alias->name, name, name_len);
+    new_alias->name[name_len] = '\0';
 
 retry:
     old_alias = RB_INSERT(SelvaAliasesByName, &type->aliases.alias_by_name, new_alias);
@@ -341,10 +342,11 @@ retry:
 void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
 {
     size_t name_len = strlen(name);
-    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len);
+    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
 
     memset(find, 0, sizeof(*find));
     memcpy(find->name, name, name_len);
+    find->name[name_len] = '\0';
 
     struct SelvaAlias *alias = RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, find);
     if (alias) {
@@ -402,6 +404,31 @@ void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
 
         selva_free(alias);
     }
+}
+
+struct SelvaNode *db_get_alias(struct SelvaTypeEntry *type, const char *name)
+{
+    size_t name_len = strlen(name);
+    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+
+    memset(find, 0, sizeof(*find));
+    memcpy(find->name, name, name_len);
+    find->name[name_len] = '\0';
+
+    struct SelvaAlias *alias = RB_FIND(SelvaAliasesByName, &type->aliases.alias_by_name, find);
+    if (!alias) {
+        return NULL;
+    }
+
+
+    struct SelvaNode *node = db_find_node(type, alias->dest);
+    if (!node) {
+        /* Oopsie, no node found. */
+        db_del_alias_by_dest(type, alias->dest);
+        alias = NULL;
+    }
+
+    return node;
 }
 
 [[noreturn]]
