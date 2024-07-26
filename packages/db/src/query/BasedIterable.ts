@@ -59,12 +59,15 @@ export class BasedIterable {
         yield ctx
         i += 4
       } else if (index === 0) {
-        if (this.#buffer[i] === 254 && this.#query.query.refIncludes) {
+        if (
+          this.#buffer[i] === 254 &&
+          this.#query.query.includeDef.refIncludes
+        ) {
           const start = this.#buffer.readUint16LE(i + 1)
-          i += this.#query.query.refIncludes[start].mainLen + 4
+          i += this.#query.query.includeDef.refIncludes[start].mainLen + 4
         } else {
           // more complex
-          i += this.#query.query.mainLen
+          i += this.#query.query.includeDef.mainLen
         }
       } else {
         const size = this.#buffer.readUInt16LE(i)

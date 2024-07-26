@@ -7,12 +7,16 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { BasedDb } from '../index.js'
 import { singleRefProp } from './singleRefProp.js'
-import { RefQueryField } from '../query/types.js'
+import { QueryIncludeDef } from '../query/types.js'
 
-const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
+const toObjectIncludeTree = (
+  obj,
+  target: any,
+  arr: QueryIncludeDef['includeTree'],
+) => {
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++] as string
-    const item = arr[i] as FieldDef | Query['includeTree']
+    const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
     if ('__isField' in item) {
       const v = target[key]
       obj[key] = v
@@ -27,7 +31,7 @@ const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
 const toObjectIncludeTreePrint = (
   str: string,
   target: any,
-  arr: Query['includeTree'],
+  arr: QueryIncludeDef['includeTree'],
   level: number = 0,
 ) => {
   const prefix = ''.padEnd(level * 2 + 2, ' ')
@@ -35,7 +39,7 @@ const toObjectIncludeTreePrint = (
 
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++] as string
-    const item = arr[i] as FieldDef | Query['includeTree']
+    const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
     str += prefix + `${key}: `
     if ('__isField' in item) {
       let v = target[key]
@@ -72,7 +76,7 @@ const toObjectIncludeTreePrint = (
 export class BasedNode {
   [key: string]: any
   __q: BasedQueryResponse
-  __r?: RefQueryField
+  __r?: QueryIncludeDef
   __o: number
   __s: SchemaTypeDef
   constructor(schema: SchemaTypeDef, schemas: BasedDb['schemaTypesParsed']) {
@@ -124,7 +128,11 @@ export class BasedNode {
 
     const msg = this.__r
       ? ' is ref need to fix includeTree'
-      : toObjectIncludeTreePrint('', this, this.__q.query.includeTree).trim()
+      : toObjectIncludeTreePrint(
+          '',
+          this,
+          this.__q.query.includeDef.includeTree,
+        ).trim()
 
     if (nested) {
       return msg
@@ -139,7 +147,7 @@ export class BasedNode {
     if (this.__r) {
       return { IS_REF: true }
     }
-    return toObjectIncludeTree({}, this, this.__q.query.includeTree)
+    return toObjectIncludeTree({}, this, this.__q.query.includeDef.includeTree)
   }
 
   toJSON() {

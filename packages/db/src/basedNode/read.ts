@@ -13,10 +13,10 @@ export const readSeperateFieldFromBuffer = (
 
   const ref = basedNode.__r
 
-  const refStart = ref?.ref.start
+  const refStart = ref?.fromRef.start
 
-  let mainIncludes = queryResponse.query.mainIncludes
-  let mainLen = queryResponse.query.mainLen
+  let mainIncludes = queryResponse.query.includeDef.mainIncludes
+  let mainLen = queryResponse.query.includeDef.mainLen
   let found = !ref || false
 
   while (i < buffer.byteLength) {
@@ -55,9 +55,10 @@ export const readSeperateFieldFromBuffer = (
       } else {
         i += 3
         index = buffer[i]
-        if (queryResponse.query.refIncludes[start].mainLen) {
-          mainLen = queryResponse.query.refIncludes[start].mainLen
-          mainIncludes = queryResponse.query.refIncludes[start].mainIncludes
+        if (queryResponse.query.includeDef.refIncludes[start].mainLen) {
+          mainLen = queryResponse.query.includeDef.refIncludes[start].mainLen
+          mainIncludes =
+            queryResponse.query.includeDef.refIncludes[start].mainIncludes
         }
         i += 1
       }
@@ -124,8 +125,8 @@ export const readSeperateFieldFromBuffer = (
       i += mainLen
 
       // reset
-      mainLen = queryResponse.query.mainLen
-      mainIncludes = queryResponse.query.mainIncludes
+      mainLen = queryResponse.query.includeDef.mainLen
+      mainIncludes = queryResponse.query.includeDef.mainIncludes
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2
