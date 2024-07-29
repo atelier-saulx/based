@@ -3,4 +3,5 @@ export default {
   name: 'smurk',
   main: './app.tsx',
   favicon: './favicon.ico',
+  public: true,
 }

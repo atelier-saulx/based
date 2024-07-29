@@ -5,14 +5,14 @@ import { OutputFile, bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 import { isIndexFile } from './utils.js'
 import { getTargets } from './getTargets.js'
-import pc from 'picocolors'
 import { login } from '../../shared/login.js'
 import { hash, hashCompact } from '@saulx/hash'
-import ts from 'typescript'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
 import { BasedClient } from '@based/client'
 import mimeTypes from 'mime-types'
+import pc from 'picocolors'
+import ts from 'typescript'
 
 const cwd = process.cwd()
 const rel = (str: string) => relative(cwd, str)
@@ -57,7 +57,7 @@ const queuedFnDeploy = queued(
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {
-    const res = await client.stream('based:set-function', {
+    const { error, distId } = await client.stream('based:set-function', {
       contents: js.contents,
       payload: {
         checksum,
@@ -65,16 +65,16 @@ const queuedFnDeploy = queued(
       },
     })
 
-    if (res.error) {
-      throw new Error(res.error)
+    if (error) {
+      throw new Error(error)
     }
 
-    if (res.distId) {
+    if (distId) {
       await client
         .stream('based:set-sourcemap', {
           contents: sourcemap.contents,
           payload: {
-            distId: res.distId,
+            distId,
             checksum,
           },
         })
@@ -117,9 +117,10 @@ export const deploy = async (program: Command) => {
         config: {
           type: string
           name: string
-          public: boolean
+          public?: boolean
           main?: string
           favicon?: string
+          path?: string
           appParams?: {
             js?: string
             css?: string
@@ -329,6 +330,11 @@ export const deploy = async (program: Command) => {
       // deploy functions
       const label = 'deploying functions'
       let deploying = 0
+      let url = client.connection?.ws.url
+        .replace('ws://', 'http://')
+        .replace('wss://', 'https://')
+
+      url = url.substring(0, url.lastIndexOf('/'))
 
       await Promise.all(
         configs.map(async ({ index, app, favicon, config }) => {
@@ -350,7 +356,13 @@ export const deploy = async (program: Command) => {
           }
 
           const checksum = hash([js.hash, config])
+
           await queuedFnDeploy(client, checksum, config, js, sourcemap)
+
+          const { path = `/${config.name}`, public: isPublic } = config
+          if (isPublic) {
+            console.log(`🚀 ${pc.dim(url)}${path}`)
+          }
         }),
       )
 
