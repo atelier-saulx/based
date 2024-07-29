@@ -53,7 +53,7 @@ db.updateSchema({
         // @ts-ignore
         // @ts-ignore
         // countryCode: { type: 'string' },
-        // countryCode: { type: 'string', maxBytes: 2 },
+        countryCode: { type: 'string', maxBytes: 2 },
         // email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
         // writer: { type: 'reference', allowedType: 'user' },
@@ -137,7 +137,7 @@ for (let i = 0; i < amount; i++) {
     flap: 'AAA',
     // email: 'bla' + i + '@once.net',
 
-    // countryCode: 'aa',
+    countryCode: 'aa',
     // smuro: {
     //   flap: 'flap',
     // },
@@ -164,7 +164,7 @@ const result = db
   .query('simple')
 
   // .filter('vectorClock', '>', 500)
-  // .include('countryCode')
+  .include('countryCode')
   // .include('vectorClock')
   // .include('flap')
 
@@ -240,7 +240,7 @@ console.log('GOP GP')
 for (const item of result.data) {
   console.info('\n| ITEM ID --->', item.id)
   // console.info('| FLAP--->', item.flap)
-  // console.info('| COUNTRY--->', item.countryCode)
+  console.info('| COUNTRY--->', item.countryCode)
   console.info('| USER AGE--->', item.user.age)
 
   i++

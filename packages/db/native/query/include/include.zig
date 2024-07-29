@@ -22,20 +22,19 @@ pub fn getFields(
     var includeIterator: u16 = 0;
     var idIsSet: bool = false;
 
-    // mainResult pointer
-
-    var mainValue: ?c.MDB_val = null;
+    var mainValue: ?c.MDB_val = null; // for single refs
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
 
         if (field == 255) {
+            // clean this a bit
             const refSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
-            std.debug.print("\n REFsize: {d} \n", .{refSize});
-
             const singleRef = include[includeIterator + 3 .. includeIterator + 3 + refSize];
 
             includeIterator += refSize + 4 + 1;
+
+            std.debug.print("HELLO {any} \n", .{mainValue.?.mv_data == null});
 
             if (mainValue == null) {
                 const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
@@ -71,8 +70,6 @@ pub fn getFields(
             }
 
             if (mainValue.?.mv_data == null) {
-                std.debug.print("\n mep \n", .{});
-
                 continue :includeField;
             }
 
@@ -101,13 +98,15 @@ pub fn getFields(
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+                mainValue = .{ .mv_size = 0, .mv_data = null };
+                continue :includeField;
+            };
+
+            // structure a bit nicer
             if (field == 0) {
                 mainValue = v;
             }
-
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                continue :includeField;
-            };
 
             if (!idIsSet and start == null) {
                 idIsSet = true;
