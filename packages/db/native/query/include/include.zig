@@ -13,15 +13,31 @@ pub fn getFields(
     type_prefix: [2]u8,
     start: ?u16,
     include: []u8,
-    includeSingleRefs: []u8,
-    includeMain: []u8,
     currentShard: u16,
 ) !usize {
+    std.debug.print("{any} {any} {any} {any} {any}", .{ ctx, id, type_prefix, start, currentShard });
+
+    std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
+
+    const EMPTY: []u8 = &.{};
+
     var size: usize = 0;
-    var includeIterator: u8 = 0;
+    var includeIterator: u16 = 0;
+    var idIsSet: bool = false;
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
+
+        if (field == 0) {
+            std.debug.print("\n IS MAIN \n", .{});
+
+            const mainSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
+
+            std.debug.print("size: {d} \n", .{mainSize});
+
+            includeIterator += 2 + mainSize;
+        }
         includeIterator += 1;
+
         const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
         var shard = ctx.shards.get(dbiName);
 
@@ -39,27 +55,28 @@ pub fn getFields(
             continue :includeField;
         };
 
-        if (includeIterator == 1 and start == null) {
+        if (!idIsSet and start == null) {
+            idIsSet = true;
             size += 1 + 4;
-            const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = includeMain };
+            const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = EMPTY };
             try ctx.results.append(s);
         } else {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = includeMain };
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = EMPTY };
             try ctx.results.append(s);
         }
 
         if (field != 0) {
             size += (v.mv_size + 1 + 2);
         } else {
-            if (v.mv_size > 0 and includeSingleRefs.len != 0) {
-                size += getSingleRefFields(ctx, includeSingleRefs, v);
-            }
-            if (includeMain.len != 0) {
-                // std.debug.print("zig: MAIN LEN {any} \n", .{std.mem.readInt(u32, includeMain[0..4], .little) + 1});
-                size += std.mem.readInt(u32, includeMain[0..4], .little) + 1;
-            } else {
-                size += (v.mv_size + 1);
-            }
+            // if (v.mv_size > 0 and includeSingleRefs.len != 0) {
+            //     size += getSingleRefFields(ctx, includeSingleRefs, v);
+            // }
+            // if (includeMain.len != 0) {
+            //     // std.debug.print("zig: MAIN LEN {any} \n", .{std.mem.readInt(u32, includeMain[0..4], .little) + 1});
+            //     size += std.mem.readInt(u32, includeMain[0..4], .little) + 1;
+            // } else {
+            size += (v.mv_size + 1);
+            // }
         }
     }
 

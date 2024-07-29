@@ -133,7 +133,7 @@ for (let i = 0; i < amount; i++) {
     // vectorClock: ~~(Math.random() * 10000),
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
-    flap: '000000000',
+    flap: 'AAA',
     // email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
@@ -164,6 +164,7 @@ const result = db
 
   // .filter('vectorClock', '>', 500)
   .include('countryCode')
+  .include('vectorClock')
   .include('flap')
   // .include('countryCode')
   // .include('smuro.flap')
@@ -231,11 +232,13 @@ let i = 0
 //   console.info(item)
 // }
 
+console.log('GOP GP')
+
 for (const item of result.data) {
   console.info('\n| ITEM ID --->', item.id)
 
   // console.info('| USER NAME--->', item.user.name)
-  console.info('| USER AGE--->', item.user.age)
+  console.info('| FLAP--->', item.flap)
   // console.info('| USER BURP--->', item.user.burp)
 
   // console.info('| NESTED BLA AGE--->', item.nested.bla.age)

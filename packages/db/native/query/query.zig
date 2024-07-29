@@ -19,15 +19,13 @@ fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
-    const args = try napi.getArgs(8, env, info);
+    const args = try napi.getArgs(6, env, info);
     const conditions = try napi.getBuffer("conditions", env, args[0]);
     const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
     const last_id = try napi.getInt32("last_id", env, args[2]);
     const offset = try napi.getInt32("offset", env, args[3]);
     const limit = try napi.getInt32("limit", env, args[4]);
     const include = try napi.getBuffer("include", env, args[5]);
-    const includeMain = try napi.getBuffer("includeMain", env, args[6]);
-    const includeSingleRefs = try napi.getBuffer("includeSingleRefs", env, args[7]);
 
     var i: u32 = offset + 1;
     var total_results: usize = 0;
@@ -90,7 +88,7 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
-        total_size += try getFields(ctx, i, type_prefix, null, include, includeSingleRefs, includeMain, currentShard);
+        total_size += try getFields(ctx, i, type_prefix, null, include, currentShard);
         total_results += 1;
     }
 

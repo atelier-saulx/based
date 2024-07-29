@@ -46,11 +46,15 @@ export class BasedIterable {
 
   *[Symbol.iterator]() {
     let i = 4
+
     while (i < this.#buffer.byteLength) {
       // read
       const index = this.#buffer[i]
       i++
       // read from tree
+
+      console.log('DERP?')
+
       if (index === 255) {
         const ctx = this.#query.query.type.responseCtx
         ctx.__o = i

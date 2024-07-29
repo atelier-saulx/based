@@ -32,16 +32,14 @@ export const get = (query: Query): BasedQueryResponse => {
 
   console.log(new Uint8Array(includeBuffer))
 
-  // const result: Buffer = query.db.native.getQuery(
-  //   conditions,
-  //   query.type.prefixString,
-  //   query.type.lastId,
-  //   start,
-  //   end, // def 1k ?
-  //   includeBuffer,
-  // )
-
-  const result = Buffer.alloc(4)
+  const result: Buffer = query.db.native.getQuery(
+    conditions,
+    query.type.prefixString,
+    query.type.lastId,
+    start,
+    end, // def 1k ?
+    includeBuffer,
+  )
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)
