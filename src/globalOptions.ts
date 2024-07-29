@@ -26,9 +26,9 @@ export const globalOptions = async (program) => {
   }
 
   program
-    .option('-c, --cluster <cluster>', 'cluster', args.cluster)
-    .requiredOption('-o, --org <org>', 'org', args.org)
-    .requiredOption('-p, --project <project>', 'project', args.project)
-    .requiredOption('-e, --env <env>', 'env', args.env)
+    .option('-c, --cluster <cluster>', 'Based cluster', args.cluster)
+    .requiredOption('-o, --org <org>', 'Organization name', args.org)
+    .requiredOption('-p, --project <project>', 'Project name', args.project)
+    .requiredOption('-e, --env <env>', 'Environment name', args.env)
     .option('--api-key <api-key>', 'API key for service account')
 }

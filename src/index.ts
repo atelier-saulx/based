@@ -1,11 +1,32 @@
 import { Command } from 'commander'
 import { version } from './version.js'
-import { deploy } from './deploy/index.js'
+import { deploy } from './commands/deploy/index.js'
 import { globalOptions } from './globalOptions.js'
+import { login } from './commands/login/index.js'
+import pc from 'picocolors'
+import { spinner } from './shared/spinner.js'
 
 export const init = async () => {
   const program = new Command()
-  Promise.all([globalOptions(program), version(program), deploy(program)]).then(
-    () => program.parse(process.argv),
-  )
+
+  try {
+    await Promise.all([
+      globalOptions(program),
+      version(program),
+      deploy(program),
+      login(program),
+    ])
+
+    const opts = program.opts()
+
+    for (const arg in opts) {
+      console.info(pc.dim(arg), opts[arg])
+    }
+
+    await program.parseAsync(process.argv)
+  } catch (e) {
+    spinner.stop()
+    console.error(pc.red(e.message))
+    process.exit(1)
+  }
 }

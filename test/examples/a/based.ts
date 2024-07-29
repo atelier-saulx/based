@@ -1,6 +1,11 @@
+// export default {
+//   project: 'based',
+//   org: 'success',
+//   env: 'magic',
+//   cluster: 'test',
+// }
 export default {
-  project: 'based',
-  org: 'success',
-  env: 'magic',
-  cluster: 'test',
+  org: 'saulx',
+  project: 'youzitest',
+  env: 'production',
 }
