@@ -31,27 +31,39 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
             const x: [2]u8 = @bitCast(key.start.?);
             if (last_singleRef[0] != x[0] or last_singleRef[1] != x[1]) {
                 last_singleRef = x;
+
                 dataU8[last_pos] = 0;
                 last_pos += 1;
                 dataU8[last_pos] = 254;
                 last_pos += 1;
+
                 dataU8[last_pos] = last_singleRef[0];
                 last_pos += 1;
                 dataU8[last_pos] = last_singleRef[1];
                 last_pos += 1;
+
+                @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
+
+                last_pos += 4;
                 // std.debug.print("zig: set ref... {any} S:{any}\n", .{ key.id, key.start });
+
+                // also add the id here
             }
         } else {
             // std.debug.print("zig: reset ref... {any}\n", .{key.id});
             last_singleRef[0] = 255;
             last_singleRef[1] = 255;
+
+            if (key.id != null) {
+                dataU8[last_pos] = 255;
+                last_pos += 1;
+                @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
+                last_pos += 4;
+            }
         }
 
-        if (key.id != null) {
-            dataU8[last_pos] = 255;
-            last_pos += 1;
-            @memcpy(dataU8[last_pos .. last_pos + 4], @as([*]u8, @ptrCast(&key.id)));
-            last_pos += 4;
+        if (key.field == 255) {
+            continue;
         }
 
         @memcpy(dataU8[last_pos .. last_pos + 1], @as([*]u8, @ptrCast(&key.field)));

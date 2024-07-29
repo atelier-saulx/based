@@ -13,33 +13,24 @@ const IncludeError = error{
 
 pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
     var size: usize = 0;
-    var i: usize = 0;
 
-    while (i < buf.len) {
-        const refstartIndex = i;
+    // [type] [type] [start] [start]
 
-        const len = std.mem.readInt(u16, buf[i..][0..2], .little);
-        const type_prefix: [2]u8 = .{ buf[i + 2], buf[i + 3] };
-        const start = std.mem.readInt(u16, buf[i + 4 ..][0..2], .little);
-        const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-        const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
+    const type_prefix: [2]u8 = .{ buf[0], buf[1] };
+    const start = std.mem.readInt(u16, buf[2..][0..2], .little);
+    const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 
-        // change format...
-        i += 6;
+    const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
 
-        // add all in includeLen....
-        const includeLen = ((len + 6) - (i - refstartIndex));
+    // if !refId DONT ADD IT
 
-        const includeNested: []u8 = buf[i .. i + includeLen];
+    const includeNested = buf[4..buf.len];
 
-        i += includeLen;
+    const shardNested: u16 = @truncate(@divTrunc(refId, 1_000_000));
 
-        const shardNested: u16 = @truncate(@divTrunc(refId, 1_000_000));
+    const resultSizeNest = getFields(ctx, refId, type_prefix, start, includeNested, shardNested) catch 0;
 
-        const resultSizeNest = getFields(ctx, refId, type_prefix, start, includeNested, shardNested) catch 0;
-
-        size += 4 + resultSizeNest;
-    }
+    size += 4 + 4 + resultSizeNest;
 
     return size;
 }

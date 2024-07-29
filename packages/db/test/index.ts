@@ -53,14 +53,15 @@ db.updateSchema({
         // @ts-ignore
         // @ts-ignore
         // countryCode: { type: 'string' },
-        countryCode: { type: 'string', maxBytes: 2 },
+        // countryCode: { type: 'string', maxBytes: 2 },
         // email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
         // writer: { type: 'reference', allowedType: 'user' },
 
         // // name: { type: 'string', maxLength: 10 },
-        user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
+        user: { type: 'reference', allowedType: 'user' },
+
         flap: { type: 'string' },
 
         // smuro: {
@@ -129,14 +130,14 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    user: 6, // TODO: add setting on other field as well...
     // vectorClock: ~~(Math.random() * 10000),
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
     flap: 'AAA',
     // email: 'bla' + i + '@once.net',
 
-    countryCode: 'aa',
+    // countryCode: 'aa',
     // smuro: {
     //   flap: 'flap',
     // },
@@ -163,9 +164,9 @@ const result = db
   .query('simple')
 
   // .filter('vectorClock', '>', 500)
-  .include('countryCode')
+  // .include('countryCode')
   // .include('vectorClock')
-  .include('flap')
+  // .include('flap')
 
   .include('user.age')
   // .include('countryCode')
@@ -238,20 +239,12 @@ console.log('GOP GP')
 
 for (const item of result.data) {
   console.info('\n| ITEM ID --->', item.id)
+  // console.info('| FLAP--->', item.flap)
+  // console.info('| COUNTRY--->', item.countryCode)
+  console.info('| USER AGE--->', item.user.age)
 
-  // console.info('| USER NAME--->', item.user.name)
-  console.info('| FLAP--->', item.flap)
-  console.info('| COUNTRY--->', item.countryCode)
-
-  // console.info('| USER BURP--->', item.user.burp)
-
-  // console.info('| NESTED BLA AGE--->', item.nested.bla.age)
-
-  // console.info('| USER SNURP--->', item.user.snurp)
-  // console.info('| USER EMAIL--->', item.user.email)
   i++
-  // console.info('| USER LOCATION--->', item.user.location.label)
-  // console.info('| USER TOTAL--->', item.user.toObject()) // fix
+
   if (i > 3) {
     break
   }

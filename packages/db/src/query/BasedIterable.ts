@@ -53,8 +53,6 @@ export class BasedIterable {
       i++
       // read from tree
 
-      console.log('DERP?')
-
       if (index === 255) {
         const ctx = this.#query.query.type.responseCtx
         ctx.__o = i
