@@ -21,11 +21,11 @@ pub fn getFields(
 
     var includeMain: []u8 = &.{};
 
+    const singleRef: []u8 = &.{}; // TMP CONST
+
     var size: usize = 0;
     var includeIterator: u16 = 0;
 
-    // should only be at the start bit strange like this maybe...
-    // scince we also want to make it for empty stuff
     var idIsSet: bool = false;
 
     includeField: while (includeIterator < include.len) {
@@ -77,9 +77,9 @@ pub fn getFields(
         if (field != 0) {
             size += (v.mv_size + 1 + 2);
         } else {
-            // if (v.mv_size > 0 and includeSingleRefs.len != 0) {
-            //     size += getSingleRefFields(ctx, includeSingleRefs, v);
-            // }
+            if (v.mv_size > 0 and singleRef.len != 0) {
+                size += getSingleRefFields(ctx, singleRef, v);
+            }
             if (includeMain.len != 0) {
                 size += std.mem.readInt(u16, includeMain[0..2], .little) + 1;
             } else {
