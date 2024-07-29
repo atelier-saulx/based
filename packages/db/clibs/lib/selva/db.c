@@ -65,7 +65,9 @@ static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
 
 static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
 {
-    return (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
+    struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
+    __builtin_prefetch(te);
+    return te;
 }
 
 static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const void ** restrict b_raw)
