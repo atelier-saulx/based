@@ -245,130 +245,168 @@ export const deploy = async (program: Command) => {
         return
       }
 
+      const onWatch = (err) => {
+        console.log('updates!', err)
+        deployThings()
+      }
+
       // build the functions
       const [nodeBundles, browserBundles] = await Promise.all([
-        bundle({
-          entryPoints: nodeEntryPoints,
-          sourcemap: 'external',
-        }),
-        bundle({
-          entryPoints: browserEntryPoints,
-          sourcemap: 'external',
-          platform: 'browser',
-          define: {
-            global: 'window',
-            'process.env.NODE_ENV': '"production"',
+        bundle(
+          {
+            entryPoints: nodeEntryPoints,
+            sourcemap: 'external',
           },
-        }),
+          onWatch,
+        ),
+        bundle(
+          {
+            entryPoints: browserEntryPoints,
+            sourcemap: 'external',
+            platform: 'browser',
+            define: {
+              global: 'window',
+              'process.env.NODE_ENV': '"production"',
+            },
+          },
+          onWatch,
+        ),
       ])
 
       const { client, destroy } = await login(program)
 
-      spinner.start()
-
-      // update schema
-      if (schemaPayload) {
-        const { length } = schemaPayload
-        const label = length === 1 ? 'schema' : `${length} schemas`
-        spinner.text = `deploying ${label}`
-        await client.call('db:set-schema', schemaPayload)
-        spinner.succeed(`deployed ${label}`)
-      }
-
-      // upload assets
-      const assets = browserBundles.result.outputFiles
       const assetsMap: Record<string, string> = {}
-      const { outputs } = browserBundles.result.metafile
-      const uploads = assets
-        .map(({ path, contents }) => {
-          const fileName = path.substring(path.lastIndexOf('/') + 1)
-          const ext = fileName.substring(fileName.lastIndexOf('.'))
-          return { path, contents, fileName, ext }
-        })
-        .filter(({ ext, fileName }) => {
-          if (ext === '.js') {
-            if (favicons.has(outputs[fileName].entryPoint)) {
-              // esbuild generates an stub js for the favicon, we don't need that
-              return
-            }
+      let previous = new Set<string | number>()
+
+      async function deployThings() {
+        const deployed: typeof previous = new Set()
+
+        spinner.start()
+
+        // update schema
+        if (schemaPayload) {
+          const { length } = schemaPayload
+          const label = length === 1 ? 'schema' : `${length} schemas`
+          const hashed = hash(schemaPayload)
+
+          deployed.add(hashed)
+
+          if (previous.has(hashed)) {
+            console.log('schema did not change, skipping...')
+          } else {
+            spinner.text = `deploying ${label}`
+            await client.call('db:set-schema', schemaPayload)
+            spinner.succeed(`deployed ${label}`)
           }
+        }
 
-          if (ext === '.map') {
-            if (favicons.has(outputs[fileName.slice(0, -4)].entryPoint)) {
-              // esbuild generates an stub js.map for the favicon, we don't need that
-              return
+        // upload assets
+        const assets = browserBundles.result.outputFiles
+
+        const { outputs } = browserBundles.result.metafile
+        const uploads = assets
+          .map(({ path, contents }) => {
+            const fileName = path.substring(path.lastIndexOf('/') + 1)
+            const ext = fileName.substring(fileName.lastIndexOf('.'))
+            return { path, contents, fileName, ext }
+          })
+          .filter(({ ext, fileName }) => {
+            if (ext === '.js') {
+              if (favicons.has(outputs[fileName].entryPoint)) {
+                // esbuild generates an stub js for the favicon, we don't need that
+                return
+              }
             }
-          }
 
-          return true
-        })
+            if (ext === '.map') {
+              if (favicons.has(outputs[fileName.slice(0, -4)].entryPoint)) {
+                // esbuild generates an stub js.map for the favicon, we don't need that
+                return
+              }
+            }
 
-      if (uploads.length) {
-        const label = 'uploading assets'
-        let uploading = 0
+            return true
+          })
+
+        if (uploads.length) {
+          const label = 'uploading assets'
+          let uploading = 0
+
+          await Promise.all(
+            uploads.map(async ({ path, contents, ext, fileName }) => {
+              if (path in assetsMap) {
+                console.log('already uploaded ' + fileName + ', skipping...')
+                return
+              }
+
+              spinner.text = `${label} (${++uploading}/${uploads.length})`
+
+              const id = `fi${hashCompact(fileName, 8)}`
+              const { src: url } = await client.stream('db:file-upload', {
+                contents,
+                fileName,
+                mimeType: mimeTypes.lookup(ext),
+                payload: { id, $$fileKey: fileName },
+              })
+
+              assetsMap[path] = url
+              assetsMap[fileName] = url
+            }),
+          )
+
+          spinner.succeed(`uploaded ${uploading} assets`)
+        }
+
+        // deploy functions
+        const label = 'deploying functions'
+        let deploying = 0
+        let url = client.connection?.ws.url
+          .replace('ws://', 'http://')
+          .replace('wss://', 'https://')
+
+        url = url.substring(0, url.lastIndexOf('/'))
 
         await Promise.all(
-          uploads.map(async ({ path, contents, ext, fileName }) => {
-            spinner.text = `${label} (${++uploading}/${uploads.length})`
+          configs.map(async ({ index, app, favicon, config }) => {
+            const js = nodeBundles.js(index)
+            const sourcemap = nodeBundles.map(index)
 
-            const id = `fi${hashCompact(fileName, 8)}`
-            const { src: url } = await client.stream('db:file-upload', {
-              contents,
-              fileName,
-              mimeType: mimeTypes.lookup(ext),
-              payload: { id, $$fileKey: fileName },
-            })
+            spinner.text = `${label} (${++deploying}/${configs.length})`
 
-            assetsMap[path] = url
-            assetsMap[fileName] = url
+            if (app) {
+              const appJS = browserBundles.js(app)
+              const appCss = browserBundles.css(app)
+              const appFavicon =
+                favicon && outputs[browserBundles.find(favicon)]?.imports[0]
+              config.appParams = {
+                js: assetsMap[appJS?.path],
+                css: assetsMap[appCss?.path],
+                favicon: assetsMap[appFavicon?.path],
+              }
+            }
+
+            const checksum = hash([js.hash, config])
+            deployed.add(checksum)
+
+            if (previous.has(checksum)) {
+              console.log('already deployed ' + config.name + ', skipping...')
+              return
+            }
+
+            await queuedFnDeploy(client, checksum, config, js, sourcemap)
+
+            const { path = `/${config.name}`, public: isPublic } = config
+            if (isPublic) {
+              console.log(`🚀 ${pc.dim(url)}${path}`)
+            }
           }),
         )
 
-        spinner.succeed(`uploaded ${uploading} assets`)
+        spinner.succeed(`deployed ${deploying} functions`)
       }
 
-      // deploy functions
-      const label = 'deploying functions'
-      let deploying = 0
-      let url = client.connection?.ws.url
-        .replace('ws://', 'http://')
-        .replace('wss://', 'https://')
-
-      url = url.substring(0, url.lastIndexOf('/'))
-
-      await Promise.all(
-        configs.map(async ({ index, app, favicon, config }) => {
-          const js = nodeBundles.js(index)
-          const sourcemap = nodeBundles.map(index)
-
-          spinner.text = `${label} (${++deploying}/${configs.length})`
-
-          if (app) {
-            const appJS = browserBundles.js(app)
-            const appCss = browserBundles.css(app)
-            const appFavicon =
-              favicon && outputs[browserBundles.find(favicon)]?.imports[0]
-            config.appParams = {
-              js: assetsMap[appJS?.path],
-              css: assetsMap[appCss?.path],
-              favicon: assetsMap[appFavicon?.path],
-            }
-          }
-
-          const checksum = hash([js.hash, config])
-
-          await queuedFnDeploy(client, checksum, config, js, sourcemap)
-
-          const { path = `/${config.name}`, public: isPublic } = config
-          if (isPublic) {
-            console.log(`🚀 ${pc.dim(url)}${path}`)
-          }
-        }),
-      )
-
-      spinner.succeed(`deployed ${deploying} functions`)
-
-      destroy()
+      await deployThings()
+      // destroy()
     },
   )
 }
