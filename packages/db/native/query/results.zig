@@ -59,7 +59,7 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
 
         if (key.field == 0) {
             if (key.includeMain.len != 0) {
-                var selectiveMainPos: usize = 4;
+                var selectiveMainPos: usize = 2;
                 var mainU8 = @as([*]u8, @ptrCast(key.val.?.mv_data));
                 while (selectiveMainPos < key.includeMain.len) {
                     const start: u16 = std.mem.readInt(u16, @ptrCast(key.includeMain[selectiveMainPos .. selectiveMainPos + 2]), .little);

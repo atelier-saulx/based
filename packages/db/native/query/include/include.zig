@@ -36,10 +36,12 @@ pub fn getFields(
 
             const mainSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
 
-            std.debug.print("size: {d} \n", .{mainSize});
+            std.debug.print(" size: {d} \n", .{mainSize});
 
             if (mainSize != 0) {
                 includeMain = include[includeIterator + 3 .. includeIterator + 3 + mainSize];
+
+                std.debug.print(" includeMain: {any} \n", .{includeMain});
             }
 
             includeIterator += 2 + mainSize;

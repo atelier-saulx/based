@@ -164,7 +164,7 @@ const result = db
 
   // .filter('vectorClock', '>', 500)
   .include('countryCode')
-  .include('vectorClock')
+  // .include('vectorClock')
   .include('flap')
   // .include('countryCode')
   // .include('smuro.flap')
@@ -239,6 +239,8 @@ for (const item of result.data) {
 
   // console.info('| USER NAME--->', item.user.name)
   console.info('| FLAP--->', item.flap)
+  console.info('| COUNTRY--->', item.countryCode)
+
   // console.info('| USER BURP--->', item.user.burp)
 
   // console.info('| NESTED BLA AGE--->', item.nested.bla.age)
