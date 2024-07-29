@@ -59,7 +59,7 @@ db.updateSchema({
         // writer: { type: 'reference', allowedType: 'user' },
 
         // // name: { type: 'string', maxLength: 10 },
-        // user: { type: 'reference', allowedType: 'user' },
+        user: { type: 'reference', allowedType: 'user' },
         vectorClock: { type: 'integer' },
         flap: { type: 'string' },
 
@@ -129,7 +129,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    // user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // vectorClock: ~~(Math.random() * 10000),
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
