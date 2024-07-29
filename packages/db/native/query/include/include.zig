@@ -19,11 +19,15 @@ pub fn getFields(
 
     std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
 
-    const EMPTY: []u8 = &.{};
+    var includeMain: []u8 = &.{};
 
     var size: usize = 0;
     var includeIterator: u16 = 0;
+
+    // should only be at the start bit strange like this maybe...
+    // scince we also want to make it for empty stuff
     var idIsSet: bool = false;
+
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
 
@@ -33,6 +37,10 @@ pub fn getFields(
             const mainSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
 
             std.debug.print("size: {d} \n", .{mainSize});
+
+            if (mainSize != 0) {
+                includeMain = include[includeIterator + 3 .. includeIterator + 3 + mainSize];
+            }
 
             includeIterator += 2 + mainSize;
         }
@@ -58,10 +66,10 @@ pub fn getFields(
         if (!idIsSet and start == null) {
             idIsSet = true;
             size += 1 + 4;
-            const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = EMPTY };
+            const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = includeMain };
             try ctx.results.append(s);
         } else {
-            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = EMPTY };
+            const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = includeMain };
             try ctx.results.append(s);
         }
 
