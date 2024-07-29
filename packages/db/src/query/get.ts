@@ -41,7 +41,7 @@ export const get = (query: Query): BasedQueryResponse => {
   //   includeBuffer,
   // )
 
-  const result = Buffer.alloc(0)
+  const result = Buffer.alloc(4)
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)
