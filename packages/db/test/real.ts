@@ -409,8 +409,8 @@ test.serial.only('1bn', async (t) => {
   const NR_NODES = 1e8
   const DATA_SIZE = 84 + 9
   const CHUNK_SIZE = 536870912;
+  const buf = Buffer.allocUnsafe(CHUNK_SIZE)
   for (let i = 0; i < NR_NODES;) {
-    const buf = Buffer.allocUnsafe(CHUNK_SIZE)
     let off = 0
     let bytes = 0;
 
