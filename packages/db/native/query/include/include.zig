@@ -30,7 +30,6 @@ pub fn getFields(
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
-
         if (field == 0) {
             std.debug.print("\n IS MAIN \n", .{});
 
@@ -81,12 +80,11 @@ pub fn getFields(
             // if (v.mv_size > 0 and includeSingleRefs.len != 0) {
             //     size += getSingleRefFields(ctx, includeSingleRefs, v);
             // }
-            // if (includeMain.len != 0) {
-            //     // std.debug.print("zig: MAIN LEN {any} \n", .{std.mem.readInt(u32, includeMain[0..4], .little) + 1});
-            //     size += std.mem.readInt(u32, includeMain[0..4], .little) + 1;
-            // } else {
-            size += (v.mv_size + 1);
-            // }
+            if (includeMain.len != 0) {
+                size += std.mem.readInt(u16, includeMain[0..2], .little) + 1;
+            } else {
+                size += (v.mv_size + 1);
+            }
         }
     }
 

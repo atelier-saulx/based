@@ -165,7 +165,9 @@ const result = db
   // .filter('vectorClock', '>', 500)
   .include('countryCode')
   // .include('vectorClock')
-  .include('flap')
+  // .include('flap')
+
+  // .include('user.age')
   // .include('countryCode')
   // .include('smuro.flap')
 
@@ -183,7 +185,7 @@ const result = db
 
   // .include('user.location.label')
   // .include('vectorClock')
-  .range(0, 2)
+  .range(0, 1)
   // sort()
   .get()
 
