@@ -2,6 +2,7 @@ import { inspect } from 'node:util'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { BasedNode } from '../basedNode/index.js'
 import picocolors from 'picocolors'
+import { QueryIncludeDef } from './types.js'
 
 export class BasedIterable {
   constructor(buffer: Buffer, query: BasedQueryResponse) {
@@ -46,7 +47,7 @@ export class BasedIterable {
 
   *[Symbol.iterator]() {
     let i = 4
-
+    let currentInclude: QueryIncludeDef
     while (i < this.#buffer.byteLength) {
       // read
       const index = this.#buffer[i]
@@ -54,6 +55,7 @@ export class BasedIterable {
       // read from tree
 
       if (index === 255) {
+        currentInclude = this.#query.query.includeDef
         const ctx = this.#query.query.type.responseCtx
         ctx.__o = i
         ctx.__q = this.#query
@@ -61,12 +63,14 @@ export class BasedIterable {
         yield ctx
         i += 4
       } else if (index === 0) {
+        // nested
         if (
           this.#buffer[i] === 254 &&
           this.#query.query.includeDef.refIncludes
         ) {
           const start = this.#buffer.readUint16LE(i + 1)
-          i += this.#query.query.includeDef.refIncludes[start].mainLen + 4
+          currentInclude = currentInclude.refIncludes[start]
+          i += currentInclude.mainLen + 4
         } else {
           // more complex
           i += this.#query.query.includeDef.mainLen

@@ -27,6 +27,7 @@ db.updateSchema({
   types: {
     user: {
       fields: {
+        myBlup: { type: 'reference', allowedType: 'blup' },
         name: { type: 'string' },
         flap: { type: 'integer' },
         email: { type: 'string', maxLength: 15 }, // maxLength: 10
@@ -41,6 +42,11 @@ db.updateSchema({
             y: { type: 'integer' },
           },
         },
+      },
+    },
+    blup: {
+      fields: {
+        name: { type: 'string' },
       },
     },
     simple: {
@@ -107,9 +113,14 @@ db.updateSchema({
 
 const users = []
 
-for (let i = 0; i < 1000; i++) {
+for (let i = 0; i < 10; i++) {
+  const blup = db.create('blup', {
+    name: 'blup ' + i,
+  })
+  console.log({ blup })
   users.push(
     db.create('user', {
+      myBlup: blup,
       age: 99,
       name: 'Mr ' + i,
       burp: 66,
@@ -164,11 +175,14 @@ const result = db
   .query('simple')
 
   // .filter('vectorClock', '>', 500)
-  .include('countryCode')
+  // .include('countryCode')
   // .include('vectorClock')
   // .include('flap')
 
   .include('user.age')
+
+  .include('user.myBlup.name')
+
   // .include('countryCode')
   // .include('smuro.flap')
 
@@ -240,7 +254,7 @@ console.log('GOP GP')
 for (const item of result.data) {
   console.info('\n| ITEM ID --->', item.id)
   // console.info('| FLAP--->', item.flap)
-  console.info('| COUNTRY--->', item.countryCode)
+  // console.info('| COUNTRY--->', item.countryCode)
   console.info('| USER AGE--->', item.user.age)
 
   i++
