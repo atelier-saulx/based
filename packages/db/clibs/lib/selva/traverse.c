@@ -129,7 +129,9 @@ int traverse_field_bfs(
                 struct SelvaFields *edge_data = any.reference->meta;
                 struct SelvaNode *adj = any.reference->dst;
 
-                BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                if (adj) {
+                    BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                }
             } else if (any.type == SELVA_FIELD_TYPE_REFERENCES) {
                 if (any.references && any.references->refs) {
                     const size_t nr_refs = any.references->nr_refs;
@@ -139,7 +141,9 @@ int traverse_field_bfs(
                         struct SelvaFields *edge_data = ref->meta;
                         struct SelvaNode *adj = ref->dst;
 
-                        BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                        if (adj) {
+                            BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                        }
                     }
                 }
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
