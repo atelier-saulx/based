@@ -16,6 +16,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
+const FILTER = {
+  CONJ_NECESS: 2,
+  CONJ_POSS: 3,
+  OP_EQ_TYPE: 6,
+  OP_EQ_INTEGER: 7,
+}
+
 function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
   const typeNames = Object.keys(schema)
   const types = Object.values(schema)
@@ -42,6 +49,7 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     mainFields.sort((a, b) => a.selvaField - b.selvaField)
     restFields.sort((a, b) => a.selvaField - b.selvaField)
 
+    console.log('\nnode_type:', i)
     console.log('mainFields:', mainFields)
     console.log('restFields:', restFields)
 
@@ -295,18 +303,13 @@ test.serial('query + filter', async (t) => {
     `Found ${matchCount} matches in ${Math.round(matchEnd - matchStart)} ms`,
   )
 
-  const FILTER = {
-      CONJ_NECESS: 2,
-      CONJ_POSS: 3,
-      OP_EQ_TYPE: 6,
-      OP_EQ_INTEGER: 7,
-  }
   console.log('fast filtering:')
   const match1Start = performance.now()
+  const fields_sel = Buffer.from([1, 1, 0, 1]) // len = 1, [ type1, field1 ]
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
   const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, 0, 0])
   //const node_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
-  const res = selva.find(dbp, 1, 0, adj_filter, node_filter, Buffer.from([1, 1, 0, 1])) // len = 1, [ type1, field1 ]
+  const res = selva.find(dbp, 1, 0, fields_sel, adj_filter, node_filter)
   const match1End = performance.now()
   console.log(
     `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,
@@ -339,14 +342,29 @@ test.serial.only('1bn', async (t) => {
 
   db.updateSchema({
     types: {
-      simple: {
+      simplex: {
         prefix: 'aa',
+        fields: {
+          complex: {
+            type: 'reference',
+            allowedType: 'complex',
+            inverseProperty: 'simplie',
+          },
+        }
+      },
+      complex: {
+        prefix: 'bb',
         fields: {
           flap: { type: 'string' },
           user: {
             type: 'reference',
             allowedType: 'user',
-            inverseProperty: 'simples',
+            inverseProperty: 'things',
+          },
+          simplie: {
+            type: 'reference',
+            allowedType: 'simplex',
+            inverseProperty: 'complex',
           },
           vectorClock: { type: 'integer' },
           location: {
@@ -362,9 +380,9 @@ test.serial.only('1bn', async (t) => {
         prefix: 'us',
         fields: {
           name: { type: 'string' },
-          simples: {
+          things: {
             type: 'references',
-            allowedType: 'simple',
+            allowedType: 'complex',
             inverseProperty: 'user',
           },
         },
@@ -395,26 +413,28 @@ test.serial.only('1bn', async (t) => {
     buf.write(name, (off += 1))
     off += nameLen
 
-    console.log(`create user ${name}:`, selva.db_update(dbp, 1, id, buf))
+    console.log(`create user ${name}:`, selva.db_update(dbp, 2, id, buf))
   }
   createUser(0, 'Synergy Greg')
 
   //const dx = peroformance.now()
   console.log('GO!', process.pid)
-  //await wait(15e3)
-  const fields = db.schemaTypesParsed.simple.fields
+  await wait(15e3)
 
   const dx = performance.now()
-  //const NR_NODES = 1e9
-  const NR_NODES = 1e8
-  const DATA_SIZE = 84 + 9
+  const NR_NODES_AA = 5e7
+  const NR_NODES_BB = 5e7
   const CHUNK_SIZE = 536870912;
   const buf = Buffer.allocUnsafe(CHUNK_SIZE)
-  for (let i = 0; i < NR_NODES;) {
+
+  // Create complices
+  for (let i = 0; i < NR_NODES_BB;) {
     let off = 0
     let bytes = 0;
+    const fields = db.schemaTypesParsed.complex.fields
 
-    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES; bytes += DATA_SIZE) {
+    const DATA_SIZE = 84 + 9
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES_BB; bytes += DATA_SIZE) {
       // UpdateBatch
       buf.writeUInt32LE(DATA_SIZE, off)
       buf.writeUInt32LE(i++, (off += 4))
@@ -450,13 +470,52 @@ test.serial.only('1bn', async (t) => {
       buf.writeUint32LE(0, (off += 1))
       off += 4
     }
+    const res = selva.db_update_batch(dbp, 1, buf.subarray(0, bytes))
+    if (res != 0) {
+        t.fail(`Update complex failed: ${res}`);
+    }
+    //console.log('wrote some bytes')
+  }
+
+  // Create simplies
+  for (let i = 0; i < NR_NODES_AA;) {
+    let off = 0
+    let bytes = 0;
+    const fields = db.schemaTypesParsed.simplex.fields
+
+    const DATA_SIZE = 17
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES_AA; bytes += DATA_SIZE) {
+      // UpdateBatch
+      buf.writeUInt32LE(DATA_SIZE, off)
+      buf.writeUInt32LE(i, (off += 4))
+      off += 4
+
+      // complex ref
+      buf.writeUInt32LE(9, off) // len
+      buf.writeInt8(fields['complex'].selvaField, (off += 4)) // field
+      buf.writeUint32LE(i, (off += 1))
+      off += 4
+
+      i++
+    }
     const res = selva.db_update_batch(dbp, 0, buf.subarray(0, bytes))
     if (res != 0) {
-        t.fail(`Update failed: ${res}`);
+        t.fail(`Update simple failed: ${res}`);
     }
     //console.log('wrote some bytes')
   }
   console.log('update took', Math.round(performance.now() - dx), 'ms')
+
+  console.log('fast filtering:')
+  const match1Start = performance.now()
+  const fields_sel = Buffer.from([1, 2, 0, 1]) // len = 1, [ type1, field1 ]
+  const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 1, 0, FILTER.OP_EQ_INTEGER, 2, 0, 0, 0, 0 ])
+  const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, 1, 0])
+  const res = selva.find(dbp, 2, 0, fields_sel, adj_filter, node_filter)
+  const match1End = performance.now()
+  console.log(
+    `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,
+  )
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())

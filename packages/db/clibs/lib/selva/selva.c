@@ -691,11 +691,11 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     node_type_t type = selva_napi_get_node_type(env, argv[1]);
     node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
 
+    const struct FindFields *fields = get_find_fields(env, argv[3]);
     size_t adj_filter_len;
-    const uint8_t *adj_filter_buf = get_filter(env, argv[3], &adj_filter_len);
+    const uint8_t *adj_filter_buf = get_filter(env, argv[4], &adj_filter_len);
     size_t node_filter_len;
-    const uint8_t *node_filter_buf = get_filter(env, argv[4], &node_filter_len);
-    const struct FindFields *fields = get_find_fields(env, argv[5]);
+    const uint8_t *node_filter_buf = get_filter(env, argv[5], &node_filter_len);
 
     if (!fields) {
         return res2napi(env, SELVA_EINVAL);
