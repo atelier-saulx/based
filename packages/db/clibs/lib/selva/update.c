@@ -104,11 +104,12 @@ int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *bu
             return err;
         }
 
+#if 0
         /*
          * Immediate swap out test.
          */
-#if 0
-        if ((node_id % slab_info.nr_objects) == 0) {
+        if ((node_id % slab_info.nr_objects) == slab_info.nr_objects - 1) {
+            //printf("page out\n");
             struct mempool_slab *slab = mempool_get_slab(&type->nodepool, node);
             mempool_pageout(&type->nodepool, slab);
         }
