@@ -36,6 +36,9 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 lastSingleRef = start;
                 lastRefLvl = key.refLvl;
 
+                dataU8[lastPos] = 254;
+                lastPos += 1;
+
                 if (key.refLvl > 1) {
                     dataU8[lastPos] = 1;
                 } else {
@@ -43,20 +46,24 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 }
 
                 lastPos += 1;
-                dataU8[lastPos] = 254;
-                lastPos += 1;
 
                 dataU8[lastPos] = lastSingleRef[0];
                 lastPos += 1;
                 dataU8[lastPos] = lastSingleRef[1];
                 lastPos += 1;
 
+                std.debug.print("zig: REF... id: {any} refLvl: {any} start: [{any},{any}] \n", .{
+                    key.id,
+                    key.refLvl,
+                    lastSingleRef[0],
+                    lastSingleRef[1],
+                });
+
                 @memcpy(dataU8[lastPos .. lastPos + 4], @as([*]u8, @ptrCast(&key.id)));
 
                 lastPos += 4;
             }
         } else {
-            // std.debug.print("zig: reset ref... {any}\n", .{key.id});
             lastSingleRef[0] = 255;
             lastSingleRef[1] = 255;
 

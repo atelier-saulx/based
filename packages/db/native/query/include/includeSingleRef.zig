@@ -30,7 +30,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8) us
 
     const resultSizeNest = getFields(ctx, refId, type_prefix, start, includeNested, shardNested, refLvl + 1) catch 0;
 
-    size += 4 + 4 + resultSizeNest;
+    size += 2 + 2 + 4 + resultSizeNest;
 
     return size;
 }

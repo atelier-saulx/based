@@ -188,10 +188,13 @@ const result = db
   // .include('flap')
 
   .include('lilBlup.flap')
+  .include('lilBlup.name')
 
-  .include('user.age')
+  // .include('user.age')
+  // .include('user.name')
 
-  .include('user.myBlup.flap')
+  // .include('user.myBlup.flap')
+  // .include('user.myBlup.name')
 
   // .include('countryCode')
   // .include('smuro.flap')
@@ -265,7 +268,10 @@ for (const item of result.data) {
   console.info('\n| ITEM ID --->', item.id)
   // console.info('| FLAP--->', item.flap)
   // console.info('| COUNTRY--->', item.countryCode)
-  console.info('| USER AGE--->', item.user.age)
+  console.info('| lilBlup --->', item.lilBlup)
+
+  console.info('| lilBlup FLAP--->', item.lilBlup.flap)
+  console.info('| lilBlup NAME--->', item.lilBlup.name)
 
   i++
 

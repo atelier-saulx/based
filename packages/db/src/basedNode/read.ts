@@ -19,6 +19,8 @@ export const readSeperateFieldFromBuffer = (
   let mainLen = queryResponse.query.includeDef.mainLen
   let found = !ref || false
 
+  // console.info('BLA -->', ref)
+
   while (i < buffer.byteLength) {
     let index = buffer[i]
 
@@ -30,36 +32,26 @@ export const readSeperateFieldFromBuffer = (
     i += 1
 
     // REF --------------------------
-    if ((!found || !ref) && index === 0 && buffer[i] === 254) {
+    if ((!found || !ref) && index === 254) {
+      // NOW NESTED REFS
       const start = buffer.readUint16LE(i + 1)
-      // console.info('HELLO', {
-      //   start,
-      //   refStart,
-      //   ref: ref.ref.path,
-      //   i,
-      //   requestedField: requestedField.path,
-      // })
       if (ref && start === refStart) {
         found = true
-        i += 3
+        i += 3 + 4
         if (ref.mainLen) {
           mainLen = ref.mainLen
           mainIncludes = ref.mainIncludes
         }
-
         index = buffer[i]
-        // console.dir({ mainIncludes }, { depth: 10 })
-        // console.log('FOUND --->', { ref, mainLen, mainIncludes, index })
-
         i += 1
       } else {
-        i += 3
-        index = buffer[i]
+        i += 3 + 4
         if (queryResponse.query.includeDef.refIncludes[start].mainLen) {
           mainLen = queryResponse.query.includeDef.refIncludes[start].mainLen
           mainIncludes =
             queryResponse.query.includeDef.refIncludes[start].mainIncludes
         }
+        index = buffer[i]
         i += 1
       }
     }

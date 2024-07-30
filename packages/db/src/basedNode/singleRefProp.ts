@@ -1,5 +1,6 @@
 import { BasedDb, FieldDef } from '../index.js'
 import { BasedNode } from './index.js'
+import { readSeperateFieldFromBuffer } from './read.js'
 
 export function singleRefProp(
   ctx: BasedNode,
@@ -13,13 +14,18 @@ export function singleRefProp(
     enumerable: true,
     set: () => undefined,
     get() {
+      // console.log('get dat ref', this.__q)
+
       // TODO: fix speed
-      // const refSchema = schemas[type]
-      // const refCtx = refSchema.responseCtx
-      // refCtx.__q = this.__q
-      // refCtx.__o = this.__o
-      // refCtx.__r = this.__q.query.refIncludes[fieldDef.start]
-      return 'bla'
+      const refSchema = schemas[type]
+      const refCtx = refSchema.responseCtx
+      refCtx.__q = this.__q
+      refCtx.__o = this.__o
+
+      // NESTED GET!
+      refCtx.__r = this.__q.query.includeDef.refIncludes[fieldDef.start]
+
+      return refCtx
     },
   })
 }
