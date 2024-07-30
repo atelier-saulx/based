@@ -188,10 +188,10 @@ const result = db
   // .include('flap')
 
   .include('lilBlup.flap')
-  .include('lilBlup.name')
+  // .include('lilBlup.name')
 
   // .include('user.age')
-  .include('user.name')
+  // .include('user.name')
 
   // .include('user.myBlup.flap')
   // .include('user.myBlup.name')
@@ -204,7 +204,7 @@ const result = db
   // same include multiple time ERROR
   .include('user.age')
   .include('user.myBlup.flap')
-  .include('user.myBlup.name')
+  // .include('user.myBlup.name')
 
   // .include('user.burp')
   // // .include('user.name')
