@@ -187,11 +187,11 @@ const result = db
   // .include('vectorClock')
   // .include('flap')
 
-  // .include('lilBlup.flap')
-  // .include('lilBlup.name')
+  .include('lilBlup.flap')
+  .include('lilBlup.name')
 
   // .include('user.age')
-  // .include('user.name')
+  .include('user.name')
 
   // .include('user.myBlup.flap')
   // .include('user.myBlup.name')
@@ -204,6 +204,7 @@ const result = db
   // same include multiple time ERROR
   .include('user.age')
   .include('user.myBlup.flap')
+  .include('user.myBlup.name')
 
   // .include('user.burp')
   // // .include('user.name')
@@ -214,7 +215,7 @@ const result = db
 
   // .include('user.location.label')
   // .include('vectorClock')
-  .range(0, 1)
+  .range(0, 2)
   // sort()
   .get()
 
@@ -271,12 +272,13 @@ for (const item of result.data) {
   // console.info('| COUNTRY--->', item.countryCode)
   // console.info('| lilBlup --->', item.lilBlup)
 
-  // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
-  // console.info('| lilBlup NAME--->', item.lilBlup.name)
+  console.info('| lilBlup FLAP--->', item.lilBlup.flap)
+  console.info('| lilBlup NAME--->', item.lilBlup.name)
 
   console.info('| user age--->', item.user.age)
 
   console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
+  console.info('| user.myBlup.name--->', item.user.myBlup.name)
 
   i++
 
