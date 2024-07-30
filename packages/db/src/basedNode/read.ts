@@ -88,10 +88,6 @@ export const readSeperateFieldFromBuffer = (
             id,
           }
         } else if (requestedField.type === 'integer') {
-          if (ref && found) {
-            // hello
-            console.info('HELLOOOOOO')
-          }
           return buffer.readUint32LE(i + fIndex)
         }
         if (requestedField.type === 'boolean') {
@@ -104,7 +100,6 @@ export const readSeperateFieldFromBuffer = (
           return buffer.readFloatLE(i + fIndex)
         }
         if (requestedField.type === 'string') {
-          // read len
           const len = buffer[i + fIndex]
           const str = buffer.toString(
             'utf-8',

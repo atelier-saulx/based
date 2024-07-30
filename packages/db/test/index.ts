@@ -202,7 +202,7 @@ const result = db
   // .include('email')
 
   // same include multiple time ERROR
-  // .include('user.age')
+  .include('user.age')
 
   // .include('user.burp')
   // // .include('user.name')
@@ -272,6 +272,8 @@ for (const item of result.data) {
 
   console.info('| lilBlup FLAP--->', item.lilBlup.flap)
   console.info('| lilBlup NAME--->', item.lilBlup.name)
+
+  console.info('| user age--->', item.user.age)
 
   i++
 
