@@ -64,13 +64,12 @@ export class BasedIterable {
         i += 4
       } else if (index === 0) {
         // nested
-        if (
-          this.#buffer[i] === 254 &&
-          this.#query.query.includeDef.refIncludes
-        ) {
+        if (this.#buffer[i] === 254 && currentInclude.refIncludes) {
+          // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
           currentInclude = currentInclude.refIncludes[start]
           i += currentInclude.mainLen + 4
+          // read len - and go back again to query if its end
         } else {
           // more complex
           i += this.#query.query.includeDef.mainLen

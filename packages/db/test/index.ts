@@ -68,6 +68,8 @@ db.updateSchema({
         vectorClock: { type: 'integer' },
         user: { type: 'reference', allowedType: 'user' },
 
+        lilBlup: { type: 'reference', allowedType: 'blup' },
+
         flap: { type: 'string' },
 
         // smuro: {
@@ -113,11 +115,11 @@ db.updateSchema({
 
 const users = []
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 99; i++) {
   const blup = db.create('blup', {
     name: 'blup ' + i,
   })
-  console.log({ blup })
+  // console.log({ blup })
   users.push(
     db.create('user', {
       myBlup: blup,
@@ -141,7 +143,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    user: 6, // TODO: add setting on other field as well...
+    user: 99, // TODO: add setting on other field as well...
     // vectorClock: ~~(Math.random() * 10000),
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
@@ -149,6 +151,7 @@ for (let i = 0; i < amount; i++) {
     // email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
+    lilBlup: 66,
     // smuro: {
     //   flap: 'flap',
     // },
@@ -179,9 +182,11 @@ const result = db
   // .include('vectorClock')
   // .include('flap')
 
+  .include('lilBlup.name')
+
   .include('user.age')
 
-  .include('user.myBlup.name')
+  // .include('user.myBlup.name')
 
   // .include('countryCode')
   // .include('smuro.flap')
