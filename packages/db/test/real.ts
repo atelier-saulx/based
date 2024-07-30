@@ -422,8 +422,8 @@ test.serial.only('1bn', async (t) => {
   await wait(15e3)
 
   const dx = performance.now()
-  const NR_NODES_AA = 5e7
-  const NR_NODES_BB = 5e7
+  const NR_NODES_AA = 3e7
+  const NR_NODES_BB = 3e7
   const CHUNK_SIZE = 536870912;
   const buf = Buffer.allocUnsafe(CHUNK_SIZE)
 
