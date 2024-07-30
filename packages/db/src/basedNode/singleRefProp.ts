@@ -19,11 +19,13 @@ export function singleRefProp(
       // TODO: fix speed
       const refSchema = schemas[type]
       const refCtx = refSchema.responseCtx
+
       refCtx.__q = this.__q
       refCtx.__o = this.__o
 
-      // NESTED GET!
-      refCtx.__r = this.__q.query.includeDef.refIncludes[fieldDef.start]
+      refCtx.__r =
+        ctx.__r?.refIncludes[fieldDef.start] ??
+        this.__q.query.includeDef.refIncludes[fieldDef.start]
 
       return refCtx
     },

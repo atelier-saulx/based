@@ -18,6 +18,7 @@ export const readSeperateFieldFromBuffer = (
   let mainIncludes = queryResponse.query.includeDef.mainIncludes
   let mainLen = queryResponse.query.includeDef.mainLen
   let found = !ref || false
+  let includeDef = queryResponse.query.includeDef
 
   // console.info('BLA -->', ref)
 
@@ -35,6 +36,12 @@ export const readSeperateFieldFromBuffer = (
     if ((!found || !ref) && index === 254) {
       // NOW NESTED REFS
       const start = buffer.readUint16LE(i + 1)
+
+      const resetNested = buffer[i] === 0
+      if (resetNested) {
+        includeDef = queryResponse.query.includeDef
+      }
+
       if (ref && start === refStart) {
         found = true
         i += 3 + 4
@@ -44,14 +51,15 @@ export const readSeperateFieldFromBuffer = (
         }
         index = buffer[i]
         i += 1
+        includeDef = ref
       } else {
         i += 3 + 4
-        if (queryResponse.query.includeDef.refIncludes[start].mainLen) {
-          mainLen = queryResponse.query.includeDef.refIncludes[start].mainLen
-          mainIncludes =
-            queryResponse.query.includeDef.refIncludes[start].mainIncludes
+        if (includeDef.refIncludes[start].mainLen) {
+          mainLen = includeDef.refIncludes[start].mainLen
+          mainIncludes = includeDef.refIncludes[start].mainIncludes
         }
         index = buffer[i]
+        includeDef = includeDef.refIncludes[start]
         i += 1
       }
     }
@@ -111,7 +119,7 @@ export const readSeperateFieldFromBuffer = (
       }
       i += mainLen
 
-      // reset
+      // reset incorrect like this ofc
       mainLen = queryResponse.query.includeDef.mainLen
       mainIncludes = queryResponse.query.includeDef.mainIncludes
     } else {

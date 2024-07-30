@@ -187,8 +187,8 @@ const result = db
   // .include('vectorClock')
   // .include('flap')
 
-  .include('lilBlup.flap')
-  .include('lilBlup.name')
+  // .include('lilBlup.flap')
+  // .include('lilBlup.name')
 
   // .include('user.age')
   // .include('user.name')
@@ -203,6 +203,7 @@ const result = db
 
   // same include multiple time ERROR
   .include('user.age')
+  .include('user.myBlup.flap')
 
   // .include('user.burp')
   // // .include('user.name')
@@ -268,12 +269,14 @@ for (const item of result.data) {
   console.info('\n| ITEM ID --->', item.id)
   // console.info('| FLAP--->', item.flap)
   // console.info('| COUNTRY--->', item.countryCode)
-  console.info('| lilBlup --->', item.lilBlup)
+  // console.info('| lilBlup --->', item.lilBlup)
 
-  console.info('| lilBlup FLAP--->', item.lilBlup.flap)
-  console.info('| lilBlup NAME--->', item.lilBlup.name)
+  // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
+  // console.info('| lilBlup NAME--->', item.lilBlup.name)
 
   console.info('| user age--->', item.user.age)
+
+  console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
 
   i++
 
