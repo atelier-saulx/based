@@ -88,7 +88,7 @@ fn getQueryInternal(
             fieldIndex += querySize + 3;
         }
 
-        total_size += try getFields(ctx, i, type_prefix, null, include, currentShard);
+        total_size += try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
         total_results += 1;
     }
 

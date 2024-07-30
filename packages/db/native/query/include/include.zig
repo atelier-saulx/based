@@ -14,6 +14,7 @@ pub fn getFields(
     start: ?u16,
     include: []u8,
     currentShard: u16,
+    refLvl: u8,
 ) !usize {
     std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
 
@@ -32,11 +33,15 @@ pub fn getFields(
             const refSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
             const singleRef = include[includeIterator + 3 .. includeIterator + 3 + refSize];
 
-            includeIterator += refSize + 4 + 1;
+            includeIterator += refSize + 2 + 1;
 
-            std.debug.print("HELLO {any} \n", .{mainValue.?.mv_data == null});
+            std.debug.print("SIZE {d} \n", .{refSize});
+
+            std.debug.print("REF {any} \n", .{mainValue.?.mv_data == null});
 
             if (mainValue == null) {
+                std.debug.print("get mainvalue\n", .{});
+
                 const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
                 var shard = ctx.shards.get(dbiName);
                 if (shard == null) {
@@ -54,6 +59,7 @@ pub fn getFields(
 
                 mainValue = v;
 
+                // REFLVL
                 // case that you only include
                 if (!idIsSet and start == null) {
                     idIsSet = true;
@@ -64,16 +70,19 @@ pub fn getFields(
                         .val = v,
                         .start = null,
                         .includeMain = includeMain,
+                        .refLvl = refLvl,
                     };
                     try ctx.results.append(s);
                 }
             }
 
             if (mainValue.?.mv_data == null) {
+                std.debug.print("skip ref \n", .{});
+
                 continue :includeField;
             }
 
-            size += getSingleRefFields(ctx, singleRef, mainValue.?);
+            size += getSingleRefFields(ctx, singleRef, mainValue.?, refLvl);
         } else {
             if (field == 0) {
                 const mainSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
@@ -111,14 +120,35 @@ pub fn getFields(
             if (!idIsSet and start == null) {
                 idIsSet = true;
                 size += 1 + 4;
-                const s: results.Result = .{ .id = id, .field = field, .val = v, .start = null, .includeMain = includeMain };
+                const s: results.Result = .{
+                    .id = id,
+                    .field = field,
+                    .val = v,
+                    .start = null,
+                    .includeMain = includeMain,
+                    .refLvl = refLvl,
+                };
                 try ctx.results.append(s);
             } else {
                 if (start != null) {
-                    const s: results.Result = .{ .id = id, .field = field, .val = v, .start = start, .includeMain = includeMain };
+                    const s: results.Result = .{
+                        .id = id,
+                        .field = field,
+                        .val = v,
+                        .start = start,
+                        .includeMain = includeMain,
+                        .refLvl = refLvl,
+                    };
                     try ctx.results.append(s);
                 } else {
-                    const s: results.Result = .{ .id = null, .field = field, .val = v, .start = start, .includeMain = includeMain };
+                    const s: results.Result = .{
+                        .id = null,
+                        .field = field,
+                        .val = v,
+                        .start = start,
+                        .includeMain = includeMain,
+                        .refLvl = refLvl,
+                    };
                     try ctx.results.append(s);
                 }
             }

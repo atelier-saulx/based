@@ -62,18 +62,17 @@ export class BasedIterable {
         ctx.__r = null
         yield ctx
         i += 4
-      } else if (index === 0) {
-        // nested
-        if (this.#buffer[i] === 254 && currentInclude.refIncludes) {
+      } else if ((index === 0 || index === 1) && this.#buffer[i] === 254) {
+        // 1 = nested
+        if (currentInclude.refIncludes) {
           // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
           currentInclude = currentInclude.refIncludes[start]
-          i += currentInclude.mainLen + 4
+          i += currentInclude.mainLen + 4 // + 2 ?
           // read len - and go back again to query if its end
-        } else {
-          // more complex
-          i += this.#query.query.includeDef.mainLen
         }
+      } else if (index === 0) {
+        i += this.#query.query.includeDef.mainLen
       } else {
         const size = this.#buffer.readUInt16LE(i)
         i += 2

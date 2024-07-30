@@ -11,7 +11,7 @@ const IncludeError = error{
     Recursion,
 };
 
-pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
+pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8) usize {
     var size: usize = 0;
 
     // [type] [type] [start] [start]
@@ -28,7 +28,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val) usize {
 
     const shardNested: u16 = @truncate(@divTrunc(refId, 1_000_000));
 
-    const resultSizeNest = getFields(ctx, refId, type_prefix, start, includeNested, shardNested) catch 0;
+    const resultSizeNest = getFields(ctx, refId, type_prefix, start, includeNested, shardNested, refLvl + 1) catch 0;
 
     size += 4 + 4 + resultSizeNest;
 

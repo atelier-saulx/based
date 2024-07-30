@@ -46,6 +46,11 @@ db.updateSchema({
     },
     blup: {
       fields: {
+        flap: {
+          type: 'string',
+          // @ts-ignore
+          maxBytes: 1,
+        },
         name: { type: 'string' },
       },
     },
@@ -63,12 +68,11 @@ db.updateSchema({
         // email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
         // writer: { type: 'reference', allowedType: 'user' },
+        lilBlup: { type: 'reference', allowedType: 'blup' },
 
         // // name: { type: 'string', maxLength: 10 },
         vectorClock: { type: 'integer' },
         user: { type: 'reference', allowedType: 'user' },
-
-        lilBlup: { type: 'reference', allowedType: 'blup' },
 
         flap: { type: 'string' },
 
@@ -118,6 +122,7 @@ const users = []
 for (let i = 0; i < 99; i++) {
   const blup = db.create('blup', {
     name: 'blup ' + i,
+    flap: 'A',
   })
   // console.log({ blup })
   users.push(
@@ -182,11 +187,11 @@ const result = db
   // .include('vectorClock')
   // .include('flap')
 
-  .include('lilBlup.name')
+  .include('lilBlup.flap')
 
   .include('user.age')
 
-  // .include('user.myBlup.name')
+  .include('user.myBlup.flap')
 
   // .include('countryCode')
   // .include('smuro.flap')
