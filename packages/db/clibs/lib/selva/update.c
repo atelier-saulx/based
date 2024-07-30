@@ -97,7 +97,7 @@ int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *bu
 
         memcpy(&ud_len, buf + i + offsetof(struct UpdateBatch, len), sizeof(ud_len));
         memcpy(&node_id, buf + i + offsetof(struct UpdateBatch, node_id), sizeof(node_id));
-        node = db_upsert_node(db, type, node_id);
+        node = db_upsert_node(type, node_id);
         assert(node);
         err = update(db, type, node, buf + i + sizeof(struct UpdateBatch), ud_len - sizeof(struct UpdateBatch));
         if (err) {

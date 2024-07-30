@@ -312,7 +312,7 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = db_upsert_node(db, te, node_id);
+    node = db_upsert_node(te, node_id);
     assert(node);
 
     return res2napi(env, update(db, te, node, buf, len));
