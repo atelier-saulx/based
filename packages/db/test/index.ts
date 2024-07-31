@@ -68,13 +68,13 @@ db.updateSchema({
         // email: { type: 'string', maxLength: 15 }, // maxLength: 10
 
         // writer: { type: 'reference', allowedType: 'user' },
-        lilBlup: { type: 'reference', allowedType: 'blup' },
+        // lilBlup: { type: 'reference', allowedType: 'blup' },
 
         // // name: { type: 'string', maxLength: 10 },
         vectorClock: { type: 'integer' },
-        user: { type: 'reference', allowedType: 'user' },
+        // user: { type: 'reference', allowedType: 'user' },
 
-        flap: { type: 'string' },
+        // flap: { type: 'string' },
 
         // smuro: {
         //   type: 'object',
@@ -142,21 +142,21 @@ for (let i = 0; i < 99; i++) {
 
 await wait(0)
 
-const amount = 1e6
+const amount = 60e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    user: 99, // TODO: add setting on other field as well...
-    // vectorClock: ~~(Math.random() * 10000),
+    // user: 99, // TODO: add setting on other field as well...
+    vectorClock: i,
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
-    flap: 'AAA',
+    // flap: 'AAA',
     // email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
-    lilBlup: 66,
+    // lilBlup: 66,
     // smuro: {
     //   flap: 'flap',
     // },
@@ -182,12 +182,21 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
 
-  // .filter('vectorClock', '>', 500)
-  // .include('countryCode')
-  // .include('vectorClock')
+  .filter('vectorClock', '<', 4)
+  .include('countryCode')
+  .include('vectorClock')
   // .include('flap')
 
-  .include('lilBlup.flap')
+  // .include('lilBlup.flap')
+  // .include('user.age')
+  // .include('user.myBlup.flap')
+  // .include('user.myBlup.name')
+
+  // 2 ids
+  // 6 ids  -> 16
+  // 4 "A" flap -> 8
+  // 2 age (4 bytes) -> 16 (40 bytes min, 40 bytes)
+
   // .include('lilBlup.name')
 
   // .include('user.age')
@@ -202,8 +211,7 @@ const result = db
   // .include('email')
 
   // same include multiple time ERROR
-  .include('user.age')
-  .include('user.myBlup.flap')
+
   // .include('user.myBlup.name')
 
   // .include('user.burp')
@@ -215,7 +223,7 @@ const result = db
 
   // .include('user.location.label')
   // .include('vectorClock')
-  .range(0, 2)
+  .range(0, 7500_000)
   // sort()
   .get()
 

@@ -16,7 +16,7 @@ pub fn getFields(
     currentShard: u16,
     refLvl: u8,
 ) !usize {
-    std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
+    // std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
 
     var includeMain: []u8 = &.{};
     var size: usize = 0;
@@ -35,12 +35,12 @@ pub fn getFields(
 
             includeIterator += refSize + 2 + 1;
 
-            std.debug.print("SIZE {d} \n", .{refSize});
+            // std.debug.print("SIZE {d} \n", .{refSize});
 
-            std.debug.print("REF {any} \n", .{mainValue.?.mv_data == null});
+            // std.debug.print("REF {any} \n", .{mainValue.?.mv_data == null});
 
             if (mainValue == null) {
-                std.debug.print("get mainvalue\n", .{});
+                // std.debug.print("get mainvalue\n", .{});
 
                 const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
                 var shard = ctx.shards.get(dbiName);
@@ -77,7 +77,7 @@ pub fn getFields(
             }
 
             if (mainValue.?.mv_data == null) {
-                std.debug.print("skip ref \n", .{});
+                // std.debug.print("skip ref \n", .{});
 
                 continue :includeField;
             }
