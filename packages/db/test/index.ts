@@ -119,11 +119,12 @@ db.updateSchema({
 
 const users = []
 
+const blup = db.create('blup', {
+  name: 'blup !',
+  flap: 'A',
+})
+
 for (let i = 0; i < 1e3; i++) {
-  const blup = db.create('blup', {
-    name: 'blup ' + i,
-    flap: 'A',
-  })
   // console.log({ blup })
   users.push(
     db.create('user', {
@@ -148,7 +149,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    user: 666, // TODO: add setting on other field as well...
+    user: 66, // TODO: add setting on other field as well...
     vectorClock: i,
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
@@ -185,16 +186,19 @@ const result = db
   // .filter('vectorClock', '<', 4)
   // add filter by ref!
 
-  .include('countryCode')
-  .include('vectorClock')
-  .include('flap')
+  // .include('countryCode')
+  // .include('vectorClock')
+  // .include('flap')
 
   // .include('lilBlup')
   // .include('user') // includes all EXCEPT REFS
   // .include('user.myBlup.flap')
   // .include('user.age')
   // just having
-  .include('user.myBlup')
+  // include user allrdy...
+  // .include('user.age')
+
+  .include('user.myBlup.name')
 
   // design TIME
 
@@ -229,7 +233,7 @@ const result = db
 
   // .include('user.location.label')
   // .include('vectorClock')
-  .range(0, 1e4)
+  .range(0, 1)
   // sort()
   .get()
 
@@ -252,7 +256,29 @@ const result = db
 // INDEX MAKING - reigsiter to index / unregister to index
 // + 1 / - 1
 
-console.log(result)
+const logger = (x, empty = '') => {
+  for (const key in x) {
+    if (key === 'fromRef') {
+      console.log(empty, key, ':', `[${x[key].path.join('.')}]`)
+    } else if (key !== 'schema' && key !== 'includeTree') {
+      if (key === 'refIncludes') {
+        console.log(empty, ' -- ref includes!')
+        for (const k in x[key]) {
+          console.log(empty, ' -- STARRT: ', k)
+          logger(x[key][k], empty + '  ')
+        }
+      } else {
+        console.log(empty, key, ':', x[key])
+      }
+    }
+  }
+  if (!empty) {
+    console.log('\n')
+  }
+}
+
+logger(result.query.includeDef)
+
 // maybe start with subscription caches before refs
 // make it work with UPDATING the query result
 
@@ -277,21 +303,23 @@ let i = 0
 console.log('GOP GP')
 
 for (const item of result.data) {
-  console.info('\n| ITEM ID --->', item.id)
+  console.info('\nITEM ID --->', item.id)
   // console.info('| FLAP--->', item.flap)
   // console.info('| COUNTRY--->', item.countryCode)
   // console.info('| lilBlup --->', item.lilBlup)
 
-  console.info('| lilBlup FLAP--->', item.lilBlup.flap)
-  console.info('| lilBlup NAME--->', item.lilBlup.name)
-  console.info('| lilBlup id--->', item.lilBlup.id)
+  // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
+  // console.info('| lilBlup NAME--->', item.lilBlup.name)
+  // console.info('| lilBlup id--->', item.lilBlup.id)
 
   // console.info('| user age--->', item.user.age)
   // console.info('| user id--->', item.user.id) // bit wrong scince it can not exist...
+  // console.info('| flap--->', item.flap)
+  // console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
+  console.info('user.myBlup.name--->', item.user.myBlup.name)
+  console.info('user.myBlup.id--->', item.user.myBlup.id)
 
-  console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
-  console.info('| user.myBlup.name--->', item.user.myBlup.name)
-  console.info('| user.myBlup.id--->', item.user.myBlup.id)
+  console.info('user.id--->', item.user.id)
 
   i++
 

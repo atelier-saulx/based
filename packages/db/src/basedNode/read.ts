@@ -32,42 +32,49 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
+    console.log('try index', index)
+
     // REF --------------------------
     if ((!found || !ref) && index === 254) {
       const start = buffer.readUint16LE(i + 1)
       const resetNested = buffer[i] === 0
       if (resetNested) {
         includeDef = queryResponse.query.includeDef
+        mainLen = queryResponse.query.includeDef.mainLen
+        mainIncludes = queryResponse.query.includeDef.mainIncludes
       }
 
+      console.log(
+        '\n1  match',
+        'i:',
+        i,
+        'refStart',
+        refStart,
+        'start',
+        start,
+        'path',
+        requestedField.path,
+      )
+
       if (ref && start === refStart) {
+        console.log('1.1 this looks like the target', requestedField.path)
+
         if (requestedField.type === 'id') {
           return buffer.readUint32LE(i + 3)
         }
         found = true
         i += 3 + 4
-        if (ref.mainLen) {
-          mainLen = ref.mainLen
-          mainIncludes = ref.mainIncludes
-        }
-        index = buffer[i]
-        i += 1
+        mainLen = ref.mainLen
+        mainIncludes = ref.mainIncludes
         includeDef = ref
       } else {
         i += 3 + 4
-
-        if (!includeDef.refIncludes?.[start]) {
-          console.warn('CANNOT FIND REF INCLUDE', start, includeDef)
-        }
-
-        if (includeDef.refIncludes[start].mainLen) {
-          mainLen = includeDef.refIncludes[start].mainLen
-          mainIncludes = includeDef.refIncludes[start].mainIncludes
-        }
-        index = buffer[i]
+        mainLen = includeDef.refIncludes[start].mainLen
+        mainIncludes = includeDef.refIncludes[start].mainIncludes
         includeDef = includeDef.refIncludes[start]
-        i += 1
+        console.log('1.2   select', includeDef.fromRef.path)
       }
+      continue
     }
     // --------------------------
 
@@ -120,10 +127,6 @@ export const readSeperateFieldFromBuffer = (
         }
       }
       i += mainLen
-
-      // reset incorrect like this ofc
-      mainLen = queryResponse.query.includeDef.mainLen
-      mainIncludes = queryResponse.query.includeDef.mainIncludes
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2
@@ -150,6 +153,8 @@ export const readSeperateFieldFromBuffer = (
       i += size
     }
   }
+
+  console.log('  END no match\n')
 
   // not in there...
   if (requestedField.type === 'string') {

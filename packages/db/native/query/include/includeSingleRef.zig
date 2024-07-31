@@ -11,8 +11,11 @@ const IncludeError = error{
     Recursion,
 };
 
-pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8) usize {
+const EMPTY_BUF: [0]u8 = .{};
+
+pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8, hasFields: bool) usize {
     var size: usize = 0;
+    const includeMain: []u8 = &.{};
 
     // [type] [type] [start] [start]
 
@@ -21,6 +24,22 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8) us
     const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 
     const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
+
+    if (!hasFields) {
+        std.debug.print("does not have fields include! {d}", .{refId});
+
+        const s: results.Result = .{
+            .id = refId,
+            .field = 255,
+            .val = .{ .mv_size = 0, .mv_data = null },
+            .start = start,
+            .includeMain = includeMain,
+            .refLvl = refLvl,
+        };
+        ctx.results.append(s) catch {
+            std.debug.print("wtf!??", .{});
+        };
+    }
 
     // if !refId DONT ADD IT
 

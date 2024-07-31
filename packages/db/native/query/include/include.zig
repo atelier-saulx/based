@@ -16,7 +16,7 @@ pub fn getFields(
     currentShard: u16,
     refLvl: u8,
 ) !usize {
-    // std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
+    std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
 
     var includeMain: []u8 = &.{};
     var size: usize = 0;
@@ -29,11 +29,19 @@ pub fn getFields(
         const field: u8 = include[includeIterator];
 
         if (field == 255) {
-            // clean this a bit
-            const refSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
-            const singleRef = include[includeIterator + 3 .. includeIterator + 3 + refSize];
 
-            includeIterator += refSize + 2 + 1;
+            // add 1 more byte INCLUDE: { 255, 12, 0, 49, 48, 11, 0, 255, 5, 0, 50, 48, 0, 0, 1 }
+            // include 0 - 1 1 means add result
+            // need 1 extra LEN
+
+            // clean this a bit
+
+            const hasFields: bool = include[includeIterator + 1] == 1;
+
+            const refSize = std.mem.readInt(u16, include[includeIterator + 2 ..][0..2], .little);
+            const singleRef = include[includeIterator + 4 .. includeIterator + 4 + refSize];
+
+            includeIterator += refSize + 2 + 1 + 1;
 
             // std.debug.print("SIZE {d} \n", .{refSize});
 
@@ -82,7 +90,7 @@ pub fn getFields(
                 continue :includeField;
             }
 
-            size += getSingleRefFields(ctx, singleRef, mainValue.?, refLvl);
+            size += getSingleRefFields(ctx, singleRef, mainValue.?, refLvl, hasFields);
         } else {
             if (field == 0) {
                 const mainSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);

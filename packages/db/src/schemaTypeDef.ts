@@ -391,7 +391,7 @@ export const idFieldDef: FieldDef = {
   type: 'id',
   typeByte: 0,
   seperate: true,
-  path: [],
+  path: ['id'],
   start: 0,
   field: 0,
   selvaField: 0,

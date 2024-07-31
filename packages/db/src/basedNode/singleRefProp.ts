@@ -23,6 +23,8 @@ export function singleRefProp(
       refCtx.__q = this.__q
       refCtx.__o = this.__o
 
+      // console.info('GET REF', field, 'ctx ref ->', ctx.__r?.fromRef.path)
+
       refCtx.__r =
         ctx.__r?.refIncludes[fieldDef.start] ??
         this.__q.query.includeDef.refIncludes[fieldDef.start]

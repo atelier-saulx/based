@@ -29,8 +29,6 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
       }
     }
 
-    // console.log('yo yo', include, includesMain)
-
     if (includesMain) {
       if (include.mainLen === include.schema.mainLen) {
         // GET ALL MAIN FIELDS
@@ -83,12 +81,19 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refInclude = include.refIncludes[key]
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
-        const meta = Buffer.allocUnsafe(7)
+        const meta = Buffer.allocUnsafe(8)
         meta[0] = 255
-        meta.writeUint16LE(size + 4, 1)
-        meta[3] = refInclude.schema.prefix[0]
-        meta[4] = refInclude.schema.prefix[1]
-        meta.writeUint16LE(refInclude.fromRef.start, 5)
+        console.log(
+          'REF INCLUDEFIELDS',
+          refInclude.fromRef.path,
+          refInclude.mainLen === 0 && refInclude.includeArr.length,
+        )
+        meta[1] =
+          refInclude.mainLen === 0 && refInclude.includeArr.length === 0 ? 0 : 1
+        meta.writeUint16LE(size + 4, 2)
+        meta[4] = refInclude.schema.prefix[0]
+        meta[5] = refInclude.schema.prefix[1]
+        meta.writeUint16LE(refInclude.fromRef.start, 6)
         result.push(meta, refBuffer)
       }
     }
@@ -201,6 +206,8 @@ const parseInclude = (
 
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
+
+        // dont return missing poitential nested ref...
         return
       }
     }

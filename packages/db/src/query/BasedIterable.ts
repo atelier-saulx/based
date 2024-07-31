@@ -71,7 +71,12 @@ export class BasedIterable {
         if (currentInclude.refIncludes) {
           // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
-          currentInclude = currentInclude.refIncludes[start]
+
+          if (currentInclude.refIncludes[start]) {
+            currentInclude = currentInclude.refIncludes[start]
+          } else {
+            console.log('ERROR GET START', start, currentInclude.schema.type)
+          }
           // START + ID + IDENTIFIER
           i += 2 + 4 + 1
         }
