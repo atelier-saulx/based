@@ -52,7 +52,7 @@ export type FieldDef = {
   selvaField: number
   inverseField?: string
   allowedType?: string
-  type: BasedSchemaFieldType
+  type: BasedSchemaFieldType | 'id'
   typeByte: number
   seperate: boolean
   path: string[]
@@ -385,4 +385,16 @@ export const readSchemaTypeDefFromBuffer = (
   schemaTypeDef.responseCtx = new BasedNode(schemaTypeDef, parsed)
 
   return schemaTypeDef
+}
+
+export const idFieldDef: FieldDef = {
+  type: 'id',
+  typeByte: 0,
+  seperate: true,
+  path: [],
+  start: 0,
+  field: 0,
+  selvaField: 0,
+  len: 4,
+  __isField: true,
 }

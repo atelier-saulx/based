@@ -1,77 +1,14 @@
 import { readSeperateFieldFromBuffer } from './read.js'
-import { FieldDef, SchemaTypeDef } from '../schemaTypeDef.js'
+import { SchemaTypeDef } from '../schemaTypeDef.js'
 import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
-import { Query } from '../query/query.js'
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { BasedDb } from '../index.js'
 import { singleRefProp } from './singleRefProp.js'
 import { QueryIncludeDef } from '../query/types.js'
-
-const toObjectIncludeTree = (
-  obj,
-  target: any,
-  arr: QueryIncludeDef['includeTree'],
-) => {
-  for (let i = 0; i < arr.length; i++) {
-    const key = arr[i++] as string
-    const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
-    if ('__isField' in item) {
-      const v = target[key]
-      obj[key] = v
-    } else {
-      // refs in here
-      obj[key] = toObjectIncludeTree({}, target[key], item)
-    }
-  }
-  return obj
-}
-
-const toObjectIncludeTreePrint = (
-  str: string,
-  target: any,
-  arr: QueryIncludeDef['includeTree'],
-  level: number = 0,
-) => {
-  const prefix = ''.padEnd(level * 2 + 2, ' ')
-  str += '{\n'
-
-  for (let i = 0; i < arr.length; i++) {
-    const key = arr[i++] as string
-    const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
-    str += prefix + `${key}: `
-    if ('__isField' in item) {
-      let v = target[key]
-      if (item.type === 'string') {
-        if (v === undefined) {
-          return ''
-        }
-        if (v.length > 80) {
-          const chars = picocolors.italic(
-            picocolors.dim(
-              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
-            ),
-          )
-          v = v.slice(0, 80) + picocolors.dim('...') + '" ' + chars
-          str += `"${v}`
-        } else {
-          str += `"${v}"`
-        }
-      } else if (item.type === 'timestamp') {
-        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
-      } else {
-        str += v
-      }
-      str += '\n'
-    } else {
-      str += toObjectIncludeTreePrint('', target[key], item, level + 1)
-    }
-  }
-
-  str += '}\n'.padStart(level * 2 + 2, ' ')
-  return str
-}
+import { idDef } from './id.js'
+import { toObjectIncludeTree, toObjectIncludeTreePrint } from './toObject.js'
 
 export class BasedNode {
   [key: string]: any
@@ -89,12 +26,7 @@ export class BasedNode {
       __q: nonEnum,
       __o: nonEnum,
       __s: nonEnum,
-      id: {
-        set: () => undefined,
-        get() {
-          return this.__q.buffer.readUint32LE(this.__o)
-        },
-      },
+      id: idDef,
     })
     this.__s = schema
     for (const field in schema.fields) {

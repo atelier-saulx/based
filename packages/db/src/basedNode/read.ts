@@ -34,15 +34,16 @@ export const readSeperateFieldFromBuffer = (
 
     // REF --------------------------
     if ((!found || !ref) && index === 254) {
-      // NOW NESTED REFS
       const start = buffer.readUint16LE(i + 1)
-
       const resetNested = buffer[i] === 0
       if (resetNested) {
         includeDef = queryResponse.query.includeDef
       }
 
       if (ref && start === refStart) {
+        if (requestedField.type === 'id') {
+          return buffer.readUint32LE(i + 3)
+        }
         found = true
         i += 3 + 4
         if (ref.mainLen) {
@@ -69,8 +70,6 @@ export const readSeperateFieldFromBuffer = (
       if (requestedFieldIndex === index && found) {
         let fIndex: number
 
-        // console.dir({ mainIncludes }, { depth: 10 })
-
         if (mainIncludes) {
           const t = mainIncludes?.[requestedField.start]
           if (!t) {
@@ -80,8 +79,6 @@ export const readSeperateFieldFromBuffer = (
         } else {
           fIndex = requestedField.start
         }
-
-        // console.log('INDEX --->', requestedFieldIndex, index, found, { fIndex })
 
         if (fIndex === undefined) {
           break

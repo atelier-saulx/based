@@ -1,11 +1,11 @@
-import { FieldDef, SchemaFieldTree, isFieldDef } from '../schemaTypeDef.js'
+import {
+  FieldDef,
+  SchemaFieldTree,
+  isFieldDef,
+  idFieldDef,
+} from '../schemaTypeDef.js'
 import { QueryIncludeDef } from './types.js'
 import { Query } from './query.js'
-
-const idFieldDef = {
-  __isField: true,
-  type: 'id',
-}
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 

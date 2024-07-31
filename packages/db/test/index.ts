@@ -119,7 +119,7 @@ db.updateSchema({
 
 const users = []
 
-for (let i = 0; i < 99; i++) {
+for (let i = 0; i < 1e3; i++) {
   const blup = db.create('blup', {
     name: 'blup ' + i,
     flap: 'A',
@@ -148,7 +148,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    user: 99, // TODO: add setting on other field as well...
+    user: 666, // TODO: add setting on other field as well...
     vectorClock: i,
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
@@ -156,7 +156,7 @@ for (let i = 0; i < amount; i++) {
     // email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
-    lilBlup: 66,
+    lilBlup: 999,
     // smuro: {
     //   flap: 'flap',
     // },
@@ -182,7 +182,7 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
 
-  .filter('vectorClock', '<', 4)
+  // .filter('vectorClock', '<', 4)
   // add filter by ref!
 
   .include('countryCode')
@@ -207,7 +207,7 @@ const result = db
   // .include('user.name')
 
   // .include('user.myBlup.flap')
-  // .include('user.myBlup.name')
+  // .include('user.myBlup.name')x
 
   // .include('countryCode')
   // .include('smuro.flap')
