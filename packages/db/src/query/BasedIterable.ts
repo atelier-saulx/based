@@ -68,7 +68,6 @@ export class BasedIterable {
           currentInclude = this.#query.query.includeDef
         }
 
-        console.log('IS REF', this.#buffer[i])
         if (currentInclude.refIncludes) {
           // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
