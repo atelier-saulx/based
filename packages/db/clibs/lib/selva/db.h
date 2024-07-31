@@ -34,6 +34,8 @@ void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNo
  */
 struct SelvaNode *db_find_node(struct SelvaTypeEntry *type, node_id_t node_id);
 struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
+void db_archive(struct SelvaTypeEntry *type);
+void db_prefetch(struct SelvaTypeEntry *type);
 
 void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name);
 void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);

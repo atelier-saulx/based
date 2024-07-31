@@ -29,16 +29,6 @@
 #define HUGE_PAGES HUGE_PAGES_SOFT
 
 
-/**
- * Get a pointer to the first chunk in a slab.
- * The rest of the chunks are `info->chunk_size` apart from each other.
- */
-static struct mempool_chunk *get_first_chunk(struct mempool_slab * restrict slab) {
-    char *p = ((char *)slab) + sizeof(struct mempool_slab);
-
-    return (struct mempool_chunk *)p;
-}
-
 char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk) {
     return ((char *)chunk) + sizeof(struct mempool_chunk) + PAD(sizeof(struct mempool_chunk), mempool->obj_align);
 }
@@ -119,14 +109,12 @@ void mempool_destroy(struct mempool *mempool) {
 
 void mempool_gc(struct mempool *mempool) {
     struct mempool_slab_info info = mempool_slab_info(mempool);
-    struct mempool_slab *slab;
-    struct mempool_slab *slab_temp;
 
     /*
      * Go through all the slabs and find the ones that have no object
      * allocations.
      */
-    SLIST_FOREACH_SAFE(slab, &mempool->slabs, next_slab, slab_temp) {
+    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
         if (slab->nr_free == info.nr_objects) {
 
             SLIST_REMOVE(&mempool->slabs, slab, mempool_slab, next_slab);
@@ -134,13 +122,13 @@ void mempool_gc(struct mempool *mempool) {
             /*
              * Remove all the objects of this slab from the free list.
              */
-            MEMPOOL_FOREACH_BEGIN(info, slab) {
+            MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
                 LIST_REMOVE(chunk, next_free);
-            } MEMPOOL_FOREACH_END();
+            } MEMPOOL_FOREACH_CHUNK_END();
 
             mempool_free_slab(mempool, slab);
         }
-    }
+    } MEMPOOL_FOREACH_SLAB_END();
 }
 
 /**
@@ -202,10 +190,10 @@ retry:
     /*
      * Add all new objects to the list of free objects in the pool.
      */
-    MEMPOOL_FOREACH_BEGIN(info, slab) {
+    MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
         chunk->slab = slab;
         LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
-    } MEMPOOL_FOREACH_END();
+    } MEMPOOL_FOREACH_CHUNK_END();
 
     SLIST_INSERT_HEAD(&mempool->slabs, slab, next_slab);
 

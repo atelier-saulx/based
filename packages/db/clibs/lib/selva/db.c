@@ -307,6 +307,24 @@ struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
     return node;
 }
 
+void db_archive(struct SelvaTypeEntry *type)
+{
+    struct mempool *mempool = &type->nodepool;
+
+    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
+        mempool_pageout(mempool, slab);
+    } MEMPOOL_FOREACH_CHUNK_END();
+}
+
+void db_prefetch(struct SelvaTypeEntry *type)
+{
+    struct mempool *mempool = &type->nodepool;
+
+    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
+        mempool_pagein(mempool, slab);
+    } MEMPOOL_FOREACH_CHUNK_END();
+}
+
 void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
 {
     size_t name_len = strlen(name);

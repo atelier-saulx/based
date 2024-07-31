@@ -506,6 +506,14 @@ test.serial.only('1bn', async (t) => {
   }
   console.log('update took', Math.round(performance.now() - dx), 'ms')
 
+  const arch1Start = performance.now()
+  //selva.db_archive(dbp, 0)
+  selva.db_prefetch(dbp, 1)
+  const arch1End = performance.now()
+  console.log(`Archived in ${Math.round(arch1End - arch1Start)} ms`)
+  await wait(3e3)
+
+
   console.log('fast filtering:')
   const match1Start = performance.now()
   const fields_sel = Buffer.from([1, 2, 0, 1]) // len = 1, [ type1, field1 ]

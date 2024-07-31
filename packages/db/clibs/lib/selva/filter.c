@@ -196,6 +196,7 @@ int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len
                 if (res) {
                     goto out;
                 }
+                break;
             default:
                 abort();
             }

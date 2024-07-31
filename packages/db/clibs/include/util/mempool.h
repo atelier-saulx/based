@@ -121,19 +121,46 @@ void mempool_pageout(struct mempool *mempool, struct mempool_slab *slab);
 void mempool_pagein(struct mempool *mempool, struct mempool_slab *slab);
 
 /**
+ * Get a pointer to the first chunk in a slab.
+ * The rest of the chunks are `info->chunk_size` apart from each other.
+ */
+static inline struct mempool_chunk *get_first_chunk(struct mempool_slab * restrict slab)
+{
+    char *p = ((char *)slab) + sizeof(struct mempool_slab);
+
+    return (struct mempool_chunk *)p;
+}
+
+
+/**
+ * For each slab in the mempool.
+ * The current slab will be available as the pointer variable `slab`.
+ * Must be terminated with MEMPOOL_FOREACH_CHUNK_END().
+ */
+#define MEMPOOL_FOREACH_SLAB_BEGIN(pool) \
+    do { \
+        struct mempool_slab *slab; \
+        struct mempool_slab *_slab_temp; \
+        SLIST_FOREACH_SAFE(slab, &(mempool)->slabs, next_slab, _slab_temp)
+
+#define MEMPOOL_FOREACH_SLAB_END() \
+   } while (0)
+
+/**
  * For each chunk on the slab.
  * The current chunk will be available as the pointer variable `chunk`.
+ * Must be terminated with MEMPOOL_FOREACH_CHUNK_END().
  * @param slab_nfo is a `struct slab_info` from `mempool_slab_info()`.
  * @param slab is a mempool slab. It can be retrieved from any mempool object by calling `mempool_get_slab()`.
  */
-#define MEMPOOL_FOREACH_BEGIN(slab_nfo, slab) \
+#define MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) \
     static_assert(__builtin_types_compatible_p(typeof(slab_nfo), struct mempool_slab_info)); \
     static_assert(__builtin_types_compatible_p(typeof(slab), struct mempool_slab *)); \
     do { \
         struct mempool_chunk *chunk = get_first_chunk(slab); \
         for (size_t i = 0; i < (slab_nfo).nr_objects; (chunk = (struct mempool_chunk *)((char *)chunk + (slab_nfo).chunk_size)), i++)
 
-#define MEMPOOL_FOREACH_END() \
+#define MEMPOOL_FOREACH_CHUNK_END() \
     } while (0)
 
 #endif /* _UTIL_MEMPOOl_H_ */

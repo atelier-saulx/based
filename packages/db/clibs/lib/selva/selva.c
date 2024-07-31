@@ -353,6 +353,62 @@ static napi_value selva_db_update_batch(napi_env env, napi_callback_info info)
     return r;
 }
 
+// selva_db_archive(db, type, buf): number
+static napi_value selva_db_archive(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 2;
+    napi_value argv[2];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type = selva_napi_get_node_type(env, argv[1]);
+
+    struct SelvaTypeEntry *te;
+
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    db_archive(te);
+
+    return res2napi(env, 0);
+}
+
+// selva_db_prefetch(db, type, buf): number
+static napi_value selva_db_prefetch(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 2;
+    napi_value argv[2];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type = selva_napi_get_node_type(env, argv[1]);
+
+    struct SelvaTypeEntry *te;
+
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    db_prefetch(te);
+
+    return res2napi(env, 0);
+}
+
 // selva_db_get_field(db, type, node_id, field_idx): number
 static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
 {
@@ -754,12 +810,13 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_schema_create", selva_db_schema_create),
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
+      DECLARE_NAPI_METHOD("db_archive", selva_db_archive),
+      DECLARE_NAPI_METHOD("db_prefetch", selva_db_prefetch),
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),
       DECLARE_NAPI_METHOD("db_get_field_p", selva_db_get_field_p),
       DECLARE_NAPI_METHOD("db_set_alias", selva_db_set_alias),
       DECLARE_NAPI_METHOD("db_del_alias", selva_db_del_alias),
       DECLARE_NAPI_METHOD("db_get_alias", selva_db_get_alias),
-
       DECLARE_NAPI_METHOD("traverse_field_bfs", selva_traverse_field_bfs),
       DECLARE_NAPI_METHOD("find", selva_find),
   };
