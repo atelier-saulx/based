@@ -189,10 +189,12 @@ const result = db
   .include('vectorClock')
   .include('flap')
 
-  .include('lilBlup.flap')
-  .include('user.age')
-  .include('user.myBlup.flap')
-  .include('user.myBlup.name')
+  // .include('lilBlup')
+  // .include('user') // includes all EXCEPT REFS
+  // .include('user.myBlup.flap')
+  // .include('user.age')
+  // just having
+  .include('user.myBlup')
 
   // design TIME
 
@@ -284,11 +286,12 @@ for (const item of result.data) {
   console.info('| lilBlup NAME--->', item.lilBlup.name)
   console.info('| lilBlup id--->', item.lilBlup.id)
 
-  console.info('| user age--->', item.user.age)
-  console.info('| user id--->', item.user.id)
+  // console.info('| user age--->', item.user.age)
+  // console.info('| user id--->', item.user.id) // bit wrong scince it can not exist...
 
   console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
   console.info('| user.myBlup.name--->', item.user.myBlup.name)
+  console.info('| user.myBlup.id--->', item.user.myBlup.id)
 
   i++
 

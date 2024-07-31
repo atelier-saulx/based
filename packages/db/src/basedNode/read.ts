@@ -55,6 +55,11 @@ export const readSeperateFieldFromBuffer = (
         includeDef = ref
       } else {
         i += 3 + 4
+
+        if (!includeDef.refIncludes?.[start]) {
+          console.warn('CANNOT FIND REF INCLUDE', start, includeDef)
+        }
+
         if (includeDef.refIncludes[start].mainLen) {
           mainLen = includeDef.refIncludes[start].mainLen
           mainIncludes = includeDef.refIncludes[start].mainIncludes

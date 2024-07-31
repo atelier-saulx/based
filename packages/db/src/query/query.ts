@@ -49,7 +49,23 @@ export class Query {
       }
     }
     for (const f of fields) {
-      this.includeDef.includeFields.add(f)
+      // if f === ref expand all
+
+      if (this.type.fields[f]?.type === 'reference') {
+        // ADD WHOILE THING
+        const t = this.db.schemaTypesParsed[this.type.fields[f].allowedType]
+        console.log(t)
+
+        for (const p in t.fields) {
+          const type = t.fields[p].type
+          if (type !== 'reference' && type !== 'references') {
+            // single ref is actualy possile
+            this.includeDef.includeFields.add(f + '.' + p)
+          }
+        }
+      } else {
+        this.includeDef.includeFields.add(f)
+      }
     }
     return this
   }
