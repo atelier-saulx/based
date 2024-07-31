@@ -11,6 +11,9 @@ struct FindParam {
     const uint8_t *adjacent_filter;
     size_t adjacent_filter_len;
 
+    /**
+     * Traverse field selector.
+     */
     const struct FindFields {
         uint8_t len;
         struct {
@@ -18,6 +21,7 @@ struct FindParam {
             field_t field;
         } __packed data[];
     } __packed *fields;
+
     const uint8_t *node_filter;
     size_t node_filter_len;
 };

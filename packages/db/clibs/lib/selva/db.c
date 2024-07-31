@@ -26,11 +26,6 @@ static int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *
     return a->node_id - b->node_id;
 }
 
-static int SelvaTypeEntry_Compare(const struct SelvaTypeEntry *a, const struct SelvaTypeEntry *b)
-{
-    return a->type - b->type;
-}
-
 static int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b)
 {
     return strcmp(a->name, b->name);
@@ -292,7 +287,7 @@ struct SelvaNode *db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
     return RB_FIND(SelvaNodeIndex, &type->nodes, &find);
 }
 
-struct SelvaNode *db_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
     struct SelvaNode *prev;

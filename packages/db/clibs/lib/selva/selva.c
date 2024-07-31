@@ -242,6 +242,18 @@ static napi_value selva_db_destroy(napi_env env, napi_callback_info info)
     return res2napi(env, 0);
 }
 
+static napi_value selva_db_save(napi_env env, napi_callback_info info)
+{
+    /* TODO save */
+    return res2napi(env, SELVA_ENOTSUP);
+}
+
+static napi_value selva_db_load(napi_env env, napi_callback_info info)
+{
+    /* TODO load */
+    return res2napi(env, SELVA_ENOTSUP);
+}
+
 // selva_db_schema_update(db, type, schema): number
 static napi_value selva_db_schema_create(napi_env env, napi_callback_info info)
 {
@@ -300,7 +312,7 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = db_upsert_node(db, te, node_id);
+    node = db_upsert_node(te, node_id);
     assert(node);
 
     return res2napi(env, update(db, te, node, buf, len));
@@ -691,11 +703,11 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     node_type_t type = selva_napi_get_node_type(env, argv[1]);
     node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
 
+    const struct FindFields *fields = get_find_fields(env, argv[3]);
     size_t adj_filter_len;
-    const uint8_t *adj_filter_buf = get_filter(env, argv[3], &adj_filter_len);
+    const uint8_t *adj_filter_buf = get_filter(env, argv[4], &adj_filter_len);
     size_t node_filter_len;
-    const uint8_t *node_filter_buf = get_filter(env, argv[4], &node_filter_len);
-    const struct FindFields *fields = get_find_fields(env, argv[5]);
+    const uint8_t *node_filter_buf = get_filter(env, argv[5], &node_filter_len);
 
     if (!fields) {
         return res2napi(env, SELVA_EINVAL);
@@ -737,6 +749,8 @@ static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
       DECLARE_NAPI_METHOD("db_create", selva_db_create),
       DECLARE_NAPI_METHOD("db_destroy", selva_db_destroy),
+      DECLARE_NAPI_METHOD("db_save", selva_db_save),
+      DECLARE_NAPI_METHOD("db_load", selva_db_load),
       DECLARE_NAPI_METHOD("db_schema_create", selva_db_schema_create),
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
