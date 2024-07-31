@@ -280,7 +280,7 @@ const logger = (x, empty = '') => {
   }
 }
 
-logger(result.query.includeDef)
+// logger(result.query.includeDef)
 
 // maybe start with subscription caches before refs
 // make it work with UPDATING the query result
@@ -291,7 +291,7 @@ console.log(new Uint8Array(result.buffer), result.data.length)
 
 let i = 0
 
-// console.info(result.data.toObject())
+console.dir(result.data.toObject(), { depth: 10 })
 
 // for (const item of result.data) {
 //   if (i > 3) {
@@ -319,10 +319,10 @@ for (const item of result.data) {
   // console.info('| user id--->', item.user.id) // bit wrong scince it can not exist...
   // console.info('| flap--->', item.flap)
   // console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
-  console.info('user.myBlup.name--->', item.user.myBlup.name)
-  console.info('user.myBlup.id--->', item.user.myBlup.id)
+  // console.info('user.myBlup.name--->', item.user.myBlup.name)
+  // console.info('user.myBlup.id--->', item.user.myBlup.id)
 
-  console.info('user.id--->', item.user.id)
+  // console.info('user.id--->', item.user.id)
 
   i++
 

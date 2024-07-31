@@ -16,7 +16,7 @@ pub fn getFields(
     currentShard: u16,
     refLvl: u8,
 ) !usize {
-    std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
+    // std.debug.print("\n\nINCLUDE: {any} \n\n", .{include});
 
     var includeMain: []u8 = &.{};
     var size: usize = 0;

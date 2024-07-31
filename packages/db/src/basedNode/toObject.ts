@@ -12,7 +12,11 @@ export const toObjectIncludeTree = (
     const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
     if ('__isField' in item) {
       const v = target[key]
-      obj[key] = v
+      if (item.type === 'reference') {
+        obj[key] = v.toObject()
+      } else {
+        obj[key] = v
+      }
     } else {
       // refs in here
       obj[key] = toObjectIncludeTree({}, target[key], item)

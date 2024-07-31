@@ -77,7 +77,7 @@ export class BasedNode {
   toObject(print: boolean = false) {
     // quite different if you have __r
     if (this.__r) {
-      return { IS_REF: true }
+      return toObjectIncludeTree({}, this, this.__r.includeTree)
     }
     return toObjectIncludeTree({}, this, this.__q.query.includeDef.includeTree)
   }

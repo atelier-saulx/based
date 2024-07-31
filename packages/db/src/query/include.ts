@@ -207,6 +207,8 @@ const parseInclude = (
         const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
+        addPathToIntermediateTree(t, includeTree, t.path)
+
         return
       }
     }
