@@ -45,7 +45,7 @@ export const readSeperateFieldFromBuffer = (
       }
 
       console.log(
-        '\n1  match',
+        '1  match',
         'i:',
         i,
         'refStart',
