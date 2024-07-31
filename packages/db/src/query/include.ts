@@ -136,6 +136,30 @@ const convertToIncludeTree = (tree: any) => {
   return arr
 }
 
+const createOrGetRefIncludeDef = (
+  ref: FieldDef,
+  include: QueryIncludeDef,
+  query: Query,
+) => {
+  if (!include.refIncludes) {
+    include.refIncludes = {}
+  }
+  const start = ref.start
+  if (!include.refIncludes[start]) {
+    include.refIncludes[start] = {
+      schema: query.db.schemaTypesParsed[ref.allowedType],
+      includeArr: [],
+      includeFields: new Set(),
+      mainLen: 0,
+      mainIncludes: {},
+      includeTree: [],
+      fromRef: ref,
+    }
+  }
+  const refIncludeDef = include.refIncludes[start]
+  return refIncludeDef
+}
+
 const addPathToIntermediateTree = (
   field: any,
   includeTree: any,
@@ -160,12 +184,9 @@ const addPathToIntermediateTree = (
   return true
 }
 
-// call it an includeDef OBJECT use for intermediate as well
-
-// clean up other file
 const parseInclude = (
   query: Query,
-  include: QueryIncludeDef, // make a INCLUDE thing
+  include: QueryIncludeDef,
   f: string,
   includesMain: boolean,
   includeTree: any,
@@ -183,31 +204,9 @@ const parseInclude = (
       }
       if (isFieldDef(t) && t.type === 'reference') {
         const ref: FieldDef = t as FieldDef
-
-        if (!include.refIncludes) {
-          include.refIncludes = {}
-        }
-
-        const start = ref.start
-
-        if (!include.refIncludes[start]) {
-          include.refIncludes[start] = {
-            schema: query.db.schemaTypesParsed[ref.allowedType],
-            includeArr: [],
-            includeFields: new Set(),
-            mainLen: 0,
-            mainIncludes: {},
-            includeTree: [],
-            fromRef: ref,
-          }
-        }
-
-        const refIncludeDef = include.refIncludes[start]
-
+        const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
-
-        // dont return missing poitential nested ref...
         return
       }
     }
@@ -229,28 +228,7 @@ const parseInclude = (
   addPathToIntermediateTree(field, includeTree, field.path)
 
   if (field.type === 'reference') {
-    const ref = field
-
-    if (!include.refIncludes) {
-      include.refIncludes = {}
-    }
-
-    const start = ref.start
-
-    if (!include.refIncludes[start]) {
-      include.refIncludes[start] = {
-        schema: query.db.schemaTypesParsed[ref.allowedType],
-        includeArr: [],
-        includeFields: new Set(),
-        mainLen: 0,
-        mainIncludes: {},
-        includeTree: [],
-        fromRef: ref,
-      }
-    }
-
-    const refIncludeDef = include.refIncludes[start]
-
+    const refIncludeDef = createOrGetRefIncludeDef(field, include, query)
     for (const f in refIncludeDef.schema.fields) {
       if (
         refIncludeDef.schema.fields[f].type !== 'reference' &&
@@ -259,7 +237,6 @@ const parseInclude = (
         refIncludeDef.includeFields.add(f)
       }
     }
-
     return
   }
 
