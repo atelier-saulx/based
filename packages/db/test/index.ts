@@ -182,7 +182,9 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
 
-  // .filter('vectorClock', '<', 4)
+  .filter('vectorClock', '<', 4)
+  // add filter by ref!
+
   .include('countryCode')
   .include('vectorClock')
   .include('flap')
