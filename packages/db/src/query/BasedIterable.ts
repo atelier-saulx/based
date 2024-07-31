@@ -67,18 +67,10 @@ export class BasedIterable {
         if (this.#buffer[i] === 0) {
           currentInclude = this.#query.query.includeDef
         }
-
         if (currentInclude.refIncludes) {
           // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
-
-          if (currentInclude.refIncludes[start]) {
-            currentInclude = currentInclude.refIncludes[start]
-          } else {
-            // only id cannot be found...
-            console.log('ERROR GET START', start, currentInclude.schema.type)
-          }
-          // START + ID + IDENTIFIER
+          currentInclude = currentInclude.refIncludes[start]
           i += 2 + 4 + 1
         }
       } else if (index === 0) {
