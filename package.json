@@ -26,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@based/functions": "^3.0.2",
     "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.3",
     "@types/node": "^20.14.2",

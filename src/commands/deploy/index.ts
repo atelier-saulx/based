@@ -1,7 +1,8 @@
 import { Command } from 'commander'
 import { readdir, readFile } from 'node:fs/promises'
 import { isAbsolute, join, relative } from 'node:path'
-import { OutputFile, bundle } from '@based/bundle'
+import { BundleResult, OutputFile, bundle } from '@based/bundle'
+import { BasedFunctionConfig } from '@based/functions'
 import { readJSON } from 'fs-extra/esm'
 import { isIndexFile } from './utils.js'
 import { getTargets } from './getTargets.js'
@@ -19,7 +20,32 @@ const rel = (str: string) => relative(cwd, str)
 const abs = (str: string, dir: string) =>
   isAbsolute(str) ? str : join(dir, str)
 
-const invalidCode = async (fileName: string) => {
+const findType = (node: ts.Node, typeName: string) => {
+  // @ts-ignore
+  if (node.type?.typeName?.escapedText === typeName) {
+    return true
+  }
+
+  let found
+  ts.forEachChild(node, (node) => {
+    if (!found) {
+      found = findType(node, typeName)
+    }
+  })
+
+  return found
+}
+
+const types = {
+  query: 'BasedQueryFunction',
+  function: 'BasedFunction',
+  app: 'BasedAppFunction',
+}
+
+const invalidate = async (
+  fileName: string,
+  config: Config,
+): Promise<boolean> => {
   const source = (await readFile(fileName)).toString()
   const target = ts.ScriptTarget.ESNext
   const sourceFile = ts.createSourceFile(
@@ -29,8 +55,9 @@ const invalidCode = async (fileName: string) => {
     false,
     ts.ScriptKind.TSX,
   )
-
+  const typeName = types[config.type]
   let hasExport
+  let hasType = !typeName
 
   ts.forEachChild(sourceFile, function walk(node) {
     if (
@@ -38,16 +65,42 @@ const invalidCode = async (fileName: string) => {
       node.kind === ts.SyntaxKind.ExportKeyword
     ) {
       hasExport = true
-    } else if (!hasExport) {
+    }
+
+    // @ts-ignore
+    if (node.type?.typeName?.escapedText === typeName) {
+      hasType = true
+    }
+
+    if (!hasType || !hasExport) {
       ts.forEachChild(node, walk)
     }
   })
+
+  if (!hasType) {
+    console.warn(
+      pc.yellow(
+        `missing type "${typeName}" in function "${config.name}" of type "${config.type}"`,
+      ),
+    )
+  }
 
   if (!hasExport) {
     console.error(pc.red(`nothing exported in: ${fileName}`))
     return true
   }
 }
+
+const queuedFileUpload = queued(
+  async (client: BasedClient, payload: any, destUrl: string) => {
+    const { status } = await fetch(destUrl, { method: 'HEAD' })
+    if (status === 200) {
+      return { src: destUrl }
+    }
+    return client.stream('db:file-upload', payload)
+  },
+  { dedup: (_client, payload) => hash(payload), concurrency: 10 },
+)
 
 const queuedFnDeploy = queued(
   async (
@@ -87,9 +140,173 @@ const queuedFnDeploy = queued(
     } else {
       console.error(pc.red('no dist id returned from set-function'))
     }
+
+    return { distId }
   },
-  { dedup: ({ config }) => config, concurrency: 10 },
+  { dedup: (_based, checksum) => checksum, concurrency: 10 },
 )
+
+type Config = BasedFunctionConfig & {
+  appParams?: {
+    js?: string
+    css?: string
+    favicon?: string
+  }
+}
+
+type ConfigStore = {
+  config: Config
+  path: string
+  dir: string
+  index?: string
+  app?: string
+  favicon?: string
+}
+
+const parseFunctions = async (functions: string[], onChange) => {
+  let { targets, schema } = await getTargets()
+  const configPaths = targets.map(([dir, file]) => join(dir, file))
+
+  if (!functions) {
+    schema = null
+  }
+
+  // bundle the configs and schema (if necessary)
+  const configBundles = await bundle({
+    entryPoints: schema ? [schema, ...configPaths] : configPaths,
+  })
+
+  // read configs
+  let configs: ConfigStore[] = await Promise.all(
+    configPaths.map(async (path, index) => {
+      const dir = targets[index][0]
+      if (path.endsWith('.json')) {
+        return { dir, path, config: await readJSON(path) }
+      }
+      const compiled = configBundles.require(path)
+      return { dir, path, config: compiled.default || compiled }
+    }),
+  )
+
+  if (functions) {
+    // only include selected functions
+    const filter = new Set(functions)
+    configs = configs.filter(({ config }) => filter.has(config.name))
+  }
+
+  if (!configs.length) {
+    console.info(
+      pc.yellow(`No ${functions ? 'matching ' : ''}function configs found`),
+    )
+    return
+  }
+
+  // handle schema
+  if (schema) {
+    const schemaPayload = parseSchema(configBundles, schema)
+    console.info(
+      `${pc.blue('schema')} ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} ${pc.dim(rel(schema))}`,
+    )
+  }
+
+  // log matching configs and find function indexes
+  await Promise.all(
+    configs.map(async (item) => {
+      const { config, path } = item
+      const access = config.public ? pc.cyan('public') + ' ' : ''
+      const type = pc.magenta(config.type || 'function')
+      const name = config.name
+      const file = pc.dim(rel(path))
+      console.info(`${type} ${name} ${access}${file}`)
+
+      const files = await readdir(item.dir)
+      for (const file of files) {
+        if (isIndexFile(file)) {
+          item.index = join(item.dir, file)
+          break
+        }
+      }
+    }),
+  )
+
+  // validate and create bundle entryPoints
+  const paths: Record<string, string> = {}
+  const nodeEntryPoints: string[] = schema ? [schema] : []
+  const browserEntryPoints: string[] = []
+  const favicons = new Set<string>()
+
+  const cancelled = await Promise.any(
+    configs.map((configStore) => {
+      const { config, path, index, dir } = configStore
+      const existingPath = paths[config.name]
+      if (existingPath) {
+        console.info(pc.red(`found multiple configs for "${config.name}"`))
+        return true
+      }
+      paths[config.name] = path
+      if (!index) {
+        console.info(
+          pc.red(`could not find index.ts or index.js for "${config.name}"`),
+        )
+        return true
+      }
+
+      if (config.type === 'app') {
+        if (!config.main) {
+          console.info(
+            pc.red(
+              `no "main" field defined for "${config.name}" of type "app"`,
+            ),
+          )
+          return true
+        }
+
+        configStore.app = abs(config.main, dir)
+        browserEntryPoints.push(configStore.app)
+
+        if (config.favicon) {
+          configStore.favicon = abs(config.favicon, dir)
+          browserEntryPoints.push(configStore.favicon)
+          favicons.add(rel(configStore.favicon))
+        }
+      }
+
+      nodeEntryPoints.push(index)
+
+      return invalidate(index, config)
+    }),
+  )
+
+  if (cancelled) {
+    console.info(pc.yellow(`deploy cancelled`))
+    return
+  }
+
+  // build the functions
+  const [nodeBundles, browserBundles] = await Promise.all([
+    bundle(
+      {
+        entryPoints: nodeEntryPoints,
+        sourcemap: 'external',
+      },
+      onChange,
+    ),
+    bundle(
+      {
+        entryPoints: browserEntryPoints,
+        sourcemap: 'external',
+        platform: 'browser',
+        define: {
+          global: 'window',
+          'process.env.NODE_ENV': '"production"',
+        },
+      },
+      onChange,
+    ),
+  ])
+
+  return { schema, configs, favicons, nodeBundles, browserBundles }
+}
 
 export const deploy = async (program: Command) => {
   const cmd = program
@@ -102,207 +319,44 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { targets, schema } = await getTargets()
-      const configPaths = targets.map(([dir, file]) => join(dir, file))
-      const includeSchema = schema && !functions
-      let schemaPayload
-
-      // bundle the configs and schema (if necessary)
-      const configBundles = await bundle({
-        entryPoints: includeSchema ? [schema, ...configPaths] : configPaths,
-      })
-
-      // read configs
-      let configs: {
-        config: {
-          type: string
-          name: string
-          public?: boolean
-          main?: string
-          favicon?: string
-          path?: string
-          appParams?: {
-            js?: string
-            css?: string
-            favicon?: string
-          }
-        }
-        path: string
-        dir: string
-        index?: string
-        app?: string
-        favicon?: string
-      }[] = await Promise.all(
-        configPaths.map(async (path, index) => {
-          const dir = targets[index][0]
-          if (path.endsWith('.json')) {
-            return { dir, path, config: await readJSON(path) }
-          }
-          const compiled = configBundles.require(path)
-          return { dir, path, config: compiled.default || compiled }
-        }),
-      )
-
-      if (functions) {
-        // only include selected functions
-        const filter = new Set(functions)
-        configs = configs.filter(({ config }) => filter.has(config.name))
-      }
-
-      if (!configs.length) {
-        console.info(
-          pc.yellow(`No ${functions ? 'matching ' : ''}function configs found`),
-        )
-        return
-      }
-
-      if (includeSchema) {
-        const compiledSchema = configBundles.require(schema)
-        schemaPayload = compiledSchema.default || compiledSchema
-        if (!Array.isArray(schemaPayload)) {
-          if (!schemaPayload.schema) {
-            schemaPayload = { schema: schemaPayload }
-          }
-          schemaPayload = [schemaPayload]
-        }
-        console.info(
-          `${pc.blue('schema')} ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} ${pc.dim(rel(schema))}`,
-        )
-      }
-
-      // log matching configs and find function indexes
-      await Promise.all(
-        configs.map(async (item) => {
-          const { config, path } = item
-          const access = config.public ? pc.cyan('public') + ' ' : ''
-          const type = pc.magenta(config.type || 'function')
-          const name = config.name
-          const file = pc.dim(rel(path))
-          console.info(`${type} ${name} ${access}${file}`)
-
-          const files = await readdir(item.dir)
-          for (const file of files) {
-            if (isIndexFile(file)) {
-              item.index = join(item.dir, file)
-              break
-            }
-          }
-        }),
-      )
-
-      // validate and create bundle entryPoints
-      const paths: Record<string, string> = {}
-      const nodeEntryPoints = includeSchema ? [schema] : []
-      const browserEntryPoints = []
-      const favicons = new Set()
-
-      const cancelled = await Promise.any(
-        configs.map((configStore) => {
-          const { config, path, index, dir } = configStore
-          const existingPath = paths[config.name]
-          if (existingPath) {
-            console.info(pc.red(`found multiple configs for "${config.name}"`))
-            return true
-          }
-          paths[config.name] = path
-          if (!index) {
-            console.info(
-              pc.red(
-                `could not find index.ts or index.js for "${config.name}"`,
-              ),
-            )
-            return true
-          }
-
-          if (config.type === 'app') {
-            if (!config.main) {
-              console.info(
-                pc.red(
-                  `no "main" field defined for "${config.name}" of type "app"`,
-                ),
-              )
-              return true
-            }
-
-            configStore.app = abs(config.main, dir)
-            browserEntryPoints.push(configStore.app)
-
-            if (config.favicon) {
-              configStore.favicon = abs(config.favicon, dir)
-              browserEntryPoints.push(configStore.favicon)
-              favicons.add(rel(configStore.favicon))
-            }
-          }
-
-          nodeEntryPoints.push(index)
-
-          return invalidCode(index)
-        }),
-      )
-
-      if (cancelled) {
-        console.info(pc.yellow(`deploy cancelled`))
-        return
-      }
-
-      const onWatch = (err) => {
-        console.log('updates!', err)
-        deployThings()
-      }
-
-      // build the functions
-      const [nodeBundles, browserBundles] = await Promise.all([
-        bundle(
-          {
-            entryPoints: nodeEntryPoints,
-            sourcemap: 'external',
-          },
-          onWatch,
-        ),
-        bundle(
-          {
-            entryPoints: browserEntryPoints,
-            sourcemap: 'external',
-            platform: 'browser',
-            define: {
-              global: 'window',
-              'process.env.NODE_ENV': '"production"',
-            },
-          },
-          onWatch,
-        ),
-      ])
-
+      const { nodeBundles, browserBundles, schema, favicons, configs } =
+        await parseFunctions(functions, watch && update)
       const { client, destroy } = await login(program)
-
+      const { publicPath } = await client.call('based:env-info')
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()
 
-      async function deployThings() {
+      await update(null)
+      if (!watch) {
+        await destroy()
+      }
+
+      async function update(err) {
+        if (err) {
+          console.error(err)
+          return
+        }
+
         const deployed: typeof previous = new Set()
 
-        spinner.start()
-
         // update schema
-        if (schemaPayload) {
-          const { length } = schemaPayload
-          const label = length === 1 ? 'schema' : `${length} schemas`
+        if (schema) {
+          const schemaPayload = parseSchema(nodeBundles, schema)
           const hashed = hash(schemaPayload)
 
           deployed.add(hashed)
 
-          if (previous.has(hashed)) {
-            console.log('schema did not change, skipping...')
-          } else {
-            spinner.text = `deploying ${label}`
+          if (!previous.has(hashed)) {
+            spinner.start()
+            const text = textFactory('deployed', 'schema', schemaPayload.length)
+            spinner.start(text(0))
             await client.call('db:set-schema', schemaPayload)
-            spinner.succeed(`deployed ${label}`)
+            spinner.succeed(text())
           }
         }
 
         // upload assets
         const assets = browserBundles.result.outputFiles
-
         const { outputs } = browserBundles.result.metafile
         const uploads = assets
           .map(({ path, contents }) => {
@@ -310,15 +364,17 @@ export const deploy = async (program: Command) => {
             const ext = fileName.substring(fileName.lastIndexOf('.'))
             return { path, contents, fileName, ext }
           })
-          .filter(({ ext, fileName }) => {
+          .filter(({ ext, path, fileName }) => {
+            if (path in assetsMap) {
+              return
+            }
+
             if (ext === '.js') {
               if (favicons.has(outputs[fileName].entryPoint)) {
                 // esbuild generates an stub js for the favicon, we don't need that
                 return
               }
-            }
-
-            if (ext === '.map') {
+            } else if (ext === '.map') {
               if (favicons.has(outputs[fileName.slice(0, -4)].entryPoint)) {
                 // esbuild generates an stub js.map for the favicon, we don't need that
                 return
@@ -329,49 +385,39 @@ export const deploy = async (program: Command) => {
           })
 
         if (uploads.length) {
-          const label = 'uploading assets'
+          const text = textFactory('uploaded', 'asset', uploads.length)
           let uploading = 0
+
+          spinner.start(text(0))
 
           await Promise.all(
             uploads.map(async ({ path, contents, ext, fileName }) => {
-              if (path in assetsMap) {
-                console.log('already uploaded ' + fileName + ', skipping...')
-                return
-              }
-
-              spinner.text = `${label} (${++uploading}/${uploads.length})`
-
               const id = `fi${hashCompact(fileName, 8)}`
-              const { src: url } = await client.stream('db:file-upload', {
-                contents,
-                fileName,
-                mimeType: mimeTypes.lookup(ext),
-                payload: { id, $$fileKey: fileName },
-              })
-
-              assetsMap[path] = url
-              assetsMap[fileName] = url
+              const destUrl = `${publicPath}/${fileName}`
+              await queuedFileUpload(
+                client,
+                {
+                  contents,
+                  fileName,
+                  mimeType: mimeTypes.lookup(ext),
+                  payload: { id, $$fileKey: fileName },
+                },
+                destUrl,
+              )
+              spinner.text = text(++uploading)
+              assetsMap[path] = destUrl
+              assetsMap[fileName] = destUrl
             }),
           )
 
-          spinner.succeed(`uploaded ${uploading} assets`)
+          spinner.succeed(text())
         }
 
-        // deploy functions
-        const label = 'deploying functions'
-        let deploying = 0
-        let url = client.connection?.ws.url
-          .replace('ws://', 'http://')
-          .replace('wss://', 'https://')
-
-        url = url.substring(0, url.lastIndexOf('/'))
-
-        await Promise.all(
-          configs.map(async ({ index, app, favicon, config }) => {
+        // deploys
+        const deploys = configs
+          .map(({ index, app, favicon, config }) => {
             const js = nodeBundles.js(index)
             const sourcemap = nodeBundles.map(index)
-
-            spinner.text = `${label} (${++deploying}/${configs.length})`
 
             if (app) {
               const appJS = browserBundles.js(app)
@@ -388,25 +434,62 @@ export const deploy = async (program: Command) => {
             const checksum = hash([js.hash, config])
             deployed.add(checksum)
 
-            if (previous.has(checksum)) {
-              console.log('already deployed ' + config.name + ', skipping...')
-              return
+            return { checksum, config, js, sourcemap }
+          })
+          .filter(({ checksum }) => !previous.has(checksum))
+
+        if (deploys.length) {
+          const text = textFactory('deployed', 'function', deploys.length)
+          // deploy functions
+          let deploying = 0
+          let url = client.connection?.ws.url
+            .replace('ws://', 'http://')
+            .replace('wss://', 'https://')
+
+          url = url.substring(0, url.lastIndexOf('/'))
+
+          spinner.start(text(0))
+
+          const logs = await Promise.all(
+            deploys.map(async ({ checksum, config, js, sourcemap }) => {
+              await queuedFnDeploy(client, checksum, config, js, sourcemap),
+                (spinner.text = text(++deploying))
+              const { path = `/${config.name}`, public: isPublic } = config
+              if (isPublic) {
+                return `🚀 ${pc.dim(url)}${path}`
+              }
+            }),
+          )
+
+          spinner.succeed(text())
+
+          for (const log of logs) {
+            if (log) {
+              console.info(log)
             }
+          }
+        }
 
-            await queuedFnDeploy(client, checksum, config, js, sourcemap)
-
-            const { path = `/${config.name}`, public: isPublic } = config
-            if (isPublic) {
-              console.log(`🚀 ${pc.dim(url)}${path}`)
-            }
-          }),
-        )
-
-        spinner.succeed(`deployed ${deploying} functions`)
+        previous = deployed
       }
-
-      await deployThings()
-      // destroy()
     },
   )
+}
+
+function textFactory(prefix: string, suffix: string, total: number) {
+  return (amount?: number) => {
+    return `${prefix} ${amount === undefined ? total : `${amount}/${total}`} ${suffix}${total === 1 ? '' : 's'}`
+  }
+}
+
+function parseSchema(bundleResult: BundleResult, schema: string) {
+  const compiledSchema = bundleResult.require(schema)
+  let schemaPayload = compiledSchema.default || compiledSchema
+  if (!Array.isArray(schemaPayload)) {
+    if (!schemaPayload.schema) {
+      schemaPayload = { schema: schemaPayload }
+    }
+    schemaPayload = [schemaPayload]
+  }
+  return schemaPayload
 }

@@ -4,4 +4,4 @@ import * as ok from './a'
 
 console.log('????', ok)
 
-document.body.innerHTML = 'yay!!!!!????'
+document.body.innerHTML = 'make it nice very nice'
