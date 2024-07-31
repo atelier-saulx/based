@@ -34,7 +34,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8, ha
             .val = .{ .mv_size = 0, .mv_data = null },
             .start = start,
             .includeMain = includeMain,
-            .refLvl = refLvl,
+            .refLvl = refLvl + 1,
         };
         ctx.results.append(s) catch {
             std.debug.print("wtf!??", .{});

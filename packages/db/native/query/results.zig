@@ -39,7 +39,7 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 dataU8[lastPos] = 254;
                 lastPos += 1;
 
-                if (key.refLvl > 0) {
+                if (key.refLvl > 1) {
                     dataU8[lastPos] = 1;
                 } else {
                     dataU8[lastPos] = 0;
