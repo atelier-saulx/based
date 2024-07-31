@@ -39,6 +39,7 @@ export const readSeperateFieldFromBuffer = (
       const start = buffer.readUint16LE(i + 1)
       const resetNested = buffer[i] === 0
       if (resetNested) {
+        // nested should prob be lvl or something...
         includeDef = queryResponse.query.includeDef
         mainLen = queryResponse.query.includeDef.mainLen
         mainIncludes = queryResponse.query.includeDef.mainIncludes
@@ -154,7 +155,7 @@ export const readSeperateFieldFromBuffer = (
     }
   }
 
-  console.log('  END no match\n')
+  console.log(`  END no match [${requestedField.path}]`)
 
   // not in there...
   if (requestedField.type === 'string') {

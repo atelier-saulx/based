@@ -229,8 +229,37 @@ const parseInclude = (
   addPathToIntermediateTree(field, includeTree, field.path)
 
   if (field.type === 'reference') {
-    // but only if not from recursive ref
-    console.info('TODO: INCLUDE: HANDLE INCLUDE TOTAL REF')
+    const ref = field
+
+    if (!include.refIncludes) {
+      include.refIncludes = {}
+    }
+
+    const start = ref.start
+
+    if (!include.refIncludes[start]) {
+      include.refIncludes[start] = {
+        schema: query.db.schemaTypesParsed[ref.allowedType],
+        includeArr: [],
+        includeFields: new Set(),
+        mainLen: 0,
+        mainIncludes: {},
+        includeTree: [],
+        fromRef: ref,
+      }
+    }
+
+    const refIncludeDef = include.refIncludes[start]
+
+    for (const f in refIncludeDef.schema.fields) {
+      if (
+        refIncludeDef.schema.fields[f].type !== 'reference' &&
+        refIncludeDef.schema.fields[f].type !== 'references'
+      ) {
+        refIncludeDef.includeFields.add(f)
+      }
+    }
+
     return
   }
 

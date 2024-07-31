@@ -157,7 +157,7 @@ for (let i = 0; i < amount; i++) {
     // email: 'bla' + i + '@once.net',
 
     countryCode: 'aa',
-    lilBlup: 999,
+    lilBlup: 1,
     // smuro: {
     //   flap: 'flap',
     // },
@@ -190,15 +190,18 @@ const result = db
   // .include('vectorClock')
   // .include('flap')
 
-  // .include('lilBlup')
+  .include('lilBlup')
   // .include('user') // includes all EXCEPT REFS
-  // .include('user.myBlup.flap')
+  // .include('user.myBlup.name')
+
+  .include('user.myBlup')
+
   // .include('user.age')
   // just having
   // include user allrdy...
   // .include('user.age')
 
-  .include('user.myBlup.name')
+  // .include('user.myBlup.name')
 
   // design TIME
 
@@ -308,9 +311,9 @@ for (const item of result.data) {
   // console.info('| COUNTRY--->', item.countryCode)
   // console.info('| lilBlup --->', item.lilBlup)
 
-  // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
-  // console.info('| lilBlup NAME--->', item.lilBlup.name)
-  // console.info('| lilBlup id--->', item.lilBlup.id)
+  console.info('| lilBlup FLAP--->', item.lilBlup.flap)
+  console.info('| lilBlup NAME--->', item.lilBlup.name)
+  console.info('| lilBlup id--->', item.lilBlup.id)
 
   // console.info('| user age--->', item.user.age)
   // console.info('| user id--->', item.user.id) // bit wrong scince it can not exist...
