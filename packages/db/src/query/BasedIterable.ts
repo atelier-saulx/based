@@ -75,6 +75,7 @@ export class BasedIterable {
           if (currentInclude.refIncludes[start]) {
             currentInclude = currentInclude.refIncludes[start]
           } else {
+            // only id cannot be found...
             // console.log('ERROR GET START', start, currentInclude.schema.type)
           }
           // START + ID + IDENTIFIER
