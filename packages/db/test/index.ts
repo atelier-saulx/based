@@ -142,7 +142,7 @@ for (let i = 0; i < 99; i++) {
 
 await wait(0)
 
-const amount = 10e6
+const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -194,6 +194,8 @@ const result = db
   .include('user.myBlup.flap')
   .include('user.myBlup.name')
 
+  // design TIME
+
   // 2 ids
   // 6 ids  -> 16
   // 4 "A" flap -> 8
@@ -228,10 +230,6 @@ const result = db
   .range(0, 1e4)
   // sort()
   .get()
-
-const team = {
-  matches: [1, 2, 5],
-}
 
 // loop
 // id SORT PUBLISHDATE
@@ -284,8 +282,10 @@ for (const item of result.data) {
 
   console.info('| lilBlup FLAP--->', item.lilBlup.flap)
   console.info('| lilBlup NAME--->', item.lilBlup.name)
+  console.info('| lilBlup id--->', item.lilBlup.id)
 
   console.info('| user age--->', item.user.age)
+  console.info('| user id--->', item.user.id)
 
   console.info('| user.myBlup.flap--->', item.user.myBlup.flap)
   console.info('| user.myBlup.name--->', item.user.myBlup.name)
