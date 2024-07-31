@@ -40,7 +40,15 @@ export const toObjectIncludeTreePrint = (
     str += prefix + `${key}: `
     if ('__isField' in item) {
       let v = target[key]
-      if (item.type === 'string') {
+
+      if (item.type === 'reference') {
+        str += toObjectIncludeTreePrint(
+          '',
+          v,
+          v.__r.includeTree,
+          level + 1,
+        ).slice(0, -1)
+      } else if (item.type === 'string') {
         if (v === undefined) {
           return ''
         }

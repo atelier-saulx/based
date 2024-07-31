@@ -293,6 +293,8 @@ let i = 0
 
 console.dir(result.data.toObject(), { depth: 10 })
 
+console.log(result)
+
 // for (const item of result.data) {
 //   if (i > 3) {
 //     break
