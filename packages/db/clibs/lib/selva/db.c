@@ -52,19 +52,6 @@ static int SVector_SelvaNode_expire_compare(const void ** restrict a_raw, const 
     return a->node_id - b->node_id;
 }
 
-static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
-{
-    assert(((uintptr_t)type & 0xFFFF) == 0);
-    return (void *)((uintptr_t)type | type->type);
-}
-
-static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
-{
-    struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
-    __builtin_prefetch(te);
-    return te;
-}
-
 static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const void ** restrict b_raw)
 {
     uint16_t a_type = 0xFFFF & (uintptr_t)(*a_raw);

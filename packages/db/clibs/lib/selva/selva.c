@@ -17,6 +17,7 @@
 #include "traverse.h"
 #include "find.h"
 #include "filter.h"
+#include "io.h"
 
 static napi_valuetype selva_napi_get_nvaluetype(napi_env env, napi_value value)
 {
@@ -799,6 +800,27 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     return (err) ? res2napi(env, err) : ({ napi_value res; napi_create_int32(env, ((struct selva_find_cb *)cb_wrap.node_arg)->i, &res); res; });
 }
 
+// selva_save(db, type, node_id, fields, adj_filter | null, node_filter | null): number
+static napi_value selva_save(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_status status;
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    if (!db) {
+        return res2napi(env, SELVA_EINVAL);
+    }
+
+    return res2napi(env, io_dump_save_async(db, ""));
+}
+
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
 
 static napi_value Init(napi_env env, napi_value exports) {
@@ -819,6 +841,7 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_get_alias", selva_db_get_alias),
       DECLARE_NAPI_METHOD("traverse_field_bfs", selva_traverse_field_bfs),
       DECLARE_NAPI_METHOD("find", selva_find),
+      DECLARE_NAPI_METHOD("save", selva_save),
   };
   napi_status status;
 
