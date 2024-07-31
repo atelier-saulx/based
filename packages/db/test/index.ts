@@ -124,8 +124,13 @@ const blup = db.create('blup', {
   flap: 'A',
 })
 
-for (let i = 0; i < 1e3; i++) {
+for (let i = 0; i < 50; i++) {
   // console.log({ blup })
+  const blup = db.create('blup', {
+    name: 'blup ! ' + i,
+    flap: 'A',
+  })
+
   users.push(
     db.create('user', {
       myBlup: blup,
@@ -149,7 +154,7 @@ for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     // // name: 'Jim de Beer',
-    user: 66, // TODO: add setting on other field as well...
+    user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: i,
     // // derp: ~~(Math.random() * 10000),
     // // flap: ,
@@ -183,6 +188,7 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
 
+  // .include('id')
   // .filter('vectorClock', '<', 4)
   // add filter by ref!
 
@@ -190,11 +196,13 @@ const result = db
   // .include('vectorClock')
   // .include('flap')
 
-  .include('lilBlup')
+  // .include('id')
+
+  // .include('lilBlup')
   // .include('user') // includes all EXCEPT REFS
   // .include('user.myBlup.name')
 
-  .include('user.myBlup')
+  .include('user.myBlup.id')
 
   // .include('user.age')
   // just having
@@ -236,7 +244,7 @@ const result = db
 
   // .include('user.location.label')
   // .include('vectorClock')
-  .range(0, 1)
+  .range(0, 3)
   // sort()
   .get()
 
@@ -280,7 +288,7 @@ const logger = (x, empty = '') => {
   }
 }
 
-// logger(result.query.includeDef)
+logger(result.query.includeDef)
 
 // maybe start with subscription caches before refs
 // make it work with UPDATING the query result
@@ -313,9 +321,9 @@ for (const item of result.data) {
   // console.info('| COUNTRY--->', item.countryCode)
   // console.info('| lilBlup --->', item.lilBlup)
 
-  console.info('| lilBlup FLAP--->', item.lilBlup.flap)
-  console.info('| lilBlup NAME--->', item.lilBlup.name)
-  console.info('| lilBlup id--->', item.lilBlup.id)
+  // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
+  // console.info('| lilBlup NAME--->', item.lilBlup.name)
+  console.info('| lilBlup id--->', item.user.myBlup.id)
 
   // console.info('| user age--->', item.user.age)
   // console.info('| user id--->', item.user.id) // bit wrong scince it can not exist...
