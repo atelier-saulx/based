@@ -32,7 +32,7 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
-    console.log('try index', index)
+    // console.log('try index', index)
 
     // REF --------------------------
     if ((!found || !ref) && index === 254) {
@@ -44,20 +44,20 @@ export const readSeperateFieldFromBuffer = (
         mainIncludes = queryResponse.query.includeDef.mainIncludes
       }
 
-      console.log(
-        '1  match',
-        'i:',
-        i,
-        'refStart',
-        refStart,
-        'start',
-        start,
-        'path',
-        requestedField.path,
-      )
+      // console.log(
+      //   '1  match',
+      //   'i:',
+      //   i,
+      //   'refStart',
+      //   refStart,
+      //   'start',
+      //   start,
+      //   'path',
+      //   requestedField.path,
+      // )
 
       if (ref && start === refStart) {
-        console.log('1.1 this looks like the target', requestedField.path)
+        // console.log('1.1 this looks like the target', requestedField.path)
 
         if (requestedField.type === 'id') {
           return buffer.readUint32LE(i + 3)
@@ -72,7 +72,7 @@ export const readSeperateFieldFromBuffer = (
         mainLen = includeDef.refIncludes[start].mainLen
         mainIncludes = includeDef.refIncludes[start].mainIncludes
         includeDef = includeDef.refIncludes[start]
-        console.log('1.2   select', includeDef.fromRef.path)
+        // console.log('1.2   select', includeDef.fromRef.path)
       }
       continue
     }
