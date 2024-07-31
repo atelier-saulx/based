@@ -201,6 +201,7 @@ const result = db
   // .include('lilBlup')
   // .include('user') // includes all EXCEPT REFS
   // .include('user.myBlup.name')
+  .include('lilBlup.name')
 
   .include('user.myBlup.id')
 
@@ -217,8 +218,6 @@ const result = db
   // 6 ids  -> 16
   // 4 "A" flap -> 8
   // 2 age (4 bytes) -> 16 (40 bytes min, 40 bytes)
-
-  // .include('lilBlup.name')
 
   // .include('user.age')
   // .include('user.name')
@@ -244,7 +243,7 @@ const result = db
 
   // .include('user.location.label')
   // .include('vectorClock')
-  .range(0, 3)
+  .range(0, 1)
   // sort()
   .get()
 

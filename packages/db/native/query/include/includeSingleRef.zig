@@ -26,7 +26,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, buf: []u8, v: c.MDB_val, refLvl: u8, ha
     const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
 
     if (!hasFields) {
-        std.debug.print("does not have fields include! {d}", .{refId});
+        std.debug.print("does not have fields include! {d} lvl {d} \n", .{ refId, refLvl });
 
         const s: results.Result = .{
             .id = refId,

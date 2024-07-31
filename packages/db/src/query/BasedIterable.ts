@@ -68,6 +68,7 @@ export class BasedIterable {
           currentInclude = this.#query.query.includeDef
         }
 
+        console.log('IS REF', this.#buffer[i])
         if (currentInclude.refIncludes) {
           // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
@@ -76,7 +77,7 @@ export class BasedIterable {
             currentInclude = currentInclude.refIncludes[start]
           } else {
             // only id cannot be found...
-            // console.log('ERROR GET START', start, currentInclude.schema.type)
+            console.log('ERROR GET START', start, currentInclude.schema.type)
           }
           // START + ID + IDENTIFIER
           i += 2 + 4 + 1
