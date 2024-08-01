@@ -7,6 +7,7 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import dbZig from './db.js'
 import { Query, query } from './query/query.js'
+import { flushBuffer } from './operations.js'
 
 export * from './schemaTypeDef.js'
 export * from './get.js'
@@ -85,8 +86,6 @@ export class BasedDb {
     dbZig.createEnv(path)
   }
 
-  // queryID thing with conditions etc
-
   updateTypeDefs() {
     for (const field in this.schema.types) {
       const type = this.schema.types[field]
@@ -138,5 +137,10 @@ export class BasedDb {
 
   query(target: string): Query {
     return query(this, target)
+  }
+
+  // drain write buffer returns perf in ms
+  drain() {
+    flushBuffer(this)
   }
 }
