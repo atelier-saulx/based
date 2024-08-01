@@ -23,23 +23,15 @@ export const readSeperateFieldFromBuffer = (
 ) => {
   const queryResponse = basedNode.__q
   let i = 4 + basedNode.__o
+
   const buffer = queryResponse.buffer
   const requestedFieldIndex = requestedField.field
   const ref = basedNode.__r
-  const refStart = ref?.fromRef.start
 
   let found = !ref || false
   let includeDef = queryResponse.query.includeDef
 
   let logg = false
-
-  // problem is START is equal
-  if (ref) {
-    if (ref?.fromRef?.path[0] === 'myBlup') {
-      // console.log('\n GET MY BLUP FIELD', requestedField.path, ref.includePath)
-      // logg = true
-    }
-  }
 
   while (i < buffer.byteLength) {
     let index = buffer[i]
@@ -51,14 +43,6 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
-    if (logg) {
-      console.log(
-        { index },
-        includeDef?.fromRef?.path ?? '[NOT FROM REF]',
-        includeDef.includePath,
-      )
-    }
-
     if ((!found || !ref) && index === 254) {
       const start = buffer.readUint16LE(i + 1)
 
@@ -67,13 +51,10 @@ export const readSeperateFieldFromBuffer = (
         includeDef = queryResponse.query.includeDef
       }
 
-      // console.log(includeDef.includePath)
-
       if (
         ref &&
         includePathsAreEqual(includeDef.includePath, ref.includePath, start)
       ) {
-        // console.info('FOUND!', start)
         if (requestedField.type === 'id') {
           return buffer.readUint32LE(i + 3)
         }
@@ -84,13 +65,6 @@ export const readSeperateFieldFromBuffer = (
         i += 7
         includeDef = includeDef.refIncludes[start]
       }
-
-      // console.log(
-      //   '1 .ref get field',
-      //   start,
-      //   requestedField.path,
-      //   ref?.fromRef?.path ?? '[NO REF]',
-      // )
 
       continue
     }

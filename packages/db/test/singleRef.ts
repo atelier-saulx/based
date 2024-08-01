@@ -363,5 +363,14 @@ test.serial.only('single reference object', async (t) => {
 
   db.drain()
 
-  console.log(db.query('simple').include('admin.user').get())
+  t.deepEqual(db.query('simple').include('admin.user').get().data.toObject(), [
+    {
+      id: 1,
+      admin: {
+        user: {
+          id: 1,
+        },
+      },
+    },
+  ])
 })

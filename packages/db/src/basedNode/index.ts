@@ -34,7 +34,7 @@ export class BasedNode {
       const { path } = fieldDef
       if (path.length > 1) {
         if (!Object.getOwnPropertyDescriptor(ctx, path[0])) {
-          createObjectProp(schema, ctx, path[0])
+          createObjectProp(schema, ctx, path[0], schemas)
         }
       } else {
         if (fieldDef.type === 'reference') {

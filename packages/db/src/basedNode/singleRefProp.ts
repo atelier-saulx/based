@@ -6,21 +6,21 @@ export function singleRefProp(
   field: string,
   fieldDef: FieldDef,
   schemas: BasedDb['schemaTypesParsed'],
+  obj?: any,
 ) {
   const type = fieldDef.allowedType
 
-  return Object.defineProperty(ctx, field, {
+  return Object.defineProperty(obj ?? ctx, field, {
     enumerable: true,
     set: () => undefined,
     get() {
       const refSchema = schemas[type]
       const refCtx = refSchema.responseCtx
-      refCtx.__q = this.__q
-      refCtx.__o = this.__o
+      refCtx.__q = ctx.__q
+      refCtx.__o = ctx.__o
       refCtx.__r =
         ctx.__r?.refIncludes[fieldDef.start] ??
-        this.__q.query.includeDef.refIncludes[fieldDef.start]
-
+        ctx.__q.query.includeDef.refIncludes[fieldDef.start]
       return refCtx
     },
   })

@@ -42,6 +42,9 @@ export const toObjectIncludeTreePrint = (
       let v = target[key]
 
       if (item.type === 'reference') {
+        if (!v) {
+          console.warn('no ref', item, key, target, v)
+        }
         str += toObjectIncludeTreePrint(
           '',
           v,
