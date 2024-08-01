@@ -33,6 +33,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, include: []u8, v: c.MDB_val, refLvl: u8
             .refLvl = refLvl + 1,
         };
         ctx.results.append(s) catch {
+            std.log.err("Cannot append result to query results", .{});
             return 0;
         };
     }

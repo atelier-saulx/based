@@ -29,7 +29,6 @@ pub fn getFields(
             const hasFields: bool = include[includeIterator + 1] == 1;
             const refSize = std.mem.readInt(u16, include[includeIterator + 2 ..][0..2], .little);
             const singleRef = include[includeIterator + 4 .. includeIterator + 4 + refSize];
-
             includeIterator += refSize + 4;
 
             if (mainValue == null) {
@@ -45,7 +44,6 @@ pub fn getFields(
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
                 try errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET));
-
                 mainValue = v;
 
                 // case that you only include
@@ -99,6 +97,17 @@ pub fn getFields(
             continue :includeField;
         };
 
+        if (field == 0) {
+            mainValue = v;
+            if (includeMain.len != 0) {
+                size += std.mem.readInt(u16, includeMain[0..2], .little) + 1;
+            } else {
+                size += (v.mv_size + 1);
+            }
+        } else {
+            size += (v.mv_size + 1 + 2);
+        }
+
         var result: results.Result = .{
             .id = id,
             .field = field,
@@ -118,17 +127,6 @@ pub fn getFields(
         }
 
         try ctx.results.append(result);
-
-        if (field != 0) {
-            size += (v.mv_size + 1 + 2);
-        } else {
-            mainValue = v;
-            if (includeMain.len != 0) {
-                size += std.mem.readInt(u16, includeMain[0..2], .little) + 1;
-            } else {
-                size += (v.mv_size + 1);
-            }
-        }
     }
 
     return size;
