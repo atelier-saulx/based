@@ -20,7 +20,7 @@
   "sideEffects": false,
   "ava": {
     "timeout": "2m",
-    "workerThreads": true,
+    "workerThreads": false,
     "files": [
       "./dist/test/**/*.js"
     ]

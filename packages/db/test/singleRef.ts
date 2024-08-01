@@ -77,8 +77,7 @@ test.serial.only('single reference', async (t) => {
     }),
   )
 
-  // db.drain()
-  await wait()
+  db.drain()
 
   const amount = 1e6
   for (let i = 0; i < amount; i++) {
@@ -90,12 +89,10 @@ test.serial.only('single reference', async (t) => {
     })
   }
 
-  // db.drain()
-  await wait()
+  db.drain()
 
-  const result = db.query('simple').include('id').range(0, 1).get()
-
-  // t.deepEqual(result.data.toObject(), [{ id: 1 }])
-
-  t.true(true)
+  t.deepEqual(
+    db.query('simple').include('id').range(0, 1).get().data.toObject(),
+    [{ id: 1 }],
+  )
 })
