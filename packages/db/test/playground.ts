@@ -52,61 +52,11 @@ db.updateSchema({
     simple: {
       // min max on string
       fields: {
-        // countryCode: { type: 'string' },
-        // derp: { type: 'integer' },
-        // add bytelenght as option
-        // also add a bytes field
         // @ts-ignore
-        // @ts-ignore
-        // countryCode: { type: 'string' },
         countryCode: { type: 'string', maxBytes: 2 },
-        // email: { type: 'string', maxLength: 15 }, // maxLength: 10
-
-        // writer: { type: 'reference', allowedType: 'user' },
         lilBlup: { type: 'reference', allowedType: 'blup' },
-
-        // // name: { type: 'string', maxLength: 10 },
         vectorClock: { type: 'integer' },
         user: { type: 'reference', allowedType: 'user' },
-
-        // flap: { type: 'string' },
-
-        // smuro: {
-        //   type: 'object',
-        //   properties: {
-        //     flap: { type: 'string' },
-        //   },
-        // },
-
-        // nested: {
-        //   type: 'object',
-        //   properties: {
-        //     bla: { type: 'reference', allowedType: 'user' },
-        //   },
-        // },
-        // refs: { type: 'references', allowedType: 'user' },
-        // location: {
-        //   type: 'object',
-        //   properties: {
-        //     bla: { type: 'integer' },
-        //     long: { type: 'number' },
-        //     lat: { type: 'number' },
-        //   },
-        // },
-        // smurp: {
-        //   type: 'object',
-        //   properties: {
-        //     hello: { type: 'boolean' },
-        //     ts: { type: 'timestamp' },
-        //     pos: {
-        //       type: 'object',
-        //       properties: {
-        //         x: { type: 'integer' },
-        //         y: { type: 'integer' },
-        //       },
-        //     },
-        //   },
-        // },
       },
     },
   },
@@ -114,13 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const blup = db.create('blup', {
-  name: 'blup !',
-  flap: 'A',
-})
-
 for (let i = 0; i < 50; i++) {
-  // console.log({ blup })
   const blup = db.create('blup', {
     name: 'blup ! ' + i,
     flap: 'A',
@@ -147,33 +91,10 @@ const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
-    // writer: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    // // name: 'Jim de Beer',
     user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: i,
-    // // derp: ~~(Math.random() * 10000),
-    // // flap: ,
-    // flap: 'AAA',
-    // email: 'bla' + i + '@once.net',
-
     countryCode: 'aa',
     lilBlup: 1,
-    // smuro: {
-    //   flap: 'flap',
-    // },
-    // nested: {
-    //   bla: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    // },
-    // countryCode: Math.random() > 0.5 ? 'en' : 'de',
-    // refs: [1, 2, 3],
-    // smurp: {
-    //   ts: Date.now(),
-    // },
-    // location: {
-    //   bla: 3,
-    //   long: 1,
-    //   lat: 2,
-    // },
   })
 }
 
