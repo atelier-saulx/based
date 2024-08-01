@@ -226,9 +226,9 @@ test.serial.only('single reference', async (t) => {
 
   logger(result.query.includeDef)
 
-  console.dir(result.data.toObject(), { depth: 10 })
+  // console.dir(result.data.toObject(), { depth: 10 })
 
-  console.dir(new Uint8Array(result.buffer), { depth: 10 })
+  // console.dir(new Uint8Array(result.buffer), { depth: 10 })
 
   // .data.toObject(),
   // { depth: 10 },
