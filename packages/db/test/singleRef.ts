@@ -68,6 +68,7 @@ test.serial.only('single reference', async (t) => {
     age: 99,
     name: 'Jim de Beer',
     email: 'person@once.net',
+    flap: 10,
     location: {
       label: 'BLA BLA',
       x: 1,
@@ -102,7 +103,7 @@ test.serial.only('single reference', async (t) => {
         user: {
           id: 1,
           name: 'Jim de Beer',
-          flap: 0,
+          flap: 10,
           email: 'person@once.net',
           age: 99,
           snurp: '',
@@ -174,14 +175,29 @@ test.serial.only('single reference', async (t) => {
     [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
   )
 
-  console.info(
-    JSON.stringify(
-      db
-        .query('simple')
-        .include('user.location')
-        .range(0, 1)
-        .get()
-        .data.toObject(),
-    ),
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user', 'user.myBlup', 'lilBlup')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          myBlup: { id: 1, flap: 'A', name: 'blup !' },
+          name: 'Jim de Beer',
+          flap: 10,
+          email: 'person@once.net',
+          age: 99,
+          snurp: '',
+          burp: 0,
+          location: { label: 'BLA BLA', x: 1, y: 2 },
+        },
+        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+      },
+    ],
   )
 })
