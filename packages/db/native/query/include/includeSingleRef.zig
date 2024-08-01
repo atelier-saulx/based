@@ -6,6 +6,7 @@ const db = @import("../../db.zig");
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
+const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 
 const IncludeError = error{
     Recursion,
@@ -15,7 +16,6 @@ const EMPTY_BUF: [0]u8 = .{};
 
 pub fn getSingleRefFields(ctx: QueryCtx, include: []u8, v: c.MDB_val, refLvl: u8, hasFields: bool) usize {
     var size: usize = 0;
-    const includeMain: []u8 = &.{};
 
     // [type] [type] [start] [start]
     const type_prefix: [2]u8 = .{ include[0], include[1] };
@@ -24,16 +24,7 @@ pub fn getSingleRefFields(ctx: QueryCtx, include: []u8, v: c.MDB_val, refLvl: u8
     const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
 
     if (!hasFields) {
-        const s: results.Result = .{
-            .id = refId,
-            .field = 255,
-            .val = .{ .mv_size = 0, .mv_data = null },
-            .start = start,
-            .includeMain = includeMain,
-            .refLvl = refLvl + 1,
-        };
-        ctx.results.append(s) catch {
-            std.log.err("Cannot append result to query results", .{});
+        _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
             return 0;
         };
     }

@@ -6,18 +6,7 @@ const db = @import("../../db.zig");
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
-
-fn addIdOnly(ctx: QueryCtx, id: u32, refLvl: u8) !usize {
-    try ctx.results.append(.{
-        .id = id,
-        .field = 255,
-        .val = .{ .mv_size = 0, .mv_data = null },
-        .start = null,
-        .includeMain = &.{},
-        .refLvl = refLvl,
-    });
-    return 5;
-}
+const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 
 pub fn getFields(
     ctx: QueryCtx,
@@ -61,7 +50,7 @@ pub fn getFields(
                 // case that you only include
                 if (!idIsSet and start == null) {
                     idIsSet = true;
-                    size += try addIdOnly(ctx, id, refLvl);
+                    size += try addIdOnly(ctx, id, refLvl, start);
                 }
             }
 
@@ -134,7 +123,7 @@ pub fn getFields(
     }
 
     if (size == 0 and !idIsSet) {
-        size += try addIdOnly(ctx, id, refLvl);
+        size += try addIdOnly(ctx, id, refLvl, start);
     }
 
     return size;
