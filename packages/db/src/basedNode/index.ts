@@ -74,7 +74,7 @@ export class BasedNode {
     return `${pre} ${msg}\n`
   }
 
-  toObject(print: boolean = false) {
+  toObject() {
     // quite different if you have __r
     if (this.__r) {
       return toObjectIncludeTree({}, this, this.__r.includeTree)

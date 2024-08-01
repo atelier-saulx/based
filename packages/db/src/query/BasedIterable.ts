@@ -49,11 +49,8 @@ export class BasedIterable {
     let i = 4
     let currentInclude: QueryIncludeDef
     while (i < this.#buffer.byteLength) {
-      // read
       const index = this.#buffer[i]
       i++
-      // read from tree
-
       if (index === 255) {
         currentInclude = this.#query.query.includeDef
         const ctx = this.#query.query.type.responseCtx
@@ -68,15 +65,11 @@ export class BasedIterable {
           currentInclude = this.#query.query.includeDef
         }
         if (currentInclude.refIncludes) {
-          // need to add an end
           const start = this.#buffer.readUint16LE(i + 1)
           currentInclude = currentInclude.refIncludes[start]
           i += 2 + 4 + 1
         }
       } else if (index === 0) {
-        // second one as well
-        // index === 0  && next cannot be 254
-        // now we have the same for fields...
         i += currentInclude.mainLen
       } else {
         const size = this.#buffer.readUInt16LE(i)
