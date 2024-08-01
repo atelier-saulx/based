@@ -130,7 +130,7 @@ struct SelvaAlias {
 struct SelvaTypeEntry {
     node_type_t type;
     struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
-    struct {
+    struct SelvaAliases {
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
     } aliases;
@@ -168,3 +168,18 @@ struct SelvaDb {
         uint32_t next;
     } expiring;
 };
+
+static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
+{
+#if 0
+    assert(((uintptr_t)type & 0xFFFF) == 0);
+#endif
+    return (void *)((uintptr_t)type | type->type);
+}
+
+static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
+{
+    struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
+    __builtin_prefetch(te);
+    return te;
+}

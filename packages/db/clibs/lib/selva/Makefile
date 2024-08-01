@@ -13,6 +13,7 @@ OBJ := \
 	fields.o \
 	filter.o \
 	find.o \
+	io/dump.o \
 	schema.o \
 	selva.o \
 	selva_object/selva_object.o \
