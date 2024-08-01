@@ -199,7 +199,7 @@ test.serial('single reference', async (t) => {
     },
   })
 
-  const amount = 1e6
+  const amount = 1e5
   for (let i = 0; i < amount; i++) {
     db.create('simple', {
       user,

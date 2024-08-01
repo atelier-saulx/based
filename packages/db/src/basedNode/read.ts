@@ -31,8 +31,6 @@ export const readSeperateFieldFromBuffer = (
   let found = !ref || false
   let includeDef = queryResponse.query.includeDef
 
-  let logg = false
-
   while (i < buffer.byteLength) {
     let index = buffer[i]
 
@@ -78,7 +76,7 @@ export const readSeperateFieldFromBuffer = (
       let fIndex: number
 
       if (includeDef.mainIncludes) {
-        const t = includeDef.mainIncludes?.[requestedField.start]
+        const t = includeDef.mainIncludes[requestedField.start]
         if (!t) {
           return undefined
         }
