@@ -313,7 +313,7 @@ test.serial('single reference multi refs', async (t) => {
   }
 })
 
-test.serial.only('single reference object', async (t) => {
+test.serial('single reference object', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
