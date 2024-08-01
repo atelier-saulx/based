@@ -7,6 +7,18 @@ const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
 
+fn addIdOnly(ctx: QueryCtx, id: u32, refLvl: u8) !usize {
+    try ctx.results.append(.{
+        .id = id,
+        .field = 255,
+        .val = .{ .mv_size = 0, .mv_data = null },
+        .start = null,
+        .includeMain = &.{},
+        .refLvl = refLvl,
+    });
+    return 5;
+}
+
 pub fn getFields(
     ctx: QueryCtx,
     id: u32,
@@ -49,15 +61,7 @@ pub fn getFields(
                 // case that you only include
                 if (!idIsSet and start == null) {
                     idIsSet = true;
-                    size += 5;
-                    try ctx.results.append(.{
-                        .id = id,
-                        .field = 255,
-                        .val = v,
-                        .start = null,
-                        .includeMain = includeMain,
-                        .refLvl = refLvl,
-                    });
+                    size += try addIdOnly(ctx, id, refLvl);
                 }
             }
 
@@ -70,11 +74,11 @@ pub fn getFields(
         }
 
         if (field == 0) {
-            const mainSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
-            if (mainSize != 0) {
-                includeMain = include[includeIterator + 3 .. includeIterator + 3 + mainSize];
+            const mainIncludeSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
+            if (mainIncludeSize != 0) {
+                includeMain = include[includeIterator + 3 .. includeIterator + 3 + mainIncludeSize];
             }
-            includeIterator += 2 + mainSize;
+            includeIterator += 2 + mainIncludeSize;
         }
 
         includeIterator += 1;
@@ -117,6 +121,8 @@ pub fn getFields(
             .refLvl = refLvl,
         };
 
+        try ctx.results.append(result);
+
         if (start == null) {
             if (!idIsSet) {
                 idIsSet = true;
@@ -125,8 +131,10 @@ pub fn getFields(
                 result.id = null;
             }
         }
+    }
 
-        try ctx.results.append(result);
+    if (size == 0 and !idIsSet) {
+        size += try addIdOnly(ctx, id, refLvl);
     }
 
     return size;
