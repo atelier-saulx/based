@@ -8,7 +8,130 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('single reference', async (t) => {
+test.serial('single reference multi refs', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          myBlup: { type: 'reference', allowedType: 'blup' },
+        },
+      },
+      blup: {
+        fields: {
+          // @ts-ignore
+          flap: { type: 'string', maxBytes: 1 },
+        },
+      },
+      simple: {
+        fields: {
+          user: { type: 'reference', allowedType: 'user' },
+        },
+      },
+    },
+  })
+
+  db.create('simple', {
+    user: db.create('user', {
+      myBlup: db.create('blup', {
+        flap: 'B',
+      }),
+    }),
+  })
+
+  db.drain()
+
+  t.deepEqual(db.query('blup').include('flap').get().data.toObject(), [
+    {
+      id: 1,
+      flap: 'B',
+    },
+  ])
+
+  const result1 = db.query('user').include('myBlup.flap').get()
+
+  for (const r of result1.data) {
+    t.is(r.myBlup.flap, 'B')
+  }
+
+  const result = db.query('simple').include('user.myBlup.flap').get()
+
+  for (const r of result.data) {
+    t.is(r.user.myBlup.flap, 'B')
+  }
+})
+
+test.serial('single reference object', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          myBlup: { type: 'reference', allowedType: 'blup' },
+        },
+      },
+      blup: {
+        fields: {
+          // @ts-ignore
+          flap: { type: 'string', maxBytes: 1 },
+        },
+      },
+      simple: {
+        fields: {
+          user: { type: 'reference', allowedType: 'user' },
+          admin: {
+            type: 'object',
+            properties: {
+              role: { type: 'string' },
+              user: { type: 'reference', allowedType: 'user' },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  db.create('simple', {
+    admin: {
+      user: db.create('user', {
+        myBlup: db.create('blup', {
+          flap: 'B',
+        }),
+      }),
+    },
+  })
+
+  db.drain()
+
+  t.deepEqual(db.query('simple').include('admin.user').get().data.toObject(), [
+    {
+      id: 1,
+      admin: {
+        user: {
+          id: 1,
+        },
+      },
+    },
+  ])
+})
+
+test.serial('single reference', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -250,127 +373,4 @@ test('single reference', async (t) => {
       },
     ],
   )
-})
-
-test.serial('single reference multi refs', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
-
-  const db = new BasedDb({
-    path: dbFolder,
-  })
-
-  db.updateSchema({
-    types: {
-      user: {
-        fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
-        },
-      },
-      blup: {
-        fields: {
-          // @ts-ignore
-          flap: { type: 'string', maxBytes: 1 },
-        },
-      },
-      simple: {
-        fields: {
-          user: { type: 'reference', allowedType: 'user' },
-        },
-      },
-    },
-  })
-
-  db.create('simple', {
-    user: db.create('user', {
-      myBlup: db.create('blup', {
-        flap: 'B',
-      }),
-    }),
-  })
-
-  db.drain()
-
-  t.deepEqual(db.query('blup').include('flap').get().data.toObject(), [
-    {
-      id: 1,
-      flap: 'B',
-    },
-  ])
-
-  const result1 = db.query('user').include('myBlup.flap').get()
-
-  for (const r of result1.data) {
-    t.is(r.myBlup.flap, 'B')
-  }
-
-  const result = db.query('simple').include('user.myBlup.flap').get()
-
-  for (const r of result.data) {
-    t.is(r.user.myBlup.flap, 'B')
-  }
-})
-
-test.serial('single reference object', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
-
-  const db = new BasedDb({
-    path: dbFolder,
-  })
-
-  db.updateSchema({
-    types: {
-      user: {
-        fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
-        },
-      },
-      blup: {
-        fields: {
-          // @ts-ignore
-          flap: { type: 'string', maxBytes: 1 },
-        },
-      },
-      simple: {
-        fields: {
-          user: { type: 'reference', allowedType: 'user' },
-          admin: {
-            type: 'object',
-            properties: {
-              role: { type: 'string' },
-              user: { type: 'reference', allowedType: 'user' },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  db.create('simple', {
-    admin: {
-      user: db.create('user', {
-        myBlup: db.create('blup', {
-          flap: 'B',
-        }),
-      }),
-    },
-  })
-
-  db.drain()
-
-  t.deepEqual(db.query('simple').include('admin.user').get().data.toObject(), [
-    {
-      id: 1,
-      admin: {
-        user: {
-          id: 1,
-        },
-      },
-    },
-  ])
 })
