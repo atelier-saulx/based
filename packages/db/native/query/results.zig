@@ -31,7 +31,6 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
         if (key.start != null) {
             const start: [2]u8 = @bitCast(key.start.?);
 
-            // incorrect since you can have a next TYPE
             if (lastSingleRef[0] != start[0] or lastSingleRef[1] != start[1] or lastRefLvl != key.refLvl) {
                 lastSingleRef = start;
                 lastRefLvl = key.refLvl;
@@ -51,13 +50,6 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 lastPos += 1;
                 dataU8[lastPos] = lastSingleRef[1];
                 lastPos += 1;
-
-                // std.debug.print("zig: REF... id: {any} refLvl: {any} start: [{any},{any}] \n", .{
-                //     key.id,
-                //     key.refLvl,
-                //     lastSingleRef[0],
-                //     lastSingleRef[1],
-                // });
 
                 @memcpy(dataU8[lastPos .. lastPos + 4], @as([*]u8, @ptrCast(&key.id)));
 

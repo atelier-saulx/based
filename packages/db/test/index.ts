@@ -203,7 +203,7 @@ const result = db
   // .include('user.myBlup.name')
   .include('lilBlup.name')
 
-  .include('user.myBlup.id')
+  .include('user.myBlup')
 
   // .include('user.age')
   // just having

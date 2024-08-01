@@ -54,3 +54,7 @@ pub fn closeDbi(shard: *Shard) void {
 pub fn closeCursor(shard: *Shard) void {
     c.mdb_cursor_close(shard.cursor);
 }
+
+pub fn idToShard(id: u32) u16 {
+    return @truncate(@divTrunc(id, 1_000_000));
+}

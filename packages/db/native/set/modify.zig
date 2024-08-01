@@ -56,8 +56,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operation == 1) {
             // SWITCH KEY
             id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            // todo can be optmized
-            currentShard = @bitCast(@as(u16, @truncate(@divFloor(id, 1_000_000))));
+            currentShard = @bitCast(db.idToShard(id));
             i = i + 1 + 4;
         } else if (operation == 2) {
             // SWITCH TYPE
@@ -83,8 +82,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             }
             i = i + operationSize + 1 + 4;
         } else {
-            // ERROR
-            std.debug.print("SOMETHING WENT WRONG INCORRECT OPERATION!\n", .{});
+            std.log.err("Something went wrong, incorret modify operation\n", .{});
             break;
         }
     }
