@@ -1,6 +1,22 @@
 import { FieldDef } from '../schemaTypeDef.js'
 import { BasedNode } from './index.js'
 
+const includePathsAreEqual = (
+  includePath: number[],
+  refPath: number[],
+  start: number,
+): boolean => {
+  for (let i = 0; i < refPath.length - 1; i++) {
+    if (includePath[i] !== refPath[i]) {
+      return false
+    }
+  }
+  if (start !== refPath[refPath.length - 1]) {
+    return false
+  }
+  return true
+}
+
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,
   basedNode: BasedNode,
@@ -15,6 +31,16 @@ export const readSeperateFieldFromBuffer = (
   let found = !ref || false
   let includeDef = queryResponse.query.includeDef
 
+  let logg = false
+
+  // problem is START is equal
+  if (ref) {
+    if (ref?.fromRef?.path[0] === 'myBlup') {
+      // console.log('\n GET MY BLUP FIELD', requestedField.path, ref.includePath)
+      // logg = true
+    }
+  }
+
   while (i < buffer.byteLength) {
     let index = buffer[i]
 
@@ -25,26 +51,47 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
+    if (logg) {
+      console.log(
+        { index },
+        includeDef?.fromRef?.path ?? '[NOT FROM REF]',
+        includeDef.includePath,
+      )
+    }
+
     if ((!found || !ref) && index === 254) {
       const start = buffer.readUint16LE(i + 1)
+
       const resetNested = buffer[i] === 0
       if (resetNested) {
         includeDef = queryResponse.query.includeDef
       }
 
-      if (ref && start === refStart) {
+      // console.log(includeDef.includePath)
+
+      if (
+        ref &&
+        includePathsAreEqual(includeDef.includePath, ref.includePath, start)
+      ) {
+        // console.info('FOUND!', start)
         if (requestedField.type === 'id') {
           return buffer.readUint32LE(i + 3)
         }
         found = true
-        i += 3 + 4
-
+        i += 7
         includeDef = ref
       } else {
-        i += 3 + 4
-
+        i += 7
         includeDef = includeDef.refIncludes[start]
       }
+
+      // console.log(
+      //   '1 .ref get field',
+      //   start,
+      //   requestedField.path,
+      //   ref?.fromRef?.path ?? '[NO REF]',
+      // )
+
       continue
     }
 

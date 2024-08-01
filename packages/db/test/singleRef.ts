@@ -1,5 +1,4 @@
 import test from 'ava'
-import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
@@ -9,11 +8,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial.only('single reference', async (t) => {
+test('single reference', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
   await fs.mkdir(dbFolder)
+
   const db = new BasedDb({
     path: dbFolder,
   })
@@ -88,177 +88,229 @@ test.serial.only('single reference', async (t) => {
 
   db.drain()
 
-  // t.deepEqual(
-  //   db.query('simple').include('id').range(0, 1).get().data.toObject(),
-  //   [{ id: 1 }],
-  // )
+  t.deepEqual(
+    db.query('simple').include('id').range(0, 1).get().data.toObject(),
+    [{ id: 1 }],
+  )
 
-  // t.deepEqual(
-  //   db.query('simple').include('user').range(0, 1).get().data.toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       user: {
-  //         id: 1,
-  //         name: 'Jim de Beer',
-  //         flap: 10,
-  //         email: 'person@once.net',
-  //         age: 99,
-  //         snurp: '',
-  //         burp: 0,
-  //         location: { label: 'BLA BLA', x: 1, y: 2 },
-  //       },
-  //     },
-  //   ],
-  // )
+  t.deepEqual(
+    db.query('simple').include('user').range(0, 1).get().data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          name: 'Jim de Beer',
+          flap: 10,
+          email: 'person@once.net',
+          age: 99,
+          snurp: '',
+          burp: 0,
+          location: { label: 'BLA BLA', x: 1, y: 2 },
+        },
+      },
+    ],
+  )
 
-  // t.deepEqual(
-  //   db.query('simple').include('user.myBlup').range(0, 1).get().data.toObject(),
-  //   [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
-  // )
+  t.deepEqual(
+    db.query('simple').include('user.myBlup').range(0, 1).get().data.toObject(),
+    [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
+  )
 
-  // t.deepEqual(
-  //   db
-  //     .query('simple')
-  //     .include('user.myBlup', 'lilBlup')
-  //     .range(0, 1)
-  //     .get()
-  //     .data.toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
-  //       lilBlup: { id: 1, flap: 'A', name: 'blup !' },
-  //     },
-  //   ],
-  // )
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.myBlup', 'lilBlup')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
+        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+      },
+    ],
+  )
 
-  // t.deepEqual(
-  //   db
-  //     .query('simple')
-  //     .include('user.myBlup', 'lilBlup', 'user.name')
-  //     .range(0, 1)
-  //     .get()
-  //     .data.toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       user: {
-  //         id: 1,
-  //         myBlup: { id: 1, flap: 'A', name: 'blup !' },
-  //         name: 'Jim de Beer',
-  //       },
-  //       lilBlup: { id: 1, flap: 'A', name: 'blup !' },
-  //     },
-  //   ],
-  // )
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.myBlup', 'lilBlup', 'user.name')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          myBlup: { id: 1, flap: 'A', name: 'blup !' },
+          name: 'Jim de Beer',
+        },
+        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+      },
+    ],
+  )
 
-  // t.deepEqual(
-  //   db
-  //     .query('simple')
-  //     .include('user.location.label')
-  //     .range(0, 1)
-  //     .get()
-  //     .data.toObject(),
-  //   [{ id: 1, user: { id: 1, location: { label: 'BLA BLA' } } }],
-  // )
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.location.label')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [{ id: 1, user: { id: 1, location: { label: 'BLA BLA' } } }],
+  )
 
-  // t.deepEqual(
-  //   db
-  //     .query('simple')
-  //     .include('user.location')
-  //     .range(0, 1)
-  //     .get()
-  //     .data.toObject(),
-  //   [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
-  // )
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.location')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
+  )
 
-  // goes wrong if the refs are the same...
-  // console.dir(
-  //   db
-  //     .query('simple')
-  //     .include('user', 'user.myBlup', 'lilBlup')
-  //     .range(0, 1)
-  //     .get()
-  //     .data.toObject(),
-  //   { depth: 10 },
-  // )
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.myBlup', 'lilBlup')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          myBlup: {
+            id: 1,
+            flap: 'A',
+            name: 'blup !',
+          },
+        },
+        lilBlup: {
+          id: 1,
+          flap: 'A',
+          name: 'blup !',
+        },
+      },
+    ],
+  )
+
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user', 'user.myBlup')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          name: 'Jim de Beer',
+          flap: 10,
+          email: 'person@once.net',
+          age: 99,
+          snurp: '',
+          burp: 0,
+          location: { label: 'BLA BLA', x: 1, y: 2 },
+          myBlup: { id: 1, flap: 'A', name: 'blup !' },
+        },
+      },
+    ],
+  )
+
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user', 'user.myBlup', 'lilBlup')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          myBlup: { id: 1, flap: 'A', name: 'blup !' },
+          name: 'Jim de Beer',
+          flap: 10,
+          email: 'person@once.net',
+          age: 99,
+          snurp: '',
+          burp: 0,
+          location: { label: 'BLA BLA', x: 1, y: 2 },
+        },
+        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+      },
+    ],
+  )
+})
+
+test.serial('single reference multi refs', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          myBlup: { type: 'reference', allowedType: 'blup' },
+        },
+      },
+      blup: {
+        fields: {
+          // @ts-ignore
+          flap: { type: 'string', maxBytes: 1 },
+        },
+      },
+      simple: {
+        fields: {
+          user: { type: 'reference', allowedType: 'user' },
+        },
+      },
+    },
+  })
 
   db.create('simple', {
-    user,
-    vectorClock: 1e6,
-    countryCode: 'aa',
-    lilBlup: db.create('blup', {
-      name: 'blup ! 2',
-      flap: 'B',
+    user: db.create('user', {
+      myBlup: db.create('blup', {
+        flap: 'B',
+      }),
     }),
   })
 
   db.drain()
 
-  const result = db
-    .query('simple')
-    .filter('vectorClock', '=', 1e6)
-    .include('user', 'user.myBlup', 'lilBlup')
-    .range(0, 1)
-    .get()
+  t.deepEqual(db.query('blup').include('flap').get().data.toObject(), [
+    {
+      id: 1,
+      flap: 'B',
+    },
+  ])
 
-  const logger = (x, empty = '') => {
-    for (const key in x) {
-      if (key === 'fromRef') {
-        console.log(empty, key, ':', `[${x[key].path.join('.')}]`)
-      } else if (key !== 'schema' && key !== 'includeTree') {
-        if (key === 'refIncludes') {
-          console.log(empty, ' -- ref includes!')
-          for (const k in x[key]) {
-            console.log(empty, ' -- STARRT: ', k)
-            logger(x[key][k], empty + '  ')
-          }
-        } else {
-          console.log(empty, key, ':', x[key])
-        }
-      }
-    }
-    if (!empty) {
-      console.log('\n')
-    }
+  const result1 = db.query('user').include('myBlup.flap').get()
+
+  for (const r of result1.data) {
+    t.is(r.myBlup.flap, 'B')
   }
 
-  logger(result.query.includeDef)
+  const result = db.query('simple').include('user.myBlup.flap').get()
 
-  // console.dir(result.data.toObject(), { depth: 10 })
-
-  // console.dir(new Uint8Array(result.buffer), { depth: 10 })
-
-  // .data.toObject(),
-  // { depth: 10 },
-  // )
-
-  // t.deepEqual(
-  //   db
-  //     .query('simple')
-  //     .include('user', 'user.myBlup', 'lilBlup')
-  //     .range(0, 1)
-  //     .get()
-  //     .data.toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       user: {
-  //         id: 1,
-  //         myBlup: { id: 1, flap: 'A', name: 'blup !' },
-  //         name: 'Jim de Beer',
-  //         flap: 10,
-  //         email: 'person@once.net',
-  //         age: 99,
-  //         snurp: '',
-  //         burp: 0,
-  //         location: { label: 'BLA BLA', x: 1, y: 2 },
-  //       },
-  //       lilBlup: { id: 1, flap: 'A', name: 'blup !' },
-  //     },
-  //   ],
-  // )
+  for (const r of result.data) {
+    t.is(r.user.myBlup.flap, 'B')
+  }
 
   t.true(true)
 })

@@ -31,7 +31,6 @@ pub fn getFields(
             const refSize = std.mem.readInt(u16, include[includeIterator + 2 ..][0..2], .little);
             const singleRef = include[includeIterator + 4 .. includeIterator + 4 + refSize];
             includeIterator += refSize + 4;
-
             if (mainValue == null) {
                 const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
                 var shard = ctx.shards.get(dbiName);
@@ -43,21 +42,17 @@ pub fn getFields(
                 }
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
                 try errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET));
                 mainValue = v;
-
                 // case that you only include
                 if (!idIsSet and start == null) {
                     idIsSet = true;
                     size += try addIdOnly(ctx, id, refLvl, start);
                 }
             }
-
             if (mainValue.?.mv_data == null) {
                 continue :includeField;
             }
-
             size += getSingleRefFields(ctx, singleRef, mainValue.?, refLvl, hasFields);
             continue :includeField;
         }
@@ -85,12 +80,11 @@ pub fn getFields(
         var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
-        errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-            mainValue = .{ .mv_size = 0, .mv_data = null };
-            continue :includeField;
-        };
-
         if (field == 0) {
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+                mainValue = .{ .mv_size = 0, .mv_data = null };
+                continue :includeField;
+            };
             mainValue = v;
             if (includeMain.len != 0) {
                 size += std.mem.readInt(u16, includeMain[0..2], .little) + 1;
@@ -98,6 +92,9 @@ pub fn getFields(
                 size += (v.mv_size + 1);
             }
         } else {
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+                continue :includeField;
+            };
             size += (v.mv_size + 1 + 2);
         }
 

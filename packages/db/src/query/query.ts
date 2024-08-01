@@ -40,6 +40,7 @@ export class Query {
   include(...fields: string[]) {
     if (!this.includeDef) {
       this.includeDef = {
+        includePath: [],
         schema: this.type,
         includeArr: [],
         includeFields: new Set(),

@@ -141,6 +141,7 @@ const createOrGetRefIncludeDef = (
   const start = ref.start
   if (!include.refIncludes[start]) {
     include.refIncludes[start] = {
+      includePath: [...include.includePath, start],
       schema: query.db.schemaTypesParsed[ref.allowedType],
       includeArr: [],
       includeFields: new Set(),
