@@ -58,24 +58,22 @@ test.serial.only('single reference', async (t) => {
     },
   })
 
-  const users = []
-
   const blup = db.create('blup', {
     name: 'blup !',
     flap: 'A',
   })
 
-  const user = users.push(
-    db.create('user', {
-      myBlup: blup,
-      age: 99,
-      name: 'Jim de Beer',
-      email: 'person@once.net',
-      location: {
-        label: 'BLA BLA',
-      },
-    }),
-  )
+  const user = db.create('user', {
+    myBlup: blup,
+    age: 99,
+    name: 'Jim de Beer',
+    email: 'person@once.net',
+    location: {
+      label: 'BLA BLA',
+      x: 1,
+      y: 2,
+    },
+  })
 
   db.drain()
 
@@ -96,10 +94,94 @@ test.serial.only('single reference', async (t) => {
     [{ id: 1 }],
   )
 
-  console.info(db.query('simple').include('user').range(0, 1).get())
-
   t.deepEqual(
     db.query('simple').include('user').range(0, 1).get().data.toObject(),
-    [{ id: 1 }],
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          name: 'Jim de Beer',
+          flap: 0,
+          email: 'person@once.net',
+          age: 99,
+          snurp: '',
+          burp: 0,
+          location: { label: 'BLA BLA', x: 1, y: 2 },
+        },
+      },
+    ],
+  )
+
+  t.deepEqual(
+    db.query('simple').include('user.myBlup').range(0, 1).get().data.toObject(),
+    [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
+  )
+
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.myBlup', 'lilBlup')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
+        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+      },
+    ],
+  )
+
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.myBlup', 'lilBlup', 'user.name')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          myBlup: { id: 1, flap: 'A', name: 'blup !' },
+          name: 'Jim de Beer',
+        },
+        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+      },
+    ],
+  )
+
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.location.label')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [{ id: 1, user: { id: 1, location: { label: 'BLA BLA' } } }],
+  )
+
+  t.deepEqual(
+    db
+      .query('simple')
+      .include('user.location')
+      .range(0, 1)
+      .get()
+      .data.toObject(),
+    [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
+  )
+
+  console.info(
+    JSON.stringify(
+      db
+        .query('simple')
+        .include('user.location')
+        .range(0, 1)
+        .get()
+        .data.toObject(),
+    ),
   )
 })
