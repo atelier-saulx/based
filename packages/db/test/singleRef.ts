@@ -95,4 +95,11 @@ test.serial.only('single reference', async (t) => {
     db.query('simple').include('id').range(0, 1).get().data.toObject(),
     [{ id: 1 }],
   )
+
+  console.info(db.query('simple').include('user').range(0, 1).get())
+
+  t.deepEqual(
+    db.query('simple').include('user').range(0, 1).get().data.toObject(),
+    [{ id: 1 }],
+  )
 })

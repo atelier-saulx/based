@@ -83,11 +83,6 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const size = refBuffer.byteLength
         const meta = Buffer.allocUnsafe(8)
         meta[0] = 255
-        console.log(
-          'REF INCLUDEFIELDS',
-          refInclude.fromRef.path,
-          refInclude.mainLen === 0 && refInclude.includeArr.length,
-        )
         meta[1] =
           refInclude.mainLen === 0 && refInclude.includeArr.length === 0 ? 0 : 1
         meta.writeUint16LE(size + 4, 2)
@@ -113,11 +108,10 @@ const getAllFieldFromObject = (
     if (!leaf.type && !leaf.__isField) {
       getAllFieldFromObject(leaf, arr)
     } else {
-      if (leaf.type === 'reference') {
-        console.log('YO LEAF IS REF DO NOTHING FOR NOW...', leaf)
-      } else {
-        arr.push(leaf.path.join('.'))
-      }
+      // if (leaf.type === 'reference') {
+      //   console.warn('Leaf is ref need to handle!', leaf)
+      // }
+      arr.push(leaf.path.join('.'))
     }
   }
   return arr

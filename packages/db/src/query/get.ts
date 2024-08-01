@@ -30,8 +30,6 @@ export const get = (query: Query): BasedQueryResponse => {
 
   const includeBuffer = addInclude(query, query.includeDef)
 
-  console.log(new Uint8Array(includeBuffer))
-
   const result: Buffer = query.db.native.getQuery(
     conditions,
     query.type.prefixString,
