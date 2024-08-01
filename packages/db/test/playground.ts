@@ -87,7 +87,7 @@ for (let i = 0; i < 50; i++) {
 
 await wait(0)
 
-const amount = 1e6
+const amount = 100e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
@@ -104,37 +104,37 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
   .include('user', 'user.myBlup', 'lilBlup')
-  .range(0, 1)
+  .range(0, 1e6)
   .get()
 
-const logger = (x, empty = '') => {
-  for (const key in x) {
-    if (key === 'fromRef') {
-      console.log(empty, key, ':', `[${x[key].path.join('.')}]`)
-    } else if (key !== 'schema' && key !== 'includeTree') {
-      if (key === 'refIncludes') {
-        console.log(empty, ' -- ref includes!')
-        for (const k in x[key]) {
-          console.log(empty, ' -- STARRT: ', k)
-          logger(x[key][k], empty + '  ')
-        }
-      } else {
-        console.log(empty, key, ':', x[key])
-      }
-    }
-  }
-  if (!empty) {
-    console.log('\n')
-  }
-}
+// const logger = (x, empty = '') => {
+//   for (const key in x) {
+//     if (key === 'fromRef') {
+//       console.log(empty, key, ':', `[${x[key].path.join('.')}]`)
+//     } else if (key !== 'schema' && key !== 'includeTree') {
+//       if (key === 'refIncludes') {
+//         console.log(empty, ' -- ref includes!')
+//         for (const k in x[key]) {
+//           console.log(empty, ' -- STARRT: ', k)
+//           logger(x[key][k], empty + '  ')
+//         }
+//       } else {
+//         console.log(empty, key, ':', x[key])
+//       }
+//     }
+//   }
+//   if (!empty) {
+//     console.log('\n')
+//   }
+// }
 
-logger(result.query.includeDef)
+// logger(result.query.includeDef)
 
-console.log(new Uint8Array(result.buffer), result.data.length)
+// console.log(new Uint8Array(result.buffer), result.data.length)
 
 let i = 0
 
-console.dir(result.data.toObject(), { depth: 10 })
+// console.dir(result.data.toObject(), { depth: 10 })
 
 console.log(result)
 
