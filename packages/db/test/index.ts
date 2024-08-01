@@ -201,9 +201,11 @@ const result = db
   // .include('lilBlup')
   // .include('user') // includes all EXCEPT REFS
   // .include('user.myBlup.name')
-  .include('lilBlup.name')
+  // .include('lilBlup.name')
 
-  .include('user.myBlup')
+  .include('flap')
+
+  // .include('user.myBlup')
 
   // .include('user.age')
   // just having
@@ -322,7 +324,7 @@ for (const item of result.data) {
 
   // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
   // console.info('| lilBlup NAME--->', item.lilBlup.name)
-  console.info('| lilBlup id--->', item.user.myBlup.id)
+  // console.info('| lilBlup id--->', item.user.myBlup.id)
 
   // console.info('| user age--->', item.user.age)
   // console.info('| user id--->', item.user.id) // bit wrong scince it can not exist...
