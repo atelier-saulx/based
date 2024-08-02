@@ -107,8 +107,6 @@ pub fn getFields(
             .refLvl = refLvl,
         };
 
-        try ctx.results.append(result);
-
         if (start == null) {
             if (!idIsSet) {
                 idIsSet = true;
@@ -117,6 +115,8 @@ pub fn getFields(
                 result.id = null;
             }
         }
+
+        try ctx.results.append(result);
     }
 
     if (size == 0 and !idIsSet) {

@@ -28,6 +28,8 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
     var lastRefLvl: u8 = 0;
 
     for (ctx.results.items) |*key| {
+        std.debug.print("KEY {any}\n", .{key});
+
         if (key.start != null) {
             const start: [2]u8 = @bitCast(key.start.?);
 

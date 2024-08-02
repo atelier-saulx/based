@@ -60,8 +60,8 @@ export class BasedQueryResponse {
 
   [inspect.custom](_depth) {
     const target = this.query.id
-      ? this.query.type.type + ':' + this.query.id
-      : this.query.type.type
+      ? this.query.schema.type + ':' + this.query.id
+      : this.query.schema.type
 
     let str = ''
 

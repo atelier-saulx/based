@@ -64,9 +64,9 @@ db.updateSchema({
 
 const users = []
 
-for (let i = 0; i < 50; i++) {
+for (let i = 0; i < 1e6; i++) {
   const blup = db.create('blup', {
-    name: 'blup ! ' + i,
+    // name: 'blup ! ' + i,
     flap: 'A',
   })
 
@@ -74,7 +74,7 @@ for (let i = 0; i < 50; i++) {
     db.create('user', {
       myBlup: blup,
       age: 99,
-      name: 'Mr ' + i,
+      // name: 'Mr ' + i,
       burp: 66,
       snurp: 'derp derp',
       email: 'merp_merp_' + i + '@once.net',
@@ -87,10 +87,14 @@ for (let i = 0; i < 50; i++) {
 
 await wait(0)
 
-const amount = 100e6
+const amount = 1e6
 const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
+    // this can be optmized by collecting the refs then go trough them in order
+    // so you add the ids in order in a 'ordered list
+
+    // 4x slower with random access
     user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
     vectorClock: i,
     countryCode: 'aa',

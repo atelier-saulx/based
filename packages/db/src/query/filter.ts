@@ -11,7 +11,7 @@ export const filter = (
   if (query.id) {
     // do things
   } else {
-    const field = <FieldDef>query.type.tree[fieldStr]
+    const field = <FieldDef>query.schema.tree[fieldStr]
     let fieldIndexChar = field.field
     let buf: Buffer
     if (field.seperate === true) {

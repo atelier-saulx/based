@@ -24,7 +24,7 @@ fn createEnvInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_v
     try mdbCheck(c.mdb_env_create(&env));
     errdefer c.mdb_env_close(env);
 
-    try mdbCheck(c.mdb_env_set_mapsize(env, 100 * 1024 * 1024 * 1024));
+    try mdbCheck(c.mdb_env_set_mapsize(env, 100 * 1024 * 1024 * 1024 * 100));
     try mdbCheck(c.mdb_env_set_maxdbs(env, 20_000_000));
 
     // TODO: check this number

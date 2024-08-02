@@ -98,7 +98,6 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
   }
 }
 
-// REF IN BUFFER AT THE (single Buffer)
 const getAllFieldFromObject = (
   tree: SchemaFieldTree | FieldDef,
   arr: string[] = [],
@@ -108,9 +107,6 @@ const getAllFieldFromObject = (
     if (!leaf.type && !leaf.__isField) {
       getAllFieldFromObject(leaf, arr)
     } else {
-      // if (leaf.type === 'reference') {
-      //   console.warn('Leaf is ref need to handle!', leaf)
-      // }
       arr.push(leaf.path.join('.'))
     }
   }

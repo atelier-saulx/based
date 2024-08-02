@@ -7,7 +7,7 @@ import { inspect } from 'node:util'
 
 export class Query {
   db: BasedDb
-  type: SchemaTypeDef
+  schema: SchemaTypeDef
   id: number | void
   conditions: Map<number, Buffer[]>
   offset: number
@@ -17,11 +17,11 @@ export class Query {
 
   totalConditionSize: number = 0
 
-  constructor(db: BasedDb, target: string, previous?: Query) {
+  constructor(db: BasedDb, target: string) {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
     if (typeDef) {
-      this.type = typeDef
+      this.schema = typeDef
     } else {
       // is ID check prefix
     }
@@ -41,7 +41,7 @@ export class Query {
     if (!this.includeDef) {
       this.includeDef = {
         includePath: [],
-        schema: this.type,
+        schema: this.schema,
         includeArr: [],
         includeFields: new Set(),
         mainLen: 0,

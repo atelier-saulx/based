@@ -42,7 +42,7 @@ export class BasedIterable {
       return str
     }
 
-    return `${picocolors.bold(`BasedIterable[${this.#query.query.type.type}]`)} (${this.length}) ${str}`
+    return `${picocolors.bold(`BasedIterable[${this.#query.query.schema.type}]`)} (${this.length}) ${str}`
   }
 
   *[Symbol.iterator]() {
@@ -53,7 +53,7 @@ export class BasedIterable {
       i++
       if (index === 255) {
         currentInclude = this.#query.query.includeDef
-        const ctx = this.#query.query.type.responseCtx
+        const ctx = this.#query.query.schema.responseCtx
         ctx.__o = i
         ctx.__q = this.#query
         ctx.__r = null

@@ -28,16 +28,27 @@ export const get = (query: Query): BasedQueryResponse => {
 
   const d = performance.now()
 
+  if (!query.includeDef) {
+    for (const f in query.schema.fields) {
+      if (
+        query.schema.fields[f].type !== 'reference' &&
+        query.schema.fields[f].type !== 'references'
+      ) {
+        query.include(f)
+      }
+    }
+  }
+
   const includeBuffer = addInclude(query, query.includeDef)
 
   // console.log('INCLUDE:', new Uint8Array(includeBuffer))
 
   const result: Buffer = query.db.native.getQuery(
     conditions,
-    query.type.prefixString,
-    query.type.lastId,
+    query.schema.prefixString,
+    query.schema.lastId,
     start,
-    end, // def 1k ?
+    end,
     includeBuffer,
   )
 
