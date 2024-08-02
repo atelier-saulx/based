@@ -95,7 +95,6 @@ pub fn getFields(
             errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
                 continue :includeField;
             };
-            std.debug.print("REF refLVL {any} v {any}\n", .{ refLvl, v });
             size += (v.mv_size + 3);
         }
 
@@ -121,7 +120,6 @@ pub fn getFields(
     }
 
     if (size == 0 and !idIsSet) {
-        std.debug.print("REF refLVL {any} NO ID\n", .{refLvl});
         const idSize = try addIdOnly(ctx, id, refLvl, start);
         if (start == null) {
             size += idSize;

@@ -41,7 +41,7 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
-    if ((!found || !ref) && index === 254) {
+    if (index === 254) {
       const start = buffer.readUint16LE(i + 1)
 
       const resetNested = buffer[i] === 0
@@ -111,6 +111,9 @@ export const readSeperateFieldFromBuffer = (
       }
       if (requestedField.type === 'string') {
         const len = buffer[i + fIndex]
+        if (len === 0) {
+          return ''
+        }
         const str = buffer.toString(
           'utf-8',
           i + fIndex + 1,
@@ -125,6 +128,10 @@ export const readSeperateFieldFromBuffer = (
       // if no field add size 0
       if (requestedField.field === index && found) {
         if (requestedField.type === 'string') {
+          if (size === 0) {
+            return ''
+          }
+
           return buffer.toString('utf8', i, size + i)
         } else if (requestedField.type === 'references') {
           const amount = size / 4
