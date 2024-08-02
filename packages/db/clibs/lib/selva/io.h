@@ -7,7 +7,7 @@ struct SelvaDbVersionInfo {
     __nonstring char updated_with[SELVA_DB_VERSION_SIZE];
 };
 
-#define SELVA_IO_HASH_SIZE 32
+#define SELVA_IO_HASH_SIZE 16
 
 enum selva_io_flags {
     SELVA_IO_FLAGS_READ = 0x0001, /*!< This is a read op. */
@@ -20,6 +20,8 @@ enum selva_io_flags {
 };
 
 #ifdef SELVA_IO_TYPE
+#include "xxhash.h"
+
 struct libdeflate_compressor;
 struct libdeflate_decompressor;
 struct selva_io_zbuf;
@@ -46,9 +48,7 @@ struct selva_io {
     struct libdeflate_compressor *compressor;
     struct libdeflate_decompressor *decompressor;
 
-#if 0
-    struct sha3_context hash_c; /*!< Currently computed hash of the data. */
-#endif
+    XXH3_state_t* hash_state;
     uint8_t computed_hash[SELVA_IO_HASH_SIZE]; /*!< Updated at the end of load/save. */
     uint8_t stored_hash[SELVA_IO_HASH_SIZE]; /*!< The hash found in the footer. */
 
