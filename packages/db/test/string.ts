@@ -94,9 +94,9 @@ test.serial('string', async (t) => {
       flap: 0,
       email: 'merp_merp@once.net',
       age: 99,
-      snurp: '',
+      snurp: 'derp derp',
       burp: 66,
-      location: { label: '', x: 0, y: 0 },
+      location: { label: 'BLA BLA', x: 0, y: 0 },
     },
   ])
 
