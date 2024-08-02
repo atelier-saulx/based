@@ -4,6 +4,13 @@
  */
 #pragma once
 
+RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
+int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b);
+int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
+int SelvaAlias_comp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
+
 /**
  * Create a new DB instance.
  */

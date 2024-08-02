@@ -17,21 +17,17 @@
 
 #define NODEPOOL_SLAB_SIZE 2097152
 
-RB_PROTOTYPE_STATIC(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
-RB_PROTOTYPE_STATIC(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
-RB_PROTOTYPE_STATIC(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
-
-static int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b)
+int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b)
 {
     return a->node_id - b->node_id;
 }
 
-static int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b)
+int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b)
 {
     return strcmp(a->name, b->name);
 }
 
-static int SelvaAlias_comp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
+int SelvaAlias_comp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
 {
     return a->dest - b->dest;
 }
@@ -60,9 +56,9 @@ static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const vo
     return a_type - b_type;
 }
 
-RB_GENERATE_STATIC(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
-RB_GENERATE_STATIC(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
-RB_GENERATE_STATIC(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
+RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
+RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
+RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
 
 struct SelvaDb *db_create(void)
 {
