@@ -49,7 +49,7 @@ struct selva_io {
 #if 0
     struct sha3_context hash_c; /*!< Currently computed hash of the data. */
 #endif
-    const uint8_t *computed_hash; /*!< Updated at the end of load/save. */
+    uint8_t computed_hash[SELVA_IO_HASH_SIZE]; /*!< Updated at the end of load/save. */
     uint8_t stored_hash[SELVA_IO_HASH_SIZE]; /*!< The hash found in the footer. */
 
     void (*raw_write)(struct selva_io *io, const void *p, size_t size);
