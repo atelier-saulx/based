@@ -43,8 +43,8 @@ export const readSeperateFieldFromBuffer = (
 
     if (index === 254) {
       const start = buffer.readUint16LE(i + 1)
-
       const resetNested = buffer[i] === 0
+
       if (resetNested) {
         includeDef = queryResponse.query.includeDef
       }
