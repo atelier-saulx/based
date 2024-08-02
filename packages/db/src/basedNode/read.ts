@@ -131,7 +131,6 @@ export const readSeperateFieldFromBuffer = (
           if (size === 0) {
             return ''
           }
-
           return buffer.toString('utf8', i, size + i)
         } else if (requestedField.type === 'references') {
           const amount = size / 4

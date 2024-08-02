@@ -152,7 +152,7 @@ for (const item of result.data) {
   // console.info('| lilBlup FLAP--->', item.lilBlup.flap)
   // console.info('| lilBlup NAME--->', item.lilBlup.name.length)
 
-  if (item.lilBlup.name.length > 1) {
+  if (item.lilBlup.name.length > 0) {
     console.log(
       'WTF',
       item.id,
