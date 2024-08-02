@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -13,6 +12,7 @@
 #include "selva.h"
 #include "schema.h"
 #include "fields.h"
+#include "db_panic.h"
 #include "db.h"
 
 #define NODEPOOL_SLAB_SIZE 2097152
@@ -431,20 +431,4 @@ struct SelvaNode *db_get_alias(struct SelvaTypeEntry *type, const char *name)
     }
 
     return node;
-}
-
-[[noreturn]]
-void db_panic_fn(const char * restrict where, const char * restrict func, const char * restrict fmt, ...)
-{
-    va_list args;
-
-    va_start(args, fmt);
-    fprintf(stderr, "%s:%s: ", where, func);
-    vfprintf(stderr, fmt, args);
-    if (fmt[strlen(fmt) - 1] != '\n') {
-        fputc('\n', stderr);
-    }
-    va_end(args);
-
-    abort();
 }

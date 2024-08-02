@@ -11,6 +11,7 @@
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva.h"
+#include "db_panic.h"
 #include "db.h"
 #include "fields.h"
 
