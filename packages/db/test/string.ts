@@ -165,7 +165,7 @@ test.serial.only('string + refs', async (t) => {
     .range(0, 1)
     .get()
 
-  t.deepEqual(result, [
+  t.deepEqual(result.data.toObject(), [
     {
       id: 1,
       user: {
