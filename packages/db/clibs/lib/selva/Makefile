@@ -15,6 +15,7 @@ OBJ := \
 	filter.o \
 	find.o \
 	io/dump.o \
+	io/io.o \
 	io/sdb.o \
 	schema.o \
 	selva.o \
