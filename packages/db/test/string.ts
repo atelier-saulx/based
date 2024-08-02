@@ -150,13 +150,7 @@ test.serial.only('string + refs', async (t) => {
   const amount = 1
   for (let i = 0; i < amount; i++) {
     db.create('simple', {
-      // this can be optmized by collecting the refs then go trough them in order
-      // so you add the ids in order in a 'ordered list
-
-      // user: i + 1,
-      // 3x slower with random access
-      user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-      // vectorClock: i,
+      user: users[~~(Math.random() * users.length)],
       countryCode: 'aa',
       lilBlup: 1,
     })
@@ -167,9 +161,23 @@ test.serial.only('string + refs', async (t) => {
 
   const result = db
     .query('simple')
-    .include('user.name', 'user.myBlup.name') // lilBlup.flap' // , 'lilBlup.name'
+    .include('user.name', 'user.myBlup.name')
     .range(0, 1)
     .get()
+
+  t.deepEqual(result, [
+    {
+      id: 1,
+      user: {
+        id: 1,
+        name: 'Mr 0',
+        myBlup: {
+          id: 1,
+          name: '',
+        },
+      },
+    },
+  ])
 
   console.log(new Uint8Array(result.buffer))
   console.log(result)
