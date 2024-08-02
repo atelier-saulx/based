@@ -37,8 +37,8 @@ struct selva_io_zbuf {
 };
 
 extern const char * const selva_db_version;
-static const char magic_start[] = { 'S', 'E', 'L', 'V', 'A', '\0', '\0', '\0' };
-static const char magic_end[]   = { '\0', '\0', '\0', 'A', 'V', 'L', 'E', 'S' };
+static const char magic_start[] = { 'T', 'H', 'S', 'I', 'D', 'E', 'U', 'P' };
+static const char magic_end[]   = { 'D', 'N', 'E', 'A', 'V', 'L', 'E', 'S' };
 
 static inline void sdb_hash_init(struct selva_io *io)
 {
