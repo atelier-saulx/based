@@ -4,6 +4,13 @@
  */
 #pragma once
 
+RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
+int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b);
+int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
+int SelvaAlias_comp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
+
 /**
  * Create a new DB instance.
  */
@@ -41,15 +48,3 @@ void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
 void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);
 void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);
 struct SelvaNode *db_get_alias(struct SelvaTypeEntry *type, const char *name);
-
-[[noreturn]]
-void db_panic_fn(const char * restrict where, const char * restrict func, const char * restrict fmt, ...) __attribute__((format(printf, 3, 4)));
-
-#define DB_PANIC_WHERESTR (__FILE__ ":" S__LINE__)
-
-#define db_panic1(where, func, fmt, ...) \
-    db_panic_fn(where, func, fmt __VA_OPT__(,) __VA_ARGS__)
-
-#define db_panic(fmt, ...) \
-    db_panic1(DB_PANIC_WHERESTR, __func__, fmt __VA_OPT__(,) __VA_ARGS__)
-

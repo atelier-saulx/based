@@ -10,10 +10,12 @@ LIB_SUFFIX := .node
 
 OBJ := \
 	db.o \
+	db_panic.o \
 	fields.o \
 	filter.o \
 	find.o \
 	io/dump.o \
+	io/sdb.o \
 	schema.o \
 	selva.o \
 	selva_object/selva_object.o \
