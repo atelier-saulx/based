@@ -63,6 +63,7 @@ db.updateSchema({
 })
 
 const users = []
+const d = Date.now()
 
 for (let i = 0; i < 1e6; i++) {
   const blup = db.create('blup', {
@@ -85,24 +86,22 @@ for (let i = 0; i < 1e6; i++) {
   )
 }
 
-await wait(0)
-
 const amount = 1e6
-const d = Date.now()
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // this can be optmized by collecting the refs then go trough them in order
     // so you add the ids in order in a 'ordered list
 
-    // 4x slower with random access
+    // user: i + 1,
+    // 3x slower with random access
     user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    vectorClock: i,
+    // vectorClock: i,
     countryCode: 'aa',
     lilBlup: 1,
   })
 }
 
-await wait(0)
+db.drain()
 console.log('TIME', Date.now() - d, 'ms')
 
 const result = db

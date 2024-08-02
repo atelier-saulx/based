@@ -68,3 +68,111 @@ test.serial('string', async (t) => {
     },
   ])
 })
+
+test.serial.only('string + refs', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          myBlup: { type: 'reference', allowedType: 'blup' },
+          name: { type: 'string' },
+          flap: { type: 'integer' },
+          age: { type: 'integer' },
+          snurp: { type: 'string' },
+          burp: { type: 'integer' },
+          email: { type: 'string', maxLength: 15 }, // maxLength: 10
+          location: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              x: { type: 'integer' },
+              y: { type: 'integer' },
+            },
+          },
+        },
+      },
+      blup: {
+        fields: {
+          flap: {
+            type: 'string',
+            // @ts-ignore
+            maxBytes: 1,
+          },
+          name: { type: 'string' },
+        },
+      },
+      simple: {
+        // min max on string
+        fields: {
+          // @ts-ignore
+          countryCode: { type: 'string', maxBytes: 2 },
+          lilBlup: { type: 'reference', allowedType: 'blup' },
+          vectorClock: { type: 'integer' },
+          user: { type: 'reference', allowedType: 'user' },
+        },
+      },
+    },
+  })
+
+  const users = []
+  const d = Date.now()
+
+  for (let i = 0; i < 1; i++) {
+    const blup = db.create('blup', {
+      // name: 'blup ! ' + i,
+      flap: 'A',
+    })
+
+    users.push(
+      db.create('user', {
+        myBlup: blup,
+        age: 99,
+        name: 'Mr ' + i,
+        burp: 66,
+        snurp: 'derp derp',
+        email: 'merp_merp_' + i + '@once.net',
+        location: {
+          label: 'BLA BLA',
+        },
+      }),
+    )
+  }
+
+  const amount = 1
+  for (let i = 0; i < amount; i++) {
+    db.create('simple', {
+      // this can be optmized by collecting the refs then go trough them in order
+      // so you add the ids in order in a 'ordered list
+
+      // user: i + 1,
+      // 3x slower with random access
+      user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+      // vectorClock: i,
+      countryCode: 'aa',
+      lilBlup: 1,
+    })
+  }
+
+  db.drain()
+  console.log('TIME', Date.now() - d, 'ms')
+
+  const result = db
+    .query('simple')
+    .include('user.name', 'user.myBlup.name') // lilBlup.flap' // , 'lilBlup.name'
+    .range(0, 1)
+    .get()
+
+  console.log(new Uint8Array(result.buffer))
+  console.log(result)
+
+  t.true(true)
+})

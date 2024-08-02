@@ -95,6 +95,8 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 lastPos += key.val.?.mv_size;
             }
         } else {
+            std.debug.print("\nREF refLVL {any} field {any}", .{ lastRefLvl, key.field });
+
             const x: [2]u8 = @bitCast(@as(u16, @truncate(key.val.?.mv_size)));
             dataU8[lastPos] = x[0];
             dataU8[lastPos + 1] = x[1];
