@@ -39,35 +39,10 @@ test.serial('string', async (t) => {
           },
         },
       },
-      blup: {
-        fields: {
-          flap: {
-            type: 'string',
-            // @ts-ignore
-            maxBytes: 1,
-          },
-          name: { type: 'string' },
-        },
-      },
-      simple: {
-        // min max on string
-        fields: {
-          // @ts-ignore
-          countryCode: { type: 'string', maxBytes: 2 },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
-          vectorClock: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
-        },
-      },
     },
   })
 
-  const blup = db.create('blup', {
-    flap: 'A',
-  })
-
   const user = db.create('user', {
-    myBlup: blup,
     age: 99,
     burp: 66,
     snurp: 'derp derp',
@@ -77,14 +52,7 @@ test.serial('string', async (t) => {
     },
   })
 
-  db.create('simple', {
-    user: user,
-    lilBlup: blup,
-  })
-
   db.drain()
-
-  console.log(db.query('user').get())
 
   const result = db.query('user').get()
   t.deepEqual(result.data.toObject(), [
@@ -99,13 +67,4 @@ test.serial('string', async (t) => {
       location: { label: 'BLA BLA', x: 0, y: 0 },
     },
   ])
-
-  console.info(new Uint8Array(result.buffer))
-
-  // // if ! include include all
-  // console.log(
-  //   db.query('simple').include('user', 'user.myBlup', 'lilBlup').get(),
-  // )
-
-  t.true(true)
 })
