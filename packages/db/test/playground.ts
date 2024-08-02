@@ -23,20 +23,20 @@ db.updateSchema({
     user: {
       fields: {
         myBlup: { type: 'reference', allowedType: 'blup' },
-        // name: { type: 'string' },
-        // flap: { type: 'integer' },
-        // email: { type: 'string', maxLength: 15 }, // maxLength: 10
-        // age: { type: 'integer' },
-        // snurp: { type: 'string' },
-        // burp: { type: 'integer' },
-        // location: {
-        // type: 'object',
-        // properties: {
-        // label: { type: 'string' },
-        // x: { type: 'integer' },
-        // y: { type: 'integer' },
-        // },
-        // },
+        name: { type: 'string' },
+        flap: { type: 'integer' },
+        email: { type: 'string', maxLength: 15 }, // maxLength: 10
+        age: { type: 'integer' },
+        snurp: { type: 'string' },
+        burp: { type: 'integer' },
+        location: {
+          type: 'object',
+          properties: {
+            label: { type: 'string' },
+            x: { type: 'integer' },
+            y: { type: 'integer' },
+          },
+        },
       },
     },
     blup: {
@@ -65,7 +65,7 @@ db.updateSchema({
 const users = []
 const d = Date.now()
 
-const amount = 1e3
+const amount = 1e6
 
 for (let i = 0; i < amount; i++) {
   const blup = db.create('blup', {
@@ -76,14 +76,14 @@ for (let i = 0; i < amount; i++) {
   users.push(
     db.create('user', {
       myBlup: blup,
-      // age: 99,
-      // name: 'Mr ' + i,
-      // burp: 66,
-      // snurp: 'derp derp',
-      // email: 'merp_merp_' + i + '@once.net',
-      // location: {
-      // label: 'BLA BLA',
-      // },
+      age: 99,
+      name: 'Mr ' + i,
+      burp: 66,
+      snurp: 'derp derp',
+      email: 'merp_merp_' + i + '@once.net',
+      location: {
+        label: 'BLA BLA',
+      },
     }),
   )
 }
@@ -108,7 +108,7 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
   .include('user', 'user.myBlup', 'lilBlup')
-  .range(0, 1000)
+  .range(0, 1e6)
   .get()
 
 // const logger = (x, empty = '') => {
