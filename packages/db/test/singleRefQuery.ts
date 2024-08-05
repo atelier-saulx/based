@@ -68,18 +68,27 @@ test.serial('single reference query', async (t) => {
 
   db.drain()
 
-  const r1 = db
-    .query('simple')
-    // check for .
-    // in conditions add 254 -> get next
-    .filter('flap.power', '=', 10)
-    .include('lilBlup')
-    .get()
-
-  console.info(r1)
-  // t.deepEqual(r1.data.toObject(), {
-
-  // })
+  t.deepEqual(
+    db
+      .query('simple')
+      // check for .
+      // in conditions add 254 -> get next
+      .filter('flap.power', '=', 10)
+      .include('lilBlup')
+      .get()
+      .data.toObject(),
+    [
+      {
+        id: 2,
+        lilBlup: {
+          id: 1,
+          age: 10,
+          name: 'mr blup',
+          flap: 'B',
+        },
+      },
+    ],
+  )
 
   // const result = db
   //   .query('simple')
@@ -95,6 +104,4 @@ test.serial('single reference query', async (t) => {
   //   console.log('START READ')
   //   t.is(r.lilBlup.name, '')
   // }
-
-  t.true(true)
 })
