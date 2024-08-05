@@ -1,4 +1,4 @@
-import { Operation, operationToByte } from './types.js'
+import { Operation, operationToByte, QueryConditions } from './types.js'
 import { Query } from './query.js'
 import {
   isFieldDef,
@@ -7,54 +7,67 @@ import {
   FieldDef,
 } from '../schemaTypeDef.js'
 
+// Query conditions: Map<number, Buffer[]>
+// does not work for recursion...
+// construct entire buffer for refs?
+
+const filterReferences = (
+  query: Query,
+  fieldStr: string,
+  operator: Operation,
+  value: any,
+  schema: SchemaTypeDef,
+) => {
+  const path = fieldStr.split('.')
+  // pass nested schema
+
+  let t: FieldDef | SchemaFieldTree = schema.tree
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i]
+    t = t[p]
+    if (!t) {
+      return
+    }
+    if (isFieldDef(t) && t.type === 'reference') {
+      // const ref: FieldDef = t as FieldDef
+      // const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
+      // const field = path.slice(i + 1).join('.')
+      // refIncludeDef.includeFields.add(field)
+      // addPathToIntermediateTree(t, includeTree, t.path)
+
+      return query
+    }
+  }
+
+  const tree = schema.tree[path[0]]
+
+  if (tree) {
+    // const endFields = getAllFieldFromObject(tree)
+    // for (const field of endFields) {
+    //   if (parseInclude(query, include, field, includesMain, includeTree)) {
+    //     includesMain = true
+    //   }
+    // }
+    return query
+  }
+  return query
+}
+
 export const filter = (
   query: Query,
   fieldStr: string,
   operator: Operation,
   value: any,
   schema: SchemaTypeDef,
+  conditions: QueryConditions,
 ): Query => {
   if (query.id) {
     // do things
   } else {
-    let field = <FieldDef>query.schema.fields[fieldStr]
+    let field = <FieldDef>schema.fields[fieldStr]
 
     if (!field) {
-      const path = fieldStr.split('.')
-      // pass nested schema
-
-      console.info('yo', field)
-
-      let t: FieldDef | SchemaFieldTree = schema.tree
-      for (let i = 0; i < path.length; i++) {
-        const p = path[i]
-        t = t[p]
-        if (!t) {
-          return
-        }
-        if (isFieldDef(t) && t.type === 'reference') {
-          // const ref: FieldDef = t as FieldDef
-          // const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
-          // const field = path.slice(i + 1).join('.')
-          // refIncludeDef.includeFields.add(field)
-          // addPathToIntermediateTree(t, includeTree, t.path)
-
-          return query
-        }
-      }
-
-      const tree = schema.tree[path[0]]
-
-      if (tree) {
-        // const endFields = getAllFieldFromObject(tree)
-        // for (const field of endFields) {
-        //   if (parseInclude(query, include, field, includesMain, includeTree)) {
-        //     includesMain = true
-        //   }
-        // }
-        return query
-      }
-      return query
+      return filterReferences(query, fieldStr, operator, value, schema)
     }
 
     let fieldIndexChar = field.field
@@ -114,15 +127,45 @@ export const filter = (
         }
       }
     }
-    query.conditions ??= new Map()
-    let arr = query.conditions.get(fieldIndexChar)
+
+    let arr = conditions.conditions.get(fieldIndexChar)
     if (!arr) {
-      query.totalConditionSize += 3
+      conditions.totalConditionSize += 3
       arr = []
-      query.conditions.set(fieldIndexChar, arr)
+      conditions.conditions.set(fieldIndexChar, arr)
     }
-    query.totalConditionSize += buf.byteLength
+    conditions.totalConditionSize += buf.byteLength
     arr.push(buf)
-    return query
   }
+
+  return query
+}
+
+export const addConditions = (conditions: QueryConditions) => {
+  let result: Buffer
+
+  // add refs
+  console.info('CONDITIONS', conditions)
+
+  if (conditions.totalConditionSize > 0) {
+    result = Buffer.allocUnsafe(conditions.totalConditionSize)
+    let lastWritten = 0
+    conditions.conditions.forEach((v, k) => {
+      result[lastWritten] = k
+      let sizeIndex = lastWritten + 1
+      lastWritten += 3
+      let conditionSize = 0
+      for (const condition of v) {
+        conditionSize += condition.byteLength
+        result.set(condition, lastWritten)
+        lastWritten += condition.byteLength
+      }
+      result.writeInt16LE(conditionSize, sizeIndex)
+    })
+
+    // add referneces
+  } else {
+    result = Buffer.alloc(0)
+  }
+  return result
 }

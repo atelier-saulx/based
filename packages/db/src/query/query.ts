@@ -1,6 +1,6 @@
 import { BasedDb, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { Operation, QueryIncludeDef } from './types.js'
+import { Operation, QueryIncludeDef, QueryConditions } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 import { inspect } from 'node:util'
@@ -9,13 +9,12 @@ export class Query {
   db: BasedDb
   schema: SchemaTypeDef
   id: number | void
-  conditions: Map<number, Buffer[]>
   offset: number
   limit: number
 
   includeDef: QueryIncludeDef
 
-  totalConditionSize: number = 0
+  conditions: QueryConditions
 
   constructor(db: BasedDb, target: string) {
     this.db = db
@@ -28,7 +27,8 @@ export class Query {
   }
 
   filter(field: string, operator: Operation, value: any) {
-    return filter(this, field, operator, value, this.schema)
+    this.conditions ??= { conditions: new Map(), totalConditionSize: 0 }
+    return filter(this, field, operator, value, this.schema, this.conditions)
   }
 
   range(offset: number, limit: number): Query {

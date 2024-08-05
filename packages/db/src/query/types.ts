@@ -45,4 +45,11 @@ export type QueryIncludeDef = {
   refIncludes?: { [start: string]: QueryIncludeDef } // { } tree for refs prob
 }
 
+export type QueryConditions = {
+  totalConditionSize: number
+  conditions: Map<number, Buffer[]>
+  references?: Map<number, QueryConditions>
+  fromRef?: FieldDef
+}
+
 export type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
