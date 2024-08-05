@@ -15,6 +15,7 @@
     "get-napi": "./scripts/download-node-headers.sh",
     "test-real": "npm run build && npm run test -- ./dist/test/real.js",
     "test-single-ref": "zig build && npm run build && npm test -- ./dist/test/singleRef.js",
+    "test-single-ref-query": "zig build && npm run build && npm test -- ./dist/test/singleRefQuery.js",
     "test-string": "zig build && npm run build && npm test -- ./dist/test/string.js",
     "playground": "zig build && npm run build && node ./dist/test/playground.js"
   },
