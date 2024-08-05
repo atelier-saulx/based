@@ -5,7 +5,7 @@ include ../../common.mk
 CFLAGS += -fPIC -fvisibility=hidden -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
 		   -L../../../build \
-		   -ljemalloc_selva -ldeflate -lutil
+		   -ljemalloc_selva -ldeflate -lutil -lxxhash
 LIB_SUFFIX := .node
 
 OBJ := \
@@ -15,6 +15,7 @@ OBJ := \
 	filter.o \
 	find.o \
 	io/dump.o \
+	io/io.o \
 	io/sdb.o \
 	schema.o \
 	selva.o \

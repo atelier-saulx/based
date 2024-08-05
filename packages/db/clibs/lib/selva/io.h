@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2022-2024 SAULX
+ * SPDX-License-Identifier: MIT
+ */
 #pragma once
 
 #define SELVA_DB_VERSION_SIZE   40
@@ -7,7 +11,7 @@ struct SelvaDbVersionInfo {
     __nonstring char updated_with[SELVA_DB_VERSION_SIZE];
 };
 
-#define SELVA_IO_HASH_SIZE 32
+#define SELVA_IO_HASH_SIZE 16
 
 enum selva_io_flags {
     SELVA_IO_FLAGS_READ = 0x0001, /*!< This is a read op. */
@@ -20,6 +24,8 @@ enum selva_io_flags {
 };
 
 #ifdef SELVA_IO_TYPE
+#include "xxhash.h"
+
 struct libdeflate_compressor;
 struct libdeflate_decompressor;
 struct selva_io_zbuf;
@@ -46,9 +52,7 @@ struct selva_io {
     struct libdeflate_compressor *compressor;
     struct libdeflate_decompressor *decompressor;
 
-#if 0
-    struct sha3_context hash_c; /*!< Currently computed hash of the data. */
-#endif
+    XXH3_state_t* hash_state;
     uint8_t computed_hash[SELVA_IO_HASH_SIZE]; /*!< Updated at the end of load/save. */
     uint8_t stored_hash[SELVA_IO_HASH_SIZE]; /*!< The hash found in the footer. */
 
@@ -73,4 +77,8 @@ struct selva_io {
 };
 #endif
 
+int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags);
+struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_io_flags flags);
+int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags);
+void selva_io_end(struct selva_io *io, struct selva_string **filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE]);
 int io_dump_save_async(struct SelvaDb *db, const char *filename);

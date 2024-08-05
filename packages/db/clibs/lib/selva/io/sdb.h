@@ -4,6 +4,8 @@
  */
 #pragma once
 
+struct selva_io;
+
 void sdb_init(struct selva_io *io);
 void sdb_deinit(struct selva_io *io);
 

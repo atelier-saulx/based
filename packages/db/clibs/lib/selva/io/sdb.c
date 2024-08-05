@@ -42,23 +42,25 @@ static const char magic_end[]   = { 'D', 'N', 'E', 'A', 'V', 'L', 'E', 'S' };
 
 static inline void sdb_hash_init(struct selva_io *io)
 {
-#if 0
-    sha3_Init256KitTen(&io->hash_c);
-#endif
+    io->hash_state = XXH3_createState();
+    XXH3_128bits_reset(io->hash_state);
+}
+
+static inline void sdb_hash_deinit(struct selva_io *io)
+{
+    XXH3_freeState(io->hash_state);
 }
 
 static inline void sdb_hash_update(struct selva_io *io, void const *in, size_t len)
 {
-#if 0
-    sha3_Update(&io->hash_c, in, len);
-#endif
+    XXH3_128bits_update(io->hash_state, in, len);
 }
 
 static inline void sdb_hash_finalize(struct selva_io *io)
 {
-#if 0
-    io->computed_hash = sha3_Finalize(&io->hash_c);
-#endif
+    XXH128_hash_t result = XXH3_128bits_digest(io->hash_state);
+    memcpy(io->computed_hash, &result, sizeof(result));
+    static_assert(sizeof(io->computed_hash) == sizeof(XXH128_hash_t));
 }
 
 /**
@@ -468,6 +470,7 @@ void sdb_deinit(struct selva_io *io)
     libdeflate_free_compressor(io->compressor);
     libdeflate_free_decompressor(io->decompressor);
     selva_free(io->zbuf);
+    sdb_hash_deinit(io);
 }
 
 int sdb_write_header(struct selva_io *io)
