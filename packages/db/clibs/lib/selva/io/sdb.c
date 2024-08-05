@@ -2,7 +2,6 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
-#define SELVA_IO_TYPE
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -14,8 +13,9 @@
 #include "util/endian.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
-#include "../io.h"
 #include "../db_panic.h"
+#include "../io.h"
+#include "io_struct.h"
 #include "sdb.h"
 
 #define SDB_VERSION 1
