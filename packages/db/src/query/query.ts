@@ -27,8 +27,13 @@ export class Query {
   }
 
   filter(field: string, operator: Operation, value: any) {
+    // if (this.id) {
+    // wrong
+    // }
+
     this.conditions ??= { conditions: new Map(), totalConditionSize: 0 }
-    return filter(this, field, operator, value, this.schema, this.conditions)
+    filter(field, operator, value, this.schema, this.conditions)
+    return this
   }
 
   range(offset: number, limit: number): Query {
