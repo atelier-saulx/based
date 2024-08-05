@@ -21,8 +21,7 @@ export const get = (query: Query): BasedQueryResponse => {
   }
 
   const includeBuffer = addInclude(query, query.includeDef)
-
-  const conditionsBuffer = addConditions(query, query.conditions)
+  const conditionsBuffer = addConditions(query)
 
   const result: Buffer = query.db.native.getQuery(
     conditionsBuffer,

@@ -179,7 +179,6 @@ export const fillConditionsBuffer = (
       result.writeUint16LE(refStart, lastWritten + 1)
       lastWritten += 5
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
-      console.log(size)
       result.writeUint16LE(size, lastWritten - 2)
       lastWritten += size
     }
@@ -187,7 +186,7 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
-export const addConditions = (query: Query, conditions: QueryConditions) => {
+export const addConditions = (query: Query) => {
   let result: Buffer
   if (query.totalConditionSize > 0) {
     result = Buffer.allocUnsafe(query.totalConditionSize)
@@ -195,7 +194,6 @@ export const addConditions = (query: Query, conditions: QueryConditions) => {
   } else {
     result = Buffer.alloc(0)
   }
-
   console.log(new Uint8Array(result), query.totalConditionSize)
   return result
 }
