@@ -6,6 +6,7 @@ import {
   SchemaFieldTree,
   FieldDef,
 } from '../schemaTypeDef.js'
+import { BasedDb } from '../index.js'
 
 // Query conditions: Map<number, Buffer[]>
 // does not work for recursion...
@@ -16,6 +17,8 @@ const filterReferences = (
   operator: Operation,
   value: any,
   schema: SchemaTypeDef,
+  conditions: QueryConditions,
+  query: Query,
 ) => {
   const path = fieldStr.split('.')
   // pass nested schema
@@ -28,27 +31,35 @@ const filterReferences = (
       return
     }
     if (isFieldDef(t) && t.type === 'reference') {
-      // const ref: FieldDef = t as FieldDef
-      // const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
-      // const field = path.slice(i + 1).join('.')
-      // refIncludeDef.includeFields.add(field)
-      // addPathToIntermediateTree(t, includeTree, t.path)
-
+      const ref: FieldDef = t as FieldDef
+      const start = ref.start
+      conditions.references ??= new Map()
+      let refConditions = conditions.references.get(start)
+      if (!refConditions) {
+        refConditions = {
+          conditions: new Map(),
+          totalConditionSize: 0,
+          fromRef: ref,
+        }
+        conditions.references.set(start, refConditions)
+      }
+      const schema = query.db.schemaTypesParsed[ref.allowedType]
+      filter(
+        path.slice(i + 1).join('.'),
+        operator,
+        value,
+        schema,
+        refConditions,
+        query,
+      )
       return
     }
   }
 
-  const tree = schema.tree[path[0]]
+  console.error(
+    `Querty: field "${fieldStr}" does not exist on type ${query.schema.type}`,
+  )
 
-  if (tree) {
-    // const endFields = getAllFieldFromObject(tree)
-    // for (const field of endFields) {
-    //   if (parseInclude(query, include, field, includesMain, includeTree)) {
-    //     includesMain = true
-    //   }
-    // }
-    return
-  }
   return
 }
 
@@ -58,14 +69,22 @@ export const filter = (
   value: any,
   schema: SchemaTypeDef,
   conditions: QueryConditions,
+  query: Query,
 ) => {
   let field = <FieldDef>schema.fields[fieldStr]
 
   if (!field) {
-    return filterReferences(fieldStr, operator, value, schema)
+    return filterReferences(
+      fieldStr,
+      operator,
+      value,
+      schema,
+      conditions,
+      query,
+    )
   }
 
-  let fieldIndexChar = field.field
+  const fieldIndexChar = field.field
 
   let buf: Buffer
   if (field.seperate === true) {
@@ -139,7 +158,7 @@ export const addConditions = (conditions: QueryConditions) => {
   let result: Buffer
 
   // add refs
-  console.info('CONDITIONS', conditions)
+  console.info('ADD CONDITIONS', conditions)
 
   if (conditions.totalConditionSize > 0) {
     result = Buffer.allocUnsafe(conditions.totalConditionSize)

@@ -32,7 +32,7 @@ export class Query {
     // }
 
     this.conditions ??= { conditions: new Map(), totalConditionSize: 0 }
-    filter(field, operator, value, this.schema, this.conditions)
+    filter(field, operator, value, this.schema, this.conditions, this)
     return this
   }
 
