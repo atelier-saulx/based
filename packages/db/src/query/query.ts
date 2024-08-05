@@ -14,6 +14,7 @@ export class Query {
 
   includeDef: QueryIncludeDef
 
+  totalConditionSize: number
   conditions: QueryConditions
 
   constructor(db: BasedDb, target: string) {
@@ -27,11 +28,8 @@ export class Query {
   }
 
   filter(field: string, operator: Operation, value: any) {
-    // if (this.id) {
-    // wrong
-    // }
-
-    this.conditions ??= { conditions: new Map(), totalConditionSize: 0 }
+    this.totalConditionSize ??= 0
+    this.conditions ??= { conditions: new Map() }
     filter(field, operator, value, this.schema, this.conditions, this)
     return this
   }

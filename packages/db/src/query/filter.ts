@@ -36,9 +36,9 @@ const filterReferences = (
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(start)
       if (!refConditions) {
+        query.totalConditionSize += 5 // 254 + start
         refConditions = {
           conditions: new Map(),
-          totalConditionSize: 0,
           fromRef: ref,
         }
         conditions.references.set(start, refConditions)
@@ -144,41 +144,58 @@ export const filter = (
 
   let arr = conditions.conditions.get(fieldIndexChar)
   if (!arr) {
-    conditions.totalConditionSize += 3
+    query.totalConditionSize += 3
     arr = []
     conditions.conditions.set(fieldIndexChar, arr)
   }
-  conditions.totalConditionSize += buf.byteLength
+  query.totalConditionSize += buf.byteLength
   arr.push(buf)
 
   return
 }
 
-export const addConditions = (conditions: QueryConditions) => {
+export const fillConditionsBuffer = (
+  result: Buffer,
+  conditions: QueryConditions,
+  offset: number,
+) => {
+  let lastWritten = offset
+  conditions.conditions.forEach((v, k) => {
+    result[lastWritten] = k
+    let sizeIndex = lastWritten + 1
+    lastWritten += 3
+    let conditionSize = 0
+    for (const condition of v) {
+      conditionSize += condition.byteLength
+      result.set(condition, lastWritten)
+      lastWritten += condition.byteLength
+    }
+    result.writeInt16LE(conditionSize, sizeIndex)
+  })
+  if (conditions.references) {
+    for (const [refStart, refConditions] of conditions.references) {
+      lastWritten
+      result[lastWritten] = 254
+      result.writeUint16LE(refStart, lastWritten + 1)
+      lastWritten += 5
+      const size = fillConditionsBuffer(result, refConditions, lastWritten)
+      console.log(size)
+      result.writeUint16LE(size, lastWritten - 2)
+      lastWritten += size
+    }
+  }
+  return lastWritten - offset
+}
+
+export const addConditions = (query: Query, conditions: QueryConditions) => {
   let result: Buffer
-
-  // add refs
-  console.info('ADD CONDITIONS', conditions)
-
-  if (conditions.totalConditionSize > 0) {
-    result = Buffer.allocUnsafe(conditions.totalConditionSize)
-    let lastWritten = 0
-    conditions.conditions.forEach((v, k) => {
-      result[lastWritten] = k
-      let sizeIndex = lastWritten + 1
-      lastWritten += 3
-      let conditionSize = 0
-      for (const condition of v) {
-        conditionSize += condition.byteLength
-        result.set(condition, lastWritten)
-        lastWritten += condition.byteLength
-      }
-      result.writeInt16LE(conditionSize, sizeIndex)
-    })
-
-    // add referneces
+  if (query.totalConditionSize > 0) {
+    result = Buffer.allocUnsafe(query.totalConditionSize)
+    fillConditionsBuffer(result, query.conditions, 0)
   } else {
     result = Buffer.alloc(0)
   }
+
+  console.log(new Uint8Array(result), query.totalConditionSize)
   return result
 }

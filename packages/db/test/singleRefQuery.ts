@@ -21,6 +21,12 @@ test.serial('single reference query', async (t) => {
 
   db.updateSchema({
     types: {
+      user: {
+        fields: {
+          myBlup: { type: 'reference', allowedType: 'blup' },
+          name: { type: 'string' },
+        },
+      },
       blup: {
         fields: {
           age: { type: 'integer' },
@@ -31,6 +37,8 @@ test.serial('single reference query', async (t) => {
       },
       simple: {
         fields: {
+          smurp: { type: 'integer' },
+          user: { type: 'reference', allowedType: 'user' },
           lilBlup: { type: 'reference', allowedType: 'blup' },
           flap: {
             type: 'object',
@@ -90,13 +98,7 @@ test.serial('single reference query', async (t) => {
   //   ],
   // )
 
-  const result = db
-    .query('simple')
-    // check for .
-    // in conditions add 254 -> get next
-    .filter('lilBlup.age', '=', 10)
-    .include('lilBlup')
-    .get()
+  const result = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
   console.log(result)
   // console.log(new Uint8Array(result.buffer))

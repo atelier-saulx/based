@@ -46,7 +46,6 @@ export type QueryIncludeDef = {
 }
 
 export type QueryConditions = {
-  totalConditionSize: number
   conditions: Map<number, Buffer[]>
   references?: Map<number, QueryConditions>
   fromRef?: FieldDef
