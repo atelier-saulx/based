@@ -57,7 +57,7 @@ test.serial('single reference query', async (t) => {
     name: 'mr blup',
   })
 
-  db.create('blup', {
+  const differentBlup = db.create('blup', {
     flap: 'C',
     age: 20,
     name: 'mr blup 2',
@@ -68,7 +68,7 @@ test.serial('single reference query', async (t) => {
   })
 
   db.create('simple', {
-    lilBlup: blup,
+    lilBlup: differentBlup,
     flap: {
       power: 10,
     },
@@ -98,7 +98,12 @@ test.serial('single reference query', async (t) => {
   //   ],
   // )
 
-  const result = db.query('simple').filter('user.myBlup.age', '=', 10).get()
+  // const result = db.query('simple').filter('user.myBlup.age', '=', 10).get()
+  const result = db
+    .query('simple')
+    .filter('lilBlup.age', '=', 10)
+    .include('lilBlup', 'flap')
+    .get()
 
   console.log(result)
   // console.log(new Uint8Array(result.buffer))

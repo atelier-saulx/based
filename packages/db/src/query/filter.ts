@@ -36,19 +36,20 @@ const filterReferences = (
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(start)
       if (!refConditions) {
-        query.totalConditionSize += 5 // 254 + start
+        const schema = query.db.schemaTypesParsed[ref.allowedType]
+        query.totalConditionSize += 7 // 254 + start
         refConditions = {
           conditions: new Map(),
           fromRef: ref,
+          schema,
         }
         conditions.references.set(start, refConditions)
       }
-      const schema = query.db.schemaTypesParsed[ref.allowedType]
       filter(
         path.slice(i + 1).join('.'),
         operator,
         value,
-        schema,
+        refConditions.schema,
         refConditions,
         query,
       )
@@ -176,10 +177,15 @@ export const fillConditionsBuffer = (
     for (const [refStart, refConditions] of conditions.references) {
       lastWritten
       result[lastWritten] = 254
-      result.writeUint16LE(refStart, lastWritten + 1)
+      const sizeIndex = lastWritten + 1
+      result.writeUint16LE(refStart, lastWritten + 3)
       lastWritten += 5
+      result[lastWritten] = refConditions.schema.prefix[0]
+      lastWritten += 1
+      result[lastWritten] = refConditions.schema.prefix[1]
+      lastWritten += 1
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
-      result.writeUint16LE(size, lastWritten - 2)
+      result.writeUint16LE(size + 4, sizeIndex)
       lastWritten += size
     }
   }
@@ -194,6 +200,6 @@ export const addConditions = (query: Query) => {
   } else {
     result = Buffer.alloc(0)
   }
-  console.log(new Uint8Array(result), query.totalConditionSize)
+  console.log(new Uint8Array(result))
   return result
 }

@@ -63,27 +63,47 @@ fn getQueryInternal(
                 .little,
             );
             const field = conditions[fieldIndex];
-            const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
-            var shard = ctx.shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                if (shard != null) {
-                    try ctx.shards.put(dbiName, shard.?);
-                }
-            }
-            if (shard != null) {
-                const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
-                var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
-                k.mv_data = &i;
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                    continue :checkItem;
-                };
-                if (!runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
-                    continue :checkItem;
-                }
+
+            if (field == 254) {
+                const start: u16 = std.mem.readInt(
+                    u16,
+                    conditions[fieldIndex + 1 ..][2..4],
+                    .little,
+                );
+
+                const type_prefix2: [2]u8 = .{ conditions[fieldIndex + 1 ..][4], conditions[fieldIndex + 1 ..][5] };
+
+                // do something special here...
+                // recursive so have to move fn to other file as well
+                std.debug.print("bla {d} {d} {d} {any} \n", .{ field, querySize, start, type_prefix2 });
+                // const start = std.mem.readInt(u16, include[2..][0..2], .little);
+                // const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+                // const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
+                // get id
+
             } else {
-                continue :checkItem;
+                const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
+                var shard = ctx.shards.get(dbiName);
+                if (shard == null) {
+                    shard = db.openShard(true, dbiName, ctx.txn) catch null;
+                    if (shard != null) {
+                        try ctx.shards.put(dbiName, shard.?);
+                    }
+                }
+                if (shard != null) {
+                    const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
+                    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
+                    k.mv_data = &i;
+                    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+                        continue :checkItem;
+                    };
+                    if (!runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
+                        continue :checkItem;
+                    }
+                } else {
+                    continue :checkItem;
+                }
             }
             fieldIndex += querySize + 3;
         }

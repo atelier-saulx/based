@@ -4,6 +4,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
     var j: usize = 0;
     outside: while (j < q.len) {
         const operation = q[j];
+
         switch (operation) {
             // head equality
             1 => {
@@ -146,7 +147,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             else => {
-                std.debug.print("\nIncorrectly encoded condition (operation not handled)", .{});
+                std.log.err("\nIncorrectly encoded condition (operation not handled)", .{});
                 return false;
             },
         }

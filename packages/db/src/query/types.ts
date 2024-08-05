@@ -49,6 +49,7 @@ export type QueryConditions = {
   conditions: Map<number, Buffer[]>
   references?: Map<number, QueryConditions>
   fromRef?: FieldDef
+  schema?: SchemaTypeDef
 }
 
 export type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
