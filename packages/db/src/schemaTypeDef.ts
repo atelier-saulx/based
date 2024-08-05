@@ -332,7 +332,6 @@ export const readSchemaTypeDefFromBuffer = (
       setByPath(tree, path, field)
       mainLen += len
       currentName++
-
       j++
     } else {
       const fieldIndex = buf[j]

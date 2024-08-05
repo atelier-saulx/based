@@ -374,3 +374,63 @@ test.serial('single reference', async (t) => {
     ],
   )
 })
+
+test.serial.only('single reference multi refs strings', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          name: { type: 'string' },
+          myBlup: { type: 'reference', allowedType: 'blup' },
+        },
+      },
+      blup: {
+        fields: {
+          name: { type: 'string' },
+          // @ts-ignore
+          flap: { type: 'string', maxBytes: 1 },
+        },
+      },
+      simple: {
+        fields: {
+          lilBlup: { type: 'reference', allowedType: 'blup' },
+          user: { type: 'reference', allowedType: 'user' },
+        },
+      },
+    },
+  })
+
+  const blup = db.create('blup', {
+    flap: 'B',
+  })
+
+  db.create('simple', {
+    user: db.create('user', {
+      name: 'mr snurp',
+      myBlup: blup,
+    }),
+    lilBlup: blup,
+  })
+
+  db.drain()
+
+  const result = db
+    .query('simple')
+    .include('user', 'user.myBlup', 'lilBlup')
+    .get()
+
+  console.log(result)
+
+  for (const r of result.data) {
+    t.is(r.user.myBlup.flap, 'B')
+  }
+})

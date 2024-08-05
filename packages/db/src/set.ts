@@ -89,11 +89,7 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
-        // const deflated = deflateRawSync(value)
-        // const byteLen = Buffer.byteLength(value, 'utf8')
-
-        // bit shaky...
-        // add deflate / zstd / snappy?
+        // add zstd
         const byteLen = value.length + value.length
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
@@ -127,7 +123,6 @@ const addModify = (
 
           // TODO: check if this is correct
           const size = db.modifyBuffer.len - schema.mainLen
-
           if (schema.mainLen < 1e3) {
             EMPTY_BUFFER.copy(db.modifyBuffer.buffer, size, 0, schema.mainLen)
           } else {
