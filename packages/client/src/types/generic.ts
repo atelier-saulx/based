@@ -13,6 +13,7 @@ export type BasedOpts = {
   org?: string
 
   cluster?: string
+  host?: string
   name?: string
   key?: string
   optionalKey?: boolean
