@@ -375,10 +375,11 @@ test.serial('single reference', async (t) => {
   )
 })
 
-test.serial.only('single reference multi refs strings', async (t) => {
+test.serial('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
+
   await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
@@ -428,9 +429,10 @@ test.serial.only('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  console.log(result)
+  console.log(new Uint8Array(result.buffer))
 
   for (const r of result.data) {
-    t.is(r.user.myBlup.flap, 'B')
+    console.log('START READ')
+    t.is(r.lilBlup.name, '')
   }
 })

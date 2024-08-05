@@ -1,6 +1,7 @@
 import { FieldDef } from '../schemaTypeDef.js'
 import { BasedNode } from './index.js'
 
+// TODO: optmize this
 const includePathsAreEqual = (
   includePath: number[],
   refPath: number[],
@@ -42,6 +43,11 @@ export const readSeperateFieldFromBuffer = (
     i += 1
 
     if (index === 254) {
+      if (ref && found) {
+        // only skip till end from now
+        found = false
+      }
+
       const start = buffer.readUint16LE(i + 1)
       const resetNested = buffer[i] === 0
 
