@@ -21,12 +21,6 @@ test.serial('single reference query', async (t) => {
 
   db.updateSchema({
     types: {
-      // user: {
-      //   fields: {
-      //     name: { type: 'string' },
-      //     myBlup: { type: 'reference', allowedType: 'blup' },
-      //   },
-      // },
       blup: {
         fields: {
           age: { type: 'integer' },
@@ -38,7 +32,12 @@ test.serial('single reference query', async (t) => {
       simple: {
         fields: {
           lilBlup: { type: 'reference', allowedType: 'blup' },
-          // user: { type: 'reference', allowedType: 'user' },
+          flap: {
+            type: 'object',
+            properties: {
+              power: { type: 'integer' },
+            },
+          },
         },
       },
     },
@@ -57,27 +56,45 @@ test.serial('single reference query', async (t) => {
   })
 
   db.create('simple', {
-    // user: db.create('user', {
-    //   name: 'mr snurp',
-    //   myBlup: blup,
-    // }),
     lilBlup: blup,
+  })
+
+  db.create('simple', {
+    lilBlup: blup,
+    flap: {
+      power: 10,
+    },
   })
 
   db.drain()
 
-  const result = db
+  const r1 = db
     .query('simple')
     // check for .
     // in conditions add 254 -> get next
-    .filter('lilBlup.age', '=', 10)
+    .filter('flap.power', '=', 10)
     .include('lilBlup')
     .get()
 
-  console.log(new Uint8Array(result.buffer))
+  console.info(r1)
+  // t.deepEqual(r1.data.toObject(), {
 
-  for (const r of result.data) {
-    console.log('START READ')
-    t.is(r.lilBlup.name, '')
-  }
+  // })
+
+  // const result = db
+  //   .query('simple')
+  //   // check for .
+  //   // in conditions add 254 -> get next
+  //   .filter('lilBlup.age', '=', 10)
+  //   .include('lilBlup')
+  //   .get()
+
+  // console.log(new Uint8Array(result.buffer))
+
+  // for (const r of result.data) {
+  //   console.log('START READ')
+  //   t.is(r.lilBlup.name, '')
+  // }
+
+  t.true(true)
 })

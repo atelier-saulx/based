@@ -1,18 +1,64 @@
 import { Operation, operationToByte } from './types.js'
 import { Query } from './query.js'
-import { FieldDef } from '../index.js'
+import {
+  isFieldDef,
+  SchemaTypeDef,
+  SchemaFieldTree,
+  FieldDef,
+} from '../schemaTypeDef.js'
 
 export const filter = (
   query: Query,
   fieldStr: string,
   operator: Operation,
   value: any,
+  schema: SchemaTypeDef,
 ): Query => {
   if (query.id) {
     // do things
   } else {
-    const field = <FieldDef>query.schema.tree[fieldStr]
+    let field = <FieldDef>query.schema.fields[fieldStr]
+
+    if (!field) {
+      const path = fieldStr.split('.')
+      // pass nested schema
+
+      console.info('yo', field)
+
+      let t: FieldDef | SchemaFieldTree = schema.tree
+      for (let i = 0; i < path.length; i++) {
+        const p = path[i]
+        t = t[p]
+        if (!t) {
+          return
+        }
+        if (isFieldDef(t) && t.type === 'reference') {
+          // const ref: FieldDef = t as FieldDef
+          // const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
+          // const field = path.slice(i + 1).join('.')
+          // refIncludeDef.includeFields.add(field)
+          // addPathToIntermediateTree(t, includeTree, t.path)
+
+          return query
+        }
+      }
+
+      const tree = schema.tree[path[0]]
+
+      if (tree) {
+        // const endFields = getAllFieldFromObject(tree)
+        // for (const field of endFields) {
+        //   if (parseInclude(query, include, field, includesMain, includeTree)) {
+        //     includesMain = true
+        //   }
+        // }
+        return query
+      }
+      return query
+    }
+
     let fieldIndexChar = field.field
+
     let buf: Buffer
     if (field.seperate === true) {
       if (field.type === 'string') {

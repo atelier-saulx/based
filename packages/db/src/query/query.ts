@@ -28,7 +28,7 @@ export class Query {
   }
 
   filter(field: string, operator: Operation, value: any) {
-    return filter(this, field, operator, value)
+    return filter(this, field, operator, value, this.schema)
   }
 
   range(offset: number, limit: number): Query {
