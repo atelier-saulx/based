@@ -12,8 +12,6 @@ const IncludeError = error{
     Recursion,
 };
 
-const EMPTY_BUF: [0]u8 = .{};
-
 pub fn getSingleRefFields(ctx: QueryCtx, include: []u8, v: c.MDB_val, refLvl: u8, hasFields: bool) usize {
     var size: usize = 0;
 

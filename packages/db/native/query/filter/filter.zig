@@ -6,6 +6,28 @@ const db = @import("../../db.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const runCondition = @import("./conditions.zig").runConditions;
 
+fn getField(ctx: QueryCtx, id: u32, typePrefix: [2]u8, currentShard: u16) []u8 {
+    const dbiName = db.createDbiName(typePrefix, 0, @bitCast(currentShard));
+    var shard = ctx.shards.get(dbiName);
+    if (shard == null) {
+        shard = db.openShard(true, dbiName, ctx.txn) catch null;
+        if (shard != null) {
+            ctx.shards.put(dbiName, shard.?) catch {
+                return &.{};
+            };
+        }
+    }
+    if (shard == null) {
+        return &.{};
+    }
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+        return &.{};
+    };
+    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+}
+
 pub fn filter(
     ctx: QueryCtx,
     id: u32,
@@ -26,22 +48,10 @@ pub fn filter(
         if (field == 254) {
             const refTypePrefix: [2]u8 = .{ conditions[fieldIndex + 1 ..][4], conditions[fieldIndex + 1 ..][5] };
             if (main == null) {
-                const dbiName = db.createDbiName(typePrefix, 0, @bitCast(currentShard));
-                var shard = ctx.shards.get(dbiName);
-                if (shard == null) {
-                    shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                    if (shard != null) {
-                        ctx.shards.put(dbiName, shard.?) catch {
-                            return false;
-                        };
-                    }
-                }
-                var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+                main = getField(ctx, id, typePrefix, currentShard);
+                if (main.?.len == 0) {
                     return false;
-                };
-                main = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+                }
             }
             const refStart: u16 = std.mem.readInt(
                 u16,
@@ -51,7 +61,7 @@ pub fn filter(
             const refId = std.mem.readInt(u32, main.?[refStart..][0..4], .little);
             if (refId > 0) {
                 const refConditions: []u8 = conditions[fieldIndex + 7 .. fieldIndex + 3 + querySize];
-                if (filter(ctx, refId, refTypePrefix, refConditions, db.idToShard(refId)) == false) {
+                if (!filter(ctx, refId, refTypePrefix, refConditions, db.idToShard(refId))) {
                     return false;
                 }
             } else {
@@ -59,53 +69,22 @@ pub fn filter(
             }
         } else {
             const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
-            var k: c.MDB_val = undefined;
-            var v: c.MDB_val = undefined;
             if (field == 0) {
                 if (main == null) {
-                    const dbiName = db.createDbiName(typePrefix, field, @bitCast(currentShard));
-                    var shard = ctx.shards.get(dbiName);
-                    if (shard == null) {
-                        shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                        if (shard != null) {
-                            ctx.shards.put(dbiName, shard.?) catch {
-                                return false;
-                            };
-                        }
-                    }
-                    if (shard == null) {
+                    main = getField(ctx, id, typePrefix, currentShard);
+                    if (main.?.len == 0) {
                         return false;
                     }
-                    k = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-                    v = .{ .mv_size = 0, .mv_data = null };
-                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                        return false;
-                    };
-                    main = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
                 }
                 if (!runCondition(main.?, query)) {
                     return false;
                 }
             } else {
-                const dbiName = db.createDbiName(typePrefix, field, @bitCast(currentShard));
-                var shard = ctx.shards.get(dbiName);
-                if (shard == null) {
-                    shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                    if (shard != null) {
-                        ctx.shards.put(dbiName, shard.?) catch {
-                            return false;
-                        };
-                    }
-                }
-                if (shard == null) {
+                const value = getField(ctx, id, typePrefix, currentShard);
+                if (value.len == 0) {
                     return false;
                 }
-                k = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-                v = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                    return false;
-                };
-                if (!runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
+                if (!runCondition(value, query)) {
                     return false;
                 }
             }
