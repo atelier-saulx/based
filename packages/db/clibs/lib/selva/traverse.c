@@ -120,7 +120,7 @@ int traverse_field_bfs(
             /* We assume that it's a valid field id. */
             field_t field = (field_t)res;
 
-            err = selva_fields_get(node, field, &any);
+            err = selva_fields_get(&node->fields, field, &any);
             if (err || any.type == SELVA_FIELD_TYPE_NULL) {
                 continue;
             }

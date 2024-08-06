@@ -442,7 +442,7 @@ static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
     }
 
     struct SelvaFieldsAny any;
-    err = selva_fields_get(node, field_idx, &any);
+    err = selva_fields_get(&node->fields, field_idx, &any);
     if (err) {
         return res2napi(env, err);
     }
@@ -467,7 +467,7 @@ static napi_value selva_db_get_field_p(napi_env env, napi_callback_info info)
     field_t field_idx = selva_napi_get_field(env, argv[1]);
 
     struct SelvaFieldsAny any;
-    err = selva_fields_get(node, field_idx, &any);
+    err = selva_fields_get(&node->fields, field_idx, &any);
     if (err) {
         return res2napi(env, err);
     }

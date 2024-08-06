@@ -287,7 +287,7 @@ static void remove_references(struct SelvaNode *node, const struct SelvaFieldSch
     struct SelvaFieldsAny any;
     int err;
 
-    err = selva_fields_get(node, fs->field, &any);
+    err = selva_fields_get(&node->fields, fs->field, &any);
     if (err || !any.references) {
         /* TODO Log error? */
         return;
@@ -495,7 +495,7 @@ int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeRefe
     return fields_set(NULL, NULL, fs, ref->meta, value, len);
 }
 
-static int fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any)
+int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any)
 {
     const struct SelvaFieldInfo *nfo;
     void *p;
@@ -579,24 +579,6 @@ static int fields_get(struct SelvaFields *fields, field_t field, struct SelvaFie
     }
 
     return 0;
-}
-
-int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any)
-{
-    struct SelvaFields *fields = &node->fields;
-
-    return fields_get(fields, field, any);
-}
-
-int selva_fields_get_reference_meta(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any)
-{
-    struct SelvaFields *fields = ref->meta;
-
-    if (!fields) {
-        return SELVA_ENOENT;
-    }
-
-    return fields_get(fields, field, any);
 }
 
 static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
@@ -693,7 +675,7 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, f
     }
 
     assert(fs);
-    err = selva_fields_get(node, field, &any);
+    err = selva_fields_get(&node->fields, field, &any);
     if (err || any.type != SELVA_FIELD_TYPE_REFERENCES || !any.references) {
         return err;
     }

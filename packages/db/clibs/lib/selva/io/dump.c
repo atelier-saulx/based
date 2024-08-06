@@ -6,9 +6,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva.h"
 #include "../db.h"
+#include "../fields.h"
 #include "../io.h"
 #include "io_struct.h"
 
@@ -72,7 +74,7 @@ static void save_ns(struct selva_io *io, struct SelvaNodeSchema *ns)
     }
 }
 
-static void save_fields(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaFields *fields)
+static void save_fields(struct selva_io *io, struct SelvaFields *fields)
 {
     /* TODO */
 #if 0
@@ -96,40 +98,119 @@ static void save_fields(struct selva_io *io, struct SelvaNodeSchema *ns, struct 
 #endif
 
     save_dump_magic(io, DUMP_MAGIC_FIELDS);
-    io->sdb_write(fields->fields_map, sizeof(struct SelvaFieldInfo), fields->nr_fields, io);
-    io->sdb_write(fields->data, fields->data_len, 1, io);
+    io->sdb_write(&((uint32_t){ fields->nr_fields }), sizeof(uint32_t), 1, io);
+    io->sdb_write(&((uint32_t){ fields->data_len }), sizeof(uint32_t), 1, io);
 
-    /* TODO Save the data of those fields that have pointers. */
-#if 0
-    for (field_t field = 0; i < fields->nr_fields; i++) {
-        struct SelvaFieldInfo nfo = node->fields.fields_map[field];
-        const struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(ns, field);
-        size_t field_data_size = fields_get_data_size(fs);
+    for (field_t field = 0; field < fields->nr_fields; field++) {
+        struct SelvaFieldsAny any;
+        int err;
 
-        switch (nfo.type) {
-            io->sdb_write(((uint8_t *)fields->data) + nfo.off, sizeof(uint8_t), field_data_size, io);
+        err = selva_fields_get(fields, field, &any);
+        if (err) {
+            /* TODO Handle error? */
+            continue;
+        }
+
+        io->sdb_write(&field, sizeof(field), 1, io);
+        switch (any.type) {
+        case SELVA_FIELD_TYPE_NULL:
+            break;
+        case SELVA_FIELD_TYPE_TIMESTAMP:
+        case SELVA_FIELD_TYPE_CREATED:
+        case SELVA_FIELD_TYPE_UPDATED:
+            io->sdb_write(&any.timestamp, sizeof(any.timestamp), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_NUMBER:
+            io->sdb_write(&any.number, sizeof(any.number), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_INTEGER:
+            io->sdb_write(&any.integer, sizeof(any.integer), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_UINT8:
+            io->sdb_write(&any.uint8, sizeof(any.uint8), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_UINT32:
+            io->sdb_write(&any.uint32, sizeof(any.uint32), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_UINT64:
+            io->sdb_write(&any.uint64, sizeof(any.uint64), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_BOOLEAN:
+            io->sdb_write(&any.boolean, sizeof(any.boolean), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_ENUM:
+            io->sdb_write(&any.enu, sizeof(any.enu), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_STRING:
+            {
+                size_t len;
+                const char *str = selva_string_to_str(any.string, &len);
+                io->sdb_write(&len, sizeof(size_t), 1, io);
+                io->sdb_write(str, sizeof(char), len, io);
+            }
+            break;
+        case SELVA_FIELD_TYPE_TEXT:
+            /* TODO text field */
+            break;
+        case SELVA_FIELD_TYPE_REFERENCE:
+            if (any.reference && any.reference->dst) {
+                io->sdb_write(&((uint32_t){ 1 }), sizeof(uint32_t), 1, io); /* nr_refs */
+                io->sdb_write(&any.reference->dst->node_id, sizeof(node_id_t), 1, io);
+                /* TODO Save meta */
+            } else {
+                io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
+            }
+            break;
+        case SELVA_FIELD_TYPE_REFERENCES:
+            if (any.references && any.references->nr_refs) {
+                io->sdb_write(&((uint32_t){ any.references->nr_refs }), sizeof(uint32_t), 1, io); /* nr_refs */
+                for (size_t i = 0; i < any.references->nr_refs; i++) {
+                    struct SelvaNodeReference *ref = &any.references->refs[i];
+
+                    if (ref && ref->dst) {
+                        io->sdb_write(&ref->dst->node_id, sizeof(ref->dst->node_id), 1, io);
+                        /* TODO Save meta */
+                    } else {
+                        /* TODO Handle NULL */
+                    }
+                }
+            } else {
+                io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
+            }
+            break;
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+                io->sdb_write(&any.weak_reference, sizeof(any.weak_reference), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+            if (any.weak_references.nr_refs) {
+                io->sdb_write(&((uint32_t){ any.weak_references.nr_refs }), sizeof(uint32_t), 1, io); /* nr_refs */
+                io->sdb_write(any.weak_references.refs, sizeof(struct SelvaNodeWeakReference), any.weak_references.nr_refs, io);
+                /* TODO Save meta */
+            } else {
+                io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
+            }
+            break;
         }
     }
-#endif
 }
 
-static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node)
+static void save_node(struct selva_io *io, struct SelvaNode *node)
 {
     save_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_type_t), 1, io);
     io->sdb_write(&node->type, sizeof(node_type_t), 1, io);
     io->sdb_write(&node->expire, sizeof(uint32_t), 1, io);
-    save_fields(io, &db_get_type_by_node(db, node)->ns, &node->fields);
+    save_fields(io, &node->fields);
 }
 
-static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeIndex *nodes)
+static void save_nodes(struct selva_io *io, struct SelvaNodeIndex *nodes)
 {
     struct SelvaNode *node;
 
     save_dump_magic(io, DUMP_MAGIC_NODES);
 
     RB_FOREACH(node, SelvaNodeIndex, nodes) {
-        save_node(io, db, node);
+        save_node(io, node);
     }
 }
 
@@ -173,7 +254,7 @@ static void save_types(struct selva_io *io, struct SelvaDb *db)
     SVector_ForeachBegin(&it, types);
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         io->sdb_write(&te->type, sizeof(te->type), 1, io);
-        save_nodes(io, db, &te->nodes);
+        save_nodes(io, &te->nodes);
         save_aliases(io, &te->aliases);
     }
 }
