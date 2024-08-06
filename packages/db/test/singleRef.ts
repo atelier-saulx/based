@@ -403,6 +403,7 @@ test.serial('single reference multi refs strings', async (t) => {
       },
       simple: {
         fields: {
+          age: { type: 'integer' },
           lilBlup: { type: 'reference', allowedType: 'blup' },
           user: { type: 'reference', allowedType: 'user' },
         },
@@ -429,10 +430,27 @@ test.serial('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  console.log(new Uint8Array(result.buffer))
-
   for (const r of result.data) {
-    console.log('START READ')
     t.is(r.lilBlup.name, '')
   }
+
+  db.create('simple', {
+    age: 5,
+  })
+
+  db.drain()
+
+  const result2 = db
+    .query('simple')
+    .filter('age', '=', 5)
+    .include('user', 'user.myBlup', 'lilBlup')
+    .get()
+
+  t.deepEqual(result2.data.toObject(), [
+    {
+      id: 2,
+      user: null,
+      lilBlup: null,
+    },
+  ])
 })

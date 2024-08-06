@@ -21,6 +21,7 @@ export function singleRefProp(
       refCtx.__r =
         ctx.__r?.refIncludes[fieldDef.start] ??
         ctx.__q.query.includeDef.refIncludes[fieldDef.start]
+
       return refCtx
     },
   })

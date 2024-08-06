@@ -1,12 +1,17 @@
 import { FieldDef } from '../schemaTypeDef.js'
 import picocolors from 'picocolors'
 import { QueryIncludeDef } from '../query/types.js'
+import { BasedNode } from './index.js'
 
 export const toObjectIncludeTree = (
   obj,
   target: any,
   arr: QueryIncludeDef['includeTree'],
 ) => {
+  if (target instanceof BasedNode && !target.id) {
+    return null
+  }
+
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++] as string
     const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
@@ -45,12 +50,16 @@ export const toObjectIncludeTreePrint = (
         if (!v) {
           console.warn('no ref', item, key, target, v)
         }
-        str += toObjectIncludeTreePrint(
-          '',
-          v,
-          v.__r.includeTree,
-          level + 1,
-        ).slice(0, -1)
+        if (!v.id) {
+          str += 'null'
+        } else {
+          str += toObjectIncludeTreePrint(
+            '',
+            v,
+            v.__r.includeTree,
+            level + 1,
+          ).slice(0, -1)
+        }
       } else if (item.type === 'string') {
         if (v === undefined) {
           return ''
