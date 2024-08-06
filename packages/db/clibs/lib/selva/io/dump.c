@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "util/ctime.h"
 #include "util/selva_string.h"
+#include "util/timestamp.h"
 #include "selva_error.h"
 #include "selva.h"
 #include "../db.h"
@@ -274,25 +276,54 @@ static void save_db(struct selva_io *io, struct SelvaDb *db)
     save_types(io, db);
 }
 
+static void print_ready(struct timespec * restrict ts_start, struct timespec * restrict ts_end)
+{
+    struct timespec ts_diff;
+    double t;
+    const char *t_unit;
+
+    timespec_sub(&ts_diff, ts_end, ts_start);
+    t = timespec2ms(&ts_diff);
+
+    if (t < 1e3) {
+        t_unit = "ms";
+    } else if (t < 60e3) {
+        t /= 1e3;
+        t_unit = "s";
+    } else if (t < 3.6e6) {
+        t /= 60e3;
+        t_unit = "min";
+    } else {
+        t /= 3.6e6;
+        t_unit = "h";
+    }
+
+    fprintf(stderr, "dump ready in %.2f %s", t, t_unit);
+}
+
 int io_dump_save_async(struct SelvaDb *db, const char *filename)
 {
     pid_t pid;
 
     pid = fork();
     if (pid == 0) {
+        struct timespec ts_start, ts_end;
         struct selva_io io;
         uint8_t hash[SELVA_IO_HASH_SIZE];
         int err;
 
-        printf("hello world\n");
+        fprintf(stderr, "hello world\n");
+        ts_monotime(&ts_start);
 
-        err = selva_io_init_file(&io, "", SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+        err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
         if (err) {
             return err;
         }
 
         save_db(&io, db);
         selva_io_end(&io, NULL, hash);
+        ts_monotime(&ts_end);
+        print_ready(&ts_start, &ts_end);
 
         quick_exit(EXIT_SUCCESS);
     } else if (pid < 0) {

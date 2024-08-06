@@ -804,8 +804,8 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
 static napi_value selva_save(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 1;
-    napi_value argv[1];
+    size_t argc = 2;
+    napi_value argv[2];
     napi_status status;
 
     err = get_args(env, info, &argc, argv, false);
@@ -818,7 +818,14 @@ static napi_value selva_save(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINVAL);
     }
 
-    return res2napi(env, io_dump_save_async(db, ""));
+    char filename[255];
+    size_t filename_len;
+    status = napi_get_value_string_utf8(env, argv[1], filename, sizeof(filename), &filename_len);
+    if (status != napi_ok) {
+        return res2napi(env, SELVA_EINVAL);
+    }
+
+    return res2napi(env, io_dump_save_async(db, filename));
 }
 
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
