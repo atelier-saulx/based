@@ -7,8 +7,9 @@ export const toObjectIncludeTree = (
   obj,
   target: any,
   arr: QueryIncludeDef['includeTree'],
+  fromObject?: boolean,
 ) => {
-  if (target instanceof BasedNode && !target.id) {
+  if (fromObject && !target.id) {
     return null
   }
 
@@ -18,7 +19,7 @@ export const toObjectIncludeTree = (
     if ('__isField' in item) {
       const v = target[key]
       if (item.type === 'reference') {
-        obj[key] = v.toObject()
+        obj[key] = toObjectIncludeTree({}, v, v.__r.includeTree, true)
       } else {
         obj[key] = v
       }
