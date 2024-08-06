@@ -154,15 +154,13 @@ const addModify = (
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
-  if (def.mainLen) {
-    const nextLen = 1 + 4 + 1
-    if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
-      flushBuffer(db)
-    }
-    setCursor(db, def, 0, id)
-    db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
-    db.modifyBuffer.len++
+  const nextLen = 1 + 4 + 1
+  if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+    flushBuffer(db)
   }
+  setCursor(db, def, 0, id)
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
+  db.modifyBuffer.len++
   if (def.seperate) {
     for (const s of def.seperate) {
       const nextLen = 1 + 4 + 1
@@ -181,6 +179,18 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
   def.total++
+
+  if (def.mainLen === 0) {
+    const nextLen = 5
+    if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+      flushBuffer(db)
+    }
+    setCursor(db, def, 0, id)
+    db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+    db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
+    db.modifyBuffer.len += nextLen
+  }
+
   addModify(db, id, value, def.tree, def)
   if (!db.isDraining) {
     startDrain(db)

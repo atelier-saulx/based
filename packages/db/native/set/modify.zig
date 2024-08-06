@@ -65,56 +65,46 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             type_prefix[1] = batch[i + 2];
             i = i + 1 + 2;
         } else if (operation == 3) {
-            // 4 will be MERGE
+            // PUT
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             const dbiName = db.createDbiName(type_prefix, field, currentShard);
             var shard = shards.get(dbiName);
             if (shard == null) {
-                shard = try db.openShard(true, dbiName, txn);
+                shard = db.openShard(true, dbiName, txn) catch null;
                 if (shard != null) {
-                    try shards.put(dbiName, shard.?);
+                    shards.put(dbiName, shard.?) catch {
+                        shard = null;
+                    };
                 }
             }
             if (shard != null) {
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
-                try errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
+                errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
             }
             i = i + operationSize + 1 + 4;
         } else if (operation == 4) {
-
-            // make fn
+            // DELETE
             const dbiName = db.createDbiName(type_prefix, field, currentShard);
             var shard = shards.get(dbiName);
             if (shard == null) {
-                shard = try db.openShard(true, dbiName, txn);
+                shard = db.openShard(true, dbiName, txn) catch null;
                 if (shard != null) {
-                    try shards.put(dbiName, shard.?);
+                    shards.put(dbiName, shard.?) catch {
+                        shard = null;
+                    };
                 }
             }
-            var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
-            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch |err| {
-                switch (err) {
-                    errors.MdbError.MDB_NOTFOUND => {
-                        i = i + 1;
-                        continue;
-                    },
-                    else => return err,
-                }
-            };
-
             if (shard != null) {
-                // MDB_NODUPDATA
-                try errors.mdbCheck(c.mdb_cursor_del(shard.?.cursor, 0));
+                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
+                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+                errors.mdbCheck(c.mdb_cursor_del(shard.?.cursor, 0)) catch {};
             }
-
             i = i + 1;
-
-            // DELETE
         } else {
-            std.log.err("Something went wrong, incorret modify operation\n", .{});
+            // ADD MERGE (only for MAIN)
+            std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
         }
     }

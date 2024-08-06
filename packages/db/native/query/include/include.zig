@@ -41,13 +41,16 @@ pub fn getFields(
                 }
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                try errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET));
-                mainValue = v;
-                // case that you only include
-                if (!idIsSet and start == null) {
-                    idIsSet = true;
-                    size += try addIdOnly(ctx, id, refLvl, start);
+
+                if (shard != null) {
+                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+                    // case that you only include
+                    if (!idIsSet and start == null) {
+                        idIsSet = true;
+                        size += try addIdOnly(ctx, id, refLvl, start);
+                    }
                 }
+                mainValue = v;
             }
             if (mainValue.?.mv_data == null) {
                 continue :includeField;
@@ -110,10 +113,6 @@ pub fn getFields(
     }
 
     if (size == 0 and !idIsSet) {
-        // a main will be 0 len if its only for this
-        // add a 0 field allways (main) and make it empty
-        // TODO check if it exists
-
         if (mainValue == null) {
             const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
             var shard = ctx.shards.get(dbiName);
@@ -125,13 +124,10 @@ pub fn getFields(
             }
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-            try errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET));
-            mainValue = v;
-            // case that you only include
-            if (!idIsSet and start == null) {
-                idIsSet = true;
-                size += try addIdOnly(ctx, id, refLvl, start);
+            if (shard != null) {
+                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
             }
+            mainValue = v;
         }
 
         if (mainValue.?.mv_data != null) {
