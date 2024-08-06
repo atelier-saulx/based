@@ -23,7 +23,6 @@ test.serial('remove', async (t) => {
     types: {
       nurp: {
         fields: {
-          // name: { type: 'string' },
           email: { type: 'string' },
         },
       },
@@ -51,14 +50,9 @@ test.serial('remove', async (t) => {
 
   t.deepEqual(db.query('user').get().data.toObject(), [])
 
-  console.log('NURP')
-  const nurp = db.create('nurp', {
-    // name: 'mr nurp',
-  })
+  const nurp = db.create('nurp', {})
 
   db.drain()
-
-  console.log('NURP DONE SETTING')
 
   t.deepEqual(db.query('nurp').include('email').get().data.toObject(), [
     {
@@ -67,17 +61,9 @@ test.serial('remove', async (t) => {
     },
   ])
 
-  console.log('NURP RESULT')
-
-  console.log('NURP remove')
-
   db.remove('nurp', nurp)
 
-  console.log('NURP remove DONE')
-
   db.drain()
-
-  console.log('QUERY GO')
 
   t.deepEqual(db.query('user').include('email').get().data.toObject(), [])
 })

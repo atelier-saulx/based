@@ -58,7 +58,6 @@ fn getQueryInternal(
         }
         const size = try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
         if (size > 0) {
-            std.debug.print("hello {d} \n", .{size});
             total_size += size;
             total_results += 1;
         }
