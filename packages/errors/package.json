@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
+    "buildCjs": "npx esbuild ./src/index.ts --bundle --platform=node --minify --outfile=./dist/index.cjs",
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
     "test": "npx ava",
