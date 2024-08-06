@@ -54,7 +54,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     q[j + 3 ..][0..2],
                     .little,
                 );
-                // std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
 
                 switch (filter_size) {
                     4 => {

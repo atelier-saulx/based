@@ -200,6 +200,5 @@ export const addConditions = (query: Query) => {
   } else {
     result = Buffer.alloc(0)
   }
-  console.log(new Uint8Array(result))
   return result
 }

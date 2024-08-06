@@ -63,14 +63,24 @@ test.serial('single reference query', async (t) => {
     name: 'mr blup 2',
   })
 
+  const user = db.create('user', {
+    myBlup: blup,
+  })
+
+  const user2 = db.create('user', {
+    myBlup: differentBlup,
+  })
+
   db.create('simple', {
     flap: {
       power: 10,
     },
+    user,
   })
 
   db.create('simple', {
     lilBlup: blup,
+    user: user2,
   })
 
   db.create('simple', {
@@ -89,44 +99,37 @@ test.serial('single reference query', async (t) => {
 
   db.drain()
 
-  // t.deepEqual(
-  //   db
-  //     .query('simple')
-  //     // check for .
-  //     // in conditions add 254 -> get next
-  //     .filter('flap.power', '=', 10)
-  //     .include('lilBlup')
-  //     .get()
-  //     .data.toObject(),
-  //   [
-  //     {
-  //       id: 2,
-  //       lilBlup: {
-  //         id: 1,
-  //         age: 10,
-  //         name: 'mr blup',
-  //         flap: 'B',
-  //       },
-  //     },
-  //   ],
-  // )
+  const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
-  // const result = db.query('simple').filter('user.myBlup.age', '=', 10).get()
+  t.deepEqual(result2.data.toObject(), [
+    {
+      id: 1,
+      smurp: 0,
+      flap: {
+        power: 10,
+      },
+    },
+  ])
+
   const result = db
     .query('simple')
     .filter('lilBlup.age', '=', 20)
     .filter('flap.power', '=', 10)
-
     .include('lilBlup', 'flap')
     .get()
 
-  console.log(result)
-  // console.log(new Uint8Array(result.buffer))
-
-  // for (const r of result.data) {
-  //   console.log('START READ')
-  //   t.is(r.lilBlup.name, '')
-  // }
-
-  t.true(true)
+  t.deepEqual(result.data.toObject(), [
+    {
+      id: 4,
+      lilBlup: {
+        id: 2,
+        age: 20,
+        name: 'mr blup 2',
+        flap: 'C',
+      },
+      flap: {
+        power: 10,
+      },
+    },
+  ])
 })
