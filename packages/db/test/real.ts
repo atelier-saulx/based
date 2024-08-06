@@ -328,7 +328,7 @@ test.serial('query + filter', async (t) => {
   // global.gc()
 })
 
-test.serial.only('1bn', async (t) => {
+test.serial('1bn', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -419,7 +419,7 @@ test.serial.only('1bn', async (t) => {
 
   //const dx = peroformance.now()
   console.log('GO!', process.pid)
-  await wait(15e3)
+  //await wait(15e3)
 
   const dx = performance.now()
   const NR_NODES_AA = 3e7
@@ -507,7 +507,7 @@ test.serial.only('1bn', async (t) => {
   console.log('update took', Math.round(performance.now() - dx), 'ms')
 
   const arch1Start = performance.now()
-  //selva.db_archive(dbp, 0)
+  selva.db_archive(dbp, 0)
   selva.db_prefetch(dbp, 1)
   const arch1End = performance.now()
   console.log(`Archived in ${Math.round(arch1End - arch1Start)} ms`)
@@ -526,6 +526,196 @@ test.serial.only('1bn', async (t) => {
   )
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
+  console.log(process.memoryUsage())
+
+  console.log('Destroy the db')
+  const startDbDel = performance.now()
+  selva.db_destroy(dbp)
+  console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
+
+  t.true(true)
+
+  // global.gc()
+})
+
+test.serial.only('dump', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  const dbp = selva.db_create()
+  await wait(1)
+
+  db.updateSchema({
+    types: {
+      simplex: {
+        prefix: 'aa',
+        fields: {
+          complex: {
+            type: 'reference',
+            allowedType: 'complex',
+            inverseProperty: 'simplie',
+          },
+        }
+      },
+      complex: {
+        prefix: 'bb',
+        fields: {
+          flap: { type: 'string' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'things',
+          },
+          simplie: {
+            type: 'reference',
+            allowedType: 'simplex',
+            inverseProperty: 'complex',
+          },
+          vectorClock: { type: 'integer' },
+          location: {
+            type: 'object',
+            properties: {
+              long: { type: 'number' },
+              lat: { type: 'number' },
+            },
+          },
+        },
+      },
+      user: {
+        prefix: 'us',
+        fields: {
+          name: { type: 'string' },
+          things: {
+            type: 'references',
+            allowedType: 'complex',
+            inverseProperty: 'user',
+          },
+        },
+      },
+    },
+  })
+
+  console.log('Schema', process.pid)
+  //await wait(15e3)
+  const schemaBufs = schema2selva(db.schemaTypesParsed)
+  //console.dir(db.schemaTypesParsed, { depth: 100 })
+  console.log('bufs', schemaBufs)
+  for (let i = 0; i < schemaBufs.length; i++) {
+    console.log(
+      `schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`,
+    )
+  }
+
+  const createUser = (id: number, name: string) => {
+    const fields = db.schemaTypesParsed.user.fields
+    const nameLen = Buffer.byteLength(name)
+    const buf = Buffer.allocUnsafe(5 + nameLen)
+    let off = 0
+
+    // name
+    buf.writeUInt32LE(5 + nameLen, off) // len
+    buf.writeInt8(fields.name.selvaField, (off += 4)) // field
+    buf.write(name, (off += 1))
+    off += nameLen
+
+    console.log(`create user ${name}:`, selva.db_update(dbp, 2, id, buf))
+  }
+  createUser(0, 'Synergy Greg')
+
+  //const dx = peroformance.now()
+  console.log('GO!', process.pid)
+  //await wait(15e3)
+
+  const dx = performance.now()
+  const NR_NODES_AA = 100
+  const NR_NODES_BB = 100
+  const CHUNK_SIZE = 536870912;
+  const buf = Buffer.allocUnsafe(CHUNK_SIZE)
+
+  // Create complices
+  for (let i = 0; i < NR_NODES_BB;) {
+    let off = 0
+    let bytes = 0;
+    const fields = db.schemaTypesParsed.complex.fields
+
+    const DATA_SIZE = 84 + 9
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES_BB; bytes += DATA_SIZE) {
+      // UpdateBatch
+      buf.writeUInt32LE(DATA_SIZE, off)
+      buf.writeUInt32LE(i++, (off += 4))
+      off += 4
+
+      // vectorClock
+      buf.writeUInt32LE(9, off) // len
+      buf.writeInt8(fields.vectorClock.selvaField, (off += 4)) // field
+      buf.writeInt32LE(i % 4, (off += 1))
+      off += 4
+
+      // flap
+      buf.writeUint32LE(41, off) // len
+      buf.writeInt8(fields.flap.selvaField, (off += 4)) // field
+      buf.write('Hippity hoppity there is no property', (off += 1))
+      off += 36
+
+      // long
+      buf.writeUInt32LE(13, off) // len
+      buf.writeInt8(fields['location.long'].selvaField, (off += 4)) // field
+      buf.writeDoubleLE(52, (off += 1))
+      off += 8
+
+      // lat
+      buf.writeUInt32LE(13, off) // len
+      buf.writeInt8(fields['location.lat'].selvaField, (off += 4)) // field
+      buf.writeDoubleLE(52, (off += 1))
+      off += 8
+
+      // user ref
+      buf.writeUInt32LE(9, off) // len
+      buf.writeInt8(fields['user'].selvaField, (off += 4)) // field
+      buf.writeUint32LE(0, (off += 1))
+      off += 4
+    }
+    const res = selva.db_update_batch(dbp, 1, buf.subarray(0, bytes))
+    if (res != 0) {
+        t.fail(`Update complex failed: ${res}`);
+    }
+    //console.log('wrote some bytes')
+  }
+
+  // Create simplies
+  for (let i = 0; i < NR_NODES_AA;) {
+    let off = 0
+    let bytes = 0;
+    const fields = db.schemaTypesParsed.simplex.fields
+
+    const DATA_SIZE = 17
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES_AA; bytes += DATA_SIZE) {
+      // UpdateBatch
+      buf.writeUInt32LE(DATA_SIZE, off)
+      buf.writeUInt32LE(i, (off += 4))
+      off += 4
+
+      // complex ref
+      buf.writeUInt32LE(9, off) // len
+      buf.writeInt8(fields['complex'].selvaField, (off += 4)) // field
+      buf.writeUint32LE(i, (off += 1))
+      off += 4
+
+      i++
+    }
+    const res = selva.db_update_batch(dbp, 0, buf.subarray(0, bytes))
+    if (res != 0) {
+        t.fail(`Update simple failed: ${res}`);
+    }
+  }
+  console.log('update took', Math.round(performance.now() - dx), 'ms')
+
+  selva.save(dbp, "test.sdb")
   console.log(process.memoryUsage())
 
   console.log('Destroy the db')

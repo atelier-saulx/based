@@ -6,10 +6,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "util/ctime.h"
 #include "util/selva_string.h"
+#include "util/timestamp.h"
 #include "selva_error.h"
 #include "selva.h"
 #include "../db.h"
+#include "../db_panic.h"
 #include "../fields.h"
 #include "../io.h"
 #include "io_struct.h"
@@ -25,6 +28,8 @@
 #define DUMP_MAGIC_NODE     3323984057
 #define DUMP_MAGIC_FIELDS   3126175483
 #define DUMP_MAGIC_ALIASES  4019181209
+
+static void save_fields(struct selva_io *io, struct SelvaFields *fields);
 
 /**
  * Write one of the magic numbers to the dump.
@@ -74,29 +79,51 @@ static void save_ns(struct selva_io *io, struct SelvaNodeSchema *ns)
     }
 }
 
+static void save_fields_string(struct selva_io *io, struct selva_string *string)
+{
+    size_t len;
+    const char *str = selva_string_to_str(string, &len);
+
+    io->sdb_write(&len, sizeof(size_t), 1, io);
+    io->sdb_write(str, sizeof(char), len, io);
+}
+
+static void save_fields_text(struct selva_io *io)
+{
+    /* TODO Save text field. */
+}
+
+static void save_fields_reference(struct selva_io *io, struct SelvaNodeReference *ref)
+{
+    const uint8_t meta_present = !!ref->meta;
+
+    io->sdb_write(&ref->dst->node_id, sizeof(node_id_t), 1, io);
+    io->sdb_write(&meta_present, sizeof(meta_present), 1, io);
+    if (meta_present) {
+        save_fields(io, ref->meta);
+    }
+}
+
+/**
+ * Save references.
+ * The caller must save nr_refs.
+ */
+static void save_fields_references(struct selva_io *io, struct SelvaNodeReferences *refs)
+{
+    for (size_t i = 0; i < refs->nr_refs; i++) {
+        struct SelvaNodeReference *ref = &refs->refs[i];
+
+        if (ref && ref->dst) {
+            save_fields_reference(io, ref);
+        } else {
+            /* TODO Handle NULL */
+            db_panic("ref in refs shouldn't be NULL");
+        }
+    }
+}
+
 static void save_fields(struct selva_io *io, struct SelvaFields *fields)
 {
-    /* TODO */
-#if 0
-    struct SelvaFields {
-#define SELVA_FIELDS_DATA_ALIGN 8
-        /**
-         * Field data.
-         * This pointer is tagged with PTAG.
-         * - 1 = shared i.e. refcount == 1
-         */
-        void *data;
-        struct {
-            uint32_t data_len: 24;
-            field_t nr_fields: 8;
-        };
-        alignas(uint16_t) struct SelvaFieldInfo {
-            enum SelvaFieldType type: 5;
-            uint16_t off: 11; /*!< Offset in data in 8-byte blocks. */
-        } __packed fields_map[] __counted_by(nr_fields);
-    } fields;
-#endif
-
     save_dump_magic(io, DUMP_MAGIC_FIELDS);
     io->sdb_write(&((uint32_t){ fields->nr_fields }), sizeof(uint32_t), 1, io);
     io->sdb_write(&((uint32_t){ fields->data_len }), sizeof(uint32_t), 1, io);
@@ -142,21 +169,15 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             io->sdb_write(&any.enu, sizeof(any.enu), 1, io);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            {
-                size_t len;
-                const char *str = selva_string_to_str(any.string, &len);
-                io->sdb_write(&len, sizeof(size_t), 1, io);
-                io->sdb_write(str, sizeof(char), len, io);
-            }
+            save_fields_string(io, any.string);
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            /* TODO text field */
+            save_fields_text(io);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (any.reference && any.reference->dst) {
                 io->sdb_write(&((uint32_t){ 1 }), sizeof(uint32_t), 1, io); /* nr_refs */
-                io->sdb_write(&any.reference->dst->node_id, sizeof(node_id_t), 1, io);
-                /* TODO Save meta */
+                save_fields_reference(io, any.reference);
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
             }
@@ -164,16 +185,7 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
         case SELVA_FIELD_TYPE_REFERENCES:
             if (any.references && any.references->nr_refs) {
                 io->sdb_write(&((uint32_t){ any.references->nr_refs }), sizeof(uint32_t), 1, io); /* nr_refs */
-                for (size_t i = 0; i < any.references->nr_refs; i++) {
-                    struct SelvaNodeReference *ref = &any.references->refs[i];
-
-                    if (ref && ref->dst) {
-                        io->sdb_write(&ref->dst->node_id, sizeof(ref->dst->node_id), 1, io);
-                        /* TODO Save meta */
-                    } else {
-                        /* TODO Handle NULL */
-                    }
-                }
+                save_fields_references(io, any.references);
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
             }
@@ -185,7 +197,6 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             if (any.weak_references.nr_refs) {
                 io->sdb_write(&((uint32_t){ any.weak_references.nr_refs }), sizeof(uint32_t), 1, io); /* nr_refs */
                 io->sdb_write(any.weak_references.refs, sizeof(struct SelvaNodeWeakReference), any.weak_references.nr_refs, io);
-                /* TODO Save meta */
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
             }
@@ -265,25 +276,54 @@ static void save_db(struct selva_io *io, struct SelvaDb *db)
     save_types(io, db);
 }
 
+static void print_ready(struct timespec * restrict ts_start, struct timespec * restrict ts_end)
+{
+    struct timespec ts_diff;
+    double t;
+    const char *t_unit;
+
+    timespec_sub(&ts_diff, ts_end, ts_start);
+    t = timespec2ms(&ts_diff);
+
+    if (t < 1e3) {
+        t_unit = "ms";
+    } else if (t < 60e3) {
+        t /= 1e3;
+        t_unit = "s";
+    } else if (t < 3.6e6) {
+        t /= 60e3;
+        t_unit = "min";
+    } else {
+        t /= 3.6e6;
+        t_unit = "h";
+    }
+
+    fprintf(stderr, "dump ready in %.2f %s", t, t_unit);
+}
+
 int io_dump_save_async(struct SelvaDb *db, const char *filename)
 {
     pid_t pid;
 
     pid = fork();
     if (pid == 0) {
+        struct timespec ts_start, ts_end;
         struct selva_io io;
         uint8_t hash[SELVA_IO_HASH_SIZE];
         int err;
 
-        printf("hello world\n");
+        fprintf(stderr, "hello world\n");
+        ts_monotime(&ts_start);
 
-        err = selva_io_init_file(&io, "", SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+        err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
         if (err) {
             return err;
         }
 
         save_db(&io, db);
         selva_io_end(&io, NULL, hash);
+        ts_monotime(&ts_end);
+        print_ready(&ts_start, &ts_end);
 
         quick_exit(EXIT_SUCCESS);
     } else if (pid < 0) {
