@@ -154,26 +154,26 @@ const addModify = (
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
-
-  // TODO: If len is too large..
-  // flushBuffer(db)
-
   if (def.mainLen) {
+    const nextLen = 1 + 4 + 1
+    if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+      flushBuffer(db)
+    }
     setCursor(db, def, 0, id)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
     db.modifyBuffer.len++
   }
-
   if (def.seperate) {
-    console.log(def.seperate)
     for (const s of def.seperate) {
-      console.log(s.field)
+      const nextLen = 1 + 4 + 1
+      if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+        flushBuffer(db)
+      }
       setCursor(db, def, s.field, id)
       db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
       db.modifyBuffer.len++
     }
   }
-
   return true
 }
 
