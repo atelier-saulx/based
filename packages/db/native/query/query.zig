@@ -56,8 +56,12 @@ fn getQueryInternal(
         if (filter(ctx, i, type_prefix, conditions, currentShard) == false) {
             continue :checkItem;
         }
-        total_size += try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
-        total_results += 1;
+        const size = try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
+        if (size > 0) {
+            std.debug.print("hello {d} \n", .{size});
+            total_size += size;
+            total_results += 1;
+        }
     }
 
     try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));

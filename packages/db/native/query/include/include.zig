@@ -25,7 +25,6 @@ pub fn getFields(
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
-
         if (field == 255) {
             const hasFields: bool = include[includeIterator + 1] == 1;
             const refSize = std.mem.readInt(u16, include[includeIterator + 2 ..][0..2], .little);
@@ -56,7 +55,6 @@ pub fn getFields(
             size += getSingleRefFields(ctx, singleRef, mainValue.?, refLvl, hasFields);
             continue :includeField;
         }
-
         if (field == 0) {
             const mainIncludeSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
             if (mainIncludeSize != 0) {
@@ -64,22 +62,17 @@ pub fn getFields(
             }
             includeIterator += 2 + mainIncludeSize;
         }
-
         includeIterator += 1;
-
         const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
         var shard = ctx.shards.get(dbiName);
-
         if (shard == null) {
             shard = db.openShard(true, dbiName, ctx.txn) catch null;
             if (shard != null) {
                 try ctx.shards.put(dbiName, shard.?);
             }
         }
-
         var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
         if (field == 0) {
             errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
                 mainValue = .{ .mv_size = 0, .mv_data = null };
@@ -97,7 +90,6 @@ pub fn getFields(
             };
             size += (v.mv_size + 3);
         }
-
         var result: results.Result = .{
             .id = id,
             .field = field,
@@ -106,7 +98,6 @@ pub fn getFields(
             .includeMain = includeMain,
             .refLvl = refLvl,
         };
-
         if (start == null) {
             if (!idIsSet) {
                 idIsSet = true;
@@ -115,14 +106,39 @@ pub fn getFields(
                 result.id = null;
             }
         }
-
         try ctx.results.append(result);
     }
 
     if (size == 0 and !idIsSet) {
-        const idSize = try addIdOnly(ctx, id, refLvl, start);
-        if (start == null) {
-            size += idSize;
+        // a main will be 0 len if its only for this
+        // add a 0 field allways (main) and make it empty
+        // TODO check if it exists
+
+        if (mainValue == null) {
+            const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
+            var shard = ctx.shards.get(dbiName);
+            if (shard == null) {
+                shard = db.openShard(true, dbiName, ctx.txn) catch null;
+                if (shard != null) {
+                    try ctx.shards.put(dbiName, shard.?);
+                }
+            }
+            var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            try errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET));
+            mainValue = v;
+            // case that you only include
+            if (!idIsSet and start == null) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id, refLvl, start);
+            }
+        }
+
+        if (mainValue.?.mv_data != null) {
+            const idSize = try addIdOnly(ctx, id, refLvl, start);
+            if (start == null) {
+                size += idSize;
+            }
         }
     }
 

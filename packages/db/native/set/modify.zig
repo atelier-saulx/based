@@ -47,6 +47,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     var currentShard: [2]u8 = .{ 0, 0 };
 
     while (i < size) {
+        // delete
         const operation = batch[i];
         if (operation == 0) {
             // SWITCH FIELD
@@ -75,12 +76,43 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
             }
             if (shard != null) {
-                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = null };
-                k.mv_data = &id;
+                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
                 try errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
             }
             i = i + operationSize + 1 + 4;
+        } else if (operation == 4) {
+
+            // make fn
+            const dbiName = db.createDbiName(type_prefix, field, currentShard);
+            var shard = shards.get(dbiName);
+            if (shard == null) {
+                shard = try db.openShard(true, dbiName, txn);
+                if (shard != null) {
+                    try shards.put(dbiName, shard.?);
+                }
+            }
+            var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
+            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch |err| {
+                switch (err) {
+                    errors.MdbError.MDB_NOTFOUND => {
+                        i = i + 1;
+                        continue;
+                    },
+                    else => return err,
+                }
+            };
+
+            if (shard != null) {
+                // MDB_NODUPDATA
+                try errors.mdbCheck(c.mdb_cursor_del(shard.?.cursor, 0));
+            }
+
+            i = i + 1;
+
+            // DELETE
         } else {
             std.log.err("Something went wrong, incorret modify operation\n", .{});
             break;

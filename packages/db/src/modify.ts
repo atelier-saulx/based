@@ -12,7 +12,7 @@ const EMPTY_BUFFER = Buffer.alloc(1000)
 const setCursor = (
   db: BasedDb,
   schema: SchemaTypeDef,
-  t: FieldDef,
+  field: number,
   id: number,
   ignoreField?: boolean,
 ) => {
@@ -34,8 +34,6 @@ const setCursor = (
     db.modifyBuffer.id = -1
     db.modifyBuffer.lastMain = -1
   }
-
-  const field = t.field
 
   if (!ignoreField && db.modifyBuffer.field !== field) {
     const len = db.modifyBuffer.len
@@ -77,7 +75,7 @@ const addModify = (
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t, id)
+        setCursor(db, schema, t.field, id)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
         db.modifyBuffer.len += 5
@@ -94,7 +92,7 @@ const addModify = (
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t, id)
+        setCursor(db, schema, t.field, id)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.len += 5
         const size = db.modifyBuffer.buffer.write(
@@ -105,14 +103,14 @@ const addModify = (
         db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
         db.modifyBuffer.len += size
       } else {
-        setCursor(db, schema, t, id, true)
+        setCursor(db, schema, t.field, id, true)
         let mainIndex = db.modifyBuffer.lastMain
         if (mainIndex === -1) {
           const nextLen = schema.mainLen + 1 + 4
           if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
             flushBuffer(db)
           }
-          setCursor(db, schema, t, id)
+          setCursor(db, schema, t.field, id)
           db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
           db.modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
@@ -152,6 +150,31 @@ const addModify = (
       }
     }
   }
+}
+
+export const remove = (db: BasedDb, type: string, id: number): boolean => {
+  const def = db.schemaTypesParsed[type]
+
+  // TODO: If len is too large..
+  // flushBuffer(db)
+
+  if (def.mainLen) {
+    setCursor(db, def, 0, id)
+    db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
+    db.modifyBuffer.len++
+  }
+
+  if (def.seperate) {
+    console.log(def.seperate)
+    for (const s of def.seperate) {
+      console.log(s.field)
+      setCursor(db, def, s.field, id)
+      db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
+      db.modifyBuffer.len++
+    }
+  }
+
+  return true
 }
 
 export const create = (db: BasedDb, type: string, value: any) => {

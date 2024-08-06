@@ -1,4 +1,4 @@
-import { create, update } from './set.js'
+import { create, update, remove } from './modify.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { SchemaTypeDef, createSchemaTypeDef } from './schemaTypeDef.js'
@@ -11,7 +11,7 @@ import { flushBuffer } from './operations.js'
 
 export * from './schemaTypeDef.js'
 export * from './get.js'
-export * from './set.js'
+export * from './modify.js'
 export * from './basedNode/index.js'
 
 // @ts-ignore
@@ -125,9 +125,8 @@ export class BasedDb {
     return update(this, type, id, value, merge)
   }
 
-  // REMOVE FAST
   remove(type: string, id: number) {
-    // goes into the same buffer as modify make a modify command for this
+    return remove(this, type, id)
   }
 
   get(type: string, id: number, include?: string[], exclude?: string[]) {

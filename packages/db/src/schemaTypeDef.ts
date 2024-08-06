@@ -159,7 +159,7 @@ export const createSchemaTypeDef = (
         result.cnt++
       }
 
-      result.fields[p.join('.')] = {
+      const field: FieldDef = {
         typeByte: TYPE_INDEX.get(f.type),
         __isField: true,
         type: f.type,
@@ -174,6 +174,11 @@ export const createSchemaTypeDef = (
           f.inverseProperty,
         allowedType:
           (f.type === 'reference' || f.type === 'references') && f.allowedType,
+      }
+
+      result.fields[p.join('.')] = field
+      if (isSeperate) {
+        result.seperate.push(field)
       }
     }
   }

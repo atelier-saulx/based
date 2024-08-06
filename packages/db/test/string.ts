@@ -124,7 +124,6 @@ test.serial.only('string + refs', async (t) => {
   })
 
   const users = []
-  const d = Date.now()
 
   for (let i = 0; i < 1; i++) {
     const blup = db.create('blup', {
@@ -157,7 +156,6 @@ test.serial.only('string + refs', async (t) => {
   }
 
   db.drain()
-  console.log('TIME', Date.now() - d, 'ms')
 
   const result = db
     .query('simple')
@@ -178,9 +176,4 @@ test.serial.only('string + refs', async (t) => {
       },
     },
   ])
-
-  console.log(new Uint8Array(result.buffer))
-  console.log(result)
-
-  t.true(true)
 })
