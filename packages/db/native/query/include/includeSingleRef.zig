@@ -23,6 +23,11 @@ pub fn getSingleRefFields(ctx: QueryCtx, include: []u8, v: c.MDB_val, refLvl: u8
     const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
     const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
 
+    // TODO: make test for this ref undefined
+    if (refId == 0) {
+        return 0;
+    }
+
     if (!hasFields) {
         _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
             return 0;

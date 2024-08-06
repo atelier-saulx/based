@@ -3,10 +3,10 @@ const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db.zig");
-const runCondition = @import("./conditions.zig").runConditions;
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
+const filter = @import("./filter/filter.zig").filter;
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(env, info) catch |err| {
@@ -47,67 +47,15 @@ fn getQueryInternal(
 
     var resultsList = std.ArrayList(results.Result).init(allocator);
     var currentShard: u16 = 0;
-    var ctx: QueryCtx = .{ .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
+    const ctx: QueryCtx = .{ .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
 
     checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
             currentShard += 1;
         }
-        var fieldIndex: usize = 0;
-
-        // fn for conditions
-        while (fieldIndex < conditions.len) {
-            const querySize: u16 = std.mem.readInt(
-                u16,
-                conditions[fieldIndex + 1 ..][0..2],
-                .little,
-            );
-            const field = conditions[fieldIndex];
-
-            if (field == 254) {
-                const start: u16 = std.mem.readInt(
-                    u16,
-                    conditions[fieldIndex + 1 ..][2..4],
-                    .little,
-                );
-
-                const type_prefix2: [2]u8 = .{ conditions[fieldIndex + 1 ..][4], conditions[fieldIndex + 1 ..][5] };
-
-                // do something special here...
-                // recursive so have to move fn to other file as well
-                std.debug.print("bla {d} {d} {d} {any} \n", .{ field, querySize, start, type_prefix2 });
-                // const start = std.mem.readInt(u16, include[2..][0..2], .little);
-                // const mainSlice = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-                // const refId = std.mem.readInt(u32, mainSlice[start..][0..4], .little);
-                // get id
-
-            } else {
-                const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
-                var shard = ctx.shards.get(dbiName);
-                if (shard == null) {
-                    shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                    if (shard != null) {
-                        try ctx.shards.put(dbiName, shard.?);
-                    }
-                }
-                if (shard != null) {
-                    const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
-                    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = null };
-                    k.mv_data = &i;
-                    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                        continue :checkItem;
-                    };
-                    if (!runCondition(@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size], query)) {
-                        continue :checkItem;
-                    }
-                } else {
-                    continue :checkItem;
-                }
-            }
-            fieldIndex += querySize + 3;
+        if (try filter(ctx, i, type_prefix, conditions, currentShard) == false) {
+            continue :checkItem;
         }
-
         total_size += try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
         total_results += 1;
     }

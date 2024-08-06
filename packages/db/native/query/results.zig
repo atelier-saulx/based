@@ -3,7 +3,6 @@ const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db.zig");
-const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 
 pub const Result = struct { id: ?u32, field: u8, val: ?c.MDB_val, start: ?u16, includeMain: []u8, refLvl: u8 };
