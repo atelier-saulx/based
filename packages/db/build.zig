@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
 
     const lib = b.addSharedLibrary(.{
         .name = "based-db-zig",
-        .root_source_file = .{ .path = "native/lib.zig" },
+        .root_source_file = b.path("native/lib.zig"),
         .target = target,
         .optimize = .ReleaseSmall,
         .link_libc = true,
@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
 
     lib.linker_allow_shlib_undefined = true;
 
-    lib.addSystemIncludePath(.{ .path = "deps/node-v20.11.1/include/node/" });
+    lib.addSystemIncludePath(b.path("deps/node-v20.11.1/include/node/"));
 
     const dep = b.dependency("lmdb", .{ .create = true });
 
