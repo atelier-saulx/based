@@ -6,10 +6,16 @@
   "main": "./dist/src/index.js",
   "exports": {
     "./client": "./dist/src/client.js",
-    ".": "./dist/src/index.js"
+    ".": {
+      "node": {
+        "require": "./dist/index.cjs"
+      },
+      "default": "./dist/src/index.js"
+    }
   },
   "scripts": {
-    "build": "rm -rf ./dist && tsc",
+    "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
+    "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
     "test": "npx ava",
     "clean": "rimraf {.turbo,dist,node_modules}"
@@ -24,6 +30,7 @@
   },
   "files": [
     "dist/src",
+    "dist/index.cjs",
     "README.md",
     "package.json"
   ],
