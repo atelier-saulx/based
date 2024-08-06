@@ -419,7 +419,7 @@ test.serial('1bn', async (t) => {
 
   //const dx = peroformance.now()
   console.log('GO!', process.pid)
-  await wait(15e3)
+  //await wait(15e3)
 
   const dx = performance.now()
   const NR_NODES_AA = 3e7
@@ -629,7 +629,7 @@ test.serial.only('dump', async (t) => {
 
   //const dx = peroformance.now()
   console.log('GO!', process.pid)
-  await wait(15e3)
+  //await wait(15e3)
 
   const dx = performance.now()
   const NR_NODES_AA = 100
