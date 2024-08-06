@@ -53,7 +53,7 @@ fn getQueryInternal(
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
             currentShard += 1;
         }
-        if (try filter(ctx, i, type_prefix, conditions, currentShard) == false) {
+        if (filter(ctx, i, type_prefix, conditions, currentShard) == false) {
             continue :checkItem;
         }
         total_size += try getFields(ctx, i, type_prefix, null, include, currentShard, 0);

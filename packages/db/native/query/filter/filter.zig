@@ -13,7 +13,7 @@ pub fn filter(
     conditions: []u8,
     currentShard: u16,
     // refLvl: u8,
-) !bool {
+) bool {
     var fieldIndex: usize = 0;
     // fn for conditions
     while (fieldIndex < conditions.len) {
@@ -46,7 +46,9 @@ pub fn filter(
             if (shard == null) {
                 shard = db.openShard(true, dbiName, ctx.txn) catch null;
                 if (shard != null) {
-                    try ctx.shards.put(dbiName, shard.?);
+                    ctx.shards.put(dbiName, shard.?) catch {
+                        return false;
+                    };
                 }
             }
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
@@ -71,7 +73,9 @@ pub fn filter(
             if (shard == null) {
                 shard = db.openShard(true, dbiName, ctx.txn) catch null;
                 if (shard != null) {
-                    try ctx.shards.put(dbiName, shard.?);
+                    ctx.shards.put(dbiName, shard.?) catch {
+                        return false;
+                    };
                 }
             }
             if (shard != null) {
