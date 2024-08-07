@@ -8,8 +8,7 @@ const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 
-// clean up and exist if main does not exist
-
+// TODO: clean up and exist if main does not exist
 pub fn getFields(
     ctx: QueryCtx,
     id: u32,
