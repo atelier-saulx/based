@@ -6,8 +6,9 @@
 #pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 #include <assert.h>
-#include <stdio.h>
 #include <node_api.h>
+#include <stdio.h>
+#include <string.h>
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva.h"
@@ -744,12 +745,13 @@ static const struct FindFields *get_find_fields(napi_env env, napi_value value)
     return fields;
 }
 
-// selva_find(db, type, node_id, fields, adj_filter | null, node_filter | null): number
+// selva_find(db, type, node_id, fields, adj_filter | null, node_filter | null, limits): number
 static napi_value selva_find(napi_env env, napi_callback_info info)
 {
     int err;
-    size_t argc = 6;
-    napi_value argv[6];
+    size_t argc = 7;
+    napi_value argv[7];
+    napi_status status;
 
     err = get_args(env, info, &argc, argv, false);
     if (err) {
@@ -765,6 +767,20 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     const uint8_t *adj_filter_buf = get_filter(env, argv[4], &adj_filter_len);
     size_t node_filter_len;
     const uint8_t *node_filter_buf = get_filter(env, argv[5], &node_filter_len);
+
+    struct {
+        size_t skip;
+        size_t offset;
+        size_t limit;
+    } __packed limits;
+    void *limits_buf;
+    size_t limits_len;
+    status = napi_get_buffer_info(env, argv[6], &limits_buf, &limits_len);
+    assert(status == napi_ok);
+    if (limits_len != sizeof(limits)) {
+        return res2napi(env, SELVA_EINVAL);
+    }
+    memcpy(&limits, limits_buf, sizeof(limits));
 
     if (!fields) {
         return res2napi(env, SELVA_EINVAL);
@@ -793,6 +809,9 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
             //.result = ({ napi_value res; napi_create_array(env, &res); res; }),
         },
         .fields = fields,
+        .skip = limits.skip,
+        .offset = limits.offset,
+        .limit = limits.limit,
     };
 
     err = find(db, node, &cb_wrap);
