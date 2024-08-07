@@ -164,11 +164,10 @@ test.serial('update', async (t) => {
   }
 
   db.drain()
+  console.log('DONE', Date.now() - d, 'ms')
 
   dbZig.stat()
   // process.exit()
-
-  console.log('DONE', Date.now() - d, 'ms')
 
   // console.log(db.query('snurp').get())
 
