@@ -24,6 +24,25 @@ struct FindParam {
 
     const uint8_t *node_filter;
     size_t node_filter_len;
+
+    /**
+     * Skip the first n nodes in the traversal.
+     * This happens before filtering.
+     */
+    ssize_t skip;
+
+    /**
+     * Skip the first n - 1 results.
+     * This skipping is executed on the final result set.
+     * 0 for no offset.
+     */
+    ssize_t offset;
+
+    /**
+     * Limit the number of results.
+     * -1 for no limit (inf).
+     */
+    ssize_t limit;
 };
 
 int find(struct SelvaDb *db, struct SelvaNode *node, const struct FindParam *param);
