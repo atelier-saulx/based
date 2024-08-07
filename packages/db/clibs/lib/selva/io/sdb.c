@@ -596,6 +596,25 @@ int sdb_write_footer(struct selva_io *io)
     return err;
 }
 
+/**
+ * Read the hash while io is at any arbitrary offset.
+ */
+static int sdb_read_hash(struct selva_io *io)
+{
+    off_t pos;
+    int err;
+
+    pos = io->sdb_tell(io);
+    io->sdb_seek(io, -(SELVA_IO_HASH_SIZE + 8), SEEK_END);
+    err = sdb_read_footer(io);
+    io->sdb_seek(io, pos, SEEK_SET);
+    if (err) {
+        return err;
+    }
+
+    return 0;
+}
+
 int sdb_read_footer(struct selva_io *io)
 {
     char magic[sizeof(magic_end)];
