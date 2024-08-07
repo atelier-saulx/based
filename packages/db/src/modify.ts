@@ -193,12 +193,19 @@ export const create = (db: BasedDb, type: string, value: any) => {
   def.total++
   if (!addModify(db, id, value, def.tree, def, false) || def.mainLen === 0) {
     const nextLen = 5 + def.mainLen
-    if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+    if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
       flushBuffer(db)
     }
     setCursor(db, def, 0, id)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
     db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
+    for (
+      let i = db.modifyBuffer.len + 5;
+      i < db.modifyBuffer.len + def.mainLen + 5;
+      i++
+    ) {
+      db.modifyBuffer.buffer[i] = 0
+    }
     db.modifyBuffer.len += nextLen
   }
   if (!db.isDraining) {
@@ -224,7 +231,6 @@ export const update = (
       flushBuffer(db)
     }
 
-    // weird
     setCursor(db, def, 0, id)
 
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 5
@@ -232,8 +238,6 @@ export const update = (
 
     db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len)
     db.modifyBuffer.len += 4
-    // also write main len (if not defined)
-    // prob want to add "empty" thing...
 
     for (let i = 0; i < mergeMain.length; i += 2) {
       const t = mergeMain[i]

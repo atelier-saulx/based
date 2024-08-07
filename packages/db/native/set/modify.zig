@@ -16,7 +16,7 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
     // [SIZE 2 bytes] | [1 byte operation] | []
-    const args = try napi.getArgs(2, env, info);
+    const args = try napi.getArgs(3, env, info);
     const batch = try napi.getBuffer("modifyBatch", env, args[0]);
     const size = try napi.getInt32("batchSize", env, args[1]);
 
@@ -67,7 +67,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // PUT
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             const dbiName = db.createDbiName(type_prefix, field, currentShard);
-
             var shard = shards.get(dbiName);
             if (shard == null) {
                 shard = db.openShard(true, dbiName, txn) catch null;
@@ -131,13 +130,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                         j += 4 + len;
                     }
                 } else {
-                    // include mainLen!
-                    std.log.err("No main defined for update {d}!\n", .{id});
+                    std.log.err("Main not created for update \n", .{});
                 }
             }
-            i = i + operationSize + 1 + 4;
+            i += operationSize + 7;
         } else {
-            // ADD MERGE (only for MAIN)
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
         }

@@ -103,12 +103,17 @@ test.serial('update', async (t) => {
     },
   })
 
+  db.drain()
+
+  console.info('FLAPFLAP')
+
   db.update('snurp', snurp2, {
     name: 'mr snurp 2!',
     nested: {
       derp: 'b',
     },
   })
+
   db.drain()
 
   t.deepEqual(db.query('snurp').get().data.toObject(), [
@@ -138,5 +143,83 @@ test.serial('update', async (t) => {
     },
   ])
 
-  dbZig.stat()
+  db.drain()
+
+  t.deepEqual(db.query('snurp').get().data.toObject(), [
+    {
+      a: 1,
+      b: 2,
+      c: 3,
+      countryCode: 'NL',
+      email: 'snurp@snurp.snurp',
+      id: 1,
+      name: 'mr snurp!',
+      nested: {
+        derp: 'a',
+      },
+    },
+    {
+      a: 0,
+      b: 0,
+      c: 0,
+      countryCode: '',
+      email: '',
+      id: 2,
+      name: 'mr snurp 2!',
+      nested: {
+        derp: 'b',
+      },
+    },
+  ])
+
+  // ---- DO THIS LATER
+  // db.update('snurp', 999, {
+  //   name: 'mr snurp 999!',
+  //   nested: {
+  //     derp: 'x',
+  //   },
+  // })
+
+  // db.drain()
+
+  // t.deepEqual(db.query('snurp').get().data.toObject(), [
+  //   {
+  //     a: 1,
+  //     b: 2,
+  //     c: 3,
+  //     countryCode: 'NL',
+  //     email: 'snurp@snurp.snurp',
+  //     id: 1,
+  //     name: 'mr snurp!',
+  //     nested: {
+  //       derp: 'a',
+  //     },
+  //   },
+  //   {
+  //     a: 0,
+  //     b: 0,
+  //     c: 0,
+  //     countryCode: '',
+  //     email: '',
+  //     id: 2,
+  //     name: 'mr snurp 2!',
+  //     nested: {
+  //       derp: 'b',
+  //     },
+  //   },
+  //   {
+  //     a: 0,
+  //     b: 0,
+  //     c: 0,
+  //     countryCode: '',
+  //     email: '',
+  //     id: 1000,
+  //     name: 'mr snurp 999!',
+  //     nested: {
+  //       derp: 'x',
+  //     },
+  //   },
+  // ])
+
+  // dbZig.stat()
 })

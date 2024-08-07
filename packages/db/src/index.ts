@@ -41,7 +41,6 @@ export class BasedDb {
     lastMain: number
     mergeMain: (FieldDef | any)[] | null
     mergeMainSize: number
-    emptyMainBuffer: Buffer
   }
 
   native = {
@@ -91,7 +90,6 @@ export class BasedDb {
       typePrefix: new Uint8Array([0, 0]),
       id: -1,
       lastMain: -1,
-      emptyMainBuffer: Buffer.alloc(0),
     }
     dbZig.createEnv(path)
   }
@@ -114,9 +112,6 @@ export class BasedDb {
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
         this.schemaTypesParsed[field] = def
-        if (def.mainLen > this.modifyBuffer.emptyMainBuffer.byteLength) {
-          this.modifyBuffer.emptyMainBuffer = Buffer.allocUnsafe(def.mainLen)
-        }
       }
     }
   }
