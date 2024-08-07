@@ -317,6 +317,8 @@ test.serial.only('query + filter', async (t) => {
   console.log(
     `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,
   )
+  t.deepEqual(res, matchCount, 'Both filters have the same result');
+  t.assert(match1End - match1Start < matchEnd - matchStart, 'Native is faster than js cb')
 
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())
@@ -325,8 +327,6 @@ test.serial.only('query + filter', async (t) => {
   const startDbDel = performance.now()
   selva.db_destroy(dbp)
   console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
-
-  t.true(true)
 
   // global.gc()
 })
