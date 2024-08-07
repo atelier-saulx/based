@@ -123,7 +123,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 var mainBuffer: []u8 = undefined;
                 if (v.mv_size != 0) {
                     mainBuffer = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-
                     const mergeMain: []u8 = batch[i + 5 .. i + 5 + operationSize];
                     var j: usize = 0;
                     @memcpy(emptyMain[0..mainBuffer.len], mainBuffer);
@@ -135,9 +134,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     }
                     const slicedEmpty = emptyMain[0..v.mv_size];
                     v.mv_data = slicedEmpty.ptr;
-                    errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
+                    errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {
+                        std.log.err("Setting main field in update {d}!\n", .{id});
+                    };
                 } else {
-                    std.log.err("No main defined should be impossible!\n", .{});
+                    // wrong just means update on non existing item which is supported
+                    // TODO: fixme
+                    std.log.err("No main defined {d}!\n", .{id});
                 }
             }
             i = i + operationSize + 1 + 4;

@@ -131,8 +131,8 @@ export class BasedDb {
     return create(this, type, value)
   }
 
-  update(type: string, id: number, value: any, merge?: boolean) {
-    return update(this, type, id, value, merge)
+  update(type: string, id: number, value: any, overwrite?: boolean) {
+    return update(this, type, id, value, overwrite)
   }
 
   remove(type: string, id: number) {

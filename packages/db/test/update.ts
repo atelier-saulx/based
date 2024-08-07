@@ -17,6 +17,7 @@ test.serial('update', async (t) => {
 
   const db = new BasedDb({
     path: dbFolder,
+    maxModifySize: 1000,
   })
 
   db.updateSchema({
@@ -107,7 +108,25 @@ test.serial('update', async (t) => {
     },
   })
 
+  // check speed
+
+  const d = Date.now()
+
+  // fix
+  for (let i = 0; i < 1e4; i++) {
+    db.update(
+      'snurp',
+      snurp,
+      {
+        a: i,
+      },
+      // false,
+      // true,
+    )
+  }
   db.drain()
+
+  console.log(Date.now() - d, 'ms')
 
   t.deepEqual(db.query('snurp').get().data.toObject(), [
     {

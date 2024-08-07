@@ -212,19 +212,19 @@ export const update = (
   type: string,
   id: number,
   value: any,
-  merge?: boolean, // default for now
+  overwrite?: boolean, // default for now
 ) => {
   const def = db.schemaTypesParsed[type]
-  addModify(db, id, value, def.tree, def, true)
-  if (!db.isDraining) {
-    startDrain(db)
-  }
-  if (db.modifyBuffer.mergeMain) {
+  const hasMain = addModify(db, id, value, def.tree, def, !overwrite)
+
+  if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
+    const mergeMain = db.modifyBuffer.mergeMain
     const size = db.modifyBuffer.mergeMainSize
     if (db.modifyBuffer.len + size + 9 > db.maxModifySize) {
       flushBuffer(db)
     }
 
+    // weird
     setCursor(db, def, 0, id)
 
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 5
@@ -233,9 +233,9 @@ export const update = (
     db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len)
     db.modifyBuffer.len += 4
 
-    for (let i = 0; i < db.modifyBuffer.mergeMain.length; i += 2) {
-      const t = db.modifyBuffer.mergeMain[i]
-      const v = db.modifyBuffer.mergeMain[i + 1]
+    for (let i = 0; i < mergeMain.length; i += 2) {
+      const t = mergeMain[i]
+      const v = mergeMain[i + 1]
       db.modifyBuffer.buffer.writeUint16LE(t.start, db.modifyBuffer.len)
       db.modifyBuffer.len += 2
       db.modifyBuffer.buffer.writeUint16LE(t.len, db.modifyBuffer.len)
@@ -247,20 +247,23 @@ export const update = (
           'utf8',
         )
         db.modifyBuffer.buffer[db.modifyBuffer.len] = size
-        db.modifyBuffer.len += t.len
         if (size + 1 > t.len) {
           console.warn('String does not fit fixed len', value)
         }
       } else if (t.type === 'timestamp' || t.type === 'number') {
-        // db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
+        db.modifyBuffer.buffer.writeFloatLE(value, db.modifyBuffer.len)
       } else if (t.type === 'integer' || t.type === 'reference') {
-        // db.modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
+        db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len)
       } else if (t.type === 'boolean') {
-        // db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
+        db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, db.modifyBuffer.len)
       }
+      db.modifyBuffer.len += t.len
     }
-
     db.modifyBuffer.mergeMain = null
     db.modifyBuffer.mergeMainSize = 0
+  }
+
+  if (!db.isDraining) {
+    startDrain(db)
   }
 }
