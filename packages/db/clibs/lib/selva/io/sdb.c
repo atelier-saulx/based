@@ -18,6 +18,40 @@
 #include "io_struct.h"
 #include "sdb.h"
 
+/*
+ *
+ * Selva binary dump serialization format (.sdb).
+ *
+ * ```
+ *    | 00 01 02 03 04 05 06 07
+ * ===+=========================+
+ * 00 | 54 48 53 49 44 45 55 50 | Magic string
+ *    |-------------------------|
+ * 08 | 00 00 00 00 00 00 00 00 | Created with version hash
+ * 10 | 00 00 00 00 00 00 00 00 | 40 bytes
+ * 18 | 00 00 00 00 00 00 00 00 | human-readable
+ * 20 | 00 00 00 00 00 00 00 00 |
+ * 28 | 00 00 00 00 00 00 00 00 |
+ *    |-------------------------|
+ * 30 | 00 00 00 00 00 00 00 00 | Updated with version hash
+ * 38 | 00 00 00 00 00 00 00 00 | 40 bytes
+ * 40 | 00 00 00 00 00 00 00 00 | human-readable
+ * 48 | 00 00 00 00 00 00 00 00 |
+ * 50 | 00 00 00 00 00 00 00 00 |
+ *    |-------------------------|
+ * 58 | 01 00 00 00|00 00 00 00 | uin32_t version | uint32_t flags
+ *    |=========================|
+ * 60 |        D  A  T  A       | compressed or raw data
+ *    |=========================|
+ *    | 44 4e 45 41 56 4c 45 53 | Magic string (not padded)
+ *    |-------------------------|
+ *    | XX XX XX XX XX XX XX XX | Hash of the file
+ *    | XX XX XX XX XX XX XX XX | from 0 to the beginning last magic string but
+ *    | XX XX XX XX XX XX XX XX | over uncompressed data.
+ *    | XX XX XX XX XX XX XX XX | binary
+ * ```
+ */
+
 #define SDB_VERSION 1
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
