@@ -127,26 +127,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     while (j < mergeMain.len) {
                         const start = std.mem.readInt(u16, mergeMain[j..][0..2], .little);
                         const len = std.mem.readInt(u16, mergeMain[j..][2..4], .little);
-
-                        // var x: usize = 0;
-                        // while (x < len) {
-                        //     const b = mergeMain[j + 4 + x];
-                        //     x += 1;
-
-                        //     // const b2 = mainBuffer[start + x];
-
-                        //     mainBuffer[start + x] = b;
-
-                        //     // std.debug.print("BYTE:{any} MMAP BYTE:{any} \n", .{ b, b2 });
-                        // }
-
                         @memcpy(mainBuffer[start .. start + len], mergeMain[j + 4 .. j + 4 + len]);
                         j += 4 + len;
                     }
-                    // std.debug.print("MAIN BUF NEW {any} MERGE {any} \n", .{ mainBuffer, mergeMain });
-                    // errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {
-                    //     std.log.err("Setting main field in update {d}!\n", .{id});
-                    // };
                 } else {
                     // include mainLen!
                     std.log.err("No main defined for update {d}!\n", .{id});
