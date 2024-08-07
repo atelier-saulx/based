@@ -201,7 +201,7 @@ export const create = (db: BasedDb, type: string, value: any) => {
     db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
     for (
       let i = db.modifyBuffer.len + 5;
-      i < db.modifyBuffer.len + def.mainLen + 5;
+      i < db.modifyBuffer.len + nextLen;
       i++
     ) {
       db.modifyBuffer.buffer[i] = 0
