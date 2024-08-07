@@ -76,13 +76,12 @@ pub fn statInternal() !c.MDB_stat {
     _ = c.mdb_dbi_close(env, dbi2);
 
     var size = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
-
-    std.debug.print("DBI {any} STAT SIZE {d} \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], size });
-
+    var dbiCnt: usize = 1;
+    var entries: usize = s.ms_entries;
+    std.debug.print("DBI {any} size {d}MB \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(size, 1000 * 1000) });
     var done: bool = false;
     while (!done) {
-        mdbCheck(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch |err| {
-            std.debug.print("no next {any} \n", .{err});
+        mdbCheck(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch {
             done = true;
             break;
         };
@@ -90,10 +89,6 @@ pub fn statInternal() !c.MDB_stat {
             done = true;
             break;
         }
-
-        std.debug.print("KEY: {any} \n", .{@as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size]});
-        // std.debug.print("VALUE: {any} \n", .{@as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size]});
-
         mdbCheck(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
             std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
             done = true;
@@ -102,13 +97,15 @@ pub fn statInternal() !c.MDB_stat {
         _ = mdbCheck(c.mdb_stat(txn, dbi2, &s)) catch |err| {
             std.debug.print("STAT ERROR {any} \n", .{err});
         };
-
+        dbiCnt += 1;
+        entries += s.ms_entries;
         _ = c.mdb_dbi_close(env, dbi2);
-
-        size += s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
-        std.debug.print("flap {any} \n", .{s});
-        std.debug.print("DBI {any} STAT SIZE {d}MB \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(size, 1000 * 1000) });
+        const dbiSize = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
+        size += dbiSize;
+        std.debug.print("DBI {any} size {d}MB \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(dbiSize, 1000 * 1000) });
     }
+
+    std.debug.print("DBIS {d} entries {d} size {d}mb \n", .{ dbiCnt, entries, @divTrunc(size, 1000 * 1000) });
 
     _ = c.mdb_cursor_close(cursor);
     _ = c.mdb_txn_commit(txn);

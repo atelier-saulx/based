@@ -232,6 +232,8 @@ export const update = (
 
     db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len)
     db.modifyBuffer.len += 4
+    // also write main len (if not defined)
+    // prob want to add "empty" thing...
 
     for (let i = 0; i < mergeMain.length; i += 2) {
       const t = mergeMain[i]

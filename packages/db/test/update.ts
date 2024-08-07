@@ -111,20 +111,13 @@ test.serial('update', async (t) => {
   // })
   // db.drain()
 
-  const d = Date.now()
+  var d = Date.now()
 
   for (let i = 0; i < 10e6; i++) {
-    db.create(
-      'snurp',
-      {
-        name: 'mr flap flapperpants ewdknwelkdn welkdhwedlkwehd ewlkd ' + i,
-        // a: i,
-      },
-      // true,
-      // false,
-      // false,
-      // true,
-    )
+    db.create('snurp', {
+      name: 'mr flap flapperpants ewdknwelkdn welkdhwedlkwehd ewlkd ' + i,
+      a: 0,
+    })
   }
   // check speed
   db.drain()
@@ -148,33 +141,34 @@ test.serial('update', async (t) => {
   // )
 
   // fix
-  // console.log('\n\nGO GO GO')
-  // for (let i = 3; i < 1 + 1; i++) {
-  //   // 5.12820512821 slower...
-  //   // going to do with premade main buffer...
-  //   // fill in the gaps
-  //   // inverts the info
-  //   // check if all
-  //   db.update(
-  //     'snurp',
-  //     i,
-  //     {
-  //       a: i,
-  //     },
-  //     // true,
-  //     true,
-  //     // false,
-  //     // true,
-  //   )
-  // }
+  console.log('\n\nGO GO GO')
+  d = Date.now()
 
-  // db.drain()
+  for (let i = 3; i < 10e6 + 1; i++) {
+    // 5.12820512821 slower...
+    // going to do with premade main buffer...
+    // fill in the gaps
+    // inverts the info
+    // check if all
+    db.update(
+      'snurp',
+      i,
+      {
+        a: i,
+      },
+      // true,
+      true,
+      // false,
+      // true,
+    )
+  }
+
+  db.drain()
 
   dbZig.stat()
-  t.true(true)
   // process.exit()
 
-  // console.log('DONE', Date.now() - d, 'ms')
+  console.log('DONE', Date.now() - d, 'ms')
 
   // console.log(db.query('snurp').get())
 
@@ -206,4 +200,6 @@ test.serial('update', async (t) => {
   //     },
   //   },
   // ])
+
+  t.true(true)
 })

@@ -149,7 +149,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     // };
                 } else {
                     // include mainLen!
-                    std.log.err("No main defined {d}!\n", .{id});
+                    std.log.err("No main defined for update {d}!\n", .{id});
                 }
             }
             i = i + operationSize + 1 + 4;
