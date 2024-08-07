@@ -70,6 +70,7 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
+
   fieldNames: Buffer
   fields: {
     // path including .

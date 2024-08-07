@@ -1,7 +1,11 @@
 import { create, update, remove } from './modify.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
-import { SchemaTypeDef, createSchemaTypeDef } from './schemaTypeDef.js'
+import {
+  FieldDef,
+  SchemaTypeDef,
+  createSchemaTypeDef,
+} from './schemaTypeDef.js'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
@@ -35,11 +39,14 @@ export class BasedDb {
     typePrefix: Uint8Array
     id: number
     lastMain: number
+    mergeMain: (FieldDef | any)[] | null
+    mergeMainSize: number
+    emptyMainBuffer: Buffer
   }
 
   native = {
-    modify: (buffer: Buffer, len: number): any => {
-      return dbZig.modify(buffer, len)
+    modify: (buffer: Buffer, len: number, empty: Buffer): any => {
+      return dbZig.modify(buffer, len, empty)
     },
     getQuery: (
       conditions: Buffer,
@@ -76,12 +83,15 @@ export class BasedDb {
     }
     const max = this.maxModifySize
     this.modifyBuffer = {
+      mergeMainSize: 0,
+      mergeMain: null,
       buffer: Buffer.allocUnsafe(max),
       len: 0,
       field: -1,
       typePrefix: new Uint8Array([0, 0]),
       id: -1,
       lastMain: -1,
+      emptyMainBuffer: Buffer.alloc(0),
     }
     dbZig.createEnv(path)
   }
@@ -102,11 +112,11 @@ export class BasedDb {
           }
           this.schema.prefixToTypeMapping[type.prefix] = field
         }
-        this.schemaTypesParsed[field] = createSchemaTypeDef(
-          field,
-          type,
-          this.schemaTypesParsed,
-        )
+        const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
+        this.schemaTypesParsed[field] = def
+        if (def.mainLen > this.modifyBuffer.emptyMainBuffer.byteLength) {
+          this.modifyBuffer.emptyMainBuffer = Buffer.allocUnsafe(def.mainLen)
+        }
       }
     }
   }
