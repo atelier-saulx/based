@@ -144,6 +144,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     }
 
     var it = shards.iterator();
+
     while (it.next()) |shard| {
         db.closeCursor(shard.value_ptr);
     }

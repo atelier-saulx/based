@@ -54,151 +54,89 @@ test.serial('update', async (t) => {
     },
   })
 
-  // const snurp = db.create('snurp', {
-  //   // name: 'mr snurp',
-  //   // email: 'snurp@snurp.snurp',
-  //   a: 1,
-  //   // b: 2,
-  //   // c: 3,
-  //   // countryCode: 'NL',
-  // })
+  const snurp = db.create('snurp', {
+    name: 'mr snurp',
+    email: 'snurp@snurp.snurp',
+    a: 1,
+    b: 2,
+    c: 3,
+    countryCode: 'NL',
+  })
 
-  // const snurp2 = db.create('snurp', {
-  //   name: 'mr snurp 2',
-  // })
+  const snurp2 = db.create('snurp', {
+    name: 'mr snurp 2',
+  })
 
-  // db.drain()
-
-  // t.deepEqual(db.query('snurp').get().data.toObject(), [
-  //   {
-  //     a: 1,
-  //     b: 2,
-  //     c: 3,
-  //     countryCode: 'NL',
-  //     email: 'snurp@snurp.snurp',
-  //     id: 1,
-  //     name: 'mr snurp',
-  //     nested: {
-  //       derp: '',
-  //     },
-  //   },
-  //   {
-  //     a: 0,
-  //     b: 0,
-  //     c: 0,
-  //     email: '',
-  //     countryCode: '',
-  //     id: 2,
-  //     name: 'mr snurp 2',
-  //     nested: {
-  //       derp: '',
-  //     },
-  //   },
-  // ])
-
-  // db.update('snurp', snurp, {
-  //   name: 'mr snurp!',
-  //   nested: {
-  //     derp: 'a',
-  //   },
-  // })
-
-  // db.update('snurp', snurp2, {
-  //   name: 'mr snurp 2!',
-  //   nested: {
-  //     derp: 'b',
-  //   },
-  // })
-  // db.drain()
-
-  var d = Date.now()
-
-  for (let i = 0; i < 10e6; i++) {
-    db.create('snurp', {
-      name: 'mr flap flapperpants ewdknwelkdn welkdhwedlkwehd ewlkd ' + i,
-      a: 0,
-    })
-  }
-  // check speed
   db.drain()
 
-  console.log('DONE', Date.now() - d, 'ms')
-
-  console.log(await fs.stat(join(__dirname, '../tmp/data.mdb')))
-
-  // const d = Date.now()
-
-  // db.update(
-  //   'snurp',
-  //   snurp,
-  //   {
-  //     a: 66,
-  //   },
-  //   // true,
-  //   false,
-  //   // false,
-  //   // true,
-  // )
-
-  // fix
-  console.log('\n\nGO GO GO')
-  d = Date.now()
-
-  for (let i = 3; i < 10e6 + 1; i++) {
-    // 5.12820512821 slower...
-    // going to do with premade main buffer...
-    // fill in the gaps
-    // inverts the info
-    // check if all
-    db.update(
-      'snurp',
-      i,
-      {
-        a: i,
+  t.deepEqual(db.query('snurp').get().data.toObject(), [
+    {
+      a: 1,
+      b: 2,
+      c: 3,
+      countryCode: 'NL',
+      email: 'snurp@snurp.snurp',
+      id: 1,
+      name: 'mr snurp',
+      nested: {
+        derp: '',
       },
-      // true,
-      true,
-      // false,
-      // true,
-    )
-  }
+    },
+    {
+      a: 0,
+      b: 0,
+      c: 0,
+      email: '',
+      countryCode: '',
+      id: 2,
+      name: 'mr snurp 2',
+      nested: {
+        derp: '',
+      },
+    },
+  ])
 
+  db.update('snurp', snurp, {
+    name: 'mr snurp!',
+    nested: {
+      derp: 'a',
+    },
+  })
+
+  db.update('snurp', snurp2, {
+    name: 'mr snurp 2!',
+    nested: {
+      derp: 'b',
+    },
+  })
   db.drain()
-  console.log('DONE', Date.now() - d, 'ms')
+
+  t.deepEqual(db.query('snurp').get().data.toObject(), [
+    {
+      a: 1,
+      b: 2,
+      c: 3,
+      countryCode: 'NL',
+      email: 'snurp@snurp.snurp',
+      id: 1,
+      name: 'mr snurp!',
+      nested: {
+        derp: 'a',
+      },
+    },
+    {
+      a: 0,
+      b: 0,
+      c: 0,
+      countryCode: '',
+      email: '',
+      id: 2,
+      name: 'mr snurp 2!',
+      nested: {
+        derp: 'b',
+      },
+    },
+  ])
 
   dbZig.stat()
-  // process.exit()
-
-  // console.log(db.query('snurp').get())
-
-  // t.true(true)
-
-  // t.deepEqual(db.query('snurp').get().data.toObject(), [
-  //   {
-  //     a: 1,
-  //     b: 2,
-  //     c: 3,
-  //     countryCode: 'NL',
-  //     email: 'snurp@snurp.snurp',
-  //     id: 1,
-  //     name: 'mr snurp!',
-  //     nested: {
-  //       derp: 'a',
-  //     },
-  //   },
-  //   {
-  //     a: 0,
-  //     b: 0,
-  //     c: 0,
-  //     countryCode: '',
-  //     email: '',
-  //     id: 2,
-  //     name: 'mr snurp 2!',
-  //     nested: {
-  //       derp: 'b',
-  //     },
-  //   },
-  // ])
-
-  t.true(true)
 })
