@@ -147,4 +147,8 @@ export class BasedDb {
   drain() {
     flushBuffer(this)
   }
+
+  stats() {
+    dbZig.stat()
+  }
 }
