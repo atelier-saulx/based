@@ -17,13 +17,12 @@ export class Query {
   totalConditionSize: number
   conditions: QueryConditions
 
-  constructor(db: BasedDb, target: string) {
+  constructor(db: BasedDb, target: string, id?: number) {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
-    if (typeDef) {
-      this.schema = typeDef
-    } else {
-      // is ID check prefix
+    this.schema = typeDef
+    if (id) {
+      this.id = id
     }
   }
 
@@ -76,4 +75,5 @@ export class Query {
   }
 }
 
-export const query = (db: BasedDb, target: string) => new Query(db, target)
+export const query = (db: BasedDb, target: string, id?: number) =>
+  new Query(db, target, id)

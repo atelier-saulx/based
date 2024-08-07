@@ -140,4 +140,6 @@ test.serial('update', async (t) => {
   ])
 
   db.drain()
+
+  console.log(db.query('snurp', 2).get())
 })

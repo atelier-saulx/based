@@ -23,6 +23,7 @@ export const get = (query: Query): BasedQueryResponse => {
   const includeBuffer = addInclude(query, query.includeDef)
   const conditionsBuffer = addConditions(query)
 
+  // add id
   const result: Buffer = query.db.native.getQuery(
     conditionsBuffer,
     query.schema.prefixString,

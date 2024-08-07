@@ -139,7 +139,7 @@ test.serial('single reference', async (t) => {
 
   const db = new BasedDb({
     path: dbFolder,
-    maxModifySize: 1e4,
+    // maxModifySize: 1e4,
   })
 
   db.updateSchema({

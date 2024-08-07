@@ -139,8 +139,8 @@ export class BasedDb {
     return get(this, type, id, include)
   }
 
-  query(target: string): Query {
-    return query(this, target)
+  query(target: string, id?: number): Query {
+    return query(this, target, id)
   }
 
   // drain write buffer returns perf in ms
