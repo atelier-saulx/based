@@ -769,9 +769,9 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     const uint8_t *node_filter_buf = get_filter(env, argv[5], &node_filter_len);
 
     struct {
-        size_t skip;
-        size_t offset;
-        size_t limit;
+        ssize_t skip;
+        ssize_t offset;
+        ssize_t limit;
     } __packed limits;
     void *limits_buf;
     size_t limits_len;

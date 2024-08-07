@@ -37,7 +37,7 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
     if (take && state->node_filter_len) {
         err = filter_eval(node, state->node_filter, state->node_filter_len, &take);
         if (err) {
-            /* TODO */
+            /* TODO handle this error? */
             return SELVA_TRAVERSAL_ABORT;
         }
     }
@@ -47,7 +47,7 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
         (void)state->node_cb(db, meta, node, state->node_arg);
 
         if (state->limit != -1 && --state->limit == 0) {
-            return SELVA_TRAVERSAL_STOP;
+            return SELVA_TRAVERSAL_ABORT;
         }
     }
 

@@ -104,7 +104,7 @@ test.serial.skip('create and destroy a db', async (t) => {
   t.true(true)
 })
 
-test.serial('query + filter', async (t) => {
+test.serial.only('query + filter', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -309,7 +309,10 @@ test.serial('query + filter', async (t) => {
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
   const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, 0, 0])
   //const node_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
-  const res = selva.find(dbp, 1, 0, fields_sel, adj_filter, node_filter)
+  const limits = Buffer.alloc(24); // [skip, offset, limit]
+  //limits.writeBigInt64LE(1000n, 0) // skip
+  //limits.writeBigInt64LE(1000n, 16) // limit
+  const res = selva.find(dbp, 1, 0, fields_sel, adj_filter, node_filter, limits)
   const match1End = performance.now()
   console.log(
     `Found ${res} matches in ${Math.round(match1End - match1Start)} ms`,
@@ -519,6 +522,8 @@ test.serial('1bn', async (t) => {
   const fields_sel = Buffer.from([1, 2, 0, 1]) // len = 1, [ type1, field1 ]
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 1, 0, FILTER.OP_EQ_INTEGER, 2, 0, 0, 0, 0 ])
   const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, 1, 0])
+  const limits = Buffer.alloc(24); // [skip, offset, limit]
+  limits.writeBigInt64LE(10000n, 16) // limit
   const res = selva.find(dbp, 2, 0, fields_sel, adj_filter, node_filter)
   const match1End = performance.now()
   console.log(
@@ -538,7 +543,7 @@ test.serial('1bn', async (t) => {
   // global.gc()
 })
 
-test.serial.only('dump', async (t) => {
+test.serial('dump', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
