@@ -248,14 +248,14 @@ export const update = (
         )
         db.modifyBuffer.buffer[db.modifyBuffer.len] = size
         if (size + 1 > t.len) {
-          console.warn('String does not fit fixed len', value)
+          console.warn('String does not fit fixed len', v)
         }
       } else if (t.type === 'timestamp' || t.type === 'number') {
-        db.modifyBuffer.buffer.writeFloatLE(value, db.modifyBuffer.len)
+        db.modifyBuffer.buffer.writeFloatLE(v, db.modifyBuffer.len)
       } else if (t.type === 'integer' || t.type === 'reference') {
-        db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len)
+        db.modifyBuffer.buffer.writeUint32LE(v, db.modifyBuffer.len)
       } else if (t.type === 'boolean') {
-        db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, db.modifyBuffer.len)
+        db.modifyBuffer.buffer.writeInt8(v ? 1 : 0, db.modifyBuffer.len)
       }
       db.modifyBuffer.len += t.len
     }

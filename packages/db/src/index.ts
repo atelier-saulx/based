@@ -45,8 +45,8 @@ export class BasedDb {
   }
 
   native = {
-    modify: (buffer: Buffer, len: number, empty: Buffer): any => {
-      return dbZig.modify(buffer, len, empty)
+    modify: (buffer: Buffer, len: number): any => {
+      return dbZig.modify(buffer, len)
     },
     getQuery: (
       conditions: Buffer,

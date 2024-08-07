@@ -17,9 +17,9 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
 
 pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: [2]u8) [5]u8 {
     if (shard[0] == 0 and shard[1] != 0) {
-        return .{ type_prefix[0], type_prefix[1], field, 255, 255 - shard[1] };
+        return .{ type_prefix[0], type_prefix[1], field + 1, 255, 255 - shard[1] };
     }
-    return .{ type_prefix[0], type_prefix[1], field, shard[0], shard[1] };
+    return .{ type_prefix[0], type_prefix[1], field + 1, shard[0], shard[1] };
 }
 
 pub fn openDbi(comptime create: bool, name: [5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {

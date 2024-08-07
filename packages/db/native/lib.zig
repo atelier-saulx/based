@@ -13,6 +13,7 @@ const Modify = @import("./set/modify.zig");
 const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
 const dbEnv = Envs.env;
+const stat = Envs.stat;
 const dbEnvIsDefined = Envs.dbEnvIsDefined;
 const getBatch4 = Gets.getBatch4;
 const getBatch8 = Gets.getBatch8;
@@ -66,6 +67,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "setBatch8", setBatch8) catch return null;
     registerFunction(env, exports, "delBatch4", delBatch4) catch return null;
     registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
+
+    registerFunction(env, exports, "stat", stat) catch return null;
+
     registerFunction(env, exports, "getQuery", query) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
     // registerFunction(env, exports, "compress", compress) catch return null;
