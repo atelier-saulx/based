@@ -4,9 +4,6 @@ import { addInclude } from './include.js'
 import { addConditions } from './filter.js'
 
 export const get = (query: Query): BasedQueryResponse => {
-  const start = query.offset ?? 0
-  const end = query.limit ?? 1e3
-
   const d = performance.now()
 
   if (!query.includeDef) {
@@ -23,15 +20,27 @@ export const get = (query: Query): BasedQueryResponse => {
   const includeBuffer = addInclude(query, query.includeDef)
   const conditionsBuffer = addConditions(query)
 
+  let result: Buffer
   // add id
-  const result: Buffer = query.db.native.getQuery(
-    conditionsBuffer,
-    query.schema.prefixString,
-    query.schema.lastId,
-    start,
-    end,
-    includeBuffer,
-  )
+  if (query.id) {
+    result = query.db.native.getQueryById(
+      conditionsBuffer,
+      query.schema.prefixString,
+      query.id,
+      includeBuffer,
+    )
+  } else {
+    const start = query.offset ?? 0
+    const end = query.limit ?? 1e3
+    result = query.db.native.getQuery(
+      conditionsBuffer,
+      query.schema.prefixString,
+      query.schema.lastId,
+      start,
+      end,
+      includeBuffer,
+    )
+  }
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

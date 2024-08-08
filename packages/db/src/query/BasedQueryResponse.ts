@@ -55,6 +55,7 @@ export class BasedQueryResponse {
   }
 
   get data() {
+    // return single item...
     return new BasedIterable(this.buffer, this)
   }
 

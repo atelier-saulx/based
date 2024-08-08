@@ -64,6 +64,14 @@ export class BasedDb {
         includeBuffer,
       )
     },
+    getQueryById: (
+      conditions: Buffer,
+      prefix: string,
+      id: number,
+      includeBuffer: Buffer,
+    ): any => {
+      return dbZig.getQueryById(conditions, prefix, id, includeBuffer)
+    },
   }
 
   schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA

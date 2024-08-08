@@ -73,7 +73,10 @@ fn getQueryInternal(
         const id = try napi.getInt32("id", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
         currentShard = db.idToShard(id);
-        if (filter(ctx, id, type_prefix, conditions, currentShard) == false) {
+
+        // ok now optmize
+
+        if (filter(ctx, id, type_prefix, conditions, currentShard)) {
             const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
             if (size > 0) {
                 total_size += size;

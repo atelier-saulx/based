@@ -105,6 +105,9 @@ export class BasedIterable {
     for (const item of this) {
       arr[i++] = item.toObject()
     }
+    if (this.#query.query.id) {
+      return arr[0] ?? null
+    }
     return arr
   }
 
