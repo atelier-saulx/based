@@ -141,6 +141,8 @@ test.serial('update', async (t) => {
 
   db.drain()
 
+  console.log(db.query('snurp', 2).get())
+
   t.deepEqual(db.query('snurp', 2).get().data.toObject(), {
     a: 0,
     b: 0,

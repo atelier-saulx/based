@@ -36,7 +36,11 @@ export class BasedIterable {
         picocolors.dim(picocolors.italic(`...${length - max} More items`))
     }
 
-    str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+    if (this.#query.query.id) {
+      str = str.trim()
+    } else {
+      str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+    }
 
     if (nested) {
       return str
