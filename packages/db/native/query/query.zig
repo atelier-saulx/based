@@ -76,6 +76,7 @@ fn getQueryInternal(
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
         var i: u32 = 1;
+        // handle offset
         checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
             if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
                 currentShard += 1;
@@ -129,7 +130,8 @@ fn getQueryInternal(
         const args = try napi.getArgs(7, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
-        const last_id = try napi.getInt32("last_id", env, args[2]);
+        // const last_id = try napi.getInt32("last_id", env, args[2]);
+        _ = try napi.getInt32("last_id", env, args[2]);
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
@@ -150,17 +152,34 @@ fn getQueryInternal(
         }
 
         if (sortIndex != null) {
-            std.debug.print("go go go {any} \n", .{sortIndex});
+            const order = sort[1];
+            std.debug.print("go go go {any} {any} \n", .{ sortIndex, order });
 
-            var i: u32 = 1;
-            checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
-                if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
-                    currentShard += 1;
+            var end: bool = false;
+            var flag: c_uint = c.MDB_FIRST;
+            var first: bool = true;
+
+            checkItem: while (!end and total_results < offset + limit) {
+                var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+                errors.mdbCheck(c.mdb_cursor_get(sortIndex.?.cursor, &k, &v, flag)) catch {
+                    end = true;
+                    break;
+                };
+                if (first) {
+                    first = false;
+
+                    flag = c.MDB_NEXT;
                 }
-                if (!filter(ctx, i, typePrefix, conditions, currentShard)) {
+                const id = std.mem.readInt(u32, @as([*]u8, @ptrCast(v.mv_data))[0..4], .little);
+
+                std.debug.print("YO {d} \n", .{id});
+
+                currentShard = db.idToShard(id);
+                if (!filter(ctx, id, typePrefix, conditions, currentShard)) {
                     continue :checkItem;
                 }
-                const size = try getFields(ctx, i, typePrefix, null, include, currentShard, 0);
+                const size = try getFields(ctx, id, typePrefix, null, include, currentShard, 0);
                 if (size > 0) {
                     total_size += size;
                     total_results += 1;

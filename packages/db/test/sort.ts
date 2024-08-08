@@ -44,6 +44,12 @@ test.serial('sort', async (t) => {
     email: 'flap@flap.flap',
   })
 
+  const blap = db.create('user', {
+    name: 'mr blap',
+    age: 20,
+    email: 'blap@blap.blap',
+  })
+
   db.drain()
 
   console.log(db.query('user').sort('age').get())
