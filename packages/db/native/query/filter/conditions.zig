@@ -145,7 +145,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             else => {
-                std.log.err("\nIncorrectly encoded condition (operation not handled)", .{});
+                std.log.err("\nIncorrectly encoded condition (operation not handled) {any} {any}", .{ v, q });
                 return false;
             },
         }
