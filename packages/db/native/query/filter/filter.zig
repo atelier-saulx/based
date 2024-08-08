@@ -44,7 +44,11 @@ pub fn filter(
             conditions[fieldIndex + 1 ..][0..2],
             .little,
         );
+
         const field = conditions[fieldIndex];
+
+        std.debug.print("flap qsize {d} field {d} \n", .{ querySize, field });
+
         if (field == 254) {
             const refTypePrefix: [2]u8 = .{ conditions[fieldIndex + 1 ..][4], conditions[fieldIndex + 1 ..][5] };
             if (main == null) {

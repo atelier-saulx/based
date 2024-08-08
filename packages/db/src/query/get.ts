@@ -21,6 +21,8 @@ export const get = (query: Query): BasedQueryResponse => {
   let result: Buffer
   const d = performance.now()
 
+  console.info('conditionsBuffer', new Uint8Array(conditionsBuffer))
+
   if (query.ids) {
     const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
     for (let i = 0; i < query.ids.length; i++) {
