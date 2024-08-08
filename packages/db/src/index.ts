@@ -52,9 +52,26 @@ export class BasedDb {
       offset: number,
       limit: number, // def 1k ?
       includeBuffer: Buffer,
-      sort: Buffer,
     ): any => {
       return dbZig.getQuery(
+        conditions,
+        prefix,
+        lastId,
+        offset,
+        limit,
+        includeBuffer,
+      )
+    },
+    getQuerySort: (
+      conditions: Buffer,
+      prefix: string,
+      lastId: number,
+      offset: number,
+      limit: number, // def 1k ?
+      includeBuffer: Buffer,
+      sort: Buffer,
+    ): any => {
+      return dbZig.getQuerySort(
         conditions,
         prefix,
         lastId,
@@ -77,9 +94,8 @@ export class BasedDb {
       prefix: string,
       ids: Buffer,
       includeBuffer: Buffer,
-      sort: Buffer,
     ): any => {
-      return dbZig.getQueryByIds(conditions, prefix, ids, includeBuffer, sort)
+      return dbZig.getQueryByIds(conditions, prefix, ids, includeBuffer)
     },
   }
 

@@ -23,6 +23,7 @@ test.serial('sort', async (t) => {
     types: {
       user: {
         fields: {
+          gender: { type: 'integer' },
           name: { type: 'string' },
           age: { type: 'integer' },
           email: { type: 'string' },

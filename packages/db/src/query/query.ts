@@ -13,7 +13,7 @@ export class Query {
   offset: number
   limit: number
 
-  sortBuffer: Buffer
+  sortBuffer: Buffer | void
 
   includeDef: QueryIncludeDef
 
@@ -24,7 +24,6 @@ export class Query {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
     this.schema = typeDef
-    this.sortBuffer = Buffer.alloc(0)
 
     if (id) {
       if (Array.isArray(id)) {
@@ -71,17 +70,16 @@ export class Query {
 
   sort(field: string, order: 'asc' | 'desc' = 'asc'): Query {
     const fieldDef = this.schema.fields[field]
-
     if (!fieldDef) {
       console.warn('No field def defined for', field)
       return this
     }
-
     if (fieldDef.field === 0) {
-      const buf = Buffer.allocUnsafe(4)
+      const buf = Buffer.allocUnsafe(6)
       buf[0] = 0
       buf[1] = order === 'asc' ? 0 : 1
       buf.writeUint16LE(fieldDef.start, 2)
+      buf.writeUint16LE(fieldDef.len, 4)
       this.sortBuffer = buf
     } else {
       const buf = Buffer.allocUnsafe(2)
@@ -89,7 +87,6 @@ export class Query {
       buf[1] = order === 'asc' ? 0 : 1
       this.sortBuffer = buf
     }
-
     return this
   }
 

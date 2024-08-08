@@ -31,7 +31,6 @@ export const get = (query: Query): BasedQueryResponse => {
       query.schema.prefixString,
       idsBuffer,
       includeBuffer,
-      query.sortBuffer,
     )
   } else if (query.id) {
     result = query.db.native.getQueryById(
@@ -39,6 +38,18 @@ export const get = (query: Query): BasedQueryResponse => {
       query.schema.prefixString,
       query.id,
       includeBuffer,
+    )
+  } else if (query.sortBuffer) {
+    const start = query.offset ?? 0
+    const end = query.limit ?? 1e3
+    result = query.db.native.getQuerySort(
+      conditionsBuffer,
+      query.schema.prefixString,
+      query.schema.lastId,
+      start,
+      end,
+      includeBuffer,
+      query.sortBuffer,
     )
   } else {
     const start = query.offset ?? 0
@@ -50,7 +61,6 @@ export const get = (query: Query): BasedQueryResponse => {
       start,
       end,
       includeBuffer,
-      query.sortBuffer,
     )
   }
 

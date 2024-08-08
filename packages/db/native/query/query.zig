@@ -30,10 +30,17 @@ pub fn getQueryIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.n
     };
 }
 
+pub fn getQuerySort(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(3, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
 var queryId: u32 = 0;
 
 fn getQueryInternal(
-    comptime idType: comptime_int,
+    comptime queryType: comptime_int,
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
@@ -59,40 +66,20 @@ fn getQueryInternal(
     var total_results: usize = 0;
     var total_size: usize = 0;
 
-    if (idType == 0) {
-        const args = try napi.getArgs(7, env, info);
+    if (queryType == 0) {
+        // query no sort
+        const args = try napi.getArgs(6, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
         const last_id = try napi.getInt32("last_id", env, args[2]);
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
-        const sort = try napi.getBuffer("sort", env, args[6]);
-
-        if (sort.len > 0) {
-            std.debug.print("SORT: {any} \n", .{sort});
-
-            if (sort.len == 4) {
-                const start = std.mem.readInt(u16, sort[2..][0..2], .little);
-
-                std.debug.print("{d} \n", .{start});
-                _ = dbSort.createOrGetSortIndex(
-                    typePrefix,
-                    sort[0],
-                    start,
-                    queryId,
-                );
-            } else {
-                _ = dbSort.createOrGetSortIndex(typePrefix, sort[0], 0, queryId);
-            }
-        }
-
-        var i: u32 = offset + 1;
+        var i: u32 = 1;
         checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
             if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
                 currentShard += 1;
             }
-
             if (!filter(ctx, i, typePrefix, conditions, currentShard)) {
                 continue :checkItem;
             }
@@ -102,7 +89,8 @@ fn getQueryInternal(
                 total_results += 1;
             }
         }
-    } else if (idType == 1) {
+    } else if (queryType == 1) {
+        // single id
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
@@ -116,17 +104,13 @@ fn getQueryInternal(
                 total_results += 1;
             }
         }
-    } else if (idType == 2) {
-        // ids
-        const args = try napi.getArgs(5, env, info);
+    } else if (queryType == 2) {
+        // ids list
+        const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
         const ids = try napi.getBuffer("ids", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
-        const sort = try napi.getBuffer("sort", env, args[4]);
-        if (sort.len > 0) {
-            std.debug.print("SORT: {any} \n", .{sort});
-        }
         var i: u32 = 0;
         checkItem: while (i <= ids.len) : (i += 4) {
             const id = std.mem.readInt(u32, ids[i..][0..4], .little);
@@ -138,6 +122,49 @@ fn getQueryInternal(
             if (size > 0) {
                 total_size += size;
                 total_results += 1;
+            }
+        }
+    } else if (queryType == 3) {
+        // query  sort
+        const args = try napi.getArgs(7, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const last_id = try napi.getInt32("last_id", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+        const include = try napi.getBuffer("include", env, args[5]);
+        const sort = try napi.getBuffer("sort", env, args[6]);
+        var sortIndex: ?dbSort.SortIndex = null;
+        if (sort.len == 6) {
+            const start = std.mem.readInt(u16, sort[2..][0..2], .little);
+            const len = std.mem.readInt(u16, sort[2..][2..4], .little);
+            sortIndex = dbSort.createOrGetSortIndex(
+                typePrefix,
+                sort[0],
+                start,
+                len,
+                queryId,
+            );
+        } else {
+            sortIndex = dbSort.createOrGetSortIndex(typePrefix, sort[0], 0, 0, queryId);
+        }
+
+        if (sortIndex != null) {
+            std.debug.print("go go go {any} \n", .{sortIndex});
+
+            var i: u32 = 1;
+            checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
+                if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
+                    currentShard += 1;
+                }
+                if (!filter(ctx, i, typePrefix, conditions, currentShard)) {
+                    continue :checkItem;
+                }
+                const size = try getFields(ctx, i, typePrefix, null, include, currentShard, 0);
+                if (size > 0) {
+                    total_size += size;
+                    total_results += 1;
+                }
             }
         }
     }
