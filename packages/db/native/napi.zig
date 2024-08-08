@@ -45,12 +45,14 @@ pub fn getString(comptime name: []const u8, env: c.napi_env, value: c.napi_value
 }
 
 pub fn getStringFixedLength(comptime name: []const u8, comptime len: comptime_int, env: c.napi_env, value: c.napi_value) ![len]u8 {
-    var buffer: [len]u8 = undefined;
+    var buffer: [len + 1]u8 = undefined;
     if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), len + 1, null) != c.napi_ok) {
         jsThrow(env, "Cannot get fixed length string for variable: " ++ name);
         return errors.Napi.CannotGetString;
     }
-    return buffer;
+    var bufferNoNull: [len]u8 = undefined;
+    @memcpy(bufferNoNull[0..len], buffer[0..len]);
+    return bufferNoNull;
 }
 
 pub fn getInt32(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !u32 {

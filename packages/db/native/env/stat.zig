@@ -7,6 +7,8 @@ const Env = @import("./env.zig");
 const mdbCheck = errors.mdbCheck;
 const jsThrow = errors.jsThrow;
 
+// init function
+
 pub fn statInternal() !c.MDB_stat {
     var s: c.MDB_stat = undefined;
     var txn: ?*c.MDB_txn = null;

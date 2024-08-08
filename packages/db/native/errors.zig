@@ -17,6 +17,8 @@ pub const Napi = error{
     CannotGetInt32,
 };
 
+pub const DbError = error{SHARD_NOT_CREATED};
+
 pub const MdbError = error{
     // OS errors
     INVAL,

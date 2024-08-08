@@ -33,16 +33,9 @@ pub fn getFields(
             includeIterator += refSize + 4;
             if (mainValue == null) {
                 const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
-                var shard = ctx.shards.get(dbiName);
-                if (shard == null) {
-                    shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                    if (shard != null) {
-                        try ctx.shards.put(dbiName, shard.?);
-                    }
-                }
+                const shard = db.getReadShard(dbiName, ctx.id);
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
                 if (shard != null) {
                     errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
                     // case that you only include
@@ -68,13 +61,12 @@ pub fn getFields(
         }
         includeIterator += 1;
         const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
-        var shard = ctx.shards.get(dbiName);
+        const shard = db.getReadShard(dbiName, ctx.id);
+
         if (shard == null) {
-            shard = db.openShard(true, dbiName, ctx.txn) catch null;
-            if (shard != null) {
-                try ctx.shards.put(dbiName, shard.?);
-            }
+            continue :includeField;
         }
+
         var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         if (field == 0) {
@@ -116,13 +108,7 @@ pub fn getFields(
     if (size == 0 and !idIsSet) {
         if (mainValue == null) {
             const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
-            var shard = ctx.shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                if (shard != null) {
-                    try ctx.shards.put(dbiName, shard.?);
-                }
-            }
+            const shard = db.getReadShard(dbiName, ctx.id);
             var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
             var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
             if (shard != null) {

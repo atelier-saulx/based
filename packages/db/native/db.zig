@@ -3,7 +3,29 @@ const errors = @import("./errors.zig");
 const Envs = @import("./env/env.zig");
 const std = @import("std");
 
-pub const Shard = struct { dbi: c.MDB_dbi, key: [5]u8, cursor: ?*c.MDB_cursor };
+pub const Shard = struct { dbi: c.MDB_dbi, key: [5]u8, cursor: ?*c.MDB_cursor, queryId: ?u32 };
+
+// READ SHARDS
+var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+const allocator = arena.allocator();
+pub var readShards = std.AutoHashMap([5]u8, Shard).init(allocator);
+pub var readTxn: *c.MDB_txn = undefined;
+var txnCrerated: bool = false;
+
+pub fn initReadTxn() !*c.MDB_txn {
+    if (txnCrerated) {
+        return readTxn;
+    }
+    txnCrerated = true;
+    const x = try createTransaction(true);
+    readTxn = x.?;
+
+    // const y = try createTransaction(true);
+    // readTxn2 = y.?;
+    // const x = try createTransaction(true);
+    // readTxn = x.?;
+    return readTxn;
+}
 
 pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     var txn: ?*c.MDB_txn = null;
@@ -32,13 +54,35 @@ pub fn openDbi(comptime create: bool, name: [5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi 
     return dbi;
 }
 
+pub fn getReadShard(dbiName: [5]u8, queryId: u32) ?Shard {
+    var s = readShards.get(dbiName);
+    if (s == null) {
+        var cursor: ?*c.MDB_cursor = null;
+        const dbi = openDbi(true, dbiName, readTxn) catch {
+            return null;
+        };
+        errors.mdbCheck(c.mdb_cursor_open(readTxn, dbi, &cursor)) catch |err| {
+            std.log.err("Cannot open cursor {any}\n", .{err});
+            return null;
+        };
+        s = .{ .dbi = dbi, .key = dbiName, .cursor = cursor, .queryId = queryId };
+        readShards.put(dbiName, s.?) catch |err| {
+            std.log.err("Shard cannot be created name: {any} err: {any}\n", .{ dbiName, err });
+        };
+    } else if (s.?.queryId != queryId) {
+        _ = c.mdb_cursor_renew(readTxn, s.?.cursor);
+        s.?.queryId = queryId;
+    }
+    return s;
+}
+
 pub fn openShard(comptime create: bool, dbiName: [5]u8, txn: ?*c.MDB_txn) !Shard {
     const dbi = try openDbi(create, dbiName, txn);
     // errdefer c.mdb_dbi_close(Envs.env, dbi);
     var cursor: ?*c.MDB_cursor = null;
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
     errdefer c.mdb_cursor_close(cursor);
-    const s: Shard = .{ .dbi = dbi, .key = dbiName, .cursor = cursor };
+    const s: Shard = .{ .dbi = dbi, .key = dbiName, .cursor = cursor, .queryId = null };
     return s;
 }
 
