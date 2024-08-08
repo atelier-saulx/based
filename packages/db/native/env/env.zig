@@ -33,10 +33,12 @@ fn createEnvInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_v
 
     var flags: c_uint = 0;
 
-    // flags |= c.MDB_RDONLY; // very nice for
-    flags |= c.MDB_NOLOCK; // only 1 writer per db
+    // flags |= c.MDB_RDONLY; // very nice for read shard
 
-    // flags |= c.MDB_NOTLS;
+    // only 1 writer per db
+    flags |= c.MDB_NOLOCK;
+
+    // no sync
     flags |= c.MDB_NOSYNC;
 
     // no meta sync

@@ -153,10 +153,11 @@ fn getQueryInternal(
 
         if (sortIndex != null) {
             const order = sort[1];
-            std.debug.print("go go go {any} {any} \n", .{ sortIndex, order });
-
             var end: bool = false;
             var flag: c_uint = c.MDB_FIRST;
+            if (order == 1) {
+                flag = c.MDB_LAST;
+            }
             var first: bool = true;
 
             checkItem: while (!end and total_results < offset + limit) {
@@ -168,13 +169,13 @@ fn getQueryInternal(
                 };
                 if (first) {
                     first = false;
-
-                    flag = c.MDB_NEXT;
+                    if (order == 1) {
+                        flag = c.MDB_PREV;
+                    } else {
+                        flag = c.MDB_NEXT;
+                    }
                 }
                 const id = std.mem.readInt(u32, @as([*]u8, @ptrCast(v.mv_data))[0..4], .little);
-
-                std.debug.print("YO {d} \n", .{id});
-
                 currentShard = db.idToShard(id);
                 if (!filter(ctx, id, typePrefix, conditions, currentShard)) {
                     continue :checkItem;

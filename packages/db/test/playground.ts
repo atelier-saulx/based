@@ -108,7 +108,8 @@ console.log('TIME', Date.now() - d, 'ms')
 const result = db
   .query('simple')
   .include('user', 'user.myBlup', 'lilBlup')
-  .range(0, 1)
+  .range(0, 100)
+  .sort('user')
   .get()
 
 // const logger = (x, empty = '') => {
@@ -134,7 +135,7 @@ const result = db
 
 // logger(result.query.includeDef)
 
-console.log(new Uint8Array(result.buffer), result.data.length)
+// console.log(new Uint8Array(result.buffer), result.data.length)
 
 let i = 0
 
@@ -143,6 +144,15 @@ let i = 0
 console.log(result)
 
 console.log('GOP GP')
+
+console.log(
+  db
+    .query('simple')
+    .include('user', 'user.myBlup', 'lilBlup')
+    .range(0, 100)
+    .sort('user')
+    .get(),
+)
 
 // for (const item of result.data) {
 //   // console.info('\nITEM ID --->', item.id)

@@ -46,13 +46,21 @@ test.serial('sort', async (t) => {
 
   const blap = db.create('user', {
     name: 'mr blap',
-    age: 20,
+    age: 200,
     email: 'blap@blap.blap',
+  })
+
+  const nurp = db.create('user', {
+    name: 'mr nurp',
+    age: 200,
+    email: 'nurp@nurp.nurp',
   })
 
   db.drain()
 
-  console.log(db.query('user').sort('age').get())
+  console.log(
+    db.query('user').sort('age', 'desc').include('email', 'age').get(),
+  )
 
   db.stats()
 
