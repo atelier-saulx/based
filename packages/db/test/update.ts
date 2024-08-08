@@ -156,9 +156,8 @@ test.serial('update', async (t) => {
   }
   db.drain()
 
+  console.log(db.query('snurp', ids).get())
   const d = Date.now()
-
-  // db.query('snurp', ids).get()
 
   // x200 faster...
 
