@@ -376,7 +376,7 @@ test.serial('single reference', async (t) => {
   )
 })
 
-test.serial('single reference multi refs strings', async (t) => {
+test.serial.only('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
