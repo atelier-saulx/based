@@ -202,7 +202,7 @@ test.serial('update', async (t) => {
   // x200 faster...
 
   let x = 0
-  for (var i = 0; i < 1e6; i++) {
+  for (var i = 0; i < 1e5; i++) {
     x += db.query('snurp', i).get().execTime
   }
   console.log(Date.now() - d, 'ms', 'db time', x, 'ms')

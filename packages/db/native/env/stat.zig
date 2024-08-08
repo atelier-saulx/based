@@ -25,7 +25,7 @@ pub fn statInternal() !c.MDB_stat {
 
     mdbCheck(c.mdb_cursor_get(cursor, &k, &v, c.MDB_FIRST)) catch {};
     mdbCheck(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
-        std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
+        std.debug.print("NO DBI {any} DBI {any}  \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
     };
     _ = c.mdb_stat(txn, dbi2, &s);
     _ = c.mdb_dbi_close(Env.env, dbi2);
@@ -33,7 +33,7 @@ pub fn statInternal() !c.MDB_stat {
     var size = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
     var dbiCnt: usize = 1;
     var entries: usize = s.ms_entries;
-    std.debug.print("DBI {any} size {d}MB \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(size, 1000 * 1000) });
+    std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(size, 1000 * 1000), entries });
     var done: bool = false;
     while (!done) {
         mdbCheck(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch {
@@ -57,7 +57,7 @@ pub fn statInternal() !c.MDB_stat {
         _ = c.mdb_dbi_close(Env.env, dbi2);
         const dbiSize = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
         size += dbiSize;
-        std.debug.print("DBI {any} size {d}MB \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(dbiSize, 1000 * 1000) });
+        std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(dbiSize, 1000 * 1000), s.ms_entries });
     }
 
     std.debug.print("DBIS {d} entries {d} size {d}mb \n", .{ dbiCnt, entries, @divTrunc(size, 1000 * 1000) });

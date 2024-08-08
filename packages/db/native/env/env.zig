@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
-const db = @import("../db.zig");
+const db = @import("../lmdb/db.zig");
 
 const mdbCheck = errors.mdbCheck;
 const jsThrow = errors.jsThrow;

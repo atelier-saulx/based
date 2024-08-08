@@ -2,9 +2,9 @@ const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
 const std = @import("std");
-const db = @import("../../db.zig");
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../ctx.zig").QueryCtx;
+const db = @import("../../lmdb/db.zig");
 
 fn getField(id: u32, typePrefix: [2]u8, currentShard: u16, ctx: QueryCtx) []u8 {
     const dbiName = db.createDbiName(typePrefix, 0, @bitCast(currentShard));

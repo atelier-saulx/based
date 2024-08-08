@@ -31,6 +31,7 @@ export const get = (query: Query): BasedQueryResponse => {
       query.schema.prefixString,
       idsBuffer,
       includeBuffer,
+      query.sortBuffer,
     )
   } else if (query.id) {
     result = query.db.native.getQueryById(
@@ -49,6 +50,7 @@ export const get = (query: Query): BasedQueryResponse => {
       start,
       end,
       includeBuffer,
+      query.sortBuffer,
     )
   }
 

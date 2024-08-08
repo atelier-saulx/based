@@ -1,29 +1,24 @@
-const c = @import("./c.zig");
-const errors = @import("./errors.zig");
-const Envs = @import("./env/env.zig");
+const c = @import("../c.zig");
+const errors = @import("../errors.zig");
+const Envs = @import("../env/env.zig");
 const std = @import("std");
 
-pub const Shard = struct { dbi: c.MDB_dbi, key: [5]u8, cursor: ?*c.MDB_cursor, queryId: ?u32 };
+pub const Shard = struct { dbi: c.MDB_dbi, key: [6]u8, cursor: ?*c.MDB_cursor, queryId: ?u32 };
 
 // READ SHARDS
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-const allocator = arena.allocator();
-pub var readShards = std.AutoHashMap([5]u8, Shard).init(allocator);
+pub const allocator = arena.allocator();
+pub var readShards = std.AutoHashMap([6]u8, Shard).init(allocator);
 pub var readTxn: *c.MDB_txn = undefined;
-var txnCrerated: bool = false;
 
+var txnCreated: bool = false;
 pub fn initReadTxn() !*c.MDB_txn {
-    if (txnCrerated) {
+    if (txnCreated) {
         return readTxn;
     }
-    txnCrerated = true;
+    txnCreated = true;
     const x = try createTransaction(true);
     readTxn = x.?;
-
-    // const y = try createTransaction(true);
-    // readTxn2 = y.?;
-    // const x = try createTransaction(true);
-    // readTxn = x.?;
     return readTxn;
 }
 
@@ -37,14 +32,15 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     return txn;
 }
 
-pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: [2]u8) [5]u8 {
+// TODO: add ZERO
+pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: [2]u8) [6]u8 {
     if (shard[0] == 0 and shard[1] != 0) {
-        return .{ type_prefix[0], type_prefix[1], field + 1, 255, 255 - shard[1] };
+        return .{ type_prefix[0], type_prefix[1], field + 1, 255, 255 - shard[1], 0 };
     }
-    return .{ type_prefix[0], type_prefix[1], field + 1, shard[0], shard[1] };
+    return .{ type_prefix[0], type_prefix[1], field + 1, shard[0], shard[1], 0 };
 }
 
-pub fn openDbi(comptime create: bool, name: [5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
+pub fn openDbi(comptime create: bool, name: [6]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
     var dbi: c.MDB_dbi = 0;
     var flags: c_uint = c.MDB_INTEGERKEY;
     if (create) {
@@ -54,11 +50,11 @@ pub fn openDbi(comptime create: bool, name: [5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi 
     return dbi;
 }
 
-pub fn getReadShard(dbiName: [5]u8, queryId: u32) ?Shard {
+pub fn getReadShard(dbiName: [6]u8, queryId: u32) ?Shard {
     var s = readShards.get(dbiName);
     if (s == null) {
         var cursor: ?*c.MDB_cursor = null;
-        const dbi = openDbi(true, dbiName, readTxn) catch {
+        const dbi = openDbi(false, dbiName, readTxn) catch {
             return null;
         };
         errors.mdbCheck(c.mdb_cursor_open(readTxn, dbi, &cursor)) catch |err| {
@@ -76,9 +72,8 @@ pub fn getReadShard(dbiName: [5]u8, queryId: u32) ?Shard {
     return s;
 }
 
-pub fn openShard(comptime create: bool, dbiName: [5]u8, txn: ?*c.MDB_txn) !Shard {
+pub fn openShard(comptime create: bool, dbiName: [6]u8, txn: ?*c.MDB_txn) !Shard {
     const dbi = try openDbi(create, dbiName, txn);
-    // errdefer c.mdb_dbi_close(Envs.env, dbi);
     var cursor: ?*c.MDB_cursor = null;
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
     errdefer c.mdb_cursor_close(cursor);
@@ -88,11 +83,6 @@ pub fn openShard(comptime create: bool, dbiName: [5]u8, txn: ?*c.MDB_txn) !Shard
 
 pub fn closeShard(shard: *Shard) void {
     c.mdb_cursor_close(shard.cursor);
-    // c.mdb_dbi_close(Envs.env, shard.dbi);
-}
-
-pub fn closeDbi(_: *Shard) void {
-    // c.mdb_dbi_close(Envs.env, shard.dbi);
 }
 
 pub fn closeCursor(shard: *Shard) void {

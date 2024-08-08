@@ -52,6 +52,7 @@ export class BasedDb {
       offset: number,
       limit: number, // def 1k ?
       includeBuffer: Buffer,
+      sort: Buffer,
     ): any => {
       return dbZig.getQuery(
         conditions,
@@ -60,6 +61,7 @@ export class BasedDb {
         offset,
         limit,
         includeBuffer,
+        sort,
       )
     },
     getQueryById: (
@@ -75,8 +77,9 @@ export class BasedDb {
       prefix: string,
       ids: Buffer,
       includeBuffer: Buffer,
+      sort: Buffer,
     ): any => {
-      return dbZig.getQueryByIds(conditions, prefix, ids, includeBuffer)
+      return dbZig.getQueryByIds(conditions, prefix, ids, includeBuffer, sort)
     },
   }
 

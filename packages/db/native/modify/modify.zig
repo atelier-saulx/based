@@ -3,7 +3,7 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
-const db = @import("../db.zig");
+const db = @import("../lmdb/db.zig");
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -11,6 +11,8 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
         return null;
     };
 }
+
+// MDB_APPEND
 
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
@@ -22,18 +24,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     if (!Envs.dbEnvIsDefined) {
         return error.MDN_ENV_UNDEFINED;
     }
-
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = arena.allocator();
 
-    var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
-    defer {
-        var it = shards.iterator();
-        while (it.next()) |shard| {
-            db.closeDbi(shard.value_ptr);
-        }
-    }
+    const allocator = arena.allocator();
+    var shards = std.AutoHashMap([6]u8, db.Shard).init(allocator);
 
     const txn = try db.createTransaction(false);
 
@@ -124,6 +119,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     var j: usize = 0;
                     while (j < mergeMain.len) {
                         const start = std.mem.readInt(u16, mergeMain[j..][0..2], .little);
+                        // start
                         const len = std.mem.readInt(u16, mergeMain[j..][2..4], .little);
                         @memcpy(mainBuffer[start .. start + len], mergeMain[j + 4 .. j + 4 + len]);
                         j += 4 + len;

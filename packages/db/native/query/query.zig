@@ -2,11 +2,12 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
-const db = @import("../db.zig");
+const db = @import("../lmdb/db.zig");
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
+const dbSort = @import("../lmdb/sort.zig");
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(0, env, info) catch |err| {
@@ -59,23 +60,43 @@ fn getQueryInternal(
     var total_size: usize = 0;
 
     if (idType == 0) {
-        const args = try napi.getArgs(6, env, info);
+        const args = try napi.getArgs(7, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
         const last_id = try napi.getInt32("last_id", env, args[2]);
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
-        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const sort = try napi.getBuffer("sort", env, args[6]);
+
+        if (sort.len > 0) {
+            std.debug.print("SORT: {any} \n", .{sort});
+
+            if (sort.len == 4) {
+                const start = std.mem.readInt(u16, sort[2..][0..2], .little);
+
+                std.debug.print("{d} \n", .{start});
+                _ = dbSort.createOrGetSortIndex(
+                    typePrefix,
+                    sort[0],
+                    start,
+                    queryId,
+                );
+            } else {
+                _ = dbSort.createOrGetSortIndex(typePrefix, sort[0], 0, queryId);
+            }
+        }
+
         var i: u32 = offset + 1;
         checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
             if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
                 currentShard += 1;
             }
 
-            if (!filter(ctx, i, type_prefix, conditions, currentShard)) {
+            if (!filter(ctx, i, typePrefix, conditions, currentShard)) {
                 continue :checkItem;
             }
-            const size = try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
+            const size = try getFields(ctx, i, typePrefix, null, include, currentShard, 0);
             if (size > 0) {
                 total_size += size;
                 total_results += 1;
@@ -84,32 +105,36 @@ fn getQueryInternal(
     } else if (idType == 1) {
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
-        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
         const id = try napi.getInt32("id", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
         currentShard = db.idToShard(id);
-        if (filter(ctx, id, type_prefix, conditions, currentShard)) {
-            const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
+        if (filter(ctx, id, typePrefix, conditions, currentShard)) {
+            const size = try getFields(ctx, id, typePrefix, null, include, currentShard, 0);
             if (size > 0) {
                 total_size += size;
                 total_results += 1;
             }
         }
     } else if (idType == 2) {
-        const args = try napi.getArgs(4, env, info);
+        // ids
+        const args = try napi.getArgs(5, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
-        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
         const ids = try napi.getBuffer("ids", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
-        // ids
+        const sort = try napi.getBuffer("sort", env, args[4]);
+        if (sort.len > 0) {
+            std.debug.print("SORT: {any} \n", .{sort});
+        }
         var i: u32 = 0;
         checkItem: while (i <= ids.len) : (i += 4) {
             const id = std.mem.readInt(u32, ids[i..][0..4], .little);
             currentShard = db.idToShard(id);
-            if (!filter(ctx, id, type_prefix, conditions, currentShard)) {
+            if (!filter(ctx, id, typePrefix, conditions, currentShard)) {
                 continue :checkItem;
             }
-            const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
+            const size = try getFields(ctx, id, typePrefix, null, include, currentShard, 0);
             if (size > 0) {
                 total_size += size;
                 total_results += 1;
