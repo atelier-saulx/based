@@ -1,36 +1,44 @@
-import { BasedDb, FieldDef, SchemaTypeDef } from '../index.js'
+import { BasedDb, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { Operation } from './types.js'
+import { Operation, QueryIncludeDef, QueryConditions } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
-
-type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
+import { inspect } from 'node:util'
 
 export class Query {
   db: BasedDb
-  type: SchemaTypeDef
+  schema: SchemaTypeDef
   id: number | void
-  conditions: Map<number, Buffer[]>
+  ids: number[] | void
   offset: number
   limit: number
-  includeFields: string[]
-  includeTree: IncludeTreeArr
-  mainLen: number = 0
-  mainIncludesSize: number
-  mainIncludes: { [start: string]: [number, FieldDef] }
-  totalConditionSize: number = 0
-  constructor(db: BasedDb, target: string, previous?: Query) {
+
+  includeDef: QueryIncludeDef
+
+  totalConditionSize: number
+  conditions: QueryConditions
+
+  constructor(db: BasedDb, target: string, id?: number | number[]) {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
-    if (typeDef) {
-      this.type = typeDef
-    } else {
-      // is ID check prefix
+    this.schema = typeDef
+    if (id) {
+      if (Array.isArray(id)) {
+        id.sort((a, b) => {
+          return a > b ? 1 : b > a ? -1 : 0
+        })
+        this.ids = id
+      } else {
+        this.id = id
+      }
     }
   }
 
   filter(field: string, operator: Operation, value: any) {
-    return filter(this, field, operator, value)
+    this.totalConditionSize ??= 0
+    this.conditions ??= { conditions: new Map() }
+    filter(field, operator, value, this.schema, this.conditions, this)
+    return this
   }
 
   range(offset: number, limit: number): Query {
@@ -40,9 +48,20 @@ export class Query {
   }
 
   include(...fields: string[]) {
-    this.includeFields = this.includeFields
-      ? [...this.includeFields, ...fields]
-      : fields
+    if (!this.includeDef) {
+      this.includeDef = {
+        includePath: [],
+        schema: this.schema,
+        includeArr: [],
+        includeFields: new Set(),
+        mainLen: 0,
+        mainIncludes: {},
+        includeTree: [],
+      }
+    }
+    for (const f of fields) {
+      this.includeDef.includeFields.add(f)
+    }
     return this
   }
 
@@ -58,6 +77,11 @@ export class Query {
     // this is also where we will create diffs
     // idea use  PROXY object as a view to the buffer
   }
+
+  [inspect.custom](_depth, { nested }) {
+    return `BasedQuery[]`
+  }
 }
 
-export const query = (db: BasedDb, target: string) => new Query(db, target)
+export const query = (db: BasedDb, target: string, id?: number | number[]) =>
+  new Query(db, target, id)

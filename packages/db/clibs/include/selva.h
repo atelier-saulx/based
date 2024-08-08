@@ -33,14 +33,13 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
 } __packed;
 
-struct SelvaObject;
-
 typedef int8_t field_t;
 typedef uint32_t node_id_t;
-typedef uint32_t node_type_t;
+typedef uint16_t node_type_t;
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
-RB_HEAD(SelvaTypeIndex, SelvaTypeEntry);
+RB_HEAD(SelvaAliasesByName, SelvaAlias);
+RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
@@ -84,9 +83,9 @@ struct SelvaNodeSchema {
  */
 struct SelvaNode {
     node_id_t node_id;
-    RB_ENTRY(SelvaNode) _index_entry;
-    struct trx_label trx_label;
     node_type_t type;
+    struct trx_label trx_label;
+    RB_ENTRY(SelvaNode) _index_entry;
 #define SELVA_NODE_EXPIRE_EPOCH 1704067200000
     /**
      * Expiration timestamp for this node.
@@ -117,24 +116,32 @@ struct SelvaNode {
 #define SELVA_FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
 #define SELVA_IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
 
+struct SelvaAlias {
+    RB_ENTRY(SelvaAlias) _entry;
+    struct SelvaAlias *prev;
+    struct SelvaAlias *next; /*!< Next alias for the same destination. */
+    node_id_t dest;
+    char name[];
+};
+
 /**
  * Entry for each node type supported by the schema.
  */
 struct SelvaTypeEntry {
     node_type_t type;
     struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
-    struct {
-        STATIC_SELVA_OBJECT(_obj_data);
+    struct SelvaAliases {
+        struct SelvaAliasesByName alias_by_name;
+        struct SelvaAliasesByDest alias_by_dest;
     } aliases;
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
-    RB_ENTRY(SelvaTypeEntry) _type_entry;
     struct {
         void *buf;
         size_t len;
         size_t main_data_size;
     } field_map_template;
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
-};
+} __attribute__((aligned(65536)));
 
 /**
  * Database instance.
@@ -145,7 +152,7 @@ struct SelvaDb {
      */
     struct trx_state trx_state;
 
-    struct SelvaTypeIndex types;
+    SVector type_list;
 
     /**
      * Expiring nodes.
@@ -161,3 +168,18 @@ struct SelvaDb {
         uint32_t next;
     } expiring;
 };
+
+static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
+{
+#if 0
+    assert(((uintptr_t)type & 0xFFFF) == 0);
+#endif
+    return (void *)((uintptr_t)type | type->type);
+}
+
+static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
+{
+    struct SelvaTypeEntry *te = (struct SelvaTypeEntry *)((uintptr_t)p & ~0xFFFF);
+    __builtin_prefetch(te);
+    return te;
+}

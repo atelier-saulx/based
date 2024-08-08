@@ -12,7 +12,7 @@ const EMPTY_BUFFER = Buffer.alloc(1000)
 const setCursor = (
   db: BasedDb,
   schema: SchemaTypeDef,
-  t: FieldDef,
+  field: number,
   id: number,
   ignoreField?: boolean,
 ) => {
@@ -34,8 +34,6 @@ const setCursor = (
     db.modifyBuffer.id = -1
     db.modifyBuffer.lastMain = -1
   }
-
-  const field = t.field
 
   if (!ignoreField && db.modifyBuffer.field !== field) {
     const len = db.modifyBuffer.len
@@ -64,12 +62,18 @@ const addModify = (
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef,
-) => {
+  merge: boolean,
+): boolean => {
+  let wroteMain = false
   for (const key in obj) {
     const leaf = tree[key]
     const value = obj[key]
     if (!leaf.type && !leaf.__isField) {
-      addModify(db, id, value, leaf as SchemaTypeDef['tree'], schema)
+      if (
+        addModify(db, id, value, leaf as SchemaTypeDef['tree'], schema, merge)
+      ) {
+        wroteMain = true
+      }
     } else {
       const t = leaf as FieldDef
       if (t.type === 'references') {
@@ -77,7 +81,7 @@ const addModify = (
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t, id)
+        setCursor(db, schema, t.field, id)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
         db.modifyBuffer.len += 5
@@ -89,16 +93,12 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
-        // const deflated = deflateRawSync(value)
-        // const byteLen = Buffer.byteLength(value, 'utf8')
-
-        // bit shaky...
-        // add deflate / zstd / snappy?
+        // add zstd
         const byteLen = value.length + value.length
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t, id)
+        setCursor(db, schema, t.field, id)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
         db.modifyBuffer.len += 5
         const size = db.modifyBuffer.buffer.write(
@@ -108,26 +108,31 @@ const addModify = (
         )
         db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
         db.modifyBuffer.len += size
+      } else if (merge) {
+        wroteMain = true
+        if (!db.modifyBuffer.mergeMain) {
+          db.modifyBuffer.mergeMain = []
+        }
+        db.modifyBuffer.mergeMain.push(t, value)
+        db.modifyBuffer.mergeMainSize += t.len + 4
       } else {
-        setCursor(db, schema, t, id, true)
+        wroteMain = true
+        setCursor(db, schema, t.field, id, true)
         let mainIndex = db.modifyBuffer.lastMain
         if (mainIndex === -1) {
           const nextLen = schema.mainLen + 1 + 4
           if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
             flushBuffer(db)
           }
-          setCursor(db, schema, t, id)
-          db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+          setCursor(db, schema, t.field, id)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : 3
           db.modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
             db.modifyBuffer.len + 1,
           )
           mainIndex = db.modifyBuffer.lastMain = db.modifyBuffer.len + 1 + 4
           db.modifyBuffer.len += nextLen
-
-          // TODO: check if this is correct
           const size = db.modifyBuffer.len - schema.mainLen
-
           if (schema.mainLen < 1e3) {
             EMPTY_BUFFER.copy(db.modifyBuffer.buffer, size, 0, schema.mainLen)
           } else {
@@ -139,17 +144,16 @@ const addModify = (
         if (t.type === 'string') {
           const size = db.modifyBuffer.buffer.write(
             value,
-            t.start + mainIndex,
+            t.start + mainIndex + 1,
             'utf8',
           )
-          db.modifyBuffer.buffer[t.start + mainIndex + size] = 0
+          db.modifyBuffer.buffer[t.start + mainIndex] = size
           if (size + 1 > t.len) {
             console.warn('String does not fit fixed len', value)
           }
         } else if (t.type === 'timestamp' || t.type === 'number') {
           db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
         } else if (t.type === 'integer' || t.type === 'reference') {
-          // enum
           db.modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
         } else if (t.type === 'boolean') {
           db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
@@ -157,13 +161,53 @@ const addModify = (
       }
     }
   }
+  return wroteMain
+}
+
+export const remove = (db: BasedDb, type: string, id: number): boolean => {
+  const def = db.schemaTypesParsed[type]
+  const nextLen = 1 + 4 + 1
+  if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+    flushBuffer(db)
+  }
+  setCursor(db, def, 0, id)
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
+  db.modifyBuffer.len++
+  if (def.seperate) {
+    for (const s of def.seperate) {
+      const nextLen = 1 + 4 + 1
+      if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+        flushBuffer(db)
+      }
+      setCursor(db, def, s.field, id)
+      db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
+      db.modifyBuffer.len++
+    }
+  }
+  return true
 }
 
 export const create = (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
   def.total++
-  addModify(db, id, value, def.tree, def)
+  if (!addModify(db, id, value, def.tree, def, false) || def.mainLen === 0) {
+    const nextLen = 5 + def.mainLen
+    if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
+      flushBuffer(db)
+    }
+    setCursor(db, def, 0, id)
+    db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+    db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
+    for (
+      let i = db.modifyBuffer.len + 5;
+      i < db.modifyBuffer.len + nextLen;
+      i++
+    ) {
+      db.modifyBuffer.buffer[i] = 0
+    }
+    db.modifyBuffer.len += nextLen
+  }
   if (!db.isDraining) {
     startDrain(db)
   }
@@ -175,10 +219,56 @@ export const update = (
   type: string,
   id: number,
   value: any,
-  merge?: boolean,
+  overwrite?: boolean, // default for now
 ) => {
   const def = db.schemaTypesParsed[type]
-  addModify(db, id, value, def.tree, def)
+  const hasMain = addModify(db, id, value, def.tree, def, !overwrite)
+
+  if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
+    const mergeMain = db.modifyBuffer.mergeMain
+    const size = db.modifyBuffer.mergeMainSize
+    if (db.modifyBuffer.len + size + 9 > db.maxModifySize) {
+      flushBuffer(db)
+    }
+
+    setCursor(db, def, 0, id)
+
+    db.modifyBuffer.buffer[db.modifyBuffer.len] = 5
+    db.modifyBuffer.len += 1
+
+    db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len)
+    db.modifyBuffer.len += 4
+
+    for (let i = 0; i < mergeMain.length; i += 2) {
+      const t = mergeMain[i]
+      const v = mergeMain[i + 1]
+      db.modifyBuffer.buffer.writeUint16LE(t.start, db.modifyBuffer.len)
+      db.modifyBuffer.len += 2
+      db.modifyBuffer.buffer.writeUint16LE(t.len, db.modifyBuffer.len)
+      db.modifyBuffer.len += 2
+      if (t.type === 'string') {
+        const size = db.modifyBuffer.buffer.write(
+          v,
+          db.modifyBuffer.len + 1,
+          'utf8',
+        )
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = size
+        if (size + 1 > t.len) {
+          console.warn('String does not fit fixed len', v)
+        }
+      } else if (t.type === 'timestamp' || t.type === 'number') {
+        db.modifyBuffer.buffer.writeFloatLE(v, db.modifyBuffer.len)
+      } else if (t.type === 'integer' || t.type === 'reference') {
+        db.modifyBuffer.buffer.writeUint32LE(v, db.modifyBuffer.len)
+      } else if (t.type === 'boolean') {
+        db.modifyBuffer.buffer.writeInt8(v ? 1 : 0, db.modifyBuffer.len)
+      }
+      db.modifyBuffer.len += t.len
+    }
+    db.modifyBuffer.mergeMain = null
+    db.modifyBuffer.mergeMainSize = 0
+  }
+
   if (!db.isDraining) {
     startDrain(db)
   }

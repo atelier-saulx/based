@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2022-2024 SAULX
+ * SPDX-License-Identifier: MIT
+ */
+#pragma once
+
+#define SELVA_DB_VERSION_SIZE   40
+struct SelvaDbVersionInfo {
+    __nonstring char running[SELVA_DB_VERSION_SIZE];
+    __nonstring char created_with[SELVA_DB_VERSION_SIZE];
+    __nonstring char updated_with[SELVA_DB_VERSION_SIZE];
+};
+
+#define SELVA_IO_HASH_SIZE 16
+
+enum selva_io_flags {
+    SELVA_IO_FLAGS_READ = 0x0001, /*!< This is a read op. */
+    SELVA_IO_FLAGS_WRITE = 0x0002, /*!< This is a write op. */
+    SELVA_IO_FLAGS_COMPRESSED = 0x0100, /* Compressed data. */
+    SELVA_IO_FLAGS_FILE_IO = 0x0010, /*! Save to/Load from a file. Not set by caller. */
+    SELVA_IO_FLAGS_STRING_IO = 0x0020, /*!< Save to/Load from a file. Not set by caller. */
+    /* Runtime control flags */
+    _SELVA_IO_FLAGS_EN_COMPRESS = 0x1000, /*!< Enable deflate block compression. */
+};
+
+struct selva_io;
+
+int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags);
+struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_io_flags flags);
+int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags);
+void selva_io_end(struct selva_io *io, struct selva_string **filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE]);
+int io_dump_save_async(struct SelvaDb *db, const char *filename);

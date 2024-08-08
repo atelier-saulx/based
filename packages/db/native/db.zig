@@ -3,7 +3,7 @@ const errors = @import("./errors.zig");
 const Envs = @import("./env/env.zig");
 const std = @import("std");
 
-pub const Shard = struct { dbi: c.MDB_dbi, key: [3]u8, cursor: ?*c.MDB_cursor };
+pub const Shard = struct { dbi: c.MDB_dbi, key: [5]u8, cursor: ?*c.MDB_cursor };
 
 pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     var txn: ?*c.MDB_txn = null;
@@ -15,55 +15,46 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     return txn;
 }
 
-// TODO shard needs to be [2]u8
-pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: u8, shard2: u8) ![5]u8 {
-    if (shard == 0 and shard2 != 0) {
-        // this will be a 2M shard (too bad...)
-        return .{ type_prefix[0], type_prefix[1], field, 255, 255 - shard2 };
+pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: [2]u8) [5]u8 {
+    if (shard[0] == 0 and shard[1] != 0) {
+        return .{ type_prefix[0], type_prefix[1], field + 1, 255, 255 - shard[1] };
     }
-    return .{ type_prefix[0], type_prefix[1], field, shard, shard2 };
+    return .{ type_prefix[0], type_prefix[1], field + 1, shard[0], shard[1] };
 }
 
-// TODO shard needs to be [2]u8
-pub fn getShardKey(field: u8, shard: [2]u8) [3]u8 {
-    return .{ field, shard[0], shard[1] };
-}
-
-pub fn openDbi(comptime create: bool, name: *[5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
+pub fn openDbi(comptime create: bool, name: [5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
     var dbi: c.MDB_dbi = 0;
-
     var flags: c_uint = c.MDB_INTEGERKEY;
-
     if (create) {
         flags |= c.MDB_CREATE;
     }
-
-    try errors.mdbCheck(c.mdb_dbi_open(txn, @ptrCast(name), flags, &dbi));
+    try errors.mdbCheck(c.mdb_dbi_open(txn, &name, flags, &dbi));
     return dbi;
 }
 
-pub fn openShard(comptime create: bool, type_prefix: [2]u8, shardKey: [3]u8, txn: ?*c.MDB_txn) !Shard {
-    var dbiName = try createDbiName(type_prefix, shardKey[0], shardKey[1], shardKey[2]);
-    // std.debug.print("DBI: {any}\n", .{dbiName});
-    const dbi = try openDbi(create, &dbiName, txn);
-    errdefer c.mdb_dbi_close(Envs.env, dbi);
+pub fn openShard(comptime create: bool, dbiName: [5]u8, txn: ?*c.MDB_txn) !Shard {
+    const dbi = try openDbi(create, dbiName, txn);
+    // errdefer c.mdb_dbi_close(Envs.env, dbi);
     var cursor: ?*c.MDB_cursor = null;
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
     errdefer c.mdb_cursor_close(cursor);
-    const s: Shard = .{ .dbi = dbi, .key = shardKey, .cursor = cursor };
-
+    const s: Shard = .{ .dbi = dbi, .key = dbiName, .cursor = cursor };
     return s;
 }
 
 pub fn closeShard(shard: *Shard) void {
     c.mdb_cursor_close(shard.cursor);
-    c.mdb_dbi_close(Envs.env, shard.dbi);
+    // c.mdb_dbi_close(Envs.env, shard.dbi);
 }
 
-pub fn closeDbi(shard: *Shard) void {
-    c.mdb_dbi_close(Envs.env, shard.dbi);
+pub fn closeDbi(_: *Shard) void {
+    // c.mdb_dbi_close(Envs.env, shard.dbi);
 }
 
 pub fn closeCursor(shard: *Shard) void {
     c.mdb_cursor_close(shard.cursor);
+}
+
+pub fn idToShard(id: u32) u16 {
+    return @truncate(@divTrunc(id, 1_000_000));
 }

@@ -1,79 +1,142 @@
 import { FieldDef } from '../schemaTypeDef.js'
 import { BasedNode } from './index.js'
 
+// TODO: optmize this
+const includePathsAreEqual = (
+  includePath: number[],
+  refPath: number[],
+  start: number,
+): boolean => {
+  for (let i = 0; i < refPath.length - 1; i++) {
+    if (includePath[i] !== refPath[i]) {
+      return false
+    }
+  }
+  if (start !== refPath[refPath.length - 1]) {
+    return false
+  }
+  return true
+}
+
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,
   basedNode: BasedNode,
 ) => {
   const queryResponse = basedNode.__q
   let i = 4 + basedNode.__o
-  const buffer = queryResponse.buffer
 
+  const buffer = queryResponse.buffer
   const requestedFieldIndex = requestedField.field
+  const ref = basedNode.__r
+
+  let found = !ref || false
+  let includeDef = queryResponse.query.includeDef
 
   while (i < buffer.byteLength) {
-    const index = buffer[i]
+    let index = buffer[i]
 
     // next node
     if (index === 255) {
       break
     }
+
     i += 1
 
-    if (index === 0) {
-      if (requestedFieldIndex === index) {
-        let fIndex: number
-
-        if (queryResponse.query.mainIncludes) {
-          const t = queryResponse.query.mainIncludes?.[requestedField.start]
-          if (!t) {
-            return undefined
-          }
-          fIndex = t[0]
-        } else {
-          fIndex = requestedField.start
-        }
-
-        if (fIndex === undefined) {
-          break // mep
-        }
-
-        if (requestedField.type === 'reference') {
-          const id = buffer.readUint32LE(i + fIndex)
-          if (!id) {
-            return null
-          }
-          return {
-            id,
-          }
-        } else if (requestedField.type === 'integer') {
-          return buffer.readUint32LE(i + fIndex)
-        }
-        if (requestedField.type === 'boolean') {
-          return Boolean(buffer[i + fIndex])
-        }
-        if (requestedField.type === 'number') {
-          return buffer.readFloatLE(i + fIndex)
-        }
-        if (requestedField.type === 'timestamp') {
-          return buffer.readFloatLE(i + fIndex)
-        }
-        if (requestedField.type === 'string') {
-          const str = buffer.toString(
-            'utf-8',
-            i + fIndex,
-            i + fIndex + requestedField.len,
-          )
-          return str
-        }
+    if (index === 254) {
+      if (ref && found) {
+        // only skip till end from now
+        found = false
       }
-      i += queryResponse.query.mainLen
+
+      const start = buffer.readUint16LE(i + 1)
+      const resetNested = buffer[i] === 0
+
+      if (resetNested) {
+        includeDef = queryResponse.query.includeDef
+      }
+
+      if (
+        ref &&
+        includePathsAreEqual(includeDef.includePath, ref.includePath, start)
+      ) {
+        if (requestedField.type === 'id') {
+          return buffer.readUint32LE(i + 3)
+        }
+        found = true
+        i += 7
+        includeDef = ref
+      } else {
+        i += 7
+        includeDef = includeDef.refIncludes[start]
+      }
+
+      continue
+    }
+
+    if (index === 0) {
+      if (requestedFieldIndex !== index || !found) {
+        i += includeDef.mainLen
+        continue
+      }
+
+      let fIndex: number
+
+      if (includeDef.mainIncludes) {
+        const t = includeDef.mainIncludes[requestedField.start]
+        if (!t) {
+          return undefined
+        }
+        fIndex = t[0]
+      } else {
+        fIndex = requestedField.start
+      }
+
+      if (fIndex === undefined) {
+        break
+      }
+
+      if (requestedField.type === 'reference') {
+        const id = buffer.readUint32LE(i + fIndex)
+        if (!id) {
+          return null
+        }
+        return {
+          id,
+        }
+      } else if (requestedField.type === 'integer') {
+        return buffer.readUint32LE(i + fIndex)
+      }
+      if (requestedField.type === 'boolean') {
+        return Boolean(buffer[i + fIndex])
+      }
+      if (requestedField.type === 'number') {
+        return buffer.readFloatLE(i + fIndex)
+      }
+      if (requestedField.type === 'timestamp') {
+        return buffer.readFloatLE(i + fIndex)
+      }
+      if (requestedField.type === 'string') {
+        const len = buffer[i + fIndex]
+        if (len === 0) {
+          return ''
+        }
+        const str = buffer.toString(
+          'utf-8',
+          i + fIndex + 1,
+          i + fIndex + len + 1,
+        )
+        return str
+      }
+      i += includeDef.mainLen
     } else {
       const size = buffer.readUInt16LE(i)
       i += 2
       // if no field add size 0
-      if (requestedField.field === index) {
+      if (requestedField.field === index && found) {
         if (requestedField.type === 'string') {
+          if (size === 0) {
+            return ''
+          }
           return buffer.toString('utf8', i, size + i)
         } else if (requestedField.type === 'references') {
           const amount = size / 4
@@ -83,9 +146,9 @@ export const readSeperateFieldFromBuffer = (
             if (id) {
               x[j] = { id }
             } else {
-              // TODO: means it broken BROKEN
-              console.info('Broken reference cannot get id!')
-              // x[j] = null
+              console.warn(
+                'BasedNode ref reader: Broken reference cannot get id!',
+              )
               x.splice(j, 1)
             }
           }

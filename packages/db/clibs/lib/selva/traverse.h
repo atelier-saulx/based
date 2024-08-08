@@ -16,11 +16,13 @@ struct SelvaTraversalMetadata {
     long long depth;
 };
 
+#define SELVA_TRAVERSAL_ABORT (-2)
+#define SELVA_TRAVERSAL_STOP (-1)
+
 /**
  * Called for each node found during a traversal.
  * @param node a pointer to the node.
  * @param arg a pointer to node_arg give in SelvaTraversalCallback structure.
- * @returns -2 to interrupt the whole traversal; -1 don't visit any field of this node.
  */
 typedef int (*SelvaTraversalNodeCallback)(
         struct SelvaDb *db,
@@ -34,7 +36,6 @@ typedef int (*SelvaTraversalNodeCallback)(
 struct SelvaTraversalParam {
     /**
      * Called for each orphan head in the hierarchy.
-     * A return value greater than 0 is ignored and a return value of less than zero stops the traversal.
      */
     SelvaTraversalNodeCallback head_cb;
     void *head_arg;
@@ -47,7 +48,6 @@ struct SelvaTraversalParam {
 
     /**
      * Called for each child of current node.
-     * The return value of this function is ignored.
      */
     SelvaTraversalNodeCallback child_cb;
     void *child_arg;

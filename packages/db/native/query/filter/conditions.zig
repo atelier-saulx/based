@@ -1,7 +1,6 @@
 const std = @import("std");
 
 pub fn runConditions(v: []u8, q: []u8) bool {
-    // TODO EXEC ASEMBLY! yeey
     var j: usize = 0;
     outside: while (j < q.len) {
         const operation = q[j];
@@ -54,7 +53,6 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     q[j + 3 ..][0..2],
                     .little,
                 );
-                // std.mem.readInt(u32, batch[i + KEY_LEN ..][0..4], .little);
 
                 switch (filter_size) {
                     4 => {
@@ -147,7 +145,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             else => {
-                std.debug.print("\nIncorrectly encoded condition (operation not handled)", .{});
+                std.log.err("\nIncorrectly encoded condition (operation not handled) {any} {any}", .{ v, q });
                 return false;
             },
         }

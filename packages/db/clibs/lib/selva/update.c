@@ -57,7 +57,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     return SELVA_EINVAL;
                 }
 
-                dst = db_find_node(db, type, dst_node_id);
+                dst = db_find_node(type, dst_node_id);
                 if (!dst) {
                     return SELVA_ENOENT;
                 }
@@ -97,18 +97,19 @@ int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *bu
 
         memcpy(&ud_len, buf + i + offsetof(struct UpdateBatch, len), sizeof(ud_len));
         memcpy(&node_id, buf + i + offsetof(struct UpdateBatch, node_id), sizeof(node_id));
-        node = db_upsert_node(db, type, node_id);
+        node = db_upsert_node(type, node_id);
         assert(node);
         err = update(db, type, node, buf + i + sizeof(struct UpdateBatch), ud_len - sizeof(struct UpdateBatch));
         if (err) {
             return err;
         }
 
+#if 0
         /*
          * Immediate swap out test.
          */
-#if 0
-        if ((node_id % slab_info.nr_objects) == 0) {
+        if ((node_id % slab_info.nr_objects) == slab_info.nr_objects - 1) {
+            //printf("page out\n");
             struct mempool_slab *slab = mempool_get_slab(&type->nodepool, node);
             mempool_pageout(&type->nodepool, slab);
         }

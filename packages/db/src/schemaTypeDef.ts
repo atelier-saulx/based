@@ -7,6 +7,7 @@ import {
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { BasedNode } from './basedNode/index.js'
+import { BasedDb } from './index.js'
 
 const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   timestamp: 8, // 64bit
@@ -51,7 +52,7 @@ export type FieldDef = {
   selvaField: number
   inverseField?: string
   allowedType?: string
-  type: BasedSchemaFieldType
+  type: BasedSchemaFieldType | 'id'
   typeByte: number
   seperate: boolean
   path: string[]
@@ -69,6 +70,7 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
+
   fieldNames: Buffer
   fields: {
     // path including .
@@ -93,9 +95,19 @@ const prefixStringToUint8 = (
   return new Uint8Array([0, 0])
 }
 
+export const isFieldDef = (
+  tree: SchemaFieldTree | FieldDef,
+): tree is FieldDef => {
+  if ('__isField' in tree && tree.__isField === true) {
+    return true
+  }
+  return false
+}
+
 export const createSchemaTypeDef = (
   typeName: string,
   type: BasedSchemaType | BasedSchemaFieldObject,
+  parsed: BasedDb['schemaTypesParsed'],
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
     checksum: hashObjectIgnoreKeyOrder(type),
@@ -128,7 +140,7 @@ export const createSchemaTypeDef = (
     const f = target[key]
     const p = [...path, key]
     if (f.type === 'object') {
-      createSchemaTypeDef(typeName, f, result, p, false)
+      createSchemaTypeDef(typeName, f, parsed, result, p, false)
     } else {
       let len = SIZE_MAP[f.type]
 
@@ -148,7 +160,7 @@ export const createSchemaTypeDef = (
         result.cnt++
       }
 
-      result.fields[p.join('.')] = {
+      const field: FieldDef = {
         typeByte: TYPE_INDEX.get(f.type),
         __isField: true,
         type: f.type,
@@ -163,6 +175,11 @@ export const createSchemaTypeDef = (
           f.inverseProperty,
         allowedType:
           (f.type === 'reference' || f.type === 'references') && f.allowedType,
+      }
+
+      result.fields[p.join('.')] = field
+      if (isSeperate) {
+        result.seperate.push(field)
       }
     }
   }
@@ -257,7 +274,7 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
-    result.responseCtx = new BasedNode(result as SchemaTypeDef)
+    result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
   }
 
   return result as SchemaTypeDef
@@ -267,6 +284,7 @@ export const createSchemaTypeDef = (
 export const readSchemaTypeDefFromBuffer = (
   buf: Buffer,
   fieldNames: Buffer,
+  parsed: BasedDb['schemaTypesParsed'], // others...
 ): SchemaTypeDef => {
   const tree: SchemaFieldTree = {}
   const fields: {
@@ -320,7 +338,6 @@ export const readSchemaTypeDefFromBuffer = (
       setByPath(tree, path, field)
       mainLen += len
       currentName++
-
       j++
     } else {
       const fieldIndex = buf[j]
@@ -370,7 +387,19 @@ export const readSchemaTypeDefFromBuffer = (
     // ResponseClass: ,
   }
 
-  schemaTypeDef.responseCtx = new BasedNode(schemaTypeDef)
+  schemaTypeDef.responseCtx = new BasedNode(schemaTypeDef, parsed)
 
   return schemaTypeDef
+}
+
+export const idFieldDef: FieldDef = {
+  type: 'id',
+  typeByte: 0,
+  seperate: true,
+  path: ['id'],
+  start: 0,
+  field: 0,
+  selvaField: 0,
+  len: 4,
+  __isField: true,
 }

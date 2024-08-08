@@ -71,7 +71,7 @@ static int child_callback_stub(
 #define BFS_VISIT_NODE(hierarchy, cb) ({ \
         /* Note that Trx_Visit() has been already called for this node. */ \
         int res = node_cb((hierarchy), &_node_cb_metadata, node, (cb)->node_arg); \
-        if (res == -2) { \
+        if (res == SELVA_TRAVERSAL_ABORT) { \
             Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; \
         } res; \
     })
@@ -83,9 +83,15 @@ static int child_callback_stub(
                 .edge_data = (edge_data), \
                 .depth = _bfs_depth.cur_depth, \
             }; \
-            (void)child_cb((hierarchy), &_child_cb_metadata, (adj_node), (cb)->child_arg); \
-            SVector_Insert(&_bfs_q, (adj_node)); \
-            SVector_Insert(&_bfs_sq, (edge_data)); \
+            int res = child_cb((hierarchy), &_child_cb_metadata, (adj_node), (cb)->child_arg); \
+            if ( res == SELVA_TRAVERSAL_STOP) { \
+                /* NOP */ \
+            } else if (res == SELVA_TRAVERSAL_ABORT) { \
+                Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; \
+            } else { \
+                SVector_Insert(&_bfs_q, (adj_node)); \
+                SVector_Insert(&_bfs_sq, (edge_data)); \
+            } \
             _bfs_depth.next_count++; \
         } \
     } while (0)
@@ -114,7 +120,7 @@ int traverse_field_bfs(
             /* We assume that it's a valid field id. */
             field_t field = (field_t)res;
 
-            err = selva_fields_get(node, field, &any);
+            err = selva_fields_get(&node->fields, field, &any);
             if (err || any.type == SELVA_FIELD_TYPE_NULL) {
                 continue;
             }
@@ -123,7 +129,9 @@ int traverse_field_bfs(
                 struct SelvaFields *edge_data = any.reference->meta;
                 struct SelvaNode *adj = any.reference->dst;
 
-                BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                if (adj) {
+                    BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                }
             } else if (any.type == SELVA_FIELD_TYPE_REFERENCES) {
                 if (any.references && any.references->refs) {
                     const size_t nr_refs = any.references->nr_refs;
@@ -133,7 +141,9 @@ int traverse_field_bfs(
                         struct SelvaFields *edge_data = ref->meta;
                         struct SelvaNode *adj = ref->dst;
 
-                        BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                        if (adj) {
+                            BFS_VISIT_ADJACENT(db, cb, edge_data, adj);
+                        }
                     }
                 }
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {

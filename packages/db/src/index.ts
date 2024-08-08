@@ -1,16 +1,21 @@
-import { create, update } from './set.js'
+import { create, update, remove } from './modify.js'
 import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
-import { SchemaTypeDef, createSchemaTypeDef } from './schemaTypeDef.js'
+import {
+  FieldDef,
+  SchemaTypeDef,
+  createSchemaTypeDef,
+} from './schemaTypeDef.js'
 import { deepMerge } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import dbZig from './db.js'
 import { Query, query } from './query/query.js'
+import { flushBuffer } from './operations.js'
 
 export * from './schemaTypeDef.js'
 export * from './get.js'
-export * from './set.js'
+export * from './modify.js'
 export * from './basedNode/index.js'
 
 // @ts-ignore
@@ -34,6 +39,8 @@ export class BasedDb {
     typePrefix: Uint8Array
     id: number
     lastMain: number
+    mergeMain: (FieldDef | any)[] | null
+    mergeMainSize: number
   }
 
   native = {
@@ -47,8 +54,6 @@ export class BasedDb {
       offset: number,
       limit: number, // def 1k ?
       includeBuffer: Buffer,
-      mainInclude: Buffer,
-      singleRefInclude: Buffer,
     ): any => {
       return dbZig.getQuery(
         conditions,
@@ -57,9 +62,23 @@ export class BasedDb {
         offset,
         limit,
         includeBuffer,
-        mainInclude,
-        singleRefInclude,
       )
+    },
+    getQueryById: (
+      conditions: Buffer,
+      prefix: string,
+      id: number,
+      includeBuffer: Buffer,
+    ): any => {
+      return dbZig.getQueryById(conditions, prefix, id, includeBuffer)
+    },
+    getQueryByIds: (
+      conditions: Buffer,
+      prefix: string,
+      ids: Buffer,
+      includeBuffer: Buffer,
+    ): any => {
+      return dbZig.getQueryByIds(conditions, prefix, ids, includeBuffer)
     },
   }
 
@@ -79,6 +98,8 @@ export class BasedDb {
     }
     const max = this.maxModifySize
     this.modifyBuffer = {
+      mergeMainSize: 0,
+      mergeMain: null,
       buffer: Buffer.allocUnsafe(max),
       len: 0,
       field: -1,
@@ -88,8 +109,6 @@ export class BasedDb {
     }
     dbZig.createEnv(path)
   }
-
-  // queryID thing with conditions etc
 
   updateTypeDefs() {
     for (const field in this.schema.types) {
@@ -107,7 +126,8 @@ export class BasedDb {
           }
           this.schema.prefixToTypeMapping[type.prefix] = field
         }
-        this.schemaTypesParsed[field] = createSchemaTypeDef(field, type)
+        const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
+        this.schemaTypesParsed[field] = def
       }
     }
   }
@@ -122,13 +142,12 @@ export class BasedDb {
     return create(this, type, value)
   }
 
-  update(type: string, id: number, value: any, merge?: boolean) {
-    return update(this, type, id, value, merge)
+  update(type: string, id: number, value: any, overwrite?: boolean) {
+    return update(this, type, id, value, overwrite)
   }
 
-  // REMOVE FAST
   remove(type: string, id: number) {
-    // goes into the same buffer as modify make a modify command for this
+    return remove(this, type, id)
   }
 
   get(type: string, id: number, include?: string[], exclude?: string[]) {
@@ -136,7 +155,16 @@ export class BasedDb {
     return get(this, type, id, include)
   }
 
-  query(target: string): Query {
-    return query(this, target)
+  query(target: string, id?: number | number[]): Query {
+    return query(this, target, id)
+  }
+
+  // drain write buffer returns perf in ms
+  drain() {
+    flushBuffer(this)
+  }
+
+  stats() {
+    dbZig.stat()
   }
 }

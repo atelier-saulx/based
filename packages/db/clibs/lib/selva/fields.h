@@ -33,7 +33,7 @@ struct SelvaFieldsAny {
         bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
         double number; /*!< SELVA_FIELD_TYPE_NUMBER */
         int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP */
-        long long integer; /*!< SELVA_FIELD_TYPE_INTEGER */
+        int32_t integer; /*!< SELVA_FIELD_TYPE_INTEGER */
         struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
         uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
         uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
@@ -42,6 +42,7 @@ struct SelvaFieldsAny {
         struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
         struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
         struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
+        struct SelvaNodeWeakReferences weak_references; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCES */
     };
 };
 
@@ -63,9 +64,7 @@ int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeRefe
  * Get field value.
  * Strings and references are returned as direct pointers to the data.
  */
-int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any);
-
-int selva_fields_get_reference_meta(struct SelvaNodeReference *ref, field_t field, struct SelvaFieldsAny *any);
+int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any);
 
 /**
  * Delete field.

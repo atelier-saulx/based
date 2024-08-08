@@ -1,74 +1,22 @@
 import { readSeperateFieldFromBuffer } from './read.js'
-import { FieldDef, SchemaTypeDef } from '../schemaTypeDef.js'
+import { SchemaTypeDef } from '../schemaTypeDef.js'
 import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
-import { Query } from '../query/query.js'
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
-
-const toObjectIncludeTree = (obj, target: any, arr: Query['includeTree']) => {
-  for (let i = 0; i < arr.length; i++) {
-    const key = arr[i++] as string
-    const item = arr[i] as FieldDef | Query['includeTree']
-    if ('__isField' in item) {
-      const v = target[key]
-      obj[key] = v
-    } else {
-      obj[key] = toObjectIncludeTree({}, target[key], item)
-    }
-  }
-  return obj
-}
-
-const toObjectIncludeTreePrint = (
-  str: string,
-  target: any,
-  arr: Query['includeTree'],
-  level: number = 0,
-) => {
-  const prefix = ''.padEnd(level * 2 + 2, ' ')
-  str += '{\n'
-
-  for (let i = 0; i < arr.length; i++) {
-    const key = arr[i++] as string
-    const item = arr[i] as FieldDef | Query['includeTree']
-    str += prefix + `${key}: `
-    if ('__isField' in item) {
-      let v = target[key]
-      if (item.type === 'string') {
-        if (v.length > 80) {
-          const chars = picocolors.italic(
-            picocolors.dim(
-              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
-            ),
-          )
-
-          v = v.slice(0, 80) + picocolors.dim('...') + '" ' + chars
-          str += `"${v}`
-        } else {
-          str += `"${v}"`
-        }
-      } else if (item.type === 'timestamp') {
-        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
-      } else {
-        str += v
-      }
-      str += '\n'
-    } else {
-      str += toObjectIncludeTreePrint('', target[key], item, level + 1)
-    }
-  }
-
-  str += '}\n'.padStart(level * 2 + 2, ' ')
-  return str
-}
+import { BasedDb } from '../index.js'
+import { singleRefProp } from './singleRefProp.js'
+import { QueryIncludeDef } from '../query/types.js'
+import { idDef } from './id.js'
+import { toObjectIncludeTree, toObjectIncludeTreePrint } from './toObject.js'
 
 export class BasedNode {
   [key: string]: any
   __q: BasedQueryResponse
+  __r?: QueryIncludeDef
   __o: number
-  __p?: number
-  constructor(schema: SchemaTypeDef) {
+  __s: SchemaTypeDef
+  constructor(schema: SchemaTypeDef, schemas: BasedDb['schemaTypesParsed']) {
     const ctx = this
     const nonEnum = {
       writable: true,
@@ -77,50 +25,61 @@ export class BasedNode {
     Object.defineProperties(ctx, {
       __q: nonEnum,
       __o: nonEnum,
-      __p: nonEnum,
-      id: {
-        set: () => undefined,
-        get() {
-          return this.__q.buffer.readUint32LE(this.__o)
-        },
-      },
+      __s: nonEnum,
+      id: idDef,
     })
+    this.__s = schema
     for (const field in schema.fields) {
       const fieldDef = schema.fields[field]
       const { path } = fieldDef
       if (path.length > 1) {
         if (!Object.getOwnPropertyDescriptor(ctx, path[0])) {
-          createObjectProp(schema, ctx, path[0])
+          createObjectProp(schema, ctx, path[0], schemas)
         }
       } else {
-        Object.defineProperty(ctx, field, {
-          enumerable: true,
-          set: () => undefined,
-          get() {
-            return readSeperateFieldFromBuffer(fieldDef, ctx)
-          },
-        })
+        if (fieldDef.type === 'reference') {
+          singleRefProp(ctx, field, fieldDef, schemas)
+        } else {
+          Object.defineProperty(ctx, field, {
+            enumerable: true,
+            set: () => undefined,
+            get() {
+              return readSeperateFieldFromBuffer(fieldDef, ctx)
+            },
+          })
+        }
       }
     }
   }
 
   [inspect.custom](_depth, { nested }) {
-    const msg = toObjectIncludeTreePrint(
-      '',
-      this,
-      this.__q.query.includeTree,
-    ).trim()
+    if (!this.__q) {
+      const pre = picocolors.bold(`BasedNode[Detached]`)
+      return `${pre}\n`
+    }
+
+    const msg = this.__r
+      ? ' is ref need to fix includeTree'
+      : toObjectIncludeTreePrint(
+          '',
+          this,
+          this.__q.query.includeDef.includeTree,
+        ).trim()
 
     if (nested) {
       return msg
     }
 
-    const pre = picocolors.bold(`BasedNode[${this.__q.query.type.type}]`)
+    const pre = picocolors.bold(`BasedNode[${this.__s.type}]`)
     return `${pre} ${msg}\n`
   }
 
-  toObject(print: boolean = false) {
-    return toObjectIncludeTree({}, this, this.__q.query.includeTree)
+  toObject() {
+    // quite different if you have __r
+    if (this.__r) {
+      return toObjectIncludeTree({}, this, this.__r.includeTree)
+    }
+    return toObjectIncludeTree({}, this, this.__q.query.includeDef.includeTree)
   }
 
   toJSON() {

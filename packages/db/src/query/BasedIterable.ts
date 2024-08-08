@@ -2,6 +2,7 @@ import { inspect } from 'node:util'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { BasedNode } from '../basedNode/index.js'
 import picocolors from 'picocolors'
+import { QueryIncludeDef } from './types.js'
 
 export class BasedIterable {
   constructor(buffer: Buffer, query: BasedQueryResponse) {
@@ -35,30 +36,45 @@ export class BasedIterable {
         picocolors.dim(picocolors.italic(`...${length - max} More items`))
     }
 
-    str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+    if (this.#query.query.id) {
+      str = str.trim()
+    } else {
+      str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+    }
 
     if (nested) {
       return str
     }
 
-    return `${picocolors.bold(`BasedIterable[${this.#query.query.type.type}]`)} (${this.length}) ${str}`
+    return `${picocolors.bold(`BasedIterable[${this.#query.query.schema.type}]`)} (${this.length}) ${str}`
   }
 
   *[Symbol.iterator]() {
     let i = 4
+    let currentInclude: QueryIncludeDef
     while (i < this.#buffer.byteLength) {
-      // read
       const index = this.#buffer[i]
       i++
-      // read from tree
       if (index === 255) {
-        const ctx = this.#query.query.type.responseCtx
+        currentInclude = this.#query.query.includeDef
+        const ctx = this.#query.query.schema.responseCtx
         ctx.__o = i
         ctx.__q = this.#query
+        ctx.__r = null
         yield ctx
         i += 4
+      } else if (index === 254) {
+        // 1 = nested, 0 = back to top
+        if (this.#buffer[i] === 0) {
+          currentInclude = this.#query.query.includeDef
+        }
+        if (currentInclude.refIncludes) {
+          const start = this.#buffer.readUint16LE(i + 1)
+          currentInclude = currentInclude.refIncludes[start]
+          i += 2 + 4 + 1
+        }
       } else if (index === 0) {
-        i += this.#query.query.mainLen
+        i += currentInclude.mainLen
       } else {
         const size = this.#buffer.readUInt16LE(i)
         i += 2
@@ -92,6 +108,9 @@ export class BasedIterable {
     let i = 0
     for (const item of this) {
       arr[i++] = item.toObject()
+    }
+    if (this.#query.query.id) {
+      return arr[0] ?? null
     }
     return arr
   }

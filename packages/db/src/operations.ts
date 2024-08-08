@@ -3,22 +3,20 @@ import { BasedDb } from './index.js'
 export const flushBuffer = (db: BasedDb) => {
   if (db.modifyBuffer.len) {
     const d = Date.now()
-
+    const len = db.modifyBuffer.len
     db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
-    console.log(
-      'FLUSH',
-      ~~(db.modifyBuffer.len / 1000 / 1000),
-      'mb',
-      Date.now() - d,
-      'ms',
-    )
-
     db.modifyBuffer.len = 0
     db.modifyBuffer.typePrefix = new Uint8Array([0, 0])
     db.modifyBuffer.field = -1
     db.modifyBuffer.id = -1
     db.modifyBuffer.lastMain = -1
+    db.modifyBuffer.mergeMain = null
+    db.modifyBuffer.mergeMainSize = 0
+    const time = Date.now() - d
+    console.log('flush db', time, 'ms', ~~(len / 1000), 'kb')
+    return time
   }
+  return 0
 }
 
 export const startDrain = (db: BasedDb) => {
