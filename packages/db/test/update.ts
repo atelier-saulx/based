@@ -143,6 +143,32 @@ test.serial('update', async (t) => {
 
   console.log(db.query('snurp', 2).get())
 
+  const ids = []
+  for (let i = 0; i < 1e5; i++) {
+    ids.push(i)
+    db.create('snurp', {
+      a: i,
+      name: 'mr snurp ' + i,
+      nested: {
+        derp: 'b',
+      },
+    })
+  }
+  db.drain()
+
+  const d = Date.now()
+
+  // db.query('snurp', ids).get()
+
+  // x200 faster...
+
+  let x = 0
+  for (var i = 0; i < 1e5; i++) {
+    x += db.query('snurp', i).get().execTime
+  }
+  console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
+
+  // ultra slow...
   t.deepEqual(db.query('snurp', 2).get().data.toObject(), {
     a: 0,
     b: 0,
@@ -155,4 +181,32 @@ test.serial('update', async (t) => {
       derp: 'b',
     },
   })
+
+  // for individual queries combine them
+  t.deepEqual(db.query('snurp', [2, 1]).get().data.toObject(), [
+    {
+      a: 1,
+      b: 2,
+      c: 3,
+      countryCode: 'NL',
+      email: 'snurp@snurp.snurp',
+      id: 1,
+      name: 'mr snurp!',
+      nested: {
+        derp: 'a',
+      },
+    },
+    {
+      a: 0,
+      b: 0,
+      c: 0,
+      countryCode: '',
+      email: '',
+      id: 2,
+      name: 'mr snurp 2!',
+      nested: {
+        derp: 'b',
+      },
+    },
+  ])
 })

@@ -9,21 +9,28 @@ const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(false, env, info) catch |err| {
+    return getQueryInternal(0, env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
 pub fn getQueryId(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(true, env, info) catch |err| {
+    return getQueryInternal(1, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(2, env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
 fn getQueryInternal(
-    comptime isId: bool,
+    comptime idType: comptime_int,
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
@@ -44,7 +51,7 @@ fn getQueryInternal(
     var total_results: usize = 0;
     var total_size: usize = 0;
 
-    if (!isId) {
+    if (idType == 0) {
         const args = try napi.getArgs(6, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
@@ -66,17 +73,36 @@ fn getQueryInternal(
                 total_results += 1;
             }
         }
-    } else {
+    } else if (idType == 1) {
+        // TODO: this is super slow!
+        // for indivdual ids its best to combine multiple into 1
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
         const id = try napi.getInt32("id", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
         currentShard = db.idToShard(id);
-
-        // ok now optmize
-
         if (filter(ctx, id, type_prefix, conditions, currentShard)) {
+            const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
+            if (size > 0) {
+                total_size += size;
+                total_results += 1;
+            }
+        }
+    } else if (idType == 2) {
+        const args = try napi.getArgs(4, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const ids = try napi.getBuffer("ids", env, args[2]);
+        const include = try napi.getBuffer("include", env, args[3]);
+        // ids
+        var i: u32 = 0;
+        checkItem: while (i <= ids.len) : (i += 4) {
+            const id = std.mem.readInt(u32, ids[i..][0..4], .little);
+            currentShard = db.idToShard(id);
+            if (!filter(ctx, id, type_prefix, conditions, currentShard)) {
+                continue :checkItem;
+            }
             const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
             if (size > 0) {
                 total_size += size;

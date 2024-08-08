@@ -1,10 +1,8 @@
 const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
-const Error = errors.MdbError;
 const Envs = @import("env/env.zig");
 const stat = @import("env/stat.zig").stat;
-
 const Query = @import("./query/query.zig");
 const Modify = @import("./modify/modify.zig");
 
@@ -15,20 +13,12 @@ const dbEnvIsDefined = Envs.dbEnvIsDefined;
 
 const query = Query.getQuery;
 const queryById = Query.getQueryId;
+const queryByIds = Query.getQueryIds;
 
 const modify = Modify.modify;
 const dbthrow = errors.mdbCheck;
 
 const NapiError = error{NapiError};
-
-pub fn throwError(env: c.napi_env, err: Error) c.napi_value {
-    const result = c.napi_throw_error(env, null, @errorName(err));
-    switch (result) {
-        c.napi_ok, c.napi_pending_exception => {},
-        else => unreachable,
-    }
-    return null;
-}
 
 pub fn registerFunction(
     env: c.napi_env,
@@ -55,6 +45,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "createEnv", createEnv) catch return null;
     registerFunction(env, exports, "stat", stat) catch return null;
     registerFunction(env, exports, "getQueryById", queryById) catch return null;
+    registerFunction(env, exports, "getQueryByIds", queryByIds) catch return null;
     registerFunction(env, exports, "getQuery", query) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
 

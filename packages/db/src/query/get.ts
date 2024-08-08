@@ -21,8 +21,19 @@ export const get = (query: Query): BasedQueryResponse => {
   const conditionsBuffer = addConditions(query)
 
   let result: Buffer
-  // add id
-  if (query.id) {
+
+  if (query.ids) {
+    const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
+    for (let i = 0; i < query.ids.length; i++) {
+      idsBuffer.writeUInt32LE(query.ids[i], i * 4)
+    }
+    result = query.db.native.getQueryByIds(
+      conditionsBuffer,
+      query.schema.prefixString,
+      idsBuffer,
+      includeBuffer,
+    )
+  } else if (query.id) {
     result = query.db.native.getQueryById(
       conditionsBuffer,
       query.schema.prefixString,

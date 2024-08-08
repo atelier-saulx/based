@@ -9,6 +9,7 @@ export class Query {
   db: BasedDb
   schema: SchemaTypeDef
   id: number | void
+  ids: number[] | void
   offset: number
   limit: number
 
@@ -17,12 +18,19 @@ export class Query {
   totalConditionSize: number
   conditions: QueryConditions
 
-  constructor(db: BasedDb, target: string, id?: number) {
+  constructor(db: BasedDb, target: string, id?: number | number[]) {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
     this.schema = typeDef
     if (id) {
-      this.id = id
+      if (Array.isArray(id)) {
+        id.sort((a, b) => {
+          return a > b ? 1 : b > a ? -1 : 0
+        })
+        this.ids = id
+      } else {
+        this.id = id
+      }
     }
   }
 
@@ -75,5 +83,5 @@ export class Query {
   }
 }
 
-export const query = (db: BasedDb, target: string, id?: number) =>
+export const query = (db: BasedDb, target: string, id?: number | number[]) =>
   new Query(db, target, id)
