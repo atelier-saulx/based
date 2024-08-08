@@ -196,14 +196,14 @@ test.serial('update', async (t) => {
   }
   db.drain()
 
-  console.log(db.query('snurp', ids).get())
-  const d = Date.now()
+  // console.log(db.query('snurp', ids).get())
+  // const d = Date.now()
 
-  // x200 faster...
+  // // x200 faster...
 
-  let x = 0
-  for (var i = 0; i < 1e5; i++) {
-    x += db.query('snurp', i).get().execTime
-  }
-  console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
+  // let x = 0
+  // for (var i = 0; i < 1e5; i++) {
+  //   x += db.query('snurp', i).get().execTime
+  // }
+  // console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
 })
