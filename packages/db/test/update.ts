@@ -141,31 +141,6 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  const ids = []
-  for (let i = 0; i < 1e5; i++) {
-    ids.push(i)
-    db.create('snurp', {
-      a: i,
-      name: 'mr snurp ' + i,
-      nested: {
-        derp: 'b',
-      },
-    })
-  }
-  db.drain()
-
-  console.log(db.query('snurp', ids).get())
-  const d = Date.now()
-
-  // x200 faster...
-
-  let x = 0
-  for (var i = 0; i < 1e5; i++) {
-    x += db.query('snurp', i).get().execTime
-  }
-  console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
-
-  // ultra slow...
   t.deepEqual(db.query('snurp', 2).get().data.toObject(), {
     a: 0,
     b: 0,
@@ -206,4 +181,29 @@ test.serial('update', async (t) => {
       },
     },
   ])
+
+  // ------------------------------
+  const ids = []
+  for (let i = 0; i < 1e5; i++) {
+    ids.push(i)
+    db.create('snurp', {
+      a: i,
+      name: 'mr snurp ' + i,
+      nested: {
+        derp: 'b',
+      },
+    })
+  }
+  db.drain()
+
+  console.log(db.query('snurp', ids).get())
+  const d = Date.now()
+
+  // x200 faster...
+
+  let x = 0
+  for (var i = 0; i < 1e5; i++) {
+    x += db.query('snurp', i).get().execTime
+  }
+  console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
 })
