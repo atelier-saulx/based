@@ -4,8 +4,6 @@ import { addInclude } from './include.js'
 import { addConditions } from './filter.js'
 
 export const get = (query: Query): BasedQueryResponse => {
-  const d = performance.now()
-
   if (!query.includeDef) {
     for (const f in query.schema.fields) {
       if (
@@ -21,6 +19,7 @@ export const get = (query: Query): BasedQueryResponse => {
   const conditionsBuffer = addConditions(query)
 
   let result: Buffer
+  const d = performance.now()
 
   if (query.ids) {
     const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)

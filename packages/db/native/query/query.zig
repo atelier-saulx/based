@@ -59,6 +59,8 @@ fn getQueryInternal(
         }
     }
 
+    _ = c.mdb_txn_renew(ctx.txn);
+
     var total_results: usize = 0;
     var total_size: usize = 0;
 
