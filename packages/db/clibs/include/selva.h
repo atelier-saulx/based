@@ -134,6 +134,8 @@ struct SelvaTypeEntry {
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
     } aliases;
+    size_t nr_nodes; /*!< Number of nodes of this type. */
+    size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     struct {
         void *buf;
