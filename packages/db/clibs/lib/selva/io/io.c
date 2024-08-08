@@ -134,6 +134,7 @@ int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string
     return 0;
 }
 
+/* TODO Is the filename arg ever needed? */
 void selva_io_end(struct selva_io *io, struct selva_string **filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE])
 {
     if (io->flags & SELVA_IO_FLAGS_WRITE) {

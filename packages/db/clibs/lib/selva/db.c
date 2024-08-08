@@ -176,6 +176,8 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     te->type = type;
     te->ns.nr_fields = count.nr_fields;
     te->ns.nr_main_fields = count.nr_main_fields;
+    te->schema_buf = schema_buf;
+    te->schema_len = schema_len;
     err = schemabuf_parse(&te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
@@ -259,6 +261,7 @@ void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNo
 
     selva_fields_destroy(db, node);
     mempool_return(&type->nodepool, node);
+    type->nr_nodes--;
 }
 
 struct SelvaNode *db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
@@ -285,6 +288,7 @@ struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
         memset(&node->trx_label, 0, sizeof(node->trx_label));
         node->expire = 0;
         selva_fields_init(type, node);
+        type->nr_nodes++;
     }
 
     return node;
@@ -308,47 +312,38 @@ void db_prefetch(struct SelvaTypeEntry *type)
     } MEMPOOL_FOREACH_CHUNK_END();
 }
 
-void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
+static struct SelvaAlias *insert_alias_by_name(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias)
 {
-    size_t name_len = strlen(name);
-    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
-    struct SelvaAlias *old_alias;
+     struct SelvaAlias *old_alias;
 
-    new_alias->prev = NULL;
-    new_alias->next = NULL;
-    new_alias->dest = dest;
-    memcpy(new_alias->name, name, name_len);
-    new_alias->name[name_len] = '\0';
+     old_alias = RB_INSERT(SelvaAliasesByName, &type->aliases.alias_by_name, new_alias);
+     if (!old_alias) {
+         type->nr_aliases++;
+     }
 
-retry:
-    old_alias = RB_INSERT(SelvaAliasesByName, &type->aliases.alias_by_name, new_alias);
-    if (old_alias) {
-        (void)RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, old_alias);
-        selva_free(old_alias);
-        old_alias = NULL;
-        goto retry;
-    }
-
-    struct SelvaAlias *old_by_dest = RB_INSERT(SelvaAliasesByDest, &type->aliases.alias_by_dest, new_alias);
-    if (old_by_dest) {
-        new_alias->prev = old_by_dest;
-        new_alias->next = old_by_dest->next;
-        old_by_dest->next = new_alias;
-    }
+     return old_alias;
 }
 
-void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
+static struct SelvaAlias *remove_alias_by_name(struct SelvaTypeEntry *type, struct SelvaAlias *find)
 {
-    size_t name_len = strlen(name);
-    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *alias;
 
-    memset(find, 0, sizeof(*find));
-    memcpy(find->name, name, name_len);
-    find->name[name_len] = '\0';
+    alias = RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, find);
+    if (alias) {
+        type->nr_aliases--;
+    }
 
-    struct SelvaAlias *alias = RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, find);
+    return alias;
+}
+
+static void del_alias(struct SelvaTypeEntry *type, struct SelvaAlias *alias_or_find)
+{
+    struct SelvaAlias *alias = remove_alias_by_name(type, alias_or_find);
     if (alias) {
         if (alias->prev) {
+            /*
+             * `alias` is in the middle or the last in the chain for this dest.
+             */
             alias->prev->next = alias->next;
         } else {
             /*
@@ -368,7 +363,47 @@ void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
         }
 
         selva_free(alias);
+        type->nr_aliases--;
     }
+}
+
+void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
+{
+    size_t name_len = strlen(name);
+    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *old_alias;
+
+    new_alias->prev = NULL;
+    new_alias->next = NULL;
+    new_alias->dest = dest;
+    memcpy(new_alias->name, name, name_len);
+    new_alias->name[name_len] = '\0';
+
+retry:
+    old_alias = insert_alias_by_name(type, new_alias);
+    if (old_alias) {
+        del_alias(type, old_alias);
+        goto retry;
+    }
+
+    struct SelvaAlias *prev_by_dest = RB_INSERT(SelvaAliasesByDest, &type->aliases.alias_by_dest, new_alias);
+    if (prev_by_dest) {
+        new_alias->prev = prev_by_dest;
+        new_alias->next = prev_by_dest->next;
+        prev_by_dest->next = new_alias;
+    }
+}
+
+void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
+{
+    size_t name_len = strlen(name);
+    struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+
+    memset(find, 0, sizeof(*find));
+    memcpy(find->name, name, name_len);
+    find->name[name_len] = '\0';
+
+    del_alias(type, find);
 }
 
 void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
@@ -384,7 +419,7 @@ void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
         /*
          * Remove this alias from by_name.
          */
-        (void)RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, alias);
+        remove_alias_by_name(type, alias);
 
         /*
          * Remove the rest of aliases by this dest from by_name.
@@ -394,7 +429,7 @@ void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
             struct SelvaAlias *tmp = next->next;
 
             assert(next->dest == alias->dest);
-            (void)RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, next);
+            remove_alias_by_name(type, next);
             selva_free(next);
 
             next = tmp;

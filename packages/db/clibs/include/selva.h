@@ -134,12 +134,16 @@ struct SelvaTypeEntry {
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
     } aliases;
+    size_t nr_nodes; /*!< Number of nodes of this type. */
+    size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     struct {
         void *buf;
         size_t len;
         size_t main_data_size;
     } field_map_template;
+    const char *schema_buf;
+    size_t schema_len;
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 } __attribute__((aligned(65536)));
 
