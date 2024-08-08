@@ -176,6 +176,8 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     te->type = type;
     te->ns.nr_fields = count.nr_fields;
     te->ns.nr_main_fields = count.nr_main_fields;
+    te->schema_buf = schema_buf;
+    te->schema_len = schema_len;
     err = schemabuf_parse(&te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);

@@ -142,6 +142,8 @@ struct SelvaTypeEntry {
         size_t len;
         size_t main_data_size;
     } field_map_template;
+    const char *schema_buf;
+    size_t schema_len;
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
 } __attribute__((aligned(65536)));
 
