@@ -29,6 +29,17 @@ pub fn getQueryIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.n
     };
 }
 
+var txn: ?*c.MDB_txn = null;
+
+fn makeTxnOrGetTxn() ?*c.MDB_txn {
+    if (txn != null) {
+        errors.mdbCheck(c.mdb_txn_renew(txn)) catch {};
+        return txn;
+    }
+    txn = db.createTransaction(true) catch null;
+    return txn;
+}
+
 fn getQueryInternal(
     comptime idType: comptime_int,
     env: c.napi_env,
@@ -40,7 +51,7 @@ fn getQueryInternal(
     var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
     var resultsList = std.ArrayList(results.Result).init(allocator);
     var currentShard: u16 = 0;
-    const ctx: QueryCtx = .{ .shards = &shards, .txn = try db.createTransaction(true), .results = &resultsList };
+    const ctx: QueryCtx = .{ .shards = &shards, .txn = makeTxnOrGetTxn(), .results = &resultsList };
     defer {
         var it = shards.iterator();
         while (it.next()) |shard| {
@@ -111,7 +122,9 @@ fn getQueryInternal(
         }
     }
 
-    try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
+    _ = c.mdb_txn_reset(ctx.txn);
+
+    // try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
 
     return results.createResultsBuffer(ctx, env, total_size, total_results);
 }

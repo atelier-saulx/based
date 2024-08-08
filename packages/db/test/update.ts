@@ -141,8 +141,6 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  console.log(db.query('snurp', 2).get())
-
   const ids = []
   for (let i = 0; i < 1e5; i++) {
     ids.push(i)

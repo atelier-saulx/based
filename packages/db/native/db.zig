@@ -5,6 +5,10 @@ const std = @import("std");
 
 pub const Shard = struct { dbi: c.MDB_dbi, key: [5]u8, cursor: ?*c.MDB_cursor };
 
+// var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+// const allocator = arena.allocator();
+// pub var dbis = std.AutoHashMap([5]u8, c.MDB_dbi).init(allocator);
+
 pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     var txn: ?*c.MDB_txn = null;
     if (readOnly == true) {
@@ -23,12 +27,17 @@ pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: [2]u8) [5]u8 {
 }
 
 pub fn openDbi(comptime create: bool, name: [5]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
+    // const hasDbi = dbis.get(name);
+    // if (hasDbi != null) {
+    //     return hasDbi.?;
+    // }
     var dbi: c.MDB_dbi = 0;
     var flags: c_uint = c.MDB_INTEGERKEY;
     if (create) {
         flags |= c.MDB_CREATE;
     }
     try errors.mdbCheck(c.mdb_dbi_open(txn, &name, flags, &dbi));
+    // try dbis.put(name, dbi);
     return dbi;
 }
 
