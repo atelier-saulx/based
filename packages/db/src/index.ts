@@ -1,5 +1,4 @@
 import { create, update, remove } from './modify.js'
-import { get } from './get.js'
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import {
   FieldDef,
@@ -14,7 +13,6 @@ import { Query, query } from './query/query.js'
 import { flushBuffer } from './operations.js'
 
 export * from './schemaTypeDef.js'
-export * from './get.js'
 export * from './modify.js'
 export * from './basedNode/index.js'
 
@@ -148,11 +146,6 @@ export class BasedDb {
 
   remove(type: string, id: number) {
     return remove(this, type, id)
-  }
-
-  get(type: string, id: number, include?: string[], exclude?: string[]) {
-    // get all except ref if no include
-    return get(this, type, id, include)
   }
 
   query(target: string, id?: number | number[]): Query {
