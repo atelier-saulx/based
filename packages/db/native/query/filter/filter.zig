@@ -91,5 +91,6 @@ pub fn filter(
         }
         fieldIndex += querySize + 3;
     }
+
     return true;
 }

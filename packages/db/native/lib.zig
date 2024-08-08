@@ -2,30 +2,22 @@ const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Error = errors.MdbError;
-const Gets = @import("get/get.zig");
 const Envs = @import("env/env.zig");
-const Sets = @import("set/set.zig");
-const Dels = @import("del/del.zig");
+const stat = @import("env/stat.zig").stat;
+
 const Query = @import("./query/query.zig");
-const Modify = @import("./set/modify.zig");
-// const Zstd = @import("./zstd.zig");
+const Modify = @import("./modify/modify.zig");
 
 const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
 const dbEnv = Envs.env;
-const stat = Envs.stat;
 const dbEnvIsDefined = Envs.dbEnvIsDefined;
-const getBatch4 = Gets.getBatch4;
-const getBatch8 = Gets.getBatch8;
-const setBatch4 = Sets.setBatch4;
-const setBatch8 = Sets.setBatch8;
-const delBatch4 = Dels.delBatch4;
-const delBatch8 = Dels.delBatch8;
+
 const query = Query.getQuery;
+const queryById = Query.getQueryId;
+
 const modify = Modify.modify;
 const dbthrow = errors.mdbCheck;
-
-// const compress = Zstd.compress;
 
 const NapiError = error{NapiError};
 
@@ -61,17 +53,10 @@ pub fn registerFunction(
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     registerFunction(env, exports, "createEnv", createEnv) catch return null;
-    registerFunction(env, exports, "getBatch4", getBatch4) catch return null;
-    registerFunction(env, exports, "getBatch8", getBatch8) catch return null;
-    registerFunction(env, exports, "setBatch4", setBatch4) catch return null;
-    registerFunction(env, exports, "setBatch8", setBatch8) catch return null;
-    registerFunction(env, exports, "delBatch4", delBatch4) catch return null;
-    registerFunction(env, exports, "delBatch8", delBatch8) catch return null;
-
     registerFunction(env, exports, "stat", stat) catch return null;
-
+    registerFunction(env, exports, "getQueryById", queryById) catch return null;
     registerFunction(env, exports, "getQuery", query) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
-    // registerFunction(env, exports, "compress", compress) catch return null;
+
     return exports;
 }
