@@ -8,6 +8,8 @@ pub const SortIndex = struct { dbi: c.MDB_dbi, key: [7]u8, cursor: ?*c.MDB_curso
 
 pub var sortIndexes = std.AutoHashMap([7]u8, SortIndex).init(db.allocator);
 
+// pub var typeSortIndexes = std.AutoHashMap([2]u8, ).init(db.allocator);
+
 //   ['timestamp', 1],
 //   ['created', 2],
 //   ['updated', 3],
