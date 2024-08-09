@@ -65,6 +65,7 @@ export class BasedDb {
     getQuerySort: (
       conditions: Buffer,
       prefix: string,
+      lastId: number,
       offset: number,
       limit: number, // def 1k ?
       includeBuffer: Buffer,
@@ -75,6 +76,7 @@ export class BasedDb {
         return dbZig.getQuerySortDesc(
           conditions,
           prefix,
+          lastId,
           offset,
           limit,
           includeBuffer,
@@ -84,6 +86,7 @@ export class BasedDb {
         return dbZig.getQuerySortAsc(
           conditions,
           prefix,
+          lastId,
           offset,
           limit,
           includeBuffer,

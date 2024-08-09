@@ -24,18 +24,18 @@ test.serial('sort', async (t) => {
       user: {
         fields: {
           gender: { type: 'integer' },
-          name: { type: 'string' },
           age: { type: 'integer' },
+          name: { type: 'string' },
           email: { type: 'string' },
         },
       },
     },
   })
 
-  const snurp = db.create('user', {
-    name: 'mr snurp',
-    age: 99,
-    email: 'snurp@snurp.snurp.snurp',
+  const blap = db.create('user', {
+    name: 'mr blap',
+    age: 201,
+    email: 'blap@blap.blap.blap',
   })
 
   const flap = db.create('user', {
@@ -44,11 +44,13 @@ test.serial('sort', async (t) => {
     email: 'flap@flap.flap.flap',
   })
 
-  const blap = db.create('user', {
-    name: 'mr blap',
-    age: 200,
-    email: 'blap@blap.blap.blap',
+  const snurp = db.create('user', {
+    name: 'mr snurp',
+    age: 99,
+    email: 'snurp@snurp.snurp.snurp',
   })
+
+  db.drain()
 
   const nurp = db.create('user', {
     name: 'mr nurp',
@@ -66,9 +68,9 @@ test.serial('sort', async (t) => {
       .get()
       .data.toObject(),
     [
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-      { id: 3, email: 'blap@blap.blap.blap', age: 200 },
-      { id: 1, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
     ],
   )
@@ -82,9 +84,9 @@ test.serial('sort', async (t) => {
       .data.toObject(),
     [
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-      { id: 1, email: 'snurp@snurp.snurp.snurp', age: 99 },
-      { id: 3, email: 'blap@blap.blap.blap', age: 200 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
     ],
   )
 
@@ -96,10 +98,10 @@ test.serial('sort', async (t) => {
       .get()
       .data.toObject(),
     [
-      { id: 3, email: 'blap@blap.blap.blap', age: 200 },
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-      { id: 1, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
     ],
   )
 })

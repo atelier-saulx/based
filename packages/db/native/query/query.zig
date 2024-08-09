@@ -134,20 +134,37 @@ fn getQueryInternal(
         }
     } else if (queryType == 3 or queryType == 4) {
         // query  sort
-        const args = try napi.getArgs(6, env, info);
+        const args = try napi.getArgs(7, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typePrefix = try napi.getStringFixedLength("type", 2, env, args[1]);
-        const offset = try napi.getInt32("offset", env, args[2]);
-        const limit = try napi.getInt32("limit", env, args[3]);
-        const include = try napi.getBuffer("include", env, args[4]);
-        const sort = try napi.getBuffer("sort", env, args[5]);
+        const lastId = try napi.getInt32("lastId", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+        const include = try napi.getBuffer("include", env, args[5]);
+        const sort = try napi.getBuffer("sort", env, args[6]);
         var sortIndex: ?dbSort.SortIndex = null;
-        if (sort.len == 5) {
+        if (sort.len == 6) {
             const start = std.mem.readInt(u16, sort[2..][0..2], .little);
             const len = std.mem.readInt(u16, sort[2..][2..4], .little);
-            sortIndex = dbSort.createOrGetSortIndex(typePrefix, sort[0], start, len, queryId, sort[1]);
+            sortIndex = dbSort.createOrGetSortIndex(
+                typePrefix,
+                sort[0],
+                start,
+                len,
+                queryId,
+                sort[1],
+                lastId,
+            );
         } else {
-            sortIndex = dbSort.createOrGetSortIndex(typePrefix, sort[0], 0, 0, queryId, sort[1]);
+            sortIndex = dbSort.createOrGetSortIndex(
+                typePrefix,
+                sort[0],
+                0,
+                0,
+                queryId,
+                sort[1],
+                lastId,
+            );
         }
 
         if (sortIndex != null) {

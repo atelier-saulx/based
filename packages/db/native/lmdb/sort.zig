@@ -21,15 +21,18 @@ pub var sortIndexes = std.AutoHashMap([7]u8, SortIndex).init(db.allocator);
 
 fn createSortIndex(
     name: [7]u8,
-    shard: db.Shard,
     start: u16,
     len: u16,
     field: u8,
     fieldType: u8,
+    lastId: u32,
+    queryId: u32,
 ) !void {
+    const txn = try db.createTransaction(false);
+    const typePrefix = .{ name[1], name[2] };
+
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
-    const txn = try db.createTransaction(false);
     var flags: c_uint = c.MDB_CREATE;
     flags |= c.MDB_DUPSORT;
     flags |= c.MDB_DUPFIXED;
@@ -39,34 +42,47 @@ fn createSortIndex(
     }
     try errors.mdbCheck(c.mdb_dbi_open(txn, &name, flags, &dbi));
     try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
-    var first: bool = true;
-    var end: bool = false;
-    var flag: c_uint = c.MDB_FIRST;
-    while (!end) {
-        var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        errors.mdbCheck(c.mdb_cursor_get(shard.cursor, &key, &value, flag)) catch {
-            end = true;
-            break;
-        };
 
-        if (len > 0) {
-            const mainValue = @as([*]u8, @ptrCast(value.mv_data))[start .. start + len];
-            var selectiveValue: c.MDB_val = .{ .mv_size = len, .mv_data = mainValue.ptr };
-            try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
-        } else if (field == 0 and value.mv_size > 8) {
-            const fieldValue = @as([*]u8, @ptrCast(value.mv_data))[0..8];
-            var selectiveValue: c.MDB_val = .{ .mv_size = 8, .mv_data = fieldValue.ptr };
-            try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
-        } else {
-            try errors.mdbCheck(c.mdb_cursor_put(cursor, &value, &key, 0));
+    const maxShards = db.idToShard(lastId);
+    var currentShard: u16 = 0;
+
+    shardLoop: while (currentShard <= maxShards) {
+        const origin = db.createDbiName(typePrefix, field, @bitCast(currentShard));
+        const shard = db.getReadShard(origin, queryId);
+        var first: bool = true;
+        var end: bool = false;
+        currentShard += 1;
+
+        std.debug.print("SNURP {any} {any} \n", .{ shard, origin });
+        if (shard == null) {
+            continue :shardLoop;
         }
-
-        if (first) {
-            first = false;
-            flag = c.MDB_NEXT;
+        var flag: c_uint = c.MDB_FIRST;
+        while (!end) {
+            var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &key, &value, flag)) catch {
+                end = true;
+                continue :shardLoop;
+            };
+            if (len > 0) {
+                const mainValue = @as([*]u8, @ptrCast(value.mv_data))[start .. start + len];
+                var selectiveValue: c.MDB_val = .{ .mv_size = len, .mv_data = mainValue.ptr };
+                try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
+            } else if (field == 0 and value.mv_size > 8) {
+                const fieldValue = @as([*]u8, @ptrCast(value.mv_data))[0..8];
+                var selectiveValue: c.MDB_val = .{ .mv_size = 8, .mv_data = fieldValue.ptr };
+                try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
+            } else {
+                try errors.mdbCheck(c.mdb_cursor_put(cursor, &value, &key, 0));
+            }
+            if (first) {
+                first = false;
+                flag = c.MDB_NEXT;
+            }
         }
     }
+
     try errors.mdbCheck(c.mdb_txn_commit(txn));
 }
 
@@ -92,6 +108,7 @@ pub fn createOrGetSortIndex(
     len: u16,
     queryId: u32,
     fieldType: u8,
+    lastId: u32,
 ) ?SortIndex {
     var startCasted: [2]u8 = @bitCast(start);
     if (startCasted[0] == 0 and startCasted[1] != 0) {
@@ -109,12 +126,7 @@ pub fn createOrGetSortIndex(
     };
     var s = sortIndexes.get(name);
     if (s == null) {
-        const origin = db.createDbiName(typePrefix, field, .{ 0, 0 });
-        const shard = db.getReadShard(origin, queryId);
-        if (shard == null) {
-            return null;
-        }
-        createSortIndex(name, shard.?, start, len, field, fieldType) catch |err| {
+        createSortIndex(name, start, len, field, fieldType, lastId, queryId) catch |err| {
             std.log.err("Cannot create writeSortIndex name: {any} err: {any} \n", .{ name, err });
             return null;
         };

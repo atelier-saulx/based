@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 10e6
+const amount = 100
 
 const d = Date.now()
 
@@ -79,8 +79,9 @@ for (let i = 0; i < amount; i++) {
   users.push(
     db.create('user', {
       // myBlup: blup,
-      age: amount - i,
-      // name: 'Mr ' + i,
+      // age: amount - i
+      age: ~~(Math.random() * 99) + 1,
+      name: 'Mr ' + i,
       burp: 66,
       // snurp: 'derp derp',
       // email: 'merp_merp_' + i + '@once.net',
@@ -138,6 +139,22 @@ console.log('TIME', dbtime, 'ms', Date.now() - d, 'ms')
 
 // console.dir(result.data.toObject(), { depth: 10 })
 
+db.create('user', {
+  // myBlup: blup,
+  // age: amount - i
+  age: 0,
+  // name: 'Mr ' + i,
+  burp: 66,
+  name: 'MR POEPOE',
+  // snurp: 'derp derp',
+  // email: 'merp_merp_' + i + '@once.net',
+  // location: {
+  // label: 'BLA BLA',
+  // },
+})
+
+db.drain()
+
 console.log(
   db.query('user').range(0, 100).include('name', 'age').sort('age').get(),
 )
@@ -174,5 +191,7 @@ console.log(
 //   // console.info('user.id--->', item.user.id)
 //   i++
 // }
+
+db.stats()
 
 await wait(0)
