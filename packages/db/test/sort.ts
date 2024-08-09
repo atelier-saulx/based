@@ -88,19 +88,18 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  // console.log(GO GO GO)
   t.deepEqual(
     db
       .query('user')
-      .sort('email', 'desc')
+      .sort('email', 'asc')
       .include('email', 'age')
       .get()
       .data.toObject(),
     [
-      { id: 4, email: 'nurp@nurp.nurp', age: 200 },
       { id: 3, email: 'blap@blap.blap', age: 200 },
-      { id: 1, email: 'snurp@snurp.snurp', age: 99 },
       { id: 2, email: 'flap@flap.flap', age: 50 },
+      { id: 4, email: 'nurp@nurp.nurp', age: 200 },
+      { id: 1, email: 'snurp@snurp.snurp', age: 99 },
     ],
   )
 })

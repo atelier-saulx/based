@@ -145,15 +145,9 @@ fn getQueryInternal(
         if (sort.len == 5) {
             const start = std.mem.readInt(u16, sort[2..][0..2], .little);
             const len = std.mem.readInt(u16, sort[2..][2..4], .little);
-            sortIndex = dbSort.createOrGetSortIndex(
-                typePrefix,
-                sort[0],
-                start,
-                len,
-                queryId,
-            );
+            sortIndex = dbSort.createOrGetSortIndex(typePrefix, sort[0], start, len, queryId, sort[1]);
         } else {
-            sortIndex = dbSort.createOrGetSortIndex(typePrefix, sort[0], 0, 0, queryId);
+            sortIndex = dbSort.createOrGetSortIndex(typePrefix, sort[0], 0, 0, queryId, sort[1]);
         }
 
         if (sortIndex != null) {
