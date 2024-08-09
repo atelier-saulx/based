@@ -47,7 +47,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // main
 
     var currentSortIndex: ?dbSort.SortIndex = null;
-
     // sortIndexes
 
     while (i < size) {
@@ -58,7 +57,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             field = batch[i + 1];
             keySize = batch[i + 2];
             i = i + 1 + 2;
-
             if (field != 0) {
                 const sortIndexName = dbSort.createSortName(typePrefix, field, 0);
                 if (dbSort.hasReadSortIndex(sortIndexName)) {
@@ -70,6 +68,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 } else {
                     currentSortIndex = null;
                 }
+            } else {
+                currentSortIndex = null;
             }
         } else if (operation == 1) {
             // SWITCH KEY
@@ -95,12 +95,41 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
             }
             if (shard != null) {
+                const data = batch[i + 5 .. i + 5 + operationSize];
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
-                var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
+                var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = data.ptr };
+
                 // TODO: only if 3! c.MDB_APPEND
                 errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
-
-                if (currentSortIndex != null) {
+                if (field == 0) {
+                    if (dbSort.hasMainSortIndexes(typePrefix)) {
+                        const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
+                        var it = s.?.*.keyIterator();
+                        while (it.next()) |key| {
+                            const start = key.*;
+                            const sortIndexName = dbSort.createSortName(typePrefix, field, start);
+                            const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
+                            const len = readSortIndex.?.len;
+                            var sIndex = sortIndexes.get(sortIndexName);
+                            if (sIndex == null) {
+                                sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
+                                try sortIndexes.put(sortIndexName, sIndex.?);
+                            }
+                            var indexValue: c.MDB_val = .{
+                                .mv_size = len,
+                                .mv_data = data[start .. start + len].ptr,
+                            };
+                            dbSort.writeToSortIndex(
+                                &indexValue,
+                                &k,
+                                sIndex.?.start,
+                                len,
+                                sIndex.?.cursor,
+                                field,
+                            ) catch {};
+                        }
+                    }
+                } else if (currentSortIndex != null) {
                     dbSort.writeToSortIndex(
                         &v,
                         &k,

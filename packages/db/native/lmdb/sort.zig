@@ -9,6 +9,12 @@ pub const SortIndex = struct { dbi: c.MDB_dbi, cursor: ?*c.MDB_cursor, queryId: 
 
 pub var sortIndexes = std.AutoHashMap([7]u8, SortIndex).init(db.allocator);
 
+pub const StartSet = std.AutoHashMap(u16, u8);
+
+// pub var
+
+pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
+
 //   ['timestamp', 1],
 //   ['created', 2],
 //   ['updated', 3],
@@ -117,6 +123,18 @@ fn createSortIndex(
         }
     }
     try errors.mdbCheck(c.mdb_txn_commit(txn));
+
+    if (len > 0) {
+        if (!mainSortIndexes.contains(typePrefix)) {
+            const flap = try db.allocator.create(StartSet);
+            flap.* = StartSet.init(db.allocator);
+            mainSortIndexes.put(typePrefix, flap) catch |e| {
+                std.log.err(" {any} \n", .{e});
+            };
+        }
+        const s: ?*StartSet = mainSortIndexes.get(typePrefix);
+        try s.?.*.put(start, 0);
+    }
 }
 
 fn createReadSortIndex(name: [7]u8, queryId: u32, len: u16, start: u16) !SortIndex {
@@ -171,6 +189,14 @@ pub fn getReadSortIndex(name: [7]u8) ?SortIndex {
 
 pub fn hasReadSortIndex(name: [7]u8) bool {
     return sortIndexes.contains(name);
+}
+
+pub fn getMainSortStarts(typePrefix: [2]u8) ?*StartSet {
+    return mainSortIndexes.get(typePrefix);
+}
+
+pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
+    return mainSortIndexes.contains(typePrefix);
 }
 
 pub fn createWriteSortIndex(name: [7]u8, len: u16, start: u16, txn: ?*c.MDB_txn) ?SortIndex {
