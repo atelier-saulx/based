@@ -4,6 +4,7 @@ const errors = @import("../errors.zig");
 const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../lmdb/db.zig");
+const dbSort = @import("../lmdb/sort.zig");
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -29,15 +30,25 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     const allocator = arena.allocator();
     var shards = std.AutoHashMap([6]u8, db.Shard).init(allocator);
+    var sortIndexes = std.AutoHashMap([7]u8, dbSort.SortIndex).init(allocator);
 
     const txn = try db.createTransaction(false);
 
     var i: usize = 0;
     var keySize: u8 = undefined;
     var field: u8 = undefined;
-    var type_prefix: [2]u8 = undefined;
+    var typePrefix: [2]u8 = undefined;
     var id: u32 = undefined;
     var currentShard: [2]u8 = .{ 0, 0 };
+
+    // hasSortIndex {}
+    // type has sortIndex
+    // field !main has sortIndex
+    // main
+
+    var currentSortIndex: ?dbSort.SortIndex = null;
+
+    // sortIndexes
 
     while (i < size) {
         // delete
@@ -47,6 +58,19 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             field = batch[i + 1];
             keySize = batch[i + 2];
             i = i + 1 + 2;
+
+            if (field != 0) {
+                const sortIndexName = dbSort.createSortName(typePrefix, field, 0);
+                if (dbSort.hasReadSortIndex(sortIndexName)) {
+                    currentSortIndex = sortIndexes.get(sortIndexName);
+                    if (currentSortIndex == null) {
+                        currentSortIndex = dbSort.createWriteSortIndex(sortIndexName, 0, 0, txn);
+                        try sortIndexes.put(sortIndexName, currentSortIndex.?);
+                    }
+                } else {
+                    currentSortIndex = null;
+                }
+            }
         } else if (operation == 1) {
             // SWITCH KEY
             id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
@@ -54,13 +78,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             i = i + 1 + 4;
         } else if (operation == 2) {
             // SWITCH TYPE
-            type_prefix[0] = batch[i + 1];
-            type_prefix[1] = batch[i + 2];
+            typePrefix[0] = batch[i + 1];
+            typePrefix[1] = batch[i + 2];
             i = i + 1 + 2;
         } else if (operation == 3) {
             // PUT
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const dbiName = db.createDbiName(type_prefix, field, currentShard);
+            const dbiName = db.createDbiName(typePrefix, field, currentShard);
             var shard = shards.get(dbiName);
             if (shard == null) {
                 shard = db.openShard(true, dbiName, txn) catch null;
@@ -75,11 +99,22 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
                 // TODO: only if 3! c.MDB_APPEND
                 errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
+
+                if (currentSortIndex != null) {
+                    dbSort.writeToSortIndex(
+                        &v,
+                        &k,
+                        currentSortIndex.?.start,
+                        currentSortIndex.?.len,
+                        currentSortIndex.?.cursor,
+                        field,
+                    ) catch {};
+                }
             }
             i = i + operationSize + 1 + 4;
         } else if (operation == 4) {
             // DELETE
-            const dbiName = db.createDbiName(type_prefix, field, currentShard);
+            const dbiName = db.createDbiName(typePrefix, field, currentShard);
             var shard = shards.get(dbiName);
             if (shard == null) {
                 shard = db.openShard(true, dbiName, txn) catch null;
@@ -99,7 +134,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operation == 5) {
             // UPDATE OFFSETS
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const dbiName = db.createDbiName(type_prefix, field, currentShard);
+            const dbiName = db.createDbiName(typePrefix, field, currentShard);
             var shard = shards.get(dbiName);
             if (shard == null) {
                 shard = db.openShard(true, dbiName, txn) catch null;
