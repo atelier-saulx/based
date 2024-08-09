@@ -67,9 +67,9 @@ fn createSortIndex(
                 const mainValue = @as([*]u8, @ptrCast(value.mv_data))[start .. start + len];
                 var selectiveValue: c.MDB_val = .{ .mv_size = len, .mv_data = mainValue.ptr };
                 try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
-            } else if (field == 0 and value.mv_size > 8) {
-                const fieldValue = @as([*]u8, @ptrCast(value.mv_data))[0..8];
-                var selectiveValue: c.MDB_val = .{ .mv_size = 8, .mv_data = fieldValue.ptr };
+            } else if (field != 0 and value.mv_size > 16) {
+                const fieldValue = @as([*]u8, @ptrCast(value.mv_data))[0..16];
+                var selectiveValue: c.MDB_val = .{ .mv_size = 16, .mv_data = fieldValue.ptr };
                 try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
             } else {
                 try errors.mdbCheck(c.mdb_cursor_put(cursor, &value, &key, 0));

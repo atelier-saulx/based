@@ -145,7 +145,7 @@ db.create('user', {
   age: 0,
   // name: 'Mr ' + i,
   // burp: 66,
-  name: 'MR POEPOE',
+  name: 'A MR POEPOE',
   // snurp: 'derp derp',
   // email: 'merp_merp_' + i + '@once.net',
   // location: {
@@ -156,11 +156,11 @@ db.create('user', {
 db.drain()
 
 console.log(
-  db.query('user').range(0, 100).include('name', 'age').sort('age').get(),
+  db.query('user').range(0, 100).include('name', 'age').sort('name').get(),
 )
 
 console.log(
-  db.query('user').range(0, 100).include('name', 'age').sort('age').get(),
+  db.query('user').range(0, 100).include('name', 'age').sort('name').get(),
 )
 
 // for (const item of result.data) {
