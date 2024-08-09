@@ -88,6 +88,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
+  // console.log(GO GO GO)
   t.deepEqual(
     db
       .query('user')

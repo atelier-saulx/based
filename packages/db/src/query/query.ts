@@ -4,6 +4,7 @@ import { Operation, QueryIncludeDef, QueryConditions } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 import { inspect } from 'node:util'
+import { sort } from './sort.js'
 
 export class Query {
   db: BasedDb
@@ -70,23 +71,7 @@ export class Query {
   }
 
   sort(field: string, order: 'asc' | 'desc' = 'asc'): Query {
-    const fieldDef = this.schema.fields[field]
-    if (!fieldDef) {
-      console.warn('Query: No field def defined for', field)
-      return this
-    }
-    this.sortOrder = order
-    if (fieldDef.field === 0) {
-      const buf = Buffer.allocUnsafe(5)
-      buf[0] = 0
-      buf.writeUint16LE(fieldDef.start, 1)
-      buf.writeUint16LE(fieldDef.len, 3)
-      this.sortBuffer = buf
-    } else {
-      const buf = Buffer.allocUnsafe(21)
-      buf[0] = fieldDef.field
-      this.sortBuffer = buf
-    }
+    sort(this, field, order)
     return this
   }
 
