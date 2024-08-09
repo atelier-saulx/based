@@ -47,6 +47,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // main
 
     var currentSortIndex: ?dbSort.SortIndex = null;
+    var sortIndexName: [7]u8 = undefined;
     // sortIndexes
 
     while (i < size) {
@@ -58,7 +59,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             keySize = batch[i + 2];
             i = i + 1 + 2;
             if (field != 0) {
-                const sortIndexName = dbSort.createSortName(typePrefix, field, 0);
+                sortIndexName = dbSort.createSortName(typePrefix, field, 0);
                 if (dbSort.hasReadSortIndex(sortIndexName)) {
                     currentSortIndex = sortIndexes.get(sortIndexName);
                     if (currentSortIndex == null) {
@@ -82,7 +83,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             typePrefix[1] = batch[i + 2];
             i = i + 1 + 2;
         } else if (operation == 3) {
-            // PUT
+            // CREATE
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             const dbiName = db.createDbiName(typePrefix, field, currentShard);
             var shard = shards.get(dbiName);
@@ -98,7 +99,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 const data = batch[i + 5 .. i + 5 + operationSize];
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = data.ptr };
-
                 // TODO: only if 3! c.MDB_APPEND
                 errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
                 if (field == 0) {
@@ -107,7 +107,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                         var it = s.?.*.keyIterator();
                         while (it.next()) |key| {
                             const start = key.*;
-                            const sortIndexName = dbSort.createSortName(typePrefix, field, start);
+                            sortIndexName = dbSort.createSortName(typePrefix, field, start);
                             const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
                             const len = readSortIndex.?.len;
                             var sIndex = sortIndexes.get(sortIndexName);
@@ -177,16 +177,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-                var mainBuffer: []u8 = undefined;
+                var currentData: []u8 = undefined;
                 if (v.mv_size != 0) {
-                    mainBuffer = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+                    currentData = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
                     const mergeMain: []u8 = batch[i + 5 .. i + 5 + operationSize];
                     var j: usize = 0;
                     while (j < mergeMain.len) {
                         const start = std.mem.readInt(u16, mergeMain[j..][0..2], .little);
                         // start
                         const len = std.mem.readInt(u16, mergeMain[j..][2..4], .little);
-                        @memcpy(mainBuffer[start .. start + len], mergeMain[j + 4 .. j + 4 + len]);
+                        @memcpy(currentData[start .. start + len], mergeMain[j + 4 .. j + 4 + len]);
                         j += 4 + len;
                     }
                 } else {
@@ -194,6 +194,54 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
             }
             i += operationSize + 7;
+        } else if (operation == 6) {
+            // UPDATE WHOLE FIELD
+            const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+            const dbiName = db.createDbiName(typePrefix, field, currentShard);
+            var shard = shards.get(dbiName);
+            if (shard == null) {
+                shard = db.openShard(true, dbiName, txn) catch null;
+                if (shard != null) {
+                    shards.put(dbiName, shard.?) catch {
+                        shard = null;
+                    };
+                }
+            }
+            if (shard != null) {
+                const data = batch[i + 5 .. i + 5 + operationSize];
+                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
+                var v: c.MDB_val = undefined;
+                // TODO: only if 3! c.MDB_APPEND
+
+                //  if (field == 0) {
+                //     // --- make fn to reuse
+                // } else
+                if (currentSortIndex != null) {
+                    v = .{ .mv_size = 0, .mv_data = null };
+                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, 0)) catch {};
+
+                    if (v.mv_size != 0) {
+                        const currentData: []u8 = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+
+                        std.debug.print("currentData {any} \n", .{currentData});
+                    }
+
+                    // const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
+
+                    dbSort.writeToSortIndex(
+                        &v,
+                        &k,
+                        currentSortIndex.?.start,
+                        currentSortIndex.?.len,
+                        currentSortIndex.?.cursor,
+                        field,
+                    ) catch {};
+                } else {
+                    v = .{ .mv_size = operationSize, .mv_data = data.ptr };
+                    errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
+                }
+            }
+            i = i + operationSize + 1 + 4;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
@@ -204,7 +252,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // while (it.next()) |shard| {
     //     db.closeCursor(shard.value_ptr);
     // }
-
     try errors.mdbCheck(c.mdb_txn_commit(txn));
 
     return null;
