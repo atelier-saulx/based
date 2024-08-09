@@ -172,13 +172,39 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 var currentData: []u8 = undefined;
                 if (v.mv_size != 0) {
                     currentData = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-                    const mergeMain: []u8 = batch[i + 5 .. i + 5 + operationSize];
+                    const mergeOperation: []u8 = batch[i + 5 .. i + 5 + operationSize];
                     var j: usize = 0;
-                    while (j < mergeMain.len) {
-                        const start = std.mem.readInt(u16, mergeMain[j..][0..2], .little);
-                        // start
-                        const len = std.mem.readInt(u16, mergeMain[j..][2..4], .little);
-                        @memcpy(currentData[start .. start + len], mergeMain[j + 4 .. j + 4 + len]);
+                    while (j < mergeOperation.len) {
+                        const start = std.mem.readInt(u16, mergeOperation[j..][0..2], .little);
+                        const len = std.mem.readInt(u16, mergeOperation[j..][2..4], .little);
+
+                        if (dbSort.hasMainSortIndexes(typePrefix)) {
+                            sortIndexName = dbSort.createSortName(typePrefix, field, start);
+                            if (dbSort.hasReadSortIndex(sortIndexName)) {
+                                var sIndex = sortIndexes.get(sortIndexName);
+                                if (sIndex == null) {
+                                    sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
+                                    try sortIndexes.put(sortIndexName, sIndex.?);
+                                }
+                                var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
+                                var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
+                                errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                                errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
+
+                                var indexValue: c.MDB_val = .{ .mv_size = len, .mv_data = mergeOperation[j + 4 .. j + 4 + len].ptr };
+
+                                dbSort.writeToSortIndex(
+                                    &indexValue,
+                                    &k,
+                                    start,
+                                    0,
+                                    sIndex.?.cursor,
+                                    field,
+                                ) catch {};
+                            }
+                        }
+
+                        @memcpy(currentData[start .. start + len], mergeOperation[j + 4 .. j + 4 + len]);
                         j += 4 + len;
                     }
                 } else {
@@ -203,15 +229,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 const data = batch[i + 5 .. i + 5 + operationSize];
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
-
                 if (field == 0) {
                     if (dbSort.hasMainSortIndexes(typePrefix)) {
+                        var currentValue: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                         const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
                         var it = s.?.*.keyIterator();
-                        errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-
-                        const currentData: []u8 = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-
+                        errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
+                        const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
                         while (it.next()) |key| {
                             const start = key.*;
                             sortIndexName = dbSort.createSortName(typePrefix, field, start);
@@ -222,21 +246,14 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                                 sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
                                 try sortIndexes.put(sortIndexName, sIndex.?);
                             }
-
-                            var sortValue: c.MDB_val = .{ .mv_size = v.mv_size, .mv_data = currentData[start .. start + len].ptr };
+                            var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
                             var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
                             errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
                             errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
-
-                            var indexValue: c.MDB_val = .{
-                                .mv_size = len,
-                                .mv_data = data[start .. start + len].ptr,
-                            };
-
                             dbSort.writeToSortIndex(
-                                &indexValue,
+                                &v,
                                 &k,
-                                sIndex.?.start,
+                                start,
                                 len,
                                 sIndex.?.cursor,
                                 field,
@@ -248,9 +265,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                         .mv_size = 0,
                         .mv_data = null,
                     };
-
                     errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
-
                     if (v.mv_size != 0) {
                         const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
                         var sortValue: c.MDB_val = .{ .mv_size = currentValue.mv_size, .mv_data = currentData.ptr };
