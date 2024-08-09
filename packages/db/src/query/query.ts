@@ -13,7 +13,8 @@ export class Query {
   offset: number
   limit: number
 
-  sortBuffer: Buffer | void
+  sortBuffer: Buffer
+  sortOrder: 'asc' | 'desc'
 
   includeDef: QueryIncludeDef
 
@@ -71,20 +72,19 @@ export class Query {
   sort(field: string, order: 'asc' | 'desc' = 'asc'): Query {
     const fieldDef = this.schema.fields[field]
     if (!fieldDef) {
-      console.warn('No field def defined for', field)
+      console.warn('Query: No field def defined for', field)
       return this
     }
+    this.sortOrder = order
     if (fieldDef.field === 0) {
-      const buf = Buffer.allocUnsafe(6)
+      const buf = Buffer.allocUnsafe(5)
       buf[0] = 0
-      buf[1] = order === 'asc' ? 0 : 1
-      buf.writeUint16LE(fieldDef.start, 2)
-      buf.writeUint16LE(fieldDef.len, 4)
+      buf.writeUint16LE(fieldDef.start, 1)
+      buf.writeUint16LE(fieldDef.len, 3)
       this.sortBuffer = buf
     } else {
-      const buf = Buffer.allocUnsafe(2)
+      const buf = Buffer.allocUnsafe(21)
       buf[0] = fieldDef.field
-      buf[1] = order === 'asc' ? 0 : 1
       this.sortBuffer = buf
     }
     return this

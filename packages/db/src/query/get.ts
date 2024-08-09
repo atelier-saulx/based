@@ -50,6 +50,7 @@ export const get = (query: Query): BasedQueryResponse => {
       end,
       includeBuffer,
       query.sortBuffer,
+      query.sortOrder,
     )
   } else {
     const start = query.offset ?? 0

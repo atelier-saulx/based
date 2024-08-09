@@ -70,16 +70,29 @@ export class BasedDb {
       limit: number, // def 1k ?
       includeBuffer: Buffer,
       sort: Buffer,
+      sortOrder: 'asc' | 'desc',
     ): any => {
-      return dbZig.getQuerySort(
-        conditions,
-        prefix,
-        lastId,
-        offset,
-        limit,
-        includeBuffer,
-        sort,
-      )
+      if (sortOrder === 'desc') {
+        return dbZig.getQuerySortDesc(
+          conditions,
+          prefix,
+          lastId,
+          offset,
+          limit,
+          includeBuffer,
+          sort,
+        )
+      } else {
+        return dbZig.getQuerySortAsc(
+          conditions,
+          prefix,
+          lastId,
+          offset,
+          limit,
+          includeBuffer,
+          sort,
+        )
+      }
     },
     getQueryById: (
       conditions: Buffer,

@@ -66,6 +66,10 @@ const users = []
 
 const amount = 10e6
 
+const d = Date.now()
+
+let dbtime = 0
+
 for (let i = 0; i < amount; i++) {
   const blup = db.create('blup', {
     // name: 'blup ! ' + i,
@@ -75,7 +79,7 @@ for (let i = 0; i < amount; i++) {
   users.push(
     db.create('user', {
       // myBlup: blup,
-      age: i,
+      age: amount - i,
       // name: 'Mr ' + i,
       burp: 66,
       // snurp: 'derp derp',
@@ -87,10 +91,8 @@ for (let i = 0; i < amount; i++) {
   )
 }
 
-db.drain()
-const d = Date.now()
+// db.drain()
 
-let dbtime = 0
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // this can be optmized by collecting the refs then go trough them in order
@@ -104,9 +106,9 @@ for (let i = 0; i < amount; i++) {
     lilBlup: 1,
   })
 }
-dbtime += db.drain()
 
-// db.drain()
+db.drain()
+
 console.log('TIME', dbtime, 'ms', Date.now() - d, 'ms')
 
 // const logger = (x, empty = '') => {

@@ -30,8 +30,15 @@ pub fn getQueryIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.n
     };
 }
 
-pub fn getQuerySort(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getQuerySortAsc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(3, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQuerySortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(4, env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
@@ -125,7 +132,7 @@ fn getQueryInternal(
                 total_results += 1;
             }
         }
-    } else if (queryType == 3) {
+    } else if (queryType == 3 or queryType == 4) {
         // query  sort
         const args = try napi.getArgs(7, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
@@ -137,7 +144,7 @@ fn getQueryInternal(
         const include = try napi.getBuffer("include", env, args[5]);
         const sort = try napi.getBuffer("sort", env, args[6]);
         var sortIndex: ?dbSort.SortIndex = null;
-        if (sort.len == 6) {
+        if (sort.len == 5) {
             const start = std.mem.readInt(u16, sort[2..][0..2], .little);
             const len = std.mem.readInt(u16, sort[2..][2..4], .little);
             sortIndex = dbSort.createOrGetSortIndex(
@@ -152,10 +159,9 @@ fn getQueryInternal(
         }
 
         if (sortIndex != null) {
-            const order = sort[1];
             var end: bool = false;
             var flag: c_uint = c.MDB_FIRST;
-            if (order == 1) {
+            if (queryType == 4) {
                 flag = c.MDB_LAST;
             }
             var first: bool = true;
@@ -169,7 +175,7 @@ fn getQueryInternal(
                 };
                 if (first) {
                     first = false;
-                    if (order == 1) {
+                    if (queryType == 4) {
                         flag = c.MDB_PREV;
                     } else {
                         flag = c.MDB_NEXT;
