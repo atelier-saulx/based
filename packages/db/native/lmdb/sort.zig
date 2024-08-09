@@ -52,8 +52,6 @@ fn createSortIndex(
         var first: bool = true;
         var end: bool = false;
         currentShard += 1;
-
-        std.debug.print("SNURP {any} {any} \n", .{ shard, origin });
         if (shard == null) {
             continue :shardLoop;
         }
@@ -82,7 +80,6 @@ fn createSortIndex(
             }
         }
     }
-
     try errors.mdbCheck(c.mdb_txn_commit(txn));
 }
 

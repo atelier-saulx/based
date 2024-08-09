@@ -22,13 +22,13 @@ db.updateSchema({
   types: {
     user: {
       fields: {
+        age: { type: 'integer' },
         myBlup: { type: 'reference', allowedType: 'blup' },
         name: { type: 'string' },
         flap: { type: 'integer' },
-        // email: { type: 'string', maxLength: 15 }, // maxLength: 10
-        age: { type: 'integer' },
+        email: { type: 'string', maxLength: 14 }, // maxLength: 10 // maxLength: 15
         snurp: { type: 'string' },
-        burp: { type: 'integer' },
+        // burp: { type: 'integer' },
         location: {
           type: 'object',
           properties: {
@@ -53,7 +53,7 @@ db.updateSchema({
       // min max on string
       fields: {
         // @ts-ignore
-        // countryCode: { type: 'string', maxBytes: 2 },
+        countryCode: { type: 'string', maxBytes: 2 },
         lilBlup: { type: 'reference', allowedType: 'blup' },
         // vectorClock: { type: 'integer' },
         user: { type: 'reference', allowedType: 'user' },
@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 100
+const amount = 10e6
 
 const d = Date.now()
 
@@ -82,9 +82,9 @@ for (let i = 0; i < amount; i++) {
       // age: amount - i
       age: ~~(Math.random() * 99) + 1,
       name: 'Mr ' + i,
-      burp: 66,
+      // burp: 66,
       // snurp: 'derp derp',
-      // email: 'merp_merp_' + i + '@once.net',
+      email: 'merp_merp_' + i + '@once.net',
       // location: {
       // label: 'BLA BLA',
       // },
@@ -144,7 +144,7 @@ db.create('user', {
   // age: amount - i
   age: 0,
   // name: 'Mr ' + i,
-  burp: 66,
+  // burp: 66,
   name: 'MR POEPOE',
   // snurp: 'derp derp',
   // email: 'merp_merp_' + i + '@once.net',
