@@ -150,6 +150,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
                 errors.mdbCheck(c.mdb_cursor_del(shard.?.cursor, 0)) catch {};
             }
+
+            // if (field == 0) {
+
+            // } else {
+
+            // }
+
             i = i + 1;
         } else if (operation == 5) {
             // FOR MAIN BASICLY
@@ -177,7 +184,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     while (j < mergeOperation.len) {
                         const start = std.mem.readInt(u16, mergeOperation[j..][0..2], .little);
                         const len = std.mem.readInt(u16, mergeOperation[j..][2..4], .little);
-
                         if (dbSort.hasMainSortIndexes(typePrefix)) {
                             sortIndexName = dbSort.createSortName(typePrefix, field, start);
                             if (dbSort.hasReadSortIndex(sortIndexName)) {
@@ -190,9 +196,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                                 var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
                                 errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
                                 errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
-
                                 var indexValue: c.MDB_val = .{ .mv_size = len, .mv_data = mergeOperation[j + 4 .. j + 4 + len].ptr };
-
                                 dbSort.writeToSortIndex(
                                     &indexValue,
                                     &k,
