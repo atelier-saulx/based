@@ -173,7 +173,7 @@ export class BasedDb {
 
   // drain write buffer returns perf in ms
   drain() {
-    flushBuffer(this)
+    return flushBuffer(this)
   }
 
   stats() {

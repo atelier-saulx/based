@@ -121,7 +121,7 @@ const addModify = (
         let mainIndex = db.modifyBuffer.lastMain
         if (mainIndex === -1) {
           const nextLen = schema.mainLen + 1 + 4
-          if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+          if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
             flushBuffer(db)
           }
           setCursor(db, schema, t.field, id)

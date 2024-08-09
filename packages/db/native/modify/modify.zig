@@ -73,6 +73,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             if (shard != null) {
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = batch[i + 5 .. i + 5 + operationSize].ptr };
+                // TODO: only if 3! c.MDB_APPEND
                 errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
             }
             i = i + operationSize + 1 + 4;
@@ -135,11 +136,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         }
     }
 
-    var it = shards.iterator();
-
-    while (it.next()) |shard| {
-        db.closeCursor(shard.value_ptr);
-    }
+    // var it = shards.iterator();
+    // while (it.next()) |shard| {
+    //     db.closeCursor(shard.value_ptr);
+    // }
 
     try errors.mdbCheck(c.mdb_txn_commit(txn));
 

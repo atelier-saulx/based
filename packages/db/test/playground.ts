@@ -25,7 +25,7 @@ db.updateSchema({
         myBlup: { type: 'reference', allowedType: 'blup' },
         name: { type: 'string' },
         flap: { type: 'integer' },
-        email: { type: 'string', maxLength: 15 }, // maxLength: 10
+        // email: { type: 'string', maxLength: 15 }, // maxLength: 10
         age: { type: 'integer' },
         snurp: { type: 'string' },
         burp: { type: 'integer' },
@@ -63,9 +63,8 @@ db.updateSchema({
 })
 
 const users = []
-const d = Date.now()
 
-const amount = 1e6
+const amount = 10e6
 
 for (let i = 0; i < amount; i++) {
   const blup = db.create('blup', {
@@ -75,19 +74,23 @@ for (let i = 0; i < amount; i++) {
 
   users.push(
     db.create('user', {
-      myBlup: blup,
-      age: 99,
-      name: 'Mr ' + i,
+      // myBlup: blup,
+      age: i,
+      // name: 'Mr ' + i,
       burp: 66,
-      snurp: 'derp derp',
-      email: 'merp_merp_' + i + '@once.net',
-      location: {
-        label: 'BLA BLA',
-      },
+      // snurp: 'derp derp',
+      // email: 'merp_merp_' + i + '@once.net',
+      // location: {
+      // label: 'BLA BLA',
+      // },
     }),
   )
 }
 
+db.drain()
+const d = Date.now()
+
+let dbtime = 0
 for (let i = 0; i < amount; i++) {
   db.create('simple', {
     // this can be optmized by collecting the refs then go trough them in order
@@ -101,16 +104,10 @@ for (let i = 0; i < amount; i++) {
     lilBlup: 1,
   })
 }
+dbtime += db.drain()
 
-db.drain()
-console.log('TIME', Date.now() - d, 'ms')
-
-const result = db
-  .query('simple')
-  .include('user', 'user.myBlup', 'lilBlup')
-  .range(0, 100)
-  .sort('user')
-  .get()
+// db.drain()
+console.log('TIME', dbtime, 'ms', Date.now() - d, 'ms')
 
 // const logger = (x, empty = '') => {
 //   for (const key in x) {
@@ -137,21 +134,14 @@ const result = db
 
 // console.log(new Uint8Array(result.buffer), result.data.length)
 
-let i = 0
-
 // console.dir(result.data.toObject(), { depth: 10 })
 
-console.log(result)
-
-console.log('GOP GP')
+console.log(
+  db.query('user').range(0, 100).include('name', 'age').sort('age').get(),
+)
 
 console.log(
-  db
-    .query('simple')
-    .include('user', 'user.myBlup', 'lilBlup')
-    .range(0, 100)
-    .sort('user')
-    .get(),
+  db.query('user').range(0, 100).include('name', 'age').sort('age').get(),
 )
 
 // for (const item of result.data) {
