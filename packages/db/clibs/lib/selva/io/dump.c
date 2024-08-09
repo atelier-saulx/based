@@ -369,77 +369,37 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static void load_field_timestamp(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load timestamp */
-}
-
-static void load_field_number(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load number */
-}
-
-static void load_field_integer(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load integer */
-}
-
-static void load_field_uint8(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load uint8 */
-}
-
-static void load_field_uint32(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load uint32 */
-}
-
-static void load_field_uint64(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load uint64 */
-}
-
-static void load_field_boolean(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load boolean */
-}
-
-static void load_field_enum(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
-{
-    /* TODO load enum */
-}
-
-static void load_field_string(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static void load_field_string(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     /* TODO load string */
 }
 
-static void load_field_text(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static void load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     /* TODO load text */
 }
 
-static void load_field_reference(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static void load_field_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     /* TODO load reference */
 }
 
-static void load_field_references(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static void load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     /* TODO load references */
 }
 
-static void load_field_weak_reference(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static void load_field_weak_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     /* TODO load weak reference */
 }
 
-static void load_field_weak_references(struct selva_io *io, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static void load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     /* TODO load weak references */
 }
 
-static void load_fields(struct selva_io *io, struct SelvaTypeEntry *te, struct SelvaNode *node)
+static void load_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
     struct SelvaNodeSchema *ns = &te->ns;
 
@@ -457,57 +417,51 @@ static void load_fields(struct selva_io *io, struct SelvaTypeEntry *te, struct S
         io->sdb_read(&field, sizeof(field), 1, io);
         fs = db_get_fs_by_ns_field(ns, field);
 
+        const size_t value_size = fields_get_data_size(fs);
+        char value_buf[value_size];
+        int err;
+
         switch (fs->type) {
         case SELVA_FIELD_TYPE_NULL:
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_CREATED:
         case SELVA_FIELD_TYPE_UPDATED:
-            load_field_timestamp(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_NUMBER:
-            load_field_number(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_INTEGER:
-            load_field_number(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_UINT8:
-            load_field_uint8(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_UINT32:
-            load_field_uint32(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_UINT64:
-            load_field_uint64(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_BOOLEAN:
-            load_field_boolean(io, ns, node, fs, field);
-            break;
         case SELVA_FIELD_TYPE_ENUM:
-            load_field_enum(io, ns, node, fs, field);
+            io->sdb_read(value_buf, sizeof(char), value_size, io);
+            err = selva_fields_set(db, node, fs, value_buf, value_size);
+            if (err) {
+                db_panic("Failed to read node: %d:%d field: %d", node->type, node->node_id, fs->field);
+            }
             break;
         case SELVA_FIELD_TYPE_STRING:
-            load_field_string(io, ns, node, fs, field);
+            load_field_string(io, db, ns, node, fs, field);
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            load_field_text(io, ns, node, fs, field);
+            load_field_text(io, db, ns, node, fs, field);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            load_field_reference(io, ns, node, fs, field);
+            load_field_reference(io, db, ns, node, fs, field);
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
-            load_field_references(io, ns, node, fs, field);
+            load_field_references(io, db, ns, node, fs, field);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-            load_field_weak_reference(io, ns, node, fs, field);
+            load_field_weak_reference(io, db, ns, node, fs, field);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            load_field_weak_references(io, ns, node, fs, field);
+            load_field_weak_references(io, db, ns, node, fs, field);
         }
     }
 }
 
-static void load_node(struct selva_io *io, struct SelvaTypeEntry *te)
+static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_NODE)) {
         db_panic("load node");
@@ -521,10 +475,10 @@ static void load_node(struct selva_io *io, struct SelvaTypeEntry *te)
 
     struct SelvaNode *node = db_upsert_node(te, node_id);
     /* TODO set expire */
-    load_fields(io, te, node);
+    load_fields(io, db, te, node);
 }
 
-static void load_nodes(struct selva_io *io, struct SelvaTypeEntry *te)
+static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_NODES)) {
         db_panic("Schema not found");
@@ -534,7 +488,7 @@ static void load_nodes(struct selva_io *io, struct SelvaTypeEntry *te)
     io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
 
     for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
-        load_node(io, te);
+        load_node(io, db, te);
     }
 }
 
@@ -566,7 +520,7 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
             db_panic("Incorrect type found");
         }
 
-        load_nodes(io, te);
+        load_nodes(io, db, te);
         load_aliases(io, te);
     }
 }
