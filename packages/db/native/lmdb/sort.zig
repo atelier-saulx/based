@@ -49,20 +49,19 @@ fn createSortIndex(
             end = true;
             break;
         };
+
         if (len > 0) {
             const mainValue = @as([*]u8, @ptrCast(value.mv_data))[start .. start + len];
             var selectiveValue: c.MDB_val = .{ .mv_size = len, .mv_data = mainValue.ptr };
             try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
+        } else if (field == 0 and value.mv_size > 8) {
+            const fieldValue = @as([*]u8, @ptrCast(value.mv_data))[0..8];
+            var selectiveValue: c.MDB_val = .{ .mv_size = 8, .mv_data = fieldValue.ptr };
+            try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
         } else {
-            // remove this if // prob comptime int
-            if (field == 0 and value.mv_size > 8) {
-                const fieldValue = @as([*]u8, @ptrCast(value.mv_data))[0..8];
-                var selectiveValue: c.MDB_val = .{ .mv_size = 8, .mv_data = fieldValue.ptr };
-                try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, &key, 0));
-            } else {
-                try errors.mdbCheck(c.mdb_cursor_put(cursor, &value, &key, 0));
-            }
+            try errors.mdbCheck(c.mdb_cursor_put(cursor, &value, &key, 0));
         }
+
         if (first) {
             first = false;
             flag = c.MDB_NEXT;
