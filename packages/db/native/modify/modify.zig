@@ -13,8 +13,6 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     };
 }
 
-// MDB_APPEND
-
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
     // [SIZE 2 bytes] | [1 byte operation] | []
@@ -40,15 +38,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     var typePrefix: [2]u8 = undefined;
     var id: u32 = undefined;
     var currentShard: [2]u8 = .{ 0, 0 };
-
-    // hasSortIndex {}
-    // type has sortIndex
-    // field !main has sortIndex
-    // main
-
     var currentSortIndex: ?dbSort.SortIndex = null;
     var sortIndexName: [7]u8 = undefined;
-    // sortIndexes
 
     while (i < size) {
         // delete
@@ -161,6 +152,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             }
             i = i + 1;
         } else if (operation == 5) {
+            // FOR MAIN BASICLY
             // UPDATE OFFSETS
             const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
             const dbiName = db.createDbiName(typePrefix, field, currentShard);
@@ -210,24 +202,65 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             if (shard != null) {
                 const data = batch[i + 5 .. i + 5 + operationSize];
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
-                var v: c.MDB_val = undefined;
-                // TODO: only if 3! c.MDB_APPEND
+                var v: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
 
-                //  if (field == 0) {
-                //     // --- make fn to reuse
-                // } else
-                if (currentSortIndex != null) {
-                    v = .{ .mv_size = 0, .mv_data = null };
-                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, 0)) catch {};
+                if (field == 0) {
+                    if (dbSort.hasMainSortIndexes(typePrefix)) {
+                        const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
+                        var it = s.?.*.keyIterator();
+                        errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
 
-                    if (v.mv_size != 0) {
                         const currentData: []u8 = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 
-                        std.debug.print("currentData {any} \n", .{currentData});
+                        while (it.next()) |key| {
+                            const start = key.*;
+                            sortIndexName = dbSort.createSortName(typePrefix, field, start);
+                            const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
+                            const len = readSortIndex.?.len;
+                            var sIndex = sortIndexes.get(sortIndexName);
+                            if (sIndex == null) {
+                                sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
+                                try sortIndexes.put(sortIndexName, sIndex.?);
+                            }
+
+                            var sortValue: c.MDB_val = .{ .mv_size = v.mv_size, .mv_data = currentData[start .. start + len].ptr };
+                            var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
+                            errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                            errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
+
+                            var indexValue: c.MDB_val = .{
+                                .mv_size = len,
+                                .mv_data = data[start .. start + len].ptr,
+                            };
+
+                            dbSort.writeToSortIndex(
+                                &indexValue,
+                                &k,
+                                sIndex.?.start,
+                                len,
+                                sIndex.?.cursor,
+                                field,
+                            ) catch {};
+                        }
                     }
+                } else if (currentSortIndex != null) {
+                    var currentValue: c.MDB_val = .{
+                        .mv_size = 0,
+                        .mv_data = null,
+                    };
 
-                    // const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
+                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
 
+                    if (v.mv_size != 0) {
+                        const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
+                        var sortValue: c.MDB_val = .{ .mv_size = currentValue.mv_size, .mv_data = currentData.ptr };
+                        var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
+                        if (currentData.len > 16) {
+                            sortValue.mv_data = currentData[0..16].ptr;
+                        }
+                        errors.mdbCheck(c.mdb_cursor_get(currentSortIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                        errors.mdbCheck(c.mdb_cursor_del(currentSortIndex.?.cursor, 0)) catch {};
+                    }
                     dbSort.writeToSortIndex(
                         &v,
                         &k,
@@ -236,10 +269,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                         currentSortIndex.?.cursor,
                         field,
                     ) catch {};
-                } else {
-                    v = .{ .mv_size = operationSize, .mv_data = data.ptr };
-                    errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
                 }
+
+                errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
             }
             i = i + operationSize + 1 + 4;
         } else {

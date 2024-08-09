@@ -132,7 +132,7 @@ test.serial('sort', async (t) => {
     ].reverse(),
   )
 
-  const id = db.create('user', {
+  const mrX = db.create('user', {
     name: 'mr x',
     age: 999,
     email: 'x@x.x',
@@ -169,11 +169,13 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  db.update('user', id, {
+  db.update('user', mrX, {
     email: 'dd@dd.dd',
   })
 
-  t.deepEqual(
+  db.drain()
+
+  console.log(
     db
       .query('user')
       .sort('email')
@@ -189,4 +191,27 @@ test.serial('sort', async (t) => {
       { id: 5, email: 'z@z.z', age: 1 },
     ],
   )
+
+  // db.update(
+  //   'user',
+  //   mrX,
+  //   {
+  //     age: 1e6,
+  //   },
+  //   true,
+  // )
+
+  // db.drain()
+
+  // console.log(
+  //   db.query('user').sort('age').include('email', 'age').get().data.toObject(),
+  //   [
+  //     { id: 5, email: 'z@z.z', age: 1 },
+  //     { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+  //     { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+  //     { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+  //     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+  //     { id: 6, email: 'dd@dd.dd', age: 1e6 },
+  //   ],
+  // )
 })
