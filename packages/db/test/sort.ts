@@ -58,11 +58,48 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  console.log(
-    db.query('user').sort('age', 'desc').include('email', 'age').get(),
+  t.deepEqual(
+    db
+      .query('user')
+      .sort('age', 'desc')
+      .include('email', 'age')
+      .get()
+      .data.toObject(),
+    [
+      { id: 4, email: 'nurp@nurp.nurp', age: 200 },
+      { id: 3, email: 'blap@blap.blap', age: 200 },
+      { id: 1, email: 'snurp@snurp.snurp', age: 99 },
+      { id: 2, email: 'flap@flap.flap', age: 50 },
+    ],
   )
 
-  db.stats()
+  t.deepEqual(
+    db
+      .query('user')
+      .sort('age', 'asc')
+      .include('email', 'age')
+      .get()
+      .data.toObject(),
+    [
+      { id: 2, email: 'flap@flap.flap', age: 50 },
+      { id: 1, email: 'snurp@snurp.snurp', age: 99 },
+      { id: 3, email: 'blap@blap.blap', age: 200 },
+      { id: 4, email: 'nurp@nurp.nurp', age: 200 },
+    ],
+  )
 
-  t.true(true)
+  t.deepEqual(
+    db
+      .query('user')
+      .sort('email', 'desc')
+      .include('email', 'age')
+      .get()
+      .data.toObject(),
+    [
+      { id: 4, email: 'nurp@nurp.nurp', age: 200 },
+      { id: 3, email: 'blap@blap.blap', age: 200 },
+      { id: 1, email: 'snurp@snurp.snurp', age: 99 },
+      { id: 2, email: 'flap@flap.flap', age: 50 },
+    ],
+  )
 })
