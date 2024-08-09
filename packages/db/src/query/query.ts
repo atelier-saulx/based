@@ -15,7 +15,7 @@ export class Query {
   limit: number
 
   sortBuffer: Buffer
-  sortOrder: 'asc' | 'desc'
+  sortOrder: 0 | 1
 
   includeDef: QueryIncludeDef
 

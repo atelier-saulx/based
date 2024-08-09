@@ -70,9 +70,9 @@ export class BasedDb {
       limit: number, // def 1k ?
       includeBuffer: Buffer,
       sort: Buffer,
-      sortOrder: 'asc' | 'desc',
+      sortOrder: 0 | 1,
     ): any => {
-      if (sortOrder === 'desc') {
+      if (sortOrder === 1) {
         return dbZig.getQuerySortDesc(
           conditions,
           prefix,

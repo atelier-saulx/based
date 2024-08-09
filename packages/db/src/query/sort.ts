@@ -10,7 +10,7 @@ export const sort = (
     console.warn('Query: No field def defined for', field)
     return this
   }
-  query.sortOrder = order
+  query.sortOrder = order === 'asc' ? 0 : 1
   if (fieldDef.field === 0) {
     const buf = Buffer.allocUnsafe(6)
     buf[0] = 0
