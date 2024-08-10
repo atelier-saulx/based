@@ -4,8 +4,10 @@ const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db/db.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
-const readInt = @import("../utils.zig").readInt;
-const writeInt = @import("../utils.zig").writeInt;
+const utils = @import("../utils.zig");
+
+const readInt = utils.readInt;
+const writeInt = utils.writeInt;
 
 pub const Result = struct {
     id: ?u32,
