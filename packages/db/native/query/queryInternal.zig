@@ -10,28 +10,21 @@ const filter = @import("./filter/filter.zig").filter;
 const dbSort = @import("../db/sort.zig");
 const utils = @import("../utils.zig");
 
-var lastQueryId: u32 = 0;
-fn getQueryId() u32 {
-    lastQueryId += 1;
-    if (lastQueryId > 4_000_000_000_000) {
-        lastQueryId = 0;
-    }
-    return lastQueryId;
-}
-
 // make in fns
 pub fn getQueryInternal(
     comptime queryType: comptime_int,
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
+
+    // this part can be a fn
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
     var currentShard: u16 = 0;
     var resultsList = std.ArrayList(results.Result).init(allocator);
-    const ctx: QueryCtx = .{ .results = &resultsList, .id = getQueryId() };
+    const ctx: QueryCtx = .{ .results = &resultsList, .id = db.getQueryId() };
 
     const readTxn = try db.initReadTxn();
     errors.mdb(c.mdb_txn_renew(readTxn)) catch {};
@@ -110,6 +103,9 @@ pub fn getQueryInternal(
         const include = try napi.getBuffer("include", env, args[5]);
         const sort = try napi.getBuffer("sort", env, args[6]);
         const sortIndex = dbSort.getOrCreateReadSortIndex(typePrefix, sort, ctx.id, lastId);
+
+        // pass this to the fn
+
         if (sortIndex != null) {
             var end: bool = false;
             var flag: c_uint = c.MDB_FIRST;

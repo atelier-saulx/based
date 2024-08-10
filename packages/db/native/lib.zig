@@ -35,11 +35,13 @@ pub fn registerFunction(
 }
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
+    // registerFunction(env, exports, "createEnv", createEnv) catch return null;
+    // registerFunction(env, exports, "destroyEnv", createEnv) catch return null;
+    // and pass globals from here to everything (ctx)
+
     registerFunction(env, exports, "createEnv", createEnv) catch return null;
     registerFunction(env, exports, "stat", Stat.stat) catch return null;
-
     registerFunction(env, exports, "tester", Stat.tester) catch return null;
-
     registerFunction(env, exports, "getQueryById", Query.getQueryId) catch return null;
     registerFunction(env, exports, "getQueryByIds", Query.getQueryIds) catch return null;
     registerFunction(env, exports, "getQuery", Query.getQuery) catch return null;

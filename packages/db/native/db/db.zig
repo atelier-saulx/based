@@ -38,8 +38,7 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     return txn;
 }
 
-// TODO: add ZERO
-pub inline fn createDbiName(typeId: TypeId, field: u8, shard: u16) DbName {
+pub inline fn getName(typeId: TypeId, field: u8, shard: u16) DbName {
     const s: TypeId = @bitCast(shard);
     if (s[0] == 0 and s[1] != 0) {
         return .{ typeId[0], typeId[1], field + 1, 255, 255 - s[1], 0 };
@@ -118,7 +117,7 @@ pub inline fn readField(id: u32, shard: ?Shard) []u8 {
 }
 
 pub fn getField(id: u32, field: u8, typeId: TypeId, currentShard: u16, queryId: u32) []u8 {
-    const dbiName = createDbiName(typeId, field, @bitCast(currentShard));
+    const dbiName = getName(typeId, field, @bitCast(currentShard));
     const shard = getReadShard(dbiName, queryId);
     if (shard == null) {
         return &.{};
@@ -139,92 +138,15 @@ pub fn deleteField(id: u32, shard: ?Shard) !void {
     try errors.mdb(c.mdb_cursor_del(shard.?.cursor, 0));
 }
 
-// ---------- doodle ---------------
-pub const TypePair = struct { key: u32, value: []u8 };
-
-const Person = struct {
-    name: []const u8,
-
-    pub fn next(self: @This(), bla: u8) void {
-        std.debug.print("Hi, I'm {s} {d}\n", .{ self.name, bla });
-    }
-};
-
-pub fn snurp(typeId: TypeId) Person {
-    std.debug.print("Hi, I'm {any}\n", .{typeId});
-
-    const x: Person = .{ .name = "Flap" };
-    return x;
+pub fn commitTxn(txn: ?*c.MDB_txn) !void {
+    try errors.mdb(c.mdb_txn_commit(txn));
 }
 
-// pub const TypeIterator = struct {
-//     typePrefix = [2]u8
-
-//     const Self = @This()
-
-//     pub fn init(typePrefix: [2]u8) TypeIterator {
-//         @This().typePrefix = typePrefix;
-//         return @This();
-//     }
-
-//     pub fn next() ?TypePair {
-//         const iterator = @This();
-
-//         std.debug.print("flap {any} \n", .{iterator});
-
-//         // currentShard;
-
-//         // while (metadata != end) : ({
-//         //     metadata += 1;
-//         //     it.index += 1;
-//         // }) {
-//         //     if (metadata[0].isUsed()) {
-//         //         const key = &it.hm.keys()[it.index];
-//         //         const value = &it.hm.values()[it.index];
-//         //         it.index += 1;
-//         //         return Entry{ .key_ptr = key, .value_ptr = value };
-//         //     }
-//         // }
-
-//         return null;
-//     }
-// };
-
-// //  fn (ctx: Context, value: i32) void;
-// pub fn iterateAllEntries(
-//     maxShards: u16,
-//     typePrefix: [2]u8,
-//     field: u8,
-//     queryId: u32,
-// ) !void {
-//     var currentShard: u16 = 0;
-
-//     // untilFn: fn (u8) bool
-
-//     shardLoop: while (currentShard <= maxShards) {
-//         const origin = createDbiName(typePrefix, field, @bitCast(currentShard));
-//         const shard = getReadShard(origin, queryId);
-//         var first: bool = true;
-//         var end: bool = false;
-//         currentShard += 1;
-//         if (shard == null) {
-//             continue :shardLoop;
-//         }
-//         var flag: c_uint = c.MDB_FIRST;
-//         while (!end) {
-//             var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-//             var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-//             errors.mdb(c.mdb_cursor_get(shard.?.cursor, &key, &value, flag)) catch {
-//                 end = true;
-//                 continue :shardLoop;
-//             };
-
-//             // try writeToSortIndex(&value, &key, start, len, cursor, field);
-
-//             if (first) {
-//                 first = false;
-//                 flag = c.MDB_NEXT;
-//             }
-//         }
-//     }
-// }
+var lastQueryId: u32 = 0;
+pub fn getQueryId() u32 {
+    lastQueryId += 1;
+    if (lastQueryId > 4_000_000_000_000) {
+        lastQueryId = 0;
+    }
+    return lastQueryId;
+}

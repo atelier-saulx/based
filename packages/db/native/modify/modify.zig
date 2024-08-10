@@ -8,11 +8,12 @@ const dbSort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
+const readInt = @import("../utils.zig").readInt;
 const Update = @import("./update.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
 const getShard = Modify.getShard;
-
+const getSortIndex = Modify.getSortIndex;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 
@@ -33,22 +34,21 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     const allocator = arena.allocator();
     var shards = std.AutoHashMap([6]u8, db.Shard).init(allocator);
-    // var sortIndexes = std.AutoHashMap([7]u8, dbSort.SortIndex).init(allocator);
+    var sortIndexes = std.AutoHashMap(dbSort.SortDbiName, dbSort.SortIndex).init(allocator);
 
     const txn = try db.createTransaction(false);
 
     var i: usize = 0;
-
-    // var currentSortIndex: ?dbSort.SortIndex = null;
-    // var sortIndexName: [7]u8 = undefined;
 
     var ctx: ModifyCtx = .{
         .field = undefined,
         .typeId = undefined,
         .id = undefined,
         .currentShard = 0,
-        .shards = &shards,
         .txn = txn.?,
+        .currentSortIndex = null,
+        .shards = &shards,
+        .sortIndexes = &sortIndexes,
     };
 
     while (i < size) {
@@ -59,23 +59,14 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // SWITCH FIELD
             ctx.field = operation[0];
             i = i + 2;
-            // if (field != 0) {
-            //     sortIndexName = dbSort.createSortName(typePrefix, field, 0);
-            //     if (dbSort.hasReadSortIndex(sortIndexName)) {
-            //         currentSortIndex = sortIndexes.get(sortIndexName);
-            //         if (currentSortIndex == null) {
-            //             currentSortIndex = dbSort.createWriteSortIndex(sortIndexName, 0, 0, txn);
-            //             try sortIndexes.put(sortIndexName, currentSortIndex.?);
-            //         }
-            //     } else {
-            //         currentSortIndex = null;
-            //     }
-            // } else {
-            //     currentSortIndex = null;
-            // }
+            if (ctx.field != 0) {
+                ctx.currentSortIndex = getSortIndex(ctx, 0);
+            } else {
+                ctx.currentSortIndex = null;
+            }
         } else if (operationType == 1) {
             // SWITCH KEY
-            ctx.id = std.mem.readInt(u32, operation[0..4], .little);
+            ctx.id = readInt(u32, operation, 0);
             ctx.currentShard = db.idToShard(ctx.id);
             i = i + 5;
         } else if (operationType == 2) {
@@ -97,7 +88,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         }
     }
 
-    try errors.mdb(c.mdb_txn_commit(txn));
+    try db.commitTxn(txn);
 
     return null;
 }

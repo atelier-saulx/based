@@ -201,6 +201,6 @@ console.log(
 
 // db.stats()
 
-// db.tester()
+db.tester()
 
 await wait(0)

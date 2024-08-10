@@ -6,12 +6,15 @@ const db = @import("./db.zig");
 
 const readInt = std.mem.readInt;
 
-pub const SortIndex = struct { dbi: c.MDB_dbi, cursor: ?*c.MDB_cursor, queryId: u32, len: u16, start: u16 };
+pub const SortDbiName = [7]u8;
 
-pub var sortIndexes = std.AutoHashMap([7]u8, SortIndex).init(db.allocator);
+pub const SortIndex = struct { field: u8, dbi: c.MDB_dbi, cursor: ?*c.MDB_cursor, queryId: u32, len: u16, start: u16 };
+
+pub var sortIndexes = std.AutoHashMap(SortDbiName, SortIndex).init(db.allocator);
 
 pub const StartSet = std.AutoHashMap(u16, u8);
 
+// start make it u16
 pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
 
 // std.ArrayListAligned()
@@ -62,6 +65,26 @@ pub fn getSortName(
     return name;
 }
 
+pub fn writeField(id: u32, buf: []u8, sortIndex: SortIndex) void {
+    const field: u8 = sortIndex.field;
+    const len = sortIndex.len;
+    const start = sortIndex.start;
+    var key: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+    if (len > 0) {
+        var selectiveValue: c.MDB_val = .{
+            .mv_size = len,
+            .mv_data = buf[start .. start + len].ptr,
+        };
+        errors.mdb(c.mdb_cursor_put(sortIndex.cursor, &selectiveValue, &key, 0)) catch {};
+    } else if (field != 0 and buf.len > 16) {
+        var selectiveValue: c.MDB_val = .{ .mv_size = 16, .mv_data = buf[0..16].ptr };
+        errors.mdb(c.mdb_cursor_put(sortIndex.cursor, &selectiveValue, &key, 0)) catch {};
+    } else {
+        var value: c.MDB_val = .{ .mv_size = buf.len, .mv_data = buf.ptr };
+        errors.mdb(c.mdb_cursor_put(sortIndex.cursor, &value, &key, 0)) catch {};
+    }
+}
+
 pub fn writeToSortIndex(
     value: [*c]c.MDB_val,
     key: [*c]c.MDB_val,
@@ -84,7 +107,7 @@ pub fn writeToSortIndex(
 }
 
 fn createSortIndex(
-    name: [7]u8,
+    name: SortDbiName,
     start: u16,
     len: u16,
     field: u8,
@@ -111,7 +134,7 @@ fn createSortIndex(
     var currentShard: u16 = 0;
 
     shardLoop: while (currentShard <= maxShards) {
-        const origin = db.createDbiName(typePrefix, field, @bitCast(currentShard));
+        const origin = db.getName(typePrefix, field, currentShard);
         const shard = db.getReadShard(origin, queryId);
         var first: bool = true;
         var end: bool = false;
@@ -151,7 +174,7 @@ fn createSortIndex(
     }
 }
 
-fn createReadSortIndex(name: [7]u8, queryId: u32, len: u16, start: u16) !SortIndex {
+fn createReadSortIndex(name: SortDbiName, queryId: u32, len: u16, start: u16) !SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     _ = c.mdb_txn_reset(db.readTxn);
@@ -159,6 +182,7 @@ fn createReadSortIndex(name: [7]u8, queryId: u32, len: u16, start: u16) !SortInd
     try errors.mdb(c.mdb_dbi_open(db.readTxn, &name, 0, &dbi));
     try errors.mdb(c.mdb_cursor_open(db.readTxn, dbi, &cursor));
     return .{
+        .field = name[3] - 1,
         .dbi = dbi,
         .queryId = queryId,
         .cursor = cursor,
@@ -223,12 +247,14 @@ pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
     return mainSortIndexes.contains(typePrefix);
 }
 
-pub fn createWriteSortIndex(name: [7]u8, txn: ?*c.MDB_txn) ?SortIndex {
+pub fn createWriteSortIndex(name: SortDbiName, txn: ?*c.MDB_txn) ?SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     var len: u16 = 0;
-    const start: u16 = readInt(u16, .{ name[5], name[6] });
-    if (name[3] == 1) {
+    const field = name[3] - 1;
+    const startBytes: [2]u8 = .{ name[4], name[5] };
+    const start: u16 = @bitCast(startBytes);
+    if (field == 0) {
         len = getReadSortIndex(name).?.len;
     }
     errors.mdb(c.mdb_dbi_open(txn, &name, 0, &dbi)) catch {
@@ -243,6 +269,24 @@ pub fn createWriteSortIndex(name: [7]u8, txn: ?*c.MDB_txn) ?SortIndex {
         .queryId = 0,
         .len = len,
         .start = start,
+        .field = field,
     };
     return writeIndex;
+}
+
+pub fn deleteField(id: u32, d: []u8, sortIndex: SortIndex) void {
+    var data: []u8 = d;
+    if (data.len == 0) {
+        return;
+    }
+    if (sortIndex.len > 0) {
+        data = data[sortIndex.start .. sortIndex.start + sortIndex.len];
+    }
+    var sortValue: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
+    var sortKey: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+    if (data.len > 16) {
+        sortValue.mv_data = data[0..16].ptr;
+    }
+    errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+    errors.mdb(c.mdb_cursor_del(sortIndex.cursor, 0)) catch {};
 }

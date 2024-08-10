@@ -221,7 +221,7 @@ export const update = (
   type: string,
   id: number,
   value: any,
-  overwrite?: boolean, // default for now
+  overwrite?: boolean,
 ) => {
   const def = db.schemaTypesParsed[type]
   const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite)

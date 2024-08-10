@@ -76,22 +76,5 @@ pub fn stat(node_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_v
 }
 
 pub fn tester(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
-    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    // defer arena.deinit();
-    // const allocator = arena.allocator();
-    // std.debug.print("\nTESTER\n", .{});
-
-    // const it = db.TypeIterator();
-
-    // _ = it.init(.{ 44, 44 });
-
-    // std.debug.print("\nTESTER {any} \n", .{iterator});
-
-    // it.next();
-
-    const flap = db.snurp(.{ 44, 44 });
-
-    flap.next(1);
-    // flap.itera
     return null;
 }
