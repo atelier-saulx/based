@@ -108,18 +108,22 @@ pub inline fn dataPart(v: c.MDB_val, start: u16, len: u16) []u8 {
     return @as([*]u8, @ptrCast(v.mv_data))[start .. len + start];
 }
 
-pub fn getField(id: u32, field: u8, typeId: TypeId, currentShard: u16, queryId: u32) []u8 {
-    const dbiName = createDbiName(typeId, field, @bitCast(currentShard));
-    const shard = getReadShard(dbiName, queryId);
-    if (shard == null) {
-        return &.{};
-    }
+pub inline fn readField(id: u32, shard: ?Shard) []u8 {
     var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
     var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
     errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
         return &.{};
     };
     return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+}
+
+pub fn getField(id: u32, field: u8, typeId: TypeId, currentShard: u16, queryId: u32) []u8 {
+    const dbiName = createDbiName(typeId, field, @bitCast(currentShard));
+    const shard = getReadShard(dbiName, queryId);
+    if (shard == null) {
+        return &.{};
+    }
+    return readField(id, shard);
 }
 
 pub fn writeField(id: u32, buf: []u8, shard: ?Shard) !void {
