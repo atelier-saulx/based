@@ -8,19 +8,20 @@ const QueryCtx = @import("./ctx.zig").QueryCtx;
 pub const Result = struct { id: ?u32, field: u8, val: ?[]u8, start: ?u16, includeMain: []u8, refLvl: u8 };
 
 pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, total_results: usize) !c.napi_value {
-    var data: ?*anyopaque = undefined;
+    var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
-    if (c.napi_create_buffer(env, total_size + 4, &data, &result) != c.napi_ok) {
+    if (c.napi_create_buffer(env, total_size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
 
-    var dataU8 = @as([*]u8, @ptrCast(data));
+    var data = @as([*]u8, @ptrCast(resultBuffer));
 
-    const s: [4]u8 = @bitCast(@as(u32, @truncate(total_results)));
-    dataU8[0] = s[0];
-    dataU8[1] = s[1];
-    dataU8[2] = s[2];
-    dataU8[3] = s[3];
+    std.mem.writeInt(
+        u32,
+        data[0..][0..4],
+        @truncate(total_results),
+        .little,
+    );
 
     var lastPos: usize = 4;
     var lastSingleRef: [2]u8 = .{ 255, 255 };
@@ -34,23 +35,23 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 lastSingleRef = start;
                 lastRefLvl = item.refLvl;
 
-                dataU8[lastPos] = 254;
+                data[lastPos] = 254;
                 lastPos += 1;
 
                 if (item.refLvl > 1) {
-                    dataU8[lastPos] = 1;
+                    data[lastPos] = 1;
                 } else {
-                    dataU8[lastPos] = 0;
+                    data[lastPos] = 0;
                 }
 
                 lastPos += 1;
 
-                dataU8[lastPos] = lastSingleRef[0];
+                data[lastPos] = lastSingleRef[0];
                 lastPos += 1;
-                dataU8[lastPos] = lastSingleRef[1];
+                data[lastPos] = lastSingleRef[1];
                 lastPos += 1;
 
-                @memcpy(dataU8[lastPos .. lastPos + 4], @as([*]u8, @ptrCast(&item.id)));
+                @memcpy(data[lastPos .. lastPos + 4], @as([*]u8, @ptrCast(&item.id)));
 
                 lastPos += 4;
             }
@@ -59,9 +60,9 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
             lastSingleRef[1] = 255;
 
             if (item.id != null) {
-                dataU8[lastPos] = 255;
+                data[lastPos] = 255;
                 lastPos += 1;
-                @memcpy(dataU8[lastPos .. lastPos + 4], @as([*]u8, @ptrCast(&item.id)));
+                @memcpy(data[lastPos .. lastPos + 4], @as([*]u8, @ptrCast(&item.id)));
                 lastPos += 4;
             }
         }
@@ -70,7 +71,7 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
             continue;
         }
 
-        @memcpy(dataU8[lastPos .. lastPos + 1], @as([*]u8, @ptrCast(&item.field)));
+        @memcpy(data[lastPos .. lastPos + 1], @as([*]u8, @ptrCast(&item.field)));
         lastPos += 1;
 
         if (item.field == 0) {
@@ -81,13 +82,13 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                     const operation = item.includeMain[mainPos..];
                     const start: u16 = std.mem.readInt(u16, operation[0..2], .little);
                     const len: u16 = std.mem.readInt(u16, operation[2..4], .little);
-                    @memcpy(dataU8[lastPos .. lastPos + len], mainU8[start .. start + len]);
+                    @memcpy(data[lastPos .. lastPos + len], mainU8[start .. start + len]);
                     lastPos += len;
                     mainPos += 4;
                 }
             } else {
                 @memcpy(
-                    dataU8[lastPos .. lastPos + item.val.?.len],
+                    data[lastPos .. lastPos + item.val.?.len],
                     item.val.?[0..item.val.?.len],
                 );
                 lastPos += item.val.?.len;
@@ -95,13 +96,13 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
         } else {
             std.mem.writeInt(
                 u16,
-                dataU8[lastPos..][0..2],
+                data[lastPos..][0..2],
                 @as(u16, @truncate(item.val.?.len)),
                 .little,
             );
             lastPos += 2;
             @memcpy(
-                dataU8[lastPos .. lastPos + item.val.?.len],
+                data[lastPos .. lastPos + item.val.?.len],
                 item.val.?[0..item.val.?.len],
             );
             lastPos += item.val.?.len;
