@@ -7,9 +7,9 @@ const db = @import("../db/db.zig");
 const dbSort = @import("../db/sort.zig");
 const ModifyCtx = @import("./ctx.zig").ModifyCtx;
 
-pub fn updateField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
+pub fn updateField(ctx: ModifyCtx, batch: []u8) usize {
     // UPDATE WHOLE FIELD
-    const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+    const operationSize = std.mem.readInt(u32, batch[0..4], .little);
     const dbiName = db.createDbiName(ctx.typeId, ctx.field, ctx.currentShard);
     var shard = ctx.shards.get(dbiName);
     if (shard == null) {
@@ -21,8 +21,8 @@ pub fn updateField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
         }
     }
     if (shard != null) {
-        const data = batch[i + 5 .. i + 5 + operationSize];
-        var k: c.MDB_val = .{ .mv_size = ctx.keySize, .mv_data = @constCast(&ctx.id) };
+        const data = batch[4 .. 4 + operationSize];
+        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&ctx.id) };
         var v: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
         // if (field == 0) {
         //     if (dbSort.hasMainSortIndexes(typePrefix)) {
@@ -83,12 +83,13 @@ pub fn updateField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
 
         errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
     }
-    return operationSize + 1 + 4;
+    return operationSize + 4;
 }
 
-pub fn updatePartialField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
+pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) usize {
+    // FOR MAIN BASICLY
     // UPDATE OFFSETS
-    const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+    const operationSize = std.mem.readInt(u32, batch[0..4], .little);
     const dbiName = db.createDbiName(ctx.typeId, ctx.field, ctx.currentShard);
     var shard = ctx.shards.get(dbiName);
     if (shard == null) {
@@ -106,13 +107,13 @@ pub fn updatePartialField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
         var currentData: []u8 = undefined;
         if (v.mv_size != 0) {
             currentData = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-            const mergeOperation: []u8 = batch[i + 5 .. i + 5 + operationSize];
+            const mergeOperation: []u8 = batch[4 .. 4 + operationSize];
             var j: usize = 0;
             while (j < mergeOperation.len) {
                 const start = std.mem.readInt(u16, mergeOperation[j..][0..2], .little);
                 const len = std.mem.readInt(u16, mergeOperation[j..][2..4], .little);
-                // field === 0
-                // if (dbSort.hasMainSortIndexes(typePrefix)) {
+
+                // if (dbSort.hasMainSortIndexes(ctx.typeId)) {
                 //     sortIndexName = dbSort.createSortName(typePrefix, field, start);
                 //     if (dbSort.hasReadSortIndex(sortIndexName)) {
                 //         var sIndex = sortIndexes.get(sortIndexName);
@@ -122,8 +123,8 @@ pub fn updatePartialField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
                 //         }
                 //         var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
                 //         var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
-                //         errors.mdb(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                //         errors.mdb(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
+                //         errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                //         errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
                 //         var indexValue: c.MDB_val = .{ .mv_size = len, .mv_data = mergeOperation[j + 4 .. j + 4 + len].ptr };
                 //         dbSort.writeToSortIndex(
                 //             &indexValue,
@@ -135,13 +136,14 @@ pub fn updatePartialField(ctx: ModifyCtx, i: usize, batch: []u8) usize {
                 //         ) catch {};
                 //     }
                 // }
-                // later
+
                 @memcpy(currentData[start .. start + len], mergeOperation[j + 4 .. j + 4 + len]);
                 j += 4 + len;
             }
-        } else {
-            std.log.err("Main not created for update \n", .{});
         }
+    } else {
+        std.log.err("Main not created for update \n", .{});
     }
-    return operationSize + 7;
+
+    return operationSize + 6;
 }

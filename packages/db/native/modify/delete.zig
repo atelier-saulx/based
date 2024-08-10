@@ -5,25 +5,15 @@ const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const dbSort = @import("../db/sort.zig");
-const ModifyCtx = @import("./ctx.zig").ModifyCtx;
+const Modify = @import("./ctx.zig");
+
+const ModifyCtx = Modify.ModifyCtx;
+const getShard = Modify.getShard;
 
 pub fn deleteField(ctx: ModifyCtx) usize {
-    const dbiName = db.createDbiName(ctx.typeId, ctx.field, ctx.currentShard);
-    var shard = ctx.shards.get(dbiName);
-    if (shard == null) {
-        shard = db.openShard(true, dbiName, ctx.txn) catch null;
-        if (shard != null) {
-            ctx.shards.put(dbiName, shard.?) catch {
-                shard = null;
-            };
-        }
-    }
+    const shard = getShard(ctx);
     if (shard != null) {
-        var k: c.MDB_val = .{ .mv_size = ctx.keySize, .mv_data = @constCast(&ctx.id) };
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-        errors.mdb(c.mdb_cursor_del(shard.?.cursor, 0)) catch {};
+        db.deleteField(ctx.id, shard) catch {};
     }
-
-    return 1;
+    return 0;
 }

@@ -56,11 +56,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     while (i < size) {
         // delete
-        const operation = batch[i];
-        if (operation == 0) {
+        const operationType = batch[i];
+        const operation = batch[i + 1 ..];
+        if (operationType == 0) {
             // SWITCH FIELD
-            ctx.field = batch[i + 1];
-            ctx.keySize = batch[i + 2];
+            ctx.field = operation[0];
+            ctx.keySize = operation[2];
             i = i + 1 + 2;
             // if (field != 0) {
             //     sortIndexName = dbSort.createSortName(typePrefix, field, 0);
@@ -76,24 +77,24 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // } else {
             //     currentSortIndex = null;
             // }
-        } else if (operation == 1) {
+        } else if (operationType == 1) {
             // SWITCH KEY
-            ctx.id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+            ctx.id = std.mem.readInt(u32, operation[0..4], .little);
             ctx.currentShard = db.idToShard(ctx.id);
-            i = i + 1 + 4;
-        } else if (operation == 2) {
+            i = i + 5;
+        } else if (operationType == 2) {
             // SWITCH TYPE
             ctx.typeId[0] = batch[i + 1];
             ctx.typeId[1] = batch[i + 2];
             i = i + 3;
-        } else if (operation == 3) {
-            i += createField(ctx, batch[i + 1 ..]);
-        } else if (operation == 4) {
-            i += deleteField(ctx);
-        } else if (operation == 5) {
-            i += updatePartialField(ctx, i, batch);
-        } else if (operation == 6) {
-            i += updateField(ctx, i, batch);
+        } else if (operationType == 3) {
+            i += createField(ctx, operation) + 1;
+        } else if (operationType == 4) {
+            i += deleteField(ctx) + 1;
+        } else if (operationType == 5) {
+            i += updatePartialField(ctx, operation) + 1;
+        } else if (operationType == 6) {
+            i += updateField(ctx, operation) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;

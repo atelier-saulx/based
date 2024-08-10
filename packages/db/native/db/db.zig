@@ -128,6 +128,13 @@ pub fn writeField(id: u32, buf: []u8, shard: ?Shard) !void {
     try errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
 }
 
+pub fn deleteField(id: u32, shard: ?Shard) !void {
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+    try errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET));
+    try errors.mdb(c.mdb_cursor_del(shard.?.cursor, 0));
+}
+
 // ---------- doodle ---------------
 pub const TypePair = struct { key: u32, value: []u8 };
 

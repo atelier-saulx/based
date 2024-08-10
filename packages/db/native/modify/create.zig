@@ -5,8 +5,8 @@ const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const dbSort = @import("../db/sort.zig");
-const Modify = @import("./ctx.zig");
 const readInt = @import("../utils.zig").readInt;
+const Modify = @import("./ctx.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
 const getShard = Modify.getShard;
@@ -15,7 +15,7 @@ pub fn createField(ctx: ModifyCtx, batch: []u8) usize {
     const operationSize = readInt(u32, batch, 0);
     const shard = getShard(ctx);
     if (shard == null) {
-        return operationSize + 5;
+        return operationSize + 4;
     }
     db.writeField(ctx.id, batch[4 .. 4 + operationSize], shard) catch {};
     // if (field == 0) {
@@ -57,5 +57,5 @@ pub fn createField(ctx: ModifyCtx, batch: []u8) usize {
     //     ) catch {};
     // }
 
-    return operationSize + 5;
+    return operationSize + 4;
 }
