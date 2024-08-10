@@ -22,8 +22,7 @@ pub fn updateField(ctx: ModifyCtx, batch: []u8) usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.readField(ctx.id, shard);
-            const s: ?*sort.StartSet = sort.mainSortIndexes.get(ctx.typeId);
-            var it = s.?.*.keyIterator();
+            var it = sort.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = getSortIndex(ctx, start).?;

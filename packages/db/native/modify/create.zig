@@ -17,11 +17,11 @@ pub fn createField(ctx: ModifyCtx, batch: []u8) usize {
     const shard = getShard(ctx).?;
     const size = operationSize + 4;
     const data = batch[4..size];
+
     db.writeField(ctx.id, data, shard) catch {};
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            const s: ?*sort.StartSet = sort.mainSortIndexes.get(ctx.typeId);
-            var it = s.?.*.keyIterator();
+            var it = sort.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |start| {
                 const sortIndex = getSortIndex(ctx, start.*).?;
                 sort.writeField(ctx.id, data, sortIndex);
