@@ -64,17 +64,17 @@ db.updateSchema({
 
 const users = []
 
-const amount = 1e6
+const amount = 10e6
 
 const d = Date.now()
 
 let dbtime = 0
 
 for (let i = 0; i < amount; i++) {
-  const blup = db.create('blup', {
-    // name: 'blup ! ' + i,
-    flap: 'A',
-  })
+  // const blup = db.create('blup', {
+  //   // name: 'blup ! ' + i,
+  //   flap: 'A',
+  // })
 
   users.push(
     db.create('user', {
@@ -94,19 +94,19 @@ for (let i = 0; i < amount; i++) {
 
 // db.drain()
 
-for (let i = 0; i < amount; i++) {
-  db.create('simple', {
-    // this can be optmized by collecting the refs then go trough them in order
-    // so you add the ids in order in a 'ordered list
+// for (let i = 0; i < amount; i++) {
+//   db.create('simple', {
+//     // this can be optmized by collecting the refs then go trough them in order
+//     // so you add the ids in order in a 'ordered list
 
-    user: i + 1,
-    // 3x slower with random access
-    // user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
-    // vectorClock: i,
-    // countryCode: 'aa',
-    lilBlup: 1,
-  })
-}
+//     user: i + 1,
+//     // 3x slower with random access
+//     // user: users[~~(Math.random() * users.length)], // TODO: add setting on other field as well...
+//     // vectorClock: i,
+//     // countryCode: 'aa',
+//     lilBlup: 1,
+//   })
+// }
 
 // db.drain()
 
@@ -156,11 +156,11 @@ for (let i = 0; i < amount; i++) {
 db.drain()
 
 console.log(
-  db.query('user').range(0, 1e6).include('name', 'age').sort('name').get(),
+  db.query('user').range(0, 10e6).include('name', 'age').sort('name').get(),
 )
 
 console.log(
-  db.query('user').range(0, 1e6).include('name', 'age').sort('name').get(),
+  db.query('user').range(0, 10e6).include('name', 'age').sort('name').get(),
 )
 
 // for (const item of result.data) {

@@ -3,9 +3,6 @@ const errors = @import("../errors.zig");
 const Envs = @import("../env/env.zig");
 const std = @import("std");
 
-const builtin = @import("builtin");
-const native_endian = builtin.cpu.arch.endian();
-
 pub const Shard = struct { dbi: c.MDB_dbi, key: [6]u8, cursor: ?*c.MDB_cursor, queryId: ?u32 };
 
 // READ SHARDS
@@ -116,13 +113,6 @@ pub fn getField(id: u32, field: u8, typePrefix: [2]u8, currentShard: u16, queryI
         return &.{};
     };
     return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-}
-
-const isLittle = native_endian == .little;
-
-pub inline fn readInt(comptime T: type, buffer: []u8, offset: u16) T {
-    const value: T = @bitCast(buffer[offset..][0..@divExact(@typeInfo(T).Int.bits, 8)].*);
-    return if (isLittle) value else @byteSwap(value);
 }
 
 pub const TypePair = struct { key: u32, value: []u8 };

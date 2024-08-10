@@ -5,7 +5,6 @@ const readInt = @import("std").mem.readInt;
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const db = @import("../../db/db.zig");
-
 const getField = db.getField;
 const idToShard = db.idToShard;
 
