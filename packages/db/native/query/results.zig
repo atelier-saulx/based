@@ -5,6 +5,9 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 
+const readInt = std.mem.readInt;
+const writeInt = std.mem.writeInt;
+
 pub const Result = struct {
     id: ?u32,
     field: u8,
@@ -29,13 +32,11 @@ pub fn createResultsBuffer(
     }
 
     var data = @as([*]u8, @ptrCast(resultBuffer));
-
-    std.mem.writeInt(u32, data[0..][0..4], @truncate(total_results), .little);
-
-    // Max is 65025
     var lastRef: u16 = MAX_REF;
     var lastRefLvl: u8 = 0;
     var i: usize = 4;
+
+    writeInt(u32, data[0..][0..4], @truncate(total_results), .little);
 
     for (ctx.results.items) |*item| {
         if (item.start != null) {
@@ -50,9 +51,9 @@ pub fn createResultsBuffer(
                     data[i] = 0;
                 }
                 i += 1;
-                std.mem.writeInt(u16, data[i..][0..2], lastRef, .little);
+                writeInt(u16, data[i..][0..2], lastRef, .little);
                 i += 2;
-                @memcpy(data[i .. i + 4], @as([*]u8, @ptrCast(&item.id)));
+                writeInt(u32, data[i..][0..4], item.id.?, .little);
                 i += 4;
             }
         } else {
@@ -60,7 +61,7 @@ pub fn createResultsBuffer(
             if (item.id != null) {
                 data[i] = 255;
                 i += 1;
-                @memcpy(data[i .. i + 4], @as([*]u8, @ptrCast(&item.id)));
+                writeInt(u32, data[i..][0..4], item.id.?, .little);
                 i += 4;
             }
         }
@@ -69,7 +70,7 @@ pub fn createResultsBuffer(
             continue;
         }
 
-        @memcpy(data[i .. i + 1], @as([*]u8, @ptrCast(&item.field)));
+        data[i] = item.field;
         i += 1;
 
         if (item.val == null) {
@@ -83,8 +84,8 @@ pub fn createResultsBuffer(
                 var mainPos: usize = 2;
                 while (mainPos < item.includeMain.len) {
                     const operation = item.includeMain[mainPos..];
-                    const start: u16 = std.mem.readInt(u16, operation[0..2], .little);
-                    const len: u16 = std.mem.readInt(u16, operation[2..4], .little);
+                    const start: u16 = readInt(u16, operation[0..2], .little);
+                    const len: u16 = readInt(u16, operation[2..4], .little);
                     @memcpy(data[i .. i + len], val[start .. start + len]);
                     i += len;
                     mainPos += 4;
@@ -97,7 +98,7 @@ pub fn createResultsBuffer(
                 i += val.len;
             }
         } else {
-            std.mem.writeInt(
+            writeInt(
                 u16,
                 data[i..][0..2],
                 @as(u16, @truncate(val.len)),
