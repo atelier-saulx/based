@@ -14,22 +14,9 @@ pub var sortIndexes = std.AutoHashMap(SortDbiName, SortIndex).init(db.allocator)
 
 pub const StartSet = std.AutoHashMap(u16, u8);
 
-// start make it u16
 pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
 
-// std.ArrayListAligned()
-
-// pub var bitSet = std.bit_set.DynamicBitSet.initEmpty(db.allocator, 255);
-// [0][0][1]
-
-// [[type] [type] [size] [0][1][2]  ] []
-// while ()
-// check size
-
-//
-// .{u8[][255]}
-// (typeIndex = [])
-
+// TYPE BYTE (make into enum)
 //   ['timestamp', 1],
 //   ['created', 2],
 //   ['updated', 3],
@@ -40,8 +27,6 @@ pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
 //   ['enum', 8],
 //   ['string', 9],
 //   ['references', 10],
-
-// add SORT iterator here
 
 pub fn getSortName(
     typePrefix: [2]u8,
