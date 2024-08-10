@@ -18,6 +18,7 @@ pub fn updateField(ctx: ModifyCtx, batch: []u8) usize {
     const size = operationSize + 4;
     const shard = getShard(ctx).?;
     const data = batch[4..size];
+
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.readField(ctx.id, shard);
@@ -41,9 +42,10 @@ pub fn updateField(ctx: ModifyCtx, batch: []u8) usize {
 
 pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) usize {
     const operationSize = readInt(u32, batch, 0);
-    const size = operationSize + 6; // + 2 wtf..
+    const size = operationSize + 4;
     const shard = getShard(ctx).?;
     const data = batch[4..size];
+
     var currentData = db.readField(ctx.id, shard);
     if (currentData.len != 0) {
         var j: usize = 0;
