@@ -4,6 +4,8 @@ const Envs = @import("../env/env.zig");
 const std = @import("std");
 const db = @import("./db.zig");
 
+const readInt = std.mem.readInt;
+
 pub const SortIndex = struct { dbi: c.MDB_dbi, cursor: ?*c.MDB_cursor, queryId: u32, len: u16, start: u16 };
 
 pub var sortIndexes = std.AutoHashMap([7]u8, SortIndex).init(db.allocator);
@@ -71,13 +73,13 @@ pub fn writeToSortIndex(
     if (len > 0) {
         const mainValue = @as([*]u8, @ptrCast(value.*.mv_data))[start .. start + len];
         var selectiveValue: c.MDB_val = .{ .mv_size = len, .mv_data = mainValue.ptr };
-        try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, key, 0));
+        try errors.mdb(c.mdb_cursor_put(cursor, &selectiveValue, key, 0));
     } else if (field != 0 and value.*.mv_size > 16) {
         const fieldValue = @as([*]u8, @ptrCast(value.*.mv_data))[0..16];
         var selectiveValue: c.MDB_val = .{ .mv_size = 16, .mv_data = fieldValue.ptr };
-        try errors.mdbCheck(c.mdb_cursor_put(cursor, &selectiveValue, key, 0));
+        try errors.mdb(c.mdb_cursor_put(cursor, &selectiveValue, key, 0));
     } else {
-        try errors.mdbCheck(c.mdb_cursor_put(cursor, value, key, 0));
+        try errors.mdb(c.mdb_cursor_put(cursor, value, key, 0));
     }
 }
 
@@ -102,8 +104,8 @@ fn createSortIndex(
     if (fieldType == 5 or fieldType == 4 or fieldType == 1) {
         flags |= c.MDB_INTEGERKEY;
     }
-    try errors.mdbCheck(c.mdb_dbi_open(txn, &name, flags, &dbi));
-    try errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
+    try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
+    try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
     const maxShards = db.idToShard(lastId);
     var currentShard: u16 = 0;
@@ -121,7 +123,7 @@ fn createSortIndex(
         while (!end) {
             var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
             var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &key, &value, flag)) catch {
+            errors.mdb(c.mdb_cursor_get(shard.?.cursor, &key, &value, flag)) catch {
                 end = true;
                 continue :shardLoop;
             };
@@ -134,7 +136,7 @@ fn createSortIndex(
             }
         }
     }
-    try errors.mdbCheck(c.mdb_txn_commit(txn));
+    try errors.mdb(c.mdb_txn_commit(txn));
 
     if (len > 0) {
         if (!mainSortIndexes.contains(typePrefix)) {
@@ -154,8 +156,8 @@ fn createReadSortIndex(name: [7]u8, queryId: u32, len: u16, start: u16) !SortInd
     var cursor: ?*c.MDB_cursor = null;
     _ = c.mdb_txn_reset(db.readTxn);
     _ = c.mdb_txn_renew(db.readTxn);
-    try errors.mdbCheck(c.mdb_dbi_open(db.readTxn, &name, 0, &dbi));
-    try errors.mdbCheck(c.mdb_cursor_open(db.readTxn, dbi, &cursor));
+    try errors.mdb(c.mdb_dbi_open(db.readTxn, &name, 0, &dbi));
+    try errors.mdb(c.mdb_cursor_open(db.readTxn, dbi, &cursor));
     return .{
         .dbi = dbi,
         .queryId = queryId,
@@ -177,8 +179,8 @@ pub fn getOrCreateReadSortIndex(
     var len: u16 = undefined;
 
     if (sort.len == 6) {
-        start = std.mem.readInt(u16, sort[2..][0..2], .little);
-        len = std.mem.readInt(u16, sort[2..][2..4], .little);
+        start = readInt(u16, sort[2..][0..2], .little);
+        len = readInt(u16, sort[2..][2..4], .little);
     } else {
         start = 0;
         len = 0;
@@ -221,20 +223,26 @@ pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
     return mainSortIndexes.contains(typePrefix);
 }
 
-pub fn createWriteSortIndex(name: [7]u8, start: u16, txn: ?*c.MDB_txn) ?SortIndex {
+pub fn createWriteSortIndex(name: [7]u8, txn: ?*c.MDB_txn) ?SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     var len: u16 = 0;
-    // name3 is field
+    const start: u16 = readInt(u16, .{ name[5], name[6] });
     if (name[3] == 1) {
         len = getReadSortIndex(name).?.len;
     }
-    errors.mdbCheck(c.mdb_dbi_open(txn, &name, 0, &dbi)) catch {
+    errors.mdb(c.mdb_dbi_open(txn, &name, 0, &dbi)) catch {
         return null;
     };
-    errors.mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor)) catch {
+    errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor)) catch {
         return null;
     };
-    const writeIndex = .{ .dbi = dbi, .cursor = cursor, .queryId = 0, .len = len, .start = start };
+    const writeIndex = .{
+        .dbi = dbi,
+        .cursor = cursor,
+        .queryId = 0,
+        .len = len,
+        .start = start,
+    };
     return writeIndex;
 }

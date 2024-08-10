@@ -10,7 +10,7 @@ const jsThrow = errors.jsThrow;
 const createEnv = Envs.createEnv;
 const dbEnv = Envs.env;
 const dbEnvIsDefined = Envs.dbEnvIsDefined;
-const dbthrow = errors.mdbCheck;
+const dbthrow = errors.mdb;
 
 const NapiError = error{NapiError};
 

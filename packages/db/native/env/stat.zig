@@ -3,8 +3,9 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const Env = @import("./env.zig");
+const db = @import("../db/db.zig");
 
-const mdbCheck = errors.mdbCheck;
+const mdb = errors.mdb;
 const jsThrow = errors.jsThrow;
 
 pub fn statInternal() !c.MDB_stat {
@@ -13,16 +14,16 @@ pub fn statInternal() !c.MDB_stat {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
-    try mdbCheck(c.mdb_txn_begin(Env.env, null, c.MDB_RDONLY, &txn));
-    try mdbCheck(c.mdb_dbi_open(txn, null, 0, &dbi));
-    try mdbCheck(c.mdb_cursor_open(txn, dbi, &cursor));
+    try mdb(c.mdb_txn_begin(Env.env, null, c.MDB_RDONLY, &txn));
+    try mdb(c.mdb_dbi_open(txn, null, 0, &dbi));
+    try mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
     var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
     var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
     var dbi2: c.MDB_dbi = 0;
 
-    mdbCheck(c.mdb_cursor_get(cursor, &k, &v, c.MDB_FIRST)) catch {};
-    mdbCheck(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
+    mdb(c.mdb_cursor_get(cursor, &k, &v, c.MDB_FIRST)) catch {};
+    mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
         std.debug.print("NO DBI {any} DBI {any}  \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
     };
     _ = c.mdb_stat(txn, dbi2, &s);
@@ -34,7 +35,7 @@ pub fn statInternal() !c.MDB_stat {
     std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(size, 1000 * 1000), entries });
     var done: bool = false;
     while (!done) {
-        mdbCheck(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch {
+        mdb(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch {
             done = true;
             break;
         };
@@ -42,12 +43,12 @@ pub fn statInternal() !c.MDB_stat {
             done = true;
             break;
         }
-        mdbCheck(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
+        mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
             std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
             done = true;
             break;
         };
-        _ = mdbCheck(c.mdb_stat(txn, dbi2, &s)) catch |err| {
+        _ = mdb(c.mdb_stat(txn, dbi2, &s)) catch |err| {
             std.debug.print("STAT ERROR {any} \n", .{err});
         };
         dbiCnt += 1;
@@ -78,6 +79,19 @@ pub fn tester(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value 
     // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     // defer arena.deinit();
     // const allocator = arena.allocator();
-    std.debug.print("\nTESTER\n", .{});
+    // std.debug.print("\nTESTER\n", .{});
+
+    // const it = db.TypeIterator();
+
+    // _ = it.init(.{ 44, 44 });
+
+    // std.debug.print("\nTESTER {any} \n", .{iterator});
+
+    // it.next();
+
+    const flap = db.snurp(.{ 44, 44 });
+
+    flap.next(1);
+    // flap.itera
     return null;
 }

@@ -1,7 +1,7 @@
 const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
-const std = @import("std");
+const readInt = @import("../../utils.zig").readInt;
 const utils = @import("../../utils.zig");
 const db = @import("../../db/db.zig");
 const results = @import("../results.zig");
@@ -23,8 +23,8 @@ pub fn getSingleRefFields(
     var size: usize = 0;
 
     const typePrefix: [2]u8 = .{ include[0], include[1] };
-    const start = std.mem.readInt(u16, include[2..4], .little);
-    const refId = std.mem.readInt(u32, main[start..][0..4], .little);
+    const start = readInt(u16, include, 2);
+    const refId = readInt(u32, main, start);
 
     // TODO: make test for this ref undefined
     if (refId == 0) {

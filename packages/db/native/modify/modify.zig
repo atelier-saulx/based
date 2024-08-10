@@ -91,7 +91,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = data.ptr };
                 // TODO: only if 3! c.MDB_APPEND
-                errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
+                errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
                 // if (field == 0) {
                 //     if (dbSort.hasMainSortIndexes(typePrefix)) {
                 //         const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
@@ -147,8 +147,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             if (shard != null) {
                 var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-                errors.mdbCheck(c.mdb_cursor_del(shard.?.cursor, 0)) catch {};
+                errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+                errors.mdb(c.mdb_cursor_del(shard.?.cursor, 0)) catch {};
             }
 
             // if (field == 0) {
@@ -174,7 +174,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             if (shard != null) {
                 var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
+                errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
                 var currentData: []u8 = undefined;
                 if (v.mv_size != 0) {
                     currentData = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
@@ -195,8 +195,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                         //         }
                         //         var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
                         //         var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
-                        //         errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                        //         errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
+                        //         errors.mdb(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                        //         errors.mdb(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
                         //         var indexValue: c.MDB_val = .{ .mv_size = len, .mv_data = mergeOperation[j + 4 .. j + 4 + len].ptr };
                         //         dbSort.writeToSortIndex(
                         //             &indexValue,
@@ -241,7 +241,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 //         var currentValue: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 //         const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
                 //         var it = s.?.*.keyIterator();
-                //         errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
+                //         errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
                 //         const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
                 //         while (it.next()) |key| {
                 //             const start = key.*;
@@ -255,8 +255,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 //             }
                 //             var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
                 //             var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
-                //             errors.mdbCheck(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                //             errors.mdbCheck(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
+                //             errors.mdb(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                //             errors.mdb(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
                 //             dbSort.writeToSortIndex(
                 //                 &v,
                 //                 &k,
@@ -272,7 +272,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 //         .mv_size = 0,
                 //         .mv_data = null,
                 //     };
-                //     errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
+                //     errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
                 //     if (v.mv_size != 0) {
                 //         const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
                 //         var sortValue: c.MDB_val = .{ .mv_size = currentValue.mv_size, .mv_data = currentData.ptr };
@@ -280,8 +280,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 //         if (currentData.len > 16) {
                 //             sortValue.mv_data = currentData[0..16].ptr;
                 //         }
-                //         errors.mdbCheck(c.mdb_cursor_get(currentSortIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                //         errors.mdbCheck(c.mdb_cursor_del(currentSortIndex.?.cursor, 0)) catch {};
+                //         errors.mdb(c.mdb_cursor_get(currentSortIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
+                //         errors.mdb(c.mdb_cursor_del(currentSortIndex.?.cursor, 0)) catch {};
                 //     }
                 //     dbSort.writeToSortIndex(
                 //         &v,
@@ -293,7 +293,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 //     ) catch {};
                 // }
 
-                errors.mdbCheck(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
+                errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
             }
             i = i + operationSize + 1 + 4;
         } else {
@@ -306,7 +306,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     // while (it.next()) |shard| {
     //     db.closeCursor(shard.value_ptr);
     // }
-    try errors.mdbCheck(c.mdb_txn_commit(txn));
+    try errors.mdb(c.mdb_txn_commit(txn));
 
     return null;
 }

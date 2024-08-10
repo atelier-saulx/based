@@ -33,7 +33,7 @@ pub fn getQueryInternal(
     const ctx: QueryCtx = .{ .results = &resultsList, .id = getQueryId() };
 
     const readTxn = try db.initReadTxn();
-    errors.mdbCheck(c.mdb_txn_renew(readTxn)) catch {};
+    errors.mdb(c.mdb_txn_renew(readTxn)) catch {};
 
     var total_results: usize = 0;
     var total_size: usize = 0;
@@ -119,7 +119,7 @@ pub fn getQueryInternal(
             checkItem: while (!end and total_results < offset + limit) {
                 var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdbCheck(c.mdb_cursor_get(sortIndex.?.cursor, &k, &v, flag)) catch {
+                errors.mdb(c.mdb_cursor_get(sortIndex.?.cursor, &k, &v, flag)) catch {
                     end = true;
                     break;
                 };
