@@ -24,8 +24,6 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 }
 
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    // format == key: KEY_LEN bytes | size: 2 bytes | content: size bytes
-    // [SIZE 2 bytes] | [1 byte operation] | []
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.getBuffer("modifyBatch", env, args[0]);
     const size = try napi.getInt32("batchSize", env, args[1]);
@@ -49,7 +47,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeId = undefined,
         .id = undefined,
         .currentShard = 0,
-        .keySize = 4,
         .shards = &shards,
         .txn = txn.?,
     };
@@ -61,8 +58,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         if (operationType == 0) {
             // SWITCH FIELD
             ctx.field = operation[0];
-            ctx.keySize = operation[2];
-            i = i + 1 + 2;
+            i = i + 2;
             // if (field != 0) {
             //     sortIndexName = dbSort.createSortName(typePrefix, field, 0);
             //     if (dbSort.hasReadSortIndex(sortIndexName)) {

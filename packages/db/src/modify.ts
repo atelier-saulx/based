@@ -34,8 +34,7 @@ const setCursor = (
     db.modifyBuffer.buffer[len] = 0
     // make field 2 bytes
     db.modifyBuffer.buffer[len + 1] = field // 1 byte (max size 255 - 1)
-    db.modifyBuffer.buffer[len + 2] = 4
-    db.modifyBuffer.len += 3
+    db.modifyBuffer.len += 2
     db.modifyBuffer.field = field
   }
 

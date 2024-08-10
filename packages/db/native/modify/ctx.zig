@@ -7,7 +7,6 @@ pub const ModifyCtx = struct {
     typeId: db.TypeId,
     id: u32,
     currentShard: u16,
-    keySize: u8,
     shards: *db.WriteShards,
     txn: *c.MDB_txn,
 };

@@ -21,7 +21,6 @@ pub fn updateField(ctx: ModifyCtx, batch: []u8) usize {
     }
     db.writeField(ctx.id, batch[4..size], shard) catch {};
     return size;
-
     // if (field == 0) {
     //     if (dbSort.hasMainSortIndexes(typePrefix)) {
     //         var currentValue: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -89,7 +88,6 @@ pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) usize {
         return size;
     }
     var currentData = db.readField(ctx.id, shard);
-
     if (currentData.len != 0) {
         const mergeOperation: []u8 = batch[4 .. 4 + operationSize];
         var j: usize = 0;
@@ -125,6 +123,5 @@ pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) usize {
             j += 4 + len;
         }
     }
-
     return operationSize + 6;
 }
