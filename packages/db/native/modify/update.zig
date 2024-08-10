@@ -94,8 +94,9 @@ pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) usize {
         const mergeOperation: []u8 = batch[4 .. 4 + operationSize];
         var j: usize = 0;
         while (j < mergeOperation.len) {
-            const start = readInt(u16, mergeOperation[j..], 0);
-            const len = readInt(u16, mergeOperation[j..], 2);
+            const operation = mergeOperation[j..];
+            const start = readInt(u16, operation, 0);
+            const len = readInt(u16, operation, 2);
 
             // if (dbSort.hasMainSortIndexes(ctx.typeId)) {
             //     sortIndexName = dbSort.createSortName(typePrefix, field, start);
@@ -120,8 +121,7 @@ pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) usize {
             //         ) catch {};
             //     }
             // }
-
-            @memcpy(currentData[start .. start + len], mergeOperation[j + 4 .. j + 4 + len]);
+            @memcpy(currentData[start .. start + len], operation[4 .. 4 + len]);
             j += 4 + len;
         }
     }
