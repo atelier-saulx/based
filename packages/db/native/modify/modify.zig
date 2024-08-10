@@ -5,6 +5,16 @@ const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const dbSort = @import("../db/sort.zig");
+const Modify = @import("./ctx.zig");
+const createField = @import("./create.zig").createField;
+const deleteField = @import("./delete.zig").deleteField;
+const Update = @import("./update.zig");
+
+const ModifyCtx = Modify.ModifyCtx;
+const getShard = Modify.getShard;
+
+const updateField = Update.updateField;
+const updatePartialField = Update.updatePartialField;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -20,9 +30,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const batch = try napi.getBuffer("modifyBatch", env, args[0]);
     const size = try napi.getInt32("batchSize", env, args[1]);
 
-    if (!Envs.dbEnvIsDefined) {
-        return error.MDN_ENV_UNDEFINED;
-    }
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
@@ -33,21 +40,27 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const txn = try db.createTransaction(false);
 
     var i: usize = 0;
-    var keySize: u8 = undefined;
-    var field: u8 = undefined;
-    var typePrefix: [2]u8 = undefined;
-    var id: u32 = undefined;
-    var currentShard: [2]u8 = .{ 0, 0 };
+
     // var currentSortIndex: ?dbSort.SortIndex = null;
     // var sortIndexName: [7]u8 = undefined;
+
+    var ctx: ModifyCtx = .{
+        .field = undefined,
+        .typeId = undefined,
+        .id = undefined,
+        .currentShard = 0,
+        .keySize = 4,
+        .shards = &shards,
+        .txn = txn.?,
+    };
 
     while (i < size) {
         // delete
         const operation = batch[i];
         if (operation == 0) {
             // SWITCH FIELD
-            field = batch[i + 1];
-            keySize = batch[i + 2];
+            ctx.field = batch[i + 1];
+            ctx.keySize = batch[i + 2];
             i = i + 1 + 2;
             // if (field != 0) {
             //     sortIndexName = dbSort.createSortName(typePrefix, field, 0);
@@ -65,247 +78,28 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // }
         } else if (operation == 1) {
             // SWITCH KEY
-            id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            currentShard = @bitCast(db.idToShard(id));
+            ctx.id = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
+            ctx.currentShard = db.idToShard(ctx.id);
             i = i + 1 + 4;
         } else if (operation == 2) {
             // SWITCH TYPE
-            typePrefix[0] = batch[i + 1];
-            typePrefix[1] = batch[i + 2];
-            i = i + 1 + 2;
+            ctx.typeId[0] = batch[i + 1];
+            ctx.typeId[1] = batch[i + 2];
+            i = i + 3;
         } else if (operation == 3) {
-            // CREATE
-            const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const dbiName = db.createDbiName(typePrefix, field, currentShard);
-            var shard = shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, txn) catch null;
-                if (shard != null) {
-                    shards.put(dbiName, shard.?) catch {
-                        shard = null;
-                    };
-                }
-            }
-            if (shard != null) {
-                const data = batch[i + 5 .. i + 5 + operationSize];
-                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
-                var v: c.MDB_val = .{ .mv_size = operationSize, .mv_data = data.ptr };
-                // TODO: only if 3! c.MDB_APPEND
-                errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
-                // if (field == 0) {
-                //     if (dbSort.hasMainSortIndexes(typePrefix)) {
-                //         const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
-                //         var it = s.?.*.keyIterator();
-                //         while (it.next()) |key| {
-                //             const start = key.*;
-                //             sortIndexName = dbSort.createSortName(typePrefix, field, start);
-                //             const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
-                //             const len = readSortIndex.?.len;
-                //             var sIndex = sortIndexes.get(sortIndexName);
-                //             if (sIndex == null) {
-                //                 sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
-                //                 try sortIndexes.put(sortIndexName, sIndex.?);
-                //             }
-                //             var indexValue: c.MDB_val = .{
-                //                 .mv_size = len,
-                //                 .mv_data = data[start .. start + len].ptr,
-                //             };
-                //             dbSort.writeToSortIndex(
-                //                 &indexValue,
-                //                 &k,
-                //                 sIndex.?.start,
-                //                 len,
-                //                 sIndex.?.cursor,
-                //                 field,
-                //             ) catch {};
-                //         }
-                //     }
-                // } else if (currentSortIndex != null) {
-                //     dbSort.writeToSortIndex(
-                //         &v,
-                //         &k,
-                //         currentSortIndex.?.start,
-                //         currentSortIndex.?.len,
-                //         currentSortIndex.?.cursor,
-                //         field,
-                //     ) catch {};
-                // }
-            }
-            i = i + operationSize + 1 + 4;
+            i += createField(ctx, batch[i + 1 ..]);
         } else if (operation == 4) {
-            // DELETE
-            const dbiName = db.createDbiName(typePrefix, field, currentShard);
-            var shard = shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, txn) catch null;
-                if (shard != null) {
-                    shards.put(dbiName, shard.?) catch {
-                        shard = null;
-                    };
-                }
-            }
-            if (shard != null) {
-                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-                errors.mdb(c.mdb_cursor_del(shard.?.cursor, 0)) catch {};
-            }
-
-            // if (field == 0) {
-
-            // } else {
-
-            // }
-
-            i = i + 1;
+            i += deleteField(ctx);
         } else if (operation == 5) {
-            // UPDATE OFFSETS
-            const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const dbiName = db.createDbiName(typePrefix, field, currentShard);
-            var shard = shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, txn) catch null;
-                if (shard != null) {
-                    shards.put(dbiName, shard.?) catch {
-                        shard = null;
-                    };
-                }
-            }
-            if (shard != null) {
-                var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-                var currentData: []u8 = undefined;
-                if (v.mv_size != 0) {
-                    currentData = @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-                    const mergeOperation: []u8 = batch[i + 5 .. i + 5 + operationSize];
-                    var j: usize = 0;
-                    while (j < mergeOperation.len) {
-                        const start = std.mem.readInt(u16, mergeOperation[j..][0..2], .little);
-                        const len = std.mem.readInt(u16, mergeOperation[j..][2..4], .little);
-
-                        // field === 0
-                        // if (dbSort.hasMainSortIndexes(typePrefix)) {
-                        //     sortIndexName = dbSort.createSortName(typePrefix, field, start);
-                        //     if (dbSort.hasReadSortIndex(sortIndexName)) {
-                        //         var sIndex = sortIndexes.get(sortIndexName);
-                        //         if (sIndex == null) {
-                        //             sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
-                        //             try sortIndexes.put(sortIndexName, sIndex.?);
-                        //         }
-                        //         var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
-                        //         var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
-                        //         errors.mdb(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                        //         errors.mdb(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
-                        //         var indexValue: c.MDB_val = .{ .mv_size = len, .mv_data = mergeOperation[j + 4 .. j + 4 + len].ptr };
-                        //         dbSort.writeToSortIndex(
-                        //             &indexValue,
-                        //             &k,
-                        //             start,
-                        //             0,
-                        //             sIndex.?.cursor,
-                        //             field,
-                        //         ) catch {};
-                        //     }
-                        // }
-
-                        // later
-
-                        @memcpy(currentData[start .. start + len], mergeOperation[j + 4 .. j + 4 + len]);
-                        j += 4 + len;
-                    }
-                } else {
-                    std.log.err("Main not created for update \n", .{});
-                }
-            }
-            i += operationSize + 7;
+            i += updatePartialField(ctx, i, batch);
         } else if (operation == 6) {
-            // UPDATE WHOLE FIELD
-            const operationSize = std.mem.readInt(u32, batch[i + 1 ..][0..4], .little);
-            const dbiName = db.createDbiName(typePrefix, field, currentShard);
-            var shard = shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, txn) catch null;
-                if (shard != null) {
-                    shards.put(dbiName, shard.?) catch {
-                        shard = null;
-                    };
-                }
-            }
-            if (shard != null) {
-                const data = batch[i + 5 .. i + 5 + operationSize];
-                var k: c.MDB_val = .{ .mv_size = keySize, .mv_data = &id };
-                var v: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
-                // if (field == 0) {
-                //     if (dbSort.hasMainSortIndexes(typePrefix)) {
-                //         var currentValue: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                //         const s: ?*dbSort.StartSet = dbSort.mainSortIndexes.get(typePrefix);
-                //         var it = s.?.*.keyIterator();
-                //         errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
-                //         const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
-                //         while (it.next()) |key| {
-                //             const start = key.*;
-                //             sortIndexName = dbSort.createSortName(typePrefix, field, start);
-                //             const readSortIndex = dbSort.getReadSortIndex(sortIndexName);
-                //             const len = readSortIndex.?.len;
-                //             var sIndex = sortIndexes.get(sortIndexName);
-                //             if (sIndex == null) {
-                //                 sIndex = dbSort.createWriteSortIndex(sortIndexName, len, start, txn);
-                //                 try sortIndexes.put(sortIndexName, sIndex.?);
-                //             }
-                //             var sortValue: c.MDB_val = .{ .mv_size = len, .mv_data = currentData[start .. start + len].ptr };
-                //             var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
-                //             errors.mdb(c.mdb_cursor_get(sIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                //             errors.mdb(c.mdb_cursor_del(sIndex.?.cursor, 0)) catch {};
-                //             dbSort.writeToSortIndex(
-                //                 &v,
-                //                 &k,
-                //                 start,
-                //                 len,
-                //                 sIndex.?.cursor,
-                //                 field,
-                //             ) catch {};
-                //         }
-                //     }
-                // } else if (currentSortIndex != null) {
-                //     var currentValue: c.MDB_val = .{
-                //         .mv_size = 0,
-                //         .mv_data = null,
-                //     };
-                //     errors.mdb(c.mdb_cursor_get(shard.?.cursor, &k, &currentValue, c.MDB_SET)) catch {};
-                //     if (v.mv_size != 0) {
-                //         const currentData: []u8 = @as([*]u8, @ptrCast(currentValue.mv_data))[0..currentValue.mv_size];
-                //         var sortValue: c.MDB_val = .{ .mv_size = currentValue.mv_size, .mv_data = currentData.ptr };
-                //         var sortKey: c.MDB_val = .{ .mv_size = k.mv_size, .mv_data = k.mv_data };
-                //         if (currentData.len > 16) {
-                //             sortValue.mv_data = currentData[0..16].ptr;
-                //         }
-                //         errors.mdb(c.mdb_cursor_get(currentSortIndex.?.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH)) catch {};
-                //         errors.mdb(c.mdb_cursor_del(currentSortIndex.?.cursor, 0)) catch {};
-                //     }
-                //     dbSort.writeToSortIndex(
-                //         &v,
-                //         &k,
-                //         currentSortIndex.?.start,
-                //         currentSortIndex.?.len,
-                //         currentSortIndex.?.cursor,
-                //         field,
-                //     ) catch {};
-                // }
-
-                errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0)) catch {};
-            }
-            i = i + operationSize + 1 + 4;
+            i += updateField(ctx, i, batch);
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
         }
     }
 
-    // var it = shards.iterator();
-    // while (it.next()) |shard| {
-    //     db.closeCursor(shard.value_ptr);
-    // }
     try errors.mdb(c.mdb_txn_commit(txn));
 
     return null;

@@ -116,6 +116,8 @@ export class BasedDb {
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 
+  writeTime: number = 0
+
   constructor({
     path,
     maxModifySize,

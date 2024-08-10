@@ -22,7 +22,7 @@ pub fn getSingleRefFields(
 ) usize {
     var size: usize = 0;
 
-    const typePrefix: [2]u8 = .{ include[0], include[1] };
+    const typeId: db.TypeId = .{ include[0], include[1] };
     const start = readInt(u16, include, 2);
     const refId = readInt(u32, main, start);
 
@@ -38,11 +38,13 @@ pub fn getSingleRefFields(
     }
 
     const includeNested = include[4..include.len];
+
     const shardNested: u16 = db.idToShard(refId);
+
     const resultSizeNest = getFields(
         ctx,
         refId,
-        typePrefix,
+        typeId,
         start,
         includeNested,
         shardNested,

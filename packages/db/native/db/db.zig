@@ -3,12 +3,18 @@ const errors = @import("../errors.zig");
 const Envs = @import("../env/env.zig");
 const std = @import("std");
 
-pub const Shard = struct { dbi: c.MDB_dbi, key: [6]u8, cursor: ?*c.MDB_cursor, queryId: ?u32 };
+pub const DbName = [6]u8;
+
+pub const TypeId = [2]u8;
+
+pub const Shard = struct { dbi: c.MDB_dbi, key: DbName, cursor: ?*c.MDB_cursor, queryId: ?u32 };
+
+pub const WriteShards = std.AutoHashMap(DbName, Shard);
 
 // READ SHARDS
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 pub const allocator = arena.allocator();
-pub var readShards = std.AutoHashMap([6]u8, Shard).init(allocator);
+pub var readShards = std.AutoHashMap(DbName, Shard).init(allocator);
 pub var readTxn: *c.MDB_txn = undefined;
 
 var txnCreated: bool = false;
@@ -33,11 +39,12 @@ pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
 }
 
 // TODO: add ZERO
-pub fn createDbiName(type_prefix: [2]u8, field: u8, shard: [2]u8) [6]u8 {
-    if (shard[0] == 0 and shard[1] != 0) {
-        return .{ type_prefix[0], type_prefix[1], field + 1, 255, 255 - shard[1], 0 };
+pub inline fn createDbiName(typeId: TypeId, field: u8, shard: u16) DbName {
+    const s: TypeId = @bitCast(shard);
+    if (s[0] == 0 and s[1] != 0) {
+        return .{ typeId[0], typeId[1], field + 1, 255, 255 - s[1], 0 };
     }
-    return .{ type_prefix[0], type_prefix[1], field + 1, shard[0], shard[1], 0 };
+    return .{ typeId[0], typeId[1], field + 1, s[0], s[1], 0 };
 }
 
 pub fn openDbi(comptime create: bool, name: [6]u8, txn: ?*c.MDB_txn) !c.MDB_dbi {
@@ -50,7 +57,7 @@ pub fn openDbi(comptime create: bool, name: [6]u8, txn: ?*c.MDB_txn) !c.MDB_dbi 
     return dbi;
 }
 
-pub fn getReadShard(dbiName: [6]u8, queryId: u32) ?Shard {
+pub fn getReadShard(dbiName: DbName, queryId: u32) ?Shard {
     var s = readShards.get(dbiName);
     if (s == null) {
         var cursor: ?*c.MDB_cursor = null;
@@ -72,7 +79,7 @@ pub fn getReadShard(dbiName: [6]u8, queryId: u32) ?Shard {
     return s;
 }
 
-pub fn openShard(comptime create: bool, dbiName: [6]u8, txn: ?*c.MDB_txn) !Shard {
+pub fn openShard(comptime create: bool, dbiName: DbName, txn: ?*c.MDB_txn) !Shard {
     const dbi = try openDbi(create, dbiName, txn);
     var cursor: ?*c.MDB_cursor = null;
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
@@ -101,8 +108,8 @@ pub inline fn dataPart(v: c.MDB_val, start: u16, len: u16) []u8 {
     return @as([*]u8, @ptrCast(v.mv_data))[start .. len + start];
 }
 
-pub fn getField(id: u32, field: u8, typePrefix: [2]u8, currentShard: u16, queryId: u32) []u8 {
-    const dbiName = createDbiName(typePrefix, field, @bitCast(currentShard));
+pub fn getField(id: u32, field: u8, typeId: TypeId, currentShard: u16, queryId: u32) []u8 {
+    const dbiName = createDbiName(typeId, field, @bitCast(currentShard));
     const shard = getReadShard(dbiName, queryId);
     if (shard == null) {
         return &.{};
@@ -115,6 +122,13 @@ pub fn getField(id: u32, field: u8, typePrefix: [2]u8, currentShard: u16, queryI
     return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 }
 
+pub fn writeField(id: u32, buf: []u8, shard: ?Shard) !void {
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+    var v: c.MDB_val = .{ .mv_size = buf.len, .mv_data = buf.ptr };
+    try errors.mdb(c.mdb_cursor_put(shard.?.cursor, &k, &v, 0));
+}
+
+// ---------- doodle ---------------
 pub const TypePair = struct { key: u32, value: []u8 };
 
 const Person = struct {
@@ -125,7 +139,7 @@ const Person = struct {
     }
 };
 
-pub fn snurp(typeId: [2]u8) Person {
+pub fn snurp(typeId: TypeId) Person {
     std.debug.print("Hi, I'm {any}\n", .{typeId});
 
     const x: Person = .{ .name = "Flap" };

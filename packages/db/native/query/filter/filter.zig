@@ -11,7 +11,7 @@ const idToShard = db.idToShard;
 pub fn filter(
     queryId: u32,
     id: u32,
-    typePrefix: [2]u8,
+    typeId: db.TypeId,
     conditions: []u8,
     currentShard: u16,
 ) bool {
@@ -29,7 +29,7 @@ pub fn filter(
         if (field == 254) {
             const refTypePrefix: [2]u8 = .{ operation[4], operation[5] };
             if (main == null) {
-                main = getField(id, 0, typePrefix, currentShard, queryId);
+                main = getField(id, 0, typeId, currentShard, queryId);
                 if (main.?.len == 0) {
                     return false;
                 }
@@ -48,7 +48,7 @@ pub fn filter(
             const query = operation[2 .. 2 + querySize];
             if (field == 0) {
                 if (main == null) {
-                    main = getField(id, field, typePrefix, currentShard, queryId);
+                    main = getField(id, field, typeId, currentShard, queryId);
                     if (main.?.len == 0) {
                         return false;
                     }
@@ -57,7 +57,7 @@ pub fn filter(
                     return false;
                 }
             } else {
-                const value = getField(id, field, typePrefix, currentShard, queryId);
+                const value = getField(id, field, typeId, currentShard, queryId);
                 if (value.len == 0) {
                     return false;
                 }

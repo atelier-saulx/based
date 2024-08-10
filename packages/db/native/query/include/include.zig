@@ -1,17 +1,18 @@
 const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
-const getField = @import("../../db/db.zig").getField;
+const db = @import("../../db/db.zig");
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
-const readInt = @import("std").mem.readInt;
+const readInt = @import("../../utils.zig").readInt;
+const getField = db.getField;
 
 pub fn getFields(
     ctx: QueryCtx,
     id: u32,
-    typePrefix: [2]u8,
+    typeId: db.TypeId,
     start: ?u16,
     include: []u8,
     currentShard: u16,
@@ -31,11 +32,11 @@ pub fn getFields(
 
         if (field == 255) {
             const hasFields: bool = operation[0] == 1;
-            const refSize = readInt(u16, operation[1..3], .little);
+            const refSize = readInt(u16, operation, 1);
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
-                main = getField(id, 0, typePrefix, currentShard, ctx.id);
+                main = getField(id, 0, typeId, currentShard, ctx.id);
                 if (main.?.len > 0 and !idIsSet and start == null) {
                     idIsSet = true;
                     size += try addIdOnly(ctx, id, refLvl, start);
@@ -49,14 +50,14 @@ pub fn getFields(
         }
 
         if (field == 0) {
-            const mainIncludeSize = readInt(u16, operation[0..2], .little);
+            const mainIncludeSize = readInt(u16, operation, 0);
             if (mainIncludeSize != 0) {
                 includeMain = operation[2 .. 2 + mainIncludeSize];
             }
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = getField(id, field, typePrefix, currentShard, ctx.id);
+        const value = getField(id, field, typeId, currentShard, ctx.id);
         if (value.len == 0) {
             continue :includeField;
         }
@@ -64,7 +65,7 @@ pub fn getFields(
         if (field == 0) {
             main = value;
             if (includeMain.len != 0) {
-                size += readInt(u16, includeMain[0..2], .little) + 1;
+                size += readInt(u16, includeMain, 0) + 1;
             } else {
                 size += (value.len + 1);
             }
@@ -95,7 +96,7 @@ pub fn getFields(
 
     if (size == 0 and !idIsSet) {
         if (main == null) {
-            main = getField(id, 0, typePrefix, currentShard, ctx.id);
+            main = getField(id, 0, typeId, currentShard, ctx.id);
             if (main.?.len > 0) {
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, refLvl, start);

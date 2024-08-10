@@ -28,6 +28,7 @@ pub fn createResultsBuffer(
 ) !c.napi_value {
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
+
     if (c.napi_create_buffer(env, total_size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }

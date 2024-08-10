@@ -1,4 +1,3 @@
-const c = @import("../c.zig");
 const std = @import("std");
 const results = @import("./results.zig");
 

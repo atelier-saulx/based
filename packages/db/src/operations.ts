@@ -12,6 +12,7 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.mergeMain = null
     db.modifyBuffer.mergeMainSize = 0
     const time = Date.now() - d
+    db.writeTime += time
     return time
   }
   db.isDraining = false

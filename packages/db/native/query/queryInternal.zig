@@ -19,6 +19,7 @@ fn getQueryId() u32 {
     return lastQueryId;
 }
 
+// make in fns
 pub fn getQueryInternal(
     comptime queryType: comptime_int,
     env: c.napi_env,
