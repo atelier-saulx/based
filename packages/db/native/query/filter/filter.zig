@@ -4,26 +4,10 @@ const napi = @import("../../napi.zig");
 const std = @import("std");
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../ctx.zig").QueryCtx;
-const db = @import("../../lmdb/db.zig");
-
-fn getField(id: u32, typePrefix: [2]u8, currentShard: u16, ctx: QueryCtx) []u8 {
-    const dbiName = db.createDbiName(typePrefix, 0, @bitCast(currentShard));
-    const shard = db.getReadShard(dbiName, ctx.id);
-
-    if (shard == null) {
-        return &.{};
-    }
-    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-        return &.{};
-    };
-
-    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-}
+const db = @import("../../db/db.zig");
 
 pub fn filter(
-    ctx: QueryCtx,
+    queryId: u32,
     id: u32,
     typePrefix: [2]u8,
     conditions: []u8,
@@ -38,34 +22,31 @@ pub fn filter(
             .little,
         );
         const field = conditions[fieldIndex];
+        const operation = conditions[fieldIndex + 1 ..];
 
         if (field == 254) {
-            const refTypePrefix: [2]u8 = .{ conditions[fieldIndex + 1 ..][4], conditions[fieldIndex + 1 ..][5] };
+            const refTypePrefix: [2]u8 = .{ operation[4], operation[5] };
             if (main == null) {
-                main = getField(id, typePrefix, currentShard, ctx);
+                main = db.getField(id, 0, typePrefix, currentShard, queryId);
                 if (main.?.len == 0) {
                     return false;
                 }
             }
-            const refStart: u16 = std.mem.readInt(
-                u16,
-                conditions[fieldIndex + 1 ..][2..4],
-                .little,
-            );
+            const refStart: u16 = std.mem.readInt(u16, operation[2..4], .little);
             const refId = std.mem.readInt(u32, main.?[refStart..][0..4], .little);
             if (refId > 0) {
-                const refConditions: []u8 = conditions[fieldIndex + 7 .. fieldIndex + 3 + querySize];
-                if (!filter(ctx, refId, refTypePrefix, refConditions, db.idToShard(refId))) {
+                const refConditions: []u8 = operation[6 .. 2 + querySize];
+                if (!filter(queryId, refId, refTypePrefix, refConditions, db.idToShard(refId))) {
                     return false;
                 }
             } else {
                 return false;
             }
         } else {
-            const query = conditions[fieldIndex + 3 .. fieldIndex + 3 + querySize];
+            const query = operation[2 .. 2 + querySize];
             if (field == 0) {
                 if (main == null) {
-                    main = getField(id, typePrefix, currentShard, ctx);
+                    main = db.getField(id, field, typePrefix, currentShard, queryId);
                     if (main.?.len == 0) {
                         return false;
                     }
@@ -74,7 +55,7 @@ pub fn filter(
                     return false;
                 }
             } else {
-                const value = getField(id, typePrefix, currentShard, ctx);
+                const value = db.getField(id, field, typePrefix, currentShard, queryId);
                 if (value.len == 0) {
                     return false;
                 }

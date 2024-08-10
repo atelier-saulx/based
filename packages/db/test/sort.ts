@@ -221,7 +221,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  console.log(
+  t.deepEqual(
     db.query('user').sort('age').include('email', 'age').get().data.toObject(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },

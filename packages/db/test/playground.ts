@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 10e6
+const amount = 1e6
 
 const d = Date.now()
 
@@ -108,9 +108,9 @@ for (let i = 0; i < amount; i++) {
   })
 }
 
-db.drain()
+// db.drain()
 
-console.log('TIME', dbtime, 'ms', Date.now() - d, 'ms')
+// console.log('TIME', dbtime, 'ms', Date.now() - d, 'ms')
 
 // const logger = (x, empty = '') => {
 //   for (const key in x) {
@@ -139,28 +139,28 @@ console.log('TIME', dbtime, 'ms', Date.now() - d, 'ms')
 
 // console.dir(result.data.toObject(), { depth: 10 })
 
-db.create('user', {
-  // myBlup: blup,
-  // age: amount - i
-  age: 0,
-  // name: 'Mr ' + i,
-  // burp: 66,
-  name: 'A MR POEPOE',
-  // snurp: 'derp derp',
-  // email: 'merp_merp_' + i + '@once.net',
-  // location: {
-  // label: 'BLA BLA',
-  // },
-})
+// db.create('user', {
+//   // myBlup: blup,
+//   // age: amount - i
+//   age: 0,
+//   // name: 'Mr ' + i,
+//   // burp: 66,
+//   name: 'A MR POEPOE',
+//   // snurp: 'derp derp',
+//   // email: 'merp_merp_' + i + '@once.net',
+//   // location: {
+//   // label: 'BLA BLA',
+//   // },
+// })
 
 db.drain()
 
 console.log(
-  db.query('user').range(0, 100).include('name', 'age').sort('name').get(),
+  db.query('user').range(0, 1e6).include('name', 'age').sort('name').get(),
 )
 
 console.log(
-  db.query('user').range(0, 100).include('name', 'age').sort('name').get(),
+  db.query('user').range(0, 1e6).include('name', 'age').sort('name').get(),
 )
 
 // for (const item of result.data) {
@@ -193,5 +193,7 @@ console.log(
 // }
 
 db.stats()
+
+db.tester()
 
 await wait(0)

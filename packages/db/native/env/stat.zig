@@ -7,8 +7,6 @@ const Env = @import("./env.zig");
 const mdbCheck = errors.mdbCheck;
 const jsThrow = errors.jsThrow;
 
-// init function
-
 pub fn statInternal() !c.MDB_stat {
     var s: c.MDB_stat = undefined;
     var txn: ?*c.MDB_txn = null;
@@ -73,5 +71,13 @@ pub fn stat(node_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_v
         napi.jsThrow(node_env, @errorName(err));
         return null;
     };
+    return null;
+}
+
+pub fn tester(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // defer arena.deinit();
+    // const allocator = arena.allocator();
+    std.debug.print("\nTESTER\n", .{});
     return null;
 }

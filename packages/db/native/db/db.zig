@@ -3,6 +3,9 @@ const errors = @import("../errors.zig");
 const Envs = @import("../env/env.zig");
 const std = @import("std");
 
+const builtin = @import("builtin");
+const native_endian = builtin.cpu.arch.endian();
+
 pub const Shard = struct { dbi: c.MDB_dbi, key: [6]u8, cursor: ?*c.MDB_cursor, queryId: ?u32 };
 
 // READ SHARDS
@@ -91,4 +94,26 @@ pub fn closeCursor(shard: *Shard) void {
 
 pub fn idToShard(id: u32) u16 {
     return @truncate(@divTrunc(id, 1_000_000));
+}
+
+pub fn data(v: c.MDB_val) []u8 {
+    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+}
+
+pub fn dataPart(v: c.MDB_val, start: u16, len: u16) []u8 {
+    return @as([*]u8, @ptrCast(v.mv_data))[start .. len + start];
+}
+
+pub fn getField(id: u32, field: u8, typePrefix: [2]u8, currentShard: u16, queryId: u32) []u8 {
+    const dbiName = createDbiName(typePrefix, field, @bitCast(currentShard));
+    const shard = getReadShard(dbiName, queryId);
+    if (shard == null) {
+        return &.{};
+    }
+    var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
+    var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
+        return &.{};
+    };
+    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 }

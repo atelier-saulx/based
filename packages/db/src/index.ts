@@ -192,4 +192,10 @@ export class BasedDb {
   stats() {
     dbZig.stat()
   }
+
+  tester() {
+    const d = Date.now()
+    dbZig.tester()
+    console.log('Tester took', Date.now() - d, 'ms')
+  }
 }

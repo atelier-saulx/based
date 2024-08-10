@@ -4,16 +4,26 @@ const Envs = @import("../env/env.zig");
 const std = @import("std");
 const db = @import("./db.zig");
 
-// flags: c_uint
 pub const SortIndex = struct { dbi: c.MDB_dbi, cursor: ?*c.MDB_cursor, queryId: u32, len: u16, start: u16 };
 
 pub var sortIndexes = std.AutoHashMap([7]u8, SortIndex).init(db.allocator);
 
 pub const StartSet = std.AutoHashMap(u16, u8);
 
-// pub var
-
 pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
+
+// std.ArrayListAligned()
+
+// pub var bitSet = std.bit_set.DynamicBitSet.initEmpty(db.allocator, 255);
+// [0][0][1]
+
+// [[type] [type] [size] [0][1][2]  ] []
+// while ()
+// check size
+
+//
+// .{u8[][255]}
+// (typeIndex = [])
 
 //   ['timestamp', 1],
 //   ['created', 2],
@@ -26,7 +36,9 @@ pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
 //   ['string', 9],
 //   ['references', 10],
 
-pub fn createSortName(
+// add SORT iterator here
+
+pub fn getSortName(
     typePrefix: [2]u8,
     field: u8,
     start: u16,
@@ -153,16 +165,26 @@ fn createReadSortIndex(name: [7]u8, queryId: u32, len: u16, start: u16) !SortInd
     };
 }
 
-pub fn createOrGetSortIndex(
+pub fn getOrCreateReadSortIndex(
     typePrefix: [2]u8,
-    field: u8,
-    start: u16,
-    len: u16,
+    sort: []u8,
     queryId: u32,
-    fieldType: u8,
     lastId: u32,
 ) ?SortIndex {
-    const name = createSortName(typePrefix, field, start);
+    const field: u8 = sort[0];
+    const fieldType: u8 = sort[1];
+    var start: u16 = undefined;
+    var len: u16 = undefined;
+
+    if (sort.len == 6) {
+        start = std.mem.readInt(u16, sort[2..][0..2], .little);
+        len = std.mem.readInt(u16, sort[2..][2..4], .little);
+    } else {
+        start = 0;
+        len = 0;
+    }
+
+    const name = getSortName(typePrefix, field, start);
     var s = sortIndexes.get(name);
     if (s == null) {
         createSortIndex(name, start, len, field, fieldType, lastId, queryId) catch |err| {
@@ -199,9 +221,14 @@ pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
     return mainSortIndexes.contains(typePrefix);
 }
 
-pub fn createWriteSortIndex(name: [7]u8, len: u16, start: u16, txn: ?*c.MDB_txn) ?SortIndex {
+pub fn createWriteSortIndex(name: [7]u8, start: u16, txn: ?*c.MDB_txn) ?SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
+    var len: u16 = 0;
+    // name3 is field
+    if (name[3] == 1) {
+        len = getReadSortIndex(name).?.len;
+    }
     errors.mdbCheck(c.mdb_dbi_open(txn, &name, 0, &dbi)) catch {
         return null;
     };

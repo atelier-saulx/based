@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Envs = @import("env/env.zig");
-const stat = @import("env/stat.zig").stat;
+const Stat = @import("env/stat.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
 
@@ -36,7 +36,10 @@ pub fn registerFunction(
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     registerFunction(env, exports, "createEnv", createEnv) catch return null;
-    registerFunction(env, exports, "stat", stat) catch return null;
+    registerFunction(env, exports, "stat", Stat.stat) catch return null;
+
+    registerFunction(env, exports, "tester", Stat.tester) catch return null;
+
     registerFunction(env, exports, "getQueryById", Query.getQueryId) catch return null;
     registerFunction(env, exports, "getQueryByIds", Query.getQueryIds) catch return null;
     registerFunction(env, exports, "getQuery", Query.getQuery) catch return null;
