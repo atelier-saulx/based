@@ -26,6 +26,7 @@ pub fn getFields(
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
         includeIterator += 1;
+
         const operation = include[includeIterator..];
 
         if (field == 255) {
