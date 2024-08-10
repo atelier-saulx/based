@@ -75,16 +75,15 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
 
         if (item.field == 0) {
             if (item.includeMain.len != 0) {
-                var selectiveMainPos: usize = 2;
+                var mainPos: usize = 2;
                 var mainU8 = item.val.?;
-                while (selectiveMainPos < item.includeMain.len) {
-                    // TODO make fn
-                    const start: u16 = std.mem.readInt(u16, @ptrCast(item.includeMain[selectiveMainPos .. selectiveMainPos + 2]), .little);
-                    const len: u16 = std.mem.readInt(u16, @ptrCast(item.includeMain[selectiveMainPos + 2 .. selectiveMainPos + 4]), .little);
-                    const end: u16 = len + start;
-                    @memcpy(dataU8[lastPos .. lastPos + len], mainU8[start..end].ptr);
+                while (mainPos < item.includeMain.len) {
+                    const operation = item.includeMain[mainPos..];
+                    const start: u16 = std.mem.readInt(u16, operation[0..2], .little);
+                    const len: u16 = std.mem.readInt(u16, operation[2..4], .little);
+                    @memcpy(dataU8[lastPos .. lastPos + len], mainU8[start .. start + len]);
                     lastPos += len;
-                    selectiveMainPos += 4;
+                    mainPos += 4;
                 }
             } else {
                 @memcpy(
@@ -94,10 +93,12 @@ pub fn createResultsBuffer(ctx: QueryCtx, env: c.napi_env, total_size: usize, to
                 lastPos += item.val.?.len;
             }
         } else {
-            const x: [2]u8 = @bitCast(@as(u16, @truncate(item.val.?.len)));
-
-            dataU8[lastPos] = x[0];
-            dataU8[lastPos + 1] = x[1];
+            std.mem.writeInt(
+                u16,
+                dataU8[lastPos..][0..2],
+                @as(u16, @truncate(item.val.?.len)),
+                .little,
+            );
             lastPos += 2;
             @memcpy(
                 dataU8[lastPos .. lastPos + item.val.?.len],

@@ -24,14 +24,14 @@ pub fn getFields(
     var main: ?[]u8 = null;
 
     includeField: while (includeIterator < include.len) {
-        const operation = include[includeIterator..];
-        const field: u8 = operation[0];
+        const field: u8 = include[includeIterator];
         includeIterator += 1;
+        const operation = include[includeIterator..];
 
         if (field == 255) {
-            const hasFields: bool = operation[1] == 1;
-            const refSize = std.mem.readInt(u16, operation[2..][0..2], .little);
-            const singleRef = operation[4 .. 4 + refSize];
+            const hasFields: bool = operation[0] == 1;
+            const refSize = std.mem.readInt(u16, operation[1..3], .little);
+            const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
                 main = db.getField(id, 0, typePrefix, currentShard, ctx.id);
@@ -48,9 +48,9 @@ pub fn getFields(
         }
 
         if (field == 0) {
-            const mainIncludeSize = std.mem.readInt(u16, operation[1..][0..2], .little);
+            const mainIncludeSize = std.mem.readInt(u16, operation[0..2], .little);
             if (mainIncludeSize != 0) {
-                includeMain = operation[3 .. 3 + mainIncludeSize];
+                includeMain = operation[2 .. 2 + mainIncludeSize];
             }
             includeIterator += 2 + mainIncludeSize;
         }
