@@ -9,27 +9,25 @@ const readInt = @import("../utils.zig").readInt;
 const Modify = @import("./ctx.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
-const getShard = Modify.getShard;
+const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn createField(ctx: ModifyCtx, batch: []u8) usize {
+pub fn createField(ctx: ModifyCtx, batch: []u8) !usize {
     const operationSize = readInt(u32, batch, 0);
-    const shard = getShard(ctx).?;
+    const shard = try getOrCreateShard(ctx);
     const size = operationSize + 4;
     const data = batch[4..size];
-
-    db.writeField(ctx.id, data, shard) catch {};
+    try db.writeField(ctx.id, data, shard);
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             var it = sort.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |start| {
-                const sortIndex = getSortIndex(ctx, start.*).?;
-                sort.writeField(ctx.id, data, sortIndex);
+                const sortIndex = try getSortIndex(ctx, start.*);
+                try sort.writeField(ctx.id, data, sortIndex.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
+        try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
-
     return size;
 }

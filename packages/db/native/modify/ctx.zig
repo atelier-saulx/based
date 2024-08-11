@@ -1,6 +1,6 @@
 const std = @import("std");
 const db = @import("../db/db.zig");
-const dbSort = @import("../db/sort.zig");
+const sort = @import("../db/sort.zig");
 const c = @import("../c.zig");
 
 pub const ModifyCtx = struct {
@@ -8,13 +8,13 @@ pub const ModifyCtx = struct {
     typeId: db.TypeId,
     id: u32,
     currentShard: u16,
-    shards: *db.WriteShards,
+    shards: *db.Shards,
     txn: *c.MDB_txn,
-    currentSortIndex: ?dbSort.SortIndex,
-    sortIndexes: *std.AutoHashMap(dbSort.SortDbiName, dbSort.SortIndex),
+    currentSortIndex: ?sort.SortIndex,
+    sortIndexes: *sort.Indexes,
 };
 
-pub fn getShard(ctx: ModifyCtx) ?db.Shard {
+pub fn getOrCreateShard(ctx: ModifyCtx) !db.Shard {
     const dbiName = db.getName(ctx.typeId, ctx.field, ctx.currentShard);
     var shard = ctx.shards.get(dbiName);
     if (shard == null) {
@@ -25,15 +25,15 @@ pub fn getShard(ctx: ModifyCtx) ?db.Shard {
             };
         }
     }
-    return shard;
+    return shard.?;
 }
 
-pub fn getSortIndex(ctx: ModifyCtx, start: u16) ?dbSort.SortIndex {
-    const sortIndexName = dbSort.getSortName(ctx.typeId, ctx.field, start);
-    if (dbSort.hasReadSortIndex(sortIndexName)) {
+pub fn getSortIndex(ctx: ModifyCtx, start: u16) !?sort.SortIndex {
+    const sortIndexName = sort.getSortName(ctx.typeId, ctx.field, start);
+    if (sort.hasReadSortIndex(sortIndexName)) {
         var sortIndex = ctx.sortIndexes.get(sortIndexName);
         if (sortIndex == null) {
-            sortIndex = dbSort.createWriteSortIndex(sortIndexName, ctx.txn);
+            sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.txn);
             ctx.sortIndexes.put(sortIndexName, sortIndex.?) catch {
                 return null;
             };

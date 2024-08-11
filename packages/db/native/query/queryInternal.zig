@@ -7,7 +7,7 @@ const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
-const dbSort = @import("../db/sort.zig");
+const sort = @import("../db/sort.zig");
 const utils = @import("../utils.zig");
 
 // make in fns
@@ -101,47 +101,45 @@ pub fn getQueryInternal(
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
-        const sort = try napi.getBuffer("sort", env, args[6]);
-        const sortIndex = dbSort.getOrCreateReadSortIndex(typePrefix, sort, ctx.id, lastId);
+        const sortBuffer = try napi.getBuffer("sort", env, args[6]);
 
-        // pass this to the fn
+        const sortIndex = try sort.getOrCreateReadSortIndex(typePrefix, sortBuffer, ctx.id, lastId);
 
-        if (sortIndex != null) {
-            var end: bool = false;
-            var flag: c_uint = c.MDB_FIRST;
-            if (queryType == 4) {
-                flag = c.MDB_LAST;
+        var end: bool = false;
+        var flag: c_uint = c.MDB_FIRST;
+        if (queryType == 4) {
+            flag = c.MDB_LAST;
+        }
+
+        var first: bool = true;
+        checkItem: while (!end and total_results < offset + limit) {
+            var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
+                end = true;
+                break;
+            };
+            if (first) {
+                first = false;
+                if (queryType == 4) {
+                    flag = c.MDB_PREV;
+                } else {
+                    flag = c.MDB_NEXT;
+                }
             }
-            var first: bool = true;
-            checkItem: while (!end and total_results < offset + limit) {
-                var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdb(c.mdb_cursor_get(sortIndex.?.cursor, &k, &v, flag)) catch {
-                    end = true;
-                    break;
-                };
-                if (first) {
-                    first = false;
-                    if (queryType == 4) {
-                        flag = c.MDB_PREV;
-                    } else {
-                        flag = c.MDB_NEXT;
-                    }
-                }
-                const id = std.mem.readInt(u32, db.data(v)[0..4], .little);
-                currentShard = db.idToShard(id);
-                if (!filter(ctx.id, id, typePrefix, conditions, currentShard)) {
-                    continue :checkItem;
-                }
-                const size = try getFields(ctx, id, typePrefix, null, include, currentShard, 0);
-                if (size > 0) {
-                    total_size += size;
-                    total_results += 1;
-                }
+            const id = std.mem.readInt(u32, db.data(v)[0..4], .little);
+            currentShard = db.idToShard(id);
+            if (!filter(ctx.id, id, typePrefix, conditions, currentShard)) {
+                continue :checkItem;
+            }
+            const size = try getFields(ctx, id, typePrefix, null, include, currentShard, 0);
+            if (size > 0) {
+                total_size += size;
+                total_results += 1;
             }
         }
     }
 
-    c.mdb_txn_reset(readTxn);
+    db.resetTxn(readTxn);
     return results.createResultsBuffer(ctx, env, total_size, total_results);
 }

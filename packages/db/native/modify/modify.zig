@@ -4,7 +4,7 @@ const errors = @import("../errors.zig");
 const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const dbSort = @import("../db/sort.zig");
+const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
@@ -33,8 +33,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     defer arena.deinit();
 
     const allocator = arena.allocator();
-    var shards = std.AutoHashMap([6]u8, db.Shard).init(allocator);
-    var sortIndexes = std.AutoHashMap(dbSort.SortDbiName, dbSort.SortIndex).init(allocator);
+    var shards = db.Shards.init(allocator);
+    var sortIndexes = sort.Indexes.init(allocator);
 
     const txn = try db.createTransaction(false);
 
@@ -60,7 +60,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.field = operation[0];
             i = i + 2;
             if (ctx.field != 0) {
-                ctx.currentSortIndex = getSortIndex(ctx, 0);
+                ctx.currentSortIndex = try getSortIndex(ctx, 0);
             } else {
                 ctx.currentSortIndex = null;
             }
@@ -75,13 +75,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.typeId[1] = batch[i + 2];
             i = i + 3;
         } else if (operationType == 3) {
-            i += createField(ctx, operation) + 1;
+            i += try createField(ctx, operation) + 1;
         } else if (operationType == 4) {
-            i += deleteField(ctx) + 1;
+            i += try deleteField(ctx) + 1;
         } else if (operationType == 5) {
-            i += updatePartialField(ctx, operation) + 1;
+            i += try updatePartialField(ctx, operation) + 1;
         } else if (operationType == 6) {
-            i += updateField(ctx, operation) + 1;
+            i += try updateField(ctx, operation) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
