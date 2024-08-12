@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 1e6
+const amount = 10e6
 
 const d = Date.now()
 
