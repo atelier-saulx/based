@@ -67,7 +67,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().data.toObject(), [
+  t.deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -112,7 +112,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().data.toObject(), [
+  t.deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -141,7 +141,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp', 2).get().data.toObject(), {
+  t.deepEqual(db.query('snurp', 2).get().toObject(), {
     a: 0,
     b: 0,
     c: 0,
@@ -155,7 +155,7 @@ test.serial('update', async (t) => {
   })
 
   // for individual queries combine them
-  t.deepEqual(db.query('snurp', [2, 1]).get().data.toObject(), [
+  t.deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
     {
       a: 1,
       b: 2,

@@ -101,7 +101,7 @@ test.serial('single reference query', async (t) => {
 
   const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
-  t.deepEqual(result2.data.toObject(), [
+  t.deepEqual(result2.toObject(), [
     {
       id: 1,
       smurp: 0,
@@ -118,7 +118,7 @@ test.serial('single reference query', async (t) => {
     .include('lilBlup', 'flap')
     .get()
 
-  t.deepEqual(result.data.toObject(), [
+  t.deepEqual(result.toObject(), [
     {
       id: 4,
       lilBlup: {

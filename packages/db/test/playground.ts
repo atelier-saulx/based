@@ -142,9 +142,9 @@ console.log(
 
 // logger(result.query.includeDef)
 
-// console.log(new Uint8Array(result.buffer), result.data.length)
+// console.log(new Uint8Array(result.buffer), result.length)
 
-// console.dir(result.data.toObject(), { depth: 10 })
+// console.dir(result.toObject(), { depth: 10 })
 
 // db.create('user', {
 //   // myBlup: blup,

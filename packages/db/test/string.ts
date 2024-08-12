@@ -56,7 +56,7 @@ test.serial('string', async (t) => {
   db.drain()
 
   const result = db.query('user').get()
-  t.deepEqual(result.data.toObject(), [
+  t.deepEqual(result.toObject(), [
     {
       id: 1,
       name: '',
@@ -164,7 +164,7 @@ test.serial.only('string + refs', async (t) => {
     .range(0, 1)
     .get()
 
-  t.deepEqual(result.data.toObject(), [
+  t.deepEqual(result.toObject(), [
     {
       id: 1,
       user: {

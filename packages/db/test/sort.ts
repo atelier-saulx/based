@@ -74,7 +74,7 @@ test.serial('sort', async (t) => {
       .sort('age', 'desc')
       .include('email', 'age')
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
@@ -90,7 +90,7 @@ test.serial('sort', async (t) => {
       .sort('age', 'asc')
       .include('email', 'age')
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -106,7 +106,7 @@ test.serial('sort', async (t) => {
       .sort('email', 'asc')
       .include('email', 'age')
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -122,7 +122,7 @@ test.serial('sort', async (t) => {
       .sort('email', 'desc')
       .include('email', 'age')
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -141,12 +141,7 @@ test.serial('sort', async (t) => {
   db.drain()
 
   t.deepEqual(
-    db
-      .query('user')
-      .sort('email')
-      .include('email', 'age')
-      .get()
-      .data.toObject(),
+    db.query('user').sort('email').include('email', 'age').get().toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -158,7 +153,7 @@ test.serial('sort', async (t) => {
   )
 
   t.deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().data.toObject(),
+    db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -176,12 +171,7 @@ test.serial('sort', async (t) => {
   db.drain()
 
   t.deepEqual(
-    db
-      .query('user')
-      .sort('email')
-      .include('email', 'age')
-      .get()
-      .data.toObject(),
+    db.query('user').sort('email').include('email', 'age').get().toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 6, email: 'dd@dd.dd', age: 999 },
@@ -204,7 +194,7 @@ test.serial('sort', async (t) => {
   db.drain()
 
   t.deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().data.toObject(),
+    db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -222,7 +212,7 @@ test.serial('sort', async (t) => {
   db.drain()
 
   t.deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().data.toObject(),
+    db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },
       { id: 5, email: 'z@z.z', age: 1 },
