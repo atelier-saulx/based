@@ -12,7 +12,7 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn updateField(ctx: ModifyCtx, batch: []u8) !usize {
+pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
     // UPDATE WHOLE FIELD
     const operationSize = readInt(u32, batch, 0);
     const size = operationSize + 4;
@@ -39,7 +39,7 @@ pub fn updateField(ctx: ModifyCtx, batch: []u8) !usize {
     return size;
 }
 
-pub fn updatePartialField(ctx: ModifyCtx, batch: []u8) !usize {
+pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
     const operationSize = readInt(u32, batch, 0);
     const size = operationSize + 4;
     const shard = try getOrCreateShard(ctx);

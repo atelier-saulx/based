@@ -33,8 +33,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     defer arena.deinit();
 
     const allocator = arena.allocator();
-    var shards = db.Shards.init(allocator);
-    var sortIndexes = sort.Indexes.init(allocator);
 
     const txn = try db.createTransaction(false);
 
@@ -47,8 +45,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .currentShard = 0,
         .txn = txn.?,
         .currentSortIndex = null,
-        .shards = &shards,
-        .sortIndexes = &sortIndexes,
+        .shards = db.Shards.init(allocator),
+        .sortIndexes = sort.Indexes.init(allocator),
     };
 
     while (i < size) {
@@ -60,7 +58,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.field = operation[0];
             i = i + 2;
             if (ctx.field != 0) {
-                ctx.currentSortIndex = try getSortIndex(ctx, 0);
+                ctx.currentSortIndex = try getSortIndex(&ctx, 0);
             } else {
                 ctx.currentSortIndex = null;
             }
@@ -75,13 +73,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.typeId[1] = batch[i + 2];
             i = i + 3;
         } else if (operationType == 3) {
-            i += try createField(ctx, operation) + 1;
+            i += try createField(&ctx, operation) + 1;
         } else if (operationType == 4) {
-            i += try deleteField(ctx) + 1;
+            i += try deleteField(&ctx) + 1;
         } else if (operationType == 5) {
-            i += try updatePartialField(ctx, operation) + 1;
+            i += try updatePartialField(&ctx, operation) + 1;
         } else if (operationType == 6) {
-            i += try updateField(ctx, operation) + 1;
+            i += try updateField(&ctx, operation) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;

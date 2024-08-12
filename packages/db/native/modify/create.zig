@@ -12,7 +12,7 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn createField(ctx: ModifyCtx, batch: []u8) !usize {
+pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     const operationSize = readInt(u32, batch, 0);
     const shard = try getOrCreateShard(ctx);
     const size = operationSize + 4;

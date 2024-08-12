@@ -50,8 +50,6 @@ inline fn getQueryInternal(
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
-
-    // this part can be a fn
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
@@ -94,6 +92,7 @@ inline fn getQueryInternal(
         const include = try napi.getBuffer("include", env, args[3]);
         try QueryTypes.queryIds(ids, &ctx, typeId, conditions, include);
     } else if (queryType == 3 or queryType == 4) {
+        // query sorted
         const args = try napi.getArgs(7, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);

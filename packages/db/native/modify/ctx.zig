@@ -8,13 +8,13 @@ pub const ModifyCtx = struct {
     typeId: db.TypeId,
     id: u32,
     currentShard: u16,
-    shards: *db.Shards,
+    shards: db.Shards,
     txn: *c.MDB_txn,
     currentSortIndex: ?sort.SortIndex,
-    sortIndexes: *sort.Indexes,
+    sortIndexes: sort.Indexes,
 };
 
-pub fn getOrCreateShard(ctx: ModifyCtx) !db.Shard {
+pub fn getOrCreateShard(ctx: *ModifyCtx) !db.Shard {
     const dbiName = db.getName(ctx.typeId, ctx.field, ctx.currentShard);
     var shard = ctx.shards.get(dbiName);
     if (shard == null) {
@@ -28,7 +28,7 @@ pub fn getOrCreateShard(ctx: ModifyCtx) !db.Shard {
     return shard.?;
 }
 
-pub fn getSortIndex(ctx: ModifyCtx, start: u16) !?sort.SortIndex {
+pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?sort.SortIndex {
     const sortIndexName = sort.getSortName(ctx.typeId, ctx.field, start);
     if (sort.hasReadSortIndex(sortIndexName)) {
         var sortIndex = ctx.sortIndexes.get(sortIndexName);
