@@ -14,7 +14,7 @@ const IncludeError = error{
 };
 
 pub fn getSingleRefFields(
-    ctx: QueryCtx,
+    ctx: *QueryCtx,
     include: []u8,
     main: []u8,
     refLvl: u8,

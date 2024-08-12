@@ -21,24 +21,22 @@ pub const Result = struct {
 const MAX_REF = 65025;
 
 pub fn createResultsBuffer(
-    ctx: QueryCtx,
+    ctx: *QueryCtx,
     env: c.napi_env,
-    total_size: usize,
-    total_results: usize,
 ) !c.napi_value {
     var resultBuffer: ?*anyopaque = undefined;
     var result: c.napi_value = undefined;
 
-    if (c.napi_create_buffer(env, total_size + 4, &resultBuffer, &result) != c.napi_ok) {
+    if (c.napi_create_buffer(env, ctx.size + 4, &resultBuffer, &result) != c.napi_ok) {
         return null;
     }
 
-    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. total_size + 4];
+    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.totalResults + 4];
     var lastRef: u16 = MAX_REF;
     var lastRefLvl: u8 = 0;
     var i: usize = 4;
 
-    writeInt(u32, data, 0, total_results);
+    writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
         if (item.start != null) {

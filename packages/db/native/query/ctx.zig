@@ -2,6 +2,8 @@ const std = @import("std");
 const results = @import("./results.zig");
 
 pub const QueryCtx = struct {
-    results: *std.ArrayList(results.Result),
+    results: std.ArrayList(results.Result),
     id: u32,
+    size: usize,
+    totalResults: usize,
 };

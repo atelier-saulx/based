@@ -10,7 +10,7 @@ const readInt = @import("../../utils.zig").readInt;
 const getField = db.getField;
 
 pub fn getFields(
-    ctx: QueryCtx,
+    ctx: *QueryCtx,
     id: u32,
     typeId: db.TypeId,
     start: ?u16,
