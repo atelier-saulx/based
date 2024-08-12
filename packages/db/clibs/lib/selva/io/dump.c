@@ -162,7 +162,9 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (any.reference && any.reference->dst) {
-                io->sdb_write(&((uint32_t){ 1 }), sizeof(uint32_t), 1, io); /* nr_refs */
+                const sdb_arr_len_t nr_refs = 1;
+
+                io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
                 save_fields_reference(io, any.reference);
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
@@ -170,7 +172,9 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             if (any.references && any.references->nr_refs) {
-                io->sdb_write(&((uint32_t){ any.references->nr_refs }), sizeof(uint32_t), 1, io); /* nr_refs */
+                const sdb_arr_len_t nr_refs = any.references->nr_refs;
+
+                io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
                 save_fields_references(io, any.references);
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
@@ -181,7 +185,9 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             if (any.weak_references.nr_refs) {
-                io->sdb_write(&((uint32_t){ any.weak_references.nr_refs }), sizeof(uint32_t), 1, io); /* nr_refs */
+                const sdb_arr_len_t nr_refs = any.weak_references.nr_refs;
+
+                io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
                 io->sdb_write(any.weak_references.refs, sizeof(struct SelvaNodeWeakReference), any.weak_references.nr_refs, io);
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
@@ -389,11 +395,18 @@ static void load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selv
 
 static void load_field_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
+    sdb_arr_len_t nr_refs;
+
+    io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     /* TODO load reference */
+    //load_field_reference(io, db, ns, node, fs, field);
 }
 
 static void load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
+    sdb_arr_len_t nr_refs;
+
+    io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     /* TODO load references */
 }
 
