@@ -20,6 +20,7 @@ pub fn initReadTxn() !*c.MDB_txn {
     if (txnCreated) {
         return readTxn;
     }
+    txnCreated = true;
     const x = try createTransaction(true);
     readTxn = x.?;
     return readTxn;
