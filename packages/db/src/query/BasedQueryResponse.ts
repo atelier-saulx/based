@@ -41,6 +41,31 @@ const time = (time: number) => {
   }
 }
 
+export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
+  const length = q.length
+  const max = Math.min(length, nested ? 2 : 10)
+  let str = ''
+  let i = 0
+  for (const x of q) {
+    // @ts-ignore
+    str += inspect(x, { nested: true })
+    i++
+    if (i >= max) {
+      break
+    }
+    str += ',\n'
+  }
+  if (length > max) {
+    str +=
+      ',\n' + picocolors.dim(picocolors.italic(`...${length - max} More items`))
+  }
+  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+  if (nested) {
+    return str
+  }
+  return `${picocolors.bold(`BasedIterable[${q.query.schema.type}]`)} (${q.length}) ${str}`
+}
+
 export class BasedQueryResponse {
   buffer: Buffer
   execTime: number = 0
@@ -60,19 +85,11 @@ export class BasedQueryResponse {
     const target = this.query.id
       ? this.query.schema.type + ':' + this.query.id
       : this.query.schema.type
-
     let str = ''
-
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.size)
-
-    // @ts-ignore
-    const dataStr = inspect(this.data, { nested: true })
-      .replaceAll('\n', '\n  ')
-      .trim()
-
-    str += '\n  data: ' + dataStr
-
+    const dataStr = inspectData(this, true).replaceAll('\n', '\n  ').trim()
+    str += '\n  ' + dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 

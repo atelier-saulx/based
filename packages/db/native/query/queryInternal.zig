@@ -22,7 +22,6 @@ pub fn getQueryInternal(
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var currentShard: u16 = 0;
     var resultsList = std.ArrayList(results.Result).init(allocator);
     const ctx: QueryCtx = .{ .results = &resultsList, .id = db.getQueryId() };
 
@@ -31,6 +30,8 @@ pub fn getQueryInternal(
 
     var total_results: usize = 0;
     var total_size: usize = 0;
+
+    var currentShard: u16 = 0;
 
     if (queryType == 0) {
         // query no sort
