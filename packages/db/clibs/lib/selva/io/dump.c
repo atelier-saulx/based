@@ -371,7 +371,15 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
 
 static void load_field_string(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
-    /* TODO load string */
+    size_t len;
+    struct selva_string *s;
+
+    io->sdb_read(&len, sizeof(len), 1, io);
+    s = selva_string_create(NULL, len, SELVA_STRING_MUTABLE_FIXED);
+    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
+        selva_string_free(s);
+        db_panic("Failed to read string field: %d:%d:%d", node->type, node->node_id, field);
+    }
 }
 
 static void load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
@@ -457,6 +465,7 @@ static void load_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTyp
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             load_field_weak_references(io, db, ns, node, fs, field);
+            break;
         }
     }
 }
