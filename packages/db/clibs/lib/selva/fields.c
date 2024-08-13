@@ -347,29 +347,6 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
 }
 
 /**
- * Set weak reference to fields.
- */
-static int set_weak_reference(const struct SelvaFieldSchema *fs, struct SelvaFields *fields, struct SelvaNode * restrict dst)
-{
-    struct SelvaFieldInfo *nfo;
-    struct SelvaNodeWeakReference weak_ref = {
-        .dst_type = dst->type,
-        .dst_id = dst->node_id,
-    };
-
-    nfo = &fields->fields_map[fs->field];
-    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
-        *nfo = alloc_block(fields, fs);
-    } else if (nfo->type != fs->type) {
-        return SELVA_EINVAL;
-    }
-
-    static_assert(offsetof(struct SelvaNodeReference, dst) == 0);
-    memcpy(nfo2p(fields, nfo), &weak_ref, sizeof(weak_ref));
-    return 0;
-}
-
-/**
  * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
  * @param db Can be NULL if field type is not a strong reference.
  * @param node Can be NULL if field type is not a strong reference.
@@ -399,6 +376,11 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
+        /*
+         * Presumable we want to only use weak refs for edge references that can't use
+         * the normal refs.
+         */
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
@@ -416,12 +398,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_REFERENCES:
         /* TODO */
         return SELVA_ENOTSUP;
-    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        /*
-         * Presumable we want to only use weak refs for edge references that can't use
-         * the normal refs.
-         */
-        return set_weak_reference(fs, fields, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO Implement weak ref */
         return SELVA_ENOTSUP;
