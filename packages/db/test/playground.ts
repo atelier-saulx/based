@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 1e6
+const amount = 10e6
 
 const d = Date.now()
 
@@ -78,7 +78,7 @@ for (let i = 0; i < amount; i++) {
     db.create('user', {
       // myBlup: blup,
       // age: amount - i
-      age: i, // ~~(Math.random() * 99) + 1,
+      age: ~~(Math.random() * 99) + 1,
       name: 'Mr ' + i,
       // burp: 66,
       // snurp: 'derp derp',
@@ -210,6 +210,15 @@ console.log(
 // }
 
 // db.stats()
+
+const ids = []
+
+for (let i = 1; i < 1001; i++) {
+  ids.push(i)
+}
+
+// include range?
+console.log(db.query('user', ids).include('name', 'age').sort('name').get())
 
 db.tester()
 

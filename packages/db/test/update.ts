@@ -184,7 +184,7 @@ test.serial('update', async (t) => {
 
   // ------------------------------
   const ids = []
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 1; i <= 1e6; i++) {
     ids.push(i)
     db.create('snurp', {
       a: i,
@@ -194,16 +194,18 @@ test.serial('update', async (t) => {
       },
     })
   }
+
   db.drain()
 
-  console.log(db.query('snurp', ids).get())
+  t.is(db.query('snurp', ids).get().length, 1e6)
+
+  t.is(db.query('snurp', ids).range(10, 100).get().length, 90)
 
   let total = 0
   let len = 0
   for (var j = 0; j < 1; j++) {
     let x = 0
     const d = Date.now()
-
     for (var i = 0; i < 1e5; i++) {
       x += db.query('snurp', i).include('a').get().execTime
     }
@@ -212,5 +214,6 @@ test.serial('update', async (t) => {
     len++
   }
 
+  // ---
   console.log('TOTAL', 'db time', total / len, 'ms', 0)
 })
