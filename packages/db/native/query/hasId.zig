@@ -1,15 +1,15 @@
 const std = @import("std");
 
-pub fn hasId(id: u32, ids: []u8) bool {
-    var hasIdBool = false;
+pub inline fn hasId(id: u32, ids: []u32, last: *usize) bool {
     var i: usize = 0;
-    // TODO: absolute sloweest way of looping trough ids...
-    while (i <= ids.len) : (i += 4) {
-        const id2 = std.mem.readInt(u32, ids[i..][0..4], .little);
+    const l = last.*;
+    while (i <= l) : (i += 1) {
+        const id2 = ids[i];
         if (id2 == id) {
-            hasIdBool = true;
-            break;
+            ids[i] = ids[l];
+            last.* -= 1;
+            return true;
         }
     }
-    return hasIdBool;
+    return false;
 }

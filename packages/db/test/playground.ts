@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 10e6
+const amount = 1e6
 
 const d = Date.now()
 
@@ -211,13 +211,160 @@ console.log(
 
 // db.stats()
 
+console.log('------- DERP')
 const ids = []
 
-for (let i = 1; i < 1001; i++) {
-  ids.push(i)
+const flap: Set<number> = new Set()
+
+for (let i = 1; i < 10; i++) {
+  flap.add(~~(Math.random() * 1e6))
+  // ids.push(~~(Math.random() * 1e6))
 }
 
-// include range?
+// has to be prob done by the query function itself.. uniqueness is required
+ids.push(...flap.values())
+
+const x = [
+  new Uint8Array([5, 6, 7, 8]),
+  new Uint8Array([5, 6, 7, 9]),
+  // new Uint8Array([2, 0, 0, 1]),
+  // new Uint8Array([2, 0, 6, 1]),
+  // new Uint8Array([2, 0, 0, 2]),
+  // new Uint8Array([2, 0, 1, 1]),
+  // new Uint8Array([2, 0, 1, 2]),
+  // new Uint8Array([1, 2, 3, 1]),
+  // new Uint8Array([1, 9, 7, 3]),
+]
+
+for (let i = 0; i < 50; i++) {
+  const bla = Buffer.allocUnsafe(4)
+  // for small numbers BE is better for large numbers LE is better
+  bla.writeUInt32LE(Math.floor(Math.random() * 100))
+  // read in reverse
+  // worse length faster check
+  const s = new Uint8Array([bla[0], bla[1], bla[2], bla[3]])
+  x.push(s)
+}
+
+// for (let i = 0; i < 1e4; i++) {
+//   const bla = Buffer.allocUnsafe(4)
+//   bla.writeUInt32LE(i)
+//   const s = new Uint8Array([bla[0], bla[1], bla[2], bla[3]])
+//   x.push(s)
+// }
+
+type Flap = any
+
+var total = 0
+const make = (x: Uint8Array, t: Flap, nr: number): Flap => {
+  if (!t[x[nr]]) {
+    t.size++
+    total++
+    t[x[nr]] =
+      nr === 3
+        ? {
+            parent: t,
+            size: 0,
+            total: 1,
+            branchSize: 1,
+          }
+        : {
+            parent: t,
+            size: 0,
+            total: 1,
+            branchSize: 1,
+          }
+    let p = t
+    while (p) {
+      p.branchSize++
+      p = p.parent
+    }
+  } else {
+    t[x[nr]].total++
+  }
+  if (nr < 3) {
+    // add cnt that you can bring down
+    make(x, t[x[nr]], nr + 1)
+  }
+  return t
+}
+
+const t: Flap = { size: 0, branchSize: 0, total: 0 }
+
+for (const y of x) {
+  make(y, t, 0)
+}
+
+const log = (t: Flap, index: string) => {
+  for (const key in t) {
+    if (
+      key !== 'parent' &&
+      key !== 'size' &&
+      key !== 'branchSize' &&
+      key !== 'total'
+    ) {
+      console.log(
+        `${index} ${key} :`,
+        `${t[key].branchSize} ${t[key].total > 1 ? `[${t[key].total}]` : t[key].total}`,
+      )
+      log(t[key], index + '  ')
+    }
+  }
+}
+
+console.log({ total, len: x.length * 4, t: Object.keys(t).length - 4 })
+console.log('---------------------------')
+log(t, '')
+console.log('---------------------------')
+
+// const buf = Buffer.allocUnsafe(total)
+// let i = 0
+// const walkMakeBuf = (t: Flap, nr: number) => {
+//   buf.writeUInt16LE(t.size, i)
+//   i += 2
+//   for (const key in t.c) {
+//     buf[i] += Number(key)
+//     i++
+//   }
+//   if (nr < 3) {
+//     for (const key in t.c) {
+//       walkMakeBuf(t.c[key], nr + 1)
+//     }
+//   }
+// }
+
+// walkMakeBuf(t, 0)
+
+// console.log(new Uint8Array(buf))
+
+// const getNumber = (id: Uint8Array): boolean => {
+//   var bufI = 0
+//   for (var j = 0; j < 4; j++) {
+//     const len = buf.readUint16LE(bufI)
+//     bufI += 2
+//     var bb = false
+//     console.log('GO', { len, bufI })
+//     for (let s = 0; s < len; s++) {
+//       if (buf[bufI] == id[j]) {
+//         if (j === 3) {
+//           return true
+//         }
+//         console.log('found', bufI, buf[bufI], 'j:', j, id[j])
+//         bufI += len - s
+//         bb = true
+//         break
+//       }
+//       bufI++
+//     }
+//     if (!bb) {
+//       return false
+//     }
+//   }
+//   return false
+// }
+
+// console.log(getNumber(new Uint8Array([2, 0, 1, 1])))
+
 console.log(db.query('user', ids).include('name', 'age').sort('name').get())
 
 db.tester()

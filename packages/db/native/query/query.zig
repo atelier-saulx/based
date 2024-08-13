@@ -123,7 +123,7 @@ inline fn getQueryInternal(
         const lastId = try napi.getInt32("last_id", env, args[2]);
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
-        const ids = try napi.getBuffer("ids", env, args[5]);
+        const ids = try napi.getBufferU32("ids", env, args[5]);
         const include = try napi.getBuffer("include", env, args[6]);
         const sortBuffer = try napi.getBuffer("sort", env, args[7]);
         try QueryTypes.queryIdsSort(

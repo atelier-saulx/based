@@ -30,6 +30,16 @@ pub fn getBuffer(comptime name: []const u8, env: c.napi_env, value: c.napi_value
     return buffer[0..size];
 }
 
+pub fn getBufferU32(comptime name: []const u8, env: c.napi_env, value: c.napi_value) ![]u32 {
+    var buffer: [*]u32 = undefined;
+    var size: usize = undefined;
+    if (c.napi_get_buffer_info(env, value, @ptrCast(&buffer), @ptrCast(&size)) != c.napi_ok) {
+        jsThrow(env, "Cannot get buffer for variable: " ++ name);
+        return errors.Napi.CannotGetBuffer;
+    }
+    return buffer[0 .. size / 4];
+}
+
 pub fn getString(comptime name: []const u8, env: c.napi_env, value: c.napi_value) ![]u8 {
     var size: usize = undefined;
     if (c.napi_get_value_string_utf8(env, value, null, 0, @ptrCast(&size)) != c.napi_ok) {

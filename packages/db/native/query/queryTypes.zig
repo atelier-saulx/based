@@ -56,7 +56,7 @@ const mem = std.mem;
 
 pub fn queryIdsSort(
     comptime queryType: comptime_int,
-    ids: []u8,
+    ids: []u32,
     ctx: *QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
@@ -74,6 +74,9 @@ pub fn queryIdsSort(
     }
     var currentShard: u16 = 0;
     var first: bool = true;
+
+    var lastCheck: usize = ids.len;
+
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -89,9 +92,9 @@ pub fn queryIdsSort(
                 flag = c.MDB_NEXT;
             }
         }
-        const id = std.mem.readInt(u32, db.data(v)[0..4], .little);
+        const id = utils.readInt(u32, db.data(v), 0);
 
-        if (!hasId(id, ids)) {
+        if (!hasId(id, ids, &lastCheck)) {
             continue :checkItem;
         }
 
@@ -99,6 +102,7 @@ pub fn queryIdsSort(
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
         }
+
         const size = try getFields(ctx, id, typeId, null, include, currentShard, 0);
         if (size > 0) {
             ctx.size += size;
@@ -167,7 +171,7 @@ pub fn querySort(
                 flag = c.MDB_NEXT;
             }
         }
-        const id = std.mem.readInt(u32, db.data(v)[0..4], .little);
+        const id = utils.readInt(u32, db.data(v), 0);
         currentShard = db.idToShard(id);
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
