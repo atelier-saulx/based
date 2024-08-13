@@ -236,7 +236,6 @@ test.serial('sort', async (t) => {
   )
 
   // ------------------------------
-  console.info('here!')
   const ids = []
   for (let i = 0; i < 10; i++) {
     ids.push(i)
@@ -248,7 +247,38 @@ test.serial('sort', async (t) => {
   }
   db.drain()
 
-  console.log(
+  t.deepEqual(
     db.query('user', ids).include('name', 'age').sort('age').get().toObject(),
+    [
+      { id: 6, name: 'mr x', age: 0 },
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 9, name: 'mr 2', age: 302 },
+    ],
+  )
+
+  t.deepEqual(
+    db
+      .query('user', ids)
+      .include('name', 'age')
+      .sort('age', 'desc')
+      .get()
+      .toObject(),
+    [
+      { id: 9, name: 'mr 2', age: 302 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 6, name: 'mr x', age: 0 },
+    ],
   )
 })

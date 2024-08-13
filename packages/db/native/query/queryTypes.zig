@@ -9,6 +9,7 @@ const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const utils = @import("../utils.zig");
+const hasId = @import("./hasId.zig").hasId;
 
 pub fn queryId(
     id: u32,
@@ -65,11 +66,10 @@ pub fn queryIdsSort(
     _: u32,
     limit: u32,
 ) !void {
-    std.debug.print("Hello {any} {any} {d} limit {d}\n", .{ sortBuffer, queryType, lastId, limit });
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
-    if (queryType == 4) {
+    if (queryType == 5) {
         flag = c.MDB_LAST;
     }
     var currentShard: u16 = 0;
@@ -91,22 +91,11 @@ pub fn queryIdsSort(
         }
         const id = std.mem.readInt(u32, db.data(v)[0..4], .little);
 
-        var i: u32 = 0;
-        var hasId = false;
-        // TODO: absolute sloweest way of looping trough ids...
-        while (i <= ids.len) : (i += 4) {
-            const id2 = std.mem.readInt(u32, ids[i..][0..4], .little);
-            if (id2 == id) {
-                hasId = true;
-                break;
-            }
-        }
-        if (!hasId) {
+        if (!hasId(id, ids)) {
             continue :checkItem;
         }
 
         currentShard = db.idToShard(id);
-
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
         }
