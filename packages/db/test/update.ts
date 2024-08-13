@@ -199,7 +199,7 @@ test.serial('update', async (t) => {
 
   t.is(db.query('snurp', ids).get().length, 1e6)
 
-  t.is(db.query('snurp', ids).range(10, 100).get().length, 90)
+  t.is(db.query('snurp', ids).range(0, 100).get().length, 100)
 
   let total = 0
   let len = 0

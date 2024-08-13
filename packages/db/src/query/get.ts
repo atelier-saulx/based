@@ -22,21 +22,33 @@ export const get = (query: Query): BasedQueryResponse => {
   const d = performance.now()
 
   if (query.ids) {
-    const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
-    for (let i = 0; i < query.ids.length; i++) {
-      idsBuffer.writeUInt32LE(query.ids[i], i * 4)
-    }
+    const start = query.offset ?? 0
+    const end = query.limit ?? query.ids.length
+
     if (query.sortBuffer) {
+      const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
+      for (let i = 0; i < query.ids.length; i++) {
+        idsBuffer.writeUInt32LE(query.ids[i], i * 4)
+      }
       result = query.db.native.getQueryIdsSort(
         conditionsBuffer,
         query.schema.prefixString,
+        query.schema.lastId,
+        start,
+        end,
         idsBuffer,
         includeBuffer,
-        query.schema.lastId,
         query.sortBuffer,
         query.sortOrder,
       )
     } else {
+      if (end < query.ids.length) {
+        query.ids = query.ids.slice(0, end)
+      }
+      const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
+      for (let i = 0; i < query.ids.length; i++) {
+        idsBuffer.writeUInt32LE(query.ids[i], i * 4)
+      }
       result = query.db.native.getQueryByIds(
         conditionsBuffer,
         query.schema.prefixString,

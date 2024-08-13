@@ -62,8 +62,10 @@ pub fn queryIdsSort(
     include: []u8,
     lastId: u32,
     sortBuffer: []u8,
+    _: u32,
+    limit: u32,
 ) !void {
-    std.debug.print("Hello {any} {any} {d}\n", .{ sortBuffer, queryType, lastId });
+    std.debug.print("Hello {any} {any} {d} limit {d}\n", .{ sortBuffer, queryType, lastId, limit });
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
@@ -72,7 +74,7 @@ pub fn queryIdsSort(
     }
     var currentShard: u16 = 0;
     var first: bool = true;
-    checkItem: while (!end and ctx.totalResults < ids.len) {
+    checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
@@ -91,7 +93,7 @@ pub fn queryIdsSort(
 
         var i: u32 = 0;
         var hasId = false;
-        // TODO: absolute sloweest wat of looping trough ids...
+        // TODO: absolute sloweest way of looping trough ids...
         while (i <= ids.len) : (i += 4) {
             const id2 = std.mem.readInt(u32, ids[i..][0..4], .little);
             if (id2 == id) {
@@ -104,6 +106,7 @@ pub fn queryIdsSort(
         }
 
         currentShard = db.idToShard(id);
+
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
         }

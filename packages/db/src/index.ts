@@ -97,9 +97,11 @@ export class BasedDb {
     getQueryIdsSort: (
       conditions: Buffer,
       prefix: string,
+      lastId: number,
+      offset: number,
+      limit: number, // def 1k ?
       ids: Buffer,
       includeBuffer: Buffer,
-      lastId: number,
       sort: Buffer,
       sortOrder: 0 | 1,
     ): any => {
@@ -107,18 +109,22 @@ export class BasedDb {
         return dbZig.getQueryIdsSortAsc(
           conditions,
           prefix,
+          lastId,
+          offset,
+          limit,
           ids,
           includeBuffer,
-          lastId,
           sort,
         )
       } else {
         return dbZig.getQueryIdsSortDesc(
           conditions,
           prefix,
+          lastId,
+          offset,
+          limit,
           ids,
           includeBuffer,
-          lastId,
           sort,
         )
       }

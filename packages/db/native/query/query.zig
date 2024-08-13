@@ -117,14 +117,29 @@ inline fn getQueryInternal(
         try QueryTypes.querySort(queryType, &ctx, lastId, offset, limit, typeId, conditions, include, sortBuffer);
     } else if (queryType == 5 or queryType == 6) {
         // query ids sorted
-        const args = try napi.getArgs(6, env, info);
+        const args = try napi.getArgs(8, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
-        const ids = try napi.getBuffer("ids", env, args[2]);
-        const include = try napi.getBuffer("include", env, args[3]);
-        const lastId = try napi.getInt32("last_id", env, args[4]);
-        const sortBuffer = try napi.getBuffer("sort", env, args[5]);
-        try QueryTypes.queryIdsSort(queryType, ids, &ctx, typeId, conditions, include, lastId, sortBuffer);
+
+        const lastId = try napi.getInt32("last_id", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+
+        const ids = try napi.getBuffer("ids", env, args[5]);
+        const include = try napi.getBuffer("include", env, args[6]);
+        const sortBuffer = try napi.getBuffer("sort", env, args[7]);
+        try QueryTypes.queryIdsSort(
+            queryType,
+            ids,
+            &ctx,
+            typeId,
+            conditions,
+            include,
+            lastId,
+            sortBuffer,
+            offset,
+            limit,
+        );
     }
 
     db.resetTxn(readTxn);
