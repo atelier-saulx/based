@@ -222,4 +222,33 @@ test.serial('sort', async (t) => {
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
     ],
   )
+
+  t.deepEqual(
+    db.query('user').sort('age').include('email', 'age').get().toObject(),
+    [
+      { id: 6, email: 'dd@dd.dd', age: 0 },
+      { id: 5, email: 'z@z.z', age: 1 },
+      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+    ],
+  )
+
+  // ------------------------------
+  console.info('here!')
+  const ids = []
+  for (let i = 0; i < 10; i++) {
+    ids.push(i)
+    db.create('user', {
+      name: 'mr ' + i,
+      age: i + 300,
+      email: i + '@z.z',
+    })
+  }
+  db.drain()
+
+  console.log(
+    db.query('user', ids).include('name', 'age').sort('age').get().toObject(),
+  )
 })

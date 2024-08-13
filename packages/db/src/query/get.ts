@@ -26,12 +26,24 @@ export const get = (query: Query): BasedQueryResponse => {
     for (let i = 0; i < query.ids.length; i++) {
       idsBuffer.writeUInt32LE(query.ids[i], i * 4)
     }
-    result = query.db.native.getQueryByIds(
-      conditionsBuffer,
-      query.schema.prefixString,
-      idsBuffer,
-      includeBuffer,
-    )
+    if (query.sortBuffer) {
+      result = query.db.native.getQueryIdsSort(
+        conditionsBuffer,
+        query.schema.prefixString,
+        idsBuffer,
+        includeBuffer,
+        query.schema.lastId,
+        query.sortBuffer,
+        query.sortOrder,
+      )
+    } else {
+      result = query.db.native.getQueryByIds(
+        conditionsBuffer,
+        query.schema.prefixString,
+        idsBuffer,
+        includeBuffer,
+      )
+    }
   } else if (query.id) {
     result = query.db.native.getQueryById(
       conditionsBuffer,

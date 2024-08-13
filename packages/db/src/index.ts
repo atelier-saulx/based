@@ -94,6 +94,35 @@ export class BasedDb {
         )
       }
     },
+    getQueryIdsSort: (
+      conditions: Buffer,
+      prefix: string,
+      ids: Buffer,
+      includeBuffer: Buffer,
+      lastId: number,
+      sort: Buffer,
+      sortOrder: 0 | 1,
+    ): any => {
+      if (sortOrder === 1) {
+        return dbZig.getQueryIdsSortAsc(
+          conditions,
+          prefix,
+          ids,
+          includeBuffer,
+          lastId,
+          sort,
+        )
+      } else {
+        return dbZig.getQueryIdsSortDesc(
+          conditions,
+          prefix,
+          ids,
+          includeBuffer,
+          lastId,
+          sort,
+        )
+      }
+    },
     getQueryById: (
       conditions: Buffer,
       prefix: string,

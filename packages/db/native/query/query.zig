@@ -45,6 +45,20 @@ pub fn getQuerySortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C
     };
 }
 
+pub fn getQueryIdsSortAsc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(5, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(6, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
 inline fn getQueryInternal(
     comptime queryType: comptime_int,
     env: c.napi_env,
@@ -83,7 +97,6 @@ inline fn getQueryInternal(
         const include = try napi.getBuffer("include", env, args[3]);
         try QueryTypes.queryId(id, &ctx, typeId, conditions, include);
     } else if (queryType == 2) {
-        // missing sorted id list
         // ids list
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
@@ -102,6 +115,16 @@ inline fn getQueryInternal(
         const include = try napi.getBuffer("include", env, args[5]);
         const sortBuffer = try napi.getBuffer("sort", env, args[6]);
         try QueryTypes.querySort(queryType, &ctx, lastId, offset, limit, typeId, conditions, include, sortBuffer);
+    } else if (queryType == 5 or queryType == 6) {
+        // query ids sorted
+        const args = try napi.getArgs(6, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const ids = try napi.getBuffer("ids", env, args[2]);
+        const include = try napi.getBuffer("include", env, args[3]);
+        const lastId = try napi.getInt32("last_id", env, args[4]);
+        const sortBuffer = try napi.getBuffer("sort", env, args[5]);
+        try QueryTypes.queryIdsSort(queryType, ids, &ctx, typeId, conditions, include, lastId, sortBuffer);
     }
 
     db.resetTxn(readTxn);

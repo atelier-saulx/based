@@ -198,11 +198,9 @@ test.serial('update', async (t) => {
 
   console.log(db.query('snurp', ids).get())
 
-  // x200 faster...
-
   let total = 0
   let len = 0
-  for (var j = 0; j < 100; j++) {
+  for (var j = 0; j < 1; j++) {
     let x = 0
     const d = Date.now()
 

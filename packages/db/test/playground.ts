@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 10e6
+const amount = 1e6
 
 const d = Date.now()
 
@@ -169,6 +169,16 @@ console.log(
 console.log(
   db.query('user').range(0, 5e5).include('name', 'age').sort('name').get(),
 )
+
+// console.log(
+//   db
+//     .query('user')
+//     .range(0, 10)
+//     .filter('age', '<', 0)
+//     .include('name', 'age')
+//     .sort('name')
+//     .get(),
+// )
 
 // for (const item of result.data) {
 //   // console.info('\nITEM ID --->', item.id)
