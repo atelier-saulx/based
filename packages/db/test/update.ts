@@ -201,6 +201,8 @@ test.serial('update', async (t) => {
 
   t.is(db.query('snurp', ids).range(0, 100).get().length, 100)
 
+  t.is(db.query('snurp', ids).range(10, 100).get().length, 90)
+
   let total = 0
   let len = 0
   for (var j = 0; j < 1; j++) {

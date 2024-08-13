@@ -42,8 +42,8 @@ export const get = (query: Query): BasedQueryResponse => {
         query.sortOrder,
       )
     } else {
-      if (end < query.ids.length) {
-        query.ids = query.ids.slice(0, end)
+      if (end < query.ids.length || query.offset) {
+        query.ids = query.ids.slice(query.offset, end)
       }
       const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
       for (let i = 0; i < query.ids.length; i++) {
