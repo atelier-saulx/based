@@ -44,6 +44,11 @@ struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 void db_archive(struct SelvaTypeEntry *type);
 void db_prefetch(struct SelvaTypeEntry *type);
 
+/**
+ * Set new alias.
+ * new_alias must be allocated with selva_jemalloc.
+ */
+void db_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
 void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name);
 void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);
 void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);

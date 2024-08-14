@@ -231,11 +231,11 @@ static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
     io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
 
     RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
-        sdb_arr_len_t alias_len = strlen(alias->name);
+        sdb_arr_len_t name_len = strlen(alias->name);
 
+        io->sdb_write(&name_len, sizeof(name_len), 1, io);
+        io->sdb_write(alias->name, sizeof(char), name_len, io);
         io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
-        io->sdb_write(&alias_len, sizeof(alias_len), 1, io);
-        io->sdb_write(alias->name, sizeof(char), alias_len, io);
     }
 }
 
@@ -379,23 +379,47 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static int load_field_string(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_field_string(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
     size_t len;
     struct selva_string *s;
     int err;
 
+
     io->sdb_read(&len, sizeof(len), 1, io);
-    s = selva_string_create(NULL, len, SELVA_STRING_MUTABLE_FIXED);
+    err = selva_fields_get_mutable_string(node, fs, len, &s);
+    if (err) {
+        return err;
+    }
+
     if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
         selva_string_free(s);
         return SELVA_EIO;
     }
 
-    /* TODO Is there a way to just keep s? */
-    TO_STR(s);
-    err = selva_fields_set(db, node, fs, s_str, s_len);
+    return 0;
+}
+
+static int load_reference_meta_field_string(
+        struct selva_io *io,
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref,
+        struct EdgeFieldConstraint *efc,
+        field_t field)
+{
+    size_t len;
+    struct selva_string *s;
+    int err;
+
+
+    io->sdb_read(&len, sizeof(len), 1, io);
+    err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, len, &s);
     if (err) {
+        return err;
+    }
+
+    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
+        selva_string_free(s);
         return SELVA_EIO;
     }
 
@@ -409,6 +433,88 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
     return 0;
 }
 
+static int load_reference_meta_field_weak_references(
+        struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node,
+        struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc,
+        field_t field)
+{
+    /* TODO */
+    return SELVA_ENOTSUP;
+}
+
+/**
+ * Load meta fields of an edge in an edge field of node.
+ */
+static void load_reference_meta(
+        struct selva_io *io,
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc)
+{
+    if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
+        db_panic("Load fields of %d:%d: Invalid magic", node->type, node->node_id);
+    }
+
+    sdb_nr_fields_t nr_fields;
+    io->sdb_read(&nr_fields, sizeof(nr_fields), 1, io);
+
+    for (sdb_nr_fields_t i = 0; i < nr_fields; i++) {
+        field_t field;
+        struct SelvaFieldSchema *fs;
+
+        io->sdb_read(&field, sizeof(field), 1, io);
+        if (field >= efc->nr_fields) {
+            db_panic("Invalid meta field: %d:%d",
+                     node->type, node->node_id);
+        }
+        fs = &efc->field_schemas[field];
+
+        const size_t value_size = fields_get_data_size(fs);
+        char value_buf[value_size];
+        int err = 0;
+
+        switch (fs->type) {
+        case SELVA_FIELD_TYPE_NULL:
+            break;
+        case SELVA_FIELD_TYPE_TIMESTAMP:
+        case SELVA_FIELD_TYPE_CREATED:
+        case SELVA_FIELD_TYPE_UPDATED:
+        case SELVA_FIELD_TYPE_NUMBER:
+        case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_UINT64:
+        case SELVA_FIELD_TYPE_BOOLEAN:
+        case SELVA_FIELD_TYPE_ENUM:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+            /* TODO check return value */
+            io->sdb_read(value_buf, sizeof(char), value_size, io);
+            err = selva_fields_set_reference_meta(node, ref, efc, field, value_buf, value_size);
+            break;
+        case SELVA_FIELD_TYPE_STRING:
+            err = load_reference_meta_field_string(io, node, ref, efc, field);
+            break;
+        case SELVA_FIELD_TYPE_TEXT:
+            /* TODO Text field support in meta */
+#if 0
+            err = load_field_text(io, db, ns, node, fs, field);
+#endif
+            break;
+        case SELVA_FIELD_TYPE_REFERENCE:
+        case SELVA_FIELD_TYPE_REFERENCES:
+            db_panic("References not supported in edge meta");
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+            err = load_reference_meta_field_weak_references(io, db, node, ref, efc, field);
+            break;
+        }
+        if (err) {
+            db_panic("Failed to set field (%d:%d:%d): %s",
+                     node->type, node->node_id, fs->field,
+                     selva_strerror(err));
+        }
+    }
+}
+
 static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     node_id_t node_id;
@@ -417,15 +523,25 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSch
 
     io->sdb_read(&node_id, sizeof(node_id), 1, io);
     io->sdb_read(&meta_present, sizeof(meta_present), 1, io);
-    if (meta_present) {
-        /* TODO load_reference_meta */
-        db_panic("Not implemented");
-    }
-
-
     err = selva_fields_set(db, node, fs, &node_id, sizeof(node_id));
     if (err) {
         return SELVA_EIO;
+    }
+
+    if (meta_present) {
+        struct SelvaFieldsAny any;
+
+        err = selva_fields_get(&node->fields, field, &any);
+        if (err) {
+            return err;
+        } else if (any.type != SELVA_FIELD_TYPE_REFERENCE) {
+            /* TODO Make this work with SELVA_FIELD_TYPE_REFERENCES */
+            return SELVA_EINTYPE;
+        } else if (!any.reference) {
+            db_panic("wat"); /* FIXME better error. */
+        }
+
+        load_reference_meta(io, db, node, any.reference, &fs->edge_constraint);
     }
 
     return 0;
@@ -466,7 +582,7 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
     return 0;
 }
 
-static void load_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
+static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
     struct SelvaNodeSchema *ns = &te->ns;
 
@@ -507,7 +623,7 @@ static void load_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTyp
             err = selva_fields_set(db, node, fs, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            err = load_field_string(io, db, ns, node, fs, field);
+            err = load_field_string(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
             err = load_field_text(io, db, ns, node, fs, field);
@@ -544,7 +660,7 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
 
     struct SelvaNode *node = db_upsert_node(te, node_id);
     /* TODO set expire */
-    load_fields(io, db, te, node);
+    load_node_fields(io, db, te, node);
 }
 
 static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
@@ -563,11 +679,25 @@ static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
+    sdb_nr_aliases_t nr_aliases;
+
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
         db_panic("Schema not found");
     }
 
-    /* TODO */
+    io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
+
+    for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
+        sdb_arr_len_t name_len;
+
+        io->sdb_read(&name_len, sizeof(name_len), 1, io);
+        struct SelvaAlias *alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+        io->sdb_read(alias->name, sizeof(char), name_len, io);
+        alias->name[name_len] = '\0';
+        io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
+
+        db_set_alias_p(te, alias);
+    }
 }
 
 static void load_types(struct selva_io *io, struct SelvaDb *db)

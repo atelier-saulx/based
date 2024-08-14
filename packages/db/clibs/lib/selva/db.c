@@ -367,17 +367,12 @@ static void del_alias(struct SelvaTypeEntry *type, struct SelvaAlias *alias_or_f
     }
 }
 
-void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
+void db_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias)
 {
-    size_t name_len = strlen(name);
-    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
     struct SelvaAlias *old_alias;
 
     new_alias->prev = NULL;
     new_alias->next = NULL;
-    new_alias->dest = dest;
-    memcpy(new_alias->name, name, name_len);
-    new_alias->name[name_len] = '\0';
 
 retry:
     old_alias = insert_alias_by_name(type, new_alias);
@@ -392,6 +387,18 @@ retry:
         new_alias->next = prev_by_dest->next;
         prev_by_dest->next = new_alias;
     }
+}
+
+void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
+{
+    size_t name_len = strlen(name);
+    struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+
+    new_alias->dest = dest;
+    memcpy(new_alias->name, name, name_len);
+    new_alias->name[name_len] = '\0';
+
+    db_set_alias_p(type, new_alias);
 }
 
 void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
