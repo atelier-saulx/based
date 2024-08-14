@@ -352,7 +352,7 @@ int io_dump_save_async(struct SelvaDb *db, const char *filename)
 static void load_schema(struct selva_io *io, struct SelvaDb *db)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_SCHEMA)) {
-        db_panic("Schema not found");
+        db_panic("Schema magic not found");
     }
 
     sdb_nr_types_t nr_types;
@@ -666,7 +666,7 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
 static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_NODES)) {
-        db_panic("Schema not found");
+        db_panic("nodes magic not found");
     }
 
     sdb_nr_nodes_t nr_nodes;
@@ -682,7 +682,7 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
     sdb_nr_aliases_t nr_aliases;
 
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
-        db_panic("Schema not found");
+        db_panic("Aliases magic not found");
     }
 
     io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
@@ -707,7 +707,7 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     struct SelvaTypeEntry *te;
 
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
-        db_panic("Schema not found");
+        db_panic("Types magic not found");
     }
 
     SVector_ForeachBegin(&it, types);

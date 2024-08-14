@@ -323,7 +323,7 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
     struct SelvaFieldSchema *fs_dst;
     int err;
 
-    if (src == dst) {
+    if (!dst || src == dst) {
         return SELVA_EINVAL;
     }
 

@@ -225,8 +225,11 @@ struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type
 struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     void *find = (void *)(uintptr_t)node->type;
+    struct SelvaTypeEntry *te;
 
-    return vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
+    te = vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
+    assert(te);
+    return te;
 }
 
 struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
