@@ -2,6 +2,7 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,12 +23,13 @@
 /*
  * Pick 32-bit primes for these.
  */
-#define DUMP_MAGIC_SCHEMA   3360690301
-#define DUMP_MAGIC_TYPES    3550908863
-#define DUMP_MAGIC_NODES    2460238717
-#define DUMP_MAGIC_NODE     3323984057
-#define DUMP_MAGIC_FIELDS   3126175483
-#define DUMP_MAGIC_ALIASES  4019181209
+#define DUMP_MAGIC_SCHEMA       3360690301
+#define DUMP_MAGIC_TYPES        3550908863
+#define DUMP_MAGIC_TYPES_ENTRY  4229893463
+#define DUMP_MAGIC_NODES        2460238717
+#define DUMP_MAGIC_NODE         3323984057
+#define DUMP_MAGIC_FIELDS       3126175483
+#define DUMP_MAGIC_ALIASES      4019181209
 
 /*
  * Helper types for portable serialization.
@@ -80,7 +82,7 @@ static void save_field_text(struct selva_io *io)
     /* TODO Save text field. */
 }
 
-static void save_field_reference(struct selva_io *io, struct SelvaNodeReference *ref)
+static void save_ref(struct selva_io *io, struct SelvaNodeReference *ref)
 {
     const uint8_t meta_present = !!ref->meta;
 
@@ -101,7 +103,7 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
         struct SelvaNodeReference *ref = &refs->refs[i];
 
         if (ref && ref->dst) {
-            save_field_reference(io, ref);
+            save_ref(io, ref);
         } else {
             /* TODO Handle NULL */
             db_panic("ref in refs shouldn't be NULL");
@@ -149,7 +151,7 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             io->sdb_write(&any.uint64, sizeof(any.uint64), 1, io);
             break;
         case SELVA_FIELD_TYPE_BOOLEAN:
-            io->sdb_write(&any.boolean, sizeof(any.boolean), 1, io);
+            io->sdb_write(&(uint8_t){ any.boolean }, sizeof(uint8_t), 1, io);
             break;
         case SELVA_FIELD_TYPE_ENUM:
             io->sdb_write(&any.enu, sizeof(any.enu), 1, io);
@@ -165,7 +167,7 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_reference(io, any.reference);
+                save_ref(io, any.reference);
             } else {
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
             }
@@ -227,7 +229,6 @@ static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
     struct SelvaAlias *alias;
 
     save_dump_magic(io, DUMP_MAGIC_ALIASES);
-
     io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
 
     RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
@@ -276,6 +277,7 @@ static void save_types(struct selva_io *io, struct SelvaDb *db)
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         const node_type_t type = te->type;
 
+        save_dump_magic(io, DUMP_MAGIC_TYPES_ENTRY);
         io->sdb_write(&type, sizeof(type), 1, io);
         save_nodes(io, te);
         save_aliases(io, te);
@@ -352,7 +354,7 @@ int io_dump_save_async(struct SelvaDb *db, const char *filename)
 static void load_schema(struct selva_io *io, struct SelvaDb *db)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_SCHEMA)) {
-        db_panic("Schema magic not found");
+        db_panic("Invalid schema magic");
     }
 
     sdb_nr_types_t nr_types;
@@ -517,13 +519,17 @@ static void load_reference_meta(
 
 static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
-    node_id_t node_id;
+    node_id_t dst_id;
     uint8_t meta_present;
     int err;
 
-    io->sdb_read(&node_id, sizeof(node_id), 1, io);
+    io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
     io->sdb_read(&meta_present, sizeof(meta_present), 1, io);
-    err = selva_fields_set(db, node, fs, &node_id, sizeof(node_id));
+
+    struct SelvaTypeEntry *dst_te = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+    struct SelvaNode *dst_node = db_upsert_node(dst_te, dst_id);
+
+    err = selva_fields_set(db, node, fs, dst_node, sizeof(dst_node));
     if (err) {
         return SELVA_EIO;
     }
@@ -587,7 +593,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
     struct SelvaNodeSchema *ns = &te->ns;
 
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
-        db_panic("load fields of %d:%d: Invalid magic", node->type, node->node_id);
+        db_panic("Invalid magic for node fields load fields of %d:%d", node->type, node->node_id);
     }
 
     sdb_nr_fields_t nr_fields;
@@ -649,7 +655,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
 static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_NODE)) {
-        db_panic("load node");
+        db_panic("Invalid node magic for type %d", te->type);
     }
 
     node_id_t node_id;
@@ -659,6 +665,7 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
     io->sdb_read(&expire, sizeof(expire), 1, io);
 
     struct SelvaNode *node = db_upsert_node(te, node_id);
+    assert(node->type == te->type);
     /* TODO set expire */
     load_node_fields(io, db, te, node);
 }
@@ -666,7 +673,7 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
 static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_NODES)) {
-        db_panic("nodes magic not found");
+        db_panic("Invalid nodes magic for type %d", te->type);
     }
 
     sdb_nr_nodes_t nr_nodes;
@@ -682,7 +689,7 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
     sdb_nr_aliases_t nr_aliases;
 
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
-        db_panic("Aliases magic not found");
+        db_panic("Invalid aliases magic for type %d", te->type);
     }
 
     io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
@@ -707,16 +714,20 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     struct SelvaTypeEntry *te;
 
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
-        db_panic("Types magic not found");
+        db_panic("Ivalid types magic");
     }
 
     SVector_ForeachBegin(&it, types);
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         node_type_t type;
 
+        if (!read_dump_magic(io, DUMP_MAGIC_TYPES_ENTRY)) {
+            db_panic("Invalid entry magic for type %d", te->type);
+        }
+
         io->sdb_read(&type, sizeof(type), 1, io);
         if (type != te->type) {
-            db_panic("Incorrect type found");
+            db_panic("Incorrect type found: %d != %d", type, te->type);
         }
 
         load_nodes(io, db, te);
