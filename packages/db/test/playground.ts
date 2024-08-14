@@ -225,41 +225,33 @@ for (let i = 1; i < 10; i++) {
 ids.push(...flap.values())
 
 const x = [
-  new Uint8Array([5, 6, 7, 8]),
-  new Uint8Array([5, 6, 7, 9]),
-  // new Uint8Array([2, 0, 0, 1]),
-  // new Uint8Array([2, 0, 6, 1]),
-  // new Uint8Array([2, 0, 0, 2]),
-  // new Uint8Array([2, 0, 1, 1]),
-  // new Uint8Array([2, 0, 1, 2]),
-  // new Uint8Array([1, 2, 3, 1]),
-  // new Uint8Array([1, 9, 7, 3]),
+  // new Uint8Array([5, 6, 7, 8]),
+  // new Uint8Array([5, 6, 7, 9]),
+  // new Uint8Array([1, 0, 0, 0]),
+  // new Uint8Array([1, 0, 0, 1]),
+  // new Uint8Array([1, 0, 0, 2]),
+  // new Uint8Array([1, 0, 0, 0]),
 ]
 
-for (let i = 0; i < 50; i++) {
+for (let i = 0; i < 1e5; i++) {
   const bla = Buffer.allocUnsafe(4)
   // for small numbers BE is better for large numbers LE is better
-  bla.writeUInt32LE(Math.floor(Math.random() * 100))
+  bla.writeUInt32LE(i)
   // read in reverse
   // worse length faster check
   const s = new Uint8Array([bla[0], bla[1], bla[2], bla[3]])
   x.push(s)
 }
 
-// for (let i = 0; i < 1e4; i++) {
-//   const bla = Buffer.allocUnsafe(4)
-//   bla.writeUInt32LE(i)
-//   const s = new Uint8Array([bla[0], bla[1], bla[2], bla[3]])
-//   x.push(s)
-// }
-
 type Flap = any
 
+var bufferSize = 0
 var total = 0
 const make = (x: Uint8Array, t: Flap, nr: number): Flap => {
   if (!t[x[nr]]) {
     t.size++
     total++
+    bufferSize += 5
     t[x[nr]] =
       nr === 3
         ? {
@@ -312,61 +304,204 @@ const log = (t: Flap, index: string) => {
   }
 }
 
+const buff = Buffer.allocUnsafe(bufferSize)
+let offset = 0
+const buftime = (t: Flap) => {
+  for (const key in t) {
+    if (
+      key !== 'parent' &&
+      key !== 'size' &&
+      key !== 'branchSize' &&
+      key !== 'total'
+    ) {
+      const s = t[key]
+      buff[offset] = Number(key)
+      buff.writeUint16LE(s.branchSize * 5, 1 + offset)
+      // if (s.total > 255) {
+      // console.log('BLAAARR', s.total, key)
+      // }
+      buff.writeUint16LE(s.total, 3 + offset)
+      // buff[3 + offset] = s.total
+      offset += 5
+      buftime(t[key])
+    }
+  }
+}
+
 console.log({ total, len: x.length * 4, t: Object.keys(t).length - 4 })
 console.log('---------------------------')
-log(t, '')
+// log(t, '')
 console.log('---------------------------')
 
-// const buf = Buffer.allocUnsafe(total)
-// let i = 0
-// const walkMakeBuf = (t: Flap, nr: number) => {
-//   buf.writeUInt16LE(t.size, i)
-//   i += 2
-//   for (const key in t.c) {
-//     buf[i] += Number(key)
-//     i++
-//   }
-//   if (nr < 3) {
-//     for (const key in t.c) {
-//       walkMakeBuf(t.c[key], nr + 1)
+// console.log('------------ MAke buffer ---------------')
+buftime(t)
+// console.log('---------------------------')
+
+console.log('------------  tree again ---------------')
+
+const buftime2 = (t: Flap, offset: number, max: number) => {
+  let i = offset
+  while (i < max) {
+    const key = buff[i]
+    const total = buff.readUint16LE(i + 3)
+    const len = buff.readUint16LE(i + 1)
+    const size = 0
+    const n = {
+      size,
+      branchSize: len / 5,
+      total,
+    }
+    t[key] = n
+    buftime2(n, offset + 5, len + offset)
+    i += len
+  }
+}
+
+const xxx = {}
+console.log(buftime2(xxx, 0, buff.byteLength))
+
+// console.log(xxx)
+
+console.log('---------------------------')
+
+console.log('---------------------------')
+// log(xxx, '')
+console.log('---------------------------')
+
+const getIdFast = (id: Uint8Array, buff: Buffer) => {
+  let i = 0
+  while (i < buff.length) {
+    const amountIndex0 = i + 3
+    const len0 = buff.readUint16LE(i + 1)
+    if (buff.readUint16LE(amountIndex0) == 0) {
+      i += len0
+    } else if (id[0] == buff[i]) {
+      const end0 = len0 + i
+      i += 5
+      while (i < end0) {
+        const amountIndex1 = i + 3
+        const len1 = buff.readUint16LE(i + 1)
+        if (buff.readUint16LE(amountIndex1) == 0) {
+          i += len1
+        } else if (id[1] == buff[i]) {
+          const end1 = len1 + i
+          i += 5
+          while (i < end1) {
+            const amountIndex2 = i + 3
+            const len2 = buff.readUint16LE(i + 1)
+            if (buff.readUint16LE(amountIndex2) == 0) {
+              i += len2
+            } else if (id[2] == buff[i]) {
+              const end2 = len2 + i
+              i += 5
+              while (i < end2) {
+                const amountIndex3 = i + 3
+                const len3 = buff.readUint16LE(i + 1)
+                if (buff.readUint16LE(amountIndex3) == 0) {
+                  i += len3
+                } else if (id[3] == buff[i]) {
+                  buff.writeUint16LE(
+                    buff.readUint16LE(amountIndex0) - 1,
+                    amountIndex0,
+                  )
+                  buff.writeUint16LE(
+                    buff.readUint16LE(amountIndex1) - 1,
+                    amountIndex1,
+                  )
+                  buff.writeUint16LE(
+                    buff.readUint16LE(amountIndex2) - 1,
+                    amountIndex2,
+                  )
+                  buff.writeUint16LE(
+                    buff.readUint16LE(amountIndex3) - 1,
+                    amountIndex3,
+                  )
+
+                  // buff[amountIndex0]--
+                  // buff[amountIndex1]--
+                  // buff[amountIndex2]--
+                  // buff[amountIndex3]--
+                  return true
+                } else {
+                  i += len3
+                }
+              }
+            } else {
+              i += len2
+            }
+          }
+        } else {
+          i += len1
+        }
+      }
+    } else {
+      i += len0
+    }
+  }
+  return false
+}
+
+// console.log('flap', getIdFast(new Uint8Array([1, 0, 0, 0]), buff))
+
+// console.log(
+//   'flap - should be removed',
+//   getIdFast(new Uint8Array([1, 0, 0, 0]), buff),
+// )
+
+const ids2 = []
+
+for (let i = 0; i < 1e6; i++) {
+  const bla = Buffer.allocUnsafe(4)
+  // for small numbers BE is better for large numbers LE is better
+  bla.writeUInt32LE(i)
+  // read in reverse
+  // worse length faster check
+  const s = new Uint8Array([bla[0], bla[1], bla[2], bla[3]])
+  ids2.push(s)
+}
+
+ids2.reverse()
+
+const moreIds = []
+for (let j = 0; j < 1e5; j++) {
+  moreIds.push(j)
+}
+
+console.log('------------go go go---------------')
+
+const ffd = Date.now()
+
+let found = 0
+
+for (let i = 0; i < ids2.length; i++) {
+  // console.log('\n\nINSPECT', ids2[i])
+  const x = getIdFast(ids2[i], buff)
+  // console.log('MATCH EQ', x, 'to', ids2[i])
+  if (x) {
+    found++
+  }
+}
+
+// var end = moreIds.length
+// for (let i = 0; i < 1e6; i++) {
+//   for (let j = 0; j < end; j++) {
+//     if (moreIds[j] === ids2[i]) {
+//       found++
+//       moreIds[j] = moreIds[end - 1]
+//       end--
 //     }
 //   }
 // }
 
-// walkMakeBuf(t, 0)
+console.log('!!!', found, Date.now() - ffd, ' ms')
 
-// console.log(new Uint8Array(buf))
+// console.log(new Uint8Array(buff))
 
-// const getNumber = (id: Uint8Array): boolean => {
-//   var bufI = 0
-//   for (var j = 0; j < 4; j++) {
-//     const len = buf.readUint16LE(bufI)
-//     bufI += 2
-//     var bb = false
-//     console.log('GO', { len, bufI })
-//     for (let s = 0; s < len; s++) {
-//       if (buf[bufI] == id[j]) {
-//         if (j === 3) {
-//           return true
-//         }
-//         console.log('found', bufI, buf[bufI], 'j:', j, id[j])
-//         bufI += len - s
-//         bb = true
-//         break
-//       }
-//       bufI++
-//     }
-//     if (!bb) {
-//       return false
-//     }
-//   }
-//   return false
-// }
+// console.log(db.query('user', ids).include('name', 'age').sort('name').get())
 
-// console.log(getNumber(new Uint8Array([2, 0, 1, 1])))
-
-console.log(db.query('user', ids).include('name', 'age').sort('name').get())
-
-db.tester()
+// db.tester()
 
 await wait(0)
+
+// console.log('flap', getIdFast(new Uint8Array([1, 0, 0, 1])))
+// console.log('flap2', getIdFast(new Uint8Array([1, 0, 0, 1])))
