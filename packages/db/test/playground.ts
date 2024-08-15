@@ -64,7 +64,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 10e6
+const amount = 1e6
 
 const d = Date.now()
 
@@ -122,6 +122,20 @@ for (let i = 1; i < 10e4; i++) {
 console.log(
   db
     .query('user', [...ids.values()])
+    .include('name', 'age')
+    .sort('age')
+    .get(),
+)
+
+const ids2: Set<number> = new Set()
+for (let i = 1; i < 500; i++) {
+  // ids.add(~~(Math.random() * 1e6))
+  ids2.add(i)
+}
+
+console.log(
+  db
+    .query('user', [...ids2.values()])
     .include('name', 'age')
     .sort('age')
     .get(),
