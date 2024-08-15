@@ -106,15 +106,15 @@ console.log(
 db.drain()
 
 console.log(
-  db.query('user').range(0, 10e4).include('name', 'age').sort('age').get(),
+  db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
 )
 
 console.log(
-  db.query('user').range(0, 10e4).include('name', 'age').sort('age').get(),
+  db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
 )
 
 const ids: Set<number> = new Set()
-for (let i = 1; i < 10e4; i++) {
+for (let i = 1; i < 1e4; i++) {
   // ids.add(~~(Math.random() * 1e6))
   ids.add(i)
 }
