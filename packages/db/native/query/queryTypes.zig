@@ -10,6 +10,7 @@ const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const utils = @import("../utils.zig");
 const hasId = @import("./hasId.zig").hasId;
+const mem = std.mem;
 
 pub fn queryId(
     id: u32,
@@ -51,8 +52,6 @@ pub fn queryIds(
         }
     }
 }
-
-const mem = std.mem;
 
 pub fn queryIdsSort(
     comptime queryType: comptime_int,
@@ -127,10 +126,10 @@ pub fn queryIdsSortBig(
     var currentShard: u16 = 0;
     var first: bool = true;
     var i: u32 = 0;
-    var x: std.AutoHashMap(u32, u8) = undefined;
-    x = std.AutoHashMap(u32, u8).init(ctx.allocator);
+    var map: std.AutoHashMap(u32, u8) = undefined;
+    map = std.AutoHashMap(u32, u8).init(ctx.allocator);
     while (i <= ids.len) : (i += 1) {
-        x.put(ids[i], 0) catch {};
+        try map.put(ids[i], 0);
     }
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -148,7 +147,7 @@ pub fn queryIdsSortBig(
             }
         }
         const id = utils.readInt(u32, db.data(v), 0);
-        if (!x.contains(id)) {
+        if (!map.contains(id)) {
             continue :checkItem;
         }
         currentShard = db.idToShard(id);

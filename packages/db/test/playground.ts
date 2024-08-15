@@ -114,7 +114,7 @@ console.log(
 )
 
 const ids: Set<number> = new Set()
-for (let i = 1; i < 505; i++) {
+for (let i = 1; i < 1e3; i++) {
   // ids.add(~~(Math.random() * 1e6))
   ids.add(i)
 }
