@@ -5,7 +5,6 @@ pub fn hasId(id: u32, ids: []u32, last: *usize) bool {
     var i: usize = 0;
     const vectorLen = 32;
     const l = last.*;
-    // handle remainder
     while (i <= l) : (i += vectorLen) {
         const vec2: @Vector(vectorLen, u32) = ids[i..][0..vectorLen].*;
         if (std.simd.countElementsWithValue(vec2, id) != 0) {
@@ -15,7 +14,6 @@ pub fn hasId(id: u32, ids: []u32, last: *usize) bool {
             return true;
         }
     }
-
     while (i <= l) : (i += 1) {
         const id2 = ids[i];
         if (id2 == id) {
@@ -24,6 +22,5 @@ pub fn hasId(id: u32, ids: []u32, last: *usize) bool {
             return true;
         }
     }
-
     return false;
 }

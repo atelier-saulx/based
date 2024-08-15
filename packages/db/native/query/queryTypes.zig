@@ -10,7 +10,6 @@ const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const utils = @import("../utils.zig");
 const hasId = @import("./hasId.zig").hasId;
-const containsId = @import("./hasId.zig").containsId;
 
 pub fn queryId(
     id: u32,
@@ -75,11 +74,18 @@ pub fn queryIdsSort(
     }
     var currentShard: u16 = 0;
     var first: bool = true;
-
     var lastCheck: usize = ids.len;
+    var isLarge: bool = false;
+    var i: u32 = 0;
+    var x: std.AutoHashMap(u32, u8) = undefined;
 
-    // var i: u8 = 0;
-    // var a = @Vector(8, u32){ 0, 0, 0, 0, 0, 0, 0, 0 };
+    if (ids.len > 512) {
+        isLarge = true;
+        x = std.AutoHashMap(u32, u8).init(ctx.allocator);
+        while (i <= ids.len) : (i += 1) {
+            x.put(ids[i], 0) catch {};
+        }
+    }
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -99,11 +105,19 @@ pub fn queryIdsSort(
 
         const id = utils.readInt(u32, db.data(v), 0);
 
-        if (!hasId(id, ids, &lastCheck)) {
-            continue :checkItem;
+        // make it comptime and make 2 fns
+        if (!isLarge) {
+            if (!hasId(id, ids, &lastCheck)) {
+                continue :checkItem;
+            }
+        } else {
+            if (!x.contains(id)) {
+                continue :checkItem;
+            }
         }
 
         currentShard = db.idToShard(id);
+
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
         }
@@ -114,11 +128,6 @@ pub fn queryIdsSort(
             ctx.totalResults += 1;
         }
     }
-
-    // std.debug.print("bla {d} {d} {d}\n", .{
-    //     ctx.totalResults,
-    //     limit,
-    // });
 }
 
 pub fn queryNonSort(

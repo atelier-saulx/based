@@ -2,7 +2,6 @@ import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Query } from './query.js'
 import { addInclude } from './include.js'
 import { addConditions } from './filter.js'
-import { createTree } from './ktree.js'
 
 export const get = (query: Query): BasedQueryResponse => {
   if (!query.includeDef) {

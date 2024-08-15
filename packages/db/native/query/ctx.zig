@@ -6,4 +6,5 @@ pub const QueryCtx = struct {
     id: u32,
     size: usize,
     totalResults: usize,
+    allocator: std.mem.Allocator,
 };

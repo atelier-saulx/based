@@ -73,6 +73,7 @@ inline fn getQueryInternal(
         .id = db.getQueryId(),
         .size = 0,
         .totalResults = 0,
+        .allocator = allocator,
     };
 
     const readTxn = try db.initReadTxn();
