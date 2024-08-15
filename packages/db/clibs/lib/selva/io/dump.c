@@ -29,6 +29,7 @@
 #define DUMP_MAGIC_NODES        2460238717
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
+#define DUMP_MAGIC_FIELD_END    2944546091
 #define DUMP_MAGIC_ALIASES      4019181209
 
 /*
@@ -52,7 +53,7 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields);
 /**
  * Write one of the magic numbers to the dump.
  */
-static void save_dump_magic(struct selva_io *io, uint32_t magic)
+static void write_dump_magic(struct selva_io *io, uint32_t magic)
 {
     io->sdb_write(&magic, sizeof(uint32_t), 1, io);
 }
@@ -113,7 +114,7 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
 
 static void save_fields(struct selva_io *io, struct SelvaFields *fields)
 {
-    save_dump_magic(io, DUMP_MAGIC_FIELDS);
+    write_dump_magic(io, DUMP_MAGIC_FIELDS);
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
 
     for (field_t field = 0; field < fields->nr_fields; field++) {
@@ -123,6 +124,7 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
         err = selva_fields_get(fields, field, &any);
         if (err) {
             /* TODO Handle error? */
+            db_panic("Handle this error");
             continue;
         }
 
@@ -196,12 +198,14 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
             }
             break;
         }
+
+        write_dump_magic(io, DUMP_MAGIC_FIELD_END);
     }
 }
 
 static void save_node(struct selva_io *io, struct SelvaNode *node)
 {
-    save_dump_magic(io, DUMP_MAGIC_NODE);
+    write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
     io->sdb_write(&node->expire, sizeof(sdb_expire_t), 1, io);
     save_fields(io, &node->fields);
@@ -213,9 +217,10 @@ static void save_nodes(struct selva_io *io, struct SelvaTypeEntry *te)
     const sdb_nr_nodes_t nr_nodes = te->nr_nodes;
     struct SelvaNode *node;
 
-    save_dump_magic(io, DUMP_MAGIC_NODES);
+    write_dump_magic(io, DUMP_MAGIC_NODES);
 
     io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
+    printf("Writing %d nodes of type %d\n", (int)nr_nodes, te->type);
 
     RB_FOREACH(node, SelvaNodeIndex, nodes) {
         save_node(io, node);
@@ -228,7 +233,7 @@ static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
     const sdb_nr_aliases_t nr_aliases = te->nr_aliases;
     struct SelvaAlias *alias;
 
-    save_dump_magic(io, DUMP_MAGIC_ALIASES);
+    write_dump_magic(io, DUMP_MAGIC_ALIASES);
     io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
 
     RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
@@ -247,7 +252,7 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
     struct SVectorIterator it;
     struct SelvaTypeEntry *te;
 
-    save_dump_magic(io, DUMP_MAGIC_SCHEMA);
+    write_dump_magic(io, DUMP_MAGIC_SCHEMA);
     io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
 
     SVector_ForeachBegin(&it, types);
@@ -267,7 +272,7 @@ static void save_types(struct selva_io *io, struct SelvaDb *db)
     struct SVectorIterator it;
     struct SelvaTypeEntry *te;
 
-    save_dump_magic(io, DUMP_MAGIC_TYPES);
+    write_dump_magic(io, DUMP_MAGIC_TYPES);
     /*
      * We don't save nr_types here again because it's already known from the
      * schema that should have been saved before.
@@ -277,7 +282,7 @@ static void save_types(struct selva_io *io, struct SelvaDb *db)
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         const node_type_t type = te->type;
 
-        save_dump_magic(io, DUMP_MAGIC_TYPES_ENTRY);
+        write_dump_magic(io, DUMP_MAGIC_TYPES_ENTRY);
         io->sdb_write(&type, sizeof(type), 1, io);
         save_nodes(io, te);
         save_aliases(io, te);
@@ -567,7 +572,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
-        load_field_reference(io, db, ns, node, fs, field);
+        load_ref(io, db, ns, node, fs, field);
     }
 
     return 0;
@@ -648,6 +653,10 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             db_panic("Failed to set field (%d:%d:%d): %s",
                      node->type, node->node_id, fs->field,
                      selva_strerror(err));
+        }
+
+        if (!read_dump_magic(io, 2944546091)) {
+            db_panic("Invalid field end magic %d:%d.%d", node->type, node->node_id, field);
         }
     }
 }

@@ -104,7 +104,7 @@ test.serial.skip('create and destroy a db', async (t) => {
   t.true(true)
 })
 
-test.serial.only('query + filter', async (t) => {
+test.serial('query + filter', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -543,7 +543,7 @@ test.serial('1bn', async (t) => {
   // global.gc()
 })
 
-test.serial('dump', async (t) => {
+test.serial.only('dump save & load', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -720,8 +720,13 @@ test.serial('dump', async (t) => {
   }
   console.log('update took', Math.round(performance.now() - dx), 'ms')
 
+  console.log('save')
   selva.save(dbp, "test.sdb")
   console.log(process.memoryUsage())
+
+  await wait(5e3)
+  console.log('load')
+  const dbp1 = selva.load("test.sdb")
 
   console.log('Destroy the db')
   const startDbDel = performance.now()
