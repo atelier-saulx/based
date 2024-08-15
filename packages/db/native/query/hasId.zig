@@ -1,8 +1,21 @@
 const std = @import("std");
+const utils = @import("../utils.zig");
 
-pub inline fn hasId(id: u32, ids: []u32, last: *usize) bool {
+pub fn hasId(id: u32, ids: []u32, last: *usize) bool {
     var i: usize = 0;
+    const vectorLen = 32;
     const l = last.*;
+    // handle remainder
+    while (i <= l) : (i += vectorLen) {
+        const vec2: @Vector(vectorLen, u32) = ids[i..][0..vectorLen].*;
+        if (std.simd.countElementsWithValue(vec2, id) != 0) {
+            const index = std.simd.firstIndexOfValue(vec2, id);
+            ids[index.? + i] = ids[l];
+            last.* -= 1;
+            return true;
+        }
+    }
+
     while (i <= l) : (i += 1) {
         const id2 = ids[i];
         if (id2 == id) {
@@ -11,5 +24,6 @@ pub inline fn hasId(id: u32, ids: []u32, last: *usize) bool {
             return true;
         }
     }
+
     return false;
 }

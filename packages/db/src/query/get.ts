@@ -2,6 +2,7 @@ import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Query } from './query.js'
 import { addInclude } from './include.js'
 import { addConditions } from './filter.js'
+import { createTree } from './ktree.js'
 
 export const get = (query: Query): BasedQueryResponse => {
   if (!query.includeDef) {
@@ -30,6 +31,9 @@ export const get = (query: Query): BasedQueryResponse => {
       for (let i = 0; i < query.ids.length; i++) {
         idsBuffer.writeUInt32LE(query.ids[i], i * 4)
       }
+
+      // const idsBuffer = createTree(query.ids)
+
       result = query.db.native.getQueryIdsSort(
         conditionsBuffer,
         query.schema.prefixString,
@@ -45,10 +49,14 @@ export const get = (query: Query): BasedQueryResponse => {
       if (end < query.ids.length || query.offset) {
         query.ids = query.ids.slice(query.offset, end)
       }
+
       const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
       for (let i = 0; i < query.ids.length; i++) {
         idsBuffer.writeUInt32LE(query.ids[i], i * 4)
       }
+
+      // const idsBuffer = createTree(query.ids)
+
       result = query.db.native.getQueryByIds(
         conditionsBuffer,
         query.schema.prefixString,

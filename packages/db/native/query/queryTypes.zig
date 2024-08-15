@@ -10,6 +10,7 @@ const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
 const utils = @import("../utils.zig");
 const hasId = @import("./hasId.zig").hasId;
+const containsId = @import("./hasId.zig").containsId;
 
 pub fn queryId(
     id: u32,
@@ -77,6 +78,9 @@ pub fn queryIdsSort(
 
     var lastCheck: usize = ids.len;
 
+    // var i: u8 = 0;
+    // var a = @Vector(8, u32){ 0, 0, 0, 0, 0, 0, 0, 0 };
+
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -92,6 +96,7 @@ pub fn queryIdsSort(
                 flag = c.MDB_NEXT;
             }
         }
+
         const id = utils.readInt(u32, db.data(v), 0);
 
         if (!hasId(id, ids, &lastCheck)) {
@@ -109,6 +114,11 @@ pub fn queryIdsSort(
             ctx.totalResults += 1;
         }
     }
+
+    // std.debug.print("bla {d} {d} {d}\n", .{
+    //     ctx.totalResults,
+    //     limit,
+    // });
 }
 
 pub fn queryNonSort(
