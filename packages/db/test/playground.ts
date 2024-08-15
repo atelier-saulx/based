@@ -106,11 +106,11 @@ console.log(
 db.drain()
 
 console.log(
-  db.query('user').range(0, 5e5).include('name', 'age').sort('age').get(),
+  db.query('user').range(0, 10e4).include('name', 'age').sort('age').get(),
 )
 
 console.log(
-  db.query('user').range(0, 5e5).include('name', 'age').sort('age').get(),
+  db.query('user').range(0, 10e4).include('name', 'age').sort('age').get(),
 )
 
 const ids: Set<number> = new Set()
