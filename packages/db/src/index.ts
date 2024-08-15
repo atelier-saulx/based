@@ -105,6 +105,31 @@ export class BasedDb {
       sort: Buffer,
       sortOrder: 0 | 1,
     ): any => {
+      if (ids.length > 512 * 4) {
+        if (sortOrder === 1) {
+          return dbZig.getQueryIdsSortAscLarge(
+            conditions,
+            prefix,
+            lastId,
+            offset,
+            limit,
+            ids,
+            includeBuffer,
+            sort,
+          )
+        } else {
+          return dbZig.getQueryIdsSortDescLarge(
+            conditions,
+            prefix,
+            lastId,
+            offset,
+            limit,
+            ids,
+            includeBuffer,
+            sort,
+          )
+        }
+      }
       if (sortOrder === 1) {
         return dbZig.getQueryIdsSortAsc(
           conditions,

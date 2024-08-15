@@ -20,19 +20,17 @@ export const get = (query: Query): BasedQueryResponse => {
 
   let result: Buffer
   const d = performance.now()
-
   if (query.ids) {
     const start = query.offset ?? 0
     const end = query.limit ?? query.ids.length
-
     if (query.sortBuffer) {
+      if (end < query.ids.length || query.offset) {
+        query.ids = query.ids.slice(query.offset, end)
+      }
       const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
       for (let i = 0; i < query.ids.length; i++) {
         idsBuffer.writeUInt32LE(query.ids[i], i * 4)
       }
-
-      // const idsBuffer = createTree(query.ids)
-
       result = query.db.native.getQueryIdsSort(
         conditionsBuffer,
         query.schema.prefixString,
@@ -48,14 +46,10 @@ export const get = (query: Query): BasedQueryResponse => {
       if (end < query.ids.length || query.offset) {
         query.ids = query.ids.slice(query.offset, end)
       }
-
       const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
       for (let i = 0; i < query.ids.length; i++) {
         idsBuffer.writeUInt32LE(query.ids[i], i * 4)
       }
-
-      // const idsBuffer = createTree(query.ids)
-
       result = query.db.native.getQueryByIds(
         conditionsBuffer,
         query.schema.prefixString,

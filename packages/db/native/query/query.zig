@@ -59,6 +59,20 @@ pub fn getQueryIdsSortDesc(env: c.napi_env, info: c.napi_callback_info) callconv
     };
 }
 
+pub fn getQueryIdsSortAscLarge(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(7, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortDescLarge(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(8, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
 inline fn getQueryInternal(
     comptime queryType: comptime_int,
     env: c.napi_env,
@@ -117,6 +131,29 @@ inline fn getQueryInternal(
         const sortBuffer = try napi.getBuffer("sort", env, args[6]);
         try QueryTypes.querySort(queryType, &ctx, lastId, offset, limit, typeId, conditions, include, sortBuffer);
     } else if (queryType == 5 or queryType == 6) {
+        // query ids sorted
+        const args = try napi.getArgs(8, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const lastId = try napi.getInt32("last_id", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+        const ids = try napi.getBufferU32("ids", env, args[5]);
+        const include = try napi.getBuffer("include", env, args[6]);
+        const sortBuffer = try napi.getBuffer("sort", env, args[7]);
+        try QueryTypes.queryIdsSort(
+            queryType,
+            ids,
+            &ctx,
+            typeId,
+            conditions,
+            include,
+            lastId,
+            sortBuffer,
+            offset,
+            limit,
+        );
+    } else if (queryType == 7 or queryType == 8) {
         // query ids sorted
         const args = try napi.getArgs(8, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
