@@ -295,7 +295,24 @@ static void save_db(struct selva_io *io, struct SelvaDb *db)
     save_types(io, db);
 }
 
-static void print_ready(char *msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
+static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
+{
+    static const char map[] = "0123456789abcdef";
+    char *p = s;
+
+    for (size_t i = 0; i < SELVA_IO_HASH_SIZE; i++) {
+        *p++ = map[(hash[i] >> 4) % sizeof(map)];
+        *p++ = map[(hash[i] & 0x0f) % sizeof(map)];
+    }
+
+    return s;
+}
+
+static void print_ready(
+        char *msg,
+        struct timespec * restrict ts_start,
+        struct timespec * restrict ts_end,
+        struct selva_io *io)
 {
     struct timespec ts_diff;
     double t;
@@ -317,7 +334,10 @@ static void print_ready(char *msg, struct timespec * restrict ts_start, struct t
         t_unit = "h";
     }
 
-    fprintf(stderr, "%s ready in %.2f %s", msg, t, t_unit);
+    fprintf(stderr, "%s ready in %.2f %s hash: %.*s\n",
+            msg,
+            t, t_unit,
+            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash));
 }
 
 int io_dump_save_async(struct SelvaDb *db, const char *filename)
@@ -342,7 +362,7 @@ int io_dump_save_async(struct SelvaDb *db, const char *filename)
         selva_io_end(&io, NULL, hash);
 
         ts_monotime(&ts_end);
-        print_ready("save", &ts_start, &ts_end);
+        print_ready("save", &ts_start, &ts_end, &io);
 
 #if defined(__APPLE__) && defined(__MACH__)
         _Exit(EXIT_SUCCESS);
@@ -772,7 +792,7 @@ int io_dump_load(const char *filename, struct SelvaDb **db_out)
     selva_io_end(&io, NULL, NULL);
 
     ts_monotime(&ts_end);
-    print_ready("load", &ts_start, &ts_end);
+    print_ready("load", &ts_start, &ts_end, &io);
 
     *db_out = db;
     return 0;
