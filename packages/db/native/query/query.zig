@@ -164,7 +164,7 @@ inline fn getQueryInternal(
         const ids = try napi.getBufferU32("ids", env, args[5]);
         const include = try napi.getBuffer("include", env, args[6]);
         const sortBuffer = try napi.getBuffer("sort", env, args[7]);
-        try QueryTypes.queryIdsSort(
+        try QueryTypes.queryIdsSortBig(
             queryType,
             ids,
             &ctx,

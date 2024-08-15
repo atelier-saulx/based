@@ -117,6 +117,7 @@ pub fn queryIdsSortBig(
     _: u32,
     limit: u32,
 ) !void {
+    std.debug.print("bla \n", .{});
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
