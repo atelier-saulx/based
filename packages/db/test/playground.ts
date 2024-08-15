@@ -123,12 +123,13 @@ console.log(
   db
     .query('user', [...ids.values()])
     .include('name', 'age')
+    .filter('age', '>', 50)
     .sort('age')
     .get(),
 )
 
 const ids2: Set<number> = new Set()
-for (let i = 1; i < 500; i++) {
+for (let i = 1; i < 100; i++) {
   // ids.add(~~(Math.random() * 1e6))
   ids2.add(i)
 }
