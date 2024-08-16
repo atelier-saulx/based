@@ -107,6 +107,7 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     struct selva_string *s = nfo2p(fields, nfo);
 
     assert(((uintptr_t)s & 7) == 0);
+    assert(s);
 
     if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
         if (fs->string.fixed_len == 0) {
@@ -406,9 +407,13 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return set_reference(db, fs, node, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_REFERENCES:
         /* TODO */
+        fprintf(stderr, "an attempt to set references at %d:%d.%d\n",
+                node->type, node->node_id, fs->field);
         return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO Implement weak ref */
+        fprintf(stderr, "an attempt to set weak references at %d:%d.%d\n",
+                node->type, node->node_id, fs->field);
         return SELVA_ENOTSUP;
     }
 
@@ -423,6 +428,7 @@ int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct Se
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
 {
     struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo;
 
     if (fs->type != SELVA_FIELD_TYPE_STRING) {
         return SELVA_EINTYPE;
@@ -432,7 +438,14 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
         return SELVA_ENOBUFS;
     }
 
-    *s = get_mutable_string(fields, fs, &fields->fields_map[fs->field], len);
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
+        *nfo = alloc_block(fields, fs);
+    } else if (nfo->type != fs->type) {
+        return SELVA_EINVAL;
+    }
+
+    *s = get_mutable_string(fields, fs, nfo, len);
     return 0;
 }
 
@@ -519,6 +532,7 @@ int selva_fields_get_reference_meta_mutable_string(
         struct selva_string **s)
 {
     struct SelvaFieldSchema *fs;
+    struct SelvaFieldInfo *nfo;
 
     if (field >= efc->nr_fields) {
         return SELVA_EINVAL;
@@ -534,7 +548,16 @@ int selva_fields_get_reference_meta_mutable_string(
     }
 
     ensure_ref_meta(node, ref, efc);
-    *s = get_mutable_string(ref->meta, fs, &ref->meta->fields_map[fs->field], len);
+    struct SelvaFields *fields = ref->meta;
+
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
+        *nfo = alloc_block(fields, fs);
+    } else if (nfo->type != fs->type) {
+        return SELVA_EINVAL;
+    }
+
+    *s = get_mutable_string(ref->meta, fs, nfo, len);
     return 0;
 }
 
