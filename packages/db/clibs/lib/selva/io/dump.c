@@ -20,6 +20,8 @@
 #include "../io.h"
 #include "io_struct.h"
 
+#define USE_DUMP_MAGIC_FIELD_BEGIN 0
+
 /*
  * Pick 32-bit primes for these.
  */
@@ -29,6 +31,9 @@
 #define DUMP_MAGIC_NODES        2460238717
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
+#if USE_DUMP_MAGIC_FIELD_BEGIN
+#define DUMP_MAGIC_FIELD_BEGIN  3734376047
+#endif
 #define DUMP_MAGIC_FIELD_END    2944546091
 #define DUMP_MAGIC_ALIASES      4019181209
 
@@ -73,9 +78,10 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
 {
     size_t len;
     const char *str = selva_string_to_str(string, &len);
+    sdb_arr_len_t sdb_len = len;
 
-    io->sdb_write(&len, sizeof(size_t), 1, io);
-    io->sdb_write(str, sizeof(char), len, io);
+    io->sdb_write(&sdb_len, sizeof(sdb_len), 1, io);
+    io->sdb_write(str, sizeof(char), sdb_len, io);
 }
 
 static void save_field_text(struct selva_io *io)
@@ -125,10 +131,13 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
         if (err) {
             /* TODO Handle error? */
             db_panic("Handle this error");
-            continue;
         }
 
+#if USE_DUMP_MAGIC_FIELD_BEGIN
+        write_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN);
+#endif
         io->sdb_write(&field, sizeof(field), 1, io);
+        io->sdb_write(&any.type, sizeof(enum SelvaFieldType), 1, io);
         switch (any.type) {
         case SELVA_FIELD_TYPE_NULL:
             break;
@@ -377,11 +386,12 @@ int io_dump_save_async(struct SelvaDb *db, const char *filename)
 
 static void load_schema(struct selva_io *io, struct SelvaDb *db)
 {
+    sdb_nr_types_t nr_types;
+
     if (!read_dump_magic(io, DUMP_MAGIC_SCHEMA)) {
         db_panic("Invalid schema magic");
     }
 
-    sdb_nr_types_t nr_types;
     if (io->sdb_read(&nr_types, sizeof(nr_types), 1, io) != 1) {
         db_panic("nr_types schema");
     }
@@ -407,10 +417,9 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
 
 static int load_field_string(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
-    size_t len;
+    sdb_arr_len_t len;
     struct selva_string *s;
     int err;
-
 
     io->sdb_read(&len, sizeof(len), 1, io);
     err = selva_fields_get_mutable_string(node, fs, len, &s);
@@ -433,10 +442,9 @@ static int load_reference_meta_field_string(
         struct EdgeFieldConstraint *efc,
         field_t field)
 {
-    size_t len;
+    sdb_arr_len_t len;
     struct selva_string *s;
     int err;
-
 
     io->sdb_read(&len, sizeof(len), 1, io);
     err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, len, &s);
@@ -478,29 +486,45 @@ static void load_reference_meta(
         struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
-        db_panic("Load fields of %d:%d: Invalid magic", node->type, node->node_id);
+        db_panic("Load ref meta fields of %d:%d: Invalid magic", node->type, node->node_id);
     }
 
     sdb_nr_fields_t nr_fields;
     io->sdb_read(&nr_fields, sizeof(nr_fields), 1, io);
 
     for (sdb_nr_fields_t i = 0; i < nr_fields; i++) {
-        field_t field;
+        struct {
+            field_t field;
+            enum SelvaFieldType type;
+        } __packed rd;
         struct SelvaFieldSchema *fs;
 
-        io->sdb_read(&field, sizeof(field), 1, io);
-        if (field >= efc->nr_fields) {
+#if USE_DUMP_MAGIC_FIELD_BEGIN
+        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {
+            db_panic("Invalid field begin magic for %d:%d",
+                     node->type, node->node_id);
+        }
+#endif
+
+        io->sdb_read(&rd, sizeof(rd), 1, io);
+
+        if (rd.field >= efc->nr_fields) {
             db_panic("Invalid meta field: %d:%d",
                      node->type, node->node_id);
         }
-        fs = &efc->field_schemas[field];
+        fs = &efc->field_schemas[rd.field];
+        if (rd.type != SELVA_FIELD_TYPE_NULL && rd.type != fs->type) {
+            db_panic("Invalid field type found %d != %d\n",
+                     rd.type, fs->type);
+        }
 
         const size_t value_size = fields_get_data_size(fs);
         char value_buf[value_size];
-        int err = 0;
+        int err = SELVA_EINVAL;
 
         switch (fs->type) {
         case SELVA_FIELD_TYPE_NULL:
+            err = 0;
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_CREATED:
@@ -515,28 +539,33 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
             /* TODO check return value */
             io->sdb_read(value_buf, sizeof(char), value_size, io);
-            err = selva_fields_set_reference_meta(node, ref, efc, field, value_buf, value_size);
+            err = selva_fields_set_reference_meta(node, ref, efc, rd.field, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            err = load_reference_meta_field_string(io, node, ref, efc, field);
+            err = load_reference_meta_field_string(io, node, ref, efc, rd.field);
             break;
         case SELVA_FIELD_TYPE_TEXT:
             /* TODO Text field support in meta */
 #if 0
-            err = load_field_text(io, db, ns, node, fs, field);
+            err = load_field_text(io, db, ns, node, fs, rd.field);
 #endif
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
         case SELVA_FIELD_TYPE_REFERENCES:
             db_panic("References not supported in edge meta");
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            err = load_reference_meta_field_weak_references(io, db, node, ref, efc, field);
+            err = load_reference_meta_field_weak_references(io, db, node, ref, efc, rd.field);
             break;
         }
         if (err) {
             db_panic("Failed to set field (%d:%d:%d): %s",
-                     node->type, node->node_id, fs->field,
+                     node->type, node->node_id, rd.field,
                      selva_strerror(err));
+        }
+
+        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
+            db_panic("Invalid field end magic for %d:%d.%d",
+                     node->type, node->node_id, rd.field);
         }
     }
 }
@@ -615,27 +644,47 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
 static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
     struct SelvaNodeSchema *ns = &te->ns;
+    sdb_nr_fields_t nr_fields;
 
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
         db_panic("Invalid magic for node fields load fields of %d:%d", node->type, node->node_id);
     }
 
-    sdb_nr_fields_t nr_fields;
     io->sdb_read(&nr_fields, sizeof(nr_fields), 1, io);
-
     for (sdb_nr_fields_t i = 0; i < nr_fields; i++) {
-        field_t field;
+        struct {
+            field_t field;
+            enum SelvaFieldType type;
+        } __packed rd;
         struct SelvaFieldSchema *fs;
 
-        io->sdb_read(&field, sizeof(field), 1, io);
-        fs = db_get_fs_by_ns_field(ns, field);
+#if USE_DUMP_MAGIC_FIELD_BEGIN
+        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {
+            db_panic("Invalid field begin magic for %d:%d",
+                     node->type, node->node_id);
+        }
+#endif
+
+        io->sdb_read(&rd, sizeof(rd), 1, io);
+
+        fs = db_get_fs_by_ns_field(ns, rd.field);
+        if (!fs) {
+            db_panic("Field Schema not found for %d:%d.%d",
+                      node->type, node->node_id, rd.field);
+        }
+        if (rd.type != SELVA_FIELD_TYPE_NULL && rd.type != fs->type) {
+            db_panic("Invalid field type found for %d:%d.%d: %d != %d\n",
+                     node->type, node->node_id, fs->field,
+                     rd.type, fs->type);
+        }
 
         const size_t value_size = fields_get_data_size(fs);
         char value_buf[value_size];
-        int err = 0;
+        int err = SELVA_EINVAL;
 
-        switch (fs->type) {
+        switch (rd.type) {
         case SELVA_FIELD_TYPE_NULL:
+            err = 0;
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_CREATED:
@@ -656,26 +705,27 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = load_field_string(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            err = load_field_text(io, db, ns, node, fs, field);
+            err = load_field_text(io, db, ns, node, fs, rd.field);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            err = load_field_reference(io, db, ns, node, fs, field);
+            err = load_field_reference(io, db, ns, node, fs, rd.field);
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
-            err = load_field_references(io, db, ns, node, fs, field);
+            err = load_field_references(io, db, ns, node, fs, rd.field);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            err = load_field_weak_references(io, db, ns, node, fs, field);
+            err = load_field_weak_references(io, db, ns, node, fs, rd.field);
             break;
         }
         if (err) {
             db_panic("Failed to set field (%d:%d:%d): %s",
-                     node->type, node->node_id, fs->field,
+                     node->type, node->node_id, rd.field,
                      selva_strerror(err));
         }
 
-        if (!read_dump_magic(io, 2944546091)) {
-            db_panic("Invalid field end magic %d:%d.%d", node->type, node->node_id, field);
+        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
+            db_panic("Invalid field end magic for %d:%d.%d",
+                     node->type, node->node_id, rd.field);
         }
     }
 }
