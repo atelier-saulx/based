@@ -25,7 +25,7 @@
  */
 #define DUMP_MAGIC_SCHEMA       3360690301
 #define DUMP_MAGIC_TYPES        3550908863
-#define DUMP_MAGIC_TYPES_ENTRY  4229893463
+#define DUMP_MAGIC_TYPE_END     4229893463
 #define DUMP_MAGIC_NODES        2460238717
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
@@ -282,10 +282,10 @@ static void save_types(struct selva_io *io, struct SelvaDb *db)
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         const node_type_t type = te->type;
 
-        write_dump_magic(io, DUMP_MAGIC_TYPES_ENTRY);
         io->sdb_write(&type, sizeof(type), 1, io);
         save_nodes(io, te);
         save_aliases(io, te);
+        write_dump_magic(io, DUMP_MAGIC_TYPE_END);
     }
 }
 
@@ -750,10 +750,6 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         node_type_t type;
 
-        if (!read_dump_magic(io, DUMP_MAGIC_TYPES_ENTRY)) {
-            db_panic("Invalid entry magic for type %d", te->type);
-        }
-
         io->sdb_read(&type, sizeof(type), 1, io);
         if (type != te->type) {
             db_panic("Incorrect type found: %d != %d", type, te->type);
@@ -761,6 +757,10 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
 
         load_nodes(io, db, te);
         load_aliases(io, te);
+
+        if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
+            db_panic("Invalid entry magic for type %d", te->type);
+        }
     }
 }
 
