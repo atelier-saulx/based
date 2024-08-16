@@ -220,7 +220,6 @@ static void save_nodes(struct selva_io *io, struct SelvaTypeEntry *te)
     write_dump_magic(io, DUMP_MAGIC_NODES);
 
     io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
-    printf("Writing %d nodes of type %d\n", (int)nr_nodes, te->type);
 
     RB_FOREACH(node, SelvaNodeIndex, nodes) {
         save_node(io, node);
