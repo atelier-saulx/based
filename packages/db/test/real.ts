@@ -49,9 +49,9 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     mainFields.sort((a, b) => a.selvaField - b.selvaField)
     restFields.sort((a, b) => a.selvaField - b.selvaField)
 
-    console.log('\nnode_type:', i)
-    console.log('mainFields:', mainFields)
-    console.log('restFields:', restFields)
+    //console.log('\nnode_type:', i)
+    //console.log('mainFields:', mainFields)
+    //console.log('restFields:', restFields)
 
     // TODO Remove this once the types agree
     const typeMap = {
@@ -93,6 +93,22 @@ function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
   return selvaSchema
 }
 
+const createUser = (db: BasedDb, dbp, id: number, name: string) => {
+  const typeId = Object.keys(db.schemaTypesParsed).indexOf('user')
+  const fields = db.schemaTypesParsed.user.fields
+  const nameLen = Buffer.byteLength(name)
+  const buf = Buffer.allocUnsafe(5 + nameLen)
+  let off = 0
+
+  // name
+  buf.writeUInt32LE(5 + nameLen, off) // len
+  buf.writeInt8(fields.name.selvaField, (off += 4)) // field
+  buf.write(name, (off += 1))
+  off += nameLen
+
+  return selva.db_update(dbp, typeId, id, buf)
+}
+
 test.serial.skip('create and destroy a db', async (t) => {
   const dbp = selva.db_create()
 
@@ -104,7 +120,7 @@ test.serial.skip('create and destroy a db', async (t) => {
   t.true(true)
 })
 
-test.serial('query + filter', async (t) => {
+test.serial.only('query + filter', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -160,32 +176,14 @@ test.serial('query + filter', async (t) => {
     },
   })
 
-  console.log('Schema', process.pid)
-  //await wait(15e3)
   const schemaBufs = schema2selva(db.schemaTypesParsed)
   //console.dir(db.schemaTypesParsed, { depth: 100 })
-  console.log('bufs', schemaBufs)
+  //console.log('bufs', schemaBufs)
   for (let i = 0; i < schemaBufs.length; i++) {
-    console.log(
-      `schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`,
-    )
+    t.deepEqual(selva.db_schema_create(dbp, i, schemaBufs[i]), 0)
   }
 
-  const createUser = (id: number, name: string) => {
-    const fields = db.schemaTypesParsed.user.fields
-    const nameLen = Buffer.byteLength(name)
-    const buf = Buffer.allocUnsafe(5 + nameLen)
-    let off = 0
-
-    // name
-    buf.writeUInt32LE(5 + nameLen, off) // len
-    buf.writeInt8(fields.name.selvaField, (off += 4)) // field
-    buf.write(name, (off += 1))
-    off += nameLen
-
-    console.log(`create user ${name}:`, selva.db_update(dbp, 1, id, buf))
-  }
-  createUser(0, 'Synergy Greg')
+  t.deepEqual(createUser(db, dbp, 0, 'Synergy Greg'), 0)
 
   //const dx = peroformance.now()
   console.log('GO!', process.pid)
@@ -254,14 +252,10 @@ test.serial('query + filter', async (t) => {
 
   console.log('GET')
   for (let nodeId = 0; nodeId < 20; nodeId++) {
-    console.log(
-      `${nodeId}.vectorClock`,
-      selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField),
-    )
+    t.deepEqual(selva.db_get_field(dbp, 0, nodeId, fields.vectorClock.selvaField), nodeId % 4)
   }
-  console.log(
-    `now get flap: "${selva.db_get_field(dbp, 0, 10, fields.flap.selvaField)}"`,
-  )
+  t.deepEqual(selva.db_get_field(dbp, 0, 10, fields.flap.selvaField), 'Hippity hoppity there is no property')
+
   console.log('ref', selva.db_get_field(dbp, 0, 10, fields.user.selvaField))
 
   //const trefstart = performance.now()
@@ -393,34 +387,13 @@ test.serial.only('1bn', async (t) => {
     },
   })
 
-  console.log('Schema', process.pid)
-  //await wait(15e3)
   const schemaBufs = schema2selva(db.schemaTypesParsed)
-  //console.dir(db.schemaTypesParsed, { depth: 100 })
-  console.log('bufs', schemaBufs)
   for (let i = 0; i < schemaBufs.length; i++) {
-    console.log(
-      `schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`,
-    )
+    t.deepEqual(selva.db_schema_create(dbp, i, schemaBufs[i]), 0)
   }
 
-  const createUser = (id: number, name: string) => {
-    const fields = db.schemaTypesParsed.user.fields
-    const nameLen = Buffer.byteLength(name)
-    const buf = Buffer.allocUnsafe(5 + nameLen)
-    let off = 0
+  t.deepEqual(createUser(db, dbp, 0, 'Synergy Greg'), 0)
 
-    // name
-    buf.writeUInt32LE(5 + nameLen, off) // len
-    buf.writeInt8(fields.name.selvaField, (off += 4)) // field
-    buf.write(name, (off += 1))
-    off += nameLen
-
-    console.log(`create user ${name}:`, selva.db_update(dbp, 2, id, buf))
-  }
-  createUser(0, 'Synergy Greg')
-
-  //const dx = peroformance.now()
   console.log('GO!', process.pid)
   //await wait(15e3)
 
@@ -473,11 +446,7 @@ test.serial.only('1bn', async (t) => {
       buf.writeUint32LE(0, (off += 1))
       off += 4
     }
-    const res = selva.db_update_batch(dbp, 1, buf.subarray(0, bytes))
-    if (res != 0) {
-        t.fail(`Update complex failed: ${res}`);
-    }
-    //console.log('wrote some bytes')
+    t.deepEqual(selva.db_update_batch(dbp, 1, buf.subarray(0, bytes)), 0)
   }
 
   // Create simplies
@@ -501,11 +470,7 @@ test.serial.only('1bn', async (t) => {
 
       i++
     }
-    const res = selva.db_update_batch(dbp, 0, buf.subarray(0, bytes))
-    if (res != 0) {
-        t.fail(`Update simple failed: ${res}`);
-    }
-    //console.log('wrote some bytes')
+    t.deepEqual(selva.db_update_batch(dbp, 0, buf.subarray(0, bytes)), 0)
   }
   console.log('update took', Math.round(performance.now() - dx), 'ms')
 
@@ -533,8 +498,6 @@ test.serial.only('1bn', async (t) => {
   //console.info('query result ==', ids, Date.now() - d, 'ms')
   console.log(process.memoryUsage())
 
-  selva.save(dbp, "1bn.sdb")
-
   console.log('Destroy the db')
   const startDbDel = performance.now()
   selva.db_destroy(dbp)
@@ -545,7 +508,7 @@ test.serial.only('1bn', async (t) => {
   // global.gc()
 })
 
-test.serial('dump save & load', async (t) => {
+test.serial.only('dump save & load', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -607,34 +570,13 @@ test.serial('dump save & load', async (t) => {
     },
   })
 
-  console.log('Schema', process.pid)
-  //await wait(15e3)
   const schemaBufs = schema2selva(db.schemaTypesParsed)
-  //console.dir(db.schemaTypesParsed, { depth: 100 })
-  console.log('bufs', schemaBufs)
   for (let i = 0; i < schemaBufs.length; i++) {
-    console.log(
-      `schema update. type: ${i} res: ${selva.db_schema_create(dbp, i, schemaBufs[i])}`,
-    )
+    t.deepEqual(selva.db_schema_create(dbp, i, schemaBufs[i]), 0)
   }
 
-  const createUser = (id: number, name: string) => {
-    const fields = db.schemaTypesParsed.user.fields
-    const nameLen = Buffer.byteLength(name)
-    const buf = Buffer.allocUnsafe(5 + nameLen)
-    let off = 0
+  t.deepEqual(createUser(db, dbp, 0, 'Synergy Greg'), 0)
 
-    // name
-    buf.writeUInt32LE(5 + nameLen, off) // len
-    buf.writeInt8(fields.name.selvaField, (off += 4)) // field
-    buf.write(name, (off += 1))
-    off += nameLen
-
-    console.log(`create user ${name}:`, selva.db_update(dbp, 2, id, buf))
-  }
-  createUser(0, 'Synergy Greg')
-
-  //const dx = peroformance.now()
   console.log('GO!', process.pid)
   //await wait(15e3)
 
@@ -687,11 +629,7 @@ test.serial('dump save & load', async (t) => {
       buf.writeUint32LE(0, (off += 1))
       off += 4
     }
-    const res = selva.db_update_batch(dbp, 1, buf.subarray(0, bytes))
-    if (res != 0) {
-        t.fail(`Update complex failed: ${res}`);
-    }
-    //console.log('wrote some bytes')
+    t.deepEqual(selva.db_update_batch(dbp, 1, buf.subarray(0, bytes)), 0)
   }
 
   // Create simplies
@@ -715,20 +653,18 @@ test.serial('dump save & load', async (t) => {
 
       i++
     }
-    const res = selva.db_update_batch(dbp, 0, buf.subarray(0, bytes))
-    if (res != 0) {
-        t.fail(`Update simple failed: ${res}`);
-    }
+    t.deepEqual(selva.db_update_batch(dbp, 0, buf.subarray(0, bytes)), 0)
   }
   console.log('update took', Math.round(performance.now() - dx), 'ms')
 
   console.log('save')
-  selva.save(dbp, "test.sdb")
+  selva.db_save(dbp, "test.sdb")
   console.log(process.memoryUsage())
 
   await wait(5e3)
   console.log('load')
-  const dbp1 = selva.load("test.sdb")
+  //await wait(15e3)
+  const dbp1 = selva.db_load("test.sdb")
 
   console.log('Destroy the db')
   const startDbDel = performance.now()

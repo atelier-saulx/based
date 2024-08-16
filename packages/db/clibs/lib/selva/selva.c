@@ -241,18 +241,6 @@ static napi_value selva_db_destroy(napi_env env, napi_callback_info info)
     return res2napi(env, 0);
 }
 
-static napi_value selva_db_save(napi_env env, napi_callback_info info)
-{
-    /* TODO save */
-    return res2napi(env, SELVA_ENOTSUP);
-}
-
-static napi_value selva_db_load(napi_env env, napi_callback_info info)
-{
-    /* TODO load */
-    return res2napi(env, SELVA_ENOTSUP);
-}
-
 // selva_db_schema_update(db, type, schema): number
 static napi_value selva_db_schema_create(napi_env env, napi_callback_info info)
 {
@@ -880,8 +868,8 @@ static napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor desc[] = {
       DECLARE_NAPI_METHOD("db_create", selva_db_create),
       DECLARE_NAPI_METHOD("db_destroy", selva_db_destroy),
-      DECLARE_NAPI_METHOD("db_save", selva_db_save),
-      DECLARE_NAPI_METHOD("db_load", selva_db_load),
+      DECLARE_NAPI_METHOD("db_save", selva_save),
+      DECLARE_NAPI_METHOD("db_load", selva_load),
       DECLARE_NAPI_METHOD("db_schema_create", selva_db_schema_create),
       DECLARE_NAPI_METHOD("db_update", selva_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
@@ -894,8 +882,6 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_get_alias", selva_db_get_alias),
       DECLARE_NAPI_METHOD("traverse_field_bfs", selva_traverse_field_bfs),
       DECLARE_NAPI_METHOD("find", selva_find),
-      DECLARE_NAPI_METHOD("save", selva_save),
-      DECLARE_NAPI_METHOD("load", selva_load),
   };
   napi_status status;
 
