@@ -59,8 +59,9 @@ test.serial('range', async (t) => {
   db.create('user', {
     age: 37,
     nr: 3,
+    email: 'merp_3@once.net',
     location: {
-      address: 'Derpstreet 2',
+      address: 'Derpstreet 3',
     },
   })
 
@@ -70,18 +71,7 @@ test.serial('range', async (t) => {
 
   t.deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
 
-  // t.deepEqual(result.toObject(), [
-  //   {
-  //     id: 1,
-  //     name: '',
-  //     flap: 0,
-  //     email: 'merp_merp@once.net',
-  //     age: 99,
-  //     snurp: 'derp derp',
-  //     burp: 66,
-  //     location: { label: 'BLA BLA', x: 0, y: 0 },
-  //   },
-  // ])
+  const result2 = db.query('user').include('nr').sort('email').range(1, 1).get()
 
-  t.true(true)
+  t.deepEqual(result2.toObject(), [{ id: 2, nr: 2 }])
 })

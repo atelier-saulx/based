@@ -173,7 +173,6 @@ pub fn queryNonSort(
 ) !void {
     var i: u32 = 1;
     var currentShard: u16 = 0;
-
     var correctedForOffset: u32 = offset;
 
     checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
@@ -184,14 +183,15 @@ pub fn queryNonSort(
             continue :checkItem;
         }
 
-        if (correctedForOffset > 0) {
+        if (correctedForOffset != 0) {
             correctedForOffset -= 1;
-        } else {
-            const size = try getFields(ctx, i, typeId, null, include, currentShard, 0);
-            if (size > 0) {
-                ctx.size += size;
-                ctx.totalResults += 1;
-            }
+            continue :checkItem;
+        }
+
+        const size = try getFields(ctx, i, typeId, null, include, currentShard, 0);
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
         }
     }
 }
@@ -215,13 +215,17 @@ pub fn querySort(
     }
     var currentShard: u16 = 0;
     var first: bool = true;
-    checkItem: while (!end and ctx.totalResults < offset + limit) {
+    var correctedForOffset: u32 = offset;
+
+    checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
         errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
             end = true;
             break;
         };
+
         if (first) {
             first = false;
             if (queryType == 4) {
@@ -231,10 +235,17 @@ pub fn querySort(
             }
         }
         const id = utils.readInt(u32, db.data(v), 0);
+
         currentShard = db.idToShard(id);
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
         }
+
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue :checkItem;
+        }
+
         const size = try getFields(ctx, id, typeId, null, include, currentShard, 0);
         if (size > 0) {
             ctx.size += size;
