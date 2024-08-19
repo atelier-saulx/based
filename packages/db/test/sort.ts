@@ -326,7 +326,6 @@ test.serial('sort', async (t) => {
       .get()
       .toObject(),
     [
-      // { id: 6, name: 'mr x', age: 0 },
       { id: 5, name: 'mr z', age: 1 },
       { id: 2, name: 'mr flap', age: 50 },
       { id: 3, name: 'mr snurp', age: 99 },
@@ -345,7 +344,25 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  // multi sort indexes and check entries on db
-  // make entries into an api
+  const mrBlurp = db.create('user', {
+    age: 2,
+    email: 'MR BLURP',
+  })
+
+  db.drain()
+
+  t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
+
+  t.is(
+    db
+      .query('user', ids2)
+      .include('name', 'age', 'email')
+      .sort('name', 'asc')
+      .get().length,
+    16,
+  )
+
+  db.remove('user', mrBlurp)
+
   db.stats()
 })
