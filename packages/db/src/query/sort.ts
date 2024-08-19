@@ -26,17 +26,19 @@ export const sort = (
   }
 
   if (fieldDef.field === 0) {
-    const sortIndex = query.db.sortIndexesMain.get(query.schema.prefixNumber)
+    let sortIndex = query.db.sortIndexesMain.get(query.schema.prefixNumber)
     if (!sortIndex) {
-      query.db.sortIndexes.set(query.schema.prefixNumber, new Set())
+      query.db.sortIndexesMain.set(query.schema.prefixNumber, new Set())
+      sortIndex = query.db.sortIndexesMain.get(query.schema.prefixNumber)
     }
     if (!sortIndex.has(fieldDef.start)) {
       sortIndex.add(fieldDef.start)
     }
   } else {
-    const sortIndex = query.db.sortIndexes.get(query.schema.prefixNumber)
+    let sortIndex = query.db.sortIndexes.get(query.schema.prefixNumber)
     if (!sortIndex) {
       query.db.sortIndexes.set(query.schema.prefixNumber, new Set())
+      sortIndex = query.db.sortIndexes.get(query.schema.prefixNumber)
     }
     if (!sortIndex.has(fieldDef.field)) {
       sortIndex.add(fieldDef.field)
