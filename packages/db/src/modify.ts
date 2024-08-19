@@ -193,6 +193,10 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
   def.total++
+
+  // add empty strings :/
+  // makes create a bit different
+
   if (!addModify(db, id, value, def.tree, def, 3, false) || def.mainLen === 0) {
     const nextLen = 5 + def.mainLen
     if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
@@ -210,9 +214,11 @@ export const create = (db: BasedDb, type: string, value: any) => {
     }
     db.modifyBuffer.len += nextLen
   }
+
   if (!db.isDraining) {
     startDrain(db)
   }
+
   return id
 }
 

@@ -18,6 +18,7 @@ pub const SortIndex = struct {
 pub const Indexes = std.AutoHashMap(SortDbiName, SortIndex);
 pub var sortIndexes = Indexes.init(db.allocator);
 pub const StartSet = std.AutoHashMap(u16, u8);
+
 // TODO: make u16
 pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
 
@@ -138,7 +139,6 @@ fn createSortIndex(
                 end = true;
                 continue :shardLoop;
             };
-
             try writeToSortIndex(&value, &key, start, len, cursor, field);
             if (first) {
                 first = false;
@@ -146,6 +146,7 @@ fn createSortIndex(
             }
         }
     }
+
     try errors.mdb(c.mdb_txn_commit(txn));
 
     if (len > 0) {
@@ -206,7 +207,7 @@ pub fn getOrCreateReadSortIndex(
             std.log.err("Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
             return err;
         };
-        sortIndexes.put(name, newSortIndex) catch {};
+        try sortIndexes.put(name, newSortIndex);
         return newSortIndex;
     }
     if (s.?.queryId != queryId) {

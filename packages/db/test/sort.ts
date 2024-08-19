@@ -363,6 +363,4 @@ test.serial('sort', async (t) => {
   )
 
   db.remove('user', mrBlurp)
-
-  db.stats()
 })
