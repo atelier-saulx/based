@@ -23,7 +23,7 @@ db.updateSchema({
     user: {
       fields: {
         age: { type: 'integer' },
-        myBlup: { type: 'reference', allowedType: 'blup' },
+        // myBlup: { type: 'reference', allowedType: 'blup' },
         name: { type: 'string' },
         flap: { type: 'integer' },
         email: { type: 'string', maxLength: 14 },

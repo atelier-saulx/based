@@ -102,7 +102,6 @@ const addModify = (
           schema.stringFieldsCurrent[t.field] = 2
           db.modifyBuffer.hasStringField++
         }
-
         // add zstd
         const byteLen = value.length + value.length
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
@@ -223,29 +222,29 @@ export const create = (db: BasedDb, type: string, value: any) => {
     db.modifyBuffer.len += nextLen
   }
 
-  if (!db.isDraining) {
-    startDrain(db)
-  }
-
   // if touched lets see perf impact here
   if (def.hasStringField) {
     if (db.modifyBuffer.hasStringField != -1) {
-      // console.log('snurp', new Uint8Array(def.stringFieldsCurrent))
-      // extra thing to loop trough
-
-      if (db.modifyBuffer.hasStringField == def.stringFieldsSize) {
-        // means do nothign
-      } else {
+      if (db.modifyBuffer.hasStringField != def.stringFieldsSize + 1) {
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = 7
+        let sizeIndex = db.modifyBuffer.len + 1
+        let size = 0
+        db.modifyBuffer.len += 3
         for (const x of def.stringFieldsLoop) {
           if (def.stringFieldsCurrent[x.field] == 1) {
-            // add to mod buffer
-            // console.log('undefined index potentialy of', x)
+            db.modifyBuffer.buffer[db.modifyBuffer.len] = x.field
+            size += 1
+            db.modifyBuffer.len += 1
           }
         }
+        db.modifyBuffer.buffer.writeUint32LE(size, sizeIndex)
       }
-
       def.stringFields.copy(def.stringFieldsCurrent)
     }
+  }
+
+  if (!db.isDraining) {
+    startDrain(db)
   }
 
   return id

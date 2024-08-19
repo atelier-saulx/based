@@ -83,7 +83,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operationType == 7) {
             // just make it like this
             // field + rest
-            i += 2;
+            const len = readInt(u32, operation, 0);
+            i += len + 3;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
