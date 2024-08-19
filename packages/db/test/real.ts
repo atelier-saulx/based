@@ -114,7 +114,7 @@ test.serial.skip('create and destroy a db', async (t) => {
   t.true(true)
 })
 
-test.serial.only('query + filter', async (t) => {
+test.serial('query + filter', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -265,9 +265,8 @@ test.serial.only('query + filter', async (t) => {
   //  console.log(`type: ${type} node: ${nodeId}`),
   //)
 
-  console.log('alias:')
   selva.db_set_alias(dbp, 0, 0, Buffer.from('bestalias\0'))
-  console.log(selva.db_get_alias(dbp, 0, Buffer.from('bestalias\0')))
+  t.deepEqual(selva.db_get_alias(dbp, 0, Buffer.from('bestalias\0')), 0)
 
   console.log('filtering:')
   let matchCount = 0
@@ -509,7 +508,7 @@ test.serial.skip('1bn', async (t) => {
   console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
 })
 
-test.serial.only('dump save & load', async (t) => {
+test.serial('dump save & load', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
