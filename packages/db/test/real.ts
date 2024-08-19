@@ -245,8 +245,8 @@ test.serial('query + filter', async (t) => {
   console.log('updateBatch', Math.round(performance.now() - dx), 'ms')
 
   const typeIds = {
-      simple: Object.keys(db.schemaTypesParsed).indexOf('simple'),
-      user: Object.keys(db.schemaTypesParsed).indexOf('user'),
+    simple: Object.keys(db.schemaTypesParsed).indexOf('simple'),
+    user: Object.keys(db.schemaTypesParsed).indexOf('user'),
   };
 
   console.log('GET')
