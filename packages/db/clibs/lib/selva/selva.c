@@ -592,6 +592,13 @@ static int node_cb_js_trampoline(struct SelvaDb *, const struct SelvaTraversalMe
     napi_create_bigint_uint64(ctx->env, (uint64_t)node, &argv[2]);
 
     status = napi_call_function(ctx->env, ctx->this, ctx->func, argc, argv, &result);
+
+    bool is_pending;
+    napi_is_exception_pending(ctx->env, &is_pending);
+    if (is_pending) {
+        return -1;
+    }
+
     if (status != napi_ok) {
         const char *code = NULL;
 
