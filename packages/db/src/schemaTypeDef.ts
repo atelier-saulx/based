@@ -77,7 +77,7 @@ export type SchemaTypeDef = {
     [key: string]: FieldDef
   }
   prefixString: string
-  // prefixNumber: number
+  prefixNumber: number
   prefix: Uint8Array
   seperate: FieldDef[]
   tree: SchemaFieldTree
@@ -115,7 +115,7 @@ export const createSchemaTypeDef = (
     type: typeName,
     fields: {},
     prefix: prefixStringToUint8(type),
-    // prefixNumber: 0,
+    prefixNumber: 0,
     mainLen: 0,
     prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
@@ -128,10 +128,9 @@ export const createSchemaTypeDef = (
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
-  // if (result.prefixNumber == 0) {
-  //   console.log('f', result.prefix.buffer)
-  //   // result.prefixNumber = result.prefix.buffer
-  // }
+  if (result.prefixNumber == 0) {
+    result.prefixNumber = new Uint16Array(result.prefix)[0]
+  }
 
   const encoder = new TextEncoder()
 

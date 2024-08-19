@@ -25,14 +25,21 @@ export const sort = (
     query.sortBuffer = buf
   }
 
-  //
-  // if (!query.db.sortIndexes[query.schema.type]) {
-  //   query.db.sortIndexes[query.schema.type] = new Set()
-  // }
-
-  // if (!query.db.sortIndexes[query.schema.type]) {
-  //
-  // }
-
-  //
+  if (fieldDef.field === 0) {
+    const sortIndex = query.db.sortIndexesMain.get(query.schema.prefixNumber)
+    if (!sortIndex) {
+      query.db.sortIndexes.set(query.schema.prefixNumber, new Set())
+    }
+    if (!sortIndex.has(fieldDef.start)) {
+      sortIndex.add(fieldDef.start)
+    }
+  } else {
+    const sortIndex = query.db.sortIndexes.get(query.schema.prefixNumber)
+    if (!sortIndex) {
+      query.db.sortIndexes.set(query.schema.prefixNumber, new Set())
+    }
+    if (!sortIndex.has(fieldDef.field)) {
+      sortIndex.add(fieldDef.field)
+    }
+  }
 }
