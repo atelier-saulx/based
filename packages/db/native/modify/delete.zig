@@ -13,5 +13,8 @@ const getOrCreateShard = Modify.getOrCreateShard;
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     const shard = try getOrCreateShard(ctx);
     db.deleteField(ctx.id, shard) catch {};
+
+    // delete from sort indexe
+
     return 0;
 }

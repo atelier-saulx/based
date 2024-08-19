@@ -313,4 +313,35 @@ test.serial('sort', async (t) => {
       { id: 16, name: 'mr 9', age: 309 },
     ],
   )
+
+  db.remove('user', mrX)
+
+  db.drain()
+
+  t.deepEqual(
+    db
+      .query('user', ids2)
+      .include('name', 'age')
+      .sort('age', 'asc')
+      .get()
+      .toObject(),
+    [
+      // { id: 6, name: 'mr x', age: 0 },
+      { id: 5, name: 'mr z', age: 1 },
+      { id: 2, name: 'mr flap', age: 50 },
+      { id: 3, name: 'mr snurp', age: 99 },
+      { id: 4, name: 'mr nurp', age: 200 },
+      { id: 1, name: 'mr blap', age: 201 },
+      { id: 7, name: 'mr 0', age: 300 },
+      { id: 8, name: 'mr 1', age: 301 },
+      { id: 9, name: 'mr 2', age: 302 },
+      { id: 10, name: 'mr 3', age: 303 },
+      { id: 11, name: 'mr 4', age: 304 },
+      { id: 12, name: 'mr 5', age: 305 },
+      { id: 13, name: 'mr 6', age: 306 },
+      { id: 14, name: 'mr 7', age: 307 },
+      { id: 15, name: 'mr 8', age: 308 },
+      { id: 16, name: 'mr 9', age: 309 },
+    ],
+  )
 })
