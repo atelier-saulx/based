@@ -665,12 +665,24 @@ test.serial.only('dump save & load', async (t) => {
 
   console.log('save')
   selva.db_save(dbp, "test.sdb")
-  console.log(process.memoryUsage())
+  //console.log(process.memoryUsage())
 
   await wait(5e3)
   console.log('load')
-  //await wait(15e3)
   const dbp1 = selva.db_load("test.sdb")
+
+  selva.traverse_field_bfs(dbp, typeIds.complex, 0, (type, nodeId, node) => {
+      t.deepEqual(selva.db_exists(dbp1, type, nodeId), true)
+      return -1 // stop traverse
+  })
+  selva.traverse_field_bfs(dbp, typeIds.simplex, 0, (type, nodeId, node) => {
+      t.deepEqual(selva.db_exists(dbp1, type, nodeId), true)
+      return -1 // stop traverse
+  })
+  selva.traverse_field_bfs(dbp, typeIds.user, 0, (type, nodeId, node) => {
+      t.deepEqual(selva.db_exists(dbp1, type, nodeId), true)
+      return -1 // stop traverse
+  })
 
   console.log('Destroy the db')
   const startDbDel = performance.now()
