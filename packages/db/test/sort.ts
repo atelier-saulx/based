@@ -344,4 +344,8 @@ test.serial('sort', async (t) => {
       { id: 16, name: 'mr 9', age: 309 },
     ],
   )
+
+  // multi sort indexes and check entries on db
+  // make entries into an api
+  db.stats()
 })

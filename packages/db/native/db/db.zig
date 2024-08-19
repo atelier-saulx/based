@@ -129,11 +129,12 @@ pub fn writeField(id: u32, buf: []u8, shard: Shard) !void {
     try errors.mdb(c.mdb_cursor_put(shard.cursor, &k, &v, 0));
 }
 
-pub fn deleteField(id: u32, shard: Shard) !void {
+pub fn deleteField(id: u32, shard: Shard) ![]u8 {
     var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
     var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
     try errors.mdb(c.mdb_cursor_get(shard.cursor, &k, &v, c.MDB_SET));
     try errors.mdb(c.mdb_cursor_del(shard.cursor, 0));
+    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 }
 
 pub inline fn commitTxn(txn: ?*c.MDB_txn) !void {
