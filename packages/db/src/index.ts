@@ -31,6 +31,7 @@ export class BasedDb {
   maxModifySize: number = 100 * 1e3 * 1e3
 
   modifyBuffer: {
+    hasStringField: number
     buffer: Buffer
     len: number
     field: number
@@ -191,6 +192,7 @@ export class BasedDb {
     }
     const max = this.maxModifySize
     this.modifyBuffer = {
+      hasStringField: -1,
       mergeMainSize: 0,
       mergeMain: null,
       buffer: Buffer.allocUnsafe(max),

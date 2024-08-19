@@ -70,7 +70,6 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
-
   fieldNames: Buffer
   fields: {
     // path including .
@@ -81,7 +80,9 @@ export type SchemaTypeDef = {
   prefix: Uint8Array
   seperate: FieldDef[]
   tree: SchemaFieldTree
-  stringFieldBuffer: Buffer
+  hasStringField: boolean
+  stringFields: Buffer // size will be max field
+  stringFieldsCurrent: Buffer // size will be max field
   responseCtx: BasedNode
 }
 
@@ -288,16 +289,24 @@ export const createSchemaTypeDef = (
 
     result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
 
-    result.stringFieldBuffer = Buffer.allocUnsafe(stringFields + 2)
-
-    result.stringFieldBuffer.writeUint16LE(stringFields, 0)
-
-    let last = 2
-    for (const f of result.seperate) {
-      if (f.type === 'string') {
-        result.stringFieldBuffer[last] = f.field
-        last++
+    if (stringFields > 0) {
+      result.hasStringField = true
+      let max = 0
+      for (const f of result.seperate) {
+        if (f.type === 'string') {
+          if (f.field > max) {
+            max = f.field
+          }
+        }
       }
+      result.stringFields = Buffer.allocUnsafe(max + 1)
+      for (const f of result.seperate) {
+        if (f.type === 'string') {
+          result.stringFields[f.field] = 1
+        }
+      }
+      result.stringFieldsCurrent = Buffer.allocUnsafe(max + 1)
+      result.stringFields.copy(result.stringFieldsCurrent)
     }
   }
 

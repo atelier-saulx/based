@@ -39,6 +39,7 @@ const setCursor = (
   }
 
   if (db.modifyBuffer.id !== id) {
+    db.modifyBuffer.hasStringField = -1
     const len = db.modifyBuffer.len
     db.modifyBuffer.buffer[len] = 1
     db.modifyBuffer.buffer.writeUInt32LE(id, len + 1)
@@ -57,6 +58,7 @@ const addModify = (
   schema: SchemaTypeDef,
   writeKey: 3 | 6,
   merge: boolean,
+  fromCreate: boolean,
 ): boolean => {
   let wroteMain = false
   for (const key in obj) {
@@ -72,6 +74,7 @@ const addModify = (
           schema,
           writeKey,
           merge,
+          fromCreate,
         )
       ) {
         wroteMain = true
@@ -95,6 +98,11 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
+        if (fromCreate) {
+          schema.stringFieldsCurrent[t.field] = 2
+          db.modifyBuffer.hasStringField++
+        }
+
         // add zstd
         const byteLen = value.length + value.length
         if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
@@ -194,13 +202,10 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const id = ++def.lastId
   def.total++
 
-  // for create add a thing in the end where we are writing the fields we have written
-  // only for strings that are seperate
-
-  // add empty strings :/
-  // makes create a bit different
-
-  if (!addModify(db, id, value, def.tree, def, 3, false) || def.mainLen === 0) {
+  if (
+    !addModify(db, id, value, def.tree, def, 3, false, true) ||
+    def.mainLen === 0
+  ) {
     const nextLen = 5 + def.mainLen
     if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
       flushBuffer(db)
@@ -222,6 +227,15 @@ export const create = (db: BasedDb, type: string, value: any) => {
     startDrain(db)
   }
 
+  // if touched lets see perf impact here
+  if (def.hasStringField) {
+    if (db.modifyBuffer.hasStringField != -1) {
+      // console.log('snurp', new Uint8Array(def.stringFieldsCurrent))
+
+      def.stringFields.copy(def.stringFieldsCurrent)
+    }
+  }
+
   return id
 }
 
@@ -233,7 +247,7 @@ export const update = (
   overwrite?: boolean,
 ) => {
   const def = db.schemaTypesParsed[type]
-  const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite)
+  const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite, false)
 
   if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
     const mergeMain = db.modifyBuffer.mergeMain

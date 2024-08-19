@@ -80,6 +80,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             i += try updatePartialField(&ctx, operation) + 1;
         } else if (operationType == 6) {
             i += try updateField(&ctx, operation) + 1;
+        } else if (operationType == 7) {
+            // just make it like this
+            // field + rest
+            i += 2;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
