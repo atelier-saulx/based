@@ -225,7 +225,7 @@ export const create = (db: BasedDb, type: string, value: any) => {
   // if touched lets see perf impact here
   if (def.hasStringField) {
     if (db.modifyBuffer.hasStringField != -1) {
-      if (db.modifyBuffer.hasStringField != def.stringFieldsSize + 1) {
+      if (db.modifyBuffer.hasStringField != def.stringFieldsSize - 1) {
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 7
         let sizeIndex = db.modifyBuffer.len + 1
         let size = 0
@@ -237,7 +237,7 @@ export const create = (db: BasedDb, type: string, value: any) => {
             db.modifyBuffer.len += 1
           }
         }
-        db.modifyBuffer.buffer.writeUint32LE(size, sizeIndex)
+        db.modifyBuffer.buffer.writeUint16LE(size, sizeIndex)
       }
       def.stringFields.copy(def.stringFieldsCurrent)
     }
