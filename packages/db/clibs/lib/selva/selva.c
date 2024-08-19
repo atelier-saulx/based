@@ -302,7 +302,7 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
     node = db_upsert_node(te, node_id);
     assert(node);
 
-    return res2napi(env, update(db, te, node, buf, len));
+    return res2napi(env, (len > 0) ? update(db, te, node, buf, len) : 0);
 }
 
 // selva_db_update_batch(db, type, buf): number
