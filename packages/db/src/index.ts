@@ -45,9 +45,6 @@ export class BasedDb {
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 
-  sortIndexes: Map<number, Set<number>> = new Map()
-  sortIndexesMain: Map<number, Set<number>> = new Map()
-
   // total write time until .drain is called manualy
   writeTime: number = 0
 

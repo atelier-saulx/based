@@ -24,24 +24,4 @@ export const sort = (
     buf[1] = fieldDef.typeByte
     query.sortBuffer = buf
   }
-
-  if (fieldDef.field === 0) {
-    let sortIndex = query.db.sortIndexesMain.get(query.schema.prefixNumber)
-    if (!sortIndex) {
-      query.db.sortIndexesMain.set(query.schema.prefixNumber, new Set())
-      sortIndex = query.db.sortIndexesMain.get(query.schema.prefixNumber)
-    }
-    if (!sortIndex.has(fieldDef.start)) {
-      sortIndex.add(fieldDef.start)
-    }
-  } else {
-    let sortIndex = query.db.sortIndexes.get(query.schema.prefixNumber)
-    if (!sortIndex) {
-      query.db.sortIndexes.set(query.schema.prefixNumber, new Set())
-      sortIndex = query.db.sortIndexes.get(query.schema.prefixNumber)
-    }
-    if (!sortIndex.has(fieldDef.field)) {
-      sortIndex.add(fieldDef.field)
-    }
-  }
 }
