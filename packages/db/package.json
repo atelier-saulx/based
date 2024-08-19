@@ -20,6 +20,7 @@
     "test-string": "zig build && npm run build && npm test -- ./dist/test/string.js",
     "test-update": "zig build && npm run build && npm test -- ./dist/test/update.js",
     "test-sort": "zig build && npm run build && npm test -- ./dist/test/sort.js",
+    "test-range": "zig build && npm run build && npm test -- ./dist/test/range.js",
     "playground": "zig build && npm run build && node ./dist/test/playground.js"
   },
   "sideEffects": false,

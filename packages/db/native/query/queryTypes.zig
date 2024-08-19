@@ -173,17 +173,25 @@ pub fn queryNonSort(
 ) !void {
     var i: u32 = 1;
     var currentShard: u16 = 0;
-    checkItem: while (i <= lastId and ctx.totalResults < offset + limit) : (i += 1) {
+
+    var correctedForOffset: u32 = offset;
+
+    checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
         if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
             currentShard += 1;
         }
         if (!filter(ctx.id, i, typeId, conditions, currentShard)) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, i, typeId, null, include, currentShard, 0);
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
+
+        if (correctedForOffset > 0) {
+            correctedForOffset -= 1;
+        } else {
+            const size = try getFields(ctx, i, typeId, null, include, currentShard, 0);
+            if (size > 0) {
+                ctx.size += size;
+                ctx.totalResults += 1;
+            }
         }
     }
 }

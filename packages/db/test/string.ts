@@ -43,7 +43,7 @@ test.serial('string', async (t) => {
     },
   })
 
-  const user = db.create('user', {
+  db.create('user', {
     age: 99,
     burp: 66,
     snurp: 'derp derp',
@@ -128,7 +128,6 @@ test.serial.only('string + refs', async (t) => {
 
   for (let i = 0; i < 1; i++) {
     const blup = db.create('blup', {
-      // name: 'blup ! ' + i,
       flap: 'A',
     })
 
