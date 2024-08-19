@@ -26,9 +26,8 @@ db.updateSchema({
         myBlup: { type: 'reference', allowedType: 'blup' },
         name: { type: 'string' },
         flap: { type: 'integer' },
-        email: { type: 'string', maxLength: 14 }, // maxLength: 10 // maxLength: 15
+        email: { type: 'string', maxLength: 14 },
         snurp: { type: 'string' },
-        // burp: { type: 'integer' },
         location: {
           type: 'object',
           properties: {
@@ -55,7 +54,6 @@ db.updateSchema({
         // @ts-ignore
         countryCode: { type: 'string', maxBytes: 2 },
         lilBlup: { type: 'reference', allowedType: 'blup' },
-        // vectorClock: { type: 'integer' },
         user: { type: 'reference', allowedType: 'user' },
       },
     },
@@ -130,7 +128,6 @@ console.log(
 
 const ids2: Set<number> = new Set()
 for (let i = 1; i < 100; i++) {
-  // ids.add(~~(Math.random() * 1e6))
   ids2.add(i)
 }
 

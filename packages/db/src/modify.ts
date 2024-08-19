@@ -231,6 +231,18 @@ export const create = (db: BasedDb, type: string, value: any) => {
   if (def.hasStringField) {
     if (db.modifyBuffer.hasStringField != -1) {
       // console.log('snurp', new Uint8Array(def.stringFieldsCurrent))
+      // extra thing to loop trough
+
+      if (db.modifyBuffer.hasStringField == def.stringFieldsSize) {
+        // means do nothign
+      } else {
+        for (const x of def.stringFieldsLoop) {
+          if (def.stringFieldsCurrent[x.field] == 1) {
+            // add to mod buffer
+            // console.log('undefined index potentialy of', x)
+          }
+        }
+      }
 
       def.stringFields.copy(def.stringFieldsCurrent)
     }

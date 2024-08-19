@@ -81,8 +81,10 @@ export type SchemaTypeDef = {
   seperate: FieldDef[]
   tree: SchemaFieldTree
   hasStringField: boolean
+  stringFieldsSize: number
   stringFields: Buffer // size will be max field
   stringFieldsCurrent: Buffer // size will be max field
+  stringFieldsLoop: FieldDef[]
   responseCtx: BasedNode
 }
 
@@ -127,6 +129,8 @@ export const createSchemaTypeDef = (
     total: 0,
     // also temprorary
     lastId: 0,
+    stringFieldsSize: 0,
+    stringFieldsLoop: [],
   },
   path: string[] = [],
   top: boolean = true,
@@ -303,6 +307,8 @@ export const createSchemaTypeDef = (
       for (const f of result.seperate) {
         if (f.type === 'string') {
           result.stringFields[f.field] = 1
+          result.stringFieldsLoop.push(f)
+          result.stringFieldsSize++
         }
       }
       result.stringFieldsCurrent = Buffer.allocUnsafe(max + 1)
