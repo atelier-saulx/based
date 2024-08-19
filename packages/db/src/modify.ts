@@ -194,6 +194,9 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const id = ++def.lastId
   def.total++
 
+  // for create add a thing in the end where we are writing the fields we have written
+  // only for strings that are seperate
+
   // add empty strings :/
   // makes create a bit different
 

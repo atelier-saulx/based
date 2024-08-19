@@ -81,6 +81,7 @@ export type SchemaTypeDef = {
   prefix: Uint8Array
   seperate: FieldDef[]
   tree: SchemaFieldTree
+  stringFieldBuffer: Buffer
   responseCtx: BasedNode
 }
 
@@ -119,6 +120,7 @@ export const createSchemaTypeDef = (
     mainLen: 0,
     prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
+    // stringFieldsBuffer
     tree: {},
     // temporary
     total: 0,
@@ -135,6 +137,7 @@ export const createSchemaTypeDef = (
   const encoder = new TextEncoder()
 
   let target: { [key: string]: BasedSchemaField }
+  let stringFields: number = 0
 
   if ('type' in type && 'properties' in type) {
     target = type.properties
@@ -163,6 +166,9 @@ export const createSchemaTypeDef = (
       const isSeperate = len === 0
 
       if (isSeperate) {
+        if (f.type === 'string') {
+          stringFields++
+        }
         result.cnt++
       }
 
@@ -281,6 +287,18 @@ export const createSchemaTypeDef = (
     }
 
     result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
+
+    result.stringFieldBuffer = Buffer.allocUnsafe(stringFields + 2)
+
+    result.stringFieldBuffer.writeUint16LE(stringFields, 0)
+
+    let last = 2
+    for (const f of result.seperate) {
+      if (f.type === 'string') {
+        result.stringFieldBuffer[last] = f.field
+        last++
+      }
+    }
   }
 
   return result as SchemaTypeDef
