@@ -13,7 +13,9 @@ const getSortIndex = Modify.getSortIndex;
 
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     const shard = try getOrCreateShard(ctx);
-    const currentData = try db.deleteField(ctx.id, shard);
+    const currentData = db.deleteField(ctx.id, shard) catch {
+        return 0;
+    };
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

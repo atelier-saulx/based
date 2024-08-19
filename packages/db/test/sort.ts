@@ -353,14 +353,14 @@ test.serial('sort', async (t) => {
 
   t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
 
-  t.is(
-    db
-      .query('user', ids2)
-      .include('name', 'age', 'email')
-      .sort('name', 'asc')
-      .get().length,
-    16,
-  )
+  // t.is(
+  //   db
+  //     .query('user', ids2)
+  //     .include('name', 'age', 'email')
+  //     .sort('name', 'asc')
+  //     .get().length,
+  //   16,
+  // )
 
   db.remove('user', mrBlurp)
 

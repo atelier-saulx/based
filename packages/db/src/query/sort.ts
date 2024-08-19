@@ -24,4 +24,15 @@ export const sort = (
     buf[1] = fieldDef.typeByte
     query.sortBuffer = buf
   }
+
+  //
+  // if (!query.db.sortIndexes[query.schema.type]) {
+  //   query.db.sortIndexes[query.schema.type] = new Set()
+  // }
+
+  // if (!query.db.sortIndexes[query.schema.type]) {
+  //
+  // }
+
+  //
 }

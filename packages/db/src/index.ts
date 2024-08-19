@@ -41,6 +41,15 @@ export class BasedDb {
     mergeMainSize: number
   }
 
+  schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
+
+  schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+
+  sortIndexes: Map<number, Set<number>> = new Map()
+
+  // total write time until .drain is called manualy
+  writeTime: number = 0
+
   native = {
     modify: (buffer: Buffer, len: number): any => {
       return dbZig.modify(buffer, len)
@@ -171,12 +180,6 @@ export class BasedDb {
       return dbZig.getQueryByIds(conditions, prefix, ids, includeBuffer)
     },
   }
-
-  schema: BasedSchema & { prefixCounter: number } = DEFAULT_SCHEMA
-
-  schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
-
-  writeTime: number = 0
 
   constructor({
     path,
