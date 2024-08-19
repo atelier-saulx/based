@@ -396,6 +396,41 @@ static napi_value selva_db_prefetch(napi_env env, napi_callback_info info)
     return res2napi(env, 0);
 }
 
+// selva_db_exists(db, type, node_id): boolean
+static napi_value selva_db_exists(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 3;
+    napi_value argv[3];
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type = selva_napi_get_node_type(env, argv[1]);
+    node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
+
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+
+    te = db_get_type_by_index(db, type);
+    assert(te->type == type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    napi_value result;
+    napi_status status;
+
+    node = db_find_node(te, node_id);
+    status = napi_get_boolean(env, !!node, &result);
+    assert(status == napi_ok);
+
+    return result;
+}
+
 // selva_db_get_field(db, type, node_id, field_idx): number
 static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
 {
@@ -882,6 +917,7 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_update_batch", selva_db_update_batch),
       DECLARE_NAPI_METHOD("db_archive", selva_db_archive),
       DECLARE_NAPI_METHOD("db_prefetch", selva_db_prefetch),
+      DECLARE_NAPI_METHOD("db_exists", selva_db_exists),
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),
       DECLARE_NAPI_METHOD("db_get_field_p", selva_db_get_field_p),
       DECLARE_NAPI_METHOD("db_set_alias", selva_db_set_alias),
