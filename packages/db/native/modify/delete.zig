@@ -10,11 +10,14 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
+const SPACE_CHAR: [1]u8 = .{32};
+
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     const shard = try getOrCreateShard(ctx);
-    const currentData = db.deleteField(ctx.id, shard) catch {
+
+    const currentData: []u8 = db.deleteField(ctx.id, shard) catch if (ctx.field == 0) {
         return 0;
-    };
+    } else @constCast(&SPACE_CHAR)[0..1];
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

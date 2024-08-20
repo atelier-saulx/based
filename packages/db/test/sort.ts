@@ -375,4 +375,6 @@ test.serial('sort', async (t) => {
       .length,
     15,
   )
+
+  db.stats()
 })
