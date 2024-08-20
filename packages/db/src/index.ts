@@ -115,7 +115,7 @@ export class BasedDb {
       low: number,
       high: number,
     ): any => {
-      if (ids.length > 1024 * 4) {
+      if (ids.length > 512 * 4) {
         if (sortOrder === 1) {
           return dbZig.getQueryIdsSortAscLarge(
             conditions,

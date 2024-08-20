@@ -113,8 +113,8 @@ console.log(
 
 const ids: Set<number> = new Set()
 for (let i = 1; i < 1e4; i++) {
-  // ids.add(~~(Math.random() * 1e6))
-  ids.add(i)
+  ids.add(~~(Math.random() * 10e6))
+  // ids.add(i)
 }
 
 // console.log(
@@ -127,8 +127,10 @@ for (let i = 1; i < 1e4; i++) {
 // )
 
 const ids2: Set<number> = new Set()
-for (let i = 1; i < 1000; i++) {
-  ids2.add(i)
+for (let i = 1; i < 500; i++) {
+  ids2.add(~~(Math.random() * 10e6))
+
+  // ids2.add(i)
 }
 
 console.log(
