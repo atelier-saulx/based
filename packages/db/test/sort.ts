@@ -84,6 +84,8 @@ test.serial('sort', async (t) => {
     ],
   )
 
+  t.true(true)
+
   t.deepEqual(
     db
       .query('user')
@@ -344,14 +346,11 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  console.log('------------')
-  console.log('ADD MR BLURP')
   const mrBlurp = db.create('user', {
     age: 99,
   })
 
   db.drain()
-  console.log('------------')
 
   t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
 
@@ -361,13 +360,11 @@ test.serial('sort', async (t) => {
     16,
   )
 
-  console.log('Create empty')
-
-  // t.is(
-  //   db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
-  //     .length,
-  //   16,
-  // )
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
+      .length,
+    16,
+  )
 
   db.remove('user', mrBlurp)
 

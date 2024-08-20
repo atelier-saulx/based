@@ -11,26 +11,21 @@ const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
 const SPACE_CHAR: [1]u8 = .{32};
-const pointer = @constCast(&SPACE_CHAR);
+const SPACE_CHAR_PTR = @constCast(&SPACE_CHAR);
 
 pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u16, data, 0);
-
     var i: usize = 0;
     while (i < len) : (i += 1) {
         const field = data[i + 2];
         const sortIndexName = sort.getSortName(ctx.typeId, field, 0);
-
-        // std.debug.print("DERP mep field: {d} id: {d} {any} \n", .{ field, ctx.id, sortIndexName });
-
         if (sort.hasReadSortIndex(sortIndexName)) {
             var sortIndex = ctx.sortIndexes.get(sortIndexName);
             if (sortIndex == null) {
                 sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.txn);
                 try ctx.sortIndexes.put(sortIndexName, sortIndex.?);
             }
-            // std.debug.print("mep mep {any} {d} \n", .{ pointer, ctx.id });
-            try sort.writeField(ctx.id, pointer, sortIndex.?);
+            try sort.writeField(ctx.id, SPACE_CHAR_PTR, sortIndex.?);
         }
     }
 
