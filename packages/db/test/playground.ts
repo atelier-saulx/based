@@ -127,7 +127,7 @@ for (let i = 1; i < 1e4; i++) {
 // )
 
 const ids2: Set<number> = new Set()
-for (let i = 1; i < 500; i++) {
+for (let i = 1; i < 1000; i++) {
   ids2.add(i)
 }
 
