@@ -98,25 +98,40 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
-        if (fromCreate) {
-          schema.stringFieldsCurrent[t.field] = 2
-          db.modifyBuffer.hasStringField++
+        const len = value.length
+        if (len === 0) {
+          if (!fromCreate) {
+            const nextLen = 1 + 4 + 1
+            if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+              flushBuffer(db)
+            }
+            setCursor(db, schema, t.field, id)
+            db.modifyBuffer.buffer[db.modifyBuffer.len] = 8
+            db.modifyBuffer.len++
+          }
+        } else {
+          if (fromCreate) {
+            schema.stringFieldsCurrent[t.field] = 2
+            db.modifyBuffer.hasStringField++
+          }
+          const byteLen = len + len
+          if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.field, id)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          db.modifyBuffer.len += 5
+          const size = db.modifyBuffer.buffer.write(
+            value,
+            db.modifyBuffer.len,
+            'utf8',
+          )
+          db.modifyBuffer.buffer.writeUint32LE(
+            size,
+            db.modifyBuffer.len + 1 - 5,
+          )
+          db.modifyBuffer.len += size
         }
-        // add zstd
-        const byteLen = value.length + value.length
-        if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
-          flushBuffer(db)
-        }
-        setCursor(db, schema, t.field, id)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-        db.modifyBuffer.len += 5
-        const size = db.modifyBuffer.buffer.write(
-          value,
-          db.modifyBuffer.len,
-          'utf8',
-        )
-        db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
-        db.modifyBuffer.len += size
       } else if (merge) {
         wroteMain = true
         if (!db.modifyBuffer.mergeMain) {

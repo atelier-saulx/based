@@ -60,7 +60,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  db.create('user', {
+  const mrZ = db.create('user', {
     name: 'mr z',
     age: 1,
     email: 'z@z.z',
@@ -372,6 +372,27 @@ test.serial('sort', async (t) => {
 
   t.is(
     db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
+      .length,
+    15,
+  )
+
+  db.update('user', mrZ, {
+    email: '',
+  })
+
+  db.drain()
+
+  console.log(
+    db
+      .query('user', ids2)
+      .include('name', 'age', 'email')
+      .sort('email')
+      .get()
+      .toObject(),
+  )
+
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
       .length,
     15,
   )
