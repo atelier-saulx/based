@@ -34,10 +34,20 @@ pub fn registerFunction(
     }
 }
 
+// TODO: global structs create on init here
+
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    // registerFunction(env, exports, "createEnv", createEnv) catch return null;
-    // registerFunction(env, exports, "destroyEnv", createEnv) catch return null;
-    // and pass globals from here to everything (ctx)
+
+    // here a stack allocated global struct
+    // also add multipl envs as possiblity that can be part of the same struct
+    // so createEnv will create a nested global struct
+
+    // destroy env (ignore file path)
+    // close env
+    // close dbis
+    // remove transactions
+    // startEnv
+    // stopEnv those are the 2 fns
 
     registerFunction(env, exports, "createEnv", createEnv) catch return null;
     registerFunction(env, exports, "stat", Stat.stat) catch return null;
