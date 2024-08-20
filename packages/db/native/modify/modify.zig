@@ -8,6 +8,8 @@ const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
+const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
+
 const readInt = @import("../utils.zig").readInt;
 const Update = @import("./update.zig");
 
@@ -81,8 +83,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operationType == 6) {
             i += try updateField(&ctx, operation) + 1;
         } else if (operationType == 7) {
-            const len = readInt(u16, operation, 0);
-            i += 3 + len;
+            i += try addEmptyToSortIndex(&ctx, operation) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;

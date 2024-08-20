@@ -1,7 +1,6 @@
 const std = @import("std");
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
-const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
@@ -17,6 +16,7 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     const shard = try getOrCreateShard(ctx);
     const size = operationSize + 4;
     const data = batch[4..size];
+
     try db.writeField(ctx.id, data, shard);
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

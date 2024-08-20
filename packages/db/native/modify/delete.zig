@@ -1,7 +1,6 @@
 const std = @import("std");
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
-const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");

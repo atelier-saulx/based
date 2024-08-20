@@ -1,7 +1,6 @@
 const std = @import("std");
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
-const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
@@ -13,7 +12,6 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
-    // UPDATE WHOLE FIELD
     const operationSize = readInt(u32, batch, 0);
     const size = operationSize + 4;
     const shard = try getOrCreateShard(ctx);

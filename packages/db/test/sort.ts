@@ -344,25 +344,38 @@ test.serial('sort', async (t) => {
     ],
   )
 
+  console.log('------------')
+  console.log('ADD MR BLURP')
   const mrBlurp = db.create('user', {
-    age: 2,
-    email: 'MR BLURP',
+    age: 99,
   })
 
   db.drain()
+  console.log('------------')
 
   t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
 
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
+      .length,
+    16,
+  )
+
+  console.log('Create empty')
+
   // t.is(
-  //   db
-  //     .query('user', ids2)
-  //     .include('name', 'age', 'email')
-  //     .sort('name', 'asc')
-  //     .get().length,
+  //   db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
+  //     .length,
   //   16,
   // )
 
   db.remove('user', mrBlurp)
 
-  // offset
+  db.drain()
+
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
+      .length,
+    15,
+  )
 })
