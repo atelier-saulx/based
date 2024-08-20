@@ -27,6 +27,8 @@ export const get = (query: Query): BasedQueryResponse => {
       if (end < query.ids.length || query.offset) {
         query.ids = query.ids.slice(query.offset, end)
       }
+      query.ids.sort((a, b) => (a > b ? 1 : a === b ? 0 : -1))
+      console.log(query.ids)
       const idsBuffer = Buffer.allocUnsafe(query.ids.length * 4)
       for (let i = 0; i < query.ids.length; i++) {
         idsBuffer.writeUInt32LE(query.ids[i], i * 4)

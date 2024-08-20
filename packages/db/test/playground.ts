@@ -27,11 +27,11 @@ db.updateSchema({
         name: { type: 'string' },
         flap: { type: 'integer' },
         email: { type: 'string', maxLength: 14 },
-        snurp: { type: 'string' },
+        // snurp: { type: 'string' },
         location: {
           type: 'object',
           properties: {
-            label: { type: 'string' },
+            // label: { type: 'string' },
             x: { type: 'integer' },
             y: { type: 'integer' },
           },
@@ -62,7 +62,7 @@ db.updateSchema({
 
 const users = []
 
-const amount = 2_200_000
+const amount = 10e6
 
 const d = Date.now()
 
@@ -117,17 +117,17 @@ for (let i = 1; i < 1e4; i++) {
   ids.add(i)
 }
 
-console.log(
-  db
-    .query('user', [...ids.values()])
-    .include('name', 'age')
-    .filter('age', '>', 50)
-    .sort('age')
-    .get(),
-)
+// console.log(
+//   db
+//     .query('user', [...ids.values()])
+//     .include('name', 'age')
+//     .filter('age', '>', 50)
+//     .sort('age')
+//     .get(),
+// )
 
 const ids2: Set<number> = new Set()
-for (let i = 1; i < 100; i++) {
+for (let i = 1; i < 500; i++) {
   ids2.add(i)
 }
 
