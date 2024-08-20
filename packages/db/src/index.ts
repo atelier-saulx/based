@@ -112,6 +112,8 @@ export class BasedDb {
       includeBuffer: Buffer,
       sort: Buffer,
       sortOrder: 0 | 1,
+      low: number,
+      high: number,
     ): any => {
       if (ids.length > 512 * 4) {
         if (sortOrder === 1) {
@@ -148,6 +150,8 @@ export class BasedDb {
           ids,
           includeBuffer,
           sort,
+          low,
+          high,
         )
       } else {
         return dbZig.getQueryIdsSortDesc(
@@ -159,6 +163,8 @@ export class BasedDb {
           ids,
           includeBuffer,
           sort,
+          low,
+          high,
         )
       }
     },

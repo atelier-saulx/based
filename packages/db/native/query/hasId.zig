@@ -1,15 +1,22 @@
 const simd = @import("std").simd;
+const std = @import("std");
 
-pub fn hasId(id: u32, ids: []u32, last: *usize) bool {
+pub fn hasId(
+    id: u32,
+    ids: []u32,
+    last: *usize,
+    low: u32,
+    high: u32,
+) bool {
     var i: usize = 0;
     const vectorLen = 32;
     const l = last.*;
 
-    if (id < ids[0]) {
+    if (id < low) {
         return false;
     }
 
-    if (id > ids[ids.len - 1]) {
+    if (id > high) {
         return false;
     }
 

@@ -42,6 +42,8 @@ export const get = (query: Query): BasedQueryResponse => {
         includeBuffer,
         query.sortBuffer,
         query.sortOrder,
+        query.ids[0],
+        query.ids[query.ids.length - 1],
       )
     } else {
       if (end < query.ids.length || query.offset) {

@@ -64,6 +64,8 @@ pub fn queryIdsSort(
     sortBuffer: []u8,
     _: u32,
     limit: u32,
+    low: u32,
+    high: u32,
 ) !void {
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
@@ -90,7 +92,7 @@ pub fn queryIdsSort(
             }
         }
         const id = utils.readInt(u32, db.data(v), 0);
-        if (!hasId(id, ids, &lastCheck)) {
+        if (!hasId(id, ids, &lastCheck, low, high)) {
             continue :checkItem;
         }
         currentShard = db.idToShard(id);
@@ -105,18 +107,7 @@ pub fn queryIdsSort(
     }
 }
 
-pub fn queryIdsSortBig(
-    comptime queryType: comptime_int,
-    ids: []u32,
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
-    conditions: []u8,
-    include: []u8,
-    lastId: u32,
-    sortBuffer: []u8,
-    _: u32,
-    limit: u32,
-) !void {
+pub fn queryIdsSortBig(comptime queryType: comptime_int, ids: []u32, ctx: *QueryCtx, typeId: db.TypeId, conditions: []u8, include: []u8, lastId: u32, sortBuffer: []u8, _: u32, limit: u32) !void {
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
