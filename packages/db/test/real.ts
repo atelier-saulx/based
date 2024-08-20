@@ -301,9 +301,9 @@ test.serial('query + filter', async (t) => {
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
   const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, 0, 0])
   //const node_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 0, 0, FILTER.OP_EQ_INTEGER, 1, 0, 0, 0, 0 ])
-  const limits = Buffer.alloc(24); // [skip, offset, limit]
-  //limits.writeBigInt64LE(1000n, 0) // skip
-  //limits.writeBigInt64LE(1000n, 16) // limit
+  const limits = Buffer.alloc(12); // [skip, offset, limit]
+  //limits.writeInt32LE(1000, 0) // skip
+  //limits.writeInt32LE(1000, 8) // limit
   const res = selva.find(dbp, typeIds.user, 0, fields_sel, adj_filter, node_filter, limits)
   const match1End = performance.now()
   console.log(
@@ -491,8 +491,8 @@ test.serial.skip('1bn', async (t) => {
   const fields_sel = Buffer.from([1, typeIds.user, 0, db.schemaTypesParsed.user.fields.things.selvaField]) // len = 1, [ type1, field1 ]
   const adj_filter = Buffer.from([ FILTER.CONJ_NECESS, FILTER.OP_EQ_TYPE, 1, 0, FILTER.OP_EQ_INTEGER, 2, 0, 0, 0, 0 ])
   const node_filter = Buffer.from([FILTER.OP_EQ_TYPE, typeIds.complex, 0])
-  const limits = Buffer.alloc(24); // [skip, offset, limit]
-  limits.writeBigInt64LE(10000n, 16) // limit
+  const limits = Buffer.alloc(12); // [skip, offset, limit]
+  limits.writeInt32LE(10000, 8) // limit
   const res = selva.find(dbp, typeIds.user, 0, fields_sel, adj_filter, node_filter)
   const match1End = performance.now()
   console.log(
@@ -506,6 +506,114 @@ test.serial.skip('1bn', async (t) => {
   const startDbDel = performance.now()
   selva.db_destroy(dbp)
   console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
+})
+
+test.serial('Simple pagination', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  const dbp = selva.db_create()
+  await wait(1)
+
+  db.updateSchema({
+    types: {
+      root: {
+        prefix: 'ro',
+        fields: {
+          children: {
+            type: 'references',
+            allowedType: 'dada',
+            inverseProperty: 'parent',
+          },
+        },
+      },
+      dada: {
+        prefix: 'dd',
+        fields: {
+          parent: {
+            type: 'reference',
+            allowedType: 'root',
+            inverseProperty: 'children',
+          },
+          name: { type: 'string' },
+          score: { type: 'integer' },
+        },
+      },
+    },
+  })
+
+  const schemaBufs = schema2selva(db.schemaTypesParsed)
+  for (let i = 0; i < schemaBufs.length; i++) {
+    t.deepEqual(selva.db_schema_create(dbp, i, schemaBufs[i]), 0)
+  }
+  const typeIds = {
+    root: Object.keys(db.schemaTypesParsed).indexOf('root'),
+    dada: Object.keys(db.schemaTypesParsed).indexOf('dada'),
+  };
+
+  // Create root
+  t.deepEqual(selva.db_update(dbp, typeIds.root, 0, Buffer.alloc(0)), 0)
+
+  // Create nodes
+  const NR_NODES = 1000
+  const CHUNK_SIZE = 536870912;
+  const buf = Buffer.allocUnsafe(CHUNK_SIZE)
+  for (let i = 0; i < NR_NODES;) {
+    let off = 0
+    let bytes = 0;
+    const fields = db.schemaTypesParsed.dada.fields
+
+    const DATA_SIZE = 37
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES; bytes += DATA_SIZE) {
+      // UpdateBatch
+      off = buf.writeUInt32LE(DATA_SIZE, off)
+      off = buf.writeUInt32LE(i++, off)
+
+      // name
+      off = buf.writeUint32LE(11, off) // len
+      off = buf.writeInt8(fields.name.selvaField, off) // field
+      off += buf.write('Herman', off)
+
+      // score
+      off = buf.writeUInt32LE(9, off) // len
+      off = buf.writeInt8(fields.score.selvaField, off) // field
+      off = buf.writeInt32LE(i % 100, off)
+
+      // parent
+      off = buf.writeUint32LE(9, off) // len
+      off = buf.writeInt8(fields['parent'].selvaField, off) // field
+      off = buf.writeUint32LE(0, off)
+    }
+    t.deepEqual(selva.db_update_batch(dbp, typeIds.dada, buf.subarray(0, bytes)), 0)
+  }
+
+  t.deepEqual(selva.db_get_field(dbp, typeIds.root, 0, 0).length, NR_NODES)
+
+  const fields_sel = Buffer.alloc(4)
+  fields_sel.writeUint8(1, 0) // len
+  fields_sel.writeUint16LE(typeIds.root, 1) // type
+  fields_sel.writeInt8(db.schemaTypesParsed.root.fields.children.selvaField, 3) // field
+  const adj_filter = null
+  const node_filter = null
+  const limits = Buffer.alloc(12); // [skip, offset, limit]
+  const result = Buffer.alloc(NR_NODES * 4)
+  for (let i = 0; i < NR_NODES; i += 100) {
+    limits.writeInt32LE(1, 0) // skip
+    limits.writeInt32LE(i, 4) // offset
+    limits.writeInt32LE(100, 8) // limit
+    const res = selva.find(dbp, typeIds.root, 0, fields_sel, adj_filter, node_filter, limits, result)
+
+    t.deepEqual(res, 100)
+    for (let j = 0; j < ((res > 0) ? res : 0); j++) {
+      //console.log(`result ${j}: ${result.readInt32LE(j * 4)}`)
+      t.deepEqual(result.readInt32LE(j * 4), i + j)
+    }
+  }
 })
 
 test.serial('dump save & load', async (t) => {
