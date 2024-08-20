@@ -10,9 +10,6 @@ const Modify = @import("./ctx.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
-const SPACE_CHAR: [1]u8 = .{32};
-const SPACE_CHAR_PTR = @constCast(&SPACE_CHAR);
-
 pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u16, data, 0);
     var i: usize = 0;
@@ -25,9 +22,8 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
                 sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.txn);
                 try ctx.sortIndexes.put(sortIndexName, sortIndex.?);
             }
-            try sort.writeField(ctx.id, SPACE_CHAR_PTR, sortIndex.?);
+            try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, sortIndex.?);
         }
     }
-
     return len + 2;
 }

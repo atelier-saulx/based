@@ -10,9 +10,6 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-const SPACE_CHAR: [1]u8 = .{32};
-const SPACE_CHAR_SLICE = @constCast(&SPACE_CHAR)[0..1];
-
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
         const shard = try getOrCreateShard(ctx);
@@ -34,7 +31,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
     const shard = try getOrCreateShard(ctx);
 
-    const currentData: []u8 = db.deleteField(ctx.id, shard) catch SPACE_CHAR_SLICE;
+    const currentData: []u8 = db.deleteField(ctx.id, shard) catch sort.EMPTY_CHAR_SLICE;
 
     if (ctx.currentSortIndex != null) {
         sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?) catch {
@@ -47,13 +44,10 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
 pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
     const shard = try getOrCreateShard(ctx);
-
     const currentData: ?[]u8 = db.deleteField(ctx.id, shard) catch null;
-
     if (ctx.currentSortIndex != null and currentData != null) {
         try sort.deleteField(ctx.id, currentData.?, ctx.currentSortIndex.?);
-        try sort.writeField(ctx.id, SPACE_CHAR_SLICE, ctx.currentSortIndex.?);
+        try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
-
     return 0;
 }

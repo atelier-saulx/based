@@ -22,6 +22,9 @@ pub const StartSet = std.AutoHashMap(u16, u8);
 // TODO: make u16
 pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
 
+pub const EMPTY_CHAR: [1]u8 = .{0};
+pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
+
 // TYPE BYTE (make into enum)
 //   ['timestamp', 1],
 //   ['created', 2],
@@ -97,9 +100,6 @@ pub fn writeToSortIndex(
     }
 }
 
-const SPACE_CHAR: [1]u8 = .{32};
-const SPACE_CHAR_PTR = @constCast(&SPACE_CHAR);
-
 fn createSortIndex(
     name: SortDbiName,
     start: u16,
@@ -152,7 +152,7 @@ fn createSortIndex(
                 var value2: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
                 errors.mdb(c.mdb_cursor_get(valueShard.cursor, &key, &value2, c.MDB_SET)) catch {
                     value2.mv_size = 1;
-                    value2.mv_data = SPACE_CHAR_PTR;
+                    value2.mv_data = EMPTY_CHAR_SLICE.ptr;
                 };
                 try writeToSortIndex(&value2, &key, start, len, cursor, field);
             }
