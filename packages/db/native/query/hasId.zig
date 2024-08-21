@@ -29,6 +29,7 @@ pub fn hasId(
             return true;
         }
     }
+
     while (i <= l) : (i += 1) {
         const id2 = ids[i];
         if (id2 == id) {
@@ -37,5 +38,6 @@ pub fn hasId(
             return true;
         }
     }
+
     return false;
 }
