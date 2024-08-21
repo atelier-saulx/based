@@ -5,7 +5,7 @@ import {
   SchemaTypeDef,
   createSchemaTypeDef,
 } from './schemaTypeDef.js'
-import { deepMerge } from '@saulx/utils'
+import { deepMerge, deepCopy } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import db from './native.js'
@@ -74,7 +74,7 @@ export class BasedDb {
       lastMain: -1,
     }
     this, (this.schemaTypesParsed = {})
-    this.schema = DEFAULT_SCHEMA
+    this.schema = deepCopy(DEFAULT_SCHEMA)
     db.createEnv(path)
   }
 
