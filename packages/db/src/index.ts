@@ -73,6 +73,8 @@ export class BasedDb {
       id: -1,
       lastMain: -1,
     }
+    this, (this.schemaTypesParsed = {})
+    this.schema = DEFAULT_SCHEMA
     db.createEnv(path)
   }
 
@@ -102,6 +104,10 @@ export class BasedDb {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
     return this.schema
+  }
+
+  removeSchema() {
+    // fix
   }
 
   create(type: string, value: any) {
