@@ -27,11 +27,11 @@ db.updateSchema({
         name: { type: 'string' },
         flap: { type: 'integer' },
         email: { type: 'string', maxLength: 14 },
-        // snurp: { type: 'string' },
+        snurp: { type: 'string' },
         location: {
           type: 'object',
           properties: {
-            // label: { type: 'string' },
+            label: { type: 'string' },
             x: { type: 'integer' },
             y: { type: 'integer' },
           },
@@ -103,6 +103,10 @@ console.log(
 
 db.drain()
 
+// console.log(
+//   db.query('user').range(0, 1e4).include('name', 'age').sort('name').get(),
+// )
+
 console.log(
   db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
 )
@@ -127,7 +131,7 @@ for (let i = 1; i < 1e4; i++) {
 // )
 
 const ids2: Set<number> = new Set()
-for (let i = 1; i < 500; i++) {
+for (let i = 1; i < 5000; i++) {
   ids2.add(~~(Math.random() * 10e6))
 
   // ids2.add(i)
