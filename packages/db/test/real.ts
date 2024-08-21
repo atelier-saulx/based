@@ -694,19 +694,18 @@ test.serial('dump save & load', async (t) => {
   //await wait(15e3)
 
   const dx = performance.now()
-  const NR_NODES_AA = 100
-  const NR_NODES_BB = 100
+  const NR_NODES = 100
   const CHUNK_SIZE = 536870912;
   const buf = Buffer.allocUnsafe(CHUNK_SIZE)
 
   // Create complices
-  for (let i = 0; i < NR_NODES_BB;) {
+  for (let i = 0; i < NR_NODES;) {
     let off = 0
     let bytes = 0;
     const fields = db.schemaTypesParsed.complex.fields
 
     const DATA_SIZE = 93
-    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES_BB; bytes += DATA_SIZE) {
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES; bytes += DATA_SIZE) {
       // UpdateBatch
       buf.writeUInt32LE(DATA_SIZE, off)
       buf.writeUInt32LE(i++, (off += 4))
@@ -746,13 +745,13 @@ test.serial('dump save & load', async (t) => {
   }
 
   // Create simplies
-  for (let i = 0; i < NR_NODES_AA;) {
+  for (let i = 0; i < NR_NODES;) {
     let off = 0
     let bytes = 0;
     const fields = db.schemaTypesParsed.simplex.fields
 
     const DATA_SIZE = 17
-    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES_AA; bytes += DATA_SIZE) {
+    for (; bytes + DATA_SIZE < CHUNK_SIZE && i < NR_NODES; bytes += DATA_SIZE) {
       // UpdateBatch
       buf.writeUInt32LE(DATA_SIZE, off)
       buf.writeUInt32LE(i, (off += 4))
@@ -778,18 +777,19 @@ test.serial('dump save & load', async (t) => {
   console.log('load')
   const dbp1 = selva.db_load("test.sdb")
 
-  selva.traverse_field_bfs(dbp, typeIds.complex, 0, (type, nodeId, node) => {
-      t.deepEqual(selva.db_exists(dbp1, type, nodeId), true)
-      return -1 // stop traverse
-  })
-  selva.traverse_field_bfs(dbp, typeIds.simplex, 0, (type, nodeId, node) => {
-      t.deepEqual(selva.db_exists(dbp1, type, nodeId), true)
-      return -1 // stop traverse
-  })
-  selva.traverse_field_bfs(dbp, typeIds.user, 0, (type, nodeId, node) => {
-      t.deepEqual(selva.db_exists(dbp1, type, nodeId), true)
-      return -1 // stop traverse
-  })
+  // TODO Traverse and check all edges
+  for (let i = 0; i < NR_NODES; i++) {
+    const fields = db.schemaTypesParsed.complex.fields
+
+    t.deepEqual(selva.db_get_field(dbp, typeIds.complex, i, fields['location.long'].selvaField), 52)
+    t.deepEqual(selva.db_get_field(dbp, typeIds.complex, i, fields.user.selvaField), `${typeIds.user}:0`)
+  }
+  for (let i = 0; i < NR_NODES; i++) {
+    const fields = db.schemaTypesParsed.simplex.fields
+
+    t.deepEqual(selva.db_get_field(dbp, typeIds.simplex, i, fields.complex.selvaField), `${typeIds.complex}:${i}`)
+  }
+  t.deepEqual(selva.db_get_field(dbp, typeIds.user, 0, db.schemaTypesParsed.user.fields.things.selvaField).length, NR_NODES)
 
   console.log('Destroy the db')
   const startDbDel = performance.now()

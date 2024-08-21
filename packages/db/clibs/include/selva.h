@@ -53,7 +53,11 @@ struct EdgeFieldConstraint {
          * By default an edge field acts like a set. This flag makes the field work like an array.
          * FIXME
          */
-        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
+        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x02,
+        /**
+         * Skip saving this field while dumping.
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
     } __packed flags;
     field_t nr_fields;
     field_t inverse_field;
@@ -157,6 +161,7 @@ struct SelvaDb {
     struct trx_state trx_state;
 
     SVector type_list;
+    struct schemabuf_parser_ctx *schemabuf_ctx;
 
     /**
      * Expiring nodes.

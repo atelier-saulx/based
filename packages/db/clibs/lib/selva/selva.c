@@ -109,7 +109,7 @@ static field_t selva_napi_get_field(napi_env env, napi_value value)
 
 static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
 {
-    char buf[1 + 20 + 2 + 20 + 1];
+    char buf[20 + 1 + 20 + 1];
     napi_value result;
 
     switch (any->type) {
@@ -157,7 +157,7 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
         if (any->reference && any->reference->dst) {
-            napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->reference->dst->type, any->reference->dst->node_id), &result);
+            napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "%u:%u", any->reference->dst->type, any->reference->dst->node_id), &result);
         } else {
             napi_get_null(env, &result);
         }
@@ -171,7 +171,7 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
             for (size_t i = 0; i < any->references->nr_refs; i++) {
                 napi_value value;
 
-                status = napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->references->refs[i].dst->type, any->references->refs[i].dst->node_id), &value);
+                status = napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "%u:%u", any->references->refs[i].dst->type, any->references->refs[i].dst->node_id), &value);
                 assert(status == napi_ok);
                 status = napi_set_element(env, result, i, value);
                 assert(status == napi_ok);
@@ -181,7 +181,7 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         }
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "t%uid%u", any->weak_reference.dst_type, any->weak_reference.dst_id), &result);
+        napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "%u:%u", any->weak_reference.dst_type, any->weak_reference.dst_id), &result);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO weak ref */
@@ -294,10 +294,10 @@ static napi_value selva_db_update(napi_env env, napi_callback_info info)
     struct SelvaNode *node;
 
     te = db_get_type_by_index(db, type);
-    assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
+    assert(te->type == type);
 
     node = db_upsert_node(te, node_id);
     assert(node);
@@ -882,7 +882,7 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     };
 
     err = find(db, node, &cb_wrap);
-    return res2napi(env, err ?: ((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
+    return res2napi(env, err ?: (int)((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
 }
 
 // selva_save(db, filename): number

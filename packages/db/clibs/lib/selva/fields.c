@@ -202,6 +202,7 @@ static void del_multi_ref(struct SelvaNodeReferences *refs, size_t i)
 {
     reference_meta_destroy(&refs->refs[i]);
 
+    /* TODO Check for nr overflow. */
     if (i < refs->nr_refs - 1) {
         if (i == 0) {
             /*
