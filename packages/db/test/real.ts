@@ -777,7 +777,6 @@ test.serial('dump save & load', async (t) => {
   console.log('load')
   const dbp1 = selva.db_load("test.sdb")
 
-  // TODO Traverse and check all edges
   for (let i = 0; i < NR_NODES; i++) {
     const fields = db.schemaTypesParsed.complex.fields
 
