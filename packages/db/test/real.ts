@@ -780,20 +780,19 @@ test.serial('dump save & load', async (t) => {
   for (let i = 0; i < NR_NODES; i++) {
     const fields = db.schemaTypesParsed.complex.fields
 
-    t.deepEqual(selva.db_get_field(dbp, typeIds.complex, i, fields['location.long'].selvaField), 52)
-    t.deepEqual(selva.db_get_field(dbp, typeIds.complex, i, fields.user.selvaField), `${typeIds.user}:0`)
+    t.deepEqual(selva.db_get_field(dbp1, typeIds.complex, i, fields['location.long'].selvaField), 52)
+    t.deepEqual(selva.db_get_field(dbp1, typeIds.complex, i, fields.user.selvaField), `${typeIds.user}:0`)
   }
   for (let i = 0; i < NR_NODES; i++) {
     const fields = db.schemaTypesParsed.simplex.fields
 
-    t.deepEqual(selva.db_get_field(dbp, typeIds.simplex, i, fields.complex.selvaField), `${typeIds.complex}:${i}`)
+    t.deepEqual(selva.db_get_field(dbp1, typeIds.simplex, i, fields.complex.selvaField), `${typeIds.complex}:${i}`)
   }
-  t.deepEqual(selva.db_get_field(dbp, typeIds.user, 0, db.schemaTypesParsed.user.fields.things.selvaField).length, NR_NODES)
+  t.deepEqual(selva.db_get_field(dbp1, typeIds.user, 0, db.schemaTypesParsed.user.fields.things.selvaField).length, NR_NODES)
 
   console.log('Destroy the db')
-  const startDbDel = performance.now()
   selva.db_destroy(dbp)
-  console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
+  selva.db_destroy(dbp1)
 
   t.true(true)
 
