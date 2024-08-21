@@ -57,8 +57,8 @@ static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const vo
 }
 
 RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
-RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
-RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
+RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name)
+RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest)
 
 struct SelvaDb *db_create(void)
 {
@@ -66,6 +66,7 @@ struct SelvaDb *db_create(void)
 
     SVector_Init(&db->type_list, 1, SVector_SelvaTypeEntry_compare);
     SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
+    db->schemabuf_ctx = schemabuf_create_ctx();
     db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
     /* TODO Expiring nodes timer */
 #if 0
@@ -119,6 +120,7 @@ void db_destroy(struct SelvaDb *db)
 
     /* TODO Destroy timers */
     del_all_types(db);
+    schemabuf_destroy_ctx(db->schemabuf_ctx);
     selva_free(db);
 }
 
@@ -178,7 +180,7 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     te->ns.nr_main_fields = count.nr_main_fields;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
-    err = schemabuf_parse(&te->ns, schema_buf, schema_len);
+    err = schemabuf_parse(db->schemabuf_ctx, &te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;

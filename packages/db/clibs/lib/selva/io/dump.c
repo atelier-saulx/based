@@ -53,7 +53,7 @@ typedef uint32_t sdb_expire_t;
 typedef uint64_t sdb_nr_aliases_t;
 typedef uint32_t sdb_arr_len_t; /*!< Used for most arrays, string or object. */
 
-static void save_fields(struct selva_io *io, struct SelvaFields *fields);
+static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFields *fields);
 
 /**
  * Write one of the magic numbers to the dump.
@@ -96,7 +96,10 @@ static void save_ref(struct selva_io *io, struct SelvaNodeReference *ref)
     io->sdb_write(&ref->dst->node_id, sizeof(node_id_t), 1, io);
     io->sdb_write(&meta_present, sizeof(meta_present), 1, io);
     if (meta_present) {
-        save_fields(io, ref->meta);
+        /*
+         * We don't pass the db here to prevent any attempt to access node schema.
+         */
+        save_fields(io, NULL, ref->meta);
     }
 }
 
@@ -118,7 +121,7 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
     }
 }
 
-static void save_fields(struct selva_io *io, struct SelvaFields *fields)
+static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFields *fields)
 {
     write_dump_magic(io, DUMP_MAGIC_FIELDS);
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
@@ -131,6 +134,26 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
         if (err) {
             /* TODO Handle error? */
             db_panic("Handle this error");
+        }
+
+        if (any.type == SELVA_FIELD_TYPE_REFERENCE ||
+            any.type == SELVA_FIELD_TYPE_REFERENCES) {
+            /*
+             * Assuming these field types can only exist in a SelvaNode, we can
+             * do the following:
+             */
+            struct SelvaNode *node = containerof(fields, struct SelvaNode, fields);
+            struct SelvaFieldSchema *fs = get_fs_by_node(db, node, field);
+
+            assert(fs->type == any.type);
+
+            if (fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
+                /* This saves it as a NULL and the loader will skip it. */
+#if 0
+                fprintf(stderr, "Skip %d (refs %d) on type %d\n", field, any.type == SELVA_FIELD_TYPE_REFERENCES, node->type);
+#endif
+                any.type = SELVA_FIELD_TYPE_NULL;
+            }
         }
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -212,15 +235,15 @@ static void save_fields(struct selva_io *io, struct SelvaFields *fields)
     }
 }
 
-static void save_node(struct selva_io *io, struct SelvaNode *node)
+static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node)
 {
     write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
     io->sdb_write(&node->expire, sizeof(sdb_expire_t), 1, io);
-    save_fields(io, &node->fields);
+    save_fields(io, db, &node->fields);
 }
 
-static void save_nodes(struct selva_io *io, struct SelvaTypeEntry *te)
+static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     struct SelvaNodeIndex *nodes = &te->nodes;
     const sdb_nr_nodes_t nr_nodes = te->nr_nodes;
@@ -231,7 +254,7 @@ static void save_nodes(struct selva_io *io, struct SelvaTypeEntry *te)
     io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
 
     RB_FOREACH(node, SelvaNodeIndex, nodes) {
-        save_node(io, node);
+        save_node(io, db, node);
     }
 }
 
@@ -291,7 +314,7 @@ static void save_types(struct selva_io *io, struct SelvaDb *db)
         const node_type_t type = te->type;
 
         io->sdb_write(&type, sizeof(type), 1, io);
-        save_nodes(io, te);
+        save_nodes(io, db, te);
         save_aliases(io, te);
         write_dump_magic(io, DUMP_MAGIC_TYPE_END);
     }
