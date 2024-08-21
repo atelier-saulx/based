@@ -2,6 +2,7 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -44,9 +45,15 @@ static bool ref_save_map_insert(struct ref_save_map *map, node_type_t src_type, 
     }
 
     if (RB_INSERT(ref_save_map, map, item)) {
+#if 0
+        fprintf(stderr, "%p skippedy %d:%d\n", map, src_type, dst_type);
+#endif
         selva_free(item);
         return false;
     }
+#if 0
+    fprintf(stderr, "%p noskippedy %d:%d\n", map, src_type, dst_type);
+#endif
     return true;
 }
 
