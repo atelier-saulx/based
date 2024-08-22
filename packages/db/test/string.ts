@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial.only('string', async (t) => {
+test.serial('string', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
     maxModifySize: 1e4,
