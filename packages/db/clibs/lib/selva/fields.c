@@ -152,17 +152,24 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
 
     nfo = &fields->fields_map[field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
+        size_t field_len = (type == SELVA_FIELD_TYPE_REFERENCE) ? sizeof(struct SelvaNodeReference) : sizeof(struct SelvaNodeReferences);
+
         *nfo = alloc_block(fields, fs);
-        memset(nfo2p(fields, nfo), 0,
-               (type == SELVA_FIELD_TYPE_REFERENCE) ? sizeof(struct SelvaNodeReference) : sizeof(struct SelvaNodeReferences));
+        memset(nfo2p(fields, nfo), 0, field_len);
     } else if (nfo->type != type) {
         return SELVA_EINVAL;
     }
 
     if (type == SELVA_FIELD_TYPE_REFERENCE) {
+        struct SelvaNodeReference ref = {
+            .dst = dst,
+        };
+        void *vp = nfo2p(fields, nfo);
+
         static_assert(offsetof(struct SelvaNodeReference, dst) == 0);
-        assert(!memcmp(nfo2p(fields, nfo), &(struct SelvaNode *){NULL}, sizeof(struct SelvaNode *)));
-        memcpy(nfo2p(fields, nfo), (void *)&dst, sizeof(struct SelvaNode *));
+        assert(!memcmp(vp, &(struct SelvaNode *){NULL}, sizeof(struct SelvaNode *)));
+
+        memcpy(vp, &ref, sizeof(ref));
     } else { // type == SELVA_FIELD_TYPE_REFERENCES
         struct SelvaNodeReferences refs;
         void *vp = nfo2p(fields, nfo);
@@ -174,11 +181,12 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
          */
         if (refs.offset > 0) {
             memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
+            refs.refs -= refs.offset;
             refs.offset = 0;
         }
 
         /*
-         * The add the new reference.
+         * Then add the new reference.
          */
         refs.refs = selva_realloc(refs.refs, ++refs.nr_refs * sizeof(*refs.refs));
         refs.refs[refs.nr_refs - 1] = (struct SelvaNodeReference){
