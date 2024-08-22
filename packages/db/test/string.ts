@@ -9,15 +9,12 @@ const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
 test.serial('string', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
     path: dbFolder,
     maxModifySize: 1e4,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -26,7 +23,7 @@ test.serial('string', async (t) => {
           myBlup: { type: 'reference', allowedType: 'blup' },
           name: { type: 'string' },
           flap: { type: 'integer' },
-          email: { type: 'string', maxLength: 15 }, // maxLength: 10
+          email: { type: 'string', maxLength: 15 },
           age: { type: 'integer' },
           snurp: { type: 'string' },
           burp: { type: 'integer' },
@@ -69,18 +66,15 @@ test.serial('string', async (t) => {
     },
   ])
 
-  db.stop()
+  await db.destroy()
 })
 
 test.serial('string + refs', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -179,5 +173,5 @@ test.serial('string + refs', async (t) => {
     },
   ])
 
-  db.stop()
+  await db.destroy()
 })

@@ -11,6 +11,9 @@ import { genPrefix } from './schema.js'
 import db from './native.js'
 import { Query, query } from './query/query.js'
 import { flushBuffer } from './operations.js'
+import { destroy } from './destroy.js'
+
+import fs from 'node:fs/promises'
 
 export * from './schemaTypeDef.js'
 export * from './modify.js'
@@ -51,6 +54,8 @@ export class BasedDb {
 
   native = db
 
+  fileSystemPath: string
+
   constructor({
     path,
     maxModifySize,
@@ -73,9 +78,17 @@ export class BasedDb {
       id: -1,
       lastMain: -1,
     }
+    this.fileSystemPath = path
     this, (this.schemaTypesParsed = {})
     this.schema = deepCopy(DEFAULT_SCHEMA)
-    db.start(path)
+  }
+
+  async start() {
+    try {
+      fs.mkdir(this.fileSystemPath)
+    } catch (err) {}
+
+    db.start(this.fileSystemPath)
   }
 
   updateTypeDefs() {
@@ -143,5 +156,9 @@ export class BasedDb {
 
   stop() {
     db.stop()
+  }
+
+  async destroy() {
+    return destroy(this)
   }
 }
