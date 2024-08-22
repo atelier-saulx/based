@@ -75,7 +75,7 @@ export class BasedDb {
     }
     this, (this.schemaTypesParsed = {})
     this.schema = deepCopy(DEFAULT_SCHEMA)
-    db.createEnv(path)
+    db.init(path)
   }
 
   updateTypeDefs() {

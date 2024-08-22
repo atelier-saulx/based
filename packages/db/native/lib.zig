@@ -1,15 +1,12 @@
 const std = @import("std");
 const c = @import("c.zig");
 const errors = @import("errors.zig");
-const Envs = @import("env/env.zig");
-const Stat = @import("env/stat.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
+const init = @import("./db/ctx.zig").init;
+const stats = @import("./db/stat.zig");
 
 const jsThrow = errors.jsThrow;
-const createEnv = Envs.createEnv;
-const dbEnv = Envs.env;
-const dbEnvIsDefined = Envs.dbEnvIsDefined;
 const dbthrow = errors.mdb;
 
 const NapiError = error{NapiError};
@@ -49,9 +46,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     // startEnv
     // stopEnv those are the 2 fns
 
-    registerFunction(env, exports, "createEnv", createEnv) catch return null;
-    registerFunction(env, exports, "stat", Stat.stat) catch return null;
-    registerFunction(env, exports, "tester", Stat.tester) catch return null;
+    registerFunction(env, exports, "init", init) catch return null;
+    registerFunction(env, exports, "stat", stats.stat) catch return null;
+    registerFunction(env, exports, "tester", stats.tester) catch return null;
     registerFunction(env, exports, "getQueryById", Query.getQueryId) catch return null;
     registerFunction(env, exports, "getQueryByIds", Query.getQueryIds) catch return null;
     registerFunction(env, exports, "getQuery", Query.getQuery) catch return null;

@@ -1,9 +1,6 @@
-const std = @import("std");
-const c = @import("../c.zig");
-const errors = @import("../errors.zig");
-const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
+const dbCtx = @import("../db/ctx.zig");
 const Modify = @import("./ctx.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -18,7 +15,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         };
 
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            var it = sort.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            var it = dbCtx.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = (try getSortIndex(ctx, start)).?;

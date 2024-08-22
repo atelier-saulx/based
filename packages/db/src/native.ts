@@ -134,8 +134,8 @@ export default {
     return db.stat()
   },
 
-  createEnv: (path: string) => {
-    return db.createEnv(path)
+  init: (path: string) => {
+    return db.init(path)
   },
 
   tester: () => {

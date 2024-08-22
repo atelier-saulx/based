@@ -2,6 +2,7 @@ const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
 const db = @import("../../db/db.zig");
+const dbCtx = @import("../../db/ctx.zig");
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
@@ -12,7 +13,7 @@ const getField = db.getField;
 pub fn getFields(
     ctx: *QueryCtx,
     id: u32,
-    typeId: db.TypeId,
+    typeId: dbCtx.TypeId,
     start: ?u16,
     include: []u8,
     currentShard: u16,

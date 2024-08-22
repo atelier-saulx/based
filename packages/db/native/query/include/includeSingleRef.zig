@@ -4,6 +4,7 @@ const napi = @import("../../napi.zig");
 const readInt = @import("../../utils.zig").readInt;
 const utils = @import("../../utils.zig");
 const db = @import("../../db/db.zig");
+const dbCtx = @import("../../db/ctx.zig");
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
@@ -22,7 +23,7 @@ pub fn getSingleRefFields(
 ) usize {
     var size: usize = 0;
 
-    const typeId: db.TypeId = .{ include[0], include[1] };
+    const typeId: dbCtx.TypeId = .{ include[0], include[1] };
     const start = readInt(u16, include, 2);
     const refId = readInt(u32, main, start);
 

@@ -1,26 +1,9 @@
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
-const Envs = @import("../env/env.zig");
 const std = @import("std");
 const db = @import("./db.zig");
 const readInt = @import("../utils.zig").readInt;
-
-pub const SortDbiName = [7]u8;
-pub const SortIndex = struct {
-    field: u8,
-    dbi: c.MDB_dbi,
-    cursor: ?*c.MDB_cursor,
-    queryId: u32,
-    len: u16,
-    start: u16,
-};
-
-pub const Indexes = std.AutoHashMap(SortDbiName, SortIndex);
-pub var sortIndexes = Indexes.init(db.allocator);
-pub const StartSet = std.AutoHashMap(u16, u8);
-
-// TODO: make u16
-pub var mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(db.allocator);
+const dbCtx = @import("./ctx.zig");
 
 pub const EMPTY_CHAR: [1]u8 = .{0};
 pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
@@ -38,10 +21,10 @@ pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
 //   ['references', 10],
 
 pub fn getSortName(
-    typePrefix: db.TypeId,
+    typePrefix: dbCtx.TypeId,
     field: u8,
     start: u16,
-) SortDbiName {
+) dbCtx.SortDbiName {
     var startCasted: [2]u8 = @bitCast(start);
     if (startCasted[0] == 0 and startCasted[1] != 0) {
         startCasted[0] = 255;
@@ -59,7 +42,7 @@ pub fn getSortName(
     return name;
 }
 
-pub fn writeField(id: u32, buf: []u8, sortIndex: SortIndex) !void {
+pub fn writeField(id: u32, buf: []u8, sortIndex: dbCtx.SortIndex) !void {
     const field: u8 = sortIndex.field;
     const len = sortIndex.len;
     const start = sortIndex.start;
@@ -101,7 +84,7 @@ pub fn writeToSortIndex(
 }
 
 fn createSortIndex(
-    name: SortDbiName,
+    name: dbCtx.SortDbiName,
     start: u16,
     len: u16,
     field: u8,
@@ -184,23 +167,23 @@ fn createSortIndex(
     try errors.mdb(c.mdb_txn_commit(txn));
 
     if (len > 0) {
-        if (!mainSortIndexes.contains(typePrefix)) {
-            const startSet = try db.allocator.create(StartSet);
-            startSet.* = StartSet.init(db.allocator);
-            try mainSortIndexes.put(typePrefix, startSet);
+        if (!dbCtx.ctx.mainSortIndexes.contains(typePrefix)) {
+            const startSet = try dbCtx.ctx.allocator.create(dbCtx.StartSet);
+            startSet.* = dbCtx.StartSet.init(dbCtx.ctx.allocator);
+            try dbCtx.ctx.mainSortIndexes.put(typePrefix, startSet);
         }
-        const s: ?*StartSet = mainSortIndexes.get(typePrefix);
+        const s: ?*dbCtx.StartSet = dbCtx.ctx.mainSortIndexes.get(typePrefix);
         try s.?.*.put(start, 0);
     }
 }
 
-fn createReadSortIndex(name: SortDbiName, queryId: u32, len: u16, start: u16) !SortIndex {
+fn createReadSortIndex(name: dbCtx.SortDbiName, queryId: u32, len: u16, start: u16) !dbCtx.SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
-    _ = c.mdb_txn_reset(db.readTxn);
-    _ = c.mdb_txn_renew(db.readTxn);
-    try errors.mdb(c.mdb_dbi_open(db.readTxn, &name, 0, &dbi));
-    try errors.mdb(c.mdb_cursor_open(db.readTxn, dbi, &cursor));
+    _ = c.mdb_txn_reset(dbCtx.ctx.readTxn);
+    _ = c.mdb_txn_renew(dbCtx.ctx.readTxn);
+    try errors.mdb(c.mdb_dbi_open(dbCtx.ctx.readTxn, &name, 0, &dbi));
+    try errors.mdb(c.mdb_cursor_open(dbCtx.ctx.readTxn, dbi, &cursor));
     return .{
         .field = name[3] - 1,
         .dbi = dbi,
@@ -216,7 +199,7 @@ pub fn getOrCreateReadSortIndex(
     sort: []u8,
     queryId: u32,
     lastId: u32,
-) !SortIndex {
+) !dbCtx.SortIndex {
     const field: u8 = sort[0];
     const fieldType: u8 = sort[1];
     var start: u16 = undefined;
@@ -231,7 +214,7 @@ pub fn getOrCreateReadSortIndex(
     }
 
     const name = getSortName(typePrefix, field, start);
-    var s = sortIndexes.get(name);
+    var s = dbCtx.ctx.sortIndexes.get(name);
     if (s == null) {
         createSortIndex(name, start, len, field, fieldType, lastId, queryId) catch |err| {
             std.log.err("Cannot create writeSortIndex name: {any} err: {any} \n", .{ name, err });
@@ -241,29 +224,29 @@ pub fn getOrCreateReadSortIndex(
             std.log.err("Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
             return err;
         };
-        try sortIndexes.put(name, newSortIndex);
+        try dbCtx.ctx.sortIndexes.put(name, newSortIndex);
         return newSortIndex;
     }
     if (s.?.queryId != queryId) {
-        _ = c.mdb_cursor_renew(db.readTxn, s.?.cursor);
+        _ = c.mdb_cursor_renew(dbCtx.ctx.readTxn, s.?.cursor);
         s.?.queryId = queryId;
     }
     return s.?;
 }
 
-pub fn getReadSortIndex(name: [7]u8) ?SortIndex {
-    return sortIndexes.get(name);
+pub fn getReadSortIndex(name: [7]u8) ?dbCtx.SortIndex {
+    return dbCtx.ctx.sortIndexes.get(name);
 }
 
 pub fn hasReadSortIndex(name: [7]u8) bool {
-    return sortIndexes.contains(name);
+    return dbCtx.ctx.sortIndexes.contains(name);
 }
 
 pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
-    return mainSortIndexes.contains(typePrefix);
+    return dbCtx.ctx.mainSortIndexes.contains(typePrefix);
 }
 
-pub fn createWriteSortIndex(name: SortDbiName, txn: ?*c.MDB_txn) !SortIndex {
+pub fn createWriteSortIndex(name: dbCtx.SortDbiName, txn: ?*c.MDB_txn) !dbCtx.SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     var len: u16 = 0;
@@ -286,7 +269,7 @@ pub fn createWriteSortIndex(name: SortDbiName, txn: ?*c.MDB_txn) !SortIndex {
     return writeIndex;
 }
 
-pub fn deleteField(id: u32, d: []u8, sortIndex: SortIndex) !void {
+pub fn deleteField(id: u32, d: []u8, sortIndex: dbCtx.SortIndex) !void {
     var data: []u8 = d;
     if (data.len == 0) {
         return;

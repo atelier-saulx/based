@@ -1,15 +1,13 @@
 const std = @import("std");
 const c = @import("../c.zig");
-const errors = @import("../errors.zig");
-const Envs = @import("../env/env.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
+const dbCtx = @import("../db/ctx.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
-
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 
 const readInt = @import("../utils.zig").readInt;
@@ -49,8 +47,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .currentShard = 0,
         .txn = txn.?,
         .currentSortIndex = null,
-        .shards = db.Shards.init(allocator),
-        .sortIndexes = sort.Indexes.init(allocator),
+        .shards = dbCtx.Shards.init(allocator),
+        .sortIndexes = dbCtx.Indexes.init(allocator),
     };
 
     while (i < size) {
