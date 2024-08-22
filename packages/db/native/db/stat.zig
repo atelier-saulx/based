@@ -7,72 +7,149 @@ const db = @import("../db/db.zig");
 const mdb = errors.mdb;
 const jsThrow = errors.jsThrow;
 
-// !c.MDB_stat
-// pub fn statInternal() !c.MDB_stat {
-// var s: c.MDB_stat = undefined;
-// var txn: ?*c.MDB_txn = null;
-// var dbi: c.MDB_dbi = 0;
-// var cursor: ?*c.MDB_cursor = null;
+pub fn statInternal(node_env: c.napi_env) !c.napi_value {
+    var s: c.MDB_stat = undefined;
+    var txn: ?*c.MDB_txn = null;
+    var dbi: c.MDB_dbi = 0;
+    var cursor: ?*c.MDB_cursor = null;
 
-// try mdb(c.mdb_txn_begin(Env.env, null, c.MDB_RDONLY, &txn));
-// try mdb(c.mdb_dbi_open(txn, null, 0, &dbi));
-// try mdb(c.mdb_cursor_open(txn, dbi, &cursor));
+    try mdb(c.mdb_txn_begin(db.ctx.env, null, c.MDB_RDONLY, &txn));
+    try mdb(c.mdb_dbi_open(txn, null, 0, &dbi));
+    try mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
-// var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-// var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-// var dbi2: c.MDB_dbi = 0;
+    var dbi2: c.MDB_dbi = 0;
 
-// mdb(c.mdb_cursor_get(cursor, &k, &v, c.MDB_FIRST)) catch {};
-// mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
-//     std.debug.print("NO DBI {any} DBI {any}  \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
-// };
-// _ = c.mdb_stat(txn, dbi2, &s);
-// _ = c.mdb_dbi_close(Env.env, dbi2);
+    var done: bool = false;
+    var isFirst: bool = true;
+    var dbiCnt: usize = 0;
+    var entries: usize = 0;
+    var size: usize = 0;
 
-// var size = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
-// var dbiCnt: usize = 1;
-// var entries: usize = s.ms_entries;
-// std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(size, 1000 * 1000), entries });
-// var done: bool = false;
-// while (!done) {
-//     mdb(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch {
-//         done = true;
-//         break;
-//     };
-//     if (k.mv_size == 0) {
-//         done = true;
-//         break;
-//     }
-//     mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
-//         std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
-//         done = true;
-//         break;
-//     };
-//     _ = mdb(c.mdb_stat(txn, dbi2, &s)) catch |err| {
-//         std.debug.print("STAT ERROR {any} \n", .{err});
-//     };
-//     dbiCnt += 1;
-//     entries += s.ms_entries;
-//     _ = c.mdb_dbi_close(Env.env, dbi2);
-//     const dbiSize = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
-//     size += dbiSize;
-//     std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size], @divTrunc(dbiSize, 1000 * 1000), s.ms_entries });
-// }
+    var arr: c.napi_value = undefined;
+    _ = c.napi_create_array(node_env, &arr);
 
-// std.debug.print("DBIS {d} entries {d} size {d}mb \n", .{ dbiCnt, entries, @divTrunc(size, 1000 * 1000) });
+    var i: u32 = 0;
+    while (!done) {
+        var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
-// _ = c.mdb_cursor_close(cursor);
-// _ = c.mdb_txn_commit(txn);
+        if (isFirst) {
+            isFirst = false;
+            mdb(c.mdb_cursor_get(cursor, &k, &v, c.MDB_FIRST)) catch {
+                done = true;
+                break;
+            };
+        } else {
+            mdb(c.mdb_cursor_get(cursor, &k, &v, c.MDB_NEXT)) catch {
+                done = true;
+                break;
+            };
+        }
 
-// return s;
-// }
+        if (k.mv_size == 0) {
+            done = true;
+            break;
+        }
 
-pub fn stat(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
-    // _ = statInternal() catch |err| {
-    //     napi.jsThrow(node_env, @errorName(err));
-    //     return null;
-    // };
-    return null;
+        mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
+            std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
+            done = true;
+            break;
+        };
+        _ = mdb(c.mdb_stat(txn, dbi2, &s)) catch |err| {
+            std.debug.print("STAT ERROR {any} \n", .{err});
+        };
+
+        dbiCnt += 1;
+        entries += s.ms_entries;
+        _ = c.mdb_dbi_close(db.ctx.env, dbi2);
+
+        const dbiSize = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
+        size += dbiSize;
+
+        const dbName = db.data(k);
+
+        var obj: c.napi_value = undefined;
+        _ = c.napi_create_object(node_env, &obj);
+        _ = c.napi_set_element(node_env, arr, i, obj);
+        i += 1;
+
+        var typeArr: c.napi_value = undefined;
+        _ = c.napi_create_array(node_env, &typeArr);
+        var char1: c.napi_value = undefined;
+        var char2: c.napi_value = undefined;
+        _ = c.napi_create_uint32(node_env, dbName[0], &char1);
+        _ = c.napi_create_uint32(node_env, dbName[1], &char2);
+        _ = c.napi_set_element(node_env, typeArr, 0, char1);
+        _ = c.napi_set_element(node_env, typeArr, 1, char2);
+        _ = c.napi_set_named_property(node_env, obj, "type", typeArr);
+
+        var field: c.napi_value = undefined;
+        _ = c.napi_create_uint32(node_env, dbName[2] - 1, &field);
+        _ = c.napi_set_named_property(node_env, obj, "field", field);
+
+        var shards: [2]u8 = .{ 0, 0 };
+
+        if (dbName[4] == 255) {
+            shards[0] = 0;
+        } else {
+            shards[0] = dbName[4];
+        }
+
+        shards[1] = dbName[5];
+
+        var shard: c.napi_value = undefined;
+        _ = c.napi_create_uint32(node_env, std.mem.readInt(u16, shards[0..2], .little), &shard);
+        _ = c.napi_set_named_property(node_env, obj, "shard", shard);
+
+        var e: c.napi_value = undefined;
+        _ = c.napi_create_uint32(node_env, @intCast(s.ms_entries), &e);
+        _ = c.napi_set_named_property(node_env, obj, "entries", e);
+
+        std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ dbName, @divTrunc(dbiSize, 1000 * 1000), s.ms_entries });
+    }
+
+    std.debug.print("DBIS {d} entries {d} size {d}mb \n", .{ dbiCnt, entries, @divTrunc(size, 1000 * 1000) });
+
+    _ = c.mdb_cursor_close(cursor);
+    _ = c.mdb_txn_commit(txn);
+
+    // napi value
+
+    // const arr = [];
+    // napi_value arr, value;
+    // status = napi_create_array(env, &arr);
+    // if (status != napi_ok) return status;
+
+    // // Create a napi_value for 'hello'
+    // status = napi_create_string_utf8(env, "hello", NAPI_AUTO_LENGTH, &value);
+    // if (status != napi_ok) return status;
+
+    // // arr[123] = 'hello';
+    // status = napi_set_element(env, arr, 123, value);
+    // if (status != napi_ok) return status;
+
+    //     // const obj = {}
+    // napi_value obj, value;
+    // status = napi_create_object(env, &obj);
+    // if (status != napi_ok) return status;
+
+    // // Create a napi_value for 123
+    // status = napi_create_int32(env, 123, &value);
+    // if (status != napi_ok) return status;
+
+    // // obj.myProp = 123
+    // status = napi_set_named_property(env, obj, "myProp", value);
+    // if (status != napi_ok) return status;
+
+    return arr;
+}
+
+pub fn stat(node_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    return statInternal(node_env) catch |err| {
+        napi.jsThrow(node_env, @errorName(err));
+        return null;
+    };
 }
 
 pub fn tester(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {

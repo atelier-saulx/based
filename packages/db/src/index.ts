@@ -14,6 +14,7 @@ import { flushBuffer } from './operations.js'
 import { destroy } from './destroy.js'
 
 import fs from 'node:fs/promises'
+import { join } from 'node:path'
 
 export * from './schemaTypeDef.js'
 export * from './modify.js'
@@ -85,10 +86,18 @@ export class BasedDb {
 
   async start() {
     try {
-      fs.mkdir(this.fileSystemPath)
+      await fs.mkdir(this.fileSystemPath)
     } catch (err) {}
 
     db.start(this.fileSystemPath)
+
+    // include schema
+    try {
+      const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
+      if (schema) {
+        this.updateSchema(JSON.parse(schema.toString()))
+      }
+    } catch (err) {}
   }
 
   updateTypeDefs() {
@@ -116,6 +125,10 @@ export class BasedDb {
   updateSchema(schema: BasedSchemaPartial): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
+    fs.writeFile(
+      join(this.fileSystemPath, 'schema.json'),
+      JSON.stringify(this.schema),
+    )
     return this.schema
   }
 
@@ -145,7 +158,7 @@ export class BasedDb {
   }
 
   stats() {
-    db.stat()
+    return db.stat()
   }
 
   tester() {

@@ -1,6 +1,5 @@
 import test from 'ava'
 import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
@@ -8,13 +7,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('string', async (t) => {
+test.serial.only('string', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
     maxModifySize: 1e4,
   })
 
   await db.start()
+
+  // add totals
+  // console.log(db.query('user').get())
 
   db.updateSchema({
     types: {
@@ -66,7 +68,10 @@ test.serial('string', async (t) => {
     },
   ])
 
-  await db.destroy()
+  // nice result object
+  console.log(db.stats())
+
+  // await db.destroy()
 })
 
 test.serial('string + refs', async (t) => {
