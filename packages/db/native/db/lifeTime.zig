@@ -46,6 +46,39 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 }
 
 fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
-    std.debug.print("Hello!", .{});
+    var it = db.ctx.readShards.iterator();
+    while (it.next()) |item| {
+        const readShard = item.value_ptr.*;
+        if (db.ctx.readShards.remove(item.key_ptr.*)) {
+            c.mdb_cursor_close(readShard.cursor);
+            c.mdb_dbi_close(db.ctx.env, readShard.dbi);
+        }
+    }
+
+    var sortIt = db.ctx.sortIndexes.iterator();
+    while (sortIt.next()) |item| {
+        const sortIndex = item.value_ptr.*;
+        if (db.ctx.sortIndexes.remove(item.key_ptr.*)) {
+            c.mdb_cursor_close(sortIndex.cursor);
+            c.mdb_dbi_close(db.ctx.env, sortIndex.dbi);
+        }
+    }
+
+    var mainSortIt = db.ctx.mainSortIndexes.iterator();
+    while (mainSortIt.next()) |item| {
+        const mainSort = item.value_ptr.*;
+        mainSort.deinit();
+        _ = db.ctx.mainSortIndexes.remove(item.key_ptr.*);
+    }
+    db.ctx.mainSortIndexes.clearRetainingCapacity();
+
+    if (db.ctx.readTxnCreated) {
+        c.mdb_txn_abort(db.ctx.readTxn);
+    }
+
+    c.mdb_env_close(db.ctx.env);
+
+    db.ctx.readTxnCreated = false;
+
     return null;
 }

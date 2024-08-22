@@ -68,9 +68,11 @@ test.serial('string', async (t) => {
       location: { label: 'BLA BLA', x: 0, y: 0 },
     },
   ])
+
+  db.stop()
 })
 
-test.serial.only('string + refs', async (t) => {
+test.serial('string + refs', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -176,4 +178,6 @@ test.serial.only('string + refs', async (t) => {
       },
     },
   ])
+
+  db.stop()
 })

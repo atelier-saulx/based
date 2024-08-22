@@ -140,4 +140,8 @@ export class BasedDb {
     db.tester()
     console.log('Tester took', Date.now() - d, 'ms')
   }
+
+  stop() {
+    db.stop()
+  }
 }
