@@ -15,6 +15,15 @@
 #include "db.h"
 #include "fields.h"
 
+/**
+ * Don't allow mutiple edges from the same field between two nodes.
+ * Enabling this will make changing SELVA_FIELD_TYPE_REFERENCES fields extremely
+ * slow.
+ */
+#if 0
+#define FIELDS_NO_DUPLICATED_EDGES
+#endif
+
 #if 0
 #define selva_malloc            malloc
 #define selva_calloc            calloc
@@ -182,6 +191,23 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
     return 0;
 }
 
+static void write_ref_2way(
+        struct SelvaNode * restrict src,  const struct SelvaFieldSchema *fs_src,
+        struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
+{
+    int err;
+
+    err = write_ref(src, fs_src, dst);
+    if (err) {
+        db_panic("Failed to write ref: %s", selva_strerror(err));
+    }
+
+    err = write_ref(dst, fs_dst, src);
+    if (err) {
+        db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
+    }
+}
+
 /**
  * Clear single ref value.
  * @returns the original value.
@@ -323,7 +349,8 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
 {
     struct SelvaTypeEntry *type_dst;
     struct SelvaFieldSchema *fs_dst;
-    int err;
+
+    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
 
     if (!dst || src == dst) {
         return SELVA_EINVAL;
@@ -339,19 +366,58 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
         return SELVA_EINTYPE;
     }
 
-    /*
-     * Remove the previous reference if set.
-     */
-    remove_reference(src, fs_src, 0);
+    remove_reference(src, fs_src, 0); /* Remove the previous reference if set. */
+#ifdef FIELDS_NO_DUPLICATED_EDGES
+    remove_reference(dst, fs_dst, src->node_id);
+#else
+    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+        remove_reference(dst, fs_dst, 0);
+    }
+#endif
+    write_ref_2way(src, fs_src, dst, fs_dst);
 
-    err = write_ref(src, fs_src, dst);
-    if (err) {
-        return err;
+    return 0;
+}
+
+static int set_references(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dsts[], size_t nr_dsts)
+{
+    struct SelvaTypeEntry *te_dst;
+    struct SelvaFieldSchema *fs_dst;
+    node_type_t type_dst;
+
+    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+
+    if (nr_dsts == 0) {
+        return 0;
     }
 
-    err = write_ref(dst, fs_dst, src);
-    if (err) {
-        db_panic("Failed to write the inverse reference field");
+    te_dst = db_get_type_by_node(db, dsts[0]);
+    type_dst = te_dst->type;
+    if (type_dst != fs_src->edge_constraint.dst_node_type) {
+        return SELVA_EINTYPE; /* TODO Is this the error we want? */
+    }
+
+    fs_dst = db_get_fs_by_ns_field(&te_dst->ns, fs_src->edge_constraint.inverse_field);
+    if (!fs_dst) {
+        return SELVA_EINTYPE;
+    }
+
+    for (size_t i = 0; i < nr_dsts; i++) {
+        struct SelvaNode *dst = dsts[i];
+
+        if (dst->type != type_dst) {
+            return SELVA_EINTYPE;
+        }
+
+#ifdef FIELDS_NO_DUPLICATED_EDGES
+        remove_reference(src, fs_src, dst->node_id);
+        remove_reference(dst, fs_dst, src->node_id);
+#else
+        if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+            remove_reference(dst, fs_dst, 0);
+        }
+#endif
+        write_ref_2way(src, fs_src, dst, fs_dst);
     }
 
     return 0;
@@ -405,12 +471,15 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
         assert(db && node);
+        if (len < sizeof(struct SelvaNode *)) {
+            db_panic("Invalid len");
+        }
         return set_reference(db, fs, node, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_REFERENCES:
-        /* TODO */
-        fprintf(stderr, "an attempt to set references at %d:%d.%d\n",
-                node->type, node->node_id, fs->field);
-        return SELVA_ENOTSUP;
+        if ((len % sizeof(struct SelvaNode **)) != 0) {
+            db_panic("Invalid len");
+        }
+        return set_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO Implement weak ref */
         fprintf(stderr, "an attempt to set weak references at %d:%d.%d\n",
