@@ -13,10 +13,12 @@ await wait(100)
 try {
   await fs.rm(dbFolder, { recursive: true })
 } catch (err) {}
-await fs.mkdir(dbFolder)
+
 const db = new BasedDb({
   path: dbFolder,
 })
+
+await db.start()
 
 db.updateSchema({
   types: {
