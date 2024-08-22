@@ -12,11 +12,12 @@ test.serial('single reference multi refs', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -67,17 +68,20 @@ test.serial('single reference multi refs', async (t) => {
   for (const r of result) {
     t.is(r.user.myBlup.flap, 'B')
   }
+
+  await db.destroy()
 })
 
 test.serial('single reference object', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -129,18 +133,20 @@ test.serial('single reference object', async (t) => {
       },
     },
   ])
+
+  await db.destroy()
 })
 
-test.serial('single reference', async (t) => {
+test.serial.only('single reference', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
-    // maxModifySize: 1e4,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -211,6 +217,8 @@ test.serial('single reference', async (t) => {
   }
 
   db.drain()
+
+  console.log(db.query('simple').include('id').range(0, 1).get().toObject())
 
   t.deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
     { id: 1 },
@@ -365,9 +373,11 @@ test.serial('single reference', async (t) => {
       },
     ],
   )
+
+  await db.destroy()
 })
 
-test.serial.only('single reference multi refs strings', async (t) => {
+test.serial('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -377,6 +387,7 @@ test.serial.only('single reference multi refs strings', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -445,4 +456,6 @@ test.serial.only('single reference multi refs strings', async (t) => {
       lilBlup: null,
     },
   ])
+
+  await db.destroy()
 })

@@ -5,7 +5,7 @@ import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
+const relativePath = '../../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
 await wait(100)
@@ -25,7 +25,7 @@ db.updateSchema({
     user: {
       fields: {
         age: { type: 'integer' },
-        // myBlup: { type: 'reference', allowedType: 'blup' },
+        myBlup: { type: 'reference', allowedType: 'blup' },
         name: { type: 'string' },
         flap: { type: 'integer' },
         email: { type: 'string', maxLength: 14 },
