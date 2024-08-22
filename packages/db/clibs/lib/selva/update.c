@@ -5,6 +5,8 @@
 #include <stdio.h> // FIXME REMOVE
 #include <assert.h>
 #include <string.h>
+#include "jemalloc.h"
+#include "util/auto_free.h"
 #include "selva_error.h"
 #include "selva.h"
 #include "db.h"
@@ -20,6 +22,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
         const struct SelvaFieldSchema *fs;
         const void *value = buf + i + sizeof(struct Update);
         size_t value_len;
+        __selva_autofree void *value_arr = NULL;
         int err = 0;
 
         memcpy(&ud, buf + i, sizeof(struct Update));
@@ -37,7 +40,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             if (ud.len < 5) {
                 return SELVA_EINVAL;
             }
-            value_len = ud.len - 5;
+            value_len = ud.len - sizeof(ud);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
@@ -67,8 +70,44 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                 value_len = sizeof(struct SelvaNode *);
             } while (0);
             break;
+        case SELVA_FIELD_TYPE_REFERENCES:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+            do {
+                size_t ids_len = ud.len - sizeof(ud);
+                size_t nr_nodes = ids_len / sizeof(node_id_t);
+                struct SelvaTypeEntry *type;
+
+                if ((ids_len % sizeof(node_id_t)) != 0) {
+                    return SELVA_EINVAL;
+                }
+
+                type = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+                if (!type) {
+                    return SELVA_EINVAL;
+                }
+
+                value_arr = selva_malloc(nr_nodes * sizeof(struct SelvaNode *));
+                for (size_t i = 0; i < nr_nodes; i++) {
+                    node_id_t dst_id;
+                    struct SelvaNode *dst;
+
+                    memcpy(&dst_id, &((node_id_t *)value)[i], sizeof(dst_id));
+                    dst = db_find_node(type, dst_id);
+                    if (!dst) {
+                        return SELVA_ENOENT;
+                    }
+
+                    ((struct SelvaNode **)value_arr)[i] = dst;
+                }
+                value = value_arr;
+                value_len = nr_nodes * sizeof(struct SelvaNode *);
+            } while (0);
+            break;
         default:
             value_len = fields_get_data_size(fs);
+            if (value_len > ud.len) {
+                return SELVA_EINVAL;
+            }
             break;
         }
 

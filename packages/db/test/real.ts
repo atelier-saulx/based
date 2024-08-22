@@ -508,6 +508,152 @@ test.serial.skip('1bn', async (t) => {
   console.log(`Done: ${Math.round(performance.now() - startDbDel)} ms`)
 })
 
+test.serial('reference ops', async (t) => {
+  console.log('GO!', process.pid)
+  //await wait(15e3)
+
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+  await fs.mkdir(dbFolder)
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  const dbp = selva.db_create()
+  await wait(1)
+
+  db.updateSchema({
+    types: {
+      root: {
+        prefix: 'ro',
+        fields: {
+          children: {
+            type: 'references',
+            allowedType: 'dada',
+            inverseProperty: 'parent',
+          },
+        },
+      },
+      dada: {
+        prefix: 'dd',
+        fields: {
+          parent: {
+            type: 'reference',
+            allowedType: 'root',
+            inverseProperty: 'children',
+          },
+          score: { type: 'integer' },
+        },
+      },
+    },
+  })
+
+  const schemaBufs = schema2selva(db.schemaTypesParsed)
+  for (let i = 0; i < schemaBufs.length; i++) {
+    t.deepEqual(selva.db_schema_create(dbp, i, schemaBufs[i]), 0)
+  }
+  const typeIds = {
+    root: Object.keys(db.schemaTypesParsed).indexOf('root'),
+    dada: Object.keys(db.schemaTypesParsed).indexOf('dada'),
+  };
+
+  // Create root
+  t.deepEqual(selva.db_update(dbp, typeIds.root, 0, Buffer.alloc(0)), 0)
+
+  const createDada = (id: number, score: number, parent?: number) => {
+    const fields = db.schemaTypesParsed.dada.fields
+    const buf = Buffer.allocUnsafe(9 + +(parent != null) * 9)
+    let off = 0
+
+    // score
+    off = buf.writeUInt32LE(9, off) // len
+    off = buf.writeInt8(fields.score.selvaField, off) // field
+    off = buf.writeInt32LE(score, off) // value
+
+    if (parent != null) {
+      // parent
+      off = buf.writeUint32LE(9, off)
+      off = buf.writeInt8(fields.parent.selvaField, off)
+      off = buf.writeUint32LE(parent, off)
+    }
+
+    return selva.db_update(dbp, typeIds.dada, id, buf)
+  }
+  const setDadaParent = (id: number, parent?: number) => {
+    const fields = db.schemaTypesParsed.dada.fields
+
+    if (parent != null) { // set
+      const buf = Buffer.allocUnsafe(9)
+
+      buf.writeUint32LE(9, 0)
+      buf.writeInt8(fields.parent.selvaField, 4)
+      buf.writeUint32LE(parent, 5)
+
+      return selva.db_update(dbp, typeIds.dada, id, buf)
+    } else { // remove
+      return selva.db_del_field(dbp, typeIds.dada, id, fields.parent.selvaField)
+    }
+  }
+  const addRootChildren = (ids: number[]) => {
+    const fields = db.schemaTypesParsed.root.fields
+    const buf = Buffer.allocUnsafe(ids.length * 9)
+    let off = 0
+
+    if (!ids || ids.length == 0) return
+
+    for (let i = 0; i < ids.length; i++) {
+      off = buf.writeUint32LE(9, off)
+      off = buf.writeInt8(fields.children.selvaField, off)
+      off = buf.writeUint32LE(ids[i], off)
+    }
+
+    return selva.db_update(dbp, typeIds.root, 0, buf)
+  }
+
+  t.deepEqual(createDada(0, 0, 0), 0)
+  t.deepEqual(createDada(1, 1, 0), 0)
+  t.deepEqual(createDada(2, 2), 0)
+  t.deepEqual(createDada(3, 3), 0)
+  t.deepEqual(
+    selva.db_get_field(dbp, typeIds.root, 0, 0),
+    [
+      `${typeIds.dada}:0`,
+      `${typeIds.dada}:1`,
+    ]
+  )
+
+  t.deepEqual(setDadaParent(2, 0), 0)
+  t.deepEqual(
+    selva.db_get_field(dbp, typeIds.root, 0, 0),
+    [
+      `${typeIds.dada}:0`,
+      `${typeIds.dada}:1`,
+      `${typeIds.dada}:2`,
+    ]
+  )
+
+  t.deepEqual(setDadaParent(1), 0)
+  t.deepEqual(
+    selva.db_get_field(dbp, typeIds.root, 0, 0),
+    [
+      `${typeIds.dada}:0`,
+      `${typeIds.dada}:2`,
+    ]
+  )
+
+  t.deepEqual(addRootChildren([1, 3]), 0)
+  t.deepEqual(
+    selva.db_get_field(dbp, typeIds.root, 0, 0),
+    [
+      `${typeIds.dada}:0`,
+      `${typeIds.dada}:2`,
+      `${typeIds.dada}:1`,
+      `${typeIds.dada}:3`,
+    ]
+  )
+})
+
 test.serial('Simple pagination', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })

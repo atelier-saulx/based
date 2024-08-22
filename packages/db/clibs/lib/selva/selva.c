@@ -431,6 +431,48 @@ static napi_value selva_db_exists(napi_env env, napi_callback_info info)
     return result;
 }
 
+// selva_db_set_field(db, type, node_id, field_idx, value): number
+static napi_value selva_db_set_field(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 5;
+    napi_value argv[5];
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type = selva_napi_get_node_type(env, argv[1]);
+    node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
+    field_t field_idx = selva_napi_get_field(env, argv[3]);
+
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+    struct SelvaFieldSchema *fs;
+
+    te = db_get_type_by_index(db, type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    node = db_upsert_node(te, node_id);
+    fs = db_get_fs_by_ns_field(&te->ns, field_idx);
+    if (!fs) {
+        return res2napi(env, SELVA_ENOENT);
+    }
+
+    void *p;
+    size_t len;
+    napi_status status = napi_get_buffer_info(env, argv[4], &p, &len);
+    if (status != napi_ok) {
+        return res2napi(env, SELVA_EGENERAL);
+    }
+
+    return res2napi(env, selva_fields_set(db, node, fs, p, len));
+}
+
 // selva_db_get_field(db, type, node_id, field_idx): number
 static napi_value selva_db_get_field(napi_env env, napi_callback_info info)
 {
@@ -494,6 +536,40 @@ static napi_value selva_db_get_field_p(napi_env env, napi_callback_info info)
     }
 
     return any2napi(env, &any);
+}
+
+// selva_db_del_field(db, type, node_id, field_idx): number
+static napi_value selva_db_del_field(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 4;
+    napi_value argv[4];
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type = selva_napi_get_node_type(env, argv[1]);
+    node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
+    field_t field = selva_napi_get_field(env, argv[3]);
+
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+
+    te = db_get_type_by_index(db, type);
+    assert(te->type == type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    node = db_find_node(te, node_id);
+    if (!node) {
+        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+    }
+
+    return res2napi(env, selva_fields_del(db, node, field));
 }
 
 // selva_db_set_alias(db, type_id, node_id, alias): number
@@ -882,7 +958,7 @@ static napi_value selva_find(napi_env env, napi_callback_info info)
     };
 
     err = find(db, node, &cb_wrap);
-    return res2napi(env, err ?: (int)((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
+    return res2napi(env, err ?: ((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
 }
 
 // selva_save(db, filename): number
@@ -957,8 +1033,10 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_archive", selva_db_archive),
       DECLARE_NAPI_METHOD("db_prefetch", selva_db_prefetch),
       DECLARE_NAPI_METHOD("db_exists", selva_db_exists),
+      DECLARE_NAPI_METHOD("db_set_field", selva_db_set_field),
       DECLARE_NAPI_METHOD("db_get_field", selva_db_get_field),
       DECLARE_NAPI_METHOD("db_get_field_p", selva_db_get_field_p),
+      DECLARE_NAPI_METHOD("db_del_field", selva_db_del_field),
       DECLARE_NAPI_METHOD("db_set_alias", selva_db_set_alias),
       DECLARE_NAPI_METHOD("db_del_alias", selva_db_del_alias),
       DECLARE_NAPI_METHOD("db_get_alias", selva_db_get_alias),
