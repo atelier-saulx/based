@@ -15,8 +15,9 @@ test.serial.only('string', async (t) => {
 
   await db.start()
 
-  // add totals
-  // console.log(db.query('user').get())
+  try {
+    console.log(db.query('user').get())
+  } catch (e) {}
 
   db.updateSchema({
     types: {
@@ -68,10 +69,7 @@ test.serial.only('string', async (t) => {
     },
   ])
 
-  // nice result object
-  console.log(db.stats())
-
-  // await db.destroy()
+  await db.destroy()
 })
 
 test.serial('string + refs', async (t) => {

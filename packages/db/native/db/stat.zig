@@ -106,41 +106,24 @@ pub fn statInternal(node_env: c.napi_env) !c.napi_value {
         _ = c.napi_create_uint32(node_env, @intCast(s.ms_entries), &e);
         _ = c.napi_set_named_property(node_env, obj, "entries", e);
 
-        std.debug.print("DBI {any} size {d}MB entries {d} \n", .{ dbName, @divTrunc(dbiSize, 1000 * 1000), s.ms_entries });
-    }
+        var cursor2: ?*c.MDB_cursor = null;
+        try mdb(c.mdb_cursor_open(txn, dbi2, &cursor2));
 
-    std.debug.print("DBIS {d} entries {d} size {d}mb \n", .{ dbiCnt, entries, @divTrunc(size, 1000 * 1000) });
+        mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_LAST)) catch {};
+
+        if (k.mv_size != 0) {
+            var lastId: c.napi_value = undefined;
+            _ = c.napi_create_uint32(node_env, std.mem.readInt(u32, db.data(k)[0..4], .little), &lastId);
+            _ = c.napi_set_named_property(node_env, obj, "lastId", lastId);
+        }
+
+        // ADD EXTRA ARG FROM INIT
+
+        // HANDLE SORT INDEXES!
+    }
 
     _ = c.mdb_cursor_close(cursor);
     _ = c.mdb_txn_commit(txn);
-
-    // napi value
-
-    // const arr = [];
-    // napi_value arr, value;
-    // status = napi_create_array(env, &arr);
-    // if (status != napi_ok) return status;
-
-    // // Create a napi_value for 'hello'
-    // status = napi_create_string_utf8(env, "hello", NAPI_AUTO_LENGTH, &value);
-    // if (status != napi_ok) return status;
-
-    // // arr[123] = 'hello';
-    // status = napi_set_element(env, arr, 123, value);
-    // if (status != napi_ok) return status;
-
-    //     // const obj = {}
-    // napi_value obj, value;
-    // status = napi_create_object(env, &obj);
-    // if (status != napi_ok) return status;
-
-    // // Create a napi_value for 123
-    // status = napi_create_int32(env, 123, &value);
-    // if (status != napi_ok) return status;
-
-    // // obj.myProp = 123
-    // status = napi_set_named_property(env, obj, "myProp", value);
-    // if (status != napi_ok) return status;
 
     return arr;
 }

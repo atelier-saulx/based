@@ -89,7 +89,7 @@ export class BasedDb {
       await fs.mkdir(this.fileSystemPath)
     } catch (err) {}
 
-    db.start(this.fileSystemPath)
+    const entries = db.start(this.fileSystemPath)
 
     // include schema
     try {
@@ -98,6 +98,24 @@ export class BasedDb {
         this.updateSchema(JSON.parse(schema.toString()))
       }
     } catch (err) {}
+
+    if (entries) {
+      for (const entry of entries) {
+        for (const key in this.schemaTypesParsed) {
+          const def = this.schemaTypesParsed[key]
+          if (
+            entry.field == 0 &&
+            def.prefix[0] == entry.type[0] &&
+            def.prefix[1] == entry.type[1]
+          ) {
+            def.total += entry.entries
+            if (entry.lastId > def.lastId) {
+              def.lastId = entry.lastId
+            }
+          }
+        }
+      }
+    }
   }
 
   updateTypeDefs() {

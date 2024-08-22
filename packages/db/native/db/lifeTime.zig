@@ -3,6 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
 const db = @import("./db.zig");
+const stat = @import("./stat.zig");
 
 pub fn start(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return startInternal(napi_env, info) catch return null;
@@ -42,7 +43,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         std.log.err("Open lmdb env {any}", .{err});
     };
 
-    return null;
+    return stat.statInternal(napi_env);
 }
 
 fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
