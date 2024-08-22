@@ -3,7 +3,6 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const readInt = @import("../utils.zig").readInt;
-const dbCtx = @import("../db/ctx.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
@@ -18,7 +17,7 @@ pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.readField(ctx.id, shard);
-            var it = dbCtx.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = (try getSortIndex(ctx, start)).?;
@@ -50,7 +49,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
             const start = readInt(u16, operation, 0);
             const len = readInt(u16, operation, 2);
             if (ctx.field == 0) {
-                if (hasSortIndex and dbCtx.ctx.mainSortIndexes.get(ctx.typeId).?.*.contains(start)) {
+                if (hasSortIndex and db.ctx.mainSortIndexes.get(ctx.typeId).?.*.contains(start)) {
                     const sortIndex = try getSortIndex(ctx, start);
                     try sort.deleteField(ctx.id, currentData, sortIndex.?);
                     try sort.writeField(ctx.id, data, sortIndex.?);

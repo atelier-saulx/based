@@ -5,7 +5,6 @@ const readInt = @import("std").mem.readInt;
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const db = @import("../../db/db.zig");
-const dbCtx = @import("../../db/ctx.zig");
 
 const getField = db.getField;
 const idToShard = db.idToShard;
@@ -13,7 +12,7 @@ const idToShard = db.idToShard;
 pub fn filter(
     queryId: u32,
     id: u32,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     currentShard: u16,
 ) bool {

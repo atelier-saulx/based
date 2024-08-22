@@ -1,20 +1,19 @@
 const db = @import("../db/db.zig");
-const dbCtx = @import("../db/ctx.zig");
 const sort = @import("../db/sort.zig");
 const c = @import("../c.zig");
 
 pub const ModifyCtx = struct {
     field: u8,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     id: u32,
     currentShard: u16,
-    shards: dbCtx.Shards,
+    shards: db.Shards,
     txn: *c.MDB_txn,
-    currentSortIndex: ?dbCtx.SortIndex,
-    sortIndexes: dbCtx.Indexes,
+    currentSortIndex: ?db.SortIndex,
+    sortIndexes: db.Indexes,
 };
 
-pub fn getOrCreateShard(ctx: *ModifyCtx) !dbCtx.Shard {
+pub fn getOrCreateShard(ctx: *ModifyCtx) !db.Shard {
     const dbiName = db.getName(ctx.typeId, ctx.field, ctx.currentShard);
     var shard = ctx.shards.get(dbiName);
     if (shard == null) {
@@ -28,7 +27,7 @@ pub fn getOrCreateShard(ctx: *ModifyCtx) !dbCtx.Shard {
     return shard.?;
 }
 
-pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?dbCtx.SortIndex {
+pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?db.SortIndex {
     const sortIndexName = sort.getSortName(ctx.typeId, ctx.field, start);
     if (sort.hasReadSortIndex(sortIndexName)) {
         var sortIndex = ctx.sortIndexes.get(sortIndexName);

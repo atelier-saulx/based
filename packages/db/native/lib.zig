@@ -3,7 +3,7 @@ const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
-const init = @import("./db/ctx.zig").init;
+const init = @import("./db/init.zig").init;
 const stats = @import("./db/stat.zig");
 
 const jsThrow = errors.jsThrow;

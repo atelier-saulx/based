@@ -2,7 +2,7 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const db = @import("../db/db.zig");
-const dbCtx = @import("../db/ctx.zig");
+
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
@@ -15,7 +15,7 @@ const mem = std.mem;
 pub fn queryId(
     id: u32,
     ctx: *QueryCtx,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
 ) !void {
@@ -33,7 +33,7 @@ pub fn queryId(
 pub fn queryIds(
     ids: []u8,
     ctx: *QueryCtx,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
 ) !void {
@@ -57,7 +57,7 @@ pub fn queryIdsSort(
     comptime queryType: comptime_int,
     ids: []u32,
     ctx: *QueryCtx,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
     lastId: u32,
@@ -111,7 +111,7 @@ pub fn queryIdsSortBig(
     comptime queryType: comptime_int,
     ids: []u32,
     ctx: *QueryCtx,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
     lastId: u32,
@@ -169,7 +169,7 @@ pub fn queryNonSort(
     lastId: u32,
     offset: u32,
     limit: u32,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
 ) !void {
@@ -204,7 +204,7 @@ pub fn querySort(
     lastId: u32,
     offset: u32,
     limit: u32,
-    typeId: dbCtx.TypeId,
+    typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,

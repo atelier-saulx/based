@@ -2,7 +2,6 @@ const std = @import("std");
 const c = @import("../c.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const dbCtx = @import("../db/ctx.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
@@ -47,8 +46,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .currentShard = 0,
         .txn = txn.?,
         .currentSortIndex = null,
-        .shards = dbCtx.Shards.init(allocator),
-        .sortIndexes = dbCtx.Indexes.init(allocator),
+        .shards = db.Shards.init(allocator),
+        .sortIndexes = db.Indexes.init(allocator),
     };
 
     while (i < size) {

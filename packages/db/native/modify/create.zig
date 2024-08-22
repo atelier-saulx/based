@@ -1,5 +1,4 @@
 const db = @import("../db/db.zig");
-const dbCtx = @import("../db/ctx.zig");
 const readInt = @import("../utils.zig").readInt;
 const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
@@ -17,7 +16,7 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     try db.writeField(ctx.id, data, shard);
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            var it = dbCtx.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |start| {
                 const sortIndex = try getSortIndex(ctx, start.*);
                 try sort.writeField(ctx.id, data, sortIndex.?);

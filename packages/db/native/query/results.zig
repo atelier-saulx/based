@@ -1,7 +1,5 @@
 const c = @import("../c.zig");
-const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
-const std = @import("std");
 const db = @import("../db/db.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const utils = @import("../utils.zig");

@@ -1,5 +1,4 @@
 const simd = @import("std").simd;
-const std = @import("std");
 
 pub fn hasId(
     id: u32,
