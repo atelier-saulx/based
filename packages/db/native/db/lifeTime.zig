@@ -4,11 +4,15 @@ const std = @import("std");
 const napi = @import("../napi.zig");
 const db = @import("./db.zig");
 
-pub fn init(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return initInternal(napi_env, info) catch return null;
+pub fn start(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return startInternal(napi_env, info) catch return null;
 }
 
-fn initInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn stop(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return stopInternal(napi_env, info) catch return null;
+}
+
+fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, napi_env, info);
     const path = try napi.getStringFixedLength("createEnv", 256, napi_env, args[0]);
 
@@ -38,5 +42,10 @@ fn initInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
         std.log.err("Open lmdb env {any}", .{err});
     };
 
+    return null;
+}
+
+fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+    std.debug.print("Hello!", .{});
     return null;
 }

@@ -134,8 +134,12 @@ export default {
     return db.stat()
   },
 
-  init: (path: string) => {
-    return db.init(path)
+  start: (path: string) => {
+    return db.start(path)
+  },
+
+  stop: () => {
+    return db.stop()
   },
 
   tester: () => {

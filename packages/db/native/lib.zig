@@ -3,7 +3,7 @@ const c = @import("c.zig");
 const errors = @import("errors.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
-const init = @import("./db/init.zig").init;
+const lifeTime = @import("./db/lifeTime.zig");
 const stats = @import("./db/stat.zig");
 
 const jsThrow = errors.jsThrow;
@@ -46,7 +46,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     // startEnv
     // stopEnv those are the 2 fns
 
-    registerFunction(env, exports, "init", init) catch return null;
+    registerFunction(env, exports, "start", lifeTime.start) catch return null;
+    registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
     registerFunction(env, exports, "stat", stats.stat) catch return null;
     registerFunction(env, exports, "tester", stats.tester) catch return null;
     registerFunction(env, exports, "getQueryById", Query.getQueryId) catch return null;
