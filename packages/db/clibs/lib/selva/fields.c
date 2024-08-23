@@ -178,6 +178,7 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
 
         /*
          * Get rid of any offset first.
+         * If offset > 0 then refs is also allocated.
          */
         if (refs.offset > 0) {
             memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
@@ -232,11 +233,17 @@ static struct SelvaNode *del_single_ref(struct SelvaFields *fields, struct Selva
     return ref.dst;
 }
 
+/**
+ * This is only a helper for remove_reference().
+ */
 static void del_multi_ref(struct SelvaNodeReferences *refs, size_t i)
 {
+    if (!refs->refs) {
+        return;
+    }
+
     reference_meta_destroy(&refs->refs[i]);
 
-    /* TODO Check for nr overflow. */
     if (i < refs->nr_refs - 1) {
         if (i == 0) {
             /*
@@ -263,7 +270,7 @@ static void del_multi_ref(struct SelvaNodeReferences *refs, size_t i)
  * Clears both ways.
  * @param orig_dst should be given if fs_src is of type SELVA_FIELD_TYPE_REFERENCES.
  */
-static void remove_reference(struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
+static void remove_reference(struct SelvaNode *src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
 {
     struct SelvaFields *fields_src = &src->fields;
     struct SelvaFieldInfo *nfo_src = &fields_src->fields_map[fs_src->field];
@@ -285,13 +292,6 @@ static void remove_reference(struct SelvaNode * restrict src, const struct Selva
                 break;
             }
         }
-    } else {
-        /*
-         * NOP:
-         * - Empty field
-         * - SELVA_FIELD_TYPE_WEAK_REFERENCE
-         * - TODO SELVA_FIELD_TYPE_WEAK_REFERENCES
-         */
     }
 
     /*
@@ -326,6 +326,49 @@ static void remove_reference(struct SelvaNode * restrict src, const struct Selva
     }
 }
 
+static void remove_weak_reference(struct SelvaNode *src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
+{
+    struct SelvaFields *fields = &src->fields;
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
+    void *vp = nfo2p(fields, nfo);
+
+    if (fs_src->type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
+        memset(vp, 0, sizeof(struct SelvaNodeWeakReference));
+    } else if (fs_src->type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+        struct SelvaNodeWeakReferences refs;
+
+        memcpy(&refs, vp, sizeof(refs));
+
+        if (!refs.refs) {
+            return;
+        }
+
+        for (size_t i = 0; i < refs.nr_refs; i++) {
+            if (refs.refs[i].dst_id == orig_dst) {
+                if (i == 0) {
+                    /*
+                     * Head removal can be done by offsetting the pointer.
+                     */
+                    refs.offset++;
+                    refs.refs++;
+                } else if (i + 1 < refs.nr_refs) {
+                    /*
+                     * Otherwise we must do a slightly expensive memmove().
+                     */
+                    memmove(&refs.refs[i],
+                            &refs.refs[i + 1],
+                            (refs.nr_refs - i - 1) * sizeof(struct SelvaNodeWeakReference));
+                }
+                /* TODO realloc on some condition */
+
+                refs.nr_refs--;
+                memcpy(vp, &refs, sizeof(refs));
+                break;
+            }
+        }
+    }
+}
+
 __attribute__((nonnull (1)))
 static void remove_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
@@ -344,10 +387,25 @@ static void remove_references(struct SelvaNode *node, const struct SelvaFieldSch
          */
         node_id_t dst_node_id = any.references->refs[any.references->nr_refs - 1].dst->node_id;
 
+        /*
+         * Note that we rely on the fact that the refs pointer doesn't change on delete.
+         */
         remove_reference(node, fs, dst_node_id);
     }
 
     selva_free(any.references->refs - any.references->offset);
+}
+
+static void remove_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+    struct SelvaNodeWeakReferences refs;
+
+    memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
+
+    selva_free(refs.refs - refs.offset);
+    memset(nfo, 0, sizeof(refs));
 }
 
 /**
@@ -431,6 +489,42 @@ static int set_references(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
     return 0;
 }
 
+static int set_weak_references(const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, node_id_t dsts[], size_t nr_dsts)
+{
+    struct SelvaFieldInfo *nfo = &src->fields.fields_map[fs_src->field];
+    void *vp = nfo2p(&src->fields, nfo);
+    struct SelvaNodeWeakReferences refs;
+
+    assert(fs_src->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
+
+    if (nr_dsts == 0) {
+        return 0;
+    }
+
+    memcpy(&refs, vp, sizeof(refs));
+
+    /*
+     * Get rid of any offset first.
+     * If offset > 0 then refs is also allocated.
+     */
+    if (refs.offset > 0) {
+        memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
+        refs.refs -= refs.offset;
+        refs.offset = 0;
+    }
+
+    /*
+     * Then add the new reference.
+     */
+    refs.nr_refs += nr_dsts;
+    refs.refs = selva_realloc(refs.refs, refs.nr_refs * sizeof(*refs.refs));
+    memcpy(refs.refs + refs.nr_refs - nr_dsts, dsts, nr_dsts * sizeof(*refs.refs));
+
+    memcpy(vp, &refs, sizeof(refs));
+
+    return 0;
+}
+
 /**
  * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
  * @param db Can be NULL if field type is not a strong reference.
@@ -466,9 +560,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
          * the normal refs.
          */
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        if (len != sizeof(node_id_t)) {
-            return SELVA_EINVAL;
-        }
+        /* TODO Verify len */
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
@@ -492,10 +584,11 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         }
         return set_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO Implement weak ref */
-        fprintf(stderr, "an attempt to set weak references at %d:%d.%d\n",
-                node->type, node->node_id, fs->field);
-        return SELVA_ENOTSUP;
+        if ((len % sizeof(node_id_t)) != 0) {
+            return SELVA_EINVAL;
+        }
+
+        set_weak_references(fs, node, (node_id_t *)value, len / sizeof(node_id_t));
     }
 
     return 0;
@@ -713,16 +806,11 @@ int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFiel
         } while (0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        do {
-            struct SelvaNodeWeakReference *weak_ref = (struct SelvaNodeWeakReference *)p;
-
-            static_assert(__builtin_types_compatible_p(typeof(*weak_ref), typeof(any->weak_reference)));
-            memcpy(&any->weak_reference, weak_ref, sizeof(*weak_ref));
-        } while (0);
+        memcpy(&any->weak_reference, p, sizeof(struct SelvaNodeWeakReference));
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO Implement weak ref */
-        return SELVA_ENOTSUP;
+        memcpy(&any->weak_references, p, sizeof(struct SelvaNodeWeakReferences));
+        break;
     }
 
     return 0;
@@ -780,10 +868,10 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         remove_references(node, fs);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        remove_reference(node, fs, 0);
+        remove_weak_reference(node, fs, 0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        /* TODO weak ref */
+        remove_weak_references(node, fs);
         break;
     }
 

@@ -20,7 +20,6 @@ struct SelvaNodeWeakReference {
     node_id_t dst_id;
 };
 
-/* TODO Support */
 struct SelvaNodeWeakReferences {
     uint32_t nr_refs;
     uint32_t offset;

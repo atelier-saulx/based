@@ -241,7 +241,7 @@ test.serial('query + filter', async (t) => {
     //selva.db_update(dbp, 0, i, buf)
   }
   const dx = performance.now()
-  console.log('batch', selva.db_update_batch(dbp, 0, buf))
+  t.deepEqual(selva.db_update_batch(dbp, 0, buf), 0)
   console.log('updateBatch', Math.round(performance.now() - dx), 'ms')
 
   const typeIds = {
