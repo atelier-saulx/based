@@ -466,6 +466,9 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
          * the normal refs.
          */
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        if (len != sizeof(node_id_t)) {
+            return SELVA_EINVAL;
+        }
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
@@ -480,12 +483,12 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_REFERENCE:
         assert(db && node);
         if (len < sizeof(struct SelvaNode *)) {
-            db_panic("Invalid len");
+            return SELVA_EINVAL;
         }
         return set_reference(db, fs, node, (struct SelvaNode *)value);
     case SELVA_FIELD_TYPE_REFERENCES:
         if ((len % sizeof(struct SelvaNode **)) != 0) {
-            db_panic("Invalid len");
+            return SELVA_EINVAL;
         }
         return set_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
