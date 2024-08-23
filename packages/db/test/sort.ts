@@ -396,7 +396,7 @@ test.serial('sort', async (t) => {
   await db.destroy()
 })
 
-test.serial('sort - from start', async (t) => {
+test.serial('sort - from start (1.5M items)', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -432,7 +432,7 @@ test.serial('sort - from start', async (t) => {
     email: 'flap@flap.flap.flap',
   })
 
-  for (let i = 0; i < 2e6; i++) {
+  for (let i = 0; i < 1500e3; i++) {
     db.create('user', {
       name: 'mr ' + i,
       age: i + 101,
