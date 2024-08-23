@@ -3,11 +3,13 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
+const sort = @import("../db/sort.zig");
+const readInt = @import("../utils.zig").readInt;
 
 const mdb = errors.mdb;
 const jsThrow = errors.jsThrow;
 
-pub fn statInternal(node_env: c.napi_env) !c.napi_value {
+pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
     var s: c.MDB_stat = undefined;
     var txn: ?*c.MDB_txn = null;
     var dbi: c.MDB_dbi = 0;
@@ -69,6 +71,43 @@ pub fn statInternal(node_env: c.napi_env) !c.napi_value {
 
         const dbName = db.data(k);
 
+        if (dbName[0] == 254) {
+            if (!initSortIndex) {
+                continue;
+            }
+
+            const field = dbName[3] - 1;
+            var name: [7]u8 = .{ dbName[0], dbName[1], dbName[2], dbName[3], 0, 0, 0 };
+
+            const queryId = db.getQueryId();
+
+            if (field == 0) {
+                name[4] = dbName[4];
+                name[5] = dbName[5];
+                name[6] = dbName[6];
+
+                var cursor2: ?*c.MDB_cursor = null;
+                try mdb(c.mdb_cursor_open(txn, dbi2, &cursor2));
+                mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_FIRST)) catch {};
+                const len: u16 = @intCast(db.data(k).len);
+                const start = readInt(u16, dbName, 4);
+                const newSortIndex = sort.createReadSortIndex(name, queryId, len, start) catch |err| {
+                    std.log.err("Init: Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
+                    return err;
+                };
+                try db.ctx.sortIndexes.put(name, newSortIndex);
+                continue;
+            }
+
+            const newSortIndex = sort.createReadSortIndex(name, 0, 0, 0) catch |err| {
+                std.log.err("Init: Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
+                return err;
+            };
+            try db.ctx.sortIndexes.put(name, newSortIndex);
+
+            continue;
+        }
+
         var obj: c.napi_value = undefined;
         _ = c.napi_create_object(node_env, &obj);
         _ = c.napi_set_element(node_env, arr, i, obj);
@@ -90,13 +129,13 @@ pub fn statInternal(node_env: c.napi_env) !c.napi_value {
 
         var shards: [2]u8 = .{ 0, 0 };
 
-        if (dbName[4] == 255) {
+        if (dbName[3] == 255) {
             shards[0] = 0;
         } else {
-            shards[0] = dbName[4];
+            shards[0] = dbName[3];
         }
 
-        shards[1] = dbName[5];
+        shards[1] = dbName[4];
 
         var shard: c.napi_value = undefined;
         _ = c.napi_create_uint32(node_env, std.mem.readInt(u16, shards[0..2], .little), &shard);
@@ -116,10 +155,6 @@ pub fn statInternal(node_env: c.napi_env) !c.napi_value {
             _ = c.napi_create_uint32(node_env, std.mem.readInt(u32, db.data(k)[0..4], .little), &lastId);
             _ = c.napi_set_named_property(node_env, obj, "lastId", lastId);
         }
-
-        // ADD EXTRA ARG FROM INIT
-
-        // HANDLE SORT INDEXES!
     }
 
     _ = c.mdb_cursor_close(cursor);
@@ -129,7 +164,7 @@ pub fn statInternal(node_env: c.napi_env) !c.napi_value {
 }
 
 pub fn stat(node_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
-    return statInternal(node_env) catch |err| {
+    return statInternal(node_env, false) catch |err| {
         napi.jsThrow(node_env, @errorName(err));
         return null;
     };

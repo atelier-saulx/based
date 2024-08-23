@@ -111,7 +111,10 @@ pub fn getReadShard(dbiName: DbName, queryId: u32) !Shard {
             return err;
         };
     } else if (s.?.queryId != queryId) {
-        _ = c.mdb_cursor_renew(ctx.readTxn, s.?.cursor);
+        errors.mdb(c.mdb_cursor_renew(ctx.readTxn, s.?.cursor)) catch |err| {
+            std.debug.print("Cannot renew {any} shard.queryId:{any} queryId:{any} \n", .{ err, s.?.queryId, queryId });
+            return s.?;
+        };
         s.?.queryId = queryId;
     }
     return s.?;
@@ -157,9 +160,11 @@ pub inline fn readField(id: u32, shard: Shard) []u8 {
 
 pub fn getField(id: u32, field: u8, typeId: TypeId, currentShard: u16, queryId: u32) []u8 {
     const dbiName = getName(typeId, field, @bitCast(currentShard));
+
     const shard = getReadShard(dbiName, queryId) catch {
         return &.{};
     };
+
     return readField(id, shard);
 }
 

@@ -176,7 +176,7 @@ fn createSortIndex(
     }
 }
 
-fn createReadSortIndex(name: db.SortDbiName, queryId: u32, len: u16, start: u16) !db.SortIndex {
+pub fn createReadSortIndex(name: db.SortDbiName, queryId: u32, len: u16, start: u16) !db.SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     _ = c.mdb_txn_reset(db.ctx.readTxn);

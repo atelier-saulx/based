@@ -240,6 +240,7 @@ pub fn querySort(
         const id = utils.readInt(u32, db.data(v), 0);
 
         currentShard = db.idToShard(id);
+
         if (!filter(ctx.id, id, typeId, conditions, currentShard)) {
             continue :checkItem;
         }

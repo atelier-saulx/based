@@ -432,12 +432,44 @@ test.serial.only('sort - from start', async (t) => {
     email: 'flap@flap.flap.flap',
   })
 
+  for (let i = 0; i < 2e6; i++) {
+    db.create('user', {
+      name: 'mr ' + i,
+      age: i + 101,
+    })
+  }
+
   db.drain()
 
-  t.deepEqual(db.query('user').include('name').sort('age').get().toObject(), [
-    { id: 2, name: 'mr flap' },
-    { id: 1, name: 'mr blap' },
-  ])
+  t.deepEqual(
+    db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
+    [
+      { id: 2, name: 'mr flap' },
+      { id: 1, name: 'mr blap' },
+    ],
+  )
+
+  t.deepEqual(
+    db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
+    [
+      { id: 2, name: 'mr flap' },
+      { id: 1, name: 'mr blap' },
+    ],
+  )
+
+  t.deepEqual(
+    db.query('user').include('name').sort('name').range(0, 2).get().toObject(),
+    [
+      {
+        id: 3,
+        name: 'mr 0',
+      },
+      {
+        id: 4,
+        name: 'mr 1',
+      },
+    ],
+  )
 
   db.stop()
 
@@ -447,10 +479,25 @@ test.serial.only('sort - from start', async (t) => {
 
   await newDb.start()
 
-  t.deepEqual(db.query('user').include('name').sort('age').get().toObject(), [
-    { id: 2, name: 'mr flap' },
-    { id: 1, name: 'mr blap' },
-  ])
+  t.deepEqual(
+    newDb
+      .query('user')
+      .include('name')
+      .sort('name')
+      .range(0, 2)
+      .get()
+      .toObject(),
+    [
+      {
+        id: 3,
+        name: 'mr 0',
+      },
+      {
+        id: 4,
+        name: 'mr 1',
+      },
+    ],
+  )
 
   await newDb.destroy()
 })

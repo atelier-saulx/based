@@ -6,6 +6,8 @@ const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const readInt = @import("../../utils.zig").readInt;
 const getField = db.getField;
 
+const std = @import("std");
+
 pub fn getFields(
     ctx: *QueryCtx,
     id: u32,
@@ -55,6 +57,7 @@ pub fn getFields(
         }
 
         const value = getField(id, field, typeId, currentShard, ctx.id);
+
         if (value.len == 0) {
             continue :includeField;
         }
@@ -94,12 +97,14 @@ pub fn getFields(
     if (size == 0 and !idIsSet) {
         if (main == null) {
             main = getField(id, 0, typeId, currentShard, ctx.id);
+
             if (main.?.len > 0) {
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, refLvl, start);
             }
         } else if (main.?.len > 0) {
             const idSize = try addIdOnly(ctx, id, refLvl, start);
+
             if (start == null) {
                 size += idSize;
             }

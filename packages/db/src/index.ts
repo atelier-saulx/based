@@ -84,7 +84,15 @@ export class BasedDb {
     this.schema = deepCopy(DEFAULT_SCHEMA)
   }
 
-  async start() {
+  async start(): Promise<
+    {
+      shard: number
+      field: number
+      entries: number
+      type: number[]
+      lastId: number
+    }[]
+  > {
     try {
       await fs.mkdir(this.fileSystemPath)
     } catch (err) {}
@@ -115,7 +123,9 @@ export class BasedDb {
           }
         }
       }
+      return entries
     }
+    return []
   }
 
   updateTypeDefs() {

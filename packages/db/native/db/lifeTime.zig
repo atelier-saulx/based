@@ -43,7 +43,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         std.log.err("Open lmdb env {any}", .{err});
     };
 
-    return stat.statInternal(napi_env);
+    return stat.statInternal(napi_env, true);
 }
 
 fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
@@ -71,6 +71,7 @@ fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
         mainSort.deinit();
         _ = db.ctx.mainSortIndexes.remove(item.key_ptr.*);
     }
+
     db.ctx.mainSortIndexes.clearRetainingCapacity();
 
     if (db.ctx.readTxnCreated) {
