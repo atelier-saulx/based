@@ -94,7 +94,7 @@ export class BasedDb {
     }[]
   > {
     try {
-      await fs.mkdir(this.fileSystemPath)
+      await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
 
     const entries = db.start(this.fileSystemPath)
