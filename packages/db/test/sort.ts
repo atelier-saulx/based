@@ -2,6 +2,7 @@ import test from 'ava'
 import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import fs from 'node:fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
@@ -393,4 +394,63 @@ test.serial('sort', async (t) => {
   )
 
   await db.destroy()
+})
+
+test.serial.only('sort - from start', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  await db.start()
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          gender: { type: 'integer' },
+          age: { type: 'integer' },
+          name: { type: 'string' },
+          email: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  db.create('user', {
+    name: 'mr blap',
+    age: 100,
+    email: 'blap@blap.blap.blap',
+  })
+
+  db.create('user', {
+    name: 'mr flap',
+    age: 50,
+    email: 'flap@flap.flap.flap',
+  })
+
+  db.drain()
+
+  t.deepEqual(db.query('user').include('name').sort('age').get().toObject(), [
+    { id: 2, name: 'mr flap' },
+    { id: 1, name: 'mr blap' },
+  ])
+
+  db.stop()
+
+  const newDb = new BasedDb({
+    path: dbFolder,
+  })
+
+  await newDb.start()
+
+  t.deepEqual(db.query('user').include('name').sort('age').get().toObject(), [
+    { id: 2, name: 'mr flap' },
+    { id: 1, name: 'mr blap' },
+  ])
+
+  await newDb.destroy()
 })
