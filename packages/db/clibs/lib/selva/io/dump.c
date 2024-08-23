@@ -495,7 +495,7 @@ static int load_reference_meta_field_weak_references(
         struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc,
         field_t field)
 {
-    /* TODO */
+    /* TODO Load weak refs in meta */
     return SELVA_ENOTSUP;
 }
 
@@ -560,6 +560,7 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             /* TODO check return value */
             io->sdb_read(value_buf, sizeof(char), value_size, io);
             err = selva_fields_set_reference_meta(node, ref, efc, rd.field, value_buf, value_size);
@@ -576,9 +577,6 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_REFERENCE:
         case SELVA_FIELD_TYPE_REFERENCES:
             db_panic("References not supported in edge meta");
-        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            err = load_reference_meta_field_weak_references(io, db, node, ref, efc, rd.field);
-            break;
         }
         if (err) {
             db_panic("Failed to set field (%d:%d:%d): %s",
