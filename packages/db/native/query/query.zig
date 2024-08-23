@@ -158,7 +158,7 @@ inline fn getQueryInternal(
             high,
         );
     } else if (queryType == 7 or queryType == 8) {
-        // query ids sorted
+        // query ids sorted > 512
         const args = try napi.getArgs(8, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
         const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);

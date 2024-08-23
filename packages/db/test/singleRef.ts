@@ -218,8 +218,6 @@ test.serial.only('single reference', async (t) => {
 
   db.drain()
 
-  console.log(db.query('simple').include('id').range(0, 1).get().toObject())
-
   t.deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
     { id: 1 },
   ])

@@ -13,6 +13,7 @@
     "build-selva": "mkdir -p build && make -C clibs",
     "clean-selva": "rm -rf build && make -C clibs clean",
     "get-napi": "./scripts/download-node-headers.sh",
+    "test-query": "zig build && npm run build && npm run test -- ./dist/test/query.js",
     "test-real": "npm run build && npm run test -- ./dist/test/real.js",
     "test-single-ref": "zig build && npm run build && npm test -- ./dist/test/singleRef.js",
     "test-remove": "zig build && npm run build && npm test -- ./dist/test/remove.js",

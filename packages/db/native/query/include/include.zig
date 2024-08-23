@@ -98,8 +98,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, refLvl, start);
             }
-        }
-        if (main.?.len > 0) {
+        } else if (main.?.len > 0) {
             const idSize = try addIdOnly(ctx, id, refLvl, start);
             if (start == null) {
                 size += idSize;

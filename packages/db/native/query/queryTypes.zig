@@ -191,6 +191,7 @@ pub fn queryNonSort(
         }
 
         const size = try getFields(ctx, i, typeId, null, include, currentShard, 0);
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
