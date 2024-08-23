@@ -396,7 +396,7 @@ test.serial('sort', async (t) => {
   await db.destroy()
 })
 
-test.serial.only('sort - from start', async (t) => {
+test.serial('sort - from start', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
