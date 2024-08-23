@@ -378,15 +378,6 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  console.log(
-    db
-      .query('user', ids2)
-      .include('name', 'age', 'email')
-      .sort('email')
-      .get()
-      .toObject(),
-  )
-
   t.is(
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
       .length,
