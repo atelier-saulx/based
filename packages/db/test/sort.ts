@@ -1,6 +1,5 @@
 import test from 'ava'
 import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
@@ -9,15 +8,11 @@ const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
 test.serial('sort', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -396,4 +391,6 @@ test.serial('sort', async (t) => {
       .length,
     15,
   )
+
+  await db.destroy()
 })
