@@ -21,9 +21,11 @@ const db = new BasedDb({
   //   maxModifySize: 1000000,
 })
 
-await wait(100)
-
+// if (workerData == 0) {
 await db.start()
+// }
+
+await wait(100)
 
 // const user = nr + 'user'
 

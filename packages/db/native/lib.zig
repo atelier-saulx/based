@@ -34,6 +34,8 @@ pub fn registerFunction(
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
+    std.debug.print("register napi fn \n", .{});
+    // need every thing here
 
     // here a stack allocated global struct
     // also add multipl envs as possiblity that can be part of the same struct
