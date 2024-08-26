@@ -7,7 +7,7 @@
 #include "selva/fields.h"
 #include "selva_error.h"
 #include "db.h"
-#include "traverse.h"
+#include "selva/traverse.h"
 
 [[maybe_unused]]
 static int head_callback_stub(
