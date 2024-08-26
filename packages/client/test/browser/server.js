@@ -50,13 +50,27 @@ const start = async () => {
         text: {
           public: true,
           type: 'query',
-          fn: (based, payload, update) => {
+          maxPayloadSize: 100,
+          fn: (based, payload, update, error) => {
             const arr = []
             for (let i = 0; i < 10; i++) {
               arr.push('hello!  ' + i)
             }
             update(arr)
-            return () => {}
+            let i = setInterval(() => {
+              for (let i = 0; i < 10; i++) {
+                arr[i] = 'hello!  ' + ~~(Math.random() * 99999)
+              }
+              if (Math.random() < 0.001) {
+                update(arr, undefined, new Error('flap'))
+              } else {
+                console.log('no error')
+                update(arr, undefined, null)
+              }
+            }, 10)
+            return () => {
+              clearInterval(i)
+            }
           },
         },
         login: {
@@ -97,6 +111,7 @@ const start = async () => {
           fn: async (based, payload, update) => {
             let cnt = 0
             update(cnt)
+
             const interval = setInterval(() => {
               update(++cnt)
             }, 100)

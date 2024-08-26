@@ -91,7 +91,7 @@ test('function error', async (t: T) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.call('throwingFunction')
+    coreClient.call('throwingFunction'),
   )) as BasedError
 
   t.is(error.code, BasedErrorCode.FunctionError)
@@ -112,7 +112,7 @@ test('function authorize error', async (t: T) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.call('throwingFunction')
+    coreClient.call('throwingFunction'),
   )) as BasedError
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
@@ -139,7 +139,7 @@ test('observable authorize error', async (t: T) => {
 
       (err) => {
         resolve(err)
-      }
+      },
     )
   })) as BasedError
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
@@ -156,7 +156,7 @@ test('type error in function', async (t: T) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.call('errorFunction')
+    coreClient.call('errorFunction'),
   )) as BasedError
   t.is(error.code, BasedErrorCode.FunctionError)
 })
@@ -171,7 +171,7 @@ test('throw in an interval', async (t: T) => {
   })
   await t.throwsAsync(
     new Promise((_, reject) =>
-      coreClient.query('errorTimer', {}).subscribe(() => { }, reject)
-    )
+      coreClient.query('errorTimer', {}).subscribe(() => {}, reject),
+    ),
   )
 })
