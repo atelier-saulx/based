@@ -22,6 +22,8 @@ pub fn build(b: *std.Build) void {
     lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/mdb.c") });
     lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/midl.c") });
 
+    // lib.
+
     lib.linkLibC();
 
     const install_lib = b.addInstallArtifact(lib, .{
