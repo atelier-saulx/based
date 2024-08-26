@@ -6,9 +6,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "selva/fields.h"
 #include "selva_error.h"
 #include "db.h"
-#include "fields.h"
 #include "filter.h"
 #include "traverse.h"
 #include "find.h"

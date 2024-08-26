@@ -6,6 +6,8 @@
 
 #include "selva/types.h"
 
+struct selva_string;
+
 struct SelvaNodeReference {
     struct SelvaNode *dst;
     struct SelvaFields *meta;
@@ -52,7 +54,7 @@ struct SelvaFieldsAny {
 #else
 __attribute__((pure))
 #endif
-size_t fields_get_data_size(const struct SelvaFieldSchema *fs);
+size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 
 /**
  * Set field value.
@@ -77,13 +79,16 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 /**
  * Delete an edge from a references field.
  */
-int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, field_t field, node_id_t dst_node_id);
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id);
 
-void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode * restrict node);
+/**
+ * Init fields of a node.
+ */
+void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 /**
  * Destroy all fields of a node.
- * This will set nr_fields = 0, making setting new field values impossible despite
- * the schema possibly defining fields for this node.
+ * This will set nr_fields = 0, making setting new field values impossible
+ * regardless wether the schema defines fields for this node.
  */
-void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node);
+void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);

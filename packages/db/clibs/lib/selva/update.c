@@ -2,14 +2,13 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <stdio.h> // FIXME REMOVE
 #include <assert.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/auto_free.h"
+#include "selva/fields.h"
 #include "selva_error.h"
 #include "db.h"
-#include "fields.h"
 #include "update.h"
 
 int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, const char *buf, size_t len)
@@ -101,7 +100,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
             } while (0);
             break;
         default:
-            value_len = fields_get_data_size(fs);
+            value_len = selva_fields_get_data_size(fs);
             if (value_len > ud.len) {
                 return SELVA_EINVAL;
             }

@@ -12,7 +12,7 @@
 #include "selva_error.h"
 #include "db_panic.h"
 #include "db.h"
-#include "fields.h"
+#include "selva/fields.h"
 
 /**
  * Don't allow mutiple edges from the same field between two nodes.
@@ -58,7 +58,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
 };
 
-size_t fields_get_data_size(const struct SelvaFieldSchema *fs)
+size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 {
     const enum SelvaFieldType type = fs->type;
 
@@ -73,7 +73,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
 {
     char *data = (char *)PTAG_GETP(fields->data);
     size_t off = fields->data_len;
-    size_t field_data_size = fields_get_data_size(fs);
+    size_t field_data_size = selva_fields_get_data_size(fs);
     size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
 
     /* TODO Handle the rare case where we run out of space that can be reprented by data_len */
@@ -874,7 +874,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     }
 
-    memset(nfo2p(fields, nfo), 0, fields_get_data_size(fs));
+    memset(nfo2p(fields, nfo), 0, selva_fields_get_data_size(fs));
 
     return 0;
 }
@@ -897,7 +897,7 @@ static int reference_meta_del(struct SelvaNodeReference *ref, field_t field)
     return fields_del(NULL, NULL, fields, field);
 }
 
-int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, field_t field, node_id_t dst_node_id)
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id)
 {
     struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
     struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&type->ns, field);
@@ -918,7 +918,7 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode * restrict node, f
     return 0;
 }
 
-void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode * restrict node)
+void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     node->fields.nr_fields = type->ns.nr_fields;
     node->fields.data_len = type->field_map_template.main_data_size;
@@ -975,7 +975,7 @@ static void destroy_fields(struct SelvaFields *fields)
     selva_free(PTAG_GETP(fields->data));
 }
 
-void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode * restrict node)
+void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
 {
     const field_t nr_fields = node->fields.nr_fields;
 

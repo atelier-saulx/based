@@ -9,8 +9,8 @@
 #include "jemalloc.h"
 #include "util/align.h"
 #include "selva_error.h"
+#include "selva/fields.h"
 #include "schema.h"
-#include "fields.h"
 #include "db_panic.h"
 #include "db.h"
 
@@ -141,7 +141,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
                 .type = fs->type,
                 .off = main_field_off >> 3,
             };
-            main_field_off += ALIGNED_SIZE(fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
+            main_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
         } else {
             nfo[i] = (struct SelvaFieldInfo){
                 .type = 0,

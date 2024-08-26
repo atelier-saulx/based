@@ -12,10 +12,10 @@
 #include "util/ctime.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
+#include "selva/fields.h"
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
-#include "../fields.h"
 #include "../io.h"
 #include "io_struct.h"
 
@@ -540,7 +540,7 @@ static void load_reference_meta(
                      rd.type, fs->type);
         }
 
-        const size_t value_size = fields_get_data_size(fs);
+        const size_t value_size = selva_fields_get_data_size(fs);
         char value_buf[value_size];
         int err = SELVA_EINVAL;
 
@@ -698,7 +698,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
                      rd.type, fs->type);
         }
 
-        const size_t value_size = fields_get_data_size(fs);
+        const size_t value_size = selva_fields_get_data_size(fs);
         char value_buf[value_size];
         int err = SELVA_EINVAL;
 

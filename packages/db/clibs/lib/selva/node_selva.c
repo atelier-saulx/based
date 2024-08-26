@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "util/selva_string.h"
+#include "selva/fields.h"
 #include "selva/types.h"
 #include "selva_error.h"
 #include "db.h"
-#include "fields.h"
 #include "filter.h"
 #include "find.h"
 #include "traverse.h"
