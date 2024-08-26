@@ -12,7 +12,6 @@
 #include "util/ctime.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
-#include "selva/selva.h"
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
@@ -41,7 +40,7 @@
  * Helper types for portable serialization.
  * Picking the right type:
  * 1. Use one of these types
- * 2. Use one of the specified-width types in selva.h
+ * 2. Use one of the specified-width types in ../db.h
  * 3. Use a specified-width type from stdint.h
  * 4. Use a BitInt type
  * 5. Use the original type

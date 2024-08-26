@@ -9,7 +9,6 @@
 #include "util/align.h"
 #include "util/ptag.h"
 #include "util/selva_string.h"
-#include "selva/selva.h"
 #include "selva_error.h"
 #include "db_panic.h"
 #include "db.h"

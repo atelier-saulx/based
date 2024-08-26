@@ -10,14 +10,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "util/selva_string.h"
-#include "selva/selva.h"
+#include "selva/types.h"
 #include "selva_error.h"
 #include "db.h"
-#include "update.h"
 #include "fields.h"
-#include "traverse.h"
-#include "find.h"
 #include "filter.h"
+#include "find.h"
+#include "traverse.h"
+#include "update.h"
 #include "io.h"
 
 static napi_valuetype selva_napi_get_nvaluetype(napi_env env, napi_value value)

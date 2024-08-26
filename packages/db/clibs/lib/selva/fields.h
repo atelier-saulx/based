@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "selva/types.h"
+
 struct SelvaNodeReference {
     struct SelvaNode *dst;
     struct SelvaFields *meta;

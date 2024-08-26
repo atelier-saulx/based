@@ -4,6 +4,9 @@
  */
 #pragma once
 
+#include "selva/types.h"
+#include "traverse.h"
+
 struct FindParam {
     SelvaTraversalNodeCallback node_cb;
     void *node_arg;
