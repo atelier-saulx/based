@@ -13,6 +13,7 @@ pub fn build(b: *std.Build) void {
 
     lib.linker_allow_shlib_undefined = true;
 
+    // add selva like this
     lib.addSystemIncludePath(b.path("deps/node-v20.11.1/include/node/"));
 
     const dep = b.dependency("lmdb", .{ .create = true });
