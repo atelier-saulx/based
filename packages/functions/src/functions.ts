@@ -266,10 +266,15 @@ type BasedJobFunctionConfig = {
 
 type BasedProxyFunctionConfig = {
   type: 'proxy'
-  connect: () => Promise<{
-    url: string
-    headers?: HttpHeaders
-  }>
+  connect: () =>
+    | Promise<{
+        url: string
+        headers?: HttpHeaders
+      }>
+    | {
+        url: string
+        headers?: HttpHeaders
+      }
 }
 
 export type BasedFunctionConfig<
