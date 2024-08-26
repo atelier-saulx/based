@@ -11,7 +11,7 @@ export type ObservableUpdateFunction<K = any> = (
   cache?: Uint8Array,
   diff?: any,
   fromChecksum?: number,
-  isDeflate?: boolean
+  isDeflate?: boolean,
 ) => void
 
 export type ObserveErrorListener = (err: any) => void
@@ -23,7 +23,7 @@ export type HttpHeaders = {
 export type SendHttpResponse = (
   responseData: any,
   headers?: HttpHeaders,
-  status?: string | number
+  status?: string | number,
 ) => void
 
 export type HttpResponse<P = any, K = any> = (
@@ -31,13 +31,13 @@ export type HttpResponse<P = any, K = any> = (
   payload: P,
   responseData: K,
   send: SendHttpResponse,
-  ctx: Context<HttpSession>
+  ctx: Context<HttpSession>,
 ) => Promise<void>
 
 export type BasedFunction<P = any, K = any> = (
   based: BasedFunctionClient,
   payload: P,
-  ctx: Context
+  ctx: Context,
 ) => Promise<K>
 
 export type BasedAppFunction = (
@@ -57,7 +57,7 @@ export type BasedAppFunction = (
       path: string
     }
   },
-  ctx: Context
+  ctx: Context,
 ) => Promise<string>
 
 export type StreamPayload<P = any> = {
@@ -81,13 +81,13 @@ export type BasedQueryFunction<P = any, K = any> =
       based: BasedFunctionClient,
       payload: P,
       update: ObservableUpdateFunction<K>,
-      error: ObserveErrorListener
+      error: ObserveErrorListener,
     ) => Promise<() => void>)
   | ((
       based: BasedFunctionClient,
       payload: P,
       update: ObservableUpdateFunction<K>,
-      error: ObserveErrorListener
+      error: ObserveErrorListener,
     ) => () => void)
 
 export type BasedChannelFunction<P = any, K = any> = (
@@ -95,7 +95,7 @@ export type BasedChannelFunction<P = any, K = any> = (
   payload: P,
   id: number,
   update: ChannelMessageFunction<K>,
-  error: (err?: any) => void
+  error: (err?: any) => void,
 ) => () => void
 
 export type BasedChannelPublishFunction<P = any, M = any> = (
@@ -103,14 +103,14 @@ export type BasedChannelPublishFunction<P = any, M = any> = (
   payload: P,
   message: M,
   id: number,
-  ctx: Context
+  ctx: Context,
 ) => void
 
 export type ChannelMessageFunction<M = any> = (message: M) => void
 
 export type ChannelMessageFunctionInternal<K = any> = (
   message: K,
-  err?: any
+  err?: any,
 ) => void
 
 export type BasedJobFunction =
@@ -187,6 +187,7 @@ export type BasedFunctionTypes =
   | 'stream'
   | 'app'
   | 'job'
+  | 'proxy'
 
 type BasedChannelFunctionConfig = {
   /** Function type `channel, function, query, stream, authorize` */
@@ -259,49 +260,63 @@ type BasedJobFunctionConfig = {
   fn?: BasedFunction
 }
 
+type BasedProxyFunctionConfig = {
+  type: 'proxy'
+  connect: Promise<{
+    url: string
+    headers?: HttpHeaders
+  }>
+}
+
 export type BasedFunctionConfig<
-  T extends BasedFunctionTypes = BasedFunctionTypes
+  T extends BasedFunctionTypes = BasedFunctionTypes,
 > = T extends 'channel'
   ? BasedChannelFunctionConfig & FunctionConfigShared
   : T extends 'function'
-  ? BasedCallFunctionConfig & FunctionConfigShared
-  : T extends 'query'
-  ? BasedQueryFunctionConfig & FunctionConfigShared
-  : T extends 'stream'
-  ? BasedStreamFunctionConfig & FunctionConfigShared
-  : T extends 'job'
-  ? BasedJobFunctionConfig & FunctionConfigShared
-  : T extends 'app'
-  ? BasedAppFunctionConfig & FunctionConfigShared
-  :
-      | (BasedChannelFunctionConfig & FunctionConfigShared)
-      | (BasedCallFunctionConfig & FunctionConfigShared)
-      | (BasedQueryFunctionConfig & FunctionConfigShared)
-      | (BasedStreamFunctionConfig & FunctionConfigShared)
-      | (BasedJobFunctionConfig & FunctionConfigShared)
-      | (BasedAppFunctionConfig & FunctionConfigShared)
+    ? BasedCallFunctionConfig & FunctionConfigShared
+    : T extends 'query'
+      ? BasedQueryFunctionConfig & FunctionConfigShared
+      : T extends 'stream'
+        ? BasedStreamFunctionConfig & FunctionConfigShared
+        : T extends 'job'
+          ? BasedJobFunctionConfig & FunctionConfigShared
+          : T extends 'app'
+            ? BasedAppFunctionConfig & FunctionConfigShared
+            : T extends 'proxy'
+              ? BasedProxyFunctionConfig & FunctionConfigShared
+              :
+                  | (BasedChannelFunctionConfig & FunctionConfigShared)
+                  | (BasedCallFunctionConfig & FunctionConfigShared)
+                  | (BasedQueryFunctionConfig & FunctionConfigShared)
+                  | (BasedStreamFunctionConfig & FunctionConfigShared)
+                  | (BasedJobFunctionConfig & FunctionConfigShared)
+                  | (BasedAppFunctionConfig & FunctionConfigShared)
+                  | (BasedProxyFunctionConfig & FunctionConfigShared)
 
 export type BasedFunctionConfigComplete<
-  T extends BasedFunctionTypes = BasedFunctionTypes
+  T extends BasedFunctionTypes = BasedFunctionTypes,
 > = T extends 'channel'
   ? BasedChannelFunctionConfig & FunctionConfigSharedComplete
   : T extends 'function'
-  ? BasedCallFunctionConfig & FunctionConfigSharedComplete
-  : T extends 'query'
-  ? BasedQueryFunctionConfig & FunctionConfigSharedComplete
-  : T extends 'stream'
-  ? BasedStreamFunctionConfig & FunctionConfigSharedComplete
-  : T extends 'job'
-  ? BasedJobFunctionConfig & FunctionConfigSharedComplete
-  : T extends 'app'
-  ? BasedAppFunctionConfig & FunctionConfigSharedComplete
-  :
-      | (BasedChannelFunctionConfig & FunctionConfigSharedComplete)
-      | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
-      | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
-      | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
-      | (BasedJobFunctionConfig & FunctionConfigSharedComplete)
-      | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
+    ? BasedCallFunctionConfig & FunctionConfigSharedComplete
+    : T extends 'query'
+      ? BasedQueryFunctionConfig & FunctionConfigSharedComplete
+      : T extends 'stream'
+        ? BasedStreamFunctionConfig & FunctionConfigSharedComplete
+        : T extends 'job'
+          ? BasedJobFunctionConfig & FunctionConfigSharedComplete
+          : T extends 'app'
+            ? BasedAppFunctionConfig & FunctionConfigSharedComplete
+            : T extends 'proxy'
+              ? BasedProxyFunctionConfig & FunctionConfigShared
+              :
+                  | (BasedChannelFunctionConfig & FunctionConfigSharedComplete)
+                  | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
+                  | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
+                  | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
+                  | (BasedJobFunctionConfig & FunctionConfigSharedComplete)
+                  | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
+                  | (BasedProxyFunctionConfig & FunctionConfigShared)
 
 export type BasedAuthorizeFunctionConfig = {
   /** Function type `authorize` */
@@ -311,11 +326,11 @@ export type BasedAuthorizeFunctionConfig = {
 
 export type BasedRoute<
   T extends BasedFunctionTypes = BasedFunctionTypes,
-  R extends keyof BasedFunctionConfig = 'type' | 'name'
+  R extends keyof BasedFunctionConfig = 'type' | 'name',
 > = Required<Partial<BasedFunctionConfig<T>>, R>
 
 export type BasedRouteComplete<
-  T extends BasedFunctionTypes = BasedFunctionTypes
+  T extends BasedFunctionTypes = BasedFunctionTypes,
 > = Required<
   Partial<BasedFunctionConfig<T>>,
   'type' | 'name' | 'maxPayloadSize' | 'rateLimitTokens'
@@ -323,7 +338,7 @@ export type BasedRouteComplete<
 
 export function isBasedRoute<T extends BasedFunctionTypes>(
   type: T,
-  route: any
+  route: any,
 ): route is BasedRoute<T> {
   return (
     route &&
@@ -340,6 +355,8 @@ export function isAnyBasedRoute(route: any): route is BasedRoute {
     (route.type === 'channel' ||
       route.type === 'query' ||
       route.type === 'function' ||
+      route.type === 'proxy' ||
+      route.type === 'app' ||
       route.type === 'stream') &&
     typeof route.name === 'string'
   )
@@ -347,13 +364,13 @@ export function isAnyBasedRoute(route: any): route is BasedRoute {
 
 export function isBasedFunctionConfig<T extends BasedFunctionTypes>(
   type: T,
-  config: any
+  config: any,
 ): config is BasedFunctionConfig<T> {
   return isBasedRoute(type, config)
 }
 
 export function isAnyBasedFunctionConfig(
-  config: any
+  config: any,
 ): config is BasedFunctionConfig {
   return isAnyBasedRoute(config)
 }
