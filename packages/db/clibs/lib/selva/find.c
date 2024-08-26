@@ -7,10 +7,10 @@
 #include <stdint.h>
 #include <string.h>
 #include "selva/fields.h"
+#include "selva/filter.h"
 #include "selva/traverse.h"
 #include "selva_error.h"
 #include "db.h"
-#include "filter.h"
 #include "selva/find.h"
 
 static int find_next_field(const struct FindFields *fields, node_type_t node_type)

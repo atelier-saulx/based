@@ -11,12 +11,12 @@
 #include <string.h>
 #include "util/selva_string.h"
 #include "selva/fields.h"
+#include "selva/filter.h"
 #include "selva/find.h"
 #include "selva/traverse.h"
 #include "selva/types.h"
 #include "selva_error.h"
 #include "db.h"
-#include "filter.h"
 #include "update.h"
 #include "io.h"
 

@@ -9,7 +9,7 @@
 #include "selva/fields.h"
 #include "selva_error.h"
 #include "db.h"
-#include "filter.h"
+#include "selva/filter.h"
 
 #if 0
 .filter((filter) => {
