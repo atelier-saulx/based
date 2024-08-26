@@ -19,44 +19,44 @@ try {
 // console.log(__dirname)
 // const nr = 10
 
-const getWorker = (i) =>
-  new Promise((resolve, reject) => {
-    // const s = spawn('node', [
-    //   join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
-    // ])
+// const getWorker = (i) =>
+//   new Promise((resolve, reject) => {
+//     // const s = spawn('node', [
+//     //   join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
+//     // ])
 
-    const s = new Worker(
-      join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
-      { workerData: i },
-    )
+//     const s = new Worker(
+//       join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
+//       { workerData: i },
+//     )
 
-    s.on('error', (err) => {
-      reject(err)
-    })
+//     s.on('error', (err) => {
+//       reject(err)
+//     })
 
-    s.stderr.on('data', (data) => {
-      console.log(`stderr: ${i} ${data}`)
-    })
+//     s.stderr.on('data', (data) => {
+//       console.log(`stderr: ${i} ${data}`)
+//     })
 
-    s.stdout.on('data', (data) => {
-      console.log(`stdout: ${i} ${data}`)
-      if (`${data}`.includes('RDY')) {
-        resolve(true)
-      }
-    })
+//     s.stdout.on('data', (data) => {
+//       console.log(`stdout: ${i} ${data}`)
+//       if (`${data}`.includes('RDY')) {
+//         resolve(true)
+//       }
+//     })
 
-    // s.stderr.on('data', (data) => {
-    // console.error(`stderr: ${i} ${data}`)
-    // })
-  })
+//     // s.stderr.on('data', (data) => {
+//     // console.error(`stderr: ${i} ${data}`)
+//     // })
+//   })
 
 // const q = []
 
 // var d = Date.now()
 // let doneCount = 0
 
-await getWorker(0)
-await getWorker(1)
+// await getWorker(0)
+// await getWorker(1)
 
 // for (let i = 1; i < nr; i++) {
 //   q.push(getWorker(i))
@@ -73,139 +73,139 @@ await getWorker(1)
 //   join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
 // )
 
-// await wait(100)
+await wait(100)
 
-// const db = new BasedDb({
-//   path: dbFolder,
-// })
+const db = new BasedDb({
+  path: dbFolder,
+})
 
-// await db.start()
+await db.start()
 
-// db.updateSchema({
-//   types: {
-//     user: {
-//       fields: {
-//         age: { type: 'integer' },
-//         myBlup: { type: 'reference', allowedType: 'blup' },
-//         name: { type: 'string' },
-//         flap: { type: 'integer' },
-//         email: { type: 'string', maxLength: 14 },
-//         snurp: { type: 'string' },
-//         location: {
-//           type: 'object',
-//           properties: {
-//             label: { type: 'string' },
-//             x: { type: 'integer' },
-//             y: { type: 'integer' },
-//           },
-//         },
-//       },
-//     },
-//     blup: {
-//       fields: {
-//         flap: {
-//           type: 'string',
-//           // @ts-ignore
-//           maxBytes: 1,
-//         },
-//         name: { type: 'string' },
-//       },
-//     },
-//     simple: {
-//       // min max on string
-//       fields: {
-//         // @ts-ignore
-//         countryCode: { type: 'string', maxBytes: 2 },
-//         lilBlup: { type: 'reference', allowedType: 'blup' },
-//         user: { type: 'reference', allowedType: 'user' },
-//       },
-//     },
-//   },
-// })
+db.updateSchema({
+  types: {
+    user: {
+      fields: {
+        age: { type: 'integer' },
+        myBlup: { type: 'reference', allowedType: 'blup' },
+        name: { type: 'string' },
+        flap: { type: 'integer' },
+        email: { type: 'string', maxLength: 14 },
+        snurp: { type: 'string' },
+        location: {
+          type: 'object',
+          properties: {
+            label: { type: 'string' },
+            x: { type: 'integer' },
+            y: { type: 'integer' },
+          },
+        },
+      },
+    },
+    blup: {
+      fields: {
+        flap: {
+          type: 'string',
+          // @ts-ignore
+          maxBytes: 1,
+        },
+        name: { type: 'string' },
+      },
+    },
+    simple: {
+      // min max on string
+      fields: {
+        // @ts-ignore
+        countryCode: { type: 'string', maxBytes: 2 },
+        lilBlup: { type: 'reference', allowedType: 'blup' },
+        user: { type: 'reference', allowedType: 'user' },
+      },
+    },
+  },
+})
 
-// const users = []
+const users = []
 
-// const amount = 22e5
+const amount = 22e5
 
-// const d = Date.now()
+const d = Date.now()
 
-// for (let i = 0; i < amount; i++) {
-//   // const blup = db.create('blup', {
-//   //   // name: 'blup ! ' + i,
-//   //   flap: 'A',
-//   // })
+for (let i = 0; i < amount; i++) {
+  // const blup = db.create('blup', {
+  //   // name: 'blup ! ' + i,
+  //   flap: 'A',
+  // })
 
-//   users.push(
-//     db.create('user', {
-//       // myBlup: blup,
-//       // age: amount - i
-//       age: ~~(Math.random() * 99) + 1,
-//       name: 'Mr ' + i,
-//       // burp: 66,
-//       // snurp: 'derp derp',
-//       // email: 'merp_merp_' + i + '@once.net',
-//       // location: {
-//       // label: 'BLA BLA',
-//       // },
-//     }),
-//   )
-// }
+  users.push(
+    db.create('user', {
+      // myBlup: blup,
+      // age: amount - i
+      age: ~~(Math.random() * 99) + 1,
+      name: 'Mr ' + i,
+      // burp: 66,
+      // snurp: 'derp derp',
+      // email: 'merp_merp_' + i + '@once.net',
+      // location: {
+      // label: 'BLA BLA',
+      // },
+    }),
+  )
+}
 
-// db.drain()
+db.drain()
 
-// console.log(
-//   'Write',
-//   amount,
-//   'items',
-//   'total db time',
-//   db.writeTime,
-//   'ms',
-//   Date.now() - d,
-//   'ms\n',
-// )
+console.log(
+  'Write',
+  amount,
+  'items',
+  'total db time',
+  db.writeTime,
+  'ms',
+  Date.now() - d,
+  'ms\n',
+)
 
-// db.drain()
-
-// // console.log(
-// //   db.query('user').range(0, 1e4).include('name', 'age').sort('name').get(),
-// // )
+db.drain()
 
 // console.log(
-//   db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
+//   db.query('user').range(0, 1e4).include('name', 'age').sort('name').get(),
 // )
 
-// console.log(
-//   db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
-// )
+console.log(
+  db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
+)
 
-// const ids: Set<number> = new Set()
-// for (let i = 1; i < 1e4; i++) {
-//   ids.add(~~(Math.random() * 10e6))
-//   // ids.add(i)
-// }
+console.log(
+  db.query('user').range(0, 1e4).include('name', 'age').sort('age').get(),
+)
 
-// // console.log(
-// //   db
-// //     .query('user', [...ids.values()])
-// //     .include('name', 'age')
-// //     .filter('age', '>', 50)
-// //     .sort('age')
-// //     .get(),
-// // )
-
-// const ids2: Set<number> = new Set()
-// for (let i = 1; i < 5000; i++) {
-//   ids2.add(~~(Math.random() * 10e6))
-
-//   // ids2.add(i)
-// }
+const ids: Set<number> = new Set()
+for (let i = 1; i < 1e4; i++) {
+  ids.add(~~(Math.random() * 10e6))
+  // ids.add(i)
+}
 
 // console.log(
 //   db
-//     .query('user', [...ids2.values()])
+//     .query('user', [...ids.values()])
 //     .include('name', 'age')
+//     .filter('age', '>', 50)
 //     .sort('age')
 //     .get(),
 // )
+
+const ids2: Set<number> = new Set()
+for (let i = 1; i < 5000; i++) {
+  ids2.add(~~(Math.random() * 10e6))
+
+  // ids2.add(i)
+}
+
+console.log(
+  db
+    .query('user', [...ids2.values()])
+    .include('name', 'age')
+    .sort('age')
+    .get(),
+)
 
 await wait(0)
