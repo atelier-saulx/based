@@ -45,7 +45,11 @@ test('proxy', async (t: T) => {
       configs: {
         counter: {
           type: 'proxy',
-          connect: async () => {},
+          connect: async () => {
+            return {
+              url: 'https://google.com',
+            }
+          },
         },
       },
     },
