@@ -209,3 +209,5 @@ console.log(
 )
 
 await wait(0)
+
+db.tester()
