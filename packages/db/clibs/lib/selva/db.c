@@ -8,8 +8,8 @@
 #include <sys/mman.h>
 #include "jemalloc.h"
 #include "util/align.h"
+#include "selva/selva.h"
 #include "selva_error.h"
-#include "selva.h"
 #include "schema.h"
 #include "fields.h"
 #include "db_panic.h"

@@ -11,8 +11,7 @@
 #include "tree.h"
 #include "util/endian.h"
 #include "selva_error.h"
-#include "selva_proto.h"
-#include "selva.h"
+#include "selva/selva.h"
 #include "schema.h"
 
 /*

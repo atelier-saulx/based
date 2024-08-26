@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "util/selva_string.h"
+#include "selva/selva.h"
 #include "selva_error.h"
-#include "selva.h"
 #include "db.h"
 #include "update.h"
 #include "fields.h"

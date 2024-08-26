@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "selva.h"
+#include "selva/selva.h"
 #include "selva_error.h"
 #include "fields.h"
 #include "filter.h"

@@ -4,8 +4,8 @@
  */
 #include <sys/types.h>
 #include "util/svector.h"
+#include "selva/selva.h"
 #include "selva_error.h"
-#include "selva.h"
 #include "fields.h"
 #include "traverse.h"
 
