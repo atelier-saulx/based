@@ -6,7 +6,6 @@ CFLAGS += -fPIC -fvisibility=hidden -iquote ../../include -I ../../../deps/node-
 LDFLAGS += -shared -g \
 		   -L../../../build \
 		   -ljemalloc_selva -ldeflate -lutil -lxxhash
-LIB_SUFFIX := .node
 
 OBJ := \
 	db.o \
@@ -18,9 +17,14 @@ OBJ := \
 	io/io.o \
 	io/sdb.o \
 	schema.o \
-	selva.o \
 	traverse.o \
 	update.o
+
+
+ifeq ($(NAPI),y)
+	OBJ += node_selva.o
+	LIB_SUFFIX := .node
+endif
 
 ifeq ($(uname_S),Linux)
 	LDFLAGS += -ldl -fPIC -rdynamic -Wl,-rpath,'$$ORIGIN'
