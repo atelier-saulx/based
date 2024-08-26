@@ -190,7 +190,7 @@ export type BasedFunctionTypes =
   | 'proxy'
 
 type BasedChannelFunctionConfig = {
-  /** Function type `channel, function, query, stream, authorize` */
+  /** Function type `channel, function, query, stream, app, proxy, authorize` */
   type: 'channel'
   /** Channel subscriber 
     
@@ -225,14 +225,14 @@ type BasedChannelFunctionConfig = {
 }
 
 type BasedCallFunctionConfig = {
-  /** Function type `channel, function, query, stream` */
+  /** Function type `channel, function, query, stream, app, proxy` */
   type: 'function'
   fn?: BasedFunction
   httpResponse?: HttpResponse
 }
 
 type BasedQueryFunctionConfig = {
-  /** Function type `channel, function, query, stream` */
+  /** Function type `channel, function, query, stream, app, proxy` */
   type: 'query'
   fn?: BasedQueryFunction
   httpResponse?: HttpResponse
@@ -243,15 +243,19 @@ type BasedQueryFunctionConfig = {
 }
 
 type BasedStreamFunctionConfig = {
-  /** Function type `channel, function, query, stream` */
+  /** Function type `channel, function, query, stream, app, proxy` */
   type: 'stream'
   fn: BasedStreamFunction
 }
 
 type BasedAppFunctionConfig = {
+  /** Function type `channel, function, query, stream, app, proxy` */
   type: 'app'
+  /** Main entry point to build app from */
   main: string
+  /** Path to serve app from `/` serves all traffic where there is no overlap with another path */
   path?: string
+  /** Path to favicon */
   favicon?: string
 }
 
@@ -308,7 +312,7 @@ export type BasedFunctionConfigComplete<
           : T extends 'app'
             ? BasedAppFunctionConfig & FunctionConfigSharedComplete
             : T extends 'proxy'
-              ? BasedProxyFunctionConfig & FunctionConfigShared
+              ? BasedProxyFunctionConfig & FunctionConfigSharedComplete
               :
                   | (BasedChannelFunctionConfig & FunctionConfigSharedComplete)
                   | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
@@ -316,7 +320,7 @@ export type BasedFunctionConfigComplete<
                   | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
                   | (BasedJobFunctionConfig & FunctionConfigSharedComplete)
                   | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedProxyFunctionConfig & FunctionConfigShared)
+                  | (BasedProxyFunctionConfig & FunctionConfigSharedComplete)
 
 export type BasedAuthorizeFunctionConfig = {
   /** Function type `authorize` */
