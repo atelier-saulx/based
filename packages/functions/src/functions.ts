@@ -270,11 +270,17 @@ type BasedProxyFunctionConfig = {
     | Promise<{
         url: string
         headers?: HttpHeaders
+        client?: 'tcp' | 'based' | 'http'
       }>
     | {
         url: string
         headers?: HttpHeaders
+        client?: 'tcp' | 'based' | 'http'
       }
+  transform?: (payload) => {
+    headers?: HttpHeaders
+    path?: string
+  }
 }
 
 export type BasedFunctionConfig<

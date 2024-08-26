@@ -43,17 +43,56 @@ test('proxy', async (t: T) => {
     rateLimit: { ws: 1e9, http: 1e9, drain: 1e3 },
     functions: {
       configs: {
-        counter: {
+        admin: {
+          path: '',
           type: 'proxy',
-          connect: async () => {
-            return {
-              url: 'https://google.com',
+          protocol: 'based'
+        },
+        imdb: {
+          // path: 'im',
+          type: 'proxy',
+          // preset: 'based' / 'http' / 'tcp'
+          protocol: 'http'
+          query: {
+            url: 'http://imdb.com/api/v3/*',
+            method: 'post',
+            headers: {
+              token: 'api-token-123'
+            },
+            poll: 1000,
+          }
+        },
+        raw: {
+          type: 'proxy',
+          function: () => {
+            throw new Error('no fn')
+          },
+          query: (path, based, payload, update, error) => {
+            // path
+            const get = () => {
+              fetch('http://google.com')
+                .text()
+                .then((r) => {
+                  update(r)
+                })
+            }
+            const interval = setInterval(get, 1000)
+            return () => {
+              clearInterval(interval)
             }
           },
-        },
+        }
       },
     },
   })
+
+  // http://www.omdbapi.com/?t=bla
+
+  client.query('imdb.movies/latest', { page: 2, search: 'matrix' }).subscribe(() => {
+    // hello
+  })
+
+
 
   await server.start()
 
