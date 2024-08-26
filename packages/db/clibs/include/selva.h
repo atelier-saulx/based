@@ -11,7 +11,6 @@
 #include "util/mempool.h"
 #include "util/svector.h"
 #include "util/trx.h"
-#include "selva_object.h"
 
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,

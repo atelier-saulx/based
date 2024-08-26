@@ -19,9 +19,6 @@ OBJ := \
 	io/sdb.o \
 	schema.o \
 	selva.o \
-	selva_object/selva_object.o \
-	selva_object/selva_object_foreach.o \
-	selva_set/selva_set.o \
 	traverse.o \
 	update.o
 
