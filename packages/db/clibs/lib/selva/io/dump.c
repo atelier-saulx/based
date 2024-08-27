@@ -437,7 +437,7 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static int load_field_string(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+static int load_field_string(struct selva_io *io, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t len;
     struct selva_string *s;
@@ -487,15 +487,6 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
     /* TODO load text */
 
     return 0;
-}
-
-static int load_reference_meta_field_weak_references(
-        struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node,
-        struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc,
-        field_t field)
-{
-    /* TODO Load weak refs in meta */
-    return SELVA_ENOTSUP;
 }
 
 /**
@@ -722,7 +713,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = selva_fields_set(db, node, fs, value_buf, value_size);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            err = load_field_string(io, db, node, fs);
+            err = load_field_string(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
             err = load_field_text(io, db, ns, node, fs, rd.field);
