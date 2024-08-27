@@ -60,3 +60,6 @@ int selva_traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
         const struct SelvaTraversalParam *cb);
+
+SELVA_EXPORT
+int selva_traverse_type(struct SelvaDb *db, struct SelvaTypeEntry *te, SelvaTraversalNodeCallback node_cb, void *node_arg);
