@@ -13,8 +13,22 @@ pub fn build(b: *std.Build) void {
 
     lib.linker_allow_shlib_undefined = true;
 
-    // add selva like this
     lib.addSystemIncludePath(b.path("deps/node-v20.11.1/include/node/"));
+
+    // Build selva
+    //const make_clibs = b.addSystemCommand(
+    //    &[_][]const u8{
+    //        "make",
+    //        "-C",
+    //        "./clibs",
+    //    },
+    //);
+    //b.getInstallStep().dependOn(&make_clibs.step);
+    lib.addIncludePath(b.path("clibs/include/"));
+    lib.addLibraryPath(b.path("build"));
+    // TODO Linux rpath
+    lib.root_module.addRPathSpecial("@loader_path");
+    lib.linkSystemLibrary("selva");
 
     const dep = b.dependency("lmdb", .{ .create = true });
 

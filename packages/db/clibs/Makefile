@@ -21,10 +21,13 @@ LIB_PATH := ../../../build
 export LIB_PATH
 
 # Build all libraries (ordered)
-all: | $(LIBS)
+all: | $(LIBS) nodeselva
 
 $(LIBS):
 	$(MAKE) -C $@
+
+nodeselva:
+	$(MAKE) -C lib/selva NAPI=1
 
 clean:
 	find . -type f -name "*.d" -exec rm -f {} \;
@@ -35,5 +38,5 @@ clean:
 	find ./lib \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all clean lib $(LIBS)
+.PHONY: all clean lib $(LIBS) nodeselva
 .NOTPARALLEL:
