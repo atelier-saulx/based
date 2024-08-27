@@ -14,6 +14,14 @@ pub fn stop(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.nap
 }
 
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+
+    // add extra args
+    // READONLY
+    // read only needs to be set on global var
+    // if readonly sort indexes need to be created from the write worker
+    // make a seperate method to create a or get a sort index from js
+    // inteprocess communication with queries etc - maybe add query on db and use workers behind it automaticluy
+
     const args = try napi.getArgs(1, napi_env, info);
     const path = try napi.getStringFixedLength("createEnv", 256, napi_env, args[0]);
 
