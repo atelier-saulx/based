@@ -298,6 +298,16 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     return node;
 }
 
+size_t selva_node_count(const struct SelvaTypeEntry *type)
+{
+    return type->nr_nodes;
+}
+
+size_t selva_alias_count(const struct SelvaTypeEntry *type)
+{
+    return type->nr_aliases;
+}
+
 void selva_archive_type(struct SelvaTypeEntry *type)
 {
     struct mempool *mempool = &type->nodepool;

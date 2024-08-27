@@ -56,6 +56,12 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
 SELVA_EXPORT
 struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
 
+SELVA_EXPORT
+size_t selva_node_count(const struct SelvaTypeEntry *type);
+
+SELVA_EXPORT
+size_t selva_alias_count(const struct SelvaTypeEntry *type);
+
 /**
  * Give a hint to page out a node type.
  */
