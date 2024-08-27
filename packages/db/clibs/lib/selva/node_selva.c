@@ -480,7 +480,46 @@ static napi_value node_db_exists(napi_env env, napi_callback_info info)
     napi_value result;
     napi_status status;
 
-    node = selva_db_find_node(te, node_id);
+    node = selva_find_node(te, node_id);
+    status = napi_get_boolean(env, !!node, &result);
+    assert(status == napi_ok);
+
+    return result;
+}
+
+// node_db_del_node(db, type, node_id): boolean
+static napi_value node_db_del_node(napi_env env, napi_callback_info info)
+{
+    int err;
+    size_t argc = 3;
+    napi_value argv[3];
+
+    err = get_args(env, info, &argc, argv, false);
+    if (err) {
+        return res2napi(env, err);
+    }
+
+    struct SelvaDb *db = npointer2db(env, argv[0]);
+    node_type_t type = selva_napi_get_node_type(env, argv[1]);
+    node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
+
+    struct SelvaTypeEntry *te;
+    struct SelvaNode *node;
+
+    te = selva_get_type_by_index(db, type);
+    assert(te->type == type);
+    if (!te) {
+        return res2napi(env, SELVA_EINTYPE);
+    }
+
+    napi_value result;
+    napi_status status;
+
+    node = selva_find_node(te, node_id);
+    if (node) {
+        selva_del_node(db, te, node);
+    }
+
     status = napi_get_boolean(env, !!node, &result);
     assert(status == napi_ok);
 
@@ -555,7 +594,7 @@ static napi_value node_db_get_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = selva_db_find_node(te, node_id);
+    node = selva_find_node(te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
@@ -620,7 +659,7 @@ static napi_value node_db_del_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = selva_db_find_node(te, node_id);
+    node = selva_find_node(te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
@@ -831,7 +870,7 @@ static napi_value node_traverse_field_bfs(napi_env env, napi_callback_info info)
     }
 
     struct SelvaNode *node;
-    node = selva_db_find_node(te, node_id);
+    node = selva_find_node(te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
@@ -990,7 +1029,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
     }
 
     struct SelvaNode *node;
-    node = selva_db_find_node(te, node_id);
+    node = selva_find_node(te, node_id);
     if (!node) {
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
@@ -1031,6 +1070,7 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_archive", node_db_archive),
       DECLARE_NAPI_METHOD("db_prefetch", node_db_prefetch),
       DECLARE_NAPI_METHOD("db_exists", node_db_exists),
+      DECLARE_NAPI_METHOD("db_del_node", node_db_del_node),
       DECLARE_NAPI_METHOD("db_set_field", node_db_set_field),
       DECLARE_NAPI_METHOD("db_get_field", node_db_get_field),
       DECLARE_NAPI_METHOD("db_get_field_p", node_db_get_field_p),

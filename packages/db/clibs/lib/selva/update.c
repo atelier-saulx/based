@@ -57,7 +57,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     return SELVA_EINVAL;
                 }
 
-                dst = selva_db_find_node(type, dst_node_id);
+                dst = selva_find_node(type, dst_node_id);
                 if (!dst) {
                     return SELVA_ENOENT;
                 }
@@ -88,7 +88,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     struct SelvaNode *dst;
 
                     memcpy(&dst_id, &((node_id_t *)value)[i], sizeof(dst_id));
-                    dst = selva_db_find_node(type, dst_id);
+                    dst = selva_find_node(type, dst_id);
                     if (!dst) {
                         return SELVA_ENOENT;
                     }

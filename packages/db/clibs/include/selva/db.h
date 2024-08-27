@@ -42,13 +42,13 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
  * Delete a node.
  */
 SELVA_EXPORT
-void selva_db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 /**
  * Get a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_db_find_node(struct SelvaTypeEntry *type, node_id_t node_id);
+struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id);
 
 /**
  * Get or create a node by id.

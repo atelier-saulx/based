@@ -84,7 +84,7 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
     struct SelvaNode *tmp;
 
     RB_FOREACH_SAFE(node, SelvaNodeIndex, &type->nodes, tmp) {
-        selva_db_del_node(db, type, node);
+        selva_del_node(db, type, node);
     }
 }
 
@@ -254,7 +254,7 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
     return selva_get_fs_by_ns_field(&type->ns, field);
 }
 
-void selva_db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
 
@@ -268,7 +268,7 @@ void selva_db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct S
     type->nr_nodes--;
 }
 
-struct SelvaNode *selva_db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode find = {
         .node_id = node_id,
@@ -465,7 +465,7 @@ struct SelvaNode *selva_db_get_alias(struct SelvaTypeEntry *type, const char *na
     }
 
 
-    struct SelvaNode *node = selva_db_find_node(type, alias->dest);
+    struct SelvaNode *node = selva_find_node(type, alias->dest);
     if (!node) {
         /* Oopsie, no node found. */
         selva_db_del_alias_by_dest(type, alias->dest);
