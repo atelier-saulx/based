@@ -884,7 +884,7 @@ static napi_value node_traverse_field_bfs(napi_env env, napi_callback_info info)
         },
     };
 
-    err = traverse_field_bfs(db, node, &cb_wrap);
+    err = selva_traverse_field_bfs(db, node, &cb_wrap);
     return res2napi(env, err);
 }
 

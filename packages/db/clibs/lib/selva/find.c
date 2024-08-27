@@ -77,5 +77,5 @@ int selva_find(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFin
         .child_arg = &state,
     };
 
-    return traverse_field_bfs(db, node, &cb_wrap);
+    return selva_traverse_field_bfs(db, node, &cb_wrap);
 }

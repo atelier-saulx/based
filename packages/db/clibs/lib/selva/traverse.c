@@ -107,7 +107,7 @@ static int child_callback_stub(
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
-int traverse_field_bfs(
+int selva_traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
         const struct SelvaTraversalParam *cb) {

@@ -56,7 +56,7 @@ struct SelvaTraversalParam {
 };
 
 SELVA_EXPORT
-int traverse_field_bfs(
+int selva_traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
         const struct SelvaTraversalParam *cb);
