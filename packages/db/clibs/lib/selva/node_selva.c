@@ -357,7 +357,7 @@ static napi_value node_db_update(napi_env env, napi_callback_info info)
     }
     assert(te->type == type);
 
-    node = selva_db_upsert_node(te, node_id);
+    node = selva_upsert_node(te, node_id);
     assert(node);
 
     return res2napi(env, (len > 0) ? update(db, te, node, buf, len) : 0);
@@ -420,7 +420,7 @@ static napi_value node_db_archive(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    selva_db_archive(te);
+    selva_archive_type(te);
 
     return res2napi(env, 0);
 }
@@ -447,7 +447,7 @@ static napi_value node_db_prefetch(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    selva_db_prefetch(te);
+    selva_prefetch_type(te);
 
     return res2napi(env, 0);
 }
@@ -552,7 +552,7 @@ static napi_value node_db_set_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    node = selva_db_upsert_node(te, node_id);
+    node = selva_upsert_node(te, node_id);
     fs = selva_get_fs_by_ns_field(&te->ns, field_idx);
     if (!fs) {
         return res2napi(env, SELVA_ENOENT);
@@ -700,7 +700,7 @@ static napi_value node_db_set_alias(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    selva_db_set_alias(te, node_id, alias_str);
+    selva_set_alias(te, node_id, alias_str);
 
     return res2napi(env, 0);
 }
@@ -737,7 +737,7 @@ static napi_value node_db_del_alias(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    selva_db_del_alias_by_name(te, alias_str);
+    selva_del_alias_by_name(te, alias_str);
 
     return res2napi(env, 0);
 }
@@ -774,7 +774,7 @@ static napi_value node_db_get_alias(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    const struct SelvaNode *node = selva_db_get_alias(te, alias_str);
+    const struct SelvaNode *node = selva_get_alias(te, alias_str);
 
     return res2napi(env, node->node_id);
 }

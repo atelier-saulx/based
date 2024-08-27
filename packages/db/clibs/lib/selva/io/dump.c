@@ -600,7 +600,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSch
     io->sdb_read(&meta_present, sizeof(meta_present), 1, io);
 
     struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
-    struct SelvaNode *dst_node = selva_db_upsert_node(dst_te, dst_id);
+    struct SelvaNode *dst_node = selva_upsert_node(dst_te, dst_id);
 
     err = selva_fields_set(db, node, fs, dst_node, sizeof(dst_node));
     if (err) {
@@ -762,7 +762,7 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
     sdb_expire_t expire;
     io->sdb_read(&expire, sizeof(expire), 1, io);
 
-    struct SelvaNode *node = selva_db_upsert_node(te, node_id);
+    struct SelvaNode *node = selva_upsert_node(te, node_id);
     assert(node->type == te->type);
     /* TODO set expire */
     load_node_fields(io, db, te, node);
@@ -801,7 +801,7 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
         alias->name[name_len] = '\0';
         io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
 
-        selva_db_set_alias_p(te, alias);
+        selva_set_alias_p(te, alias);
     }
 }
 

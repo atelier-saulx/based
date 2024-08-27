@@ -54,42 +54,42 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
  * Get or create a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
+struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
 
 /**
  * Give a hint to page out a node type.
  */
 SELVA_EXPORT
-void selva_db_archive(struct SelvaTypeEntry *type);
+void selva_archive_type(struct SelvaTypeEntry *type);
 
 /**
  * Give a hint to page in a node type.
  */
 SELVA_EXPORT
-void selva_db_prefetch(struct SelvaTypeEntry *type);
+void selva_prefetch_type(struct SelvaTypeEntry *type);
 
 /**
  * Set new alias.
  * new_alias must be allocated with selva_jemalloc.
  */
 SELVA_EXPORT
-void selva_db_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
+void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
 
 /**
  * Set new alias.
  * @param name is copied.
  */
 SELVA_EXPORT
-void selva_db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name);
+void selva_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name);
 
 SELVA_EXPORT
-void selva_db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);
+void selva_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);
 
 SELVA_EXPORT
-void selva_db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);
+void selva_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);
 
 /**
  * Get alias by name.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_db_get_alias(struct SelvaTypeEntry *type, const char *name);
+struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, const char *name);
