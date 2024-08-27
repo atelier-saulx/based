@@ -23,7 +23,9 @@ enum selva_io_flags {
     _SELVA_IO_FLAGS_EN_COMPRESS = 0x1000, /*!< Enable deflate block compression. */
 };
 
+struct SelvaDb;
 struct selva_io;
+struct selva_string;
 
 int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags);
 struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_io_flags flags);
