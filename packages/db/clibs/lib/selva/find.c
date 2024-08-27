@@ -29,7 +29,7 @@ static int find_next_field(const struct FindFields *fields, node_type_t node_typ
 
 static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
 {
-    struct FindParam *state = (struct FindParam *)arg;
+    struct SelvaFindParam *state = (struct SelvaFindParam *)arg;
     node_type_t type = node->type;
     bool take = (state->skip > 0) ? !state->skip-- : true;
     int err;
@@ -56,7 +56,7 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
 
 static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
 {
-    struct FindParam *state = (struct FindParam *)arg;
+    struct SelvaFindParam *state = (struct SelvaFindParam *)arg;
 
     bool res = false;
     int err;
@@ -67,9 +67,9 @@ static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *m
     return err ? SELVA_TRAVERSAL_STOP : res ? 0 : SELVA_TRAVERSAL_STOP;
 }
 
-int find(struct SelvaDb *db, struct SelvaNode *node, const struct FindParam *param)
+int selva_find(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFindParam *param)
 {
-    struct FindParam state = *param;
+    struct SelvaFindParam state = *param;
     struct SelvaTraversalParam cb_wrap = {
         .node_cb = find_node_cb,
         .node_arg = &state,

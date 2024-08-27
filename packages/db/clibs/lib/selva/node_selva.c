@@ -1034,7 +1034,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
-    struct FindParam cb_wrap = {
+    struct SelvaFindParam cb_wrap = {
         .adjacent_filter = adj_filter_buf,
         .adjacent_filter_len = adj_filter_len,
         .node_filter = node_filter_buf,
@@ -1052,7 +1052,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
         .limit = limits.limit,
     };
 
-    err = find(db, node, &cb_wrap);
+    err = selva_find(db, node, &cb_wrap);
     return res2napi(env, err ?: ((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
 }
 

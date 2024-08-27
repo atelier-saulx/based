@@ -8,7 +8,7 @@
 #include "selva/types.h"
 #include "selva/traverse.h"
 
-struct FindParam {
+struct SelvaFindParam {
     SelvaTraversalNodeCallback node_cb;
     void *node_arg;
 
@@ -50,4 +50,4 @@ struct FindParam {
 };
 
 SELVA_EXPORT
-int find(struct SelvaDb *db, struct SelvaNode *node, const struct FindParam *param);
+int selva_find(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFindParam *param);
