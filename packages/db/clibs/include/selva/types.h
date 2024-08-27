@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "selva/_export.h"
 
 typedef int8_t field_t;
 typedef uint32_t node_id_t;
@@ -40,3 +41,9 @@ struct SelvaAlias;
 struct SelvaTypeEntry;
 struct SelvaAliases;
 struct SelvaDb;
+
+SELVA_EXPORT
+bool selva_is_valid_field_type(enum SelvaFieldType ftype);
+
+SELVA_EXPORT
+const char *selva_str_field_type(enum SelvaFieldType ftype);

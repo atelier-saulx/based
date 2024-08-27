@@ -18,6 +18,7 @@ OBJ := \
 	io/sdb.o \
 	schema.o \
 	traverse.o \
+	types.o \
 	update.o
 
 ifeq ($(NAPI),1)
