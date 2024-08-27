@@ -4,8 +4,9 @@
  */
 #pragma once
 
+#include "selva/_export.h"
 #include "selva/types.h"
-#include "traverse.h"
+#include "selva/traverse.h"
 
 struct FindParam {
     SelvaTraversalNodeCallback node_cb;
@@ -48,4 +49,5 @@ struct FindParam {
     ssize_t limit;
 };
 
+SELVA_EXPORT
 int find(struct SelvaDb *db, struct SelvaNode *node, const struct FindParam *param);

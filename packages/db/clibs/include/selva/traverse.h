@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "selva/_export.h"
+
 struct SelvaNode;
 struct SelvaDb;
 
@@ -53,7 +55,7 @@ struct SelvaTraversalParam {
     void *child_arg;
 };
 
-
+SELVA_EXPORT
 int traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,

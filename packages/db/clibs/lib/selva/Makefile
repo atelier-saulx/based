@@ -20,8 +20,7 @@ OBJ := \
 	traverse.o \
 	update.o
 
-
-ifeq ($(NAPI),y)
+ifeq ($(NAPI),1)
 	OBJ += node_selva.o
 	LIB_SUFFIX := .node
 endif

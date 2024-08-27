@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "selva/_export.h"
+
 /**
  * conjunction = or | and | necess | break
  * comparison_operator = switch_type | gt | lt | ge | le | eq | ne
@@ -26,4 +28,5 @@ enum filter_op_code {
     FILTER_OP_LAST
 } __attribute__((packed));
 
+SELVA_EXPORT
 int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len, bool *res_out);
