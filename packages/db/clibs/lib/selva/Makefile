@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
-CFLAGS += -fPIC -fvisibility=hidden -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
+CFLAGS += -fPIC -fvisibility=hidden -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h \
+		  -Wno-gnu-alignof-expression
 LDFLAGS += -shared -g \
 		   -L../../../build \
 		   -ljemalloc_selva -ldeflate -lutil -lxxhash
