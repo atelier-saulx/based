@@ -581,7 +581,7 @@ static void load_reference_meta(
     }
 }
 
-static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
 {
     node_id_t dst_id;
     uint8_t meta_present;
@@ -604,14 +604,21 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSch
         err = selva_fields_get(&node->fields, field, &any);
         if (err) {
             return err;
-        } else if (any.type != SELVA_FIELD_TYPE_REFERENCE) {
-            /* TODO Make this work with SELVA_FIELD_TYPE_REFERENCES */
-            return SELVA_EINTYPE;
-        } else if (!any.reference) {
-            db_panic("wat"); /* FIXME better error. */
-        }
+        } else if (any.type == SELVA_FIELD_TYPE_REFERENCE) {
+            assert(any.reference);
+            load_reference_meta(io, db, node, any.reference, &fs->edge_constraint);
+        } else if (any.type == SELVA_FIELD_TYPE_REFERENCES) {
+            const size_t len = any.references->nr_refs;
+            struct SelvaNodeReference *refs = any.references->refs;
 
-        load_reference_meta(io, db, node, any.reference, &fs->edge_constraint);
+            /* TODO We really need a better implementation for this! */
+            for (size_t i = 0; i < len; i++) {
+                if (refs[i].dst == dst_node) {
+                    load_reference_meta(io, db, node, &refs[i], &fs->edge_constraint);
+                    break;
+                }
+            }
+        }
     }
 
     return 0;
@@ -622,7 +629,7 @@ static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct 
     sdb_arr_len_t nr_refs;
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
-    return (nr_refs) ? load_ref(io, db, ns, node, fs, field) : 0;
+    return (nr_refs) ? load_ref(io, db, node, fs, field) : 0;
 }
 
 static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
@@ -631,7 +638,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
-        load_ref(io, db, ns, node, fs, field);
+        load_ref(io, db, node, fs, field);
     }
 
     return 0;
