@@ -24,7 +24,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
         int err = 0;
 
         memcpy(&ud, buf + i, sizeof(struct Update));
-        fs = selva_db_get_fs_by_ns_field(ns, ud.field);
+        fs = selva_get_fs_by_ns_field(ns, ud.field);
         if (!fs) {
             return SELVA_EINTYPE;
         }
@@ -52,7 +52,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
 
                 memcpy(&dst_node_id, value, sizeof(dst_node_id));
 
-                type = selva_db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+                type = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
                 if (!type) {
                     return SELVA_EINVAL;
                 }
@@ -77,7 +77,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     return SELVA_EINVAL;
                 }
 
-                type = selva_db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+                type = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
                 if (!type) {
                     return SELVA_EINVAL;
                 }

@@ -351,7 +351,7 @@ static napi_value node_db_update(napi_env env, napi_callback_info info)
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -388,7 +388,7 @@ static napi_value node_db_update_batch(napi_env env, napi_callback_info info)
 
     struct SelvaTypeEntry *te;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -415,7 +415,7 @@ static napi_value node_db_archive(napi_env env, napi_callback_info info)
 
     struct SelvaTypeEntry *te;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -442,7 +442,7 @@ static napi_value node_db_prefetch(napi_env env, napi_callback_info info)
 
     struct SelvaTypeEntry *te;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -471,7 +471,7 @@ static napi_value node_db_exists(napi_env env, napi_callback_info info)
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
@@ -508,13 +508,13 @@ static napi_value node_db_set_field(napi_env env, napi_callback_info info)
     struct SelvaNode *node;
     struct SelvaFieldSchema *fs;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
 
     node = selva_db_upsert_node(te, node_id);
-    fs = selva_db_get_fs_by_ns_field(&te->ns, field_idx);
+    fs = selva_get_fs_by_ns_field(&te->ns, field_idx);
     if (!fs) {
         return res2napi(env, SELVA_ENOENT);
     }
@@ -549,7 +549,7 @@ static napi_value node_db_get_field(napi_env env, napi_callback_info info)
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
@@ -614,7 +614,7 @@ static napi_value node_db_del_field(napi_env env, napi_callback_info info)
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
 
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
@@ -655,7 +655,7 @@ static napi_value node_db_set_alias(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINVAL);
     }
 
-    struct SelvaTypeEntry *te = selva_db_get_type_by_index(db, type);
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
@@ -692,7 +692,7 @@ static napi_value node_db_del_alias(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINVAL);
     }
 
-    struct SelvaTypeEntry *te = selva_db_get_type_by_index(db, type);
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
@@ -729,7 +729,7 @@ static napi_value node_db_get_alias(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_EINVAL);
     }
 
-    struct SelvaTypeEntry *te = selva_db_get_type_by_index(db, type);
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
@@ -825,7 +825,7 @@ static napi_value node_traverse_field_bfs(napi_env env, napi_callback_info info)
     }
 
     struct SelvaTypeEntry *te;
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
@@ -984,7 +984,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
     }
 
     struct SelvaTypeEntry *te;
-    te = selva_db_get_type_by_index(db, type);
+    te = selva_get_type_by_index(db, type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }

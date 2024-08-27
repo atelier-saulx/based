@@ -27,13 +27,13 @@ SELVA_EXPORT
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len);
 
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_db_get_type_by_index(struct SelvaDb *db, node_type_t type);
+struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
 
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
+struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
 
 SELVA_EXPORT
-struct SelvaFieldSchema *selva_db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field);
+struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field);
 
 SELVA_EXPORT
 struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field);

@@ -599,7 +599,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSch
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
     io->sdb_read(&meta_present, sizeof(meta_present), 1, io);
 
-    struct SelvaTypeEntry *dst_te = selva_db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+    struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     struct SelvaNode *dst_node = selva_db_upsert_node(dst_te, dst_id);
 
     err = selva_fields_set(db, node, fs, dst_node, sizeof(dst_node));
@@ -687,7 +687,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
 
         io->sdb_read(&rd, sizeof(rd), 1, io);
 
-        fs = selva_db_get_fs_by_ns_field(ns, rd.field);
+        fs = selva_get_fs_by_ns_field(ns, rd.field);
         if (!fs) {
             db_panic("Field Schema not found for %d:%d.%d",
                       node->type, node->node_id, rd.field);

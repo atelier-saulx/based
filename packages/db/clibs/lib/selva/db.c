@@ -133,7 +133,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
 
     for (size_t i = 0; i < nr_fields; i++) {
         if (i < nr_main_fields) {
-            struct SelvaFieldSchema *fs = selva_db_get_fs_by_ns_field(ns, i);
+            struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(ns, i);
 
             assert(fs);
 
@@ -216,14 +216,14 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     return 0;
 }
 
-struct SelvaTypeEntry *selva_db_get_type_by_index(struct SelvaDb *db, node_type_t type)
+struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
 {
     void *find = (void *)(uintptr_t)type;
 
     return vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
 }
 
-struct SelvaTypeEntry *selva_db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     void *find = (void *)(uintptr_t)node->type;
     struct SelvaTypeEntry *te;
@@ -233,7 +233,7 @@ struct SelvaTypeEntry *selva_db_get_type_by_node(struct SelvaDb *db, struct Selv
     return te;
 }
 
-struct SelvaFieldSchema *selva_db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
+struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
 {
     if (field >= ns->nr_fields) {
         return NULL;
@@ -246,12 +246,12 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
 {
     struct SelvaTypeEntry *type;
 
-    type = selva_db_get_type_by_node(db, node);
+    type = selva_get_type_by_node(db, node);
     if (!type) {
         return NULL;
     }
 
-    return selva_db_get_fs_by_ns_field(&type->ns, field);
+    return selva_get_fs_by_ns_field(&type->ns, field);
 }
 
 void selva_db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
