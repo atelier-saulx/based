@@ -421,12 +421,12 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
         return SELVA_EINVAL;
     }
 
-    type_dst = db_get_type_by_node(db, dst);
+    type_dst = selva_db_get_type_by_node(db, dst);
     if (type_dst->type != fs_src->edge_constraint.dst_node_type) {
         return SELVA_EINTYPE; /* TODO Is this the error we want? */
     }
 
-    fs_dst = db_get_fs_by_ns_field(&type_dst->ns, fs_src->edge_constraint.inverse_field);
+    fs_dst = selva_db_get_fs_by_ns_field(&type_dst->ns, fs_src->edge_constraint.inverse_field);
     if (!fs_dst) {
         return SELVA_EINTYPE;
     }
@@ -456,13 +456,13 @@ static int set_references(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         return 0;
     }
 
-    te_dst = db_get_type_by_node(db, dsts[0]);
+    te_dst = selva_db_get_type_by_node(db, dsts[0]);
     type_dst = te_dst->type;
     if (type_dst != fs_src->edge_constraint.dst_node_type) {
         return SELVA_EINTYPE; /* TODO Is this the error we want? */
     }
 
-    fs_dst = db_get_fs_by_ns_field(&te_dst->ns, fs_src->edge_constraint.inverse_field);
+    fs_dst = selva_db_get_fs_by_ns_field(&te_dst->ns, fs_src->edge_constraint.inverse_field);
     if (!fs_dst) {
         return SELVA_EINTYPE;
     }
@@ -832,7 +832,7 @@ static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *
 static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, field_t field)
 {
     struct SelvaFieldInfo *nfo;
-    struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&db_get_type_by_node(db, node)->ns, field);
+    struct SelvaFieldSchema *fs = selva_db_get_fs_by_ns_field(&selva_db_get_type_by_node(db, node)->ns, field);
 
     if (field >= fields->nr_fields) {
         return SELVA_ENOENT;
@@ -899,8 +899,8 @@ static int reference_meta_del(struct SelvaNodeReference *ref, field_t field)
 
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id)
 {
-    struct SelvaTypeEntry *type = db_get_type_by_node(db, node);
-    struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(&type->ns, field);
+    struct SelvaTypeEntry *type = selva_db_get_type_by_node(db, node);
+    struct SelvaFieldSchema *fs = selva_db_get_fs_by_ns_field(&type->ns, field);
     struct SelvaFieldsAny any;
     int err;
 

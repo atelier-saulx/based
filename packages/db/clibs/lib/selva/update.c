@@ -24,7 +24,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
         int err = 0;
 
         memcpy(&ud, buf + i, sizeof(struct Update));
-        fs = db_get_fs_by_ns_field(ns, ud.field);
+        fs = selva_db_get_fs_by_ns_field(ns, ud.field);
         if (!fs) {
             return SELVA_EINTYPE;
         }
@@ -52,12 +52,12 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
 
                 memcpy(&dst_node_id, value, sizeof(dst_node_id));
 
-                type = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+                type = selva_db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
                 if (!type) {
                     return SELVA_EINVAL;
                 }
 
-                dst = db_find_node(type, dst_node_id);
+                dst = selva_db_find_node(type, dst_node_id);
                 if (!dst) {
                     return SELVA_ENOENT;
                 }
@@ -77,7 +77,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     return SELVA_EINVAL;
                 }
 
-                type = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+                type = selva_db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
                 if (!type) {
                     return SELVA_EINVAL;
                 }
@@ -88,7 +88,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
                     struct SelvaNode *dst;
 
                     memcpy(&dst_id, &((node_id_t *)value)[i], sizeof(dst_id));
-                    dst = db_find_node(type, dst_id);
+                    dst = selva_db_find_node(type, dst_id);
                     if (!dst) {
                         return SELVA_ENOENT;
                     }
@@ -132,7 +132,7 @@ int update_batch(struct SelvaDb *db, struct SelvaTypeEntry *type, const char *bu
 
         memcpy(&ud_len, buf + i + offsetof(struct UpdateBatch, len), sizeof(ud_len));
         memcpy(&node_id, buf + i + offsetof(struct UpdateBatch, node_id), sizeof(node_id));
-        node = db_upsert_node(type, node_id);
+        node = selva_db_upsert_node(type, node_id);
         assert(node);
         err = update(db, type, node, buf + i + sizeof(struct UpdateBatch), ud_len - sizeof(struct UpdateBatch));
         if (err) {

@@ -59,7 +59,7 @@ RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
 RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name)
 RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest)
 
-struct SelvaDb *db_create(void)
+struct SelvaDb *selva_db_create(void)
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
@@ -84,7 +84,7 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *type)
     struct SelvaNode *tmp;
 
     RB_FOREACH_SAFE(node, SelvaNodeIndex, &type->nodes, tmp) {
-        db_del_node(db, type, node);
+        selva_db_del_node(db, type, node);
     }
 }
 
@@ -113,7 +113,7 @@ static void del_all_types(struct SelvaDb *db)
     }
 }
 
-void db_destroy(struct SelvaDb *db)
+void selva_db_destroy(struct SelvaDb *db)
 {
     /* FIXME */
 
@@ -133,7 +133,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
 
     for (size_t i = 0; i < nr_fields; i++) {
         if (i < nr_main_fields) {
-            struct SelvaFieldSchema *fs = db_get_fs_by_ns_field(ns, i);
+            struct SelvaFieldSchema *fs = selva_db_get_fs_by_ns_field(ns, i);
 
             assert(fs);
 
@@ -155,7 +155,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
     type->field_map_template.main_data_size = ALIGNED_SIZE(main_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
-int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_fields_count count;
     const size_t te_ns_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
@@ -216,14 +216,14 @@ int db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_bu
     return 0;
 }
 
-struct SelvaTypeEntry *db_get_type_by_index(struct SelvaDb *db, node_type_t type)
+struct SelvaTypeEntry *selva_db_get_type_by_index(struct SelvaDb *db, node_type_t type)
 {
     void *find = (void *)(uintptr_t)type;
 
     return vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
 }
 
-struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+struct SelvaTypeEntry *selva_db_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
 {
     void *find = (void *)(uintptr_t)node->type;
     struct SelvaTypeEntry *te;
@@ -233,7 +233,7 @@ struct SelvaTypeEntry *db_get_type_by_node(struct SelvaDb *db, struct SelvaNode 
     return te;
 }
 
-struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
+struct SelvaFieldSchema *selva_db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
 {
     if (field >= ns->nr_fields) {
         return NULL;
@@ -242,19 +242,19 @@ struct SelvaFieldSchema *db_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field
     return &ns->field_schemas[field];
 }
 
-struct SelvaFieldSchema *get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
     struct SelvaTypeEntry *type;
 
-    type = db_get_type_by_node(db, node);
+    type = selva_db_get_type_by_node(db, node);
     if (!type) {
         return NULL;
     }
 
-    return db_get_fs_by_ns_field(&type->ns, field);
+    return selva_db_get_fs_by_ns_field(&type->ns, field);
 }
 
-void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
+void selva_db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
 
@@ -268,7 +268,7 @@ void db_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNo
     type->nr_nodes--;
 }
 
-struct SelvaNode *db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *selva_db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode find = {
         .node_id = node_id,
@@ -277,7 +277,7 @@ struct SelvaNode *db_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
     return RB_FIND(SelvaNodeIndex, &type->nodes, &find);
 }
 
-struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *selva_db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
     struct SelvaNode *prev;
@@ -298,7 +298,7 @@ struct SelvaNode *db_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
     return node;
 }
 
-void db_archive(struct SelvaTypeEntry *type)
+void selva_db_archive(struct SelvaTypeEntry *type)
 {
     struct mempool *mempool = &type->nodepool;
 
@@ -307,7 +307,7 @@ void db_archive(struct SelvaTypeEntry *type)
     } MEMPOOL_FOREACH_CHUNK_END();
 }
 
-void db_prefetch(struct SelvaTypeEntry *type)
+void selva_db_prefetch(struct SelvaTypeEntry *type)
 {
     struct mempool *mempool = &type->nodepool;
 
@@ -371,7 +371,7 @@ static void del_alias(struct SelvaTypeEntry *type, struct SelvaAlias *alias_or_f
     }
 }
 
-void db_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias)
+void selva_db_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias)
 {
     struct SelvaAlias *old_alias;
 
@@ -393,7 +393,7 @@ retry:
     }
 }
 
-void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
+void selva_db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
 {
     size_t name_len = strlen(name);
     struct SelvaAlias *new_alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
@@ -402,10 +402,10 @@ void db_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name)
     memcpy(new_alias->name, name, name_len);
     new_alias->name[name_len] = '\0';
 
-    db_set_alias_p(type, new_alias);
+    selva_db_set_alias_p(type, new_alias);
 }
 
-void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
+void selva_db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
 {
     size_t name_len = strlen(name);
     struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
@@ -417,7 +417,7 @@ void db_del_alias_by_name(struct SelvaTypeEntry *type, const char *name)
     del_alias(type, find);
 }
 
-void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
+void selva_db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
 {
     struct SelvaAlias find = {
         .dest = dest,
@@ -450,7 +450,7 @@ void db_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
     }
 }
 
-struct SelvaNode *db_get_alias(struct SelvaTypeEntry *type, const char *name)
+struct SelvaNode *selva_db_get_alias(struct SelvaTypeEntry *type, const char *name)
 {
     size_t name_len = strlen(name);
     struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
@@ -465,10 +465,10 @@ struct SelvaNode *db_get_alias(struct SelvaTypeEntry *type, const char *name)
     }
 
 
-    struct SelvaNode *node = db_find_node(type, alias->dest);
+    struct SelvaNode *node = selva_db_find_node(type, alias->dest);
     if (!node) {
         /* Oopsie, no node found. */
-        db_del_alias_by_dest(type, alias->dest);
+        selva_db_del_alias_by_dest(type, alias->dest);
         alias = NULL;
     }
 

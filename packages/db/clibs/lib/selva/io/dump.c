@@ -142,7 +142,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
              * do the following:
              */
             struct SelvaNode *node = containerof(fields, struct SelvaNode, fields);
-            struct SelvaFieldSchema *fs = get_fs_by_node(db, node, field);
+            struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
 
             assert(fs->type == any.type);
 
@@ -429,7 +429,7 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
         schema_buf = selva_malloc(schema_len);
         io->sdb_read(schema_buf, sizeof(char), schema_len, io);
 
-        err = db_schema_create(db, type, schema_buf, schema_len);
+        err = selva_db_schema_create(db, type, schema_buf, schema_len);
         if (err) {
             db_panic("Failed to create a node type entry: %s", selva_strerror(err));
         }
@@ -599,8 +599,8 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSch
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
     io->sdb_read(&meta_present, sizeof(meta_present), 1, io);
 
-    struct SelvaTypeEntry *dst_te = db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
-    struct SelvaNode *dst_node = db_upsert_node(dst_te, dst_id);
+    struct SelvaTypeEntry *dst_te = selva_db_get_type_by_index(db, fs->edge_constraint.dst_node_type);
+    struct SelvaNode *dst_node = selva_db_upsert_node(dst_te, dst_id);
 
     err = selva_fields_set(db, node, fs, dst_node, sizeof(dst_node));
     if (err) {
@@ -687,7 +687,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
 
         io->sdb_read(&rd, sizeof(rd), 1, io);
 
-        fs = db_get_fs_by_ns_field(ns, rd.field);
+        fs = selva_db_get_fs_by_ns_field(ns, rd.field);
         if (!fs) {
             db_panic("Field Schema not found for %d:%d.%d",
                       node->type, node->node_id, rd.field);
@@ -762,7 +762,7 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
     sdb_expire_t expire;
     io->sdb_read(&expire, sizeof(expire), 1, io);
 
-    struct SelvaNode *node = db_upsert_node(te, node_id);
+    struct SelvaNode *node = selva_db_upsert_node(te, node_id);
     assert(node->type == te->type);
     /* TODO set expire */
     load_node_fields(io, db, te, node);
@@ -801,7 +801,7 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
         alias->name[name_len] = '\0';
         io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
 
-        db_set_alias_p(te, alias);
+        selva_db_set_alias_p(te, alias);
     }
 }
 
@@ -835,7 +835,7 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
 
 static struct SelvaDb *load_db(struct selva_io *io)
 {
-    struct SelvaDb *db = db_create();
+    struct SelvaDb *db = selva_db_create();
 
     load_schema(io, db);
     load_types(io, db);
