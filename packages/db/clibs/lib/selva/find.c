@@ -54,7 +54,7 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
     return find_next_field(state->fields, type);
 }
 
-static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *meta, struct SelvaNode *node, void *arg)
+static int adj_filter(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
 {
     struct SelvaFindParam *state = (struct SelvaFindParam *)arg;
 
