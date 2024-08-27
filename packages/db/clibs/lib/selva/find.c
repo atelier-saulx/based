@@ -35,7 +35,7 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
     int err;
 
     if (take && state->node_filter_len) {
-        err = filter_eval(node, state->node_filter, state->node_filter_len, &take);
+        err = selva_filter_eval(node, state->node_filter, state->node_filter_len, &take);
         if (err) {
             /* TODO handle this error? */
             return SELVA_TRAVERSAL_ABORT;
@@ -62,7 +62,7 @@ static int adj_filter(struct SelvaDb *db, const struct SelvaTraversalMetadata *m
     int err;
 
     __builtin_prefetch(node, 0, 1);
-    err = filter_eval(node, state->adjacent_filter, state->adjacent_filter_len, &res);
+    err = selva_filter_eval(node, state->adjacent_filter, state->adjacent_filter_len, &res);
 
     return err ? SELVA_TRAVERSAL_STOP : res ? 0 : SELVA_TRAVERSAL_STOP;
 }
