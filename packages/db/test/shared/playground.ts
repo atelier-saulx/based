@@ -208,9 +208,9 @@ console.log(
     .get(),
 )
 
-for (let i = 0; i < 1; i++) {
-  q.push(getWorker(i + 1))
-}
+// for (let i = 0; i < 10; i++) {
+//   q.push(getWorker(i + 1))
+// }
 
 const d2 = Date.now()
 
