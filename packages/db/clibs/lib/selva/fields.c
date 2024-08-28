@@ -488,7 +488,7 @@ static int set_references(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
     return 0;
 }
 
-static int set_weak_references(const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, node_id_t dsts[], size_t nr_dsts)
+static int set_weak_references(const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
 {
     struct SelvaFieldInfo *nfo = &src->fields.fields_map[fs_src->field];
     void *vp = nfo2p(&src->fields, nfo);
@@ -583,11 +583,11 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         }
         return set_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        if ((len % sizeof(node_id_t)) != 0) {
+        if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             return SELVA_EINVAL;
         }
 
-        set_weak_references(fs, node, (node_id_t *)value, len / sizeof(node_id_t));
+        set_weak_references(fs, node, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     }
 
     return 0;
