@@ -74,6 +74,15 @@ pub fn getInt32(comptime name: []const u8, env: c.napi_env, value: c.napi_value)
     return res;
 }
 
+pub fn getBool(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !bool {
+    var res: bool = undefined;
+    if (c.napi_get_value_bool(env, value, @ptrCast(&res)) != c.napi_ok) {
+        jsThrow(env, "Cannot get bool for variable: " ++ name);
+        return errors.Napi.CannotGetInt32;
+    }
+    return res;
+}
+
 pub fn getSignedInt32(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !i32 {
     var res: i32 = undefined;
     if (c.napi_get_value_int32(env, value, @ptrCast(&res)) != c.napi_ok) {

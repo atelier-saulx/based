@@ -22,8 +22,10 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     // make a seperate method to create a or get a sort index from js
     // inteprocess communication with queries etc - maybe add query on db and use workers behind it automaticluy
 
-    const args = try napi.getArgs(1, napi_env, info);
+    const args = try napi.getArgs(2, napi_env, info);
     const path = try napi.getStringFixedLength("createEnv", 256, napi_env, args[0]);
+
+    const readOnly = try napi.getBool("readOnly", napi_env, args[1]);
 
     try errors.mdb(c.mdb_env_create(&db.ctx.env));
     errdefer c.mdb_env_close(db.ctx.env);
@@ -33,7 +35,9 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 
     var flags: c_uint = 0;
 
-    // flags |= c.MDB_RDONLY; // very nice for read shard
+    if (readOnly) {
+        flags |= c.MDB_RDONLY;
+    }
 
     // only 1 writer per db
     flags |= c.MDB_NOLOCK;
