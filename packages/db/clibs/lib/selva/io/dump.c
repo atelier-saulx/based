@@ -644,16 +644,23 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     return 0;
 }
 
-static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t nr_refs;
 
+    /*
+     * TODO This could be optimized by reading them all at Once.
+     */
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
         struct SelvaNodeWeakReference reference;
+        int err;
 
         io->sdb_read(&reference, sizeof(reference), 1, io);
-        /* TODO Finish loading weak references */
+        err = selva_fields_set(db, node, fs, &reference, 1);
+        if (err) {
+            return err;
+        }
     }
 
     return 0;
@@ -732,7 +739,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = load_field_references(io, db, node, fs, rd.field);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            err = load_field_weak_references(io, db, ns, node, fs, rd.field);
+            err = load_field_weak_references(io, db, node, fs);
             break;
         }
         if (err) {
