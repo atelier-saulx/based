@@ -100,11 +100,21 @@ for (let i = 0; i < s.length; i++) {
   db.native.updateSchemaType(type.prefixString, s[i])
 }
 
-db.create('user', {
-  name: 'Mr X!',
-})
+/*
+//         age: ~~(Math.random() * 99) + 1,
+//         name: 'Mr ' + i,
+*/
 
-db.drain()
+var d = Date.now()
+for (let i = 0; i < 2e6; i++) {
+  db.create('user', {
+    name: 'Mr X!',
+  })
+}
+
+const dbTime = db.drain()
+
+console.log(Date.now() - d, dbTime, 'ms')
 
 // await db.start()
 

@@ -36,6 +36,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     const allocator = arena.allocator();
 
+    // TODO: remove
     const txn = try db.createTransaction(false);
 
     var i: usize = 0;
@@ -45,8 +46,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeId = undefined,
         .id = undefined,
         .currentShard = 0,
+        // can be gone as well
         .txn = txn.?,
         .currentSortIndex = null,
+        // shards can be remove
         .shards = db.Shards.init(allocator),
         .sortIndexes = db.Indexes.init(allocator),
         .selvaNode = null,
@@ -69,8 +72,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             }
 
             // TODO REMOVE THIS
-            // ctx.selvaFieldSchema = selva.selva_get_field(ctx.selva, ctx.    );
 
+            ctx.selvaFieldSchema = selva.selva_get_fs_by_ns_field(
+                selva.selva_get_ns_by_te(ctx.selvaTypeEntry),
+                @bitCast(ctx.field),
+            );
         } else if (operationType == 9) {
 
             // create node
@@ -81,7 +87,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.currentShard = db.idToShard(ctx.id);
 
             ctx.selvaNode = selva.selva_upsert_node(ctx.selvaTypeEntry, ctx.id);
-            std.log.err("CREATED AND GET PTR TO NODE {any} \n", .{ctx.selvaNode});
+            // std.log.err("CREATED AND GET PTR TO NODE {any} \n", .{ctx.selvaNode});
 
             i = i + 5;
         } else if (operationType == 1) {
