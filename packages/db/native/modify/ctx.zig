@@ -1,16 +1,23 @@
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const c = @import("../c.zig");
+const selva = @import("../selva.zig");
 
 pub const ModifyCtx = struct {
     field: u8,
-    typeId: db.TypeId,
     id: u32,
     currentShard: u16,
     shards: db.Shards,
     txn: *c.MDB_txn,
     currentSortIndex: ?db.SortIndex,
     sortIndexes: db.Indexes,
+
+    typeId: db.TypeId,
+    selvaTypeEntry: ?*selva.SelvaTypeEntry,
+
+    selvaFieldSchema: ?*selva.SelvaFieldSchema,
+
+    selvaNode: ?*selva.SelvaNode,
 };
 
 pub fn getOrCreateShard(ctx: *ModifyCtx) !db.Shard {

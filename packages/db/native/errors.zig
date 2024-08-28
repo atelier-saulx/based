@@ -15,7 +15,10 @@ pub const Napi = error{
     CannotInitCtx,
     CannotGetString,
     CannotGetInt32,
+    CannotGetUint64,
 };
+
+pub const SelvaError = error{DB_NOT_CREATED};
 
 pub const DbError = error{SHARD_NOT_CREATED};
 

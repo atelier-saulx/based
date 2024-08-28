@@ -2,6 +2,8 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 
+const selva = @import("../selva.zig");
+
 pub const DbName = [6]u8;
 
 pub const TypeId = [2]u8;
@@ -40,6 +42,7 @@ pub const DbCtx = struct {
     sortIndexes: Indexes,
     mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
     readOnly: bool,
+    selva: ?*selva.SelvaDb,
 };
 
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -58,6 +61,7 @@ pub var ctx: DbCtx = .{
     .readTxnCreated = false,
     .initialized = false,
     .readOnly = false,
+    .selva = null,
 };
 
 pub fn initReadTxn() !*c.MDB_txn {

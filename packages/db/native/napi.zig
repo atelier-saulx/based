@@ -74,6 +74,15 @@ pub fn getInt32(comptime name: []const u8, env: c.napi_env, value: c.napi_value)
     return res;
 }
 
+pub fn getUint64(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !u32 {
+    var res: u64 = undefined;
+    if (c.napi_get_value_bigiint_uint64(env, value, @ptrCast(&res)) != c.napi_ok) {
+        jsThrow(env, "Cannot get UInt64 for variable: " ++ name);
+        return errors.Napi.CannotGetUint64;
+    }
+    return res;
+}
+
 pub fn getBool(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !bool {
     var res: bool = undefined;
     if (c.napi_get_value_bool(env, value, @ptrCast(&res)) != c.napi_ok) {

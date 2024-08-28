@@ -2,18 +2,32 @@ const db = @import("../db/db.zig");
 const readInt = @import("../utils.zig").readInt;
 const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
+const selva = @import("../selva.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
+// createNode(id, type)
+// createField()
+//
+
 pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     const operationSize = readInt(u32, batch, 0);
-    const shard = try getOrCreateShard(ctx);
+    // const shard = try getOrCreateShard(ctx);
     const size = operationSize + 4;
     const data = batch[4..size];
 
-    try db.writeField(ctx.id, data, shard);
+    // bla
+
+    // TODO: get rid of the field
+
+    // std.log.err("CREATED AND GET PTR TO NODE {any} \n", .{ctx.selvaNode});
+
+    _ = selva.selva_fields_set(db.ctx.selva, ctx.selvaNode, ctx.selvaFieldSchema, data.ptr, data.len);
+
+    // try db.writeField(ctx.id, data, shard);
+
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();

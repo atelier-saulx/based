@@ -1,16 +1,16 @@
 import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, schema2selva } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import { Worker } from 'node:worker_threads'
 import { spawn } from 'node:child_process'
 
-// const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-// const relativePath = '../../tmp'
-// const dbFolder = resolve(join(__dirname, relativePath))
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+const relativePath = '../../tmp'
+const dbFolder = resolve(join(__dirname, relativePath))
 
-// await wait(100)
+await wait(100)
 
 // try {
 //   await fs.rm(dbFolder, { recursive: true })
@@ -75,9 +75,36 @@ import { spawn } from 'node:child_process'
 
 // await wait(100)
 
-// const db = new BasedDb({
-//   path: dbFolder,
-// })
+const db = new BasedDb({
+  path: dbFolder,
+})
+
+db.updateSchema({
+  types: {
+    user: {
+      fields: {
+        // age: { type: 'integer' },
+        name: { type: 'string' },
+      },
+    },
+  },
+})
+
+await db.start()
+
+let types = Object.keys(db.schemaTypesParsed)
+const s = schema2selva(db.schemaTypesParsed)
+for (let i = 0; i < s.length; i++) {
+  // types
+  const type = db.schemaTypesParsed[types[i]]
+  db.native.updateSchemaType(type.prefixString, s[i])
+}
+
+db.create('user', {
+  name: 'Mr X!',
+})
+
+db.drain()
 
 // await db.start()
 
@@ -220,4 +247,4 @@ import { spawn } from 'node:child_process'
 
 // await wait(0)
 
-db.tester()
+// db.tester()

@@ -4,6 +4,7 @@ const std = @import("std");
 const napi = @import("../napi.zig");
 const db = @import("./db.zig");
 const stat = @import("./stat.zig");
+const selva = @import("../selva.zig");
 
 pub fn start(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return startInternal(napi_env, info) catch return null;
@@ -54,6 +55,9 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     errors.mdb(c.mdb_env_open(db.ctx.env, &path, flags, 0o664)) catch |err| {
         std.log.err("Open lmdb env {any}", .{err});
     };
+
+    // plz
+    db.ctx.selva = selva.selva_db_create();
 
     return stat.statInternal(napi_env, true);
 }

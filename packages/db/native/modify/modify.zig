@@ -1,5 +1,6 @@
 const std = @import("std");
 const c = @import("../c.zig");
+const selva = @import("../selva.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
@@ -48,6 +49,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .currentSortIndex = null,
         .shards = db.Shards.init(allocator),
         .sortIndexes = db.Indexes.init(allocator),
+        .selvaNode = null,
+        .selvaTypeEntry = null,
+        .selvaFieldSchema = null,
     };
 
     while (i < size) {
@@ -63,8 +67,26 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             } else {
                 ctx.currentSortIndex = null;
             }
+
+            // TODO REMOVE THIS
+            // ctx.selvaFieldSchema = selva.selva_get_field(ctx.selva, ctx.    );
+
+        } else if (operationType == 9) {
+
+            // create node
+            // i += try deleteFieldOnly(&ctx) + 1;
+
+            // create or get
+            ctx.id = readInt(u32, operation, 0);
+            ctx.currentShard = db.idToShard(ctx.id);
+
+            ctx.selvaNode = selva.selva_upsert_node(ctx.selvaTypeEntry, ctx.id);
+            std.log.err("CREATED AND GET PTR TO NODE {any} \n", .{ctx.selvaNode});
+
+            i = i + 5;
         } else if (operationType == 1) {
-            // SWITCH KEY
+            // SWITCH ID
+            // create or get
             ctx.id = readInt(u32, operation, 0);
             ctx.currentShard = db.idToShard(ctx.id);
             i = i + 5;
@@ -72,10 +94,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // SWITCH TYPE
             ctx.typeId[0] = batch[i + 1];
             ctx.typeId[1] = batch[i + 2];
+
+            ctx.selvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva, @bitCast(ctx.typeId));
+
             i = i + 3;
+            // lookup
+
         } else if (operationType == 3) {
             i += try createField(&ctx, operation) + 1;
         } else if (operationType == 4) {
+            // special case
             i += try deleteField(&ctx) + 1;
         } else if (operationType == 5) {
             i += try updatePartialField(&ctx, operation) + 1;

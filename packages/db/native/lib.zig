@@ -5,6 +5,7 @@ const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
 const stats = @import("./db/stat.zig");
+const schema = @import("./schema/schema.zig");
 
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
@@ -62,5 +63,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "getQueryIdsSortAscLarge", Query.getQueryIdsSortAscLarge) catch return null;
     registerFunction(env, exports, "getQueryIdsSortDescLarge", Query.getQueryIdsSortDescLarge) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
+
+    registerFunction(env, exports, "updateSchema", schema.updateSchema) catch return null;
+
     return exports;
 }

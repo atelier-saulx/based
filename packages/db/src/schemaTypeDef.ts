@@ -442,3 +442,68 @@ export const idFieldDef: FieldDef = {
   len: 4,
   __isField: true,
 }
+
+// TODO unify this
+export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
+  const typeNames = Object.keys(schema)
+  const types = Object.values(schema)
+
+  return types.map((t, i) => {
+    const vals = Object.values(t.fields)
+    const mainFields: FieldDef[] = []
+    const restFields: FieldDef[] = []
+
+    const ALL_MAIN = false
+    for (const f of vals) {
+      if (ALL_MAIN) {
+        mainFields.push(f)
+      } else {
+        if (f.seperate) {
+          restFields.push(f)
+        } else {
+          mainFields.push(f)
+        }
+      }
+    }
+    mainFields.sort((a, b) => a.selvaField - b.selvaField)
+    restFields.sort((a, b) => a.selvaField - b.selvaField)
+
+    //console.log('\nnode_type:', i)
+    //console.log('mainFields:', mainFields)
+    //console.log('restFields:', restFields)
+
+    // TODO Remove this once the types agree
+    const typeMap = {
+      timestamp: 1,
+      created: 2,
+      updated: 3,
+      number: 4,
+      integer: 5,
+      boolean: 9,
+      reference: 13,
+      enum: 10,
+      string: 11,
+      references: 14,
+    }
+    const toSelvaSchemaBuf = (f: FieldDef): number[] => {
+      if (f.type === 'reference' || f.type === 'references') {
+        const dstType: SchemaTypeDef = schema[f.allowedType]
+        const buf = Buffer.allocUnsafe(4)
+
+        buf.writeUInt8(typeMap[f.type], 0)
+        buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
+        buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
+        return [...buf.values()]
+      } else if (f.type === 'string') {
+        return [typeMap[f.type], f.len < 50 ? f.len : 0]
+      } else {
+        return [typeMap[f.type]]
+      }
+    }
+    return Buffer.from([
+      mainFields.length,
+      ...mainFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+      ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+    ])
+  })
+}
