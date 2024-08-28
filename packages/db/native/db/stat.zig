@@ -6,6 +6,8 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const readInt = @import("../utils.zig").readInt;
 
+const selva = @import("../selva.zig");
+
 const mdb = errors.mdb;
 const jsThrow = errors.jsThrow;
 
@@ -177,5 +179,10 @@ pub fn stat(node_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_v
 
 pub fn tester(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
     //
+
+    const selvaDb = selva.selva_db_create();
+
+    std.debug.print("bla {any} \n", .{selvaDb});
+
     return null;
 }
