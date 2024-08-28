@@ -4,6 +4,8 @@ const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 
+const std = @import("std");
+
 const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
@@ -24,7 +26,9 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
 
     // std.log.err("CREATED AND GET PTR TO NODE {any} \n", .{ctx.selvaNode});
 
-    _ = selva.selva_fields_set(db.ctx.selva, ctx.selvaNode, ctx.selvaFieldSchema, data.ptr, data.len);
+    if (selva.selva_fields_set(db.ctx.selva, ctx.selvaNode, ctx.selvaFieldSchema, data.ptr, data.len) != 0) {
+        std.log.err("flapo", .{});
+    }
 
     // try db.writeField(ctx.id, data, shard);
 

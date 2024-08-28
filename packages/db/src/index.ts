@@ -182,7 +182,10 @@ export class BasedDb {
 
   // drain write buffer returns perf in ms
   drain() {
-    return flushBuffer(this)
+    flushBuffer(this)
+    let t = this.writeTime
+    this.writeTime = 0
+    return t
   }
 
   stats() {

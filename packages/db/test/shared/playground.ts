@@ -106,7 +106,7 @@ for (let i = 0; i < s.length; i++) {
 */
 
 var d = Date.now()
-for (let i = 0; i < 2e6; i++) {
+for (let i = 0; i < 100e6; i++) {
   db.create('user', {
     name: 'Mr X!',
   })
