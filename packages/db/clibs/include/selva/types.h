@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 #include "selva/_export.h"
 
@@ -32,15 +33,15 @@ enum SelvaFieldType {
 } __packed;
 
 struct EdgeFieldConstraint;
-struct SelvaNodeSchema;
-struct SelvaFieldSchema;
-struct SelvaNode;
-struct SelvaFields;
-struct SelvaFieldInfo;
 struct SelvaAlias;
-struct SelvaTypeEntry;
 struct SelvaAliases;
 struct SelvaDb;
+struct SelvaFieldInfo;
+struct SelvaFieldSchema;
+struct SelvaFields;
+struct SelvaNode;
+struct SelvaNodeSchema;
+struct SelvaTypeEntry;
 
 // #include <stdbool.h>
 SELVA_EXPORT
