@@ -32,15 +32,15 @@ enum SelvaFieldType {
 } __packed;
 
 struct EdgeFieldConstraint;
-struct SelvaNodeSchema;
-struct SelvaFieldSchema;
-struct SelvaNode;
-struct SelvaFields;
-struct SelvaFieldInfo;
 struct SelvaAlias;
-struct SelvaTypeEntry;
 struct SelvaAliases;
 struct SelvaDb;
+struct SelvaFieldInfo;
+struct SelvaFieldSchema;
+struct SelvaFields;
+struct SelvaNode;
+struct SelvaNodeSchema;
+struct SelvaTypeEntry;
 
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);
