@@ -208,7 +208,15 @@ console.log(
     .get(),
 )
 
-await getWorker(1)
+for (let i = 0; i < 1; i++) {
+  q.push(getWorker(i + 1))
+}
+
+const d2 = Date.now()
+
+await Promise.all(q)
+
+console.log(Date.now() - d2, 'ms')
 
 await wait(0)
 

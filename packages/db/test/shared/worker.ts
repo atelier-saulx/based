@@ -139,12 +139,18 @@ console.log('RDY')
 
 // await db.destroy()
 
-console.log(
-  'WORKER',
-  db
-    .query('user')
-    .range(0, 10)
-    .include('name', 'age')
-    // .sort('age')
-    .get(),
-)
+// console.log(
+//   'WORKER',
+//   db
+//     .query('user')
+//     .range(0, 1e6)
+//     .include('name', 'age')
+//     // .sort('age')
+//     .get(),
+// )
+
+db.query('user')
+  .range(0, 1e6)
+  // .include('name', 'age')
+  // .sort('age')
+  .get()

@@ -179,10 +179,16 @@ fn createSortIndex(
 pub fn createReadSortIndex(name: db.SortDbiName, queryId: u32, len: u16, start: u16) !db.SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
-    _ = c.mdb_txn_reset(db.ctx.readTxn);
-    _ = c.mdb_txn_renew(db.ctx.readTxn);
+
+    // TODO: optmize calling this at the start BUT after the creation of a write TXN (else it crashes)
+    _ = try db.initReadTxn();
+
+    c.mdb_txn_reset(db.ctx.readTxn);
+
+    try errors.mdb(c.mdb_txn_renew(db.ctx.readTxn));
     try errors.mdb(c.mdb_dbi_open(db.ctx.readTxn, &name, 0, &dbi));
     try errors.mdb(c.mdb_cursor_open(db.ctx.readTxn, dbi, &cursor));
+
     return .{
         .field = name[3] - 1,
         .dbi = dbi,

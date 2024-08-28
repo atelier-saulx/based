@@ -53,6 +53,8 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
             break;
         }
 
+        const dbName = db.data(k);
+
         mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
             std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
             done = true;
@@ -68,8 +70,6 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
 
         const dbiSize = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
         size += dbiSize;
-
-        const dbName = db.data(k);
 
         if (dbName[0] == 254) {
             if (!initSortIndex) {
@@ -88,9 +88,12 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
 
                 var cursor2: ?*c.MDB_cursor = null;
                 try mdb(c.mdb_cursor_open(txn, dbi2, &cursor2));
-                mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_FIRST)) catch {};
+                mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_FIRST)) catch |err| {
+                    std.log.err("Init: cannot create sort cursor {any} \n", .{err});
+                };
                 const len: u16 = @intCast(db.data(k).len);
                 const start = readInt(u16, dbName, 4);
+
                 const newSortIndex = sort.createReadSortIndex(name, queryId, len, start) catch |err| {
                     std.log.err("Init: Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
                     return err;
@@ -148,7 +151,9 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
         var cursor2: ?*c.MDB_cursor = null;
         try mdb(c.mdb_cursor_open(txn, dbi2, &cursor2));
 
-        mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_LAST)) catch {};
+        mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_LAST)) catch |err| {
+            std.log.err("Init: hello this is wrong {any} \n", .{err});
+        };
 
         if (k.mv_size != 0) {
             var lastId: c.napi_value = undefined;
