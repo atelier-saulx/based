@@ -21,9 +21,7 @@ const db = new BasedDb({
   //   maxModifySize: 1000000,
 })
 
-// if (workerData == 0) {
-await db.start()
-// }
+await db.start(true)
 
 await wait(100)
 
@@ -51,70 +49,51 @@ db.updateSchema({
         },
       },
     },
-    // blup: {
-    //   fields: {
-    //     flap: {
-    //       type: 'string',
-    //       // @ts-ignore
-    //       maxBytes: 1,
-    //     },
-    //     name: { type: 'string' },
-    //   },
-    // },
-    // simple: {
-    //   // min max on string
-    //   fields: {
-    //     // @ts-ignore
-    //     countryCode: { type: 'string', maxBytes: 2 },
-    //     lilBlup: { type: 'reference', allowedType: 'blup' },
-    //     user: { type: 'reference', allowedType: 'user' },
-    //   },
-    // },
   },
 })
 
-if (workerData === 0) {
-  const users = []
+// if (workerData === 0) {
+//   const users = []
 
-  const amount = 1e6
+//   const amount = 1e6
 
-  const d = Date.now()
+//   const d = Date.now()
 
-  for (let i = 0; i < amount; i++) {
-    // const blup = db.create('blup', {
-    //   // name: 'blup ! ' + i,
-    //   flap: 'A',
-    // })
+//   for (let i = 0; i < amount; i++) {
+//     // const blup = db.create('blup', {
+//     //   // name: 'blup ! ' + i,
+//     //   flap: 'A',
+//     // })
 
-    users.push(
-      db.create(user, {
-        // myBlup: blup,
-        // age: amount - i
-        age: ~~(Math.random() * 99) + 1,
-        name: 'Mr ' + i,
-        // burp: 66,
-        // snurp: 'derp derp',
-        // email: 'merp_merp_' + i + '@once.net',
-        // location: {
-        // label: 'BLA BLA',
-        // },
-      }),
-    )
-  }
+//     users.push(
+//       db.create(user, {
+//         // myBlup: blup,
+//         // age: amount - i
+//         age: ~~(Math.random() * 99) + 1,
+//         name: 'Mr ' + i,
+//         // burp: 66,
+//         // snurp: 'derp derp',
+//         // email: 'merp_merp_' + i + '@once.net',
+//         // location: {
+//         // label: 'BLA BLA',
+//         // },
+//       }),
+//     )
+//   }
 
-  db.drain()
+//   db.drain()
 
-  console.log(
-    'Write',
-    amount,
-    'items',
-    'total db time',
-    db.writeTime,
-    'ms',
-    Date.now() - d,
-    'ms\n',
-  )
-}
+//   console.log(
+//     'Write',
+//     amount,
+//     'items',
+//     'total db time',
+//     db.writeTime,
+//     'ms',
+//     Date.now() - d,
+//     'ms\n',
+//   )
+// }
 
 // console.log(
 //   db.query('user').range(0, 1e4).include('name', 'age').sort('name').get(),
@@ -159,3 +138,13 @@ await wait(0)
 console.log('RDY')
 
 // await db.destroy()
+
+console.log(
+  'WORKER',
+  db
+    .query('user')
+    .range(0, 10)
+    .include('name', 'age')
+    // .sort('age')
+    .get(),
+)

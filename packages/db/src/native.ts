@@ -134,7 +134,7 @@ export default {
     return db.stat()
   },
 
-  start: (path: string, readOnly: boolean = false) => {
+  start: (path: string, readOnly: boolean) => {
     return db.start(path, readOnly)
   },
 

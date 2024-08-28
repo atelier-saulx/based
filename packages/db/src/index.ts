@@ -84,7 +84,7 @@ export class BasedDb {
     this.schema = deepCopy(DEFAULT_SCHEMA)
   }
 
-  async start(): Promise<
+  async start(readOnly: boolean = false): Promise<
     {
       shard: number
       field: number
@@ -97,7 +97,7 @@ export class BasedDb {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
 
-    const entries = db.start(this.fileSystemPath)
+    const entries = db.start(this.fileSystemPath, readOnly)
 
     // include schema
     try {

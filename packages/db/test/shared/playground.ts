@@ -19,38 +19,38 @@ try {
 // console.log(__dirname)
 // const nr = 10
 
-// const getWorker = (i) =>
-//   new Promise((resolve, reject) => {
-//     // const s = spawn('node', [
-//     //   join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
-//     // ])
+const getWorker = (i) =>
+  new Promise((resolve, reject) => {
+    // const s = spawn('node', [
+    //   join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
+    // ])
 
-//     const s = new Worker(
-//       join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
-//       { workerData: i },
-//     )
+    const s = new Worker(
+      join(dirname(fileURLToPath(import.meta.url)), '/worker.js'),
+      { workerData: i },
+    )
 
-//     s.on('error', (err) => {
-//       reject(err)
-//     })
+    s.on('error', (err) => {
+      reject(err)
+    })
 
-//     s.stderr.on('data', (data) => {
-//       console.log(`stderr: ${i} ${data}`)
-//     })
+    s.stderr.on('data', (data) => {
+      console.log(`stderr: ${i} ${data}`)
+    })
 
-//     s.stdout.on('data', (data) => {
-//       console.log(`stdout: ${i} ${data}`)
-//       if (`${data}`.includes('RDY')) {
-//         resolve(true)
-//       }
-//     })
+    s.stdout.on('data', (data) => {
+      console.log(`stdout: ${i} ${data}`)
+      if (`${data}`.includes('RDY')) {
+        resolve(true)
+      }
+    })
 
-//     // s.stderr.on('data', (data) => {
-//     // console.error(`stderr: ${i} ${data}`)
-//     // })
-//   })
+    // s.stderr.on('data', (data) => {
+    // console.error(`stderr: ${i} ${data}`)
+    // })
+  })
 
-// const q = []
+const q = []
 
 // var d = Date.now()
 // let doneCount = 0
@@ -207,6 +207,8 @@ console.log(
     .sort('age')
     .get(),
 )
+
+await getWorker(1)
 
 await wait(0)
 
