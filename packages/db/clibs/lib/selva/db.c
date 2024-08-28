@@ -233,6 +233,11 @@ struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNo
     return te;
 }
 
+struct SelvaNodeSchema *selva_get_ns_by_te(struct SelvaTypeEntry *te)
+{
+    return &te->ns;
+}
+
 struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
 {
     if (field >= ns->nr_fields) {

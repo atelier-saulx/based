@@ -33,6 +33,9 @@ SELVA_EXPORT
 struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
 
 SELVA_EXPORT
+struct SelvaNodeSchema *selva_get_ns_by_te(struct SelvaTypeEntry *te);
+
+SELVA_EXPORT
 struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field);
 
 SELVA_EXPORT
