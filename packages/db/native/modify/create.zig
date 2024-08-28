@@ -43,5 +43,6 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     } else if (ctx.currentSortIndex != null) {
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
+
     return size;
 }
