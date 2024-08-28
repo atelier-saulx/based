@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include <stddef.h>
 #include "selva/_export.h"
 #include "selva/types.h"
 
