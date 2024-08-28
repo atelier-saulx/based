@@ -39,6 +39,7 @@ pub const DbCtx = struct {
     env: ?*c.MDB_env,
     sortIndexes: Indexes,
     mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
+    readOnly: bool,
 };
 
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -56,6 +57,7 @@ pub var ctx: DbCtx = .{
     .mainSortIndexes = mainSortIndexes,
     .readTxnCreated = false,
     .initialized = false,
+    .readOnly = false,
 };
 
 pub fn initReadTxn() !*c.MDB_txn {
