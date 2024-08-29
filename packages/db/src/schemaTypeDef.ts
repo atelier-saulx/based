@@ -451,7 +451,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
   return types.map((t, i) => {
     const vals = Object.values(t.fields)
-    const mainFields: FieldDef[] = []
     const restFields: FieldDef[] = []
 
     for (const f of vals) {
