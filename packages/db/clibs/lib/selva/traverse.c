@@ -125,7 +125,7 @@ int selva_traverse_field_bfs(
         const struct SelvaTraversalParam *cb) {
     BFS_TRAVERSE_BEGIN(db, head, cb) {
         struct SelvaFieldsAny any;
-        int res, err;
+        int res;
 
         res = BFS_VISIT_NODE(db, cb);
         if (res >= 0) {

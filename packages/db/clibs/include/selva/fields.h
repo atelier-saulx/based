@@ -56,6 +56,12 @@ struct SelvaFieldsAny {
     };
 };
 
+struct SelvaFieldsPointer {
+    uint8_t *ptr;
+    size_t off;
+    size_t len;
+};
+
 #if __has_c_attribute(unsequenced)
 [[unsequenced]]
 #else
@@ -87,6 +93,9 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
 
 SELVA_EXPORT
 struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field);
+
+SELVA_EXPORT
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field);
 
 /**
  * Delete field.

@@ -827,6 +827,7 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
         break;
     }
 
+    printf("get field %d type %d\n", field, any.type);
     return any;
 }
 
@@ -847,6 +848,27 @@ static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *
             memset(s, 0, sizeof(*s));
         }
     }
+}
+
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+{
+    struct SelvaFields *fields = &node->fields;
+    const struct SelvaFieldInfo *nfo;
+
+    if (field >= fields->nr_fields) {
+        return (struct SelvaFieldsPointer){};
+    }
+
+    nfo = &fields->fields_map[field];
+
+    return (struct SelvaFieldsPointer){
+#if 0
+        .type = nfo->type,
+#endif
+        .ptr = (uint8_t *)PTAG_GETP(fields->data),
+        .off = (nfo->off << 3),
+        .len = selva_fields_get_data_size(fs),
+    };
 }
 
 static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, field_t field)
