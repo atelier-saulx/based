@@ -56,6 +56,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
     [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
+    [SELVA_FIELD_TYPE_MICRO_BUFFER] = sizeof(struct SelvaMicroBuffer),
 };
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
@@ -64,6 +65,8 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 
     if (type == SELVA_FIELD_TYPE_STRING) {
         return sizeof(struct selva_string) + SELVA_STRING_STATIC_BUF_SIZE(fs->string.fixed_len);
+    } else if (type == SELVA_FIELD_TYPE_MICRO_BUFFER) {
+        return sizeof(struct SelvaMicroBuffer) + fs->smb.len;
     } else {
         return selva_field_data_size[type];
     }

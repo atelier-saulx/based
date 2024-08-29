@@ -54,6 +54,9 @@ struct SelvaNodeSchema {
                 size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
             } string;
             struct EdgeFieldConstraint edge_constraint;
+            struct {
+                uint16_t len;
+            } smb;
         };
     } field_schemas[] __counted_by(nr_fields);
 };
