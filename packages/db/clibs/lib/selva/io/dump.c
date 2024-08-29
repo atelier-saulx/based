@@ -129,7 +129,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         struct SelvaFieldsAny any;
         int err;
 
-        err = selva_fields_get(fields, field, &any);
+        err = selva_fields_get2(fields, field, &any);
         if (err) {
             /* TODO Handle error? */
             db_panic("Handle this error");
@@ -605,7 +605,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
     if (meta_present) {
         struct SelvaFieldsAny any;
 
-        err = selva_fields_get(&node->fields, field, &any);
+        err = selva_fields_get2(&node->fields, field, &any);
         if (err) {
             return err;
         } else if (any.type == SELVA_FIELD_TYPE_REFERENCE) {
@@ -681,7 +681,7 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, stru
     }
 
     struct SelvaFieldsAny any;
-    err = selva_fields_get(&node->fields, fs->field, &any);
+    err = selva_fields_get2(&node->fields, fs->field, &any);
 
     io->sdb_read(&any.smb->len, sizeof(any.smb->len), 1, io);
     io->sdb_read(any.smb->data, sizeof(uint8_t), sizeof(any.smb->len), io);
