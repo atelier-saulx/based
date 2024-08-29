@@ -1,11 +1,7 @@
 import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb, schema2selva } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
-import { Worker } from 'node:worker_threads'
-import { spawn } from 'node:child_process'
-import { text } from './examples.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -254,7 +250,6 @@ console.log(Date.now() - d, dbTime, 'ms')
 // const ids2: Set<number> = new Set()
 // for (let i = 1; i < 5000; i++) {
 //   ids2.add(~~(Math.random() * 10e6))
-
 //   // ids2.add(i)
 // }
 

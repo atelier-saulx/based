@@ -462,7 +462,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         if (f.seperate) {
           restFields.push(f)
         } else {
-          mainFields.push(f)
+          mainFields.push(f) // just 1
         }
       }
     }
@@ -486,6 +486,9 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       string: 11,
       references: 14,
     }
+
+    // add MUFFER (main buffer)
+
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
       if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
@@ -503,6 +506,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     }
     return Buffer.from([
       mainFields.length,
+      //
       ...mainFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
