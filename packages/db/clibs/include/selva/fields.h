@@ -34,9 +34,7 @@ struct SelvaNodeWeakReferences {
 struct SelvaMicroBuffer {
     uint16_t len;
     uint8_t data[] __counted_by(len);
-};
-
-// __packed;
+} __attribute__((packed)); /* zig hack. */
 
 struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
