@@ -25,6 +25,7 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_REFERENCES:
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
         return true;
     }
     return false;
@@ -69,6 +70,8 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         str = (const char *)"weak reference";
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         str = (const char *)"weak references";
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        str = (const char *)"micro buffer";
     }
 
     return str;

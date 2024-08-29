@@ -283,80 +283,91 @@ static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaNode
     return 1 + sizeof(constraints);
 }
 
+static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaNodeSchema *ns, field_t field)
+{
+    struct SelvaFieldSchema *fs = &ns->field_schemas[field];
+    uint16_t len;
+
+    if (ctx->len < 1 + sizeof(len)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&len, ctx->buf + 1, sizeof(len));
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
+        .smb = {
+            .len = len,
+        },
+    };
+
+    return 1 + sizeof(len);
+}
+
 static struct schemabuf_parser {
     enum SelvaFieldType __packed type;
-    char name[11];
     int (*type2fs)(struct schemabuf_parser_ctx *ctx, struct SelvaNodeSchema *fs, field_t field_idx);
 } __designated_init schemabuf_parsers[] = {
     [SELVA_FIELD_TYPE_NULL] = {
         .type = 0,
-        .name = "reserved",
         .type2fs = type2fs_reserved,
     },
     [SELVA_FIELD_TYPE_TIMESTAMP] = {
         .type = SELVA_FIELD_TYPE_TIMESTAMP,
-        .name = "timestamp",
         .type2fs = type2fs_timestamp,
     },
     [SELVA_FIELD_TYPE_CREATED] = {
         .type = SELVA_FIELD_TYPE_CREATED,
-        .name = "created",
         .type2fs = type2fs_timestamp_created,
     },
     [SELVA_FIELD_TYPE_UPDATED] = {
         .type = SELVA_FIELD_TYPE_UPDATED,
-        .name = "updated",
         .type2fs = type2fs_timestamp_updated,
     },
     [SELVA_FIELD_TYPE_NUMBER] = {
         .type = SELVA_FIELD_TYPE_NUMBER,
-        .name = "number",
         .type2fs = type2fs_number,
     },
     [SELVA_FIELD_TYPE_INTEGER] = {
         .type = SELVA_FIELD_TYPE_INTEGER,
-        .name = "integer",
         .type2fs = type2fs_integer,
     },
     [SELVA_FIELD_TYPE_UINT8] = {
         .type = SELVA_FIELD_TYPE_UINT8,
-        .name = "uint8",
         .type2fs = type2fs_uint8,
     },
     [SELVA_FIELD_TYPE_UINT32] = {
         .type = SELVA_FIELD_TYPE_UINT32,
-        .name = "uint32",
         .type2fs = type2fs_uint32,
     },
     [SELVA_FIELD_TYPE_UINT64] = {
         .type = SELVA_FIELD_TYPE_UINT64,
-        .name = "uint64",
         .type2fs = type2fs_uint64,
     },
     [SELVA_FIELD_TYPE_BOOLEAN] = {
         .type = SELVA_FIELD_TYPE_BOOLEAN,
-        .name = "boolean",
         .type2fs = type2fs_boolean,
     },
     [SELVA_FIELD_TYPE_ENUM] = {
         .type = SELVA_FIELD_TYPE_ENUM,
-        .name = "enum",
         .type2fs = type2fs_enum,
     },
     [SELVA_FIELD_TYPE_STRING] = {
         .type = SELVA_FIELD_TYPE_STRING,
-        .name = "string",
         .type2fs = type2fs_string,
     },
     [SELVA_FIELD_TYPE_REFERENCE] = {
         .type = SELVA_FIELD_TYPE_REFERENCE,
-        .name = "reference",
         .type2fs = type2fs_reference,
     },
     [SELVA_FIELD_TYPE_REFERENCES] = {
         .type = SELVA_FIELD_TYPE_REFERENCES,
-        .name = "references",
         .type2fs = type2fs_references,
+    },
+    [SELVA_FIELD_TYPE_MICRO_BUFFER] = {
+        .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
+        .type2fs = type2fs_micro_buffer,
     },
 };
 
@@ -366,10 +377,10 @@ int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, s
         return SELVA_EINVAL;
     }
 
-    count->nr_main_fields = buf[0];
+    count->nr_fixed_fields = buf[0];
     count->nr_fields = len - 1;
 
-    if (count->nr_main_fields > count->nr_fields) {
+    if (count->nr_fixed_fields > count->nr_fields) {
         return SELVA_EINVAL;
     }
 

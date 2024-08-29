@@ -6,7 +6,7 @@
 
 struct schemabuf_parser_ctx;
 struct schema_fields_count {
-    size_t nr_main_fields;
+    size_t nr_fixed_fields;
     size_t nr_fields;
 };
 

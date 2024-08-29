@@ -43,7 +43,7 @@ struct EdgeFieldConstraint {
 
 struct SelvaNodeSchema {
     field_t nr_fields; /*!< The total number of fields for this node type. */
-    field_t nr_main_fields; /*!< Number of main fields that are always allocated. */
+    field_t nr_fixed_fields; /*!< Number of fixed fields that are always allocated. */
     field_t created_field;
     field_t updated_field;
     struct SelvaFieldSchema {
@@ -54,6 +54,9 @@ struct SelvaNodeSchema {
                 size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
             } string;
             struct EdgeFieldConstraint edge_constraint;
+            struct {
+                uint16_t len;
+            } smb;
         };
     } field_schemas[] __counted_by(nr_fields);
 };
@@ -120,7 +123,7 @@ struct SelvaTypeEntry {
     struct {
         void *buf;
         size_t len;
-        size_t main_data_size;
+        size_t fixed_data_size;
     } field_map_template;
     const char *schema_buf;
     size_t schema_len;

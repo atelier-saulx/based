@@ -228,6 +228,9 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
                 io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
             }
             break;
+        case SELVA_FIELD_TYPE_MICRO_BUFFER:
+            io->sdb_write(any.smb, sizeof(uint8_t), sizeof(*any.smb) + any.smb->len, io);
+            break;
         }
 
         write_dump_magic(io, DUMP_MAGIC_FIELD_END);
@@ -494,7 +497,6 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
  */
 static void load_reference_meta(
         struct selva_io *io,
-        struct SelvaDb *db,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc)
 {
@@ -567,6 +569,8 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_REFERENCE:
         case SELVA_FIELD_TYPE_REFERENCES:
             db_panic("References not supported in edge meta");
+        case SELVA_FIELD_TYPE_MICRO_BUFFER:
+            db_panic("Muffer not supported in edge meta");
         }
         if (err) {
             db_panic("Failed to set field (%d:%d:%d): %s",
@@ -606,7 +610,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
             return err;
         } else if (any.type == SELVA_FIELD_TYPE_REFERENCE) {
             assert(any.reference);
-            load_reference_meta(io, db, node, any.reference, &fs->edge_constraint);
+            load_reference_meta(io, node, any.reference, &fs->edge_constraint);
         } else if (any.type == SELVA_FIELD_TYPE_REFERENCES) {
             const size_t len = any.references->nr_refs;
             struct SelvaNodeReference *refs = any.references->refs;
@@ -614,7 +618,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
             /* TODO We really need a better implementation for this! */
             for (size_t i = 0; i < len; i++) {
                 if (refs[i].dst == dst_node) {
-                    load_reference_meta(io, db, node, &refs[i], &fs->edge_constraint);
+                    load_reference_meta(io, node, &refs[i], &fs->edge_constraint);
                     break;
                 }
             }
@@ -662,6 +666,25 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
             return err;
         }
     }
+
+    return 0;
+}
+
+static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+{
+    int err;
+
+    /* Hack to create the field. */
+    err = selva_fields_set(db, node, fs, (uint8_t []){ 0 }, 1);
+    if (err) {
+        return err;
+    }
+
+    struct SelvaFieldsAny any;
+    err = selva_fields_get(&node->fields, fs->field, &any);
+
+    io->sdb_read(&any.smb->len, sizeof(any.smb->len), 1, io);
+    io->sdb_read(any.smb->data, sizeof(uint8_t), sizeof(any.smb->len), io);
 
     return 0;
 }
@@ -740,6 +763,9 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             err = load_field_weak_references(io, db, node, fs);
+            break;
+        case SELVA_FIELD_TYPE_MICRO_BUFFER:
+            err = load_field_micro_buffer(io, db, node, fs);
             break;
         }
         if (err) {

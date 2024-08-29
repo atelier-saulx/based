@@ -30,6 +30,7 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_REFERENCES = 14,
     SELVA_FIELD_TYPE_WEAK_REFERENCE = 15,
     SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
+    SELVA_FIELD_TYPE_MICRO_BUFFER = 17,
 } __packed;
 
 struct EdgeFieldConstraint;
@@ -43,16 +44,8 @@ struct SelvaNode;
 struct SelvaNodeSchema;
 struct SelvaTypeEntry;
 
-// #include <stdbool.h>
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);
 
 SELVA_EXPORT
 const char *selva_str_field_type(enum SelvaFieldType ftype);
-
-// #include <stdio.h>
-// static void stuff(void)
-// {
-
-//     printf("%ld", __STDC_VERSION__);
-// }
