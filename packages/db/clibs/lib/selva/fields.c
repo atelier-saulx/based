@@ -588,6 +588,14 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         }
 
         set_weak_references(fs, node, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
+    case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
+        do {
+            struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
+            typeof(buffer->len) buf_len = (typeof(buf_len))len;
+
+            memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
+            memcpy(buffer->data, value, buf_len);
+        } while (0);
     }
 
     return 0;
@@ -810,6 +818,9 @@ int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFiel
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         memcpy(&any->weak_references, p, sizeof(struct SelvaNodeWeakReferences));
         break;
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        any->smb = (struct SelvaMicroBuffer *)p;
+        break;
     }
 
     return 0;
@@ -852,6 +863,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
         /* NOP */
         break;
     case SELVA_FIELD_TYPE_STRING:

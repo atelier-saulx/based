@@ -187,6 +187,10 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         /* TODO weak ref */
         napi_get_null(env, &result);
         break;
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        /* TODO pass buffer */
+        napi_get_null(env, &result);
+        break;
     }
 
     return result;
