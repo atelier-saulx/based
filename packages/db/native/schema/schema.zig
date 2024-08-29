@@ -23,9 +23,7 @@ fn updateSchemaInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_val
     const nrType: u16 = @bitCast(typeId);
     const schema = try napi.getBuffer("schema", env, args[1]);
 
-    std.debug.print("FLAP \n", .{});
     try errors.selva(selva.selva_db_schema_create(db.ctx.selva, nrType, schema.ptr, schema.len));
-    std.debug.print("2FLAP \n", .{});
 
     return null;
 }

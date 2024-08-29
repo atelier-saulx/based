@@ -1,10 +1,11 @@
-const db = @import("../../db/db.zig");
 const results = @import("../results.zig");
+const selva = @import("../../selva.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const readInt = @import("../../utils.zig").readInt;
 const getField = db.getField;
+const db = @import("../../db//db.zig");
 
 const std = @import("std");
 
@@ -14,9 +15,18 @@ pub fn getFields(
     typeId: db.TypeId,
     start: ?u16,
     include: []u8,
-    currentShard: u16,
     refLvl: u8,
 ) !usize {
+    const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId));
+
+    const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(selvaTypeEntry.?, id);
+
+    if (selvaNodeNull == null) {
+        return 0;
+    }
+
+    const selvaNode: *selva.SelvaNode = selvaNodeNull.?;
+
     var includeMain: []u8 = &.{};
     var size: usize = 0;
     var includeIterator: u16 = 0;
@@ -35,7 +45,8 @@ pub fn getFields(
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
-                main = getField(id, 0, typeId, currentShard, ctx.id);
+                main = try db.selvaGetField(selvaNode, 0);
+
                 if (main.?.len > 0 and !idIsSet and start == null) {
                     idIsSet = true;
                     size += try addIdOnly(ctx, id, refLvl, start);
@@ -56,7 +67,7 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = getField(id, field, typeId, currentShard, ctx.id);
+        const value = try db.selvaGetField(selvaNode, field);
 
         if (value.len == 0) {
             continue :includeField;
@@ -96,7 +107,7 @@ pub fn getFields(
 
     if (size == 0 and !idIsSet) {
         if (main == null) {
-            main = getField(id, 0, typeId, currentShard, ctx.id);
+            main = try db.selvaGetField(selvaNode, 0);
 
             if (main.?.len > 0) {
                 idIsSet = true;

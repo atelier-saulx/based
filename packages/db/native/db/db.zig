@@ -135,6 +135,19 @@ pub fn openShard(comptime create: bool, dbiName: DbName, txn: ?*c.MDB_txn) !Shar
     return s;
 }
 
+pub fn selvaGetField(node: *selva.SelvaNode, field: u8) ![]u8 {
+    var bla: ?selva.SelvaFieldsAny = null;
+
+    // offset BUFFER len
+    try errors.selva(selva.selva_fields_get(node, field, &bla));
+
+    std.debug.print("hello {any}  \n", .{bla});
+
+    // return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+
+    return &.{};
+}
+
 pub inline fn closeShard(shard: Shard) void {
     c.mdb_cursor_close(shard.cursor);
 }

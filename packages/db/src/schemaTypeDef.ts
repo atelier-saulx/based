@@ -478,6 +478,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
     // add MUFFER (main buffer)
 
+    // CLEAN THIS UP
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
       // @ts-ignore
       if (f.len && f.type == 'muffer') {

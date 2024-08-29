@@ -3,6 +3,7 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
+const selva = @import("../../selva.zig");
 
 const IncludeError = error{
     Recursion,
@@ -16,6 +17,8 @@ pub fn getSingleRefFields(
     hasFields: bool,
 ) usize {
     var size: usize = 0;
+
+    // GET SELVA NODE
 
     const typeId: db.TypeId = .{ include[0], include[1] };
     const start = readInt(u16, include, 2);
@@ -34,15 +37,12 @@ pub fn getSingleRefFields(
 
     const includeNested = include[4..include.len];
 
-    const shardNested: u16 = db.idToShard(refId);
-
     const resultSizeNest = getFields(
         ctx,
         refId,
         typeId,
         start,
         includeNested,
-        shardNested,
         refLvl + 1,
     ) catch 0;
 

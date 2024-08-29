@@ -81,9 +81,9 @@ db.updateSchema({
     user: {
       fields: {
         age: { type: 'integer' },
-        // time: { type: 'integer' },
-        // fun: { type: 'integer' },
-        name: { type: 'string' },
+        time: { type: 'integer' },
+        fun: { type: 'integer' },
+        name: { type: 'string', maxLength: 15 },
         flap: { type: 'string' },
       },
     },
@@ -119,10 +119,10 @@ console.log('SNURP')
 var d = Date.now()
 for (let i = 0; i < 10e6; i++) {
   db.create('user', {
-    // time: 1,
-    // fun: 2,
+    time: 1,
+    fun: 2,
     age: 99,
-    name: 'Mr ' + i,
+    name: 'Mr nurp nurp ' + i,
   })
   // Relatively slow remove schema lookup
   // db.create('xyz', {
