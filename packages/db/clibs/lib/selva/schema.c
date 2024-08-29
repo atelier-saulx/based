@@ -366,10 +366,10 @@ int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, s
         return SELVA_EINVAL;
     }
 
-    count->nr_main_fields = buf[0];
+    count->nr_fixed_fields = buf[0];
     count->nr_fields = len - 1;
 
-    if (count->nr_main_fields > count->nr_fields) {
+    if (count->nr_fixed_fields > count->nr_fields) {
         return SELVA_EINVAL;
     }
 

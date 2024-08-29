@@ -127,21 +127,21 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
 {
     struct SelvaNodeSchema *ns = &type->ns;
     const size_t nr_fields = ns->nr_fields;
-    const size_t nr_main_fields = ns->nr_main_fields;
-    size_t main_field_off = 0;
+    const size_t nr_fixed_fields = ns->nr_fixed_fields;
+    size_t fixed_field_off = 0;
     struct SelvaFieldInfo *nfo = selva_malloc(nr_fields * sizeof(struct SelvaFieldInfo));
 
     for (size_t i = 0; i < nr_fields; i++) {
-        if (i < nr_main_fields) {
+        if (i < nr_fixed_fields) {
             struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(ns, i);
 
             assert(fs);
 
             nfo[i] = (struct SelvaFieldInfo){
                 .type = fs->type,
-                .off = main_field_off >> 3,
+                .off = fixed_field_off >> 3,
             };
-            main_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
+            fixed_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
         } else {
             nfo[i] = (struct SelvaFieldInfo){
                 .type = 0,
@@ -152,7 +152,7 @@ static void make_field_map_template(struct SelvaTypeEntry *type)
 
     type->field_map_template.buf = nfo;
     type->field_map_template.len = nr_fields * sizeof(struct SelvaFieldInfo);
-    type->field_map_template.main_data_size = ALIGNED_SIZE(main_field_off, SELVA_FIELDS_DATA_ALIGN);
+    type->field_map_template.fixed_data_size = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
@@ -176,7 +176,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
 
     te->type = type;
     te->ns.nr_fields = count.nr_fields;
-    te->ns.nr_main_fields = count.nr_main_fields;
+    te->ns.nr_fixed_fields = count.nr_fixed_fields;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
     err = schemabuf_parse(db->schemabuf_ctx, &te->ns, schema_buf, schema_len);
