@@ -12,20 +12,18 @@ const std = @import("std");
 pub fn getFields(
     ctx: *QueryCtx,
     id: u32,
-    typeId: db.TypeId,
+    typeEntry: *selva.SelvaTypeEntry,
     start: ?u16,
     include: []u8,
     refLvl: u8,
 ) !usize {
-    const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId));
-
-    const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(selvaTypeEntry.?, id);
+    // get this from top
+    const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, id);
 
     if (selvaNodeNull == null) {
+        std.debug.print("CANT FIND ID {d}\n", .{id});
         return 0;
     }
-
-    std.debug.print("2 id {d}  \n", .{id});
 
     const selvaNode: *selva.SelvaNode = selvaNodeNull.?;
 
@@ -47,7 +45,7 @@ pub fn getFields(
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
-                main = db.selvaGetField(selvaNode, 0);
+                main = db.selvaGetField(selvaNode, 0, typeEntry);
 
                 if (main.?.len > 0 and !idIsSet and start == null) {
                     idIsSet = true;
@@ -69,7 +67,7 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = db.selvaGetField(selvaNode, field);
+        const value = db.selvaGetField(selvaNode, field, typeEntry);
 
         if (value.len == 0) {
             continue :includeField;

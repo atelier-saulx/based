@@ -135,17 +135,19 @@ pub fn openShard(comptime create: bool, dbiName: DbName, txn: ?*c.MDB_txn) !Shar
     return s;
 }
 
-pub fn selvaGetField(node: *selva.SelvaNode, field: u8) []u8 {
+pub fn selvaGetField(node: *selva.SelvaNode, field: u8, fieldSchema: ?*selva.SelvaTypeEntry) []u8 {
 
     // offset BUFFER len
-    const bla: selva.SelvaFieldsAny = selva.selva_fields_get(node, @intCast(field));
+    const bla: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selva.selva_get_fs_by_ns_field(
+        selva.selva_get_ns_by_te(fieldSchema.?),
+        @bitCast(field),
+    ), @intCast(field));
 
-    const x: i8 = @intCast(field);
-    std.debug.print("hello {d} {any} {d}  \n", .{ field, bla.type, x });
-
-    // return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
-
-    return &.{};
+    if (field == 0) {
+        return @as([*]u8, @ptrCast(bla.ptr))[bla.off + 2 .. bla.len + bla.off];
+    } else {
+        return @as([*]u8, @ptrCast(bla.ptr))[bla.off .. bla.len + bla.off];
+    }
 }
 
 pub inline fn closeShard(shard: Shard) void {

@@ -20,9 +20,11 @@ pub fn queryId(
     conditions: []u8,
     include: []u8,
 ) !void {
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+
     // pass this refactor single ref
     if (filter(id, typeId, conditions)) {
-        const size = try getFields(ctx, id, typeId, null, include, 0);
+        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -37,13 +39,15 @@ pub fn queryIds(
     conditions: []u8,
     include: []u8,
 ) !void {
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+
     var i: u32 = 0;
     checkItem: while (i <= ids.len) : (i += 4) {
         const id = std.mem.readInt(u32, ids[i..][0..4], .little);
         if (!filter(id, typeId, conditions)) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, id, typeId, null, include, 0);
+        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -73,6 +77,9 @@ pub fn queryIdsSort(
     }
     var first: bool = true;
     var lastCheck: usize = ids.len;
+
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -95,7 +102,7 @@ pub fn queryIdsSort(
         if (!filter(id, typeId, conditions)) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, id, typeId, null, include, 0);
+        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -128,6 +135,9 @@ pub fn queryIdsSortBig(
     while (i <= ids.len) : (i += 1) {
         try map.put(ids[i], 0);
     }
+
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -150,7 +160,7 @@ pub fn queryIdsSortBig(
         if (!filter(id, typeId, conditions)) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, id, typeId, null, include, 0);
+        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -174,6 +184,7 @@ pub fn queryNonSort(
     //   int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any);
 
     // getField(id, field)
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
 
     checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
         // if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
@@ -191,7 +202,7 @@ pub fn queryNonSort(
             continue :checkItem;
         }
 
-        const size = try getFields(ctx, i, typeId, null, include, 0);
+        const size = try getFields(ctx, i, selvaTypeEntry, null, include, 0);
 
         if (size > 0) {
             ctx.size += size;
@@ -219,6 +230,8 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
+
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -249,7 +262,7 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        const size = try getFields(ctx, id, typeId, null, include, 0);
+        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;

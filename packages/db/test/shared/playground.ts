@@ -86,8 +86,8 @@ db.updateSchema({
         age: { type: 'integer' },
         time: { type: 'integer' },
         fun: { type: 'integer' },
-        name: { type: 'string', maxLength: 15 },
-        flap: { type: 'string' },
+        // name: { type: 'string', maxLength: 15 },
+        // flap: { type: 'string' },
       },
     },
     xyz: {
@@ -118,12 +118,12 @@ for (let i = 0; i < s.length; i++) {
 console.log('SNURP')
 
 var d = Date.now()
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 1e6; i++) {
   db.create('user', {
-    time: 1,
-    fun: 2,
-    age: 99,
-    name: 'Mr nurp nurp ' + i,
+    age: i + 1,
+    time: 66,
+    fun: 99,
+    // name: 'Mr nurp nurp ' + i,
   })
   // Relatively slow remove schema lookup
   // db.create('xyz', {
@@ -136,7 +136,7 @@ const dbTime = db.drain()
 
 console.log(Date.now() - d, dbTime, 'ms')
 
-console.log(db.query('user').get())
+console.log(db.query('user').range(0, 1e6).get())
 
 // await db.start()
 

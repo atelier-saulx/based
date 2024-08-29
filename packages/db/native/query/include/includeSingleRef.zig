@@ -37,10 +37,12 @@ pub fn getSingleRefFields(
 
     const includeNested = include[4..include.len];
 
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+
     const resultSizeNest = getFields(
         ctx,
         refId,
-        typeId,
+        selvaTypeEntry,
         start,
         includeNested,
         refLvl + 1,
