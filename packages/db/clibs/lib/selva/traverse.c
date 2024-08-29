@@ -132,8 +132,8 @@ int selva_traverse_field_bfs(
             /* We assume that it's a valid field id. */
             field_t field = (field_t)res;
 
-            err = selva_fields_get2(&node->fields, field, &any);
-            if (err || any.type == SELVA_FIELD_TYPE_NULL) {
+            any = selva_fields_get2(&node->fields, field);
+            if (any.type == SELVA_FIELD_TYPE_NULL) {
                 continue;
             }
 

@@ -603,12 +603,7 @@ static napi_value node_db_get_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
-    struct SelvaFieldsAny any;
-    err = selva_fields_get2(&node->fields, field_idx, &any);
-    if (err) {
-        return res2napi(env, err);
-    }
-
+    struct SelvaFieldsAny any = selva_fields_get2(&node->fields, field_idx);
     return any2napi(env, &any);
 }
 
@@ -628,12 +623,7 @@ static napi_value node_db_get_field_p(napi_env env, napi_callback_info info)
     struct SelvaNode *node = (struct SelvaNode *)npointer2db(env, argv[0]);
     field_t field_idx = selva_napi_get_field(env, argv[1]);
 
-    struct SelvaFieldsAny any;
-    err = selva_fields_get2(&node->fields, field_idx, &any);
-    if (err) {
-        return res2napi(env, err);
-    }
-
+    struct SelvaFieldsAny any = selva_fields_get2(&node->fields, field_idx);
     return any2napi(env, &any);
 }
 

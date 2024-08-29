@@ -97,10 +97,8 @@ static struct op_result op_eq_type(struct SelvaNode *node, const uint8_t *in, si
         field_t field; \
         int32_t value; \
     } __packed *args = (typeof(args))in; \
-    struct SelvaFieldsAny any; \
     if (max_len < sizeof(*args)) return OP_RESULT_ERROR(SELVA_EINVAL); \
-    int err = selva_fields_get2(&node->fields, args->field, &any); \
-    if (err) return OP_RESULT_ERROR(err); \
+    struct SelvaFieldsAny any = selva_fields_get2(&node->fields, args->field); \
     if (any.type != SELVA_FIELD_TYPE_INTEGER) return OP_RESULT_ERROR(SELVA_EINTYPE); \
     return (struct op_result){ \
         .len = sizeof(*args), \
