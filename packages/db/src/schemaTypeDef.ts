@@ -454,24 +454,13 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     const mainFields: FieldDef[] = []
     const restFields: FieldDef[] = []
 
-    const ALL_MAIN = false
     for (const f of vals) {
-      if (ALL_MAIN) {
-        mainFields.push(f)
-      } else {
-        if (f.seperate) {
-          restFields.push(f)
-        } else {
-          mainFields.push(f) // just 1
-        }
+      if (f.seperate) {
+        restFields.push(f)
       }
     }
-    mainFields.sort((a, b) => a.selvaField - b.selvaField)
-    restFields.sort((a, b) => a.selvaField - b.selvaField)
 
-    //console.log('\nnode_type:', i)
-    //console.log('mainFields:', mainFields)
-    //console.log('restFields:', restFields)
+    restFields.sort((a, b) => a.selvaField - b.selvaField)
 
     // TODO Remove this once the types agree
     const typeMap = {
@@ -485,12 +474,17 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       enum: 10,
       string: 11,
       references: 14,
+      muffer: 17,
     }
 
     // add MUFFER (main buffer)
 
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
-      if (f.type === 'reference' || f.type === 'references') {
+      // @ts-ignore
+      if (f.len && f.type == 'muffer') {
+        // max size is 64kb
+        return [typeMap[f.type], f.len]
+      } else if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
         const buf = Buffer.allocUnsafe(4)
 
@@ -504,10 +498,14 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         return [typeMap[f.type]]
       }
     }
+
     return Buffer.from([
-      mainFields.length,
-      //
-      ...mainFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+      1,
+      ...toSelvaSchemaBuf({
+        // @ts-ignore
+        type: 'muffer',
+        len: t.mainLen,
+      }),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
   })
