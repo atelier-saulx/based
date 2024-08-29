@@ -110,6 +110,7 @@ fn createSortIndex(
     try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
+    // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         db.ctx.selva.?,
         @bitCast(typePrefix),
