@@ -5,6 +5,7 @@ import { BasedDb, schema2selva } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import { Worker } from 'node:worker_threads'
 import { spawn } from 'node:child_process'
+import { text } from './examples.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -85,6 +86,14 @@ db.updateSchema({
       fields: {
         // age: { type: 'integer' },
         name: { type: 'string' },
+        flap: { type: 'string' },
+      },
+    },
+    xyz: {
+      fields: {
+        // age: { type: 'integer' },
+        name: { type: 'string' },
+        flap: { type: 'string' },
       },
     },
   },
@@ -101,15 +110,21 @@ for (let i = 0; i < s.length; i++) {
 }
 
 /*
-//         age: ~~(Math.random() * 99) + 1,
-//         name: 'Mr ' + i,
+  age: ~~(Math.random() * 99) + 1,
+  name: 'Mr ' + i,
 */
 
 var d = Date.now()
-for (let i = 0; i < 100e6; i++) {
+for (let i = 0; i < 1e5; i++) {
   db.create('user', {
-    name: 'Mr X!',
+    name: text,
+    // name: 'Mr X! dsfsdljf hsdfkjsdh ksdjfhsdk jhsdf',
+    // flap: 'BLA',
   })
+  //   db.create('xyz', {
+  //     name: 'Mr X!',
+  //     flap: 'BLA',
+  //   })
 }
 
 const dbTime = db.drain()

@@ -86,6 +86,7 @@ export type SchemaTypeDef = {
   stringFieldsCurrent: Buffer // size will be max field
   stringFieldsLoop: FieldDef[]
   responseCtx: BasedNode
+  // HELLO
 }
 
 const prefixStringToUint8 = (

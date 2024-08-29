@@ -11,4 +11,6 @@ pub usingnamespace @cImport({
     @cInclude("selva/db.h");
     @cInclude("selva/types.h");
     @cInclude("selva/fields.h");
+
+    @cInclude("selva_error.h");
 });

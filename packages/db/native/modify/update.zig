@@ -40,6 +40,12 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
     const shard = try getOrCreateShard(ctx);
     const data = batch[4..size];
 
+    // updateRef
+    // setRef()
+    // callBoth
+    // REFERENCES //
+    // 100 | 1, 48 , 49 99 | ||||||
+
     var currentData = db.readField(ctx.id, shard);
     if (currentData.len != 0) {
         var j: usize = 0;
