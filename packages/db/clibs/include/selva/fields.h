@@ -83,7 +83,10 @@ int selva_fields_get_reference_meta_mutable_string(struct SelvaNode *node, struc
  * Strings and references are returned as direct pointers to the data.
  */
 SELVA_EXPORT
-int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any);
+int selva_fields_get2(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any);
+
+SELVA_EXPORT
+int selva_fields_get(struct SelvaNode *node, field_t field, struct SelvaFieldsAny *any);
 
 /**
  * Delete field.
