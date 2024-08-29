@@ -481,8 +481,12 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
       // @ts-ignore
       if (f.len && f.type == 'muffer') {
-        // max size is 64kb
-        return [typeMap[f.type], f.len]
+        // max size is
+
+        const buf = Buffer.allocUnsafe(3)
+        buf[0] = typeMap[f.type]
+        buf.writeUint16LE(f.len)
+        return [...buf.values()]
       } else if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
         const buf = Buffer.allocUnsafe(4)
@@ -498,7 +502,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }
     }
 
-    return Buffer.from([
+    const x = Buffer.from([
       1,
       ...toSelvaSchemaBuf({
         // @ts-ignore
@@ -507,5 +511,9 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
+
+    console.info(new Uint8Array(x))
+
+    return x
   })
 }

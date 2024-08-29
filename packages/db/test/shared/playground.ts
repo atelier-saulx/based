@@ -114,6 +114,8 @@ for (let i = 0; i < s.length; i++) {
   name: 'Mr ' + i,
 */
 
+console.log('SNURP')
+
 var d = Date.now()
 for (let i = 0; i < 10e6; i++) {
   db.create('user', {
