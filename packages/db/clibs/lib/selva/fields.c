@@ -605,7 +605,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
 
 int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
 {
-    // printf("hello! %d len %zu \n", fs->type, len);
     return fields_set(db, node, fs, &node->fields, value, len);
 }
 
