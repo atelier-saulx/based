@@ -135,13 +135,12 @@ pub fn openShard(comptime create: bool, dbiName: DbName, txn: ?*c.MDB_txn) !Shar
     return s;
 }
 
-pub fn selvaGetField(node: *selva.SelvaNode, field: u8) ![]u8 {
-    var bla: selva.SelvaFieldsAny = undefined;
+pub fn selvaGetField(node: *selva.SelvaNode, field: u8) []u8 {
 
     // offset BUFFER len
-    try errors.selva(selva.selva_fields_get(node, @intCast(field), &bla));
+    const bla: selva.SelvaFieldsAny = selva.selva_fields_get(node, @intCast(field));
 
-    std.debug.print("hello {any}  \n", .{bla});
+    std.debug.print("hello {d} {any}  \n", .{ field, bla });
 
     // return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 

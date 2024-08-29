@@ -45,7 +45,7 @@ pub fn getFields(
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
-                main = try db.selvaGetField(selvaNode, 0);
+                main = db.selvaGetField(selvaNode, 0);
 
                 if (main.?.len > 0 and !idIsSet and start == null) {
                     idIsSet = true;
@@ -67,7 +67,7 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = try db.selvaGetField(selvaNode, field);
+        const value = db.selvaGetField(selvaNode, field);
 
         if (value.len == 0) {
             continue :includeField;
@@ -107,7 +107,7 @@ pub fn getFields(
 
     if (size == 0 and !idIsSet) {
         if (main == null) {
-            main = try db.selvaGetField(selvaNode, 0);
+            main = db.selvaGetField(selvaNode, 0);
 
             if (main.?.len > 0) {
                 idIsSet = true;

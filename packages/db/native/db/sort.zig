@@ -95,7 +95,7 @@ fn createSortIndex(
     lastId: u32,
 ) !void {
     const txn = try db.createTransaction(false);
-    const typePrefix = .{ name[1], name[2] };
+    const typePrefix: [2]u8 = .{ name[1], name[2] };
 
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
@@ -117,7 +117,7 @@ fn createSortIndex(
 
     if (field != 0) {
         var i: u32 = 0;
-        while (!i < lastId) : (i += 1) {
+        while (i < lastId) : (i += 1) {
             const selvaNode: ?*selva.SelvaNode = selva.selva_find_node(selvaTypeEntry.?, i);
 
             if (selvaNode == null) {
@@ -211,7 +211,7 @@ pub fn getOrCreateReadSortIndex(
     const name = getSortName(typePrefix, field, start);
     var s = db.ctx.sortIndexes.get(name);
     if (s == null) {
-        createSortIndex(name, start, len, field, fieldType, lastId, queryId) catch |err| {
+        createSortIndex(name, start, len, field, fieldType, lastId) catch |err| {
             std.log.err("Cannot create writeSortIndex name: {any} err: {any} \n", .{ name, err });
             return err;
         };
