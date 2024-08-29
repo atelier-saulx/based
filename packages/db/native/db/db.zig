@@ -136,10 +136,10 @@ pub fn openShard(comptime create: bool, dbiName: DbName, txn: ?*c.MDB_txn) !Shar
 }
 
 pub fn selvaGetField(node: *selva.SelvaNode, field: u8) ![]u8 {
-    var bla: ?selva.SelvaFieldsAny = null;
+    var bla: selva.SelvaFieldsAny = undefined;
 
     // offset BUFFER len
-    try errors.selva(selva.selva_fields_get(node, field, &bla));
+    try errors.selva(selva.selva_fields_get(node, @intCast(field), &bla));
 
     std.debug.print("hello {any}  \n", .{bla});
 

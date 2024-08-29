@@ -4,6 +4,8 @@ const std = @import("std");
 const db = @import("./db.zig");
 const readInt = @import("../utils.zig").readInt;
 
+const selva = @import("../selva.zig");
+
 pub const EMPTY_CHAR: [1]u8 = .{0};
 pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
 
@@ -82,6 +84,8 @@ pub fn writeToSortIndex(
     }
 }
 
+// integrate selva
+
 fn createSortIndex(
     name: db.SortDbiName,
     start: u16,
@@ -89,7 +93,6 @@ fn createSortIndex(
     field: u8,
     fieldType: u8,
     lastId: u32,
-    queryId: u32,
 ) !void {
     const txn = try db.createTransaction(false);
     const typePrefix = .{ name[1], name[2] };
@@ -107,60 +110,47 @@ fn createSortIndex(
     try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
-    const maxShards = db.idToShard(lastId);
-    var currentShard: u16 = 0;
+    const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
+        db.ctx.selva.?,
+        @bitCast(typePrefix),
+    );
 
     if (field != 0) {
-        shardLoop: while (currentShard <= maxShards) {
-            const n = db.getName(typePrefix, field, currentShard);
-            const valueShard = try db.getReadShard(n, queryId);
-            const origin = db.getName(typePrefix, 0, currentShard);
-            const shard = try db.getReadShard(origin, queryId);
-            var first: bool = true;
-            var end: bool = false;
-            currentShard += 1;
-            var flag: c_uint = c.MDB_FIRST;
-            while (!end) {
-                var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdb(c.mdb_cursor_get(shard.cursor, &key, &value, flag)) catch {
-                    end = true;
-                    continue :shardLoop;
-                };
-                if (first) {
-                    first = false;
-                    flag = c.MDB_NEXT;
-                }
-                var value2: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdb(c.mdb_cursor_get(valueShard.cursor, &key, &value2, c.MDB_SET)) catch {
-                    value2.mv_size = 1;
-                    value2.mv_data = EMPTY_CHAR_SLICE.ptr;
-                };
-                try writeToSortIndex(&value2, &key, start, len, cursor, field);
+        var i: u32 = 0;
+        while (!i < lastId) : (i += 1) {
+            const selvaNode: ?*selva.SelvaNode = selva.selva_find_node(selvaTypeEntry.?, i);
+
+            if (selvaNode == null) {
+                continue;
             }
+
+            // var value2: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+            // errors.mdb(c.mdb_cursor_get(valueShard.cursor, &key, &value2, c.MDB_SET)) catch {
+            //     value2.mv_size = 1;
+            //     value2.mv_data = EMPTY_CHAR_SLICE.ptr;
+            // };
+            // try writeToSortIndex(&value2, &key, start, len, cursor, field);
         }
     } else {
-        shardLoop: while (currentShard <= maxShards) {
-            const origin = db.getName(typePrefix, field, currentShard);
-            const shard = try db.getReadShard(origin, queryId);
-            var first: bool = true;
-            var end: bool = false;
-            currentShard += 1;
-            var flag: c_uint = c.MDB_FIRST;
-            while (!end) {
-                var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-                errors.mdb(c.mdb_cursor_get(shard.cursor, &key, &value, flag)) catch {
-                    end = true;
-                    continue :shardLoop;
-                };
-                try writeToSortIndex(&value, &key, start, len, cursor, field);
-                if (first) {
-                    first = false;
-                    flag = c.MDB_NEXT;
-                }
-            }
-        }
+        // const origin = db.getName(typePrefix, field, currentShard);
+        // const shard = try db.getReadShard(origin, queryId);
+        // var first: bool = true;
+        // var end: bool = false;
+        // currentShard += 1;
+        // var flag: c_uint = c.MDB_FIRST;
+        // while (!end) {
+        //     var key: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+        //     var value: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+        //     errors.mdb(c.mdb_cursor_get(shard.cursor, &key, &value, flag)) catch {
+        //         end = true;
+        //         continue :shardLoop;
+        //     };
+        //     try writeToSortIndex(&value, &key, start, len, cursor, field);
+        //     if (first) {
+        //         first = false;
+        //         flag = c.MDB_NEXT;
+        //     }
+        // }
     }
 
     try errors.mdb(c.mdb_txn_commit(txn));

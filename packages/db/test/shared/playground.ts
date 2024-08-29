@@ -117,7 +117,7 @@ for (let i = 0; i < s.length; i++) {
 console.log('SNURP')
 
 var d = Date.now()
-for (let i = 0; i < 10e6; i++) {
+for (let i = 0; i < 10; i++) {
   db.create('user', {
     time: 1,
     fun: 2,
@@ -134,6 +134,8 @@ for (let i = 0; i < 10e6; i++) {
 const dbTime = db.drain()
 
 console.log(Date.now() - d, dbTime, 'ms')
+
+console.log(db.query('user').get())
 
 // await db.start()
 
