@@ -747,13 +747,13 @@ int selva_fields_get_reference_meta_mutable_string(
 struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t field)
 {
     struct SelvaFieldsAny any;
-    const struct SelvaFieldInfo *nfo;
     void *p;
 
     if (field >= fields->nr_fields) {
         any.type = SELVA_FIELD_TYPE_NULL;
     } else {
-        nfo = &fields->fields_map[field];
+        const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+
         any.type = nfo->type;
         p = nfo2p(fields, nfo);
     }
