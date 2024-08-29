@@ -140,7 +140,8 @@ pub fn selvaGetField(node: *selva.SelvaNode, field: u8) []u8 {
     // offset BUFFER len
     const bla: selva.SelvaFieldsAny = selva.selva_fields_get(node, @intCast(field));
 
-    std.debug.print("hello {d} {any}  \n", .{ field, bla });
+    const x: i8 = @intCast(field);
+    std.debug.print("hello {d} {any} {d}  \n", .{ field, bla.type, x });
 
     // return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 

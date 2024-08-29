@@ -2,6 +2,7 @@ import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
 import { BasedDb, schema2selva } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
+import fs from 'node:fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -9,9 +10,9 @@ const dbFolder = resolve(join(__dirname, relativePath))
 
 await wait(100)
 
-// try {
-//   await fs.rm(dbFolder, { recursive: true })
-// } catch (err) {}
+try {
+  await fs.rm(dbFolder, { recursive: true })
+} catch (err) {}
 
 // // console.log(__dirname)
 // // const nr = 10
@@ -76,6 +77,8 @@ const db = new BasedDb({
   path: dbFolder,
 })
 
+await db.start()
+
 db.updateSchema({
   types: {
     user: {
@@ -98,8 +101,6 @@ db.updateSchema({
     },
   },
 })
-
-await db.start()
 
 let types = Object.keys(db.schemaTypesParsed)
 const s = schema2selva(db.schemaTypesParsed)

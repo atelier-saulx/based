@@ -25,6 +25,8 @@ pub fn getFields(
         return 0;
     }
 
+    std.debug.print("2 id {d}  \n", .{id});
+
     const selvaNode: *selva.SelvaNode = selvaNodeNull.?;
 
     var includeMain: []u8 = &.{};
@@ -106,20 +108,8 @@ pub fn getFields(
     }
 
     if (size == 0 and !idIsSet) {
-        if (main == null) {
-            main = db.selvaGetField(selvaNode, 0);
-
-            if (main.?.len > 0) {
-                idIsSet = true;
-                size += try addIdOnly(ctx, id, refLvl, start);
-            }
-        } else if (main.?.len > 0) {
-            const idSize = try addIdOnly(ctx, id, refLvl, start);
-
-            if (start == null) {
-                size += idSize;
-            }
-        }
+        idIsSet = true;
+        size += try addIdOnly(ctx, id, refLvl, start);
     }
 
     return size;
