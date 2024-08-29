@@ -485,7 +485,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
         const buf = Buffer.allocUnsafe(3)
         buf[0] = typeMap[f.type]
-        buf.writeUint16LE(f.len)
+        buf.writeUint16LE(f.len, 1)
         return [...buf.values()]
       } else if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
