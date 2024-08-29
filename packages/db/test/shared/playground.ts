@@ -84,14 +84,18 @@ db.updateSchema({
   types: {
     user: {
       fields: {
-        // age: { type: 'integer' },
+        age: { type: 'integer' },
+        time: { type: 'integer' },
+        fun: { type: 'integer' },
         name: { type: 'string' },
         flap: { type: 'string' },
       },
     },
     xyz: {
       fields: {
-        // age: { type: 'integer' },
+        age: { type: 'integer' },
+        time: { type: 'integer' },
+        fun: { type: 'integer' },
         name: { type: 'string' },
         flap: { type: 'string' },
       },
@@ -115,16 +119,18 @@ for (let i = 0; i < s.length; i++) {
 */
 
 var d = Date.now()
-for (let i = 0; i < 1e5; i++) {
+for (let i = 0; i < 10e6; i++) {
   db.create('user', {
-    name: text,
-    // name: 'Mr X! dsfsdljf hsdfkjsdh ksdjfhsdk jhsdf',
-    // flap: 'BLA',
+    time: 1,
+    fun: 2,
+    age: 99,
+    name: 'Mr ' + i,
   })
-  //   db.create('xyz', {
-  //     name: 'Mr X!',
-  //     flap: 'BLA',
-  //   })
+  // Relatively slow remove schema lookup
+  // db.create('xyz', {
+  //   name: 'Mr X!',
+  //   flap: 'BLA',
+  // })
 }
 
 const dbTime = db.drain()

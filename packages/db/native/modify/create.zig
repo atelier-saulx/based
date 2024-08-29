@@ -10,18 +10,10 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-// createNode(id, type)
-// createField()
-//
-
 pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     const operationSize = readInt(u32, batch, 0);
     const size = operationSize + 4;
     const data = batch[4..size];
-
-    // TODO: get rid of the field
-    // const shard = try getOrCreateShard(ctx);
-    // try db.writeField(ctx.id, data, shard);
 
     try errors.selva(selva.selva_fields_set(
         db.ctx.selva,
