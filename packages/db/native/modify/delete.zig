@@ -34,6 +34,8 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
     db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {};
 
+    ctx.selvaNode = null;
+
     return 0;
 }
 
@@ -46,5 +48,8 @@ pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
     db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {
         return 0;
     };
+
+    ctx.selvaNode = null;
+
     return 0;
 }

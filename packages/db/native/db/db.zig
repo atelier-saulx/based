@@ -231,6 +231,11 @@ pub fn selvaGetFieldSchema(field: u8, typeEntry: ?*selva.SelvaTypeEntry) !*selva
 
 pub fn selvaGetField(node: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) []u8 {
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
+
+    if (result.len == 0) {
+        std.debug.print("yo yo {any} \n", .{result});
+    }
+
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
 }
 
