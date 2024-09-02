@@ -235,7 +235,6 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
 {
     write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
-    io->sdb_write(&node->expire, sizeof(sdb_expire_t), 1, io);
     save_fields(io, db, &node->fields);
 }
 

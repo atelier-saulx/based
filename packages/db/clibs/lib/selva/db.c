@@ -35,6 +35,7 @@ static int SVector_SelvaNode_expire_compare(const void ** restrict a_raw, const 
 {
     const struct SelvaNode *a = *(const struct SelvaNode **)a_raw;
     const struct SelvaNode *b = *(const struct SelvaNode **)b_raw;
+#if 0
     int diff;
 
     assert(a && b);
@@ -43,6 +44,7 @@ static int SVector_SelvaNode_expire_compare(const void ** restrict a_raw, const 
     if (diff) {
         return diff;
     }
+#endif
 
     return a->node_id - b->node_id;
 }
@@ -263,9 +265,11 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 {
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
 
+#if 0
     if (node->expire) {
         /* TODO clear expire */
     }
+#endif
     /* TODO Remove aliases */
 
     selva_fields_destroy(db, node);
@@ -295,7 +299,9 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         node = prev;
     } else {
         memset(&node->trx_label, 0, sizeof(node->trx_label));
+#if 0
         node->expire = 0;
+#endif
         selva_fields_init(type, node);
         type->nr_nodes++;
     }

@@ -69,13 +69,6 @@ struct SelvaNode {
     node_type_t type;
     struct trx_label trx_label;
     RB_ENTRY(SelvaNode) _index_entry;
-#define SELVA_NODE_EXPIRE_EPOCH 1704067200000
-    /**
-     * Expiration timestamp for this node.
-     * 0 = never expires
-     * max_life = <epoch year>+(2^<bits>)/60/60/24/365
-     */
-    uint32_t expire;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
         /**
@@ -95,6 +88,16 @@ struct SelvaNode {
     } fields;
 };
 
+#if 0
+/* FIXME */
+#define SELVA_NODE_EXPIRE_EPOCH 1704067200000
+    /**
+     * Expiration timestamp for this node.
+     * 0 = never expires
+     * max_life = <epoch year>+(2^<bits>)/60/60/24/365
+     */
+    uint32_t expire;
+#endif
 #define SELVA_TO_EXPIRE(_ts_) ((uint32_t)((_ts_) - SELVA_HIERARCHY_EXPIRE_EPOCH))
 #define SELVA_FROM_EXPIRE(_expire_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH)
 #define SELVA_IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
