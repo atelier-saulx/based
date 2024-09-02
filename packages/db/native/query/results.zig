@@ -4,6 +4,8 @@ const db = @import("../db/db.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const utils = @import("../utils.zig");
 
+const std = @import("std");
+
 const readInt = utils.readInt;
 const writeInt = utils.writeInt;
 
@@ -29,7 +31,7 @@ pub fn createResultsBuffer(
         return null;
     }
 
-    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.totalResults + 4];
+    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     var lastRef: u16 = MAX_REF;
     var lastRefLvl: u8 = 0;
     var i: usize = 4;

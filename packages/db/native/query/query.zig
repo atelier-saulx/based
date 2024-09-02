@@ -183,5 +183,6 @@ inline fn getQueryInternal(
     }
 
     db.resetTxn(readTxn);
+
     return results.createResultsBuffer(&ctx, env);
 }

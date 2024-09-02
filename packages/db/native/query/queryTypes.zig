@@ -135,7 +135,7 @@ pub fn queryIdsSortBig(
         try map.put(ids[i], 0);
     }
 
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+    const selvaTypeEntry: *selva.SelvaTypeEntry = try db.getSelvaTypeEntry(typeId);
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -180,22 +180,9 @@ pub fn queryNonSort(
     var i: u32 = 1;
     var correctedForOffset: u32 = offset;
 
-    //   SELVA_EXPORT
-    //   int selva_fields_get(struct SelvaFields *fields, field_t field, struct SelvaFieldsAny *any);
-
-    // getField(id, field)
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
-
-    // TRAVERSAL
-    //
+    const selvaTypeEntry: *selva.SelvaTypeEntry = try db.getSelvaTypeEntry(typeId);
 
     checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
-        // if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
-        //     currentShard += 1;
-        // }
-
-        //  selva.
-
         if (!filter(i, typeId, conditions)) {
             continue :checkItem;
         }
@@ -225,7 +212,7 @@ pub fn querySort(
     include: []u8,
     sortBuffer: []u8,
 ) !void {
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+    const selvaTypeEntry: *selva.SelvaTypeEntry = try db.getSelvaTypeEntry(typeId);
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;

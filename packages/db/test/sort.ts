@@ -315,12 +315,9 @@ test.serial.only('sort', async (t) => {
     ],
   )
 
-  console.log('HELLO')
   db.remove('user', mrX)
 
   db.drain()
-
-  console.log('HELLO DONE')
 
   t.deepEqual(
     db
@@ -347,6 +344,10 @@ test.serial.only('sort', async (t) => {
       { id: 16, name: 'mr 9', age: 309 },
     ],
   )
+
+  console.log('hello')
+
+  t.true(true)
 
   // const mrBlurp = db.create('user', {
   //   age: 99,

@@ -104,7 +104,7 @@ pub fn getFields(
         try ctx.results.append(result);
     }
 
-    if (size == 0 and !idIsSet) {
+    if (!idIsSet) {
         idIsSet = true;
         size += try addIdOnly(ctx, id, refLvl, start);
     }
