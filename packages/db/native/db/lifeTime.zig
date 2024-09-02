@@ -24,7 +24,11 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     // inteprocess communication with queries etc - maybe add query on db and use workers behind it automaticluy
 
     const args = try napi.getArgs(2, napi_env, info);
-    const path = try napi.getStringFixedLength("createEnv", 256, napi_env, args[0]);
+    const path = try napi.getBuffer("createEnv", napi_env, args[0]);
+
+    std.debug.print("hello {any} \n", .{path.len});
+
+    std.debug.print("flap {any} \n", .{path});
 
     const readOnly = try napi.getBool("readOnly", napi_env, args[1]);
 
@@ -52,7 +56,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     // writable mmap
     flags |= c.MDB_WRITEMAP;
 
-    errors.mdb(c.mdb_env_open(db.ctx.env, &path, flags, 0o664)) catch |err| {
+    errors.mdb(c.mdb_env_open(db.ctx.env, path.ptr, flags, 0o664)) catch |err| {
         std.log.err("Open lmdb env {any}", .{err});
     };
 

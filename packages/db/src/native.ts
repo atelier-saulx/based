@@ -136,7 +136,8 @@ export default {
   },
 
   start: (path: string, readOnly: boolean) => {
-    return db.start(path, readOnly)
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.start(buf, readOnly)
   },
 
   stop: () => {

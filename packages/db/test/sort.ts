@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial.only('sort', async (t) => {
+test.serial('sort', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}

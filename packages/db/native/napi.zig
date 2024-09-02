@@ -47,7 +47,7 @@ pub fn getString(comptime name: []const u8, env: c.napi_env, value: c.napi_value
         return errors.Napi.CannotGetString;
     }
     var buffer: [*]u8 = undefined;
-    if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size + 1, null) != c.napi_ok) {
+    if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size, null) != c.napi_ok) {
         jsThrow(env, "Cannot get fixed length string for variable: " ++ name);
         return errors.Napi.CannotGetString;
     }
