@@ -319,12 +319,12 @@ struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
     return RB_MAX(SelvaNodeIndex, &type->nodes);
 }
 
-struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
+struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type __unused, struct SelvaNode *node)
 {
     return RB_NEXT(SelvaNodeIndex, &type->nodes, node);
 }
 
-struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
+struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type __unused, struct SelvaNode *node)
 {
     return RB_PREV(SelvaNodeIndex, &type->nodes, node);
 }
