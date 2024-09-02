@@ -190,7 +190,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     RB_INIT(&te->aliases.alias_by_name);
     RB_INIT(&te->aliases.alias_by_dest);
 
-    const size_t node_size = sizeof(struct SelvaNode) + count.nr_fields * sizeof(struct SelvaFieldInfo);
+    const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, count.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
 
 #if 0
