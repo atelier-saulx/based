@@ -1054,6 +1054,7 @@ static void destroy_fields(struct SelvaFields *fields)
     fields->nr_fields = 0;
     fields->data_len = 0;
     selva_free(PTAG_GETP(fields->data));
+    fields->data = NULL;
 }
 
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
