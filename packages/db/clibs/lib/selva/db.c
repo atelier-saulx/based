@@ -303,6 +303,26 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     return node;
 }
 
+struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type)
+{
+    return RB_MIN(SelvaNodeIndex, &type->nodes);
+}
+
+struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
+{
+    return RB_MAX(SelvaNodeIndex, &type->nodes);
+}
+
+struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
+{
+    return RB_NEXT(SelvaNodeIndex, &type->nodes, node);
+}
+
+struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
+{
+    return RB_PREV(SelvaNodeIndex, &type->nodes, node);
+}
+
 size_t selva_node_count(const struct SelvaTypeEntry *type)
 {
     return type->nr_nodes;

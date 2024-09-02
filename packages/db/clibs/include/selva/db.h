@@ -59,11 +59,32 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
 SELVA_EXPORT
 struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
 
+/**
+ * **Example**
+ * ```c
+ * for (struct SelvaNode *np = selva_min_node(type); np; np = selva_next_node(type, np))
+ * ```
+ */
 SELVA_EXPORT
-size_t selva_node_count(const struct SelvaTypeEntry *type);
+struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type);
+
+/**
+ * **Example**
+ * ```c
+ * for (struct SelvaNode *np = selva_max_node(type); np; np = selva_prev_node(type, np))
+ * ```
+ */
+SELVA_EXPORT
+struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type);
 
 SELVA_EXPORT
-size_t selva_alias_count(const struct SelvaTypeEntry *type);
+struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node);
+
+SELVA_EXPORT
+struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node);
+
+SELVA_EXPORT
+size_t selva_node_count(const struct SelvaTypeEntry *type);
 
 /**
  * Give a hint to page out a node type.
@@ -78,8 +99,14 @@ SELVA_EXPORT
 void selva_prefetch_type(struct SelvaTypeEntry *type);
 
 /**
+ * Get the number of aliases under given type.
+ */
+SELVA_EXPORT
+size_t selva_alias_count(const struct SelvaTypeEntry *type);
+
+/**
  * Set new alias.
- * new_alias must be allocated with selva_jemalloc.
+ * `new_alias` must be allocated with selva_jemalloc.
  */
 SELVA_EXPORT
 void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
