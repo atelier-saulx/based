@@ -21,7 +21,7 @@ pub fn getFields(
     const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, id);
 
     if (selvaNodeNull == null) {
-        std.debug.print("CANT FIND ID {d}\n", .{id});
+        // std.debug.print("CANT FIND ID {d}\n", .{id});
         return 0;
     }
 

@@ -315,8 +315,6 @@ test.serial.only('sort', async (t) => {
     ],
   )
 
-  console.info('_--------------')
-
   db.remove('user', mrX)
 
   db.drain()
@@ -347,47 +345,47 @@ test.serial.only('sort', async (t) => {
     ],
   )
 
-  // const mrBlurp = db.create('user', {
-  //   age: 99,
-  // })
+  const mrBlurp = db.create('user', {
+    age: 99,
+  })
 
-  // db.drain()
+  db.drain()
 
-  // t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
+  t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
 
-  // t.is(
-  //   db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
-  //     .length,
-  //   16,
-  // )
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
+      .length,
+    16,
+  )
 
-  // t.is(
-  //   db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
-  //     .length,
-  //   16,
-  // )
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
+      .length,
+    16,
+  )
 
-  // db.remove('user', mrBlurp)
+  db.remove('user', mrBlurp)
 
-  // db.drain()
+  db.drain()
 
-  // t.is(
-  //   db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
-  //     .length,
-  //   15,
-  // )
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
+      .length,
+    15,
+  )
 
-  // db.update('user', mrZ, {
-  //   email: '',
-  // })
+  db.update('user', mrZ, {
+    email: '',
+  })
 
-  // db.drain()
+  db.drain()
 
-  // t.is(
-  //   db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
-  //     .length,
-  //   15,
-  // )
+  t.is(
+    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
+      .length,
+    15,
+  )
 
   await db.destroy()
 })

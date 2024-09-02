@@ -5,6 +5,8 @@ const Modify = @import("./ctx.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
+// TODO maybe remove this completely
+
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
@@ -16,18 +18,14 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                 try sort.deleteField(ctx.id, currentData, sortIndex);
             }
         }
-
         return 0;
     }
-
     if (ctx.currentSortIndex != null) {
         const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
-
         sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?) catch {
             return 0;
         };
     }
-
     return 0;
 }
 
@@ -37,6 +35,5 @@ pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
-
     return 0;
 }
