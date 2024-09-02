@@ -1077,7 +1077,10 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
 
 static void reference_meta_create(struct SelvaNodeReference *ref, size_t nr_fields)
 {
-    struct SelvaFields *fields = selva_calloc(1, sizeof(*fields) + nr_fields * sizeof(struct SelvaFieldInfo));
+    struct SelvaFields *fields = selva_calloc(1, sizeof_wflex(struct SelvaFields, fields_map, nr_fields));
+#if 0
+    assert(sizeof(*fields) + nr_fields * sizeof(struct SelvaFieldInfo) == sizeof_wflex(struct SelvaFields, fields_map, nr_fields));
+#endif
     fields->nr_fields = nr_fields;
 
     share_fields(fields);
