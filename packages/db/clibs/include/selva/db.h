@@ -27,6 +27,12 @@ SELVA_EXPORT
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len);
 
 SELVA_EXPORT
+int selva_dump_save_async(struct SelvaDb *db, const char *filename);
+
+SELVA_EXPORT
+int selva_dump_load(const char *filename, struct SelvaDb **db_out);
+
+SELVA_EXPORT
 struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
 
 SELVA_EXPORT

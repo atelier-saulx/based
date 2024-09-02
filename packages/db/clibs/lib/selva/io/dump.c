@@ -13,10 +13,10 @@
 #include "util/selva_string.h"
 #include "util/timestamp.h"
 #include "selva/fields.h"
-#include "selva/io.h"
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
+#include "../io.h"
 #include "io_struct.h"
 
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
@@ -366,7 +366,7 @@ static void print_ready(
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash));
 }
 
-int io_dump_save_async(struct SelvaDb *db, const char *filename)
+int selva_dump_save_async(struct SelvaDb *db, const char *filename)
 {
     pid_t pid;
 
@@ -867,7 +867,7 @@ static struct SelvaDb *load_db(struct selva_io *io)
     return db;
 }
 
-int io_dump_load(const char *filename, struct SelvaDb **db_out)
+int selva_dump_load(const char *filename, struct SelvaDb **db_out)
 {
     struct selva_io io;
     struct timespec ts_start, ts_end;

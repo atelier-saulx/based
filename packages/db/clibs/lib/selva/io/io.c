@@ -10,9 +10,9 @@
 #include <string.h>
 #include "selva_error.h"
 #include "util/selva_string.h"
-#include "selva/io.h"
 #include "../db_panic.h"
 #include "sdb.h"
+#include "../io.h"
 #include "io_struct.h"
 
 __attribute__((pure))
@@ -21,20 +21,6 @@ static int valid_flags(enum selva_io_flags flags)
     return (!(flags & SELVA_IO_FLAGS_READ) ^ !(flags & SELVA_IO_FLAGS_WRITE)) ||
            (!(flags & SELVA_IO_FLAGS_FILE_IO) ^ !(flags & SELVA_IO_FLAGS_STRING_IO)) ||
            !(flags & _SELVA_IO_FLAGS_EN_COMPRESS);
-}
-
-static bool is_valid_sdb_name(const char *filename)
-{
-    size_t len = strlen(filename);
-    bool res = len > 0;
-
-    for (size_t i = 0; i < len; ++i) {
-        int c = filename[i];
-
-        res &= !!isalnum(c) || c == '-' || c == '.' || c == '_';
-    }
-
-    return res;
 }
 
 /**
@@ -80,7 +66,7 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
     FILE *file;
 
     flags |= SELVA_IO_FLAGS_FILE_IO;
-    if (!(valid_flags(flags) && is_valid_sdb_name(filename))) {
+    if (!(valid_flags(flags))) {
         return SELVA_EINVAL;
     }
 
