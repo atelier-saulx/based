@@ -230,8 +230,8 @@ pub fn selvaGetFieldSchema(field: u8, typeEntry: ?*selva.SelvaTypeEntry) !*selva
 }
 
 pub fn selvaGetField(node: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) []u8 {
-    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema, 0);
-    return @as([*]u8, @ptrCast(result.ptr))[result.off + 2 .. result.len + result.off];
+    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
+    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
 }
 
 pub fn selvaWriteField(d: []u8, selvaNode: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) !void {
