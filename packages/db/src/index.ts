@@ -4,6 +4,7 @@ import {
   FieldDef,
   SchemaTypeDef,
   createSchemaTypeDef,
+  schema2selva,
 } from './schemaTypeDef.js'
 import { deepMerge, deepCopy } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -157,6 +158,14 @@ export class BasedDb {
       join(this.fileSystemPath, 'schema.json'),
       JSON.stringify(this.schema),
     )
+
+    let types = Object.keys(this.schemaTypesParsed)
+    const s = schema2selva(this.schemaTypesParsed)
+    for (let i = 0; i < s.length; i++) {
+      // types
+      const type = this.schemaTypesParsed[types[i]]
+      this.native.updateSchemaType(type.prefixString, s[i])
+    }
     return this.schema
   }
 

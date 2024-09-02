@@ -102,14 +102,6 @@ db.updateSchema({
   },
 })
 
-let types = Object.keys(db.schemaTypesParsed)
-const s = schema2selva(db.schemaTypesParsed)
-for (let i = 0; i < s.length; i++) {
-  // types
-  const type = db.schemaTypesParsed[types[i]]
-  db.native.updateSchemaType(type.prefixString, s[i])
-}
-
 /*
   age: ~~(Math.random() * 99) + 1,
   name: 'Mr ' + i,

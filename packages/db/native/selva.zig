@@ -1,5 +1,7 @@
 // TODO advanced zig ⚡️
 pub usingnamespace @cImport({
+    @cDefine("__zig", "1");
+
     @cDefine("true", "(_Bool)1");
     @cDefine("false", "(_Bool)0");
     @cInclude("stdbool.h");
@@ -8,9 +10,13 @@ pub usingnamespace @cImport({
     @cDefine("true", "(_Bool)1");
     @cDefine("false", "(_Bool)0");
 
+    @cInclude("cdefs.h");
+
     @cInclude("selva/db.h");
     @cInclude("selva/types.h");
     @cInclude("selva/fields.h");
 
     @cInclude("selva_error.h");
+
+    @cInclude("util/selva_string.h");
 });

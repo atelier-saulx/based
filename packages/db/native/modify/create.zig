@@ -15,15 +15,7 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     const size = operationSize + 4;
     const data = batch[4..size];
 
-    // std.debug.print("hello {any} \n", .{data});
-
-    try errors.selva(selva.selva_fields_set(
-        db.ctx.selva,
-        ctx.selvaNode,
-        ctx.selvaFieldSchema,
-        data.ptr,
-        data.len,
-    ));
+    try db.selvaWriteField(data, ctx.selvaNode.?, ctx.selvaFieldSchema.?);
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

@@ -123,6 +123,7 @@ fn createSortIndex(
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
     const typeEntry = try db.getSelvaTypeEntry(typePrefix);
+    const fieldSchema = try db.selvaGetFieldSchema(field, typeEntry);
 
     var i: u32 = 0;
     while (i < lastId) : (i += 1) {
@@ -130,7 +131,7 @@ fn createSortIndex(
         if (selvaNode == null) {
             continue;
         }
-        const data = db.selvaGetField(selvaNode.?, field, typeEntry);
+        const data = db.selvaGetField(selvaNode.?, fieldSchema);
         try writeDataToSortIndex(i, data, start, len, cursor, field);
     }
 

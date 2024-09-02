@@ -218,15 +218,28 @@ pub fn getSelvaTypeEntry(typePrefix: [2]u8) !*selva.SelvaTypeEntry {
     return selvaTypeEntry.?;
 }
 
-pub fn selvaGetField(node: *selva.SelvaNode, field: u8, fieldSchema: ?*selva.SelvaTypeEntry) []u8 {
-    // offset BUFFER len
-    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selva.selva_get_fs_by_ns_field(
-        selva.selva_get_ns_by_te(fieldSchema.?),
+pub fn selvaGetFieldSchema(field: u8, typeEntry: ?*selva.SelvaTypeEntry) !*selva.SelvaFieldSchema {
+    const s: ?*selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
+        selva.selva_get_ns_by_te(typeEntry.?),
         @bitCast(field),
-    ), @intCast(field));
-    if (field == 0) {
-        return @as([*]u8, @ptrCast(result.ptr))[result.off + 2 .. result.len + result.off];
-    } else {
-        return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
+    );
+    if (s == null) {
+        return errors.SelvaError.SELVA_EINVAL;
     }
+    return s.?;
+}
+
+pub fn selvaGetField(node: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) []u8 {
+    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
+    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
+}
+
+pub fn selvaWriteField(d: []u8, selvaNode: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) !void {
+    try errors.selva(selva.selva_fields_set(
+        ctx.selva,
+        selvaNode,
+        selvaFieldSchema,
+        d.ptr,
+        d.len,
+    ));
 }
