@@ -23,20 +23,6 @@ static int valid_flags(enum selva_io_flags flags)
            !(flags & _SELVA_IO_FLAGS_EN_COMPRESS);
 }
 
-static bool is_valid_sdb_name(const char *filename)
-{
-    size_t len = strlen(filename);
-    bool res = len > 0;
-
-    for (size_t i = 0; i < len; ++i) {
-        int c = filename[i];
-
-        res &= !!isalnum(c) || c == '-' || c == '.' || c == '_';
-    }
-
-    return res;
-}
-
 /**
  * Init an io structure for a file.
  * Note that flags must be valid and validated before calling this function.
@@ -80,7 +66,7 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
     FILE *file;
 
     flags |= SELVA_IO_FLAGS_FILE_IO;
-    if (!(valid_flags(flags) && is_valid_sdb_name(filename))) {
+    if (!(valid_flags(flags))) {
         return SELVA_EINVAL;
     }
 
