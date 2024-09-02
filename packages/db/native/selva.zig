@@ -19,6 +19,4 @@ pub usingnamespace @cImport({
     @cInclude("selva_error.h");
 
     @cInclude("util/selva_string.h");
-
-    @cInclude("selva/io.h");
 });

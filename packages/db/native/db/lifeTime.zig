@@ -26,10 +26,6 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     const args = try napi.getArgs(2, napi_env, info);
     const path = try napi.getBuffer("createEnv", napi_env, args[0]);
 
-    std.debug.print("hello {any} \n", .{path.len});
-
-    std.debug.print("flap {any} \n", .{path});
-
     const readOnly = try napi.getBool("readOnly", napi_env, args[1]);
 
     try errors.mdb(c.mdb_env_create(&db.ctx.env));
@@ -60,7 +56,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         std.log.err("Open lmdb env {any}", .{err});
     };
 
-    // plz
+    // selva.se
     db.ctx.selva = selva.selva_db_create();
 
     return stat.statInternal(napi_env, true);
