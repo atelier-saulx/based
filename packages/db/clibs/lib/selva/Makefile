@@ -19,6 +19,7 @@ ifeq ($(uname_S),Darwin)
 endif
 
 OBJ := \
+	alias.o \
 	db.o \
 	db_panic.o \
 	fields.o \
