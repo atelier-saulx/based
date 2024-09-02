@@ -127,7 +127,6 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
 
     for (field_t field = 0; field < fields->nr_fields; field++) {
         struct SelvaFieldsAny any;
-        int err;
 
         any = selva_fields_get2(fields, field);
         if (any.type == SELVA_FIELD_TYPE_REFERENCE ||
