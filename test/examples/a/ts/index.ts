@@ -1,8 +1,8 @@
-export default async (based, { css, js, favicon }) => {
+export default async (_based, { css, js, favicon }) => {
   return `<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="shortcut icon" href="${favicon}"/>
+    <link rel="shortcut icon" href="${favicon.url}"/>
     <link rel="stylesheet" href="${css.url}" />
   </head>
   <body>

@@ -11,10 +11,13 @@ import { hash, hashCompact } from '@saulx/hash'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
 import { BasedClient } from '@based/client'
+import { minimatch } from 'minimatch'
+import fg from 'fast-glob'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
 import ts from 'typescript'
 
+const { glob } = fg
 const cwd = process.cwd()
 const rel = (str: string) => relative(cwd, str)
 const abs = (str: string, dir: string) =>
@@ -42,7 +45,8 @@ const types = {
   app: 'BasedAppFunction',
 }
 
-const invalidate = async (
+const warned = new Set()
+export const invalidate = async (
   fileName: string,
   config: Config,
 ): Promise<boolean> => {
@@ -77,12 +81,15 @@ const invalidate = async (
     }
   })
 
-  if (!hasType) {
+  if (hasType) {
+    warned.delete(fileName)
+  } else if (!warned.has(fileName)) {
     console.warn(
-      pc.yellow(
-        `missing type "${typeName}" in function "${config.name}" of type "${config.type}"`,
-      ),
+      `${pc.yellow(
+        `⚠️  missing type "${typeName}" in function "${config.name}" of type "${config.type}"`,
+      )} ${pc.dim(rel(fileName))}`,
     )
+    warned.add(fileName)
   }
 
   if (!hasExport) {
@@ -152,6 +159,7 @@ type Config = BasedFunctionConfig & {
     css?: string
     favicon?: string
   }
+  files?: string[]
 }
 
 type ConfigStore = {
@@ -163,7 +171,12 @@ type ConfigStore = {
   favicon?: string
 }
 
-const parseFunctions = async (functions: string[], onChange) => {
+export const parseFunctions = async (
+  functions: string[],
+  onChange,
+  publicPath: string,
+  staticPath: string,
+) => {
   let { targets, schema } = await getTargets()
   const configPaths = targets.map(([dir, file]) => join(dir, file))
 
@@ -195,10 +208,9 @@ const parseFunctions = async (functions: string[], onChange) => {
   }
 
   if (!configs.length) {
-    console.info(
-      pc.yellow(`No ${functions ? 'matching ' : ''}function configs found`),
-    )
-    return
+    const err = `No ${functions ? 'matching ' : ''}function configs found`
+    console.info(pc.yellow(err))
+    throw new Error(err)
   }
 
   // handle schema
@@ -234,9 +246,9 @@ const parseFunctions = async (functions: string[], onChange) => {
   const nodeEntryPoints: string[] = schema ? [schema] : []
   const browserEntryPoints: string[] = []
   const favicons = new Set<string>()
-
-  const cancelled = await Promise.any(
-    configs.map((configStore) => {
+  const files: Record<string, string> = {}
+  const invalids = await Promise.all(
+    configs.map(async (configStore) => {
       const { config, path, index, dir } = configStore
       const existingPath = paths[config.name]
       if (existingPath) {
@@ -261,13 +273,42 @@ const parseFunctions = async (functions: string[], onChange) => {
           return true
         }
 
-        configStore.app = abs(config.main, dir)
-        browserEntryPoints.push(configStore.app)
+        if (!('bundle' in config) || config.bundle) {
+          configStore.app = abs(config.main, dir)
+          browserEntryPoints.push(configStore.app)
 
-        if (config.favicon) {
-          configStore.favicon = abs(config.favicon, dir)
-          browserEntryPoints.push(configStore.favicon)
-          favicons.add(rel(configStore.favicon))
+          if (config.favicon) {
+            configStore.favicon = abs(config.favicon, dir)
+            browserEntryPoints.push(configStore.favicon)
+            favicons.add(rel(configStore.favicon))
+          }
+        }
+      }
+
+      if (config.files) {
+        const matched = await glob(config.files, { cwd: dir })
+        const outsideRootFile = matched.find((file) => file.startsWith('../'))
+
+        if (outsideRootFile) {
+          console.info(
+            pc.red(
+              `invalid "fields" defined for "${config.name}" - ${outsideRootFile} is not in ${dir}`,
+            ),
+          )
+          return true
+        }
+
+        if (!matched.length) {
+          console.info(
+            pc.red(
+              `invalid "fields" defined for "${config.name}" - no files matched`,
+            ),
+          )
+          return true
+        }
+
+        for (const file of matched) {
+          files[`${config.name}/${file}`] = file
         }
       }
 
@@ -277,9 +318,10 @@ const parseFunctions = async (functions: string[], onChange) => {
     }),
   )
 
+  const cancelled = invalids.find(Boolean)
+
   if (cancelled) {
-    console.info(pc.yellow(`deploy cancelled`))
-    return
+    throw new Error(`❌ deploy cancelled`)
   }
 
   // build the functions
@@ -293,9 +335,11 @@ const parseFunctions = async (functions: string[], onChange) => {
     ),
     bundle(
       {
+        publicPath,
         entryPoints: browserEntryPoints,
-        sourcemap: 'external',
+        sourcemap: 'inline',
         platform: 'browser',
+        bundle: true,
         define: {
           global: 'window',
           'process.env.NODE_ENV': '"production"',
@@ -305,7 +349,7 @@ const parseFunctions = async (functions: string[], onChange) => {
     ),
   ])
 
-  return { schema, configs, favicons, nodeBundles, browserBundles }
+  return { schema, configs, favicons, nodeBundles, browserBundles, files }
 }
 
 export const deploy = async (program: Command) => {
@@ -319,10 +363,11 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { nodeBundles, browserBundles, schema, favicons, configs } =
-        await parseFunctions(functions, watch && update)
       const { client, destroy } = await login(program)
       const { publicPath } = await client.call('based:env-info')
+      const { nodeBundles, browserBundles, schema, favicons, configs } =
+        await parseFunctions(functions, watch && update, publicPath, publicPath)
+
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()
 
@@ -418,20 +463,30 @@ export const deploy = async (program: Command) => {
           .map(({ index, app, favicon, config }) => {
             const js = nodeBundles.js(index)
             const sourcemap = nodeBundles.map(index)
+            const appJs = app && browserBundles.js(app)
+            let checksum
 
             if (app) {
-              const appJS = browserBundles.js(app)
               const appCss = browserBundles.css(app)
               const appFavicon =
                 favicon && outputs[browserBundles.find(favicon)]?.imports[0]
               config.appParams = {
-                js: assetsMap[appJS?.path],
+                js: assetsMap[appJs?.path],
                 css: assetsMap[appCss?.path],
                 favicon: assetsMap[appFavicon?.path],
               }
+
+              checksum = [
+                appJs?.hash,
+                appCss?.hash,
+                appFavicon?.path,
+                js.hash,
+                config,
+              ]
+            } else {
+              checksum = hash([js.hash, config])
             }
 
-            const checksum = hash([js.hash, config])
             deployed.add(checksum)
 
             return { checksum, config, js, sourcemap }

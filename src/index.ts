@@ -5,6 +5,7 @@ import { globalOptions } from './globalOptions.js'
 import { login } from './commands/login/index.js'
 import pc from 'picocolors'
 import { spinner } from './shared/spinner.js'
+import { dev } from './commands/dev/index.js'
 
 export const init = async () => {
   const program = new Command()
@@ -15,6 +16,7 @@ export const init = async () => {
       version(program),
       deploy(program),
       login(program),
+      dev(program),
     ])
 
     const opts = program.opts()

@@ -1,7 +1,11 @@
 import React from 'react'
 import * as ok from './a'
+import favicon from './favicon.ico'
 // import pkg from "../../../../package.json"
 
-console.log('????', ok)
+document.body.innerHTML = 'supercool'
 
-document.body.innerHTML = 'make it nice very nice'
+const img = document.createElement('img')
+img.src = favicon
+
+document.body.appendChild(img)

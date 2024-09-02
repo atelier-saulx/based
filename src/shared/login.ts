@@ -104,7 +104,10 @@ export const login = async (
     project,
   })
 
-  await client.setAuthState(admin.authState)
+  await client.setAuthState({
+    ...admin.authState,
+    type: 'based',
+  })
 
   console.info(`🧑 ${user.email}`)
 
