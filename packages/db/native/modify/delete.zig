@@ -17,10 +17,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             }
         }
 
-        db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {
-            return 0;
-        };
-
         return 0;
     }
 
@@ -32,8 +28,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         };
     }
 
-    db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {};
-
     return 0;
 }
 
@@ -43,9 +37,6 @@ pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
-    db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {
-        return 0;
-    };
 
     return 0;
 }

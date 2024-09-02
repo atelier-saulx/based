@@ -64,6 +64,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.currentSortIndex = null;
             }
             ctx.selvaFieldSchema = try db.selvaGetFieldSchema(ctx.field, ctx.selvaTypeEntry);
+        } else if (operationType == 10) {
+            db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {};
+            ctx.selvaNode = null;
+            i = i + 1;
         } else if (operationType == 9) {
             // create or get
             ctx.id = readInt(u32, operation, 0);

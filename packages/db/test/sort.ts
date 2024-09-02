@@ -315,6 +315,8 @@ test.serial.only('sort', async (t) => {
     ],
   )
 
+  console.info('_--------------')
+
   db.remove('user', mrX)
 
   db.drain()

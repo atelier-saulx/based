@@ -192,7 +192,7 @@ const addModify = (
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
-  const nextLen = 1 + 4 + 1
+  const nextLen = 1 + 4 + 1 + 1
   if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
     flushBuffer(db)
   }
@@ -210,6 +210,8 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       db.modifyBuffer.len++
     }
   }
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = 10
+  db.modifyBuffer.len++
   return true
 }
 
