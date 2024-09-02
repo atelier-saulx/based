@@ -126,12 +126,13 @@ fn createSortIndex(
     const fieldSchema = try db.selvaGetFieldSchema(field, typeEntry);
 
     var i: u32 = 0;
-    while (i < lastId) : (i += 1) {
+    while (i <= lastId) : (i += 1) {
         const selvaNode: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, i);
         if (selvaNode == null) {
             continue;
         }
         const data = db.selvaGetField(selvaNode.?, fieldSchema);
+
         try writeDataToSortIndex(i, data, start, len, cursor, field);
     }
 
