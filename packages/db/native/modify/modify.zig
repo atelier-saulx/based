@@ -101,11 +101,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.typeId[0] = batch[i + 1];
             ctx.typeId[1] = batch[i + 2];
 
-            ctx.selvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva, @bitCast(ctx.typeId));
+            ctx.selvaTypeEntry = try db.getSelvaTypeEntry(ctx.typeId);
 
             i = i + 3;
-            // lookup
-
         } else if (operationType == 3) {
             i += try createField(&ctx, operation) + 1;
         } else if (operationType == 4) {

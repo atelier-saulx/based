@@ -136,7 +136,7 @@ const dbTime = db.drain()
 
 console.log(Date.now() - d, dbTime, 'ms')
 
-console.log(db.query('user').range(0, 1e6).get())
+console.log(db.query('user').range(0, 1e6).sort('age').get())
 
 // await db.start()
 

@@ -135,21 +135,6 @@ pub fn openShard(comptime create: bool, dbiName: DbName, txn: ?*c.MDB_txn) !Shar
     return s;
 }
 
-pub fn selvaGetField(node: *selva.SelvaNode, field: u8, fieldSchema: ?*selva.SelvaTypeEntry) []u8 {
-
-    // offset BUFFER len
-    const bla: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selva.selva_get_fs_by_ns_field(
-        selva.selva_get_ns_by_te(fieldSchema.?),
-        @bitCast(field),
-    ), @intCast(field));
-
-    if (field == 0) {
-        return @as([*]u8, @ptrCast(bla.ptr))[bla.off + 2 .. bla.len + bla.off];
-    } else {
-        return @as([*]u8, @ptrCast(bla.ptr))[bla.off .. bla.len + bla.off];
-    }
-}
-
 pub inline fn closeShard(shard: Shard) void {
     c.mdb_cursor_close(shard.cursor);
 }
@@ -181,11 +166,9 @@ pub inline fn readField(id: u32, shard: Shard) []u8 {
 
 pub fn getField(id: u32, field: u8, typeId: TypeId, currentShard: u16, queryId: u32) []u8 {
     const dbiName = getName(typeId, field, @bitCast(currentShard));
-
     const shard = getReadShard(dbiName, queryId) catch {
         return &.{};
     };
-
     return readField(id, shard);
 }
 
@@ -218,4 +201,32 @@ pub fn getQueryId() u32 {
         lastQueryId = 0;
     }
     return lastQueryId;
+}
+
+// SELVA WRAPPERS
+pub fn getSelvaTypeEntry(typePrefix: [2]u8) !*selva.SelvaTypeEntry {
+    // make fn getSelvaTypeIndex
+    const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
+        ctx.selva.?,
+        @bitCast(typePrefix),
+    );
+
+    if (selvaTypeEntry == null) {
+        return errors.SelvaError.SELVA_EINTYPE;
+    }
+
+    return selvaTypeEntry.?;
+}
+
+pub fn selvaGetField(node: *selva.SelvaNode, field: u8, fieldSchema: ?*selva.SelvaTypeEntry) []u8 {
+    // offset BUFFER len
+    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selva.selva_get_fs_by_ns_field(
+        selva.selva_get_ns_by_te(fieldSchema.?),
+        @bitCast(field),
+    ), @intCast(field));
+    if (field == 0) {
+        return @as([*]u8, @ptrCast(result.ptr))[result.off + 2 .. result.len + result.off];
+    } else {
+        return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
+    }
 }

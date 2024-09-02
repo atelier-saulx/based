@@ -3,7 +3,6 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const db = @import("../db/db.zig");
 const selva = @import("../selva.zig");
-
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
@@ -157,6 +156,7 @@ pub fn queryIdsSortBig(
         if (!map.contains(id)) {
             continue :checkItem;
         }
+        // selva node
         if (!filter(id, typeId, conditions)) {
             continue :checkItem;
         }
@@ -185,6 +185,9 @@ pub fn queryNonSort(
 
     // getField(id, field)
     const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+
+    // TRAVERSAL
+    //
 
     checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
         // if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
@@ -222,6 +225,7 @@ pub fn querySort(
     include: []u8,
     sortBuffer: []u8,
 ) !void {
+    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
@@ -230,8 +234,6 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
-
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -263,6 +265,7 @@ pub fn querySort(
         }
 
         const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
