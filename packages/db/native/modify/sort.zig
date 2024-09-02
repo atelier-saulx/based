@@ -16,7 +16,7 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
         if (sort.hasReadSortIndex(sortIndexName)) {
             var sortIndex = ctx.sortIndexes.get(sortIndexName);
             if (sortIndex == null) {
-                sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.txn);
+                sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.sortWriteTxn);
                 try ctx.sortIndexes.put(sortIndexName, sortIndex.?);
             }
             try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, sortIndex.?);

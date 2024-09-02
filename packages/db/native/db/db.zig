@@ -243,3 +243,11 @@ pub fn selvaWriteField(d: []u8, selvaNode: *selva.SelvaNode, selvaFieldSchema: *
         d.len,
     ));
 }
+
+pub fn selvaDeleteNode(selvaNode: *selva.SelvaNode, typeEntry: ?*selva.SelvaTypeEntry) !void {
+    selva.selva_del_node(
+        ctx.selva,
+        typeEntry,
+        selvaNode,
+    );
+}

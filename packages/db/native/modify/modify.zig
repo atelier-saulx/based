@@ -36,21 +36,14 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     const allocator = arena.allocator();
 
-    // TODO: remove
-    const txn = try db.createTransaction(false);
-
     var i: usize = 0;
 
     var ctx: ModifyCtx = .{
         .field = undefined,
         .typeId = undefined,
         .id = undefined,
-        .currentShard = 0,
-        // can be gone as well
-        .txn = txn.?,
+        .sortWriteTxn = null,
         .currentSortIndex = null,
-        // shards can be remove
-        .shards = db.Shards.init(allocator),
         .sortIndexes = db.Indexes.init(allocator),
         .selvaNode = null,
         .selvaTypeEntry = null,
@@ -70,31 +63,18 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             } else {
                 ctx.currentSortIndex = null;
             }
-
-            // TODO REMOVE THIS
-
-            ctx.selvaFieldSchema = selva.selva_get_fs_by_ns_field(
-                selva.selva_get_ns_by_te(ctx.selvaTypeEntry),
-                @bitCast(ctx.field),
-            );
+            ctx.selvaFieldSchema = try db.selvaGetFieldSchema(ctx.field, ctx.selvaTypeEntry);
         } else if (operationType == 9) {
-
-            // create node
-            // i += try deleteFieldOnly(&ctx) + 1;
-
             // create or get
             ctx.id = readInt(u32, operation, 0);
-            ctx.currentShard = db.idToShard(ctx.id);
-
             ctx.selvaNode = selva.selva_upsert_node(ctx.selvaTypeEntry, ctx.id);
-            // std.log.err("CREATED AND GET PTR TO NODE {any} \n", .{ctx.selvaNode});
-
             i = i + 5;
         } else if (operationType == 1) {
             // SWITCH ID
-            // create or get
+            // get
             ctx.id = readInt(u32, operation, 0);
-            ctx.currentShard = db.idToShard(ctx.id);
+            ctx.selvaNode = selva.selva_find_node(ctx.selvaTypeEntry, ctx.id);
+
             i = i + 5;
         } else if (operationType == 2) {
             // SWITCH TYPE
@@ -123,7 +103,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         }
     }
 
-    try db.commitTxn(txn);
+    if (ctx.sortWriteTxn != null) {
+        try db.commitTxn(ctx.sortWriteTxn);
+    }
 
     return null;
 }

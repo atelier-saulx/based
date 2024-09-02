@@ -3,17 +3,12 @@ const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
-const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
-        const shard = try getOrCreateShard(ctx);
-        const currentData: []u8 = db.deleteField(ctx.id, shard) catch {
-            return 0;
-        };
-
         if (sort.hasMainSortIndexes(ctx.typeId)) {
+            const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
             var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
@@ -22,28 +17,34 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             }
         }
 
+        db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {
+            return 0;
+        };
+
         return 0;
     }
 
-    const shard = try getOrCreateShard(ctx);
-
-    const currentData: []u8 = db.deleteField(ctx.id, shard) catch sort.EMPTY_CHAR_SLICE;
-
     if (ctx.currentSortIndex != null) {
+        const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+
         sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?) catch {
             return 0;
         };
     }
 
+    db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {};
+
     return 0;
 }
 
 pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
-    const shard = try getOrCreateShard(ctx);
-    const currentData: ?[]u8 = db.deleteField(ctx.id, shard) catch null;
-    if (ctx.currentSortIndex != null and currentData != null) {
-        try sort.deleteField(ctx.id, currentData.?, ctx.currentSortIndex.?);
+    if (ctx.currentSortIndex != null) {
+        const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+        try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
+    db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {
+        return 0;
+    };
     return 0;
 }
