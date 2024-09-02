@@ -63,6 +63,10 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 }
 
 fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+    selva.selva_db_destroy(db.ctx.selva);
+
+    db.ctx.selva = null;
+
     var it = db.ctx.readShards.iterator();
     while (it.next()) |item| {
         const readShard = item.value_ptr.*;

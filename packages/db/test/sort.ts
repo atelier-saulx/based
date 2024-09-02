@@ -345,10 +345,6 @@ test.serial.only('sort', async (t) => {
     ],
   )
 
-  console.log('hello')
-
-  t.true(true)
-
   // const mrBlurp = db.create('user', {
   //   age: 99,
   // })
@@ -391,7 +387,7 @@ test.serial.only('sort', async (t) => {
   //   15,
   // )
 
-  // await db.destroy()
+  await db.destroy()
 })
 
 test.serial('sort - from start (1.5M items)', async (t) => {
