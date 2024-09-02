@@ -34,7 +34,7 @@ struct SelvaNodeWeakReferences {
 struct SelvaMicroBuffer {
     uint16_t len;
     uint8_t data[] __counted_by(len);
-} __attribute__((packed)); /* zig hack. */
+} __packed;
 
 struct SelvaFieldsAny {
     enum SelvaFieldType type; /*!< Type of the value. */
@@ -95,7 +95,7 @@ SELVA_EXPORT
 struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field);
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 /**
  * Delete field.

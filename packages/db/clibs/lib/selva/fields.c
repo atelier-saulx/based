@@ -850,25 +850,64 @@ static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *
     }
 }
 
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
 
-    if (field >= fields->nr_fields) {
+    if (fs->field >= fields->nr_fields) {
         return (struct SelvaFieldsPointer){};
     }
 
-    nfo = &fields->fields_map[field];
+    nfo = &fields->fields_map[fs->field];
 
-    return (struct SelvaFieldsPointer){
+    switch (nfo->type) {
+    case SELVA_FIELD_TYPE_NULL:
+    case SELVA_FIELD_TYPE_TIMESTAMP:
+    case SELVA_FIELD_TYPE_CREATED:
+    case SELVA_FIELD_TYPE_UPDATED:
+    case SELVA_FIELD_TYPE_NUMBER:
+    case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_UINT64:
+    case SELVA_FIELD_TYPE_BOOLEAN:
+    case SELVA_FIELD_TYPE_ENUM:
+    case SELVA_FIELD_TYPE_TEXT:
+    case SELVA_FIELD_TYPE_REFERENCE:
+    case SELVA_FIELD_TYPE_REFERENCES:
+    case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+    case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+        return (struct SelvaFieldsPointer){
 #if 0
-        .type = nfo->type,
+            .type = nfo->type,
 #endif
-        .ptr = (uint8_t *)PTAG_GETP(fields->data),
-        .off = (nfo->off << 3),
-        .len = selva_fields_get_data_size(fs),
-    };
+            .ptr = (uint8_t *)PTAG_GETP(fields->data),
+            .off = (nfo->off << 3),
+            .len = selva_fields_get_data_size(fs),
+        };
+    case SELVA_FIELD_TYPE_STRING:
+        do {
+            const struct selva_string *s = (const struct selva_string *)((uint8_t *)PTAG_GETP(fields->data) + (nfo->off << 3));
+            size_t len;
+            const char *str = selva_string_to_str(s, &len);
+            return (struct SelvaFieldsPointer){
+                .ptr = (uint8_t *)str,
+                .off = 0,
+                .len = len,
+            };
+        } while (0);
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        return (struct SelvaFieldsPointer){
+#if 0
+            .type = nfo->type,
+#endif
+            .ptr = (uint8_t *)PTAG_GETP(fields->data),
+            .off = (nfo->off << 3) + sizeof_field(struct SelvaMicroBuffer, len),
+            .len = selva_fields_get_data_size(fs) - sizeof_field(struct SelvaMicroBuffer, len),
+        };
+    }
+    db_panic("Invalid type");
 }
 
 static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, field_t field)
