@@ -12,9 +12,9 @@
 #include "libdeflate.h"
 #include "util/endian.h"
 #include "util/selva_string.h"
+#include "selva/io.h"
 #include "selva_error.h"
 #include "../db_panic.h"
-#include "../io.h"
 #include "io_struct.h"
 #include "sdb.h"
 

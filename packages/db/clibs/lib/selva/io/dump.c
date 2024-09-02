@@ -13,10 +13,10 @@
 #include "util/selva_string.h"
 #include "util/timestamp.h"
 #include "selva/fields.h"
+#include "selva/io.h"
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
-#include "../io.h"
 #include "io_struct.h"
 
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0

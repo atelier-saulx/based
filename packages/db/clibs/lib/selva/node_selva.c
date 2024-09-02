@@ -13,12 +13,12 @@
 #include "selva/fields.h"
 #include "selva/filter.h"
 #include "selva/find.h"
+#include "selva/io.h"
 #include "selva/traverse.h"
 #include "selva/types.h"
 #include "selva_error.h"
 #include "db.h"
 #include "update.h"
-#include "io.h"
 
 static napi_valuetype selva_napi_get_nvaluetype(napi_env env, napi_value value)
 {

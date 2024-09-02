@@ -10,9 +10,9 @@
 #include <string.h>
 #include "selva_error.h"
 #include "util/selva_string.h"
+#include "selva/io.h"
 #include "../db_panic.h"
 #include "sdb.h"
-#include "../io.h"
 #include "io_struct.h"
 
 __attribute__((pure))
