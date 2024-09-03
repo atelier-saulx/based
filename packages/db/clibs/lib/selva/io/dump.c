@@ -454,7 +454,7 @@ int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t
     int status, err;
 
     pid = waitpid(child, &status, WNOHANG);
-    if (pid < 0) {
+    if (pid <= 0) {
         return SELVA_EINPROGRESS;
     }
 
