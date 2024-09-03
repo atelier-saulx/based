@@ -14,28 +14,19 @@ pub fn stop(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.nap
     return stopInternal(napi_env, info) catch return null;
 }
 
-fn getOptPath(env: c.napi_env, value: c.napi_value, comptime name: []const u8) !?[]u8 {
+fn getOptPath(
+    env: c.napi_env,
+    value: c.napi_value,
+) !?[]u8 {
     const t = try napi.getType(env, value);
-
-    return if (!(t == c.napi_null or t == c.napi_undefined))
-        try napi.getBuffer(name, env, value)
-    else
-        null;
+    return if (!(t == c.napi_null or t == c.napi_undefined)) try napi.get([]u8, env, value) else null;
 }
 
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-
-    // add extra args
-    // READONLY
-    // read only needs to be set on global var
-    // if readonly sort indexes need to be created from the write worker
-    // make a seperate method to create a or get a sort index from js
-    // inteprocess communication with queries etc - maybe add query on db and use workers behind it automaticluy
-
     const args = try napi.getArgs(3, napi_env, info);
-    const path = try napi.getBuffer("createEnv", napi_env, args[0]);
-    const readOnly = try napi.getBool("readOnly", napi_env, args[1]);
-    const sdb_filename = try getOptPath(napi_env, args[2], "sdb_filename");
+    const path = try napi.get([]u8, napi_env, args[0]);
+    const readOnly = try napi.get(bool, napi_env, args[1]);
+    const sdb_filename = try getOptPath(napi_env, args[2]);
 
     try errors.mdb(c.mdb_env_create(&db.ctx.env));
     errdefer c.mdb_env_close(db.ctx.env);

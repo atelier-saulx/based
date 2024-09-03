@@ -28,8 +28,8 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
-    const batch = try napi.getBuffer("modifyBatch", env, args[0]);
-    const size = try napi.getInt32("batchSize", env, args[1]);
+    const batch = try napi.get([]u8, env, args[0]);
+    const size = try napi.get(u32, env, args[1]);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
