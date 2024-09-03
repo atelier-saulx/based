@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,7 @@
 #include "jemalloc.h"
 #include "util/ctime.h"
 #include "util/selva_string.h"
+#include "util/sigstr.h"
 #include "util/timestamp.h"
 #include "selva/fields.h"
 #include "selva_error.h"
@@ -385,7 +387,7 @@ int selva_dump_save_async(struct SelvaDb *db, const char *filename)
         }
 
         save_db(&io, db);
-        selva_io_end(&io, NULL, hash);
+        selva_io_end(&io, hash);
 
         ts_monotime(&ts_end);
         print_ready("save", &ts_start, &ts_end, &io);
@@ -400,6 +402,73 @@ int selva_dump_save_async(struct SelvaDb *db, const char *filename)
     }
 
     return 0;
+}
+
+
+static size_t format_errmsg(char *out_buf, size_t out_len, const char * format, ...)
+{
+    va_list args;
+    int r;
+
+    va_start(args, format);
+    r = vsnprintf(out_buf , out_len, format, args);
+    va_end(args);
+
+    return r > 0 && (size_t)r < out_len ? r : 0;
+}
+
+/**
+ * Translate child exit status into a selva_error and log messages.
+ */
+static int handle_child_status(pid_t pid, int status, char *out_buf, size_t *out_len)
+{
+    if (WIFEXITED(status)) {
+        int code = WEXITSTATUS(status);
+
+        if (code != 0) {
+            *out_len = format_errmsg(out_buf, *out_len,
+                                     "child %d terminated with exit code: %d",
+                                     (int)pid, code);
+            return SELVA_EGENERAL;
+        }
+    } else if (WIFSIGNALED(status)) {
+        int termsig = WTERMSIG(status);
+            *out_len = format_errmsg(out_buf, *out_len,
+                     "child %d killed by signal SIG%s (%s)%s",
+                     (int)pid, sigstr_abbrev(termsig), sigstr_descr(termsig),
+                     (WCOREDUMP(status)) ? " (core dumped)" : NULL);
+        return SELVA_EGENERAL;
+    } else {
+            *out_len = format_errmsg(out_buf, *out_len,
+                                     "child %d terminated abnormally", pid);
+        return SELVA_EGENERAL;
+    }
+
+    *out_len = 0;
+    return 0;
+}
+
+int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len)
+{
+    pid_t pid;
+    int status, err;
+
+    pid = waitpid(child, &status, WNOHANG);
+    if (pid < 0) {
+        return SELVA_EINPROGRESS;
+    }
+
+    err = handle_child_status(pid, status, out_buf, out_len);
+    if (err) {
+        return err;
+    }
+
+    err = selva_io_quick_verify(filename);
+    if (err) {
+        return err;
+    }
+
+    return err;
 }
 
 static void load_schema(struct selva_io *io, struct SelvaDb *db)
@@ -882,7 +951,7 @@ int selva_dump_load(const char *filename, struct SelvaDb **db_out)
     }
 
     db = load_db(&io);
-    selva_io_end(&io, NULL, NULL);
+    selva_io_end(&io, NULL);
 
     ts_monotime(&ts_end);
     print_ready("load", &ts_start, &ts_end, &io);

@@ -10,6 +10,17 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) void {
     }
 }
 
+pub fn getType(env: c.napi_env, value: c.napi_value) !c.napi_valuetype {
+    var t: c.napi_valuetype = undefined;
+
+    if (c.napi_typeof(env, value, &t) != c.napi_ok) {
+        jsThrow(env, "Failed to get args.");
+        return errors.Napi.CannotGetType;
+    }
+
+    return t;
+}
+
 pub fn getArgs(comptime totalArgs: comptime_int, env: c.napi_env, info: c.napi_callback_info) ![totalArgs]c.napi_value {
     var argv: [totalArgs]c.napi_value = undefined;
     var size: usize = totalArgs;
@@ -68,6 +79,15 @@ pub fn getStringFixedLength(comptime name: []const u8, comptime len: comptime_in
 pub fn getInt32(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !u32 {
     var res: u32 = undefined;
     if (c.napi_get_value_int32(env, value, @ptrCast(&res)) != c.napi_ok) {
+        jsThrow(env, "Cannot get Int32 for variable: " ++ name);
+        return errors.Napi.CannotGetInt32;
+    }
+    return res;
+}
+
+pub fn getInt32_2(comptime name: []const u8, env: c.napi_env, value: c.napi_value) !i32 {
+    var res: i32 = undefined;
+    if (c.napi_get_value_uint32(env, value, @ptrCast(&res)) != c.napi_ok) {
         jsThrow(env, "Cannot get Int32 for variable: " ++ name);
         return errors.Napi.CannotGetInt32;
     }

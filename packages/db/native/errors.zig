@@ -16,7 +16,9 @@ pub const Napi = error{
     CannotInitCtx,
     CannotGetString,
     CannotGetInt32,
+    CannotGetUint32,
     CannotGetUint64,
+    CannotGetType,
 };
 
 pub const SelvaError = error{
