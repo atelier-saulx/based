@@ -827,7 +827,9 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
         break;
     }
 
+#if 0
     printf("get field %d type %d\n", field, any.type);
+#endif
     return any;
 }
 
