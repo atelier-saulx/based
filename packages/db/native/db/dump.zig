@@ -10,7 +10,9 @@ pub fn save(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.nap
     var result: c.napi_value = null;
 
     const pid = selva.selva_dump_save_async(db.ctx.selva, sdb_filename.ptr);
-    errors.selva(pid) catch return null;
+    if (pid < 0) {
+        errors.selva(pid) catch return null;
+    }
 
     _ = c.napi_create_int32(napi_env, pid, &result);
     return result;
