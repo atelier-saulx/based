@@ -155,6 +155,7 @@ fn createSortIndex(
     flags |= c.MDB_DUPSORT;
     flags |= c.MDB_DUPFIXED;
     flags |= c.MDB_INTEGERDUP;
+
     if (fieldType == 5 or fieldType == 4 or fieldType == 1) {
         flags |= c.MDB_INTEGERKEY;
     }
@@ -162,17 +163,16 @@ fn createSortIndex(
     try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
-    const typeEntry = try db.getTypeEntry(typePrefix);
-    const fieldSchema = try db.selvaGetFieldSchema(field, typeEntry);
+    const typeEntry = try db.getType(typePrefix);
+    const fieldSchema = try db.getFieldSchema(field, typeEntry);
 
     var i: u32 = 0;
     while (i <= lastId) : (i += 1) {
-        const selvaNode: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, i);
-        if (selvaNode == null) {
+        const node = db.getNode(i, typeEntry);
+        if (node == null) {
             continue;
         }
-        const data = db.selvaGetField(selvaNode.?, fieldSchema);
-
+        const data = db.getField(node.?, fieldSchema);
         try writeDataToSortIndex(i, data, start, len, cursor, field);
     }
 

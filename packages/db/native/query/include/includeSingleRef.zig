@@ -29,7 +29,7 @@ pub fn getSingleRefFields(
         return 0;
     }
 
-    const typeEntry = db.getTypeEntry(typeId) catch null;
+    const typeEntry = db.getType(typeId) catch null;
 
     if (typeEntry == null) {
         return 0;

@@ -18,7 +18,7 @@ pub fn queryId(
     conditions: []u8,
     include: []u8,
 ) !void {
-    const typeEntry = try db.getTypeEntry(typeId);
+    const typeEntry = try db.getType(typeId);
     // pass this refactor single ref
     const node = db.getNode(id, typeEntry);
 
@@ -44,7 +44,7 @@ pub fn queryIds(
     conditions: []u8,
     include: []u8,
 ) !void {
-    const typeEntry = try db.getTypeEntry(typeId);
+    const typeEntry = try db.getType(typeId);
 
     var i: u32 = 0;
     checkItem: while (i <= ids.len) : (i += 4) {
@@ -80,7 +80,7 @@ pub fn query(
     var i: u32 = 1;
     var correctedForOffset: u32 = offset;
 
-    const typeEntry = try db.getTypeEntry(typeId);
+    const typeEntry = try db.getType(typeId);
 
     checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
         const node = db.getNode(i, typeEntry);

@@ -14,7 +14,7 @@ pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+            const currentData = db.getField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
             var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
@@ -24,12 +24,12 @@ pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+        const currentData = db.getField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
 
-    try db.selvaWriteField(data, ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+    try db.writeField(data, ctx.selvaNode.?, ctx.selvaFieldSchema.?);
 
     return size;
 }
@@ -39,7 +39,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
     const size = operationSize + 4;
     const data = batch[4..size];
 
-    var currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+    var currentData = db.getField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
 
     if (currentData.len != 0) {
         var j: usize = 0;

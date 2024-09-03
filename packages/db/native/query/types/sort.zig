@@ -37,7 +37,7 @@ pub fn queryIdsSort(
     var first: bool = true;
     var lastCheck: usize = ids.len;
 
-    const typeEntry = try db.getTypeEntry(typeId);
+    const typeEntry = try db.getType(typeId);
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -108,7 +108,7 @@ pub fn queryIdsSortBig(
         try map.put(ids[i], 0);
     }
 
-    const typeEntry = try db.getTypeEntry(typeId);
+    const typeEntry = try db.getType(typeId);
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -163,7 +163,7 @@ pub fn querySort(
 ) !void {
     const readTxn = try sort.initReadTxn();
     sort.renewTx(readTxn);
-    const typeEntry = try db.getTypeEntry(typeId);
+    const typeEntry = try db.getType(typeId);
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
 
     var end: bool = false;

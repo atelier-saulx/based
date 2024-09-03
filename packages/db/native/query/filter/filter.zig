@@ -28,10 +28,10 @@ pub fn filter(
         if (field == 254) {
             const refTypePrefix: [2]u8 = .{ operation[4], operation[5] };
             if (main == null) {
-                const fieldSchema = db.selvaGetFieldSchema(0, typeEntry) catch {
+                const fieldSchema = db.getFieldSchema(0, typeEntry) catch {
                     return false;
                 };
-                main = db.selvaGetField(node, fieldSchema);
+                main = db.getField(node, fieldSchema);
                 if (main.?.len == 0) {
                     return false;
                 }
@@ -41,7 +41,7 @@ pub fn filter(
             if (refId > 0) {
                 const refConditions: []u8 = operation[6 .. 2 + querySize];
 
-                const refTypeEntry = db.getTypeEntry(refTypePrefix) catch {
+                const refTypeEntry = db.getType(refTypePrefix) catch {
                     return false;
                 };
                 // pass this refactor single ref
@@ -61,10 +61,10 @@ pub fn filter(
             const query = operation[2 .. 2 + querySize];
             if (field == 0) {
                 if (main == null) {
-                    const fieldSchema = db.selvaGetFieldSchema(field, typeEntry) catch {
+                    const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                         return false;
                     };
-                    main = db.selvaGetField(node, fieldSchema);
+                    main = db.getField(node, fieldSchema);
                     if (main.?.len == 0) {
                         return false;
                     }
@@ -73,10 +73,10 @@ pub fn filter(
                     return false;
                 }
             } else {
-                const fieldSchema = db.selvaGetFieldSchema(field, typeEntry) catch {
+                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                     return false;
                 };
-                const value = db.selvaGetField(node, fieldSchema);
+                const value = db.getField(node, fieldSchema);
                 if (value.len == 0) {
                     return false;
                 }

@@ -10,6 +10,12 @@ pub const Indexes = std.AutoHashMap(sort.SortDbiName, sort.SortIndex);
 
 pub const StartSet = std.AutoHashMap(u16, u8);
 
+pub const Node = *selva.SelvaNode;
+
+pub const Type = *selva.SelvaTypeEntry;
+
+pub const FieldSchema = *selva.SelvaFieldSchema;
+
 pub const DbCtx = struct {
     initialized: bool,
     allocator: std.mem.Allocator,
@@ -48,8 +54,7 @@ pub fn getQueryId() u32 {
     return lastQueryId;
 }
 
-// SELVA WRAPPERS
-pub fn getTypeEntry(typePrefix: TypeId) !*selva.SelvaTypeEntry {
+pub fn getType(typePrefix: TypeId) !Type {
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
@@ -63,7 +68,7 @@ pub fn getTypeEntry(typePrefix: TypeId) !*selva.SelvaTypeEntry {
     return selvaTypeEntry.?;
 }
 
-pub fn selvaGetFieldSchema(field: u8, typeEntry: ?*selva.SelvaTypeEntry) !*selva.SelvaFieldSchema {
+pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
     const s: ?*selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
         selva.selva_get_ns_by_te(typeEntry.?),
         @bitCast(field),
@@ -74,30 +79,30 @@ pub fn selvaGetFieldSchema(field: u8, typeEntry: ?*selva.SelvaTypeEntry) !*selva
     return s.?;
 }
 
-pub fn selvaGetField(node: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) []u8 {
+pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
 
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
 }
 
-pub fn selvaWriteField(data: []u8, selvaNode: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) !void {
+pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
-        selvaNode,
-        selvaFieldSchema,
+        node,
+        fieldSchema,
         data.ptr,
         data.len,
     ));
 }
 
-pub fn selvaDeleteNode(selvaNode: *selva.SelvaNode, typeEntry: ?*selva.SelvaTypeEntry) !void {
+pub fn deleteNode(node: Node, typeEntry: Type) !void {
     selva.selva_del_node(
         ctx.selva,
         typeEntry,
-        selvaNode,
+        node,
     );
 }
 
-pub fn getNode(id: u32, typeEntry: *selva.SelvaTypeEntry) ?*selva.SelvaNode {
+pub fn getNode(id: u32, typeEntry: Type) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
