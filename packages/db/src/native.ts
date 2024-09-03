@@ -155,7 +155,8 @@ export default {
 
   isSaveReady: (pid: number, path: string): boolean => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    const errBuf = Buffer.allocUnsafe(80)
+    console.log(buf)
+    const errBuf = Buffer.alloc(80)
     return db.isSaveReady(pid, buf, errBuf)
   },
 
