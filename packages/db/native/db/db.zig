@@ -79,7 +79,6 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 
 pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
-
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
 }
 
@@ -101,9 +100,12 @@ pub fn deleteNode(node: Node, typeEntry: Type) !void {
     );
 }
 
-pub fn upsertNode(id: u32, typeEntry: Type) Node {
-    // add error handling
-    return selva.selva_upsert_node(typeEntry, id).?;
+pub fn upsertNode(id: u32, typeEntry: Type) !Node {
+    const node = selva.selva_upsert_node(typeEntry, id);
+    if (node == null) {
+        return errors.SelvaError.SELVA_CANNOT_UPSERT;
+    }
+    return node.?;
 }
 
 pub fn getNode(id: u32, typeEntry: Type) ?Node {

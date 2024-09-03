@@ -37,6 +37,7 @@ pub const SelvaError = error{
 
     // Other errors
     UNKNOWN_ERROR,
+    SELVA_CANNOT_UPSERT,
 };
 
 pub fn selva(rc: c_int) SelvaError!void {
