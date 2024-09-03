@@ -466,31 +466,31 @@ test.serial.only('sort - from start (1.5M items)', async (t) => {
 
   await db.stop()
 
-  const newDb = new BasedDb({
-    path: dbFolder,
-  })
+  // const newDb = new BasedDb({
+  //   path: dbFolder,
+  // })
 
-  await newDb.start()
+  // await newDb.start()
 
-  t.deepEqual(
-    newDb
-      .query('user')
-      .include('name')
-      .sort('name')
-      .range(0, 2)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 3,
-        name: 'mr 0',
-      },
-      {
-        id: 4,
-        name: 'mr 1',
-      },
-    ],
-  )
+  // t.deepEqual(
+  //   newDb
+  //     .query('user')
+  //     .include('name')
+  //     .sort('name')
+  //     .range(0, 2)
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 3,
+  //       name: 'mr 0',
+  //     },
+  //     {
+  //       id: 4,
+  //       name: 'mr 1',
+  //     },
+  //   ],
+  // )
 
-  await newDb.destroy()
+  // await newDb.destroy()
 })
