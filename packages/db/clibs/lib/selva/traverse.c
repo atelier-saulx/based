@@ -4,10 +4,10 @@
  */
 #include <sys/types.h>
 #include "util/svector.h"
+#include "selva/fields.h"
 #include "selva_error.h"
-#include "selva.h"
-#include "fields.h"
-#include "traverse.h"
+#include "db.h"
+#include "selva/traverse.h"
 
 [[maybe_unused]]
 static int head_callback_stub(
@@ -107,21 +107,33 @@ static int child_callback_stub(
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
-int traverse_field_bfs(
+static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNodeWeakReference *weak_ref)
+{
+    struct SelvaTypeEntry *dst_te;
+
+    dst_te = selva_get_type_by_index(db, weak_ref->dst_type);
+    if (!dst_te) {
+        return NULL;
+    }
+
+    return selva_find_node(dst_te, weak_ref->dst_id);
+}
+
+int selva_traverse_field_bfs(
         struct SelvaDb *db,
         struct SelvaNode *head,
         const struct SelvaTraversalParam *cb) {
     BFS_TRAVERSE_BEGIN(db, head, cb) {
         struct SelvaFieldsAny any;
-        int res, err;
+        int res;
 
         res = BFS_VISIT_NODE(db, cb);
         if (res >= 0) {
             /* We assume that it's a valid field id. */
             field_t field = (field_t)res;
 
-            err = selva_fields_get(&node->fields, field, &any);
-            if (err || any.type == SELVA_FIELD_TYPE_NULL) {
+            any = selva_fields_get2(&node->fields, field);
+            if (any.type == SELVA_FIELD_TYPE_NULL) {
                 continue;
             }
 
@@ -147,14 +159,49 @@ int traverse_field_bfs(
                     }
                 }
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
-                /* TODO */
+                struct SelvaNode *dst_node = weak_ref2node(db, &any.weak_reference);
+                if (dst_node) {
+                    struct SelvaFields *edge_data = NULL;
+
+                    BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
+                }
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
-                /* TODO */
+                const size_t nr_refs = any.weak_references.nr_refs;
+
+                for (size_t i = 0; i < nr_refs; i++) {
+                    struct SelvaNode *dst_node = weak_ref2node(db, &any.weak_references.refs[i]);
+                    if (dst_node) {
+                        struct SelvaFields *edge_data = NULL;
+
+                        BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
+                    }
+                }
             } else {
                 return SELVA_EINTYPE;
             }
         }
     } BFS_TRAVERSE_END(db);
+
+    return 0;
+}
+
+int selva_traverse_type(struct SelvaDb *db, struct SelvaTypeEntry *te, SelvaTraversalNodeCallback node_cb, void *node_arg)
+{
+    struct SelvaNodeIndex *nodes = &te->nodes;
+    struct SelvaNode *node;
+    struct SelvaNode *tmp;
+
+    RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
+        static const struct SelvaTraversalMetadata meta = {
+            .edge_data = NULL,
+            .depth = 0,
+        };
+        int res = node_cb(db, &meta, node, node_arg);
+
+        if (res < 0) {
+            return res;
+        }
+    }
 
     return 0;
 }

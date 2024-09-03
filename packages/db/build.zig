@@ -15,32 +15,30 @@ pub fn build(b: *std.Build) void {
 
     lib.addSystemIncludePath(b.path("deps/node-v20.11.1/include/node/"));
 
+    // Build selva
+    //const make_clibs = b.addSystemCommand(
+    //    &[_][]const u8{
+    //        "make",
+    //        "-C",
+    //        "./clibs",
+    //    },
+    //);
+    //b.getInstallStep().dependOn(&make_clibs.step);
+    lib.addIncludePath(b.path("clibs/include/"));
+    lib.addLibraryPath(b.path("build"));
+    // TODO Linux rpath
+    lib.root_module.addRPathSpecial("@loader_path");
+    lib.linkSystemLibrary("selva");
+
     const dep = b.dependency("lmdb", .{ .create = true });
 
     lib.addIncludePath(dep.path("libraries/liblmdb"));
     lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/mdb.c") });
     lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/midl.c") });
 
+    // lib.
+
     lib.linkLibC();
-
-    // const dep2 = b.dependency("zstd", .{ .create = true });
-
-    // lib.addIncludePath(dep2.path("lib"));
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_lazy.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_opt.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_double_fast.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_fast.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/fse_compress.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/hist.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/huf_compress.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress_literals.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress_superblock.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_compress_sequences.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstd_ldm.c") });
-    // lib.addCSourceFile(.{ .file = dep2.path("lib/compress/zstdmt_compress.c") });
-
-    // lib.linkLibC();
 
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "./lib.node",

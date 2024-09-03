@@ -233,6 +233,22 @@
     static_assert(__builtin_types_compatible_p(TYPE, typeof(VAR)))
 
 /**
+ * Returns the smaller of the given values.
+ */
+#define min(a, b) \
+    ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+       _a < _b ? _a : _b; })
+
+/**
+ * Returns the greater of the given values.
+ */
+#define max(a, b) \
+    ({ __typeof__ (a) _a = (a); \
+      __typeof__ (b) _b = (b); \
+      _a > _b ? _a : _b; })
+
+/**
  * Get the struct that contains `m`.
  * This macro can be only used if we know for certain that `x` is a pointer to
  * the member `m` in type `s`.
@@ -261,20 +277,10 @@
 #define sizeof_field(t, f) (sizeof(((t*)0)->f))
 
 /**
- * Returns the smaller of the given values.
+ * Size of a struct with its flexible array member.
  */
-#define min(a, b) \
-    ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-       _a < _b ? _a : _b; })
-
-/**
- * Returns the greater of the given values.
- */
-#define max(a, b) \
-    ({ __typeof__ (a) _a = (a); \
-      __typeof__ (b) _b = (b); \
-      _a > _b ? _a : _b; })
+#define sizeof_wflex(t, f, count) \
+    max(sizeof(t), offsetof(t, f[0]) + count * sizeof(((t*)0)->f[0]))
 
 /**
  * Check if pointer has a const qualifier.

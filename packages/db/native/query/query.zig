@@ -2,11 +2,13 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
-const db = @import("../db.zig");
+const db = @import("../db/db.zig");
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
+const sort = @import("../db/sort.zig");
+const QueryTypes = @import("./queryTypes.zig");
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(0, env, info) catch |err| {
@@ -29,104 +31,158 @@ pub fn getQueryIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.n
     };
 }
 
-var txnRead: ?*c.MDB_txn = null;
-
-fn makeTxnOrGetTxn() ?*c.MDB_txn {
-    if (txnRead != null) {
-        errors.mdbCheck(c.mdb_txn_renew(txnRead)) catch {};
-        return txnRead;
-    }
-    txnRead = db.createTransaction(true) catch null;
-    return txnRead;
+pub fn getQuerySortAsc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(3, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
 }
 
-fn getQueryInternal(
-    comptime idType: comptime_int,
+pub fn getQuerySortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(4, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortAsc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(5, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(6, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortAscLarge(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(7, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortDescLarge(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(8, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+inline fn getQueryInternal(
+    comptime queryType: comptime_int,
     env: c.napi_env,
     info: c.napi_callback_info,
 ) !c.napi_value {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    var shards = std.AutoHashMap([5]u8, db.Shard).init(allocator);
-    var resultsList = std.ArrayList(results.Result).init(allocator);
-    var currentShard: u16 = 0;
-    // const txn = try db.createTransaction(true);
-    const ctx: QueryCtx = .{ .shards = &shards, .txn = makeTxnOrGetTxn(), .results = &resultsList };
-    defer {
-        var it = shards.iterator();
-        while (it.next()) |shard| {
-            db.closeShard(shard.value_ptr);
-        }
-        _ = c.mdb_txn_reset(ctx.txn);
-    }
 
-    // _ = c.mdb_txn_renew(ctx.txn);
+    var ctx: QueryCtx = .{
+        .results = std.ArrayList(results.Result).init(allocator),
+        .id = db.getQueryId(),
+        .size = 0,
+        .totalResults = 0,
+        .allocator = allocator,
+    };
 
-    var total_results: usize = 0;
-    var total_size: usize = 0;
+    const readTxn = try db.initReadTxn();
+    errors.mdb(c.mdb_txn_renew(readTxn)) catch {};
 
-    if (idType == 0) {
+    if (queryType == 0) {
+        // query no sort
         const args = try napi.getArgs(6, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
-        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
-        const last_id = try napi.getInt32("last_id", env, args[2]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const lastId = try napi.getInt32("last_id", env, args[2]);
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
-        var i: u32 = offset + 1;
-        checkItem: while (i <= last_id and total_results < offset + limit) : (i += 1) {
-            if (i > (@as(u32, currentShard + 1)) * 1_000_000) {
-                currentShard += 1;
-            }
-            if (!filter(ctx, i, type_prefix, conditions, currentShard)) {
-                continue :checkItem;
-            }
-            const size = try getFields(ctx, i, type_prefix, null, include, currentShard, 0);
-            if (size > 0) {
-                total_size += size;
-                total_results += 1;
-            }
-        }
-    } else if (idType == 1) {
-        // TODO: this is super slow!
-        // for indivdual ids its best to combine multiple into 1
+        try QueryTypes.queryNonSort(&ctx, lastId, offset, limit, typeId, conditions, include);
+    } else if (queryType == 1) {
+        // single id
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
-        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
         const id = try napi.getInt32("id", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
-        currentShard = db.idToShard(id);
-        if (filter(ctx, id, type_prefix, conditions, currentShard)) {
-            const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
-            if (size > 0) {
-                total_size += size;
-                total_results += 1;
-            }
-        }
-    } else if (idType == 2) {
+        try QueryTypes.queryId(id, &ctx, typeId, conditions, include);
+    } else if (queryType == 2) {
+        // ids list
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.getBuffer("conditions", env, args[0]);
-        const type_prefix = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
         const ids = try napi.getBuffer("ids", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
-        // ids
-        var i: u32 = 0;
-        checkItem: while (i <= ids.len) : (i += 4) {
-            const id = std.mem.readInt(u32, ids[i..][0..4], .little);
-            currentShard = db.idToShard(id);
-            if (!filter(ctx, id, type_prefix, conditions, currentShard)) {
-                continue :checkItem;
-            }
-            const size = try getFields(ctx, id, type_prefix, null, include, currentShard, 0);
-            if (size > 0) {
-                total_size += size;
-                total_results += 1;
-            }
-        }
+        try QueryTypes.queryIds(ids, &ctx, typeId, conditions, include);
+    } else if (queryType == 3 or queryType == 4) {
+        // query sorted
+        const args = try napi.getArgs(7, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const lastId = try napi.getInt32("last_id", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+        const include = try napi.getBuffer("include", env, args[5]);
+        const sortBuffer = try napi.getBuffer("sort", env, args[6]);
+        try QueryTypes.querySort(queryType, &ctx, lastId, offset, limit, typeId, conditions, include, sortBuffer);
+    } else if (queryType == 5 or queryType == 6) {
+        // query ids sorted
+        const args = try napi.getArgs(10, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const lastId = try napi.getInt32("last_id", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+        const ids = try napi.getBufferU32("ids", env, args[5]);
+        const include = try napi.getBuffer("include", env, args[6]);
+        const sortBuffer = try napi.getBuffer("sort", env, args[7]);
+        const low = try napi.getInt32("low", env, args[8]);
+        const high = try napi.getInt32("high", env, args[9]);
+        try QueryTypes.queryIdsSort(
+            queryType,
+            ids,
+            &ctx,
+            typeId,
+            conditions,
+            include,
+            lastId,
+            sortBuffer,
+            offset,
+            limit,
+            low,
+            high,
+        );
+    } else if (queryType == 7 or queryType == 8) {
+        // query ids sorted > 512
+        const args = try napi.getArgs(8, env, info);
+        const conditions = try napi.getBuffer("conditions", env, args[0]);
+        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const lastId = try napi.getInt32("last_id", env, args[2]);
+        const offset = try napi.getInt32("offset", env, args[3]);
+        const limit = try napi.getInt32("limit", env, args[4]);
+        const ids = try napi.getBufferU32("ids", env, args[5]);
+        const include = try napi.getBuffer("include", env, args[6]);
+        const sortBuffer = try napi.getBuffer("sort", env, args[7]);
+        try QueryTypes.queryIdsSortBig(
+            queryType,
+            ids,
+            &ctx,
+            typeId,
+            conditions,
+            include,
+            lastId,
+            sortBuffer,
+            offset,
+            limit,
+        );
     }
 
-    // try errors.mdbCheck(c.mdb_txn_commit(ctx.txn));
+    db.resetTxn(readTxn);
 
-    return results.createResultsBuffer(ctx, env, total_size, total_results);
+    return results.createResultsBuffer(&ctx, env);
 }

@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include "selva.h"
+#include "selva/types.h"
 
 struct Update {
     uint32_t len; /*!< Length of this struct. */

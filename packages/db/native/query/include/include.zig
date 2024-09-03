@@ -1,107 +1,97 @@
-const c = @import("../../c.zig");
-const errors = @import("../../errors.zig");
-const napi = @import("../../napi.zig");
-const std = @import("std");
-const db = @import("../../db.zig");
 const results = @import("../results.zig");
+const selva = @import("../../selva.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
+const readInt = @import("../../utils.zig").readInt;
+const getField = db.getField;
+const db = @import("../../db//db.zig");
 
-// TODO: clean up and exist if main does not exist
+const std = @import("std");
+
 pub fn getFields(
-    ctx: QueryCtx,
+    ctx: *QueryCtx,
     id: u32,
-    type_prefix: [2]u8,
+    typeEntry: *selva.SelvaTypeEntry,
     start: ?u16,
     include: []u8,
-    currentShard: u16,
     refLvl: u8,
 ) !usize {
+    // get this from top
+    const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, id);
+
+    if (selvaNodeNull == null) {
+        // std.debug.print("CANT FIND ID {d}\n", .{id});
+        return 0;
+    }
+
+    const selvaNode: *selva.SelvaNode = selvaNodeNull.?;
+
     var includeMain: []u8 = &.{};
     var size: usize = 0;
     var includeIterator: u16 = 0;
     var idIsSet: bool = false;
-    var mainValue: ?c.MDB_val = null;
+    var main: ?[]u8 = null;
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
-        if (field == 255) {
-            const hasFields: bool = include[includeIterator + 1] == 1;
-            const refSize = std.mem.readInt(u16, include[includeIterator + 2 ..][0..2], .little);
-            const singleRef = include[includeIterator + 4 .. includeIterator + 4 + refSize];
-            includeIterator += refSize + 4;
-            if (mainValue == null) {
-                const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
-                var shard = ctx.shards.get(dbiName);
-                if (shard == null) {
-                    shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                    if (shard != null) {
-                        try ctx.shards.put(dbiName, shard.?);
-                    }
-                }
-                var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-                var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+        includeIterator += 1;
 
-                if (shard != null) {
-                    errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-                    // case that you only include
-                    if (!idIsSet and start == null) {
-                        idIsSet = true;
-                        size += try addIdOnly(ctx, id, refLvl, start);
-                    }
+        const operation = include[includeIterator..];
+
+        if (field == 255) {
+            const hasFields: bool = operation[0] == 1;
+            const refSize = readInt(u16, operation, 1);
+            const singleRef = operation[3 .. 3 + refSize];
+            includeIterator += refSize + 3;
+            if (main == null) {
+                main = db.selvaGetField(selvaNode, try db.selvaGetFieldSchema(0, typeEntry));
+                if (main.?.len > 0 and !idIsSet and start == null) {
+                    idIsSet = true;
+                    size += try addIdOnly(ctx, id, refLvl, start);
                 }
-                mainValue = v;
             }
-            if (mainValue.?.mv_data == null) {
+            if (main.?.len == 0) {
                 continue :includeField;
             }
-            size += getSingleRefFields(ctx, singleRef, mainValue.?, refLvl, hasFields);
+            size += getSingleRefFields(ctx, singleRef, main.?, refLvl, hasFields);
             continue :includeField;
         }
+
         if (field == 0) {
-            const mainIncludeSize = std.mem.readInt(u16, include[includeIterator + 1 ..][0..2], .little);
+            const mainIncludeSize = readInt(u16, operation, 0);
             if (mainIncludeSize != 0) {
-                includeMain = include[includeIterator + 3 .. includeIterator + 3 + mainIncludeSize];
+                includeMain = operation[2 .. 2 + mainIncludeSize];
             }
             includeIterator += 2 + mainIncludeSize;
         }
-        includeIterator += 1;
-        const dbiName = db.createDbiName(type_prefix, field, @bitCast(currentShard));
-        var shard = ctx.shards.get(dbiName);
-        if (shard == null) {
-            shard = db.openShard(true, dbiName, ctx.txn) catch null;
-            if (shard != null) {
-                try ctx.shards.put(dbiName, shard.?);
-            }
+
+        const value = db.selvaGetField(selvaNode, try db.selvaGetFieldSchema(field, typeEntry));
+
+        if (value.len == 0) {
+            continue :includeField;
         }
-        var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+
         if (field == 0) {
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                mainValue = .{ .mv_size = 0, .mv_data = null };
-                continue :includeField;
-            };
-            mainValue = v;
+            main = value;
             if (includeMain.len != 0) {
-                size += std.mem.readInt(u16, includeMain[0..2], .little) + 1;
+                size += readInt(u16, includeMain, 0) + 1;
             } else {
-                size += (v.mv_size + 1);
+                size += (value.len + 1);
             }
         } else {
-            errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {
-                continue :includeField;
-            };
-            size += (v.mv_size + 3);
+            size += (value.len + 3);
         }
+
         var result: results.Result = .{
             .id = id,
             .field = field,
-            .val = v,
+            .val = value,
             .start = start,
             .includeMain = includeMain,
             .refLvl = refLvl,
         };
+
         if (start == null) {
             if (!idIsSet) {
                 idIsSet = true;
@@ -110,33 +100,13 @@ pub fn getFields(
                 result.id = null;
             }
         }
+
         try ctx.results.append(result);
     }
 
-    if (size == 0 and !idIsSet) {
-        if (mainValue == null) {
-            const dbiName = db.createDbiName(type_prefix, 0, @bitCast(currentShard));
-            var shard = ctx.shards.get(dbiName);
-            if (shard == null) {
-                shard = db.openShard(true, dbiName, ctx.txn) catch null;
-                if (shard != null) {
-                    try ctx.shards.put(dbiName, shard.?);
-                }
-            }
-            var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
-            var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-            if (shard != null) {
-                errors.mdbCheck(c.mdb_cursor_get(shard.?.cursor, &k, &v, c.MDB_SET)) catch {};
-            }
-            mainValue = v;
-        }
-
-        if (mainValue.?.mv_data != null) {
-            const idSize = try addIdOnly(ctx, id, refLvl, start);
-            if (start == null) {
-                size += idSize;
-            }
-        }
+    if (!idIsSet) {
+        idIsSet = true;
+        size += try addIdOnly(ctx, id, refLvl, start);
     }
 
     return size;

@@ -23,10 +23,13 @@ enum selva_io_flags {
     _SELVA_IO_FLAGS_EN_COMPRESS = 0x1000, /*!< Enable deflate block compression. */
 };
 
+struct SelvaDb;
 struct selva_io;
+struct selva_string;
 
 int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags);
 struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_io_flags flags);
 int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags);
 void selva_io_end(struct selva_io *io, struct selva_string **filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE]);
 int io_dump_save_async(struct SelvaDb *db, const char *filename);
+int io_dump_load(const char *filename, struct SelvaDb **db_out);

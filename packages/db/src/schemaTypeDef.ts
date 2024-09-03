@@ -70,17 +70,23 @@ export type SchemaTypeDef = {
   lastId: number
   mainLen: number
   buf: Buffer
-
   fieldNames: Buffer
   fields: {
     // path including .
     [key: string]: FieldDef
   }
   prefixString: string
+  prefixNumber: number
   prefix: Uint8Array
   seperate: FieldDef[]
   tree: SchemaFieldTree
+  hasStringField: boolean
+  stringFieldsSize: number
+  stringFields: Buffer // size will be max field
+  stringFieldsCurrent: Buffer // size will be max field
+  stringFieldsLoop: FieldDef[]
   responseCtx: BasedNode
+  // HELLO
 }
 
 const prefixStringToUint8 = (
@@ -114,21 +120,30 @@ export const createSchemaTypeDef = (
     type: typeName,
     fields: {},
     prefix: prefixStringToUint8(type),
+    prefixNumber: 0,
     mainLen: 0,
     prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
+    // stringFieldsBuffer
     tree: {},
     // temporary
     total: 0,
     // also temprorary
     lastId: 0,
+    stringFieldsSize: 0,
+    stringFieldsLoop: [],
   },
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
+  if (result.prefixNumber == 0) {
+    result.prefixNumber = new Uint16Array(result.prefix)[0]
+  }
+
   const encoder = new TextEncoder()
 
   let target: { [key: string]: BasedSchemaField }
+  let stringFields: number = 0
 
   if ('type' in type && 'properties' in type) {
     target = type.properties
@@ -157,6 +172,9 @@ export const createSchemaTypeDef = (
       const isSeperate = len === 0
 
       if (isSeperate) {
+        if (f.type === 'string') {
+          stringFields++
+        }
         result.cnt++
       }
 
@@ -275,6 +293,28 @@ export const createSchemaTypeDef = (
     }
 
     result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
+
+    if (stringFields > 0) {
+      result.hasStringField = true
+      let max = 0
+      for (const f of result.seperate) {
+        if (f.type === 'string') {
+          if (f.field > max) {
+            max = f.field
+          }
+        }
+      }
+      result.stringFields = Buffer.allocUnsafe(max + 1)
+      for (const f of result.seperate) {
+        if (f.type === 'string') {
+          result.stringFields[f.field] = 1
+          result.stringFieldsLoop.push(f)
+          result.stringFieldsSize++
+        }
+      }
+      result.stringFieldsCurrent = Buffer.allocUnsafe(max + 1)
+      result.stringFields.copy(result.stringFieldsCurrent)
+    }
   }
 
   return result as SchemaTypeDef
@@ -402,4 +442,79 @@ export const idFieldDef: FieldDef = {
   selvaField: 0,
   len: 4,
   __isField: true,
+}
+
+// TODO unify this
+export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
+  const typeNames = Object.keys(schema)
+  const types = Object.values(schema)
+
+  return types.map((t, i) => {
+    const vals = Object.values(t.fields)
+    const restFields: FieldDef[] = []
+
+    for (const f of vals) {
+      if (f.seperate) {
+        restFields.push(f)
+      }
+    }
+
+    restFields.sort((a, b) => a.selvaField - b.selvaField)
+
+    // TODO Remove this once the types agree
+    const typeMap = {
+      timestamp: 1,
+      created: 2,
+      updated: 3,
+      number: 4,
+      integer: 5,
+      boolean: 9,
+      reference: 13,
+      enum: 10,
+      string: 11,
+      references: 14,
+      muffer: 17,
+    }
+
+    // add MUFFER (main buffer)
+
+    // CLEAN THIS UP
+    const toSelvaSchemaBuf = (f: FieldDef): number[] => {
+      // @ts-ignore
+      if (f.len && f.type == 'muffer') {
+        // max size is
+
+        const buf = Buffer.allocUnsafe(3)
+        buf[0] = typeMap[f.type]
+        buf.writeUint16LE(f.len, 1)
+        return [...buf.values()]
+      } else if (f.type === 'reference' || f.type === 'references') {
+        const dstType: SchemaTypeDef = schema[f.allowedType]
+        const buf = Buffer.allocUnsafe(4)
+
+        buf.writeUInt8(typeMap[f.type], 0)
+        buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
+        buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
+        return [...buf.values()]
+      } else if (f.type === 'string') {
+        return [typeMap[f.type], f.len < 50 ? f.len : 0]
+      } else {
+        return [typeMap[f.type]]
+      }
+    }
+
+    const x = Buffer.from([
+      1,
+      ...toSelvaSchemaBuf({
+        // @ts-ignore
+        type: 'muffer',
+        len: t.mainLen,
+      }),
+      ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+    ])
+
+    console.info(new Uint8Array(x))
+
+    return x
+  })
 }

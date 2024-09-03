@@ -599,7 +599,7 @@ int sdb_write_footer(struct selva_io *io)
 /**
  * Read the hash while io is at any arbitrary offset.
  */
-static int sdb_read_hash(struct selva_io *io)
+__unused static int sdb_read_hash(struct selva_io *io)
 {
     off_t pos;
     int err;

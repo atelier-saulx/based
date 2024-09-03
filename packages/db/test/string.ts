@@ -1,6 +1,5 @@
 import test from 'ava'
 import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
@@ -9,15 +8,16 @@ const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
 test.serial('string', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
     path: dbFolder,
     maxModifySize: 1e4,
   })
+
+  await db.start()
+
+  try {
+    console.log(db.query('user').get())
+  } catch (e) {}
 
   db.updateSchema({
     types: {
@@ -26,7 +26,7 @@ test.serial('string', async (t) => {
           myBlup: { type: 'reference', allowedType: 'blup' },
           name: { type: 'string' },
           flap: { type: 'integer' },
-          email: { type: 'string', maxLength: 15 }, // maxLength: 10
+          email: { type: 'string', maxLength: 15 },
           age: { type: 'integer' },
           snurp: { type: 'string' },
           burp: { type: 'integer' },
@@ -43,7 +43,7 @@ test.serial('string', async (t) => {
     },
   })
 
-  const user = db.create('user', {
+  db.create('user', {
     age: 99,
     burp: 66,
     snurp: 'derp derp',
@@ -56,7 +56,7 @@ test.serial('string', async (t) => {
   db.drain()
 
   const result = db.query('user').get()
-  t.deepEqual(result.data.toObject(), [
+  t.deepEqual(result.toObject(), [
     {
       id: 1,
       name: '',
@@ -68,17 +68,16 @@ test.serial('string', async (t) => {
       location: { label: 'BLA BLA', x: 0, y: 0 },
     },
   ])
+
+  await db.destroy()
 })
 
-test.serial.only('string + refs', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-  await fs.mkdir(dbFolder)
-
+test.serial('string + refs', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -128,7 +127,6 @@ test.serial.only('string + refs', async (t) => {
 
   for (let i = 0; i < 1; i++) {
     const blup = db.create('blup', {
-      // name: 'blup ! ' + i,
       flap: 'A',
     })
 
@@ -164,7 +162,7 @@ test.serial.only('string + refs', async (t) => {
     .range(0, 1)
     .get()
 
-  t.deepEqual(result.data.toObject(), [
+  t.deepEqual(result.toObject(), [
     {
       id: 1,
       user: {
@@ -177,4 +175,6 @@ test.serial.only('string + refs', async (t) => {
       },
     },
   ])
+
+  await db.destroy()
 })

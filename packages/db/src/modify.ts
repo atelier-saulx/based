@@ -1,11 +1,5 @@
 import { BasedDb, FieldDef, SchemaTypeDef } from './index.js'
 import { startDrain, flushBuffer } from './operations.js'
-// import snappy from 'snappy'
-
-import { createRequire } from 'node:module'
-const nodeflate = createRequire(import.meta.url)('../../build/nodeflate.node')
-// const compressor = nodeflate.newCompressor(3)
-// const decompressor = nodeflate.newDecompressor()
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
 
@@ -15,6 +9,7 @@ const setCursor = (
   field: number,
   id: number,
   ignoreField?: boolean,
+  isCreate?: boolean,
 ) => {
   // 0 switch field
   // 1 switch id
@@ -40,14 +35,15 @@ const setCursor = (
     db.modifyBuffer.buffer[len] = 0
     // make field 2 bytes
     db.modifyBuffer.buffer[len + 1] = field // 1 byte (max size 255 - 1)
-    db.modifyBuffer.buffer[len + 2] = 4
-    db.modifyBuffer.len += 3
+    db.modifyBuffer.len += 2
     db.modifyBuffer.field = field
   }
 
   if (db.modifyBuffer.id !== id) {
+    db.modifyBuffer.hasStringField = -1
     const len = db.modifyBuffer.len
-    db.modifyBuffer.buffer[len] = 1
+    // --- hello
+    db.modifyBuffer.buffer[len] = isCreate ? 9 : 1
     db.modifyBuffer.buffer.writeUInt32LE(id, len + 1)
     db.modifyBuffer.len += 5
     db.modifyBuffer.id = id
@@ -62,7 +58,9 @@ const addModify = (
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef,
+  writeKey: 3 | 6,
   merge: boolean,
+  fromCreate: boolean,
 ): boolean => {
   let wroteMain = false
   for (const key in obj) {
@@ -70,7 +68,16 @@ const addModify = (
     const value = obj[key]
     if (!leaf.type && !leaf.__isField) {
       if (
-        addModify(db, id, value, leaf as SchemaTypeDef['tree'], schema, merge)
+        addModify(
+          db,
+          id,
+          value,
+          leaf as SchemaTypeDef['tree'],
+          schema,
+          writeKey,
+          merge,
+          fromCreate,
+        )
       ) {
         wroteMain = true
       }
@@ -81,8 +88,8 @@ const addModify = (
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t.field, id)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+        setCursor(db, schema, t.field, id, false, fromCreate)
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
         db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
         db.modifyBuffer.len += 5
         for (let i = 0; i < value.length; i++) {
@@ -93,21 +100,40 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
-        // add zstd
-        const byteLen = value.length + value.length
-        if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
-          flushBuffer(db)
+        const len = value.length
+        if (len === 0) {
+          if (!fromCreate) {
+            const nextLen = 1 + 4 + 1
+            if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+              flushBuffer(db)
+            }
+            setCursor(db, schema, t.field, id, false, fromCreate)
+            db.modifyBuffer.buffer[db.modifyBuffer.len] = 8
+            db.modifyBuffer.len++
+          }
+        } else {
+          if (fromCreate) {
+            schema.stringFieldsCurrent[t.field] = 2
+            db.modifyBuffer.hasStringField++
+          }
+          const byteLen = len + len
+          if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.field, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          db.modifyBuffer.len += 5
+          const size = db.modifyBuffer.buffer.write(
+            value,
+            db.modifyBuffer.len,
+            'utf8',
+          )
+          db.modifyBuffer.buffer.writeUint32LE(
+            size,
+            db.modifyBuffer.len + 1 - 5,
+          )
+          db.modifyBuffer.len += size
         }
-        setCursor(db, schema, t.field, id)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
-        db.modifyBuffer.len += 5
-        const size = db.modifyBuffer.buffer.write(
-          value,
-          db.modifyBuffer.len,
-          'utf8',
-        )
-        db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
-        db.modifyBuffer.len += size
       } else if (merge) {
         wroteMain = true
         if (!db.modifyBuffer.mergeMain) {
@@ -117,15 +143,15 @@ const addModify = (
         db.modifyBuffer.mergeMainSize += t.len + 4
       } else {
         wroteMain = true
-        setCursor(db, schema, t.field, id, true)
+        setCursor(db, schema, t.field, id, true, fromCreate)
         let mainIndex = db.modifyBuffer.lastMain
         if (mainIndex === -1) {
           const nextLen = schema.mainLen + 1 + 4
-          if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+          if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
             flushBuffer(db)
           }
-          setCursor(db, schema, t.field, id)
-          db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : 3
+          setCursor(db, schema, t.field, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : writeKey
           db.modifyBuffer.buffer.writeUint32LE(
             schema.mainLen,
             db.modifyBuffer.len + 1,
@@ -166,7 +192,7 @@ const addModify = (
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
-  const nextLen = 1 + 4 + 1
+  const nextLen = 1 + 4 + 1 + 1
   if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
     flushBuffer(db)
   }
@@ -184,6 +210,8 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       db.modifyBuffer.len++
     }
   }
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = 10
+  db.modifyBuffer.len++
   return true
 }
 
@@ -191,26 +219,54 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
   def.total++
-  if (!addModify(db, id, value, def.tree, def, false) || def.mainLen === 0) {
-    const nextLen = 5 + def.mainLen
-    if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
-      flushBuffer(db)
-    }
-    setCursor(db, def, 0, id)
-    db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
-    db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
-    for (
-      let i = db.modifyBuffer.len + 5;
-      i < db.modifyBuffer.len + nextLen;
-      i++
-    ) {
-      db.modifyBuffer.buffer[i] = 0
-    }
-    db.modifyBuffer.len += nextLen
+
+  if (
+    !addModify(db, id, value, def.tree, def, 3, false, true) ||
+    def.mainLen === 0
+  ) {
+    // FIXI FIX
+    // const nextLen = 5 + def.mainLen
+    // if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
+    //   flushBuffer(db)
+    // }
+    // setCursor(db, def, 0, id, false, true)
+    // db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
+    // db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
+    // for (
+    //   let i = db.modifyBuffer.len + 5;
+    //   i < db.modifyBuffer.len + nextLen;
+    //   i++
+    // ) {
+    //   db.modifyBuffer.buffer[i] = 0
+    // }
+    // db.modifyBuffer.len += nextLen
   }
+
+  // if touched lets see perf impact here
+  if (def.hasStringField) {
+    if (db.modifyBuffer.hasStringField != def.stringFieldsSize - 1) {
+      db.modifyBuffer.buffer[db.modifyBuffer.len] = 7
+      let sizeIndex = db.modifyBuffer.len + 1
+      let size = 0
+      db.modifyBuffer.len += 3
+      for (const x of def.stringFieldsLoop) {
+        if (def.stringFieldsCurrent[x.field] == 1) {
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = x.field
+          size += 1
+          db.modifyBuffer.len += 1
+        }
+      }
+      db.modifyBuffer.buffer.writeUint16LE(size, sizeIndex)
+    }
+    if (db.modifyBuffer.hasStringField != -1) {
+      def.stringFields.copy(def.stringFieldsCurrent)
+    }
+  }
+
   if (!db.isDraining) {
     startDrain(db)
   }
+
   return id
 }
 
@@ -219,10 +275,10 @@ export const update = (
   type: string,
   id: number,
   value: any,
-  overwrite?: boolean, // default for now
+  overwrite?: boolean,
 ) => {
   const def = db.schemaTypesParsed[type]
-  const hasMain = addModify(db, id, value, def.tree, def, !overwrite)
+  const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite, false)
 
   if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
     const mergeMain = db.modifyBuffer.mergeMain
@@ -230,15 +286,11 @@ export const update = (
     if (db.modifyBuffer.len + size + 9 > db.maxModifySize) {
       flushBuffer(db)
     }
-
     setCursor(db, def, 0, id)
-
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 5
     db.modifyBuffer.len += 1
-
     db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len)
     db.modifyBuffer.len += 4
-
     for (let i = 0; i < mergeMain.length; i += 2) {
       const t = mergeMain[i]
       const v = mergeMain[i + 1]

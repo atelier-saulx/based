@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "selva.h"
+#include "selva/fields.h"
 #include "selva_error.h"
-#include "fields.h"
-#include "filter.h"
+#include "db.h"
+#include "selva/filter.h"
 
 #if 0
 .filter((filter) => {
@@ -97,10 +97,8 @@ static struct op_result op_eq_type(struct SelvaNode *node, const uint8_t *in, si
         field_t field; \
         int32_t value; \
     } __packed *args = (typeof(args))in; \
-    struct SelvaFieldsAny any; \
     if (max_len < sizeof(*args)) return OP_RESULT_ERROR(SELVA_EINVAL); \
-    int err = selva_fields_get(&node->fields, args->field, &any); \
-    if (err) return OP_RESULT_ERROR(err); \
+    struct SelvaFieldsAny any = selva_fields_get2(&node->fields, args->field); \
     if (any.type != SELVA_FIELD_TYPE_INTEGER) return OP_RESULT_ERROR(SELVA_EINTYPE); \
     return (struct op_result){ \
         .len = sizeof(*args), \
@@ -138,19 +136,19 @@ static struct op_result op_le_integer(struct SelvaNode *node, const uint8_t *in,
 }
 
 static const op_fn_t op_fn[] = {
-    [FILTER_OP_SWITCH_TYPE] = op_switch_type,
-    [FILTER_OP_EQ_TYPE] = op_eq_type,
-    [FILTER_OP_EQ_INTEGER] = op_eq_integer,
-    [FILTER_OP_NE_INTEGER] = op_ne_integer,
-    [FILTER_OP_GT_INTEGER] = op_gt_integer,
-    [FILTER_OP_LT_INTEGER] = op_lt_integer,
-    [FILTER_OP_GE_INTEGER] = op_ge_integer,
-    [FILTER_OP_LE_INTEGER] = op_le_integer,
+    [SELVA_FILTER_OP_SWITCH_TYPE] = op_switch_type,
+    [SELVA_FILTER_OP_EQ_TYPE] = op_eq_type,
+    [SELVA_FILTER_OP_EQ_INTEGER] = op_eq_integer,
+    [SELVA_FILTER_OP_NE_INTEGER] = op_ne_integer,
+    [SELVA_FILTER_OP_GT_INTEGER] = op_gt_integer,
+    [SELVA_FILTER_OP_LT_INTEGER] = op_lt_integer,
+    [SELVA_FILTER_OP_GE_INTEGER] = op_ge_integer,
+    [SELVA_FILTER_OP_LE_INTEGER] = op_le_integer,
 };
 
-int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len, bool *res_out)
+int selva_filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len, bool *res_out)
 {
-    enum filter_op_code conjunction = FILTER_CONJ_OR;
+    enum selva_filter_op_code conjunction = SELVA_FILTER_CONJ_OR;
     bool res = false;
 
     /*
@@ -163,9 +161,9 @@ int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len
     for (size_t i = 0; i < expr_len;) {
         uint8_t byte = expr_buf[i++];
 
-        if (byte < FILTER_CONJ_OP_BREAK) {
+        if (byte < SELVA_FILTER_CONJ_OP_BREAK) {
             conjunction = byte;
-        } else if (byte > FILTER_CONJ_OP_BREAK && byte < FILTER_OP_LAST) {
+        } else if (byte > SELVA_FILTER_CONJ_OP_BREAK && byte < SELVA_FILTER_OP_LAST) {
             struct op_result op_res;
 
             if (unlikely(i >= expr_len)) {
@@ -179,19 +177,19 @@ int filter_eval(struct SelvaNode *node, const uint8_t *expr_buf, size_t expr_len
             i += op_res.len;
 
             switch (conjunction) {
-            case FILTER_CONJ_OR:
+            case SELVA_FILTER_CONJ_OR:
                 res |= !!op_res.res;
                 break;
-            case FILTER_CONJ_AND:
+            case SELVA_FILTER_CONJ_AND:
                 res &= !!op_res.res;
                 break;
-            case FILTER_CONJ_NECESS:
+            case SELVA_FILTER_CONJ_NECESS:
                 res = !!op_res.res;
                 if (!res) {
                     goto out;
                 }
                 break;
-            case FILTER_CONJ_POSS:
+            case SELVA_FILTER_CONJ_POSS:
                 res = !!op_res.res;
                 if (res) {
                     goto out;

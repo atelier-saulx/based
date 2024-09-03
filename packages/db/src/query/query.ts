@@ -4,6 +4,7 @@ import { Operation, QueryIncludeDef, QueryConditions } from './types.js'
 import { get } from './get.js'
 import { filter } from './filter.js'
 import { inspect } from 'node:util'
+import { sort } from './sort.js'
 
 export class Query {
   db: BasedDb
@@ -12,6 +13,9 @@ export class Query {
   ids: number[] | void
   offset: number
   limit: number
+
+  sortBuffer: Buffer
+  sortOrder: 0 | 1
 
   includeDef: QueryIncludeDef
 
@@ -22,6 +26,7 @@ export class Query {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
     this.schema = typeDef
+
     if (id) {
       if (Array.isArray(id)) {
         id.sort((a, b) => {
@@ -62,6 +67,11 @@ export class Query {
     for (const f of fields) {
       this.includeDef.includeFields.add(f)
     }
+    return this
+  }
+
+  sort(field: string, order: 'asc' | 'desc' = 'asc'): Query {
+    sort(this, field, order)
     return this
   }
 

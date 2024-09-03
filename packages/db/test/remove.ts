@@ -13,11 +13,11 @@ test.serial('remove', async (t) => {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
 
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -48,13 +48,13 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').get().data.toObject(), [])
+  t.deepEqual(db.query('user').get().toObject(), [])
 
   const nurp = db.create('nurp', {})
 
   db.drain()
 
-  t.deepEqual(db.query('nurp').include('email').get().data.toObject(), [
+  t.deepEqual(db.query('nurp').include('email').get().toObject(), [
     {
       email: '',
       id: 1,
@@ -65,5 +65,7 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').include('email').get().data.toObject(), [])
+  t.deepEqual(db.query('user').include('email').get().toObject(), [])
+
+  await db.destroy()
 })

@@ -67,7 +67,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().data.toObject(), [
+  t.deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -112,7 +112,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().data.toObject(), [
+  t.deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -141,7 +141,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp', 2).get().data.toObject(), {
+  t.deepEqual(db.query('snurp', 2).get().toObject(), {
     a: 0,
     b: 0,
     c: 0,
@@ -155,7 +155,7 @@ test.serial('update', async (t) => {
   })
 
   // for individual queries combine them
-  t.deepEqual(db.query('snurp', [2, 1]).get().data.toObject(), [
+  t.deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -184,7 +184,7 @@ test.serial('update', async (t) => {
 
   // ------------------------------
   const ids = []
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 1; i <= 1e6; i++) {
     ids.push(i)
     db.create('snurp', {
       a: i,
@@ -194,16 +194,28 @@ test.serial('update', async (t) => {
       },
     })
   }
+
   db.drain()
 
-  // console.log(db.query('snurp', ids).get())
-  // const d = Date.now()
+  t.is(db.query('snurp', ids).get().length, 1e6)
 
-  // // x200 faster...
+  t.is(db.query('snurp', ids).range(0, 100).get().length, 100)
 
-  // let x = 0
-  // for (var i = 0; i < 1e5; i++) {
-  //   x += db.query('snurp', i).get().execTime
-  // }
-  // console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
+  t.is(db.query('snurp', ids).range(10, 100).get().length, 90)
+
+  let total = 0
+  let len = 0
+  for (var j = 0; j < 1; j++) {
+    let x = 0
+    const d = Date.now()
+    for (var i = 0; i < 1e5; i++) {
+      x += db.query('snurp', i).include('a').get().execTime
+    }
+    console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
+    total += x
+    len++
+  }
+
+  // ---
+  console.log('TOTAL', 'db time', total / len, 'ms', 0)
 })

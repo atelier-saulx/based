@@ -3,7 +3,6 @@ import { BasedDb } from './index.js'
 export const flushBuffer = (db: BasedDb) => {
   if (db.modifyBuffer.len) {
     const d = Date.now()
-    const len = db.modifyBuffer.len
     db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
     db.modifyBuffer.len = 0
     db.modifyBuffer.typePrefix = new Uint8Array([0, 0])
@@ -12,18 +11,18 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.lastMain = -1
     db.modifyBuffer.mergeMain = null
     db.modifyBuffer.mergeMainSize = 0
+    db.modifyBuffer.hasStringField = -1
     const time = Date.now() - d
-    console.log('flush db', time, 'ms', ~~(len / 1000), 'kb')
+    db.writeTime += time
     return time
   }
+  db.isDraining = false
   return 0
 }
 
 export const startDrain = (db: BasedDb) => {
-  // if size is large drain
   db.isDraining = true
   process.nextTick(() => {
     flushBuffer(db)
-    db.isDraining = false
   })
 }

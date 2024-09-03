@@ -12,11 +12,12 @@ test.serial('single reference multi refs', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -49,7 +50,7 @@ test.serial('single reference multi refs', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('blup').include('flap').get().data.toObject(), [
+  t.deepEqual(db.query('blup').include('flap').get().toObject(), [
     {
       id: 1,
       flap: 'B',
@@ -58,26 +59,29 @@ test.serial('single reference multi refs', async (t) => {
 
   const result1 = db.query('user').include('myBlup.flap').get()
 
-  for (const r of result1.data) {
+  for (const r of result1) {
     t.is(r.myBlup.flap, 'B')
   }
 
   const result = db.query('simple').include('user.myBlup.flap').get()
 
-  for (const r of result.data) {
+  for (const r of result) {
     t.is(r.user.myBlup.flap, 'B')
   }
+
+  await db.destroy()
 })
 
 test.serial('single reference object', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -119,7 +123,7 @@ test.serial('single reference object', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('simple').include('admin.user').get().data.toObject(), [
+  t.deepEqual(db.query('simple').include('admin.user').get().toObject(), [
     {
       id: 1,
       admin: {
@@ -129,18 +133,20 @@ test.serial('single reference object', async (t) => {
       },
     },
   ])
+
+  await db.destroy()
 })
 
-test.serial('single reference', async (t) => {
+test.serial.only('single reference', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
-    // maxModifySize: 1e4,
   })
+
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -212,32 +218,28 @@ test.serial('single reference', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
-    db.query('simple').include('id').range(0, 1).get().data.toObject(),
-    [{ id: 1 }],
-  )
+  t.deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
+    { id: 1 },
+  ])
 
-  t.deepEqual(
-    db.query('simple').include('user').range(0, 1).get().data.toObject(),
-    [
-      {
+  t.deepEqual(db.query('simple').include('user').range(0, 1).get().toObject(), [
+    {
+      id: 1,
+      user: {
         id: 1,
-        user: {
-          id: 1,
-          name: 'Jim de Beer',
-          flap: 10,
-          email: 'person@once.net',
-          age: 99,
-          snurp: '',
-          burp: 0,
-          location: { label: 'BLA BLA', x: 1, y: 2 },
-        },
+        name: 'Jim de Beer',
+        flap: 10,
+        email: 'person@once.net',
+        age: 99,
+        snurp: '',
+        burp: 0,
+        location: { label: 'BLA BLA', x: 1, y: 2 },
       },
-    ],
-  )
+    },
+  ])
 
   t.deepEqual(
-    db.query('simple').include('user.myBlup').range(0, 1).get().data.toObject(),
+    db.query('simple').include('user.myBlup').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
   )
 
@@ -247,7 +249,7 @@ test.serial('single reference', async (t) => {
       .include('user.myBlup', 'lilBlup')
       .range(0, 1)
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       {
         id: 1,
@@ -263,7 +265,7 @@ test.serial('single reference', async (t) => {
       .include('user.myBlup', 'lilBlup', 'user.name')
       .range(0, 1)
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       {
         id: 1,
@@ -283,17 +285,12 @@ test.serial('single reference', async (t) => {
       .include('user.location.label')
       .range(0, 1)
       .get()
-      .data.toObject(),
+      .toObject(),
     [{ id: 1, user: { id: 1, location: { label: 'BLA BLA' } } }],
   )
 
   t.deepEqual(
-    db
-      .query('simple')
-      .include('user.location')
-      .range(0, 1)
-      .get()
-      .data.toObject(),
+    db.query('simple').include('user.location').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
   )
 
@@ -303,7 +300,7 @@ test.serial('single reference', async (t) => {
       .include('user.myBlup', 'lilBlup')
       .range(0, 1)
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       {
         id: 1,
@@ -330,7 +327,7 @@ test.serial('single reference', async (t) => {
       .include('user', 'user.myBlup')
       .range(0, 1)
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       {
         id: 1,
@@ -355,7 +352,7 @@ test.serial('single reference', async (t) => {
       .include('user', 'user.myBlup', 'lilBlup')
       .range(0, 1)
       .get()
-      .data.toObject(),
+      .toObject(),
     [
       {
         id: 1,
@@ -374,9 +371,11 @@ test.serial('single reference', async (t) => {
       },
     ],
   )
+
+  await db.destroy()
 })
 
-test.serial.only('single reference multi refs strings', async (t) => {
+test.serial('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -386,6 +385,7 @@ test.serial.only('single reference multi refs strings', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
+  await db.start()
 
   db.updateSchema({
     types: {
@@ -431,7 +431,7 @@ test.serial.only('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  for (const r of result.data) {
+  for (const r of result) {
     t.is(r.lilBlup.name, '')
   }
 
@@ -447,11 +447,13 @@ test.serial.only('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  t.deepEqual(result2.data.toObject(), [
+  t.deepEqual(result2.toObject(), [
     {
       id: 2,
       user: null,
       lilBlup: null,
     },
   ])
+
+  await db.destroy()
 })

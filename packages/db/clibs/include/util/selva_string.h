@@ -67,6 +67,7 @@ struct selva_string_compressed_hdr {
     uint32_t uncompressed_size;
 } __packed;
 
+#ifndef __zig
 struct selva_string {
     struct {
         uint64_t len: 48;
@@ -87,6 +88,7 @@ struct selva_string {
         struct selva_string name; \
         char buf[SELVA_STRING_STATIC_BUF_SIZE]; \
     } name
+#endif
 
 /**
  * Initialize a statically allocated selva_string.
