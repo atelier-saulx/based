@@ -135,11 +135,11 @@ await db.stop()
 
 console.log('STOP rdy')
 
-const db2 = new BasedDb({
-  path: dbFolder,
-})
+// const db2 = new BasedDb({
+//   path: dbFolder,
+// })
 
-await db2.start()
+// await db2.start()
 
 // db.updateSchema({
 //   types: {
