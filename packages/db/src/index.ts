@@ -106,28 +106,31 @@ export class BasedDb {
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
       if (schema) {
-        this.updateSchema(JSON.parse(schema.toString()))
+        //  prop need to not call setting in selva
+        this.updateSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
 
-    if (entries) {
-      for (const entry of entries) {
-        for (const key in this.schemaTypesParsed) {
-          const def = this.schemaTypesParsed[key]
-          if (
-            entry.field == 0 &&
-            def.prefix[0] == entry.type[0] &&
-            def.prefix[1] == entry.type[1]
-          ) {
-            def.total += entry.entries
-            if (entry.lastId > def.lastId) {
-              def.lastId = entry.lastId
-            }
-          }
-        }
-      }
-      return entries
-    }
+    console.log('Info from ABOUT TYPES PLZZZZ!')
+    // TODO MAKE SOMETHING LIKE THIS
+    // if (entries) {
+    //   for (const entry of entries) {
+    //     for (const key in this.schemaTypesParsed) {
+    //       const def = this.schemaTypesParsed[key]
+    //       if (
+    //         entry.field == 0 &&
+    //         def.prefix[0] == entry.type[0] &&
+    //         def.prefix[1] == entry.type[1]
+    //       ) {
+    //         def.total += entry.entries
+    //         if (entry.lastId > def.lastId) {
+    //           def.lastId = entry.lastId
+    //         }
+    //       }
+    //     }
+    //   }
+    //   return entries
+    // }
     return []
   }
 
@@ -153,20 +156,30 @@ export class BasedDb {
     }
   }
 
-  updateSchema(schema: BasedSchemaPartial): BasedSchema {
+  updateSchema(
+    schema: BasedSchemaPartial,
+    fromStart: boolean = false,
+  ): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
 
-    fs.writeFile(
-      join(this.fileSystemPath, 'schema.json'),
-      JSON.stringify(this.schema),
-    )
+    if (!fromStart) {
+      fs.writeFile(
+        join(this.fileSystemPath, 'schema.json'),
+        JSON.stringify(this.schema),
+      )
+    }
 
     let types = Object.keys(this.schemaTypesParsed)
     const s = schema2selva(this.schemaTypesParsed)
     for (let i = 0; i < s.length; i++) {
       const type = this.schemaTypesParsed[types[i]]
-      this.native.updateSchemaType(type.prefixString, s[i])
+      //  should not crash!
+      try {
+        this.native.updateSchemaType(type.prefixString, s[i])
+      } catch (err) {
+        console.error('Cannot update schema on selva', type.type, err)
+      }
     }
     return this.schema
   }
