@@ -160,7 +160,7 @@ export default {
       console.log(buf.toString())
       return db.isSaveReady(pid, buf, errBuf)
     } catch (err) {
-      console.log('HELLO', errBuf.toString())
+      console.log('ERROR SAVE READY', errBuf.toString())
       throw err
     }
   },
