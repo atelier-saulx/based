@@ -59,10 +59,23 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     // selva.se
     db.ctx.selva = selva.selva_db_create();
 
+    selva.selva_dump_load(path);
+
     return stat.statInternal(napi_env, true);
 }
 
+// make extra method
+// LOCK
+
 fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+
+    // selva_dump_save_async
+    // done :/
+    // TODO: fix
+
+    // if last is magic string
+    // check every second
+
     selva.selva_db_destroy(db.ctx.selva);
 
     db.ctx.selva = null;
