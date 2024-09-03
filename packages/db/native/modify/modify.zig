@@ -44,10 +44,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .id = undefined,
         .sortWriteTxn = null,
         .currentSortIndex = null,
-        .sortIndexes = db.Indexes.init(allocator),
-        .selvaNode = null,
-        .selvaTypeEntry = null,
-        .selvaFieldSchema = null,
+        .sortIndexes = sort.Indexes.init(allocator),
+        .node = null,
+        .typeEntry = null,
+        .fieldSchema = null,
     };
 
     while (i < size) {
@@ -63,26 +63,25 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             } else {
                 ctx.currentSortIndex = null;
             }
-            ctx.selvaFieldSchema = try db.getFieldSchema(ctx.field, ctx.selvaTypeEntry);
+            ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
         } else if (operationType == 10) {
-            db.deleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {};
+            db.deleteNode(ctx.node.?, ctx.typeEntry.?) catch {};
             i = i + 1;
         } else if (operationType == 9) {
             // create or get
             ctx.id = readInt(u32, operation, 0);
-            ctx.selvaNode = selva.selva_upsert_node(ctx.selvaTypeEntry, ctx.id);
+            ctx.node = selva.selva_upsert_node(ctx.typeEntry.?, ctx.id);
             i = i + 5;
         } else if (operationType == 1) {
             // SWITCH ID
-            // get
             ctx.id = readInt(u32, operation, 0);
-            ctx.selvaNode = selva.selva_find_node(ctx.selvaTypeEntry, ctx.id);
+            ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
             i = i + 5;
         } else if (operationType == 2) {
             // SWITCH TYPE
             ctx.typeId[0] = batch[i + 1];
             ctx.typeId[1] = batch[i + 2];
-            ctx.selvaTypeEntry = try db.getType(ctx.typeId);
+            ctx.typeEntry = try db.getType(ctx.typeId);
             i = i + 3;
         } else if (operationType == 3) {
             i += try createField(&ctx, operation) + 1;

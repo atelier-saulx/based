@@ -40,6 +40,8 @@ pub const SortIndex = struct {
     start: u16,
 };
 
+pub const Indexes = std.AutoHashMap(SortDbiName, SortIndex);
+
 pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
     var txn: ?*c.MDB_txn = null;
     if (readOnly == true) {

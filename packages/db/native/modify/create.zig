@@ -15,7 +15,7 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     const size = operationSize + 4;
     const data = batch[4..size];
 
-    try db.writeField(data, ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+    try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

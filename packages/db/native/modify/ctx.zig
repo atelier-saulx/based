@@ -6,19 +6,13 @@ const selva = @import("../selva.zig");
 pub const ModifyCtx = struct {
     field: u8,
     id: u32,
-
     sortWriteTxn: ?*c.MDB_txn,
-
     currentSortIndex: ?sort.SortIndex,
-
-    sortIndexes: db.Indexes,
-
+    sortIndexes: sort.Indexes,
     typeId: db.TypeId,
-    selvaTypeEntry: ?*selva.SelvaTypeEntry,
-
-    selvaFieldSchema: ?*selva.SelvaFieldSchema,
-
-    selvaNode: ?*selva.SelvaNode,
+    typeEntry: ?db.Type,
+    fieldSchema: ?db.FieldSchema,
+    node: ?db.Node,
 };
 
 pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?sort.SortIndex {

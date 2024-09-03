@@ -6,8 +6,6 @@ const selva = @import("../selva.zig");
 
 pub const TypeId = [2]u8;
 
-pub const Indexes = std.AutoHashMap(sort.SortDbiName, sort.SortIndex);
-
 pub const StartSet = std.AutoHashMap(u16, u8);
 
 pub const Node = *selva.SelvaNode;
@@ -22,7 +20,7 @@ pub const DbCtx = struct {
     readTxn: *c.MDB_txn,
     readTxnCreated: bool,
     env: ?*c.MDB_env,
-    sortIndexes: Indexes,
+    sortIndexes: sort.Indexes,
     mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
     readOnly: bool,
     selva: ?*selva.SelvaDb,
@@ -30,7 +28,7 @@ pub const DbCtx = struct {
 
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 const allocator = arena.allocator();
-const sortIndexes = Indexes.init(allocator);
+const sortIndexes = sort.Indexes.init(allocator);
 const mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(allocator);
 
 pub var ctx: DbCtx = .{
