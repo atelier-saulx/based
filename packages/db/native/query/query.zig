@@ -8,7 +8,8 @@ const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
-const QueryTypes = @import("./queryTypes.zig");
+const QuerySort = @import("./sort.zig");
+const Query = @import("./nonSort.zig");
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(0, env, info) catch |err| {
@@ -90,11 +91,6 @@ inline fn getQueryInternal(
         .allocator = allocator,
     };
 
-    // get rid of this
-    const readTxn = try sort.initReadTxn();
-
-    sort.renewTx(readTxn);
-
     if (queryType == 0) {
         // query no sort
         const args = try napi.getArgs(6, env, info);
@@ -104,7 +100,7 @@ inline fn getQueryInternal(
         const offset = try napi.getInt32("offset", env, args[3]);
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
-        try QueryTypes.queryNonSort(&ctx, lastId, offset, limit, typeId, conditions, include);
+        try Query.query(&ctx, lastId, offset, limit, typeId, conditions, include);
     } else if (queryType == 1) {
         // single id
         const args = try napi.getArgs(4, env, info);
@@ -112,7 +108,7 @@ inline fn getQueryInternal(
         const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
         const id = try napi.getInt32("id", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
-        try QueryTypes.queryId(id, &ctx, typeId, conditions, include);
+        try Query.queryId(id, &ctx, typeId, conditions, include);
     } else if (queryType == 2) {
         // ids list
         const args = try napi.getArgs(4, env, info);
@@ -120,7 +116,7 @@ inline fn getQueryInternal(
         const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
         const ids = try napi.getBuffer("ids", env, args[2]);
         const include = try napi.getBuffer("include", env, args[3]);
-        try QueryTypes.queryIds(ids, &ctx, typeId, conditions, include);
+        try Query.queryIds(ids, &ctx, typeId, conditions, include);
     } else if (queryType == 3 or queryType == 4) {
         // query sorted
         const args = try napi.getArgs(7, env, info);
@@ -131,7 +127,7 @@ inline fn getQueryInternal(
         const limit = try napi.getInt32("limit", env, args[4]);
         const include = try napi.getBuffer("include", env, args[5]);
         const sortBuffer = try napi.getBuffer("sort", env, args[6]);
-        try QueryTypes.querySort(queryType, &ctx, lastId, offset, limit, typeId, conditions, include, sortBuffer);
+        try QuerySort.querySort(queryType, &ctx, lastId, offset, limit, typeId, conditions, include, sortBuffer);
     } else if (queryType == 5 or queryType == 6) {
         // query ids sorted
         const args = try napi.getArgs(10, env, info);
@@ -145,7 +141,7 @@ inline fn getQueryInternal(
         const sortBuffer = try napi.getBuffer("sort", env, args[7]);
         const low = try napi.getInt32("low", env, args[8]);
         const high = try napi.getInt32("high", env, args[9]);
-        try QueryTypes.queryIdsSort(
+        try QuerySort.queryIdsSort(
             queryType,
             ids,
             &ctx,
@@ -170,7 +166,7 @@ inline fn getQueryInternal(
         const ids = try napi.getBufferU32("ids", env, args[5]);
         const include = try napi.getBuffer("include", env, args[6]);
         const sortBuffer = try napi.getBuffer("sort", env, args[7]);
-        try QueryTypes.queryIdsSortBig(
+        try QuerySort.queryIdsSortBig(
             queryType,
             ids,
             &ctx,
@@ -183,9 +179,6 @@ inline fn getQueryInternal(
             limit,
         );
     }
-
-    // get rid of this only for search
-    sort.resetTxn(readTxn);
 
     return results.createResultsBuffer(&ctx, env);
 }
