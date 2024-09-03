@@ -154,10 +154,15 @@ export default {
   },
 
   isSaveReady: (pid: number, path: string): boolean => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    console.log(buf)
     const errBuf = Buffer.alloc(80)
-    return db.isSaveReady(pid, buf, errBuf)
+    try {
+      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+      console.log(buf.toString())
+      return db.isSaveReady(pid, buf, errBuf)
+    } catch (err) {
+      console.log('HELLO', errBuf.toString())
+      throw err
+    }
   },
 
   stop: () => {

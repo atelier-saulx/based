@@ -3,6 +3,7 @@ const db = @import("db.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const selva = @import("../selva.zig");
+const std = @import("std");
 
 pub fn save(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, napi_env, info) catch return null;
@@ -25,7 +26,11 @@ pub fn isReady(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.
     const err_msg = napi.getBuffer("err_msg", napi_env, args[2]) catch return null;
     var res: c.napi_value = null;
 
-    const rc = selva.selva_is_dump_ready(pid, sdb_filename.ptr, err_msg.ptr, err_msg.len);
+    std.debug.print("flap {d} \n", .{pid});
+
+    var len: usize = err_msg.len;
+
+    const rc = selva.selva_is_dump_ready(pid, sdb_filename.ptr, err_msg.ptr, &len);
     if (rc == 0) {
         _ = c.napi_get_boolean(napi_env, true, &res);
     } else if (rc == selva.SELVA_EINPROGRESS) {
