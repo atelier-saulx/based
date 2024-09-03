@@ -18,15 +18,22 @@ pub fn queryId(
     conditions: []u8,
     include: []u8,
 ) !void {
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
-
+    const typeEntry = try db.getTypeEntry(typeId);
     // pass this refactor single ref
-    if (filter(id, typeId, conditions)) {
-        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
+    const node = db.getNode(id, typeEntry);
+
+    if (node == null) {
+        return;
+    }
+
+    if (!filter(node.?, typeEntry, conditions)) {
+        return;
+    }
+
+    const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+    if (size > 0) {
+        ctx.size += size;
+        ctx.totalResults += 1;
     }
 }
 
@@ -37,15 +44,23 @@ pub fn queryIds(
     conditions: []u8,
     include: []u8,
 ) !void {
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+    const typeEntry = try db.getTypeEntry(typeId);
 
     var i: u32 = 0;
     checkItem: while (i <= ids.len) : (i += 4) {
         const id = std.mem.readInt(u32, ids[i..][0..4], .little);
-        if (!filter(id, typeId, conditions)) {
+
+        const node = db.getNode(id, typeEntry);
+        if (node == null) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
+
+        if (!filter(node.?, typeEntry, conditions)) {
+            continue :checkItem;
+        }
+
+        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -65,10 +80,16 @@ pub fn query(
     var i: u32 = 1;
     var correctedForOffset: u32 = offset;
 
-    const selvaTypeEntry: *selva.SelvaTypeEntry = try db.getSelvaTypeEntry(typeId);
+    const typeEntry = try db.getTypeEntry(typeId);
 
     checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
-        if (!filter(i, typeId, conditions)) {
+        const node = db.getNode(i, typeEntry);
+
+        if (node == null) {
+            continue :checkItem;
+        }
+
+        if (!filter(node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
 
@@ -77,7 +98,7 @@ pub fn query(
             continue :checkItem;
         }
 
-        const size = try getFields(ctx, i, selvaTypeEntry, null, include, 0);
+        const size = try getFields(node.?, ctx, i, typeEntry, null, include, 0);
 
         if (size > 0) {
             ctx.size += size;

@@ -49,7 +49,7 @@ pub fn getQueryId() u32 {
 }
 
 // SELVA WRAPPERS
-pub fn getSelvaTypeEntry(typePrefix: [2]u8) !*selva.SelvaTypeEntry {
+pub fn getTypeEntry(typePrefix: TypeId) !*selva.SelvaTypeEntry {
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
@@ -80,13 +80,13 @@ pub fn selvaGetField(node: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaField
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
 }
 
-pub fn selvaWriteField(d: []u8, selvaNode: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) !void {
+pub fn selvaWriteField(data: []u8, selvaNode: *selva.SelvaNode, selvaFieldSchema: *selva.SelvaFieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
         selvaNode,
         selvaFieldSchema,
-        d.ptr,
-        d.len,
+        data.ptr,
+        data.len,
     ));
 }
 

@@ -162,7 +162,7 @@ fn createSortIndex(
     try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
-    const typeEntry = try db.getSelvaTypeEntry(typePrefix);
+    const typeEntry = try db.getTypeEntry(typePrefix);
     const fieldSchema = try db.selvaGetFieldSchema(field, typeEntry);
 
     var i: u32 = 0;

@@ -29,6 +29,18 @@ pub fn getSingleRefFields(
         return 0;
     }
 
+    const typeEntry = db.getTypeEntry(typeId) catch null;
+
+    if (typeEntry == null) {
+        return 0;
+    }
+
+    const node = db.getNode(refId, typeEntry.?);
+
+    if (node == null) {
+        return 0;
+    }
+
     if (!hasFields) {
         _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
             return 0;
@@ -37,12 +49,11 @@ pub fn getSingleRefFields(
 
     const includeNested = include[4..include.len];
 
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
-
     const resultSizeNest = getFields(
+        node.?,
         ctx,
         refId,
-        selvaTypeEntry,
+        typeEntry.?,
         start,
         includeNested,
         refLvl + 1,

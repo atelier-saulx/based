@@ -84,7 +84,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.typeId[0] = batch[i + 1];
             ctx.typeId[1] = batch[i + 2];
 
-            ctx.selvaTypeEntry = try db.getSelvaTypeEntry(ctx.typeId);
+            ctx.selvaTypeEntry = try db.getTypeEntry(ctx.typeId);
 
             i = i + 3;
         } else if (operationType == 3) {

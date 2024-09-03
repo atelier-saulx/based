@@ -37,7 +37,7 @@ pub fn queryIdsSort(
     var first: bool = true;
     var lastCheck: usize = ids.len;
 
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+    const typeEntry = try db.getTypeEntry(typeId);
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -58,10 +58,18 @@ pub fn queryIdsSort(
         if (!hasId(id, ids, &lastCheck, low, high)) {
             continue :checkItem;
         }
-        if (!filter(id, typeId, conditions)) {
+
+        const node = db.getNode(id, typeEntry);
+
+        if (node == null) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
+
+        if (!filter(node.?, typeEntry, conditions)) {
+            continue :checkItem;
+        }
+
+        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -100,7 +108,7 @@ pub fn queryIdsSortBig(
         try map.put(ids[i], 0);
     }
 
-    const selvaTypeEntry: *selva.SelvaTypeEntry = try db.getSelvaTypeEntry(typeId);
+    const typeEntry = try db.getTypeEntry(typeId);
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -121,11 +129,18 @@ pub fn queryIdsSortBig(
         if (!map.contains(id)) {
             continue :checkItem;
         }
-        // selva node
-        if (!filter(id, typeId, conditions)) {
+
+        const node = db.getNode(id, typeEntry);
+
+        if (node == null) {
             continue :checkItem;
         }
-        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
+
+        if (!filter(node.?, typeEntry, conditions)) {
+            continue :checkItem;
+        }
+
+        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -148,7 +163,7 @@ pub fn querySort(
 ) !void {
     const readTxn = try sort.initReadTxn();
     sort.renewTx(readTxn);
-    const selvaTypeEntry: *selva.SelvaTypeEntry = try db.getSelvaTypeEntry(typeId);
+    const typeEntry = try db.getTypeEntry(typeId);
     const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
 
     var end: bool = false;
@@ -179,7 +194,13 @@ pub fn querySort(
 
         const id = utils.readInt(u32, sort.readData(v), 0);
 
-        if (!filter(id, typeId, conditions)) {
+        const node = db.getNode(id, typeEntry);
+
+        if (node == null) {
+            continue :checkItem;
+        }
+
+        if (!filter(node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
 
@@ -188,7 +209,7 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        const size = try getFields(ctx, id, selvaTypeEntry, null, include, 0);
+        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
 
         if (size > 0) {
             ctx.size += size;

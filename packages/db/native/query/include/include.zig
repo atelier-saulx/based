@@ -10,6 +10,7 @@ const db = @import("../../db//db.zig");
 const std = @import("std");
 
 pub fn getFields(
+    node: *selva.SelvaNode,
     ctx: *QueryCtx,
     id: u32,
     typeEntry: *selva.SelvaTypeEntry,
@@ -17,15 +18,6 @@ pub fn getFields(
     include: []u8,
     refLvl: u8,
 ) !usize {
-    const selvaNodeNull = db.getNode(id, typeEntry);
-
-    if (selvaNodeNull == null) {
-        // std.debug.print("CANT FIND ID {d}\n", .{id});
-        return 0;
-    }
-
-    const selvaNode: *selva.SelvaNode = selvaNodeNull.?;
-
     var includeMain: []u8 = &.{};
     var size: usize = 0;
     var includeIterator: u16 = 0;
@@ -44,7 +36,7 @@ pub fn getFields(
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
-                main = db.selvaGetField(selvaNode, try db.selvaGetFieldSchema(0, typeEntry));
+                main = db.selvaGetField(node, try db.selvaGetFieldSchema(0, typeEntry));
                 if (main.?.len > 0 and !idIsSet and start == null) {
                     idIsSet = true;
                     size += try addIdOnly(ctx, id, refLvl, start);
@@ -65,7 +57,7 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = db.selvaGetField(selvaNode, try db.selvaGetFieldSchema(field, typeEntry));
+        const value = db.selvaGetField(node, try db.selvaGetFieldSchema(field, typeEntry));
 
         if (value.len == 0) {
             continue :includeField;
