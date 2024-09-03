@@ -11,7 +11,6 @@ import { hash, hashCompact } from '@saulx/hash'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
 import { BasedClient } from '@based/client'
-import { minimatch } from 'minimatch'
 import fg from 'fast-glob'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
@@ -273,16 +272,16 @@ export const parseFunctions = async (
           return true
         }
 
-        if (!('bundle' in config) || config.bundle) {
-          configStore.app = abs(config.main, dir)
-          browserEntryPoints.push(configStore.app)
+        // if (!('bundle' in config) || config.bundle) {
+        configStore.app = abs(config.main, dir)
+        browserEntryPoints.push(configStore.app)
 
-          if (config.favicon) {
-            configStore.favicon = abs(config.favicon, dir)
-            browserEntryPoints.push(configStore.favicon)
-            favicons.add(rel(configStore.favicon))
-          }
+        if (config.favicon) {
+          configStore.favicon = abs(config.favicon, dir)
+          browserEntryPoints.push(configStore.favicon)
+          favicons.add(rel(configStore.favicon))
         }
+        // }
       }
 
       if (config.files) {
@@ -337,7 +336,7 @@ export const parseFunctions = async (
       {
         publicPath,
         entryPoints: browserEntryPoints,
-        sourcemap: 'inline',
+        sourcemap: true,
         platform: 'browser',
         bundle: true,
         define: {
@@ -476,13 +475,13 @@ export const deploy = async (program: Command) => {
                 favicon: assetsMap[appFavicon?.path],
               }
 
-              checksum = [
+              checksum = hash([
                 appJs?.hash,
                 appCss?.hash,
                 appFavicon?.path,
                 js.hash,
                 config,
-              ]
+              ])
             } else {
               checksum = hash([js.hash, config])
             }

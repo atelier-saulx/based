@@ -1,6 +1,5 @@
 import { Command } from 'commander'
 import { login as loginFn } from '../../shared/login.js'
-import { spinner } from '../../shared/spinner.js'
 
 export const login = async (program: Command) => {
   const cmd = program.command('login')

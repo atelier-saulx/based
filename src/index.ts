@@ -14,6 +14,7 @@ export const init = async () => {
     await Promise.all([
       globalOptions(program),
       version(program),
+      // commands
       deploy(program),
       login(program),
       dev(program),

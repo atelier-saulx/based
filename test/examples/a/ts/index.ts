@@ -1,4 +1,4 @@
-export default async (_based, { css, js, favicon }) => {
+export default async (_based, { css, js, favicon }, _ctx) => {
   return `<html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -7,7 +7,9 @@ export default async (_based, { css, js, favicon }) => {
   </head>
   <body>
     <div id="root"></div>
-    <script src="${js.url}"></script>
+    <script>${await js.text}</script>
   </body>
 </html>`
+
+  //<script src="${js.url}"></script>
 }

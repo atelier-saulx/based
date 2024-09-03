@@ -2,34 +2,34 @@ import { findUp } from 'find-up'
 import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 
-let env
-const getEnv = async (): Promise<string> => {
-  if (env === undefined) {
-    env = global.ENV
-    if (!env && typeof process === 'object') {
-      env = process.env.ENV
-      if (!env) {
-        const { exec } = await import('node:child_process')
-        env = await new Promise((resolve) => {
-          return exec('git branch --show-current', (err, stdout) => {
-            resolve(err ? '' : stdout.trim())
-            if (err) {
-              resolve('')
-            }
-          })
-        })
-      }
-    }
-    env ||= ''
-  }
+// let env
+// const getEnv = async (): Promise<string> => {
+//   if (env === undefined) {
+//     env = global.ENV
+//     if (!env && typeof process === 'object') {
+//       env = process.env.ENV
+//       if (!env) {
+//         const { exec } = await import('node:child_process')
+//         env = await new Promise((resolve) => {
+//           return exec('git branch --show-current', (err, stdout) => {
+//             resolve(err ? '' : stdout.trim())
+//             if (err) {
+//               resolve('')
+//             }
+//           })
+//         })
+//       }
+//     }
+//     env ||= ''
+//   }
 
-  return env
-}
+//   return env
+// }
 
 export const globalOptions = async (program) => {
-  if (!process.env.ENV) {
-    process.env.ENV = await getEnv()
-  }
+  // if (!process.env.ENV) {
+  //   process.env.ENV = await getEnv()
+  // }
 
   const configPath = await findUp(['based.json', 'based.js', 'based.ts'])
   const args: {
