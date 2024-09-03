@@ -62,13 +62,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         db.ctx.selva = selva.selva_db_create();
     }
 
-    // SORT INDEXES
     try initSort();
-
-    // NEED TYPES + LAST ID + ENTRIES
-    // db.selva.types EACH
-
-    std.debug.print("have to get all TYPES + LAST IDS + ENTRIES \n", .{});
 
     return null;
 }

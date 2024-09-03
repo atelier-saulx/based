@@ -143,6 +143,12 @@ const db2 = new BasedDb({
 
 await db2.start()
 
+const flap = db2.query('user').range(0, 1e6).get()
+
+for (const x of flap) {
+  console.log(x)
+}
+
 // db.updateSchema({
 //   types: {
 //     user: {

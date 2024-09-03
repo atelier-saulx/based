@@ -101,8 +101,8 @@ export class BasedDb {
 
     const s = await fs.stat(dumppath).catch(() => null)
 
-    const entries = db.start(this.fileSystemPath, s ? dumppath : null, readOnly)
-    // include schema
+    db.start(this.fileSystemPath, s ? dumppath : null, readOnly)
+
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
       if (schema) {
@@ -111,26 +111,13 @@ export class BasedDb {
       }
     } catch (err) {}
 
-    console.log('Info from ABOUT TYPES PLZZZZ!')
-    // TODO MAKE SOMETHING LIKE THIS
-    // if (entries) {
-    //   for (const entry of entries) {
-    //     for (const key in this.schemaTypesParsed) {
-    //       const def = this.schemaTypesParsed[key]
-    //       if (
-    //         entry.field == 0 &&
-    //         def.prefix[0] == entry.type[0] &&
-    //         def.prefix[1] == entry.type[1]
-    //       ) {
-    //         def.total += entry.entries
-    //         if (entry.lastId > def.lastId) {
-    //           def.lastId = entry.lastId
-    //         }
-    //       }
-    //     }
-    //   }
-    //   return entries
-    // }
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      const [total, lastId] = this.native.getTypeInfo(def.prefixString)
+      def.total = total
+      def.lastId = lastId
+    }
+
     return []
   }
 
@@ -168,17 +155,16 @@ export class BasedDb {
         join(this.fileSystemPath, 'schema.json'),
         JSON.stringify(this.schema),
       )
-    }
-
-    let types = Object.keys(this.schemaTypesParsed)
-    const s = schema2selva(this.schemaTypesParsed)
-    for (let i = 0; i < s.length; i++) {
-      const type = this.schemaTypesParsed[types[i]]
-      //  should not crash!
-      try {
-        this.native.updateSchemaType(type.prefixString, s[i])
-      } catch (err) {
-        console.error('Cannot update schema on selva', type.type, err)
+      let types = Object.keys(this.schemaTypesParsed)
+      const s = schema2selva(this.schemaTypesParsed)
+      for (let i = 0; i < s.length; i++) {
+        const type = this.schemaTypesParsed[types[i]]
+        //  should not crash!
+        try {
+          this.native.updateSchemaType(type.prefixString, s[i])
+        } catch (err) {
+          console.error('Cannot update schema on selva', type.type, err)
+        }
       }
     }
     return this.schema
@@ -213,16 +199,6 @@ export class BasedDb {
     let t = this.writeTime
     this.writeTime = 0
     return t
-  }
-
-  stats() {
-    return db.stat()
-  }
-
-  tester() {
-    const d = Date.now()
-    db.tester()
-    console.log('Tester took', Date.now() - d, 'ms')
   }
 
   async save() {

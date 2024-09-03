@@ -136,10 +136,6 @@ export default {
     return db.getQueryByIds(conditions, prefix, ids, includeBuffer)
   },
 
-  stat: () => {
-    return db.stat()
-  },
-
   start: (path: string, dumpPath: string, readOnly: boolean) => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
     const dumpPathBuf = dumpPath
@@ -169,8 +165,8 @@ export default {
     return db.stop()
   },
 
-  tester: () => {
-    return db.tester()
+  getTypeInfo: (type: string) => {
+    return db.getTypeInfo(type)
   },
 
   updateSchemaType: (prefix: string, buf: Buffer) => {
