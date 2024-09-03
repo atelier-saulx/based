@@ -140,6 +140,20 @@ export default {
     return db.start(buf, readOnly)
   },
 
+  save: (path: string): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.save(buf)
+  },
+
+  isSaveReady: (pid: number, path: string): boolean => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    const code = db.isSaveReady(pid, buf)
+    if (code === 0) {
+      return true
+    }
+    return false
+  },
+
   stop: () => {
     return db.stop()
   },
