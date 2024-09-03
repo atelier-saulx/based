@@ -216,11 +216,7 @@ export class BasedDb {
     const dumppath = join(this.fileSystemPath, 'data.sdb')
     await fs.rm(dumppath).catch(() => {})
     var rdy = false
-    console.log('BLA')
     const pid = this.native.save(dumppath)
-    console.log('BLA 2')
-
-    console.log({ pid, dumppath })
     while (!rdy) {
       await wait(100)
       if (this.native.isSaveReady(pid, dumppath)) {

@@ -133,13 +133,15 @@ console.log(db.query('user').range(0, 1000).get())
 
 await db.stop()
 
+await wait(1e3)
+
 console.log('STOP rdy')
 
-// const db2 = new BasedDb({
-//   path: dbFolder,
-// })
+const db2 = new BasedDb({
+  path: dbFolder,
+})
 
-// await db2.start()
+await db2.start()
 
 // db.updateSchema({
 //   types: {
