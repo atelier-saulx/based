@@ -465,7 +465,7 @@ test.serial('sort - from start (1.5M items)', async (t) => {
     ],
   )
 
-  db.stop()
+  await db.stop()
 
   const newDb = new BasedDb({
     path: dbFolder,

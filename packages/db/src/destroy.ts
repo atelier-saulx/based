@@ -2,7 +2,8 @@ import fs from 'node:fs/promises'
 import { BasedDb } from './index.js'
 
 export const destroy = async (db: BasedDb) => {
-  db.stop()
+  // make stop
+  await db.stop()
   const path = db.fileSystemPath
   try {
     await fs.rm(path, { recursive: true })
