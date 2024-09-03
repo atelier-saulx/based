@@ -97,3 +97,7 @@ pub fn selvaDeleteNode(selvaNode: *selva.SelvaNode, typeEntry: ?*selva.SelvaType
         selvaNode,
     );
 }
+
+pub fn getNode(id: u32, typeEntry: *selva.SelvaTypeEntry) ?*selva.SelvaNode {
+    return selva.selva_find_node(typeEntry, id);
+}

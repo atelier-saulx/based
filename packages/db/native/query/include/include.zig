@@ -17,8 +17,7 @@ pub fn getFields(
     include: []u8,
     refLvl: u8,
 ) !usize {
-    // get this from top
-    const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, id);
+    const selvaNodeNull = db.getNode(id, typeEntry);
 
     if (selvaNodeNull == null) {
         // std.debug.print("CANT FIND ID {d}\n", .{id});

@@ -9,7 +9,9 @@ const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
 test.serial(' query', async (t) => {
-  await fs.mkdir(dbFolder)
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
 
   const db = new BasedDb({
     path: dbFolder,
@@ -50,6 +52,18 @@ test.serial(' query', async (t) => {
   db.drain()
 
   t.deepEqual(db.query('user').include('id').get().toObject(), [{ id: 1 }])
+
+  t.deepEqual(
+    db
+      .query('user')
+      .filter('age', '<', 20)
+      .include('id', 'age')
+      .get()
+      .toObject(),
+    [],
+  )
+
+  // single id
 
   await db.destroy()
 })

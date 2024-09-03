@@ -8,8 +8,8 @@ const results = @import("./results.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
-const QuerySort = @import("./sort.zig");
-const Query = @import("./nonSort.zig");
+const QuerySort = @import("./types/sort.zig");
+const Query = @import("./types/query.zig");
 
 pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryInternal(0, env, info) catch |err| {
