@@ -368,7 +368,7 @@ static void print_ready(
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash));
 }
 
-int selva_dump_save_async(struct SelvaDb *db, const char *filename)
+pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename)
 {
     pid_t pid;
 
@@ -401,7 +401,7 @@ int selva_dump_save_async(struct SelvaDb *db, const char *filename)
         return SELVA_EGENERAL;
     }
 
-    return 0;
+    return pid;
 }
 
 

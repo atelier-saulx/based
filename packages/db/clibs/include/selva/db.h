@@ -28,7 +28,7 @@ SELVA_EXPORT
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len);
 
 SELVA_EXPORT
-int selva_dump_save_async(struct SelvaDb *db, const char *filename);
+pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename);
 
 SELVA_EXPORT
 int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len);

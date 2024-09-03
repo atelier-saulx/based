@@ -7,9 +7,13 @@ const selva = @import("../selva.zig");
 pub fn save(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, napi_env, info) catch return null;
     const sdb_filename = napi.getBuffer("sdb_filename", napi_env, args[0]) catch return null;
+    var result: c.napi_value = null;
 
-    errors.selva(selva.selva_dump_save_async(db.ctx.selva, sdb_filename.ptr)) catch return null;
-    return null;
+    const pid = selva.selva_dump_save_async(db.ctx.selva, sdb_filename.ptr);
+    errors.selva(pid) catch return null;
+
+    _ = c.napi_create_int32(napi_env, pid, &result);
+    return result;
 }
 
 pub fn isReady(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
