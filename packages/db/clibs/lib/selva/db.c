@@ -337,6 +337,11 @@ size_t selva_node_count(const struct SelvaTypeEntry *type)
     return type->nr_nodes;
 }
 
+node_id_t selva_get_node_id(const struct SelvaNode *node)
+{
+    return node->node_id;
+}
+
 void selva_archive_type(struct SelvaTypeEntry *type)
 {
     struct mempool *mempool = &type->nodepool;

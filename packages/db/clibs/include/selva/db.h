@@ -96,6 +96,9 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
 SELVA_EXPORT
 size_t selva_node_count(const struct SelvaTypeEntry *type);
 
+SELVA_EXPORT
+node_id_t selva_get_node_id(const struct SelvaNode *node);
+
 /**
  * Give a hint to page out a node type.
  */
