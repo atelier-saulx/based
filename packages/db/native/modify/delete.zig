@@ -6,7 +6,6 @@ const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
 // TODO maybe remove this completely
-
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

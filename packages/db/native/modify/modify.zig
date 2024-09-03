@@ -107,7 +107,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     }
 
     if (ctx.sortWriteTxn != null) {
-        try db.commitTxn(ctx.sortWriteTxn);
+        try sort.commitTxn(ctx.sortWriteTxn);
     }
 
     return null;

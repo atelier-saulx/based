@@ -94,7 +94,7 @@ pub fn queryIdsSort(
                 flag = c.MDB_NEXT;
             }
         }
-        const id = utils.readInt(u32, db.data(v), 0);
+        const id = utils.readInt(u32, sort.readData(v), 0);
         if (!hasId(id, ids, &lastCheck, low, high)) {
             continue :checkItem;
         }
@@ -152,7 +152,7 @@ pub fn queryIdsSortBig(
                 flag = c.MDB_NEXT;
             }
         }
-        const id = utils.readInt(u32, db.data(v), 0);
+        const id = utils.readInt(u32, sort.readData(v), 0);
         if (!map.contains(id)) {
             continue :checkItem;
         }
@@ -240,7 +240,7 @@ pub fn querySort(
             }
         }
 
-        const id = utils.readInt(u32, db.data(v), 0);
+        const id = utils.readInt(u32, sort.readData(v), 0);
 
         if (!filter(id, typeId, conditions)) {
             continue :checkItem;

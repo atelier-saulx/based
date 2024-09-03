@@ -2,29 +2,69 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const db = @import("./db.zig");
+
 const readInt = @import("../utils.zig").readInt;
 const selva = @import("../selva.zig");
 
 pub const EMPTY_CHAR: [1]u8 = .{0};
 pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
 
-// TYPE BYTE (make into enum)
-//   ['timestamp', 1],
-//   ['created', 2],
-//   ['updated', 3],
-//   ['number', 4],
-//   ['integer', 5],
-//   ['boolean', 6],
-//   ['reference', 7],
-//   ['enum', 8],
-//   ['string', 9],
-//   ['references', 10],
+pub inline fn commitTxn(txn: ?*c.MDB_txn) !void {
+    try errors.mdb(c.mdb_txn_commit(txn));
+}
+
+pub inline fn renewTx(txn: ?*c.MDB_txn) void {
+    errors.mdb(c.mdb_txn_renew(txn)) catch {};
+}
+
+pub inline fn resetTxn(txn: ?*c.MDB_txn) void {
+    c.mdb_txn_reset(txn);
+}
+
+pub inline fn readDataPart(v: c.MDB_val, start: u16, len: u16) []u8 {
+    return @as([*]u8, @ptrCast(v.mv_data))[start .. len + start];
+}
+
+pub inline fn readData(v: c.MDB_val) []u8 {
+    return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
+}
+
+pub const SortDbiName = [7]u8;
+
+pub const SortIndex = struct {
+    field: u8,
+    dbi: c.MDB_dbi,
+    cursor: ?*c.MDB_cursor,
+    queryId: u32,
+    len: u16,
+    start: u16,
+};
+
+pub fn createTransaction(comptime readOnly: bool) !?*c.MDB_txn {
+    var txn: ?*c.MDB_txn = null;
+    if (readOnly == true) {
+        try errors.mdb(c.mdb_txn_begin(db.ctx.env, null, c.MDB_RDONLY, &txn));
+    } else {
+        try errors.mdb(c.mdb_txn_begin(db.ctx.env, null, 0, &txn));
+    }
+    return txn.?;
+}
+
+pub fn initReadTxn() !*c.MDB_txn {
+    if (db.ctx.readTxnCreated) {
+        return db.ctx.readTxn;
+    }
+    db.ctx.readTxnCreated = true;
+    const tmpTxn = try createTransaction(true);
+    db.ctx.readTxn = tmpTxn.?;
+    return db.ctx.readTxn;
+}
 
 pub fn getSortName(
     typePrefix: db.TypeId,
     field: u8,
     start: u16,
-) db.SortDbiName {
+) SortDbiName {
     var startCasted: [2]u8 = @bitCast(start);
     if (startCasted[0] == 0 and startCasted[1] != 0) {
         startCasted[0] = 255;
@@ -42,7 +82,7 @@ pub fn getSortName(
     return name;
 }
 
-pub fn writeField(id: u32, buf: []u8, sortIndex: db.SortIndex) !void {
+pub fn writeField(id: u32, buf: []u8, sortIndex: SortIndex) !void {
     const field: u8 = sortIndex.field;
     const len = sortIndex.len;
     const start = sortIndex.start;
@@ -99,14 +139,14 @@ pub fn writeDataToSortIndex(
 // integrate selva
 
 fn createSortIndex(
-    name: db.SortDbiName,
+    name: SortDbiName,
     start: u16,
     len: u16,
     field: u8,
     fieldType: u8,
     lastId: u32,
 ) !void {
-    const txn = try db.createTransaction(false);
+    const txn = try createTransaction(false);
     const typePrefix: [2]u8 = .{ name[1], name[2] };
 
     var dbi: c.MDB_dbi = 0;
@@ -136,7 +176,7 @@ fn createSortIndex(
         try writeDataToSortIndex(i, data, start, len, cursor, field);
     }
 
-    try errors.mdb(c.mdb_txn_commit(txn));
+    try commitTxn(txn);
 
     if (len > 0) {
         if (!db.ctx.mainSortIndexes.contains(typePrefix)) {
@@ -149,14 +189,14 @@ fn createSortIndex(
     }
 }
 
-pub fn createReadSortIndex(name: db.SortDbiName, queryId: u32, len: u16, start: u16) !db.SortIndex {
+pub fn createReadSortIndex(name: SortDbiName, queryId: u32, len: u16, start: u16) !SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
     // TODO: optmize calling this at the start BUT after the creation of a write TXN (else it crashes)
-    _ = try db.initReadTxn();
+    _ = try initReadTxn();
 
-    c.mdb_txn_reset(db.ctx.readTxn);
+    resetTxn(db.ctx.readTxn);
 
     try errors.mdb(c.mdb_txn_renew(db.ctx.readTxn));
     try errors.mdb(c.mdb_dbi_open(db.ctx.readTxn, &name, 0, &dbi));
@@ -177,7 +217,7 @@ pub fn getOrCreateReadSortIndex(
     sort: []u8,
     queryId: u32,
     lastId: u32,
-) !db.SortIndex {
+) !SortIndex {
     const field: u8 = sort[0];
     const fieldType: u8 = sort[1];
     var start: u16 = undefined;
@@ -212,7 +252,7 @@ pub fn getOrCreateReadSortIndex(
     return s.?;
 }
 
-pub fn getReadSortIndex(name: [7]u8) ?db.SortIndex {
+pub fn getReadSortIndex(name: [7]u8) ?SortIndex {
     return db.ctx.sortIndexes.get(name);
 }
 
@@ -224,7 +264,7 @@ pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
     return db.ctx.mainSortIndexes.contains(typePrefix);
 }
 
-pub fn createWriteSortIndex(name: db.SortDbiName, txn: ?*c.MDB_txn) !db.SortIndex {
+pub fn createWriteSortIndex(name: SortDbiName, txn: ?*c.MDB_txn) !SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     var len: u16 = 0;
@@ -247,7 +287,7 @@ pub fn createWriteSortIndex(name: db.SortDbiName, txn: ?*c.MDB_txn) !db.SortInde
     return writeIndex;
 }
 
-pub fn deleteField(id: u32, d: []u8, sortIndex: db.SortIndex) !void {
+pub fn deleteField(id: u32, d: []u8, sortIndex: SortIndex) !void {
     var data: []u8 = d;
     if (data.len == 0) {
         return;

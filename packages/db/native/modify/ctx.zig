@@ -9,7 +9,7 @@ pub const ModifyCtx = struct {
 
     sortWriteTxn: ?*c.MDB_txn,
 
-    currentSortIndex: ?db.SortIndex,
+    currentSortIndex: ?sort.SortIndex,
 
     sortIndexes: db.Indexes,
 
@@ -21,13 +21,13 @@ pub const ModifyCtx = struct {
     selvaNode: ?*selva.SelvaNode,
 };
 
-pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?db.SortIndex {
+pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?sort.SortIndex {
     const sortIndexName = sort.getSortName(ctx.typeId, ctx.field, start);
     if (sort.hasReadSortIndex(sortIndexName)) {
         var sortIndex = ctx.sortIndexes.get(sortIndexName);
         if (sortIndex == null) {
             if (ctx.sortWriteTxn == null) {
-                ctx.sortWriteTxn = try db.createTransaction(false);
+                ctx.sortWriteTxn = try sort.createTransaction(false);
             }
             sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.sortWriteTxn);
             ctx.sortIndexes.put(sortIndexName, sortIndex.?) catch {

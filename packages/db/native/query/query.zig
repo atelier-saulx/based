@@ -90,8 +90,10 @@ inline fn getQueryInternal(
         .allocator = allocator,
     };
 
-    const readTxn = try db.initReadTxn();
-    errors.mdb(c.mdb_txn_renew(readTxn)) catch {};
+    // get rid of this
+    const readTxn = try sort.initReadTxn();
+
+    sort.renewTx(readTxn);
 
     if (queryType == 0) {
         // query no sort
@@ -182,7 +184,8 @@ inline fn getQueryInternal(
         );
     }
 
-    db.resetTxn(readTxn);
+    // get rid of this only for search
+    sort.resetTxn(readTxn);
 
     return results.createResultsBuffer(&ctx, env);
 }

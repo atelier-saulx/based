@@ -59,7 +59,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     // selva.se
     db.ctx.selva = selva.selva_db_create();
 
-    selva.selva_dump_load(path);
+    // selva.selva_dump_load(path);
 
     return stat.statInternal(napi_env, true);
 }
@@ -79,15 +79,6 @@ fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
     selva.selva_db_destroy(db.ctx.selva);
 
     db.ctx.selva = null;
-
-    var it = db.ctx.readShards.iterator();
-    while (it.next()) |item| {
-        const readShard = item.value_ptr.*;
-        if (db.ctx.readShards.remove(item.key_ptr.*)) {
-            c.mdb_cursor_close(readShard.cursor);
-            c.mdb_dbi_close(db.ctx.env, readShard.dbi);
-        }
-    }
 
     var sortIt = db.ctx.sortIndexes.iterator();
     while (sortIt.next()) |item| {

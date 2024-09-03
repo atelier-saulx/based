@@ -53,7 +53,7 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
             break;
         }
 
-        const dbName = db.data(k);
+        const dbName = sort.readData(k);
 
         mdb(c.mdb_dbi_open(txn, @as([*]u8, @ptrCast(k.mv_data)), c.MDB_INTEGERKEY, &dbi2)) catch |err| {
             std.debug.print("NO DBI {any} DBI {any} \n", .{ err, @as([*]u8, @ptrCast(k.mv_data))[0..k.mv_size] });
@@ -91,7 +91,7 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
                 mdb(c.mdb_cursor_get(cursor2, &k, &v, c.MDB_FIRST)) catch |err| {
                     std.log.err("Init: cannot create sort cursor {any} \n", .{err});
                 };
-                const len: u16 = @intCast(db.data(k).len);
+                const len: u16 = @intCast(sort.readData(k).len);
                 const start = readInt(u16, dbName, 4);
 
                 const newSortIndex = sort.createReadSortIndex(name, queryId, len, start) catch |err| {
@@ -157,13 +157,13 @@ pub fn statInternal(node_env: c.napi_env, initSortIndex: bool) !c.napi_value {
 
         if (k.mv_size != 0) {
             var lastId: c.napi_value = undefined;
-            _ = c.napi_create_uint32(node_env, std.mem.readInt(u32, db.data(k)[0..4], .little), &lastId);
+            _ = c.napi_create_uint32(node_env, std.mem.readInt(u32, sort.readData(k)[0..4], .little), &lastId);
             _ = c.napi_set_named_property(node_env, obj, "lastId", lastId);
         }
     }
 
     _ = c.mdb_cursor_close(cursor);
-    _ = c.mdb_txn_commit(txn);
+    try sort.commitTxn(txn);
 
     return arr;
 }
