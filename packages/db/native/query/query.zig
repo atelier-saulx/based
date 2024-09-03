@@ -85,7 +85,7 @@ inline fn getQueryInternal(
 
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),
-        .id = db.getQueryId(),
+        .id = db.getQueryId(), // maybe unnecessary
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
