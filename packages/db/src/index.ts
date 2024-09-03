@@ -220,14 +220,13 @@ export class BasedDb {
     const pid = this.native.save(dumppath)
     console.log('BLA 2')
 
-    console.log({ pid })
+    console.log({ pid, dumppath })
     while (!rdy) {
       await wait(100)
-      rdy = true
-      // if (this.native.isSaveReady(pid, dumppath)) {
-      //   rdy = true
-      //   break
-      // }
+      if (this.native.isSaveReady(pid, dumppath)) {
+        rdy = true
+        break
+      }
     }
   }
 
