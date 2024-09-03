@@ -98,7 +98,10 @@ export class BasedDb {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
     const dumppath = join(this.fileSystemPath, 'data.sdb')
-    const entries = db.start(this.fileSystemPath, dumppath, readOnly)
+
+    const s = await fs.stat(dumppath).catch(() => null)
+
+    const entries = db.start(this.fileSystemPath, s ? dumppath : null, readOnly)
     // include schema
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
@@ -214,6 +217,7 @@ export class BasedDb {
     await fs.rm(dumppath).catch(() => {})
     var rdy = false
     const pid = this.native.save(dumppath)
+    console.log({ pid })
     while (!rdy) {
       await wait(100)
       if (this.native.isSaveReady(pid, dumppath)) {

@@ -142,7 +142,9 @@ export default {
 
   start: (path: string, dumpPath: string, readOnly: boolean) => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    const dumpPathBuf = Buffer.concat([Buffer.from(dumpPath), Buffer.from([0])])
+    const dumpPathBuf = dumpPath
+      ? Buffer.concat([Buffer.from(dumpPath), Buffer.from([0])])
+      : null
     return db.start(buf, readOnly, dumpPathBuf)
   },
 

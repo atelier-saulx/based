@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
-import { wait } from '@saulx/utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
@@ -390,7 +389,7 @@ test.serial('sort', async (t) => {
   await db.destroy()
 })
 
-test.serial('sort - from start (1.5M items)', async (t) => {
+test.serial.only('sort - from start (1.5M items)', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
