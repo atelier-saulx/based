@@ -513,8 +513,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
 
-    console.info(new Uint8Array(x))
-
     return x
   })
 }

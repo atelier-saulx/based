@@ -154,6 +154,7 @@ export class BasedDb {
   updateSchema(schema: BasedSchemaPartial): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
+
     fs.writeFile(
       join(this.fileSystemPath, 'schema.json'),
       JSON.stringify(this.schema),
@@ -162,7 +163,6 @@ export class BasedDb {
     let types = Object.keys(this.schemaTypesParsed)
     const s = schema2selva(this.schemaTypesParsed)
     for (let i = 0; i < s.length; i++) {
-      // types
       const type = this.schemaTypesParsed[types[i]]
       this.native.updateSchemaType(type.prefixString, s[i])
     }
