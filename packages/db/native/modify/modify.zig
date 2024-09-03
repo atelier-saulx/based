@@ -70,7 +70,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operationType == 9) {
             // create or get
             ctx.id = readInt(u32, operation, 0);
-            ctx.node = db.upsertNode(ctx.typeEntry.?, ctx.id);
+            ctx.node = db.upsertNode(ctx.id, ctx.typeEntry.?);
             i = i + 5;
         } else if (operationType == 1) {
             // SWITCH ID

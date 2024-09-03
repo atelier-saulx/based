@@ -103,7 +103,7 @@ pub fn deleteNode(node: Node, typeEntry: Type) !void {
 
 pub fn upsertNode(id: u32, typeEntry: Type) Node {
     // add error handling
-    return selva.selva_upsert_node(typeEntry, id);
+    return selva.selva_upsert_node(typeEntry, id).?;
 }
 
 pub fn getNode(id: u32, typeEntry: Type) ?Node {
