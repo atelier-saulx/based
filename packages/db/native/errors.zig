@@ -15,10 +15,7 @@ pub const Napi = error{
     CannotGetBuffer,
     CannotInitCtx,
     CannotGetString,
-    CannotGetInt32,
-    CannotGetInt64,
-    CannotGetUint32,
-    CannotGetUint64,
+    CannotGetInt,
     CannotGetType,
     CannotGetBool,
 };

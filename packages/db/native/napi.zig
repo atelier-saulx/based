@@ -16,56 +16,56 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == u8) {
         if (c.napi_get_value_uint8(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetUint32;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == i8) {
         if (c.napi_get_value_int8(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetUint32;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == u16) {
         if (c.napi_get_value_uint16(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetUint32;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == i16) {
         if (c.napi_get_value_int16(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetUint32;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == u32) {
         if (c.napi_get_value_uint32(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetUint32;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == i32) {
         if (c.napi_get_value_int32(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetInt32;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == u64) {
         if (c.napi_get_value_bigiint_uint64(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetUint64;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == i64) {
         if (c.napi_get_value_bigiint_int64(env, value, @ptrCast(&res)) != c.napi_ok) {
-            return errors.Napi.CannotGetInt64;
+            return errors.Napi.CannotGetInt;
         }
         return res;
     }
@@ -84,15 +84,6 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
             return errors.Napi.CannotGetBuffer;
         }
         return buffer[0..size];
-    }
-
-    if (T == []u32) {
-        var buffer: [*]u32 = undefined;
-        var size: usize = undefined;
-        if (c.napi_get_buffer_info(env, value, @ptrCast(&buffer), @ptrCast(&size)) != c.napi_ok) {
-            return errors.Napi.CannotGetBuffer;
-        }
-        return buffer[0 .. size / 4];
     }
 
     if (T == []u32) {
