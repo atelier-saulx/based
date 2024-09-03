@@ -905,7 +905,7 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
             .type = nfo->type,
 #endif
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
-            .off = (nfo->off << 3) + sizeof_field(struct SelvaMicroBuffer, len),
+            .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
             .len = selva_fields_get_data_size(fs) - sizeof_field(struct SelvaMicroBuffer, len),
         };
     }

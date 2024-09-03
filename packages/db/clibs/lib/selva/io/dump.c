@@ -50,7 +50,6 @@
 typedef uint32_t sdb_nr_types_t;
 typedef uint32_t sdb_nr_nodes_t;
 typedef uint32_t sdb_nr_fields_t;
-typedef uint32_t sdb_expire_t;
 typedef uint64_t sdb_nr_aliases_t;
 typedef uint32_t sdb_arr_len_t; /*!< Used for most arrays, string or object. */
 
@@ -746,7 +745,7 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, stru
     any = selva_fields_get2(&node->fields, fs->field);
 
     io->sdb_read(&any.smb->len, sizeof(any.smb->len), 1, io);
-    io->sdb_read(any.smb->data, sizeof(uint8_t), sizeof(any.smb->len), io);
+    io->sdb_read(any.smb->data, sizeof(uint8_t), any.smb->len, io);
 
     return 0;
 }
@@ -852,12 +851,8 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
     node_id_t node_id;
     io->sdb_read(&node_id, sizeof(node_id), 1, io);
 
-    sdb_expire_t expire;
-    io->sdb_read(&expire, sizeof(expire), 1, io);
-
     struct SelvaNode *node = selva_upsert_node(te, node_id);
     assert(node->type == te->type);
-    /* TODO set expire */
     load_node_fields(io, db, te, node);
 }
 
