@@ -130,7 +130,15 @@ console.log(Date.now() - d, dbTime, 'ms')
 
 console.log(db.query('user').range(0, 1e6).sort('age').get())
 
-// await db.start()
+await db.stop()
+
+console.log('STOP rdy')
+
+const db2 = new BasedDb({
+  path: dbFolder,
+})
+
+await db2.start()
 
 // db.updateSchema({
 //   types: {
