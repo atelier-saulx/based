@@ -6,7 +6,7 @@ import {
   createSchemaTypeDef,
   schema2selva,
 } from './schemaTypeDef.js'
-import { deepMerge, deepCopy } from '@saulx/utils'
+import { deepMerge, deepCopy, wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import db from './native.js'
@@ -97,9 +97,8 @@ export class BasedDb {
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
-
-    const entries = db.start(this.fileSystemPath, readOnly)
-
+    const dumppath = join(this.fileSystemPath, 'data.sdb')
+    const entries = db.start(this.fileSystemPath, dumppath, readOnly)
     // include schema
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
@@ -210,7 +209,22 @@ export class BasedDb {
     console.log('Tester took', Date.now() - d, 'ms')
   }
 
-  stop() {
+  async save() {
+    const dumppath = join(this.fileSystemPath, 'data.sdb')
+    await fs.rm(dumppath).catch(() => {})
+    var rdy = false
+    const pid = this.native.save(dumppath)
+    while (!rdy) {
+      await wait(100)
+      if (this.native.isSaveReady(pid, dumppath)) {
+        rdy = true
+        break
+      }
+    }
+  }
+
+  async stop() {
+    await this.save()
     db.stop()
   }
 

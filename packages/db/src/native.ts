@@ -6,6 +6,7 @@ export default {
   modify: (buffer: Buffer, len: number): any => {
     return db.modify(buffer, len)
   },
+
   getQuery: (
     conditions: Buffer,
     prefix: string,
@@ -16,6 +17,7 @@ export default {
   ): any => {
     return db.getQuery(conditions, prefix, lastId, offset, limit, includeBuffer)
   },
+
   getQuerySort: (
     conditions: Buffer,
     prefix: string,
@@ -48,6 +50,7 @@ export default {
       )
     }
   },
+
   getQueryIdsSort: (
     conditions: Buffer,
     prefix: string,
@@ -114,6 +117,7 @@ export default {
       )
     }
   },
+
   getQueryById: (
     conditions: Buffer,
     prefix: string,
@@ -122,6 +126,7 @@ export default {
   ): any => {
     return db.getQueryById(conditions, prefix, id, includeBuffer)
   },
+
   getQueryByIds: (
     conditions: Buffer,
     prefix: string,
@@ -135,9 +140,10 @@ export default {
     return db.stat()
   },
 
-  start: (path: string, readOnly: boolean) => {
+  start: (path: string, dumpPath: string, readOnly: boolean) => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.start(buf, readOnly)
+    const dumpPathBuf = Buffer.concat([Buffer.from(dumpPath), Buffer.from([0])])
+    return db.start(buf, readOnly, dumpPathBuf)
   },
 
   save: (path: string): number => {
@@ -147,11 +153,8 @@ export default {
 
   isSaveReady: (pid: number, path: string): boolean => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    const code = db.isSaveReady(pid, buf)
-    if (code === 0) {
-      return true
-    }
-    return false
+    const errBuf = Buffer.allocUnsafe(80)
+    return db.isSaveReady(pid, buf, errBuf)
   },
 
   stop: () => {
