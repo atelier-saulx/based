@@ -40,5 +40,19 @@ console.log('')
 
 for (const test of testsToRun) {
   const fullPath = join(p, test)
+
+  console.log(picocolors.bgBlue(` ${test} `))
+  console.log('')
+
   await import(fullPath)
+    .catch((err) => {
+      console.log('')
+      console.log(picocolors.bgRed(` Err: ${test} `))
+    })
+    .then(() => {
+      console.log('')
+      console.log(picocolors.bgGreen(` 👌 ${test} `))
+    })
+
+  console.log('\n')
 }

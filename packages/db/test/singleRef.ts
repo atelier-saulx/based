@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('single reference multi refs', async (t) => {
+await test('single reference multi refs', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -73,7 +73,7 @@ test('single reference multi refs', async (t) => {
   await db.destroy()
 })
 
-test('single reference object', async (t) => {
+await test('single reference object', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -138,7 +138,7 @@ test('single reference object', async (t) => {
   await db.destroy()
 })
 
-test('single reference', async (t) => {
+await test('single reference', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -380,7 +380,7 @@ test('single reference', async (t) => {
   await db.destroy()
 })
 
-test('single reference multi refs strings', async (t) => {
+await test('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}

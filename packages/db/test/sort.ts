@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('sort', async () => {
+await test('sort', async () => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -390,7 +390,7 @@ test('sort', async () => {
   await db.destroy()
 })
 
-test('sort - from start (1.5M items)', async (t) => {
+await test('sort - from start (1.5M items)', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}

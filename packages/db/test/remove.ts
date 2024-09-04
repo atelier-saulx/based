@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test('remove', async (t) => {
+await test('remove', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
