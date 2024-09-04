@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
+import test from 'node:test'
+import { deepEqual, equal } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('sort', async (t) => {
+test('sort', async () => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -68,7 +69,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user')
       .sort('age', 'desc')
@@ -84,7 +85,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user')
       .sort('age', 'asc')
@@ -100,7 +101,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user')
       .sort('email', 'asc')
@@ -116,7 +117,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user')
       .sort('email', 'desc')
@@ -140,7 +141,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').sort('email').include('email', 'age').get().toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
@@ -152,7 +153,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
@@ -170,7 +171,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').sort('email').include('email', 'age').get().toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
@@ -193,7 +194,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
@@ -211,7 +212,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },
@@ -223,7 +224,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').sort('age').include('email', 'age').get().toObject(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },
@@ -247,7 +248,7 @@ test.serial('sort', async (t) => {
   }
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db.query('user', ids).include('name', 'age').sort('age').get().toObject(),
     [
       { id: 6, name: 'mr x', age: 0 },
@@ -262,7 +263,7 @@ test.serial('sort', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user', ids)
       .include('name', 'age')
@@ -287,7 +288,7 @@ test.serial('sort', async (t) => {
     ids2.push(i)
   }
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user', ids2)
       .include('name', 'age')
@@ -318,7 +319,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user', ids2)
       .include('name', 'age')
@@ -350,15 +351,15 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.is(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
+  equal(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
 
-  t.is(
+  equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
       .length,
     16,
   )
 
-  t.is(
+  equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
       .length,
     16,
@@ -368,7 +369,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.is(
+  equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
       .length,
     15,
@@ -380,7 +381,7 @@ test.serial('sort', async (t) => {
 
   db.drain()
 
-  t.is(
+  equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
       .length,
     15,
@@ -389,7 +390,7 @@ test.serial('sort', async (t) => {
   await db.destroy()
 })
 
-test.serial('sort - from start (1.5M items)', async (t) => {
+test('sort - from start (1.5M items)', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -434,7 +435,7 @@ test.serial('sort - from start (1.5M items)', async (t) => {
 
   db.drain()
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
     [
       { id: 2, name: 'mr flap' },
@@ -442,7 +443,7 @@ test.serial('sort - from start (1.5M items)', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
     [
       { id: 2, name: 'mr flap' },
@@ -450,7 +451,7 @@ test.serial('sort - from start (1.5M items)', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db.query('user').include('name').sort('name').range(0, 2).get().toObject(),
     [
       {
@@ -472,7 +473,7 @@ test.serial('sort - from start (1.5M items)', async (t) => {
 
   // await newDb.start()
 
-  // t.deepEqual(
+  // deepEqual(
   //   newDb
   //     .query('user')
   //     .include('name')

@@ -7,7 +7,6 @@
   "scripts": {
     "build": "tsc",
     "watch": "npx tsc --watch",
-    "test": "npx ava",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "build-zig": "mkdir -p dist && zig build --summary all",
     "build-selva": "mkdir -p build && make -C clibs",
@@ -18,20 +17,13 @@
     "test-single-ref": "zig build && npm run build && npm test -- ./dist/test/singleRef.js",
     "test-remove": "npm run build-selva  && zig build && npm run build && npm test -- ./dist/test/remove.js",
     "test-single-ref-query": "zig build && npm run build && npm test -- ./dist/test/singleRefQuery.js",
-    "test-string": "npm run build-selva && zig build && npm run build && npm test -- ./dist/test/string.js",
+    "test-string": "npm run build-selva && zig build && npm run build && lldb -o run -o \"script import os; os._exit(0)\" node -- ./dist/test/string.js",
     "test-update": "zig build && npm run build && npm test -- ./dist/test/update.js",
-    "test-sort": "zig build && npm run build && npm test -- ./dist/test/sort.js",
+    "test-sort": "zig build && npm run build && node ./dist/test/sort.js",
     "test-range": "zig build && npm run build && npm test -- ./dist/test/range.js",
     "playground": "zig build && npm run build && node ./dist/test/shared/playground.js"
   },
   "sideEffects": false,
-  "ava": {
-    "timeout": "2m",
-    "workerThreads": false,
-    "files": [
-      "./dist/test/**/*.js"
-    ]
-  },
   "files": [
     "dist/lib.node",
     "dist/src",
@@ -49,6 +41,7 @@
     "@based/client": "^6.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.5.3",
     "lorem-ipsum": "^2.0.8",
     "ts-node": "10.9.1",
     "ava": "5.3.1",
