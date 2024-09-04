@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import picocolors from 'picocolors'
+import { wait } from '@saulx/utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -46,15 +47,20 @@ console.log('')
 for (const test of testsToRun) {
   const fullPath = join(p, test)
 
-  await import(fullPath).catch((err) => {
-    console.log('')
-    console.log(picocolors.bgRed(` Err: ${test} `))
-  })
+  console.log(picocolors.bgBlue(` ${test} `))
 
-  // .then(() => {
-  //   console.log('')
-  //   console.log(picocolors.bgGreen(` 👌 ${test} `))
-  // })
+  await import(fullPath)
+    .catch((err) => {
+      console.log('')
+      console.log(picocolors.bgRed(` Err: ${test} `))
+      console.error(err)
+    })
+    .then(() => {
+      //   console.log('')
+      //   console.log(picocolors.bgGreen(` 👌 ${test} `))
+    })
 
   console.log('\n')
+
+  await wait(100)
 }

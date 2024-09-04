@@ -2,7 +2,7 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
-import test from 'node:test'
+import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -18,6 +18,12 @@ await test('single reference query', async (t) => {
 
   const db = new BasedDb({
     path: dbFolder,
+  })
+
+  await db.start()
+
+  t.after(() => {
+    return db.destroy()
   })
 
   db.updateSchema({

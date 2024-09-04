@@ -2,14 +2,14 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
-import test from 'node:test'
+import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-await test('string', async () => {
+await test('string', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -20,6 +20,10 @@ await test('string', async () => {
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   try {
     console.log(db.query('user').get())
@@ -79,16 +83,18 @@ await test('string', async () => {
       location: { label: 'BLA BLA', x: 0, y: 0 },
     },
   ])
-
-  await db.destroy()
 })
 
-test.skip('string + refs', async () => {
+test.skip('string + refs', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -186,6 +192,4 @@ test.skip('string + refs', async () => {
       },
     },
   ])
-
-  await db.destroy()
 })

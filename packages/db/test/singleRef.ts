@@ -2,7 +2,7 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
-import test from 'node:test'
+import test from './shared/test.js'
 import { deepEqual, equal } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -19,6 +19,10 @@ await test('single reference multi refs', async (t) => {
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -69,8 +73,6 @@ await test('single reference multi refs', async (t) => {
   for (const r of result) {
     equal(r.user.myBlup.flap, 'B')
   }
-
-  await db.destroy()
 })
 
 await test('single reference object', async (t) => {
@@ -83,6 +85,10 @@ await test('single reference object', async (t) => {
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -134,8 +140,6 @@ await test('single reference object', async (t) => {
       },
     },
   ])
-
-  await db.destroy()
 })
 
 await test('single reference', async (t) => {
@@ -148,6 +152,10 @@ await test('single reference', async (t) => {
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -376,8 +384,6 @@ await test('single reference', async (t) => {
       },
     ],
   )
-
-  await db.destroy()
 })
 
 await test('single reference multi refs strings', async (t) => {
@@ -390,7 +396,12 @@ await test('single reference multi refs strings', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
+
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -459,6 +470,4 @@ await test('single reference multi refs strings', async (t) => {
       lilBlup: null,
     },
   ])
-
-  await db.destroy()
 })

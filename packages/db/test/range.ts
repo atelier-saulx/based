@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
-import test from 'node:test'
+import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -14,11 +14,13 @@ await test('range', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
-    maxModifySize: 1e4,
+  })
+
+  t.after(() => {
+    return db.destroy()
   })
 
   db.updateSchema({

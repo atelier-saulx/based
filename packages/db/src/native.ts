@@ -153,7 +153,6 @@ export default {
     const errBuf = Buffer.alloc(80)
     try {
       const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-      console.log(buf.toString())
       return db.isSaveReady(pid, buf, errBuf)
     } catch (err) {
       console.log('ERROR SAVE READY', errBuf.toString())

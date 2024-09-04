@@ -2,14 +2,14 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
-import test from 'node:test'
+import test from './shared/test.js'
 import { deepEqual, equal } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-await test('sort', async () => {
+await test('sort', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -19,6 +19,10 @@ await test('sort', async () => {
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -386,8 +390,6 @@ await test('sort', async () => {
       .length,
     15,
   )
-
-  await db.destroy()
 })
 
 await test('sort - from start (1.5M items)', async (t) => {
@@ -467,31 +469,33 @@ await test('sort - from start (1.5M items)', async (t) => {
 
   await db.stop()
 
-  // const newDb = new BasedDb({
-  //   path: dbFolder,
-  // })
+  const newDb = new BasedDb({
+    path: dbFolder,
+  })
 
-  // await newDb.start()
+  await newDb.start()
 
-  // deepEqual(
-  //   newDb
-  //     .query('user')
-  //     .include('name')
-  //     .sort('name')
-  //     .range(0, 2)
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 3,
-  //       name: 'mr 0',
-  //     },
-  //     {
-  //       id: 4,
-  //       name: 'mr 1',
-  //     },
-  //   ],
-  // )
+  t.after(() => {
+    return newDb.destroy()
+  })
 
-  // await newDb.destroy()
+  deepEqual(
+    newDb
+      .query('user')
+      .include('name')
+      .sort('name')
+      .range(0, 2)
+      .get()
+      .toObject(),
+    [
+      {
+        id: 3,
+        name: 'mr 0',
+      },
+      {
+        id: 4,
+        name: 'mr 1',
+      },
+    ],
+  )
 })

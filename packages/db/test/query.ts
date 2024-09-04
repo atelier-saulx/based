@@ -2,9 +2,8 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
-import { wait } from '@saulx/utils'
 
-import test from 'node:test'
+import test from './shared/test.js'
 import { deepEqual } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -18,6 +17,10 @@ await test('query', async (t) => {
 
   const db = new BasedDb({
     path: dbFolder,
+  })
+
+  t.after(() => {
+    return db.destroy()
   })
 
   await db.start()
@@ -65,8 +68,4 @@ await test('query', async (t) => {
       .toObject(),
     [],
   )
-
-  // single id
-
-  await db.destroy()
 })
