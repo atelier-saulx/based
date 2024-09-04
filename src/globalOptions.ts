@@ -27,7 +27,7 @@ import { Command } from 'commander'
 //   return env
 // }
 
-export const globalOptions = async (program) => {
+export const globalOptions = async (program: Command) => {
   // if (!process.env.ENV) {
   //   process.env.ENV = await getEnv()
   // }
