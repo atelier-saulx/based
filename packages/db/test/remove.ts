@@ -1,15 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
-import { wait } from '@saulx/utils'
+import test from 'node:test'
+import { deepEqual } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('remove', async (t) => {
+test('remove', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -49,13 +49,13 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').get().toObject(), [])
+  deepEqual(db.query('user').get().toObject(), [])
 
   const nurp = db.create('nurp', {})
 
   db.drain()
 
-  t.deepEqual(db.query('nurp').include('email').get().toObject(), [
+  deepEqual(db.query('nurp').include('email').get().toObject(), [
     {
       email: '',
       id: 1,
@@ -66,7 +66,7 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').include('email').get().toObject(), [])
+  deepEqual(db.query('user').include('email').get().toObject(), [])
 
   const nurp2 = db.create('nurp', { email: 'flippie' })
 
@@ -78,7 +78,7 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('nurp').include('email').get().toObject(), [
+  deepEqual(db.query('nurp').include('email').get().toObject(), [
     {
       email: '',
       id: 2,

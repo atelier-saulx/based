@@ -1,14 +1,16 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
+import test from 'node:test'
+import { deepEqual } from 'node:assert'
+
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial(' query', async (t) => {
+test(' query', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -51,9 +53,9 @@ test.serial(' query', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').include('id').get().toObject(), [{ id: 1 }])
+  deepEqual(db.query('user').include('id').get().toObject(), [{ id: 1 }])
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('user')
       .filter('age', '<', 20)

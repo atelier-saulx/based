@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import test from 'node:test'
+import { deepEqual } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('single reference query', async (t) => {
+test('single reference query', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -101,7 +102,7 @@ test.serial('single reference query', async (t) => {
 
   const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
-  t.deepEqual(result2.toObject(), [
+  deepEqual(result2.toObject(), [
     {
       id: 1,
       smurp: 0,
@@ -118,7 +119,7 @@ test.serial('single reference query', async (t) => {
     .include('lilBlup', 'flap')
     .get()
 
-  t.deepEqual(result.toObject(), [
+  deepEqual(result.toObject(), [
     {
       id: 4,
       lilBlup: {

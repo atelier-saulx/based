@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import test from 'node:test'
+import { deepEqual, equal } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('single reference multi refs', async (t) => {
+test('single reference multi refs', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -50,7 +51,7 @@ test.serial('single reference multi refs', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('blup').include('flap').get().toObject(), [
+  deepEqual(db.query('blup').include('flap').get().toObject(), [
     {
       id: 1,
       flap: 'B',
@@ -60,19 +61,19 @@ test.serial('single reference multi refs', async (t) => {
   const result1 = db.query('user').include('myBlup.flap').get()
 
   for (const r of result1) {
-    t.is(r.myBlup.flap, 'B')
+    equal(r.myBlup.flap, 'B')
   }
 
   const result = db.query('simple').include('user.myBlup.flap').get()
 
   for (const r of result) {
-    t.is(r.user.myBlup.flap, 'B')
+    equal(r.user.myBlup.flap, 'B')
   }
 
   await db.destroy()
 })
 
-test.serial('single reference object', async (t) => {
+test('single reference object', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -123,7 +124,7 @@ test.serial('single reference object', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('simple').include('admin.user').get().toObject(), [
+  deepEqual(db.query('simple').include('admin.user').get().toObject(), [
     {
       id: 1,
       admin: {
@@ -137,7 +138,7 @@ test.serial('single reference object', async (t) => {
   await db.destroy()
 })
 
-test.serial.only('single reference', async (t) => {
+test('single reference', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -218,7 +219,7 @@ test.serial.only('single reference', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
+  deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
     { id: 1 },
   ])
 
@@ -226,7 +227,7 @@ test.serial.only('single reference', async (t) => {
     depth: 10,
   })
 
-  t.deepEqual(db.query('simple').include('user').range(0, 1).get().toObject(), [
+  deepEqual(db.query('simple').include('user').range(0, 1).get().toObject(), [
     {
       id: 1,
       user: {
@@ -242,12 +243,12 @@ test.serial.only('single reference', async (t) => {
     },
   ])
 
-  t.deepEqual(
+  deepEqual(
     db.query('simple').include('user.myBlup').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup')
@@ -263,7 +264,7 @@ test.serial.only('single reference', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup', 'user.name')
@@ -283,7 +284,7 @@ test.serial.only('single reference', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user.location.label')
@@ -293,12 +294,12 @@ test.serial.only('single reference', async (t) => {
     [{ id: 1, user: { id: 1, location: { label: 'BLA BLA' } } }],
   )
 
-  t.deepEqual(
+  deepEqual(
     db.query('simple').include('user.location').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup')
@@ -325,7 +326,7 @@ test.serial.only('single reference', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user', 'user.myBlup')
@@ -350,7 +351,7 @@ test.serial.only('single reference', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user', 'user.myBlup', 'lilBlup')
@@ -379,7 +380,7 @@ test.serial.only('single reference', async (t) => {
   await db.destroy()
 })
 
-test.serial('single reference multi refs strings', async (t) => {
+test('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -436,7 +437,7 @@ test.serial('single reference multi refs strings', async (t) => {
     .get()
 
   for (const r of result) {
-    t.is(r.lilBlup.name, '')
+    equal(r.lilBlup.name, '')
   }
 
   db.create('simple', {
@@ -451,7 +452,7 @@ test.serial('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  t.deepEqual(result2.toObject(), [
+  deepEqual(result2.toObject(), [
     {
       id: 2,
       user: null,

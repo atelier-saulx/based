@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import test from 'node:test'
+import { deepEqual, equal } from 'node:assert'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('update', async (t) => {
+test('update', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -67,7 +68,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().toObject(), [
+  deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -112,7 +113,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().toObject(), [
+  deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -141,7 +142,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp', 2).get().toObject(), {
+  deepEqual(db.query('snurp', 2).get().toObject(), {
     a: 0,
     b: 0,
     c: 0,
@@ -155,7 +156,7 @@ test.serial('update', async (t) => {
   })
 
   // for individual queries combine them
-  t.deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
+  deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -197,11 +198,11 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.is(db.query('snurp', ids).get().length, 1e6)
+  equal(db.query('snurp', ids).get().length, 1e6)
 
-  t.is(db.query('snurp', ids).range(0, 100).get().length, 100)
+  equal(db.query('snurp', ids).range(0, 100).get().length, 100)
 
-  t.is(db.query('snurp', ids).range(10, 100).get().length, 90)
+  equal(db.query('snurp', ids).range(10, 100).get().length, 90)
 
   let total = 0
   let len = 0
