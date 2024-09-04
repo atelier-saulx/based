@@ -80,8 +80,6 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
 
-    std.debug.print("YO {any} \n", .{result});
-
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
 }
 

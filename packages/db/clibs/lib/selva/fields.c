@@ -857,8 +857,6 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
     struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
 
-    printf("1: hello \n");
-
     if (fs->field >= fields->nr_fields) {
         return (struct SelvaFieldsPointer){};
     }
