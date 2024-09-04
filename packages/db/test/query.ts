@@ -4,7 +4,7 @@ import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
 import test from './shared/test.js'
-import { deepEqual } from 'node:assert'
+import { deepEqual } from './shared/assert.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
@@ -57,7 +57,11 @@ await test('query', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').include('id').get().toObject(), [{ id: 1 }])
+  deepEqual(
+    db.query('user').include('id').get().toObject(),
+    [{ id: 1 }, {}],
+    'Id only',
+  )
 
   deepEqual(
     db
@@ -66,6 +70,6 @@ await test('query', async (t) => {
       .include('id', 'age')
       .get()
       .toObject(),
-    [],
+    ['x'],
   )
 })

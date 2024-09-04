@@ -4,6 +4,8 @@ import { join, dirname } from 'path'
 import picocolors from 'picocolors'
 import { wait } from '@saulx/utils'
 
+import { printSummary } from '../dist/test/shared/test.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const args = process.argv
@@ -62,5 +64,7 @@ for (const test of testsToRun) {
 
   console.log('\n')
 
-  await wait(100)
+  await wait(0)
 }
+
+printSummary()

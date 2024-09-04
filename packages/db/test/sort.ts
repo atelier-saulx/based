@@ -3,7 +3,7 @@ import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
 import test from './shared/test.js'
-import { deepEqual, equal } from 'node:assert'
+import { deepEqual, equal } from './shared/assert.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
