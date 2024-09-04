@@ -118,6 +118,9 @@ SELVA_EXPORT
 void selva_cursor_del(struct SelvaTypeEntry *type, cursor_id_t id);
 
 SELVA_EXPORT
+size_t selva_cursor_count(const struct SelvaTypeEntry *type);
+
+SELVA_EXPORT
 size_t selva_node_count(const struct SelvaTypeEntry *type);
 
 SELVA_EXPORT
