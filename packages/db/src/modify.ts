@@ -100,7 +100,7 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
-        const len = value.length
+        const len = value === null ? 0 : value.length
         if (len === 0) {
           if (!fromCreate) {
             const nextLen = 1 + 4 + 1
@@ -108,7 +108,7 @@ const addModify = (
               flushBuffer(db)
             }
             setCursor(db, schema, t.field, id, false, fromCreate)
-            db.modifyBuffer.buffer[db.modifyBuffer.len] = 8
+            db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
             db.modifyBuffer.len++
           }
         } else {

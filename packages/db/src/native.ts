@@ -9,18 +9,18 @@ export default {
 
   getQuery: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     lastId: number,
     offset: number,
     limit: number, // def 1k ?
     includeBuffer: Buffer,
   ): any => {
-    return db.getQuery(conditions, prefix, lastId, offset, limit, includeBuffer)
+    return db.getQuery(conditions, typeId, lastId, offset, limit, includeBuffer)
   },
 
   getQuerySort: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     lastId: number,
     offset: number,
     limit: number, // def 1k ?
@@ -31,7 +31,7 @@ export default {
     if (sortOrder === 1) {
       return db.getQuerySortDesc(
         conditions,
-        prefix,
+        typeId,
         lastId,
         offset,
         limit,
@@ -41,7 +41,7 @@ export default {
     } else {
       return db.getQuerySortAsc(
         conditions,
-        prefix,
+        typeId,
         lastId,
         offset,
         limit,
@@ -53,7 +53,7 @@ export default {
 
   getQueryIdsSort: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     lastId: number,
     offset: number,
     limit: number, // def 1k ?
@@ -68,7 +68,7 @@ export default {
       if (sortOrder === 1) {
         return db.getQueryIdsSortAscLarge(
           conditions,
-          prefix,
+          typeId,
           lastId,
           offset,
           limit,
@@ -79,7 +79,7 @@ export default {
       } else {
         return db.getQueryIdsSortDescLarge(
           conditions,
-          prefix,
+          typeId,
           lastId,
           offset,
           limit,
@@ -92,7 +92,7 @@ export default {
     if (sortOrder === 1) {
       return db.getQueryIdsSortAsc(
         conditions,
-        prefix,
+        typeId,
         lastId,
         offset,
         limit,
@@ -105,7 +105,7 @@ export default {
     } else {
       return db.getQueryIdsSortDesc(
         conditions,
-        prefix,
+        typeId,
         lastId,
         offset,
         limit,
@@ -120,20 +120,20 @@ export default {
 
   getQueryById: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     id: number,
     includeBuffer: Buffer,
   ): any => {
-    return db.getQueryById(conditions, prefix, id, includeBuffer)
+    return db.getQueryById(conditions, typeId, id, includeBuffer)
   },
 
   getQueryByIds: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     ids: Buffer,
     includeBuffer: Buffer,
   ): any => {
-    return db.getQueryByIds(conditions, prefix, ids, includeBuffer)
+    return db.getQueryByIds(conditions, typeId, ids, includeBuffer)
   },
 
   start: (path: string, dumpPath: string, readOnly: boolean) => {

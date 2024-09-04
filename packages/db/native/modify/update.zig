@@ -15,7 +15,7 @@ pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
-            var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = (try getSortIndex(ctx, start)).?;
@@ -49,7 +49,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
             const start = readInt(u16, operation, 0);
             const len = readInt(u16, operation, 2);
             if (ctx.field == 0) {
-                if (hasSortIndex and db.ctx.mainSortIndexes.get(ctx.typeId).?.*.contains(start)) {
+                if (hasSortIndex and db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
                     const sortIndex = try getSortIndex(ctx, start);
                     try sort.deleteField(ctx.id, currentData, sortIndex.?);
                     try sort.writeField(ctx.id, data, sortIndex.?);

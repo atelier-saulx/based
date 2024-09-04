@@ -11,7 +11,6 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) void {
 }
 
 pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
-    // std.debug.print("hello {any} \n", .{@typeInfo(T)});
     var res: T = undefined;
 
     if (T == u8) {
@@ -29,9 +28,11 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
     }
 
     if (T == u16) {
-        if (c.napi_get_value_uint16(env, value, @ptrCast(&res)) != c.napi_ok) {
+        var x: u32 = undefined;
+        if (c.napi_get_value_uint32(env, value, @ptrCast(&x)) != c.napi_ok) {
             return errors.Napi.CannotGetInt;
         }
+        res = @truncate(x);
         return res;
     }
 
@@ -129,15 +130,4 @@ pub fn getString(comptime name: []const u8, env: c.napi_env, value: c.napi_value
         return errors.Napi.CannotGetString;
     }
     return buffer[0..size];
-}
-
-pub fn getStringFixedLength(comptime name: []const u8, comptime len: comptime_int, env: c.napi_env, value: c.napi_value) ![len]u8 {
-    var buffer: [len + 1]u8 = undefined;
-    if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), len + 1, null) != c.napi_ok) {
-        jsThrow(env, "Cannot get fixed length string for variable: " ++ name);
-        return errors.Napi.CannotGetString;
-    }
-    var bufferNoNull: [len]u8 = undefined;
-    @memcpy(bufferNoNull[0..len], buffer[0..len]);
-    return bufferNoNull;
 }

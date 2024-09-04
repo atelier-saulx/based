@@ -19,7 +19,7 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |start| {
                 const sortIndex = try getSortIndex(ctx, start.*);
                 try sort.writeField(ctx.id, data, sortIndex.?);

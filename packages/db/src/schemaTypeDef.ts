@@ -75,7 +75,6 @@ export type SchemaTypeDef = {
     // path including .
     [key: string]: FieldDef
   }
-  prefixString: string
   prefixNumber: number
   prefix: Uint8Array
   seperate: FieldDef[]
@@ -122,7 +121,6 @@ export const createSchemaTypeDef = (
     prefix: prefixStringToUint8(type),
     prefixNumber: 0,
     mainLen: 0,
-    prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
     // stringFieldsBuffer
     tree: {},
@@ -409,7 +407,6 @@ export const readSchemaTypeDefFromBuffer = (
   // @ts-ignore
   const schemaTypeDef: SchemaTypeDef = {
     prefix: new Uint8Array([buf[0], buf[1]]),
-    prefixString: prefix,
     tree,
     fields,
     seperate,
@@ -417,14 +414,10 @@ export const readSchemaTypeDefFromBuffer = (
     buf,
     type,
     fieldNames,
-    // TODO this is still incorrect
     checksum: 0,
     mainLen,
-    // this is tmp has to be removed
     total: 0,
     lastId: 0,
-    // dirty ts
-    // ResponseClass: ,
   }
 
   schemaTypeDef.responseCtx = new BasedNode(schemaTypeDef, parsed)

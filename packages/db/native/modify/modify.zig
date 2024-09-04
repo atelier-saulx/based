@@ -8,6 +8,7 @@ const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
+const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 
 const readInt = @import("../utils.zig").readInt;
@@ -79,8 +80,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             i = i + 5;
         } else if (operationType == 2) {
             // SWITCH TYPE
-            ctx.typeId[0] = batch[i + 1];
-            ctx.typeId[1] = batch[i + 2];
+            ctx.typeId = readInt(u16, operation, 0);
             ctx.typeEntry = try db.getType(ctx.typeId);
             i = i + 3;
         } else if (operationType == 3) {
@@ -96,6 +96,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             i += try addEmptyToSortIndex(&ctx, operation) + 1;
         } else if (operationType == 8) {
             i += try deleteFieldOnly(&ctx) + 1;
+        } else if (operationType == 11) {
+            i += try deleteFieldOnlyReal(&ctx) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;

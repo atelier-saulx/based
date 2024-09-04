@@ -68,5 +68,24 @@ test.serial('remove', async (t) => {
 
   t.deepEqual(db.query('user').include('email').get().toObject(), [])
 
+  const nurp2 = db.create('nurp', { email: 'flippie' })
+
+  db.drain()
+
+  db.update('nurp', nurp2, {
+    email: null,
+  })
+
+  db.drain()
+
+  t.deepEqual(db.query('nurp').include('email').get().toObject(), [
+    {
+      email: '',
+      id: 2,
+    },
+  ])
+
+  // add buffer field ?
+
   await db.destroy()
 })

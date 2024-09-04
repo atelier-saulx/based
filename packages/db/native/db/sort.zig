@@ -2,9 +2,7 @@ const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const db = @import("./db.zig");
-
 const readInt = @import("../utils.zig").readInt;
-const selva = @import("../selva.zig");
 
 pub const EMPTY_CHAR: [1]u8 = .{0};
 pub const EMPTY_CHAR_SLICE = @constCast(&EMPTY_CHAR)[0..1];
@@ -29,7 +27,7 @@ pub inline fn readData(v: c.MDB_val) []u8 {
     return @as([*]u8, @ptrCast(v.mv_data))[0..v.mv_size];
 }
 
-pub const SortDbiName = [7]u8;
+pub const SortDbiName = [6]u8;
 
 pub const SortIndex = struct {
     field: u8,
@@ -62,8 +60,20 @@ pub fn initReadTxn() !*c.MDB_txn {
     return db.ctx.readTxn;
 }
 
+pub fn getPrefix(typeId: db.TypeId) [2]u8 {
+    // potential make it 3 bytes
+    var typePrefix: [2]u8 = @bitCast(typeId);
+    if (typePrefix[0] == 0) {
+        typePrefix[0] = 255;
+    }
+    if (typePrefix[1] == 0) {
+        typePrefix[1] = 255;
+    }
+    return typePrefix;
+}
+
 pub fn getSortName(
-    typePrefix: db.TypeId,
+    typeId: db.TypeId,
     field: u8,
     start: u16,
 ) SortDbiName {
@@ -72,8 +82,9 @@ pub fn getSortName(
         startCasted[0] = 255;
         startCasted[1] = 255 - startCasted[1];
     }
-    const name: [7]u8 = .{
-        254,
+    const typePrefix = getPrefix(typeId);
+
+    const name: SortDbiName = .{
         typePrefix[0],
         typePrefix[1],
         field + 1,
@@ -138,8 +149,6 @@ pub fn writeDataToSortIndex(
     try writeToSortIndex(&v, &k, start, len, cursor, field);
 }
 
-// integrate selva
-
 fn createSortIndex(
     name: SortDbiName,
     start: u16,
@@ -150,6 +159,7 @@ fn createSortIndex(
 ) !void {
     const txn = try createTransaction(false);
     const typePrefix: [2]u8 = .{ name[1], name[2] };
+    const typeId: u16 = @bitCast(typePrefix);
 
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
@@ -165,7 +175,7 @@ fn createSortIndex(
     try errors.mdb(c.mdb_dbi_open(txn, &name, flags, &dbi));
     try errors.mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
-    const typeEntry = try db.getType(typePrefix);
+    const typeEntry = try db.getType(typeId);
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
 
     var i: u32 = 0;
@@ -205,7 +215,7 @@ pub fn createReadSortIndex(name: SortDbiName, queryId: u32, len: u16, start: u16
     try errors.mdb(c.mdb_cursor_open(db.ctx.readTxn, dbi, &cursor));
 
     return .{
-        .field = name[3] - 1,
+        .field = name[2] - 1,
         .dbi = dbi,
         .queryId = queryId,
         .cursor = cursor,
@@ -215,7 +225,7 @@ pub fn createReadSortIndex(name: SortDbiName, queryId: u32, len: u16, start: u16
 }
 
 pub fn getOrCreateReadSortIndex(
-    typePrefix: [2]u8,
+    typeId: db.TypeId,
     sort: []u8,
     queryId: u32,
     lastId: u32,
@@ -233,7 +243,7 @@ pub fn getOrCreateReadSortIndex(
         len = 0;
     }
 
-    const name = getSortName(typePrefix, field, start);
+    const name = getSortName(typeId, field, start);
     var s = db.ctx.sortIndexes.get(name);
     if (s == null) {
         createSortIndex(name, start, len, field, fieldType, lastId) catch |err| {
@@ -254,24 +264,24 @@ pub fn getOrCreateReadSortIndex(
     return s.?;
 }
 
-pub fn getReadSortIndex(name: [7]u8) ?SortIndex {
+pub fn getReadSortIndex(name: SortDbiName) ?SortIndex {
     return db.ctx.sortIndexes.get(name);
 }
 
-pub fn hasReadSortIndex(name: [7]u8) bool {
+pub fn hasReadSortIndex(name: SortDbiName) bool {
     return db.ctx.sortIndexes.contains(name);
 }
 
-pub fn hasMainSortIndexes(typePrefix: [2]u8) bool {
-    return db.ctx.mainSortIndexes.contains(typePrefix);
+pub fn hasMainSortIndexes(typeId: db.TypeId) bool {
+    return db.ctx.mainSortIndexes.contains(getPrefix(typeId));
 }
 
 pub fn createWriteSortIndex(name: SortDbiName, txn: ?*c.MDB_txn) !SortIndex {
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
     var len: u16 = 0;
-    const field = name[3] - 1;
-    const startBytes: [2]u8 = .{ name[4], name[5] };
+    const field = name[2] - 1;
+    const startBytes: [2]u8 = .{ name[3], name[4] };
     const start: u16 = @bitCast(startBytes);
     if (field == 0) {
         len = getReadSortIndex(name).?.len;

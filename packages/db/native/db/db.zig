@@ -4,7 +4,7 @@ const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
 
-pub const TypeId = [2]u8;
+pub const TypeId = u16;
 
 pub const StartSet = std.AutoHashMap(u16, u8);
 
@@ -56,7 +56,7 @@ pub fn getType(typePrefix: TypeId) !Type {
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
-        @bitCast(typePrefix),
+        typePrefix,
     );
 
     if (selvaTypeEntry == null) {
@@ -80,6 +80,10 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
+}
+
+pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
 pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {

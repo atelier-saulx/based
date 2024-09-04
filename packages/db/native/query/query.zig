@@ -95,7 +95,7 @@ inline fn getQueryInternal(
         // query no sort
         const args = try napi.getArgs(6, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.get(u16, env, args[1]);
         const lastId = try napi.get(u32, env, args[2]);
         const offset = try napi.get(u32, env, args[3]);
         const limit = try napi.get(u32, env, args[4]);
@@ -105,7 +105,7 @@ inline fn getQueryInternal(
         // single id
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.get(u16, env, args[1]);
         const id = try napi.get(u32, env, args[2]);
         const include = try napi.get([]u8, env, args[3]);
         try Query.queryId(id, &ctx, typeId, conditions, include);
@@ -113,7 +113,7 @@ inline fn getQueryInternal(
         // ids list
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.get(u16, env, args[1]);
         const ids = try napi.get([]u8, env, args[2]);
         const include = try napi.get([]u8, env, args[3]);
         try Query.queryIds(ids, &ctx, typeId, conditions, include);
@@ -121,7 +121,7 @@ inline fn getQueryInternal(
         // query sorted
         const args = try napi.getArgs(7, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.get(u16, env, args[1]);
         const lastId = try napi.get(u32, env, args[2]);
         const offset = try napi.get(u32, env, args[3]);
         const limit = try napi.get(u32, env, args[4]);
@@ -132,7 +132,7 @@ inline fn getQueryInternal(
         // query ids sorted
         const args = try napi.getArgs(10, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.get(u16, env, args[1]);
         const lastId = try napi.get(u32, env, args[2]);
         const offset = try napi.get(u32, env, args[3]);
         const limit = try napi.get(u32, env, args[4]);
@@ -159,7 +159,7 @@ inline fn getQueryInternal(
         // query ids sorted > 512
         const args = try napi.getArgs(8, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.getStringFixedLength("type", 2, env, args[1]);
+        const typeId = try napi.get(u16, env, args[1]);
         const lastId = try napi.get(u32, env, args[2]);
         const offset = try napi.get(u32, env, args[3]);
         const limit = try napi.get(u32, env, args[4]);

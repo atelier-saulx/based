@@ -66,16 +66,16 @@ pub fn initSort() !void {
         size += dbiSize;
 
         // means is SORT INDEX
-        if (dbName[0] == 254) {
-            const field = dbName[3] - 1;
-            var name: [7]u8 = .{ dbName[0], dbName[1], dbName[2], dbName[3], 0, 0, 0 };
+        if (dbName.len > 0) {
+            const field = dbName[2] - 1;
+            var name: sort.SortDbiName = .{ dbName[0], dbName[1], dbName[2], 0, 0, 0 };
 
             const queryId = db.getQueryId();
 
             if (field == 0) {
+                name[3] = dbName[3];
                 name[4] = dbName[4];
                 name[5] = dbName[5];
-                name[6] = dbName[6];
 
                 var cursor2: ?*c.MDB_cursor = null;
                 try mdb(c.mdb_cursor_open(txn, dbi2, &cursor2));
@@ -83,7 +83,7 @@ pub fn initSort() !void {
                     std.log.err("Init: cannot create sort cursor {any} \n", .{err});
                 };
                 const len: u16 = @intCast(sort.readData(k).len);
-                const start = readInt(u16, dbName, 4);
+                const start = readInt(u16, dbName, 3);
 
                 const newSortIndex = sort.createReadSortIndex(name, queryId, len, start) catch |err| {
                     std.log.err("Init: Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
