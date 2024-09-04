@@ -93,6 +93,30 @@ struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode 
 SELVA_EXPORT
 struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node);
 
+/**
+ * Create a new cursor pointing to node.
+ */
+SELVA_EXPORT
+cursor_id_t selva_cursor_new(struct SelvaTypeEntry *type, struct SelvaNode *node);
+
+/**
+ * Get a pointer to the node from a cursor.
+ */
+SELVA_EXPORT
+struct SelvaNode *selva_cursor_get(struct SelvaTypeEntry *type, cursor_id_t id);
+
+/**
+ * Update a cursor to point to a new node.
+ */
+SELVA_EXPORT
+int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct SelvaNode *node);
+
+/**
+ * Delete a cursor.
+ */
+SELVA_EXPORT
+void selva_cursor_del(struct SelvaTypeEntry *type, cursor_id_t id);
+
 SELVA_EXPORT
 size_t selva_node_count(const struct SelvaTypeEntry *type);
 

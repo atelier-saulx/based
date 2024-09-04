@@ -14,6 +14,8 @@
 #include "selva/types.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
+RB_HEAD(SelvaTypeCursorById, SelvaTypeCursor);
+RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
@@ -124,6 +126,11 @@ struct SelvaTypeEntry {
     size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     struct {
+        struct ida *ida; /*! Id allocator for cursors. TODO */
+        struct SelvaTypeCursorById by_cursor_id;
+        struct SelvaTypeCursorsByNodeId by_node_id;
+    } cursors;
+    struct {
         void *buf;
         size_t len;
         size_t fixed_data_size;
@@ -175,11 +182,11 @@ static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
     return te;
 }
 
-RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
-RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
-RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
-int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b);
-int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
-int SelvaAlias_comp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
+RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_cmp_name);
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_cmp_dest);
+int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
+int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
+int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
 
 #include "selva/db.h"
