@@ -865,6 +865,11 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
 
     switch (nfo->type) {
     case SELVA_FIELD_TYPE_NULL:
+        return (struct SelvaFieldsPointer){
+            .ptr = (uint8_t *)PTAG_GETP(fields->data),
+            .off = (nfo->off << 3),
+            .len = 0,
+        };
     case SELVA_FIELD_TYPE_TIMESTAMP:
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
