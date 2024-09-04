@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
+import picocolors from 'picocolors'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -28,6 +29,14 @@ await fs.readdir(p).then((files) => {
     }
   }
 })
+
+console.log('\n\n')
+console.log(
+  picocolors.bgWhite(
+    ` RUN ${testsToRun.length} TEST${testsToRun.length == 1 ? '' : 'S'} `,
+  ),
+)
+console.log('')
 
 for (const test of testsToRun) {
   const fullPath = join(p, test)
