@@ -2,6 +2,7 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import { wait } from '@saulx/utils'
 
 import test from 'node:test'
 import { deepEqual } from 'node:assert'
@@ -10,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-await test(' query', async (t) => {
+await test('query', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}

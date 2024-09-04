@@ -18,7 +18,12 @@ await fs.readdir(p).then((files) => {
     if (f.endsWith('.js')) {
       if (match.length > 0) {
         for (const test of match) {
-          if (f.toLowerCase().includes(test.toLowerCase())) {
+          if (test.startsWith('^')) {
+            if (!f.toLowerCase().includes(test.slice(1).toLowerCase())) {
+              testsToRun.push(f)
+              break
+            }
+          } else if (f.toLowerCase().includes(test.toLowerCase())) {
             testsToRun.push(f)
             break
           }
@@ -33,7 +38,7 @@ await fs.readdir(p).then((files) => {
 console.log('\n\n')
 console.log(
   picocolors.bgWhite(
-    ` RUN ${testsToRun.length} TEST${testsToRun.length == 1 ? '' : 'S'} `,
+    ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 'S'} `,
   ),
 )
 console.log('')
@@ -41,18 +46,15 @@ console.log('')
 for (const test of testsToRun) {
   const fullPath = join(p, test)
 
-  console.log(picocolors.bgBlue(` ${test} `))
-  console.log('')
+  await import(fullPath).catch((err) => {
+    console.log('')
+    console.log(picocolors.bgRed(` Err: ${test} `))
+  })
 
-  await import(fullPath)
-    .catch((err) => {
-      console.log('')
-      console.log(picocolors.bgRed(` Err: ${test} `))
-    })
-    .then(() => {
-      console.log('')
-      console.log(picocolors.bgGreen(` 👌 ${test} `))
-    })
+  // .then(() => {
+  //   console.log('')
+  //   console.log(picocolors.bgGreen(` 👌 ${test} `))
+  // })
 
   console.log('\n')
 }
