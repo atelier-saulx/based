@@ -101,7 +101,7 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
  * Delete field.
  */
 SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field);
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 /**
  * Delete an edge from a references field.

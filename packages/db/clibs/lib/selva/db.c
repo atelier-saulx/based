@@ -218,14 +218,14 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     return 0;
 }
 
-struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
+struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type)
 {
     void *find = (void *)(uintptr_t)type;
 
     return vecptr2SelvaTypeEntry(SVector_Search(&db->type_list, find));
 }
 
-struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node)
 {
     void *find = (void *)(uintptr_t)node->type;
     struct SelvaTypeEntry *te;

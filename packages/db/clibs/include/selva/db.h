@@ -37,10 +37,10 @@ SELVA_EXPORT
 int selva_dump_load(const char *filename, struct SelvaDb **db_out);
 
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
+struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type);
 
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
+struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node);
 
 SELVA_EXPORT
 struct SelvaNodeSchema *selva_get_ns_by_te(struct SelvaTypeEntry *te);

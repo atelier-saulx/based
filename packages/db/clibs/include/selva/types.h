@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "selva/_export.h"
 
-typedef int8_t field_t;
+typedef uint8_t field_t;
 typedef uint32_t node_id_t;
 typedef uint16_t node_type_t;
 
