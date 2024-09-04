@@ -129,6 +129,7 @@ struct SelvaTypeEntry {
         struct ida *ida; /*! Id allocator for cursors. TODO */
         struct SelvaTypeCursorById by_cursor_id;
         struct SelvaTypeCursorsByNodeId by_node_id;
+        size_t nr_cursors;
     } cursors;
     struct {
         void *buf;
