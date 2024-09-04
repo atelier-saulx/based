@@ -353,7 +353,7 @@ export const parseFunctions = async (
 }
 
 export const deploy = async (program: Command) => {
-  const cmd = program
+  const cmd: Command = program
     .command('deploy')
     .option('-w, --watch', 'watch mode')
     .option(
@@ -363,7 +363,8 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { client, destroy } = await login(program)
+      const { cluster, org, env, project } = program.opts()
+      const { client, destroy } = await login({ cluster, org, env, project })
       const { publicPath } = await client.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
         await parseFunctions(functions, watch && update, publicPath, publicPath)

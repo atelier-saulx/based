@@ -1,6 +1,8 @@
-import { BasedClient, BasedOpts } from '@based/client'
+import { AuthState, BasedClient, BasedOpts } from '@based/client'
 import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
 import { spinner } from './spinner.js'
+import pc from 'picocolors'
+import { clearTimeout } from 'node:timers'
 
 const store: Record<
   string,
@@ -11,32 +13,27 @@ const store: Record<
 > = {}
 
 class SharedBasedClient extends BasedClient {
-  //   override async call(name, ...args) {
-  //     const spinner = ora(name).start()
-  //     const res = await super.call(name, ...args)
-  //     spinner.succeed()
-  //     return res
-  //   }
-
-  override async connect(...args) {
-    await super.connect(...args)
+  override async setAuthState(args: AuthState) {
     const [emoji, target] =
       this.opts.org === 'saulx' && this.opts.project === 'based-cloud'
-        ? ['📡', 'based cloud']
-        : ['🪐', 'environment']
+        ? ['📡', 'Based Cloud']
+        : ['🪐', 'the environment']
 
-    const timer = setTimeout(async () => {
-      spinner.text = `connecting ${target}`
-      spinner.start()
-      await this.once('connect')
-      spinner.stop()
-    }, 1e3)
+    spinner.text = `Connecting to ${target}`
+    spinner.start()
 
-    await this.once('connect')
+    const timeout = setTimeout(() => {
+      spinner.fail(pc.red('Could not connect.'))
+      spinner.fail(pc.red('Check your based.json file or your arguments.'))
+      process.exit(1)
+    }, 5e3)
 
-    clearTimeout(timer)
+    const authState = await super.setAuthState(args)
 
-    console.info(`${emoji} connected ${target}`)
+    clearTimeout(timeout)
+    spinner.succeed(`${emoji} Connected to ${target}`)
+
+    return authState
   }
 
   override async destroy() {

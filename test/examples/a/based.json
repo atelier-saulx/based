@@ -1,0 +1,5 @@
+{
+  "org": "github-actions",
+  "project": "cli-test",
+  "env": "production"
+}

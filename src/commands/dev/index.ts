@@ -49,6 +49,7 @@ export const dev = async (program: Command) => {
     )
 
   cmd.action(async ({ functions }) => {
+    const { cluster, org, env, project } = program.opts()
     const { BasedServer } = await import('@based/server')
     const [devPort, filePort, staticPort, lrPort] = await Promise.all([
       getPort({ port: 1234 }),
@@ -62,7 +63,7 @@ export const dev = async (program: Command) => {
     const { nodeBundles, browserBundles, schema, favicons, configs, files } =
       await parseFunctions(functions, update, publicPath, staticPath)
 
-    const { client, destroy } = await login(program)
+    const { client, destroy } = await login({ cluster, org, env, project })
     const checksums: Record<string, number> = {}
     const { clients } = new WebSocketServer({ port: lrPort })
     let hadError

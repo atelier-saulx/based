@@ -1,8 +1,6 @@
-import { Command } from 'commander'
 import { join } from 'node:path'
 import { readJSON, outputJSON } from 'fs-extra/esm'
 import { input, select } from '@inquirer/prompts'
-
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
 import pc from 'picocolors'
@@ -12,12 +10,33 @@ import { spinner } from './spinner.js'
 const persistPath = join(homedir(), '.based/cli')
 const authPath = join(persistPath, 'auth.json')
 
-export const login = async (
-  program: Command,
-  selectUser?: boolean,
-): Promise<{ client: BasedClient; admin: BasedClient; destroy(): void }> => {
-  const { cluster, org, env, project } = program.opts()
-  const admin = getBasedClient({
+type LoginArgs = {
+  cluster: string
+  org: string
+  env: string
+  project: string
+  selectUser?: boolean
+}
+
+type User = {
+  email: string
+  userId?: string
+  token?: string
+  ts?: number
+}
+
+export const login = async ({
+  cluster,
+  org,
+  env,
+  project,
+  selectUser,
+}: LoginArgs): Promise<{
+  client: BasedClient
+  admin: BasedClient
+  destroy(): void
+}> => {
+  const hub = getBasedClient({
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
@@ -25,40 +44,23 @@ export const login = async (
     cluster,
   })
 
-  await admin.once('connect')
+  await hub.once('connect')
 
-  let users: {
-    email: string
-    userId: string
-    token: string
-    ts: number
-  }[] = await readJSON(authPath).catch(() => [])
-
-  let user
+  let users: User[] = await readJSON(authPath).catch(() => [])
+  let user: User
 
   if (users.length) {
-    const lastUser = users.sort((a, b) => b?.ts - a?.ts)[0]
-    await admin
-      .setAuthState({
-        ...lastUser,
-        type: 'based',
-      })
-      .then(() => {
-        user = lastUser
-      })
-      .catch(() => {
-        users = users.filter((user) => user !== lastUser)
-      })
+    user = users.sort((a: User, b: User) => b?.ts - a?.ts)[0]
 
-    if (selectUser && users.length) {
+    if (selectUser) {
       const choices = users.map((user) => ({ name: user.email, value: user }))
       choices.push({
-        name: 'other user',
+        name: 'Other user',
         value: null,
       })
 
       user = await select({
-        message: 'select user',
+        message: 'Select user:',
         choices,
       })
     }
@@ -66,7 +68,7 @@ export const login = async (
 
   if (!user) {
     const email = await input({
-      message: 'enter email address',
+      message: 'Enter your email address:',
       validate(email) {
         const at = email.lastIndexOf('@')
         const dot = email.lastIndexOf('.')
@@ -75,23 +77,30 @@ export const login = async (
     })
 
     const code = (~~(Math.random() * 1e6)).toString(16)
-    spinner.text = `verify ${pc.bold(email)} with code ${pc.bold(code)}`
+    spinner.text = `Please check your inbox at '${pc.bold(email)}', your login code is: ${pc.bold(code)}`
     spinner.start()
 
-    await admin.call('login', {
+    await hub.call('login', {
       email,
       skipEmailForTesting: cluster === 'local',
       code,
     })
 
-    spinner.succeed('verified')
+    spinner.succeed('Email verified!')
 
-    user = await admin.once('authstate-change')
-    user.email = email
+    user = {
+      ...(await hub.once('authstate-change')),
+      email,
+    }
 
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)
   }
+
+  await hub.setAuthState({
+    ...user,
+    type: 'based',
+  })
 
   // update users with updated timestamp
   user.ts = Date.now()
@@ -105,18 +114,18 @@ export const login = async (
   })
 
   await client.setAuthState({
-    ...admin.authState,
+    ...hub.authState,
     type: 'based',
   })
 
-  console.info(`🧑 ${user.email}`)
+  spinner.succeed(`🧑 User: '${user.email}' logged in successfully!`)
 
   return {
     client,
-    admin,
+    admin: hub,
     destroy() {
       client.destroy()
-      admin.destroy()
+      hub.destroy()
     },
   }
 }

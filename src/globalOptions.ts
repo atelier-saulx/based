@@ -1,8 +1,10 @@
 import { findUp } from 'find-up'
 import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
+import { Command } from 'commander'
 
-let env
+let env: string
+
 const getEnv = async (): Promise<string> => {
   if (env === undefined) {
     env = global.ENV
@@ -26,12 +28,12 @@ const getEnv = async (): Promise<string> => {
   return env
 }
 
-export const globalOptions = async (program) => {
+export const globalOptions = async (program: Command) => {
   if (!process.env.ENV) {
     process.env.ENV = await getEnv()
   }
 
-  const configPath = await findUp(['based.json', 'based.js', 'based.ts'])
+  const configPath = await findUp(['based.json', 'based.js', 'based.json'])
   const args: {
     cluster: string
     project?: string
@@ -54,9 +56,24 @@ export const globalOptions = async (program) => {
   }
 
   program
-    .option('-c, --cluster <cluster>', 'Based cluster', args.cluster)
-    .requiredOption('-o, --org <org>', 'Organization name', args.org)
-    .requiredOption('-p, --project <project>', 'Project name', args.project)
-    .requiredOption('-e, --env <env>', 'Environment name', args.env)
-    .option('--api-key <api-key>', 'API key for service account')
+    .option(
+      '-c, --cluster <cluster>',
+      'Define the cluster to use',
+      args.cluster,
+    )
+    .requiredOption('-o, --org <org>', 'Specify the organization', args.org)
+    .requiredOption(
+      '-p, --project <project>',
+      'Specify the project name',
+      args.project,
+    )
+    .requiredOption(
+      '-e, --env <env>',
+      'Specify witch environment (can be a name or "#branch" if you want to deploy by branch)',
+      args.env,
+    )
+    .option(
+      '-aK, --api-key <api-key>',
+      'API Key generated on Based.io for Service Account',
+    )
 }
