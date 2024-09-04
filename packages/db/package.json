@@ -18,7 +18,7 @@
     "test-single-ref": "zig build && npm run build && npm test -- ./dist/test/singleRef.js",
     "test-remove": "zig build && npm run build && npm test -- ./dist/test/remove.js",
     "test-single-ref-query": "zig build && npm run build && npm test -- ./dist/test/singleRefQuery.js",
-    "test-string": "zig build && npm run build && npm test -- ./dist/test/string.js",
+    "test-string": "npm run build-selva && zig build && npm run build && npm test -- ./dist/test/string.js",
     "test-update": "zig build && npm run build && npm test -- ./dist/test/update.js",
     "test-sort": "zig build && npm run build && npm test -- ./dist/test/sort.js",
     "test-range": "zig build && npm run build && npm test -- ./dist/test/range.js",

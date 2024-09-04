@@ -2,12 +2,17 @@ import test from 'ava'
 import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import fs from 'node:fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('string', async (t) => {
+test.serial.only('string', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+
   const db = new BasedDb({
     path: dbFolder,
     maxModifySize: 1e4,
@@ -43,6 +48,8 @@ test.serial('string', async (t) => {
     },
   })
 
+  // console.dir(db.schemaTypesParsed.user, { depth: 10 })
+
   db.create('user', {
     age: 99,
     burp: 66,
@@ -56,6 +63,9 @@ test.serial('string', async (t) => {
   db.drain()
 
   const result = db.query('user').get()
+
+  console.log(result.toObject())
+
   t.deepEqual(result.toObject(), [
     {
       id: 1,
