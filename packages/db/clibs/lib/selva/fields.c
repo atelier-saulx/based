@@ -917,16 +917,15 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
     db_panic("Invalid type");
 }
 
-static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, field_t field)
+static int fields_del(struct SelvaNode *node, struct SelvaFields *fields, struct SelvaFieldSchema *fs)
 {
     struct SelvaFieldInfo *nfo;
-    struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
 
-    if (field >= fields->nr_fields) {
+    if (fs->field >= fields->nr_fields) {
         return SELVA_ENOENT;
     }
 
-    nfo = &fields->fields_map[field];
+    nfo = &fields->fields_map[fs->field];
 
     switch (nfo->type) {
     case SELVA_FIELD_TYPE_NULL:
@@ -968,22 +967,30 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     return 0;
 }
 
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+int selva_fields_del(struct SelvaDb *, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
 
-    return fields_del(db, node, fields, field);
+    return fields_del(node, fields, fs);
 }
 
 static int reference_meta_del(struct SelvaNodeReference *ref, field_t field)
 {
     struct SelvaFields *fields = ref->meta;
 
+#if 0
     if (!fields) {
         return SELVA_ENOENT;
     }
 
-    return fields_del(NULL, NULL, fields, field);
+    struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
+    if (unlikely(!fs)) {
+        db_panic("No field schema found");
+    }
+
+    return fields_del(NULL, fields, fs);
+#endif
+    db_panic("NOT IMPLEMENTED");
 }
 
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id)
@@ -1072,7 +1079,12 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
         if (node->fields.fields_map[field].type != SELVA_FIELD_TYPE_NULL) {
             int err;
 
-            err = selva_fields_del(db, node, field);
+            struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
+            if (unlikely(!fs)) {
+                db_panic("No field schema found");
+            }
+
+            err = selva_fields_del(db, node, fs);
             if (unlikely(err)) {
                 db_panic("Failed to remove a field: %s", selva_strerror(err));
             }

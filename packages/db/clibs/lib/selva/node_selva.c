@@ -658,7 +658,12 @@ static napi_value node_db_del_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
     }
 
-    return res2napi(env, selva_fields_del(db, node, field));
+    struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
+    if (!fs) {
+        return res2napi(env, SELVA_ENOENT);
+    }
+
+    return res2napi(env, selva_fields_del(db, node, fs));
 }
 
 // node_db_set_alias(db, type_id, node_id, alias): number
