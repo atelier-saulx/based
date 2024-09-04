@@ -19,6 +19,8 @@ await test('range', async (t) => {
     path: dbFolder,
   })
 
+  await db.start()
+
   t.after(() => {
     return db.destroy()
   })
