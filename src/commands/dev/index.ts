@@ -117,14 +117,14 @@ export const dev = async (program: Command) => {
     await server.start()
     await browserBundles.ctx.serve({ port: filePort })
 
-    const rewrites = []
+    // const rewrites = []
 
-    for (const i in files) {
-      rewrites.push({
-        source: i,
-        destination: files[i],
-      })
-    }
+    // for (const i in files) {
+    //   rewrites.push({
+    //     source: i,
+    //     destination: files[i],
+    //   })
+    // }
 
     console.info(
       `🚀 dev server: http://localhost:${devPort} ${pc.dim(`http://${ip}:${devPort}`)}`,
@@ -133,29 +133,29 @@ export const dev = async (program: Command) => {
       `📦 bundle server: http://localhost:${filePort} ${pc.dim(`http://${ip}:${filePort}`)} `,
     )
 
-    http
-      .createServer((request, response) => {
-        return handler(request, response, {
-          rewrites,
-          headers: [
-            {
-              source: '*',
+    // http
+    //   .createServer((request, response) => {
+    //     return handler(request, response, {
+    //       rewrites,
+    //       headers: [
+    //         {
+    //           source: '*',
 
-              headers: [
-                {
-                  key: 'Access-Control-Allow-Origin',
-                  value: '*',
-                },
-              ],
-            },
-          ],
-        })
-      })
-      .listen(staticPort, () => {
-        console.info(
-          `☁️  static server: http://localhost:${staticPort} ${pc.dim(`http://${ip}:${staticPort}`)}`,
-        )
-      })
+    //           headers: [
+    //             {
+    //               key: 'Access-Control-Allow-Origin',
+    //               value: '*',
+    //             },
+    //           ],
+    //         },
+    //       ],
+    //     })
+    //   })
+    //   .listen(staticPort, () => {
+    //     console.info(
+    //       `☁️  static server: http://localhost:${staticPort} ${pc.dim(`http://${ip}:${staticPort}`)}`,
+    //     )
+    //   })
 
     async function update(err) {
       let reloadClients = hadError
@@ -215,11 +215,12 @@ export const dev = async (program: Command) => {
           checksums[config.name] = checksum
 
           if (await invalidate(index, config)) {
+            // ts validation
             server.functions.add({
               [config.name]: {
                 type: 'function',
                 async fn() {
-                  return 'error'
+                  return 'error (should log the ts error)'
                 },
               },
             })
