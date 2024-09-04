@@ -14,6 +14,8 @@
 #include "selva/types.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
+RB_HEAD(SelvaTypeCursorById, SelvaTypeCursor);
+RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
@@ -123,6 +125,11 @@ struct SelvaTypeEntry {
     size_t nr_nodes; /*!< Number of nodes of this type. */
     size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
+    struct {
+        struct ida *ida; /*! Id allocator for cursors. TODO */
+        struct SelvaTypeCursorById by_cursor_id;
+        struct SelvaTypeCursorsByNodeId by_node_id;
+    } cursors;
     struct {
         void *buf;
         size_t len;
