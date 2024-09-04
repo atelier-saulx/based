@@ -50,7 +50,18 @@ export const login = async ({
   let user: User
 
   if (users.length) {
-    user = users.sort((a: User, b: User) => b?.ts - a?.ts)[0]
+    const lastUser: User = users.sort((a: User, b: User) => b?.ts - a?.ts)[0]
+    await hub
+      .setAuthState({
+        ...lastUser,
+        type: 'based',
+      })
+      .then(() => {
+        user = lastUser
+      })
+      .catch(() => {
+        users = users.filter((user) => user !== lastUser)
+      })
 
     if (selectUser) {
       const choices = users.map((user) => ({ name: user.email, value: user }))
@@ -96,11 +107,6 @@ export const login = async ({
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)
   }
-
-  await hub.setAuthState({
-    ...user,
-    type: 'based',
-  })
 
   // update users with updated timestamp
   user.ts = Date.now()
