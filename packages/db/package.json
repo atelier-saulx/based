@@ -12,7 +12,7 @@
     "clean-selva": "rm -rf build && make -C clibs clean",
     "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
     "playground": "npm run build && node ./dist/test/shared/playground.js",
-    "test": "npm run build && lldb -o run -o \"script import os; os._exit(0)\" node ./scripts/test.js"
+    "test": "npm run build && lldb -o run -o bt -o \"script import os; os._exit(0)\" node ./scripts/test.js"
   },
   "sideEffects": false,
   "files": [
