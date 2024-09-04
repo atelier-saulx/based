@@ -503,6 +503,14 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }
     }
 
+    if (t.mainLen === 0) {
+      const x = Buffer.from([
+        0,
+        ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+      ])
+      return x
+    }
+
     const x = Buffer.from([
       1,
       ...toSelvaSchemaBuf({

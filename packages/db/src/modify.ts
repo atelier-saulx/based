@@ -224,6 +224,8 @@ export const create = (db: BasedDb, type: string, value: any) => {
     !addModify(db, id, value, def.tree, def, 3, false, true) ||
     def.mainLen === 0
   ) {
+    setCursor(db, def, 0, id, false, true)
+
     // FIXI FIX
     // const nextLen = 5 + def.mainLen
     // if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
