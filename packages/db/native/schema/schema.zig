@@ -19,11 +19,10 @@ fn updateSchemaInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_val
     }
 
     const args = try napi.getArgs(2, env, info);
-    const typeId = try napi.getStringFixedLength("type", 2, env, args[0]);
-    const nrType: u16 = @bitCast(typeId);
+    const typeId = try napi.get(u16, env, args[0]);
     const schema = try napi.get([]u8, env, args[1]);
 
-    try errors.selva(selva.selva_db_schema_create(db.ctx.selva, nrType, schema.ptr, schema.len));
+    try errors.selva(selva.selva_db_schema_create(db.ctx.selva, typeId, schema.ptr, schema.len));
 
     return null;
 }

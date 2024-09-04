@@ -145,8 +145,12 @@ await db2.start()
 
 const flap = db2.query('user').range(0, 1e6).get()
 
+let i = 0
 for (const x of flap) {
-  console.log(x)
+  i++
+  if (i > 999999) {
+    console.log(x)
+  }
 }
 
 // db.updateSchema({

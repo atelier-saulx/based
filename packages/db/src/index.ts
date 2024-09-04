@@ -113,7 +113,7 @@ export class BasedDb {
 
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      const [total, lastId] = this.native.getTypeInfo(def.prefixString)
+      const [total, lastId] = this.native.getTypeInfo(def.prefixNumber)
       def.total = total
       def.lastId = lastId
     }
@@ -161,7 +161,7 @@ export class BasedDb {
         const type = this.schemaTypesParsed[types[i]]
         //  should not crash!
         try {
-          this.native.updateSchemaType(type.prefixString, s[i])
+          this.native.updateSchemaType(type.prefixNumber, s[i])
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err)
         }

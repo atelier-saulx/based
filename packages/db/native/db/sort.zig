@@ -146,6 +146,11 @@ pub fn writeDataToSortIndex(
 ) !void {
     var k: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
     var v: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
+
+    if (data.len == 0) {
+        v.mv_size = 1;
+        v.mv_data = EMPTY_CHAR_SLICE.ptr;
+    }
     try writeToSortIndex(&v, &k, start, len, cursor, field);
 }
 
@@ -158,7 +163,7 @@ fn createSortIndex(
     lastId: u32,
 ) !void {
     const txn = try createTransaction(false);
-    const typePrefix: [2]u8 = .{ name[1], name[2] };
+    const typePrefix: [2]u8 = .{ name[0], name[1] };
     const typeId: u16 = @bitCast(typePrefix);
 
     var dbi: c.MDB_dbi = 0;
@@ -185,7 +190,12 @@ fn createSortIndex(
             continue;
         }
         const data = db.getField(node.?, fieldSchema);
+
+        // std.debug.print("4.1 HELLO id: {d} {any}  \n", .{ i, data });
+
         try writeDataToSortIndex(i, data, start, len, cursor, field);
+
+        // std.debug.print("4 HELLO id: {d} {any}  \n", .{ i, data });
     }
 
     try commitTxn(txn);

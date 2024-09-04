@@ -165,11 +165,11 @@ export default {
     return db.stop()
   },
 
-  getTypeInfo: (type: string) => {
+  getTypeInfo: (type: number) => {
     return db.getTypeInfo(type)
   },
 
-  updateSchemaType: (prefix: string, buf: Buffer) => {
+  updateSchemaType: (prefix: number, buf: Buffer) => {
     return db.updateSchema(prefix, buf)
   },
 }

@@ -18,9 +18,7 @@ pub fn getSingleRefFields(
 ) usize {
     var size: usize = 0;
 
-    // GET SELVA NODE
-
-    const typeId: db.TypeId = .{ include[0], include[1] };
+    const typeId: db.TypeId = readInt(u16, include, 0);
     const start = readInt(u16, include, 2);
     const refId = readInt(u32, main, start);
 

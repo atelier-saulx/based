@@ -1,7 +1,7 @@
 const c = @import("../../c.zig");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
-const readInt = @import("std").mem.readInt;
+const readInt = @import("../../utils.zig").readInt;
 const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const db = @import("../../db/db.zig");
@@ -20,13 +20,9 @@ pub fn filter(
     while (fieldIndex < conditions.len) {
         const field = conditions[fieldIndex];
         const operation = conditions[fieldIndex + 1 ..];
-        const querySize: u16 = readInt(
-            u16,
-            operation[0..2],
-            .little,
-        );
+        const querySize: u16 = readInt(u16, operation, 0);
         if (field == 254) {
-            const refTypePrefix: [2]u8 = .{ operation[4], operation[5] };
+            const refTypePrefix = readInt(u16, operation, 4);
             if (main == null) {
                 const fieldSchema = db.getFieldSchema(0, typeEntry) catch {
                     return false;
@@ -36,8 +32,8 @@ pub fn filter(
                     return false;
                 }
             }
-            const refStart: u16 = readInt(u16, operation[2..4], .little);
-            const refId = readInt(u32, main.?[refStart..][0..4], .little);
+            const refStart: u16 = readInt(u16, operation, 2);
+            const refId = readInt(u32, main.?, refStart);
             if (refId > 0) {
                 const refConditions: []u8 = operation[6 .. 2 + querySize];
 

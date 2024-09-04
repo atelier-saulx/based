@@ -135,7 +135,8 @@ export const createSchemaTypeDef = (
   top: boolean = true,
 ): SchemaTypeDef => {
   if (result.prefixNumber == 0) {
-    result.prefixNumber = new Uint16Array(result.prefix)[0]
+    result.prefixNumber = (result.prefix[1] << 8) + result.prefix[0]
+    console.log(result.prefixNumber, result.prefix)
   }
 
   const encoder = new TextEncoder()

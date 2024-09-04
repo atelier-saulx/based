@@ -2,6 +2,8 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 
+const std = @import("std");
+
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
@@ -38,14 +40,13 @@ pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
 }
 
 pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
-    // u8
-    // 255 / 254 / 253 / 252
-    try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
-
     if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
+
+    try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+
     return 0;
 }
