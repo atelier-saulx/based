@@ -462,7 +462,9 @@ static void selva_cursors_move_node(
     struct SelvaTypeCursors *old_cursors;
 
     old_cursors = RB_FIND(SelvaTypeCursorsByNodeId, &type->cursors.by_node_id, &find_old);
-    assert(old_cursors);
+    if (!old_cursors) {
+        return;
+    }
     assert(old_node != new_node);
 
     if (new_node) {
