@@ -100,8 +100,12 @@ pub fn getFields(
 
     if (!idIsSet) {
         idIsSet = true;
-        if (start != null and !fromNoFields) {
-            _ = try addIdOnly(ctx, id, refLvl, start);
+        if (start != null) {
+            if (!fromNoFields) {
+                _ = try addIdOnly(ctx, id, refLvl, start);
+            }
+            // std.debug.print("flao", .{});
+            // size += try addIdOnly(ctx, id, refLvl, start);
         } else {
             size += try addIdOnly(ctx, id, refLvl, start);
         }
