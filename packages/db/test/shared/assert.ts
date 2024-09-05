@@ -5,9 +5,9 @@ export const deepEqual = (a, b, msg?: string) => {
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
-${util.inspect(b)}
+${util.inspect(b, { depth: 10 })}
 ------------------- ACTUAL -----------------------
-${util.inspect(a)}
+${util.inspect(a, { depth: 10 })}
 --------------------------------------------------`
     throw new Error(m)
   }

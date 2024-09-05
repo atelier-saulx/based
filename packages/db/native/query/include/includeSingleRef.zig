@@ -4,6 +4,7 @@ const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
+const std = @import("std");
 
 const IncludeError = error{
     Recursion,
@@ -40,9 +41,11 @@ pub fn getSingleRefFields(
     }
 
     if (!hasFields) {
+        std.debug.print(" ---- Flap BLABLA\n", .{});
         _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
             return 0;
         };
+        return 8;
     }
 
     const includeNested = include[4..include.len];
