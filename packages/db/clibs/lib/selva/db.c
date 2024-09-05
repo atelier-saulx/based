@@ -119,11 +119,11 @@ struct SelvaDb *selva_db_create(void)
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
     SVector_Init(&db->type_list, 1, SVector_SelvaTypeEntry_compare);
-    SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
     db->schemabuf_ctx = schemabuf_create_ctx();
-    db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
-    /* TODO Expiring nodes timer */
 #if 0
+    db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
+    SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
+    /* TODO Expiring nodes timer */
     db->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
 #endif
 
@@ -153,6 +153,9 @@ static void del_type(struct SelvaDb *db, struct SelvaTypeEntry *type)
 
     mempool_destroy(&type->nodepool);
     selva_free(type->field_map_template.buf);
+#if 0
+    memset(type, 0, sizeof(*type));
+#endif
     selva_free(type);
 }
 
@@ -173,6 +176,9 @@ void selva_db_destroy(struct SelvaDb *db)
 {
     del_all_types(db);
     schemabuf_destroy_ctx(db->schemabuf_ctx);
+#if 0
+    memset(db, 0, sizeof(*db));
+#endif
     selva_free(db);
 }
 
