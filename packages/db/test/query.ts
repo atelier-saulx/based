@@ -59,7 +59,7 @@ await test('query', async (t) => {
 
   deepEqual(
     db.query('user').include('id').get().toObject(),
-    [{ id: 1 }, {}],
+    [{ id: 1 }],
     'Id only',
   )
 
