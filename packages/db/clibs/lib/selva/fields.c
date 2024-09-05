@@ -568,6 +568,8 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
                  selva_str_field_type(fs->type), fs->type);
     }
 
+    assert(len <= selva_fields_get_data_size(fs));
+
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
         break;
@@ -938,6 +940,7 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
             .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
             .len = selva_fields_get_data_size(fs),
         };
+        static_assert(offsetof(struct SelvaMicroBuffer, data) == sizeof_field(struct SelvaMicroBuffer, len));
     }
     db_panic("Invalid type");
 }
