@@ -153,25 +153,65 @@ await test('string + refs', async (t) => {
 
   db.drain()
 
-  const result = db
-    .query('simple')
-    .include('user.name', 'user.myBlup.name')
-    .range(0, 1)
-    .get()
-
-  deepEqual(result.toObject(), [
-    {
-      id: 1,
-      user: {
+  deepEqual(
+    db
+      .query('simple')
+      .include('user.name', 'user.myBlup.name')
+      .range(0, 1)
+      .get()
+      .toObject(),
+    [
+      {
         id: 1,
-        name: 'Mr 0',
-        myBlup: {
+        user: {
           id: 1,
-          name: '',
+          name: 'Mr 0',
+          myBlup: {
+            id: 1,
+            name: '',
+          },
         },
       },
-    },
-  ])
+    ],
+  )
+
+  db.create('simple', {
+    user: users[~~(Math.random() * users.length)],
+  })
+
+  db.drain()
+
+  deepEqual(
+    db
+      .query('simple')
+      .include('user.name', 'user.myBlup.name')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        user: {
+          id: 1,
+          name: 'Mr 0',
+          myBlup: {
+            id: 1,
+            name: '',
+          },
+        },
+      },
+      {
+        id: 2,
+        user: {
+          id: 1,
+          name: 'Mr 0',
+          myBlup: {
+            id: 1,
+            name: '',
+          },
+        },
+      },
+    ],
+  )
 })
 
 await test('Big string', async (t) => {
