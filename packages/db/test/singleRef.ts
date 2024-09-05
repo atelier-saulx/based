@@ -247,13 +247,11 @@ await test('nested', async (t) => {
       },
     },
   ])
-  console.log('FLAP')
 
   deepEqual(
     db.query('simple').include('user.myBlup').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
   )
-  console.log('FLAP')
 
   deepEqual(
     db
