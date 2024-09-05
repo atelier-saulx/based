@@ -376,12 +376,12 @@ struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
 
 struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type __unused, struct SelvaNode *node)
 {
-    return RB_NEXT(SelvaNodeIndex, &type->nodes, node);
+    return RB_PREV(SelvaNodeIndex, &type->nodes, node);
 }
 
 struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type __unused, struct SelvaNode *node)
 {
-    return RB_PREV(SelvaNodeIndex, &type->nodes, node);
+    return RB_NEXT(SelvaNodeIndex, &type->nodes, node);
 }
 
 static struct SelvaTypeCursors *find_cursors(struct SelvaTypeEntry *type, node_id_t node_id)
