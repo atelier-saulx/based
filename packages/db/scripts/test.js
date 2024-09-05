@@ -47,7 +47,7 @@ await fs.readdir(p).then((files) => {
 console.log('\n\n')
 console.log(
   picocolors.bgWhite(
-    ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 'S'} `,
+    ` RUN ${testsToRun.length} file${testsToRun.length == 1 ? '' : 's'} `,
   ),
 )
 console.log('')
