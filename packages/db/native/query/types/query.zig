@@ -30,7 +30,17 @@ pub fn queryId(
         return;
     }
 
-    const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+    const size = try getFields(
+        node.?,
+        ctx,
+        id,
+        typeEntry,
+        null,
+        include,
+        0,
+        false,
+    );
+
     if (size > 0) {
         ctx.size += size;
         ctx.totalResults += 1;
@@ -59,7 +69,16 @@ pub fn queryIds(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+        const size = try getFields(
+            node.?,
+            ctx,
+            id,
+            typeEntry,
+            null,
+            include,
+            0,
+            false,
+        );
 
         if (size > 0) {
             ctx.size += size;
@@ -103,7 +122,16 @@ pub fn query(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, null, include, 0);
+        const size = try getFields(
+            node.?,
+            ctx,
+            db.getNodeId(node.?),
+            typeEntry,
+            null,
+            include,
+            0,
+            false,
+        );
 
         if (size > 0) {
             ctx.size += size;

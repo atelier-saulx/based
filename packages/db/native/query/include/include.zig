@@ -17,6 +17,7 @@ pub fn getFields(
     start: ?u16,
     include: []u8,
     refLvl: u8,
+    fromNoFields: bool,
 ) !usize {
     var includeMain: []u8 = &.{};
     var size: usize = 0;
@@ -99,9 +100,8 @@ pub fn getFields(
 
     if (!idIsSet) {
         idIsSet = true;
-        if (start != null) {
-            // _ = try addIdOnly(ctx, id, refLvl, start);
-            // size += 2;
+        if (start != null and !fromNoFields) {
+            _ = try addIdOnly(ctx, id, refLvl, start);
         } else {
             size += try addIdOnly(ctx, id, refLvl, start);
         }

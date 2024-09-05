@@ -41,11 +41,10 @@ pub fn getSingleRefFields(
     }
 
     if (!hasFields) {
-        std.debug.print(" ---- Flap BLABLA\n", .{});
         _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
             return 0;
         };
-        return 8;
+        // return 8;
     }
 
     const includeNested = include[4..include.len];
@@ -58,6 +57,7 @@ pub fn getSingleRefFields(
         start,
         includeNested,
         refLvl + 1,
+        !hasFields,
     ) catch 0;
 
     size += 8 + resultSizeNest;

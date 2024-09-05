@@ -68,7 +68,17 @@ pub fn queryIdsSort(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+        const size = try getFields(
+            node.?,
+            ctx,
+            id,
+            typeEntry,
+            null,
+            include,
+            0,
+            false,
+        );
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -138,7 +148,17 @@ pub fn queryIdsSortBig(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+        const size = try getFields(
+            node.?,
+            ctx,
+            id,
+            typeEntry,
+            null,
+            include,
+            0,
+            false,
+        );
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -206,7 +226,16 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, id, typeEntry, null, include, 0);
+        const size = try getFields(
+            node.?,
+            ctx,
+            id,
+            typeEntry,
+            null,
+            include,
+            0,
+            false,
+        );
 
         if (size > 0) {
             ctx.size += size;
