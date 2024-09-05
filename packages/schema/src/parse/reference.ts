@@ -11,7 +11,13 @@ export const reference = new PropParser<SchemaReference>(
       }
     },
 
-    inverseProp(propKey, prop, schema) {
+    inverseProp(propKey, prop, schema, inRootProps) {
+      if (inRootProps) {
+        if (propKey === undefined) {
+          return
+        }
+        throw Error('inverseProp not supported on root')
+      }
       const schemaType = schema.types[prop.ref]
       let targetProp = schemaType.props?.[propKey]
       if (isNotObject(targetProp)) {

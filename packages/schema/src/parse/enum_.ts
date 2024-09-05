@@ -4,7 +4,7 @@ import { PropParser } from './props.js'
 
 export const enum_ = new PropParser<SchemaEnum>(
   {
-    enum(items, prop) {
+    enum(items) {
       if (!Array.isArray(items)) {
         throw Error(ERRORS.EXPECTED_ARR)
       }

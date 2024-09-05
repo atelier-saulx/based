@@ -3,32 +3,67 @@ import { throws } from 'node:assert'
 import { parse } from '@based/schema'
 
 test('set', () => {
-  for (const basicType of [
-    'string',
-    'number',
-    'boolean',
-    'timestamp',
-  ] as const) {
-    parse({
-      props: {
-        myProp: {
-          items: {
-            type: basicType,
-          },
+  parse({
+    props: {
+      myStrings: {
+        items: {
+          type: 'string',
         },
       },
-    })
+    },
+  })
 
-    parse({
-      props: {
-        myProp: {
-          items: {
-            type: basicType,
+  parse({
+    props: {
+      myNumbers: {
+        items: {
+          type: 'number',
+          min: 0,
+          max: 100,
+          step: 1,
+        },
+      },
+    },
+  })
+
+  parse({
+    props: {
+      myBools: {
+        items: {
+          type: 'boolean',
+        },
+      },
+    },
+  })
+
+  parse({
+    types: {
+      user: {
+        props: {
+          name: {
+            type: 'string',
           },
         },
       },
-    })
-  }
+    },
+    props: {
+      myUsers: {
+        items: {
+          ref: 'user',
+        },
+      },
+    },
+  })
+
+  // parse({
+  //   props: {
+  //     myRefs: {
+  //       items: {
+  //         ref: 'user'
+  //       },
+  //     },
+  //   },
+  // })
 
   throws(() => {
     parse({
@@ -36,7 +71,7 @@ test('set', () => {
         myType: {
           props: {
             // @ts-ignore
-            myProp: {
+            myWrongSet: {
               type: 'set',
             },
           },

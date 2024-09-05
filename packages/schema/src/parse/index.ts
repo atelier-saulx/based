@@ -21,8 +21,11 @@ export const propParsers: Record<string, PropParser<SchemaProp>> = {
   reference,
 } as const
 
-const schemaParsers = {
-  props(props: SchemaProps, schema: Schema) {
+const schemaParsers: Record<
+  string,
+  (val: any, schema: Schema, inRootProps?: boolean) => void
+> = {
+  props(props: SchemaProps, schema: Schema, inRootProps: boolean = true) {
     if (isNotObject(props)) {
       throw Error(ERRORS.EXPECTED_OBJ)
     }
@@ -36,7 +39,7 @@ const schemaParsers = {
       if (!propParser) {
         throw Error(ERRORS.INVALID_VALUE)
       }
-      propParser.parse(prop, schema)
+      propParser.parse(prop, schema, inRootProps)
     }
   },
   types(types: SchemaTypes, schema: Schema) {
@@ -49,7 +52,7 @@ const schemaParsers = {
         throw Error(ERRORS.EXPECTED_OBJ)
       }
       const { props } = nodeType
-      schemaParsers.props(props, schema)
+      schemaParsers.props(props, schema, false)
     }
   },
 } as const
