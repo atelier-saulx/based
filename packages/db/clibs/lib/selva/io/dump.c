@@ -461,6 +461,7 @@ int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t
     if (err) {
         return err;
     }
+    *out_len = 0;
 
     err = selva_io_quick_verify(filename);
     if (err) {
