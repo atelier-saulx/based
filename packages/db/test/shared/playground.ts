@@ -136,9 +136,9 @@ const dd = db.query('user').range(0, 100).get()
 
 console.log(dd)
 
-for (const x of dd) {
-  console.log('???', x.name)
-}
+// for (const x of dd) {
+// console.log('???', x.name)
+// }
 
 await db.stop()
 

@@ -79,7 +79,7 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 
 pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
-    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.len + result.off];
+    return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
 }
 
 pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
