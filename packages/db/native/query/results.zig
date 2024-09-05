@@ -45,48 +45,27 @@ pub fn createResultsBuffer(
                 lastRefLvl = item.refLvl;
                 data[i] = 254;
                 i += 1;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
+
                 if (item.refLvl > 1) {
                     data[i] = 1;
                 } else {
                     data[i] = 0;
                 }
                 i += 1;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
+
                 writeInt(u16, data, i, lastRef);
                 i += 2;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
+
                 writeInt(u32, data, i, item.id.?);
                 i += 4;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
             }
         } else {
             lastRef = MAX_REF;
             if (item.id != null) {
                 data[i] = 255;
                 i += 1;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
                 writeInt(u32, data, i, item.id.?);
                 i += 4;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
             }
         }
 
@@ -96,11 +75,6 @@ pub fn createResultsBuffer(
 
         data[i] = item.field;
         i += 1;
-
-        if (i > data.len) {
-            std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-            break;
-        }
 
         if (item.val == null) {
             continue;
@@ -117,40 +91,19 @@ pub fn createResultsBuffer(
                     const len = readInt(u16, operation, 2);
                     @memcpy(data[i .. i + len], val[start .. start + len]);
                     i += len;
-                    if (i > data.len) {
-                        std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                        break;
-                    }
+
                     mainPos += 4;
                 }
             } else {
                 @memcpy(data[i .. i + val.len], val);
                 i += val.len;
-                if (i > data.len) {
-                    std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                    break;
-                }
             }
         } else {
             writeInt(u32, data, i, val.len);
             i += 4;
 
-            if (i > data.len) {
-                std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                break;
-            }
             @memcpy(data[i .. i + val.len], val);
             i += val.len;
-
-            if (i > data.len) {
-                std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-                break;
-            }
-        }
-
-        if (i > data.len) {
-            std.debug.print("HELLO len: {d} i: {d} \n", .{ data.len, i });
-            break;
         }
     }
 
