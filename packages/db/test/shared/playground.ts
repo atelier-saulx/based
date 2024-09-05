@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import { BasedDb, schema2selva } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
+import { text, italy, euobserver } from './examples.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -86,7 +87,7 @@ db.updateSchema({
         age: { type: 'integer' },
         time: { type: 'integer' },
         fun: { type: 'integer' },
-        // name: { type: 'string', maxLength: 15 },
+        name: { type: 'string' }, // 8610
         // flap: { type: 'string' },
       },
     },
@@ -110,12 +111,12 @@ db.updateSchema({
 console.log('SNURP')
 
 var d = Date.now()
-for (let i = 0; i < 1e6; i++) {
+for (let i = 0; i < 10000; i++) {
   db.create('user', {
-    age: i + 1,
+    age: i,
     time: 66,
     fun: 99,
-    // name: 'Mr nurp nurp ' + i,
+    name: euobserver,
   })
   // Relatively slow remove schema lookup
   // db.create('xyz', {
@@ -131,6 +132,14 @@ console.log(Date.now() - d, dbTime, 'ms')
 // sort('age').
 console.log(db.query('user').range(0, 1000).get())
 
+const dd = db.query('user').range(0, 100).get()
+
+console.log(dd)
+
+for (const x of dd) {
+  console.log('???', x.name)
+}
+
 await db.stop()
 
 await wait(1e3)
@@ -143,13 +152,19 @@ const db2 = new BasedDb({
 
 await db2.start()
 
-const flap = db2.query('user').range(0, 1e6).get()
+const flap = db2
+  .query('user')
+  .filter('name', 'has', 'mr poopoo')
+  .range(0, 100)
+  .get()
+
+console.log(flap)
 
 let i = 0
 for (const x of flap) {
   i++
   if (i > 999999) {
-    console.log(x)
+    console.log(x.name)
   }
 }
 

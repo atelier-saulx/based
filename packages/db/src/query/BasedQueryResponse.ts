@@ -93,6 +93,18 @@ export class BasedQueryResponse {
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
+  // bit weird...
+  node(index: number = 0) {
+    let i = 0
+    for (const x of this) {
+      if (i === index) {
+        return x
+      }
+      i++
+    }
+    return null
+  }
+
   *[Symbol.iterator]() {
     let i = 4
     let currentInclude: QueryIncludeDef
@@ -120,8 +132,8 @@ export class BasedQueryResponse {
       } else if (index === 0) {
         i += currentInclude.mainLen
       } else {
-        const size = this.buffer.readUInt16LE(i)
-        i += 2
+        const size = this.buffer.readUInt32LE(i)
+        i += 4
         i += size
       }
     }

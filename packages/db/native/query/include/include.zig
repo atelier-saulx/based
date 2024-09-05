@@ -71,7 +71,7 @@ pub fn getFields(
                 size += (value.len + 1);
             }
         } else {
-            size += (value.len + 3);
+            size += (value.len + 5);
         }
 
         var result: results.Result = .{

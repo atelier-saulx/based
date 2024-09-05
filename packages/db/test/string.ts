@@ -1,33 +1,19 @@
-import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
-import fs from 'node:fs/promises'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
-
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
+import { deepEqual, equal } from './shared/assert.js'
+import { euobserver } from './shared/examples.js'
 
 await test('string', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
     maxModifySize: 1e4,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
   })
-
-  try {
-    console.log(db.query('user').get())
-  } catch (e) {}
 
   db.updateSchema({
     types: {
@@ -52,8 +38,6 @@ await test('string', async (t) => {
       },
     },
   })
-
-  // console.dir(db.schemaTypesParsed.user, { depth: 10 })
 
   db.create('user', {
     age: 99,
@@ -85,12 +69,12 @@ await test('string', async (t) => {
   ])
 })
 
-test.skip('string + refs', async (t) => {
+await test.skip('string + refs', async (t) => {
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -192,4 +176,36 @@ test.skip('string + refs', async (t) => {
       },
     },
   ])
+})
+
+await test('Big string', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.updateSchema({
+    types: {
+      file: {
+        fields: {
+          name: { type: 'string', maxLength: 20 },
+          contents: { type: 'string' },
+        },
+      },
+    },
+  })
+  const file = db.create('file', {
+    contents: euobserver,
+  })
+  db.drain()
+  equal(
+    db.query('file', file).get().node().contents,
+    euobserver,
+    'Get single id',
+  )
 })

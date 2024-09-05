@@ -95,8 +95,8 @@ pub fn createResultsBuffer(
                 i += val.len;
             }
         } else {
-            writeInt(u16, data, i, val.len);
-            i += 2;
+            writeInt(u32, data, i, val.len);
+            i += 4;
             @memcpy(data[i .. i + val.len], val);
             i += val.len;
         }

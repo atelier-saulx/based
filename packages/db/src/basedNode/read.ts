@@ -129,8 +129,8 @@ export const readSeperateFieldFromBuffer = (
       }
       i += includeDef.mainLen
     } else {
-      const size = buffer.readUInt16LE(i)
-      i += 2
+      const size = buffer.readUInt32LE(i)
+      i += 4
       // if no field add size 0
       if (requestedField.field === index && found) {
         if (requestedField.type === 'string') {

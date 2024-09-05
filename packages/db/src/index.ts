@@ -64,6 +64,7 @@ export class BasedDb {
   }: {
     path: string
     maxModifySize?: number
+    fresh?: boolean
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
@@ -81,11 +82,12 @@ export class BasedDb {
       lastMain: -1,
     }
     this.fileSystemPath = path
+
     this, (this.schemaTypesParsed = {})
     this.schema = deepCopy(DEFAULT_SCHEMA)
   }
 
-  async start(readOnly: boolean = false): Promise<
+  async start(opts: { clean?: boolean } = {}): Promise<
     {
       shard: number
       field: number
@@ -94,6 +96,12 @@ export class BasedDb {
       lastId: number
     }[]
   > {
+    if (opts.clean) {
+      try {
+        await fs.rm(this.fileSystemPath, { recursive: true })
+      } catch {}
+    }
+
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
@@ -101,7 +109,7 @@ export class BasedDb {
 
     const s = await fs.stat(dumppath).catch(() => null)
 
-    db.start(this.fileSystemPath, s ? dumppath : null, readOnly)
+    db.start(this.fileSystemPath, s ? dumppath : null, false)
 
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
@@ -215,8 +223,10 @@ export class BasedDb {
     }
   }
 
-  async stop() {
-    await this.save()
+  async stop(noSave?: boolean) {
+    if (!noSave) {
+      await this.save()
+    }
     db.stop()
   }
 

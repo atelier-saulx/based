@@ -3,7 +3,7 @@ import { BasedDb } from './index.js'
 
 export const destroy = async (db: BasedDb) => {
   // make stop
-  await db.stop()
+  await db.stop(true)
   const path = db.fileSystemPath
   try {
     await fs.rm(path, { recursive: true })

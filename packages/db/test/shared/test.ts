@@ -1,11 +1,16 @@
-import { count } from 'console'
 import picocolors from 'picocolors'
+
+import { fileURLToPath } from 'url'
+import { join, dirname, resolve } from 'path'
 
 export const counts = {
   errors: 0,
   skipped: 0,
   success: 0,
 }
+
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+const relativePath = '../tmp'
 
 const test = async (name: string, fn: (t?: any) => Promise<void>) => {
   console.log(picocolors.gray(`\nstart ${name}`))
@@ -15,6 +20,7 @@ const test = async (name: string, fn: (t?: any) => Promise<void>) => {
     after: (fn) => {
       afters.push(fn)
     },
+    tmp: resolve(join(__dirname, relativePath)),
   }
   try {
     await fn(t)

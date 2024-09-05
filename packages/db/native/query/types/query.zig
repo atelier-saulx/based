@@ -85,21 +85,15 @@ pub fn query(
     var node: ?db.Node = selva.selva_min_node(typeEntry);
 
     checkItem: while (ctx.totalResults < limit) {
-        std.debug.print("YO YO YO\n", .{});
-
         if (first) {
             first = false;
         } else {
-            std.debug.print("BLUP YO YO\n", .{});
-
             node = selva.selva_next_node(typeEntry, node);
         }
 
         if (node == null) {
             break :checkItem;
         }
-
-        std.debug.print("YO YO YO {any} {d} \n", .{ node, selva.selva_get_node_id(node) });
 
         if (!filter(node.?, typeEntry, conditions)) {
             continue :checkItem;
