@@ -13,7 +13,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 
 const test = async (name: string, fn: (t?: any) => Promise<void>) => {
-  if (process.env.TEST_TO_RUN && !name.includes(process.env.TEST_TO_RUN)) {
+  if (
+    process.env.TEST_TO_RUN &&
+    !name.toLowerCase().includes(process.env.TEST_TO_RUN.toLowerCase())
+  ) {
     counts.skipped++
     console.log('')
     console.log(picocolors.gray('skip ' + name))

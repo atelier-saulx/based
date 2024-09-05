@@ -165,7 +165,7 @@ await test('nested', async (t) => {
           name: { type: 'string' },
           flap: { type: 'integer' },
           email: { type: 'string', maxLength: 15 },
-          age: { type: 'integer' },
+          age: { type: 'integer' }, // Add receiving field
           snurp: { type: 'string' },
           burp: { type: 'integer' },
           location: {
@@ -267,6 +267,10 @@ await test('nested', async (t) => {
         lilBlup: { id: 1, flap: 'A', name: 'blup !' },
       },
     ],
+  )
+
+  console.log(
+    db.query('simple').include('user.myBlup').get().node().user.myBlup,
   )
 
   deepEqual(

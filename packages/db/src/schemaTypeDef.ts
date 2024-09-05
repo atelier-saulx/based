@@ -484,7 +484,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       } else if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
         const buf = Buffer.allocUnsafe(4)
-
+        // inverseField
         buf.writeUInt8(typeMap[f.type], 0)
         buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
         buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
