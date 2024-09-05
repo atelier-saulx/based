@@ -269,8 +269,10 @@ await test('nested', async (t) => {
     ],
   )
 
-  console.log(
-    db.query('simple').include('user.myBlup').get().node().user.myBlup,
+  equal(
+    db.query('simple').include('user.myBlup').get().node().user.myBlup.flap,
+    'A',
+    'Read nested field with getter',
   )
 
   deepEqual(
