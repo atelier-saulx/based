@@ -126,10 +126,10 @@ struct SelvaTypeEntry {
     size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
     struct {
-        struct ida *ida; /*! Id allocator for cursors. TODO */
-        struct SelvaTypeCursorById by_cursor_id;
-        struct SelvaTypeCursorsByNodeId by_node_id;
-        size_t nr_cursors;
+        struct ida *ida; /*! Id allocator for cursors. */
+        struct SelvaTypeCursorById by_cursor_id; /*!< Cursors indexed by cursor_id. */
+        struct SelvaTypeCursorsByNodeId by_node_id; /*!< Lists of cursors indexed by node_id. i.e. find all cursors pointing to a certain node. */
+        size_t nr_cursors; /*!< Total count of active cursors allocated. */
     } cursors;
     struct {
         void *buf;
