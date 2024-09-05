@@ -36,8 +36,9 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@saulx/tsconfig": "^1.1.0",
     "@saulx/prettier-config": "^2.0.0",
+    "@saulx/tsconfig": "^1.1.0",
+    "@types/node": "^22.5.4",
     "prettier": "^3.2.5",
     "rimraf": "^3.0.2",
     "turbo": "1.6.3",

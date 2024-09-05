@@ -1,41 +1,25 @@
 {
   "name": "@based/schema",
-  "version": "3.2.0",
+  "version": "4.0.0-alpha.0",
   "license": "MIT",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "files": [
     "dist",
     "README.md",
     "package.json",
-    "!dist/**/*.js.map"
+    "!dist/**/*.map"
   ],
   "scripts": {
-    "build": "npx tsc",
-    "watch": "npx tsc --watch",
-    "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --color --timeout 3m --verbose",
-    "test-ci": "ava --color --concurrency 1 --timeout 3m"
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "tsc && tsc test/*.ts --noEmit && tsx --test test/*.ts"
   },
   "sideEffects": false,
   "type": "module",
-  "dependencies": {
-    "validator": "^13.9.0",
-    "@saulx/hash": "^2.0.0",
-    "@saulx/utils": "^3.5.0"
-  },
-  "ava": {
-    "timeout": "2m",
-    "files": [
-      "./dist/test/*.js",
-      "./dist/test/validateSchema/*.js"
-    ]
-  },
   "devDependencies": {
-    "type-fest": "^3.12.0",
     "@saulx/tsconfig": "^1.1.0",
-    "ts-node": "10.9.1",
-    "typescript": "^5.1.6",
-    "rimraf": "^3.0.2",
-    "ava": "6.1.1"
+    "@types/node": "22.5.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.1.6"
   }
 }

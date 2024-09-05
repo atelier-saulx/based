@@ -1,17 +1,10 @@
 {
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
+    "composite": true,
     "outDir": "dist",
-    "target": "es2021",
-    "esModuleInterop": true,
+    "rootDir": "src",
+    "declarationMap": true
   },
-  "include": [
-    "src",
-    "test"
-  ],
-  "exclude": [
-    "dist",
-    "tmp",
-    "scripts"
-  ]
+  "include": ["src"]
 }

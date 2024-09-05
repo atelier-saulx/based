@@ -2,11 +2,12 @@ import test from 'node:test'
 import { throws } from 'node:assert'
 import { parse } from '@based/schema'
 
-test('text', () => {
+test('enum', () => {
   parse({
     props: {
-      myText: {
-        type: 'text',
+      myEnum: {
+        enum: ['published', 'draft'],
+        defaultValue: 'published',
       },
     },
   })
@@ -15,10 +16,10 @@ test('text', () => {
     parse({
       props: {
         myEnum: {
-          // @ts-ignore
-          enum: [{ invalidObj: true }],
+          enum: ['published', 'draft'],
+          defaultValue: 'blurdo',
         },
       },
     })
-  }, 'should throw with non primitive enum')
+  }, 'disallow non defined defaultValue')
 })
