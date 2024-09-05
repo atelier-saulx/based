@@ -99,7 +99,7 @@ pub fn getFields(
 
     if (!idIsSet) {
         idIsSet = true;
-        if (start == null) {
+        if (start != null) {
             // _ = try addIdOnly(ctx, id, refLvl, start);
             // size += 2;
         } else {
