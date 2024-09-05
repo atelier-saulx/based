@@ -45,7 +45,7 @@ await test('query', async (t) => {
     },
   })
 
-  const mrX = db.create('user', {
+  db.create('user', {
     age: 50,
     name: 'mr X',
     countryCode: 'us',
