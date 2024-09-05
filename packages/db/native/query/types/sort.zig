@@ -19,7 +19,6 @@ pub fn queryIdsSort(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    lastId: u32,
     sortBuffer: []u8,
     _: u32,
     limit: u32,
@@ -28,7 +27,7 @@ pub fn queryIdsSort(
 ) !void {
     const readTxn = try sort.initReadTxn();
     sort.renewTx(readTxn);
-    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
+    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id);
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
     if (queryType == 5) {
@@ -86,14 +85,13 @@ pub fn queryIdsSortBig(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    lastId: u32,
     sortBuffer: []u8,
     _: u32,
     limit: u32,
 ) !void {
     const readTxn = try sort.initReadTxn();
     sort.renewTx(readTxn);
-    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
+    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id);
 
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
@@ -153,7 +151,6 @@ pub fn queryIdsSortBig(
 pub fn querySort(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
-    lastId: u32,
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
@@ -164,7 +161,7 @@ pub fn querySort(
     const readTxn = try sort.initReadTxn();
     sort.renewTx(readTxn);
     const typeEntry = try db.getType(typeId);
-    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id, lastId);
+    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id);
 
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;

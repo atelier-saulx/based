@@ -35,7 +35,6 @@ export const get = (query: Query): BasedQueryResponse => {
       result = query.db.native.getQueryIdsSort(
         conditionsBuffer,
         query.schema.prefixNumber,
-        query.schema.lastId,
         start,
         end,
         idsBuffer,
@@ -73,7 +72,6 @@ export const get = (query: Query): BasedQueryResponse => {
     result = query.db.native.getQuerySort(
       conditionsBuffer,
       query.schema.prefixNumber,
-      query.schema.lastId,
       start,
       end,
       includeBuffer,

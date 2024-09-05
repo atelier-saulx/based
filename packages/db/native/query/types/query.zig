@@ -81,13 +81,13 @@ pub fn query(
     const typeEntry = try db.getType(typeId);
 
     var first = true;
-    var node = selva.selva_min_node(typeEntry);
+    var node = db.getFirstNode(typeEntry);
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
         } else {
-            node = selva.selva_next_node(typeEntry, node);
+            node = db.getNextNode(typeEntry, node.?);
         }
 
         if (node == null) {
@@ -103,7 +103,7 @@ pub fn query(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, selva.selva_get_node_id(node), typeEntry, null, include, 0);
+        const size = try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, null, include, 0);
 
         if (size > 0) {
             ctx.size += size;

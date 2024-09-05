@@ -160,7 +160,6 @@ fn createSortIndex(
     len: u16,
     field: u8,
     fieldType: u8,
-    lastId: u32,
 ) !void {
     const txn = try createTransaction(false);
     const typePrefix: [2]u8 = .{ name[0], name[1] };
@@ -183,19 +182,20 @@ fn createSortIndex(
     const typeEntry = try db.getType(typeId);
     const fieldSchema = try db.getFieldSchema(field, typeEntry);
 
-    var i: u32 = 0;
-    while (i <= lastId) : (i += 1) {
-        const node = db.getNode(i, typeEntry);
+    var node = db.getFirstNode(typeEntry);
+    var first = true;
+
+    while (node != null) {
+        if (first) {
+            first = false;
+        } else {
+            node = db.getNextNode(typeEntry, node.?);
+        }
         if (node == null) {
-            continue;
+            break;
         }
         const data = db.getField(node.?, fieldSchema);
-
-        // std.debug.print("4.1 HELLO id: {d} {any}  \n", .{ i, data });
-
-        try writeDataToSortIndex(i, data, start, len, cursor, field);
-
-        // std.debug.print("4 HELLO id: {d} {any}  \n", .{ i, data });
+        try writeDataToSortIndex(db.getNodeId(node.?), data, start, len, cursor, field);
     }
 
     try commitTxn(txn);
@@ -238,7 +238,6 @@ pub fn getOrCreateReadSortIndex(
     typeId: db.TypeId,
     sort: []u8,
     queryId: u32,
-    lastId: u32,
 ) !SortIndex {
     const field: u8 = sort[0];
     const fieldType: u8 = sort[1];
@@ -256,7 +255,7 @@ pub fn getOrCreateReadSortIndex(
     const name = getSortName(typeId, field, start);
     var s = db.ctx.sortIndexes.get(name);
     if (s == null) {
-        createSortIndex(name, start, len, field, fieldType, lastId) catch |err| {
+        createSortIndex(name, start, len, field, fieldType) catch |err| {
             std.log.err("Cannot create writeSortIndex name: {any} err: {any} \n", .{ name, err });
             return err;
         };

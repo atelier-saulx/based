@@ -10,10 +10,10 @@ const db = @import("../../db//db.zig");
 const std = @import("std");
 
 pub fn getFields(
-    node: *selva.SelvaNode,
+    node: db.Node,
     ctx: *QueryCtx,
     id: u32,
-    typeEntry: *selva.SelvaTypeEntry,
+    typeEntry: db.Type,
     start: ?u16,
     include: []u8,
     refLvl: u8,

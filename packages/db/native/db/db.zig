@@ -115,3 +115,23 @@ pub fn upsertNode(id: u32, typeEntry: Type) !Node {
 pub fn getNode(id: u32, typeEntry: Type) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
+
+pub fn getNodeId(node: Node) u32 {
+    return selva.selva_get_node_id(node);
+}
+
+pub fn getFirstNode(typeEntry: Type) ?Node {
+    return selva.selva_min_node(typeEntry);
+}
+
+pub fn getLastNode(typeEntry: Type) ?Node {
+    return selva.selva_max_node(typeEntry);
+}
+
+pub fn getNextNode(typeEntry: Type, node: Node) ?Node {
+    return selva.selva_next_node(typeEntry, node);
+}
+
+pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
+    return selva.selva_prev_node(typeEntry, node);
+}

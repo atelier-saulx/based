@@ -20,7 +20,6 @@ export default {
   getQuerySort: (
     conditions: Buffer,
     typeId: number,
-    lastId: number,
     offset: number,
     limit: number, // def 1k ?
     includeBuffer: Buffer,
@@ -31,7 +30,6 @@ export default {
       return db.getQuerySortDesc(
         conditions,
         typeId,
-        lastId,
         offset,
         limit,
         includeBuffer,
@@ -41,7 +39,6 @@ export default {
       return db.getQuerySortAsc(
         conditions,
         typeId,
-        lastId,
         offset,
         limit,
         includeBuffer,
@@ -53,7 +50,6 @@ export default {
   getQueryIdsSort: (
     conditions: Buffer,
     typeId: number,
-    lastId: number,
     offset: number,
     limit: number, // def 1k ?
     ids: Buffer,
@@ -68,7 +64,6 @@ export default {
         return db.getQueryIdsSortAscLarge(
           conditions,
           typeId,
-          lastId,
           offset,
           limit,
           ids,
@@ -79,7 +74,6 @@ export default {
         return db.getQueryIdsSortDescLarge(
           conditions,
           typeId,
-          lastId,
           offset,
           limit,
           ids,
@@ -92,7 +86,6 @@ export default {
       return db.getQueryIdsSortAsc(
         conditions,
         typeId,
-        lastId,
         offset,
         limit,
         ids,
@@ -105,7 +98,6 @@ export default {
       return db.getQueryIdsSortDesc(
         conditions,
         typeId,
-        lastId,
         offset,
         limit,
         ids,
