@@ -153,6 +153,7 @@ struct SelvaDb {
     SVector type_list;
     struct schemabuf_parser_ctx *schemabuf_ctx;
 
+#if 0
     /**
      * Expiring nodes.
      */
@@ -166,6 +167,7 @@ struct SelvaDb {
          */
         uint32_t next;
     } expiring;
+#endif
 };
 
 static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)

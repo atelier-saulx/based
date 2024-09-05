@@ -555,14 +555,17 @@ static int set_weak_references(const struct SelvaFieldSchema *fs_src, struct Sel
  */
 static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
 {
-    struct SelvaFieldInfo *nfo;
     const enum SelvaFieldType type = fs->type;
+    struct SelvaFieldInfo *nfo;
 
     nfo = &fields->fields_map[fs->field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
         *nfo = alloc_block(fields, fs);
-    } else if (nfo->type != fs->type) {
-        return SELVA_EINVAL;
+    } else if (unlikely(nfo->type != fs->type)) {
+        db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)\n",
+                 node->type, node->node_id, fs->field,
+                 selva_str_field_type(nfo->type), nfo->type,
+                 selva_str_field_type(fs->type), fs->type);
     }
 
     switch (type) {
