@@ -51,11 +51,7 @@ await test('string', async (t) => {
 
   db.drain()
 
-  const result = db.query('user').get()
-
-  console.log(result.toObject())
-
-  deepEqual(result.toObject(), [
+  deepEqual(db.query('user').get().toObject(), [
     {
       id: 1,
       name: '',
@@ -207,5 +203,29 @@ await test('Big string', async (t) => {
     db.query('file', file).get().node().contents,
     euobserver,
     'Get single id',
+  )
+
+  db.create('file', {
+    name: 'file 2',
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  deepEqual(
+    db.query('file').get().toObject(),
+    [
+      {
+        id: 1,
+        name: '',
+        contents: euobserver,
+      },
+      {
+        id: 2,
+        name: 'file 2',
+        contents: euobserver,
+      },
+    ],
+    'Get multiple big strings (620kb)',
   )
 })

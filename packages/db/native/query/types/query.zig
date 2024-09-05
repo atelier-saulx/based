@@ -70,7 +70,6 @@ pub fn queryIds(
 
 pub fn query(
     ctx: *QueryCtx,
-    _: u32, // REMOVE!
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
@@ -82,7 +81,7 @@ pub fn query(
     const typeEntry = try db.getType(typeId);
 
     var first = true;
-    var node: ?db.Node = selva.selva_min_node(typeEntry);
+    var node = selva.selva_min_node(typeEntry);
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {

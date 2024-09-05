@@ -10,12 +10,11 @@ export default {
   getQuery: (
     conditions: Buffer,
     typeId: number,
-    lastId: number,
     offset: number,
     limit: number, // def 1k ?
     includeBuffer: Buffer,
   ): any => {
-    return db.getQuery(conditions, typeId, lastId, offset, limit, includeBuffer)
+    return db.getQuery(conditions, typeId, offset, limit, includeBuffer)
   },
 
   getQuerySort: (

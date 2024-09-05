@@ -86,7 +86,6 @@ export const get = (query: Query): BasedQueryResponse => {
     result = query.db.native.getQuery(
       conditionsBuffer,
       query.schema.prefixNumber,
-      query.schema.lastId,
       start,
       end,
       includeBuffer,

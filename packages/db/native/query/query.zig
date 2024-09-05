@@ -96,11 +96,10 @@ inline fn getQueryInternal(
         const args = try napi.getArgs(6, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
         const typeId = try napi.get(u16, env, args[1]);
-        const lastId = try napi.get(u32, env, args[2]);
-        const offset = try napi.get(u32, env, args[3]);
-        const limit = try napi.get(u32, env, args[4]);
-        const include = try napi.get([]u8, env, args[5]);
-        try Query.query(&ctx, lastId, offset, limit, typeId, conditions, include);
+        const offset = try napi.get(u32, env, args[2]);
+        const limit = try napi.get(u32, env, args[3]);
+        const include = try napi.get([]u8, env, args[4]);
+        try Query.query(&ctx, offset, limit, typeId, conditions, include);
     } else if (queryType == 1) {
         // single id
         const args = try napi.getArgs(4, env, info);
