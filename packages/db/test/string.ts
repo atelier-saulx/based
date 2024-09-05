@@ -65,7 +65,7 @@ await test('string', async (t) => {
   ])
 })
 
-await test.skip('string + refs', async (t) => {
+await test('string + refs', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -226,6 +226,6 @@ await test('Big string', async (t) => {
         contents: euobserver,
       },
     ],
-    'Get multiple big strings (620kb)',
+    'Get multiple big strings',
   )
 })

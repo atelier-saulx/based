@@ -21,18 +21,24 @@ await fs.readdir(p).then((files) => {
     if (f.endsWith('.js')) {
       if (match.length > 0) {
         for (const test of match) {
-          if (test.startsWith('^')) {
+          if (test.includes(':')) {
+            const [a, b] = test.split(':')
+            if (f.toLowerCase().includes(a.slice(1).toLowerCase())) {
+              testsToRun.push([f, b])
+              break
+            }
+          } else if (test.startsWith('^')) {
             if (!f.toLowerCase().includes(test.slice(1).toLowerCase())) {
-              testsToRun.push(f)
+              testsToRun.push([f])
               break
             }
           } else if (f.toLowerCase().includes(test.toLowerCase())) {
-            testsToRun.push(f)
+            testsToRun.push([f])
             break
           }
         }
       } else {
-        testsToRun.push(f)
+        testsToRun.push([f])
       }
     }
   }
@@ -47,14 +53,20 @@ console.log(
 console.log('')
 
 for (const test of testsToRun) {
-  const fullPath = join(p, test)
+  const fullPath = join(p, test[0])
 
-  console.log(picocolors.bgBlue(` ${test} `))
+  console.log(picocolors.bgBlue(` ${test[0]} `))
+
+  if (test[1]) {
+    process.env.TEST_TO_RUN = test[1]
+  } else {
+    process.env.TEST_TO_RUN = ''
+  }
 
   await import(fullPath)
     .catch((err) => {
       console.log('')
-      console.log(picocolors.bgRed(` Err: ${test} `))
+      console.log(picocolors.bgRed(` Err: ${test[0]} `))
       console.error(err)
     })
     .then(() => {

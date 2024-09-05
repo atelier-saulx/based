@@ -90,6 +90,8 @@ pub fn getFields(
             } else {
                 result.id = null;
             }
+        } else {
+            idIsSet = true;
         }
 
         try ctx.results.append(result);

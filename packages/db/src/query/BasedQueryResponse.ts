@@ -108,6 +108,7 @@ export class BasedQueryResponse {
   *[Symbol.iterator]() {
     let i = 4
     let currentInclude: QueryIncludeDef
+
     while (i < this.buffer.byteLength) {
       const index = this.buffer[i]
       i++

@@ -142,7 +142,7 @@ await test('single reference object', async (t) => {
   ])
 })
 
-await test('single reference', async (t) => {
+await test('nested', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -216,6 +216,7 @@ await test('single reference', async (t) => {
   })
 
   const amount = 1e5
+
   for (let i = 0; i < amount; i++) {
     db.create('simple', {
       user,
@@ -230,10 +231,6 @@ await test('single reference', async (t) => {
   deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
     { id: 1 },
   ])
-
-  console.dir(db.query('simple').include('user').range(0, 1).get().toObject(), {
-    depth: 10,
-  })
 
   deepEqual(db.query('simple').include('user').range(0, 1).get().toObject(), [
     {
@@ -250,11 +247,13 @@ await test('single reference', async (t) => {
       },
     },
   ])
+  console.log('FLAP')
 
   deepEqual(
     db.query('simple').include('user.myBlup').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
   )
+  console.log('FLAP')
 
   deepEqual(
     db

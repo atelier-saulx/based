@@ -13,6 +13,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 
 const test = async (name: string, fn: (t?: any) => Promise<void>) => {
+  if (process.env.TEST_TO_RUN && !name.includes(process.env.TEST_TO_RUN)) {
+    counts.skipped++
+    console.log('')
+    console.log(picocolors.gray('skip ' + name))
+    return
+  }
   console.log(picocolors.gray(`\nstart ${name}`))
   const d = performance.now()
   const afters = []
@@ -49,6 +55,7 @@ const test = async (name: string, fn: (t?: any) => Promise<void>) => {
 
 test.skip = async (name: string, fn: (t?: any) => Promise<void>) => {
   counts.skipped++
+  console.log('')
   console.log(picocolors.gray('skip ' + name))
 }
 
