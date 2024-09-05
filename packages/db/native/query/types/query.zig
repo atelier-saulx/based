@@ -70,24 +70,36 @@ pub fn queryIds(
 
 pub fn query(
     ctx: *QueryCtx,
-    lastId: u32,
+    _: u32, // REMOVE!
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
 ) !void {
-    var i: u32 = 1;
     var correctedForOffset: u32 = offset;
 
     const typeEntry = try db.getType(typeId);
 
-    checkItem: while (i <= lastId and ctx.totalResults < limit) : (i += 1) {
-        const node = db.getNode(i, typeEntry);
+    var first = true;
+    var node: ?db.Node = selva.selva_min_node(typeEntry);
+
+    checkItem: while (ctx.totalResults < limit) {
+        std.debug.print("YO YO YO\n", .{});
+
+        if (first) {
+            first = false;
+        } else {
+            std.debug.print("BLUP YO YO\n", .{});
+
+            node = selva.selva_next_node(typeEntry, node);
+        }
 
         if (node == null) {
-            continue :checkItem;
+            break :checkItem;
         }
+
+        std.debug.print("YO YO YO {any} {d} \n", .{ node, selva.selva_get_node_id(node) });
 
         if (!filter(node.?, typeEntry, conditions)) {
             continue :checkItem;
@@ -98,7 +110,7 @@ pub fn query(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, i, typeEntry, null, include, 0);
+        const size = try getFields(node.?, ctx, selva.selva_get_node_id(node), typeEntry, null, include, 0);
 
         if (size > 0) {
             ctx.size += size;

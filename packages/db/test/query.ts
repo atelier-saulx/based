@@ -70,6 +70,6 @@ await test('query', async (t) => {
       .include('id', 'age')
       .get()
       .toObject(),
-    ['x'],
+    [],
   )
 })
