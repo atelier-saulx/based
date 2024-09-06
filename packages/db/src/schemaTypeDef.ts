@@ -504,7 +504,10 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         f.inverseTypeNumber = dstType.prefixNumber
 
         buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
-        buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
+
+        console.log(typeNames)
+
+        buf.writeUInt16LE(dstType.prefixNumber, 2)
         return [...buf.values()]
       } else if (f.type === 'string') {
         return [typeMap[f.type], f.len < 50 ? f.len : 0]
@@ -528,8 +531,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       return x
     }
 
-    console.log('HELLO', f)
-
     const x = Buffer.from([
       1,
       ...toSelvaSchemaBuf({
@@ -539,6 +540,8 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
+
+    console.log('HELLO', t.type, x)
 
     return x
   })

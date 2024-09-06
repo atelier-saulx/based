@@ -278,6 +278,9 @@ static struct SelvaFieldSchema *get_edge_dst_fs(
     }
 
     type_dst = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
+
+
+    fprintf(stderr, "type: %d type_dst: %p\n", fs_src->edge_constraint.dst_node_type, type_dst);
     assert(type_dst->type == fs_src->edge_constraint.dst_node_type);
 
     return selva_get_fs_by_ns_field(&type_dst->ns, fs_src->edge_constraint.inverse_field);

@@ -20,17 +20,14 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !void {
     // CTX.
 
     if (ctx.fieldSchema.?.*.type == 13) {
-        const refTypeId = utils.readInt(u16, data, 0);
-        const id = utils.readInt(u32, data, 2);
-
+        const id = utils.readInt(u32, data, 0);
+        const refTypeId = try db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
         const refTypeEntry = try db.getType(refTypeId);
-
         const node = db.getNode(id, refTypeEntry);
-
         if (node == null) {
             std.debug.print("Cannot find reference to {d} \n", .{id});
         } else {
-            std.debug.print("Ref found {d} node: {any} currentNode: {any} \n", .{ id, node, ctx.node });
+            std.debug.print("Ref found {d} node: {any} currentNode: {any}  types ref: {any} target: {any} \n", .{ id, node, ctx.node, refTypeEntry, ctx.typeEntry });
             try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
         }
     } else {
