@@ -7,11 +7,7 @@ const readInt = @import("../utils.zig").readInt;
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
-    const operationSize = readInt(u32, batch, 0);
-    const size = operationSize + 4;
-    const data = batch[4..size];
-
+pub fn updateField(ctx: *ModifyCtx, data: []u8) !void {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
@@ -30,15 +26,9 @@ pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
     }
 
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
-
-    return size;
 }
 
-pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
-    const operationSize = readInt(u32, batch, 0);
-    const size = operationSize + 4;
-    const data = batch[4..size];
-
+pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !void {
     var currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
 
     if (currentData.len != 0) {
@@ -67,6 +57,4 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
-
-    return size;
 }

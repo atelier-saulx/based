@@ -10,14 +10,16 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
-    const operationSize = readInt(u32, batch, 0);
-    const size = operationSize + 4;
-    const data = batch[4..size];
+pub fn createField(ctx: *ModifyCtx, data: []u8) !void {
+
+    // get type
+    std.debug.print("CREATE type {d} field {d} {d} {any}  {any} \n", .{ ctx.fieldSchema.?.*, ctx.typeId, ctx.field, ctx.id, data });
+
+    // CTX.
 
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
 
-    std.debug.print("CREATE type {d} field {d} {d} {any}  \n", .{ ctx.typeId, ctx.field, ctx.id, data });
+    std.debug.print("CREATE onde!  \n", .{});
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
@@ -30,6 +32,4 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
     } else if (ctx.currentSortIndex != null) {
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
-
-    return size;
 }

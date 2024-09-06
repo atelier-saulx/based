@@ -28,52 +28,53 @@ await test('single simple', async (t) => {
     types: {
       user: {
         fields: {
-          // bla: { type: 'integer' },
+          bla: { type: 'integer' },
+          simples: {
+            type: 'references',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
         },
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedType: 'user' },
+          bla: { type: 'integer' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simples',
+          },
         },
       },
     },
   })
 
-  // db.create('simple', {
-  //   user: db.create('user', {
-  //     name: 'Mr snurp',
-  //   }),
+  db.create('simple', {
+    user: db.create('user', {
+      name: 'Mr snurp',
+    }),
+  })
+
+  db.drain()
+
+  // console.dir(db.query('user').include('name').get().toObject(), {
+  //   depth: 10,
   // })
 
-  const us = db.create('user', {
-    name: 'Mr snurp',
-  })
-  db.drain()
+  // console.dir(db.query('simple').include('user.name').get().toObject(), {
+  //   depth: 10,
+  // })
 
-  db.create('simple', {
-    user: us,
-  })
-
-  db.drain()
-
-  console.dir(db.query('user').include('name').get().toObject(), {
-    depth: 10,
-  })
-
-  console.dir(db.query('simple').include('user.name').get().toObject(), {
-    depth: 10,
-  })
-
-  // deepEqual(db.query('simple').include('user.name').get().toObject(), [
-  //   {
-  //     id: 1,
-  //     user: {
-  //       id: 1,
-  //       name: 'Mr snurp',
-  //     },
-  //   },
-  // ])
+  deepEqual(db.query('simple').include('user.name').get().toObject(), [
+    {
+      id: 1,
+      user: {
+        id: 1,
+        name: 'Mr snurp',
+      },
+    },
+  ])
 })
 
 await test('single reference multi refs', async (t) => {

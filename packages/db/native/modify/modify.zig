@@ -65,6 +65,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.currentSortIndex = null;
             }
             ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
+            // ctx.fieldSchema need to be able to read this for single ref
         } else if (operationType == 10) {
             db.deleteNode(ctx.node.?, ctx.typeEntry.?) catch {};
             i = i + 1;
@@ -84,20 +85,28 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.typeEntry = try db.getType(ctx.typeId);
             i = i + 3;
         } else if (operationType == 3) {
-            i += try createField(&ctx, operation) + 1;
-        } else if (operationType == 4) {
-            // special case
-            i += try deleteField(&ctx) + 1;
+            // WRITE OPTIONS SO SIZE CAN ACTIALY BE UNDEFINED
+            // MAKE A FN SO WE DONT NEED TO PASS FOR FIELDS
+            const operationSize = readInt(u32, operation, 0) + 4;
+            try createField(&ctx, operation[4 .. operationSize + 4]) + 1;
+            i += operationSize + 1;
         } else if (operationType == 5) {
-            i += try updatePartialField(&ctx, operation) + 1;
+            const operationSize = readInt(u32, operation, 0) + 4;
+            try updatePartialField(&ctx, operation[4 .. operationSize + 4]);
+            i += operationSize + 1;
         } else if (operationType == 6) {
-            i += try updateField(&ctx, operation) + 1;
+            const operationSize = readInt(u32, operation, 0) + 4;
+            try updateField(&ctx, operation);
+            i += operationSize + 1;
         } else if (operationType == 7) {
             i += try addEmptyToSortIndex(&ctx, operation) + 1;
         } else if (operationType == 8) {
             i += try deleteFieldOnly(&ctx) + 1;
         } else if (operationType == 11) {
             i += try deleteFieldOnlyReal(&ctx) + 1;
+        } else if (operationType == 4) {
+            // special case
+            i += try deleteField(&ctx) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;

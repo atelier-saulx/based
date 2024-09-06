@@ -15,7 +15,7 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   number: 8, // 64bit
   integer: 4, // 32bit Unisgned 4  16bit
   boolean: 1, // 1bit (6 bits overhead)
-  reference: 4,
+  reference: 0, // seperate
   enum: 4, // enum
   string: 0, // var length fixed length will be different
   references: 0,
@@ -137,7 +137,7 @@ export const createSchemaTypeDef = (
   if (result.prefixNumber == 0) {
     result.prefixNumber = (result.prefix[1] << 8) + result.prefix[0]
 
-    console.info('HELLO TYPE ', typeName, type, result.prefixNumber)
+    console.info('TYPE PREFIX: ', typeName, result.prefixNumber)
   }
 
   const encoder = new TextEncoder()
@@ -166,15 +166,14 @@ export const createSchemaTypeDef = (
           len = f.maxBytes + 1
         } else if (f.maxLength < 30) {
           len = f.maxLength * 2 + 1
+        } else {
+          stringFields++
         }
       }
 
       const isSeperate = len === 0
 
       if (isSeperate) {
-        if (f.type === 'string') {
-          stringFields++
-        }
         result.cnt++
       }
 
@@ -453,7 +452,17 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }
     }
 
+    // console.log(restFields)
+
+    // TODO GET RID OF SELVAFIELD
+
     restFields.sort((a, b) => a.selvaField - b.selvaField)
+
+    restFields.forEach((a) => {
+      if (a.selvaField !== a.field) {
+        throw new Error('SELVA FIELD HAS TO MATCH FIELD')
+      }
+    })
 
     // TODO Remove this once the types agree
     const typeMap = {
@@ -486,6 +495,9 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         const buf = Buffer.allocUnsafe(4)
         // inverseField
         buf.writeUInt8(typeMap[f.type], 0)
+
+        console.log(dstType)
+
         buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
         buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
         return [...buf.values()]
@@ -500,6 +512,8 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       const x = Buffer.from([
         1,
         ...toSelvaSchemaBuf({
+          // this can be removed...
+
           // @ts-ignore
           type: 'muffer',
           len: 1,

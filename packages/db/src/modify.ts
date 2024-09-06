@@ -83,7 +83,20 @@ const addModify = (
       }
     } else {
       const t = leaf as FieldDef
-      if (t.type === 'references') {
+
+      if (t.type === 'reference') {
+        const refLen = 4
+        if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+          flushBuffer(db)
+        }
+        setCursor(db, schema, t.field, id, false, fromCreate)
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+        db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+        db.modifyBuffer.len += 5
+        // make this better (using schemaLength)
+        db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len)
+        db.modifyBuffer.len += refLen
+      } else if (t.type === 'references') {
         const refLen = 4 * value.length
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
@@ -179,7 +192,7 @@ const addModify = (
           }
         } else if (t.type === 'timestamp' || t.type === 'number') {
           db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
-        } else if (t.type === 'integer' || t.type === 'reference') {
+        } else if (t.type === 'integer') {
           db.modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
         } else if (t.type === 'boolean') {
           db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
