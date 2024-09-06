@@ -48,5 +48,5 @@ void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
 
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
-const void *selva_sort_foreach(struct SelvaSortCtx *ctx);
+void *selva_sort_foreach(struct SelvaSortCtx *ctx);
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
