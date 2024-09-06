@@ -278,9 +278,6 @@ static struct SelvaFieldSchema *get_edge_dst_fs(
     }
 
     type_dst = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
-
-
-    fprintf(stderr, "type: %d type_dst: %p\n", fs_src->edge_constraint.dst_node_type, type_dst);
     assert(type_dst->type == fs_src->edge_constraint.dst_node_type);
 
     return selva_get_fs_by_ns_field(&type_dst->ns, fs_src->edge_constraint.inverse_field);
@@ -867,18 +864,20 @@ struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field)
     return selva_fields_get2(&node->fields, field);
 }
 
-static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field)
 {
-    struct selva_string *s = nfo2p(fields, nfo);
+    struct SelvaFieldsAny any;
 
-    if (s->flags & SELVA_STRING_STATIC) {
-        if (s->flags & SELVA_STRING_MUTABLE_FIXED) {
-            selva_string_replace(s, NULL, 0);
-        } else {
-            selva_string_free(s);
-            memset(s, 0, sizeof(*s));
-        }
-    }
+    any = selva_fields_get(node, field);
+    return (any.type == SELVA_FIELD_TYPE_REFERENCE) ? any.reference : NULL;
+}
+
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field)
+{
+    struct SelvaFieldsAny any;
+
+    any = selva_fields_get(node, field);
+    return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs)
@@ -945,6 +944,20 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
         static_assert(offsetof(struct SelvaMicroBuffer, data) == sizeof_field(struct SelvaMicroBuffer, len));
     }
     db_panic("Invalid type");
+}
+
+static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
+{
+    struct selva_string *s = nfo2p(fields, nfo);
+
+    if (s->flags & SELVA_STRING_STATIC) {
+        if (s->flags & SELVA_STRING_MUTABLE_FIXED) {
+            selva_string_replace(s, NULL, 0);
+        } else {
+            selva_string_free(s);
+            memset(s, 0, sizeof(*s));
+        }
+    }
 }
 
 static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)

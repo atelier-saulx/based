@@ -6,6 +6,24 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/*
+ * Usage
+ * -----
+ *
+ * ```c
+ * struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC, 1000);
+ * selva_sort_insert_i64(sort, num, data);
+ *
+ * selva_sort_foreach_begin(sort);
+ * while (!selva_sort_foreach_done(sort)) {
+ *     item = selva_sort_foreach(sort);
+ *     print(item);
+ * }
+ *
+ * selva_sort_destroy(sort);
+ * ```
+ */
+
 enum SelvaSortOrder {
     SELVA_SORT_ORDER_NONE = 0,
     SELVA_SORT_ORDER_I64_ASC,
