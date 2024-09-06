@@ -4,13 +4,10 @@
  */
 #include <assert.h>
 #include <string.h>
-#include <sys/types.h>
 #include "jemalloc.h"
 #include "util/funmap.h"
 #include "util/selva_lang.h"
 #include "util/svector.h"
-#include "selva/fields.h"
-#include "selva_error.h"
 #include "selva/sort.h"
 
 #define EN_ASSERT 0
