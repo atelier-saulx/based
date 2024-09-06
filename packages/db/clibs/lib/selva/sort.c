@@ -272,7 +272,6 @@ void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
 
 const void *selva_sort_foreach(struct SelvaSortCtx *ctx)
 {
-
     struct SelvaSortItem *item = SVector_Foreach(&ctx->it);
 
     return item->p;
