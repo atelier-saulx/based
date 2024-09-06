@@ -485,7 +485,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         buf.writeUInt8(typeMap[f.type], 0)
 
         f.inverseTypeNumber = dstType.prefixNumber
-
+        console.log('ref debug:', t.prefixNumber, f.field, f.path, dstType.prefixNumber, f.inverseField)
         buf.writeUInt8(dstType.fields[f.inverseField].field, 1)
 
         buf.writeUInt16LE(dstType.prefixNumber, 2)
