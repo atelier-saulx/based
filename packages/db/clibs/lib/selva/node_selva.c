@@ -600,7 +600,7 @@ static napi_value node_db_get_field(napi_env env, napi_callback_info info)
 
     node = selva_find_node(te, node_id);
     if (!node) {
-        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+        return res2napi(env, SELVA_ENOENT); /* TODO New error codes */
     }
 
     struct SelvaFieldsAny any = selva_fields_get2(&node->fields, field_idx);
@@ -655,7 +655,7 @@ static napi_value node_db_del_field(napi_env env, napi_callback_info info)
 
     node = selva_find_node(te, node_id);
     if (!node) {
-        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+        return res2napi(env, SELVA_ENOENT); /* TODO New error codes */
     }
 
     struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
@@ -871,7 +871,7 @@ static napi_value node_traverse_field_bfs(napi_env env, napi_callback_info info)
     struct SelvaNode *node;
     node = selva_find_node(te, node_id);
     if (!node) {
-        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+        return res2napi(env, SELVA_ENOENT); /* TODO New error codes */
     }
 
     struct SelvaTraversalParam cb_wrap = {
@@ -1030,7 +1030,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
     struct SelvaNode *node;
     node = selva_find_node(te, node_id);
     if (!node) {
-        return res2napi(env, SELVA_HIERARCHY_ENOENT); /* TODO New error codes */
+        return res2napi(env, SELVA_ENOENT); /* TODO New error codes */
     }
 
     struct SelvaFindParam cb_wrap = {
