@@ -106,7 +106,7 @@ pub fn writeReference(value: Node, target: Node, fieldSchema: FieldSchema) !void
     ));
 }
 
-pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) !u16 {
+pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
     // if (result == null) {
     //     return errors.SelvaError.SELVA_CANNOT_UPSERT;

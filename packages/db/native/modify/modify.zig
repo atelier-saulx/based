@@ -27,6 +27,13 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     };
 }
 
+inline fn readData(fieldType: u8, operation: []u8) []u8 {
+    if (fieldType == 13) {
+        return operation[0..4];
+    }
+    return operation[4 .. readInt(u32, operation, 0) + 4];
+}
+
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
@@ -49,7 +56,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
+        .fieldType = 0,
     };
+
+    var offset: u32 = 0;
 
     while (i < size) {
         // delete
@@ -65,7 +75,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.currentSortIndex = null;
             }
             ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
-            // ctx.fieldSchema need to be able to read this for single ref
+            ctx.fieldType = ctx.fieldSchema.?.*.type;
+            if (ctx.fieldType == 13) {
+                offset = 1;
+            } else {
+                offset = 5;
+            }
         } else if (operationType == 10) {
             db.deleteNode(ctx.node.?, ctx.typeEntry.?) catch {};
             i = i + 1;
@@ -85,19 +100,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             ctx.typeEntry = try db.getType(ctx.typeId);
             i = i + 3;
         } else if (operationType == 3) {
-            // WRITE OPTIONS SO SIZE CAN ACTIALY BE UNDEFINED
-            // MAKE A FN SO WE DONT NEED TO PASS FOR FIELDS
-            const operationSize = readInt(u32, operation, 0) + 4;
-            try createField(&ctx, operation[4 .. operationSize + 4]);
-            i += operationSize + 1;
+            i += try createField(&ctx, readData(ctx.fieldType, operation)) + offset;
         } else if (operationType == 5) {
-            const operationSize = readInt(u32, operation, 0) + 4;
-            try updatePartialField(&ctx, operation[4 .. operationSize + 4]);
-            i += operationSize + 1;
+            i += try updatePartialField(&ctx, readData(ctx.fieldType, operation)) + offset;
         } else if (operationType == 6) {
-            const operationSize = readInt(u32, operation, 0) + 4;
-            try updateField(&ctx, operation);
-            i += operationSize + 1;
+            i += try updateField(&ctx, readData(ctx.fieldType, operation)) + offset;
         } else if (operationType == 7) {
             i += try addEmptyToSortIndex(&ctx, operation) + 1;
         } else if (operationType == 8) {

@@ -3,11 +3,10 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const readInt = @import("../utils.zig").readInt;
-
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn updateField(ctx: *ModifyCtx, data: []u8) !void {
+pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
@@ -19,6 +18,17 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !void {
                 try sort.writeField(ctx.id, data, sortIndex);
             }
         }
+    } else if (ctx.fieldSchema.?.*.type == 13) {
+        const id = readInt(u32, data, 0);
+        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+        const refTypeEntry = try db.getType(refTypeId);
+        const node = db.getNode(id, refTypeEntry);
+        if (node == null) {
+            std.debug.print("Cannot find reference to {d} \n", .{id});
+        } else {
+            std.debug.print("Ref found {d} node: {any} currentNode: {any}  types ref: {any} target: {any} \n", .{ id, node, ctx.node, refTypeEntry, ctx.typeEntry });
+            try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
+        }
     } else if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
@@ -26,11 +36,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !void {
     }
 
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
+
+    return data.len;
 }
 
-pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !void {
+pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     var currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
-
     if (currentData.len != 0) {
         var j: usize = 0;
         const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.typeId));
@@ -57,4 +68,6 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !void {
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
+
+    return data.len;
 }

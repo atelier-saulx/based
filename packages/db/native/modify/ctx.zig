@@ -13,6 +13,7 @@ pub const ModifyCtx = struct {
     typeEntry: ?db.Type,
     fieldSchema: ?db.FieldSchema,
     node: ?db.Node,
+    fieldType: u8,
 };
 
 pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?sort.SortIndex {

@@ -4,7 +4,6 @@ const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
-const utils = @import("../utils.zig");
 
 const std = @import("std");
 
@@ -12,16 +11,10 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn createField(ctx: *ModifyCtx, data: []u8) !void {
-
-    // get type
-    // std.debug.print("CREATE type {any} field {d} {d} {any}  {any} \n", .{ ctx.fieldSchema.?.*, ctx.typeId, ctx.field, ctx.id, data });
-
-    // CTX.
-
-    if (ctx.fieldSchema.?.*.type == 13) {
-        const id = utils.readInt(u32, data, 0);
-        const refTypeId = try db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
+    if (ctx.fieldType == 13) {
+        const id = readInt(u32, data, 0);
+        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
         const refTypeEntry = try db.getType(refTypeId);
         const node = db.getNode(id, refTypeEntry);
         if (node == null) {
@@ -45,4 +38,6 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !void {
     } else if (ctx.currentSortIndex != null) {
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
+
+    return data.len;
 }
