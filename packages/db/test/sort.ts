@@ -20,7 +20,6 @@ await test('basic', async (t) => {
         fields: {
           name: { type: 'string' },
           email: { type: 'string' },
-          // gender: { type: 'integer' },
           age: { type: 'integer' },
         },
       },
