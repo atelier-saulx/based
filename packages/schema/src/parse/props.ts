@@ -1,14 +1,19 @@
-import { Schema, SchemaProp } from '../types.js'
+import { Schema, SchemaAllProps } from '../types.js'
 import { ERRORS } from './errors.js'
 
 export const isNotObject = (obj) => typeof obj !== 'object' || obj === null
 
-type PropValidators<PropType extends SchemaProp> = Record<
+type PropValidators<PropType extends SchemaAllProps> = Record<
   string,
-  (val: any, prop: PropType, schema: Schema, rootOrEdgeProps: boolean) => void
+  (
+    val: any,
+    prop: Partial<PropType>,
+    schema: Schema,
+    rootOrEdgeProps: boolean,
+  ) => void
 >
 
-export class PropParser<PropType extends SchemaProp> {
+export class PropParser<PropType extends SchemaAllProps> {
   constructor(
     validators: PropValidators<PropType>,
     optionalValidators: PropValidators<PropType>,
@@ -27,7 +32,7 @@ export class PropParser<PropType extends SchemaProp> {
     },
   }
 
-  parse(prop: PropType, schema: Schema, rootOrEdgeProps: boolean) {
+  parse(prop: Partial<PropType>, schema: Schema, rootOrEdgeProps: boolean) {
     let key
     try {
       for (key in this.validators) {

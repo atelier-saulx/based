@@ -4,14 +4,15 @@ type Prop<Values extends { type?: string; defaultValue?: any }> = {
   description?: Record<string, string>
 } & Values
 
-type SetItem<rootOrEdgeProps = false> =
+type NonRefSetItems =
   | SchemaNumber
-  | SchemaReference<rootOrEdgeProps>
   | SchemaString
   | SchemaTimestamp
   | SchemaBoolean
 
-type Set<ItemsType extends SetItem<boolean>> = Prop<{
+type Set<
+  ItemsType extends NonRefSetItems | SchemaReference | SchemaOneWayReference,
+> = Prop<{
   type?: 'set'
   defaultValue?: ItemsType['defaultValue']
   items: ItemsType
@@ -47,18 +48,17 @@ export type SchemaTimestamp = Prop<{
   defaultValue?: number | Date
 }>
 
-type Reference = Prop<{
+export type SchemaReference = Prop<{
   type?: 'reference'
   defaultValue?: string
   ref: string
   prop: string
   edge?: {
-    props: SchemaProps<true>
+    props: SchemaProps
   }
 }>
 
-export type SchemaReference<rootOrEdgeProps = false> =
-  rootOrEdgeProps extends true ? Omit<Reference, 'prop' | 'edge'> : Reference
+type SchemaOneWayReference = Omit<SchemaReference, 'prop' | 'edge'>
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
@@ -66,27 +66,30 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaSet<rootOrEdgeProps = false> = Set<SetItem<rootOrEdgeProps>>
+export type SchemaSet = Set<NonRefSetItems | SchemaReference>
+export type SchemaRootSet = Set<NonRefSetItems | SchemaOneWayReference>
 
-export type SchemaProp<rootOrEdgeProps = false> =
+type NonRefSchemaProps =
   | SchemaBoolean
   | SchemaTimestamp
   | SchemaNumber
   | SchemaString
   | SchemaText
-  | SchemaSet<rootOrEdgeProps>
+  | SchemaSet
   | SchemaEnum
-  | SchemaReference<rootOrEdgeProps>
+
+export type SchemaProp = NonRefSchemaProps | SchemaReference
+export type SchemaAllProps =
+  | NonRefSchemaProps
+  | SchemaOneWayReference
+  | SchemaReference
 
 export type SchemaType = {
   props: Record<string, SchemaProp>
 }
-export type SchemaProps<rootOrEdgeProps = false> = Record<
-  string,
-  SchemaProp<rootOrEdgeProps>
->
+export type SchemaProps = Record<string, SchemaProp>
 export type SchemaTypes = Record<string, SchemaType>
 export type Schema = {
   types?: SchemaTypes
-  props?: SchemaProps<true>
+  props?: Record<string, NonRefSchemaProps | SchemaOneWayReference>
 }

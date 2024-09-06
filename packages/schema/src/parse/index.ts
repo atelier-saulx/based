@@ -1,5 +1,6 @@
 import {
   Schema,
+  SchemaAllProps,
   SchemaProp,
   SchemaProps,
   SchemaType,
@@ -28,7 +29,7 @@ export const propParsers: Record<string, PropParser<SchemaProp>> = {
 } as const
 
 export const parseProps = (
-  props: SchemaProps<true>,
+  props: Record<string, SchemaAllProps>,
   schema: Schema,
   rootOrEdgeProps: boolean = true,
 ) => {
