@@ -20,6 +20,7 @@ export const operationToByte = (op: Operation) => {
   if (op === '>') {
     return 3
   }
+
   if (op === '<') {
     return 4
   }
@@ -27,6 +28,7 @@ export const operationToByte = (op: Operation) => {
   if (op === 'has') {
     return 7
   }
+
   return 0
 }
 
@@ -42,7 +44,8 @@ export type QueryIncludeDef = {
   fromRef?: FieldDef
   includeFields: Set<string>
   includeTree: IncludeTreeArr // meh
-  refIncludes?: { [start: string]: QueryIncludeDef } // { } tree for refs prob
+  // make it a MAP
+  refIncludes?: { [field: string]: QueryIncludeDef } // { } tree for refs prob
 }
 
 export type QueryConditions = {

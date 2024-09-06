@@ -36,17 +36,15 @@ pub fn getFields(
             const refSize = readInt(u16, operation, 1);
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
-            if (main == null) {
-                main = db.getField(node, try db.getFieldSchema(0, typeEntry));
-                if (main.?.len > 0 and !idIsSet and start == null) {
-                    idIsSet = true;
-                    size += try addIdOnly(ctx, id, refLvl, start);
-                }
+
+            const refResultSize = getSingleRefFields(ctx, singleRef, node, refLvl, hasFields);
+
+            if (!idIsSet and refResultSize != 0) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id, refLvl, start);
             }
-            if (main.?.len == 0) {
-                continue :includeField;
-            }
-            size += getSingleRefFields(ctx, singleRef, main.?, refLvl, hasFields);
+
+            size += refResultSize;
             continue :includeField;
         }
 

@@ -13,7 +13,7 @@ const IncludeError = error{
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
-    main: []u8,
+    originalNode: db.Node,
     refLvl: u8,
     hasFields: bool,
 ) usize {
@@ -21,30 +21,25 @@ pub fn getSingleRefFields(
 
     const typeId: db.TypeId = readInt(u16, include, 0);
     const start = readInt(u16, include, 2);
-    const refId = readInt(u32, main, start);
 
-    // TODO: make test for this ref undefined
-    if (refId == 0) {
+    const node = db.getReference(originalNode, include[3]);
+
+    if (node == null) {
         return 0;
+    }
+
+    const refId = db.getNodeId(node);
+
+    if (!hasFields) {
+        _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
+            return 0;
+        };
     }
 
     const typeEntry = db.getType(typeId) catch null;
 
     if (typeEntry == null) {
         return 0;
-    }
-
-    const node = db.getNode(refId, typeEntry.?);
-
-    if (node == null) {
-        return 0;
-    }
-
-    if (!hasFields) {
-        _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
-            return 0;
-        };
-        // return 8;
     }
 
     const includeNested = include[4..include.len];

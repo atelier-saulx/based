@@ -81,18 +81,24 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refInclude = include.refIncludes[key]
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
-        const meta = Buffer.allocUnsafe(8)
+        const meta = Buffer.allocUnsafe(7)
         meta[0] = 255
         meta[1] =
           refInclude.mainLen === 0 && refInclude.includeArr.length === 0 ? 0 : 1
-        meta.writeUint16LE(size + 4, 2)
+        meta.writeUint16LE(size + 3, 2)
+
         meta[4] = refInclude.schema.prefix[0]
         meta[5] = refInclude.schema.prefix[1]
-        meta.writeUint16LE(refInclude.fromRef.start, 6)
+
+        meta[6] = refInclude.fromRef.field
+
+        // meta.writeUint16LE(refInclude.fromRef.start, 6)
         result.push(meta, refBuffer)
       }
     }
-    return Buffer.concat(result)
+    const x = Buffer.concat(result)
+    console.log(new Uint8Array(x))
+    return x
   } else {
     return EMPTY_BUFFER
   }
@@ -134,10 +140,12 @@ const createOrGetRefIncludeDef = (
   if (!include.refIncludes) {
     include.refIncludes = {}
   }
-  const start = ref.start
-  if (!include.refIncludes[start]) {
-    include.refIncludes[start] = {
-      includePath: [...include.includePath, start],
+
+  // make it field not stat
+  const field = ref.field
+  if (!include.refIncludes[field]) {
+    include.refIncludes[field] = {
+      includePath: [...include.includePath, field],
       schema: query.db.schemaTypesParsed[ref.allowedType],
       includeArr: [],
       includeFields: new Set(),
@@ -147,7 +155,7 @@ const createOrGetRefIncludeDef = (
       fromRef: ref,
     }
   }
-  const refIncludeDef = include.refIncludes[start]
+  const refIncludeDef = include.refIncludes[field]
   return refIncludeDef
 }
 
@@ -199,7 +207,6 @@ const parseInclude = (
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
         addPathToIntermediateTree(t, includeTree, t.path)
-
         return
       }
     }

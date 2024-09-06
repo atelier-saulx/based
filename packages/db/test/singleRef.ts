@@ -66,15 +66,15 @@ await test('single simple', async (t) => {
   //   depth: 10,
   // })
 
-  // deepEqual(db.query('simple').include('user.name').get().toObject(), [
-  //   {
-  //     id: 1,
-  //     user: {
-  //       id: 1,
-  //       name: 'Mr snurp',
-  //     },
-  //   },
-  // ])
+  deepEqual(db.query('simple').include('user.name').get().toObject(), [
+    {
+      id: 1,
+      user: {
+        id: 1,
+        name: 'Mr snurp',
+      },
+    },
+  ])
 })
 
 await test('single reference multi refs', async (t) => {

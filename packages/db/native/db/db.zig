@@ -82,6 +82,14 @@ pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
 }
 
+pub fn getReference(node: Node, field: u8) ?Node {
+    const result = selva.selva_fields_get_reference(node, field);
+    if (result == null) {
+        return null;
+    }
+    return result.?.*.dst;
+}
+
 pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
