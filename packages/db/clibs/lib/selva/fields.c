@@ -567,8 +567,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
                  selva_str_field_type(fs->type), fs->type);
     }
 
-    assert(len <= selva_fields_get_data_size(fs));
-
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
         break;

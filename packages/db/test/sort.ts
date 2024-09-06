@@ -1,24 +1,14 @@
-import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
-import fs from 'node:fs/promises'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
+import { wait } from '@saulx/utils'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
-await test('sort', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
+await test('basic', async (t) => {
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -28,18 +18,20 @@ await test('sort', async (t) => {
     types: {
       user: {
         fields: {
-          gender: { type: 'integer' },
-          age: { type: 'integer' },
           name: { type: 'string' },
           email: { type: 'string' },
+          // gender: { type: 'integer' },
+          age: { type: 'integer' },
         },
       },
     },
   })
 
   db.create('user', {
-    name: 'mr blap',
     age: 201,
+
+    name: 'mr blap',
+
     email: 'blap@blap.blap.blap',
   })
 
@@ -226,6 +218,7 @@ await test('sort', async (t) => {
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
     ],
+    'update mrX to age 0',
   )
 
   deepEqual(
@@ -354,18 +347,24 @@ await test('sort', async (t) => {
 
   db.drain()
 
-  equal(db.query('user', ids2).include('name', 'age', 'email').get().length, 16)
+  equal(
+    db.query('user', ids2).include('name', 'age', 'email').get().length,
+    16,
+    'Check default query after remove',
+  )
 
   equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
       .length,
     16,
+    'Check email index len after removal',
   )
 
   equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
       .length,
     16,
+    'Check name index len after removal',
   )
 
   db.remove('user', mrBlurp)
@@ -376,6 +375,7 @@ await test('sort', async (t) => {
     db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
       .length,
     15,
+    'Check name index len after removal (2)',
   )
 
   db.update('user', mrZ, {
@@ -388,19 +388,16 @@ await test('sort', async (t) => {
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
       .length,
     15,
+    'Check email index len after removal (2)',
   )
 })
 
 await test('sort - from start (1.5M items)', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   db.updateSchema({
     types: {
@@ -469,7 +466,7 @@ await test('sort - from start (1.5M items)', async (t) => {
   await db.stop()
 
   const newDb = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
   await newDb.start()

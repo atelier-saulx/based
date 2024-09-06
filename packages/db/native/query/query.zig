@@ -113,7 +113,7 @@ inline fn getQueryInternal(
         const args = try napi.getArgs(4, env, info);
         const conditions = try napi.get([]u8, env, args[0]);
         const typeId = try napi.get(u16, env, args[1]);
-        const ids = try napi.get([]u8, env, args[2]);
+        const ids = try napi.get([]u32, env, args[2]);
         const include = try napi.get([]u8, env, args[3]);
         try Query.queryIds(ids, &ctx, typeId, conditions, include);
     } else if (queryType == 3 or queryType == 4) {

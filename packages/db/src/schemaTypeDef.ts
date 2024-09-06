@@ -468,8 +468,9 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
     // add MUFFER (main buffer)
 
-    // CLEAN THIS UP
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
+      console.log('hello ->', f.path, f.type, f.field)
+
       // @ts-ignore
       if (f.len && f.type == 'muffer') {
         // max size is
@@ -508,6 +509,8 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         }),
         ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
       ])
+      console.log('SCHEMA BUFFER -> ', t.type, new Uint8Array(x))
+
       return x
     }
 
@@ -520,6 +523,8 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
+
+    console.log('SCHEMA BUFFER -> ', t.type, new Uint8Array(x))
 
     return x
   })

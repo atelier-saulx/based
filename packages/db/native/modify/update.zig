@@ -42,6 +42,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     var currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+
     if (currentData.len != 0) {
         var j: usize = 0;
         const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.typeId));
@@ -53,7 +54,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                 if (hasSortIndex and db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
                     const sortIndex = try getSortIndex(ctx, start);
                     try sort.deleteField(ctx.id, currentData, sortIndex.?);
-                    try sort.writeField(ctx.id, data, sortIndex.?);
+                    try sort.writeField(ctx.id, operation[4 .. len + 4], sortIndex.?);
                 }
                 @memcpy(currentData[start .. start + len], operation[4 .. 4 + len]);
             } else if (ctx.currentSortIndex != null) {
