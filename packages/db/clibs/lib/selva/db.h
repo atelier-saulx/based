@@ -19,48 +19,12 @@ RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
-struct EdgeFieldConstraint {
-    enum EdgeFieldConstraintFlag {
-        /**
-         * Bidirectional reference.
-         * TODO Is this needed if edges are always bidir.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
-        /**
-         * Edge field array mode.
-         * By default an edge field acts like a set. This flag makes the field work like an array.
-         * FIXME
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x02,
-        /**
-         * Skip saving this field while dumping.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
-    } __packed flags;
-    field_t nr_fields;
-    field_t inverse_field;
-    node_type_t dst_node_type;
-    struct SelvaFieldSchema *field_schemas __counted_by(nr_fields);
-};
-
 struct SelvaNodeSchema {
     field_t nr_fields; /*!< The total number of fields for this node type. */
     field_t nr_fixed_fields; /*!< Number of fixed fields that are always allocated. */
     field_t created_field;
     field_t updated_field;
-    struct SelvaFieldSchema {
-        field_t field;
-        enum SelvaFieldType type;
-        union {
-            struct {
-                size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
-            } string;
-            struct EdgeFieldConstraint edge_constraint;
-            struct {
-                uint16_t len;
-            } smb;
-        };
-    } field_schemas[] __counted_by(nr_fields);
+    struct SelvaFieldSchema field_schemas[] __counted_by(nr_fields);
 };
 
 /**
