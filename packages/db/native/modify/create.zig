@@ -15,6 +15,8 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 13) {
         const id = readInt(u32, data, 0);
         const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+
+        std.debug.print("LOG refTypeId: {d} id: {id} \n", .{ refTypeId, id });
         const refTypeEntry = try db.getType(refTypeId);
         const node = db.getNode(id, refTypeEntry);
         if (node == null) {
