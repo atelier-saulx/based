@@ -286,7 +286,6 @@ static struct SelvaFieldSchema *get_edge_dst_fs(
     return selva_get_fs_by_ns_field(&type_dst->ns, fs_src->edge_constraint.inverse_field);
 }
 
-
 /**
  * Delete a reference field edge.
  * The caller must invalidate pointers in ref if relevant.
