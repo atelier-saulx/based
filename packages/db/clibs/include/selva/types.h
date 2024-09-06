@@ -72,12 +72,10 @@ struct SelvaFieldSchema {
     };
 };
 
-struct EdgeFieldConstraint;
 struct SelvaAlias;
 struct SelvaAliases;
 struct SelvaDb;
 struct SelvaFieldInfo;
-struct SelvaFieldSchema;
 struct SelvaFields;
 struct SelvaNode;
 struct SelvaNodeSchema;

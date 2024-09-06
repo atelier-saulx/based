@@ -318,6 +318,13 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
     return selva_get_fs_by_ns_field(&type->ns, field);
 }
 
+struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSchema *fs)
+{
+    return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
+        ? &fs->edge_constraint
+        : NULL;
+}
+
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_cursors_node_going_away(type, node);

@@ -84,6 +84,15 @@ SELVA_EXPORT
 struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 /**
+ * Get the EdgeFieldConstraint from a ref field schema.
+ * struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(src_fs);
+ * struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, efc->dst_node_type);
+ * struct SelvaFieldSchema *dst_fs = selva_get_fs_by_node(db, dst, efc->inverse_field);
+ */
+SELVA_EXPORT
+struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSchema *fs);
+
+/**
  * Delete a node.
  */
 SELVA_EXPORT
