@@ -9,6 +9,73 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
+await test('single simple', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          // bla: { type: 'integer' },
+          name: { type: 'string' },
+        },
+      },
+      simple: {
+        fields: {
+          user: { type: 'reference', allowedType: 'user' },
+        },
+      },
+    },
+  })
+
+  // db.create('simple', {
+  //   user: db.create('user', {
+  //     name: 'Mr snurp',
+  //   }),
+  // })
+
+  const us = db.create('user', {
+    name: 'Mr snurp',
+  })
+  db.drain()
+
+  db.create('simple', {
+    user: us,
+  })
+
+  db.drain()
+
+  console.dir(db.query('user').include('name').get().toObject(), {
+    depth: 10,
+  })
+
+  console.dir(db.query('simple').include('user.name').get().toObject(), {
+    depth: 10,
+  })
+
+  // deepEqual(db.query('simple').include('user.name').get().toObject(), [
+  //   {
+  //     id: 1,
+  //     user: {
+  //       id: 1,
+  //       name: 'Mr snurp',
+  //     },
+  //   },
+  // ])
+})
+
 await test('single reference multi refs', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
@@ -248,7 +315,6 @@ await test('nested', async (t) => {
     },
   ])
 
-  console.log('--------------')
   deepEqual(
     db.query('simple').include('user.myBlup').range(0, 1).get().toObject(),
     [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],

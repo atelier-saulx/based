@@ -568,6 +568,12 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
                  selva_str_field_type(fs->type), fs->type);
     }
 
+
+    fprintf(stderr, "Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d), %zu\n",
+                 node->type, node->node_id, fs->field,
+                 selva_str_field_type(nfo->type), nfo->type,
+                 selva_str_field_type(fs->type), fs->type, len);
+
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
         break;

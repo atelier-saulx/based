@@ -240,7 +240,6 @@ await test('sort', async (t) => {
     ],
   )
 
-  // ------------------------------
   const ids = []
   for (let i = 0; i < 10; i++) {
     ids.push(i)

@@ -136,6 +136,8 @@ export const createSchemaTypeDef = (
 ): SchemaTypeDef => {
   if (result.prefixNumber == 0) {
     result.prefixNumber = (result.prefix[1] << 8) + result.prefix[0]
+
+    console.info('HELLO TYPE ', typeName, type, result.prefixNumber)
   }
 
   const encoder = new TextEncoder()
@@ -328,7 +330,6 @@ export const readSchemaTypeDefFromBuffer = (
   const fields: {
     [key: string]: FieldDef
   } = {}
-  const prefix = String.fromCharCode(buf[0]) + String.fromCharCode(buf[1])
   const names: string[] = []
   const seperate: FieldDef[] = []
   let i = 0
@@ -476,7 +477,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       // @ts-ignore
       if (f.len && f.type == 'muffer') {
         // max size is
-
         const buf = Buffer.allocUnsafe(3)
         buf[0] = typeMap[f.type]
         buf.writeUint16LE(f.len, 1)
@@ -498,7 +498,13 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
     if (t.mainLen === 0) {
       const x = Buffer.from([
-        0,
+        1,
+        ...toSelvaSchemaBuf({
+          // @ts-ignore
+          type: 'muffer',
+          len: 1,
+        }),
+        // 0,
         ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
       ])
       return x

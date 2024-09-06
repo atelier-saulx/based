@@ -40,6 +40,14 @@ pub fn getSingleRefFields(
         return 0;
     }
 
+    std.debug.print("GET SINGE REF -> node {any} refLvl {d} ID  {d} hasFields {any} type {d} \n", .{
+        node,
+        refLvl,
+        refId,
+        hasFields,
+        typeId,
+    });
+
     if (!hasFields) {
         _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
             return 0;

@@ -17,6 +17,8 @@ pub fn createField(ctx: *ModifyCtx, batch: []u8) !usize {
 
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
 
+    std.debug.print("CREATE type {d} field {d} {d} {any}  \n", .{ ctx.typeId, ctx.field, ctx.id, data });
+
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();

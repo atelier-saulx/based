@@ -37,6 +37,13 @@ pub fn getFields(
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
             if (main == null) {
+                std.debug.print("GET REF FROM NODE {any} field {d} refLvl {d} ID  {d} \n", .{
+                    node,
+                    field,
+                    refLvl,
+                    id,
+                });
+
                 main = db.getField(node, try db.getFieldSchema(0, typeEntry));
                 if (main.?.len > 0 and !idIsSet and start == null) {
                     idIsSet = true;
@@ -57,6 +64,13 @@ pub fn getFields(
             }
             includeIterator += 2 + mainIncludeSize;
         }
+
+        std.debug.print("GET node {any} field {d} refLvl {d} ID  {d} \n", .{
+            node,
+            field,
+            refLvl,
+            id,
+        });
 
         const value = db.getField(node, try db.getFieldSchema(field, typeEntry));
 
