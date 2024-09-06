@@ -350,12 +350,14 @@ await test('nested', async (t) => {
   const amount = 1e5
 
   for (let i = 0; i < amount; i++) {
+    console.log('HELLO')
     db.create('simple', {
       user,
       vectorClock: i,
       countryCode: 'aa',
       lilBlup: blup,
     })
+  db.drain()
   }
 
   db.drain()
