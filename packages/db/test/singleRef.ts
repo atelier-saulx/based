@@ -152,6 +152,13 @@ await test('simple nested', async (t) => {
     equal(r.user.myBlup.flap, 'B')
   }
 
+  deepEqual(db.query('user').include('simple').get().toObject(), [
+    {
+      id: 1,
+      simple: { id: 1 },
+    },
+  ])
+
   db.update('simple', simple, {
     user: null,
   })
@@ -162,6 +169,13 @@ await test('simple nested', async (t) => {
     {
       id: 1,
       user: null,
+    },
+  ])
+
+  deepEqual(db.query('user').include('simple').get().toObject(), [
+    {
+      id: 1,
+      simple: null,
     },
   ])
 })
