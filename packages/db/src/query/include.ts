@@ -82,23 +82,28 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
         const meta = Buffer.allocUnsafe(7)
+
+        // command meaning include single ref
         meta[0] = 255
+
+        // has fields
         meta[1] =
           refInclude.mainLen === 0 && refInclude.includeArr.length === 0 ? 0 : 1
+
+        // size
         meta.writeUint16LE(size + 3, 2)
 
+        // typeId
         meta[4] = refInclude.schema.prefix[0]
         meta[5] = refInclude.schema.prefix[1]
 
+        // field where ref is stored
         meta[6] = refInclude.fromRef.field
 
-        // meta.writeUint16LE(refInclude.fromRef.start, 6)
         result.push(meta, refBuffer)
       }
     }
-    const x = Buffer.concat(result)
-    console.log(new Uint8Array(x))
-    return x
+    return Buffer.concat(result)
   } else {
     return EMPTY_BUFFER
   }

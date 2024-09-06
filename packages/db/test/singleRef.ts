@@ -58,14 +58,6 @@ await test('single simple', async (t) => {
 
   db.drain()
 
-  // console.dir(db.query('user').include('name').get().toObject(), {
-  //   depth: 10,
-  // })
-
-  // console.dir(db.query('simple').include('user.name').get().toObject(), {
-  //   depth: 10,
-  // })
-
   deepEqual(db.query('simple').include('user.name').get().toObject(), [
     {
       id: 1,
@@ -77,7 +69,7 @@ await test('single simple', async (t) => {
   ])
 })
 
-await test('single reference multi refs', async (t) => {
+await test('simple nested', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -96,18 +88,36 @@ await test('single reference multi refs', async (t) => {
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
         },
       },
       blup: {
         fields: {
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
         },
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
@@ -131,6 +141,8 @@ await test('single reference multi refs', async (t) => {
   ])
 
   const result1 = db.query('user').include('myBlup.flap').get()
+
+  console.info(result1)
 
   for (const r of result1) {
     equal(r.myBlup.flap, 'B')
@@ -229,7 +241,16 @@ await test('nested', async (t) => {
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
           flap: { type: 'integer' },
           email: { type: 'string', maxLength: 15 },
@@ -251,15 +272,33 @@ await test('nested', async (t) => {
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
           name: { type: 'string' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
         },
       },
       simple: {
         fields: {
           // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
           vectorClock: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },

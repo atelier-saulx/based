@@ -13,12 +13,12 @@ pub const Result = struct {
     id: ?u32,
     field: u8,
     val: ?[]u8,
-    start: ?u16,
+    refField: ?u8,
     includeMain: []u8,
     refLvl: u8,
 };
 
-const MAX_REF = 65025;
+const MAX_REF = 255;
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
@@ -32,16 +32,16 @@ pub fn createResultsBuffer(
     }
 
     var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    var lastRef: u16 = MAX_REF;
+    var lastRef: u8 = MAX_REF;
     var lastRefLvl: u8 = 0;
     var i: usize = 4;
 
     writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
-        if (item.start != null) {
-            if (lastRef != item.start.? or lastRefLvl != item.refLvl) {
-                lastRef = item.start.?;
+        if (item.refField != null) {
+            if (lastRef != item.refField.? or lastRefLvl != item.refLvl) {
+                lastRef = item.refField.?;
                 lastRefLvl = item.refLvl;
                 data[i] = 254;
                 i += 1;
@@ -53,8 +53,9 @@ pub fn createResultsBuffer(
                 }
                 i += 1;
 
-                writeInt(u16, data, i, lastRef);
-                i += 2;
+                data[i] = lastRef;
+                // writeInt(u16, data, i, lastRef);
+                i += 1;
 
                 writeInt(u32, data, i, item.id.?);
                 i += 4;

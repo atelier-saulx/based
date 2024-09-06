@@ -48,7 +48,7 @@ export const readSeperateFieldFromBuffer = (
         found = false
       }
 
-      const start = buffer.readUint16LE(i + 1)
+      const refField = buffer[i + 1]
       const resetNested = buffer[i] === 0
 
       if (resetNested) {
@@ -57,17 +57,17 @@ export const readSeperateFieldFromBuffer = (
 
       if (
         ref &&
-        includePathsAreEqual(includeDef.includePath, ref.includePath, start)
+        includePathsAreEqual(includeDef.includePath, ref.includePath, refField)
       ) {
         if (requestedField.type === 'id') {
-          return buffer.readUint32LE(i + 3)
+          return buffer.readUint32LE(i + 2)
         }
         found = true
-        i += 7
+        i += 6
         includeDef = ref
       } else {
-        i += 7
-        includeDef = includeDef.refIncludes[start]
+        i += 6
+        includeDef = includeDef.refIncludes[refField]
       }
 
       continue

@@ -10,6 +10,7 @@ const IncludeError = error{
     Recursion,
 };
 
+// pass id
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
@@ -20,18 +21,18 @@ pub fn getSingleRefFields(
     var size: usize = 0;
 
     const typeId: db.TypeId = readInt(u16, include, 0);
-    const start = readInt(u16, include, 2);
+    const refField = include[2];
 
-    const node = db.getReference(originalNode, include[3]);
+    const node = db.getReference(originalNode, refField);
 
     if (node == null) {
         return 0;
     }
 
-    const refId = db.getNodeId(node);
+    const refId = db.getNodeId(node.?);
 
     if (!hasFields) {
-        _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
+        _ = addIdOnly(ctx, refId, refLvl + 1, refField) catch {
             return 0;
         };
     }
@@ -42,20 +43,22 @@ pub fn getSingleRefFields(
         return 0;
     }
 
-    const includeNested = include[4..include.len];
+    const includeNested = include[3..include.len];
+
+    std.debug.print("HELLO {any} {d} {d} \n", .{ includeNested, typeId, refField });
 
     const resultSizeNest = getFields(
         node.?,
         ctx,
         refId,
         typeEntry.?,
-        start,
+        refField,
         includeNested,
         refLvl + 1,
         !hasFields,
     ) catch 0;
 
-    size += 8 + resultSizeNest;
+    size += 7 + resultSizeNest;
 
     return size;
 }

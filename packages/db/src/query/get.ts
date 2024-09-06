@@ -90,7 +90,7 @@ export const get = (query: Query): BasedQueryResponse => {
     )
   }
 
-  console.info(new Uint8Array(result))
+  console.info('QUERY RESULT', new Uint8Array(result))
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

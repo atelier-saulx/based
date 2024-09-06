@@ -49,7 +49,6 @@ const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map([
 export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
-  selvaField: number
   inverseField?: string
   allowedType?: string
   type: BasedSchemaFieldType | 'id'
@@ -188,7 +187,6 @@ export const createSchemaTypeDef = (
         inverseTypeNumber: 0,
         len,
         field: isSeperate ? result.cnt : 0,
-        selvaField: 0, // will be set later
         inverseField:
           (f.type === 'reference' || f.type === 'references') &&
           f.inverseProperty,
@@ -232,13 +230,6 @@ export const createSchemaTypeDef = (
       } else {
         mainFields.push(f)
       }
-    }
-    let selvaField = 0
-    for (const field of mainFields) {
-      field.selvaField = selvaField++
-    }
-    for (const field of restFields) {
-      field.selvaField = selvaField++
     }
 
     /*
@@ -366,7 +357,6 @@ export const readSchemaTypeDefFromBuffer = (
       const field: FieldDef = {
         __isField: true,
         field: 0,
-        selvaField: selvaField++,
         inverseTypeNumber: 0,
         type: typeName,
         typeByte,
@@ -390,7 +380,6 @@ export const readSchemaTypeDefFromBuffer = (
       const field: FieldDef = {
         __isField: true,
         field: fieldIndex,
-        selvaField: selvaField++,
         type: typeName,
         typeByte,
         seperate: false,
@@ -437,7 +426,6 @@ export const idFieldDef: FieldDef = {
   start: 0,
   inverseTypeNumber: 0,
   field: 0,
-  selvaField: 0,
   len: 4,
   __isField: true,
 }
@@ -461,13 +449,19 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
     // TODO GET RID OF SELVAFIELD
 
-    restFields.sort((a, b) => a.selvaField - b.selvaField)
+    console.log(
+      restFields.map((v) => {
+        return { field: v.field, path: v.path }
+      }),
+    )
 
-    restFields.forEach((a) => {
-      if (a.selvaField !== a.field) {
-        throw new Error('SELVA FIELD HAS TO MATCH FIELD')
-      }
-    })
+    restFields.sort((a, b) => a.field - b.field)
+
+    // restFields.forEach((a) => {
+    //   if (a.selvaField !== a.field) {
+    //     throw new Error('SELVA FIELD HAS TO MATCH FIELD')
+    //   }
+    // })
 
     // TODO Remove this once the types agree
     const typeMap = {
@@ -503,9 +497,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
         f.inverseTypeNumber = dstType.prefixNumber
 
-        buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
-
-        console.log(typeNames)
+        buf.writeUInt8(dstType.fields[f.inverseField].field, 1)
 
         buf.writeUInt16LE(dstType.prefixNumber, 2)
         return [...buf.values()]

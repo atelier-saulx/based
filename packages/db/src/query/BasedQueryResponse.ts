@@ -90,6 +90,7 @@ export class BasedQueryResponse {
     str += '\n  size: ' + size(this.size)
     const dataStr = inspectData(this, true).replaceAll('\n', '\n  ').trim()
     str += '\n  ' + dataStr
+
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
@@ -118,6 +119,7 @@ export class BasedQueryResponse {
         ctx.__o = i
         ctx.__q = this
         ctx.__r = null
+
         yield ctx
         i += 4
       } else if (index === 254) {
@@ -126,9 +128,9 @@ export class BasedQueryResponse {
           currentInclude = this.query.includeDef
         }
         if (currentInclude.refIncludes) {
-          const start = this.buffer.readUint16LE(i + 1)
-          currentInclude = currentInclude.refIncludes[start]
-          i += 2 + 4 + 1
+          const refField = this.buffer[i + 1]
+          currentInclude = currentInclude.refIncludes[refField]
+          i += 6
         }
       } else if (index === 0) {
         i += currentInclude.mainLen

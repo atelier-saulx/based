@@ -14,7 +14,7 @@ pub fn getFields(
     ctx: *QueryCtx,
     id: u32,
     typeEntry: db.Type,
-    start: ?u16,
+    refField: ?u8,
     include: []u8,
     refLvl: u8,
     fromNoFields: bool,
@@ -37,12 +37,12 @@ pub fn getFields(
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
 
-            const refResultSize = getSingleRefFields(ctx, singleRef, node, refLvl, hasFields);
-
-            if (!idIsSet and refResultSize != 0) {
+            if (!idIsSet) {
                 idIsSet = true;
-                size += try addIdOnly(ctx, id, refLvl, start);
+                size += try addIdOnly(ctx, id, refLvl, refField);
             }
+
+            const refResultSize = getSingleRefFields(ctx, singleRef, node, refLvl, hasFields);
 
             size += refResultSize;
             continue :includeField;
@@ -57,6 +57,8 @@ pub fn getFields(
         }
 
         const value = db.getField(node, try db.getFieldSchema(field, typeEntry));
+
+        std.debug.print("FIELD {d} {any} {any} {any} \n", .{ field, value, typeEntry, node });
 
         if (value.len == 0) {
             continue :includeField;
@@ -77,12 +79,12 @@ pub fn getFields(
             .id = id,
             .field = field,
             .val = value,
-            .start = start,
+            .refField = refField,
             .includeMain = includeMain,
             .refLvl = refLvl,
         };
 
-        if (start == null) {
+        if (refField == null) {
             if (!idIsSet) {
                 idIsSet = true;
                 size += 1 + 4;
@@ -98,13 +100,13 @@ pub fn getFields(
 
     if (!idIsSet) {
         idIsSet = true;
-        if (start != null) {
+        if (refField != null) {
             if (!fromNoFields) {
                 // pretty nice to just add the size here
-                _ = try addIdOnly(ctx, id, refLvl, start);
+                _ = try addIdOnly(ctx, id, refLvl, refField);
             }
         } else {
-            size += try addIdOnly(ctx, id, refLvl, start);
+            size += try addIdOnly(ctx, id, refLvl, refField);
         }
     }
 

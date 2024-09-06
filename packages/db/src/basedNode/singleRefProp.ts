@@ -19,8 +19,8 @@ export function singleRefProp(
       refCtx.__q = ctx.__q
       refCtx.__o = ctx.__o
       refCtx.__r =
-        ctx.__r?.refIncludes[fieldDef.start] ??
-        ctx.__q.query.includeDef.refIncludes[fieldDef.start]
+        ctx.__r?.refIncludes[fieldDef.field] ??
+        ctx.__q.query.includeDef.refIncludes[fieldDef.field]
 
       return refCtx
     },
