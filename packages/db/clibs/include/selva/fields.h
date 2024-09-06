@@ -73,10 +73,10 @@ SELVA_EXPORT
 struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, struct SelvaFieldSchema *fs);
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, struct SelvaFieldSchema *fs);
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);

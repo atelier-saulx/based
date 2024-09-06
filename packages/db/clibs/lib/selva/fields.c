@@ -864,19 +864,19 @@ struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field)
     return selva_fields_get2(&node->fields, field);
 }
 
-struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, struct SelvaFieldSchema *fs)
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field)
 {
     struct SelvaFieldsAny any;
 
-    any = selva_fields_get(node, fs->field);
+    any = selva_fields_get(node, field);
     return (any.type == SELVA_FIELD_TYPE_REFERENCE) ? any.reference : NULL;
 }
 
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, struct SelvaFieldSchema *fs)
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field)
 {
     struct SelvaFieldsAny any;
 
-    any = selva_fields_get(node, fs->field);
+    any = selva_fields_get(node, field);
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
 }
 
