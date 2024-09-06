@@ -9,7 +9,7 @@ test('references', () => {
         props: {
           author: {
             ref: 'author',
-            inverseProp: 'articles',
+            prop: 'articles',
           },
         },
       },
@@ -18,7 +18,7 @@ test('references', () => {
           articles: {
             items: {
               ref: 'article',
-              inverseProp: 'author',
+              prop: 'author',
             },
           },
         },
@@ -34,7 +34,7 @@ test('references', () => {
             articles: {
               items: {
                 ref: 'article',
-                inverseProp: 'author',
+                prop: 'author',
               },
             },
           },
@@ -49,7 +49,6 @@ test('references', () => {
         myRefs: {
           items: {
             ref: 'user',
-            inverseProp: 'author',
           },
         },
       },
@@ -63,7 +62,7 @@ test('references', () => {
           props: {
             author: {
               ref: 'author',
-              inverseProp: 'articles',
+              prop: 'articles',
             },
           },
         },
@@ -72,7 +71,7 @@ test('references', () => {
             articles: {
               items: {
                 ref: 'article',
-                inverseProp: 'author',
+                prop: 'author',
               },
             },
           },
@@ -82,7 +81,7 @@ test('references', () => {
             articles: {
               items: {
                 ref: 'article',
-                inverseProp: 'author',
+                prop: 'author',
               },
             },
           },
@@ -90,4 +89,36 @@ test('references', () => {
       },
     })
   }, 'Disallow mixed ref types')
+})
+
+test('edges', () => {
+  parse({
+    types: {
+      article: {
+        props: {
+          author: {
+            ref: 'author',
+            prop: 'articles',
+            edge: {
+              props: {
+                role: {
+                  enum: ['admin', 'collaborator'],
+                },
+              },
+            },
+          },
+        },
+      },
+      author: {
+        props: {
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'author',
+            },
+          },
+        },
+      },
+    },
+  })
 })

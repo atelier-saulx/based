@@ -4,33 +4,28 @@ import { PropParser, isNotObject, getPropType } from './props.js'
 
 export const reference = new PropParser<SchemaReference>(
   {
-    // order is important
     ref(ref, _prop, schema) {
       if (isNotObject(schema.types) || !(ref in schema.types)) {
         throw Error(ERRORS.INVALID_VALUE)
       }
     },
-
-    inverseProp(propKey, prop, schema, inRootProps) {
-      if (inRootProps) {
+    prop(propKey, prop, schema, rootOrEdgeProps) {
+      if (rootOrEdgeProps) {
         if (propKey === undefined) {
           return
         }
-        throw Error('inverseProp not supported on root')
+        throw Error('ref prop not supported on root or edge props')
       }
-      const schemaType = schema.types[prop.ref]
-      let targetProp = schemaType.props?.[propKey]
-      if (isNotObject(targetProp)) {
-        throw Error(ERRORS.EXPECTED_OBJ)
+      let targetProp = schema.types[prop.ref].props?.[propKey]
+      if (!targetProp) {
+        // it should throw elsewhere in the parser
+        return
       }
-
-      let targetPropType = getPropType(targetProp)
-      if (targetPropType === 'set' && 'items' in targetProp) {
+      if ('items' in targetProp) {
         targetProp = targetProp.items
       }
-
-      if ('ref' in targetProp && 'inverseProp' in targetProp) {
-        let t = schema.types[targetProp.ref]?.props?.[targetProp.inverseProp]
+      if ('ref' in targetProp && 'prop' in targetProp) {
+        let t = schema.types[targetProp.ref]?.props?.[targetProp.prop]
         if ('items' in t) {
           t = t.items
         }
@@ -46,6 +41,16 @@ export const reference = new PropParser<SchemaReference>(
     defaultValue(val) {
       if (typeof val !== 'string') {
         throw Error(ERRORS.EXPECTED_STR)
+      }
+    },
+
+    edge(val, prop, schema, rootOrEdgeProps) {
+      if (rootOrEdgeProps) {
+        throw Error('ref edge not supported on root or edge props')
+      }
+      let targetProp = schema.types[prop.ref].props[prop.prop]
+      if ('items' in targetProp) {
+        targetProp = targetProp.items
       }
     },
   },

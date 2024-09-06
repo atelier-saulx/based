@@ -4,9 +4,9 @@ type Prop<Values extends { type?: string; defaultValue?: any }> = {
   description?: Record<string, string>
 } & Values
 
-type SetItem<inRootProps = false> =
+type SetItem<rootOrEdgeProps = false> =
   | SchemaNumber
-  | SchemaReference<inRootProps>
+  | SchemaReference<rootOrEdgeProps>
   | SchemaString
   | SchemaTimestamp
   | SchemaBoolean
@@ -51,12 +51,14 @@ type Reference = Prop<{
   type?: 'reference'
   defaultValue?: string
   ref: string
-  inverseProp: string
+  prop: string
+  edge?: {
+    props: SchemaProps<true>
+  }
 }>
 
-export type SchemaReference<inRootProps = false> = inRootProps extends true
-  ? Omit<Reference, 'inverseProp'>
-  : Reference
+export type SchemaReference<rootOrEdgeProps = false> =
+  rootOrEdgeProps extends true ? Omit<Reference, 'prop' | 'edge'> : Reference
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
@@ -64,24 +66,24 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaSet<inRootProps = false> = Set<SetItem<inRootProps>>
+export type SchemaSet<rootOrEdgeProps = false> = Set<SetItem<rootOrEdgeProps>>
 
-export type SchemaProp<inRootProps = false> =
+export type SchemaProp<rootOrEdgeProps = false> =
   | SchemaBoolean
   | SchemaTimestamp
   | SchemaNumber
   | SchemaString
   | SchemaText
-  | SchemaSet<inRootProps>
+  | SchemaSet<rootOrEdgeProps>
   | SchemaEnum
-  | SchemaReference<inRootProps>
+  | SchemaReference<rootOrEdgeProps>
 
 export type SchemaType = {
   props: Record<string, SchemaProp>
 }
-export type SchemaProps<inRootProps = false> = Record<
+export type SchemaProps<rootOrEdgeProps = false> = Record<
   string,
-  SchemaProp<inRootProps>
+  SchemaProp<rootOrEdgeProps>
 >
 export type SchemaTypes = Record<string, SchemaType>
 export type Schema = {

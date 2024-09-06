@@ -5,7 +5,7 @@ export const isNotObject = (obj) => typeof obj !== 'object' || obj === null
 
 type PropValidators<PropType extends SchemaProp> = Record<
   string,
-  (val: any, prop: PropType, schema: Schema, inRootProps: boolean) => void
+  (val: any, prop: PropType, schema: Schema, rootOrEdgeProps: boolean) => void
 >
 
 export class PropParser<PropType extends SchemaProp> {
@@ -20,18 +20,18 @@ export class PropParser<PropType extends SchemaProp> {
   validators: PropValidators<PropType>
   optionalValidators: PropValidators<PropType> = {
     type() {},
-    required(val, prop) {
+    required(val) {
       if (typeof val !== 'boolean') {
         throw Error(ERRORS.EXPECTED_BOOL)
       }
     },
   }
 
-  parse(prop: PropType, schema: Schema, inRootProps: boolean) {
+  parse(prop: PropType, schema: Schema, rootOrEdgeProps: boolean) {
     let key
     try {
       for (key in this.validators) {
-        this.validators[key](prop[key], prop, schema, inRootProps)
+        this.validators[key](prop[key], prop, schema, rootOrEdgeProps)
       }
 
       for (key in prop) {
@@ -40,7 +40,7 @@ export class PropParser<PropType extends SchemaProp> {
         }
 
         if (key in this.optionalValidators) {
-          this.optionalValidators[key](prop[key], prop, schema, inRootProps)
+          this.optionalValidators[key](prop[key], prop, schema, rootOrEdgeProps)
           continue
         }
 

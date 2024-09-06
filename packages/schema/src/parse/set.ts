@@ -5,7 +5,7 @@ import { PropParser, isNotObject, getPropType } from './props.js'
 
 export const set = new PropParser<SchemaSet>(
   {
-    items(items, _prop, schema, inRootProps) {
+    items(items, _prop, schema, rootOrEdgeProps) {
       if (isNotObject(items)) {
         throw Error(ERRORS.EXPECTED_OBJ)
       }
@@ -17,7 +17,7 @@ export const set = new PropParser<SchemaSet>(
         itemsType === 'timestamp' ||
         itemsType === 'boolean'
       ) {
-        propParsers[itemsType].parse(items, schema, inRootProps)
+        propParsers[itemsType].parse(items, schema, rootOrEdgeProps)
       }
     },
   },

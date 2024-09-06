@@ -14,3 +14,8 @@ export const ERRORS = {
   UNKNOWN_PROP: 'Unknown property',
   MISSING_TYPE: 'Missing type',
 } as const
+
+export const current: {
+  key?: string
+  obj?: object
+} = {}

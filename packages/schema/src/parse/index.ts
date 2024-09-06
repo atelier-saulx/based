@@ -1,4 +1,10 @@
-import { Schema, SchemaProp, SchemaProps, SchemaTypes } from '../types.js'
+import {
+  Schema,
+  SchemaProp,
+  SchemaProps,
+  SchemaType,
+  SchemaTypes,
+} from '../types.js'
 import { boolean } from './boolean.js'
 import { text } from './text.js'
 import { number } from './number.js'
@@ -8,7 +14,7 @@ import { timestamp } from './timestamp.js'
 import { enum_ } from './enum_.js'
 import { set } from './set.js'
 import { reference } from './reference.js'
-import { ERRORS } from './errors.js'
+import { ERRORS, current } from './errors.js'
 
 export const propParsers: Record<string, PropParser<SchemaProp>> = {
   timestamp,
@@ -21,65 +27,69 @@ export const propParsers: Record<string, PropParser<SchemaProp>> = {
   reference,
 } as const
 
-const schemaParsers: Record<
-  string,
-  (val: any, schema: Schema, inRootProps?: boolean) => void
-> = {
-  props(props: SchemaProps, schema: Schema, inRootProps: boolean = true) {
-    if (isNotObject(props)) {
+export const parseProps = (
+  props: SchemaProps<true>,
+  schema: Schema,
+  rootOrEdgeProps: boolean = true,
+) => {
+  if (isNotObject(current.obj)) {
+    throw Error(ERRORS.EXPECTED_OBJ)
+  }
+  current.obj = props
+  current.key = null
+  for (current.key in props) {
+    const prop = props[current.key]
+    if (isNotObject(prop)) {
       throw Error(ERRORS.EXPECTED_OBJ)
     }
-    for (const key in props) {
-      const prop = props[key]
-      if (isNotObject(prop)) {
-        throw Error(ERRORS.EXPECTED_OBJ)
-      }
-      const propType = getPropType(prop)
-      const propParser = propParsers[propType]
-      if (!propParser) {
-        throw Error(ERRORS.INVALID_VALUE)
-      }
-      propParser.parse(prop, schema, inRootProps)
+    const propType = getPropType(prop)
+    const propParser = propParsers[propType]
+    if (!propParser) {
+      throw Error(ERRORS.INVALID_VALUE)
     }
-  },
-  types(types: SchemaTypes, schema: Schema) {
-    if (isNotObject(types)) {
-      throw Error(ERRORS.EXPECTED_OBJ)
-    }
-    for (const key in types) {
-      const nodeType = types[key]
-      if (isNotObject(nodeType)) {
-        throw Error(ERRORS.EXPECTED_OBJ)
-      }
-      const { props } = nodeType
-      schemaParsers.props(props, schema, false)
-    }
-  },
-} as const
+    propParser.parse(prop, schema, rootOrEdgeProps)
+  }
+}
+
+export const parseType = (type: SchemaType, schema: Schema) => {
+  if (isNotObject(type)) {
+    throw Error(ERRORS.EXPECTED_OBJ)
+  }
+  current.obj = type
+  current.key = null
+  parseProps(type.props, schema, false)
+}
+
+export const parseTypes = (types: SchemaTypes, schema: Schema) => {
+  if (isNotObject(types)) {
+    throw Error(ERRORS.EXPECTED_OBJ)
+  }
+  current.obj = types
+  for (current.key in types) {
+    parseType(types[current.key], schema)
+  }
+}
 
 export const parse = (schema: Schema) => {
   if (isNotObject(schema)) {
     throw Error(ERRORS.INVALID_SCHEMA)
   }
-  let key, obj
   try {
-    for (const key in schema) {
-      const schemaParser = schemaParsers[key]
-      if (!schemaParser) {
+    current.obj = schema
+    for (current.key in schema) {
+      if (current.key === 'types') {
+        parseTypes(schema.types, schema)
+      } else if (current.key === 'props') {
+        parseProps(schema.props, schema)
+      } else {
         throw Error(ERRORS.UNKNOWN_PROP)
       }
-      schemaParser(schema[key], schema)
     }
   } catch (e) {
-    if (e.cause) {
-      obj = e.cause.obj
-      key = e.cause.key
-    } else {
-      obj = schema
-    }
-    const path = key ? [key] : []
+    // e.cause ??= { obj, key }
+    const path = e.cause.key ? [e.cause.key] : []
     const find = (t) => {
-      if (t === obj) {
+      if (t === e.cause.obj) {
         return true
       }
       if (isNotObject(t)) {
