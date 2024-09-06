@@ -270,15 +270,71 @@ void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
     SVector_ForeachBegin(&ctx->it, &ctx->out);
 }
 
-const void *selva_sort_foreach(struct SelvaSortCtx *ctx)
+void *selva_sort_foreach(struct SelvaSortCtx *ctx)
 {
-
     struct SelvaSortItem *item = SVector_Foreach(&ctx->it);
 
-    return item->p;
+    return (void *)item->p;
 }
 
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
 {
     return SVector_Done(&ctx->it);
 }
+
+#if 0
+#include <stdio.h>
+#include <unistd.h>
+#include "util/ctime.h"
+#include "util/timestamp.h"
+
+static void print_time(char *msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
+{
+    struct timespec ts_diff;
+    double t;
+    const char *t_unit;
+
+    timespec_sub(&ts_diff, ts_end, ts_start);
+    t = timespec2ms(&ts_diff);
+
+    if (t < 1e3) {
+        t_unit = "ms";
+    } else if (t < 60e3) {
+        t /= 1e3;
+        t_unit = "s";
+    } else if (t < 3.6e6) {
+        t /= 60e3;
+        t_unit = "min";
+    } else {
+        t /= 3.6e6;
+        t_unit = "h";
+    }
+
+    fprintf(stderr, "%s: %.2f %s\n", msg, t, t_unit);
+}
+
+__constructor
+static void test(void)
+{
+    struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC, 1000);
+    struct timespec ts_start, ts_end;
+
+    ts_monotime(&ts_start);
+    //for (int64_t i = 0; i < 100000000; i++) {
+    for (int64_t i = 0; i < 1000; i++) {
+        selva_sort_insert_i64(sort, i, (void *)i);
+    }
+    ts_monotime(&ts_end);
+    print_time("inserts", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+        void *item = selva_sort_foreach(sort);
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach", &ts_start, &ts_end);
+
+    selva_sort_destroy(sort);
+}
+#endif
