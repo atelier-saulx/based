@@ -343,9 +343,9 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             db_panic("field schema not found");
         }
 
-        fprintf(stderr, "Removed %d:%d -> %d:%d | %d %d\n",
-                src->type, src->node_id,
-                dst->type, dst->node_id,
+        fprintf(stderr, "Removed %d:%d.%d -> %d:%d.%d | %d %d\n",
+                src->type, src->node_id, fs_src->field,
+                dst->type, dst->node_id, fs_dst->field,
                 fs_dst->edge_constraint.dst_node_type, src->type);
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
