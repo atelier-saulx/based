@@ -88,7 +88,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             // WRITE OPTIONS SO SIZE CAN ACTIALY BE UNDEFINED
             // MAKE A FN SO WE DONT NEED TO PASS FOR FIELDS
             const operationSize = readInt(u32, operation, 0) + 4;
-            try createField(&ctx, operation[4 .. operationSize + 4]) + 1;
+            try createField(&ctx, operation[4 .. operationSize + 4]);
             i += operationSize + 1;
         } else if (operationType == 5) {
             const operationSize = readInt(u32, operation, 0) + 4;

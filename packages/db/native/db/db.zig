@@ -96,6 +96,16 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     ));
 }
 
+pub fn writeReference(value: Node, target: Node, fieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_set(
+        ctx.selva,
+        target,
+        fieldSchema,
+        value,
+        8, // TODO use system bullshit
+    ));
+}
+
 pub fn deleteNode(node: Node, typeEntry: Type) !void {
     selva.selva_del_node(
         ctx.selva,

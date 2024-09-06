@@ -29,8 +29,8 @@ await test('single simple', async (t) => {
       user: {
         fields: {
           bla: { type: 'integer' },
-          simples: {
-            type: 'references',
+          simple: {
+            type: 'reference',
             allowedType: 'simple',
             inverseProperty: 'user',
           },
@@ -43,7 +43,7 @@ await test('single simple', async (t) => {
           user: {
             type: 'reference',
             allowedType: 'user',
-            inverseProperty: 'simples',
+            inverseProperty: 'simple',
           },
         },
       },

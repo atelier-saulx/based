@@ -4,6 +4,8 @@ const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
+const utils = @import("../utils.zig");
+
 const std = @import("std");
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -13,13 +15,27 @@ const getSortIndex = Modify.getSortIndex;
 pub fn createField(ctx: *ModifyCtx, data: []u8) !void {
 
     // get type
-    std.debug.print("CREATE type {d} field {d} {d} {any}  {any} \n", .{ ctx.fieldSchema.?.*, ctx.typeId, ctx.field, ctx.id, data });
+    std.debug.print("CREATE type {any} field {d} {d} {any}  {any} \n", .{ ctx.fieldSchema.?.*, ctx.typeId, ctx.field, ctx.id, data });
 
     // CTX.
 
-    try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
+    if (ctx.fieldSchema.?.*.type == 13) {
+        const id = utils.readInt(u32, data, 0);
 
-    std.debug.print("CREATE onde!  \n", .{});
+        // getTypeEntryOfDestinationFromFieldSchema
+
+        const node = db.getNode(id, ctx.typeEntry.?);
+
+        if (node == null) {
+            std.debug.print("Cannot find reference to {d} \n", .{id});
+        } else {
+            std.debug.print("Ref found {d} node: {any} currentNode: {any} \n", .{ id, node, ctx.node });
+
+            try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
+        }
+    } else {
+        try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
+    }
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
