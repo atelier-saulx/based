@@ -347,6 +347,10 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 src->type, src->node_id,
                 dst->type, dst->node_id,
                 fs_dst->edge_constraint.dst_node_type, src->type);
+        assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+        assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+        assert(selva_get_fs_by_node(db, src, fs_src->field) == fs_src);
+        assert(selva_get_fs_by_node(db, dst, fs_dst->field) == fs_dst);
         assert(fs_src->edge_constraint.dst_node_type == dst->type);
         assert(fs_src->edge_constraint.inverse_field == fs_dst->field);
         assert(fs_dst->edge_constraint.dst_node_type == src->type);

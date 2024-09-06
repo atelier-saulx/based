@@ -232,7 +232,7 @@ export const createSchemaTypeDef = (
 
     /*
       Add FIXED LEN STRING in main
-    
+
       [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
       // [type, type][field if 0 means main][if main fieldType]...[if 0 ends main][fieldName 1][fieldType]...
       // make buffer
@@ -469,7 +469,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     // add MUFFER (main buffer)
 
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
-      console.log('hello ->', f.path, f.type, f.field)
+      console.log('hello ->', f.path, f.type, f.field, t.prefixNumber)
 
       // @ts-ignore
       if (f.len && f.type == 'muffer') {
