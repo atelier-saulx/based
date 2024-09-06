@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2022-2024 SAULX
+ * SPDX-License-Identifier: MIT
+ */
+#pragma once
+#include <stdint.h>
+#include <stddef.h>
+
+enum SelvaSortOrder {
+    SELVA_SORT_ORDER_NONE = 0,
+    SELVA_SORT_ORDER_I64_ASC,
+    SELVA_SORT_ORDER_I64_DESC,
+    SELVA_SORT_ORDER_DOUBLE_ASC,
+    SELVA_SORT_ORDER_DOUBLE_DESC,
+    SELVA_SORT_ORDER_BUFFER_ASC,
+    SELVA_SORT_ORDER_BUFFER_DESC,
+    SELVA_SORT_ORDER_TEXT_ASC,
+    SELVA_SORT_ORDER_TEXT_DESC,
+};
+
+struct SelvaSortCtx;
+
+struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_len);
+void selva_sort_destroy(struct SelvaSortCtx *ctx);
+
+void selva_sort_insert(struct SelvaSortCtx *ctx, const void *p);
+void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
+void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p);
+void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p);
+void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
+
+void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
+const void *selva_sort_foreach(struct SelvaSortCtx *ctx);
+bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
