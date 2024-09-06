@@ -504,7 +504,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
           type: 'muffer',
           len: 1,
         }),
-        // 0,
         ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
       ])
       return x
