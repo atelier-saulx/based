@@ -29,6 +29,7 @@ OBJ := \
 	io/io.o \
 	io/sdb.o \
 	schema.o \
+	sort.o \
 	traverse.o \
 	types.o \
 	update.o
