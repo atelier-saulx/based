@@ -123,7 +123,7 @@ await test('simple nested', async (t) => {
     },
   })
 
-  db.create('simple', {
+  const simple = db.create('simple', {
     user: db.create('user', {
       myBlup: db.create('blup', {
         flap: 'B',
@@ -142,8 +142,6 @@ await test('simple nested', async (t) => {
 
   const result1 = db.query('user').include('myBlup.flap').get()
 
-  console.info(result1)
-
   for (const r of result1) {
     equal(r.myBlup.flap, 'B')
   }
@@ -153,6 +151,19 @@ await test('simple nested', async (t) => {
   for (const r of result) {
     equal(r.user.myBlup.flap, 'B')
   }
+
+  db.update('simple', simple, {
+    user: null,
+  })
+
+  db.drain()
+
+  deepEqual(db.query('simple').include('user').get().toObject(), [
+    {
+      id: 1,
+      user: null,
+    },
+  ])
 })
 
 await test('single reference object', async (t) => {

@@ -85,14 +85,24 @@ const addModify = (
       const t = leaf as FieldDef
 
       if (t.type === 'reference') {
-        if (5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
-          flushBuffer(db)
+        if (value === null) {
+          const nextLen = 1 + 4 + 1
+          if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.field, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
+          db.modifyBuffer.len++
+        } else {
+          if (5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.field, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          // if value == null...
+          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 1)
+          db.modifyBuffer.len += 5
         }
-        setCursor(db, schema, t.field, id, false, fromCreate)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-        // if value == null...
-        db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 1)
-        db.modifyBuffer.len += 5
       } else if (t.type === 'references') {
         const refLen = 4 * value.length
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
