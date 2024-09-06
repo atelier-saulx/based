@@ -9,28 +9,6 @@
 
 struct selva_string;
 
-struct SelvaNodeReference {
-    struct SelvaNode *dst;
-    struct SelvaFields *meta;
-};
-
-struct SelvaNodeReferences {
-    uint32_t nr_refs;
-    uint32_t offset;
-    struct SelvaNodeReference *refs __counted_by(nr_refs);
-};
-
-struct SelvaNodeWeakReference {
-    node_type_t dst_type;
-    node_id_t dst_id;
-};
-
-struct SelvaNodeWeakReferences {
-    uint32_t nr_refs;
-    uint32_t offset;
-    struct SelvaNodeWeakReference *refs __counted_by(nr_refs);
-};
-
 struct SelvaMicroBuffer {
     uint16_t len;
     uint8_t data[] __counted_by(len);
@@ -93,6 +71,12 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
 
 SELVA_EXPORT
 struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field);
+
+SELVA_EXPORT
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, struct SelvaFieldSchema *fs);
+
+SELVA_EXPORT
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);

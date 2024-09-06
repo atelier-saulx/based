@@ -72,6 +72,28 @@ struct SelvaFieldSchema {
     };
 };
 
+struct SelvaNodeReference {
+    struct SelvaNode *dst;
+    struct SelvaFields *meta;
+};
+
+struct SelvaNodeReferences {
+    uint32_t nr_refs;
+    uint32_t offset;
+    struct SelvaNodeReference *refs __counted_by(nr_refs);
+};
+
+struct SelvaNodeWeakReference {
+    node_type_t dst_type;
+    node_id_t dst_id;
+};
+
+struct SelvaNodeWeakReferences {
+    uint32_t nr_refs;
+    uint32_t offset;
+    struct SelvaNodeWeakReference *refs __counted_by(nr_refs);
+};
+
 struct SelvaAlias;
 struct SelvaAliases;
 struct SelvaDb;
