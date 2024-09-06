@@ -15,22 +15,22 @@ const getSortIndex = Modify.getSortIndex;
 pub fn createField(ctx: *ModifyCtx, data: []u8) !void {
 
     // get type
-    std.debug.print("CREATE type {any} field {d} {d} {any}  {any} \n", .{ ctx.fieldSchema.?.*, ctx.typeId, ctx.field, ctx.id, data });
+    // std.debug.print("CREATE type {any} field {d} {d} {any}  {any} \n", .{ ctx.fieldSchema.?.*, ctx.typeId, ctx.field, ctx.id, data });
 
     // CTX.
 
     if (ctx.fieldSchema.?.*.type == 13) {
-        const id = utils.readInt(u32, data, 0);
+        const refTypeId = utils.readInt(u16, data, 0);
+        const id = utils.readInt(u32, data, 2);
 
-        // getTypeEntryOfDestinationFromFieldSchema
+        const refTypeEntry = try db.getType(refTypeId);
 
-        const node = db.getNode(id, ctx.typeEntry.?);
+        const node = db.getNode(id, refTypeEntry);
 
         if (node == null) {
             std.debug.print("Cannot find reference to {d} \n", .{id});
         } else {
             std.debug.print("Ref found {d} node: {any} currentNode: {any} \n", .{ id, node, ctx.node });
-
             try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
         }
     } else {

@@ -58,6 +58,7 @@ export type FieldDef = {
   path: string[]
   start: number
   len: number
+  inverseTypeNumber: number
 }
 
 export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
@@ -184,6 +185,7 @@ export const createSchemaTypeDef = (
         seperate: isSeperate,
         path: p,
         start: 0,
+        inverseTypeNumber: 0,
         len,
         field: isSeperate ? result.cnt : 0,
         selvaField: 0, // will be set later
@@ -365,6 +367,7 @@ export const readSchemaTypeDefFromBuffer = (
         __isField: true,
         field: 0,
         selvaField: selvaField++,
+        inverseTypeNumber: 0,
         type: typeName,
         typeByte,
         seperate: false,
@@ -392,6 +395,7 @@ export const readSchemaTypeDefFromBuffer = (
         typeByte,
         seperate: false,
         path,
+        inverseTypeNumber: 0,
         start: mainLen,
         len,
       }
@@ -431,6 +435,7 @@ export const idFieldDef: FieldDef = {
   seperate: true,
   path: ['id'],
   start: 0,
+  inverseTypeNumber: 0,
   field: 0,
   selvaField: 0,
   len: 4,
@@ -496,7 +501,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         // inverseField
         buf.writeUInt8(typeMap[f.type], 0)
 
-        console.log(dstType)
+        f.inverseTypeNumber = dstType.prefixNumber
 
         buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
         buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
@@ -522,6 +527,8 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       ])
       return x
     }
+
+    console.log('HELLO', f)
 
     const x = Buffer.from([
       1,

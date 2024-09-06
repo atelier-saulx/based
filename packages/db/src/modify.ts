@@ -85,7 +85,7 @@ const addModify = (
       const t = leaf as FieldDef
 
       if (t.type === 'reference') {
-        const refLen = 4
+        const refLen = 6
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
         }
@@ -93,8 +93,13 @@ const addModify = (
         db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
         db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
         db.modifyBuffer.len += 5
-        // make this better (using schemaLength)
-        db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len)
+
+        db.modifyBuffer.buffer.writeUint16LE(
+          t.inverseTypeNumber,
+          db.modifyBuffer.len,
+        )
+
+        db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 2)
         db.modifyBuffer.len += refLen
       } else if (t.type === 'references') {
         const refLen = 4 * value.length
