@@ -136,8 +136,6 @@ export const createSchemaTypeDef = (
 ): SchemaTypeDef => {
   if (result.prefixNumber == 0) {
     result.prefixNumber = (result.prefix[1] << 8) + result.prefix[0]
-
-    console.info('TYPE PREFIX: ', typeName, result.prefixNumber)
   }
 
   const encoder = new TextEncoder()
@@ -445,16 +443,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }
     }
 
-    // console.log(restFields)
-
-    // TODO GET RID OF SELVAFIELD
-
-    console.log(
-      restFields.map((v) => {
-        return { field: v.field, path: v.path }
-      }),
-    )
-
     restFields.sort((a, b) => a.field - b.field)
 
     // restFields.forEach((a) => {
@@ -532,8 +520,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
-
-    console.log('HELLO', t.type, x)
 
     return x
   })

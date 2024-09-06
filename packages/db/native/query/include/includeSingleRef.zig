@@ -45,8 +45,6 @@ pub fn getSingleRefFields(
 
     const includeNested = include[3..include.len];
 
-    std.debug.print("HELLO {any} {d} {d} \n", .{ includeNested, typeId, refField });
-
     const resultSizeNest = getFields(
         node.?,
         ctx,

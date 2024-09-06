@@ -119,7 +119,6 @@ export class BasedQueryResponse {
         ctx.__o = i
         ctx.__q = this
         ctx.__r = null
-
         yield ctx
         i += 4
       } else if (index === 254) {

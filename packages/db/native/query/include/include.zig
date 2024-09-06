@@ -58,8 +58,6 @@ pub fn getFields(
 
         const value = db.getField(node, try db.getFieldSchema(field, typeEntry));
 
-        std.debug.print("FIELD {d} {any} {any} {any} \n", .{ field, value, typeEntry, node });
-
         if (value.len == 0) {
             continue :includeField;
         }

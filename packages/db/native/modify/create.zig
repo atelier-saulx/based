@@ -18,9 +18,8 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         const refTypeEntry = try db.getType(refTypeId);
         const node = db.getNode(id, refTypeEntry);
         if (node == null) {
-            std.debug.print("Cannot find reference to {d} \n", .{id});
+            std.log.err("Cannot find reference to {d} \n", .{id});
         } else {
-            std.debug.print("Ref found {d} node: {any} currentNode: {any}  types ref: {any} target: {any} \n", .{ id, node, ctx.node, refTypeEntry, ctx.typeEntry });
             try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
         }
     } else {
