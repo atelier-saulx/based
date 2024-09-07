@@ -30,7 +30,16 @@ await test('single reference query', async (t) => {
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
         },
       },
@@ -38,6 +47,16 @@ await test('single reference query', async (t) => {
         fields: {
           age: { type: 'integer' },
           name: { type: 'string' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
@@ -45,8 +64,16 @@ await test('single reference query', async (t) => {
       simple: {
         fields: {
           smurp: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
           flap: {
             type: 'object',
             properties: {

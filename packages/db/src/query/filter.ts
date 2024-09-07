@@ -6,7 +6,6 @@ import {
   SchemaFieldTree,
   FieldDef,
 } from '../schemaTypeDef.js'
-import { BasedDb } from '../index.js'
 
 // Query conditions: Map<number, Buffer[]>
 // does not work for recursion...
@@ -32,18 +31,18 @@ const filterReferences = (
     }
     if (isFieldDef(t) && t.type === 'reference') {
       const ref: FieldDef = t as FieldDef
-      const start = ref.start
+      const refField = ref.field
       conditions.references ??= new Map()
-      let refConditions = conditions.references.get(start)
+      let refConditions = conditions.references.get(refField)
       if (!refConditions) {
         const schema = query.db.schemaTypesParsed[ref.allowedType]
-        query.totalConditionSize += 7 // 254 + start
+        query.totalConditionSize += 6 // 254 + refField
         refConditions = {
           conditions: new Map(),
           fromRef: ref,
           schema,
         }
-        conditions.references.set(start, refConditions)
+        conditions.references.set(refField, refConditions)
       }
       filter(
         path.slice(i + 1).join('.'),
@@ -174,12 +173,14 @@ export const fillConditionsBuffer = (
     result.writeInt16LE(conditionSize, sizeIndex)
   })
   if (conditions.references) {
-    for (const [refStart, refConditions] of conditions.references) {
+    for (const [refField, refConditions] of conditions.references) {
       lastWritten
       result[lastWritten] = 254
       const sizeIndex = lastWritten + 1
-      result.writeUint16LE(refStart, lastWritten + 3)
-      lastWritten += 5
+      result[lastWritten + 3] = refField
+
+      // result.writeUint16LE(refField, lastWritten + 3)
+      lastWritten += 4
       result[lastWritten] = refConditions.schema.prefix[0]
       lastWritten += 1
       result[lastWritten] = refConditions.schema.prefix[1]
