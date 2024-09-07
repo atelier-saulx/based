@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
 
-await test('string', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e4,
@@ -19,7 +19,6 @@ await test('string', async (t) => {
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
           name: { type: 'string' },
           flap: { type: 'integer' },
           email: { type: 'string', maxLength: 15 },
@@ -80,7 +79,16 @@ await test('string + refs', async (t) => {
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
           flap: { type: 'integer' },
           age: { type: 'integer' },
@@ -99,6 +107,16 @@ await test('string + refs', async (t) => {
       },
       blup: {
         fields: {
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
           flap: {
             type: 'string',
             // @ts-ignore
@@ -112,9 +130,17 @@ await test('string + refs', async (t) => {
         fields: {
           // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
           vectorClock: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
@@ -190,14 +216,7 @@ await test('string + refs', async (t) => {
     [
       {
         id: 1,
-        user: {
-          id: 1,
-          name: 'Mr 0',
-          myBlup: {
-            id: 1,
-            name: '',
-          },
-        },
+        user: null,
       },
       {
         id: 2,

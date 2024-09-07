@@ -199,23 +199,52 @@ await test('single reference object', async (t) => {
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
+          admin: {
+            type: 'reference',
+            allowedType: 'simple',
+            // lets see if this works...
+            inverseProperty: 'admin.user',
+          },
         },
       },
       blup: {
         fields: {
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
           admin: {
             type: 'object',
             properties: {
               role: { type: 'string' },
-              user: { type: 'reference', allowedType: 'user' },
+              user: {
+                type: 'reference',
+                allowedType: 'user',
+                inverseProperty: 'admin',
+              },
             },
           },
         },
@@ -559,11 +588,30 @@ await test('single reference multi refs strings', async (t) => {
       user: {
         fields: {
           name: { type: 'string' },
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
         },
       },
       blup: {
         fields: {
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
           name: { type: 'string' },
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
@@ -572,8 +620,16 @@ await test('single reference multi refs strings', async (t) => {
       simple: {
         fields: {
           age: { type: 'integer' },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
-          user: { type: 'reference', allowedType: 'user' },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
