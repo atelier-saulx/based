@@ -305,7 +305,7 @@ await test('nested', async (t) => {
           simple: {
             type: 'reference',
             allowedType: 'simple',
-            inverseProperty: 'user',
+            inverseProperty: 'lilBlup',
           },
         },
       },
@@ -357,7 +357,7 @@ await test('nested', async (t) => {
       countryCode: 'aa',
       lilBlup: blup,
     })
-  db.drain()
+    db.drain()
   }
 
   db.drain()

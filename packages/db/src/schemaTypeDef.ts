@@ -469,8 +469,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     // add MUFFER (main buffer)
 
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
-      console.log('hello ->', f.path, f.type, f.field, t.prefixNumber)
-
       // @ts-ignore
       if (f.len && f.type == 'muffer') {
         // max size is
@@ -487,14 +485,15 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         f.inverseTypeNumber = dstType.prefixNumber
         console.log(
           'ref debug:',
+          t.type,
           t.prefixNumber,
           f.field,
           f.path,
           '---- TARGET ------',
-          dstType.prefixNumber,
+          dstType.type,
           dstType.fields[f.inverseField].path,
+          dstType.prefixNumber,
           dstType.fields[f.inverseField].field,
-          f.inverseField,
         )
         buf.writeUInt8(dstType.fields[f.inverseField].field, 1)
 
