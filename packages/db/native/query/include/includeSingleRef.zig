@@ -46,8 +46,6 @@ pub fn getSingleRefFields(
 
     const includeNested = include[3..include.len];
 
-    std.debug.print("GET REF {d} {d} hasF {any} \n", .{ refId, refLvl, hasFields });
-
     const resultSizeNest = getFields(
         node.?,
         ctx,
@@ -58,8 +56,6 @@ pub fn getSingleRefFields(
         refLvl + 1,
         !hasFields,
     ) catch 0;
-
-    std.debug.print("RESULT GET REF {d} {d} hasF {any} size: {d} \n", .{ refId, refLvl, hasFields, resultSizeNest });
 
     if (!hasFields) {
         size += 7 + resultSizeNest;

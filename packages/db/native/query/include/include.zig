@@ -54,8 +54,6 @@ pub fn getFields(
             continue :includeField;
         }
 
-        std.debug.print("Snurp FIELD {d} \n", .{field});
-
         if (field == 0) {
             const mainIncludeSize = readInt(u16, operation, 0);
             if (mainIncludeSize != 0) {
@@ -101,23 +99,15 @@ pub fn getFields(
             idIsSet = true;
         }
 
-        std.debug.print("ADD RESULT {any} \n", .{result});
-
         try ctx.results.append(result);
     }
 
-    if (!idIsSet) {
+    if (!idIsSet and !fromNoFields) {
         idIsSet = true;
         if (refField != null) {
-            if (!fromNoFields) {
-                std.debug.print("ADD ID lvl {d} \n", .{refLvl});
-
-                // pretty nice to just add the size here
-                _ = try addIdOnly(ctx, id, refLvl, refField);
-            }
+            // pretty nice to just add the size here
+            _ = try addIdOnly(ctx, id, refLvl, refField);
         } else {
-            std.debug.print("ADD ID NORMAL \n", .{});
-
             size += try addIdOnly(ctx, id, refLvl, refField);
         }
     }
