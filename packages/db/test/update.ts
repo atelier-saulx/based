@@ -218,11 +218,13 @@ await test('update', async (t) => {
     for (var i = 0; i < 1e5; i++) {
       x += db.query('snurp', i).include('a').get().execTime
     }
-    console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
     total += x
     len++
   }
 
-  // ---
-  console.log('TOTAL', 'db time', total / len, 'ms', 0)
+  equal(
+    total / len < 1e3,
+    true,
+    'Is at least faster then 1 second for 100k seperate updates and query',
+  )
 })
