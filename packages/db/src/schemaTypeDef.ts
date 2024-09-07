@@ -430,7 +430,6 @@ export const idFieldDef: FieldDef = {
 
 // TODO unify this
 export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
-  const typeNames = Object.keys(schema)
   const types = Object.values(schema)
 
   return types.map((t, i) => {
@@ -444,12 +443,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
     }
 
     restFields.sort((a, b) => a.field - b.field)
-
-    // restFields.forEach((a) => {
-    //   if (a.selvaField !== a.field) {
-    //     throw new Error('SELVA FIELD HAS TO MATCH FIELD')
-    //   }
-    // })
 
     // TODO Remove this once the types agree
     const typeMap = {
@@ -483,18 +476,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         buf.writeUInt8(typeMap[f.type], 0)
 
         f.inverseTypeNumber = dstType.prefixNumber
-        console.log(
-          'ref debug:',
-          t.type,
-          t.prefixNumber,
-          f.field,
-          f.path,
-          '---- TARGET ------',
-          dstType.type,
-          dstType.fields[f.inverseField].path,
-          dstType.prefixNumber,
-          dstType.fields[f.inverseField].field,
-        )
+
         buf.writeUInt8(dstType.fields[f.inverseField].field, 1)
 
         buf.writeUInt16LE(dstType.prefixNumber, 2)
@@ -518,7 +500,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         }),
         ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
       ])
-      console.log('SCHEMA BUFFER -> ', t.type, new Uint8Array(x))
 
       return x
     }
@@ -532,8 +513,6 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }),
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
-
-    console.log('SCHEMA BUFFER -> ', t.prefixNumber, t.type, new Uint8Array(x))
 
     return x
   })

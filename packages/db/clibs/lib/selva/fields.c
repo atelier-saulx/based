@@ -343,10 +343,6 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             db_panic("field schema not found");
         }
 
-        fprintf(stderr, "Removed %d:%d.%d -> %d:%d.%d | %d %d\n",
-                src->type, src->node_id, fs_src->field,
-                dst->type, dst->node_id, fs_dst->field,
-                fs_dst->edge_constraint.dst_node_type, src->type);
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
         assert(selva_get_fs_by_node(db, src, fs_src->field) == fs_src);
@@ -364,7 +360,6 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
             assert(fs_dst->edge_constraint.dst_node_type == src->type);
             removed = del_single_ref(db, &fs_dst->edge_constraint, fields_dst, nfo_dst);
-            fprintf(stderr, "removed inv ref: %d:%d.%d <- %d:%d.%d\n", src->type, src->node_id, fs_src->field, dst->type, dst->node_id, fs_src->edge_constraint.inverse_field);
             assert(removed == src);
         } else if (nfo_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences refs;
@@ -485,13 +480,11 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
     }
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
 
-    fprintf(stderr, "A\n");
     remove_reference(db, src, fs_src, 0); /* Remove the previous reference if set. */
 #ifdef FIELDS_NO_DUPLICATED_EDGES
     remove_reference(db, dst, fs_dst, src->node_id);
 #else
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-        fprintf(stderr, "B\n");
         remove_reference(db, dst, fs_dst, 0);
     }
 #endif

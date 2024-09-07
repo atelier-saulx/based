@@ -31,6 +31,7 @@ pub fn getSingleRefFields(
 
     const refId = db.getNodeId(node.?);
 
+    // only do this if there is nothing else
     if (!hasFields) {
         _ = addIdOnly(ctx, refId, refLvl + 1, refField) catch {
             return 0;
@@ -45,6 +46,8 @@ pub fn getSingleRefFields(
 
     const includeNested = include[3..include.len];
 
+    std.debug.print("GET REF {d} {d} hasF {any} \n", .{ refId, refLvl, hasFields });
+
     const resultSizeNest = getFields(
         node.?,
         ctx,
@@ -56,7 +59,13 @@ pub fn getSingleRefFields(
         !hasFields,
     ) catch 0;
 
-    size += 7 + resultSizeNest;
+    std.debug.print("RESULT GET REF {d} {d} hasF {any} size: {d} \n", .{ refId, refLvl, hasFields, resultSizeNest });
+
+    if (!hasFields) {
+        size += 7 + resultSizeNest;
+    } else {
+        size += 7 + resultSizeNest;
+    }
 
     return size;
 }
