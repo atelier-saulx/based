@@ -389,6 +389,17 @@ await test('basic', async (t) => {
     15,
     'Check email index len after removal (2)',
   )
+
+  db.remove('user', mrZ)
+
+  db.drain()
+
+  equal(
+    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
+      .length,
+    14,
+    'Check email index len after removal (3)',
+  )
 })
 
 await test('sort - from start (1.5M items)', async (t) => {
