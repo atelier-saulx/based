@@ -485,7 +485,17 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
         buf.writeUInt8(typeMap[f.type], 0)
 
         f.inverseTypeNumber = dstType.prefixNumber
-        console.log('ref debug:', t.prefixNumber, f.field, f.path, dstType.prefixNumber, f.inverseField)
+        console.log(
+          'ref debug:',
+          t.prefixNumber,
+          f.field,
+          f.path,
+          '---- TARGET ------',
+          dstType.prefixNumber,
+          dstType.fields[f.inverseField].path,
+          dstType.fields[f.inverseField].field,
+          f.inverseField,
+        )
         buf.writeUInt8(dstType.fields[f.inverseField].field, 1)
 
         buf.writeUInt16LE(dstType.prefixNumber, 2)
@@ -524,7 +534,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
 
-    console.log('SCHEMA BUFFER -> ', t.type, new Uint8Array(x))
+    console.log('SCHEMA BUFFER -> ', t.prefixNumber, t.type, new Uint8Array(x))
 
     return x
   })
