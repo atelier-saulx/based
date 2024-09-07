@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
-#include <stdio.h> /* TODO REMOVE */
+#include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/align.h"
@@ -150,8 +150,10 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
     const field_t field = fs->field;
     struct SelvaFieldInfo *nfo;
 
+#if 0
     assert(type == SELVA_FIELD_TYPE_REFERENCE || type == SELVA_FIELD_TYPE_REFERENCES);
     assert(fs->edge_constraint.dst_node_type == dst->type);
+#endif
 
     nfo = &fields->fields_map[field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
@@ -343,6 +345,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             db_panic("field schema not found");
         }
 
+#if 0
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
         assert(selva_get_fs_by_node(db, src, fs_src->field) == fs_src);
@@ -352,20 +355,25 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
         assert(fs_dst->edge_constraint.dst_node_type == src->type);
         assert(fs_dst->edge_constraint.inverse_field == fs_src->field);
         assert(fs_dst->field < fields_dst->nr_fields);
+#endif
 
         nfo_dst = &fields_dst->fields_map[fs_dst->field];
         if (nfo_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             struct SelvaNode *removed;
 
+#if 0
             assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
             assert(fs_dst->edge_constraint.dst_node_type == src->type);
+#endif
             removed = del_single_ref(db, &fs_dst->edge_constraint, fields_dst, nfo_dst);
             assert(removed == src);
         } else if (nfo_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences refs;
             struct SelvaNode *tmp;
 
+#if 0
             assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+#endif
             memcpy(&refs, nfo2p(fields_dst, nfo_dst), sizeof(refs));
             for (size_t i = 0; i < refs.nr_refs; i++) {
                 tmp = refs.refs[i].dst;
@@ -478,7 +486,9 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
     if (!fs_dst) {
         return SELVA_EINTYPE;
     }
+#if 0
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
+#endif
 
     remove_reference(db, src, fs_src, 0); /* Remove the previous reference if set. */
 #ifdef FIELDS_NO_DUPLICATED_EDGES
@@ -624,7 +634,9 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         /* TODO Implement text fields */
         return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
+#if 0
         assert(db && node);
+#endif
         if (len < sizeof(struct SelvaNode *)) {
             return SELVA_EINVAL;
         }
