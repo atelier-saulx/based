@@ -13,12 +13,18 @@ const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
-        var i: u32 = 0;
+        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+        const refTypeEntry = try db.getType(refTypeId);
         const len = @divTrunc(data.len, 4);
+        var i: u32 = 0;
+
         while (i < len) : (i += 1) {
             const id = readInt(u32, data, i);
-            std.debug.print("put this id '{d}' in references \n", .{id});
-            // have to add it here!
+            var nodes: [1]db.Node = undefined;
+            nodes[0] = try db.upsertNode(id, refTypeEntry);
+
+            // TODO It would be better to at least do this in chunks
+            try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
         }
     } else if (ctx.fieldType == 13) {
         const id = readInt(u32, data, 0);

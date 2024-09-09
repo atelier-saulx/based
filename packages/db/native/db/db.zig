@@ -114,6 +114,16 @@ pub fn writeReference(value: Node, target: Node, fieldSchema: FieldSchema) !void
     ));
 }
 
+pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_set(
+        ctx.selva,
+        target,
+        fieldSchema,
+        @ptrCast(value.ptr),
+        value.len * 8, // TODO use system bullshit
+    ));
+}
+
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
     // if (result == null) {
