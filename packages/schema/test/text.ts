@@ -4,9 +4,20 @@ import { parse } from '@based/schema'
 
 test('text', () => {
   parse({
+    locales: {
+      en: {
+        required: true,
+      },
+      de: {},
+      nl: {
+        fallback: ['en'],
+      },
+    },
     props: {
       myText: {
         type: 'text',
+        // @ts-ignore
+        potato: true,
       },
     },
   })
@@ -14,11 +25,10 @@ test('text', () => {
   throws(() => {
     parse({
       props: {
-        myEnum: {
-          // @ts-ignore
-          enum: [{ invalidObj: true }],
+        myText: {
+          type: 'text',
         },
       },
     })
-  }, 'should throw with non primitive enum')
+  }, 'type text requires locales to be defined')
 })

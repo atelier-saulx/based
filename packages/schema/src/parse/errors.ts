@@ -1,21 +1,16 @@
-export const ERRORS = {
-  OUT_OF_RANGE: 'Value is out of range',
-  EXPECTED_VALUE_IN_ENUM: 'Expected value in "enum" field',
-  EXPECTED_DATE: 'Expected number or Date',
-  EXPECTED_BOOL: 'Expected boolean',
-  EXPECTED_OBJ: 'Expected object',
-  EXPECTED_ARR: 'Expected array',
-  EXPECTED_NUM: 'Expected number',
-  EXPECTED_STR: 'Expected string',
-  EXPECTED_PRIMITIVE: 'Expected primitive value',
-  INVALID_VALUE: 'Invalid value',
-  INVALID_SCHEMA: 'Invalid schema',
-  MIN_MAX: 'Max value must be larger than min value',
-  UNKNOWN_PROP: 'Unknown property',
-  MISSING_TYPE: 'Missing type',
-} as const
-
-export const current: {
-  key?: string
-  obj?: object
-} = {}
+export const OUT_OF_RANGE = 'Value is out of range'
+export const EXPECTED_VALUE_IN_ENUM = 'Expected value in "enum" field'
+export const EXPECTED_DATE = 'Expected number or Date'
+export const EXPECTED_BOOL = 'Expected boolean'
+export const EXPECTED_OBJ = 'Expected object'
+export const EXPECTED_ARR = 'Expected array'
+export const EXPECTED_NUM = 'Expected number'
+export const EXPECTED_STR = 'Expected string'
+export const EXPECTED_PRIMITIVE = 'Expected primitive value'
+export const INVALID_VALUE = 'Invalid value'
+export const INVALID_SCHEMA = 'Invalid schema'
+export const MIN_MAX = 'Max value must be larger than min value'
+export const UNKNOWN_PROP = 'Unknown property'
+export const MISSING_TYPE = 'Missing type'
+export const INVALID_TYPE = 'Invalid type'
+export const TEXT_REQUIRES_LOCALES = 'Type text requires locales'

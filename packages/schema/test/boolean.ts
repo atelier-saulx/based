@@ -24,3 +24,16 @@ test('boolean', () => {
     })
   }, 'only allow booleans')
 })
+
+// test('boolean - modify', () => {
+//   set({
+//     myBoolean: true
+//   }, {
+//     props: {
+//       myBoolean: {
+//         type: 'boolean',
+//         defaultValue: true,
+//       },
+//     },
+//   })
+// })

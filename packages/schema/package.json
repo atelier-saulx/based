@@ -14,12 +14,17 @@
     "watch": "tsc --watch",
     "test": "tsc && tsc test/*.ts --noEmit && tsx --test test/*.ts"
   },
+  "prettier": "@saulx/prettier-config",
   "sideEffects": false,
   "type": "module",
   "devDependencies": {
+    "@saulx/prettier-config": "2.0.0",
     "@saulx/tsconfig": "^1.1.0",
     "@types/node": "22.5.3",
     "tsx": "^4.19.0",
     "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.0"
   }
 }

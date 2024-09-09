@@ -7,7 +7,7 @@ test('references', () => {
     types: {
       article: {
         props: {
-          author: {
+          writer: {
             ref: 'author',
             prop: 'articles',
           },
@@ -18,7 +18,7 @@ test('references', () => {
           articles: {
             items: {
               ref: 'article',
-              prop: 'author',
+              prop: 'writer',
             },
           },
         },

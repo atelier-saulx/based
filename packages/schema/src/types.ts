@@ -11,7 +11,7 @@ type NonRefSetItems =
   | SchemaBoolean
 
 type Set<
-  ItemsType extends NonRefSetItems | SchemaReference | SchemaOneWayReference,
+  ItemsType extends NonRefSetItems | SchemaReference | SchemaReferenceOneWay,
 > = Prop<{
   type?: 'set'
   defaultValue?: ItemsType['defaultValue']
@@ -58,7 +58,7 @@ export type SchemaReference = Prop<{
   }
 }>
 
-type SchemaOneWayReference = Omit<SchemaReference, 'prop' | 'edge'>
+export type SchemaReferenceOneWay = Omit<SchemaReference, 'prop' | 'edge'>
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
@@ -67,7 +67,7 @@ export type SchemaEnum = Prop<{
 }>
 
 export type SchemaSet = Set<NonRefSetItems | SchemaReference>
-export type SchemaRootSet = Set<NonRefSetItems | SchemaOneWayReference>
+export type SchemaSetOneWay = Set<NonRefSetItems | SchemaReferenceOneWay>
 
 type NonRefSchemaProps =
   | SchemaBoolean
@@ -75,21 +75,32 @@ type NonRefSchemaProps =
   | SchemaNumber
   | SchemaString
   | SchemaText
-  | SchemaSet
   | SchemaEnum
 
-export type SchemaProp = NonRefSchemaProps | SchemaReference
-export type SchemaAllProps =
+export type SchemaProp = NonRefSchemaProps | SchemaSet | SchemaReference
+export type SchemaRootProp =
   | NonRefSchemaProps
-  | SchemaOneWayReference
-  | SchemaReference
+  | SchemaSetOneWay
+  | SchemaReferenceOneWay
+export type SchemaAnyProp = SchemaRootProp | SchemaProp
 
 export type SchemaType = {
   props: Record<string, SchemaProp>
 }
 export type SchemaProps = Record<string, SchemaProp>
 export type SchemaTypes = Record<string, SchemaType>
+export type SchemaRootProps = Record<string, SchemaRootProp>
+
 export type Schema = {
   types?: SchemaTypes
-  props?: Record<string, NonRefSchemaProps | SchemaOneWayReference>
+  props?: SchemaRootProps
+  locales?: SchemaLocales
 }
+
+export type SchemaLocales = Record<
+  string,
+  {
+    required?: boolean
+    fallback?: string[]
+  }
+>
