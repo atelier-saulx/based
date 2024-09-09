@@ -108,10 +108,12 @@ pub fn queryIdsSortBig(
     if (queryType == 7) {
         flag = c.MDB_LAST;
     }
+
     var first: bool = true;
     var i: u32 = 0;
     var map: std.AutoHashMap(u32, u8) = undefined;
     map = std.AutoHashMap(u32, u8).init(ctx.allocator);
+
     while (i <= ids.len) : (i += 1) {
         try map.put(ids[i], 0);
     }

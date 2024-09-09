@@ -12,7 +12,10 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
-    if (ctx.fieldType == 13) {
+    if (ctx.fieldType == 14) {
+        const refs: []u32 = @as([]u32, data);
+        std.debug.print("SET REFERENCES HERE SOME HOW {any}", .{refs});
+    } else if (ctx.fieldType == 13) {
         const id = readInt(u32, data, 0);
         const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
         const refTypeEntry = try db.getType(refTypeId);
