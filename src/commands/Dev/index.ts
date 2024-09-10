@@ -14,9 +14,8 @@ import { hash } from '@saulx/hash'
 import getPort from 'get-port'
 import { join } from 'path'
 import pc from 'picocolors'
-import handler from 'serve-handler'
-import http from 'http'
-import { BasedFunction } from '@based/functions'
+// import handler from 'serve-handler'
+// import http from 'http'
 
 export const dev = async (program: Command) => {
   const cmd = program
@@ -39,8 +38,8 @@ export const dev = async (program: Command) => {
       getPort({ port: 3000 }),
       getPort({ port: 4000 }),
     ])
-    const publicPath = `http://${ip}:${filePort}`
-    const staticPath = `http://${ip}:${staticPort}`
+    const publicPath: string = `http://${ip}:${filePort}`
+    const staticPath: string = `http://${ip}:${staticPort}`
 
     spinner.succeed(
       `🚀 Dev server: http://localhost:${devPort} ${pc.dim(`http://${ip}:${devPort}`)}`,
@@ -49,7 +48,6 @@ export const dev = async (program: Command) => {
       `📦 Bundle server: http://localhost:${filePort} ${pc.dim(`http://${ip}:${filePort}`)} `,
     )
 
-    const checksums: Record<string, number> = {}
     const { clients } = new WebSocketServer({ port: lrPort })
     let hadError: boolean = false
 
@@ -101,9 +99,9 @@ export const dev = async (program: Command) => {
       functions,
       update,
       publicPath,
-      staticPath,
     )
 
+    const checksums: Record<string, number> = {}
     await update(null)
     await server.start()
     await browserBundles.ctx.serve({ port: filePort })
@@ -146,7 +144,7 @@ export const dev = async (program: Command) => {
         reloadClients = true
         hadError = true
       } else {
-        let fnUpdates = {}
+        let fnUpdates: {} = {}
         hadError = false
 
         for (const { index, config, app, favicon } of configs) {
@@ -165,6 +163,7 @@ export const dev = async (program: Command) => {
               ]?.imports[0]?.path
             const faviconPathAbsolute =
               faviconPath && join(process.cwd(), faviconPath)
+
             if (app.endsWith('.html')) {
               appHtml = browserBundles.html(app)
             } else {
@@ -199,14 +198,15 @@ export const dev = async (program: Command) => {
           }
 
           checksums[config.name] = checksum
+          const ts = await invalidate(index, config)
 
-          if (await invalidate(index, config)) {
+          if (ts) {
             // ts validation
             server.functions.add({
               [config.name]: {
                 type: 'function',
                 async fn() {
-                  return 'error (should log the ts error)'
+                  return `<p>${ts}</p>`
                 },
               },
             })

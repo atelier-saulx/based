@@ -13,12 +13,20 @@ import { rel, abs } from './index.js'
 
 const { glob } = fg
 
+type ParseFunctionsResult = {
+  schema: string
+  configs: BasedCli.ConfigStore[]
+  favicons: Set<string>
+  nodeBundles: BundleResult
+  browserBundles: BundleResult
+  files: Record<string, string>
+}
+
 export const parseFunctions = async (
   functions: string[],
   onChange: (err: Error | null, res: BundleResult) => void,
   publicPath: string,
-  staticPath: string,
-) => {
+): Promise<ParseFunctionsResult> => {
   let { targets, schema } = await getTargets()
 
   const configPaths = targets.map(([dir, file]) => join(dir, file))
@@ -75,6 +83,7 @@ export const parseFunctions = async (
       console.info(`⚒️ ${type} ${name} ${pc.italic(access)} ${file}`)
 
       const files = await readdir(item.dir)
+
       for (const file of files) {
         if (isIndexFile(file)) {
           item.index = join(item.dir, file)

@@ -13,7 +13,7 @@ const types = {
 export const invalidate = async (
   fileName: string,
   config: BasedCli.ConfigBase,
-): Promise<boolean> => {
+): Promise<string | undefined> => {
   const source = (await readFile(fileName)).toString()
   const target = ts.ScriptTarget.ESNext
   const sourceFile = ts.createSourceFile(
@@ -57,7 +57,8 @@ export const invalidate = async (
   }
 
   if (!hasExport) {
-    console.error(pc.red(`‼️ Nothing exported in: ${fileName}`))
-    return true
+    const error: string = `Nothing exported in: ${fileName}`
+    console.error(pc.red(`‼️ ${error}`))
+    return error
   }
 }
