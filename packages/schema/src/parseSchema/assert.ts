@@ -1,4 +1,10 @@
-import { EXPECTED_BOOL, EXPECTED_OBJ, EXPECTED_STR } from './errors.js'
+import {
+  EXPECTED_BOOL,
+  EXPECTED_FN,
+  EXPECTED_NUM,
+  EXPECTED_OBJ,
+  EXPECTED_STR,
+} from './errors.js'
 
 export const expectObject = (obj) => {
   if (typeof obj !== 'object' || obj === null) {
@@ -15,5 +21,17 @@ export const expectString = (obj) => {
 export const expectBoolean = (v) => {
   if (v !== true && v !== false) {
     throw Error(EXPECTED_BOOL)
+  }
+}
+
+export const expectFunction = (v) => {
+  if (typeof v !== 'function') {
+    throw Error(EXPECTED_FN)
+  }
+}
+
+export const expectNumber = (v) => {
+  if (typeof v !== 'number') {
+    throw Error(EXPECTED_NUM)
   }
 }

@@ -10,6 +10,7 @@ export class Parser {
     this.schema = schema
   }
 
+  inQuery: boolean
   schema: Schema
   type: SchemaType
 

@@ -1,5 +1,5 @@
 type QueryFn = Function
-type Prop<Values extends { type?: string; defaultValue?: any }> = {
+type Prop<Values extends { type?: string; default?: any }> = {
   required?: boolean
   label?: Record<string, string>
   description?: Record<string, string>
@@ -17,7 +17,7 @@ type Set<
   ItemsType extends NonRefSetItems | SchemaReference | SchemaReferenceOneWay,
 > = Prop<{
   type?: 'set'
-  defaultValue?: ItemsType['defaultValue']
+  default?: ItemsType['default']
   items: ItemsType
 }>
 
@@ -25,12 +25,12 @@ type EnumItem = string | number | boolean
 
 export type SchemaText = Prop<{
   type: 'text'
-  defaultValue?: Record<string, string>
+  default?: Record<string, string>
 }>
 
 export type SchemaNumber = Prop<{
   type: 'number'
-  defaultValue?: number
+  default?: number
   min: number
   max: number
   step: number | 'any'
@@ -38,22 +38,22 @@ export type SchemaNumber = Prop<{
 
 export type SchemaString = Prop<{
   type: 'string'
-  defaultValue?: string
+  default?: string
 }>
 
 export type SchemaBoolean = Prop<{
   type: 'boolean'
-  defaultValue?: boolean
+  default?: boolean
 }>
 
 export type SchemaTimestamp = Prop<{
   type: 'timestamp'
-  defaultValue?: number | Date
+  default?: number | Date
 }>
 
 export type SchemaReference = Prop<{
   type?: 'reference'
-  defaultValue?: string
+  default?: string
   ref: string
   prop: string
   edge?: {
@@ -66,7 +66,7 @@ export type SchemaReferenceQuery = SchemaReferenceOneWay & { query: QueryFn }
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
-  defaultValue?: EnumItem
+  default?: EnumItem
   enum: EnumItem[]
 }>
 
@@ -90,7 +90,13 @@ export type SchemaRootProp =
 
 export type SchemaAnyProp = SchemaRootProp | SchemaProp
 
+export type SchemaHook = string | Function
 export type SchemaType = {
+  hooks?: {
+    create: SchemaHook
+    update: SchemaHook
+    delete: SchemaHook
+  }
   props: Record<string, SchemaProp>
 }
 export type SchemaProps = Record<string, SchemaProp>

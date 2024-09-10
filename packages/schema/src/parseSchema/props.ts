@@ -11,15 +11,18 @@ import {
   SchemaTimestamp,
   SchemaText,
 } from '../types.js'
-import { expectBoolean, expectObject, expectString } from './assert.js'
+import {
+  expectBoolean,
+  expectFunction,
+  expectObject,
+  expectString,
+  expectNumber,
+} from './assert.js'
 import {
   EXPECTED_ARR,
-  EXPECTED_BOOL,
-  EXPECTED_NUM,
+  EXPECTED_DATE,
   EXPECTED_PRIMITIVE,
-  EXPECTED_STR,
   EXPECTED_VALUE_IN_ENUM,
-  INVALID_TYPE,
   INVALID_VALUE,
   MIN_MAX,
   OUT_OF_RANGE,
@@ -39,6 +42,9 @@ const shared: PropsFns<SchemaAnyProp> = {
   type() {},
   required(val) {
     expectBoolean(val)
+  },
+  query(val) {
+    expectFunction(val)
   },
   path(val, prop, ctx) {
     expectString(val)
@@ -86,10 +92,8 @@ const p: Record<string, ReturnType<typeof propParser>> = {}
 p.boolean = propParser<SchemaBoolean>(
   {},
   {
-    defaultValue(val) {
-      if (typeof val !== 'boolean') {
-        throw Error(EXPECTED_BOOL)
-      }
+    default(val) {
+      expectBoolean(val)
     },
   },
 )
@@ -108,7 +112,7 @@ p.enum = propParser<SchemaEnum>(
     },
   },
   {
-    defaultValue(val, prop) {
+    default(val, prop) {
       if (!prop.enum.includes(val)) {
         throw Error(EXPECTED_VALUE_IN_ENUM)
       }
@@ -119,14 +123,10 @@ p.enum = propParser<SchemaEnum>(
 p.number = propParser<SchemaNumber>(
   {
     min(val) {
-      if (typeof val !== 'number') {
-        throw Error(EXPECTED_NUM)
-      }
+      expectNumber(val)
     },
     max(val, prop) {
-      if (typeof val !== 'number') {
-        throw Error(EXPECTED_NUM)
-      }
+      expectNumber(val)
       if (prop.min > val) {
         throw Error(MIN_MAX)
       }
@@ -138,10 +138,8 @@ p.number = propParser<SchemaNumber>(
     },
   },
   {
-    defaultValue(val, prop) {
-      if (typeof val !== 'number') {
-        throw Error(EXPECTED_NUM)
-      }
+    default(val, prop) {
+      expectNumber(val)
       if (val > prop.max || val < prop.min) {
         throw Error(OUT_OF_RANGE)
       }
@@ -164,15 +162,16 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     ref(ref, _prop, { schema }) {
       schema.types[ref].props
     },
-    prop(propKey, prop, { schema, type }) {
-      if (type) {
+    prop(propKey, prop, { schema, type, inQuery }) {
+      const propAllowed = type && !inQuery
+      if (propAllowed) {
         expectString(propKey)
-        let targetProp = schema.types[prop.ref].props[propKey]
+        let targetProp: any = schema.types[prop.ref].props[propKey]
         if ('items' in targetProp) {
           targetProp = targetProp.items
         }
         if ('ref' in targetProp && 'prop' in targetProp) {
-          let t = schema.types[targetProp.ref].props[targetProp.prop]
+          let t: any = schema.types[targetProp.ref].props[targetProp.prop]
           if ('items' in t) {
             t = t.items
           }
@@ -190,26 +189,28 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     },
   },
   {
-    defaultValue(val) {
-      if (typeof val !== 'string') {
-        throw Error(EXPECTED_STR)
-      }
+    default(val) {
+      expectString(val)
     },
-    edge(val, prop, { schema, type }) {
-      if (!type) {
-        throw Error('ref edge not supported on root or edge p')
+    edge(val, prop, { schema, type, inQuery }) {
+      const edgeAllowed = type && !inQuery
+      if (edgeAllowed) {
+        let targetProp: any = schema.types[prop.ref].props[prop.prop]
+        if ('items' in targetProp) {
+          targetProp = targetProp.items
+        }
+        console.warn('TODO add edge validation')
+        return
       }
-      let targetProp = schema.types[prop.ref].props[prop.prop]
-      if ('items' in targetProp) {
-        targetProp = targetProp.items
-      }
+
+      throw Error('ref edge not supported on root or edge p')
     },
   },
 )
 
 p.set = propParser<SchemaSet | SchemaSetOneWay>(
   {
-    items(items, _prop, ctx) {
+    items(items, prop, ctx) {
       expectObject(items)
       const itemsType = getPropType(items)
       if (
@@ -219,15 +220,17 @@ p.set = propParser<SchemaSet | SchemaSetOneWay>(
         itemsType === 'timestamp' ||
         itemsType === 'boolean'
       ) {
+        ctx.inQuery = 'query' in prop
         p[itemsType](items, ctx)
+        ctx.inQuery = false
       }
     },
   },
   {
-    defaultValue(val, prop) {
+    default(val, prop) {
       console.warn('TODO SET DEFAULT VALUE')
       // if (typeof val === 'object') {
-      //   throwErr(ERRORS.EXPECTED_PRIMITIVE, prop, 'defaultValue')
+      //   throwErr(ERRORS.EXPECTED_PRIMITIVE, prop, 'default')
       // }
     },
   },
@@ -236,10 +239,8 @@ p.set = propParser<SchemaSet | SchemaSetOneWay>(
 p.string = propParser<SchemaString>(
   {},
   {
-    defaultValue(val) {
-      if (typeof val !== 'string') {
-        throw Error(EXPECTED_STR)
-      }
+    default(val) {
+      expectString(val)
     },
   },
 )
@@ -256,10 +257,10 @@ p.text = propParser<SchemaText>(
     },
   },
   {
-    defaultValue(val, prop) {
+    default(val, prop) {
       console.warn('MAKE DEFAULT VALUE FOR TEXT')
       //   if (typeof val !== 'string') {
-      //     throwErr(ERRORS.EXPECTED_STR, prop, 'defaultValue')
+      //     throwErr(ERRORS.EXPECTED_STR, prop, 'default')
       //   }
     },
   },
@@ -268,9 +269,9 @@ p.text = propParser<SchemaText>(
 p.timestamp = propParser<SchemaTimestamp>(
   {},
   {
-    defaultValue(val) {
+    default(val) {
       if (typeof val !== 'number' && !(val instanceof Date)) {
-        throw Error(EXPECTED_STR)
+        throw Error(EXPECTED_DATE)
       }
     },
   },

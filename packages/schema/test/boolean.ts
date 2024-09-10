@@ -7,7 +7,7 @@ test('boolean', () => {
     props: {
       myBoolean: {
         type: 'boolean',
-        defaultValue: true,
+        default: true,
       },
     },
   })
@@ -18,42 +18,9 @@ test('boolean', () => {
         // @ts-ignore
         myBoolean: {
           type: 'boolean',
-          defaultValue: 'hello',
+          default: 'hello',
         },
       },
     })
   }, 'only allow booleans')
 })
-
-// test('boolean - modify', () => {
-//   update({
-//     myBoolean: true
-//   }, {
-//     props: {
-//       myBoolean: {
-//         type: 'boolean',
-//         defaultValue: true,
-//       },
-//     },
-//   })
-// })
-
-/*
-const schema = {
-  types: {
-    thing: {
-      props: {
-        myBoolean: {
-          type: 'boolean',
-          defaultValue: true,
-        },
-      },
-    }
-  }
-}
-
-import { setSchema } from '@based/schema'
-setSchema(client, schema)
-
-client.call('db:set-schema', schema)
-*/

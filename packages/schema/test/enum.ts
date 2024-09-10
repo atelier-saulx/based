@@ -7,7 +7,7 @@ test('enum', () => {
     props: {
       myEnum: {
         enum: ['published', 'draft'],
-        defaultValue: 'published',
+        default: 'published',
       },
     },
   })
@@ -17,9 +17,9 @@ test('enum', () => {
       props: {
         myEnum: {
           enum: ['published', 'draft'],
-          defaultValue: 'blurdo',
+          default: 'blurdo',
         },
       },
     })
-  }, 'disallow non defined defaultValue')
+  }, 'disallow non defined default')
 })

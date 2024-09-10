@@ -7,7 +7,7 @@ test('number', () => {
     props: {
       myNumber: {
         type: 'number',
-        defaultValue: 11,
+        default: 11,
         min: 10,
         max: 100,
         step: 0.5,
@@ -20,26 +20,26 @@ test('number', () => {
       props: {
         myNumber: {
           type: 'number',
-          defaultValue: 200,
+          default: 200,
           min: 10,
           max: 100,
           step: 0.5,
         },
       },
     })
-  }, 'should throw with out of range defaultValue')
+  }, 'should throw with out of range default')
 
   throws(() => {
     parseSchema({
       props: {
         myNumber: {
           type: 'number',
-          defaultValue: 11,
+          default: 11,
           min: 10,
           max: 100,
           step: 0.7,
         },
       },
     })
-  }, 'should throw with unreachable defaultValue')
+  }, 'should throw with unreachable default')
 })

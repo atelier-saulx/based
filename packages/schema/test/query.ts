@@ -36,6 +36,12 @@ test('query', () => {
           status: {
             enum: ['published', 'draft', 'archived'],
           },
+          views: {
+            type: 'number',
+            min: 0,
+            max: Infinity,
+            step: 1,
+          },
         },
       },
     },
