@@ -50,6 +50,11 @@ the information passed as a parameter will take precedence over the file.
 
 `npx @based/cli auth`
 
+| Option            | Description                    | Required |
+|-------------------|--------------------------------|----------|
+| `--email <email>` | To speed up the login process. | No       |
+
+
 ### init
 `npx @based/cli init [options]`
 
@@ -67,14 +72,15 @@ the information passed as a parameter will take precedence over the file.
 ### dev
 `npx @based/cli dev [options]`
 
-| Option                       | Description                                                                             | Required |
-|------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-s`, `--skip-auth`          | Skip authentication (default: false).                                                   | No       |
-| `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
-| `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
-| `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
-| `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
-| `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
+| Option                             | Description                                                                             | Required |
+|------------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `-p`, `--port <port>`              | To set manually the Based Dev Server port.                                              | No       |
+| `-fn`, `--function <functions...>` | The function names to be served (variadic).                                             | No       |
+| `-c`, `--cluster <cluster>`        | Define the cluster to use (default: "production").                                      | No       |
+| `-o`, `--org <org>`                | Specify the organization.                                                               | No       |
+| `-p`, `--project <project>`        | Specify the project name.                                                               | No       |
+| `-e`, `--env <env>`                | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
+| `-aK`, `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                      | No       |
 
 
 ### deploy
@@ -82,7 +88,7 @@ the information passed as a parameter will take precedence over the file.
 
 | Option                             | Description                                                                             | Required |
 |------------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-fn`, `--function <functions...>` | Your function names to be deployed.                                                     | No       |
+| `-fn`, `--function <functions...>` | The function names to be deployed (variadic).                                           | No       |
 | `--schema`                         | Deploy schemas (default: false).                                                        | No       |
 | `-w`, `--watch`                    | Watch for changes (default: false).                                                     | No       |
 | `-f`, `--force`                    | Force deploy unchanged (default: false).                                                | No       |
