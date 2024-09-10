@@ -16,5 +16,8 @@ export const getPropType = (prop) => {
   if ('enum' in prop) {
     return 'enum'
   }
+  if ('props' in prop) {
+    return 'object'
+  }
   throw Error(MISSING_TYPE)
 }

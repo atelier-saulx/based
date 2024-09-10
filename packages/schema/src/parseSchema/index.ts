@@ -3,7 +3,7 @@ import { INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
 import pc from 'picocolors'
-import { expectBoolean } from './assert.js'
+import { expectBoolean, expectObject } from './assert.js'
 
 export class Parser {
   constructor(schema: Schema) {
@@ -15,16 +15,20 @@ export class Parser {
   type: SchemaType
 
   parseType(type: SchemaType) {
+    expectObject(type)
     this.parseProps(type.props, type)
   }
 
   parseTypes() {
-    for (const type in this.schema.types) {
-      this.parseType(this.schema.types[type])
+    const { types } = this.schema
+    expectObject(types)
+    for (const type in types) {
+      this.parseType(types[type])
     }
   }
 
   parseProps(props, schemaType: SchemaType = null) {
+    expectObject(props)
     this.type = schemaType
     for (const key in props) {
       const prop = props[key]
@@ -38,8 +42,11 @@ export class Parser {
   }
 
   parseLocales() {
-    for (const locale in this.schema.locales) {
-      const opts = this.schema.locales[locale]
+    const { locales } = this.schema
+    expectObject(locales)
+    for (const locale in locales) {
+      const opts = locales[locale]
+      expectObject(opts)
       for (const key in opts) {
         const val = opts[key]
         if (key === 'required') {
@@ -56,6 +63,7 @@ export class Parser {
   }
 
   parse() {
+    expectObject(this.schema)
     for (const key in this.schema) {
       if (key === 'types') {
         this.parseTypes()
@@ -78,7 +86,10 @@ export const print = (schema: Schema, path: string[]) => {
     const padding = '  '.repeat(lvl)
     const prefix = key === Object.keys(obj)[0] ? '' : `${padding}...\n`
     if (lvl === depth) {
-      const err = key in obj ? `${key}: ${JSON.stringify(v)}` : key
+      const err =
+        key in obj
+          ? `${key}: ${typeof v === 'object' && v !== null && !Array.isArray(v) ? `{..}` : JSON.stringify(v)}`
+          : key
       return `${prefix}${'--'.repeat(lvl - 1)}> ${pc.red(err)}`
     }
     obj = v

@@ -121,4 +121,43 @@ test('edges', () => {
       },
     },
   })
+
+  throws(() => {
+    parseSchema({
+      types: {
+        article: {
+          props: {
+            author: {
+              ref: 'author',
+              prop: 'articles',
+              edge: {
+                props: {
+                  role: {
+                    enum: ['admin', 'collaborator'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        author: {
+          props: {
+            articles: {
+              items: {
+                ref: 'article',
+                prop: 'author',
+                edge: {
+                  props: {
+                    role: {
+                      enum: ['admin', 'collaborator'],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  }, 'Only allow edge definition on one side')
 })

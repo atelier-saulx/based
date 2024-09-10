@@ -15,9 +15,9 @@ test('boolean', () => {
   throws(() => {
     parseSchema({
       props: {
-        // @ts-ignore
         myBoolean: {
           type: 'boolean',
+          // @ts-ignore
           default: 'hello',
         },
       },

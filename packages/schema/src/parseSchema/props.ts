@@ -10,6 +10,8 @@ import {
   SchemaString,
   SchemaTimestamp,
   SchemaText,
+  SchemaObject,
+  SchemaRootObject,
 } from '../types.js'
 import {
   expectBoolean,
@@ -157,6 +159,19 @@ p.number = propParser<SchemaNumber>(
   },
 )
 
+p.object = propParser<SchemaObject | SchemaRootObject>(
+  {
+    props(val, prop, ctx) {
+      ctx.parseProps(val, ctx.type)
+    },
+  },
+  {
+    default(val) {
+      console.warn('TODO object default value')
+    },
+  },
+)
+
 p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
   {
     ref(ref, _prop, { schema }) {
@@ -192,14 +207,17 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     default(val) {
       expectString(val)
     },
-    edge(val, prop, { schema, type, inQuery }) {
-      const edgeAllowed = type && !inQuery
+    edge(val, prop, ctx) {
+      const edgeAllowed = ctx.type && !ctx.inQuery
       if (edgeAllowed) {
-        let targetProp: any = schema.types[prop.ref].props[prop.prop]
-        if ('items' in targetProp) {
-          targetProp = targetProp.items
+        let t: any = ctx.schema.types[prop.ref].props[prop.prop]
+        if (t.items) {
+          t = t.items
         }
-        console.warn('TODO add edge validation')
+        if (t.edge) {
+          throw Error('Edge can not be defined on both props')
+        }
+        p.object(val, ctx)
         return
       }
 

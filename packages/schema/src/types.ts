@@ -56,9 +56,17 @@ export type SchemaReference = Prop<{
   default?: string
   ref: string
   prop: string
-  edge?: {
-    props: SchemaProps
-  }
+  edge?: SchemaRootObject
+}>
+
+export type SchemaObject = Prop<{
+  type?: 'object'
+  props: SchemaProps
+}>
+
+export type SchemaRootObject = Prop<{
+  type?: 'object'
+  props: SchemaRootProps
 }>
 
 export type SchemaReferenceOneWay = Omit<SchemaReference, 'prop' | 'edge'>
@@ -82,11 +90,16 @@ type NonRefSchemaProps =
   | SchemaText
   | SchemaEnum
 
-export type SchemaProp = NonRefSchemaProps | SchemaSet | SchemaReference
+export type SchemaProp =
+  | NonRefSchemaProps
+  | SchemaSet
+  | SchemaReference
+  | SchemaObject
 export type SchemaRootProp =
   | NonRefSchemaProps
   | SchemaSetOneWay
   | SchemaReferenceOneWay
+  | SchemaRootObject
 
 export type SchemaAnyProp = SchemaRootProp | SchemaProp
 
