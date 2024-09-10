@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { parseSchema } from '@based/schema'
 
 test('enum', () => {
-  parse({
+  parseSchema({
     props: {
       myEnum: {
         enum: ['published', 'draft'],
@@ -13,7 +13,7 @@ test('enum', () => {
   })
 
   throws(() => {
-    parse({
+    parseSchema({
       props: {
         myEnum: {
           enum: ['published', 'draft'],

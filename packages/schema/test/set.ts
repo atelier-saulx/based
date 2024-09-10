@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { parseSchema } from '@based/schema'
 
 test('set', () => {
-  parse({
+  parseSchema({
     props: {
       myStrings: {
         items: {
@@ -13,7 +13,7 @@ test('set', () => {
     },
   })
 
-  parse({
+  parseSchema({
     props: {
       myNumbers: {
         items: {
@@ -26,7 +26,7 @@ test('set', () => {
     },
   })
 
-  parse({
+  parseSchema({
     props: {
       myBools: {
         items: {
@@ -36,7 +36,7 @@ test('set', () => {
     },
   })
 
-  parse({
+  parseSchema({
     types: {
       user: {
         props: {
@@ -55,7 +55,7 @@ test('set', () => {
     },
   })
 
-  // parse({
+  // parseSchema({
   //   props: {
   //     myRefs: {
   //       items: {
@@ -66,7 +66,7 @@ test('set', () => {
   // })
 
   throws(() => {
-    parse({
+    parseSchema({
       types: {
         myType: {
           props: {

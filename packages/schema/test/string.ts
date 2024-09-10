@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { parseSchema } from '@based/schema'
 
 test('string', () => {
-  parse({
+  parseSchema({
     props: {
       myString: {
         type: 'string',
@@ -12,7 +12,7 @@ test('string', () => {
   })
 
   throws(() => {
-    parse({
+    parseSchema({
       props: {
         myEnum: {
           // @ts-ignore

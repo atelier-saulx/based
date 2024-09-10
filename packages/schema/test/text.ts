@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { parseSchema } from '@based/schema'
 
 test('text', () => {
-  parse({
+  parseSchema({
     locales: {
       en: {
         required: true,
@@ -16,14 +16,12 @@ test('text', () => {
     props: {
       myText: {
         type: 'text',
-        // @ts-ignore
-        potato: true,
       },
     },
   })
 
   throws(() => {
-    parse({
+    parseSchema({
       props: {
         myText: {
           type: 'text',

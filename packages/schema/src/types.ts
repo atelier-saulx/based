@@ -1,7 +1,10 @@
+type QueryFn = Function
 type Prop<Values extends { type?: string; defaultValue?: any }> = {
   required?: boolean
   label?: Record<string, string>
   description?: Record<string, string>
+  path?: string
+  query?: QueryFn
 } & Values
 
 type NonRefSetItems =
@@ -59,6 +62,7 @@ export type SchemaReference = Prop<{
 }>
 
 export type SchemaReferenceOneWay = Omit<SchemaReference, 'prop' | 'edge'>
+export type SchemaReferenceQuery = SchemaReferenceOneWay & { query: QueryFn }
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
@@ -66,7 +70,8 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaSet = Set<NonRefSetItems | SchemaReference>
+export type SchemaSetQuery = Set<SchemaReferenceOneWay> & { query: QueryFn }
+export type SchemaSet = Set<NonRefSetItems | SchemaReference> | SchemaSetQuery
 export type SchemaSetOneWay = Set<NonRefSetItems | SchemaReferenceOneWay>
 
 type NonRefSchemaProps =
@@ -82,6 +87,7 @@ export type SchemaRootProp =
   | NonRefSchemaProps
   | SchemaSetOneWay
   | SchemaReferenceOneWay
+
 export type SchemaAnyProp = SchemaRootProp | SchemaProp
 
 export type SchemaType = {

@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { parseSchema } from '@based/schema'
 
 test('number', () => {
-  parse({
+  parseSchema({
     props: {
       myNumber: {
         type: 'number',
@@ -16,7 +16,7 @@ test('number', () => {
   })
 
   throws(() => {
-    parse({
+    parseSchema({
       props: {
         myNumber: {
           type: 'number',
@@ -30,7 +30,7 @@ test('number', () => {
   }, 'should throw with out of range defaultValue')
 
   throws(() => {
-    parse({
+    parseSchema({
       props: {
         myNumber: {
           type: 'number',

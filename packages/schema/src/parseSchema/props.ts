@@ -11,7 +11,7 @@ import {
   SchemaTimestamp,
   SchemaText,
 } from '../types.js'
-import { expectObject, expectString } from './assert.js'
+import { expectBoolean, expectObject, expectString } from './assert.js'
 import {
   EXPECTED_ARR,
   EXPECTED_BOOL,
@@ -19,10 +19,12 @@ import {
   EXPECTED_PRIMITIVE,
   EXPECTED_STR,
   EXPECTED_VALUE_IN_ENUM,
+  INVALID_TYPE,
   INVALID_VALUE,
   MIN_MAX,
   OUT_OF_RANGE,
   TEXT_REQUIRES_LOCALES,
+  TYPE_MISMATCH,
   UNKNOWN_PROP,
 } from './errors.js'
 import { Parser } from './index.js'
@@ -36,8 +38,24 @@ type PropsFns<PropType> = Record<
 const shared: PropsFns<SchemaAnyProp> = {
   type() {},
   required(val) {
-    if (typeof val !== 'boolean') {
-      throw Error(EXPECTED_BOOL)
+    expectBoolean(val)
+  },
+  path(val, prop, ctx) {
+    expectString(val)
+    const path = val.split('.')
+    let t: any = ctx.type
+    for (const key of path) {
+      if ('items' in t) {
+        t = t.items
+      }
+      if ('ref' in t) {
+        t = ctx.schema.types[t.ref]
+      }
+      t = t.props[key]
+      expectObject(t)
+    }
+    if (t.type !== prop.type) {
+      throw Error(TYPE_MISMATCH)
     }
   },
 }
@@ -146,8 +164,8 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     ref(ref, _prop, { schema }) {
       schema.types[ref].props
     },
-    prop(propKey, prop, { schema, inType }) {
-      if (inType) {
+    prop(propKey, prop, { schema, type }) {
+      if (type) {
         expectString(propKey)
         let targetProp = schema.types[prop.ref].props[propKey]
         if ('items' in targetProp) {
@@ -177,8 +195,8 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         throw Error(EXPECTED_STR)
       }
     },
-    edge(val, prop, { schema, inType }) {
-      if (!inType) {
+    edge(val, prop, { schema, type }) {
+      if (!type) {
         throw Error('ref edge not supported on root or edge p')
       }
       let targetProp = schema.types[prop.ref].props[prop.prop]

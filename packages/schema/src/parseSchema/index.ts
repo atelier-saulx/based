@@ -11,22 +11,22 @@ export class Parser {
   }
 
   schema: Schema
-  inType: boolean
+  type: SchemaType
 
   parseType(type: SchemaType) {
-    this.parseProps(type.props)
+    this.parseProps(type.props, type)
   }
 
   parseTypes() {
     for (const type in this.schema.types) {
-      this.parseProps(this.schema.types[type].props)
+      this.parseType(this.schema.types[type])
     }
   }
 
-  parseProps(props) {
+  parseProps(props, schemaType: SchemaType = null) {
+    this.type = schemaType
     for (const key in props) {
       const prop = props[key]
-
       const type = getPropType(prop)
       if (type in propParsers) {
         propParsers[type](prop, this)
@@ -56,8 +56,7 @@ export class Parser {
 
   parse() {
     for (const key in this.schema) {
-      this.inType = key === 'types'
-      if (this.inType) {
+      if (key === 'types') {
         this.parseTypes()
       } else if (key === 'props') {
         this.parseProps(this.schema.props)
@@ -113,7 +112,7 @@ export const debug = (schema: Schema) => {
   }
 }
 
-export const parse = (schema: Schema) => {
+export const parseSchema = (schema: Schema) => {
   try {
     new Parser(schema).parse()
   } catch (e) {

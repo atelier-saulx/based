@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { parseSchema } from '@based/schema'
 
 test('boolean', () => {
-  parse({
+  parseSchema({
     props: {
       myBoolean: {
         type: 'boolean',
@@ -13,7 +13,7 @@ test('boolean', () => {
   })
 
   throws(() => {
-    parse({
+    parseSchema({
       props: {
         // @ts-ignore
         myBoolean: {
@@ -26,7 +26,7 @@ test('boolean', () => {
 })
 
 // test('boolean - modify', () => {
-//   set({
+//   update({
 //     myBoolean: true
 //   }, {
 //     props: {
@@ -37,3 +37,23 @@ test('boolean', () => {
 //     },
 //   })
 // })
+
+/*
+const schema = {
+  types: {
+    thing: {
+      props: {
+        myBoolean: {
+          type: 'boolean',
+          defaultValue: true,
+        },
+      },
+    }
+  }
+}
+
+import { setSchema } from '@based/schema'
+setSchema(client, schema)
+
+client.call('db:set-schema', schema)
+*/
