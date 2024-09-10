@@ -4,5 +4,6 @@ export default {
   main: './app.tsx',
   favicon: './favicon.ico',
   public: true,
+  path: '/test2',
   // files: ['./b.ts'],
 }
