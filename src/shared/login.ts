@@ -8,9 +8,10 @@ import { BasedClient } from '@based/client'
 import { spinner } from './spinner.js'
 
 const persistPath = join(homedir(), '.based/cli')
-const authPath = join(persistPath, 'auth.json')
+const authPath = join(persistPath, 'Auth.json')
 
 type LoginArgs = {
+  email?: string
   cluster: string
   org: string
   env: string
@@ -25,7 +26,37 @@ type User = {
   ts?: number
 }
 
+const validateEmail = (email: string) => {
+  const at: number = email.lastIndexOf('@')
+  const dot: number = email.lastIndexOf('.')
+  return at > 0 && at < dot - 1 && dot < email.length - 2
+}
+
+const authenticateUser = async (
+  email: string,
+  hub: BasedClient,
+  cluster: string,
+) => {
+  const code: string = (~~(Math.random() * 1e6)).toString(16)
+  spinner.text = `Please check your inbox at '${pc.bold(email)}', your login code is: ${pc.bold(code)}`
+  spinner.start()
+
+  await hub.call('login', {
+    email,
+    skipEmailForTesting: cluster === 'local',
+    code,
+  })
+
+  spinner.succeed('Email verified!')
+
+  return {
+    ...(await hub.once('authstate-change')),
+    email,
+  }
+}
+
 export const login = async ({
+  email,
   cluster,
   org,
   env,
@@ -49,7 +80,14 @@ export const login = async ({
   let users: User[] = await readJSON(authPath).catch(() => [])
   let user: User
 
-  if (users.length) {
+  if (email) {
+    user = await authenticateUser(email, hub, cluster)
+
+    users = users.filter(({ email }) => email !== user.email)
+    users.push(user)
+  }
+
+  if (users.length && !email) {
     const lastUser: User = users.sort((a: User, b: User) => b?.ts - a?.ts)[0]
     await hub
       .setAuthState({
@@ -77,32 +115,13 @@ export const login = async ({
     }
   }
 
-  if (!user) {
-    const email = await input({
+  if (!user && !email) {
+    const email: string = await input({
       message: 'Enter your email address:',
-      validate(email) {
-        const at = email.lastIndexOf('@')
-        const dot = email.lastIndexOf('.')
-        return at > 0 && at < dot - 1 && dot < email.length - 2
-      },
+      validate: (email) => validateEmail(email),
     })
 
-    const code = (~~(Math.random() * 1e6)).toString(16)
-    spinner.text = `Please check your inbox at '${pc.bold(email)}', your login code is: ${pc.bold(code)}`
-    spinner.start()
-
-    await hub.call('login', {
-      email,
-      skipEmailForTesting: cluster === 'local',
-      code,
-    })
-
-    spinner.succeed('Email verified!')
-
-    user = {
-      ...(await hub.once('authstate-change')),
-      email,
-    }
+    user = await authenticateUser(email, hub, cluster)
 
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)

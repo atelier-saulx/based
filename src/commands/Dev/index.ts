@@ -1,72 +1,57 @@
-import { invalidate, parseFunctions } from '../deploy/index.js'
 import { WebSocket, WebSocketServer } from 'ws'
 import { buffer } from 'node:stream/consumers'
-import { login } from '../../shared/login.js'
-import { networkInterfaces } from 'node:os'
+import {
+  login,
+  getMyIp,
+  parseFunctions,
+  invalidate,
+  spinner,
+} from '../../shared/index.js'
 import { OutputFile } from '@based/bundle'
 import { Readable } from 'node:stream'
 import { Command } from 'commander'
-import handler from 'serve-handler'
 import { hash } from '@saulx/hash'
 import getPort from 'get-port'
 import { join } from 'path'
 import pc from 'picocolors'
+import handler from 'serve-handler'
 import http from 'http'
-
-const getOwnIp = () => {
-  const nets = networkInterfaces()
-  const results: Record<string, string[]> = {}
-
-  for (const name in nets) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        results[name] ??= []
-        results[name].push(net.address)
-      }
-    }
-  }
-
-  let ip = results.en0?.[0]
-
-  if (!ip) {
-    for (const k in results) {
-      ip = results[k][0]
-      if (ip) {
-        return ip
-      }
-    }
-  }
-
-  return ip
-}
+import { BasedFunction } from '@based/functions'
 
 export const dev = async (program: Command) => {
   const cmd = program
     .command('dev')
+    .option('-p, --port <port>', 'To set manually the Based Dev Server port.')
     .option(
-      '-f, --functions <functions...>',
-      'function names to deploy (variadic)',
+      '-fn, --function <functions...>',
+      'The function names to be served (variadic).',
     )
 
-  cmd.action(async ({ functions }) => {
+  cmd.action(async ({ functions, port }) => {
     const { cluster, org, env, project } = program.opts()
+    const { client } = await login({ cluster, org, env, project })
+
     const { BasedServer } = await import('@based/server')
+    const ip: string = getMyIp()
     const [devPort, filePort, staticPort, lrPort] = await Promise.all([
-      getPort({ port: 1234 }),
+      getPort({ port: port ?? 1234 }),
       getPort({ port: 2000 }),
       getPort({ port: 3000 }),
       getPort({ port: 4000 }),
     ])
-    const ip = getOwnIp()
     const publicPath = `http://${ip}:${filePort}`
     const staticPath = `http://${ip}:${staticPort}`
-    const { nodeBundles, browserBundles, schema, favicons, configs, files } =
-      await parseFunctions(functions, update, publicPath, staticPath)
 
-    const { client, destroy } = await login({ cluster, org, env, project })
+    spinner.succeed(
+      `🚀 Dev server: http://localhost:${devPort} ${pc.dim(`http://${ip}:${devPort}`)}`,
+    )
+    spinner.succeed(
+      `📦 Bundle server: http://localhost:${filePort} ${pc.dim(`http://${ip}:${filePort}`)} `,
+    )
+
     const checksums: Record<string, number> = {}
     const { clients } = new WebSocketServer({ port: lrPort })
-    let hadError
+    let hadError: boolean = false
 
     const server = new BasedServer({
       silent: true,
@@ -112,27 +97,25 @@ export const dev = async (program: Command) => {
       },
     })
 
-    update(null)
+    const { nodeBundles, browserBundles, configs } = await parseFunctions(
+      functions,
+      update,
+      publicPath,
+      staticPath,
+    )
 
+    await update(null)
     await server.start()
     await browserBundles.ctx.serve({ port: filePort })
 
     // const rewrites = []
-
     // for (const i in files) {
     //   rewrites.push({
     //     source: i,
     //     destination: files[i],
     //   })
     // }
-
-    console.info(
-      `🚀 dev server: http://localhost:${devPort} ${pc.dim(`http://${ip}:${devPort}`)}`,
-    )
-    console.info(
-      `📦 bundle server: http://localhost:${filePort} ${pc.dim(`http://${ip}:${filePort}`)} `,
-    )
-
+    //
     // http
     //   .createServer((request, response) => {
     //     return handler(request, response, {
@@ -140,7 +123,6 @@ export const dev = async (program: Command) => {
     //       headers: [
     //         {
     //           source: '*',
-
     //           headers: [
     //             {
     //               key: 'Access-Control-Allow-Origin',
@@ -157,20 +139,24 @@ export const dev = async (program: Command) => {
     //     )
     //   })
 
-    async function update(err) {
-      let reloadClients = hadError
+    async function update(err: null) {
+      let reloadClients: boolean = hadError
 
       if (err) {
         reloadClients = true
         hadError = true
       } else {
-        let fnUpdates
+        let fnUpdates = {}
         hadError = false
 
         for (const { index, config, app, favicon } of configs) {
-          const js = nodeBundles.js(index)
+          const nodeJs: OutputFile = nodeBundles.js(index)
+          let checksum: number
+          let appHtml: OutputFile
+          let appJs: OutputFile
+          let appCss: OutputFile
+          let appFavicon: OutputFile
 
-          let checksum, appHtml, appJs, appCss, appFavicon
           if (app) {
             const faviconPath =
               favicon &&
@@ -200,12 +186,12 @@ export const dev = async (program: Command) => {
                 appCss?.hash,
                 appCss?.path,
                 appFavicon?.path,
-                js.hash,
+                nodeJs.hash,
                 config,
               ].filter(Boolean),
             )
           } else {
-            checksum = hash([js.hash, config])
+            checksum = hash([nodeJs.hash, config])
           }
 
           if (checksums[config.name] === checksum) {
@@ -229,7 +215,7 @@ export const dev = async (program: Command) => {
 
           // const sourcemap = nodeBundles.map(index)
           const fn = nodeBundles.require(index)
-          const defaultFn = fn.default || fn
+          const defaultFn = fn[Object.keys(fn)[0]]
           fnUpdates ??= {}
 
           if (app) {
@@ -249,7 +235,7 @@ export const dev = async (program: Command) => {
                   (nodeBundles.error && nodeBundles)
 
                 if (errorTarget) {
-                  const vsCodeLink = (str) =>
+                  const vsCodeLink = (str: string) =>
                     `<a href='vscode://file${join(process.cwd(), str)}'>${str}</a>`
                   let str = `${liveReloadScript(lrPort)}<pre>`
                   for (const { location, text } of errorTarget.error.errors) {
@@ -291,10 +277,11 @@ export const dev = async (program: Command) => {
 
                 if (i === -1) {
                   console.warn(
-                    '⚠️ invalid html, skip livereload tag and based opts tag',
+                    '⚠️ Invalid html, skip livereload tag and based opts tag',
                   )
                   return html
                 }
+
                 return `${html.substring(0, i)}${liveReloadScript(
                   lrPort,
                 )}${basedOptsScript(client.opts)}${html.substring(i)}`
@@ -356,6 +343,6 @@ class AppFile {
 const liveReloadScript = (port: number): string =>
   `<script>!function e(o){var n=window.location.hostname;o||(o=0),setTimeout((function(){var t=new WebSocket("ws://"+n+":${port}");t.addEventListener("message",(function(){location.reload()})),t.addEventListener("open",(function(){o>0&&location.reload(),console.log("%cBased live reload server connected","color: #bbb")})),t.addEventListener("close",(function(){console.log("%cBased live reload server reconnecting...","color: #bbb"),e(Math.min(o+1e3))}))}),o)}();</script>`
 
-const basedOptsScript = (opts) => {
+const basedOptsScript = (opts: unknown) => {
   return `<script>window.BASED=window.BASED||{};window.BASED.opts={${JSON.stringify(opts).replace(/":/g, ':').replace(/,"/g, ',').slice(2, -1)}}</script>`
 }

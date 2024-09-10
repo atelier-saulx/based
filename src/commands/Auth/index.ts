@@ -1,12 +1,16 @@
 import { Command } from 'commander'
-import { login } from '../../shared/login.js'
+import { login } from '../../shared/index.js'
 
 export const auth = async (program: Command) => {
-  const cmd: Command = program.command('auth')
+  const cmd: Command = program
+    .command('auth')
+    .option('--email <email>', 'To set manually the Based Dev Server port.')
 
-  cmd.action(async () => {
+  cmd.action(async ({ email }) => {
     const { cluster, org, env, project } = program.opts()
+
     const { destroy } = await login({
+      email,
       cluster,
       org,
       env,
