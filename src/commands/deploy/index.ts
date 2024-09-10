@@ -95,7 +95,7 @@ export const deploy = async (program: Command) => {
       const { client, destroy } = await login({ cluster, org, env, project })
       const { publicPath } = await client.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
-        await parseFunctions(functions, watch && update, publicPath, publicPath)
+        await parseFunctions(functions, watch && update, publicPath)
 
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()
