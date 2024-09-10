@@ -73,16 +73,44 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
  * Set field value.
  */
 SELVA_EXPORT
-int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+int selva_fields_set(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        const void *value, size_t len);
 
 SELVA_EXPORT
-int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s);
+int selva_fields_get_mutable_string(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t len,
+        struct selva_string **s);
 
 SELVA_EXPORT
-int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, field_t field, const void *value, size_t len);
+int selva_fields_references_insert(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t index,
+        struct SelvaNode *dst,
+        struct SelvaNodeReference *out);
 
 SELVA_EXPORT
-int selva_fields_get_reference_meta_mutable_string(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, field_t field, size_t len, struct selva_string **s);
+int selva_fields_set_reference_meta(
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref,
+        struct EdgeFieldConstraint *efc,
+        field_t field,
+        const void *value, size_t len);
+
+SELVA_EXPORT
+int selva_fields_get_reference_meta_mutable_string(
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref,
+        struct EdgeFieldConstraint *efc,
+        field_t field,
+        size_t len,
+        struct selva_string **s);
 
 /**
  * Get field value.
