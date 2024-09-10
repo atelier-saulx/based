@@ -17,6 +17,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         const refTypeEntry = try db.getType(refTypeId);
         const len = @divTrunc(data.len, 4);
         var i: u32 = 0;
+        // stack allocate per 4?
 
         while (i < len) : (i += 1) {
             const id = readInt(u32, data, i);
@@ -24,6 +25,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             nodes[0] = try db.upsertNode(id, refTypeEntry);
 
             // TODO It would be better to at least do this in chunks
+            // use max chunks
             try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
         }
     } else if (ctx.fieldType == 13) {

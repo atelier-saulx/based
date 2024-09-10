@@ -83,8 +83,10 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const size = refBuffer.byteLength
         const meta = Buffer.allocUnsafe(7)
 
+        console.log('INCLUDE', refInclude.fromRef)
+
         // command meaning include single ref
-        meta[0] = 255
+        meta[0] = refInclude.multiple ? 254 : 255
 
         // has fields
         meta[1] =
@@ -141,6 +143,7 @@ const createOrGetRefIncludeDef = (
   ref: FieldDef,
   include: QueryIncludeDef,
   query: Query,
+  multiple: boolean,
 ) => {
   if (!include.refIncludes) {
     include.refIncludes = {}
@@ -158,6 +161,7 @@ const createOrGetRefIncludeDef = (
       mainIncludes: {},
       includeTree: [],
       fromRef: ref,
+      multiple,
     }
   }
   const refIncludeDef = include.refIncludes[field]
@@ -206,9 +210,17 @@ const parseInclude = (
       if (!t) {
         return
       }
-      if (isFieldDef(t) && t.type === 'reference') {
+      if (
+        isFieldDef(t) &&
+        (t.type === 'reference' || t.type === 'references')
+      ) {
         const ref: FieldDef = t as FieldDef
-        const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
+        const refIncludeDef = createOrGetRefIncludeDef(
+          ref,
+          include,
+          query,
+          t.type === 'references',
+        )
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
         addPathToIntermediateTree(t, includeTree, t.path)
@@ -232,9 +244,15 @@ const parseInclude = (
 
   addPathToIntermediateTree(field, includeTree, field.path)
 
-  if (field.type === 'reference') {
-    const refIncludeDef = createOrGetRefIncludeDef(field, include, query)
+  if (field.type === 'reference' || field.type === 'references') {
+    const refIncludeDef = createOrGetRefIncludeDef(
+      field,
+      include,
+      query,
+      field.type === 'references',
+    )
     for (const f in refIncludeDef.schema.fields) {
+      // include all
       if (
         refIncludeDef.schema.fields[f].type !== 'reference' &&
         refIncludeDef.schema.fields[f].type !== 'references'

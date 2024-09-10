@@ -6,6 +6,7 @@ const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const readInt = @import("../../utils.zig").readInt;
 const getField = db.getField;
 const db = @import("../../db//db.zig");
+const getRefsFields = @import("./includeRefs.zig").getRefsFields;
 
 const std = @import("std");
 
@@ -31,26 +32,39 @@ pub fn getFields(
 
         const operation = include[includeIterator..];
 
+        if (field == 254) {
+            const hasFields: bool = operation[0] == 1;
+            const refSize = readInt(u16, operation, 1);
+            const singleRef = operation[3 .. 3 + refSize];
+            includeIterator += refSize + 3;
+            if (!idIsSet) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id, refLvl, refField);
+            }
+            const refResultSize = getRefsFields(ctx, singleRef, node, refLvl, hasFields);
+            size += refResultSize;
+            if (fromNoFields) {
+                // else it counts it double for some wierd reason...
+                size -= 5;
+            }
+            continue :includeField;
+        }
+
         if (field == 255) {
             const hasFields: bool = operation[0] == 1;
             const refSize = readInt(u16, operation, 1);
             const singleRef = operation[3 .. 3 + refSize];
             includeIterator += refSize + 3;
-
             if (!idIsSet) {
                 idIsSet = true;
                 size += try addIdOnly(ctx, id, refLvl, refField);
             }
-
             const refResultSize = getSingleRefFields(ctx, singleRef, node, refLvl, hasFields);
-
             size += refResultSize;
-
             if (fromNoFields) {
                 // else it counts it double for some wierd reason...
                 size -= 5;
             }
-
             continue :includeField;
         }
 

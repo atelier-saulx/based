@@ -71,10 +71,9 @@ await test('simple', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('article').include('contributors.name').get().toObject(), [
-    // FIXME the contributors should be returned
-    { id: strudelArticle },
-    { id: piArticle },
+  deepEqual(db.query('article').include('contributors').get().toObject(), [
+    { id: strudelArticle, contributors: [{ id: mrSnurp }] },
+    { id: piArticle, contributors: [{ id: mrSnurp }, { id: flippie }] },
   ])
 })
 
@@ -130,7 +129,7 @@ await test('one to many', async (t) => {
     db.create('resource', {
       type: i % 2,
       name: `thing ${i}`,
-      owner: ownerId
+      owner: ownerId,
     })
   }
   db.drain()

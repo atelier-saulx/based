@@ -62,6 +62,7 @@ export class Query {
         mainLen: 0,
         mainIncludes: {},
         includeTree: [],
+        multiple: false,
       }
     }
     for (const f of fields) {
