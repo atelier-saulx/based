@@ -6,6 +6,7 @@ import { auth } from './commands/Auth/index.js'
 import pc from 'picocolors'
 import { spinner } from './shared/index.js'
 import { dev } from './commands/Dev/index.js'
+import { backup } from './commands/Backup/index.js'
 
 export const init = async () => {
   const program: Command = new Command()
@@ -17,6 +18,7 @@ export const init = async () => {
       auth(program),
       dev(program),
       deploy(program),
+      backup(program),
     ])
 
     program.helpOption('-h, --help', 'Display the help for each command.')
