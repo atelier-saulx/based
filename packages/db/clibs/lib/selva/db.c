@@ -66,11 +66,11 @@ int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b)
     return node_id_cmp(a->dest, b->dest);
 }
 
+#if 0
 static int SVector_SelvaNode_expire_compare(const void ** restrict a_raw, const void ** restrict b_raw)
 {
     const struct SelvaNode *a = *(const struct SelvaNode **)a_raw;
     const struct SelvaNode *b = *(const struct SelvaNode **)b_raw;
-#if 0
     int diff;
 
     assert(a && b);
@@ -79,10 +79,10 @@ static int SVector_SelvaNode_expire_compare(const void ** restrict a_raw, const 
     if (diff) {
         return diff;
     }
-#endif
 
     return node_id_cmp(a->node_id, b->node_id);
 }
+#endif
 
 static int SVector_SelvaTypeEntry_compare(const void ** restrict a_raw, const void ** restrict b_raw)
 {
