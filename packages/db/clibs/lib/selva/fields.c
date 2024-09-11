@@ -776,10 +776,6 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-    if (dst->type != type_dst) {
-        return SELVA_EINTYPE;
-    }
-
 #ifdef FIELDS_NO_DUPLICATED_EDGES
     remove_reference(db, src, fs_src, dst->node_id);
     remove_reference(db, dst, fs_dst, src->node_id);
@@ -800,6 +796,69 @@ int selva_fields_references_insert(
     if (err) {
         db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
     }
+
+    return 0;
+}
+
+static int get_refs( struct SelvaNodeReferences *refs, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFieldInfo *nfo;
+
+    if (fs->type != SELVA_FIELD_TYPE_REFERENCES) {
+        return SELVA_EINTYPE;
+    }
+
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type != SELVA_FIELD_TYPE_REFERENCES) {
+        return SELVA_ENOENT;
+    }
+
+    memcpy(refs, nfo2p(fields, nfo), sizeof(*refs));
+    return 0;
+}
+
+int selva_fields_references_move(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        ssize_t index_old,
+        ssize_t index_new)
+{
+    /* TODO */
+
+    return 0;
+}
+
+int selva_fields_references_swap(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t index1,
+        size_t index2)
+{
+    struct SelvaNodeReferences refs;
+    int err;
+
+    err = get_refs(&refs, &node->fields, fs);
+    if (err) {
+        return err;
+    }
+
+    if (index1 < 0 || index1 >= refs.nr_refs ||
+        index2 < 0 || index2 >= refs.nr_refs) {
+        return SELVA_EINVAL;
+    }
+
+    /*
+     * No matter how clever you try to be here with temp variables or whatever,
+     * clang and gcc will figure out that you are doing a swap and will optimize
+     * your code the best possible (same) way for the arch.
+     * That's probably 4 instructions on x86-64 and 6 on ARMH64.
+     */
+    struct SelvaNodeReference *ap = &refs.refs[index1];
+    struct SelvaNodeReference *bp = &refs.refs[index2];
+    struct SelvaNodeReference a = *ap;
+    struct SelvaNodeReference b = *bp;
+    *ap = b;
+    *bp = a;
 
     return 0;
 }
