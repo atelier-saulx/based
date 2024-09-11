@@ -136,8 +136,6 @@ Authorize your user in the Based Cloud.
 #### make
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--db <db>`                  | DB instance name.                                                                       | No       |
-| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
@@ -153,22 +151,10 @@ Authorize your user in the Based Cloud.
 | `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
 
-#### select
-| Option                       | Description                                                                             | Required |
-|------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--db <db>`                  | DB instance name.                                                                       | No       |
-| `--debug`                    | Show debug info if available.                                                           | No       |
-| `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
-| `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
-| `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
-| `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
-| `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
-
 #### download
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--db <db>`                  | DB instance name.                                                                       | No       |
-| `--debug`                    | Show debug info if available.                                                           | No       |
+| `-f`, `--file <file>`        | .rdb backup file to upload.                                                             | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
@@ -179,8 +165,6 @@ Authorize your user in the Based Cloud.
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
 | `-f`, `--file <file>`        | .rdb backup file to upload.                                                             | Yes      |
-| `--db <db>`                  | DB instance name.                                                                       | No       |
-| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
@@ -190,8 +174,6 @@ Authorize your user in the Based Cloud.
 #### flush
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--db <db>`                  | DB instance name.                                                                       | No       |
-| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |

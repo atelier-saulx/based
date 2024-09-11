@@ -4,9 +4,24 @@ import { BasedClient } from '@based/client'
 
 export const basedAuth = async (
   program: Command,
-): Promise<{ basedClient: BasedClient; destroy: () => void }> => {
+): Promise<{
+  basedClient: BasedClient
+  adminHubBasedCloud: BasedClient
+  envHubBasedCloud: BasedClient
+  destroy: () => void
+}> => {
   const { cluster, org, env, project } = program.opts()
-  const { client, destroy } = await login({ cluster, org, env, project })
+  const { client, adminHub, envHub, destroy } = await login({
+    cluster,
+    org,
+    env,
+    project,
+  })
 
-  return { basedClient: client, destroy }
+  return {
+    basedClient: client,
+    adminHubBasedCloud: adminHub,
+    envHubBasedCloud: envHub,
+    destroy,
+  }
 }

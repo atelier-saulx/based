@@ -18,6 +18,7 @@ export const auth = async (program: Command) => {
       project,
       selectUser: true,
     })
+
     destroy()
   })
 }

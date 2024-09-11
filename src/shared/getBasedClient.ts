@@ -31,7 +31,7 @@ class SharedBasedClient extends BasedClient {
     const authState = await super.setAuthState(args)
 
     clearTimeout(timeout)
-    spinner.succeed(`${emoji} Connected to ${target}`)
+    spinner.succeed(`${emoji} Connected to ${target}.`)
 
     return authState
   }

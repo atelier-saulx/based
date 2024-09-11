@@ -64,10 +64,11 @@ export const login = async ({
   selectUser,
 }: LoginArgs): Promise<{
   client: BasedClient
-  admin: BasedClient
+  adminHub: BasedClient
+  envHub: BasedClient
   destroy(): void
 }> => {
-  const hub = getBasedClient({
+  const adminHub = getBasedClient({
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
@@ -75,13 +76,13 @@ export const login = async ({
     cluster,
   })
 
-  await hub.once('connect')
+  await adminHub.once('connect')
 
   let users: User[] = await readJSON(authPath).catch(() => [])
   let user: User
 
   if (email) {
-    user = await authenticateUser(email, hub, cluster)
+    user = await authenticateUser(email, adminHub, cluster)
 
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)
@@ -89,7 +90,7 @@ export const login = async ({
 
   if (users.length && !email) {
     const lastUser: User = users.sort((a: User, b: User) => b?.ts - a?.ts)[0]
-    await hub
+    await adminHub
       .setAuthState({
         ...lastUser,
         type: 'based',
@@ -121,7 +122,7 @@ export const login = async ({
       validate: (email) => validateEmail(email),
     })
 
-    user = await authenticateUser(email, hub, cluster)
+    user = await authenticateUser(email, adminHub, cluster)
 
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)
@@ -138,8 +139,26 @@ export const login = async ({
     project,
   })
 
+  await client.once('connect')
+
   await client.setAuthState({
-    ...hub.authState,
+    ...adminHub.authState,
+    type: 'based',
+  })
+
+  const envHub = getBasedClient({
+    cluster,
+    org,
+    env,
+    project,
+    key: 'cms',
+    optionalKey: true,
+  })
+
+  await envHub.once('connect')
+
+  await envHub.setAuthState({
+    ...adminHub.authState,
     type: 'based',
   })
 
@@ -147,10 +166,12 @@ export const login = async ({
 
   return {
     client,
-    admin: hub,
+    adminHub,
+    envHub,
     destroy() {
       client.destroy()
-      hub.destroy()
+      adminHub.destroy()
+      envHub.destroy()
     },
   }
 }
