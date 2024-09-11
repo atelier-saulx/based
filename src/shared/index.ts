@@ -10,6 +10,7 @@ export * from './parseFunctions.js'
 export * from './parseSchema.js'
 export * from './buildFunctions.js'
 export * from './invalidate.js'
+export * from './auth.js'
 
 export const cwd = process.cwd()
 export const rel = (str: string) => relative(cwd, str)

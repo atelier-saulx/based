@@ -1,11 +1,11 @@
 import { WebSocket, WebSocketServer } from 'ws'
 import { buffer } from 'node:stream/consumers'
 import {
-  login,
   getMyIp,
   parseFunctions,
   invalidate,
   spinner,
+  basedAuth,
 } from '../../shared/index.js'
 import { OutputFile } from '@based/bundle'
 import { Readable } from 'node:stream'
@@ -20,6 +20,7 @@ import pc from 'picocolors'
 export const dev = async (program: Command) => {
   const cmd = program
     .command('dev')
+    .description('Develop your app running the Based Cloud locally.')
     .option('-p, --port <port>', 'To set manually the Based Dev Server port.')
     .option(
       '-fn, --function <functions...>',
@@ -27,8 +28,7 @@ export const dev = async (program: Command) => {
     )
 
   cmd.action(async ({ functions, port }) => {
-    const { cluster, org, env, project } = program.opts()
-    const { client } = await login({ cluster, org, env, project })
+    const { basedClient } = await basedAuth(program)
 
     const { BasedServer } = await import('@based/server')
     const ip: string = getMyIp()
@@ -54,7 +54,7 @@ export const dev = async (program: Command) => {
     const server = new BasedServer({
       silent: true,
       clients: {
-        env: client,
+        env: basedClient,
       },
       port: devPort,
       functions: {
@@ -284,7 +284,7 @@ export const dev = async (program: Command) => {
 
                 return `${html.substring(0, i)}${liveReloadScript(
                   lrPort,
-                )}${basedOptsScript(client.opts)}${html.substring(i)}`
+                )}${basedOptsScript(basedClient.opts)}${html.substring(i)}`
               },
             }
           } else {

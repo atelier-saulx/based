@@ -4,7 +4,7 @@ Streamline your app development with our cli.
 letting you focus on building your app without the hassle.
 
 ## Simple usage
-`npx @based/cli [commands][sub-commands][options]`
+*Example:* `npx @based/cli [commands][sub-commands][options]`
 
 When you created your account on Based.io, you also needed to create a cluster or an organization,
 name your project, and choose an environment to start developing your app.
@@ -47,16 +47,17 @@ the information passed as a parameter will take precedence over the file.
 
 ## Basic commands
 ### auth
+Authorize your user in the Based Cloud.
 
-`npx @based/cli auth`
+*Example:* `npx @based/cli auth`
 
 | Option            | Description                    | Required |
 |-------------------|--------------------------------|----------|
 | `--email <email>` | To speed up the login process. | No       |
 
 
-### init
-`npx @based/cli init [options]`
+### init [not-ready]
+*Example:* `npx @based/cli init [options]`
 
 | Option                       | Description                                                                              | Required |
 |------------------------------|------------------------------------------------------------------------------------------|----------|
@@ -70,7 +71,7 @@ the information passed as a parameter will take precedence over the file.
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                       | No       |
 
 ### dev
-`npx @based/cli dev [options]`
+*Example:* `npx @based/cli dev [options]`
 
 | Option                             | Description                                                                             | Required |
 |------------------------------------|-----------------------------------------------------------------------------------------|----------|
@@ -84,7 +85,7 @@ the information passed as a parameter will take precedence over the file.
 
 
 ### deploy
-`npx @based/cli deploy [options]`
+*Example:* `npx @based/cli deploy [options]`
 
 | Option                             | Description                                                                             | Required |
 |------------------------------------|-----------------------------------------------------------------------------------------|----------|
@@ -99,8 +100,8 @@ the information passed as a parameter will take precedence over the file.
 | `-aK`, `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-### logs
-`npx @based/cli logs [sub-command][options]`
+### logs [not-ready]
+*Example:* `npx @based/cli logs [sub-command][options]`
 
 #### show
 | Option                              | Description                                                                             | Required |
@@ -130,20 +131,18 @@ the information passed as a parameter will take precedence over the file.
 
 
 ### backup
-`npx @based/cli backup [sub-command][options]`
+*Example:* `npx @based/cli backup [sub-command][options]`
 
-#### restore
+#### make
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-f`, `--file <file>`        | .rdb backup file to upload.                                                             | Yes      |
-| `-n`, `--name <name>`        | DB instance name.                                                                       | No       |
+| `--db <db>`                  | DB instance name.                                                                       | No       |
 | `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
 | `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
-
 
 #### list
 | Option                       | Description                                                                             | Required |
@@ -154,31 +153,45 @@ the information passed as a parameter will take precedence over the file.
 | `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
 
+#### select
+| Option                       | Description                                                                             | Required |
+|------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `--db <db>`                  | DB instance name.                                                                       | No       |
+| `--debug`                    | Show debug info if available.                                                           | No       |
+| `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
+| `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
+| `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
+| `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
+| `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
 
 #### download
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `--db <db>`                  | DB instance name.                                                                       | No       |
+| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
 | `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
 
-
-#### select
+#### restore
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `-f`, `--file <file>`        | .rdb backup file to upload.                                                             | Yes      |
+| `--db <db>`                  | DB instance name.                                                                       | No       |
+| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
 | `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
-
 
 #### flush
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-n`, `--name <name>`        | DB instance name.                                                                       | No       |
+| `--db <db>`                  | DB instance name.                                                                       | No       |
+| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
@@ -186,32 +199,26 @@ the information passed as a parameter will take precedence over the file.
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-#### make
-| Option                       | Description                                                                             | Required |
-|------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
-| `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
-| `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
-| `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
-| `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
+### call [not-ready]
+*Example:* `npx @based/cli call [options]`
+
+| Option                              | Description                                                                             | Required |
+|-------------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `-fn`, `--function <function name>` | The function name to be called.                                                         | Yes      |
+| `-c`, `--cluster <cluster>`         | Define the cluster to use (default: "production").                                      | No       |
+| `-o`, `--org <org>`                 | Specify the organization.                                                               | No       |
+| `-p`, `--project <project>`         | Specify the project name.                                                               | No       |
+| `-e`, `--env <env>`                 | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
+| `-aK`, `--api-key <api-key>`        | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-### call
-| Option                       | Description                                                                             | Required |
-|------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-n`, `--name <name>`        | Name.                                                                                   | No       |
-| `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
-| `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
-| `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
-| `-e`, `--env <env>`          | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
-| `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
+### edit [not-ready]
+*Example:* `npx @based/cli edit [options]`
 
-
-### edit
 | Option                        | Description                                                                             | Required |
 |-------------------------------|-----------------------------------------------------------------------------------------|----------|
 | `--id <id>`                   | ID.                                                                                     | No       |
-| `--db <db>`                   | Database.                                                                               | No       |
+| `--db <db>`                   | DB instance name.                                                                       | No       |
 | `-l`, `--language <language>` | Language.                                                                               | No       |
 | `-e`, `--editor <editor>`     | Editor (default: "nvim").                                                               | No       |
 | `-c`, `--cluster <cluster>`   | Define the cluster to use (default: "production").                                      | No       |
@@ -221,7 +228,9 @@ the information passed as a parameter will take precedence over the file.
 | `-aK`, `--api-key <api-key>`  | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-### secrets
+### secrets [not-ready]
+*Example:* `npx @based/cli secrets [sub-command][options]`
+
 #### set
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
@@ -245,11 +254,13 @@ the information passed as a parameter will take precedence over the file.
 | `-aK`, `--api-key <api-key>` | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-### query
+### query [not-ready]
+*Example:* `npx @based/cli query [options]`
+
 | Option                        | Description                                                                             | Required |
 |-------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--id <id>`                   | ID.                                                                                     | No       |
-| `--db <db>`                   | Database.                                                                               | No       |
+| `--id <id>`                   | Query ID.                                                                               | Yes      |
+| `--db <db>`                   | DB instance name.                                                                       | No       |
 | `-n`, `--name <name>`         | Name.                                                                                   | No       |
 | `-w`, `--watch`               | Watch for changes (default: false).                                                     | No       |
 | `-t`, `--type <type>`         | Type.                                                                                   | No       |

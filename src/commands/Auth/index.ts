@@ -4,6 +4,7 @@ import { login } from '../../shared/index.js'
 export const auth = async (program: Command) => {
   const cmd: Command = program
     .command('auth')
+    .description('Authorize your user in the Based Cloud.')
     .option('--email <email>', 'To set manually the Based Dev Server port.')
 
   cmd.action(async ({ email }) => {

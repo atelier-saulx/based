@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { OutputFile } from '@based/bundle'
-import { login, parseFunctions, parseSchema } from '../../shared/index.js'
+import { basedAuth, parseFunctions, parseSchema } from '../../shared/index.js'
 import { hash, hashCompact } from '@saulx/hash'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
@@ -38,13 +38,13 @@ const queuedFileUpload = queued(
 
 const queuedFnDeploy = queued(
   async (
-    client: BasedClient,
+    basedClient: BasedClient,
     checksum: number,
     config: any,
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {
-    const { error, distId } = await client.stream('based:set-function', {
+    const { error, distId } = await basedClient.stream('based:set-function', {
       contents: js.contents,
       payload: {
         checksum,
@@ -57,7 +57,7 @@ const queuedFnDeploy = queued(
     }
 
     if (distId) {
-      await client
+      await basedClient
         .stream('based:set-sourcemap', {
           contents: sourcemap.contents,
           payload: {
@@ -83,6 +83,7 @@ const queuedFnDeploy = queued(
 export const deploy = async (program: Command) => {
   const cmd: Command = program
     .command('deploy')
+    .description('Push your app to Based Cloud super fast as hell.')
     .option('-w, --watch', 'watch mode')
     .option(
       '-f, --functions <functions...>',
@@ -91,9 +92,8 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { cluster, org, env, project } = program.opts()
-      const { client, destroy } = await login({ cluster, org, env, project })
-      const { publicPath } = await client.call('based:env-info')
+      const { basedClient, destroy } = await basedAuth(program)
+      const { publicPath } = await basedClient.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
         await parseFunctions(functions, watch && update, publicPath)
 
@@ -124,7 +124,7 @@ export const deploy = async (program: Command) => {
             spinner.start()
             const text = textFactory('deployed', 'schema', schemaPayload.length)
             spinner.start(text(0))
-            await client.call('db:set-schema', schemaPayload)
+            await basedClient.call('db:set-schema', schemaPayload)
             spinner.succeed(text())
           }
         }
@@ -169,7 +169,7 @@ export const deploy = async (program: Command) => {
               const id = `fi${hashCompact(fileName, 8)}`
               const destUrl = `${publicPath}/${fileName}`
               await queuedFileUpload(
-                client,
+                basedClient,
                 {
                   contents,
                   fileName,
@@ -226,7 +226,7 @@ export const deploy = async (program: Command) => {
           const text = textFactory('deployed', 'function', deploys.length)
           // deploy functions
           let deploying = 0
-          let url = client.connection?.ws.url
+          let url = basedClient.connection?.ws.url
             .replace('ws://', 'http://')
             .replace('wss://', 'https://')
 
@@ -236,9 +236,17 @@ export const deploy = async (program: Command) => {
 
           const logs = await Promise.all(
             deploys.map(async ({ checksum, config, js, sourcemap }) => {
-              await queuedFnDeploy(client, checksum, config, js, sourcemap),
+              await queuedFnDeploy(
+                basedClient,
+                checksum,
+                config,
+                js,
+                sourcemap,
+              ),
                 (spinner.text = text(++deploying))
+
               const { path = `/${config.name}`, public: isPublic } = config
+
               if (isPublic) {
                 return `🚀 ${pc.dim(url)}${path}`
               }

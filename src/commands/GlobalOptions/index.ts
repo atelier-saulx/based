@@ -33,22 +33,22 @@ export const index = async (program: Command) => {
   program
     .option(
       '-c, --cluster <cluster>',
-      'Define the cluster to use',
+      'Define the cluster to use.',
       args.cluster,
     )
-    .requiredOption('-o, --org <org>', 'Specify the organization', args.org)
+    .requiredOption('-o, --org <org>', 'Specify the organization.', args.org)
     .requiredOption(
       '-p, --project <project>',
-      'Specify the project name',
+      'Specify the project name.',
       args.project,
     )
     .requiredOption(
       '-e, --env <env>',
-      'Specify witch environment (can be a name or "#branch" if you want to Deploy by branch)',
+      'Specify witch environment (can be a name or "#branch" if you want to Deploy by branch).',
       args.env,
     )
     .option(
       '-aK, --api-key <api-key>',
-      'API Key generated on Based.io for Service Account',
+      'API Key generated on Based.io for Service Account.',
     )
 }

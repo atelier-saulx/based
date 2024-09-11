@@ -19,6 +19,12 @@ export const init = async () => {
       deploy(program),
     ])
 
+    program.helpOption('-h, --help', 'Display the help for each command.')
+    program.helpCommand(
+      'help [command]',
+      'Display the help related to the command.',
+    )
+
     const opts = program.opts()
 
     for (const arg in opts) {
