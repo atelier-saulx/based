@@ -92,8 +92,9 @@ int selva_fields_references_insert(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         size_t index,
+        struct SelvaTypeEntry *te_dst,
         struct SelvaNode *dst,
-        struct SelvaNodeReference *out);
+        struct SelvaNodeReference **ref_out);
 
 SELVA_EXPORT
 int selva_fields_set_reference_meta(
