@@ -7,6 +7,7 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "util/align.h"
+#include "util/array_field.h"
 #include "util/ptag.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
@@ -823,7 +824,73 @@ int selva_fields_references_move(
         ssize_t index_old,
         ssize_t index_new)
 {
-    /* TODO */
+    struct SelvaNodeReferences refs;
+    int err;
+
+    err = get_refs(&refs, &node->fields, fs);
+    if (err) {
+        return err;
+    }
+
+    index_old = ary_idx_to_abs(refs.nr_refs, index_old);
+    index_new = ary_idx_to_abs(refs.nr_refs, index_new);
+
+    if (index_old < 0 || index_old >= refs.nr_refs ||
+        index_new < 0 || index_new >= refs.nr_refs) {
+        return SELVA_EINVAL;
+    }
+
+    if (index_old < index_new) {
+        struct SelvaNodeReference tmp = refs.refs[index_old];
+
+        /*
+         *   0   1   2   3   4   5   6
+         * | a | b |   | d | e | f | g |
+         *           |           ^
+         *           +-----c-----+
+         *
+         * First fill the hole.
+         */
+        memmove(refs.refs + index_old, refs.refs + index_old + 1, (index_new - index_old) * sizeof(*refs.refs));
+        /*
+         *   0   1   2   3   4   5   6
+         * | a | b | d | e | f |   | g |
+         *           |           ^
+         *           +-----c-----+
+         *
+         * Assign tmp to the new index.
+         */
+        refs.refs[index_new] = tmp;
+        /*
+         *   0   1   2   3   4   5   6
+         * | a | b | d | e | f | c | g |
+         */
+    } else if (index_old > index_new) {
+        struct SelvaNodeReference tmp = refs.refs[index_old];
+
+        /*
+         *   0   1   2   3   4   5   6
+         * | a | b | c | d | e |   | g |
+         *           ^           |
+         *           +-----f-----+
+         *
+         * First fill the hole.
+         */
+        memmove(refs.refs + index_new + 1, refs.refs + index_new, (index_new - index_old) * sizeof(*refs.refs));
+        /*
+         *   0   1   2   3   4   5   6
+         * | a | b |   | c | d | e | g |
+         *           ^           |
+         *           +-----f-----+
+         *
+         * Assign tmp to the new index.
+         */
+        refs.refs[index_new] = tmp;
+        /*
+         *   0   1   2   3   4   5   6
+         * | a | b | f | c | d | e | g |
+         */
+    } /* else NOP */
 
     return 0;
 }
@@ -842,8 +909,8 @@ int selva_fields_references_swap(
         return err;
     }
 
-    if (index1 < 0 || index1 >= refs.nr_refs ||
-        index2 < 0 || index2 >= refs.nr_refs) {
+    if (index1 >= refs.nr_refs ||
+        index2 >= refs.nr_refs) {
         return SELVA_EINVAL;
     }
 

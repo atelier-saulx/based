@@ -96,6 +96,13 @@ int selva_fields_references_insert(
         struct SelvaNode *dst,
         struct SelvaNodeReference **ref_out);
 
+/**
+ * Move reference from old to new index in a references field array.
+ * If index_new > index_old then the ref will be after the reference that was in index_new before the operation;
+ * If index_new < index_ld then the ref  will be before the reference that was in the index_new before the operation.
+ * index_new and index_old can be negative, which will start counting the references array from the last position.
+ * It's not possible to create a gap of null references using this function.
+ */
 SELVA_EXPORT
 int selva_fields_references_move(
         struct SelvaNode *node,
@@ -103,6 +110,9 @@ int selva_fields_references_move(
         ssize_t index_old,
         ssize_t index_new);
 
+/**
+ * Swap two references in a references field array.
+ */
 SELVA_EXPORT
 int selva_fields_references_swap(
         struct SelvaNode *node,
