@@ -851,7 +851,7 @@ int selva_fields_references_swap(
      * No matter how clever you try to be here with temp variables or whatever,
      * clang and gcc will figure out that you are doing a swap and will optimize
      * your code the best possible (same) way for the arch.
-     * That's probably 4 instructions on x86-64 and 6 on ARMH64.
+     * That's probably 4 instructions on x86-64 and 6 on ARM64.
      */
     struct SelvaNodeReference *ap = &refs.refs[index1];
     struct SelvaNodeReference *bp = &refs.refs[index2];
