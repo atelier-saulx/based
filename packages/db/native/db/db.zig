@@ -115,12 +115,22 @@ pub fn writeReference(value: Node, target: Node, fieldSchema: FieldSchema) !void
 }
 
 pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !void {
+    // selva_fields_references_insert() is slightly more optimized than this for insertions to
+    // a `references` field but does it really make a difference?
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
         target,
         fieldSchema,
         @ptrCast(value.ptr),
         value.len * 8, // TODO use system bullshit
+    ));
+}
+
+pub fn insertReference(value: Node, target: Node, fieldSchema: FieldSchema, index: selva.user_ssize_t) !void {
+    // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
+    const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
+
+    try errors.selva(selva.selva_fields_references_insert(ctx.selva, target, fieldSchema, index, te_dst, value, selva.NULL // Here could be: struct SelvaNodeReference **ref_out
     ));
 }
 
