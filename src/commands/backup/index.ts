@@ -1,9 +1,9 @@
 import { Command } from 'commander'
-import { make } from './Make/index.js'
-import { list } from './List/index.js'
-import { download } from './Download/index.js'
-import { restore } from './Restore/index.js'
-import { flush } from './Flush/index.js'
+import { make } from './make/index.js'
+import { list } from './list/index.js'
+import { restore } from './restore/index.js'
+import { flush } from './flush/index.js'
+import { download } from './download/index.js'
 
 export const backup = async (program: Command) => {
   const cmd: Command = program
@@ -19,13 +19,13 @@ export const backup = async (program: Command) => {
   cmd
     .command('list')
     .description('List available backups.')
-    .action(list(program))
+    .action(list(program, true))
 
   cmd
     .command('download')
     .option('-f, --file <file>', '.rdb backup file to upload.')
     .description('Download previous backups.')
-    .action(download)
+    .action(download(program))
 
   cmd
     .command('restore')

@@ -1,15 +1,18 @@
 import { join } from 'node:path'
 import { bundle, BundleResult } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
-import { isIndexFile } from './checkFileType.js'
-import { getTargets } from './getTargets.js'
 import pc from 'picocolors'
 import { readdir } from 'node:fs/promises'
-import { parseSchema } from './parseSchema.js'
 import fg from 'fast-glob'
-import { buildFunctions } from './buildFunctions.js'
-import { invalidate } from './invalidate.js'
-import { rel, abs } from './index.js'
+import {
+  rel,
+  abs,
+  invalidate,
+  buildFunctions,
+  parseSchema,
+  getTargets,
+  isIndexFile,
+} from './index.js'
 
 const { glob } = fg
 
