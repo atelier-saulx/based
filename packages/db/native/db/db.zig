@@ -134,6 +134,14 @@ pub fn insertReference(value: Node, target: Node, fieldSchema: FieldSchema, inde
     ));
 }
 
+pub fn moveReference(node: Node, fieldSchema: FieldSchema, index_old: selva.user_ssize_t, index_new: selva.user_ssize_t) !void {
+    try errors.selva(selva.selva_fields_references_move(node, fieldSchema, index_old, index_new));
+}
+
+pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_ssize_t, index_b: selva.user_ssize_t) !void {
+    try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
+}
+
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
     // if (result == null) {
