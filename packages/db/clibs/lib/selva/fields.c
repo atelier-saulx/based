@@ -351,6 +351,8 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
              */
             refs->offset++;
             refs->refs++;
+
+            static_assert(sizeof(refs->offset) == sizeof(uint16_t));
             if (refs->offset == 0xffff) {
                 remove_refs_offset(refs);
             }
@@ -500,7 +502,9 @@ static void remove_weak_reference(struct SelvaNode *src, const struct SelvaField
                      */
                     refs.offset++;
                     refs.refs++;
-                    if (refs.offset == 0xffff) {
+
+                    static_assert(sizeof(refs.offset) == sizeof(uint32_t));
+                    if (refs.offset == 0xFFFFFFFF) {
                         remove_weak_refs_offset(&refs);
                     }
                 } else if (i + 1 < refs.nr_refs) {
