@@ -28,7 +28,8 @@ struct SelvaNodeWeakReference {
 
 struct SelvaNodeWeakReferences {
     uint32_t nr_refs;
-    uint32_t offset;
+    uint16_t offset;
+    uint16_t great_idz; /*!< Greatest node_id ever inserted in this field. (Compressed). */
     struct SelvaNodeWeakReference *refs __counted_by(nr_refs);
 };
 

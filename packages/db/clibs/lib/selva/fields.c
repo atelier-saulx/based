@@ -13,6 +13,7 @@
 #include "selva_error.h"
 #include "db_panic.h"
 #include "db.h"
+#include "idz.h"
 #include "selva/fields.h"
 
 /**
@@ -133,6 +134,26 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     return s;
 }
 
+static void remove_refs_offset(struct SelvaNodeReferences *refs)
+{
+    if (refs->offset > 0) {
+        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+        refs->refs -= refs->offset;
+        refs->offset = 0;
+    }
+}
+
+static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
+{
+    /* If offset > 0 then refs is also allocated. */
+    if (refs->offset > 0) {
+        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+        refs->refs -= refs->offset;
+        refs->offset = 0;
+    }
+}
+
+
 static void set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
 {
     struct selva_string *s = get_mutable_string(fields, fs, nfo, len);
@@ -223,11 +244,8 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
 
         /*
          * Get rid of the offset first.
-         * If offset > 0 then refs is already allocated.
          */
-        memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
-        refs.refs -= refs.offset;
-        refs.offset = 0;
+        remove_refs_offset(&refs);
     }
 
     index = (index == -1) ? refs.nr_refs : index;
@@ -333,6 +351,9 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
              */
             refs->offset++;
             refs->refs++;
+            if (refs->offset == 0xffff) {
+                remove_refs_offset(refs);
+            }
         } else if (i + 1 < refs->nr_refs) {
             /*
              * Otherwise we must do a slightly expensive memmove().
@@ -479,6 +500,9 @@ static void remove_weak_reference(struct SelvaNode *src, const struct SelvaField
                      */
                     refs.offset++;
                     refs.refs++;
+                    if (refs.offset == 0xffff) {
+                        remove_weak_refs_offset(&refs);
+                    }
                 } else if (i + 1 < refs.nr_refs) {
                     /*
                      * Otherwise we must do a slightly expensive memmove().
@@ -630,13 +654,8 @@ static int set_weak_references(const struct SelvaFieldSchema *fs_src, struct Sel
 
     /*
      * Get rid of any offset first.
-     * If offset > 0 then refs is also allocated.
      */
-    if (refs.offset > 0) {
-        memmove(refs.refs - refs.offset, refs.refs, refs.nr_refs * sizeof(*refs.refs));
-        refs.refs -= refs.offset;
-        refs.offset = 0;
-    }
+    remove_weak_refs_offset(&refs);
 
     /*
      * Then add the new reference.
