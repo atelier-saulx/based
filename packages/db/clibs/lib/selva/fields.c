@@ -175,6 +175,10 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
     return 0;
 }
 
+/**
+ * Write a ref to the fields data.
+ * Note that this function doesn't touch the destination node.
+ */
 static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, ssize_t index, struct SelvaNode * restrict dst, struct SelvaNodeReference **ref_out)
 {
     struct SelvaFields *fields = &node->fields;
@@ -250,6 +254,13 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
 
     if (ref_out) {
         *ref_out = &refs.refs[index];
+    }
+
+    /*
+     * Update the greatest id observed.
+     */
+    if (dst->node_id > idz_unpack(refs.great_idz)) {
+        refs.great_idz = idz_pack(dst->node_id);
     }
 
     memcpy(vp, &refs, sizeof(refs));

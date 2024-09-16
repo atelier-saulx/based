@@ -25,6 +25,7 @@ OBJ := \
 	fields.o \
 	filter.o \
 	find.o \
+	idz.o \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
