@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { version } from './version.js'
 import { deploy } from './commands/deploy/index.js'
-import { index } from './commands/globalOptions/index.js'
+import { globalOptions } from './commands/globalOptions/index.js'
 import { auth } from './commands/auth/index.js'
 import pc from 'picocolors'
 import { spinner } from './shared/index.js'
@@ -14,7 +14,7 @@ export const init = async () => {
   try {
     await Promise.all([
       version(program),
-      index(program),
+      globalOptions(program),
       auth(program),
       dev(program),
       deploy(program),

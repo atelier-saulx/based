@@ -3,7 +3,7 @@ import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 import { Command } from 'commander'
 
-export const index = async (program: Command) => {
+export const globalOptions = async (program: Command): Promise<void> => {
   // if (!process.env.ENV) {
   //   process.env.ENV = await getEnv()
   // }
@@ -28,6 +28,10 @@ export const index = async (program: Command) => {
       const compiled = bundled.require()
       Object.assign(args, compiled.default || compiled)
     }
+  } else {
+    console.info(
+      `⚠️ No 'based.json' configuration file was found. It is recommended to create one.`,
+    )
   }
 
   program

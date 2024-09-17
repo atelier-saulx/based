@@ -4,11 +4,15 @@ import { input, select } from '@inquirer/prompts'
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
 import pc from 'picocolors'
-import { BasedClient } from '@based/client'
+import { AuthState, BasedClient } from '@based/client'
 import { spinner } from './spinner.js'
 
-const persistPath = join(homedir(), '.based/cli')
-const authPath = join(persistPath, 'Auth.json')
+type User = {
+  email: string
+  userId?: string
+  token?: string
+  ts?: number
+}
 
 type LoginArgs = {
   email?: string
@@ -19,16 +23,24 @@ type LoginArgs = {
   selectUser?: boolean
 }
 
-type User = {
-  email: string
-  userId?: string
-  token?: string
-  ts?: number
+type LoginReturn = {
+  client: BasedClient
+  adminHub: BasedClient
+  envHub: BasedClient
+  destroy: () => void
 }
+
+type AuthenticateUserReturn = AuthState & {
+  email: string
+}
+
+const persistPath: string = join(homedir(), '.based/cli')
+const authPath: string = join(persistPath, 'Auth.json')
 
 const validateEmail = (email: string) => {
   const at: number = email.lastIndexOf('@')
   const dot: number = email.lastIndexOf('.')
+
   return at > 0 && at < dot - 1 && dot < email.length - 2
 }
 
@@ -36,7 +48,7 @@ const authenticateUser = async (
   email: string,
   hub: BasedClient,
   cluster: string,
-) => {
+): Promise<AuthenticateUserReturn> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
   spinner.text = `Please check your inbox at '${pc.bold(email)}', your login code is: ${pc.bold(code)}`
   spinner.start()
@@ -62,19 +74,21 @@ export const login = async ({
   env,
   project,
   selectUser,
-}: LoginArgs): Promise<{
-  client: BasedClient
-  adminHub: BasedClient
-  envHub: BasedClient
-  destroy(): void
-}> => {
-  const adminHub = getBasedClient({
+}: LoginArgs): Promise<LoginReturn> => {
+  const adminHub: BasedClient = getBasedClient({
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
     name: '@based/admin-hub',
     cluster,
   })
+
+  if (!Object.keys(adminHub).length) {
+    spinner.fail(
+      'Fatal error during authorization, was not possible to connect to the Admin Hub. Try again.',
+    )
+    process.exit(1)
+  }
 
   await adminHub.once('connect')
 
@@ -128,16 +142,22 @@ export const login = async ({
     users.push(user)
   }
 
-  // update users with updated timestamp
   user.ts = Date.now()
   await outputJSON(authPath, users)
 
-  const client = getBasedClient({
+  const client: BasedClient = getBasedClient({
     cluster,
     org,
     env,
     project,
   })
+
+  if (!Object.keys(client).length) {
+    spinner.fail(
+      'Fatal error during authorization, was not possible to connect to the User Env. Try again.',
+    )
+    process.exit(1)
+  }
 
   await client.once('connect')
 
@@ -146,7 +166,7 @@ export const login = async ({
     type: 'based',
   })
 
-  const envHub = getBasedClient({
+  const envHub: BasedClient = getBasedClient({
     cluster,
     org,
     env,
@@ -154,6 +174,13 @@ export const login = async ({
     key: 'cms',
     optionalKey: true,
   })
+
+  if (!Object.keys(envHub).length) {
+    spinner.fail(
+      'Fatal error during authorization, was not possible to connect to the Env Hub. Try again.',
+    )
+    process.exit(1)
+  }
 
   await envHub.once('connect')
 

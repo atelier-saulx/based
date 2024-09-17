@@ -15,11 +15,11 @@ export const isConfigFile = (file: string) =>
 export const isIndexFile = (file: string) =>
   file === 'index.ts' || file === 'index.js'
 
-// export const isCurrentDump = (key: string) => /\/current-dump.rdb$/.test(key)
+export const isCurrentDump = (key: string) => /\/current-dump.rdb$/.test(key)
 
-export const isValidPath = (filePath: string): boolean => {
+export const isValidPath = (path: string): boolean => {
   try {
-    return fs.existsSync(filePath) && fs.lstatSync(filePath).isDirectory()
+    return fs.existsSync(path) && fs.lstatSync(path).isDirectory()
   } catch (err) {
     return false
   }

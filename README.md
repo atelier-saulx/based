@@ -92,7 +92,7 @@ Authorize your user in the Based Cloud.
 | `-fn`, `--function <functions...>` | The function names to be deployed (variadic).                                           | No       |
 | `--schema`                         | Deploy schemas (default: false).                                                        | No       |
 | `-w`, `--watch`                    | Watch for changes (default: false).                                                     | No       |
-| `-f`, `--force`                    | Force deploy unchanged (default: false).                                                | No       |
+| `--force`                          | Force deploy unchanged (default: false).                                                | No       |
 | `-c`, `--cluster <cluster>`        | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`                | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`        | Specify the project name.                                                               | No       |
@@ -154,7 +154,9 @@ Authorize your user in the Based Cloud.
 #### download
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-f`, `--file <file>`        | .rdb backup file to upload.                                                             | No       |
+| `--db <db>`                  | DB instance name.                                                                       | No       |
+| `--file <file>`              | The '.rdb' backup file to download.                                                     | No       |
+| `--path <path>`              | Specify the path where the file will be saved.                                          | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
@@ -164,7 +166,8 @@ Authorize your user in the Based Cloud.
 #### restore
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `-f`, `--file <file>`        | .rdb backup file to upload.                                                             | Yes      |
+| `--db <db>`                  | DB instance name.                                                                       | No       |
+| `--file <file>`              | The '.rdb' backup file to upload.                                                       | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |
@@ -174,6 +177,7 @@ Authorize your user in the Based Cloud.
 #### flush
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `--db <db>`                  | DB instance name.                                                                       | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |

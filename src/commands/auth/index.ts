@@ -1,7 +1,9 @@
 import { Command } from 'commander'
 import { login } from '../../shared/index.js'
 
-export const auth = async (program: Command) => {
+type AuthFunction = (program: Command) => Promise<void>
+
+export const auth: AuthFunction = async (program: Command): Promise<void> => {
   const cmd: Command = program
     .command('auth')
     .description('Authorize your user in the Based Cloud.')
