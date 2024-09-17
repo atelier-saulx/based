@@ -90,6 +90,10 @@ pub fn getReference(node: Node, field: u8) ?Node {
     return result.?.*.dst;
 }
 
+pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
+    return selva.selva_fields_get_references(node, field);
+}
+
 pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }

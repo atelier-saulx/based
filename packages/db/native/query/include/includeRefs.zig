@@ -14,7 +14,7 @@ const IncludeError = error{
 pub fn getRefsFields(
     _: *QueryCtx,
     include: []u8,
-    _: db.Node,
+    node: db.Node,
     _: u8,
     _: bool,
 ) usize {
@@ -24,6 +24,10 @@ pub fn getRefsFields(
     const refField = include[2];
 
     std.debug.print("REFS {any} type: {d} refField: {d} \n", .{ include, typeId, refField });
+    const refs = db.getReferences(node, refField);
+    if (refs != null) {
+        std.debug.print("refs: {any}\n", .{refs});
+    }
 
     // const node = db.getReference(originalNode, refField);
 
