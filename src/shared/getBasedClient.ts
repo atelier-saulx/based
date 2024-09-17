@@ -17,7 +17,9 @@ class SharedBasedClient extends BasedClient {
     const [emoji, target] =
       this.opts.org === 'saulx' && this.opts.project === 'based-cloud'
         ? ['📡', 'Based Cloud']
-        : ['🪐', 'the environment']
+        : this.opts.optionalKey
+          ? ['🌎', 'the environment manager']
+          : ['🪐', 'the environment']
 
     spinner.text = `Connecting to ${target}`
     spinner.start()

@@ -19,11 +19,13 @@ export const backup = async (program: Command) => {
   cmd
     .command('list')
     .description('List available backups.')
-    .action(list(program, true))
+    .action(list(program))
 
   cmd
     .command('download')
-    .option('-f, --file <file>', '.rdb backup file to upload.')
+    .option('--db <db>', 'DB instance name.')
+    .option('--file <file>', '.rdb backup file to upload.')
+    .option('--path <path>', 'The path to save the file.')
     .description('Download previous backups.')
     .action(download(program))
 
@@ -32,8 +34,13 @@ export const backup = async (program: Command) => {
     .description(
       'Upload a backup file or restore a previous version as the current one.',
     )
-    .option('-f, --file <file>', '.rdb backup file to upload.')
-    .action(restore)
+    .option('--db <db>', 'DB instance name.')
+    .option('--file <file>', '.rdb backup file to upload.')
+    .action(restore(program))
 
-  cmd.command('flush').description('delete all database contents').action(flush)
+  cmd
+    .command('flush')
+    .description('Flush the current database.')
+    .option('--db <db>', 'DB instance name.')
+    .action(flush(program))
 }

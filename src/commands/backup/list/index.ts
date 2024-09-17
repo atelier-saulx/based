@@ -5,15 +5,19 @@ import {
   backupsSorting,
   basedAuth,
   BackupsSorted,
+  spinner,
 } from '../../../shared/index.js'
 import confirm from '@inquirer/confirm'
 import { getDownload } from '../download/index.js'
 import { BasedClient } from '@based/client'
+import { setRestore } from '../restore/index.js'
+import { setFlush } from '../flush/index.js'
 
-export const list = (program: Command, verbose: boolean) => async () => {
+export const list = (program: Command) => async () => {
+  const { org, project, env, cluster } = program.opts()
   const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
 
-  const backupsSorted: BackupsSorted = await getList(envHubBasedCloud, verbose)
+  const backups: BackupsSorted = await getList(envHubBasedCloud, true)
 
   console.info('')
 
@@ -22,8 +26,15 @@ export const list = (program: Command, verbose: boolean) => async () => {
   })
 
   if (downloadBackup) {
-    const selectedBackup: string = await backupsSelection(backupsSorted)
-    await getDownload(basedClient, selectedBackup)
+    const { selectedFile, selectedDB } = await backupsSelection({
+      backups,
+    })
+    await getDownload({
+      basedClient,
+      db: selectedDB,
+      file: selectedFile,
+      path: '',
+    })
 
     destroy()
     return
@@ -34,20 +45,39 @@ export const list = (program: Command, verbose: boolean) => async () => {
   })
 
   if (restoreBackup) {
-    const selectedBackup: string = await backupsSelection(backupsSorted)
-    console.log('restore ---->>', selectedBackup)
+    const { selectedFile, selectedDB } = await backupsSelection({
+      backups,
+      showCurrent: false,
+    })
+    await setRestore({
+      basedClient,
+      db: selectedDB,
+      file: selectedFile,
+      isExternalFile: false,
+    })
 
     destroy()
     return
   }
 
   const deleteBackup: boolean = await confirm({
-    message: `Would you like to delete any of these backups? (This action cannot be undone)`,
+    message: `Would you like to flush the current database? (This action cannot be undone)`,
   })
 
   if (deleteBackup) {
-    const selectedBackup: string = await backupsSelection(backupsSorted)
-    console.log('delete ---->>', selectedBackup)
+    const { selectedDB } = await backupsSelection({
+      backups,
+      selectFile: false,
+      showCurrent: false,
+    })
+    await setFlush({
+      basedClient,
+      db: selectedDB,
+      org,
+      project,
+      env,
+      cluster,
+    })
 
     destroy()
     return
@@ -61,8 +91,16 @@ export const getList = async (
   envHubBasedCloud: BasedClient,
   verbose: boolean,
 ): Promise<BackupsSorted> => {
-  console.info(`\n🔎 Searching for databases and backups...`)
+  spinner.start(`Searching for databases and backups...`)
   const { backups } = await envHubBasedCloud.call('based:backups-list')
+
+  if (!Object.keys(backups).length) {
+    spinner.fail(`There were no backups found.`)
+    process.exit(1)
+  } else {
+    spinner.stop()
+  }
+
   const backupsSorted: BackupsSorted = backupsSorting(backups)
 
   backupsSummary(backupsSorted, verbose)

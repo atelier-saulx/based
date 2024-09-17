@@ -16,7 +16,7 @@ export const make = (program: Command) => async () => {
 
   const { envId } = await basedClient.call('based:env-info').catch(() => {
     spinner.fail(
-      `Could not get env info, check your based.json file or your arguments and try again.`,
+      `Could not get env info, check your 'based.json' file or your arguments and try again.`,
     )
     process.exit(1)
   })
