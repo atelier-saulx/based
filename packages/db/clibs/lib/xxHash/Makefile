@@ -4,19 +4,22 @@
 XXHASH_SRC_PATH := xxHash-0.8.2
 
 ifeq ($(uname_S),Linux)
-	# TODO rpath_linux
+all: linux
 endif
 ifeq ($(uname_S),Darwin)
 all: darwin
 endif
 
-build:
-	$(MAKE) -C $(XXHASH_SRC_PATH)
-	cp $(XXHASH_SRC_PATH)/libxxhash*.dylib ../../../build/
-	rsync --checksum $(XXHASH_SRC_PATH)/xxhash.h ../../include
+linux: build
+	cp $(XXHASH_SRC_PATH)/libxxhash.so* ../../../build/
 
 darwin: build
+	cp $(XXHASH_SRC_PATH)/libxxhash*.dylib ../../../build/
 	install_name_tool -id @rpath/libxxhash.dylib ../../../build/libxxhash.dylib
+
+build:
+	$(MAKE) -C $(XXHASH_SRC_PATH)
+	rsync --checksum $(XXHASH_SRC_PATH)/xxhash.h ../../include
 
 clean:
 	$(MAKE) -C xxHash-0.8.2 clean
