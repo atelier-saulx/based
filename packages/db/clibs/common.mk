@@ -55,10 +55,6 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 
 	CFLAGS += -g -Wno-c11-extensions -Wno-unknown-attributes
 
-# Homebrew
-	CFLAGS += -I/opt/homebrew/include
-	LDFLAGS += -L/opt/homebrew/lib
-
 	ifeq ($(uname_M),x86_64)
 		CFLAGS += -march=x86-64
 		ifeq ($(ROSETTA2),0)
