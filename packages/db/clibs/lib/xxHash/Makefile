@@ -13,7 +13,7 @@ endif
 build:
 	$(MAKE) -C $(XXHASH_SRC_PATH)
 	cp $(XXHASH_SRC_PATH)/libxxhash*.dylib ../../../build/
-	cp $(XXHASH_SRC_PATH)/xxhash.h ../../include
+	rsync --checksum $(XXHASH_SRC_PATH)/xxhash.h ../../include
 
 darwin: build
 	install_name_tool -id @rpath/libxxhash.dylib ../../../build/libxxhash.dylib
