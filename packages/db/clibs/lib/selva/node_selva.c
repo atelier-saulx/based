@@ -1052,7 +1052,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
     };
 
     err = selva_find(db, node, &cb_wrap);
-    return res2napi(env, err ?: ((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
+    return res2napi(env, err ?: (int)((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
 }
 
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
