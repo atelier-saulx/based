@@ -57,8 +57,9 @@ struct EdgeFieldConstraint {
     node_type_t dst_node_type;
     struct SelvaFieldSchema *field_schemas
 #ifndef __clang__
-        __counted_by(nr_fields);
+        __counted_by(nr_fields)
 #endif
+    ;
 };
 
 struct SelvaFieldSchema {

@@ -20,8 +20,9 @@ struct SelvaNodeReferences {
     uint16_t great_idz; /*!< Greatest node_id ever inserted in this field. (Compressed). */
     struct SelvaNodeReference *refs
 #ifndef __clang__
-        __counted_by(nr_refs);
+        __counted_by(nr_refs)
 #endif
+        ;
 };
 
 struct SelvaNodeWeakReference {
@@ -34,8 +35,9 @@ struct SelvaNodeWeakReferences {
     uint32_t offset;
     struct SelvaNodeWeakReference *refs
 #ifndef __clang__
-        __counted_by(nr_refs);
+        __counted_by(nr_refs)
 #endif
+        ;
 };
 
 struct SelvaMicroBuffer {
