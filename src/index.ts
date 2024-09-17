@@ -1,12 +1,15 @@
 import { Command } from 'commander'
 import { version } from './version.js'
-import { deploy } from './commands/deploy/index.js'
-import { globalOptions } from './commands/globalOptions/index.js'
-import { auth } from './commands/auth/index.js'
+import {
+  auth,
+  logs,
+  deploy,
+  globalOptions,
+  dev,
+  backup,
+} from './commands/index.js'
 import pc from 'picocolors'
 import { spinner } from './shared/index.js'
-import { dev } from './commands/dev/index.js'
-import { backup } from './commands/backup/index.js'
 
 export const init = async () => {
   const program: Command = new Command()
@@ -19,6 +22,7 @@ export const init = async () => {
       dev(program),
       deploy(program),
       backup(program),
+      logs(program),
     ])
 
     program.helpOption('-h, --help', 'Display the help for each command.')

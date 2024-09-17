@@ -100,29 +100,28 @@ Authorize your user in the Based Cloud.
 | `-aK`, `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-### logs [not-ready]
+### logs
 *Example:* `npx @based/cli logs [sub-command][options]`
 
 #### show
-| Option                              | Description                                                                             | Required |
-|-------------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--before <DD/MM/YYYY>`             | Filter before date.                                                                     | No       |
-| `--after <DD/MM/YYYY>`              | Filter after date.                                                                      | No       |
-| `-fn`, `--function <function name>` | Filter function name.                                                                   | No       |
-| `-cs`, `--checksum <cheksum>`       | Filter checksum.                                                                        | No       |
-| `-l`, `--level <level>`             | Filter level.                                                                           | No       |
-| `-s`, `--service <services...>`     | Filter service name.                                                                    | No       |
-| `-c`, `--cluster <cluster>`         | Define the cluster to use (default: "production").                                      | No       |
-| `-o`, `--org <org>`                 | Specify the organization.                                                               | No       |
-| `-p`, `--project <project>`         | Specify the project name.                                                               | No       |
-| `-e`, `--env <env>`                 | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
-| `-aK`, `--api-key <api-key>`        | API Key generated on Based.io for Service Account.                                      | No       |
+| Option                             | Description                                                                             | Required |
+|------------------------------------|-----------------------------------------------------------------------------------------|----------|
+| `--before <DD/MM/YYYY>`            | Filter by date.                                                                         | No       |
+| `--after <DD/MM/YYYY>`             | Filter by date.                                                                         | No       |
+| `-fn`, `--function <functions...>` | Filter by function.                                                                     | No       |
+| `-cs`, `--checksum <cheksum>`      | Filter by checksum.                                                                     | No       |
+| `-l`, `--level <level>`            | Filter by level.                                                                        | No       |
+| `-s`, `--service <services...>`    | Filter by service name.                                                                 | No       |
+| `-c`, `--cluster <cluster>`        | Define the cluster to use (default: "production").                                      | No       |
+| `-o`, `--org <org>`                | Specify the organization.                                                               | No       |
+| `-p`, `--project <project>`        | Specify the project name.                                                               | No       |
+| `-e`, `--env <env>`                | Specify witch environment (can be a name or "#branch" if you want to deploy by branch). | No       |
+| `-aK`, `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                      | No       |
 
 
-#### delete
+#### clean
 | Option                       | Description                                                                             | Required |
 |------------------------------|-----------------------------------------------------------------------------------------|----------|
-| `--debug`                    | Show debug info if available.                                                           | No       |
 | `-c`, `--cluster <cluster>`  | Define the cluster to use (default: "production").                                      | No       |
 | `-o`, `--org <org>`          | Specify the organization.                                                               | No       |
 | `-p`, `--project <project>`  | Specify the project name.                                                               | No       |

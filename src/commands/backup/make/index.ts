@@ -1,16 +1,18 @@
 import { Command } from 'commander'
 import confirm from '@inquirer/confirm'
 import { basedAuth, spinner } from '../../../shared/index.js'
+import pc from 'picocolors'
 
 export const make = (program: Command) => async () => {
   const { org, project, env } = program.opts()
   const { basedClient, adminHubBasedCloud, destroy } = await basedAuth(program)
 
-  const yes: boolean = await confirm({
-    message: `Would you like to execute a backup for env ${org}/${project}/${env} ?`,
+  const doIt: boolean = await confirm({
+    message: `Would you like to make a backup for the env '${pc.cyan(`${org}/${project}/${env}`)}'?`,
+    default: true,
   })
 
-  if (!yes) {
+  if (!doIt) {
     return
   }
 
@@ -21,13 +23,22 @@ export const make = (program: Command) => async () => {
     process.exit(1)
   })
 
-  await adminHubBasedCloud.call('backup-env', {
-    org,
-    project,
-    env,
-    envId,
-  })
+  try {
+    spinner.start('Making a new backup...')
 
-  spinner.succeed(`💾 Backup completed successfully!`)
+    await adminHubBasedCloud.call('backup-env', {
+      org,
+      project,
+      env,
+      envId,
+    })
+
+    spinner.succeed(`Backup completed successfully!`)
+  } catch (error) {
+    spinner.fail(`Error making your backup: '${error}'`)
+    process.exit(1)
+  }
+
   destroy()
+  return
 }
