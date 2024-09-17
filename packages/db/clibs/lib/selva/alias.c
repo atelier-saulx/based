@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <string.h>
 #include "jemalloc.h"
 #include "db.h"
 
