@@ -789,7 +789,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
             return SELVA_EINVAL;
         }
 
-        set_weak_references(fs, node, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
+        return set_weak_references(fs, node, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
         do {
             struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
