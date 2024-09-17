@@ -16,15 +16,6 @@
 #include "idz.h"
 #include "selva/fields.h"
 
-/**
- * Don't allow mutiple edges from the same field between two nodes.
- * Enabling this will make changing SELVA_FIELD_TYPE_REFERENCES fields extremely
- * slow.
- */
-#if 0
-#define FIELDS_NO_DUPLICATED_EDGES
-#endif
-
 #if 0
 #define selva_malloc            malloc
 #define selva_calloc            calloc
@@ -407,12 +398,14 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
         dst = del_single_ref(db, &fs_src->edge_constraint, fields_src, nfo_src);
     } else if (nfo_src->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences refs;
-        struct SelvaNode *tmp;
+
+        /* TODO Check great_idz? */
 
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         memcpy(&refs, nfo2p(fields_src, nfo_src), sizeof(refs));
         for (size_t i = 0; i < refs.nr_refs; i++) {
-            tmp = refs.refs[i].dst;
+            struct SelvaNode *tmp = refs.refs[i].dst;
+
             if (tmp && tmp->node_id == orig_dst) {
                 del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
                 memcpy(nfo2p(fields_src, nfo_src), &refs, sizeof(refs));
@@ -563,12 +556,46 @@ static void remove_weak_references(struct SelvaNode *node, const struct SelvaFie
     memset(nfo, 0, sizeof(refs));
 }
 
+static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaNode *dst)
+{
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+
+    if (!dst) {
+        return SELVA_EINVAL;
+    }
+
+    if (nfo->type == SELVA_FIELD_TYPE_REFERENCE) {
+        struct SelvaNodeReference ref;
+
+        memcpy(&ref, nfo2p(fields, nfo), sizeof(ref));
+        if (ref.dst == dst) {
+            return SELVA_EEXIST;
+        }
+    } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
+        struct SelvaNodeReferences refs;
+
+        memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
+        if (dst->node_id < idz_unpack(refs.great_idz)) {
+            for (size_t i = 0; i < refs.nr_refs; i++) {
+                struct SelvaNode *tmp = refs.refs[i].dst;
+
+                if (tmp == dst) {
+                    return SELVA_EEXIST;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 /**
  * Set reference to fields.
  */
 static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dst)
 {
     struct SelvaFieldSchema *fs_dst;
+    int err;
 
     assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
     assert(fs_src->edge_constraint.dst_node_type == dst->type);
@@ -585,14 +612,23 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
 #endif
 
-    remove_reference(db, src, fs_src, 0); /* Remove the previous reference if set. */
-#ifdef FIELDS_NO_DUPLICATED_EDGES
-    remove_reference(db, dst, fs_dst, src->node_id);
-#else
+    /*
+     * Fail if ref already set.
+     * Only one way check is enough.
+     */
+    err = check_ref_eexists(&src->fields, fs_src, dst);
+    if (err) {
+        return err;
+    }
+
+    /*
+     * Remove previous refs.
+     */
+    remove_reference(db, src, fs_src, 0);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         remove_reference(db, dst, fs_dst, 0);
     }
-#endif
+
     write_ref_2way(src, fs_src, -1, dst, fs_dst);
 
     return 0;
@@ -623,19 +659,31 @@ static int insert_references(struct SelvaDb *db, const struct SelvaFieldSchema *
 
     for (size_t i = 0; i < nr_dsts; i++) {
         struct SelvaNode *dst = dsts[i];
+        int err;
 
         if (dst->type != type_dst) {
             return SELVA_EINTYPE;
         }
 
-#ifdef FIELDS_NO_DUPLICATED_EDGES
-        remove_reference(db, src, fs_src, dst->node_id);
-        remove_reference(db, dst, fs_dst, src->node_id);
-#else
+        /*
+         * It's cheaper/faster to check from a reference field rather
+         * than a references field.
+         */
+        err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
+            ? check_ref_eexists(&dst->fields, fs_dst, src)
+            : check_ref_eexists(&src->fields, fs_src, dst);
+        if (err) {
+            return err;
+        }
+    }
+
+    for (size_t i = 0; i < nr_dsts; i++) {
+        struct SelvaNode *dst = dsts[i];
+
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             remove_reference(db, dst, fs_dst, 0);
         }
-#endif
+
         write_ref_2way(src, fs_src, -1, dst, fs_dst);
     }
 
@@ -811,14 +859,21 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-#ifdef FIELDS_NO_DUPLICATED_EDGES
-    remove_reference(db, src, fs_src, dst->node_id);
-    remove_reference(db, dst, fs_dst, src->node_id);
-#else
+
+    /*
+     * It's cheaper/faster to check from a reference field rather
+     * than a references field.
+     */
+    err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
+        ? check_ref_eexists(&dst->fields, fs_dst, node)
+        : check_ref_eexists(&node->fields, fs, dst);
+    if (err) {
+        return err;
+    }
+
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         remove_reference(db, dst, fs_dst, 0);
     }
-#endif
 
     err = write_refs(node, fs, index, dst, ref_out);
     if (err) {
