@@ -33,46 +33,45 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
 
 const char *selva_str_field_type(enum SelvaFieldType ftype)
 {
-    const char *str = (const char *)"invalid";
 
     switch (ftype) {
     case SELVA_FIELD_TYPE_NULL:
-        str = (const char *)"null";
+        return (const char *)"null";
     case SELVA_FIELD_TYPE_TIMESTAMP:
-        str = (const char *)"timestamp";
+        return (const char *)"timestamp";
     case SELVA_FIELD_TYPE_CREATED:
-        str = (const char *)"created";
+        return (const char *)"created";
     case SELVA_FIELD_TYPE_UPDATED:
-        str = (const char *)"updated";
+        return (const char *)"updated";
     case SELVA_FIELD_TYPE_NUMBER:
-        str = (const char *)"number";
+        return (const char *)"number";
     case SELVA_FIELD_TYPE_INTEGER:
-        str = (const char *)"integer";
+        return (const char *)"integer";
     case SELVA_FIELD_TYPE_UINT8:
-        str = (const char *)"uint8";
+        return (const char *)"uint8";
     case SELVA_FIELD_TYPE_UINT32:
-        str = (const char *)"uint32";
+        return (const char *)"uint32";
     case SELVA_FIELD_TYPE_UINT64:
-        str = (const char *)"uint64";
+        return (const char *)"uint64";
     case SELVA_FIELD_TYPE_BOOLEAN:
-        str = (const char *)"boolean";
+        return (const char *)"boolean";
     case SELVA_FIELD_TYPE_ENUM:
-        str = (const char *)"enum";
+        return (const char *)"enum";
     case SELVA_FIELD_TYPE_STRING:
-        str = (const char *)"string";
+        return (const char *)"string";
     case SELVA_FIELD_TYPE_TEXT:
-        str = (const char *)"text";
+        return (const char *)"text";
     case SELVA_FIELD_TYPE_REFERENCE:
-        str = (const char *)"reference";
+        return (const char *)"reference";
     case SELVA_FIELD_TYPE_REFERENCES:
-        str = (const char *)"references";
+        return (const char *)"references";
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        str = (const char *)"weak reference";
+        return (const char *)"weak reference";
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        str = (const char *)"weak references";
+        return (const char *)"weak references";
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
-        str = (const char *)"micro buffer";
+        return (const char *)"micro buffer";
     }
 
-    return str;
+    return (const char *)"invalid";
 }
