@@ -10,6 +10,10 @@ ifeq ($(uname_S),Darwin)
 all: darwin
 endif
 
+ERR = $(error Unsupported platform!)
+
+err: ; $(ERR)
+
 linux: build
 	cp $(XXHASH_SRC_PATH)/libxxhash.so* ../../../build/
 
@@ -24,4 +28,4 @@ build:
 clean:
 	$(MAKE) -C xxHash-0.8.2 clean
 
-.PHONY: all clean
+.PHONY: all err clean
