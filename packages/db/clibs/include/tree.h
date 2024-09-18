@@ -417,6 +417,7 @@ struct {								\
 #define RB_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
 	RB_PROTOTYPE_INSERT_COLOR(name, type, attr);			\
 	RB_PROTOTYPE_REMOVE_COLOR(name, type, attr);			\
+    RB_PROTOTYPE_INSERT_FINISH(name, type, attr); \
 	RB_PROTOTYPE_INSERT(name, type, attr);				\
 	RB_PROTOTYPE_INSERT_NEXT(name, type, attr);			\
 	RB_PROTOTYPE_REMOVE(name, type, attr);				\
@@ -427,10 +428,13 @@ struct {								\
 	RB_PROTOTYPE_MINMAX(name, type, attr);				\
 	RB_PROTOTYPE_REINSERT(name, type, attr);
 #define RB_PROTOTYPE_INSERT_COLOR(name, type, attr)			\
-	attr void name##_RB_INSERT_COLOR(struct name *, struct type *)
+	attr void name##_RB_INSERT_COLOR(struct name *, struct type *, struct type *)
 #define RB_PROTOTYPE_REMOVE_COLOR(name, type, attr)			\
 	attr void name##_RB_REMOVE_COLOR(struct name *,			\
 	    struct type *, struct type *)
+#define RB_PROTOTYPE_INSERT_FINISH(name, type, attr) \
+    attr struct type *name##_RB_INSERT_FINISH(struct name *, \
+        struct type *, struct type **, struct type *)
 #define RB_PROTOTYPE_REMOVE(name, type, attr)				\
 	attr struct type *name##_RB_REMOVE(struct name *, struct type *)
 #define RB_PROTOTYPE_INSERT(name, type, attr)				\
@@ -460,6 +464,7 @@ struct {								\
 #define RB_GENERATE_INTERNAL(name, type, field, cmp, attr)		\
 	RB_GENERATE_INSERT_COLOR(name, type, field, attr)		\
 	RB_GENERATE_REMOVE_COLOR(name, type, field, attr)		\
+    RB_GENERATE_INSERT_FINISH(name, type, field, attr) \
 	RB_GENERATE_INSERT(name, type, field, cmp, attr)		\
 	RB_GENERATE_INSERT_NEXT(name, type, field, cmp, attr)	\
 	RB_GENERATE_REMOVE(name, type, field, attr)			\
@@ -470,12 +475,13 @@ struct {								\
 	RB_GENERATE_MINMAX(name, type, field, attr)			\
 	RB_GENERATE_REINSERT(name, type, field, cmp, attr)
 
+
 #define RB_GENERATE_INSERT_COLOR(name, type, field, attr)		\
 attr void								\
-name##_RB_INSERT_COLOR(struct name *head, struct type *elm)		\
+name##_RB_INSERT_COLOR(struct name *head, struct type *parent, struct type *elm)		\
 {									\
-	struct type *child, *parent;					\
-	while ((parent = RB_PARENT(elm, field)) != NULL) {		\
+	struct type *child;					\
+    do { \
 		if (RB_LEFT(parent, field) == elm) {			\
 			if (RB_RED_LEFT(parent, field)) {		\
 				RB_FLIP_LEFT(parent, field);		\
@@ -519,7 +525,7 @@ name##_RB_INSERT_COLOR(struct name *head, struct type *elm)		\
 		}							\
 		RB_BITS(elm, field) &= ~RB_RED_MASK;			\
 		break;							\
-	}								\
+	} while ((parent = RB_PARENT(elm, field)) != NULL); \
 }
 
 #define RB_GENERATE_REMOVE_COLOR(name, type, field, attr)		\
@@ -644,55 +650,51 @@ name##_RB_REMOVE(struct name *head, struct type *elm)			\
 	return (old);							\
 }
 
+#define RB_GENERATE_INSERT_FINISH(name, type, field, attr)		\
+/* Inserts a node into the RB tree */					\
+attr struct type *							\
+name##_RB_INSERT_FINISH(struct name *head, struct type *parent,		\
+    struct type **pptr, struct type *elm)				\
+{									\
+	RB_SET(elm, parent, field);					\
+	*pptr = elm;							\
+	if (parent != NULL) name##_RB_INSERT_COLOR(head, parent, elm); \
+	while (elm != NULL) {						\
+		RB_AUGMENT(elm);					\
+		elm = RB_PARENT(elm, field);				\
+	}								\
+	return NULL;							\
+}
+
 #define RB_GENERATE_INSERT(name, type, field, cmp, attr)		\
 /* Inserts a node into the RB tree */					\
 attr struct type *							\
 name##_RB_INSERT(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp;						\
+    struct type **tmpp = &RB_ROOT(head); \
 	struct type *parent = NULL;					\
-	__typeof(cmp(NULL, NULL)) comp = 0;							\
-	tmp = RB_ROOT(head);						\
-	while (tmp) {							\
-		parent = tmp;						\
-		comp = (cmp)(elm, parent);				\
-		if (comp < 0)						\
-			tmp = RB_LEFT(tmp, field);			\
-		else if (comp > 0)					\
-			tmp = RB_RIGHT(tmp, field);			\
-		else							\
-			return (tmp);					\
-	}								\
-	RB_SET(elm, parent, field);					\
-	if (parent == NULL)						\
-		RB_ROOT(head) = elm;					\
-	else if (comp < 0)						\
-		RB_LEFT(parent, field) = elm;				\
-	else								\
-		RB_RIGHT(parent, field) = elm;				\
-	name##_RB_INSERT_COLOR(head, elm);				\
-	while (elm != NULL) {						\
-		RB_AUGMENT(elm);					\
-		elm = RB_PARENT(elm, field);				\
-	}								\
-	return (NULL);							\
+    while ((tmp = *tmpp) != NULL) { \
+        parent = tmp; \
+        __typeof(cmp(NULL, NULL)) comp = (cmp)(elm, parent); \
+        if (comp < 0) tmpp = &RB_LEFT(parent, field); \
+        else if (comp > 0) tmpp = &RB_RIGHT(parent, field); \
+        else return (parent); \
+    } \
+    return (name##_RB_INSERT_FINISH(head, parent, tmpp, elm)); \
 }
 
 #define RB_GENERATE_INSERT_NEXT(name, type, field, cmp, attr) \
 attr void \
-name##_RB_INSERT_NEXT(struct name *head, struct type * restrict parent, struct type * restrict elm) \
+name##_RB_INSERT_NEXT(struct name *head, struct type * restrict elm, struct type * restrict next) \
 { \
-    RB_SET(elm, parent, field); \
-    if ((cmp)(elm, parent) < 0) { \
-        RB_LEFT(parent, field) = elm; \
-    } else { \
-        RB_RIGHT(parent, field) = elm; \
+    struct type *tmp; \
+    struct type **tmpp = &RB_RIGHT(elm, field); \
+    while ((tmp = *tmpp) != NULL) { \
+        elm = tmp; \
+        tmpp = &RB_LEFT(elm, field); \
     } \
-	name##_RB_INSERT_COLOR(head, elm); \
-	while (elm != NULL) { \
-		RB_AUGMENT(elm); \
-		elm = RB_PARENT(elm, field); \
-	} \
+    (void)(name##_RB_INSERT_FINISH(head, elm, tmpp, next)); \
 }
 
 #define RB_GENERATE_FIND(name, type, field, cmp, attr)			\
