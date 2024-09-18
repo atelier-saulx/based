@@ -329,6 +329,9 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 {
     selva_cursors_node_going_away(type, node);
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
+    if (node == type->max_node) {
+        type->max_node = NULL;
+    }
 
 #if 0
     if (node->expire) {
@@ -357,21 +360,31 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
 struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
-    struct SelvaNode *prev;
 
     node->node_id = node_id;
     node->type = type->type;
-    prev = RB_INSERT(SelvaNodeIndex, &type->nodes, node);
-    if (prev) {
-        mempool_return(&type->nodepool, node);
-        node = prev;
+
+    if (type->max_node && type->max_node->node_id < node_id) {
+        RB_INSERT_NEXT(SelvaNodeIndex, &type->nodes, type->max_node, node);
     } else {
-        memset(&node->trx_label, 0, sizeof(node->trx_label));
+        struct SelvaNode *prev;
+
+        prev = RB_INSERT(SelvaNodeIndex, &type->nodes, node);
+        if (prev) {
+            mempool_return(&type->nodepool, node);
+            return prev;
+        }
+    }
+
+    memset(&node->trx_label, 0, sizeof(node->trx_label));
 #if 0
-        node->expire = 0;
+    node->expire = 0;
 #endif
-        selva_fields_init(type, node);
-        type->nr_nodes++;
+    selva_fields_init(type, node);
+
+    type->nr_nodes++;
+    if (!type->max_node || type->max_node->node_id < node_id) {
+        type->max_node = node;
     }
 
     return node;

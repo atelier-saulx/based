@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
+ * Copyright (c) 2022-2024 SAULX
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -417,6 +418,7 @@ struct {								\
 	RB_PROTOTYPE_INSERT_COLOR(name, type, attr);			\
 	RB_PROTOTYPE_REMOVE_COLOR(name, type, attr);			\
 	RB_PROTOTYPE_INSERT(name, type, attr);				\
+	RB_PROTOTYPE_INSERT_NEXT(name, type, attr);			\
 	RB_PROTOTYPE_REMOVE(name, type, attr);				\
 	RB_PROTOTYPE_FIND(name, type, attr);				\
 	RB_PROTOTYPE_NFIND(name, type, attr);				\
@@ -433,6 +435,8 @@ struct {								\
 	attr struct type *name##_RB_REMOVE(struct name *, struct type *)
 #define RB_PROTOTYPE_INSERT(name, type, attr)				\
 	attr struct type *name##_RB_INSERT(struct name *, struct type *)
+#define RB_PROTOTYPE_INSERT_NEXT(name, type, attr)				\
+	attr void name##_RB_INSERT_NEXT(struct name *, struct type *, struct type *)
 #define RB_PROTOTYPE_FIND(name, type, attr)				\
 	attr struct type *name##_RB_FIND(struct name *, struct type *)
 #define RB_PROTOTYPE_NFIND(name, type, attr)				\
@@ -457,6 +461,7 @@ struct {								\
 	RB_GENERATE_INSERT_COLOR(name, type, field, attr)		\
 	RB_GENERATE_REMOVE_COLOR(name, type, field, attr)		\
 	RB_GENERATE_INSERT(name, type, field, cmp, attr)		\
+	RB_GENERATE_INSERT_NEXT(name, type, field, cmp, attr)	\
 	RB_GENERATE_REMOVE(name, type, field, attr)			\
 	RB_GENERATE_FIND(name, type, field, cmp, attr)			\
 	RB_GENERATE_NFIND(name, type, field, cmp, attr)			\
@@ -673,6 +678,23 @@ name##_RB_INSERT(struct name *head, struct type *elm)			\
 	return (NULL);							\
 }
 
+#define RB_GENERATE_INSERT_NEXT(name, type, field, cmp, attr) \
+attr void \
+name##_RB_INSERT_NEXT(struct name *head, struct type * restrict parent, struct type * restrict elm) \
+{ \
+    RB_SET(elm, parent, field); \
+    if ((cmp)(elm, parent) < 0) { \
+        RB_LEFT(parent, field) = elm; \
+    } else { \
+        RB_RIGHT(parent, field) = elm; \
+    } \
+	name##_RB_INSERT_COLOR(head, elm); \
+	while (elm != NULL) { \
+		RB_AUGMENT(elm); \
+		elm = RB_PARENT(elm, field); \
+	} \
+}
+
 #define RB_GENERATE_FIND(name, type, field, cmp, attr)			\
 /* Finds the node with the same key as elm */				\
 attr struct type *							\
@@ -786,6 +808,7 @@ name##_RB_REINSERT(struct name *head, struct type *elm)			\
 #define RB_INF	1
 
 #define RB_INSERT(name, x, y)	name##_RB_INSERT(x, y)
+#define RB_INSERT_NEXT(name, x, y, z)	name##_RB_INSERT_NEXT(x, y, z)
 #define RB_REMOVE(name, x, y)	name##_RB_REMOVE(x, y)
 #define RB_FIND(name, x, y)	name##_RB_FIND(x, y)
 #define RB_NFIND(name, x, y)	name##_RB_NFIND(x, y)

@@ -89,6 +89,7 @@ struct SelvaTypeEntry {
     size_t nr_nodes; /*!< Number of nodes of this type. */
     size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
+    struct SelvaNode *max_node;
     struct {
         struct ida *ida; /*! Id allocator for cursors. */
         struct SelvaTypeCursorById by_cursor_id; /*!< Cursors indexed by cursor_id. */
