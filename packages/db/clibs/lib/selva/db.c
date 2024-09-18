@@ -365,6 +365,9 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     node->type = type->type;
 
     if (type->max_node && type->max_node->node_id < node_id) {
+        /*
+         * We can assume that node_id almost always grows monotonically.
+         */
         RB_INSERT_NEXT(SelvaNodeIndex, &type->nodes, type->max_node, node);
     } else {
         struct SelvaNode *prev;

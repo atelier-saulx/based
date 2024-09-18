@@ -88,7 +88,13 @@ struct SelvaTypeEntry {
     } aliases;
     size_t nr_nodes; /*!< Number of nodes of this type. */
     size_t nr_aliases; /*!< Number of aliases by name. */
-    struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
+    struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
+    /**
+     * Max node inserted so far.
+     * Initially NULL but also NULLed if the node is deleted.
+     * This is used to optimize new insertions because it's possible to use
+     * RB_INSERT_NEXT() almost always as node_id normally grows monotonically.
+     */
     struct SelvaNode *max_node;
     struct {
         struct ida *ida; /*! Id allocator for cursors. */
