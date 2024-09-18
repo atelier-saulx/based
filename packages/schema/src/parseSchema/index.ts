@@ -1,4 +1,4 @@
-import { Schema, SchemaAnyProp, SchemaType } from '../types.js'
+import { Schema, SchemaType } from '../types.js'
 import { INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
@@ -124,9 +124,10 @@ export const debug = (schema: Schema) => {
   }
 }
 
-export const parseSchema = (schema: Schema) => {
+export const parseSchema = (schema: Schema): { schema: Schema } => {
   try {
     new Parser(schema).parse()
+    return { schema }
   } catch (e) {
     debug(schema)
   }
