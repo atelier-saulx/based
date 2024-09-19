@@ -2,13 +2,14 @@ import { deepEqual } from '@saulx/utils'
 import { QueryIncludeDef } from '../query/types.js'
 import { FieldDef } from '../schemaTypeDef.js'
 import { BasedNode } from './index.js'
+import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,
   basedNode: BasedNode,
-  includeDef: QueryIncludeDef = basedNode.__q.query.includeDef,
+  includeDef: QueryIncludeDef = basedNode.__q.includeDef,
   offset: number = 4 + basedNode.__o,
-  end: number = basedNode.__q.buffer.byteLength,
+  end: number = basedNode.__q.end,
 ) => {
   const queryResponse = basedNode.__q
   const buffer = queryResponse.buffer
@@ -37,11 +38,35 @@ export const readSeperateFieldFromBuffer = (
     if (index === 253) {
       const size = buffer.readUInt32LE(i + 1)
 
-      if (found || !ref) {
-        // console.log('i:', i + 9 + size)
+      if (!found) {
         i += 9 + size
         continue
       }
+
+      const refField = buffer[i]
+
+      if (
+        requestedField.type === 'references' &&
+        requestedField.field === refField
+      ) {
+        const total = buffer.readUInt32LE(i + 5)
+
+        const include = includeDef.refIncludes[refField]
+
+        const refResp = new BasedQueryResponse(
+          basedNode.__q.query,
+          buffer,
+          i + 5,
+          size + 9 + i,
+          include,
+          include.schema,
+        )
+
+        return refResp
+      }
+
+      i += 9 + size
+      continue
     } else if (index === 254) {
       const size = buffer.readUInt32LE(i + 1)
 

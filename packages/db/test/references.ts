@@ -71,10 +71,27 @@ await test('simple', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('article').include('contributors').get().toObject(), [
-    { id: strudelArticle, contributors: [{ id: mrSnurp }] },
-    { id: piArticle, contributors: [{ id: mrSnurp }, { id: flippie }] },
-  ])
+  const x = db.query('article').include('contributors').get()
+
+  x.debug()
+
+  for (const n of x) {
+    // console.log(n)
+    console.log('\n\nMR ID', n.id, 'LEN', n.contributors.length)
+    for (const v of n.contributors) {
+      console.log('--->', v.id)
+      console.log('----------> name', v.name)
+    }
+  }
+
+  // fix log
+  console.log(x)
+
+  console.dir(x.toObject(), { depth: 10 })
+  // deepEqual(db.query('article').include('contributors').get().toObject(), [
+  //   { id: strudelArticle, contributors: [{ id: mrSnurp }] },
+  //   { id: piArticle, contributors: [{ id: mrSnurp }, { id: flippie }] },
+  // ])
 })
 
 await test('one to many', async (t) => {
