@@ -35,7 +35,7 @@ export const download =
   async ({ db, file, path }: DownloadArgs) => {
     const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
 
-    const backups: BackupsSorted = await getList(envHubBasedCloud, false)
+    const backups: BackupsSorted = await getList(envHubBasedCloud)
     let { selectedFile, selectedDB } = await backupsSelection({
       backups,
       selectDB: db ?? true,

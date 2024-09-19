@@ -19,6 +19,7 @@ type BackupSelectionArgs = {
   selectDB?: string | boolean
   selectFile?: string | boolean
   showCurrent?: boolean
+  sort?: BasedCli.Backups.List.Args['sort']
 }
 
 export type BackupsSorted = {
@@ -32,8 +33,13 @@ type BackupSelectionReturn = {
   selectedFile: string
 }
 
+const getSortingText = (sort: string): string =>
+  sort === 'ASC' ? '(older to newer)' : '(newer to older)'
+
 export const backupsSummary = (
   values: BackupsSorted,
+  limit: number,
+  sort: BasedCli.Backups.List.Args['sort'],
   verbose: boolean,
 ): void => {
   if (!values.databases || !values.backups) {
@@ -41,7 +47,7 @@ export const backupsSummary = (
     process.exit(1)
   } else {
     console.info(
-      `✨ ${pc.bold(values.backups)} backups found in ${pc.bold(values.databases)} databases.`,
+      `\n✨ ${pc.bold(values.backups)} backups found in ${pc.bold(values.databases)} databases. Showing ${pc.bold(limit)} items ${pc.bold(getSortingText(sort))}.`,
     )
   }
 
@@ -51,8 +57,9 @@ export const backupsSummary = (
       console.info(`📖  Database: ${pc.bold(pc.cyan(database))}`)
 
       for (let i = 0; i < values.sorted[database].length; i++) {
-        console.info(`Backup: ${pc.dim(values.sorted[database][i].key)}`)
+        console.info(`File: ${pc.dim(values.sorted[database][i].key)}`)
       }
+      console.info(' ──────────────')
     }
   }
 }
@@ -84,6 +91,7 @@ const dbSelection = async (
 
 const fileSelection = async (
   backups: BackupsSorted,
+  sort: BasedCli.Backups.List.Args['sort'],
   selectedDB: string,
   selectedFile?: string,
   showCurrent: boolean = true,
@@ -112,7 +120,7 @@ const fileSelection = async (
   }
 
   selectedFile = await select<string>({
-    message: 'Choose backup: (newer to older)',
+    message: `Choose backup ${getSortingText(sort)}:`,
     choices: [
       ...backups.sorted[selectedDB].map(
         (file: { key: string; lastModified: string }) => ({
@@ -133,6 +141,7 @@ const fileSelection = async (
 
 export const backupsSelection = async ({
   backups,
+  sort,
   selectDB = true,
   selectFile = true,
   showCurrent = true,
@@ -146,9 +155,15 @@ export const backupsSelection = async ({
   }
 
   if (typeof selectFile === 'string') {
-    selectFile = await fileSelection(backups, selectDB, selectFile, showCurrent)
+    selectFile = await fileSelection(
+      backups,
+      sort,
+      selectDB,
+      selectFile,
+      showCurrent,
+    )
   } else if (typeof selectFile === 'boolean' && selectFile === true) {
-    selectFile = await fileSelection(backups, selectDB, '', showCurrent)
+    selectFile = await fileSelection(backups, sort, selectDB, '', showCurrent)
   } else {
     selectFile = ''
   }
@@ -156,7 +171,11 @@ export const backupsSelection = async ({
   return { selectedDB: selectDB, selectedFile: selectFile }
 }
 
-export const backupsSorting = (backups: BackupsSelection): BackupsSorted => {
+export const backupsSorting = (
+  backups: BackupsSelection,
+  limit: number,
+  sort: BasedCli.Backups.List.Args['sort'],
+): BackupsSorted => {
   const result: BackupsSorted = {
     databases: 0,
     backups: 0,
@@ -170,7 +189,21 @@ export const backupsSorting = (backups: BackupsSelection): BackupsSorted => {
   for (const database in backups) {
     result.databases++
     result.backups = backups[database].length
-    result.sorted[database] = backups[database].sort().reverse()
+
+    result.sorted[database] = backups[database]
+      .sort((a, b) => {
+        const dateA: number = new Date(a.lastModified).getTime()
+        const dateB: number = new Date(b.lastModified).getTime()
+
+        if (sort === 'ASC') {
+          return dateA - dateB
+        } else if (sort === 'DESC') {
+          return dateB - dateA
+        } else {
+          return 0
+        }
+      })
+      .slice(0, limit)
   }
 
   return result

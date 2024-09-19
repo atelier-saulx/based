@@ -30,7 +30,7 @@ export const restore =
   async ({ db, file }: RestoreArgs): Promise<void> => {
     const isExternalFile: boolean = file !== undefined
     const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
-    const backups: BackupsSorted = await getList(envHubBasedCloud, false)
+    const backups: BackupsSorted = await getList(envHubBasedCloud)
 
     let { selectedFile, selectedDB } = await backupsSelection({
       backups,

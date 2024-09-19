@@ -7,7 +7,7 @@ import { download } from './download/index.js'
 
 export const backup = async (program: Command) => {
   const cmd: Command = program
-    .command('backup [command]')
+    .command('backups [command]')
     .description('Backup and restore your databases.')
     .usage('[command]')
 
@@ -18,6 +18,15 @@ export const backup = async (program: Command) => {
 
   cmd
     .command('list')
+    .option('-y, --yes', 'Skip all the prompts.')
+    .option(
+      '-l, --limit <limit>',
+      'Limit the number of displayed backups (default: 10)(all: 0).',
+    )
+    .option(
+      '-s, --sort <sort>',
+      'Sort the order of the backups ASC/DESC (default: ASC).',
+    )
     .description('List available backups.')
     .action(list(program))
 

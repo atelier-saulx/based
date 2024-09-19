@@ -44,7 +44,7 @@ export const flush =
       process.exit(1)
     }
 
-    const backups: BackupsSorted = await getList(envHubBasedCloud, false)
+    const backups: BackupsSorted = await getList(envHubBasedCloud)
     let { selectedDB } = await backupsSelection({
       backups,
       selectDB: db,
