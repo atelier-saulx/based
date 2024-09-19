@@ -23,17 +23,6 @@ export const readSeperateFieldFromBuffer = (
 
   let i = offset
 
-  // console.log(
-  //   ref.includePath.map((v) => '-').join(''),
-  //   'GET FIELD',
-  //   requestedField.type,
-  //   requestedField.path,
-  //   includeDef.includePath,
-  //   ref.includePath,
-  //   offset,
-  //   end,
-  // )
-
   while (i < end) {
     let index = buffer[i]
 
@@ -43,8 +32,6 @@ export const readSeperateFieldFromBuffer = (
     }
 
     i += 1
-
-    // console.log({ index })
 
     // index === 253 or 254
     if (index === 254) {
@@ -59,15 +46,6 @@ export const readSeperateFieldFromBuffer = (
         i += 5 + size
         continue
       }
-
-      // console.log({
-      //   fType: requestedField.type,
-      //   refField,
-      //   size,
-      //   i,
-      //   END: i + 5 + size,
-      // })
-      // console.log(ref.includePath, ref.fromRef?.path, includeDef.includePath)
 
       if (includeDef.includePath.length > ref.includePath.length) {
         i += 5 + size
@@ -94,7 +72,7 @@ export const readSeperateFieldFromBuffer = (
       if (refField === ref.includePath[pIndex]) {
         const r = includeDef.refIncludes[refField]
         if (!r) {
-          throw new Error('IN WRONG MATCHED INCLUDE')
+          throw new Error('READ BASED NODE - WRONGLY MATCHED INCLUDEDEF')
         }
 
         if (
@@ -104,8 +82,6 @@ export const readSeperateFieldFromBuffer = (
           if (size === 0) {
             return null
           }
-          // console.log('     ID:', { i, id: buffer.readUint32LE(i + 5 + 1) })
-
           return buffer.readUint32LE(i + 5 + 1)
         }
 
@@ -192,21 +168,6 @@ export const readSeperateFieldFromBuffer = (
             return ''
           }
           return buffer.toString('utf8', i, size + i)
-        } else if (requestedField.type === 'references') {
-          const amount = size / 4
-          const x = new Array(amount)
-          for (let j = 0; j < amount; j++) {
-            const id = buffer.readUint32LE(j * 4 + i)
-            if (id) {
-              x[j] = { id }
-            } else {
-              console.warn(
-                'BasedNode ref reader: Broken reference cannot get id!',
-              )
-              x.splice(j, 1)
-            }
-          }
-          return x
         }
       }
       i += size
