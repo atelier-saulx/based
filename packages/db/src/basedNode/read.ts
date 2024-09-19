@@ -49,10 +49,8 @@ export const readSeperateFieldFromBuffer = (
         requestedField.type === 'references' &&
         requestedField.field === refField
       ) {
-        const total = buffer.readUInt32LE(i + 5)
-
         const include = includeDef.refIncludes[refField]
-
+        // this is tmp... very inefficient
         const refResp = new BasedQueryResponse(
           basedNode.__q.query,
           buffer,
@@ -61,7 +59,6 @@ export const readSeperateFieldFromBuffer = (
           include,
           include.schema,
         )
-
         return refResp
       }
 
