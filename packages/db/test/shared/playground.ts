@@ -84,89 +84,140 @@ db.updateSchema({
   types: {
     user: {
       fields: {
+        // @ts-ignore
+        flap: { type: 'string', maxBytes: 1 },
         age: { type: 'integer' },
-        time: { type: 'integer' },
-        fun: { type: 'integer' },
-        name: { type: 'string' }, // 8610
-        // flap: { type: 'string' },
+        xyz: {
+          type: 'reference',
+          allowedType: 'xyz',
+          inverseProperty: 'user',
+        },
+        xyz2: {
+          type: 'reference',
+          allowedType: 'xyz',
+          inverseProperty: 'user2',
+        },
       },
     },
     xyz: {
       fields: {
         age: { type: 'integer' },
-        time: { type: 'integer' },
-        fun: { type: 'integer' },
-        name: { type: 'string' },
-        flap: { type: 'string' },
+        user: {
+          type: 'reference',
+          allowedType: 'user',
+          inverseProperty: 'xyz',
+        },
+        user2: {
+          type: 'reference',
+          allowedType: 'user',
+          inverseProperty: 'xyz2',
+        },
       },
     },
   },
 })
 
-/*
-  age: ~~(Math.random() * 99) + 1,
-  name: 'Mr ' + i,
-*/
-
-console.log('SNURP')
-
-var d = Date.now()
-for (let i = 0; i < 10000; i++) {
-  db.create('user', {
-    age: i,
-    time: 66,
-    fun: 99,
-    name: euobserver,
-  })
-  // Relatively slow remove schema lookup
-  // db.create('xyz', {
-  //   name: 'Mr X!',
-  //   flap: 'BLA',
-  // })
-}
-
-const dbTime = db.drain()
-
-console.log(Date.now() - d, dbTime, 'ms')
-
-// sort('age').
-console.log(db.query('user').range(0, 1000).get())
-
-const dd = db.query('user').range(0, 100).get()
-
-console.log(dd)
-
-// for (const x of dd) {
-// console.log('???', x.name)
-// }
-
-await db.stop()
-
-await wait(1e3)
-
-console.log('STOP rdy')
-
-const db2 = new BasedDb({
-  path: dbFolder,
+const user1 = db.create('user', {
+  age: 66,
+  flap: 'A',
+  xyz: db.create('xyz', { age: 98 }),
 })
 
-await db2.start()
+// db.create('user', {
+//   age: 102,
+// })
 
-const flap = db2
+db.create('user', {
+  age: 67,
+  xyz: db.create('xyz', { age: 99, user2: user1 }),
+})
+
+db.drain()
+
+console.log('drained')
+
+const result = db
   .query('user')
-  .filter('name', 'has', 'mr poopoo')
-  .range(0, 100)
+  .include('xyz2')
+  .include('xyz.user2')
+  .include('xyz.user2.xyz2')
   .get()
 
-console.log(flap)
-
 let i = 0
-for (const x of flap) {
-  i++
-  if (i > 999999) {
-    console.log(x.name)
+for (const x of result) {
+  if (i === 1) {
+    // id of user has to be 1
+    console.log(x)
   }
+  i++
 }
+
+// console.log(result)
+
+// /*
+//   age: ~~(Math.random() * 99) + 1,
+//   name: 'Mr ' + i,
+// */
+
+// console.log('SNURP')
+
+// var d = Date.now()
+// for (let i = 0; i < 10000; i++) {
+//   db.create('user', {
+//     age: i,
+//     time: 66,
+//     fun: 99,
+//     name: euobserver,
+//   })
+//   // Relatively slow remove schema lookup
+//   // db.create('xyz', {
+//   //   name: 'Mr X!',
+//   //   flap: 'BLA',
+//   // })
+// }
+
+// const dbTime = db.drain()
+
+// console.log(Date.now() - d, dbTime, 'ms')
+
+// // sort('age').
+// console.log(db.query('user').range(0, 1000).get())
+
+// const dd = db.query('user').range(0, 100).get()
+
+// console.log(dd)
+
+// // for (const x of dd) {
+// // console.log('???', x.name)
+// // }
+
+// await db.stop()
+
+// await wait(1e3)
+
+// console.log('STOP rdy')
+
+// const db2 = new BasedDb({
+//   path: dbFolder,
+// })
+
+// await db2.start()
+
+// const flap = db2
+//   .query('user')
+//   .filter('name', 'has', 'mr poopoo')
+//   .range(0, 100)
+//   .get()
+
+// console.log(flap)
+
+// let i = 0
+// for (const x of flap) {
+//   i++
+//   if (i > 999999) {
+//     console.log(x.name)
+//   }
+// }
 
 // db.updateSchema({
 //   types: {

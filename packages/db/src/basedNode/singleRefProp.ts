@@ -16,6 +16,7 @@ export function singleRefProp(
     get() {
       const refSchema = schemas[type]
       const refCtx = refSchema.responseCtx
+
       refCtx.__q = ctx.__q
       refCtx.__o = ctx.__o
       refCtx.__r =

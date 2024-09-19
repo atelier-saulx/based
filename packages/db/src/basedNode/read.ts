@@ -1,38 +1,40 @@
+import { deepEqual } from '@saulx/utils'
+import { QueryIncludeDef } from '../query/types.js'
 import { FieldDef } from '../schemaTypeDef.js'
 import { BasedNode } from './index.js'
-
-// TODO: optmize this
-const includePathsAreEqual = (
-  includePath: number[],
-  refPath: number[],
-  start: number,
-): boolean => {
-  for (let i = 0; i < refPath.length - 1; i++) {
-    if (includePath[i] !== refPath[i]) {
-      return false
-    }
-  }
-  if (start !== refPath[refPath.length - 1]) {
-    return false
-  }
-  return true
-}
 
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,
   basedNode: BasedNode,
+  includeDef: QueryIncludeDef = basedNode.__q.query.includeDef,
+  offset: number = 4 + basedNode.__o,
+  end: number = basedNode.__q.buffer.byteLength,
 ) => {
   const queryResponse = basedNode.__q
-  let i = 4 + basedNode.__o
-
   const buffer = queryResponse.buffer
   const requestedFieldIndex = requestedField.field
   const ref = basedNode.__r
 
-  let found = !ref || false
-  let includeDef = queryResponse.query.includeDef
+  let found = true
 
-  while (i < buffer.byteLength) {
+  if (ref) {
+    found = deepEqual(ref.includePath, includeDef.includePath)
+  }
+
+  let i = offset
+
+  // console.log(
+  //   ref.includePath.map((v) => '-').join(''),
+  //   'GET FIELD',
+  //   requestedField.type,
+  //   requestedField.path,
+  //   includeDef.includePath,
+  //   ref.includePath,
+  //   offset,
+  //   end,
+  // )
+
+  while (i < end) {
     let index = buffer[i]
 
     // next node
@@ -42,39 +44,91 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
+    // console.log({ index })
+
+    // index === 253 or 254
     if (index === 254) {
-      if (ref && found) {
-        // only skip till end from now
-        found = false
+      const size = buffer.readUInt32LE(i + 1)
+      const refField = buffer[i]
+
+      if (includeDef.includePath.length > 1) {
+        console.log({ ref: !!ref })
       }
 
-      const refField = buffer[i + 1]
-      const resetNested = buffer[i] === 0
-
-      if (resetNested) {
-        includeDef = queryResponse.query.includeDef
+      if (!ref) {
+        i += 5 + size
+        continue
       }
 
-      if (
-        ref &&
-        includePathsAreEqual(includeDef.includePath, ref.includePath, refField)
-      ) {
-        if (requestedField.type === 'id') {
-          return buffer.readUint32LE(i + 2)
+      // console.log({
+      //   fType: requestedField.type,
+      //   refField,
+      //   size,
+      //   i,
+      //   END: i + 5 + size,
+      // })
+      // console.log(ref.includePath, ref.fromRef?.path, includeDef.includePath)
+
+      if (includeDef.includePath.length > ref.includePath.length) {
+        i += 5 + size
+        continue
+      }
+
+      let pIndex = 0
+      for (pIndex = 0; pIndex < ref.includePath.length; pIndex++) {
+        if (includeDef.includePath[pIndex] === undefined) {
+          // return i
+          break
         }
-        found = true
-        i += 6
-        includeDef = ref
-      } else {
-        i += 6
-        includeDef = includeDef.refIncludes[refField]
+        if (includeDef.includePath[pIndex] !== ref.includePath[pIndex]) {
+          pIndex = -1
+          break
+        }
       }
 
+      if (pIndex == -1) {
+        i += 5 + size
+        continue
+      }
+
+      if (refField === ref.includePath[pIndex]) {
+        const r = includeDef.refIncludes[refField]
+        if (!r) {
+          throw new Error('IN WRONG MATCHED INCLUDE')
+        }
+
+        if (
+          requestedField.type === 'id' &&
+          pIndex === ref.includePath.length - 1
+        ) {
+          if (size === 0) {
+            return null
+          }
+          // console.log('     ID:', { i, id: buffer.readUint32LE(i + 5 + 1) })
+
+          return buffer.readUint32LE(i + 5 + 1)
+        }
+
+        if (size === 0) {
+          i += 5
+          continue
+        }
+
+        return readSeperateFieldFromBuffer(
+          requestedField,
+          basedNode,
+          r,
+          i + 5 + 5,
+          i + 5 + size,
+        )
+      }
+
+      i += 5 + size
       continue
     }
 
     if (index === 0) {
-      if (requestedFieldIndex !== index || !found) {
+      if (!found || requestedFieldIndex !== index) {
         i += includeDef.mainLen
         continue
       }
@@ -132,7 +186,7 @@ export const readSeperateFieldFromBuffer = (
       const size = buffer.readUInt32LE(i)
       i += 4
       // if no field add size 0
-      if (requestedField.field === index && found) {
+      if (found && requestedField.field === index) {
         if (requestedField.type === 'string') {
           if (size === 0) {
             return ''

@@ -5,18 +5,16 @@ const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
+const results = @import("../results.zig");
 
 const IncludeError = error{
     Recursion,
 };
 
-// pass id
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
     originalNode: db.Node,
-    refLvl: u8,
-    hasFields: bool,
 ) usize {
     var size: usize = 0;
 
@@ -25,43 +23,47 @@ pub fn getSingleRefFields(
 
     const node = db.getReference(originalNode, refField);
 
+    // SINGLE REF
+    // op, field, bytes
+    // u8, u8, u32
+    // [254, 2, 4531]
+
+    ctx.results.append(.{
+        .id = null,
+        .field = refField,
+        .val = null,
+        .refSize = 0,
+        .includeMain = &.{},
+        .refType = 254,
+    }) catch return 0;
+
+    const resultIndex: usize = ctx.results.items.len - 1;
+
     if (node == null) {
-        return 0;
+        return 6;
     }
 
     const refId = db.getNodeId(node.?);
 
-    // only do this if there is nothing else
-    if (!hasFields) {
-        _ = addIdOnly(ctx, refId, refLvl + 1, refField) catch {
-            return 0;
-        };
-    }
-
-    const typeEntry = db.getType(typeId) catch null;
-
-    if (typeEntry == null) {
-        return 0;
-    }
+    const typeEntry = db.getType(typeId) catch {
+        return 6;
+    };
 
     const includeNested = include[3..include.len];
+
+    std.debug.print("ZIG GET FIELDS SINGLE REF\n", .{});
 
     const resultSizeNest = getFields(
         node.?,
         ctx,
         refId,
-        typeEntry.?,
-        refField,
+        typeEntry,
         includeNested,
-        refLvl + 1,
-        !hasFields,
     ) catch 0;
 
-    if (!hasFields) {
-        size += 7 + resultSizeNest;
-    } else {
-        size += 7 + resultSizeNest;
-    }
+    ctx.results.items[resultIndex].refSize = resultSizeNest;
+
+    size += 6 + resultSizeNest;
 
     return size;
 }

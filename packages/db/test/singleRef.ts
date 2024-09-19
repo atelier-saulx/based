@@ -404,6 +404,19 @@ await test('nested', async (t) => {
     'Get first item user should be null',
   )
 
+  console.log('\nSNURP SNURP -------')
+  deepEqual(
+    db.query('simple', lastID).include('user.location').get().toObject(),
+    {
+      id: lastID,
+      user: {
+        id: 1,
+        location: { label: 'BLA BLA', x: 1, y: 2 },
+      },
+    },
+    'Get user location as part of simple',
+  )
+
   deepEqual(
     db.query('simple', lastID).include('user').get().toObject(),
     {
@@ -438,6 +451,16 @@ await test('nested', async (t) => {
     'Get userMyBlup',
   )
 
+  deepEqual(
+    db.query('simple', lastID).include('user.myBlup').get().toObject(),
+    {
+      id: lastID,
+      user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
+    },
+    'Get single id myBlup ',
+  )
+
+  console.log('======= SNURP =======')
   deepEqual(
     db
       .query('simple', lastID)
@@ -517,6 +540,8 @@ await test('nested', async (t) => {
     ],
   )
 
+  console.log('\nGURP SNURP SNURP')
+
   deepEqual(
     db
       .query('simple')
@@ -540,6 +565,7 @@ await test('nested', async (t) => {
         },
       },
     ],
+    'get nested userMyBlup and user',
   )
 
   deepEqual(

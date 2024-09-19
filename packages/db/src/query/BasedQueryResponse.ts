@@ -108,13 +108,41 @@ export class BasedQueryResponse {
 
   *[Symbol.iterator]() {
     let i = 4
-    let currentInclude: QueryIncludeDef
+    console.log('')
+    const a = [...new Uint8Array(this.buffer)]
+    for (let i = 0; i < Math.ceil(this.buffer.byteLength / 20); i++) {
+      console.log(
+        picocolors.gray(
+          a
+            .slice(i * 20, (i + 1) * 20)
+            .map((v, j) => {
+              return String(j + i * 20).padStart(3, '0')
+            })
+            .join(' '),
+        ),
+      )
+      console.log(
+        a
+          .slice(i * 20, (i + 1) * 20)
+          .map((v) => String(v).padStart(3, '0'))
+          .map((v, j) => {
+            if (a[j + i * 20] === 255) {
+              return picocolors.blue(v)
+            }
+            if (a[j + i * 20] === 254) {
+              return picocolors.green(v)
+            }
+            return v
+          })
+          .join(' '),
+      )
+    }
+    console.log('')
 
     while (i < this.buffer.byteLength) {
       const index = this.buffer[i]
       i++
       if (index === 255) {
-        currentInclude = this.query.includeDef
         const ctx = this.query.schema.responseCtx
         ctx.__o = i
         ctx.__q = this
@@ -122,17 +150,10 @@ export class BasedQueryResponse {
         yield ctx
         i += 4
       } else if (index === 254) {
-        // 1 = nested, 0 = back to top
-        if (this.buffer[i] === 0) {
-          currentInclude = this.query.includeDef
-        }
-        if (currentInclude.refIncludes) {
-          const refField = this.buffer[i + 1]
-          currentInclude = currentInclude.refIncludes[refField]
-          i += 6
-        }
+        const size = this.buffer.readUInt32LE(i + 1)
+        i += size + 5
       } else if (index === 0) {
-        i += currentInclude.mainLen
+        i += this.query.includeDef.mainLen
       } else {
         const size = this.buffer.readUInt32LE(i)
         i += 4

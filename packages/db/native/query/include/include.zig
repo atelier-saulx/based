@@ -15,16 +15,15 @@ pub fn getFields(
     ctx: *QueryCtx,
     id: u32,
     typeEntry: db.Type,
-    refField: ?u8,
     include: []u8,
-    refLvl: u8,
-    fromNoFields: bool,
 ) !usize {
     var includeMain: []u8 = &.{};
     var size: usize = 0;
     var includeIterator: u16 = 0;
     var idIsSet: bool = false;
     var main: ?[]u8 = null;
+
+    std.debug.print("ZIG INCLUDE!\n", .{});
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
@@ -33,38 +32,32 @@ pub fn getFields(
         const operation = include[includeIterator..];
 
         if (field == 254) {
-            const hasFields: bool = operation[0] == 1;
-            const refSize = readInt(u16, operation, 1);
-            const singleRef = operation[3 .. 3 + refSize];
-            includeIterator += refSize + 3;
-            if (!idIsSet) {
-                idIsSet = true;
-                size += try addIdOnly(ctx, id, refLvl, refField);
-            }
-            const refResultSize = getRefsFields(ctx, singleRef, node, refLvl, hasFields);
-            size += refResultSize;
-            if (fromNoFields) {
-                // else it counts it double for some wierd reason...
-                size -= 5;
-            }
-            continue :includeField;
+            // const hasFields: bool = operation[0] == 1;
+            // const refSize = readInt(u16, operation, 1);
+            // // const singleRef = operation[3 .. 3 + refSize];
+            // includeIterator += refSize + 3;
+            // if (!idIsSet) {
+            //     idIsSet = true;
+            //     size += try addIdOnly(ctx, id);
+            // }
+            // // const refResultSize = getRefsFields(ctx, singleRef, node, hasFields);
+            // // size += refResultSize;
+            // continue :includeField;
         }
 
         if (field == 255) {
-            const hasFields: bool = operation[0] == 1;
-            const refSize = readInt(u16, operation, 1);
-            const singleRef = operation[3 .. 3 + refSize];
-            includeIterator += refSize + 3;
+            // can remove this prop
+            // const hasFields: bool = operation[0] == 1;
+            const refSize = readInt(u16, operation, 0);
+            const singleRef = operation[2 .. 2 + refSize];
+            includeIterator += refSize + 2;
             if (!idIsSet) {
                 idIsSet = true;
-                size += try addIdOnly(ctx, id, refLvl, refField);
+                size += try addIdOnly(ctx, id);
             }
-            const refResultSize = getSingleRefFields(ctx, singleRef, node, refLvl, hasFields);
-            size += refResultSize;
-            if (fromNoFields) {
-                // else it counts it double for some wierd reason...
-                size -= 5;
-            }
+            // hasFields
+            const s = getSingleRefFields(ctx, singleRef, node);
+            size += s;
             continue :includeField;
         }
 
@@ -94,36 +87,26 @@ pub fn getFields(
         }
 
         var result: results.Result = .{
-            .id = id,
+            .id = null,
             .field = field,
             .val = value,
-            .refField = refField,
+            .refSize = null,
             .includeMain = includeMain,
-            .refLvl = refLvl,
+            .refType = null,
         };
 
-        if (refField == null) {
-            if (!idIsSet) {
-                idIsSet = true;
-                size += 1 + 4;
-            } else {
-                result.id = null;
-            }
-        } else if (!idIsSet) {
+        if (!idIsSet) {
+            size += 5;
+            result.id = id;
             idIsSet = true;
         }
 
         try ctx.results.append(result);
     }
 
-    if (!idIsSet and !fromNoFields) {
+    if (!idIsSet) {
         idIsSet = true;
-        if (refField != null) {
-            // pretty nice to just add the size here
-            _ = try addIdOnly(ctx, id, refLvl, refField);
-        } else {
-            size += try addIdOnly(ctx, id, refLvl, refField);
-        }
+        size += try addIdOnly(ctx, id);
     }
 
     return size;

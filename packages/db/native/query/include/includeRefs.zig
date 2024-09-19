@@ -10,6 +10,8 @@ const IncludeError = error{
     Recursion,
 };
 
+// make the filter as option as well
+
 // pass id
 pub fn getRefsFields(
     _: *QueryCtx,
@@ -60,6 +62,9 @@ pub fn getRefsFields(
     // }
 
     // const includeNested = include[3..include.len];
+
+    // make a result thats says REFRENCES
+    // then just include count all the sizes and store in the references HEAD
 
     // const resultSizeNest = getFields(
     //     node.?,
