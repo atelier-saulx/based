@@ -2,6 +2,7 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include "jemalloc.h"
@@ -20,25 +21,20 @@ static struct SelvaAlias *insert_alias_by_name(struct SelvaTypeEntry *type, stru
      return old_alias;
 }
 
-static struct SelvaAlias *remove_alias_by_name(struct SelvaTypeEntry *type, struct SelvaAlias *find)
+static void remove_alias_by_dest(struct SelvaTypeEntry *type, struct SelvaAlias *alias)
 {
-    struct SelvaAlias *alias;
-
-    alias = RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, find);
-    if (alias) {
-        type->nr_aliases--;
-    }
-
-    return alias;
+    RB_REMOVE(SelvaAliasesByDest, &type->aliases.alias_by_dest, alias);
 }
 
-static int del_alias(struct SelvaTypeEntry *type, struct SelvaAlias *alias_or_find)
+static void remove_alias_by_name(struct SelvaTypeEntry *type, struct SelvaAlias *alias)
 {
-    struct SelvaAlias *alias = remove_alias_by_name(type, alias_or_find);
+    RB_REMOVE(SelvaAliasesByName, &type->aliases.alias_by_name, alias);
+    type->nr_aliases--;
+}
 
-    if (!alias) {
-        return SELVA_ENOENT;
-    }
+static int del_alias(struct SelvaTypeEntry *type, struct SelvaAlias *alias)
+{
+    remove_alias_by_name(type, alias);
 
     if (alias->prev) {
         /*
@@ -50,7 +46,7 @@ static int del_alias(struct SelvaTypeEntry *type, struct SelvaAlias *alias_or_fi
          * `alias` must be the first in alias_by_dest with this destination.
          * We must make the `next` the first.
          */
-        (void)RB_REMOVE(SelvaAliasesByDest, &type->aliases.alias_by_dest, alias);
+	remove_alias_by_dest(type, alias);
         if (alias->next) {
             (void)RB_INSERT(SelvaAliasesByDest, &type->aliases.alias_by_dest, alias->next);
         }
@@ -109,12 +105,18 @@ void selva_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *na
 int selva_del_alias_by_name(struct SelvaTypeEntry *type, const char *name_str, size_t name_len)
 {
     struct SelvaAlias *find = alloca(sizeof(struct SelvaAlias) + name_len + 1);
+    struct SelvaAlias *alias;
 
     memset(find, 0, sizeof(*find));
     memcpy(find->name, name_str, name_len);
     find->name[name_len] = '\0';
 
-    return del_alias(type, find);
+    alias = RB_FIND(SelvaAliasesByDest, &type->aliases.alias_by_dest, find);
+    if (!alias) {
+        return SELVA_ENOENT;
+    }
+
+    return (alias) ? del_alias(type, alias) : SELVA_ENOENT;
 }
 
 void selva_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
@@ -122,32 +124,35 @@ void selva_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest)
     struct SelvaAlias find = {
         .dest = dest,
     };
+    struct SelvaAlias *alias = RB_FIND(SelvaAliasesByDest, &type->aliases.alias_by_dest, &find);
 
-    struct SelvaAlias *alias = RB_REMOVE(SelvaAliasesByDest, &type->aliases.alias_by_dest, &find);
-    if (alias) {
-        assert(!alias->prev); /* This must be the first one on the list of by_dest aliases. */
-
-        /*
-         * Remove this alias from by_name.
-         */
-        remove_alias_by_name(type, alias);
-
-        /*
-         * Remove the rest of aliases by this dest from by_name.
-         */
-        struct SelvaAlias *next = alias->next;
-        while (next) {
-            struct SelvaAlias *tmp = next->next;
-
-            assert(next->dest == alias->dest);
-            remove_alias_by_name(type, next);
-            selva_free(next);
-
-            next = tmp;
-        }
-
-        selva_free(alias);
+    if (!alias) {
+        return;
     }
+
+    remove_alias_by_dest(type, alias);
+    assert(!alias->prev); /* This must be the first one on the list of by_dest aliases. */
+
+    /*
+     * Remove this alias from by_name.
+     */
+    remove_alias_by_name(type, alias);
+
+    /*
+     * Remove the rest of aliases by this dest from by_name.
+     */
+    struct SelvaAlias *next = alias->next;
+    while (next) {
+        struct SelvaAlias *tmp = next->next;
+
+        assert(next->dest == alias->dest);
+        remove_alias_by_name(type, next);
+        selva_free(next);
+
+        next = tmp;
+    }
+
+    selva_free(alias);
 }
 
 struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, const char *name_str, size_t name_len)
