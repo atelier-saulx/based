@@ -49,15 +49,13 @@ pub fn getRefsFields(
 
     const includeNested = include[3..include.len];
 
-    std.debug.print("Flap flap {any} \n", .{includeNested});
-
     var i: usize = 0;
 
     while (i < refs.?.nr_refs) : (i += 1) {
         // and add filter
         const refNode = refs.?.refs[i].dst.?;
 
-        std.debug.print("  HELLO {any} {d} \n", .{ refNode, db.getNodeId(refNode) });
+        // std.debug.print("  HELLO {any} {d} \n", .{ refNode, db.getNodeId(refNode) });
 
         size += getFields(
             refNode,

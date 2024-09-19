@@ -23,8 +23,6 @@ pub fn getFields(
     var idIsSet: bool = false;
     var main: ?[]u8 = null;
 
-    std.debug.print("ZIG INCLUDE!\n", .{});
-
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
         includeIterator += 1;
