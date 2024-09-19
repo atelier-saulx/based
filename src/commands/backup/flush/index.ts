@@ -8,7 +8,7 @@ import {
 } from '../../../shared/index.js'
 import pc from 'picocolors'
 import { getList } from '../list/index.js'
-import { confirmInput } from '../../../shared/inputs.js'
+import { confirmInput } from '../../../shared/inputHandler.js'
 
 type FlushArgs = {
   db?: string

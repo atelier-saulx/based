@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { basedAuth, spinner } from '../../../shared/index.js'
 import pc from 'picocolors'
-import { confirmInput } from '../../../shared/inputs.js'
+import { confirmInput } from '../../../shared/inputHandler.js'
 
 export const clean = (program: Command) => async () => {
   const { basedClient, destroy } = await basedAuth(program)

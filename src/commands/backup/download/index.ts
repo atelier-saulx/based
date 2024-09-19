@@ -13,7 +13,7 @@ import pc from 'picocolors'
 import { BasedClient } from '@based/client'
 import { Command } from 'commander'
 import { getList } from '../list/index.js'
-import { confirmInput, defaultInput } from '../../../shared/inputs.js'
+import { confirmInput, defaultInput } from '../../../shared/inputHandler.js'
 
 type DownloadArgs = {
   db?: string

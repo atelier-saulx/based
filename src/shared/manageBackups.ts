@@ -2,7 +2,7 @@ import pc from 'picocolors'
 import { format, parseISO } from 'date-fns'
 import { spinner } from './spinner.js'
 import { isCurrentDump } from './pathAndFiles.js'
-import { SelectInputItems, singleSelectInput } from './inputs.js'
+import { SelectInputItems, singleSelectInput } from './inputHandler.js'
 
 type BackupInfo = {
   key: string

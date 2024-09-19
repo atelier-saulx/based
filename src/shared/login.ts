@@ -5,7 +5,11 @@ import { getBasedClient } from './getBasedClient.js'
 import pc from 'picocolors'
 import { AuthState, BasedClient } from '@based/client'
 import { spinner } from './spinner.js'
-import { emailInput, SelectInputItems, singleSelectInput } from './inputs.js'
+import {
+  emailInput,
+  SelectInputItems,
+  singleSelectInput,
+} from './inputHandler.js'
 
 type User = {
   email: string

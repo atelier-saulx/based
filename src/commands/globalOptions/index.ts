@@ -2,8 +2,12 @@ import { findUp } from 'find-up'
 import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 import { Command } from 'commander'
+import AppContext from '../../shared/AppContext.js'
 
-export const globalOptions = async (program: Command): Promise<void> => {
+export const globalOptions = async (
+  program: Command,
+  context: AppContext,
+): Promise<void> => {
   // if (!process.env.ENV) {
   //   process.env.ENV = await getEnv()
   // }
@@ -29,12 +33,17 @@ export const globalOptions = async (program: Command): Promise<void> => {
       Object.assign(args, compiled.default || compiled)
     }
   } else {
-    console.info(
-      `⚠️ No 'based.json' configuration file was found. It is recommended to create one.`,
+    context.print.warning(
+      `⚠️ <b>No 'based.json' configuration file found. It is recommended to create one.</b>`,
     )
   }
 
   program
+    .option(
+      '--level <level>',
+      `Sets the logging level for the CLI output. (default: verbose)(available levels: info | success | warning | error | silent).`,
+      'verbose',
+    )
     .option(
       '-c, --cluster <cluster>',
       'Define the cluster to use.',

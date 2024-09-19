@@ -11,7 +11,7 @@ import { BasedClient } from '@based/client'
 import pc from 'picocolors'
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
-import { confirmInput } from '../../../shared/inputs.js'
+import { confirmInput } from '../../../shared/inputHandler.js'
 
 type RestoreArgs = {
   db?: string

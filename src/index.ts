@@ -10,14 +10,16 @@ import {
 } from './commands/index.js'
 import pc from 'picocolors'
 import { spinner } from './shared/index.js'
+import AppContext from './shared/AppContext.js'
 
 export const init = async () => {
   const program: Command = new Command()
+  const context: AppContext = AppContext.getInstance()
 
   try {
     await Promise.all([
-      version(program),
-      globalOptions(program),
+      version(program, context),
+      globalOptions(program, context),
       auth(program),
       dev(program),
       deploy(program),
@@ -31,11 +33,12 @@ export const init = async () => {
       'Display the help related to the command.',
     )
 
-    const opts = program.opts()
+    const { org, project, env, level } = program.opts()
 
-    for (const arg in opts) {
-      console.info(pc.dim(arg), opts[arg])
-    }
+    context.set('level', level)
+    context.print.info(`<dim>org:</dim> <b>${org}</b>`)
+    context.print.info(`<dim>project:</dim> <b>${project}</b>`)
+    context.print.info(`<dim>env:</dim> <b>${env}</b>`)
 
     await program.parseAsync(process.argv)
   } catch (e) {
