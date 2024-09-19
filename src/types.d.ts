@@ -19,6 +19,16 @@ declare global {
       app?: string
       favicon?: string
     }
+
+    namespace Backups {
+      namespace List {
+        type Args = {
+          yes?: boolean
+          limit?: number
+          sort?: 'ASC' | 'DESC'
+        }
+      }
+    }
   }
 }
 
