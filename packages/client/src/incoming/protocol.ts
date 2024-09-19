@@ -58,12 +58,13 @@ export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
     if (d instanceof Buffer) {
       return new Uint8Array(d)
     }
-  } else {
-    if (d instanceof Blob) {
-      const buffer = await d.arrayBuffer()
-      return new Uint8Array(buffer)
-    }
   }
+
+  if (d instanceof Blob) {
+    const buffer = await d.arrayBuffer()
+    return new Uint8Array(buffer)
+  }
+
   throw new Error('432')
 }
 

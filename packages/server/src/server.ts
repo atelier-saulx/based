@@ -270,10 +270,10 @@ export class BasedServer {
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
 
-    let restPath =
-      '1' +
-      (~~(Math.random() * 99999999)).toString(16) +
-      (~~(Math.random() * 99999999)).toString(16)
+    let restPath = '148e7ba428e4dbd'
+    // '1' +
+    // (~~(Math.random() * 99999999)).toString(16) +
+    // (~~(Math.random() * 99999999)).toString(16)
     this.restFallbackPath = restPath
 
     if (opts.client) {

@@ -5,7 +5,7 @@ const client = based(
   },
   {
     restFallBack: {
-      pollInverval: 500,
+      pollInterval: 500,
     },
   },
 )

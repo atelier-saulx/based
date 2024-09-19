@@ -69,6 +69,27 @@ if (isBrowser) {
   }
 }
 
+let env
+const getEnv = async (): Promise<string> => {
+  if (env === undefined) {
+    env = global.BASED?.opts?.env
+    if (!env && typeof process === 'object') {
+      env = process.env.ENV
+      // if (!env) {
+      //   const { exec } = await import('node:child_process')
+      //   env = await new Promise((resolve) => {
+      //     return exec('git branch --show-current', (err, stdout) =>
+      //       resolve(err ? '' : stdout.trim()),
+      //     )
+      //   })
+      // }
+    }
+    env ||= ''
+  }
+
+  return env
+}
+
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
@@ -247,6 +268,12 @@ export class BasedClient extends Emitter {
    */
   public async connect(opts?: BasedOpts) {
     if (opts && Object.keys(opts).length > 0) {
+      if (opts.env?.toLowerCase() === '#branch') {
+        opts = {
+          ...opts,
+          env: await getEnv(),
+        }
+      }
       if (this.opts) {
         if (deepEqual(this.opts, opts)) {
           return
