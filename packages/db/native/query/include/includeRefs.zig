@@ -17,11 +17,7 @@ pub fn getRefsFields(
     _: *QueryCtx,
     include: []u8,
     node: db.Node,
-    _: u8,
-    _: bool,
 ) usize {
-    // var size: usize = 0;
-
     const typeId: db.TypeId = readInt(u16, include, 0);
     const refField = include[2];
 

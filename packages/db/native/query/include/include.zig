@@ -32,22 +32,18 @@ pub fn getFields(
         const operation = include[includeIterator..];
 
         if (field == 254) {
-            // const hasFields: bool = operation[0] == 1;
-            // const refSize = readInt(u16, operation, 1);
-            // // const singleRef = operation[3 .. 3 + refSize];
-            // includeIterator += refSize + 3;
-            // if (!idIsSet) {
-            //     idIsSet = true;
-            //     size += try addIdOnly(ctx, id);
-            // }
-            // // const refResultSize = getRefsFields(ctx, singleRef, node, hasFields);
-            // // size += refResultSize;
-            // continue :includeField;
+            const refSize = readInt(u16, operation, 0);
+            const multiRefs = operation[2 .. 2 + refSize];
+            includeIterator += refSize + 2;
+            if (!idIsSet) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id);
+            }
+            size += getRefsFields(ctx, multiRefs, node);
+            continue :includeField;
         }
 
         if (field == 255) {
-            // can remove this prop
-            // const hasFields: bool = operation[0] == 1;
             const refSize = readInt(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
@@ -55,9 +51,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            // hasFields
-            const s = getSingleRefFields(ctx, singleRef, node);
-            size += s;
+            size += getSingleRefFields(ctx, singleRef, node);
             continue :includeField;
         }
 

@@ -36,16 +36,13 @@ export const readSeperateFieldFromBuffer = (
     // index === 253 or 254
     if (index === 254) {
       const size = buffer.readUInt32LE(i + 1)
-      const refField = buffer[i]
 
-      if (includeDef.includePath.length > 1) {
-        console.log({ ref: !!ref })
-      }
-
-      if (!ref) {
+      if (found || !ref) {
         i += 5 + size
         continue
       }
+
+      const refField = buffer[i]
 
       if (includeDef.includePath.length > ref.includePath.length) {
         i += 5 + size
@@ -55,7 +52,6 @@ export const readSeperateFieldFromBuffer = (
       let pIndex = 0
       for (pIndex = 0; pIndex < ref.includePath.length; pIndex++) {
         if (includeDef.includePath[pIndex] === undefined) {
-          // return i
           break
         }
         if (includeDef.includePath[pIndex] !== ref.includePath[pIndex]) {
