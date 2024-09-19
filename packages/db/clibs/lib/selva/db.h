@@ -163,4 +163,10 @@ int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
 
+/**
+ * Set new alias.
+ * `new_alias` must be allocated with selva_jemalloc.
+ */
+void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
+
 #include "selva/db.h"

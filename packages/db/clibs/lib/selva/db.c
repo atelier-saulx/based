@@ -327,6 +327,7 @@ struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSch
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
+    selva_del_alias_by_dest(type, node->node_id);
     selva_cursors_node_going_away(type, node);
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
     if (node == type->max_node) {
@@ -338,7 +339,6 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
         /* TODO clear expire */
     }
 #endif
-    /* TODO Remove aliases */
 
     selva_fields_destroy(db, node);
 #if 0

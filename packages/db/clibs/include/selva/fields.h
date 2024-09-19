@@ -17,7 +17,12 @@ struct SelvaNodeReference {
 struct SelvaNodeReferences {
     uint32_t nr_refs;
     uint16_t offset;
-    uint16_t great_idz; /*!< Greatest node_id ever inserted in this field. (Compressed). */
+    /*!<
+     * Greatest node_id ever inserted in this field. (Compressed/packed).
+     * This can be zeroed when the gretest node is deleted, which may
+     * cause some lookup slowdown.
+     */
+    uint16_t great_idz;
     struct SelvaNodeReference *refs
 #ifndef __clang__
         __counted_by(nr_refs)

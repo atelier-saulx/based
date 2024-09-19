@@ -204,23 +204,16 @@ size_t selva_alias_count(const struct SelvaTypeEntry *type);
 
 /**
  * Set new alias.
- * `new_alias` must be allocated with selva_jemalloc.
- */
-SELVA_EXPORT
-void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
-
-/**
- * Set new alias.
  * @param name is copied.
  */
 SELVA_EXPORT
-void selva_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name);
+void selva_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name_str, size_t name_len);
 
 /**
  * Delete alias by name.
  */
 SELVA_EXPORT
-void selva_del_alias_by_name(struct SelvaTypeEntry *type, const char *name);
+int selva_del_alias_by_name(struct SelvaTypeEntry *type, const char *name_str, size_t name_len);
 
 /**
  * Delete all aliases pointing to dest.
@@ -232,4 +225,4 @@ void selva_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);
  * Get alias by name.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, const char *name);
+struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, const char *name_str, size_t name_len);

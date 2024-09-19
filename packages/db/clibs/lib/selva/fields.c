@@ -268,7 +268,7 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     /*
      * Update the greatest id observed.
      */
-    if (dst->node_id > idz_unpack(refs.great_idz)) {
+    if (dst->node_id >= idz_unpack(refs.great_idz)) {
         refs.great_idz = idz_pack(dst->node_id);
     }
 
@@ -399,8 +399,6 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
     } else if (nfo_src->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences refs;
 
-        /* TODO Check great_idz? */
-
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         memcpy(&refs, nfo2p(fields_src, nfo_src), sizeof(refs));
         for (size_t i = 0; i < refs.nr_refs; i++) {
@@ -408,10 +406,16 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
 
             if (tmp && tmp->node_id == orig_dst) {
                 del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
-                memcpy(nfo2p(fields_src, nfo_src), &refs, sizeof(refs));
+                if (tmp->node_id >= idz_unpack(refs.great_idz)) {
+                    refs.great_idz = 0;
+                }
                 dst = tmp;
                 break;
             }
+        }
+
+        if (dst) {
+            memcpy(nfo2p(fields_src, nfo_src), &refs, sizeof(refs));
         }
     }
 
@@ -462,6 +466,9 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 tmp = refs.refs[i].dst;
                 if (tmp == src) {
                     del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
+                    if (tmp->node_id >= idz_unpack(refs.great_idz)) {
+                        refs.great_idz = 0;
+                    }
                     break;
                 }
             }
@@ -573,9 +580,10 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
         }
     } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences refs;
+        const node_id_t great_id = idz_unpack(refs.great_idz);
 
         memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
-        if (dst->node_id < idz_unpack(refs.great_idz)) {
+        if (dst->node_id <= great_id || great_id == 0) {
             for (size_t i = 0; i < refs.nr_refs; i++) {
                 struct SelvaNode *tmp = refs.refs[i].dst;
 
