@@ -28,6 +28,7 @@ await test('simple', async (t) => {
     types: {
       user: {
         fields: {
+          flap: { type: 'integer' },
           name: { type: 'string' },
           articles: {
             type: 'references',
@@ -51,10 +52,12 @@ await test('simple', async (t) => {
 
   const mrSnurp = db.create('user', {
     name: 'Mr snurp',
+    flap: 10,
   })
 
   const flippie = db.create('user', {
     name: 'Flippie',
+    flap: 20,
   })
 
   db.drain()
@@ -71,7 +74,7 @@ await test('simple', async (t) => {
 
   db.drain()
 
-  const x = db.query('article').include('contributors').get()
+  const x = db.query('article').include('contributors.name').get()
 
   x.debug()
 
