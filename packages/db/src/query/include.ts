@@ -83,8 +83,6 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const size = refBuffer.byteLength
         const meta = Buffer.allocUnsafe(7)
 
-        console.log('INCLUDE', refInclude.fromRef)
-
         // command meaning include single ref
         meta[0] = refInclude.multiple ? 254 : 255
 

@@ -29,6 +29,13 @@ pub fn getRefsFields(
         std.debug.print("refs: {any}\n", .{refs});
     }
 
+    std.debug.print("flap {any} {d} \n", .{ refs, refs.?.nr_refs });
+
+    var i: usize = 0;
+    while (i < refs.?.nr_refs) : (i += 1) {
+        std.debug.print("snuro {any} \n", .{refs.?.refs[i].dst});
+    }
+
     // const node = db.getReference(originalNode, refField);
 
     // if (node == null) {

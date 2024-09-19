@@ -91,6 +91,7 @@ pub fn getReference(node: Node, field: u8) ?Node {
 }
 
 pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
+    // make this return []SelvaNode or iterator over references
     return selva.selva_fields_get_references(node, field);
 }
 
