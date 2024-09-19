@@ -194,3 +194,15 @@ pub fn getNextNode(typeEntry: Type, node: Node) ?Node {
 pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
+
+pub fn setAlias(typeEntry: Type, dest: Node, aliasName: [*]u8) void {
+    selva.selva_set_alias(typeEntry, dest, aliasName.ptr, aliasName.len);
+}
+
+pub fn delAliasByName(typeEntry: Type, aliasName: [*]u8) !void {
+    try errors.selva(selva.selva_del_alias_by_name(typeEntry, aliasName.ptr, aliasName.len));
+}
+
+pub fn getAliasByName(typeEntry: Type, aliasName: [*]u8) ?Node {
+    return selva.selva_get_alias(typeEntry, aliasName.ptr, aliasName.len);
+}

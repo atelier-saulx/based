@@ -689,17 +689,13 @@ static napi_value node_db_set_alias(napi_env env, napi_callback_info info)
     assert(status == napi_ok);
     alias_str = p;
 
-    if (alias_str[alias_len - 1] != '\0') {
-        return res2napi(env, SELVA_EINVAL);
-    }
-
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    selva_set_alias(te, node_id, alias_str);
+    selva_set_alias(te, node_id, alias_str, alias_len);
 
     return res2napi(env, 0);
 }
@@ -726,17 +722,13 @@ static napi_value node_db_del_alias(napi_env env, napi_callback_info info)
     assert(status == napi_ok);
     alias_str = p;
 
-    if (alias_str[alias_len - 1] != '\0') {
-        return res2napi(env, SELVA_EINVAL);
-    }
-
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    selva_del_alias_by_name(te, alias_str);
+    selva_del_alias_by_name(te, alias_str, alias_len);
 
     return res2napi(env, 0);
 }
@@ -763,17 +755,13 @@ static napi_value node_db_get_alias(napi_env env, napi_callback_info info)
     assert(status == napi_ok);
     alias_str = p;
 
-    if (alias_str[alias_len - 1] != '\0') {
-        return res2napi(env, SELVA_EINVAL);
-    }
-
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
     assert(te->type == type);
     if (!te) {
         return res2napi(env, SELVA_EINTYPE);
     }
 
-    const struct SelvaNode *node = selva_get_alias(te, alias_str);
+    const struct SelvaNode *node = selva_get_alias(te, alias_str, alias_len);
 
     return res2napi(env, node->node_id);
 }
