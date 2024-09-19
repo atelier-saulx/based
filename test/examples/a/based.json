@@ -1,5 +1,5 @@
 {
-  "org": "github-actions",
-  "project": "cli-test",
+  "org": "saulx",
+  "project": "based-ui",
   "env": "production"
 }

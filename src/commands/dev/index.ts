@@ -21,9 +21,9 @@ export const dev = async (program: Command) => {
   const cmd = program
     .command('dev')
     .description('Develop your app running the Based Cloud locally.')
-    .option('-p, --port <port>', 'To set manually the Based Dev Server port.')
+    .option('--port <port>', 'To set manually the Based Dev Server port.')
     .option(
-      '-fn, --function <functions...>',
+      '-f, --function <functions...>',
       'The function names to be served (variadic).',
     )
 

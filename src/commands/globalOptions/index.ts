@@ -52,7 +52,7 @@ export const globalOptions = async (program: Command): Promise<void> => {
       args.env,
     )
     .option(
-      '-aK, --api-key <api-key>',
+      '--api-key <api-key>',
       'API Key generated on Based.io for Service Account.',
     )
 }

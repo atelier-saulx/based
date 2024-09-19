@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { show } from './show/index.js'
+import { filter } from './filter/index.js'
 import { clean } from './clean/index.js'
 
 export const logs = async (program: Command) => {
@@ -11,15 +11,16 @@ export const logs = async (program: Command) => {
     .usage('[command]')
 
   cmd
-    .command('show')
+    .command('filter')
+    .option('--expanded', 'To show all the the logs expanded.')
     .option('--before <DD/MM/YYYY>', 'Filter by date.')
     .option('--after <DD/MM/YYYY>', 'Filter by date.')
-    .option('-fn, --functions <functions...>', 'Filter by function.')
-    .option('-cs, --checksum <cheksum>', 'Filter by checksum.')
+    .option('-f, --functions <functions...>', 'Filter by function.')
+    .option('-c, --checksum <cheksum>', 'Filter by checksum.')
     .option('-l, --level <level>', 'Filter by level.')
     .option('-s --service <services...>', 'Filter by service.')
     .description('Display all logs')
-    .action(show(program))
+    .action(filter(program))
 
   cmd.command('clean').description('Clean the logs.').action(clean(program))
 }
