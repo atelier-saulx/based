@@ -1,16 +1,15 @@
 import { Command } from 'commander'
-import confirm from '@inquirer/confirm'
 import { basedAuth, spinner } from '../../../shared/index.js'
 import pc from 'picocolors'
+import { confirmInput } from '../../../shared/inputs.js'
 
 export const make = (program: Command) => async () => {
   const { org, project, env } = program.opts()
   const { basedClient, adminHubBasedCloud, destroy } = await basedAuth(program)
 
-  const doIt: boolean = await confirm({
-    message: `Would you like to make a backup for the env '${pc.cyan(`${org}/${project}/${env}`)}'?`,
-    default: true,
-  })
+  const doIt: boolean = await confirmInput(
+    `Would you like to make a backup for the env '${pc.cyan(`${org}/${project}/${env}`)}'?`,
+  )
 
   if (!doIt) {
     return

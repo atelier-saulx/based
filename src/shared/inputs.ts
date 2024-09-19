@@ -1,6 +1,7 @@
-import { checkbox, input, Separator } from '@inquirer/prompts'
+import { checkbox, input, select, Separator } from '@inquirer/prompts'
 import { isValid } from 'date-fns/isValid'
 import { parse } from 'date-fns'
+import confirm from '@inquirer/confirm'
 
 export const dateInput = async (message: string, skip: boolean = true) =>
   input({
@@ -17,25 +18,73 @@ export const numberInput = async (message: string, skip: boolean = true) =>
     validate: (value) => (skip && value === 's') || !isNaN(Number(value)),
   })
 
-type MultipleItems =
+export const emailInput = async (message: string) =>
+  input({
+    message,
+    required: true,
+    validate: (email) => {
+      const at: number = email.lastIndexOf('@')
+      const dot: number = email.lastIndexOf('.')
+
+      return at > 0 && at < dot - 1 && dot < email.length - 2
+    },
+  })
+
+export const confirmInput = async (
+  message: string = 'Continue?',
+  defaultValue: boolean = true,
+) =>
+  confirm({
+    message,
+    default: defaultValue,
+  })
+
+export const defaultInput = async (
+  message: string,
+  defaultValue: string,
+  validate?: (value: string) => boolean | string | Promise<string | boolean>,
+) =>
+  input({
+    message,
+    required: true,
+    default: defaultValue,
+    validate,
+  })
+
+export type SelectInputItems =
   | {
       name?: string
-      value: string
+      value: any
     }
   | Separator
 
 export const multiSelectInput = async (
   message: string,
-  data: MultipleItems[],
+  choices: SelectInputItems[],
   separator: boolean = true,
 ) => {
-  if (data.length > 5 || separator) {
-    data.push(new Separator())
+  if (choices.length > 5 || separator) {
+    choices.push(new Separator())
   }
 
   return checkbox({
     message,
-    choices: data,
+    choices,
     required: true,
+  })
+}
+
+export const singleSelectInput = async (
+  message: string,
+  choices: SelectInputItems[],
+  separator: boolean = true,
+) => {
+  if (choices.length > 5 || separator) {
+    choices.push(new Separator())
+  }
+
+  return select({
+    message,
+    choices,
   })
 }

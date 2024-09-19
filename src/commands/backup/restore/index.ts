@@ -9,9 +9,9 @@ import {
 import { getList } from '../list/index.js'
 import { BasedClient } from '@based/client'
 import pc from 'picocolors'
-import confirm from '@inquirer/confirm'
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
+import { confirmInput } from '../../../shared/inputs.js'
 
 type RestoreArgs = {
   db?: string
@@ -94,10 +94,7 @@ export const setRestore = async ({
   )
 
   if (!isExternalFile) {
-    const doIt: boolean = await confirm({
-      message: 'Continue?',
-      default: true,
-    })
+    const doIt: boolean = await confirmInput()
 
     if (!doIt) {
       spinner.fail('Restoration cancelled.')

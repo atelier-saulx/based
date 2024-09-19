@@ -8,13 +8,12 @@ import {
   spinner,
 } from '../../../shared/index.js'
 import { join, resolve } from 'node:path'
-import { input } from '@inquirer/prompts'
-import confirm from '@inquirer/confirm'
 import { writeFile } from 'fs/promises'
 import pc from 'picocolors'
 import { BasedClient } from '@based/client'
 import { Command } from 'commander'
 import { getList } from '../list/index.js'
+import { confirmInput, defaultInput } from '../../../shared/inputs.js'
 
 type DownloadArgs = {
   db?: string
@@ -63,11 +62,10 @@ export const getDownload = async ({
   }
 
   const getPath = async () =>
-    await input({
-      message:
-        'Path to save the backup to: (If the file already exists it will be overwritten)',
-      default: './',
-    })
+    await defaultInput(
+      'Path to save the backup to: (If the file already exists it will be overwritten)',
+      './',
+    )
 
   do {
     retry--
@@ -94,10 +92,7 @@ export const getDownload = async ({
   )
 
   if (!isExternalPath) {
-    const doIt: boolean = await confirm({
-      message: 'Continue?',
-      default: true,
-    })
+    const doIt: boolean = await confirmInput()
 
     if (!doIt) {
       spinner.fail('Download cancelled.')

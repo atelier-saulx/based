@@ -1,11 +1,11 @@
 import { join } from 'node:path'
 import { readJSON, outputJSON } from 'fs-extra/esm'
-import { input, select } from '@inquirer/prompts'
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
 import pc from 'picocolors'
 import { AuthState, BasedClient } from '@based/client'
 import { spinner } from './spinner.js'
+import { emailInput, SelectInputItems, singleSelectInput } from './inputs.js'
 
 type User = {
   email: string
@@ -36,13 +36,6 @@ type AuthenticateUserReturn = AuthState & {
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-
-const validateEmail = (email: string) => {
-  const at: number = email.lastIndexOf('@')
-  const dot: number = email.lastIndexOf('.')
-
-  return at > 0 && at < dot - 1 && dot < email.length - 2
-}
 
 const authenticateUser = async (
   email: string,
@@ -117,24 +110,21 @@ export const login = async ({
       })
 
     if (selectUser) {
-      const choices = users.map((user) => ({ name: user.email, value: user }))
+      const choices: SelectInputItems[] = users.map((user) => ({
+        name: user.email,
+        value: user,
+      }))
       choices.push({
         name: 'Other user',
         value: null,
       })
 
-      user = await select({
-        message: 'Select user:',
-        choices,
-      })
+      user = await singleSelectInput('Select user:', choices)
     }
   }
 
   if (!user && !email) {
-    const email: string = await input({
-      message: 'Enter your email address:',
-      validate: (email) => validateEmail(email),
-    })
+    const email: string = await emailInput('Enter your email address:')
 
     user = await authenticateUser(email, adminHub, cluster)
 

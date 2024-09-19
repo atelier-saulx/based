@@ -1,7 +1,7 @@
 import { Command } from 'commander'
-import confirm from '@inquirer/confirm'
 import { basedAuth, spinner } from '../../../shared/index.js'
 import pc from 'picocolors'
+import { confirmInput } from '../../../shared/inputs.js'
 
 export const clean = (program: Command) => async () => {
   const { basedClient, destroy } = await basedAuth(program)
@@ -10,10 +10,7 @@ export const clean = (program: Command) => async () => {
     `⚠️ ${pc.bold("Warning! This action cannot be undone. Proceed only if you know what you're doing.")}`,
   )
 
-  const doIt: boolean = await confirm({
-    message: 'Continue?',
-    default: true,
-  })
+  const doIt: boolean = await confirmInput()
 
   if (!doIt) {
     spinner.fail('Operation cancelled.')

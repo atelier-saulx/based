@@ -7,7 +7,7 @@ export const auth: AuthFunction = async (program: Command): Promise<void> => {
   const cmd: Command = program
     .command('auth')
     .description('Authorize your user in the Based Cloud.')
-    .option('--email <email>', 'To set manually the Based Dev Server port.')
+    .option('--email <email>', 'To speed up the login process.')
 
   cmd.action(async ({ email }) => {
     const { cluster, org, env, project } = program.opts()

@@ -1,8 +1,8 @@
-import { select, Separator } from '@inquirer/prompts'
 import pc from 'picocolors'
 import { format, parseISO } from 'date-fns'
 import { spinner } from './spinner.js'
 import { isCurrentDump } from './pathAndFiles.js'
+import { SelectInputItems, singleSelectInput } from './inputs.js'
 
 type BackupInfo = {
   key: string
@@ -69,12 +69,11 @@ const dbSelection = async (
   selectedDB?: string,
 ): Promise<string> => {
   if (!selectedDB) {
-    selectedDB = await select<string>({
-      message: 'Choose database:',
-      choices: Object.keys(backups.sorted)
-        .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
-        .map((key) => ({ name: key, value: key })),
-    })
+    const choices: SelectInputItems[] = Object.keys(backups.sorted)
+      .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
+      .map((key) => ({ name: key, value: key }))
+
+    selectedDB = await singleSelectInput('Choose database:', choices)
   } else {
     console.info(`📖 ${pc.bold('Selected database:')} ${pc.cyan(selectedDB)}`)
   }
@@ -119,22 +118,21 @@ const fileSelection = async (
     )
   }
 
-  selectedFile = await select<string>({
-    message: `Choose backup ${getSortingText(sort)}:`,
-    choices: [
-      ...backups.sorted[selectedDB].map(
-        (file: { key: string; lastModified: string }) => ({
-          name: file.key,
-          description: `${pc.bold(pc.white('  Generated at:'))} ${format(
-            parseISO(file.lastModified),
-            'dd/MM/yyyy - HH:mm:ss',
-          )}`,
-          value: file.key,
-        }),
-      ),
-      new Separator(),
-    ],
-  })
+  const choices: SelectInputItems[] = backups.sorted[selectedDB].map(
+    (file: { key: string; lastModified: string }) => ({
+      name: file.key,
+      description: `${pc.bold(pc.white('  Generated at:'))} ${format(
+        parseISO(file.lastModified),
+        'dd/MM/yyyy - HH:mm:ss',
+      )}`,
+      value: file.key,
+    }),
+  )
+
+  selectedFile = await singleSelectInput(
+    `Choose backup ${getSortingText(sort)}:`,
+    choices,
+  )
 
   return selectedFile
 }

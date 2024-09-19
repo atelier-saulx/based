@@ -7,11 +7,11 @@ import {
   BackupsSorted,
   spinner,
 } from '../../../shared/index.js'
-import confirm from '@inquirer/confirm'
 import { getDownload } from '../download/index.js'
 import { BasedClient } from '@based/client'
 import { setRestore } from '../restore/index.js'
 import { setFlush } from '../flush/index.js'
+import { confirmInput } from '../../../shared/inputs.js'
 
 export const list =
   (program: Command) =>
@@ -33,9 +33,9 @@ export const list =
     console.info('')
 
     if (!skip) {
-      const downloadBackup = await confirm({
-        message: `Would you like to download any of this backups?`,
-      })
+      const downloadBackup = await confirmInput(
+        `Would you like to download any of this backups?`,
+      )
 
       if (downloadBackup) {
         const { selectedFile, selectedDB } = await backupsSelection({
@@ -53,9 +53,9 @@ export const list =
         return
       }
 
-      const restoreBackup: boolean = await confirm({
-        message: `Would you like to restore one of these backups and make it the current version of the database?`,
-      })
+      const restoreBackup: boolean = await confirmInput(
+        `Would you like to restore one of these backups and make it the current version of the database?`,
+      )
 
       if (restoreBackup) {
         const { selectedFile, selectedDB } = await backupsSelection({
@@ -74,9 +74,9 @@ export const list =
         return
       }
 
-      const deleteBackup: boolean = await confirm({
-        message: `Would you like to flush the current database? (This action cannot be undone)`,
-      })
+      const deleteBackup: boolean = await confirmInput(
+        `Would you like to flush the current database? (This action cannot be undone)`,
+      )
 
       if (deleteBackup) {
         const { selectedDB } = await backupsSelection({

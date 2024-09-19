@@ -6,9 +6,9 @@ import {
   basedAuth,
   spinner,
 } from '../../../shared/index.js'
-import confirm from '@inquirer/confirm'
 import pc from 'picocolors'
 import { getList } from '../list/index.js'
+import { confirmInput } from '../../../shared/inputs.js'
 
 type FlushArgs = {
   db?: string
@@ -34,10 +34,7 @@ export const flush =
       `⚠️ ${pc.bold("Warning! This action cannot be undone. Proceed only if you know what you're doing.")}`,
     )
 
-    const doIt: boolean = await confirm({
-      message: 'Continue?',
-      default: true,
-    })
+    const doIt: boolean = await confirmInput()
 
     if (!doIt) {
       spinner.fail('Operation cancelled.')
@@ -90,10 +87,7 @@ export const setFlush = async ({
   console.info(`${pc.bold('Database:')} '${pc.cyan(dbInfo.name)}'`)
   console.info(`${pc.bold('Instance:')} ${pc.cyan(dbInfo.instance)}\n`)
 
-  const doIt: boolean = await confirm({
-    message: 'Continue?',
-    default: true,
-  })
+  const doIt: boolean = await confirmInput()
 
   if (!doIt) {
     spinner.fail('Operation cancelled.')
