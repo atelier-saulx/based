@@ -204,13 +204,6 @@ size_t selva_alias_count(const struct SelvaTypeEntry *type);
 
 /**
  * Set new alias.
- * `new_alias` must be allocated with selva_jemalloc.
- */
-SELVA_EXPORT
-void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
-
-/**
- * Set new alias.
  * @param name is copied.
  */
 SELVA_EXPORT
