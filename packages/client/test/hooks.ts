@@ -175,3 +175,39 @@ test('Query hook', async (t: T) => {
   client.disconnect()
   await server.destroy()
 })
+
+test('http.open', async (t: T) => {
+  let openCnt = 0
+  let closeCnt = 0
+  const server = new BasedServer({
+    port: t.context.port,
+    http: {
+      open(ctx) {
+        openCnt++
+      },
+      close(ctx) {
+        closeCnt++
+      },
+    },
+    functions: {
+      configs: {
+        hello: {
+          type: 'function',
+          fn: async () => {
+            return 'hello!'
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  const res = await fetch(`${t.context.http}/hello`)
+  const text = await res.text()
+
+  t.is(text, 'hello!')
+  t.is(openCnt, 1)
+  t.is(closeCnt, 1)
+
+  await server.destroy()
+})
