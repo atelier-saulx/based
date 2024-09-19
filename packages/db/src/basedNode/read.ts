@@ -34,7 +34,15 @@ export const readSeperateFieldFromBuffer = (
     i += 1
 
     // index === 253 or 254
-    if (index === 254) {
+    if (index === 253) {
+      const size = buffer.readUInt32LE(i + 1)
+
+      if (found || !ref) {
+        // console.log('i:', i + 9 + size)
+        i += 9 + size
+        continue
+      }
+    } else if (index === 254) {
       const size = buffer.readUInt32LE(i + 1)
 
       if (found || !ref) {
@@ -66,8 +74,8 @@ export const readSeperateFieldFromBuffer = (
       }
 
       if (refField === ref.includePath[pIndex]) {
-        const r = includeDef.refIncludes[refField]
-        if (!r) {
+        const singleRef = includeDef.refIncludes[refField]
+        if (!singleRef) {
           throw new Error('READ BASED NODE - WRONGLY MATCHED INCLUDEDEF')
         }
 
@@ -89,7 +97,7 @@ export const readSeperateFieldFromBuffer = (
         return readSeperateFieldFromBuffer(
           requestedField,
           basedNode,
-          r,
+          singleRef,
           i + 5 + 5,
           i + 5 + size,
         )

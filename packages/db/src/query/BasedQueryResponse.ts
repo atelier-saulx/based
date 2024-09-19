@@ -126,6 +126,9 @@ export class BasedQueryResponse {
           .slice(i * 20, (i + 1) * 20)
           .map((v) => String(v).padStart(3, '0'))
           .map((v, j) => {
+            if (a[j + i * 20] === 253) {
+              return picocolors.magenta(v)
+            }
             if (a[j + i * 20] === 255) {
               return picocolors.blue(v)
             }
@@ -149,6 +152,9 @@ export class BasedQueryResponse {
         ctx.__r = null
         yield ctx
         i += 4
+      } else if (index === 253) {
+        const size = this.buffer.readUInt32LE(i + 1)
+        i += size + 9
       } else if (index === 254) {
         const size = this.buffer.readUInt32LE(i + 1)
         i += size + 5

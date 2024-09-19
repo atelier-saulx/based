@@ -5,6 +5,7 @@ const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
+const results = @import("../results.zig");
 
 const IncludeError = error{
     Recursion,
@@ -14,70 +15,62 @@ const IncludeError = error{
 
 // pass id
 pub fn getRefsFields(
-    _: *QueryCtx,
+    ctx: *QueryCtx,
     include: []u8,
     node: db.Node,
 ) usize {
     const typeId: db.TypeId = readInt(u16, include, 0);
     const refField = include[2];
 
-    std.debug.print("REFS {any} type: {d} refField: {d} \n", .{ include, typeId, refField });
+    // MULTIPLE REFS
+    // op u8, field u8, bytes u32, len u32
+    // [253, 2, 2124, 10]
+
+    ctx.results.append(.{
+        .id = null,
+        .field = refField,
+        .val = null,
+        .refSize = 0,
+        .includeMain = &.{},
+        .refType = 253,
+        .totalRefs = 0,
+    }) catch return 0;
+
+    const resultIndex: usize = ctx.results.items.len - 1;
+
     const refs = db.getReferences(node, refField);
-    if (refs != null) {
-        std.debug.print("refs: {any}\n", .{refs});
+    if (refs == null) {
+        return 10;
     }
 
-    std.debug.print("flap {any} {d} \n", .{ refs, refs.?.nr_refs });
+    const typeEntry = db.getType(typeId) catch null;
 
+    var size: usize = 0;
     var i: usize = 0;
+
+    const includeNested = include[3..include.len];
+
+    std.debug.print("Flap flap {any} \n", .{includeNested});
+
     while (i < refs.?.nr_refs) : (i += 1) {
-        std.debug.print("snuro {any} \n", .{refs.?.refs[i].dst});
+        // and add filter
+        const refNode = refs.?.refs[i].dst.?;
+
+        std.debug.print("  HELLO {any} {d} \n", .{ refNode, db.getNodeId(refNode) });
+
+        size += getFields(
+            refNode,
+            ctx,
+            db.getNodeId(refNode),
+            typeEntry.?,
+            includeNested,
+        ) catch 0;
     }
 
-    // const node = db.getReference(originalNode, refField);
+    const r: *results.Result = &ctx.results.items[resultIndex];
 
-    // if (node == null) {
-    //     return 0;
-    // }
+    r.*.refSize = size;
+    r.*.totalRefs = refs.?.nr_refs;
 
-    return 5;
-
-    // const refId = db.getNodeId(node.?);
-
-    // // only do this if there is nothing else
-    // if (!hasFields) {
-    //     _ = addIdOnly(ctx, refId, refLvl + 1, refField) catch {
-    //         return 0;
-    //     };
-    // }
-
-    // const typeEntry = db.getType(typeId) catch null;
-
-    // if (typeEntry == null) {
-    //     return 0;
-    // }
-
-    // const includeNested = include[3..include.len];
-
-    // make a result thats says REFRENCES
-    // then just include count all the sizes and store in the references HEAD
-
-    // const resultSizeNest = getFields(
-    //     node.?,
-    //     ctx,
-    //     refId,
-    //     typeEntry.?,
-    //     refField,
-    //     includeNested,
-    //     refLvl + 1,
-    //     !hasFields,
-    // ) catch 0;
-
-    // if (!hasFields) {
-    //     size += 7 + resultSizeNest;
-    // } else {
-    //     size += 7 + resultSizeNest;
-    // }
-
-    // return size;
+    return size + 10;
 }

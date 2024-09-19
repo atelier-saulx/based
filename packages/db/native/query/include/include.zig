@@ -87,6 +87,7 @@ pub fn getFields(
             .refSize = null,
             .includeMain = includeMain,
             .refType = null,
+            .totalRefs = null,
         };
 
         if (!idIsSet) {

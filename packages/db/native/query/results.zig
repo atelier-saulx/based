@@ -16,6 +16,7 @@ pub const Result = struct {
     val: ?[]u8,
     refSize: ?usize,
     includeMain: []u8,
+    totalRefs: ?usize,
 };
 
 pub fn createResultsBuffer(
@@ -51,8 +52,7 @@ pub fn createResultsBuffer(
                 data[i] = 253;
                 data[i + 1] = item.field;
                 writeInt(u32, data, i + 2, item.refSize.?);
-                // add len
-                writeInt(u32, data, i + 6, 0);
+                writeInt(u32, data, i + 6, item.totalRefs.?);
                 i += 10;
             }
             continue;

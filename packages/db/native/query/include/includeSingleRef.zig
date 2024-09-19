@@ -17,10 +17,8 @@ pub fn getSingleRefFields(
     originalNode: db.Node,
 ) usize {
     var size: usize = 0;
-
     const typeId: db.TypeId = readInt(u16, include, 0);
     const refField = include[2];
-
     const node = db.getReference(originalNode, refField);
 
     // SINGLE REF
@@ -35,6 +33,7 @@ pub fn getSingleRefFields(
         .refSize = 0,
         .includeMain = &.{},
         .refType = 254,
+        .totalRefs = null,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
@@ -50,8 +49,6 @@ pub fn getSingleRefFields(
     };
 
     const includeNested = include[3..include.len];
-
-    std.debug.print("ZIG GET FIELDS SINGLE REF\n", .{});
 
     const resultSizeNest = getFields(
         node.?,
