@@ -6,6 +6,8 @@ const readInt = @import("../utils.zig").readInt;
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
+// TODO: add multiple REFERENCES
+
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

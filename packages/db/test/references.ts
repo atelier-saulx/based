@@ -79,7 +79,6 @@ await test('simple', async (t) => {
   x.debug()
 
   for (const n of x) {
-    // console.log(n)
     console.log('\n\nMR ID', n.id, 'LEN', n.contributors.length)
     for (const v of n.contributors) {
       console.log('--->', v.id)
@@ -159,22 +158,22 @@ await test('one to many', async (t) => {
       id: 1,
       resources: [
         {
-          id: 0,
+          id: 1,
           type: 0,
           name: 'thing 0',
         },
         {
-          id: 1,
+          id: 2,
           type: 1,
           name: 'thing 1',
         },
         {
-          id: 2,
+          id: 3,
           type: 0,
           name: 'thing 2',
         },
         {
-          id: 3,
+          id: 4,
           type: 1,
           name: 'thing 3',
         },
@@ -186,19 +185,19 @@ await test('one to many', async (t) => {
       id: 1,
       resources: [
         {
-          id: 0,
+          id: 1,
           name: 'thing 0',
         },
         {
-          id: 1,
+          id: 2,
           name: 'thing 1',
         },
         {
-          id: 2,
+          id: 3,
           name: 'thing 2',
         },
         {
-          id: 3,
+          id: 4,
           name: 'thing 3',
         },
       ],
