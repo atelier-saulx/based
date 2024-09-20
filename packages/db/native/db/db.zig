@@ -53,6 +53,7 @@ pub fn getQueryId() u32 {
 }
 
 pub fn getType(typePrefix: TypeId) !Type {
+    std.debug.print("MEP {any} \n", .{ctx.selva});
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,

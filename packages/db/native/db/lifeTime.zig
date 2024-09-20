@@ -81,6 +81,7 @@ fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
 
     selva.selva_db_destroy(db.ctx.selva);
 
+    std.debug.print("SET TO NULL\n", .{});
     db.ctx.selva = null;
 
     var sortIt = db.ctx.sortIndexes.iterator();

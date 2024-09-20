@@ -219,6 +219,7 @@ await test('update', async (t) => {
   await db.start()
 
   t.after(() => {
+    console.log('HELLO DESTROY')
     return db.destroy()
   })
 
@@ -267,11 +268,15 @@ await test('update', async (t) => {
 
   db.drain()
 
+  console.log('UPDATE---')
+
   db.update('article', strudelArticle, {
     contributors: [flippie],
   })
 
   db.drain()
+
+  console.log('UPDATE--- DONE')
 
   deepEqual(db.query('article').include('contributors.name').get().toObject(), [
     {
@@ -284,6 +289,8 @@ await test('update', async (t) => {
       ],
     },
   ])
+
+  console.log('MERP')
 })
 
 await test('filter', async (t) => {

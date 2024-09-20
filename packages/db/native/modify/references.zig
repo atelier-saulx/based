@@ -10,7 +10,7 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
-    std.debug.print("Update references {any} \n", .{data});
+    std.debug.print("SET references {any} \n", .{data});
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(refTypeId);
     const len = data.len;
@@ -19,7 +19,16 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
         const id = readInt(u32, data, i);
         var nodes: [1]db.Node = undefined;
         // maybe this fails?
+        std.debug.print("FLAPO 1\n", .{});
+
         nodes[0] = try db.upsertNode(id, refTypeEntry);
+
+        std.debug.print("FLAPO {any} \n", .{db.ctx.selva});
+
         try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
+
+        std.debug.print("FLAP2 {any} \n", .{db.ctx.selva});
     }
+
+    std.debug.print("WRITE REF DONE {any}\n", .{db.ctx.selva});
 }
