@@ -9,9 +9,7 @@ const references = @import("./references.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
-        // TODO make FAST
-        // least efficient
-        try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+        db.clearReferences(ctx.node.?, ctx.fieldSchema.?);
         // gets some special things in there
         try references.updateReferences(ctx, data);
         return data.len;

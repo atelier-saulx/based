@@ -99,6 +99,10 @@ pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
+pub fn clearReferences(node: Node, selvaFieldSchema: FieldSchema) void {
+    selva.selva_fields_clear_references(ctx.selva, node, selvaFieldSchema);
+}
+
 pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
