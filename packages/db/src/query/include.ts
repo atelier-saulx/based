@@ -6,6 +6,7 @@ import {
 } from '../schemaTypeDef.js'
 import { QueryIncludeDef } from './types.js'
 import { Query } from './query.js'
+import { addConditions } from './filter.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
@@ -82,8 +83,13 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
 
-        const filter =
+        const filterConditions =
           include.referencesFilters[refInclude.fromRef.path.join('.')]
+        let filter: Buffer
+
+        if (filterConditions) {
+          filter = addConditions(filterConditions, filterConditions.size)
+        }
 
         const filterSize = filter?.byteLength ?? 0
 

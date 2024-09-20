@@ -38,17 +38,15 @@ export type QueryIncludeDef = {
   mainIncludes: MainIncludes
   mainLen: number
   includePath: number[]
-  // fields: FieldDef[] // REMOVE THIS...
   includeArr: number[]
   schema: SchemaTypeDef
   fromRef?: FieldDef
   multiple: boolean
   referencesFilters: {
-    [field: string]: Buffer
+    [field: string]: { conditions: Map<number, Buffer[]>; size: number }
   }
   includeFields: Set<string>
   includeTree: IncludeTreeArr // meh
-  // make it a MAP
   refIncludes?: { [field: string]: QueryIncludeDef } // { } tree for refs prob
 }
 

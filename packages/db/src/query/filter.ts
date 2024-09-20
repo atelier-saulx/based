@@ -185,8 +185,6 @@ export const fillConditionsBuffer = (
       result[lastWritten] = 254
       const sizeIndex = lastWritten + 1
       result[lastWritten + 3] = refField
-
-      // result.writeUint16LE(refField, lastWritten + 3)
       lastWritten += 4
       result[lastWritten] = refConditions.schema.prefix[0]
       lastWritten += 1

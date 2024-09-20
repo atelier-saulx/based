@@ -94,8 +94,16 @@ export class Query {
 
           if (s.filters.length) {
             if (fieldDef.type === 'references') {
-              var size = 0
-              const conditions = { conditions: new Map() }
+              // add conditions there
+              if (!this.includeDef.referencesFilters[s.field]) {
+                this.includeDef.referencesFilters[s.field] = {
+                  conditions: new Map(),
+                  size: 0,
+                }
+              }
+              const conditions = this.includeDef.referencesFilters[s.field]
+              var size = conditions.size
+
               for (const f of s.filters) {
                 size += filter(
                   f.field,
@@ -107,8 +115,7 @@ export class Query {
                   size,
                 )
               }
-              const buf = addConditions(conditions, size)
-              this.includeDef.referencesFilters[s.field] = buf
+              conditions.size = size
             } else {
               console.error('Cannot filter other fields then references..')
             }
