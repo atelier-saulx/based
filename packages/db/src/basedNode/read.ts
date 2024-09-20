@@ -58,6 +58,7 @@ export const readSeperateFieldFromBuffer = (
           size + 9 + i,
           include,
           include.schema,
+          undefined,
         )
         return refResp
       }
