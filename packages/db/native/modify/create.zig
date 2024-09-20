@@ -15,14 +15,18 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
         const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
         const refTypeEntry = try db.getType(refTypeId);
-        const len = @divTrunc(data.len, 4);
-        var i: u32 = 0;
+        const len = data.len;
+        var i: usize = 0;
         // stack allocate per 4?
 
-        while (i < len) : (i += 1) {
+        std.debug.print("hello d {any} \n", .{data});
+
+        while (i < len) : (i += 4) {
             const id = readInt(u32, data, i);
             var nodes: [1]db.Node = undefined;
             nodes[0] = try db.upsertNode(id, refTypeEntry);
+
+            std.debug.print("SNURP {any} id {d} id: {d} \n", .{ nodes, db.getNodeId(nodes[0]), id });
 
             // TODO It would be better to at least do this in chunks
             // use max chunks
