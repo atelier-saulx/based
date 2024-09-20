@@ -93,26 +93,31 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
 
         const filterSize = filter?.byteLength ?? 0
 
-        const meta = Buffer.allocUnsafe(8 + filterSize)
+        const multi = refInclude.multiple
+        const startSize = multi ? 8 : 6
+
+        const meta = Buffer.allocUnsafe(startSize + filterSize)
 
         // command meaning include single ref
-        meta[0] = refInclude.multiple ? 254 : 255
+        meta[0] = multi ? 254 : 255
 
         // size
-        meta.writeUint16LE(size + 5 + filterSize, 1)
+        meta.writeUint16LE(size + (multi ? 5 : 3) + filterSize, 1)
 
-        meta.writeUint16LE(filterSize, 3)
+        if (multi) {
+          meta.writeUint16LE(filterSize, 3)
+        }
 
         if (filter) {
           meta.set(filter, 5)
         }
 
         // typeId
-        meta[5 + filterSize] = refInclude.schema.prefix[0]
-        meta[6 + filterSize] = refInclude.schema.prefix[1]
+        meta[(multi ? 5 : 3) + filterSize] = refInclude.schema.prefix[0]
+        meta[(multi ? 6 : 4) + filterSize] = refInclude.schema.prefix[1]
 
         // field where ref is stored
-        meta[7 + filterSize] = refInclude.fromRef.field
+        meta[(multi ? 7 : 5) + filterSize] = refInclude.fromRef.field
 
         result.push(meta, refBuffer)
       }
