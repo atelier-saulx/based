@@ -4,6 +4,7 @@ const Modify = @import("./ctx.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
+const references = @import("./references.zig");
 
 const std = @import("std");
 
@@ -13,16 +14,7 @@ const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
-        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
-        const refTypeEntry = try db.getType(refTypeId);
-        const len = data.len;
-        var i: usize = 0;
-        while (i < len) : (i += 4) {
-            const id = readInt(u32, data, i);
-            var nodes: [1]db.Node = undefined;
-            nodes[0] = try db.upsertNode(id, refTypeEntry);
-            try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
-        }
+        try references.updateReferences(ctx, data);
     } else if (ctx.fieldType == 13) {
         const id = readInt(u32, data, 0);
         const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
@@ -36,7 +28,6 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     } else {
         try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
     }
-
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
@@ -48,6 +39,5 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     } else if (ctx.currentSortIndex != null) {
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
-
     return data.len;
 }

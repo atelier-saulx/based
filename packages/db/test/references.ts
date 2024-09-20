@@ -205,3 +205,77 @@ await test('one to many', async (t) => {
     },
   ])
 })
+
+await test('modify', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          flap: { type: 'integer' },
+          name: { type: 'string' },
+          articles: {
+            type: 'references',
+            allowedType: 'article',
+            inverseProperty: 'contributors',
+          },
+        },
+      },
+      article: {
+        fields: {
+          name: { type: 'string' },
+          contributors: {
+            type: 'references',
+            allowedType: 'user',
+            inverseProperty: 'articles',
+          },
+        },
+      },
+    },
+  })
+
+  const mrSnurp = db.create('user', {
+    name: 'Mr snurp',
+    flap: 10,
+  })
+
+  const flippie = db.create('user', {
+    name: 'Flippie',
+    flap: 20,
+  })
+
+  db.drain()
+
+  const strudelArticle = db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: [mrSnurp],
+  })
+
+  const piArticle = db.create('article', {
+    name: 'Apple Pie is a Lie',
+    contributors: [mrSnurp, flippie],
+  })
+
+  db.drain()
+
+  db.update('article', strudelArticle, {
+    contributors: [flippie],
+  })
+
+  db.drain()
+
+  console.log(db.query('article').include('contributors').get())
+})

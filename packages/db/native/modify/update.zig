@@ -5,11 +5,14 @@ const Modify = @import("./ctx.zig");
 const readInt = @import("../utils.zig").readInt;
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
+const references = @import("./references.zig");
 
 // TODO: add multiple REFERENCES
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
-    if (ctx.field == 0) {
+    if (ctx.fieldType == 14) {
+        try references.updateReferences(ctx, data);
+    } else if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
