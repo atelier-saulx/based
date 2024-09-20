@@ -359,4 +359,16 @@ await test('filter', async (t) => {
       .toObject(),
     { id: 1, contributors: { id: 1, flap: 10, name: 'Mr snurp' } },
   )
+
+  console.log('---------FUN---------')
+
+  console.log(
+    db
+      .query('article', strudelArticle)
+      .include((select) => {
+        select('contributors').include('name').filter('flap', '>', 25)
+      })
+      .get()
+      .toObject(),
+  )
 })

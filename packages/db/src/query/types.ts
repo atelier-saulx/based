@@ -43,7 +43,9 @@ export type QueryIncludeDef = {
   schema: SchemaTypeDef
   fromRef?: FieldDef
   multiple: boolean
-
+  referencesFilters: {
+    [field: string]: Buffer
+  }
   includeFields: Set<string>
   includeTree: IncludeTreeArr // meh
   // make it a MAP

@@ -81,6 +81,15 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refInclude = include.refIncludes[key]
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
+
+        if (include.referencesFilters[refInclude.fromRef.path.join('.')]) {
+          console.log(
+            'GO GO GO',
+            include.referencesFilters[refInclude.fromRef.path.join('.')],
+          )
+        }
+
+        // meta len 7 first one is has filter
         const meta = Buffer.allocUnsafe(6)
 
         // command meaning include single ref
@@ -152,6 +161,7 @@ const createOrGetRefIncludeDef = (
       includeArr: [],
       includeFields: new Set(),
       mainLen: 0,
+      referencesFilters: {},
       mainIncludes: {},
       includeTree: [],
       fromRef: ref,

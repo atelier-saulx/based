@@ -18,7 +18,8 @@ const filterReferences = (
   schema: SchemaTypeDef,
   conditions: QueryConditions,
   query: Query,
-) => {
+  size: number,
+): number => {
   const path = fieldStr.split('.')
   // pass nested schema
 
@@ -36,7 +37,8 @@ const filterReferences = (
       let refConditions = conditions.references.get(refField)
       if (!refConditions) {
         const schema = query.db.schemaTypesParsed[ref.allowedType]
-        query.totalConditionSize += 6 // 254 + refField
+        size += 6
+        // query.totalConditionSize += 6 // 254 + refField
         refConditions = {
           conditions: new Map(),
           fromRef: ref,
@@ -51,8 +53,9 @@ const filterReferences = (
         refConditions.schema,
         refConditions,
         query,
+        size,
       )
-      return
+      return size
     }
   }
 
@@ -60,7 +63,7 @@ const filterReferences = (
     `Querty: field "${fieldStr}" does not exist on type ${query.schema.type}`,
   )
 
-  return
+  return size
 }
 
 export const filter = (
@@ -70,7 +73,8 @@ export const filter = (
   schema: SchemaTypeDef,
   conditions: QueryConditions,
   query: Query,
-) => {
+  size: number,
+): number => {
   let field = <FieldDef>schema.fields[fieldStr]
 
   if (!field) {
@@ -81,6 +85,7 @@ export const filter = (
       schema,
       conditions,
       query,
+      size,
     )
   }
 
@@ -144,14 +149,16 @@ export const filter = (
 
   let arr = conditions.conditions.get(fieldIndexChar)
   if (!arr) {
-    query.totalConditionSize += 3
+    size += 3
+    // query.totalConditionSize += 3
     arr = []
     conditions.conditions.set(fieldIndexChar, arr)
   }
-  query.totalConditionSize += buf.byteLength
+  size += buf.byteLength
+  // query.totalConditionSize += buf.byteLength
   arr.push(buf)
 
-  return
+  return size
 }
 
 export const fillConditionsBuffer = (
@@ -193,11 +200,14 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
-export const addConditions = (query: Query) => {
+export const addConditions = (
+  conditions: Query['conditions'],
+  size: number,
+) => {
   let result: Buffer
-  if (query.totalConditionSize > 0) {
-    result = Buffer.allocUnsafe(query.totalConditionSize)
-    fillConditionsBuffer(result, query.conditions, 0)
+  if (size > 0) {
+    result = Buffer.allocUnsafe(size)
+    fillConditionsBuffer(result, conditions, 0)
   } else {
     result = Buffer.alloc(0)
   }
