@@ -276,6 +276,25 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     return 0;
 }
 
+/**
+ * This function must be called if the greatest node_id is removed from refs.
+ */
+static void update_great_idz(struct SelvaNodeReferences *refs)
+{
+    size_t nr_refs = refs->nr_refs;
+    node_id_t great = 0;
+
+    for (size_t i = 0; i < nr_refs; i++) {
+        struct SelvaNode *dst = refs->refs[i].dst;
+
+        if (dst && dst->node_id > great) {
+            great = dst->node_id;
+        }
+    }
+
+    refs->great_idz = idz_pack(great);
+}
+
 static void write_ref_2way(
         struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, ssize_t index,
         struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
@@ -407,7 +426,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             if (tmp && tmp->node_id == orig_dst) {
                 del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
                 if (tmp->node_id >= idz_unpack(refs.great_idz)) {
-                    refs.great_idz = 0;
+                    update_great_idz(&refs);
                 }
                 dst = tmp;
                 break;
@@ -467,7 +486,7 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 if (tmp == src) {
                     del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
                     if (tmp->node_id >= idz_unpack(refs.great_idz)) {
-                        refs.great_idz = 0;
+                        update_great_idz(&refs);
                     }
                     break;
                 }
