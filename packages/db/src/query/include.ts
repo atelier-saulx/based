@@ -82,28 +82,31 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
 
-        if (include.referencesFilters[refInclude.fromRef.path.join('.')]) {
-          console.log(
-            'GO GO GO',
-            include.referencesFilters[refInclude.fromRef.path.join('.')],
-          )
-        }
+        const filter =
+          include.referencesFilters[refInclude.fromRef.path.join('.')]
 
-        // meta len 7 first one is has filter
-        const meta = Buffer.allocUnsafe(6)
+        const filterSize = filter?.byteLength ?? 0
+
+        const meta = Buffer.allocUnsafe(8 + filterSize)
 
         // command meaning include single ref
         meta[0] = refInclude.multiple ? 254 : 255
 
         // size
-        meta.writeUint16LE(size + 3, 1)
+        meta.writeUint16LE(size + 5 + filterSize, 1)
+
+        meta.writeUint16LE(filterSize, 3)
+
+        if (filter) {
+          meta.set(filter, 5)
+        }
 
         // typeId
-        meta[3] = refInclude.schema.prefix[0]
-        meta[4] = refInclude.schema.prefix[1]
+        meta[5 + filterSize] = refInclude.schema.prefix[0]
+        meta[6 + filterSize] = refInclude.schema.prefix[1]
 
         // field where ref is stored
-        meta[5] = refInclude.fromRef.field
+        meta[7 + filterSize] = refInclude.fromRef.field
 
         result.push(meta, refBuffer)
       }

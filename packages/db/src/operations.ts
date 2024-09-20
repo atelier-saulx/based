@@ -3,14 +3,12 @@ import { BasedDb } from './index.js'
 export const flushBuffer = (db: BasedDb) => {
   if (db.modifyBuffer.len) {
     const d = Date.now()
-    console.log('MODIFY!')
     try {
       // todo check if this is smart
       db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
     } catch (err) {
       console.error(err)
     }
-    console.log('MODIOFY DONE!')
     db.modifyBuffer.len = 0
     db.modifyBuffer.typePrefix = new Uint8Array([0, 0])
     db.modifyBuffer.field = -1

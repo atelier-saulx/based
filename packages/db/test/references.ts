@@ -364,12 +364,17 @@ await test('filter', async (t) => {
       .include('contributors')
       .get()
       .toObject(),
-    { id: 1, contributors: { id: 1, flap: 10, name: 'Mr snurp' } },
+    {
+      id: 1,
+      contributors: [
+        { id: 1, flap: 10, name: 'Mr snurp' },
+        { id: 2, flap: 20, name: 'Flippie' },
+        { id: 3, flap: 30, name: 'Derpie' },
+      ],
+    },
   )
 
-  console.log('---------FUN---------')
-
-  console.log(
+  deepEqual(
     db
       .query('article', strudelArticle)
       .include((select) => {
@@ -380,5 +385,7 @@ await test('filter', async (t) => {
       })
       .get()
       .toObject(),
+    { id: 1, contributors: [{ id: 3, name: 'Derpie', flap: 30 }] },
+    'filter references',
   )
 })

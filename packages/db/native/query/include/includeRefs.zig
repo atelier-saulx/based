@@ -6,6 +6,7 @@ const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
 const results = @import("../results.zig");
+const filter = @import("../filter/filter.zig").filter;
 
 const IncludeError = error{
     Recursion,
@@ -19,8 +20,12 @@ pub fn getRefsFields(
     include: []u8,
     node: db.Node,
 ) usize {
-    const typeId: db.TypeId = readInt(u16, include, 0);
-    const refField = include[2];
+    const filterSize: db.TypeId = readInt(u16, include, 0);
+
+    const filterArr: ?[]u8 = if (filterSize > 0) include[2 .. 2 + filterSize] else null;
+
+    const typeId: db.TypeId = readInt(u16, include, 2 + filterSize);
+    const refField = include[4 + filterSize];
 
     // MULTIPLE REFS
     // op u8, field u8, bytes u32, len u32
@@ -47,15 +52,19 @@ pub fn getRefsFields(
 
     var size: usize = 0;
 
-    const includeNested = include[3..include.len];
+    const includeNested = include[(5 + filterSize)..include.len];
 
     var i: usize = 0;
+    var resultsCnt: u32 = 0;
 
-    while (i < refs.?.nr_refs) : (i += 1) {
-        // and add filter
+    checkItem: while (i < refs.?.nr_refs) : (i += 1) {
         const refNode = refs.?.refs[i].dst.?;
 
-        // std.debug.print("  HELLO {any} {d} \n", .{ refNode, db.getNodeId(refNode) });
+        if (filterArr != null and !filter(refNode, typeEntry.?, filterArr.?)) {
+            continue :checkItem;
+        }
+
+        resultsCnt += 1;
 
         size += getFields(
             refNode,
@@ -69,7 +78,7 @@ pub fn getRefsFields(
     const r: *results.Result = &ctx.results.items[resultIndex];
 
     r.*.refSize = size;
-    r.*.totalRefs = refs.?.nr_refs;
+    r.*.totalRefs = resultsCnt;
 
     return size + 10;
 }
