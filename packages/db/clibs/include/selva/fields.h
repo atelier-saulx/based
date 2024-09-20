@@ -182,6 +182,9 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFie
 SELVA_EXPORT
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id);
 
+SELVA_EXPORT
+void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs);
+
 /**
  * Init fields of a node.
  */
