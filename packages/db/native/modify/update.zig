@@ -7,10 +7,10 @@ const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 const references = @import("./references.zig");
 
-// TODO: add multiple REFERENCES
-
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
+        // try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+        // gets some special things in there
         try references.updateReferences(ctx, data);
     } else if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
@@ -39,15 +39,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
-
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
-
     return data.len;
 }
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     var currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
-
     if (currentData.len != 0) {
         var j: usize = 0;
         const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.typeId));
@@ -74,6 +71,5 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
-
     return data.len;
 }
