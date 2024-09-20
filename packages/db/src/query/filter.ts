@@ -18,8 +18,7 @@ const filterReferences = (
   schema: SchemaTypeDef,
   conditions: QueryConditions,
   query: Query,
-  size: number,
-): number => {
+) => {
   const path = fieldStr.split('.')
   // pass nested schema
 
@@ -37,8 +36,7 @@ const filterReferences = (
       let refConditions = conditions.references.get(refField)
       if (!refConditions) {
         const schema = query.db.schemaTypesParsed[ref.allowedType]
-        size += 6
-        // query.totalConditionSize += 6 // 254 + refField
+        query.totalConditionSize += 6 // 254 + refField
         refConditions = {
           conditions: new Map(),
           fromRef: ref,
@@ -53,9 +51,8 @@ const filterReferences = (
         refConditions.schema,
         refConditions,
         query,
-        size,
       )
-      return size
+      return
     }
   }
 
@@ -63,7 +60,7 @@ const filterReferences = (
     `Querty: field "${fieldStr}" does not exist on type ${query.schema.type}`,
   )
 
-  return size
+  return
 }
 
 export const filter = (
@@ -73,8 +70,7 @@ export const filter = (
   schema: SchemaTypeDef,
   conditions: QueryConditions,
   query: Query,
-  size: number,
-): number => {
+) => {
   let field = <FieldDef>schema.fields[fieldStr]
 
   if (!field) {
@@ -85,7 +81,6 @@ export const filter = (
       schema,
       conditions,
       query,
-      size,
     )
   }
 
@@ -149,16 +144,14 @@ export const filter = (
 
   let arr = conditions.conditions.get(fieldIndexChar)
   if (!arr) {
-    size += 3
-    // query.totalConditionSize += 3
+    query.totalConditionSize += 3
     arr = []
     conditions.conditions.set(fieldIndexChar, arr)
   }
-  size += buf.byteLength
-  // query.totalConditionSize += buf.byteLength
+  query.totalConditionSize += buf.byteLength
   arr.push(buf)
 
-  return size
+  return
 }
 
 export const fillConditionsBuffer = (
@@ -185,6 +178,8 @@ export const fillConditionsBuffer = (
       result[lastWritten] = 254
       const sizeIndex = lastWritten + 1
       result[lastWritten + 3] = refField
+
+      // result.writeUint16LE(refField, lastWritten + 3)
       lastWritten += 4
       result[lastWritten] = refConditions.schema.prefix[0]
       lastWritten += 1
@@ -198,10 +193,7 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
-export const addConditions = (
-  conditions: Query['conditions'],
-  size: number,
-) => {
+export const addConditions = (conditions: QueryConditions, size: number) => {
   let result: Buffer
   if (size > 0) {
     result = Buffer.allocUnsafe(size)

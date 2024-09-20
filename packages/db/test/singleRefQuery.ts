@@ -123,6 +123,8 @@ await test('single reference query', async (t) => {
 
   const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
+  console.log('bla2')
+
   deepEqual(result2.toObject(), [
     {
       id: 1,
@@ -139,6 +141,8 @@ await test('single reference query', async (t) => {
     .filter('flap.power', '=', 10)
     .include('lilBlup', 'flap')
     .get()
+
+  console.log('bla')
 
   deepEqual(result.toObject(), [
     {

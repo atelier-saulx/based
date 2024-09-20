@@ -88,6 +88,7 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         let filter: Buffer
 
         if (filterConditions) {
+          console.log(filterConditions)
           filter = addConditions(filterConditions, filterConditions.size)
         }
 
