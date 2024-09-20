@@ -373,7 +373,10 @@ await test('filter', async (t) => {
     db
       .query('article', strudelArticle)
       .include((select) => {
-        select('contributors').include('name').filter('flap', '>', 25)
+        select('contributors')
+          .include('name')
+          .include('flap')
+          .filter('flap', '>', 25)
       })
       .get()
       .toObject(),
