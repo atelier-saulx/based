@@ -1,22 +1,28 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('range', async (t) => {
+await test('range', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
-  await fs.mkdir(dbFolder)
 
   const db = new BasedDb({
     path: dbFolder,
-    maxModifySize: 1e4,
+  })
+
+  await db.start()
+
+  t.after(() => {
+    return db.destroy()
   })
 
   db.updateSchema({
@@ -69,9 +75,9 @@ test.serial('range', async (t) => {
 
   const result = db.query('user').include('nr').range(1, 1).get()
 
-  t.deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
+  deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
 
   const result2 = db.query('user').include('nr').sort('email').range(1, 1).get()
 
-  t.deepEqual(result2.toObject(), [{ id: 2, nr: 2 }])
+  deepEqual(result2.toObject(), [{ id: 2, nr: 2 }])
 })

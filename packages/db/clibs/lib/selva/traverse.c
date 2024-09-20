@@ -54,7 +54,7 @@ static int child_callback_stub(
     } _bfs_depth = { 0, 1, 0 }; \
     struct trx trx_cur; \
     if (Trx_Begin(&(hierarchy)->trx_state, &trx_cur)) { \
-        return SELVA_HIERARCHY_ETRMAX; \
+        return SELVA_ETRMAX; \
     } \
     \
     Trx_Visit(&trx_cur, &(head)->trx_label); \

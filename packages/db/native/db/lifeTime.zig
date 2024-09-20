@@ -3,7 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
 const db = @import("./db.zig");
-const stat = @import("./stat.zig");
+const initSort = @import("./initSort.zig").initSort;
 const selva = @import("../selva.zig");
 
 pub fn start(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
@@ -14,19 +14,19 @@ pub fn stop(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.nap
     return stopInternal(napi_env, info) catch return null;
 }
 
+fn getOptPath(
+    env: c.napi_env,
+    value: c.napi_value,
+) !?[]u8 {
+    const t = try napi.getType(env, value);
+    return if (!(t == c.napi_null or t == c.napi_undefined)) try napi.get([]u8, env, value) else null;
+}
+
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-
-    // add extra args
-    // READONLY
-    // read only needs to be set on global var
-    // if readonly sort indexes need to be created from the write worker
-    // make a seperate method to create a or get a sort index from js
-    // inteprocess communication with queries etc - maybe add query on db and use workers behind it automaticluy
-
-    const args = try napi.getArgs(2, napi_env, info);
-    const path = try napi.getBuffer("createEnv", napi_env, args[0]);
-
-    const readOnly = try napi.getBool("readOnly", napi_env, args[1]);
+    const args = try napi.getArgs(3, napi_env, info);
+    const path = try napi.get([]u8, napi_env, args[0]);
+    const readOnly = try napi.get(bool, napi_env, args[1]);
+    const sdb_filename = try getOptPath(napi_env, args[2]);
 
     try errors.mdb(c.mdb_env_create(&db.ctx.env));
     errdefer c.mdb_env_close(db.ctx.env);
@@ -56,12 +56,15 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         std.log.err("Open lmdb env {any}", .{err});
     };
 
-    // selva.se
-    db.ctx.selva = selva.selva_db_create();
+    if (sdb_filename != null) {
+        try errors.selva(selva.selva_dump_load(sdb_filename.?.ptr, &db.ctx.selva));
+    } else {
+        db.ctx.selva = selva.selva_db_create();
+    }
 
-    selva.selva_dump_load(path);
+    try initSort();
 
-    return stat.statInternal(napi_env, true);
+    return null;
 }
 
 // make extra method
@@ -79,15 +82,6 @@ fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
     selva.selva_db_destroy(db.ctx.selva);
 
     db.ctx.selva = null;
-
-    var it = db.ctx.readShards.iterator();
-    while (it.next()) |item| {
-        const readShard = item.value_ptr.*;
-        if (db.ctx.readShards.remove(item.key_ptr.*)) {
-            c.mdb_cursor_close(readShard.cursor);
-            c.mdb_dbi_close(db.ctx.env, readShard.dbi);
-        }
-    }
 
     var sortIt = db.ctx.sortIndexes.iterator();
     while (sortIt.next()) |item| {

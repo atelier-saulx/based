@@ -1,18 +1,26 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
 
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial(' query', async (t) => {
-  await fs.mkdir(dbFolder)
+await test('query', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
 
   const db = new BasedDb({
     path: dbFolder,
+  })
+
+  t.after(() => {
+    return db.destroy()
   })
 
   await db.start()
@@ -37,7 +45,7 @@ test.serial(' query', async (t) => {
     },
   })
 
-  const mrX = db.create('user', {
+  db.create('user', {
     age: 50,
     name: 'mr X',
     countryCode: 'us',
@@ -49,7 +57,19 @@ test.serial(' query', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').include('id').get().toObject(), [{ id: 1 }])
+  deepEqual(
+    db.query('user').include('id').get().toObject(),
+    [{ id: 1 }],
+    'Id only',
+  )
 
-  await db.destroy()
+  deepEqual(
+    db
+      .query('user')
+      .filter('age', '<', 20)
+      .include('id', 'age')
+      .get()
+      .toObject(),
+    [],
+  )
 })

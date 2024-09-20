@@ -8,6 +8,7 @@ const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
+const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 
 const readInt = @import("../utils.zig").readInt;
@@ -26,10 +27,17 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     };
 }
 
+inline fn readData(fieldType: u8, operation: []u8) []u8 {
+    if (fieldType == 13) {
+        return operation[0..4];
+    }
+    return operation[4 .. readInt(u32, operation, 0) + 4];
+}
+
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
-    const batch = try napi.getBuffer("modifyBatch", env, args[0]);
-    const size = try napi.getInt32("batchSize", env, args[1]);
+    const batch = try napi.get([]u8, env, args[0]);
+    const size = try napi.get(u32, env, args[1]);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -44,11 +52,14 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .id = undefined,
         .sortWriteTxn = null,
         .currentSortIndex = null,
-        .sortIndexes = db.Indexes.init(allocator),
-        .selvaNode = null,
-        .selvaTypeEntry = null,
-        .selvaFieldSchema = null,
+        .sortIndexes = sort.Indexes.init(allocator),
+        .node = null,
+        .typeEntry = null,
+        .fieldSchema = null,
+        .fieldType = 0,
     };
+
+    var offset: u32 = 0;
 
     while (i < size) {
         // delete
@@ -63,43 +74,46 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             } else {
                 ctx.currentSortIndex = null;
             }
-            ctx.selvaFieldSchema = try db.selvaGetFieldSchema(ctx.field, ctx.selvaTypeEntry);
+            ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
+            ctx.fieldType = ctx.fieldSchema.?.*.type;
+            if (ctx.fieldType == 13) {
+                offset = 1;
+            } else {
+                offset = 5;
+            }
         } else if (operationType == 10) {
-            db.selvaDeleteNode(ctx.selvaNode.?, ctx.selvaTypeEntry.?) catch {};
+            db.deleteNode(ctx.node.?, ctx.typeEntry.?) catch {};
             i = i + 1;
         } else if (operationType == 9) {
             // create or get
             ctx.id = readInt(u32, operation, 0);
-            ctx.selvaNode = selva.selva_upsert_node(ctx.selvaTypeEntry, ctx.id);
+            ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
             i = i + 5;
         } else if (operationType == 1) {
             // SWITCH ID
-            // get
             ctx.id = readInt(u32, operation, 0);
-            ctx.selvaNode = selva.selva_find_node(ctx.selvaTypeEntry, ctx.id);
-
+            ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
             i = i + 5;
         } else if (operationType == 2) {
             // SWITCH TYPE
-            ctx.typeId[0] = batch[i + 1];
-            ctx.typeId[1] = batch[i + 2];
-
-            ctx.selvaTypeEntry = try db.getSelvaTypeEntry(ctx.typeId);
-
+            ctx.typeId = readInt(u16, operation, 0);
+            ctx.typeEntry = try db.getType(ctx.typeId);
             i = i + 3;
         } else if (operationType == 3) {
-            i += try createField(&ctx, operation) + 1;
-        } else if (operationType == 4) {
-            // special case
-            i += try deleteField(&ctx) + 1;
+            i += try createField(&ctx, readData(ctx.fieldType, operation)) + offset;
         } else if (operationType == 5) {
-            i += try updatePartialField(&ctx, operation) + 1;
+            i += try updatePartialField(&ctx, readData(ctx.fieldType, operation)) + offset;
         } else if (operationType == 6) {
-            i += try updateField(&ctx, operation) + 1;
+            i += try updateField(&ctx, readData(ctx.fieldType, operation)) + offset;
         } else if (operationType == 7) {
             i += try addEmptyToSortIndex(&ctx, operation) + 1;
         } else if (operationType == 8) {
             i += try deleteFieldOnly(&ctx) + 1;
+        } else if (operationType == 11) {
+            i += try deleteFieldOnlyReal(&ctx) + 1;
+        } else if (operationType == 4) {
+            // special case
+            i += try deleteField(&ctx) + 1;
         } else {
             std.log.err("Something went wrong, incorrect modify operation\n", .{});
             break;
@@ -107,7 +121,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     }
 
     if (ctx.sortWriteTxn != null) {
-        try db.commitTxn(ctx.sortWriteTxn);
+        try sort.commitTxn(ctx.sortWriteTxn);
     }
 
     return null;

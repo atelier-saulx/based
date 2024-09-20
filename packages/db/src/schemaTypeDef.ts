@@ -15,7 +15,7 @@ const SIZE_MAP: Partial<Record<BasedSchemaFieldType, number>> = {
   number: 8, // 64bit
   integer: 4, // 32bit Unisgned 4  16bit
   boolean: 1, // 1bit (6 bits overhead)
-  reference: 4,
+  reference: 0, // seperate
   enum: 4, // enum
   string: 0, // var length fixed length will be different
   references: 0,
@@ -49,7 +49,6 @@ const REVERSE_TYPE_INDEX: Map<number, BasedSchemaFieldType> = new Map([
 export type FieldDef = {
   __isField: true
   field: number // (0-255 - 1) to start?
-  selvaField: number
   inverseField?: string
   allowedType?: string
   type: BasedSchemaFieldType | 'id'
@@ -58,6 +57,7 @@ export type FieldDef = {
   path: string[]
   start: number
   len: number
+  inverseTypeNumber: number
 }
 
 export type SchemaFieldTree = { [key: string]: SchemaFieldTree | FieldDef }
@@ -75,7 +75,6 @@ export type SchemaTypeDef = {
     // path including .
     [key: string]: FieldDef
   }
-  prefixString: string
   prefixNumber: number
   prefix: Uint8Array
   seperate: FieldDef[]
@@ -122,7 +121,6 @@ export const createSchemaTypeDef = (
     prefix: prefixStringToUint8(type),
     prefixNumber: 0,
     mainLen: 0,
-    prefixString: 'prefix' in type ? type.prefix : '',
     seperate: [],
     // stringFieldsBuffer
     tree: {},
@@ -137,7 +135,7 @@ export const createSchemaTypeDef = (
   top: boolean = true,
 ): SchemaTypeDef => {
   if (result.prefixNumber == 0) {
-    result.prefixNumber = new Uint16Array(result.prefix)[0]
+    result.prefixNumber = (result.prefix[1] << 8) + result.prefix[0]
   }
 
   const encoder = new TextEncoder()
@@ -166,15 +164,14 @@ export const createSchemaTypeDef = (
           len = f.maxBytes + 1
         } else if (f.maxLength < 30) {
           len = f.maxLength * 2 + 1
+        } else {
+          stringFields++
         }
       }
 
       const isSeperate = len === 0
 
       if (isSeperate) {
-        if (f.type === 'string') {
-          stringFields++
-        }
         result.cnt++
       }
 
@@ -185,9 +182,9 @@ export const createSchemaTypeDef = (
         seperate: isSeperate,
         path: p,
         start: 0,
+        inverseTypeNumber: 0,
         len,
         field: isSeperate ? result.cnt : 0,
-        selvaField: 0, // will be set later
         inverseField:
           (f.type === 'reference' || f.type === 'references') &&
           f.inverseProperty,
@@ -232,17 +229,10 @@ export const createSchemaTypeDef = (
         mainFields.push(f)
       }
     }
-    let selvaField = 0
-    for (const field of mainFields) {
-      field.selvaField = selvaField++
-    }
-    for (const field of restFields) {
-      field.selvaField = selvaField++
-    }
 
     /*
       Add FIXED LEN STRING in main
-    
+
       [58,62,0,1,1,1,2,2,3,4,68,90,0,1,1,48,90,2]
       // [type, type][field if 0 means main][if main fieldType]...[if 0 ends main][fieldName 1][fieldType]...
       // make buffer
@@ -330,7 +320,6 @@ export const readSchemaTypeDefFromBuffer = (
   const fields: {
     [key: string]: FieldDef
   } = {}
-  const prefix = String.fromCharCode(buf[0]) + String.fromCharCode(buf[1])
   const names: string[] = []
   const seperate: FieldDef[] = []
   let i = 0
@@ -366,7 +355,7 @@ export const readSchemaTypeDefFromBuffer = (
       const field: FieldDef = {
         __isField: true,
         field: 0,
-        selvaField: selvaField++,
+        inverseTypeNumber: 0,
         type: typeName,
         typeByte,
         seperate: false,
@@ -389,11 +378,11 @@ export const readSchemaTypeDefFromBuffer = (
       const field: FieldDef = {
         __isField: true,
         field: fieldIndex,
-        selvaField: selvaField++,
         type: typeName,
         typeByte,
         seperate: false,
         path,
+        inverseTypeNumber: 0,
         start: mainLen,
         len,
       }
@@ -409,7 +398,6 @@ export const readSchemaTypeDefFromBuffer = (
   // @ts-ignore
   const schemaTypeDef: SchemaTypeDef = {
     prefix: new Uint8Array([buf[0], buf[1]]),
-    prefixString: prefix,
     tree,
     fields,
     seperate,
@@ -417,14 +405,10 @@ export const readSchemaTypeDefFromBuffer = (
     buf,
     type,
     fieldNames,
-    // TODO this is still incorrect
     checksum: 0,
     mainLen,
-    // this is tmp has to be removed
     total: 0,
     lastId: 0,
-    // dirty ts
-    // ResponseClass: ,
   }
 
   schemaTypeDef.responseCtx = new BasedNode(schemaTypeDef, parsed)
@@ -438,15 +422,14 @@ export const idFieldDef: FieldDef = {
   seperate: true,
   path: ['id'],
   start: 0,
+  inverseTypeNumber: 0,
   field: 0,
-  selvaField: 0,
   len: 4,
   __isField: true,
 }
 
 // TODO unify this
 export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
-  const typeNames = Object.keys(schema)
   const types = Object.values(schema)
 
   return types.map((t, i) => {
@@ -459,7 +442,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       }
     }
 
-    restFields.sort((a, b) => a.selvaField - b.selvaField)
+    restFields.sort((a, b) => a.field - b.field)
 
     // TODO Remove this once the types agree
     const typeMap = {
@@ -478,12 +461,10 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
 
     // add MUFFER (main buffer)
 
-    // CLEAN THIS UP
     const toSelvaSchemaBuf = (f: FieldDef): number[] => {
       // @ts-ignore
       if (f.len && f.type == 'muffer') {
         // max size is
-
         const buf = Buffer.allocUnsafe(3)
         buf[0] = typeMap[f.type]
         buf.writeUint16LE(f.len, 1)
@@ -491,16 +472,36 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       } else if (f.type === 'reference' || f.type === 'references') {
         const dstType: SchemaTypeDef = schema[f.allowedType]
         const buf = Buffer.allocUnsafe(4)
-
+        // inverseField
         buf.writeUInt8(typeMap[f.type], 0)
-        buf.writeUInt8(dstType.fields[f.inverseField].selvaField, 1)
-        buf.writeUInt16LE(typeNames.indexOf(f.allowedType), 2)
+
+        f.inverseTypeNumber = dstType.prefixNumber
+
+        buf.writeUInt8(dstType.fields[f.inverseField].field, 1)
+
+        buf.writeUInt16LE(dstType.prefixNumber, 2)
         return [...buf.values()]
       } else if (f.type === 'string') {
         return [typeMap[f.type], f.len < 50 ? f.len : 0]
       } else {
         return [typeMap[f.type]]
       }
+    }
+
+    if (t.mainLen === 0) {
+      const x = Buffer.from([
+        1,
+        ...toSelvaSchemaBuf({
+          // this can be removed...
+
+          // @ts-ignore
+          type: 'muffer',
+          len: 1,
+        }),
+        ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
+      ])
+
+      return x
     }
 
     const x = Buffer.from([
@@ -513,7 +514,7 @@ export function schema2selva(schema: { [key: string]: SchemaTypeDef }) {
       ...restFields.map((f) => toSelvaSchemaBuf(f)).flat(1),
     ])
 
-    console.info(new Uint8Array(x))
+    // console.log(t.type, t.prefixNumber)
 
     return x
   })

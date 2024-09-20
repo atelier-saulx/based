@@ -1,8 +1,9 @@
 import { Query } from './query.js'
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
-import { QueryIncludeDef } from './types.js'
 import { BasedNode } from '../basedNode/index.js'
+import { QueryIncludeDef } from './types.js'
+import { SchemaTypeDef } from '../schemaTypeDef.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -69,16 +70,30 @@ export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
 export class BasedQueryResponse {
   buffer: Buffer
   execTime: number = 0
-  // add mainLen thats included
   query: Query
+  offset: number = 0
+  end: number = 0
+  includeDef: QueryIncludeDef
+  schema: SchemaTypeDef
 
-  constructor(query: Query, buffer: Buffer) {
+  constructor(
+    query: Query,
+    buffer: Buffer,
+    offset: number = 0,
+    end: number = buffer.byteLength,
+    includeDef: QueryIncludeDef = query.includeDef,
+    schema: SchemaTypeDef = query.schema,
+  ) {
+    this.offset = offset
+    this.end = end
     this.buffer = buffer
     this.query = query
+    this.includeDef = includeDef
+    this.schema = schema
   }
 
   get size() {
-    return this.buffer.byteLength
+    return this.end - this.offset
   }
 
   [inspect.custom](_depth) {
@@ -93,35 +108,82 @@ export class BasedQueryResponse {
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
+  debug() {
+    // -------- debug -----------
+    console.log('')
+    const a = [...new Uint8Array(this.buffer.slice(this.offset, this.end))]
+    for (let i = 0; i < Math.ceil(this.buffer.byteLength / 20); i++) {
+      console.log(
+        picocolors.gray(
+          a
+            .slice(i * 20, (i + 1) * 20)
+            .map((v, j) => {
+              return String(j + i * 20).padStart(3, '0')
+            })
+            .join(' '),
+        ),
+      )
+      console.log(
+        a
+          .slice(i * 20, (i + 1) * 20)
+          .map((v) => String(v).padStart(3, '0'))
+          .map((v, j) => {
+            if (a[j + i * 20] === 253) {
+              return picocolors.magenta(v)
+            }
+            if (a[j + i * 20] === 255) {
+              return picocolors.blue(v)
+            }
+            if (a[j + i * 20] === 254) {
+              return picocolors.green(v)
+            }
+            return v
+          })
+          .join(' '),
+      )
+    }
+    console.log('')
+    // -------------------------
+  }
+
+  // bit weird...
+  node(index: number = 0) {
+    let i = 0
+    for (const x of this) {
+      if (i === index) {
+        return x
+      }
+      i++
+    }
+    return null
+  }
+
   *[Symbol.iterator]() {
-    let i = 4
-    let currentInclude: QueryIncludeDef
-    while (i < this.buffer.byteLength) {
+    let i = 4 + this.offset
+
+    while (i < this.end) {
       const index = this.buffer[i]
+
       i++
       if (index === 255) {
-        currentInclude = this.query.includeDef
-        const ctx = this.query.schema.responseCtx
+        const ctx = this.schema.responseCtx
         ctx.__o = i
         ctx.__q = this
         ctx.__r = null
+
         yield ctx
         i += 4
+      } else if (index === 253) {
+        const size = this.buffer.readUInt32LE(i + 1)
+        i += size + 9
       } else if (index === 254) {
-        // 1 = nested, 0 = back to top
-        if (this.buffer[i] === 0) {
-          currentInclude = this.query.includeDef
-        }
-        if (currentInclude.refIncludes) {
-          const start = this.buffer.readUint16LE(i + 1)
-          currentInclude = currentInclude.refIncludes[start]
-          i += 2 + 4 + 1
-        }
+        const size = this.buffer.readUInt32LE(i + 1)
+        i += size + 5
       } else if (index === 0) {
-        i += currentInclude.mainLen
+        i += this.includeDef.mainLen
       } else {
-        const size = this.buffer.readUInt16LE(i)
-        i += 2
+        const size = this.buffer.readUInt32LE(i)
+        i += 4
         i += size
       }
     }
@@ -144,7 +206,7 @@ export class BasedQueryResponse {
   }
 
   get length() {
-    return this.buffer.readUint32LE(0)
+    return this.buffer.readUint32LE(this.offset)
   }
 
   toObject() {

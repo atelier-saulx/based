@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -7,9 +7,6 @@
 #define _UTIL_ARRAY_FIELD_H_
 
 struct SVector;
-
-ssize_t get_array_field_index(const char *field_str, size_t field_len, ssize_t *res)
-    __attribute__((access(read_only, 1, 2), access(write_only, 3)));
 
 /**
  * Convert integer index to unsigned absolute index.

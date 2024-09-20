@@ -3,19 +3,19 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const readInt = @import("../utils.zig").readInt;
-
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
+const references = @import("./references.zig");
 
-pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
-    const operationSize = readInt(u32, batch, 0);
-    const size = operationSize + 4;
-    const data = batch[4..size];
-
-    if (ctx.field == 0) {
+pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
+    if (ctx.fieldType == 14) {
+        // try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+        // gets some special things in there
+        try references.updateReferences(ctx, data);
+    } else if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
-            var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+            var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = (try getSortIndex(ctx, start)).?;
@@ -23,24 +23,28 @@ pub fn updateField(ctx: *ModifyCtx, batch: []u8) !usize {
                 try sort.writeField(ctx.id, data, sortIndex);
             }
         }
+    } else if (ctx.fieldSchema.?.*.type == 13) {
+        const id = readInt(u32, data, 0);
+        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+        const refTypeEntry = try db.getType(refTypeId);
+        const node = db.getNode(id, refTypeEntry);
+        if (node == null) {
+            std.debug.print("Cannot find reference to {d} \n", .{id});
+        } else {
+            std.debug.print("Ref found {d} node: {any} currentNode: {any}  types ref: {any} target: {any} \n", .{ id, node, ctx.node, refTypeEntry, ctx.typeEntry });
+            try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
+        }
     } else if (ctx.currentSortIndex != null) {
-        const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
-
-    try db.selvaWriteField(data, ctx.selvaNode.?, ctx.selvaFieldSchema.?);
-
-    return size;
+    try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
+    return data.len;
 }
 
-pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
-    const operationSize = readInt(u32, batch, 0);
-    const size = operationSize + 4;
-    const data = batch[4..size];
-
-    var currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
-
+pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
+    var currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
     if (currentData.len != 0) {
         var j: usize = 0;
         const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.typeId));
@@ -49,10 +53,10 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
             const start = readInt(u16, operation, 0);
             const len = readInt(u16, operation, 2);
             if (ctx.field == 0) {
-                if (hasSortIndex and db.ctx.mainSortIndexes.get(ctx.typeId).?.*.contains(start)) {
+                if (hasSortIndex and db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
                     const sortIndex = try getSortIndex(ctx, start);
                     try sort.deleteField(ctx.id, currentData, sortIndex.?);
-                    try sort.writeField(ctx.id, data, sortIndex.?);
+                    try sort.writeField(ctx.id, operation[4 .. len + 4], sortIndex.?);
                 }
                 @memcpy(currentData[start .. start + len], operation[4 .. 4 + len]);
             } else if (ctx.currentSortIndex != null) {
@@ -67,6 +71,5 @@ pub fn updatePartialField(ctx: *ModifyCtx, batch: []u8) !usize {
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
-
-    return size;
+    return data.len;
 }

@@ -14,6 +14,7 @@ LIBS := \
 		lib/deflate \
 		lib/jemalloc \
 		lib/nodeflate \
+		lib/xxHash \
 		lib/util \
 		lib/selva
 

@@ -1,29 +1,24 @@
-import test from 'ava'
-import { fileURLToPath } from 'url'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
+import test from './shared/test.js'
+import { deepEqual, equal } from './shared/assert.js'
+import { euobserver } from './shared/examples.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
-test.serial('string', async (t) => {
+await test('simple', async (t) => {
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
     maxModifySize: 1e4,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
-  try {
-    console.log(db.query('user').get())
-  } catch (e) {}
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
           name: { type: 'string' },
           flap: { type: 'integer' },
           email: { type: 'string', maxLength: 15 },
@@ -55,8 +50,7 @@ test.serial('string', async (t) => {
 
   db.drain()
 
-  const result = db.query('user').get()
-  t.deepEqual(result.toObject(), [
+  deepEqual(db.query('user').get().toObject(), [
     {
       id: 1,
       name: '',
@@ -68,22 +62,33 @@ test.serial('string', async (t) => {
       location: { label: 'BLA BLA', x: 0, y: 0 },
     },
   ])
-
-  await db.destroy()
 })
 
-test.serial('string + refs', async (t) => {
+await test('string + refs', async (t) => {
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
           flap: { type: 'integer' },
           age: { type: 'integer' },
@@ -102,6 +107,16 @@ test.serial('string + refs', async (t) => {
       },
       blup: {
         fields: {
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
           flap: {
             type: 'string',
             // @ts-ignore
@@ -115,9 +130,17 @@ test.serial('string + refs', async (t) => {
         fields: {
           // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
           vectorClock: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
@@ -156,25 +179,112 @@ test.serial('string + refs', async (t) => {
 
   db.drain()
 
-  const result = db
-    .query('simple')
-    .include('user.name', 'user.myBlup.name')
-    .range(0, 1)
-    .get()
-
-  t.deepEqual(result.toObject(), [
-    {
-      id: 1,
-      user: {
+  deepEqual(
+    db
+      .query('simple')
+      .include('user.name', 'user.myBlup.name')
+      .range(0, 1)
+      .get()
+      .toObject(),
+    [
+      {
         id: 1,
-        name: 'Mr 0',
-        myBlup: {
+        user: {
           id: 1,
-          name: '',
+          name: 'Mr 0',
+          myBlup: {
+            id: 1,
+            name: '',
+          },
+        },
+      },
+    ],
+  )
+
+  db.create('simple', {
+    user: users[~~(Math.random() * users.length)],
+  })
+
+  db.drain()
+
+  deepEqual(
+    db
+      .query('simple')
+      .include('user.name', 'user.myBlup.name')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        user: null,
+      },
+      {
+        id: 2,
+        user: {
+          id: 1,
+          name: 'Mr 0',
+          myBlup: {
+            id: 1,
+            name: '',
+          },
+        },
+      },
+    ],
+  )
+})
+
+await test('Big string', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.updateSchema({
+    types: {
+      file: {
+        fields: {
+          name: { type: 'string', maxLength: 20 },
+          contents: { type: 'string' },
         },
       },
     },
-  ])
+  })
+  const file = db.create('file', {
+    contents: euobserver,
+  })
+  db.drain()
+  equal(
+    db.query('file', file).get().node().contents,
+    euobserver,
+    'Get single id',
+  )
 
-  await db.destroy()
+  db.create('file', {
+    name: 'file 2',
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  deepEqual(
+    db.query('file').get().toObject(),
+    [
+      {
+        id: 1,
+        name: '',
+        contents: euobserver,
+      },
+      {
+        id: 2,
+        name: 'file 2',
+        contents: euobserver,
+      },
+    ],
+    'Get multiple big strings',
+  )
 })

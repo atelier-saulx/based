@@ -14,51 +14,17 @@
 #include "selva/types.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
+RB_HEAD(SelvaTypeCursorById, SelvaTypeCursor);
+RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
-
-struct EdgeFieldConstraint {
-    enum EdgeFieldConstraintFlag {
-        /**
-         * Bidirectional reference.
-         * TODO Is this needed if edges are always bidir.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
-        /**
-         * Edge field array mode.
-         * By default an edge field acts like a set. This flag makes the field work like an array.
-         * FIXME
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x02,
-        /**
-         * Skip saving this field while dumping.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
-    } __packed flags;
-    field_t nr_fields;
-    field_t inverse_field;
-    node_type_t dst_node_type;
-    struct SelvaFieldSchema *field_schemas __counted_by(nr_fields);
-};
 
 struct SelvaNodeSchema {
     field_t nr_fields; /*!< The total number of fields for this node type. */
     field_t nr_fixed_fields; /*!< Number of fixed fields that are always allocated. */
     field_t created_field;
     field_t updated_field;
-    struct SelvaFieldSchema {
-        field_t field;
-        enum SelvaFieldType type;
-        union {
-            struct {
-                size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
-            } string;
-            struct EdgeFieldConstraint edge_constraint;
-            struct {
-                uint16_t len;
-            } smb;
-        };
-    } field_schemas[] __counted_by(nr_fields);
+    struct SelvaFieldSchema field_schemas[] __counted_by(nr_fields);
 };
 
 /**
@@ -122,7 +88,20 @@ struct SelvaTypeEntry {
     } aliases;
     size_t nr_nodes; /*!< Number of nodes of this type. */
     size_t nr_aliases; /*!< Number of aliases by name. */
-    struct mempool nodepool; /* Pool for struct SelvaNode of this type. */
+    struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
+    /**
+     * Max node inserted so far.
+     * Initially NULL but also NULLed if the node is deleted.
+     * This is used to optimize new insertions because it's possible to use
+     * RB_INSERT_NEXT() almost always as node_id normally grows monotonically.
+     */
+    struct SelvaNode *max_node;
+    struct {
+        struct ida *ida; /*! Id allocator for cursors. */
+        struct SelvaTypeCursorById by_cursor_id; /*!< Cursors indexed by cursor_id. */
+        struct SelvaTypeCursorsByNodeId by_node_id; /*!< Lists of cursors indexed by node_id. i.e. find all cursors pointing to a certain node. */
+        size_t nr_cursors; /*!< Total count of active cursors allocated. */
+    } cursors;
     struct {
         void *buf;
         size_t len;
@@ -145,6 +124,7 @@ struct SelvaDb {
     SVector type_list;
     struct schemabuf_parser_ctx *schemabuf_ctx;
 
+#if 0
     /**
      * Expiring nodes.
      */
@@ -158,6 +138,7 @@ struct SelvaDb {
          */
         uint32_t next;
     } expiring;
+#endif
 };
 
 static inline void *SelvaTypeEntry2vecptr(struct SelvaTypeEntry *type)
@@ -175,11 +156,17 @@ static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
     return te;
 }
 
-RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_Compare)
-RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_comp_name);
-RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_comp_dest);
-int SelvaNode_Compare(const struct SelvaNode *a, const struct SelvaNode *b);
-int SelvaAlias_comp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
-int SelvaAlias_comp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
+RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_cmp_name);
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_cmp_dest);
+int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
+int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
+int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
+
+/**
+ * Set new alias.
+ * `new_alias` must be allocated with selva_jemalloc.
+ */
+void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
 
 #include "selva/db.h"

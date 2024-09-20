@@ -2,16 +2,17 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 
+const std = @import("std");
+
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 
 // TODO maybe remove this completely
-
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
-            var it = db.ctx.mainSortIndexes.get(ctx.typeId).?.*.keyIterator();
+            const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+            var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = (try getSortIndex(ctx, start)).?;
@@ -21,7 +22,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         return 0;
     }
     if (ctx.currentSortIndex != null) {
-        const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?) catch {
             return 0;
         };
@@ -31,9 +32,21 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
 pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
     if (ctx.currentSortIndex != null) {
-        const currentData = db.selvaGetField(ctx.selvaNode.?, ctx.selvaFieldSchema.?);
+        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
+    return 0;
+}
+
+pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
+    if (ctx.currentSortIndex != null) {
+        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+        try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
+        try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
+    }
+
+    try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+
     return 0;
 }

@@ -1,29 +1,33 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
-test.serial('single reference query', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
-  await fs.mkdir(dbFolder)
-
+await test('single reference query', async (t) => {
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
   })
 
   db.updateSchema({
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
         },
       },
@@ -31,6 +35,16 @@ test.serial('single reference query', async (t) => {
         fields: {
           age: { type: 'integer' },
           name: { type: 'string' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
@@ -38,8 +52,16 @@ test.serial('single reference query', async (t) => {
       simple: {
         fields: {
           smurp: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
           flap: {
             type: 'object',
             properties: {
@@ -101,7 +123,7 @@ test.serial('single reference query', async (t) => {
 
   const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
-  t.deepEqual(result2.toObject(), [
+  deepEqual(result2.toObject(), [
     {
       id: 1,
       smurp: 0,
@@ -118,7 +140,7 @@ test.serial('single reference query', async (t) => {
     .include('lilBlup', 'flap')
     .get()
 
-  t.deepEqual(result.toObject(), [
+  deepEqual(result.toObject(), [
     {
       id: 4,
       lilBlup: {

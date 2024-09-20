@@ -2,6 +2,7 @@ import { FieldDef } from '../schemaTypeDef.js'
 import picocolors from 'picocolors'
 import { QueryIncludeDef } from '../query/types.js'
 import { BasedNode } from './index.js'
+import { BasedQueryResponse, inspectData } from '../query/BasedQueryResponse.js'
 
 export const toObjectIncludeTree = (
   obj,
@@ -18,7 +19,13 @@ export const toObjectIncludeTree = (
     const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
     if ('__isField' in item) {
       const v = target[key]
-      if (item.type === 'reference') {
+      if (item.type === 'references') {
+        if (v instanceof BasedQueryResponse) {
+          obj[key] = v.toObject()
+        } else {
+          obj[key] = []
+        }
+      } else if (item.type === 'reference') {
         obj[key] = toObjectIncludeTree({}, v, v.__r.includeTree, true)
       } else {
         obj[key] = v
@@ -47,7 +54,11 @@ export const toObjectIncludeTreePrint = (
     if ('__isField' in item) {
       let v = target[key]
 
-      if (item.type === 'reference') {
+      if (item.type === 'references') {
+        if (v instanceof BasedQueryResponse) {
+          str += inspectData(v, true)
+        }
+      } else if (item.type === 'reference') {
         if (!v) {
           console.warn('no ref', item, key, target, v)
         }

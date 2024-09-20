@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('remove', async (t) => {
+await test('remove', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -18,6 +19,10 @@ test.serial('remove', async (t) => {
   })
 
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
@@ -48,13 +53,13 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').get().toObject(), [])
+  deepEqual(db.query('user').get().toObject(), [])
 
   const nurp = db.create('nurp', {})
 
   db.drain()
 
-  t.deepEqual(db.query('nurp').include('email').get().toObject(), [
+  deepEqual(db.query('nurp').include('email').get().toObject(), [
     {
       email: '',
       id: 1,
@@ -65,7 +70,22 @@ test.serial('remove', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('user').include('email').get().toObject(), [])
+  deepEqual(db.query('user').include('email').get().toObject(), [])
 
-  await db.destroy()
+  const nurp2 = db.create('nurp', { email: 'flippie' })
+
+  db.drain()
+
+  db.update('nurp', nurp2, {
+    email: null,
+  })
+
+  db.drain()
+
+  deepEqual(db.query('nurp').include('email').get().toObject(), [
+    {
+      email: '',
+      id: 2,
+    },
+  ])
 })

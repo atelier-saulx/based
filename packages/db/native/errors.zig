@@ -15,8 +15,9 @@ pub const Napi = error{
     CannotGetBuffer,
     CannotInitCtx,
     CannotGetString,
-    CannotGetInt32,
-    CannotGetUint64,
+    CannotGetInt,
+    CannotGetType,
+    CannotGetBool,
 };
 
 pub const SelvaError = error{
@@ -37,6 +38,7 @@ pub const SelvaError = error{
 
     // Other errors
     UNKNOWN_ERROR,
+    SELVA_CANNOT_UPSERT,
 };
 
 pub fn selva(rc: c_int) SelvaError!void {

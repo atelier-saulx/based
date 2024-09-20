@@ -6,7 +6,7 @@ import {
   createSchemaTypeDef,
   schema2selva,
 } from './schemaTypeDef.js'
-import { deepMerge, deepCopy } from '@saulx/utils'
+import { deepMerge, deepCopy, wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { genPrefix } from './schema.js'
 import db from './native.js'
@@ -64,6 +64,7 @@ export class BasedDb {
   }: {
     path: string
     maxModifySize?: number
+    fresh?: boolean
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
@@ -81,11 +82,12 @@ export class BasedDb {
       lastMain: -1,
     }
     this.fileSystemPath = path
+
     this, (this.schemaTypesParsed = {})
     this.schema = deepCopy(DEFAULT_SCHEMA)
   }
 
-  async start(readOnly: boolean = false): Promise<
+  async start(opts: { clean?: boolean } = {}): Promise<
     {
       shard: number
       field: number
@@ -94,38 +96,36 @@ export class BasedDb {
       lastId: number
     }[]
   > {
+    if (opts.clean) {
+      try {
+        await fs.rm(this.fileSystemPath, { recursive: true })
+      } catch {}
+    }
+
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
+    const dumppath = join(this.fileSystemPath, 'data.sdb')
 
-    const entries = db.start(this.fileSystemPath, readOnly)
+    const s = await fs.stat(dumppath).catch(() => null)
 
-    // include schema
+    db.start(this.fileSystemPath, s ? dumppath : null, false)
+
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
       if (schema) {
-        this.updateSchema(JSON.parse(schema.toString()))
+        //  prop need to not call setting in selva
+        this.updateSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
 
-    if (entries) {
-      for (const entry of entries) {
-        for (const key in this.schemaTypesParsed) {
-          const def = this.schemaTypesParsed[key]
-          if (
-            entry.field == 0 &&
-            def.prefix[0] == entry.type[0] &&
-            def.prefix[1] == entry.type[1]
-          ) {
-            def.total += entry.entries
-            if (entry.lastId > def.lastId) {
-              def.lastId = entry.lastId
-            }
-          }
-        }
-      }
-      return entries
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      const [total, lastId] = this.native.getTypeInfo(def.prefixNumber)
+      def.total = total
+      def.lastId = lastId
     }
+
     return []
   }
 
@@ -151,20 +151,29 @@ export class BasedDb {
     }
   }
 
-  updateSchema(schema: BasedSchemaPartial): BasedSchema {
+  updateSchema(
+    schema: BasedSchemaPartial,
+    fromStart: boolean = false,
+  ): BasedSchema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
-    fs.writeFile(
-      join(this.fileSystemPath, 'schema.json'),
-      JSON.stringify(this.schema),
-    )
 
-    let types = Object.keys(this.schemaTypesParsed)
-    const s = schema2selva(this.schemaTypesParsed)
-    for (let i = 0; i < s.length; i++) {
-      // types
-      const type = this.schemaTypesParsed[types[i]]
-      this.native.updateSchemaType(type.prefixString, s[i])
+    if (!fromStart) {
+      fs.writeFile(
+        join(this.fileSystemPath, 'schema.json'),
+        JSON.stringify(this.schema),
+      )
+      let types = Object.keys(this.schemaTypesParsed)
+      const s = schema2selva(this.schemaTypesParsed)
+      for (let i = 0; i < s.length; i++) {
+        const type = this.schemaTypesParsed[types[i]]
+        //  should not crash!
+        try {
+          this.native.updateSchemaType(type.prefixNumber, s[i])
+        } catch (err) {
+          console.error('Cannot update schema on selva', type.type, err)
+        }
+      }
     }
     return this.schema
   }
@@ -200,17 +209,24 @@ export class BasedDb {
     return t
   }
 
-  stats() {
-    return db.stat()
+  async save() {
+    const dumppath = join(this.fileSystemPath, 'data.sdb')
+    await fs.rm(dumppath).catch(() => {})
+    var rdy = false
+    const pid = this.native.save(dumppath)
+    while (!rdy) {
+      await wait(100)
+      if (this.native.isSaveReady(pid, dumppath)) {
+        rdy = true
+        break
+      }
+    }
   }
 
-  tester() {
-    const d = Date.now()
-    db.tester()
-    console.log('Tester took', Date.now() - d, 'ms')
-  }
-
-  stop() {
+  async stop(noSave?: boolean) {
+    if (!noSave) {
+      await this.save()
+    }
     db.stop()
   }
 
