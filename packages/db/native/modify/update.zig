@@ -9,10 +9,15 @@ const references = @import("./references.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
-        // try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+        // TODO make FAST
+        // least efficient
+        try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
         // gets some special things in there
         try references.updateReferences(ctx, data);
-    } else if (ctx.field == 0) {
+        return data.len;
+    }
+
+    if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();

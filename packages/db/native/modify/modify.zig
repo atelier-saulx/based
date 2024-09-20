@@ -65,6 +65,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         // delete
         const operationType = batch[i];
         const operation = batch[i + 1 ..];
+
+        std.debug.print("MODIFY op {d} \n", .{operationType});
+
         if (operationType == 0) {
             // SWITCH FIELD
             ctx.field = operation[0];

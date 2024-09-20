@@ -25,10 +25,10 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
 
         std.debug.print("FLAPO {any} \n", .{db.ctx.selva});
 
-        try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
+        db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?) catch |err| {
+            std.debug.print("WRITE REF WONRG {any}\n", .{err});
+        };
 
         std.debug.print("FLAP2 {any} \n", .{db.ctx.selva});
     }
-
-    std.debug.print("WRITE REF DONE {any}\n", .{db.ctx.selva});
 }
