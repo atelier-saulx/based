@@ -181,6 +181,7 @@ await test('one to many', async (t) => {
       ],
     },
   ])
+
   deepEqual(db.query('user').include('resources.name').get().toObject(), [
     {
       id: 1,
@@ -264,11 +265,6 @@ await test('modify', async (t) => {
     contributors: [mrSnurp],
   })
 
-  const piArticle = db.create('article', {
-    name: 'Apple Pie is a Lie',
-    contributors: [mrSnurp, flippie],
-  })
-
   db.drain()
 
   db.update('article', strudelArticle, {
@@ -277,5 +273,15 @@ await test('modify', async (t) => {
 
   db.drain()
 
-  console.log(db.query('article').include('contributors').get())
+  deepEqual(db.query('article').include('contributors.name').get().toObject(), [
+    {
+      id: 1,
+      contributors: [
+        {
+          name: 'Flippie',
+          id: flippie,
+        },
+      ],
+    },
+  ])
 })
