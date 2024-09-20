@@ -82,6 +82,13 @@ await db.start()
 
 db.updateSchema({
   types: {
+    todo: {
+      fields: {
+        name: { type: 'string' },
+        done: { type: 'boolean' },
+        age: { type: 'integer' },
+      },
+    },
     user: {
       fields: {
         // @ts-ignore
@@ -117,40 +124,48 @@ db.updateSchema({
   },
 })
 
-const user1 = db.create('user', {
-  age: 66,
-  flap: 'A',
-  xyz: db.create('xyz', { age: 98 }),
-})
+for (let i = 0; i < 20e6; i++) {
+  db.create('todo', { done: false, age: i })
+}
 
-// db.create('user', {
-//   age: 102,
+console.log('db time', db.drain())
+
+console.log(db.query('todo').range(0, 100).get())
+
+// const user1 = db.create('user', {
+//   age: 66,
+//   flap: 'A',
+//   xyz: db.create('xyz', { age: 98 }),
 // })
 
-db.create('user', {
-  age: 67,
-  xyz: db.create('xyz', { age: 99, user2: user1 }),
-})
+// // db.create('user', {
+// //   age: 102,
+// // })
 
-db.drain()
+// db.create('user', {
+//   age: 67,
+//   xyz: db.create('xyz', { age: 99, user2: user1 }),
+// })
 
-console.log('drained')
+// db.drain()
 
-const result = db
-  .query('user')
-  .include('xyz2')
-  .include('xyz.user2')
-  .include('xyz.user2.xyz2')
-  .get()
+// console.log('drained')
 
-let i = 0
-for (const x of result) {
-  if (i === 1) {
-    // id of user has to be 1
-    console.log(x)
-  }
-  i++
-}
+// const result = db
+//   .query('user')
+//   .include('xyz2')
+//   .include('xyz.user2')
+//   .include('xyz.user2.xyz2')
+//   .get()
+
+// let i = 0
+// for (const x of result) {
+//   if (i === 1) {
+//     // id of user has to be 1
+//     console.log(x)
+//   }
+//   i++
+// }
 
 // console.log(result)
 

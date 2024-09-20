@@ -84,6 +84,17 @@ await test('simple', async (t) => {
       ],
     },
   ])
+
+  deepEqual(db.query('user').include('articles.name').get().toObject(), [
+    {
+      id: 1,
+      articles: [
+        { id: 1, name: 'The wonders of Strudel' },
+        { id: 2, name: 'Apple Pie is a Lie' },
+      ],
+    },
+    { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
+  ])
 })
 
 await test('one to many', async (t) => {
