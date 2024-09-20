@@ -42,7 +42,14 @@ export class Query {
   filter(field: string, operator: Operation, value: any) {
     this.totalConditionSize ??= 0
     this.conditions ??= { conditions: new Map() }
-    filter(field, operator, value, this.schema, this.conditions, this)
+    this.totalConditionSize += filter(
+      field,
+      operator,
+      value,
+      this.schema,
+      this.conditions,
+      this,
+    )
     return this
   }
 
@@ -86,7 +93,6 @@ export class Query {
 
           if (s.filters.length) {
             if (fieldDef.type === 'references') {
-              // add conditions there
               if (!this.includeDef.referencesFilters[s.field]) {
                 this.includeDef.referencesFilters[s.field] = {
                   conditions: new Map(),
@@ -94,22 +100,16 @@ export class Query {
                 }
               }
               const conditions = this.includeDef.referencesFilters[s.field]
-              var size = conditions.size
-
-              this.totalConditionSize ??= 0
-              const startSize = this.totalConditionSize
-
               for (const f of s.filters) {
-                filter(f.field, f.operator, f.value, fSchema, conditions, this)
+                conditions.size += filter(
+                  f.field,
+                  f.operator,
+                  f.value,
+                  fSchema,
+                  conditions,
+                  this,
+                )
               }
-
-              const d = this.totalConditionSize - startSize
-
-              conditions.size += d
-
-              console.log('-->', conditions.size)
-
-              this.totalConditionSize = startSize
             } else {
               console.error('Cannot filter other fields then references..')
             }

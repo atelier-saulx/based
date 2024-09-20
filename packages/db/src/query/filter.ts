@@ -18,10 +18,9 @@ const filterReferences = (
   schema: SchemaTypeDef,
   conditions: QueryConditions,
   query: Query,
-) => {
+): number => {
+  var size = 0
   const path = fieldStr.split('.')
-  // pass nested schema
-
   let t: FieldDef | SchemaFieldTree = schema.tree
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
@@ -36,7 +35,7 @@ const filterReferences = (
       let refConditions = conditions.references.get(refField)
       if (!refConditions) {
         const schema = query.db.schemaTypesParsed[ref.allowedType]
-        query.totalConditionSize += 6 // 254 + refField
+        size += 6 // 254 + refField
         refConditions = {
           conditions: new Map(),
           fromRef: ref,
@@ -44,7 +43,7 @@ const filterReferences = (
         }
         conditions.references.set(refField, refConditions)
       }
-      filter(
+      size += filter(
         path.slice(i + 1).join('.'),
         operator,
         value,
@@ -52,7 +51,7 @@ const filterReferences = (
         refConditions,
         query,
       )
-      return
+      return size
     }
   }
 
@@ -60,7 +59,7 @@ const filterReferences = (
     `Querty: field "${fieldStr}" does not exist on type ${query.schema.type}`,
   )
 
-  return
+  return size
 }
 
 export const filter = (
@@ -70,7 +69,8 @@ export const filter = (
   schema: SchemaTypeDef,
   conditions: QueryConditions,
   query: Query,
-) => {
+): number => {
+  var size = 0
   let field = <FieldDef>schema.fields[fieldStr]
 
   if (!field) {
@@ -144,14 +144,16 @@ export const filter = (
 
   let arr = conditions.conditions.get(fieldIndexChar)
   if (!arr) {
-    query.totalConditionSize += 3
+    // query.totalConditionSize += 3
+    size += 3
     arr = []
     conditions.conditions.set(fieldIndexChar, arr)
   }
-  query.totalConditionSize += buf.byteLength
+  size += buf.byteLength
+  // query.totalConditionSize += buf.byteLength
   arr.push(buf)
 
-  return
+  return size
 }
 
 export const fillConditionsBuffer = (
@@ -178,8 +180,6 @@ export const fillConditionsBuffer = (
       result[lastWritten] = 254
       const sizeIndex = lastWritten + 1
       result[lastWritten + 3] = refField
-
-      // result.writeUint16LE(refField, lastWritten + 3)
       lastWritten += 4
       result[lastWritten] = refConditions.schema.prefix[0]
       lastWritten += 1
