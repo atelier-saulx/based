@@ -151,6 +151,19 @@ pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_s
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
+pub fn getEdgeData(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
+    if (ref.meta) {
+        return null;
+    } else {
+        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(ref.meta, selvaFieldSchema);
+        return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
+    }
+}
+
+pub fn writeEdgeData(data: []u8, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.SelvaNodeReference, field: u8) !void {
+    try errors.selva(selva.selva_fields_set_reference_meta(node, ref, efc, field, data.ptr, data.len));
+}
+
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
     // if (result == null) {
