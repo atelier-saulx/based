@@ -1,9 +1,11 @@
 import { Command } from 'commander'
 import { login } from '../../shared/index.js'
+import AppContext from '../../shared/AppContext.js'
 
-type AuthFunction = (program: Command) => Promise<void>
-
-export const auth: AuthFunction = async (program: Command): Promise<void> => {
+export const auth = async (
+  program: Command,
+  context: AppContext,
+): Promise<void> => {
   const cmd: Command = program
     .command('auth')
     .description('Authorize your user in the Based Cloud.')
@@ -13,6 +15,7 @@ export const auth: AuthFunction = async (program: Command): Promise<void> => {
     const { cluster, org, env, project } = program.opts()
 
     const { destroy } = await login({
+      context,
       email,
       cluster,
       org,

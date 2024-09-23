@@ -1,8 +1,7 @@
 import { AuthState, BasedClient, BasedOpts } from '@based/client'
 import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
-import { spinner } from './spinner.js'
-import pc from 'picocolors'
 import { clearTimeout } from 'node:timers'
+import AppContext from './AppContext.js'
 
 const store: Record<
   string,
@@ -13,6 +12,13 @@ const store: Record<
 > = {}
 
 class SharedBasedClient extends BasedClient {
+  private context: AppContext
+
+  public constructor(context: AppContext, opts?: BasedOpts) {
+    super(opts)
+    this.context = context
+  }
+
   override async setAuthState(args: AuthState) {
     const [emoji, target] =
       this.opts.org === 'saulx' && this.opts.project === 'based-cloud'
@@ -21,19 +27,18 @@ class SharedBasedClient extends BasedClient {
           ? ['🌎', 'the environment manager']
           : ['🪐', 'the environment']
 
-    spinner.text = `Connecting to ${target}`
-    spinner.start()
+    this.context.print.loading(`Connecting to ${target}`)
 
     const timeout = setTimeout(() => {
-      spinner.fail(pc.red('Could not connect.'))
-      spinner.fail(pc.red('Check your based.json file or your arguments.'))
-      process.exit(1)
+      this.context.print.fail(
+        `Could not connect. Check your '<b>based.json</b>' file or your arguments.`,
+      )
     }, 5e3)
 
     const authState = await super.setAuthState(args)
 
     clearTimeout(timeout)
-    spinner.succeed(`${emoji} Connected to ${target}.`)
+    this.context.print.stop().success(`${emoji} Connected to ${target}.`)
 
     return authState
   }
@@ -51,11 +56,14 @@ class SharedBasedClient extends BasedClient {
   }
 }
 
-export const getBasedClient = (opts: BasedOpts): BasedClient => {
+export const getBasedClient = (
+  context: AppContext,
+  opts: BasedOpts,
+): BasedClient => {
   const key = String(hashObjectIgnoreKeyOrderNest(opts))
   store[key] ??= {
     users: 0,
-    client: new SharedBasedClient(opts),
+    client: new SharedBasedClient(context, opts),
   }
 
   store[key].users++
