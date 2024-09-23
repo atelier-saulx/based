@@ -30,7 +30,11 @@ $(LIBS):
 nodeselva:
 	$(MAKE) -C lib/selva NAPI=1
 
-locale:
+ifeq ($(uname_S),Linux)
+locale: locale-linux
+endif
+
+locale-linux:
 	$(MAKE) -C locale LOCPATH=../../build/locale
 
 clean:
@@ -42,5 +46,5 @@ clean:
 	find ./lib \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all clean lib $(LIBS) nodeselva locale
+.PHONY: all clean lib $(LIBS) nodeselva locale locale-linux
 .NOTPARALLEL:
