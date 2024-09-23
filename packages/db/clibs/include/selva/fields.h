@@ -23,11 +23,7 @@ struct SelvaNodeReferences {
      * cause some lookup slowdown.
      */
     uint16_t great_idz;
-    struct SelvaNodeReference *refs
-#ifndef __clang__
-        __counted_by(nr_refs)
-#endif
-        ;
+    struct SelvaNodeReference *refs __pcounted_by(nr_refs);
 };
 
 struct SelvaNodeWeakReference {
@@ -38,11 +34,7 @@ struct SelvaNodeWeakReference {
 struct SelvaNodeWeakReferences {
     uint32_t nr_refs;
     uint32_t offset;
-    struct SelvaNodeWeakReference *refs
-#ifndef __clang__
-        __counted_by(nr_refs)
-#endif
-        ;
+    struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
 };
 
 struct SelvaMicroBuffer {
