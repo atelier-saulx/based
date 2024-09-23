@@ -160,7 +160,8 @@ SELVA_EXPORT
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs);
+struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);
