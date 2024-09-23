@@ -4,11 +4,9 @@ import {
   backupsSelection,
   BackupsSorted,
   basedAuth,
-  spinner,
 } from '../../../shared/index.js'
-import pc from 'picocolors'
 import { getList } from '../list/index.js'
-import { confirmInput } from '../../../shared/inputHandler.js'
+import AppContext from '../../../shared/AppContext.js'
 
 type FlushArgs = {
   db?: string
@@ -16,6 +14,7 @@ type FlushArgs = {
 }
 
 type SetFlushArgs = {
+  context: AppContext
   basedClient: BasedClient
   db: string
   org: string
@@ -25,24 +24,27 @@ type SetFlushArgs = {
 }
 
 export const flush =
-  (program: Command) =>
+  (program: Command, context: AppContext) =>
   async ({ db }: FlushArgs) => {
     const { org, project, env, cluster } = program.opts()
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
-
-    console.info(
-      `⚠️ ${pc.bold("Warning! This action cannot be undone. Proceed only if you know what you're doing.")}`,
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
+      program,
+      context,
     )
 
-    const doIt: boolean = await confirmInput()
+    context.print.warning(
+      `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
+    )
+
+    const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      spinner.fail('Operation cancelled.')
-      process.exit(1)
+      context.print.fail('Operation cancelled.')
     }
 
-    const backups: BackupsSorted = await getList(envHubBasedCloud)
+    const backups: BackupsSorted = await getList(context, envHubBasedCloud)
     let { selectedDB } = await backupsSelection({
+      context,
       backups,
       selectDB: db,
       selectFile: false,
@@ -50,6 +52,7 @@ export const flush =
     })
 
     await setFlush({
+      context,
       basedClient,
       db: selectedDB,
       org,
@@ -63,6 +66,7 @@ export const flush =
   }
 
 export const setFlush = async ({
+  context,
   basedClient,
   db,
   org,
@@ -75,39 +79,35 @@ export const setFlush = async ({
   const defaultDBInfo = await basedClient.call('based:db-list')
   const dbInfo = { ...defaultDBInfo[0], name: db }
 
-  console.info(`\n${pc.bold('Flush summary:')}`)
+  context.print.line().info(`<b>Flush summary:</b>`)
   // TODO Fix the value coming from 'db'
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-  console.info(`${pc.bold('Cluster:')} ${pc.cyan(cluster)}`)
-  console.info(
-    `${pc.bold('Org:')} ${pc.cyan(org)} / ${pc.bold('Project:')} ${pc.cyan(project)} / ${pc.bold('Env:')} ${pc.cyan(env)}`,
+  context.print.info(`<b>Cluster:</b> <cyan>${cluster}</cyan>`)
+  context.print.info(
+    `<b>Org:</b> '<cyan>${org}</cyan>' / <b>Project:</b> '<cyan>${project}</cyan>' / <b>Env:</b> '<cyan>${env}</cyan>'`,
   )
-  console.info(`${pc.bold('Config:')} ${pc.cyan(dbInfo.configName)}`)
-  console.info(`${pc.bold('Service:')} ${pc.cyan('@based/env-db')}`)
-  console.info(`${pc.bold('Database:')} '${pc.cyan(dbInfo.name)}'`)
-  console.info(`${pc.bold('Instance:')} ${pc.cyan(dbInfo.instance)}\n`)
+  context.print.info(`<b>Config:</b> '<cyan>${dbInfo.configName}</cyan>'`)
+  context.print.info(`<b>Service:</b> '<cyan>@based/env-db</cyan>'`)
+  context.print.info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
+  context.print.info(`<b>Instance:</b> '<cyan>${dbInfo.instance}</cyan>`).line()
 
-  const doIt: boolean = await confirmInput()
+  const doIt: boolean = await context.input.confirm()
 
   if (!doIt) {
-    spinner.fail('Operation cancelled.')
-    process.exit(1)
+    context.print.fail('Operation cancelled.')
   }
 
   try {
-    console.log('')
-    spinner.start('Flushing the current database...')
+    context.print.loading('Flushing the current database...')
 
     const result = await basedClient.call('based:db-flush', { db: dbInfo })
 
     if (!result.ok) {
-      spinner.fail(`Error flushing the current database: '${result}'`)
-      process.exit(1)
+      context.print.fail(`Error flushing the current database: '${result}'`)
     }
   } catch (error) {
-    spinner.fail(`Error flushing the current database: '${error}'`)
-    process.exit(1)
+    context.print.fail(`Error flushing the current database: '${error}'`)
   }
 
-  spinner.succeed(`Current database flushed successfully!`)
+  context.print.success(`Current database flushed successfully!`)
 }

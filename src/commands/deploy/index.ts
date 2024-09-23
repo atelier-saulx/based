@@ -8,6 +8,7 @@ import { BasedClient } from '@based/client'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
 import ts from 'typescript'
+import AppContext from '../../shared/AppContext.js'
 
 const findType = (node: ts.Node, typeName: string) => {
   // @ts-ignore
@@ -80,7 +81,7 @@ const queuedFnDeploy = queued(
   { dedup: (_based, checksum) => checksum, concurrency: 10 },
 )
 
-export const deploy = async (program: Command) => {
+export const deploy = async (program: Command, context: AppContext) => {
   const cmd: Command = program
     .command('deploy')
     .description('Push your app to Based Cloud super fast as hell.')
@@ -92,10 +93,10 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { basedClient, destroy } = await basedAuth(program)
+      const { basedClient, destroy } = await basedAuth(program, context)
       const { publicPath } = await basedClient.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
-        await parseFunctions(functions, watch && update, publicPath)
+        await parseFunctions(context, functions, watch && update, publicPath)
 
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()

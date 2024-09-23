@@ -14,10 +14,11 @@ import { hash } from '@saulx/hash'
 import getPort from 'get-port'
 import { join } from 'path'
 import pc from 'picocolors'
+import AppContext from '../../shared/AppContext.js'
 // import handler from 'serve-handler'
 // import http from 'http'
 
-export const dev = async (program: Command) => {
+export const dev = async (program: Command, context: AppContext) => {
   const cmd = program
     .command('dev')
     .description('Develop your app running the Based Cloud locally.')
@@ -28,7 +29,7 @@ export const dev = async (program: Command) => {
     )
 
   cmd.action(async ({ functions, port }) => {
-    const { basedClient } = await basedAuth(program)
+    const { basedClient } = await basedAuth(program, context)
 
     const { BasedServer } = await import('@based/server')
     const ip: string = getMyIp()
@@ -96,6 +97,7 @@ export const dev = async (program: Command) => {
     })
 
     const { nodeBundles, browserBundles, configs } = await parseFunctions(
+      context,
       functions,
       update,
       publicPath,

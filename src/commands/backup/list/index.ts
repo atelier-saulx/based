@@ -5,44 +5,45 @@ import {
   backupsSorting,
   basedAuth,
   BackupsSorted,
-  spinner,
 } from '../../../shared/index.js'
 import { getDownload } from '../download/index.js'
 import { BasedClient } from '@based/client'
 import { setRestore } from '../restore/index.js'
 import { setFlush } from '../flush/index.js'
-import { confirmInput } from '../../../shared/inputHandler.js'
+import AppContext from '../../../shared/AppContext.js'
 
 export const list =
-  (program: Command) =>
-  async ({
-    yes: skip,
-    limit = 10,
-    sort = 'DESC',
-  }: BasedCli.Backups.List.Args) => {
-    const { org, project, env, cluster } = program.opts()
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
+  (program: Command, context: AppContext) =>
+  async ({ limit = 10, sort = 'DESC' }: BasedCli.Backups.List.Args) => {
+    const { org, project, env, cluster, yes: skip } = program.opts()
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
+      program,
+      context,
+    )
 
     const backups: BackupsSorted = await getList(
+      context,
       envHubBasedCloud,
       limit,
       sort,
       true,
     )
 
-    console.info('')
+    context.print.line()
 
     if (!skip) {
-      const downloadBackup = await confirmInput(
+      const downloadBackup = await context.input.confirm(
         `Would you like to download any of this backups?`,
       )
 
       if (downloadBackup) {
         const { selectedFile, selectedDB } = await backupsSelection({
+          context,
           backups,
           sort,
         })
         await getDownload({
+          context,
           basedClient,
           db: selectedDB,
           file: selectedFile,
@@ -53,17 +54,19 @@ export const list =
         return
       }
 
-      const restoreBackup: boolean = await confirmInput(
+      const restoreBackup: boolean = await context.input.confirm(
         `Would you like to restore one of these backups and make it the current version of the database?`,
       )
 
       if (restoreBackup) {
         const { selectedFile, selectedDB } = await backupsSelection({
+          context,
           backups,
           sort,
           showCurrent: false,
         })
         await setRestore({
+          context,
           basedClient,
           db: selectedDB,
           file: selectedFile,
@@ -74,18 +77,20 @@ export const list =
         return
       }
 
-      const deleteBackup: boolean = await confirmInput(
+      const deleteBackup: boolean = await context.input.confirm(
         `Would you like to flush the current database? (This action cannot be undone)`,
       )
 
       if (deleteBackup) {
         const { selectedDB } = await backupsSelection({
+          context,
           backups,
           sort,
           selectFile: false,
           showCurrent: false,
         })
         await setFlush({
+          context,
           basedClient,
           db: selectedDB,
           org,
@@ -104,24 +109,24 @@ export const list =
   }
 
 export const getList = async (
+  context: AppContext,
   envHubBasedCloud: BasedClient,
   limit: number = 10,
   sort: BasedCli.Backups.List.Args['sort'] = 'DESC',
   verbose: boolean = false,
 ): Promise<BackupsSorted> => {
-  spinner.start(`Searching for databases and backups...`)
+  context.print.line().loading(`Searching for databases and backups...`)
   const { backups } = await envHubBasedCloud.call('based:backups-list')
 
   if (!Object.keys(backups).length) {
-    spinner.fail(`There were no backups found.`)
-    process.exit(1)
+    context.print.fail(`There were no backups found.`)
   } else {
-    spinner.stop()
+    context.print.stop()
   }
 
   const backupsSorted: BackupsSorted = backupsSorting(backups, limit, sort)
 
-  backupsSummary(backupsSorted, limit, sort, verbose)
+  backupsSummary(context, backupsSorted, limit, sort, verbose)
 
   return backupsSorted
 }

@@ -1,30 +1,27 @@
 import { Command } from 'commander'
-import { basedAuth, spinner } from '../../../shared/index.js'
-import pc from 'picocolors'
-import { confirmInput } from '../../../shared/inputHandler.js'
+import { basedAuth } from '../../../shared/index.js'
+import AppContext from '../../../shared/AppContext.js'
 
-export const clean = (program: Command) => async () => {
-  const { basedClient, destroy } = await basedAuth(program)
+export const clean = (program: Command, context: AppContext) => async () => {
+  const { basedClient, destroy } = await basedAuth(program, context)
 
-  console.info(
-    `⚠️ ${pc.bold("Warning! This action cannot be undone. Proceed only if you know what you're doing.")}`,
+  context.print.info(
+    `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
   )
 
-  const doIt: boolean = await confirmInput()
+  const doIt: boolean = await context.input.confirm()
 
   if (!doIt) {
-    spinner.fail('Operation cancelled.')
-    process.exit(1)
+    context.print.fail('Operation cancelled.')
   }
 
   try {
-    spinner.start('Cleaning your logs...')
+    context.print.loading('Cleaning your logs...')
     await basedClient.call('based:logs-delete')
 
-    spinner.succeed(`Logs cleaned successfully!`)
+    context.print.success(`Logs cleaned successfully!`)
   } catch (error) {
-    spinner.fail(`Error cleaning your logs: '${error}'`)
-    process.exit(1)
+    context.print.fail(`Error cleaning your logs: '${error}'`)
   }
 
   destroy()

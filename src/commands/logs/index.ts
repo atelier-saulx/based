@@ -1,8 +1,9 @@
 import { Command } from 'commander'
 import { filter } from './filter/index.js'
 import { clean } from './clean/index.js'
+import AppContext from '../../shared/AppContext.js'
 
-export const logs = async (program: Command) => {
+export const logs = async (program: Command, context: AppContext) => {
   const cmd: Command = program
     .command('logs [command]')
     .description(
@@ -20,7 +21,10 @@ export const logs = async (program: Command) => {
     .option('-l, --level <level>', 'Filter by level.')
     .option('-s --service <services...>', 'Filter by service.')
     .description('Display all logs')
-    .action(filter(program))
+    .action(filter(program, context))
 
-  cmd.command('clean').description('Clean the logs.').action(clean(program))
+  cmd
+    .command('clean')
+    .description('Clean the logs.')
+    .action(clean(program, context))
 }

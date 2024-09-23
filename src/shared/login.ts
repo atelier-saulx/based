@@ -2,14 +2,8 @@ import { join } from 'node:path'
 import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
-import pc from 'picocolors'
 import { AuthState, BasedClient } from '@based/client'
-import { spinner } from './spinner.js'
-import {
-  emailInput,
-  SelectInputItems,
-  singleSelectInput,
-} from './inputHandler.js'
+import AppContext, { SelectInputItems } from './AppContext.js'
 
 type User = {
   email: string
@@ -19,6 +13,7 @@ type User = {
 }
 
 type LoginArgs = {
+  context: AppContext
   email?: string
   cluster: string
   org: string
@@ -45,10 +40,12 @@ const authenticateUser = async (
   email: string,
   hub: BasedClient,
   cluster: string,
+  context: AppContext,
 ): Promise<AuthenticateUserReturn> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
-  spinner.text = `Please check your inbox at '${pc.bold(email)}', your login code is: ${pc.bold(code)}`
-  spinner.start()
+  context.print.loading(
+    `Please check your inbox at '<b>${email}</b>', your login code is: '<b>${code}</b>'`,
+  )
 
   await hub.call('login', {
     email,
@@ -56,7 +53,7 @@ const authenticateUser = async (
     code,
   })
 
-  spinner.succeed('Email verified!')
+  context.print.success("Email verified. Welcome, let's rock!")
 
   return {
     ...(await hub.once('authstate-change')),
@@ -65,6 +62,7 @@ const authenticateUser = async (
 }
 
 export const login = async ({
+  context,
   email,
   cluster,
   org,
@@ -72,7 +70,7 @@ export const login = async ({
   project,
   selectUser,
 }: LoginArgs): Promise<LoginReturn> => {
-  const adminHub: BasedClient = getBasedClient({
+  const adminHub: BasedClient = getBasedClient(context, {
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
@@ -81,10 +79,9 @@ export const login = async ({
   })
 
   if (!Object.keys(adminHub).length) {
-    spinner.fail(
+    context.print.fail(
       'Fatal error during authorization, was not possible to connect to the Admin Hub. Try again.',
     )
-    process.exit(1)
   }
 
   await adminHub.once('connect')
@@ -93,7 +90,7 @@ export const login = async ({
   let user: User
 
   if (email) {
-    user = await authenticateUser(email, adminHub, cluster)
+    user = await authenticateUser(email, adminHub, cluster, context)
 
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)
@@ -123,14 +120,14 @@ export const login = async ({
         value: null,
       })
 
-      user = await singleSelectInput('Select user:', choices)
+      user = await context.input.select('Select user:', choices, false, false)
     }
   }
 
   if (!user && !email) {
-    const email: string = await emailInput('Enter your email address:')
+    const email: string = await context.input.email('Enter your email address:')
 
-    user = await authenticateUser(email, adminHub, cluster)
+    user = await authenticateUser(email, adminHub, cluster, context)
 
     users = users.filter(({ email }) => email !== user.email)
     users.push(user)
@@ -139,7 +136,7 @@ export const login = async ({
   user.ts = Date.now()
   await outputJSON(authPath, users)
 
-  const client: BasedClient = getBasedClient({
+  const client: BasedClient = getBasedClient(context, {
     cluster,
     org,
     env,
@@ -147,10 +144,9 @@ export const login = async ({
   })
 
   if (!Object.keys(client).length) {
-    spinner.fail(
+    context.print.fail(
       'Fatal error during authorization, was not possible to connect to the User Env. Try again.',
     )
-    process.exit(1)
   }
 
   await client.once('connect')
@@ -160,7 +156,7 @@ export const login = async ({
     type: 'based',
   })
 
-  const envHub: BasedClient = getBasedClient({
+  const envHub: BasedClient = getBasedClient(context, {
     cluster,
     org,
     env,
@@ -170,10 +166,9 @@ export const login = async ({
   })
 
   if (!Object.keys(envHub).length) {
-    spinner.fail(
+    context.print.fail(
       'Fatal error during authorization, was not possible to connect to the Env Hub. Try again.',
     )
-    process.exit(1)
   }
 
   await envHub.once('connect')
@@ -183,7 +178,7 @@ export const login = async ({
     type: 'based',
   })
 
-  spinner.succeed(`🧑 User: '${user.email}' logged in successfully!`)
+  context.print.success(`User: '${user.email}' logged in successfully!`, '👨‍🦱')
 
   return {
     client,

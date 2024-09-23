@@ -4,14 +4,12 @@ import {
   BackupsSorted,
   basedAuth,
   replaceTilde,
-  spinner,
 } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 import { BasedClient } from '@based/client'
-import pc from 'picocolors'
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
-import { confirmInput } from '../../../shared/inputHandler.js'
+import AppContext from '../../../shared/AppContext.js'
 
 type RestoreArgs = {
   db?: string
@@ -19,6 +17,7 @@ type RestoreArgs = {
 }
 
 type SetRestoreArgs = {
+  context: AppContext
   basedClient: BasedClient
   db: string
   file: string
@@ -26,13 +25,17 @@ type SetRestoreArgs = {
 }
 
 export const restore =
-  (program: Command) =>
+  (program: Command, context: AppContext) =>
   async ({ db, file }: RestoreArgs): Promise<void> => {
     const isExternalFile: boolean = file !== undefined
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
-    const backups: BackupsSorted = await getList(envHubBasedCloud)
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
+      program,
+      context,
+    )
+    const backups: BackupsSorted = await getList(context, envHubBasedCloud)
 
     let { selectedFile, selectedDB } = await backupsSelection({
+      context,
       backups,
       selectDB: db,
       selectFile: !file,
@@ -44,6 +47,7 @@ export const restore =
     }
 
     await setRestore({
+      context,
       basedClient,
       db: selectedDB,
       file: selectedFile,
@@ -55,6 +59,7 @@ export const restore =
   }
 
 export const setRestore = async ({
+  context,
   basedClient,
   db,
   file,
@@ -67,57 +72,51 @@ export const setRestore = async ({
 
   if (isExternalFile) {
     if (!(await pathExists(file))) {
-      spinner.fail(
-        `The specified file '${pc.cyan(file)}' is invalid or does not exist. Please provide a valid file.
-`,
+      context.print.fail(
+        `The specified file '<cyan>${file}</cyan>' is invalid or does not exist. Please provide a valid file.`,
       )
-      process.exit(1)
     }
 
     if (!file.endsWith('.rdb')) {
-      spinner.fail(
-        `The specified file '${pc.cyan(file)}' is invalid. Only '${pc.bold('.rdb')}' files can be restored.
+      context.print.fail(
+        `The specified file '<cyan>${file}</cyan>' is invalid. Only '<b>.rdb</b>' files can be restored.
 `,
       )
-      process.exit(1)
     }
 
-    console.info(`📂 ${pc.bold('Selected file:')} ${pc.cyan(file)}`)
+    context.print.info(`<b>Selected file:</b> <cyan>${file}</cyan>`)
   }
 
-  console.info(`\n${pc.bold('Restore summary:')}`)
+  context.print.line().info(`<b>Restore summary:</b>`)
   // TODO Fix the value coming from 'db'
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-  console.info(`${pc.bold('Database:')} '${pc.cyan(dbInfo.name)}'`)
-  console.info(
-    `${pc.bold('File to be restored:')} '${pc.cyan(resolve(replaceTilde(file)))}'`,
+  context.print.info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
+  context.print.info(
+    `<b>File to be restored:</b> '<cyan>${resolve(replaceTilde(file))}</cyan>'`,
   )
 
   if (!isExternalFile) {
-    const doIt: boolean = await confirmInput()
+    const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      spinner.fail('Restoration cancelled.')
-      process.exit(1)
+      context.print.fail('Restoration cancelled.')
     }
 
     try {
-      spinner.start('Restoring your backup...')
+      context.print.loading('Restoring your backup...')
 
       await basedClient.call('based:backups-select', {
         db: dbInfo,
         key: file,
       })
     } catch (error) {
-      spinner.fail(`Error restoring your file: '${error}'`)
-      process.exit(1)
+      context.print.fail(`Error restoring your file: '${error}'`)
     }
   }
 
   if (isExternalFile) {
     try {
-      console.log('')
-      spinner.start('Uploading file...')
+      context.print.line().loading('Uploading file...')
 
       const result = await basedClient.stream('based:backups-upload', {
         path: file,
@@ -127,14 +126,12 @@ export const setRestore = async ({
       })
 
       if (!result.ok) {
-        spinner.fail(`Error uploading your file: '${result}'`)
-        process.exit(1)
+        context.print.fail(`Error uploading your file: '${result}'`)
       }
     } catch (error) {
-      spinner.fail(`Error uploading your file: '${error}'`)
-      process.exit(1)
+      context.print.fail(`Error uploading your file: '${error}'`)
     }
   }
 
-  spinner.succeed(`Backup restored successfully!`)
+  context.print.success(`Backup restored successfully!`)
 }

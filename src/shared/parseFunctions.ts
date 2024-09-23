@@ -1,7 +1,6 @@
 import { join } from 'node:path'
 import { bundle, BundleResult } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
-import pc from 'picocolors'
 import { readdir } from 'node:fs/promises'
 import fg from 'fast-glob'
 import {
@@ -13,6 +12,7 @@ import {
   getTargets,
   isIndexFile,
 } from './index.js'
+import AppContext from './AppContext.js'
 
 const { glob } = fg
 
@@ -26,6 +26,7 @@ type ParseFunctionsResult = {
 }
 
 export const parseFunctions = async (
+  context: AppContext,
   functions: string[],
   onChange: (err: Error | null, res: BundleResult) => void,
   publicPath: string,
@@ -62,16 +63,16 @@ export const parseFunctions = async (
   }
 
   if (!configs.length) {
-    const err = `No ${functions ? 'matching ' : ''}function configs found`
-    console.info(pc.yellow(err))
-    throw new Error(err)
+    context.print.fail(
+      `<yellow>No ${functions ? 'matching ' : ''}function configs found.</yellow>`,
+    )
   }
 
   // handle schema
   if (schema) {
     const schemaPayload = parseSchema(configBundles, schema)
-    console.info(
-      `📖 ${pc.blue('schema')} ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} ${pc.dim(rel(schema))}`,
+    context.print.info(
+      `<blue>schema</blue> ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schema)}</dim>`,
     )
   }
 
@@ -79,11 +80,15 @@ export const parseFunctions = async (
   await Promise.all(
     configs.map(async (item) => {
       const { config, path } = item
-      const access = config.public ? pc.cyan('public') : pc.red('private')
-      const type = pc.magenta(config.type || 'function')
+      const access = config.public
+        ? '<cyan>public</cyan>'
+        : '<red>private</red>'
+      const type = config.type || 'function'
       const name = config.name
-      const file = pc.dim(rel(path))
-      console.info(`⚒️ ${type} ${name} ${pc.italic(access)} ${file}`)
+      const file = rel(path)
+      context.print.info(
+        `⚒️ <magenta>${type}</magenta> ${name} <i>${access}</i> <dim>${file}</dim>`,
+      )
 
       const files = await readdir(item.dir)
 
@@ -107,32 +112,27 @@ export const parseFunctions = async (
       const { config, path, index, dir } = configStore
       const existingPath = paths[config.name]
       if (existingPath) {
-        console.info(pc.red(`‼️ Found multiple configs for "${config.name}"`))
+        context.print.warning(`Found multiple configs for "${config.name}"`)
         return true
       }
 
       paths[config.name] = path
 
       if (!index) {
-        console.info(
-          pc.red(
-            `‼️ Could not find "index.ts" or "index.js" for: "${config.name}"`,
-          ),
+        context.print.warning(
+          `Could not find "index.ts" or "index.js" for: "${config.name}"`,
         )
         return true
       }
 
       if (config.type === 'app') {
         if (!config.main) {
-          console.info(
-            pc.red(
-              `‼️ No "main" field defined for "${config.name}" of type "app"`,
-            ),
+          context.print.warning(
+            `No "main" field defined for "${config.name}" of type "app"`,
           )
           return true
         }
 
-        // if (!('bundle' in config) || config.bundle) {
         configStore.app = abs(config.main, dir)
         browserEntryPoints.push(configStore.app)
 
@@ -141,7 +141,6 @@ export const parseFunctions = async (
           browserEntryPoints.push(configStore.favicon)
           favicons.add(rel(configStore.favicon))
         }
-        // }
       }
 
       if (config.files) {
@@ -149,19 +148,15 @@ export const parseFunctions = async (
         const outsideRootFile = matched.find((file) => file.startsWith('../'))
 
         if (outsideRootFile) {
-          console.info(
-            pc.red(
-              `‼️ Invalid "fields" defined for "${config.name}" - ${outsideRootFile} is not in ${dir}`,
-            ),
+          context.print.warning(
+            `Invalid "fields" defined for "${config.name}" - ${outsideRootFile} is not in ${dir}`,
           )
           return true
         }
 
         if (!matched.length) {
-          console.info(
-            pc.red(
-              `‼️ Invalid "fields" defined for "${config.name}" - no files matched`,
-            ),
+          context.print.warning(
+            `Invalid "fields" defined for "${config.name}" - no files matched`,
           )
           return true
         }
@@ -180,7 +175,7 @@ export const parseFunctions = async (
   const cancelled = invalids.find(Boolean)
 
   if (cancelled) {
-    throw new Error(`❌ Build failed`)
+    context.print.fail('<b><red>Build failed.</red></b>')
   }
 
   // build the functions

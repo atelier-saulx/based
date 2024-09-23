@@ -1,8 +1,6 @@
-import pc from 'picocolors'
 import { format, parseISO } from 'date-fns'
-import { spinner } from './spinner.js'
 import { isCurrentDump } from './pathAndFiles.js'
-import { SelectInputItems, singleSelectInput } from './inputHandler.js'
+import AppContext, { SelectInputItems } from './AppContext.js'
 
 type BackupInfo = {
   key: string
@@ -15,6 +13,7 @@ type BackupsSelection = {
 }
 
 type BackupSelectionArgs = {
+  context: AppContext
   backups: BackupsSorted
   selectDB?: string | boolean
   selectFile?: string | boolean
@@ -37,34 +36,35 @@ const getSortingText = (sort: string): string =>
   sort === 'ASC' ? '(older to newer)' : '(newer to older)'
 
 export const backupsSummary = (
+  context: AppContext,
   values: BackupsSorted,
   limit: number,
   sort: BasedCli.Backups.List.Args['sort'],
   verbose: boolean,
 ): void => {
   if (!values.databases || !values.backups) {
-    spinner.fail(`No backups found.`)
-    process.exit(1)
+    context.print.fail(`No backups found.`)
   } else {
-    console.info(
-      `\n✨ ${pc.bold(values.backups)} backups found in ${pc.bold(values.databases)} databases. Showing ${pc.bold(limit)} items ${pc.bold(getSortingText(sort))}.`,
+    context.print.info(
+      `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases. Showing <b>${limit}</b> items <b>${getSortingText(sort)}</b>.`,
     )
   }
 
   if (verbose) {
     for (const database in values.sorted) {
-      console.info(' ──────────────')
-      console.info(`📖  Database: ${pc.bold(pc.cyan(database))}`)
+      context.print.separator()
+      context.print.info(`Database: <b><cyan>${database}</cyan></b>`)
 
       for (let i = 0; i < values.sorted[database].length; i++) {
-        console.info(`File: ${pc.dim(values.sorted[database][i].key)}`)
+        context.print.info(`File: <dim>${values.sorted[database][i].key}</dim>`)
       }
-      console.info(' ──────────────')
+      context.print.separator()
     }
   }
 }
 
 const dbSelection = async (
+  context: AppContext,
   backups: BackupsSorted,
   selectedDB?: string,
 ): Promise<string> => {
@@ -73,22 +73,22 @@ const dbSelection = async (
       .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
       .map((key) => ({ name: key, value: key }))
 
-    selectedDB = await singleSelectInput('Choose database:', choices)
+    selectedDB = await context.input.select('Choose database:', choices)
   } else {
-    console.info(`📖 ${pc.bold('Selected database:')} ${pc.cyan(selectedDB)}`)
+    console.info(`<b>Selected database:</b> <cyan>${selectedDB}</cyan>`)
   }
 
   if (!backups?.sorted?.[selectedDB]?.length) {
-    spinner.fail(
-      `There were no backups found for the selected database: '${pc.bold(selectedDB)}'.`,
+    context.print.fail(
+      `There were no backups found for the selected database: '<b>${selectedDB}</b>'.`,
     )
-    process.exit(1)
   }
 
   return selectedDB
 }
 
 const fileSelection = async (
+  context: AppContext,
   backups: BackupsSorted,
   sort: BasedCli.Backups.List.Args['sort'],
   selectedDB: string,
@@ -101,15 +101,14 @@ const fileSelection = async (
     )
 
     if (isBackupExists > -1) {
-      console.info(`💾 ${pc.bold('Selected file:')} ${pc.cyan(selectedFile)}`)
+      context.print.info(`<b>Selected file:</b> <b>${selectedFile}</b>`)
 
       return selectedFile
     }
 
-    spinner.fail(
+    context.print.fail(
       `There were no backups found with the name: '${selectedFile}'.`,
     )
-    process.exit(1)
   }
 
   if (!showCurrent) {
@@ -121,7 +120,7 @@ const fileSelection = async (
   const choices: SelectInputItems[] = backups.sorted[selectedDB].map(
     (file: { key: string; lastModified: string }) => ({
       name: file.key,
-      description: `${pc.bold(pc.white('  Generated at:'))} ${format(
+      description: `<b><white>Generated at:</white></b> ${format(
         parseISO(file.lastModified),
         'dd/MM/yyyy - HH:mm:ss',
       )}`,
@@ -129,7 +128,7 @@ const fileSelection = async (
     }),
   )
 
-  selectedFile = await singleSelectInput(
+  selectedFile = await context.input.select(
     `Choose backup ${getSortingText(sort)}:`,
     choices,
   )
@@ -138,6 +137,7 @@ const fileSelection = async (
 }
 
 export const backupsSelection = async ({
+  context,
   backups,
   sort,
   selectDB = true,
@@ -145,15 +145,16 @@ export const backupsSelection = async ({
   showCurrent = true,
 }: BackupSelectionArgs): Promise<BackupSelectionReturn> => {
   if (typeof selectDB === 'string') {
-    selectDB = await dbSelection(backups, selectDB)
+    selectDB = await dbSelection(context, backups, selectDB)
   } else if (typeof selectDB === 'boolean' && selectDB === true) {
-    selectDB = await dbSelection(backups, '')
+    selectDB = await dbSelection(context, backups, '')
   } else {
     selectDB = ''
   }
 
   if (typeof selectFile === 'string') {
     selectFile = await fileSelection(
+      context,
       backups,
       sort,
       selectDB,
@@ -161,7 +162,14 @@ export const backupsSelection = async ({
       showCurrent,
     )
   } else if (typeof selectFile === 'boolean' && selectFile === true) {
-    selectFile = await fileSelection(backups, sort, selectDB, '', showCurrent)
+    selectFile = await fileSelection(
+      context,
+      backups,
+      sort,
+      selectDB,
+      '',
+      showCurrent,
+    )
   } else {
     selectFile = ''
   }

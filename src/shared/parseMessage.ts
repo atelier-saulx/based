@@ -1,11 +1,16 @@
 import pc from 'picocolors'
 
-export const parseMessage = (message: string): string => {
+export const parseMessage = (message?: string): string => {
+  if (!message) {
+    return ''
+  }
+
   const tagFunctions: { [key: string]: (text: string) => string } = {
     b: pc.bold,
     i: pc.italic,
     red: pc.red,
     yellow: pc.yellow,
+    white: pc.white,
     blue: pc.blue,
     magenta: pc.magenta,
     cyan: pc.cyan,

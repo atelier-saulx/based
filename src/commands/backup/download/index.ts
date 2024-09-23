@@ -5,15 +5,13 @@ import {
   isValidPath,
   replaceTilde,
   sanitizeFileName,
-  spinner,
 } from '../../../shared/index.js'
 import { join, resolve } from 'node:path'
 import { writeFile } from 'fs/promises'
-import pc from 'picocolors'
 import { BasedClient } from '@based/client'
 import { Command } from 'commander'
 import { getList } from '../list/index.js'
-import { confirmInput, defaultInput } from '../../../shared/inputHandler.js'
+import AppContext from '../../../shared/AppContext.js'
 
 type DownloadArgs = {
   db?: string
@@ -22,6 +20,7 @@ type DownloadArgs = {
 }
 
 type GetDownloadsArgs = {
+  context: AppContext
   basedClient: BasedClient
   db: string
   file: string
@@ -30,24 +29,35 @@ type GetDownloadsArgs = {
 }
 
 export const download =
-  (program: Command) =>
+  (program: Command, context: AppContext) =>
   async ({ db, file, path }: DownloadArgs) => {
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(program)
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
+      program,
+      context,
+    )
 
-    const backups: BackupsSorted = await getList(envHubBasedCloud)
+    const backups: BackupsSorted = await getList(context, envHubBasedCloud)
     let { selectedFile, selectedDB } = await backupsSelection({
+      context,
       backups,
       selectDB: db ?? true,
       selectFile: file ?? true,
     })
 
-    await getDownload({ basedClient, db: selectedDB, file: selectedFile, path })
+    await getDownload({
+      context,
+      basedClient,
+      db: selectedDB,
+      file: selectedFile,
+      path,
+    })
 
     destroy()
     return
   }
 
 export const getDownload = async ({
+  context,
   basedClient,
   db,
   file,
@@ -58,11 +68,11 @@ export const getDownload = async ({
   const isExternalPath: boolean = path !== undefined && path !== ''
 
   if (isExternalPath) {
-    console.info(`📂 ${pc.bold('Selected path:')} ${pc.cyan(path)}`)
+    context.print.info(`<b>Selected path:</b> <cyan>${path}</cyan>`)
   }
 
   const getPath = async () =>
-    await defaultInput(
+    await context.input.default(
       'Path to save the backup to: (If the file already exists it will be overwritten)',
       './',
     )
@@ -78,49 +88,49 @@ export const getDownload = async ({
     path = join(path, sanitizeFileName(file))
 
     if (!isValid) {
-      spinner.fail(
+      context.print.fail(
         'The specified path is invalid or does not exist. Please provide a valid path.\n',
       )
     }
   } while (!isValid && retry > 0)
 
-  console.info(`\n${pc.bold('Download summary:')}`)
-  console.info(`${pc.bold('Database:')} '${pc.cyan(db)}'`)
-  console.info(`${pc.bold('Backup file:')} '${pc.cyan(file)}'`)
-  console.info(
-    `${pc.bold('Saving to:')} '${pc.cyan(resolve(replaceTilde(path)))}'`,
-  )
+  context.print.line().info(`<b>Download summary:</b>`)
+  context.print.info(`<b>Database:</b> '<cyan>${db}</cyan>'`)
+  context.print.info(`<b>Backup file:</b> '<cyan>${file}</cyan>'`)
+  context.print
+    .info(`<b>Saving to:</b> '<cyan>${resolve(replaceTilde(path))}</cyan>'`)
+    .line()
 
   if (!isExternalPath) {
-    const doIt: boolean = await confirmInput()
+    const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      spinner.fail('Download cancelled.')
-      process.exit(1)
+      context.print.fail('Download cancelled.')
     }
   }
 
   try {
-    console.log('')
-    spinner.start('Downloading file...')
+    context.print.loading('Downloading file...')
     const response = await basedClient.call('based:backups-download', {
       key: file,
     })
-    spinner.succeed()
+    context.print.success()
 
     try {
-      spinner.start('Saving file...')
+      context.print.loading('Saving file...')
 
       const buffer: Buffer = Buffer.from(response.data)
       await writeFile(replaceTilde(path), buffer)
 
-      spinner.succeed()
+      context.print.success()
     } catch (error) {
-      spinner.fail(`Was not possible to save the file: ${error}`)
+      context.print.fail(`Was not possible to save the file: ${error}`)
     }
   } catch (error) {
-    spinner.fail(`Error downloading your file: ${error}`)
+    context.print.fail(`Error downloading your file: ${error}`)
   }
 
-  spinner.succeed(`Saved backup in: '${pc.cyan(resolve(replaceTilde(path)))}'`)
+  context.print.success(
+    `Saved backup in: '<cyan>${resolve(replaceTilde(path))}<cyan>'`,
+  )
 }

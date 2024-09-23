@@ -34,7 +34,7 @@ export const globalOptions = async (
     }
   } else {
     context.print.warning(
-      `⚠️ <b>No 'based.json' configuration file found. It is recommended to create one.</b>`,
+      `<b>No 'based.json' configuration file found. It is recommended to create one.</b>`,
     )
   }
 
@@ -43,6 +43,11 @@ export const globalOptions = async (
       '--level <level>',
       `Sets the logging level for the CLI output. (default: verbose)(available levels: info | success | warning | error | silent).`,
       'verbose',
+    )
+    .option(
+      '-y, --yes',
+      `You can use this to skip all the prompts and use a predefined preset in some commands.`,
+      false,
     )
     .option(
       '-c, --cluster <cluster>',
@@ -64,4 +69,10 @@ export const globalOptions = async (
       '--api-key <api-key>',
       'API Key generated on Based.io for Service Account.',
     )
+
+  program.helpOption('-h, --help', 'Display the help for each command.')
+  program.helpCommand(
+    'help [command]',
+    'Display the help related to the command.',
+  )
 }
