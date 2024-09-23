@@ -609,9 +609,11 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
         }
     } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences refs;
-        const node_id_t great_id = idz_unpack(refs.great_idz);
+        node_id_t great_id;
 
         memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
+        great_id = idz_unpack(refs.great_idz);
+
         if (dst->node_id <= great_id || great_id == 0) {
             for (size_t i = 0; i < refs.nr_refs; i++) {
                 struct SelvaNode *tmp = refs.refs[i].dst;
