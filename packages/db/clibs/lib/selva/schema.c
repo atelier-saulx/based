@@ -306,7 +306,7 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaNo
 }
 
 static struct schemabuf_parser {
-    enum SelvaFieldType __packed type;
+    enum SelvaFieldType type;
     int (*type2fs)(struct schemabuf_parser_ctx *ctx, struct SelvaNodeSchema *fs, field_t field_idx);
 } __designated_init schemabuf_parsers[] = {
     [SELVA_FIELD_TYPE_NULL] = {
