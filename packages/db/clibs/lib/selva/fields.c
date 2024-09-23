@@ -1278,9 +1278,8 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
 }
 
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs)
+struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)
 {
-    struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
 
     if (fs->field >= fields->nr_fields) {
@@ -1342,6 +1341,11 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
         static_assert(offsetof(struct SelvaMicroBuffer, data) == sizeof_field(struct SelvaMicroBuffer, len));
     }
     db_panic("Invalid type");
+}
+
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs)
+{
+    return selva_fields_get_raw2(&node->fields, fs);
 }
 
 static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
