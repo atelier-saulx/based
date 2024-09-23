@@ -1002,9 +1002,8 @@ int selva_fields_references_move(
          *           +-----f-----+
          *
          * First fill the hole.
-         * FIXME warning: ‘__builtin_memmove’ specified bound between 18446744004990074912 and 18446744073709551600 exceeds maximum object size 9223372036854775807
          */
-        memmove(refs.refs + index_new + 1, refs.refs + index_new, (index_new - index_old) * sizeof(*refs.refs));
+        memmove(refs.refs + index_new + 1, refs.refs + index_new, (index_old - index_new) * sizeof(*refs.refs));
         /*
          *   0   1   2   3   4   5   6
          * | a | b |   | c | d | e | g |
