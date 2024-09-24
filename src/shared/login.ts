@@ -53,7 +53,7 @@ const authenticateUser = async (
     code,
   })
 
-  context.print.success("Email verified. Welcome, let's rock!")
+  context.print.stop().success("Email verified. Welcome, <b>let's rock!</b> 🔥")
 
   return {
     ...(await hub.once('authstate-change')),

@@ -13,12 +13,21 @@ export const logs = async (program: Command, context: AppContext) => {
 
   cmd
     .command('filter')
-    .option('--expanded', 'To show all the the logs expanded.')
-    .option('--before <DD/MM/YYYY>', 'Filter by date.')
-    .option('--after <DD/MM/YYYY>', 'Filter by date.')
-    .option('-f, --functions <functions...>', 'Filter by function.')
-    .option('-c, --checksum <cheksum>', 'Filter by checksum.')
-    .option('-l, --level <level>', 'Filter by level.')
+    .option(
+      '--expanded',
+      'To display the full content of the logs (verbose).',
+      false,
+    )
+    .option(
+      '-g, --group <group>',
+      'Group similar logs (default: name)(available types: name/function/time)',
+      'name',
+    )
+    .option('-l, --level <level>', 'Filter by level.', 'all')
+    .option('-b, --before <DD/MM/YYYY>', 'Filter by date.')
+    .option('-a, --after <DD/MM/YYYY>', 'Filter by date.')
+    .option('-cs, --checksum <cheksum>', 'Filter by checksum.')
+    .option('-f, --function <functions...>', 'Filter by function.')
     .option('-s --service <services...>', 'Filter by service.')
     .description('Display all logs')
     .action(filter(program, context))

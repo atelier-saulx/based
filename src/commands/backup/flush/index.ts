@@ -79,17 +79,18 @@ export const setFlush = async ({
   const defaultDBInfo = await basedClient.call('based:db-list')
   const dbInfo = { ...defaultDBInfo[0], name: db }
 
-  context.print.line().info(`<b>Flush summary:</b>`)
-  // TODO Fix the value coming from 'db'
-  // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-  context.print.info(`<b>Cluster:</b> <cyan>${cluster}</cyan>`)
-  context.print.info(
-    `<b>Org:</b> '<cyan>${org}</cyan>' / <b>Project:</b> '<cyan>${project}</cyan>' / <b>Env:</b> '<cyan>${env}</cyan>'`,
-  )
-  context.print.info(`<b>Config:</b> '<cyan>${dbInfo.configName}</cyan>'`)
-  context.print.info(`<b>Service:</b> '<cyan>@based/env-db</cyan>'`)
-  context.print.info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
-  context.print.info(`<b>Instance:</b> '<cyan>${dbInfo.instance}</cyan>`).line()
+  context.print
+    .line()
+    .info(`<b>Flush summary:</b>`)
+    .info(`<b>Cluster:</b> <cyan>${cluster}</cyan>`)
+    .info(
+      `<b>Org:</b> '<cyan>${org}</cyan>' / <b>Project:</b> '<cyan>${project}</cyan>' / <b>Env:</b> '<cyan>${env}</cyan>'`,
+    )
+    .info(`<b>Config:</b> '<cyan>${dbInfo.configName}</cyan>'`)
+    .info(`<b>Service:</b> '<cyan>@based/env-db</cyan>'`)
+    .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
+    .info(`<b>Instance:</b> '<cyan>${dbInfo.instance}</cyan>`)
+    .line()
 
   const doIt: boolean = await context.input.confirm()
 

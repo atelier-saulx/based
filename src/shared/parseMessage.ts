@@ -7,7 +7,9 @@ export const parseMessage = (message?: string): string => {
 
   const tagFunctions: { [key: string]: (text: string) => string } = {
     b: pc.bold,
+    bold: pc.bold,
     i: pc.italic,
+    italic: pc.italic,
     red: pc.red,
     yellow: pc.yellow,
     white: pc.white,

@@ -55,7 +55,7 @@ all the parameters you need on the command line.
 
 | Option                      | Description                                                                                                                 |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| `--level <level>`           | Sets the logging level for the CLI output. (default: verbose)(available levels: verbose/info/success/warning/error/silent). |
+| `--display <level>`         | Sets the logging level for the CLI output. (default: verbose)(available levels: verbose/info/success/warning/error/silent). |
 | `-y`, `--yes`               | You can use this to skip all the prompts and use a predefined preset in some commands.                                      |
 | `-c`, `--cluster <cluster>` | Define the cluster to use (default: "production").                                                                          |
 | `-o`, `--org <org>`         | Specify the organization.                                                                                                   |
@@ -107,15 +107,16 @@ Authorize your user in the Based Cloud.
 *Example:* `npx @based/cli logs [sub-command][options]`
 
 #### filter
-| Option                            | Description                   | Required |
-|-----------------------------------|-------------------------------|----------|
-| `--before <DD/MM/YYYY>`           | Filter by date.               | No       |
-| `--after <DD/MM/YYYY>`            | Filter by date.               | No       |
-| `-f`, `--function <functions...>` | Filter by function.           | No       |
-| `--checksum <cheksum>`            | Filter by checksum.           | No       |
-| `-l`, `--level <level>`           | Filter by level.              | No       |
-| `-s`, `--service <services...>`   | Filter by service name.       | No       |
-| `[globals]`                       | You can use any global option | No       |
+| Option                            | Description                                                               | Required |
+|-----------------------------------|---------------------------------------------------------------------------|----------|
+| `-g`, `--group <group>`           | Group similar logs (default: name)(available types: name/functions/time). | No       |
+| `-l`, `--level <level>`           | Filter by level (default: all)(available levels: all/info/error).         | No       |
+| `--before <DD/MM/YYYY>`           | Filter by date.                                                           | No       |
+| `--after <DD/MM/YYYY>`            | Filter by date.                                                           | No       |
+| `-cs`, `--checksum <cheksum>`     | Filter by checksum.                                                       | No       |
+| `-f`, `--function <functions...>` | Filter by function (variadic).                                            | No       |
+| `-s`, `--service <services...>`   | Filter by service name (variadic).                                        | No       |
+| `[globals]`                       | You can use any global option                                             | No       |
 
 #### clean
 | Option      | Description                   | Required |

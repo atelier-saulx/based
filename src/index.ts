@@ -25,12 +25,13 @@ export const init = async () => {
       logs(program, context),
     ])
 
-    const { org, project, env, level } = program.opts()
+    const { org, project, env, display } = program.opts()
 
-    context.set('level', level)
-    context.print.info(`<dim>org:</dim> <b>${org}</b>`)
-    context.print.info(`<dim>project:</dim> <b>${project}</b>`)
-    context.print.info(`<dim>env:</dim> <b>${env}</b>`)
+    context.set('display', display)
+    context.print
+      .info(`<dim>org:</dim> <b>${org}</b>`)
+      .info(`<dim>project:</dim> <b>${project}</b>`)
+      .info(`<dim>env:</dim> <b>${env}</b>`)
 
     await program.parseAsync(process.argv)
   } catch (e) {

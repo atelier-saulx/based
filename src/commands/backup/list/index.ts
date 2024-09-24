@@ -14,12 +14,27 @@ import AppContext from '../../../shared/AppContext.js'
 
 export const list =
   (program: Command, context: AppContext) =>
-  async ({ limit = 10, sort = 'DESC' }: BasedCli.Backups.List.Args) => {
+  async ({ limit = 10, sort = 'desc' }: BasedCli.Backups.List.Args) => {
     const { org, project, env, cluster, yes: skip } = program.opts()
     const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
       program,
       context,
     )
+    sort = sort.toLowerCase() as BasedCli.Backups.List.Args['sort']
+
+    if (sort && sort !== 'desc' && sort !== 'asc') {
+      context.print.fail(
+        `The <b>sorting</b> option is not valid: '<b><cyan>${sort}</cyan></b>'. Check it and try again.`,
+      )
+    }
+
+    if (isNaN(parseInt(limit.toString()))) {
+      context.print.fail(
+        `The <b>limit</b> option is not valid: '<b><cyan>${limit}</cyan></b>'. Check it and try again.`,
+      )
+    }
+
+    limit = Number(limit)
 
     const backups: BackupsSorted = await getList(
       context,
@@ -112,7 +127,7 @@ export const getList = async (
   context: AppContext,
   envHubBasedCloud: BasedClient,
   limit: number = 10,
-  sort: BasedCli.Backups.List.Args['sort'] = 'DESC',
+  sort: BasedCli.Backups.List.Args['sort'] = 'desc',
   verbose: boolean = false,
 ): Promise<BackupsSorted> => {
   context.print.line().loading(`Searching for databases and backups...`)

@@ -25,7 +25,7 @@ declare global {
         type Args = {
           yes?: boolean
           limit?: number
-          sort?: 'ASC' | 'DESC'
+          sort?: 'asc' | 'desc'
         }
       }
     }

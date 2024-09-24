@@ -2,7 +2,7 @@ import { spinner } from './spinner.js'
 import { parseMessage } from './parseMessage.js'
 import { checkbox, input, select, Separator } from '@inquirer/prompts'
 import { isValid } from 'date-fns/isValid'
-import { parse } from 'date-fns'
+import { format as formatDate, parse, toDate } from 'date-fns'
 import confirm from '@inquirer/confirm'
 
 interface MessageHandler {
@@ -24,9 +24,14 @@ export type SelectInputItems =
     }
   | Separator
 
-interface InputHandler {
-  date: (message: string, skip?: boolean) => Promise<string>
-  number: (message: string, skip?: boolean) => Promise<string>
+type InputHandler = {
+  date: (
+    message: string,
+    skip?: boolean,
+    today?: boolean,
+    format?: string,
+  ) => Promise<string | null>
+  number: (message: string, skip?: boolean) => Promise<string | null>
   email: (message: string) => Promise<string>
   confirm: (message?: string, defaultValue?: boolean) => Promise<boolean>
   default: (
@@ -44,7 +49,7 @@ interface InputHandler {
 
 type AppContextState = {
   [key: string]: any
-  level: 'verbose' | 'info' | 'success' | 'warning' | 'error' | 'silent'
+  display: 'verbose' | 'info' | 'success' | 'warning' | 'error' | 'silent'
   emojis: {
     warning: string
     success: string
@@ -56,7 +61,7 @@ type AppContextState = {
 class AppContext {
   private static instance: AppContext
   private state: AppContextState = {
-    level: 'verbose',
+    display: 'verbose',
     emojis: {
       info: '💬',
       success: '✨',
@@ -76,7 +81,7 @@ class AppContext {
 
   public set(key: string, value: any) {
     if (
-      key === 'level' &&
+      key === 'display' &&
       value !== 'verbose' &&
       value !== 'info' &&
       value !== 'success' &&
@@ -95,19 +100,56 @@ class AppContext {
   }
 
   public input: InputHandler = {
-    date: async (message: string, skip: boolean = true) =>
-      input({
+    date: async (
+      message: string,
+      skip: boolean = true,
+      today: boolean = true,
+      format: string = 'dd/MM/yyyy',
+    ) => {
+      message = message + ` <b>(${format.toUpperCase()})</b>`
+
+      if (skip) {
+        message = message + ' <dim>(S to skip)</dim>'
+      }
+      if (today) {
+        message = message + ' <dim>(T for today)</dim>'
+      }
+
+      const prompt = input({
         message: parseMessage(message),
         validate: (value) =>
-          (skip && value === 's') ||
-          isValid(parse(value, 'dd/MM/yyyy', new Date())),
-      }),
-    number: async (message: string, skip: boolean = true) =>
-      input({
+          (skip && value.toLowerCase() === 's') ||
+          (today && value.toLowerCase() === 't') ||
+          isValid(parse(value, format, new Date())),
+      })
+
+      if (today && (await prompt) === 't') {
+        return formatDate(toDate(new Date()), format)
+      }
+
+      if ((await prompt) === 's') {
+        return null
+      }
+
+      return prompt
+    },
+    number: async (message: string, skip: boolean = true) => {
+      if (skip) {
+        message = message + ' <dim>(S to skip)</dim>'
+      }
+
+      const prompt = input({
         message: parseMessage(message),
         required: true,
         validate: (value) => (skip && value === 's') || !isNaN(Number(value)),
-      }),
+      })
+
+      if ((await prompt) === 's') {
+        return null
+      }
+
+      return prompt
+    },
     email: async (message: string) =>
       input({
         message: parseMessage(message),
@@ -146,7 +188,7 @@ class AppContext {
       multiSelection: boolean = false,
       separator: boolean = true,
     ) => {
-      if (choices.length > 5 || separator) {
+      if (choices.length > 5 && separator) {
         choices.push(new Separator())
       }
 
@@ -193,9 +235,9 @@ class AppContext {
   public print: MessageHandler = {
     loading: (message: string): MessageHandler => {
       if (
-        this.state.level === 'verbose' ||
-        this.state.level === 'info' ||
-        this.state.level === 'success'
+        this.state.display === 'verbose' ||
+        this.state.display === 'info' ||
+        this.state.display === 'success'
       ) {
         spinner.start(parseMessage(message))
       }
@@ -208,7 +250,7 @@ class AppContext {
       return this.print
     },
     info: (message: string, icon: boolean | string = false): MessageHandler => {
-      if (this.state.level === 'verbose' || this.state.level === 'info') {
+      if (this.state.display === 'verbose' || this.state.display === 'info') {
         if (!icon) {
           console.info(parseMessage(message))
           return this.print
@@ -226,7 +268,10 @@ class AppContext {
       message?: string,
       icon: boolean | string = false,
     ): MessageHandler => {
-      if (this.state.level === 'verbose' || this.state.level === 'success') {
+      if (
+        this.state.display === 'verbose' ||
+        this.state.display === 'success'
+      ) {
         if (!icon) {
           console.info(parseMessage(message))
           return this.print
@@ -244,7 +289,10 @@ class AppContext {
       message: string,
       icon: boolean | string = false,
     ): MessageHandler => {
-      if (this.state.level === 'verbose' || this.state.level === 'warning') {
+      if (
+        this.state.display === 'verbose' ||
+        this.state.display === 'warning'
+      ) {
         if (!icon) {
           console.info(parseMessage(message))
           return this.print
@@ -263,7 +311,7 @@ class AppContext {
       icon: boolean | string = false,
       killCode: number = 1,
     ): void => {
-      if (this.state.level === 'verbose' || this.state.level === 'error') {
+      if (this.state.display === 'verbose' || this.state.display === 'error') {
         if (!icon) {
           console.info(parseMessage(message))
           process.exit(killCode)
@@ -278,7 +326,7 @@ class AppContext {
       process.exit(killCode)
     },
     line: (): MessageHandler => {
-      if (this.state.level === 'silent') {
+      if (this.state.display === 'silent') {
         return this.print
       }
 
@@ -287,7 +335,7 @@ class AppContext {
       return this.print
     },
     separator: (width: number = 15): MessageHandler => {
-      if (this.state.level === 'silent') {
+      if (this.state.display === 'silent') {
         return this.print
       }
 

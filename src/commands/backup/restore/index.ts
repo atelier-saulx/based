@@ -87,13 +87,16 @@ export const setRestore = async ({
     context.print.info(`<b>Selected file:</b> <cyan>${file}</cyan>`)
   }
 
-  context.print.line().info(`<b>Restore summary:</b>`)
-  // TODO Fix the value coming from 'db'
-  // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-  context.print.info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
-  context.print.info(
-    `<b>File to be restored:</b> '<cyan>${resolve(replaceTilde(file))}</cyan>'`,
-  )
+  context.print
+    .line()
+    .info(`<b>Restore summary:</b>`)
+    // TODO Fix the value coming from 'db'
+    // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
+    .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
+    .info(
+      `<b>File to be restored:</b> '<cyan>${resolve(replaceTilde(file))}</cyan>'`,
+    )
+    .line()
 
   if (!isExternalFile) {
     const doIt: boolean = await context.input.confirm()
@@ -116,7 +119,7 @@ export const setRestore = async ({
 
   if (isExternalFile) {
     try {
-      context.print.line().loading('Uploading file...')
+      context.print.loading('Uploading file...')
 
       const result = await basedClient.stream('based:backups-upload', {
         path: file,

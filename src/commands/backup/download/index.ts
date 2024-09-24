@@ -94,10 +94,11 @@ export const getDownload = async ({
     }
   } while (!isValid && retry > 0)
 
-  context.print.line().info(`<b>Download summary:</b>`)
-  context.print.info(`<b>Database:</b> '<cyan>${db}</cyan>'`)
-  context.print.info(`<b>Backup file:</b> '<cyan>${file}</cyan>'`)
   context.print
+    .line()
+    .info(`<b>Download summary:</b>`)
+    .info(`<b>Database:</b> '<cyan>${db}</cyan>'`)
+    .info(`<b>Backup file:</b> '<cyan>${file}</cyan>'`)
     .info(`<b>Saving to:</b> '<cyan>${resolve(replaceTilde(path))}</cyan>'`)
     .line()
 

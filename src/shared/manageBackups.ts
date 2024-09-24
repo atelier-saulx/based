@@ -33,7 +33,7 @@ type BackupSelectionReturn = {
 }
 
 const getSortingText = (sort: string): string =>
-  sort === 'ASC' ? '(older to newer)' : '(newer to older)'
+  sort === 'asc' ? '(older to newer)' : '(newer to older)'
 
 export const backupsSummary = (
   context: AppContext,
@@ -46,14 +46,15 @@ export const backupsSummary = (
     context.print.fail(`No backups found.`)
   } else {
     context.print.info(
-      `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases. Showing <b>${limit}</b> items <b>${getSortingText(sort)}</b>.`,
+      `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases. Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
     )
   }
 
   if (verbose) {
     for (const database in values.sorted) {
-      context.print.separator()
-      context.print.info(`Database: <b><cyan>${database}</cyan></b>`)
+      context.print
+        .separator()
+        .info(`Database: <b><cyan>${database}</cyan></b>`)
 
       for (let i = 0; i < values.sorted[database].length; i++) {
         context.print.info(`File: <dim>${values.sorted[database][i].key}</dim>`)
@@ -118,9 +119,9 @@ const fileSelection = async (
   }
 
   const choices: SelectInputItems[] = backups.sorted[selectedDB].map(
-    (file: { key: string; lastModified: string }) => ({
+    (file: { key: string; lastModified: string }, index, array) => ({
       name: file.key,
-      description: `<b><white>Generated at:</white></b> ${format(
+      description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(
         parseISO(file.lastModified),
         'dd/MM/yyyy - HH:mm:ss',
       )}`,
@@ -196,20 +197,23 @@ export const backupsSorting = (
     result.databases++
     result.backups = backups[database].length
 
-    result.sorted[database] = backups[database]
-      .sort((a, b) => {
-        const dateA: number = new Date(a.lastModified).getTime()
-        const dateB: number = new Date(b.lastModified).getTime()
+    result.sorted[database] = backups[database].sort((a, b) => {
+      const dateA: number = new Date(a.lastModified).getTime()
+      const dateB: number = new Date(b.lastModified).getTime()
 
-        if (sort === 'ASC') {
-          return dateA - dateB
-        } else if (sort === 'DESC') {
-          return dateB - dateA
-        } else {
-          return 0
-        }
-      })
-      .slice(0, limit)
+      if (sort === 'asc') {
+        return dateA - dateB
+      } else if (sort === 'desc') {
+        return dateB - dateA
+      } else {
+        return 0
+      }
+    })
+
+    if (limit !== 0) {
+      console.log('limit', limit !== 0)
+      result.sorted[database] = backups[database].slice(0, limit)
+    }
   }
 
   return result
