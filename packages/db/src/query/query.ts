@@ -62,6 +62,7 @@ export class Query {
         mainLen: 0,
         mainIncludes: {},
         includeTree: [],
+        multiple: false,
       }
     }
     for (const f of fields) {
@@ -81,7 +82,7 @@ export class Query {
 
   subscribe(fn: (value: any, checksum: number, err: Error) => void) {
     // TODO: add to active subs
-    console.log('hello sub')
+    console.log('hello sub NOT THERE')
     // sub will all wil fire on any field
     // maybe start with this?
     // this is also where we will create diffs

@@ -63,7 +63,7 @@ export class BasedNode {
       : toObjectIncludeTreePrint(
           '',
           this,
-          this.__q.query.includeDef.includeTree,
+          this.__q.includeDef.includeTree,
         ).trim()
 
     if (nested) {
@@ -79,7 +79,7 @@ export class BasedNode {
     if (this.__r) {
       return toObjectIncludeTree({}, this, this.__r.includeTree)
     }
-    return toObjectIncludeTree({}, this, this.__q.query.includeDef.includeTree)
+    return toObjectIncludeTree({}, this, this.__q.includeDef.includeTree)
   }
 
   toJSON() {

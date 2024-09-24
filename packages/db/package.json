@@ -5,33 +5,18 @@
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
-    "build": "tsc",
-    "watch": "npx tsc --watch",
-    "test": "npx ava",
-    "clean": "rimraf {.turbo,dist,node_modules}",
-    "build-zig": "mkdir -p dist && zig build --summary all",
-    "build-selva": "mkdir -p build && make -C clibs",
-    "clean-selva": "rm -rf build && make -C clibs clean",
     "get-napi": "./scripts/download-node-headers.sh",
-    "test-query": "zig build && npm run build && npm run test -- ./dist/test/query.js",
-    "test-real": "npm run build && npm run test -- ./dist/test/real.js",
-    "test-single-ref": "zig build && npm run build && npm test -- ./dist/test/singleRef.js",
-    "test-remove": "zig build && npm run build && npm test -- ./dist/test/remove.js",
-    "test-single-ref-query": "zig build && npm run build && npm test -- ./dist/test/singleRefQuery.js",
-    "test-string": "zig build && npm run build && npm test -- ./dist/test/string.js",
-    "test-update": "zig build && npm run build && npm test -- ./dist/test/update.js",
-    "test-sort": "zig build && npm run build && npm test -- ./dist/test/sort.js",
-    "test-range": "zig build && npm run build && npm test -- ./dist/test/range.js",
-    "playground": "zig build && npm run build && node ./dist/test/shared/playground.js"
+    "build-selva": "mkdir -p build && make -C clibs",
+    "build": "npm run build-selva && zig build  && tsc",
+    "watch": "npx tsc --watch",
+    "clean-selva": "rm -rf build && make -C clibs clean",
+    "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
+    "playground": "npm run build && node ./dist/test/shared/playground.js",
+    "test": "npm run build && lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./scripts/test.js",
+    "test2": "npm run build && node ./scripts/test.js",
+    "test-fast": "node ./scripts/test.js"
   },
   "sideEffects": false,
-  "ava": {
-    "timeout": "2m",
-    "workerThreads": false,
-    "files": [
-      "./dist/test/**/*.js"
-    ]
-  },
   "files": [
     "dist/lib.node",
     "dist/src",
@@ -41,7 +26,7 @@
   "dependencies": {
     "data-record": "^2.0.0",
     "@saulx/hash": "^3.0.0",
-    "@based/schema": "^3.1.0",
+    "@based/schema": "4",
     "snappy": "^7.2.2",
     "picocolors": "^1.0.1",
     "@saulx/utils": "^4.3.2",
@@ -49,9 +34,9 @@
     "@based/client": "^6.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.5.3",
     "lorem-ipsum": "^2.0.8",
     "ts-node": "10.9.1",
-    "ava": "5.3.1",
     "typescript": "^4.3.5",
     "rimraf": "^3.0.2"
   }

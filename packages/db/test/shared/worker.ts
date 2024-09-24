@@ -21,7 +21,7 @@ const db = new BasedDb({
   //   maxModifySize: 1000000,
 })
 
-await db.start(true)
+await db.start()
 
 await wait(100)
 

@@ -8,9 +8,10 @@
 #include <stdint.h>
 #include "selva/_export.h"
 
-typedef int8_t field_t;
+typedef uint8_t field_t;
 typedef uint32_t node_id_t;
 typedef uint16_t node_type_t;
+typedef int32_t cursor_id_t;
 
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
@@ -33,12 +34,52 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_MICRO_BUFFER = 17,
 } __packed;
 
-struct EdgeFieldConstraint;
+struct EdgeFieldConstraint {
+    enum EdgeFieldConstraintFlag {
+        /**
+         * Bidirectional reference.
+         * TODO Is this needed if edges are always bidir.
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
+        /**
+         * Edge field array mode.
+         * By default an edge field acts like a set. This flag makes the field work like an array.
+         * FIXME
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x02,
+        /**
+         * Skip saving this field while dumping.
+         */
+        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
+    } __packed flags;
+    field_t nr_fields;
+    field_t inverse_field;
+    node_type_t dst_node_type;
+    struct SelvaFieldSchema *field_schemas
+#ifndef __clang__
+        __counted_by(nr_fields)
+#endif
+    ;
+};
+
+struct SelvaFieldSchema {
+    field_t field;
+    enum SelvaFieldType type;
+    union {
+        struct {
+            size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
+        } string;
+        struct EdgeFieldConstraint edge_constraint;
+        struct {
+            uint16_t len;
+        } smb;
+    };
+};
+
 struct SelvaAlias;
 struct SelvaAliases;
 struct SelvaDb;
 struct SelvaFieldInfo;
-struct SelvaFieldSchema;
 struct SelvaFields;
 struct SelvaNode;
 struct SelvaNodeSchema;

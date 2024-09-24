@@ -6,20 +6,20 @@ export default {
   modify: (buffer: Buffer, len: number): any => {
     return db.modify(buffer, len)
   },
+
   getQuery: (
     conditions: Buffer,
-    prefix: string,
-    lastId: number,
+    typeId: number,
     offset: number,
     limit: number, // def 1k ?
     includeBuffer: Buffer,
   ): any => {
-    return db.getQuery(conditions, prefix, lastId, offset, limit, includeBuffer)
+    return db.getQuery(conditions, typeId, offset, limit, includeBuffer)
   },
+
   getQuerySort: (
     conditions: Buffer,
-    prefix: string,
-    lastId: number,
+    typeId: number,
     offset: number,
     limit: number, // def 1k ?
     includeBuffer: Buffer,
@@ -29,8 +29,7 @@ export default {
     if (sortOrder === 1) {
       return db.getQuerySortDesc(
         conditions,
-        prefix,
-        lastId,
+        typeId,
         offset,
         limit,
         includeBuffer,
@@ -39,8 +38,7 @@ export default {
     } else {
       return db.getQuerySortAsc(
         conditions,
-        prefix,
-        lastId,
+        typeId,
         offset,
         limit,
         includeBuffer,
@@ -48,10 +46,10 @@ export default {
       )
     }
   },
+
   getQueryIdsSort: (
     conditions: Buffer,
-    prefix: string,
-    lastId: number,
+    typeId: number,
     offset: number,
     limit: number, // def 1k ?
     ids: Buffer,
@@ -65,8 +63,7 @@ export default {
       if (sortOrder === 1) {
         return db.getQueryIdsSortAscLarge(
           conditions,
-          prefix,
-          lastId,
+          typeId,
           offset,
           limit,
           ids,
@@ -76,8 +73,7 @@ export default {
       } else {
         return db.getQueryIdsSortDescLarge(
           conditions,
-          prefix,
-          lastId,
+          typeId,
           offset,
           limit,
           ids,
@@ -89,8 +85,7 @@ export default {
     if (sortOrder === 1) {
       return db.getQueryIdsSortAsc(
         conditions,
-        prefix,
-        lastId,
+        typeId,
         offset,
         limit,
         ids,
@@ -102,8 +97,7 @@ export default {
     } else {
       return db.getQueryIdsSortDesc(
         conditions,
-        prefix,
-        lastId,
+        typeId,
         offset,
         limit,
         ids,
@@ -114,41 +108,58 @@ export default {
       )
     }
   },
+
   getQueryById: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     id: number,
     includeBuffer: Buffer,
   ): any => {
-    return db.getQueryById(conditions, prefix, id, includeBuffer)
+    return db.getQueryById(conditions, typeId, id, includeBuffer)
   },
+
   getQueryByIds: (
     conditions: Buffer,
-    prefix: string,
+    typeId: number,
     ids: Buffer,
     includeBuffer: Buffer,
   ): any => {
-    return db.getQueryByIds(conditions, prefix, ids, includeBuffer)
+    return db.getQueryByIds(conditions, typeId, ids, includeBuffer)
   },
 
-  stat: () => {
-    return db.stat()
-  },
-
-  start: (path: string, readOnly: boolean) => {
+  start: (path: string, dumpPath: string, readOnly: boolean) => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.start(buf, readOnly)
+    const dumpPathBuf = dumpPath
+      ? Buffer.concat([Buffer.from(dumpPath), Buffer.from([0])])
+      : null
+    return db.start(buf, readOnly, dumpPathBuf)
+  },
+
+  save: (path: string): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.save(buf)
+  },
+
+  isSaveReady: (pid: number, path: string): boolean => {
+    const errBuf = Buffer.alloc(80)
+    try {
+      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+      return db.isSaveReady(pid, buf, errBuf)
+    } catch (err) {
+      console.log('ERROR SAVE READY', errBuf.toString())
+      throw err
+    }
   },
 
   stop: () => {
     return db.stop()
   },
 
-  tester: () => {
-    return db.tester()
+  getTypeInfo: (type: number) => {
+    return db.getTypeInfo(type)
   },
 
-  updateSchemaType: (prefix: string, buf: Buffer) => {
+  updateSchemaType: (prefix: number, buf: Buffer) => {
     return db.updateSchema(prefix, buf)
   },
 }

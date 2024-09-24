@@ -16,8 +16,18 @@ struct SelvaNodeReference {
 
 struct SelvaNodeReferences {
     uint32_t nr_refs;
-    uint32_t offset;
-    struct SelvaNodeReference *refs __counted_by(nr_refs);
+    uint16_t offset;
+    /*!<
+     * Greatest node_id ever inserted in this field. (Compressed/packed).
+     * This can be zeroed when the gretest node is deleted, which may
+     * cause some lookup slowdown.
+     */
+    uint16_t great_idz;
+    struct SelvaNodeReference *refs
+#ifndef __clang__
+        __counted_by(nr_refs)
+#endif
+        ;
 };
 
 struct SelvaNodeWeakReference {
@@ -28,7 +38,11 @@ struct SelvaNodeWeakReference {
 struct SelvaNodeWeakReferences {
     uint32_t nr_refs;
     uint32_t offset;
-    struct SelvaNodeWeakReference *refs __counted_by(nr_refs);
+    struct SelvaNodeWeakReference *refs
+#ifndef __clang__
+        __counted_by(nr_refs)
+#endif
+        ;
 };
 
 struct SelvaMicroBuffer {
@@ -73,16 +87,69 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
  * Set field value.
  */
 SELVA_EXPORT
-int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+int selva_fields_set(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        const void *value, size_t len);
 
 SELVA_EXPORT
-int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s);
+int selva_fields_get_mutable_string(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t len,
+        struct selva_string **s);
 
 SELVA_EXPORT
-int selva_fields_set_reference_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, field_t field, const void *value, size_t len);
+int selva_fields_references_insert(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        ssize_t index,
+        struct SelvaTypeEntry *te_dst,
+        struct SelvaNode *dst,
+        struct SelvaNodeReference **ref_out);
+
+/**
+ * Move reference from old to new index in a references field array.
+ * If index_new > index_old then the ref will be after the reference that was in index_new before the operation;
+ * If index_new < index_ld then the ref  will be before the reference that was in the index_new before the operation.
+ * index_new and index_old can be negative, which will start counting the references array from the last position.
+ * It's not possible to create a gap of null references using this function.
+ */
+SELVA_EXPORT
+int selva_fields_references_move(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        ssize_t index_old,
+        ssize_t index_new);
+
+/**
+ * Swap two references in a references field array.
+ */
+SELVA_EXPORT
+int selva_fields_references_swap(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        size_t index_a,
+        size_t index_b);
 
 SELVA_EXPORT
-int selva_fields_get_reference_meta_mutable_string(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc, field_t field, size_t len, struct selva_string **s);
+int selva_fields_set_reference_meta(
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref,
+        struct EdgeFieldConstraint *efc,
+        field_t field,
+        const void *value, size_t len);
+
+SELVA_EXPORT
+int selva_fields_get_reference_meta_mutable_string(
+        struct SelvaNode *node,
+        struct SelvaNodeReference *ref,
+        struct EdgeFieldConstraint *efc,
+        field_t field,
+        size_t len,
+        struct selva_string **s);
 
 /**
  * Get field value.
@@ -95,13 +162,19 @@ SELVA_EXPORT
 struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
+struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field);
+
+SELVA_EXPORT
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
+
+SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 /**
  * Delete field.
  */
 SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, field_t field);
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 /**
  * Delete an edge from a references field.

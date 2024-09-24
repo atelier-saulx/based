@@ -6,27 +6,17 @@ const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const readInt = @import("../../utils.zig").readInt;
 const getField = db.getField;
 const db = @import("../../db//db.zig");
+const getRefsFields = @import("./includeRefs.zig").getRefsFields;
 
 const std = @import("std");
 
 pub fn getFields(
+    node: db.Node,
     ctx: *QueryCtx,
     id: u32,
-    typeEntry: *selva.SelvaTypeEntry,
-    start: ?u16,
+    typeEntry: db.Type,
     include: []u8,
-    refLvl: u8,
 ) !usize {
-    // get this from top
-    const selvaNodeNull: ?*selva.SelvaNode = selva.selva_find_node(typeEntry, id);
-
-    if (selvaNodeNull == null) {
-        // std.debug.print("CANT FIND ID {d}\n", .{id});
-        return 0;
-    }
-
-    const selvaNode: *selva.SelvaNode = selvaNodeNull.?;
-
     var includeMain: []u8 = &.{};
     var size: usize = 0;
     var includeIterator: u16 = 0;
@@ -39,22 +29,27 @@ pub fn getFields(
 
         const operation = include[includeIterator..];
 
+        if (field == 254) {
+            const refSize = readInt(u16, operation, 0);
+            const multiRefs = operation[2 .. 2 + refSize];
+            includeIterator += refSize + 2;
+            if (!idIsSet) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id);
+            }
+            size += getRefsFields(ctx, multiRefs, node);
+            continue :includeField;
+        }
+
         if (field == 255) {
-            const hasFields: bool = operation[0] == 1;
-            const refSize = readInt(u16, operation, 1);
-            const singleRef = operation[3 .. 3 + refSize];
-            includeIterator += refSize + 3;
-            if (main == null) {
-                main = db.selvaGetField(selvaNode, try db.selvaGetFieldSchema(0, typeEntry));
-                if (main.?.len > 0 and !idIsSet and start == null) {
-                    idIsSet = true;
-                    size += try addIdOnly(ctx, id, refLvl, start);
-                }
+            const refSize = readInt(u16, operation, 0);
+            const singleRef = operation[2 .. 2 + refSize];
+            includeIterator += refSize + 2;
+            if (!idIsSet) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id);
             }
-            if (main.?.len == 0) {
-                continue :includeField;
-            }
-            size += getSingleRefFields(ctx, singleRef, main.?, refLvl, hasFields);
+            size += getSingleRefFields(ctx, singleRef, node);
             continue :includeField;
         }
 
@@ -66,7 +61,7 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = db.selvaGetField(selvaNode, try db.selvaGetFieldSchema(field, typeEntry));
+        const value = db.getField(node, try db.getFieldSchema(field, typeEntry));
 
         if (value.len == 0) {
             continue :includeField;
@@ -80,25 +75,23 @@ pub fn getFields(
                 size += (value.len + 1);
             }
         } else {
-            size += (value.len + 3);
+            size += (value.len + 5);
         }
 
         var result: results.Result = .{
-            .id = id,
+            .id = null,
             .field = field,
             .val = value,
-            .start = start,
+            .refSize = null,
             .includeMain = includeMain,
-            .refLvl = refLvl,
+            .refType = null,
+            .totalRefs = null,
         };
 
-        if (start == null) {
-            if (!idIsSet) {
-                idIsSet = true;
-                size += 1 + 4;
-            } else {
-                result.id = null;
-            }
+        if (!idIsSet) {
+            size += 5;
+            result.id = id;
+            idIsSet = true;
         }
 
         try ctx.results.append(result);
@@ -106,7 +99,7 @@ pub fn getFields(
 
     if (!idIsSet) {
         idIsSet = true;
-        size += try addIdOnly(ctx, id, refLvl, start);
+        size += try addIdOnly(ctx, id);
     }
 
     return size;

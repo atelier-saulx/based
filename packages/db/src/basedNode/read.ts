@@ -1,38 +1,30 @@
+import { deepEqual } from '@saulx/utils'
+import { QueryIncludeDef } from '../query/types.js'
 import { FieldDef } from '../schemaTypeDef.js'
 import { BasedNode } from './index.js'
-
-// TODO: optmize this
-const includePathsAreEqual = (
-  includePath: number[],
-  refPath: number[],
-  start: number,
-): boolean => {
-  for (let i = 0; i < refPath.length - 1; i++) {
-    if (includePath[i] !== refPath[i]) {
-      return false
-    }
-  }
-  if (start !== refPath[refPath.length - 1]) {
-    return false
-  }
-  return true
-}
+import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 
 export const readSeperateFieldFromBuffer = (
   requestedField: FieldDef,
   basedNode: BasedNode,
+  includeDef: QueryIncludeDef = basedNode.__q.includeDef,
+  offset: number = 4 + basedNode.__o,
+  end: number = basedNode.__q.end,
 ) => {
   const queryResponse = basedNode.__q
-  let i = 4 + basedNode.__o
-
   const buffer = queryResponse.buffer
   const requestedFieldIndex = requestedField.field
   const ref = basedNode.__r
 
-  let found = !ref || false
-  let includeDef = queryResponse.query.includeDef
+  let found = true
 
-  while (i < buffer.byteLength) {
+  if (ref) {
+    found = deepEqual(ref.includePath, includeDef.includePath)
+  }
+
+  let i = offset
+
+  while (i < end) {
     let index = buffer[i]
 
     // next node
@@ -42,39 +34,103 @@ export const readSeperateFieldFromBuffer = (
 
     i += 1
 
-    if (index === 254) {
-      if (ref && found) {
-        // only skip till end from now
-        found = false
+    // index === 253 or 254
+    if (index === 253) {
+      const size = buffer.readUInt32LE(i + 1)
+
+      if (!found) {
+        i += 9 + size
+        continue
       }
 
-      const start = buffer.readUint16LE(i + 1)
-      const resetNested = buffer[i] === 0
-
-      if (resetNested) {
-        includeDef = queryResponse.query.includeDef
-      }
+      const refField = buffer[i]
 
       if (
-        ref &&
-        includePathsAreEqual(includeDef.includePath, ref.includePath, start)
+        requestedField.type === 'references' &&
+        requestedField.field === refField
       ) {
-        if (requestedField.type === 'id') {
-          return buffer.readUint32LE(i + 3)
-        }
-        found = true
-        i += 7
-        includeDef = ref
-      } else {
-        i += 7
-        includeDef = includeDef.refIncludes[start]
+        const include = includeDef.refIncludes[refField]
+        // this is tmp... very inefficient
+        const refResp = new BasedQueryResponse(
+          basedNode.__q.query,
+          buffer,
+          i + 5,
+          size + 9 + i,
+          include,
+          include.schema,
+        )
+        return refResp
       }
 
+      i += 9 + size
+      continue
+    } else if (index === 254) {
+      const size = buffer.readUInt32LE(i + 1)
+
+      if (found || !ref) {
+        i += 5 + size
+        continue
+      }
+
+      const refField = buffer[i]
+
+      if (includeDef.includePath.length > ref.includePath.length) {
+        i += 5 + size
+        continue
+      }
+
+      let pIndex = 0
+      for (pIndex = 0; pIndex < ref.includePath.length; pIndex++) {
+        if (includeDef.includePath[pIndex] === undefined) {
+          break
+        }
+        if (includeDef.includePath[pIndex] !== ref.includePath[pIndex]) {
+          pIndex = -1
+          break
+        }
+      }
+
+      if (pIndex == -1) {
+        i += 5 + size
+        continue
+      }
+
+      if (refField === ref.includePath[pIndex]) {
+        const singleRef = includeDef.refIncludes[refField]
+        if (!singleRef) {
+          throw new Error('READ BASED NODE - WRONGLY MATCHED INCLUDEDEF')
+        }
+
+        if (
+          requestedField.type === 'id' &&
+          pIndex === ref.includePath.length - 1
+        ) {
+          if (size === 0) {
+            return null
+          }
+          return buffer.readUint32LE(i + 5 + 1)
+        }
+
+        if (size === 0) {
+          i += 5
+          continue
+        }
+
+        return readSeperateFieldFromBuffer(
+          requestedField,
+          basedNode,
+          singleRef,
+          i + 5 + 5,
+          i + 5 + size,
+        )
+      }
+
+      i += 5 + size
       continue
     }
 
     if (index === 0) {
-      if (requestedFieldIndex !== index || !found) {
+      if (!found || requestedFieldIndex !== index) {
         i += includeDef.mainLen
         continue
       }
@@ -129,30 +185,15 @@ export const readSeperateFieldFromBuffer = (
       }
       i += includeDef.mainLen
     } else {
-      const size = buffer.readUInt16LE(i)
-      i += 2
+      const size = buffer.readUInt32LE(i)
+      i += 4
       // if no field add size 0
-      if (requestedField.field === index && found) {
+      if (found && requestedField.field === index) {
         if (requestedField.type === 'string') {
           if (size === 0) {
             return ''
           }
           return buffer.toString('utf8', i, size + i)
-        } else if (requestedField.type === 'references') {
-          const amount = size / 4
-          const x = new Array(amount)
-          for (let j = 0; j < amount; j++) {
-            const id = buffer.readUint32LE(j * 4 + i)
-            if (id) {
-              x[j] = { id }
-            } else {
-              console.warn(
-                'BasedNode ref reader: Broken reference cannot get id!',
-              )
-              x.splice(j, 1)
-            }
-          }
-          return x
         }
       }
       i += size

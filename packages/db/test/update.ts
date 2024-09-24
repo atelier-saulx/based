@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import test from './shared/test.js'
+import { deepEqual, equal } from './shared/assert.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('update', async (t) => {
+await test('update', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -20,29 +21,46 @@ test.serial('update', async (t) => {
     // maxModifySize: 1024 * 1024 * 1000,
   })
 
+  await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  /*
+    float32	JSON numbers	3.14
+    float64	JSON numbers	3.14
+    int8	Whole JSON numbers that fit in a signed 8-bit integer	127
+    uint8	Whole JSON numbers that fit in an unsigned 8-bit integer	255
+    int16	Whole JSON numbers that fit in a signed 16-bit integer	32767
+    uint16	Whole JSON numbers that fit in an unsigned 16-bit integer	65535
+    int32	Whole JSON numbers that fit in a signed 32-bit integer	2147483647
+    uint32	Whole JSON numbers that fit in an unsigned 32-bit integer
+  */
+
   db.updateSchema({
     types: {
       mep: {
-        fields: {
-          a: { type: 'integer' },
+        props: {
+          a: { type: 'uint32' },
           // @ts-ignore
           countryCode: { type: 'string', maxBytes: 10 },
-          b: { type: 'integer' },
-          c: { type: 'integer' },
+          b: { type: 'uint32' },
+          c: { type: 'uint32' },
         },
       },
       snurp: {
-        fields: {
-          a: { type: 'integer' },
+        props: {
+          a: { type: 'uint32' },
           // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
-          b: { type: 'integer' },
-          c: { type: 'integer' },
+          b: { type: 'uint32' },
+          c: { type: 'uint32' },
           name: { type: 'string' },
           email: { type: 'string' },
           nested: {
             type: 'object',
-            properties: {
+            props: {
               // @ts-ignore
               derp: { type: 'string', maxBytes: 1 },
             },
@@ -67,7 +85,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().toObject(), [
+  deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -112,7 +130,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp').get().toObject(), [
+  deepEqual(db.query('snurp').get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -141,7 +159,7 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('snurp', 2).get().toObject(), {
+  deepEqual(db.query('snurp', 2).get().toObject(), {
     a: 0,
     b: 0,
     c: 0,
@@ -155,7 +173,7 @@ test.serial('update', async (t) => {
   })
 
   // for individual queries combine them
-  t.deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
+  deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
     {
       a: 1,
       b: 2,
@@ -197,11 +215,11 @@ test.serial('update', async (t) => {
 
   db.drain()
 
-  t.is(db.query('snurp', ids).get().length, 1e6)
+  equal(db.query('snurp', ids).get().length, 1e6)
 
-  t.is(db.query('snurp', ids).range(0, 100).get().length, 100)
+  equal(db.query('snurp', ids).range(0, 100).get().length, 100)
 
-  t.is(db.query('snurp', ids).range(10, 100).get().length, 90)
+  equal(db.query('snurp', ids).range(10, 100).get().length, 90)
 
   let total = 0
   let len = 0
@@ -211,11 +229,13 @@ test.serial('update', async (t) => {
     for (var i = 0; i < 1e5; i++) {
       x += db.query('snurp', i).include('a').get().execTime
     }
-    console.log(Date.now() - d, 'ms', 'db time', x, 'ms')
     total += x
     len++
   }
 
-  // ---
-  console.log('TOTAL', 'db time', total / len, 'ms', 0)
+  equal(
+    total / len < 1e3,
+    true,
+    'Is at least faster then 1 second for 100k seperate updates and query',
+  )
 })

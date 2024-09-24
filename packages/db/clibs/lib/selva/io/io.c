@@ -120,8 +120,16 @@ int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string
     return 0;
 }
 
-/* TODO Is the filename arg ever needed? */
-void selva_io_end(struct selva_io *io, struct selva_string **filename_out, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE])
+static void selva_io_close(struct selva_io *io)
+{
+    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
+        fclose(io->file_io.file);
+        selva_string_free(io->file_io.filename);
+        io->file_io.filename = NULL;
+    }
+}
+
+void selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE])
 {
     if (io->flags & SELVA_IO_FLAGS_WRITE) {
         sdb_write_footer(io);
@@ -151,21 +159,32 @@ void selva_io_end(struct selva_io *io, struct selva_string **filename_out, uint8
 
     }
 
-    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        fclose(io->file_io.file);
-
-        if (filename_out) {
-            *filename_out = io->file_io.filename;
-        } else {
-            selva_string_free(io->file_io.filename);
-        }
-        io->file_io.filename = NULL;
-
-    }
+    selva_io_close(io);
 
     if (hash_out) {
         memcpy(hash_out, io->computed_hash, SELVA_IO_HASH_SIZE);
     }
 
     sdb_deinit(io);
+}
+
+int selva_io_quick_verify(const char *filename)
+{
+    int err;
+    struct selva_io io;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    err = sdb_read_hash(&io);
+    if (err) {
+        return err;
+    }
+
+    selva_io_close(&io);
+    sdb_deinit(&io);
+
+    return 0;
 }

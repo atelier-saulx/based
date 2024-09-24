@@ -81,14 +81,21 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refInclude = include.refIncludes[key]
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
-        const meta = Buffer.allocUnsafe(8)
-        meta[0] = 255
-        meta[1] =
-          refInclude.mainLen === 0 && refInclude.includeArr.length === 0 ? 0 : 1
-        meta.writeUint16LE(size + 4, 2)
-        meta[4] = refInclude.schema.prefix[0]
-        meta[5] = refInclude.schema.prefix[1]
-        meta.writeUint16LE(refInclude.fromRef.start, 6)
+        const meta = Buffer.allocUnsafe(6)
+
+        // command meaning include single ref
+        meta[0] = refInclude.multiple ? 254 : 255
+
+        // size
+        meta.writeUint16LE(size + 3, 1)
+
+        // typeId
+        meta[3] = refInclude.schema.prefix[0]
+        meta[4] = refInclude.schema.prefix[1]
+
+        // field where ref is stored
+        meta[5] = refInclude.fromRef.field
+
         result.push(meta, refBuffer)
       }
     }
@@ -130,14 +137,17 @@ const createOrGetRefIncludeDef = (
   ref: FieldDef,
   include: QueryIncludeDef,
   query: Query,
+  multiple: boolean,
 ) => {
   if (!include.refIncludes) {
     include.refIncludes = {}
   }
-  const start = ref.start
-  if (!include.refIncludes[start]) {
-    include.refIncludes[start] = {
-      includePath: [...include.includePath, start],
+
+  // make it field not stat
+  const field = ref.field
+  if (!include.refIncludes[field]) {
+    include.refIncludes[field] = {
+      includePath: [...include.includePath, field],
       schema: query.db.schemaTypesParsed[ref.allowedType],
       includeArr: [],
       includeFields: new Set(),
@@ -145,9 +155,10 @@ const createOrGetRefIncludeDef = (
       mainIncludes: {},
       includeTree: [],
       fromRef: ref,
+      multiple,
     }
   }
-  const refIncludeDef = include.refIncludes[start]
+  const refIncludeDef = include.refIncludes[field]
   return refIncludeDef
 }
 
@@ -193,13 +204,20 @@ const parseInclude = (
       if (!t) {
         return
       }
-      if (isFieldDef(t) && t.type === 'reference') {
+      if (
+        isFieldDef(t) &&
+        (t.type === 'reference' || t.type === 'references')
+      ) {
         const ref: FieldDef = t as FieldDef
-        const refIncludeDef = createOrGetRefIncludeDef(ref, include, query)
+        const refIncludeDef = createOrGetRefIncludeDef(
+          ref,
+          include,
+          query,
+          t.type === 'references',
+        )
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
         addPathToIntermediateTree(t, includeTree, t.path)
-
         return
       }
     }
@@ -220,9 +238,15 @@ const parseInclude = (
 
   addPathToIntermediateTree(field, includeTree, field.path)
 
-  if (field.type === 'reference') {
-    const refIncludeDef = createOrGetRefIncludeDef(field, include, query)
+  if (field.type === 'reference' || field.type === 'references') {
+    const refIncludeDef = createOrGetRefIncludeDef(
+      field,
+      include,
+      query,
+      field.type === 'references',
+    )
     for (const f in refIncludeDef.schema.fields) {
+      // include all
       if (
         refIncludeDef.schema.fields[f].type !== 'reference' &&
         refIncludeDef.schema.fields[f].type !== 'references'

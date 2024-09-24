@@ -1,10 +1,11 @@
 const std = @import("std");
 const c = @import("c.zig");
+const dump = @import("./db/dump.zig");
+const info = @import("./db/info.zig");
 const errors = @import("errors.zig");
 const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
-const stats = @import("./db/stat.zig");
 const schema = @import("./schema/schema.zig");
 
 const jsThrow = errors.jsThrow;
@@ -51,8 +52,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
-    registerFunction(env, exports, "stat", stats.stat) catch return null;
-    registerFunction(env, exports, "tester", stats.tester) catch return null;
+    registerFunction(env, exports, "save", dump.save) catch return null;
+    registerFunction(env, exports, "isSaveReady", dump.isReady) catch return null;
+    registerFunction(env, exports, "getTypeInfo", info.ofType) catch return null;
     registerFunction(env, exports, "getQueryById", Query.getQueryId) catch return null;
     registerFunction(env, exports, "getQueryByIds", Query.getQueryIds) catch return null;
     registerFunction(env, exports, "getQuery", Query.getQuery) catch return null;

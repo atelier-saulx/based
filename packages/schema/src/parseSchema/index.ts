@@ -5,6 +5,8 @@ import propParsers from './props.js'
 import pc from 'picocolors'
 import { expectBoolean, expectObject } from './assert.js'
 
+export { getPropType }
+
 export class Parser {
   constructor(schema: Schema) {
     this.schema = schema

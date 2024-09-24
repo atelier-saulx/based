@@ -1,14 +1,15 @@
-import test from 'ava'
 import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import { join, dirname, resolve } from 'path'
+import test from './shared/test.js'
+import { deepEqual, equal } from './shared/assert.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
 
-test.serial('single reference multi refs', async (t) => {
+await test('single simple', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -19,28 +20,110 @@ test.serial('single reference multi refs', async (t) => {
 
   await db.start()
 
+  t.after(() => {
+    return db.destroy()
+  })
+
   db.updateSchema({
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
-        },
-      },
-      blup: {
-        fields: {
-          // @ts-ignore
-          flap: { type: 'string', maxBytes: 1 },
+          bla: { type: 'integer' },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
+          name: { type: 'string' },
         },
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedType: 'user' },
+          bla: { type: 'integer' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
   })
 
   db.create('simple', {
+    user: db.create('user', {
+      name: 'Mr snurp',
+    }),
+  })
+
+  db.drain()
+
+  deepEqual(db.query('simple').include('user.name').get().toObject(), [
+    {
+      id: 1,
+      user: {
+        id: 1,
+        name: 'Mr snurp',
+      },
+    },
+  ])
+})
+
+await test('simple nested', async (t) => {
+  try {
+    await fs.rm(dbFolder, { recursive: true })
+  } catch (err) {}
+
+  const db = new BasedDb({
+    path: dbFolder,
+  })
+
+  await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.updateSchema({
+    types: {
+      user: {
+        fields: {
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
+        },
+      },
+      blup: {
+        fields: {
+          // @ts-ignore
+          flap: { type: 'string', maxBytes: 1 },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+        },
+      },
+      simple: {
+        fields: {
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
+        },
+      },
+    },
+  })
+
+  const simple = db.create('simple', {
     user: db.create('user', {
       myBlup: db.create('blup', {
         flap: 'B',
@@ -50,7 +133,7 @@ test.serial('single reference multi refs', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('blup').include('flap').get().toObject(), [
+  deepEqual(db.query('blup').include('flap').get().toObject(), [
     {
       id: 1,
       flap: 'B',
@@ -60,19 +143,44 @@ test.serial('single reference multi refs', async (t) => {
   const result1 = db.query('user').include('myBlup.flap').get()
 
   for (const r of result1) {
-    t.is(r.myBlup.flap, 'B')
+    equal(r.myBlup.flap, 'B')
   }
 
   const result = db.query('simple').include('user.myBlup.flap').get()
 
   for (const r of result) {
-    t.is(r.user.myBlup.flap, 'B')
+    equal(r.user.myBlup.flap, 'B')
   }
 
-  await db.destroy()
+  deepEqual(db.query('user').include('simple').get().toObject(), [
+    {
+      id: 1,
+      simple: { id: 1 },
+    },
+  ])
+
+  db.update('simple', simple, {
+    user: null,
+  })
+
+  db.drain()
+
+  deepEqual(db.query('simple').include('user').get().toObject(), [
+    {
+      id: 1,
+      user: null,
+    },
+  ])
+
+  deepEqual(db.query('user').include('simple').get().toObject(), [
+    {
+      id: 1,
+      simple: null,
+    },
+  ])
 })
 
-test.serial('single reference object', async (t) => {
+await test('single reference object', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -83,27 +191,60 @@ test.serial('single reference object', async (t) => {
 
   await db.start()
 
+  t.after(() => {
+    return db.destroy()
+  })
+
   db.updateSchema({
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
+          admin: {
+            type: 'reference',
+            allowedType: 'simple',
+            // lets see if this works...
+            inverseProperty: 'admin.user',
+          },
         },
       },
       blup: {
         fields: {
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
       },
       simple: {
         fields: {
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
           admin: {
             type: 'object',
             properties: {
               role: { type: 'string' },
-              user: { type: 'reference', allowedType: 'user' },
+              user: {
+                type: 'reference',
+                allowedType: 'user',
+                inverseProperty: 'admin',
+              },
             },
           },
         },
@@ -123,7 +264,7 @@ test.serial('single reference object', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('simple').include('admin.user').get().toObject(), [
+  deepEqual(db.query('simple').include('admin.user').get().toObject(), [
     {
       id: 1,
       admin: {
@@ -133,11 +274,9 @@ test.serial('single reference object', async (t) => {
       },
     },
   ])
-
-  await db.destroy()
 })
 
-test.serial.only('single reference', async (t) => {
+await test('nested', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -148,11 +287,24 @@ test.serial.only('single reference', async (t) => {
 
   await db.start()
 
+  t.after(() => {
+    return db.destroy()
+  })
+
   db.updateSchema({
     types: {
       user: {
         fields: {
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
           name: { type: 'string' },
           flap: { type: 'integer' },
           email: { type: 'string', maxLength: 15 },
@@ -174,15 +326,33 @@ test.serial.only('single reference', async (t) => {
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
           name: { type: 'string' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
         },
       },
       simple: {
         fields: {
           // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
           vectorClock: { type: 'integer' },
-          user: { type: 'reference', allowedType: 'user' },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
@@ -207,8 +377,9 @@ test.serial.only('single reference', async (t) => {
   })
 
   const amount = 1e5
+  let lastID = 0
   for (let i = 0; i < amount; i++) {
-    db.create('simple', {
+    lastID = db.create('simple', {
       user,
       vectorClock: i,
       countryCode: 'aa',
@@ -218,13 +389,38 @@ test.serial.only('single reference', async (t) => {
 
   db.drain()
 
-  t.deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
+  deepEqual(db.query('simple').include('id').range(0, 1).get().toObject(), [
     { id: 1 },
   ])
 
-  t.deepEqual(db.query('simple').include('user').range(0, 1).get().toObject(), [
+  deepEqual(
+    db.query('simple').include('user').range(0, 1).get().toObject(),
+    [
+      {
+        id: 1,
+        user: null,
+      },
+    ],
+    'Get first item user should be null',
+  )
+
+  console.log('\nSNURP SNURP -------')
+  deepEqual(
+    db.query('simple', lastID).include('user.location').get().toObject(),
     {
-      id: 1,
+      id: lastID,
+      user: {
+        id: 1,
+        location: { label: 'BLA BLA', x: 1, y: 2 },
+      },
+    },
+    'Get user location as part of simple',
+  )
+
+  deepEqual(
+    db.query('simple', lastID).include('user').get().toObject(),
+    {
+      id: lastID,
       user: {
         id: 1,
         name: 'Jim de Beer',
@@ -236,39 +432,66 @@ test.serial.only('single reference', async (t) => {
         location: { label: 'BLA BLA', x: 1, y: 2 },
       },
     },
-  ])
-
-  t.deepEqual(
-    db.query('simple').include('user.myBlup').range(0, 1).get().toObject(),
-    [{ id: 1, user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } } }],
+    'Get user as part of simple',
   )
 
-  t.deepEqual(
+  deepEqual(
     db
-      .query('simple')
-      .include('user.myBlup', 'lilBlup')
-      .range(0, 1)
+      .query('simple') // lastID
+      .include('user.myBlup')
+      .range(lastID - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: 1,
+        id: lastID,
         user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
-        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
       },
     ],
+    'Get userMyBlup',
   )
 
-  t.deepEqual(
+  deepEqual(
+    db.query('simple', lastID).include('user.myBlup').get().toObject(),
+    {
+      id: lastID,
+      user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
+    },
+    'Get single id myBlup ',
+  )
+
+  console.log('======= SNURP =======')
+  deepEqual(
+    db
+      .query('simple', lastID)
+      .include('user.myBlup', 'lilBlup')
+      .get()
+      .toObject(),
+    {
+      id: lastID,
+      user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
+      lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+    },
+    'Get single id myBlup & lilBlup',
+  )
+
+  equal(
+    db.query('simple', lastID).include('user.myBlup').get().node().user.myBlup
+      .flap,
+    'A',
+    'Read nested field with getter',
+  )
+
+  deepEqual(
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup', 'user.name')
-      .range(0, 1)
+      .range(lastID - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: 1,
+        id: lastID,
         user: {
           id: 1,
           myBlup: { id: 1, flap: 'A', name: 'blup !' },
@@ -277,33 +500,29 @@ test.serial.only('single reference', async (t) => {
         lilBlup: { id: 1, flap: 'A', name: 'blup !' },
       },
     ],
+    'Get user.name, user.myBlup and lilBlup of offset last',
   )
 
-  t.deepEqual(
-    db
-      .query('simple')
-      .include('user.location.label')
-      .range(0, 1)
-      .get()
-      .toObject(),
-    [{ id: 1, user: { id: 1, location: { label: 'BLA BLA' } } }],
+  deepEqual(
+    db.query('simple', lastID).include('user.location.label').get().toObject(),
+    { id: lastID, user: { id: 1, location: { label: 'BLA BLA' } } },
   )
 
-  t.deepEqual(
-    db.query('simple').include('user.location').range(0, 1).get().toObject(),
-    [{ id: 1, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } }],
+  deepEqual(
+    db.query('simple', lastID).include('user.location').get().toObject(),
+    { id: lastID, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } },
   )
 
-  t.deepEqual(
+  deepEqual(
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup')
-      .range(0, 1)
+      .range(lastID - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: 1,
+        id: lastID,
         user: {
           id: 1,
           myBlup: {
@@ -321,16 +540,18 @@ test.serial.only('single reference', async (t) => {
     ],
   )
 
-  t.deepEqual(
+  console.log('\nGURP SNURP SNURP')
+
+  deepEqual(
     db
       .query('simple')
       .include('user', 'user.myBlup')
-      .range(0, 1)
+      .range(lastID - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: 1,
+        id: lastID,
         user: {
           id: 1,
           name: 'Jim de Beer',
@@ -344,38 +565,34 @@ test.serial.only('single reference', async (t) => {
         },
       },
     ],
+    'get nested userMyBlup and user',
   )
 
-  t.deepEqual(
+  deepEqual(
     db
-      .query('simple')
+      .query('simple', lastID)
       .include('user', 'user.myBlup', 'lilBlup')
-      .range(0, 1)
       .get()
       .toObject(),
-    [
-      {
+    {
+      id: lastID,
+      user: {
         id: 1,
-        user: {
-          id: 1,
-          myBlup: { id: 1, flap: 'A', name: 'blup !' },
-          name: 'Jim de Beer',
-          flap: 10,
-          email: 'person@once.net',
-          age: 99,
-          snurp: '',
-          burp: 0,
-          location: { label: 'BLA BLA', x: 1, y: 2 },
-        },
-        lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+        name: 'Jim de Beer',
+        flap: 10,
+        email: 'person@once.net',
+        age: 99,
+        snurp: '',
+        burp: 0,
+        location: { label: 'BLA BLA', x: 1, y: 2 },
+        myBlup: { id: 1, flap: 'A', name: 'blup !' },
       },
-    ],
+      lilBlup: { id: 1, flap: 'A', name: 'blup !' },
+    },
   )
-
-  await db.destroy()
 })
 
-test.serial('single reference multi refs strings', async (t) => {
+await test('single reference multi refs strings', async (t) => {
   try {
     await fs.rm(dbFolder, { recursive: true })
   } catch (err) {}
@@ -385,18 +602,42 @@ test.serial('single reference multi refs strings', async (t) => {
   const db = new BasedDb({
     path: dbFolder,
   })
+
   await db.start()
+
+  t.after(() => {
+    return db.destroy()
+  })
 
   db.updateSchema({
     types: {
       user: {
         fields: {
           name: { type: 'string' },
-          myBlup: { type: 'reference', allowedType: 'blup' },
+          myBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'user',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'user',
+          },
         },
       },
       blup: {
         fields: {
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'myBlup',
+          },
+          simple: {
+            type: 'reference',
+            allowedType: 'simple',
+            inverseProperty: 'lilBlup',
+          },
           name: { type: 'string' },
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
@@ -405,8 +646,16 @@ test.serial('single reference multi refs strings', async (t) => {
       simple: {
         fields: {
           age: { type: 'integer' },
-          lilBlup: { type: 'reference', allowedType: 'blup' },
-          user: { type: 'reference', allowedType: 'user' },
+          lilBlup: {
+            type: 'reference',
+            allowedType: 'blup',
+            inverseProperty: 'simple',
+          },
+          user: {
+            type: 'reference',
+            allowedType: 'user',
+            inverseProperty: 'simple',
+          },
         },
       },
     },
@@ -432,7 +681,7 @@ test.serial('single reference multi refs strings', async (t) => {
     .get()
 
   for (const r of result) {
-    t.is(r.lilBlup.name, '')
+    equal(r.lilBlup.name, '')
   }
 
   db.create('simple', {
@@ -447,13 +696,11 @@ test.serial('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  t.deepEqual(result2.toObject(), [
+  deepEqual(result2.toObject(), [
     {
       id: 2,
       user: null,
       lilBlup: null,
     },
   ])
-
-  await db.destroy()
 })

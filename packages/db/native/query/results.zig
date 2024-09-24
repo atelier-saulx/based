@@ -12,13 +12,12 @@ const writeInt = utils.writeInt;
 pub const Result = struct {
     id: ?u32,
     field: u8,
+    refType: ?u8, // 253 | 254
     val: ?[]u8,
-    start: ?u16,
+    refSize: ?usize,
     includeMain: []u8,
-    refLvl: u8,
+    totalRefs: ?usize,
 };
-
-const MAX_REF = 65025;
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
@@ -32,32 +31,32 @@ pub fn createResultsBuffer(
     }
 
     var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
-    var lastRef: u16 = MAX_REF;
-    var lastRefLvl: u8 = 0;
     var i: usize = 4;
 
     writeInt(u32, data, 0, ctx.totalResults);
 
     for (ctx.results.items) |*item| {
-        if (item.start != null) {
-            if (lastRef != item.start.? or lastRefLvl != item.refLvl) {
-                lastRef = item.start.?;
-                lastRefLvl = item.refLvl;
+        if (item.refType != null) {
+            if (item.refType == 254) {
+                // SINGLE REF
+                // op, field, bytes
+                // [254, 2, 4531] // NULL if zero length
                 data[i] = 254;
-                i += 1;
-                if (item.refLvl > 1) {
-                    data[i] = 1;
-                } else {
-                    data[i] = 0;
-                }
-                i += 1;
-                writeInt(u16, data, i, lastRef);
-                i += 2;
-                writeInt(u32, data, i, item.id.?);
-                i += 4;
+                data[i + 1] = item.field;
+                writeInt(u32, data, i + 2, item.refSize.?);
+                i += 6;
+            } else if (item.refType == 253) {
+                // MULTIPLE REFS
+                // op, field, bytes, len (u32)  (max 4.2GB)
+                // [253, 2, 2124, 10]
+                data[i] = 253;
+                data[i + 1] = item.field;
+                writeInt(u32, data, i + 2, item.refSize.?);
+                writeInt(u32, data, i + 6, item.totalRefs.?);
+                i += 10;
             }
+            continue;
         } else {
-            lastRef = MAX_REF;
             if (item.id != null) {
                 data[i] = 255;
                 i += 1;
@@ -88,6 +87,7 @@ pub fn createResultsBuffer(
                     const len = readInt(u16, operation, 2);
                     @memcpy(data[i .. i + len], val[start .. start + len]);
                     i += len;
+
                     mainPos += 4;
                 }
             } else {
@@ -95,8 +95,9 @@ pub fn createResultsBuffer(
                 i += val.len;
             }
         } else {
-            writeInt(u16, data, i, val.len);
-            i += 2;
+            writeInt(u32, data, i, val.len);
+            i += 4;
+
             @memcpy(data[i .. i + val.len], val);
             i += val.len;
         }

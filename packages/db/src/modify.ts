@@ -83,7 +83,27 @@ const addModify = (
       }
     } else {
       const t = leaf as FieldDef
-      if (t.type === 'references') {
+
+      if (t.type === 'reference') {
+        if (value === null) {
+          const nextLen = 1 + 4 + 1
+          if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.field, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
+          db.modifyBuffer.len++
+        } else {
+          if (5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.field, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          // if value == null...
+          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 1)
+          db.modifyBuffer.len += 5
+        }
+      } else if (t.type === 'references') {
         const refLen = 4 * value.length
         if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
           flushBuffer(db)
@@ -100,7 +120,7 @@ const addModify = (
         }
         db.modifyBuffer.len += refLen
       } else if (t.type === 'string' && t.seperate === true) {
-        const len = value.length
+        const len = value === null ? 0 : value.length
         if (len === 0) {
           if (!fromCreate) {
             const nextLen = 1 + 4 + 1
@@ -108,7 +128,7 @@ const addModify = (
               flushBuffer(db)
             }
             setCursor(db, schema, t.field, id, false, fromCreate)
-            db.modifyBuffer.buffer[db.modifyBuffer.len] = 8
+            db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
             db.modifyBuffer.len++
           }
         } else {
@@ -179,7 +199,7 @@ const addModify = (
           }
         } else if (t.type === 'timestamp' || t.type === 'number') {
           db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
-        } else if (t.type === 'integer' || t.type === 'reference') {
+        } else if (t.type === 'integer') {
           db.modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
         } else if (t.type === 'boolean') {
           db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
@@ -224,6 +244,8 @@ export const create = (db: BasedDb, type: string, value: any) => {
     !addModify(db, id, value, def.tree, def, 3, false, true) ||
     def.mainLen === 0
   ) {
+    setCursor(db, def, 0, id, false, true)
+
     // FIXI FIX
     // const nextLen = 5 + def.mainLen
     // if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {

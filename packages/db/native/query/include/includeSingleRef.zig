@@ -4,6 +4,8 @@ const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
+const std = @import("std");
+const results = @import("../results.zig");
 
 const IncludeError = error{
     Recursion,
@@ -12,43 +14,53 @@ const IncludeError = error{
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
-    main: []u8,
-    refLvl: u8,
-    hasFields: bool,
+    originalNode: db.Node,
 ) usize {
     var size: usize = 0;
+    const typeId: db.TypeId = readInt(u16, include, 0);
+    const refField = include[2];
+    const node = db.getReference(originalNode, refField);
 
-    // GET SELVA NODE
+    // SINGLE REF
+    // op, field, bytes
+    // u8, u8, u32
+    // [254, 2, 4531]
 
-    const typeId: db.TypeId = .{ include[0], include[1] };
-    const start = readInt(u16, include, 2);
-    const refId = readInt(u32, main, start);
+    ctx.results.append(.{
+        .id = null,
+        .field = refField,
+        .val = null,
+        .refSize = 0,
+        .includeMain = &.{},
+        .refType = 254,
+        .totalRefs = null,
+    }) catch return 0;
 
-    // TODO: make test for this ref undefined
-    if (refId == 0) {
-        return 0;
+    const resultIndex: usize = ctx.results.items.len - 1;
+
+    if (node == null) {
+        return 6;
     }
 
-    if (!hasFields) {
-        _ = addIdOnly(ctx, refId, refLvl + 1, start) catch {
-            return 0;
-        };
-    }
+    const refId = db.getNodeId(node.?);
 
-    const includeNested = include[4..include.len];
+    const typeEntry = db.getType(typeId) catch {
+        return 6;
+    };
 
-    const selvaTypeEntry: *selva.SelvaTypeEntry = selva.selva_get_type_by_index(db.ctx.selva.?, @bitCast(typeId)).?;
+    const includeNested = include[3..include.len];
 
     const resultSizeNest = getFields(
+        node.?,
         ctx,
         refId,
-        selvaTypeEntry,
-        start,
+        typeEntry,
         includeNested,
-        refLvl + 1,
     ) catch 0;
 
-    size += 8 + resultSizeNest;
+    ctx.results.items[resultIndex].refSize = resultSizeNest;
+
+    size += 6 + resultSizeNest;
 
     return size;
 }

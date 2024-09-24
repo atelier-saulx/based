@@ -34,8 +34,7 @@ export const get = (query: Query): BasedQueryResponse => {
       }
       result = query.db.native.getQueryIdsSort(
         conditionsBuffer,
-        query.schema.prefixString,
-        query.schema.lastId,
+        query.schema.prefixNumber,
         start,
         end,
         idsBuffer,
@@ -55,7 +54,7 @@ export const get = (query: Query): BasedQueryResponse => {
       }
       result = query.db.native.getQueryByIds(
         conditionsBuffer,
-        query.schema.prefixString,
+        query.schema.prefixNumber,
         idsBuffer,
         includeBuffer,
       )
@@ -63,7 +62,7 @@ export const get = (query: Query): BasedQueryResponse => {
   } else if (query.id) {
     result = query.db.native.getQueryById(
       conditionsBuffer,
-      query.schema.prefixString,
+      query.schema.prefixNumber,
       query.id,
       includeBuffer,
     )
@@ -72,8 +71,7 @@ export const get = (query: Query): BasedQueryResponse => {
     const end = query.limit ?? 1e3
     result = query.db.native.getQuerySort(
       conditionsBuffer,
-      query.schema.prefixString,
-      query.schema.lastId,
+      query.schema.prefixNumber,
       start,
       end,
       includeBuffer,
@@ -85,13 +83,14 @@ export const get = (query: Query): BasedQueryResponse => {
     const end = query.limit ?? 1e3
     result = query.db.native.getQuery(
       conditionsBuffer,
-      query.schema.prefixString,
-      query.schema.lastId,
+      query.schema.prefixNumber,
       start,
       end,
       includeBuffer,
     )
   }
+
+  // console.info('QUERY RESULT', new Uint8Array(result))
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

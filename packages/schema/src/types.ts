@@ -36,6 +36,22 @@ export type SchemaNumber = Prop<{
   step: number | 'any'
 }>
 
+export type SchemaExactNumber = Prop<{
+  type:
+    | 'float32'
+    | 'float64'
+    | 'int8'
+    | 'uint8'
+    | 'int16'
+    | 'uint16'
+    | 'int32'
+    | 'uint32'
+  default?: number
+  min?: number
+  max?: number
+  step?: number | 'any'
+}>
+
 export type SchemaString = Prop<{
   type: 'string'
   default?: string
@@ -89,6 +105,7 @@ type NonRefSchemaProps =
   | SchemaString
   | SchemaText
   | SchemaEnum
+  | SchemaExactNumber
 
 export type SchemaProp =
   | NonRefSchemaProps
@@ -112,6 +129,7 @@ export type SchemaType = {
   }
   props: Record<string, SchemaProp>
 }
+
 export type SchemaProps = Record<string, SchemaProp>
 export type SchemaTypes = Record<string, SchemaType>
 export type SchemaRootProps = Record<string, SchemaRootProp>
