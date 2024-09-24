@@ -10,8 +10,6 @@ type Prop<V extends PropValues> = {
   query?: QueryFn
 } & V
 
-type PropWithShorthand<V extends PropValues> = V['type'] | Prop<V>
-
 type EnumItem = string | number | boolean
 
 export type SchemaReferences = Prop<{
@@ -53,7 +51,7 @@ export type SchemaExactNumber = Prop<{
   step?: number | 'any'
 }>
 
-export type SchemaString = PropWithShorthand<{
+export type SchemaString = Prop<{
   type: 'string'
   default?: string
   maxBytes?: number
@@ -103,7 +101,13 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaShorthandProp = 'string' | 'boolean'
+export type SchemaShorthandProp = (
+  | SchemaText
+  | SchemaNumber
+  | SchemaString
+  | SchemaTimestamp
+  | SchemaBoolean
+)['type']
 
 type SetItems =
   | SchemaNumber
@@ -128,6 +132,7 @@ type NonRefSchemaProps =
   | SchemaEnum
   | SchemaExactNumber
   | SchemaSet
+  | SchemaShorthandProp
 
 export type SchemaProp =
   | NonRefSchemaProps
