@@ -42,7 +42,7 @@ struct SelvaNode {
          * This pointer is tagged with PTAG.
          * - 1 = shared i.e. refcount == 1
          */
-        void *data __counted_by(data_len);
+        void *data __pcounted_by(data_len);
         struct {
             uint32_t data_len: 24;
             field_t nr_fields: 8;
