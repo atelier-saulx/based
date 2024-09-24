@@ -37,17 +37,6 @@ enum SelvaFieldType {
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         /**
-         * Bidirectional reference.
-         * TODO Is this needed if edges are always bidir.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x01,
-        /**
-         * Edge field array mode.
-         * By default an edge field acts like a set. This flag makes the field work like an array.
-         * FIXME
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x02,
-        /**
          * Skip saving this field while dumping.
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
