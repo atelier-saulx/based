@@ -104,6 +104,7 @@ export type SchemaEnum = Prop<{
 export type SchemaShorthandProp = (
   | SchemaText
   | SchemaNumber
+  | SchemaExactNumber
   | SchemaString
   | SchemaTimestamp
   | SchemaBoolean
@@ -111,7 +112,6 @@ export type SchemaShorthandProp = (
 
 type SetItems =
   | SchemaNumber
-  | SchemaExactNumber
   | SchemaString
   | SchemaTimestamp
   | SchemaBoolean
