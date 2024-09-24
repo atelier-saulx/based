@@ -11,6 +11,7 @@ test('path', () => {
             type: 'string',
           },
           teams: {
+            // type: 'references',
             items: {
               ref: 'team',
               prop: 'club',

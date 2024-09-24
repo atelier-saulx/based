@@ -1,37 +1,31 @@
 import { getPropType } from './parseSchema/utils.js'
 
 type QueryFn = Function
-type Prop<Values extends { type?: string; default?: any }> = {
+type PropValues = { type?: string; default?: any }
+type Prop<V extends PropValues> = {
   required?: boolean
   label?: Record<string, string>
   description?: Record<string, string>
   path?: string
   query?: QueryFn
-} & Values
+} & V
 
-type NonRefSetItems =
+type SetItems =
   | SchemaNumber
   | SchemaString
   | SchemaTimestamp
   | SchemaBoolean
-
-type Set<
-  ItemsType extends NonRefSetItems | SchemaReference | SchemaReferenceOneWay,
-> = Prop<{
-  type?: 'set'
-  default?: ItemsType['default']
-  items: ItemsType
-}>
+  | SchemaEnum
 
 type EnumItem = string | number | boolean
 
 export type SchemaReferences = Prop<{
-  type: 'references'
+  type?: 'references'
   items: SchemaReference
 }>
 
 export type SchemaReferencesOneWay = Prop<{
-  type: 'references'
+  type?: 'references'
   items: SchemaReferenceOneWay
 }>
 
@@ -87,7 +81,7 @@ export type SchemaReference = Prop<{
   default?: string
   ref: string
   prop: string
-  edge?: SchemaRootObject
+  edge?: SchemaObjectOneWay
 }>
 
 export type SchemaObject = Prop<{
@@ -95,13 +89,18 @@ export type SchemaObject = Prop<{
   props: SchemaProps
 }>
 
-export type SchemaRootObject = Prop<{
+export type SchemaObjectOneWay = Prop<{
   type?: 'object'
   props: SchemaRootProps
 }>
 
 export type SchemaReferenceOneWay = Omit<SchemaReference, 'prop' | 'edge'>
-export type SchemaReferenceQuery = SchemaReferenceOneWay & { query: QueryFn }
+export type SchemaReferenceWithQuery = SchemaReferenceOneWay & {
+  query: QueryFn
+}
+export type SchemaReferencesWithQuery = SchemaReferencesOneWay & {
+  query: QueryFn
+}
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
@@ -109,9 +108,11 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaSetQuery = Set<SchemaReferenceOneWay> & { query: QueryFn }
-export type SchemaSet = Set<NonRefSetItems | SchemaReference> | SchemaSetQuery
-export type SchemaSetOneWay = Set<NonRefSetItems | SchemaReferenceOneWay>
+export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
+  type?: 'set'
+  default?: ItemsType['default']
+  items: ItemsType
+}>
 
 type NonRefSchemaProps =
   | SchemaBoolean
@@ -121,20 +122,21 @@ type NonRefSchemaProps =
   | SchemaText
   | SchemaEnum
   | SchemaExactNumber
+  | SchemaSet
 
 export type SchemaProp =
   | NonRefSchemaProps
-  | SchemaSet
   | SchemaReference
+  | SchemaReferenceWithQuery
   | SchemaReferences
+  | SchemaReferencesWithQuery
   | SchemaObject
 
 export type SchemaRootProp =
   | NonRefSchemaProps
-  | SchemaSetOneWay
   | SchemaReferenceOneWay
   | SchemaReferencesOneWay
-  | SchemaRootObject
+  | SchemaObjectOneWay
 
 export type SchemaAnyProp = SchemaRootProp | SchemaProp
 

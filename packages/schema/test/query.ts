@@ -8,7 +8,6 @@ test('query', () => {
       author: {
         props: {
           top10Articles: {
-            type: 'set',
             items: {
               ref: 'article',
             },

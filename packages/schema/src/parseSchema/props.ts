@@ -5,13 +5,13 @@ import {
   SchemaNumber,
   SchemaReferenceOneWay,
   SchemaReference,
-  SchemaSetOneWay,
   SchemaSet,
   SchemaString,
   SchemaTimestamp,
   SchemaText,
   SchemaObject,
-  SchemaRootObject,
+  SchemaObjectOneWay,
+  SchemaReferences,
 } from '../types.js'
 import {
   expectBoolean,
@@ -159,7 +159,7 @@ p.number = propParser<SchemaNumber>(
   },
 )
 
-p.object = propParser<SchemaObject | SchemaRootObject>(
+p.object = propParser<SchemaObject | SchemaObjectOneWay>(
   {
     props(val, prop, ctx) {
       ctx.parseProps(val, ctx.type)
@@ -226,7 +226,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
   },
 )
 
-p.set = propParser<SchemaSet | SchemaSetOneWay>(
+p.set = propParser<SchemaSet>(
   {
     items(items, prop, ctx) {
       expectObject(items)
@@ -234,13 +234,38 @@ p.set = propParser<SchemaSet | SchemaSetOneWay>(
       if (
         itemsType === 'string' ||
         itemsType === 'number' ||
-        itemsType === 'reference' ||
         itemsType === 'timestamp' ||
         itemsType === 'boolean'
       ) {
         ctx.inQuery = 'query' in prop
         p[itemsType](items, ctx)
         ctx.inQuery = false
+      } else {
+        throw new Error(INVALID_VALUE)
+      }
+    },
+  },
+  {
+    default(val, prop) {
+      console.warn('TODO SET DEFAULT VALUE')
+      // if (typeof val === 'object') {
+      //   throwErr(ERRORS.EXPECTED_PRIMITIVE, prop, 'default')
+      // }
+    },
+  },
+)
+
+p.references = propParser<SchemaReferences>(
+  {
+    items(items, prop, ctx) {
+      expectObject(items)
+      const itemsType = getPropType(items)
+      if (itemsType === 'reference') {
+        ctx.inQuery = 'query' in prop
+        p[itemsType](items, ctx)
+        ctx.inQuery = false
+      } else {
+        throw new Error(INVALID_VALUE)
       }
     },
   },
