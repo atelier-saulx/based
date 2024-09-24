@@ -181,13 +181,28 @@
 /**
  * struct foo {
  *     unsigned int len;
- *     char buf[] __attribute__((__element_count__(len)));
+ *     char buf[] __counted_by(len);
  * };
  * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf)
  */
 #define __counted_by(member) __attribute__((__counted_by__(member)))
 #else
 #define __counted_by(member)
+#endif
+#endif
+
+#ifndef __pcounted_by
+#if __has_attribute(__counted_by__) && !defined(__clang__)
+/**
+ * struct foo {
+ *     unsigned int len;
+ *     char *buf __pcounted_by(len);
+ * };
+ * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf)
+ */
+#define __pcounted_by(member) __attribute__((__counted_by__(member)))
+#else
+#define __pcounted_by(member)
 #endif
 #endif
 

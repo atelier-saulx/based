@@ -2,9 +2,10 @@ import { BasedDb, SchemaTypeDef } from '../index.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Operation, QueryIncludeDef, QueryConditions } from './types.js'
 import { get } from './get.js'
-import { filter } from './filter.js'
+import { addConditions, filter } from './filter.js'
 import { inspect } from 'node:util'
 import { sort } from './sort.js'
+import { BranchInclude, Select } from './branch.js'
 
 export class Query {
   db: BasedDb
@@ -26,7 +27,6 @@ export class Query {
     this.db = db
     let typeDef = this.db.schemaTypesParsed[target]
     this.schema = typeDef
-
     if (id) {
       if (Array.isArray(id)) {
         id.sort((a, b) => {
@@ -42,7 +42,14 @@ export class Query {
   filter(field: string, operator: Operation, value: any) {
     this.totalConditionSize ??= 0
     this.conditions ??= { conditions: new Map() }
-    filter(field, operator, value, this.schema, this.conditions, this)
+    this.totalConditionSize += filter(
+      field,
+      operator,
+      value,
+      this.schema,
+      this.conditions,
+      this,
+    )
     return this
   }
 
@@ -52,7 +59,7 @@ export class Query {
     return this
   }
 
-  include(...fields: string[]) {
+  include(...fields: (string | BranchInclude | undefined)[]) {
     if (!this.includeDef) {
       this.includeDef = {
         includePath: [],
@@ -63,11 +70,60 @@ export class Query {
         mainIncludes: {},
         includeTree: [],
         multiple: false,
+        referencesFilters: {},
       }
     }
+
     for (const f of fields) {
-      this.includeDef.includeFields.add(f)
+      if (typeof f === 'string') {
+        this.includeDef.includeFields.add(f)
+      } else if (typeof f === 'function') {
+        // ------------------------------- fix that it becomes recursive..
+        var selects = []
+        const select = (field: string) => {
+          const s = new Select(field, this)
+          selects.push(s)
+          return s
+        }
+        f(select)
+        for (const s of selects) {
+          const fieldDef = this.includeDef.schema.fields[s.field]
+
+          const fSchema = this.db.schemaTypesParsed[fieldDef.allowedType]
+
+          if (s.filters.length) {
+            if (fieldDef.type === 'references') {
+              if (!this.includeDef.referencesFilters[s.field]) {
+                this.includeDef.referencesFilters[s.field] = {
+                  conditions: new Map(),
+                  size: 0,
+                }
+              }
+              const conditions = this.includeDef.referencesFilters[s.field]
+              for (const f of s.filters) {
+                conditions.size += filter(
+                  f.field,
+                  f.operator,
+                  f.value,
+                  fSchema,
+                  conditions,
+                  this,
+                )
+              }
+            } else {
+              console.error('Cannot filter other fields then references..')
+            }
+          }
+          if (s.includes.length) {
+            for (const include of s.includes) {
+              this.includeDef.includeFields.add(s.field + '.' + include)
+            }
+          }
+        }
+        // -------------------------------
+      }
     }
+
     return this
   }
 

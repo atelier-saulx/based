@@ -342,11 +342,16 @@ await test('filter', async (t) => {
     flap: 30,
   })
 
+  const dinkelDoink = db.create('user', {
+    name: 'Dinkel Doink',
+    flap: 40,
+  })
+
   db.drain()
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
-    contributors: [mrSnurp, flippie, derpie],
+    contributors: [mrSnurp, flippie, derpie, dinkelDoink],
   })
 
   db.drain()
@@ -357,6 +362,73 @@ await test('filter', async (t) => {
       .include('contributors')
       .get()
       .toObject(),
-    { id: 1, contributors: { id: 1, flap: 10, name: 'Mr snurp' } },
+    {
+      id: 1,
+      contributors: [
+        { id: 1, flap: 10, name: 'Mr snurp' },
+        { id: 2, flap: 20, name: 'Flippie' },
+        { id: 3, flap: 30, name: 'Derpie' },
+        { id: 4, flap: 40, name: 'Dinkel Doink' },
+      ],
+    },
+    'Get reference one get by id',
   )
+
+  deepEqual(
+    db
+      .query('article', strudelArticle)
+      .include((select) => {
+        select('contributors').include('name').filter('flap', '>', 25)
+      })
+      .get()
+      .toObject(),
+    {
+      id: 1,
+      contributors: [
+        { id: 3, name: 'Derpie' },
+        { id: 4, name: 'Dinkel Doink' },
+      ],
+    },
+    'Filter references',
+  )
+
+  deepEqual(
+    db
+      .query('article', strudelArticle)
+      .include((select) => {
+        select('contributors').include('flap')
+        select('contributors').include('name')
+
+        select('contributors').filter('flap', '>', 25)
+        select('contributors').filter('flap', '<', 35)
+      })
+      .get()
+      .toObject(),
+    {
+      id: 1,
+      contributors: [{ id: 3, name: 'Derpie', flap: 30 }],
+    },
+    'Filter references multi select',
+  )
+
+  // deepEqual(
+  //   db
+  //     .query('article', strudelArticle)
+  //     .include((select) => {
+  //       select('contributors')
+  //         .include('name')
+  //         .include('flap')
+  //         .filter('flap', '>', 25)
+  //     })
+  //     .get()
+  //     .toObject(),
+  //   {
+  //     id: 1,
+  //     contributors: [
+  //       { id: 3, name: 'Derpie', flap: 30 },
+  //       { id: 3, flap: 40, name: 'Dinkel Doink' },
+  //     ],
+  //   },
+  //   'Filter references and sort',
+  // )
 })

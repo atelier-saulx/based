@@ -544,22 +544,23 @@ static void remove_weak_reference(struct SelvaNode *src, const struct SelvaField
     }
 }
 
-__attribute__((nonnull (1)))
-static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    struct SelvaFieldsAny any;
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+    struct SelvaNodeReferences *refs;
 
-    any = selva_fields_get2(&node->fields, fs->field);
-    if (!(any.type == SELVA_FIELD_TYPE_REFERENCES && any.references)) {
-        /* TODO Log error? */
-        return;
+    if (nfo->type != SELVA_FIELD_TYPE_REFERENCES) {
+        return NULL;
     }
 
-    while (any.references->nr_refs > 0) {
+    refs = nfo2p(fields, nfo);
+    assert(((uintptr_t)refs & 7) == 0);
+    while (refs->nr_refs > 0) {
         /*
          * Deleting the last ref first is faster because a memmove() is not needed.
          */
-        node_id_t dst_node_id = any.references->refs[any.references->nr_refs - 1].dst->node_id;
+        node_id_t dst_node_id = refs->refs[refs->nr_refs - 1].dst->node_id;
 
         /*
          * Note that we rely on the fact that the refs pointer doesn't change on delete.
@@ -567,7 +568,16 @@ static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const 
         remove_reference(db, node, fs, dst_node_id);
     }
 
-    selva_free(any.references->refs - any.references->offset);
+    return refs;
+}
+
+__attribute__((nonnull (1)))
+static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaNodeReferences *refs = clear_references(db, node, fs);
+    if (refs) {
+        selva_free(refs->refs - refs->offset);
+    }
 }
 
 static void remove_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
@@ -599,9 +609,11 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
         }
     } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences refs;
-        const node_id_t great_id = idz_unpack(refs.great_idz);
+        node_id_t great_id;
 
         memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
+        great_id = idz_unpack(refs.great_idz);
+
         if (dst->node_id <= great_id || great_id == 0) {
             for (size_t i = 0; i < refs.nr_refs; i++) {
                 struct SelvaNode *tmp = refs.refs[i].dst;
@@ -886,7 +898,6 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-
     /*
      * It's cheaper/faster to check from a reference field rather
      * than a references field.
@@ -991,9 +1002,8 @@ int selva_fields_references_move(
          *           +-----f-----+
          *
          * First fill the hole.
-         * FIXME warning: ‘__builtin_memmove’ specified bound between 18446744004990074912 and 18446744073709551600 exceeds maximum object size 9223372036854775807
          */
-        memmove(refs.refs + index_new + 1, refs.refs + index_new, (index_new - index_old) * sizeof(*refs.refs));
+        memmove(refs.refs + index_new + 1, refs.refs + index_new, (index_old - index_new) * sizeof(*refs.refs));
         /*
          *   0   1   2   3   4   5   6
          * | a | b |   | c | d | e | g |
@@ -1269,9 +1279,8 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
 }
 
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs)
+struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)
 {
-    struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
 
     if (fs->field >= fields->nr_fields) {
@@ -1333,6 +1342,11 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct Se
         static_assert(offsetof(struct SelvaMicroBuffer, data) == sizeof_field(struct SelvaMicroBuffer, len));
     }
     db_panic("Invalid type");
+}
+
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs)
+{
+    return selva_fields_get_raw2(&node->fields, fs);
 }
 
 static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
@@ -1441,6 +1455,11 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t fie
 
     remove_reference(db, node, fs, dst_node_id);
     return 0;
+}
+
+void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+{
+    (void)clear_references(db, node, fs);
 }
 
 void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode *node)

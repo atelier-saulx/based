@@ -39,6 +39,7 @@ enum SelvaSortOrder {
 struct SelvaSortCtx;
 
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_len);
+void selva_sort_set_lang(struct SelvaSortCtx *ctx, const char lang[8]);
 void selva_sort_destroy(struct SelvaSortCtx *ctx);
 
 void selva_sort_insert(struct SelvaSortCtx *ctx, const void *p);

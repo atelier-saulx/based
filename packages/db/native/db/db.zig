@@ -99,6 +99,10 @@ pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
+pub fn clearReferences(node: Node, selvaFieldSchema: FieldSchema) void {
+    selva.selva_fields_clear_references(ctx.selva, node, selvaFieldSchema);
+}
+
 pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
@@ -145,6 +149,19 @@ pub fn moveReference(node: Node, fieldSchema: FieldSchema, index_old: selva.user
 
 pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_ssize_t, index_b: selva.user_ssize_t) !void {
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
+}
+
+pub fn getEdgeProp(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
+    if (ref.meta) {
+        return null;
+    } else {
+        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(ref.meta, selvaFieldSchema);
+        return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
+    }
+}
+
+pub fn writeEdgeProp(data: []u8, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.SelvaNodeReference, field: u8) !void {
+    try errors.selva(selva.selva_fields_set_reference_meta(node, ref, efc, field, data.ptr, data.len));
 }
 
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
