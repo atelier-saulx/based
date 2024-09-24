@@ -37,6 +37,9 @@ endif
 locale-linux:
 	$(MAKE) -C locale LOCPATH=../../build/locale
 
+test:
+	$(MAKE) -C test
+
 clean:
 	find . -type f -name "*.d" -exec rm -f {} \;
 	find . -type f -name "*.o" -exec rm -f {} \;
@@ -46,5 +49,5 @@ clean:
 	find ./lib \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all clean lib $(LIBS) nodeselva locale locale-linux
+.PHONY: all clean lib $(LIBS) nodeselva locale locale-linux test
 .NOTPARALLEL:
