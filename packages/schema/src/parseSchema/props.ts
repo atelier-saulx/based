@@ -62,7 +62,7 @@ const shared: PropsFns<SchemaAnyProp> = {
       t = t.props[key]
       expectObject(t)
     }
-    if (t.type !== prop.type) {
+    if (t.type !== getPropType(prop)) {
       throw Error(TYPE_MISMATCH)
     }
   },

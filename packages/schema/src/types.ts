@@ -10,12 +10,7 @@ type Prop<V extends PropValues> = {
   query?: QueryFn
 } & V
 
-type SetItems =
-  | SchemaNumber
-  | SchemaString
-  | SchemaTimestamp
-  | SchemaBoolean
-  | SchemaEnum
+type PropWithShorthand<V extends PropValues> = V['type'] | Prop<V>
 
 type EnumItem = string | number | boolean
 
@@ -58,7 +53,7 @@ export type SchemaExactNumber = Prop<{
   step?: number | 'any'
 }>
 
-export type SchemaString = Prop<{
+export type SchemaString = PropWithShorthand<{
   type: 'string'
   default?: string
   maxBytes?: number
@@ -108,9 +103,19 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
+export type SchemaShorthandProp = 'string' | 'boolean'
+
+type SetItems =
+  | SchemaNumber
+  | SchemaString
+  | SchemaTimestamp
+  | SchemaBoolean
+  | SchemaEnum
+  | SchemaShorthandProp
+
 export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
   type?: 'set'
-  default?: ItemsType['default']
+  default?: ItemsType extends { default } ? ItemsType['default'][] : undefined
   items: ItemsType
 }>
 
@@ -139,22 +144,23 @@ export type SchemaRootProp =
   | SchemaObjectOneWay
 
 export type SchemaAnyProp = SchemaRootProp | SchemaProp
-
 export type SchemaHook = string | Function
-
+export type SchemaProps = Record<string, SchemaProp>
 export type SchemaType = {
   hooks?: {
-    create: SchemaHook
-    update: SchemaHook
-    delete: SchemaHook
+    create?: SchemaHook
+    update?: SchemaHook
+    delete?: SchemaHook
   }
   id?: number
-  props: Record<string, SchemaProp>
+  props: SchemaProps
 }
 
-export type SchemaProps = Record<string, SchemaProp>
 export type SchemaTypes = Record<string, SchemaType>
-export type SchemaRootProps = Record<string, SchemaRootProp>
+export type SchemaRootProps = Record<
+  string,
+  SchemaRootProp | SchemaShorthandProp
+>
 
 export type Schema = {
   types?: SchemaTypes
@@ -183,7 +189,8 @@ export type SchemaPropTypeMap = {
   references: SchemaReferences
 } & Record<SchemaExactNumber['type'], SchemaExactNumber>
 
-export const isPropType = <T extends SchemaProp['type']>(
+export type SchemaPropTypes = keyof SchemaPropTypeMap
+export const isPropType = <T extends SchemaPropTypes>(
   type: T,
   prop: SchemaProp,
 ): prop is SchemaPropTypeMap[T] => {

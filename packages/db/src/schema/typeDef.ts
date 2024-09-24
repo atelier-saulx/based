@@ -64,12 +64,14 @@ export const createSchemaTypeDef = (
       let len = SIZE_MAP[propType]
 
       if (isPropType('string', f)) {
-        if (f.maxBytes < 60) {
-          len = f.maxBytes + 1
-        } else if (f.max < 30) {
-          len = f.max * 2 + 1
-        } else {
-          stringFields++
+        if (typeof f === 'object') {
+          if (f.maxBytes < 60) {
+            len = f.maxBytes + 1
+          } else if (f.max < 30) {
+            len = f.max * 2 + 1
+          } else {
+            stringFields++
+          }
         }
       }
 
