@@ -1,3 +1,5 @@
+import { getPropType } from './parseSchema/utils.js'
+
 type QueryFn = Function
 type Prop<Values extends { type?: string; default?: any }> = {
   required?: boolean
@@ -22,6 +24,16 @@ type Set<
 }>
 
 type EnumItem = string | number | boolean
+
+export type SchemaReferences = Prop<{
+  type: 'references'
+  items: SchemaReference
+}>
+
+export type SchemaReferencesOneWay = Prop<{
+  type: 'references'
+  items: SchemaReferenceOneWay
+}>
 
 export type SchemaText = Prop<{
   type: 'text'
@@ -55,6 +67,9 @@ export type SchemaExactNumber = Prop<{
 export type SchemaString = Prop<{
   type: 'string'
   default?: string
+  maxBytes?: number
+  max?: number
+  min?: number
 }>
 
 export type SchemaBoolean = Prop<{
@@ -111,22 +126,27 @@ export type SchemaProp =
   | NonRefSchemaProps
   | SchemaSet
   | SchemaReference
+  | SchemaReferences
   | SchemaObject
+
 export type SchemaRootProp =
   | NonRefSchemaProps
   | SchemaSetOneWay
   | SchemaReferenceOneWay
+  | SchemaReferencesOneWay
   | SchemaRootObject
 
 export type SchemaAnyProp = SchemaRootProp | SchemaProp
 
 export type SchemaHook = string | Function
+
 export type SchemaType = {
   hooks?: {
     create: SchemaHook
     update: SchemaHook
     delete: SchemaHook
   }
+  id?: number
   props: Record<string, SchemaProp>
 }
 
@@ -147,3 +167,23 @@ export type SchemaLocales = Record<
     fallback?: string[]
   }
 >
+
+export type SchemaPropTypeMap = {
+  string: SchemaString
+  number: SchemaNumber
+  object: SchemaObject
+  boolean: SchemaBoolean
+  timestamp: SchemaTimestamp
+  enum: SchemaEnum
+  text: SchemaText
+  set: SchemaSet
+  reference: SchemaReference
+  references: SchemaReferences
+} & Record<SchemaExactNumber['type'], SchemaExactNumber>
+
+export const isPropType = <T extends SchemaProp['type']>(
+  type: T,
+  prop: SchemaProp,
+): prop is SchemaPropTypeMap[T] => {
+  return getPropType(prop) === type
+}

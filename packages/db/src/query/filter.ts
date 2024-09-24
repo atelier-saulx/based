@@ -1,11 +1,11 @@
 import { Operation, operationToByte, QueryConditions } from './types.js'
 import { Query } from './query.js'
 import {
-  isFieldDef,
+  isPropDef,
   SchemaTypeDef,
-  SchemaFieldTree,
-  FieldDef,
-} from '../schemaTypeDef.js'
+  SchemaPropTree,
+  PropDef,
+} from '../schema/schema.js'
 
 // Query conditions: Map<number, Buffer[]>
 // does not work for recursion...
@@ -21,27 +21,25 @@ const filterReferences = (
 ): number => {
   var size = 0
   const path = fieldStr.split('.')
-  let t: FieldDef | SchemaFieldTree = schema.tree
+  let t: PropDef | SchemaPropTree = schema.tree
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
     t = t[p]
     if (!t) {
       return
     }
-    if (isFieldDef(t) && t.type === 'reference') {
-      const ref: FieldDef = t as FieldDef
-      const refField = ref.field
+    if (isPropDef(t) && t.typeIndex === 13) {
       conditions.references ??= new Map()
-      let refConditions = conditions.references.get(refField)
+      let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
-        const schema = query.db.schemaTypesParsed[ref.allowedType]
-        size += 6 // 254 + refField
+        const schema = query.db.schemaTypesParsed[t.inverseTypeName]
+        size += 6
         refConditions = {
           conditions: new Map(),
-          fromRef: ref,
+          fromRef: t,
           schema,
         }
-        conditions.references.set(refField, refConditions)
+        conditions.references.set(t.prop, refConditions)
       }
       size += filter(
         path.slice(i + 1).join('.'),
@@ -71,7 +69,7 @@ export const filter = (
   query: Query,
 ): number => {
   var size = 0
-  let field = <FieldDef>schema.fields[fieldStr]
+  let field = schema.props[fieldStr]
 
   if (!field) {
     return filterReferences(
@@ -84,11 +82,11 @@ export const filter = (
     )
   }
 
-  const fieldIndexChar = field.field
+  const fieldIndexChar = field.prop
 
   let buf: Buffer
   if (field.seperate === true) {
-    if (field.type === 'string') {
+    if (field.typeIndex === 11) {
       const op = operationToByte(operator)
       if (op === 1) {
         const matches = Buffer.from(value)
@@ -99,7 +97,7 @@ export const filter = (
       } else if (op === 7) {
         // TODO MAKE HAS
       }
-    } else if (field.type === 'references') {
+    } else if (field.typeIndex === 14) {
       const op = operationToByte(operator)
       const matches = value
       const len = matches.length
@@ -118,7 +116,7 @@ export const filter = (
       }
     }
   } else {
-    if (field.type === 'string') {
+    if (field.typeIndex === 11) {
       const op = operationToByte(operator)
       if (op === 1) {
         const matches = Buffer.from(value)
@@ -130,7 +128,7 @@ export const filter = (
       } else if (op === 7) {
         // TODO MAKE HAS
       }
-    } else if (field.type === 'integer') {
+    } else if (field.typeIndex === 5) {
       const op = operationToByte(operator)
       if (op === 1 || op === 3 || op === 4) {
         buf = Buffer.allocUnsafe(9)
@@ -144,15 +142,12 @@ export const filter = (
 
   let arr = conditions.conditions.get(fieldIndexChar)
   if (!arr) {
-    // query.totalConditionSize += 3
     size += 3
     arr = []
     conditions.conditions.set(fieldIndexChar, arr)
   }
   size += buf.byteLength
-  // query.totalConditionSize += buf.byteLength
   arr.push(buf)
-
   return size
 }
 
@@ -181,9 +176,9 @@ export const fillConditionsBuffer = (
       const sizeIndex = lastWritten + 1
       result[lastWritten + 3] = refField
       lastWritten += 4
-      result[lastWritten] = refConditions.schema.prefix[0]
+      result[lastWritten] = refConditions.schema.idUint8[0]
       lastWritten += 1
-      result[lastWritten] = refConditions.schema.prefix[1]
+      result[lastWritten] = refConditions.schema.idUint8[1]
       lastWritten += 1
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
       result.writeUint16LE(size + 4, sizeIndex)

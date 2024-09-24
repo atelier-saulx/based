@@ -1,6 +1,7 @@
+import { SchemaProp } from '../types.js'
 import { INVALID_TYPE, MISSING_TYPE } from './errors.js'
 
-export const getPropType = (prop) => {
+export const getPropType = (prop: SchemaProp): SchemaProp['type'] => {
   if (prop.type) {
     if (typeof prop.type !== 'string') {
       throw Error(INVALID_TYPE)
@@ -11,6 +12,10 @@ export const getPropType = (prop) => {
     return 'reference'
   }
   if ('items' in prop) {
+    // @ts-ignore TODO
+    if (getPropType(prop.items) === 'reference') {
+      return 'references'
+    }
     return 'set'
   }
   if ('enum' in prop) {

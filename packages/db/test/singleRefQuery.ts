@@ -1,7 +1,6 @@
-import { fileURLToPath } from 'url'
+import { deepEqual } from './shared/assert.js'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
 
 await test('single reference query', async (t) => {
   const db = new BasedDb({
@@ -17,55 +16,48 @@ await test('single reference query', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           myBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'user',
+            ref: 'blup',
+            prop: 'user',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
           name: { type: 'string' },
         },
       },
       blup: {
-        fields: {
-          age: { type: 'integer' },
+        props: {
+          age: { type: 'uint32' },
           name: { type: 'string' },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'myBlup',
+            ref: 'user',
+            prop: 'myBlup',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'lilBlup',
+            ref: 'simple',
+            prop: 'lilBlup',
           },
           // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
       },
       simple: {
-        fields: {
-          smurp: { type: 'integer' },
+        props: {
+          smurp: { type: 'uint32' },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
           lilBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'simple',
+            ref: 'blup',
+            prop: 'simple',
           },
           flap: {
-            type: 'object',
-            properties: {
-              power: { type: 'integer' },
+            props: {
+              power: { type: 'uint32' },
             },
           },
         },
@@ -123,8 +115,6 @@ await test('single reference query', async (t) => {
 
   const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
 
-  console.log('bla2')
-
   deepEqual(result2.toObject(), [
     {
       id: 1,
@@ -141,8 +131,6 @@ await test('single reference query', async (t) => {
     .filter('flap.power', '=', 10)
     .include('lilBlup', 'flap')
     .get()
-
-  console.log('bla')
 
   deepEqual(result.toObject(), [
     {

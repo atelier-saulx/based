@@ -1,11 +1,11 @@
 import { deepEqual } from '@saulx/utils'
 import { QueryIncludeDef } from '../query/types.js'
-import { FieldDef } from '../schemaTypeDef.js'
+import { PropDef } from '../schema/schema.js'
 import { BasedNode } from './index.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 
 export const readSeperateFieldFromBuffer = (
-  requestedField: FieldDef,
+  requestedField: PropDef,
   basedNode: BasedNode,
   includeDef: QueryIncludeDef = basedNode.__q.includeDef,
   offset: number = 4 + basedNode.__o,
@@ -13,7 +13,7 @@ export const readSeperateFieldFromBuffer = (
 ) => {
   const queryResponse = basedNode.__q
   const buffer = queryResponse.buffer
-  const requestedFieldIndex = requestedField.field
+  const requestedFieldIndex = requestedField.prop
   const ref = basedNode.__r
 
   let found = true
@@ -46,8 +46,9 @@ export const readSeperateFieldFromBuffer = (
       const refField = buffer[i]
 
       if (
-        requestedField.type === 'references' &&
-        requestedField.field === refField
+        // 14: refeewnces
+        requestedField.typeIndex === 14 &&
+        requestedField.prop === refField
       ) {
         const include = includeDef.refIncludes[refField]
         // this is tmp... very inefficient
@@ -103,7 +104,8 @@ export const readSeperateFieldFromBuffer = (
         }
 
         if (
-          requestedField.type === 'id' &&
+          // 0: id
+          requestedField.typeIndex === 0 &&
           pIndex === ref.includePath.length - 1
         ) {
           if (size === 0) {
@@ -152,7 +154,8 @@ export const readSeperateFieldFromBuffer = (
         break
       }
 
-      if (requestedField.type === 'reference') {
+      // 13: Reference
+      if (requestedField.typeIndex === 13) {
         const id = buffer.readUint32LE(i + fIndex)
         if (!id) {
           return null
@@ -160,19 +163,28 @@ export const readSeperateFieldFromBuffer = (
         return {
           id,
         }
-      } else if (requestedField.type === 'integer') {
+        // 5: uint32
+      } else if (requestedField.typeIndex === 5) {
         return buffer.readUint32LE(i + fIndex)
       }
-      if (requestedField.type === 'boolean') {
+
+      // 9: Boolean
+      if (requestedField.typeIndex === 9) {
         return Boolean(buffer[i + fIndex])
       }
-      if (requestedField.type === 'number') {
+
+      // 4: Number
+      if (requestedField.typeIndex === 4) {
         return buffer.readFloatLE(i + fIndex)
       }
-      if (requestedField.type === 'timestamp') {
+
+      // 1: Timestamp
+      if (requestedField.typeIndex === 1) {
         return buffer.readFloatLE(i + fIndex)
       }
-      if (requestedField.type === 'string') {
+
+      // 11: String
+      if (requestedField.typeIndex === 11) {
         const len = buffer[i + fIndex]
         if (len === 0) {
           return ''
@@ -184,13 +196,15 @@ export const readSeperateFieldFromBuffer = (
         )
         return str
       }
+
       i += includeDef.mainLen
     } else {
       const size = buffer.readUInt32LE(i)
       i += 4
       // if no field add size 0
-      if (found && requestedField.field === index) {
-        if (requestedField.type === 'string') {
+      if (found && requestedField.prop === index) {
+        // 11: String
+        if (requestedField.typeIndex === 11) {
           if (size === 0) {
             return ''
           }
@@ -201,10 +215,13 @@ export const readSeperateFieldFromBuffer = (
     }
   }
 
-  if (requestedField.type === 'string') {
+  // 11: string
+  if (requestedField.typeIndex === 11) {
     return ''
   }
-  if (requestedField.type === 'references') {
+
+  // 14: References
+  if (requestedField.typeIndex === 14) {
     return []
   }
 }

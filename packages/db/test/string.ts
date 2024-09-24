@@ -18,19 +18,18 @@ await test('simple', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           name: { type: 'string' },
-          flap: { type: 'integer' },
-          email: { type: 'string', maxLength: 15 },
-          age: { type: 'integer' },
+          flap: { type: 'uint32' },
+          email: { type: 'string', max: 15 },
+          age: { type: 'uint32' },
           snurp: { type: 'string' },
-          burp: { type: 'integer' },
+          burp: { type: 'uint32' },
           location: {
-            type: 'object',
-            properties: {
+            props: {
               label: { type: 'string' },
-              x: { type: 'integer' },
-              y: { type: 'integer' },
+              x: { type: 'uint32' },
+              y: { type: 'uint32' },
             },
           },
         },
@@ -78,48 +77,42 @@ await test('string + refs', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           myBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'user',
+            ref: 'blup',
+            prop: 'user',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
           name: { type: 'string' },
-          flap: { type: 'integer' },
-          age: { type: 'integer' },
+          flap: { type: 'uint32' },
+          age: { type: 'uint32' },
           snurp: { type: 'string' },
-          burp: { type: 'integer' },
-          email: { type: 'string', maxLength: 15 }, // maxLength: 10
+          burp: { type: 'uint32' },
+          email: { type: 'string', max: 15 }, // max: 10
           location: {
-            type: 'object',
-            properties: {
+            props: {
               label: { type: 'string' },
-              x: { type: 'integer' },
-              y: { type: 'integer' },
+              x: { type: 'uint32' },
+              y: { type: 'uint32' },
             },
           },
         },
       },
       blup: {
-        fields: {
+        props: {
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'lilBlup',
+            ref: 'simple',
+            prop: 'lilBlup',
           },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'myBlup',
+            ref: 'user',
+            prop: 'myBlup',
           },
           flap: {
             type: 'string',
-            // @ts-ignore
             maxBytes: 1,
           },
           name: { type: 'string' },
@@ -127,19 +120,16 @@ await test('string + refs', async (t) => {
       },
       simple: {
         // min max on string
-        fields: {
-          // @ts-ignore
+        props: {
           countryCode: { type: 'string', maxBytes: 2 },
           lilBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'simple',
+            ref: 'blup',
+            prop: 'simple',
           },
-          vectorClock: { type: 'integer' },
+          vectorClock: { type: 'uint32' },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
         },
       },
@@ -247,8 +237,8 @@ await test('Big string', async (t) => {
   db.updateSchema({
     types: {
       file: {
-        fields: {
-          name: { type: 'string', maxLength: 20 },
+        props: {
+          name: { type: 'string', max: 20 },
           contents: { type: 'string' },
         },
       },

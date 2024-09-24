@@ -1,4 +1,4 @@
-import { FieldDef, SchemaTypeDef } from '../index.js'
+import { PropDef, SchemaTypeDef } from '../schema/schema.js'
 
 export type Operation =
   | '='
@@ -32,7 +32,7 @@ export const operationToByte = (op: Operation) => {
   return 0
 }
 
-export type MainIncludes = { [start: string]: [number, FieldDef] }
+export type MainIncludes = { [start: string]: [number, PropDef] }
 
 export type QueryIncludeDef = {
   mainIncludes: MainIncludes
@@ -40,7 +40,7 @@ export type QueryIncludeDef = {
   includePath: number[]
   includeArr: number[]
   schema: SchemaTypeDef
-  fromRef?: FieldDef
+  fromRef?: PropDef
   multiple: boolean
   referencesFilters: {
     [field: string]: { conditions: Map<number, Buffer[]>; size: number }
@@ -53,9 +53,9 @@ export type QueryIncludeDef = {
 export type QueryConditions = {
   conditions: Map<number, Buffer[]>
   references?: Map<number, QueryConditions>
-  fromRef?: FieldDef
+  fromRef?: PropDef
   schema?: SchemaTypeDef
   size?: number
 }
 
-export type IncludeTreeArr = (string | FieldDef | IncludeTreeArr)[]
+export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]

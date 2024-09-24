@@ -1,24 +1,13 @@
-import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
 await test('single simple', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -27,23 +16,21 @@ await test('single simple', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          bla: { type: 'integer' },
+        props: {
+          bla: { type: 'uint32' },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
           name: { type: 'string' },
         },
       },
       simple: {
-        fields: {
-          bla: { type: 'integer' },
+        props: {
+          bla: { type: 'uint32' },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
         },
       },
@@ -70,15 +57,11 @@ await test('single simple', async (t) => {
 })
 
 await test('simple nested', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -87,36 +70,31 @@ await test('simple nested', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           myBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'user',
+            ref: 'blup',
+            prop: 'user',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
         },
       },
       blup: {
-        fields: {
-          // @ts-ignore
+        props: {
           flap: { type: 'string', maxBytes: 1 },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'myBlup',
+            ref: 'user',
+            prop: 'myBlup',
           },
         },
       },
       simple: {
-        fields: {
+        props: {
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
         },
       },
@@ -181,15 +159,11 @@ await test('simple nested', async (t) => {
 })
 
 await test('single reference object', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -198,52 +172,42 @@ await test('single reference object', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           myBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'user',
+            ref: 'blup',
+            prop: 'user',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
           admin: {
-            type: 'reference',
-            allowedType: 'simple',
-            // lets see if this works...
-            inverseProperty: 'admin.user',
+            ref: 'simple',
+            prop: 'admin.user',
           },
         },
       },
       blup: {
-        fields: {
+        props: {
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'myBlup',
+            ref: 'user',
+            prop: 'myBlup',
           },
-
-          // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
       },
       simple: {
-        fields: {
+        props: {
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
           admin: {
-            type: 'object',
-            properties: {
+            props: {
               role: { type: 'string' },
               user: {
-                type: 'reference',
-                allowedType: 'user',
-                inverseProperty: 'admin',
+                ref: 'user',
+                prop: 'admin',
               },
             },
           },
@@ -277,15 +241,11 @@ await test('single reference object', async (t) => {
 })
 
 await test('nested', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -294,64 +254,55 @@ await test('nested', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           myBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'user',
+            ref: 'blup',
+            prop: 'user',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
           name: { type: 'string' },
-          flap: { type: 'integer' },
-          email: { type: 'string', maxLength: 15 },
-          age: { type: 'integer' },
+          flap: { type: 'uint32' },
+          email: { type: 'string', max: 15 },
+          age: { type: 'uint32' },
           snurp: { type: 'string' },
-          burp: { type: 'integer' },
+          burp: { type: 'uint32' },
           location: {
-            type: 'object',
-            properties: {
+            props: {
               label: { type: 'string' },
-              x: { type: 'integer' },
-              y: { type: 'integer' },
+              x: { type: 'uint32' },
+              y: { type: 'uint32' },
             },
           },
         },
       },
       blup: {
-        fields: {
-          // @ts-ignore
+        props: {
           flap: { type: 'string', maxBytes: 1 },
           name: { type: 'string' },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'myBlup',
+            ref: 'user',
+            prop: 'myBlup',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'lilBlup',
+            ref: 'simple',
+            prop: 'lilBlup',
           },
         },
       },
       simple: {
-        fields: {
-          // @ts-ignore
+        props: {
           countryCode: { type: 'string', maxBytes: 2 },
           lilBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'simple',
+            ref: 'blup',
+            prop: 'simple',
           },
-          vectorClock: { type: 'integer' },
+          vectorClock: { type: 'uint32' },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
         },
       },
@@ -404,7 +355,6 @@ await test('nested', async (t) => {
     'Get first item user should be null',
   )
 
-  console.log('\nSNURP SNURP -------')
   deepEqual(
     db.query('simple', lastID).include('user.location').get().toObject(),
     {
@@ -460,7 +410,6 @@ await test('nested', async (t) => {
     'Get single id myBlup ',
   )
 
-  console.log('======= SNURP =======')
   deepEqual(
     db
       .query('simple', lastID)
@@ -540,8 +489,6 @@ await test('nested', async (t) => {
     ],
   )
 
-  console.log('\nGURP SNURP SNURP')
-
   deepEqual(
     db
       .query('simple')
@@ -593,17 +540,11 @@ await test('nested', async (t) => {
 })
 
 await test('single reference multi refs strings', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -612,49 +553,42 @@ await test('single reference multi refs strings', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           name: { type: 'string' },
           myBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'user',
+            ref: 'blup',
+            prop: 'user',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'user',
+            ref: 'simple',
+            prop: 'user',
           },
         },
       },
       blup: {
-        fields: {
+        props: {
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'myBlup',
+            ref: 'user',
+            prop: 'myBlup',
           },
           simple: {
-            type: 'reference',
-            allowedType: 'simple',
-            inverseProperty: 'lilBlup',
+            ref: 'simple',
+            prop: 'lilBlup',
           },
           name: { type: 'string' },
-          // @ts-ignore
           flap: { type: 'string', maxBytes: 1 },
         },
       },
       simple: {
-        fields: {
-          age: { type: 'integer' },
+        props: {
+          age: { type: 'uint32' },
           lilBlup: {
-            type: 'reference',
-            allowedType: 'blup',
-            inverseProperty: 'simple',
+            ref: 'blup',
+            prop: 'simple',
           },
           user: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'simple',
+            ref: 'user',
+            prop: 'simple',
           },
         },
       },

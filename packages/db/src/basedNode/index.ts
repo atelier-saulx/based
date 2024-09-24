@@ -1,5 +1,5 @@
 import { readSeperateFieldFromBuffer } from './read.js'
-import { SchemaTypeDef } from '../schemaTypeDef.js'
+import { SchemaTypeDef } from '../schema/schema.js'
 import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 import { inspect } from 'node:util'
@@ -29,15 +29,16 @@ export class BasedNode {
       id: idDef,
     })
     this.__s = schema
-    for (const field in schema.fields) {
-      const fieldDef = schema.fields[field]
+    for (const field in schema.props) {
+      const fieldDef = schema.props[field]
       const { path } = fieldDef
       if (path.length > 1) {
         if (!Object.getOwnPropertyDescriptor(ctx, path[0])) {
           createObjectProp(schema, ctx, path[0], schemas)
         }
       } else {
-        if (fieldDef.type === 'reference') {
+        // 13: Reference
+        if (fieldDef.typeIndex === 13) {
           singleRefProp(ctx, field, fieldDef, schemas)
         } else {
           Object.defineProperty(ctx, field, {

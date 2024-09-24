@@ -1,6 +1,5 @@
 // @ts-ignore
 import db from '../../nativebla.cjs'
-import { schema2selva, SchemaTypeDef } from './schemaTypeDef.js'
 
 export default {
   modify: (buffer: Buffer, len: number): any => {

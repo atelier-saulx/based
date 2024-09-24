@@ -1,7 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
-import { wait } from '@saulx/utils'
 
 await test('basic', async (t) => {
   const db = new BasedDb({
@@ -17,10 +16,10 @@ await test('basic', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           name: { type: 'string' },
           email: { type: 'string' },
-          age: { type: 'integer' },
+          age: { type: 'uint32' },
         },
       },
     },
@@ -412,9 +411,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          gender: { type: 'integer' },
-          age: { type: 'integer' },
+        props: {
+          gender: { type: 'uint32' },
+          age: { type: 'uint32' },
           name: { type: 'string' },
           email: { type: 'string' },
         },

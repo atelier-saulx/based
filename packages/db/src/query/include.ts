@@ -1,9 +1,9 @@
 import {
-  FieldDef,
-  SchemaFieldTree,
-  isFieldDef,
-  idFieldDef,
-} from '../schemaTypeDef.js'
+  PropDef,
+  SchemaPropTree,
+  isPropDef,
+  ID_FIELD_DEF,
+} from '../schema/schema.js'
 import { QueryIncludeDef } from './types.js'
 import { Query } from './query.js'
 import { addConditions } from './filter.js'
@@ -16,7 +16,7 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
   let mainBuffer: Buffer
 
   const includeTreeIntermediate = {
-    id: idFieldDef,
+    id: ID_FIELD_DEF,
   }
 
   // has to go to include
@@ -99,7 +99,7 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
 
         const meta = Buffer.allocUnsafe(startSize + filterSize)
 
-        // command meaning include single ref
+        // command meaning include single ref or multiple ref
         meta[0] = multi ? 254 : 255
 
         // size
@@ -114,11 +114,11 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         }
 
         // typeId
-        meta[(multi ? 5 : 3) + filterSize] = refInclude.schema.prefix[0]
-        meta[(multi ? 6 : 4) + filterSize] = refInclude.schema.prefix[1]
+        meta[(multi ? 5 : 3) + filterSize] = refInclude.schema.idUint8[0]
+        meta[(multi ? 6 : 4) + filterSize] = refInclude.schema.idUint8[1]
 
         // field where ref is stored
-        meta[(multi ? 7 : 5) + filterSize] = refInclude.fromRef.field
+        meta[(multi ? 7 : 5) + filterSize] = refInclude.fromRef.prop
 
         result.push(meta, refBuffer)
       }
@@ -130,12 +130,12 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
 }
 
 const getAllFieldFromObject = (
-  tree: SchemaFieldTree | FieldDef,
+  tree: SchemaPropTree | PropDef,
   arr: string[] = [],
 ) => {
   for (const key in tree) {
     const leaf = tree[key]
-    if (!leaf.type && !leaf.__isField) {
+    if (!leaf.typeIndex && !leaf.__isPropDef) {
       getAllFieldFromObject(leaf, arr)
     } else {
       arr.push(leaf.path.join('.'))
@@ -144,11 +144,11 @@ const getAllFieldFromObject = (
   return arr
 }
 
-const convertToIncludeTree = (tree: any) => {
+const convertToIncludeTree = (tree: SchemaPropTree | PropDef) => {
   const arr = []
   for (const key in tree) {
     const item = tree[key]
-    if (item.__isField === true) {
+    if (item.__isPropDef === true) {
       arr.push(key, item)
     } else {
       arr.push(key, convertToIncludeTree(item))
@@ -158,7 +158,7 @@ const convertToIncludeTree = (tree: any) => {
 }
 
 const createOrGetRefIncludeDef = (
-  ref: FieldDef,
+  ref: PropDef,
   include: QueryIncludeDef,
   query: Query,
   multiple: boolean,
@@ -167,12 +167,11 @@ const createOrGetRefIncludeDef = (
     include.refIncludes = {}
   }
 
-  // make it field not stat
-  const field = ref.field
+  const field = ref.prop
   if (!include.refIncludes[field]) {
     include.refIncludes[field] = {
       includePath: [...include.includePath, field],
-      schema: query.db.schemaTypesParsed[ref.allowedType],
+      schema: query.db.schemaTypesParsed[ref.inverseTypeName],
       includeArr: [],
       includeFields: new Set(),
       mainLen: 0,
@@ -218,27 +217,26 @@ const parseInclude = (
   includesMain: boolean,
   includeTree: any,
 ): boolean => {
-  const field = include.schema.fields[f]
+  const field = include.schema.props[f]
   const path = f.split('.')
 
   if (!field) {
-    let t: FieldDef | SchemaFieldTree = include.schema.tree
+    let t: PropDef | SchemaPropTree = include.schema.tree
     for (let i = 0; i < path.length; i++) {
       const p = path[i]
       t = t[p]
       if (!t) {
         return
       }
-      if (
-        isFieldDef(t) &&
-        (t.type === 'reference' || t.type === 'references')
-      ) {
-        const ref: FieldDef = t as FieldDef
+
+      // 13: reference
+      // 14: references
+      if (isPropDef(t) && (t.typeIndex === 13 || t.typeIndex === 14)) {
         const refIncludeDef = createOrGetRefIncludeDef(
-          ref,
+          t,
           include,
           query,
-          t.type === 'references',
+          t.typeIndex === 14,
         )
         const field = path.slice(i + 1).join('.')
         refIncludeDef.includeFields.add(field)
@@ -263,18 +261,18 @@ const parseInclude = (
 
   addPathToIntermediateTree(field, includeTree, field.path)
 
-  if (field.type === 'reference' || field.type === 'references') {
+  if (field.typeIndex === 13 || field.typeIndex === 14) {
     const refIncludeDef = createOrGetRefIncludeDef(
       field,
       include,
       query,
-      field.type === 'references',
+      field.typeIndex === 14,
     )
-    for (const f in refIncludeDef.schema.fields) {
+    for (const f in refIncludeDef.schema.props) {
       // include all
       if (
-        refIncludeDef.schema.fields[f].type !== 'reference' &&
-        refIncludeDef.schema.fields[f].type !== 'references'
+        refIncludeDef.schema.props[f].typeIndex !== 13 &&
+        refIncludeDef.schema.props[f].typeIndex !== 14
       ) {
         refIncludeDef.includeFields.add(f)
       }
@@ -283,7 +281,7 @@ const parseInclude = (
   }
 
   if (field.seperate) {
-    include.includeArr.push(field.field)
+    include.includeArr.push(field.prop)
   } else {
     if (!includesMain) {
       include.mainIncludes = {}

@@ -1,14 +1,15 @@
-import { BasedDb, FieldDef } from '../index.js'
+import { PropDef } from '../schema/schema.js'
+import { BasedDb } from '../index.js'
 import { BasedNode } from './index.js'
 
 export function singleRefProp(
   ctx: BasedNode,
   field: string,
-  fieldDef: FieldDef,
+  fieldDef: PropDef,
   schemas: BasedDb['schemaTypesParsed'],
   obj?: any,
 ) {
-  const type = fieldDef.allowedType
+  const type = fieldDef.inverseTypeName
 
   return Object.defineProperty(obj ?? ctx, field, {
     enumerable: true,
@@ -16,13 +17,11 @@ export function singleRefProp(
     get() {
       const refSchema = schemas[type]
       const refCtx = refSchema.responseCtx
-
       refCtx.__q = ctx.__q
       refCtx.__o = ctx.__o
       refCtx.__r =
-        ctx.__r?.refIncludes[fieldDef.field] ??
-        ctx.__q.includeDef.refIncludes[fieldDef.field]
-
+        ctx.__r?.refIncludes[fieldDef.prop] ??
+        ctx.__q.includeDef.refIncludes[fieldDef.prop]
       return refCtx
     },
   })

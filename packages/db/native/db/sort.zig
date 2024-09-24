@@ -77,11 +77,12 @@ pub fn getSortName(
     field: u8,
     start: u16,
 ) SortDbiName {
-    var startCasted: [2]u8 = @bitCast(start);
-    if (startCasted[0] == 0 and startCasted[1] != 0) {
-        startCasted[0] = 255;
-        startCasted[1] = 255 - startCasted[1];
-    }
+    const startCasted: [2]u8 = @bitCast(start);
+    // if (startCasted[0] == 0 and startCasted[1] != 0) {
+    //     startCasted[0] = 255;
+    //     startCasted[1] = 255 - startCasted[1];
+    // }
+
     const typePrefix = getPrefix(typeId);
 
     const name: SortDbiName = .{
@@ -163,6 +164,7 @@ fn createSortIndex(
 ) !void {
     const txn = try createTransaction(false);
     const typePrefix: [2]u8 = .{ name[0], name[1] };
+
     const typeId: u16 = @bitCast(typePrefix);
 
     var dbi: c.MDB_dbi = 0;

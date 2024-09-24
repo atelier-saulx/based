@@ -1,43 +1,29 @@
-import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
-
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
 await test('query', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
   t.after(() => {
     return db.destroy()
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          age: { type: 'integer' },
+        props: {
+          age: { type: 'uint32' },
           name: { type: 'string' },
-          // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
           location: {
-            type: 'object',
-            properties: {
-              long: { type: 'number' },
-              lat: { type: 'number' },
+            props: {
+              long: { type: 'number', min: 0, max: 100, step: 'any' },
+              lat: { type: 'number', min: 0, max: 100, step: 'any' },
             },
           },
         },

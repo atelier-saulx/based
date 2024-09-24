@@ -3,7 +3,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { BasedNode } from '../basedNode/index.js'
 import { QueryIncludeDef } from './types.js'
-import { SchemaTypeDef } from '../schemaTypeDef.js'
+import { SchemaTypeDef } from '../schema/schema.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 

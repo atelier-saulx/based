@@ -1,7 +1,6 @@
-import { FieldDef } from '../schemaTypeDef.js'
+import { PropDef } from '../schema/schema.js'
 import picocolors from 'picocolors'
 import { QueryIncludeDef } from '../query/types.js'
-import { BasedNode } from './index.js'
 import { BasedQueryResponse, inspectData } from '../query/BasedQueryResponse.js'
 
 export const toObjectIncludeTree = (
@@ -16,16 +15,18 @@ export const toObjectIncludeTree = (
 
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++] as string
-    const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
-    if ('__isField' in item) {
+    const item = arr[i] as PropDef | QueryIncludeDef['includeTree']
+    if ('__isPropDef' in item) {
       const v = target[key]
-      if (item.type === 'references') {
+      // 14: References
+      if (item.typeIndex === 14) {
         if (v instanceof BasedQueryResponse) {
           obj[key] = v.toObject()
         } else {
           obj[key] = []
         }
-      } else if (item.type === 'reference') {
+        // 13: Reference
+      } else if (item.typeIndex === 13) {
         obj[key] = toObjectIncludeTree({}, v, v.__r.includeTree, true)
       } else {
         obj[key] = v
@@ -49,16 +50,19 @@ export const toObjectIncludeTreePrint = (
 
   for (let i = 0; i < arr.length; i++) {
     const key = arr[i++] as string
-    const item = arr[i] as FieldDef | QueryIncludeDef['includeTree']
+    const item = arr[i] as PropDef | QueryIncludeDef['includeTree']
     str += prefix + `${key}: `
-    if ('__isField' in item) {
+    if ('__isPropDef' in item) {
       let v = target[key]
 
-      if (item.type === 'references') {
+      // 14: References
+      if (item.typeIndex === 14) {
         if (v instanceof BasedQueryResponse) {
           str += inspectData(v, true)
         }
-      } else if (item.type === 'reference') {
+
+        // 13: Reference
+      } else if (item.typeIndex === 13) {
         if (!v) {
           console.warn('no ref', item, key, target, v)
         }
@@ -72,7 +76,7 @@ export const toObjectIncludeTreePrint = (
             level + 1,
           ).slice(0, -1)
         }
-      } else if (item.type === 'string') {
+      } else if (item.typeIndex === 11) {
         if (v === undefined) {
           return ''
         }
@@ -87,7 +91,7 @@ export const toObjectIncludeTreePrint = (
         } else {
           str += `"${v}"`
         }
-      } else if (item.type === 'timestamp') {
+      } else if (item.typeIndex === 1) {
         str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {
         str += v

@@ -1,6 +1,6 @@
 import { wait } from '@saulx/utils'
 import { fileURLToPath } from 'url'
-import { BasedDb, schema2selva } from '../../src/index.js'
+import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
 import { text, italy, euobserver } from './examples.js'
@@ -83,41 +83,41 @@ await db.start()
 db.updateSchema({
   types: {
     todo: {
-      fields: {
+      props: {
         name: { type: 'string' },
         done: { type: 'boolean' },
-        age: { type: 'integer' },
+        age: { type: 'uint32' },
       },
     },
     user: {
-      fields: {
+      props: {
         // @ts-ignore
         flap: { type: 'string', maxBytes: 1 },
-        age: { type: 'integer' },
+        age: { type: 'uint32' },
         xyz: {
           type: 'reference',
-          allowedType: 'xyz',
-          inverseProperty: 'user',
+          ref: 'xyz',
+          prop: 'user',
         },
         xyz2: {
           type: 'reference',
-          allowedType: 'xyz',
-          inverseProperty: 'user2',
+          ref: 'xyz',
+          prop: 'user2',
         },
       },
     },
     xyz: {
-      fields: {
-        age: { type: 'integer' },
+      props: {
+        age: { type: 'uint32' },
         user: {
           type: 'reference',
-          allowedType: 'user',
-          inverseProperty: 'xyz',
+          ref: 'user',
+          prop: 'xyz',
         },
         user2: {
           type: 'reference',
-          allowedType: 'user',
-          inverseProperty: 'xyz2',
+          ref: 'user',
+          prop: 'xyz2',
         },
       },
     },
@@ -237,25 +237,25 @@ console.log(db.query('todo').range(0, 100).get())
 // db.updateSchema({
 //   types: {
 //     user: {
-//       fields: {
-//         age: { type: 'integer' },
-//         myBlup: { type: 'reference', allowedType: 'blup' },
+//       props: {
+//         age: { type: 'uint32' },
+//         myBlup: { type: 'reference', ref: 'blup' },
 //         name: { type: 'string' },
-//         flap: { type: 'integer' },
+//         flap: { type: 'uint32' },
 //         email: { type: 'string', maxLength: 14 },
 //         snurp: { type: 'string' },
 //         location: {
 //           type: 'object',
 //           properties: {
 //             label: { type: 'string' },
-//             x: { type: 'integer' },
-//             y: { type: 'integer' },
+//             x: { type: 'uint32' },
+//             y: { type: 'uint32' },
 //           },
 //         },
 //       },
 //     },
 //     blup: {
-//       fields: {
+//       props: {
 //         flap: {
 //           type: 'string',
 //           // @ts-ignore
@@ -266,11 +266,11 @@ console.log(db.query('todo').range(0, 100).get())
 //     },
 //     simple: {
 //       // min max on string
-//       fields: {
+//       props: {
 //         // @ts-ignore
 //         countryCode: { type: 'string', maxBytes: 2 },
-//         lilBlup: { type: 'reference', allowedType: 'blup' },
-//         user: { type: 'reference', allowedType: 'user' },
+//         lilBlup: { type: 'reference', ref: 'blup' },
+//         user: { type: 'reference', ref: 'user' },
 //       },
 //     },
 //   },

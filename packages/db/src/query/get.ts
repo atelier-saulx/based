@@ -5,10 +5,10 @@ import { addConditions } from './filter.js'
 
 export const get = (query: Query): BasedQueryResponse => {
   if (!query.includeDef) {
-    for (const f in query.schema.fields) {
+    for (const f in query.schema.props) {
       if (
-        query.schema.fields[f].type !== 'reference' &&
-        query.schema.fields[f].type !== 'references'
+        query.schema.props[f].typeIndex !== 13 &&
+        query.schema.props[f].typeIndex !== 14
       ) {
         query.include(f)
       }
@@ -38,7 +38,7 @@ export const get = (query: Query): BasedQueryResponse => {
       }
       result = query.db.native.getQueryIdsSort(
         conditionsBuffer,
-        query.schema.prefixNumber,
+        query.schema.id,
         start,
         end,
         idsBuffer,
@@ -58,7 +58,7 @@ export const get = (query: Query): BasedQueryResponse => {
       }
       result = query.db.native.getQueryByIds(
         conditionsBuffer,
-        query.schema.prefixNumber,
+        query.schema.id,
         idsBuffer,
         includeBuffer,
       )
@@ -66,7 +66,7 @@ export const get = (query: Query): BasedQueryResponse => {
   } else if (query.id) {
     result = query.db.native.getQueryById(
       conditionsBuffer,
-      query.schema.prefixNumber,
+      query.schema.id,
       query.id,
       includeBuffer,
     )
@@ -75,7 +75,7 @@ export const get = (query: Query): BasedQueryResponse => {
     const end = query.limit ?? 1e3
     result = query.db.native.getQuerySort(
       conditionsBuffer,
-      query.schema.prefixNumber,
+      query.schema.id,
       start,
       end,
       includeBuffer,
@@ -87,7 +87,7 @@ export const get = (query: Query): BasedQueryResponse => {
     const end = query.limit ?? 1e3
     result = query.db.native.getQuery(
       conditionsBuffer,
-      query.schema.prefixNumber,
+      query.schema.id,
       start,
       end,
       includeBuffer,

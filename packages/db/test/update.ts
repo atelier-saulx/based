@@ -1,27 +1,13 @@
-import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
 await test('update', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
-  await fs.mkdir(dbFolder)
-
   const db = new BasedDb({
-    path: dbFolder,
-    // maxModifySize: 1024 * 1024 * 1000,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -43,7 +29,6 @@ await test('update', async (t) => {
       mep: {
         props: {
           a: { type: 'uint32' },
-          // @ts-ignore
           countryCode: { type: 'string', maxBytes: 10 },
           b: { type: 'uint32' },
           c: { type: 'uint32' },
@@ -52,7 +37,6 @@ await test('update', async (t) => {
       snurp: {
         props: {
           a: { type: 'uint32' },
-          // @ts-ignore
           countryCode: { type: 'string', maxBytes: 2 },
           b: { type: 'uint32' },
           c: { type: 'uint32' },
@@ -61,7 +45,6 @@ await test('update', async (t) => {
           nested: {
             type: 'object',
             props: {
-              // @ts-ignore
               derp: { type: 'string', maxBytes: 1 },
             },
           },

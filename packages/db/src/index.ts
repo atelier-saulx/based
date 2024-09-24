@@ -1,14 +1,13 @@
 import { create, update, remove } from './modify.js'
 import { Schema, SchemaType } from '@based/schema'
 import {
-  FieldDef,
+  PropDef,
   SchemaTypeDef,
   createSchemaTypeDef,
-  schema2selva,
-} from './schemaTypeDef.js'
+  schemaToSelvaBuffer,
+} from './schema/schema.js'
 import { deepMerge, deepCopy, wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { genPrefix } from './schema.js'
 import db from './native.js'
 import { Query, query } from './query/query.js'
 import { flushBuffer } from './operations.js'
@@ -16,24 +15,20 @@ import { destroy } from './destroy.js'
 
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
+import { genId } from './schema/utils.js'
 
-export * from './schemaTypeDef.js'
+export * from './schema/typeDef.js'
 export * from './modify.js'
 export * from './basedNode/index.js'
 
 type InternalSchema = Schema & {
-  prefixCounter: number
-  prefixToTypeMapping: Record<string, string>
-  types: Record<string, SchemaType & { prefix?: string }>
+  lastId: number
+  types: Record<string, SchemaType>
 }
 
-// @ts-ignore
 const DEFAULT_SCHEMA: InternalSchema = {
-  // $defs: {},
-  // language: 'en',
-  prefixToTypeMapping: {},
   types: {},
-  prefixCounter: 0,
+  lastId: 0,
 }
 
 export class BasedDb {
@@ -49,7 +44,7 @@ export class BasedDb {
     typePrefix: Uint8Array
     id: number
     lastMain: number
-    mergeMain: (FieldDef | any)[] | null
+    mergeMain: (PropDef | any)[] | null
     mergeMainSize: number
   }
 
@@ -127,7 +122,7 @@ export class BasedDb {
 
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      const [total, lastId] = this.native.getTypeInfo(def.prefixNumber)
+      const [total, lastId] = this.native.getTypeInfo(def.id)
       def.total = total
       def.lastId = lastId
     }
@@ -141,15 +136,12 @@ export class BasedDb {
       if (
         this.schemaTypesParsed[field] &&
         this.schemaTypesParsed[field].checksum ===
-          hashObjectIgnoreKeyOrder(type)
+          hashObjectIgnoreKeyOrder(type) // bit weird..
       ) {
         continue
       } else {
-        if (!type.prefix || !this.schema.prefixToTypeMapping[type.prefix]) {
-          if (!type.prefix) {
-            type.prefix = genPrefix(this)
-          }
-          this.schema.prefixToTypeMapping[type.prefix] = field
+        if (!type.id) {
+          type.id = genId(this)
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
         this.schemaTypesParsed[field] = def
@@ -160,34 +152,30 @@ export class BasedDb {
   updateSchema(schema: Schema, fromStart: boolean = false): Schema {
     this.schema = deepMerge(this.schema, schema)
     this.updateTypeDefs()
-
     if (!fromStart) {
       fs.writeFile(
         join(this.fileSystemPath, 'schema.json'),
         JSON.stringify(this.schema),
       )
       let types = Object.keys(this.schemaTypesParsed)
-      const s = schema2selva(this.schemaTypesParsed)
+      const s = schemaToSelvaBuffer(this.schemaTypesParsed)
       for (let i = 0; i < s.length; i++) {
+        //  TYPE SELVA user Uint8Array(6) [ 1, 17, 23, 0, 11, 0 ]
         const type = this.schemaTypesParsed[types[i]]
-        //  should not crash!
+        // TODO should not crash!
         try {
-          this.native.updateSchemaType(type.prefixNumber, s[i])
+          this.native.updateSchemaType(type.id, s[i])
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err)
         }
       }
     }
-
     return this.schema
   }
 
   removeSchema() {
     // fix
   }
-
-  // verifyDump
-  // saveDump
 
   create(type: string, value: any) {
     return create(this, type, value)

@@ -1,49 +1,40 @@
-import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
 await test('simple', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
-
-  await db.start()
 
   t.after(() => {
     return db.destroy()
   })
 
+  await db.start({ clean: true })
+
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          flap: { type: 'integer' },
+        props: {
+          flap: { type: 'uint32' },
           name: { type: 'string' },
           articles: {
-            type: 'references',
-            allowedType: 'article',
-            inverseProperty: 'contributors',
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
           },
         },
       },
       article: {
-        fields: {
+        props: {
           name: { type: 'string' },
           contributors: {
-            type: 'references',
-            allowedType: 'user',
-            inverseProperty: 'articles',
+            items: {
+              ref: 'user',
+              prop: 'articles',
+            },
           },
         },
       },
@@ -98,15 +89,11 @@ await test('simple', async (t) => {
 })
 
 await test('one to many', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -115,24 +102,24 @@ await test('one to many', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          uid: { type: 'integer' },
+        props: {
+          uid: { type: 'uint32' },
           name: { type: 'string' },
           resources: {
-            type: 'references',
-            allowedType: 'resource',
-            inverseProperty: 'owner',
+            items: {
+              ref: 'resource',
+              prop: 'owner',
+            },
           },
         },
       },
       resource: {
-        fields: {
-          type: { type: 'integer' },
+        props: {
+          type: { type: 'uint32' },
           name: { type: 'string' },
           owner: {
-            type: 'reference',
-            allowedType: 'user',
-            inverseProperty: 'resources',
+            ref: 'user',
+            prop: 'resources',
           },
         },
       },
@@ -208,15 +195,11 @@ await test('one to many', async (t) => {
 })
 
 await test('update', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -225,23 +208,25 @@ await test('update', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          flap: { type: 'integer' },
+        props: {
+          flap: { type: 'uint32' },
           name: { type: 'string' },
           articles: {
-            type: 'references',
-            allowedType: 'article',
-            inverseProperty: 'contributors',
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
           },
         },
       },
       article: {
-        fields: {
+        props: {
           name: { type: 'string' },
           contributors: {
-            type: 'references',
-            allowedType: 'user',
-            inverseProperty: 'articles',
+            items: {
+              ref: 'user',
+              prop: 'articles',
+            },
           },
         },
       },
@@ -287,15 +272,11 @@ await test('update', async (t) => {
 })
 
 await test('filter', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -304,23 +285,25 @@ await test('filter', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
-          flap: { type: 'integer' },
+        props: {
+          flap: { type: 'uint32' },
           name: { type: 'string' },
           articles: {
-            type: 'references',
-            allowedType: 'article',
-            inverseProperty: 'contributors',
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
           },
         },
       },
       article: {
-        fields: {
+        props: {
           name: { type: 'string' },
           contributors: {
-            type: 'references',
-            allowedType: 'user',
-            inverseProperty: 'articles',
+            items: {
+              ref: 'user',
+              prop: 'articles',
+            },
           },
         },
       },

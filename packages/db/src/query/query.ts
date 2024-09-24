@@ -1,8 +1,9 @@
-import { BasedDb, SchemaTypeDef } from '../index.js'
+import { BasedDb } from '../index.js'
+import { SchemaTypeDef } from '../schema/schema.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { Operation, QueryIncludeDef, QueryConditions } from './types.js'
 import { get } from './get.js'
-import { addConditions, filter } from './filter.js'
+import { filter } from './filter.js'
 import { inspect } from 'node:util'
 import { sort } from './sort.js'
 import { BranchInclude, Select } from './branch.js'
@@ -87,12 +88,13 @@ export class Query {
         }
         f(select)
         for (const s of selects) {
-          const fieldDef = this.includeDef.schema.fields[s.field]
+          const fieldDef = this.includeDef.schema.props[s.field]
 
-          const fSchema = this.db.schemaTypesParsed[fieldDef.allowedType]
+          const fSchema = this.db.schemaTypesParsed[fieldDef.inverseTypeName]
 
           if (s.filters.length) {
-            if (fieldDef.type === 'references') {
+            // 14: references
+            if (fieldDef.typeIndex === 14) {
               if (!this.includeDef.referencesFilters[s.field]) {
                 this.includeDef.referencesFilters[s.field] = {
                   conditions: new Map(),

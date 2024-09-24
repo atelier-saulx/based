@@ -1,25 +1,13 @@
-import { fileURLToPath } from 'url'
-import fs from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
-import { join, dirname, resolve } from 'path'
-
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
-const relativePath = '../tmp'
-const dbFolder = resolve(join(__dirname, relativePath))
-
 await test('range', async (t) => {
-  try {
-    await fs.rm(dbFolder, { recursive: true })
-  } catch (err) {}
-
   const db = new BasedDb({
-    path: dbFolder,
+    path: t.tmp,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   t.after(() => {
     return db.destroy()
@@ -28,14 +16,13 @@ await test('range', async (t) => {
   db.updateSchema({
     types: {
       user: {
-        fields: {
+        props: {
           name: { type: 'string' },
           email: { type: 'string' },
-          age: { type: 'integer' },
-          nr: { type: 'integer' },
+          age: { type: 'uint32' },
+          nr: { type: 'uint32' },
           location: {
-            type: 'object',
-            properties: {
+            props: {
               address: { type: 'string' },
             },
           },
