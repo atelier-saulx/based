@@ -111,6 +111,7 @@ export type SchemaShorthandProp = (
 
 type SetItems =
   | SchemaNumber
+  | SchemaExactNumber
   | SchemaString
   | SchemaTimestamp
   | SchemaBoolean
