@@ -10,7 +10,6 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
-    std.debug.print("Update references {any} \n", .{data});
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(refTypeId);
     const len = data.len;

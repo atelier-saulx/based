@@ -75,6 +75,7 @@ export class BasedQueryResponse {
   end: number = 0
   includeDef: QueryIncludeDef
   schema: SchemaTypeDef
+  id: number | void
 
   constructor(
     query: Query,
@@ -83,6 +84,7 @@ export class BasedQueryResponse {
     end: number = buffer.byteLength,
     includeDef: QueryIncludeDef = query.includeDef,
     schema: SchemaTypeDef = query.schema,
+    id: number | void = query.id,
   ) {
     this.offset = offset
     this.end = end
@@ -90,6 +92,7 @@ export class BasedQueryResponse {
     this.query = query
     this.includeDef = includeDef
     this.schema = schema
+    this.id = id
   }
 
   get size() {
@@ -97,9 +100,7 @@ export class BasedQueryResponse {
   }
 
   [inspect.custom](_depth) {
-    const target = this.query.id
-      ? this.query.schema.type + ':' + this.query.id
-      : this.query.schema.type
+    const target = this.id ? this.schema.type + ':' + this.id : this.schema.type
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.size)
@@ -215,7 +216,7 @@ export class BasedQueryResponse {
     for (const item of this) {
       arr[i++] = item.toObject()
     }
-    if (this.query.id) {
+    if (this.id) {
       return arr[0] ?? null
     }
     return arr

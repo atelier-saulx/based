@@ -6,9 +6,9 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "util/funmap.h"
-#include "util/selva_lang.h"
 #include "util/svector.h"
 #include "selva/sort.h"
+#include "langs.h"
 
 #define EN_ASSERT 0
 
@@ -16,7 +16,7 @@ struct SelvaSortCtx {
     struct SVector out;
     struct SVectorIterator it;
     enum SelvaSortOrder order;
-    char lang[8]; /* TODO */
+    char lang[8];
 };
 
 struct SelvaSortItem {
@@ -135,6 +135,11 @@ struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_l
     return ctx;
 }
 
+void selva_sort_set_lang(struct SelvaSortCtx *ctx, const typeof(ctx->lang) lang)
+{
+    strlcpy(ctx->lang, lang, sizeof(ctx->lang));
+}
+
 void selva_sort_destroy(struct SelvaSortCtx *ctx)
 {
     struct SVectorIterator it;
@@ -189,32 +194,22 @@ static struct SelvaSortItem *create_item_buffer(const void *buf, size_t len, con
     return item;
 }
 
-static size_t calc_final_data_len(const char *data_lang, const char *data, size_t data_len, locale_t *locale_p) {
-    size_t final_data_len = data_len;
-    locale_t locale = 0;
-
-    if (data_len > 0) {
-        /* FIXME locales */
-#if 0
-        locale = selva_lang_getlocale(selva_langs, data_lang, strlen(data_lang));
-#endif
-        final_data_len = strxfrm_l(NULL, data, 0, locale);
-    }
-
-    *locale_p = locale;
-    return final_data_len;
-}
-
 static struct SelvaSortItem *create_item_text(const char *lang, const char *str, size_t len, const void *p)
 {
-    locale_t locale = 0;
-    size_t data_len = calc_final_data_len(lang, str, len, &locale);
-    struct SelvaSortItem *item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
+    struct SelvaSortItem *item;
 
-    item->data_len = data_len;
-    if (len > 0) {
+    if (likely(len > 0)) {
+        locale_t locale = selva_lang_getlocale(&selva_langs, lang, strlen(lang));
+        size_t data_len = strxfrm_l(NULL, str, 0, locale);
+
+        item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
         strxfrm_l(item->data, str, len, locale);
+        item->data_len = data_len;
+    } else {
+        item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, 1));
+        item->data_len = 0;
     }
+
     item->p = p;
 
     return item;

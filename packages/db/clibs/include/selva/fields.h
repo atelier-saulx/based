@@ -23,11 +23,7 @@ struct SelvaNodeReferences {
      * cause some lookup slowdown.
      */
     uint16_t great_idz;
-    struct SelvaNodeReference *refs
-#ifndef __clang__
-        __counted_by(nr_refs)
-#endif
-        ;
+    struct SelvaNodeReference *refs __pcounted_by(nr_refs);
 };
 
 struct SelvaNodeWeakReference {
@@ -38,11 +34,7 @@ struct SelvaNodeWeakReference {
 struct SelvaNodeWeakReferences {
     uint32_t nr_refs;
     uint32_t offset;
-    struct SelvaNodeWeakReference *refs
-#ifndef __clang__
-        __counted_by(nr_refs)
-#endif
-        ;
+    struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
 };
 
 struct SelvaMicroBuffer {
@@ -168,6 +160,10 @@ SELVA_EXPORT
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
+struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)
+    __attribute__((nonnull));
+
+SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 /**
@@ -181,6 +177,9 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFie
  */
 SELVA_EXPORT
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id);
+
+SELVA_EXPORT
+void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs);
 
 /**
  * Init fields of a node.

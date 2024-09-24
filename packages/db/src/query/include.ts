@@ -6,6 +6,7 @@ import {
 } from '../schemaTypeDef.js'
 import { QueryIncludeDef } from './types.js'
 import { Query } from './query.js'
+import { addConditions } from './filter.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
@@ -81,20 +82,43 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refInclude = include.refIncludes[key]
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
-        const meta = Buffer.allocUnsafe(6)
+
+        const filterConditions =
+          include.referencesFilters[refInclude.fromRef.path.join('.')]
+        let filter: Buffer
+
+        if (filterConditions) {
+          console.log(filterConditions)
+          filter = addConditions(filterConditions, filterConditions.size)
+        }
+
+        const filterSize = filter?.byteLength ?? 0
+
+        const multi = refInclude.multiple
+        const startSize = multi ? 8 : 6
+
+        const meta = Buffer.allocUnsafe(startSize + filterSize)
 
         // command meaning include single ref
-        meta[0] = refInclude.multiple ? 254 : 255
+        meta[0] = multi ? 254 : 255
 
         // size
-        meta.writeUint16LE(size + 3, 1)
+        meta.writeUint16LE(size + (multi ? 5 : 3) + filterSize, 1)
+
+        if (multi) {
+          meta.writeUint16LE(filterSize, 3)
+        }
+
+        if (filter) {
+          meta.set(filter, 5)
+        }
 
         // typeId
-        meta[3] = refInclude.schema.prefix[0]
-        meta[4] = refInclude.schema.prefix[1]
+        meta[(multi ? 5 : 3) + filterSize] = refInclude.schema.prefix[0]
+        meta[(multi ? 6 : 4) + filterSize] = refInclude.schema.prefix[1]
 
         // field where ref is stored
-        meta[5] = refInclude.fromRef.field
+        meta[(multi ? 7 : 5) + filterSize] = refInclude.fromRef.field
 
         result.push(meta, refBuffer)
       }
@@ -152,6 +176,7 @@ const createOrGetRefIncludeDef = (
       includeArr: [],
       includeFields: new Set(),
       mainLen: 0,
+      referencesFilters: {},
       mainIncludes: {},
       includeTree: [],
       fromRef: ref,
