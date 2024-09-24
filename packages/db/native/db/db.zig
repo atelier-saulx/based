@@ -151,7 +151,7 @@ pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_s
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-pub fn getEdgeData(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
+pub fn getEdgeProp(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
     if (ref.meta) {
         return null;
     } else {
@@ -160,7 +160,7 @@ pub fn getEdgeData(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema)
     }
 }
 
-pub fn writeEdgeData(data: []u8, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.SelvaNodeReference, field: u8) !void {
+pub fn writeEdgeProp(data: []u8, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.SelvaNodeReference, field: u8) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(node, ref, efc, field, data.ptr, data.len));
 }
 
