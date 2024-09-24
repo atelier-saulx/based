@@ -29,6 +29,7 @@ OBJ := \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
+	langs.o \
 	schema.o \
 	sort.o \
 	traverse.o \
