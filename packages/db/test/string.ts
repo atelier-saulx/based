@@ -20,16 +20,16 @@ await test('simple', async (t) => {
       user: {
         props: {
           name: { type: 'string' },
-          flap: { type: 'uint32' },
+          flap: 'uint32',
           email: { type: 'string', max: 15 },
-          age: { type: 'uint32' },
+          age: 'uint32',
           snurp: { type: 'string' },
-          burp: { type: 'uint32' },
+          burp: 'uint32',
           location: {
             props: {
               label: { type: 'string' },
-              x: { type: 'uint32' },
-              y: { type: 'uint32' },
+              x: 'uint32',
+              y: 'uint32',
             },
           },
         },
@@ -86,17 +86,17 @@ await test('string + refs', async (t) => {
             ref: 'simple',
             prop: 'user',
           },
-          name: { type: 'string' },
-          flap: { type: 'uint32' },
-          age: { type: 'uint32' },
-          snurp: { type: 'string' },
-          burp: { type: 'uint32' },
+          name: 'string',
+          flap: 'uint32',
+          age: 'uint32',
+          snurp: 'string',
+          burp: 'uint32',
           email: { type: 'string', max: 15 }, // max: 10
           location: {
             props: {
-              label: { type: 'string' },
-              x: { type: 'uint32' },
-              y: { type: 'uint32' },
+              label: 'string',
+              x: 'uint32',
+              y: 'uint32',
             },
           },
         },
@@ -115,7 +115,7 @@ await test('string + refs', async (t) => {
             type: 'string',
             maxBytes: 1,
           },
-          name: { type: 'string' },
+          name: 'string',
         },
       },
       simple: {
@@ -126,7 +126,7 @@ await test('string + refs', async (t) => {
             ref: 'blup',
             prop: 'simple',
           },
-          vectorClock: { type: 'uint32' },
+          vectorClock: 'uint32',
           user: {
             ref: 'user',
             prop: 'simple',

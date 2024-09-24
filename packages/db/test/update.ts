@@ -208,7 +208,6 @@ await test('update', async (t) => {
   let len = 0
   for (var j = 0; j < 1; j++) {
     let x = 0
-    const d = Date.now()
     for (var i = 0; i < 1e5; i++) {
       x += db.query('snurp', i).include('a').get().execTime
     }
