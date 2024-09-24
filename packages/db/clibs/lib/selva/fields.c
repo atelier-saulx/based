@@ -72,7 +72,9 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     size_t field_data_size = selva_fields_get_data_size(fs);
     size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
 
-    /* TODO Handle the rare case where we run out of space that can be reprented by data_len */
+    if (new_size > 0xFFFFFF) {
+        db_panic("new_size too large: %zu", new_size);
+    }
 
     if (!data || selva_sallocx(data, 0) < new_size) {
         data = selva_realloc(data, new_size);
