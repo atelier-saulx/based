@@ -121,11 +121,10 @@ export const filter = (
       // != pretty important
       if (op === 1) {
         // single byte equality
-        buf = Buffer.allocUnsafe(5 + 1)
-        buf[0] = 1
-        buf.writeInt16LE(1, 1)
-        buf.writeInt16LE(field.start, 3)
-        buf[5] = value === true ? 1 : 0
+        buf = Buffer.allocUnsafe(4)
+        buf[0] = 5
+        buf.writeInt16LE(field.start, 1)
+        buf[3] = value === true ? 1 : 0
       } else {
       }
     } else if (field.typeIndex === 10) {
@@ -135,11 +134,10 @@ export const filter = (
         const index = field.reverseEnum[value]
         if (index != undefined) {
           // single byte equality
-          buf = Buffer.allocUnsafe(5 + 1)
-          buf[0] = 1
-          buf.writeInt16LE(1, 1)
-          buf.writeInt16LE(field.start, 3)
-          buf[5] = index + 1
+          buf = Buffer.allocUnsafe(4)
+          buf[0] = 5
+          buf.writeInt16LE(field.start, 1)
+          buf[3] = index + 1
         } else {
           throw new Error('incorrect val for enum!')
         }

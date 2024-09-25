@@ -123,7 +123,19 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                     },
                 }
             },
-
+            // single byte check
+            5 => {
+                const index = std.mem.readInt(
+                    u16,
+                    q[j + 1 ..][0..2],
+                    .little,
+                );
+                if (q[j + 3] != v[index]) {
+                    return false;
+                }
+                j += 4;
+                continue :outside;
+            },
             // seperate field has check
             7 => {
                 const filter_size: u16 = std.mem.readInt(
@@ -134,6 +146,7 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 var i: u16 = 0;
                 while (i < v.len) : (i += 4) {
                     var p: usize = j + 3;
+                    // replace with simd
                     while (p < filter_size * 4 + j + 3) : (p += 4) {
                         if (v[i] != q[p] or v[i + 1] != q[p + 1] or v[i + 2] != q[p + 2] or v[i + 3] != q[p + 3]) {
                             continue;
