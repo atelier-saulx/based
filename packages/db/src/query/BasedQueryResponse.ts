@@ -110,6 +110,10 @@ export class BasedQueryResponse {
   }
 
   debug() {
+    // add include
+    // add filter in the same way
+    // make a function for this
+
     // -------- debug -----------
     console.log('')
     const a = [...new Uint8Array(this.buffer.slice(this.offset, this.end))]

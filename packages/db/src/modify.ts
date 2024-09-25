@@ -212,6 +212,9 @@ const addModify = (
           // 9: boolean
         } else if (t.typeIndex === 9) {
           db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
+        } else if (t.typeIndex === 10) {
+          console.log('yo dawg', value)
+          // db.modifyBuffer.buffer[t.start + mainIndex] =
         }
       }
     }

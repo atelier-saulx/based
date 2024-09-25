@@ -84,7 +84,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   uint32: 4,
   boolean: 1, // 1bit (6 bits overhead)
   reference: 0, // seperate
-  enum: 4, // enum
+  enum: 1, // enum
   string: 0, // var length fixed length will be different
   references: 0,
   microbuffer: 0,
