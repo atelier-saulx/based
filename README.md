@@ -107,16 +107,18 @@ Authorize your user in the Based Cloud.
 *Example:* `npx @based/cli logs [sub-command][options]`
 
 #### filter
-| Option                            | Description                                                               | Required |
-|-----------------------------------|---------------------------------------------------------------------------|----------|
-| `-g`, `--group <group>`           | Group similar logs (default: name)(available types: name/functions/time). | No       |
-| `-l`, `--level <level>`           | Filter by level (default: all)(available levels: all/info/error).         | No       |
-| `--before <DD/MM/YYYY>`           | Filter by date.                                                           | No       |
-| `--after <DD/MM/YYYY>`            | Filter by date.                                                           | No       |
-| `-cs`, `--checksum <cheksum>`     | Filter by checksum.                                                       | No       |
-| `-f`, `--function <functions...>` | Filter by function (variadic).                                            | No       |
-| `-s`, `--service <services...>`   | Filter by service name (variadic).                                        | No       |
-| `[globals]`                       | You can use any global option                                             | No       |
+| Option                            | Description                                                                        | Required |
+|-----------------------------------|------------------------------------------------------------------------------------|----------|
+| `--collapsed`                     | To display the content of the logs collapsed.                                      | No       |
+| `--app`                           | To display the content only about your app and your functions.                     | No       |
+| `--infra`                         | To display the content only about the infrastructure of your environment.          | No       |
+| `-l`, `--level <level>`           | Filter by level (default: all)(available levels: all/info/error).                  | No       |
+| `--before <DD/MM/YYYY>`           | Filter by date.                                                                    | No       |
+| `--after <DD/MM/YYYY>`            | Filter by date.                                                                    | No       |
+| `-cs`, `--checksum <cheksum>`     | Filter by checksum.                                                                | No       |
+| `-f`, `--function <functions...>` | Filter by function (variadic).                                                     | No       |
+| `-s`, `--service <services...>`   | Filter by service name (variadic).                                                 | No       |
+| `[globals]`                       | You can use any global option                                                      | No       |
 
 #### clean
 | Option      | Description                   | Required |
