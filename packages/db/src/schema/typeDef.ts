@@ -55,20 +55,26 @@ export const createSchemaTypeDef = (
   let stringFields: number = 0
 
   for (const key in target) {
-    const f = target[key]
-    const p = [...path, key]
-    const propType = getPropType(f)
+    const schemaProp = target[key]
+    const propPath = [...path, key]
+    const propType = getPropType(schemaProp)
     if (propType === 'object') {
-      createSchemaTypeDef(typeName, f as SchemaObject, parsed, result, p, false)
+      createSchemaTypeDef(
+        typeName,
+        schemaProp as SchemaObject,
+        parsed,
+        result,
+        propPath,
+        false,
+      )
     } else {
       let len = SIZE_MAP[propType]
-
-      if (isPropType('string', f)) {
-        if (typeof f === 'object') {
-          if (f.maxBytes < 60) {
-            len = f.maxBytes + 1
-          } else if (f.max < 30) {
-            len = f.max * 2 + 1
+      if (isPropType('string', schemaProp)) {
+        if (typeof schemaProp === 'object') {
+          if (schemaProp.maxBytes < 60) {
+            len = schemaProp.maxBytes + 1
+          } else if (schemaProp.max < 30) {
+            len = schemaProp.max * 2 + 1
           } else {
             stringFields++
           }
@@ -76,32 +82,29 @@ export const createSchemaTypeDef = (
           stringFields++
         }
       }
-
       const isSeperate = len === 0
-
       if (isSeperate) {
         result.cnt++
       }
-
       const prop: PropDef = {
         typeIndex: TYPE_INDEX_MAP[propType],
         __isPropDef: true,
         seperate: isSeperate,
-        path: p,
+        path: propPath,
         start: 0,
         len,
         prop: isSeperate ? result.cnt : 0,
       }
 
-      if (isPropType('references', f)) {
-        prop.inversePropName = f.items.prop
-        prop.inverseTypeName = f.items.ref
-      } else if (isPropType('reference', f)) {
-        prop.inversePropName = f.prop
-        prop.inverseTypeName = f.ref
+      if (isPropType('references', schemaProp)) {
+        prop.inversePropName = schemaProp.items.prop
+        prop.inverseTypeName = schemaProp.items.ref
+      } else if (isPropType('reference', schemaProp)) {
+        prop.inversePropName = schemaProp.prop
+        prop.inverseTypeName = schemaProp.ref
       }
 
-      result.props[p.join('.')] = prop
+      result.props[propPath.join('.')] = prop
       if (isSeperate) {
         result.seperate.push(prop)
       }
