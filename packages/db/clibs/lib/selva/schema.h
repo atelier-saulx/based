@@ -4,14 +4,12 @@
  */
 #pragma once
 
-struct schemabuf_parser_ctx;
+struct ref_save_map_item;
+
 struct schema_fields_count {
     size_t nr_fixed_fields;
     size_t nr_fields;
 };
-
-struct schemabuf_parser_ctx *schemabuf_create_ctx(void);
-void schemabuf_destroy_ctx(struct schemabuf_parser_ctx *ctx);
 
 /**
  * Count the number of fields in a given node schema.
@@ -21,4 +19,4 @@ int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, s
 /**
  * Parse node schema.
  */
-int schemabuf_parse(struct schemabuf_parser_ctx *ctx, struct SelvaNodeSchema *ns, const char *buf, size_t len);
+int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const char *buf, size_t len);

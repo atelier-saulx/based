@@ -12,6 +12,7 @@
 #include "util/svector.h"
 #include "util/trx.h"
 #include "selva/types.h"
+#include "ref_save_map.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaTypeCursorById, SelvaTypeCursor);
@@ -122,7 +123,13 @@ struct SelvaDb {
     struct trx_state trx_state;
 
     SVector type_list;
-    struct schemabuf_parser_ctx *schemabuf_ctx;
+
+    /**
+     * Schema related items.
+     */
+    struct {
+        struct ref_save_map ref_save_map;
+    } schema;
 
 #if 0
     /**
