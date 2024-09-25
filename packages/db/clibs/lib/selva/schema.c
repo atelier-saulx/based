@@ -419,9 +419,8 @@ int schemabuf_parse(struct schemabuf_parser_ctx *ctx, struct SelvaNodeSchema *ns
         return SELVA_ENOBUFS;
     }
 
-    /* TODO What are the reserved values for created_field and updated_field? */
-    ns->created_field = 0;
-    ns->updated_field = 0;
+    ns->created_field = SELVA_FIELDS_RESERVED;
+    ns->updated_field = SELVA_FIELDS_RESERVED;
 
     field_t field_idx = 0;
     for (size_t i = 1; i < len;) {
