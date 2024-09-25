@@ -55,7 +55,15 @@ export const createSchemaTypeDef = (
   let stringFields: number = 0
 
   for (const key in target) {
-    const f = target[key]
+    let f = target[key]
+
+    if (Array.isArray(f)) {
+      // @ts-ignore
+      f = { enum: f }
+    } else if (typeof f === 'string') {
+      // @ts-ignore
+      f = { type: f }
+    }
     const p = [...path, key]
     const propType = getPropType(f)
     if (propType === 'object') {
