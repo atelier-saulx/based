@@ -39,6 +39,8 @@ export type PropDef = {
   inversePropName?: string
   inverseTypeId?: number
   inversePropNumber?: number
+  reverseEnum?: { [key: string]: number }
+  enum?: any[]
 }
 
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }

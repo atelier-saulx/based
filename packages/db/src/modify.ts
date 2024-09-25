@@ -202,6 +202,7 @@ const addModify = (
           db.modifyBuffer.buffer[t.start + mainIndex] = size
           if (size + 1 > t.len) {
             console.warn('String does not fit fixed len', value)
+            // also skip...
           }
           // 1: timestamp, 4: number
         } else if (t.typeIndex === 1 || t.typeIndex === 4) {
@@ -212,9 +213,15 @@ const addModify = (
           // 9: boolean
         } else if (t.typeIndex === 9) {
           db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
+          // 10: Enum
         } else if (t.typeIndex === 10) {
-          console.log('yo dawg', value)
-          // db.modifyBuffer.buffer[t.start + mainIndex] =
+          const index = t.reverseEnum[value]
+          if (index === undefined) {
+            console.warn('invalid enum value')
+            // skip
+          } else {
+            db.modifyBuffer.buffer[t.start + mainIndex] = index
+          }
         }
       }
     }

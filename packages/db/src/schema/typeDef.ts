@@ -96,7 +96,13 @@ export const createSchemaTypeDef = (
         prop: isSeperate ? result.cnt : 0,
       }
 
-      if (isPropType('references', schemaProp)) {
+      if (isPropType('enum', schemaProp)) {
+        prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
+        prop.reverseEnum = {}
+        for (let i = 0; i < prop.enum.length; i++) {
+          prop.reverseEnum[prop.enum[i]] = i
+        }
+      } else if (isPropType('references', schemaProp)) {
         prop.inversePropName = schemaProp.items.prop
         prop.inverseTypeName = schemaProp.items.ref
       } else if (isPropType('reference', schemaProp)) {
