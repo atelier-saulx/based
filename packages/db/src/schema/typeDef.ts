@@ -3,6 +3,7 @@ import {
   SchemaObject,
   SchemaType,
   getPropType,
+  SchemaReference,
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
@@ -14,7 +15,30 @@ import {
   SIZE_MAP,
   TYPE_INDEX_MAP,
   isType,
+  PropDefEdge,
 } from './types.js'
+
+const addEdges = (prop: PropDef, refProp: SchemaReference) => {
+  let edgesCnt = 0
+  for (const key in refProp) {
+    if (key[0] === '$') {
+      if (!prop.edges) {
+        prop.edges = {}
+        prop.reverseEdges = {}
+      }
+      edgesCnt++
+      const edgeType = getPropType(refProp[key])
+      const edge: PropDefEdge = {
+        prop: edgesCnt,
+        name: key,
+        typeIndex: TYPE_INDEX_MAP[edgeType],
+        len: SIZE_MAP[edgeType],
+      }
+      prop.edges[key] = edge
+      prop.reverseEdges[edge.prop] = edge
+    }
+  }
+}
 
 export const createSchemaTypeDef = (
   typeName: string,
@@ -95,7 +119,6 @@ export const createSchemaTypeDef = (
         len,
         prop: isSeperate ? result.cnt : 0,
       }
-
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
         prop.reverseEnum = {}
@@ -105,11 +128,12 @@ export const createSchemaTypeDef = (
       } else if (isPropType('references', schemaProp)) {
         prop.inversePropName = schemaProp.items.prop
         prop.inverseTypeName = schemaProp.items.ref
+        addEdges(prop, schemaProp.items)
       } else if (isPropType('reference', schemaProp)) {
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
+        addEdges(prop, schemaProp)
       }
-
       result.props[propPath.join('.')] = prop
       if (isSeperate) {
         result.seperate.push(prop)

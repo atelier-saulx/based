@@ -27,9 +27,17 @@ export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
 export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
 
+export type PropDefEdge = {
+  typeIndex: TypeIndex
+  len: number
+  prop: number // (0-250)
+  name: string
+  // ref info later
+}
+
 export type PropDef = {
   __isPropDef: true
-  prop: number // (0-255 - 1) to start?
+  prop: number // (0-250)
   typeIndex: TypeIndex
   seperate: boolean
   path: string[]
@@ -40,6 +48,12 @@ export type PropDef = {
   inverseTypeId?: number
   inversePropNumber?: number
   reverseEnum?: { [key: string]: number }
+  edges?: {
+    [key: string]: PropDefEdge
+  }
+  reverseEdges?: {
+    [prop: string]: PropDefEdge
+  }
   enum?: any[]
 }
 

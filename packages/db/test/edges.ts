@@ -44,23 +44,6 @@ await test('simple', async (t) => {
     flap: 10,
   })
 
-  // const flippie = db.create('user', {
-  //   name: 'Flippie',
-  //   flap: 20,
-  // })
-
-  db.drain()
-
-  const strudelArticle = db.create('article', {
-    name: 'The wonders of Strudel',
-    contributors: [{ id: mrSnurp, $role: 'writer' }],
-  })
-
-  // const piArticle = db.create('article', {
-  //   name: 'Apple Pie is a Lie',
-  //   contributors: [mrSnurp, flippie],
-  // })
-
   db.drain()
 
   console.info(db.query('articles').include('contributors.$role').get())
