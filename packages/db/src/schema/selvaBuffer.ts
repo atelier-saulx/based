@@ -11,7 +11,6 @@ const propDefBuffer = (
     buf.writeUint16LE(prop.len, 1)
     return [...buf.values()]
   } else if (isType(prop, 'reference') || isType(prop, 'references')) {
-    console.log('EDGES?', prop)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
     const buf = Buffer.allocUnsafe(4)
     buf.writeUInt8(type, 0)
