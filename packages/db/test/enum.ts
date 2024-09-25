@@ -37,7 +37,7 @@ await test('enum', async (t) => {
 
   db.create('user', {})
 
-  db.drain()
+  db.drain() // will become async
 
   deepEqual(db.query('user').include('fancyness').get().toObject(), [
     { id: 1, fancyness: 'mid' },

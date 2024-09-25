@@ -40,9 +40,18 @@ export class Query {
     }
   }
 
-  filter(field: string, operator: Operation, value: any) {
+  filter(field: string, operator?: Operation | boolean, value?: any) {
     this.totalConditionSize ??= 0
     this.conditions ??= { conditions: new Map() }
+
+    if (operator === undefined) {
+      operator = '='
+      value = true
+    } else if (typeof operator === 'boolean') {
+      operator = '='
+      value = operator
+    }
+
     this.totalConditionSize += filter(
       field,
       operator,

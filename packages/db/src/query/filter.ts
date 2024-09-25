@@ -116,7 +116,19 @@ export const filter = (
       }
     }
   } else {
-    if (field.typeIndex === 10) {
+    if (field.typeIndex === 9) {
+      const op = operationToByte(operator)
+      // != pretty important
+      if (op === 1) {
+        // single byte equality
+        buf = Buffer.allocUnsafe(5 + 1)
+        buf[0] = 1
+        buf.writeInt16LE(1, 1)
+        buf.writeInt16LE(field.start, 3)
+        buf[5] = value === true ? 1 : 0
+      } else {
+      }
+    } else if (field.typeIndex === 10) {
       const op = operationToByte(operator)
       // != pretty important
       if (op === 1) {
