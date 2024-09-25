@@ -224,7 +224,7 @@ static void langs_log(const struct selva_lang *lang, int err)
             selva_strerror(err));
 }
 
-__constructor static int load_langs(void)
+__constructor static void load_langs(void)
 {
     selva_langs_sort(&selva_langs);
     /* TODO We should handle this error */
