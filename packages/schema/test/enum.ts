@@ -12,6 +12,12 @@ test('enum', () => {
     },
   })
 
+  parseSchema({
+    props: {
+      myEnum: ['published', 'draft'],
+    },
+  })
+
   throws(() => {
     parseSchema({
       props: {

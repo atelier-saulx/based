@@ -14,8 +14,8 @@ test('timestamp', () => {
   throws(() => {
     parseSchema({
       props: {
+        // @ts-ignore
         myEnum: {
-          // @ts-ignore
           enum: [{ invalidObj: true }],
         },
       },

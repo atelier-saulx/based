@@ -99,12 +99,8 @@ test('edges', () => {
           author: {
             ref: 'author',
             prop: 'articles',
-            edge: {
-              props: {
-                role: {
-                  enum: ['admin', 'collaborator'],
-                },
-              },
+            $role: {
+              enum: ['admin', 'collaborator'],
             },
           },
         },
@@ -130,13 +126,7 @@ test('edges', () => {
             author: {
               ref: 'author',
               prop: 'articles',
-              edge: {
-                props: {
-                  role: {
-                    enum: ['admin', 'collaborator'],
-                  },
-                },
-              },
+              $role: ['admin', 'collaborator'],
             },
           },
         },
@@ -146,13 +136,7 @@ test('edges', () => {
               items: {
                 ref: 'article',
                 prop: 'author',
-                edge: {
-                  props: {
-                    role: {
-                      enum: ['admin', 'collaborator'],
-                    },
-                  },
-                },
+                $role: ['admin', 'collaborator'],
               },
             },
           },

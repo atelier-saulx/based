@@ -18,19 +18,18 @@ export const getPropType = (prop: SchemaAnyProp): SchemaPropTypes => {
   }
 
   if ('items' in prop) {
-    // @ts-ignore TODO
     if (getPropType(prop.items) === 'reference') {
       return 'references'
     }
     return 'set'
   }
 
-  if ('enum' in prop) {
-    return 'enum'
-  }
-
   if ('props' in prop) {
     return 'object'
+  }
+
+  if ('enum' in prop || Array.isArray(prop)) {
+    return 'enum'
   }
 
   throw Error(MISSING_TYPE)

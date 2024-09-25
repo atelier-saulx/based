@@ -196,6 +196,12 @@ await test('update', async (t) => {
     })
   }
 
+  const response = db.query('article').include('contributors.$edge').get()
+
+  const { data } = useQuery((query) => {
+    return query('article').include('contributors.$edge')
+  }, [])
+
   db.drain()
 
   equal(db.query('snurp', ids).get().length, 1e6)

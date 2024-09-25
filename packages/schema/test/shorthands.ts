@@ -14,9 +14,7 @@ test('text', () => {
       },
     },
     props: {
-      myText: {
-        type: 'text',
-      },
+      myText: 'text',
     },
   })
 

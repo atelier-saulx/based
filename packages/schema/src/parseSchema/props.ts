@@ -23,6 +23,7 @@ import {
 import {
   EXPECTED_ARR,
   EXPECTED_DATE,
+  EXPECTED_OBJ,
   EXPECTED_PRIMITIVE,
   EXPECTED_VALUE_IN_ENUM,
   INVALID_VALUE,
@@ -37,7 +38,7 @@ import { getPropType } from './utils.js'
 
 type PropsFns<PropType> = Record<
   string,
-  (val, prop: PropType, ctx: Parser) => void
+  (val, prop: PropType, ctx: Parser, key?: string) => void
 >
 
 const shared: PropsFns<SchemaAnyProp> = {
@@ -71,11 +72,28 @@ const shared: PropsFns<SchemaAnyProp> = {
 function propParser<PropType extends SchemaAnyProp>(
   required: PropsFns<PropType>,
   optional: PropsFns<PropType>,
+  allowShorthand?: number,
 ) {
   return (prop, ctx: Parser) => {
+    if (typeof prop === 'string') {
+      // allow string
+      if (allowShorthand === 0) {
+        return
+      }
+      throw Error(EXPECTED_OBJ)
+    }
+    if (Array.isArray(prop)) {
+      // allow array
+      if (allowShorthand === 1) {
+        return
+      }
+      throw Error(EXPECTED_OBJ)
+    }
+
     for (const key in required) {
       required[key](prop[key], prop, ctx)
     }
+
     for (const key in prop) {
       const val = prop[key]
       if (key in optional) {
@@ -83,7 +101,11 @@ function propParser<PropType extends SchemaAnyProp>(
       } else if (key in shared) {
         shared[key](val, prop, ctx)
       } else if (!(key in required)) {
-        throw Error(UNKNOWN_PROP)
+        if (key[0] === '$' && 'ref' in prop) {
+          optional.edge(val, prop, ctx, key)
+        } else {
+          throw Error(UNKNOWN_PROP)
+        }
       }
     }
   }
@@ -98,6 +120,7 @@ p.boolean = propParser<SchemaBoolean>(
       expectBoolean(val)
     },
   },
+  0,
 )
 
 p.enum = propParser<SchemaEnum>(
@@ -120,6 +143,7 @@ p.enum = propParser<SchemaEnum>(
       }
     },
   },
+  1,
 )
 
 p.number = propParser<SchemaNumber>(
@@ -157,6 +181,7 @@ p.number = propParser<SchemaNumber>(
       }
     },
   },
+  0,
 )
 
 p.object = propParser<SchemaObject | SchemaObjectOneWay>(
@@ -207,17 +232,16 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     default(val) {
       expectString(val)
     },
-    edge(val, prop, ctx) {
+    edge(val, prop, ctx, key) {
       const edgeAllowed = ctx.type && !ctx.inQuery
       if (edgeAllowed) {
         let t: any = ctx.schema.types[prop.ref].props[prop.prop]
-        if (t.items) {
-          t = t.items
-        }
-        if (t.edge) {
+        t = t.items || t
+        if (t[key]) {
           throw Error('Edge can not be defined on both props')
         }
-        p.object(val, ctx)
+        const edgePropType = getPropType(val)
+        p[edgePropType](val, ctx)
         return
       }
 
@@ -286,6 +310,7 @@ p.string = propParser<SchemaString>(
       expectString(val)
     },
   },
+  0,
 )
 
 p.text = propParser<SchemaText>(
@@ -307,6 +332,7 @@ p.text = propParser<SchemaText>(
       //   }
     },
   },
+  0,
 )
 
 p.timestamp = propParser<SchemaTimestamp>(
@@ -318,6 +344,7 @@ p.timestamp = propParser<SchemaTimestamp>(
       }
     },
   },
+  0,
 )
 
 export default p
