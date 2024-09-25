@@ -144,25 +144,33 @@ const addModify = (
             console.log('variable len edges implement later... tmp 50 len')
             refLen = (50 + 4 + 1) * value.length
           }
-
           if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
             flushBuffer(db)
           }
-          refLen = 0
+
           setCursor(db, schema, t.prop, id, false, fromCreate)
           db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-          db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+          const sizeIndex = db.modifyBuffer.len + 1
           db.modifyBuffer.len += 5
           for (let i = 0; i < value.length; i++) {
             const ref = value[i]
             if (typeof ref === 'object') {
+              db.modifyBuffer.buffer[db.modifyBuffer.len] = 1
+              db.modifyBuffer.buffer.writeUint32LE(
+                ref.id,
+                db.modifyBuffer.len + 1,
+              )
+              db.modifyBuffer.len += 5
+            } else {
+              db.modifyBuffer.buffer[db.modifyBuffer.len] = 0
+              db.modifyBuffer.buffer.writeUint32LE(ref, db.modifyBuffer.len + 1)
+              db.modifyBuffer.len += 5
             }
-            // db.modifyBuffer.buffer.writeUint32LE(
-            //   value[i],
-            //   i * 4 + db.modifyBuffer.len,
-            // )
           }
-          db.modifyBuffer.len += refLen
+          db.modifyBuffer.buffer.writeUint32LE(
+            db.modifyBuffer.len - (sizeIndex + 5),
+            sizeIndex,
+          )
         } else {
           const refLen = 5 * value.length
           if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
