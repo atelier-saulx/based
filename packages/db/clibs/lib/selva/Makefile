@@ -30,6 +30,7 @@ OBJ := \
 	io/io.o \
 	io/sdb.o \
 	langs.o \
+	ref_save_map.o \
 	schema.o \
 	sort.o \
 	traverse.o \

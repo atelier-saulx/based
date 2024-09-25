@@ -119,7 +119,7 @@ struct SelvaDb *selva_db_create(void)
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
     SVector_Init(&db->type_list, 1, SVector_SelvaTypeEntry_compare);
-    db->schemabuf_ctx = schemabuf_create_ctx();
+    ref_save_map_init(&db->schema.ref_save_map);
 #if 0
     db->expiring.next = SELVA_NODE_EXPIRE_NEVER;
     SVector_Init(&db->expiring.list, 0, SVector_SelvaNode_expire_compare);
@@ -175,7 +175,7 @@ static void del_all_types(struct SelvaDb *db)
 void selva_db_destroy(struct SelvaDb *db)
 {
     del_all_types(db);
-    schemabuf_destroy_ctx(db->schemabuf_ctx);
+    ref_save_map_destroy(&db->schema.ref_save_map);
 #if 0
     memset(db, 0, sizeof(*db));
 #endif
@@ -238,7 +238,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     te->ns.nr_fixed_fields = count.nr_fixed_fields;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
-    err = schemabuf_parse(db->schemabuf_ctx, &te->ns, schema_buf, schema_len);
+    err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
