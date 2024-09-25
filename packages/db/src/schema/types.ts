@@ -32,6 +32,8 @@ export type PropDefEdge = {
   len: number
   prop: number // (0-250)
   name: string
+  enum?: any[]
+  reverseEnum?: { [key: string]: number }
   // ref info later
 }
 
@@ -47,6 +49,7 @@ export type PropDef = {
   inversePropName?: string
   inverseTypeId?: number
   inversePropNumber?: number
+  enum?: any[]
   reverseEnum?: { [key: string]: number }
   edges?: {
     [key: string]: PropDefEdge
@@ -54,7 +57,6 @@ export type PropDef = {
   reverseEdges?: {
     [prop: string]: PropDefEdge
   }
-  enum?: any[]
 }
 
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }
