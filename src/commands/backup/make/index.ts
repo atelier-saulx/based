@@ -1,6 +1,5 @@
 import { Command } from 'commander'
-import { basedAuth } from '../../../shared/index.js'
-import AppContext from '../../../shared/AppContext.js'
+import { basedAuth, AppContext } from '../../../shared/index.js'
 
 export const make = (program: Command, context: AppContext) => async () => {
   const { org, project, env } = program.opts()

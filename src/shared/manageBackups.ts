@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns'
 import { isCurrentDump } from './pathAndFiles.js'
-import AppContext, { SelectInputItems } from './AppContext.js'
+import { AppContext, SelectInputItems } from './AppContext.js'
 
 type BackupInfo = {
   key: string

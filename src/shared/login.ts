@@ -3,7 +3,7 @@ import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
 import { AuthState, BasedClient } from '@based/client'
-import AppContext, { SelectInputItems } from './AppContext.js'
+import { AppContext, SelectInputItems } from './AppContext.js'
 
 type User = {
   email: string

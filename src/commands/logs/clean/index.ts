@@ -1,6 +1,5 @@
 import { Command } from 'commander'
-import { basedAuth } from '../../../shared/index.js'
-import AppContext from '../../../shared/AppContext.js'
+import { basedAuth, AppContext } from '../../../shared/index.js'
 
 export const clean = (program: Command, context: AppContext) => async () => {
   const { basedClient, destroy } = await basedAuth(program, context)

@@ -11,8 +11,8 @@ import {
   parseSchema,
   getTargets,
   isIndexFile,
+  AppContext,
 } from './index.js'
-import AppContext from './AppContext.js'
 
 const { glob } = fg
 

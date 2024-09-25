@@ -8,7 +8,7 @@ import {
   dev,
   backup,
 } from './commands/index.js'
-import AppContext from './shared/AppContext.js'
+import { AppContext } from './shared/index.js'
 
 export const init = async () => {
   const program: Command = new Command()

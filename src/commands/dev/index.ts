@@ -6,6 +6,7 @@ import {
   invalidate,
   spinner,
   basedAuth,
+  AppContext,
 } from '../../shared/index.js'
 import { OutputFile } from '@based/bundle'
 import { Readable } from 'node:stream'
@@ -14,7 +15,6 @@ import { hash } from '@saulx/hash'
 import getPort from 'get-port'
 import { join } from 'path'
 import pc from 'picocolors'
-import AppContext from '../../shared/AppContext.js'
 // import handler from 'serve-handler'
 // import http from 'http'
 

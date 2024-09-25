@@ -1,6 +1,11 @@
 import { Command } from 'commander'
 import { OutputFile } from '@based/bundle'
-import { basedAuth, parseFunctions, parseSchema } from '../../shared/index.js'
+import {
+  basedAuth,
+  parseFunctions,
+  parseSchema,
+  AppContext,
+} from '../../shared/index.js'
 import { hash, hashCompact } from '@saulx/hash'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
@@ -8,7 +13,6 @@ import { BasedClient } from '@based/client'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
 import ts from 'typescript'
-import AppContext from '../../shared/AppContext.js'
 
 const findType = (node: ts.Node, typeName: string) => {
   // @ts-ignore

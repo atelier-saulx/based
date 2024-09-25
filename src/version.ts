@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import { readJSON } from 'fs-extra/esm'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import AppContext from './shared/AppContext.js'
+import { AppContext } from './shared/index.js'
 
 export const version = async (
   program: Command,

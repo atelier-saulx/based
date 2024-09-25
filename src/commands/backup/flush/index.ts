@@ -4,9 +4,9 @@ import {
   backupsSelection,
   BackupsSorted,
   basedAuth,
+  AppContext,
 } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
-import AppContext from '../../../shared/AppContext.js'
 
 type FlushArgs = {
   db?: string

@@ -4,7 +4,7 @@ import { list } from './list/index.js'
 import { restore } from './restore/index.js'
 import { flush } from './flush/index.js'
 import { download } from './download/index.js'
-import AppContext from '../../shared/AppContext.js'
+import { AppContext } from '../../shared/index.js'
 
 export const backup = async (program: Command, context: AppContext) => {
   const cmd: Command = program

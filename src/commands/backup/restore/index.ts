@@ -4,12 +4,12 @@ import {
   BackupsSorted,
   basedAuth,
   replaceTilde,
+  AppContext,
 } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 import { BasedClient } from '@based/client'
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
-import AppContext from '../../../shared/AppContext.js'
 
 type RestoreArgs = {
   db?: string

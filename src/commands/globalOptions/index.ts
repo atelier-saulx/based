@@ -2,7 +2,7 @@ import { findUp } from 'find-up'
 import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 import { Command } from 'commander'
-import AppContext from '../../shared/AppContext.js'
+import { AppContext } from '../../shared/index.js'
 
 export const globalOptions = async (
   program: Command,
