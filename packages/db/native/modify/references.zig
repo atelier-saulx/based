@@ -14,8 +14,8 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeEntry = try db.getType(refTypeId);
     const len = data.len;
     var i: usize = 0;
-    while (i < len) : (i += 4) {
-        const id = readInt(u32, data, i);
+    while (i < len) : (i += 5) {
+        const id = readInt(u32, data, i + 1);
         var nodes: [1]db.Node = undefined;
         // maybe this fails?
         nodes[0] = try db.upsertNode(id, refTypeEntry);

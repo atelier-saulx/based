@@ -110,15 +110,36 @@ const addModify = (
         if (t.edges) {
           // FIX
           console.log('got edges do different')
-
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          let refLen = 0
           if (t.edgesTotalLen) {
+            console.log('EDGES')
+            refLen = (t.edgesTotalLen + 4 + 1) * value.length
           } else {
-            // do the loop and handle it
+            console.log('variable len edges implement later... tmp 50 len')
+            refLen = (50 + 4 + 1) * value.length
           }
-          // if only fixed len edges use that to check
-          // otherwise need to make a seperate thing
+
+          if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          refLen = 0
+          setCursor(db, schema, t.prop, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+          db.modifyBuffer.len += 5
+          for (let i = 0; i < value.length; i++) {
+            const ref = value[i]
+            if (typeof ref === 'object') {
+            }
+            // db.modifyBuffer.buffer.writeUint32LE(
+            //   value[i],
+            //   i * 4 + db.modifyBuffer.len,
+            // )
+          }
+          db.modifyBuffer.len += refLen
         } else {
-          const refLen = 4 * value.length
+          const refLen = 5 * value.length
           if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
             flushBuffer(db)
           }
@@ -127,9 +148,10 @@ const addModify = (
           db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
           db.modifyBuffer.len += 5
           for (let i = 0; i < value.length; i++) {
+            db.modifyBuffer.buffer[db.modifyBuffer.len + i * 5] = 0
             db.modifyBuffer.buffer.writeUint32LE(
               value[i],
-              i * 4 + db.modifyBuffer.len,
+              i * 5 + db.modifyBuffer.len + 1,
             )
           }
           db.modifyBuffer.len += refLen
