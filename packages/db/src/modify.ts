@@ -107,21 +107,33 @@ const addModify = (
         }
         // 14: references
       } else if (t.typeIndex === 14) {
-        const refLen = 4 * value.length
-        if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
-          flushBuffer(db)
+        if (t.edges) {
+          // FIX
+          console.log('got edges do different')
+
+          if (t.edgesTotalLen) {
+          } else {
+            // do the loop and handle it
+          }
+          // if only fixed len edges use that to check
+          // otherwise need to make a seperate thing
+        } else {
+          const refLen = 4 * value.length
+          if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, t.prop, id, false, fromCreate)
+          db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+          db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+          db.modifyBuffer.len += 5
+          for (let i = 0; i < value.length; i++) {
+            db.modifyBuffer.buffer.writeUint32LE(
+              value[i],
+              i * 4 + db.modifyBuffer.len,
+            )
+          }
+          db.modifyBuffer.len += refLen
         }
-        setCursor(db, schema, t.prop, id, false, fromCreate)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-        db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
-        db.modifyBuffer.len += 5
-        for (let i = 0; i < value.length; i++) {
-          db.modifyBuffer.buffer.writeUint32LE(
-            value[i],
-            i * 4 + db.modifyBuffer.len,
-          )
-        }
-        db.modifyBuffer.len += refLen
         // 11: string
       } else if (t.typeIndex === 11 && t.seperate === true) {
         const len = value === null ? 0 : value.length

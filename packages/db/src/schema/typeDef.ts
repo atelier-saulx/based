@@ -25,6 +25,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       if (!prop.edges) {
         prop.edges = {}
         prop.reverseEdges = {}
+        prop.edgesTotalLen = 0
       }
       edgesCnt++
       const edgeType = getPropType(refProp[key])
@@ -33,6 +34,11 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         name: key,
         typeIndex: TYPE_INDEX_MAP[edgeType],
         len: SIZE_MAP[edgeType],
+      }
+      if (edge.len == 0) {
+        prop.edgesTotalLen = 0
+      } else {
+        prop.edgesTotalLen += edge.len
       }
       if (edge.typeIndex === 10) {
         edge.enum = Array.isArray(refProp[key])

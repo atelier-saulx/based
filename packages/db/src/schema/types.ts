@@ -51,6 +51,7 @@ export type PropDef = {
   inversePropNumber?: number
   enum?: any[]
   reverseEnum?: { [key: string]: number }
+  edgesTotalLen?: number
   edges?: {
     [key: string]: PropDefEdge
   }
