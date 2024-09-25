@@ -178,6 +178,15 @@ export const readSeperateFieldFromBuffer = (
         return buffer.readFloatLE(i + fIndex)
       }
 
+      // 10: Enum
+      if (requestedField.typeIndex === 10) {
+        const index = buffer[i + fIndex]
+        if (index === 0) {
+          return undefined
+        }
+        return requestedField.enum[index - 1]
+      }
+
       // 1: Timestamp
       if (requestedField.typeIndex === 1) {
         return buffer.readFloatLE(i + fIndex)

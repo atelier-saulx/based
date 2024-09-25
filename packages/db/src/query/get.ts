@@ -22,9 +22,6 @@ export const get = (query: Query): BasedQueryResponse => {
     query.totalConditionSize,
   )
 
-  console.log('conditionsBuffer', new Uint8Array(conditionsBuffer))
-  console.log('includeBuffer', new Uint8Array(includeBuffer))
-
   let result: Buffer
   const d = performance.now()
   if (query.ids) {
@@ -96,8 +93,6 @@ export const get = (query: Query): BasedQueryResponse => {
       includeBuffer,
     )
   }
-
-  // console.info('QUERY RESULT', new Uint8Array(result))
 
   const time = performance.now() - d
   const q = new BasedQueryResponse(query, result)

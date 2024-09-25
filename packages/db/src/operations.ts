@@ -6,9 +6,11 @@ export const flushBuffer = (db: BasedDb) => {
     try {
       // todo check if this is smart
       db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
+      // or it sends it to the actual db
     } catch (err) {
       console.error(err)
     }
+    // add errors and reset them here
     db.modifyBuffer.len = 0
     db.modifyBuffer.typePrefix = new Uint8Array([0, 0])
     db.modifyBuffer.field = -1

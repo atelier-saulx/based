@@ -27,9 +27,19 @@ export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
 export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
 
+export type PropDefEdge = {
+  typeIndex: TypeIndex
+  len: number
+  prop: number // (0-250)
+  name: string
+  enum?: any[]
+  reverseEnum?: { [key: string]: number }
+  // ref info later
+}
+
 export type PropDef = {
   __isPropDef: true
-  prop: number // (0-255 - 1) to start?
+  prop: number // (0-250)
   typeIndex: TypeIndex
   seperate: boolean
   path: string[]
@@ -39,6 +49,14 @@ export type PropDef = {
   inversePropName?: string
   inverseTypeId?: number
   inversePropNumber?: number
+  enum?: any[]
+  reverseEnum?: { [key: string]: number }
+  edges?: {
+    [key: string]: PropDefEdge
+  }
+  reverseEdges?: {
+    [prop: string]: PropDefEdge
+  }
 }
 
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }
@@ -84,7 +102,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   uint32: 4,
   boolean: 1, // 1bit (6 bits overhead)
   reference: 0, // seperate
-  enum: 4, // enum
+  enum: 1, // enum
   string: 0, // var length fixed length will be different
   references: 0,
   microbuffer: 0,

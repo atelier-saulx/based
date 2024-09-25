@@ -83,12 +83,15 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
 
+        if (refInclude.edgeIncludes) {
+          console.info('GO INCLUDE THESE MOFOS!', refInclude.edgeIncludes)
+        }
+
         const filterConditions =
           include.referencesFilters[refInclude.fromRef.path.join('.')]
         let filter: Buffer
 
         if (filterConditions) {
-          console.log(filterConditions)
           filter = addConditions(filterConditions, filterConditions.size)
         }
 
@@ -221,9 +224,18 @@ const parseInclude = (
   const path = f.split('.')
 
   if (!field) {
+    if (include.fromRef && f[0] == '$') {
+      if (!include.edgeIncludes) {
+        include.edgeIncludes = {}
+      }
+      include.edgeIncludes[f] = include.fromRef.edges[f]
+      return
+    }
+
     let t: PropDef | SchemaPropTree = include.schema.tree
     for (let i = 0; i < path.length; i++) {
       const p = path[i]
+
       t = t[p]
       if (!t) {
         return

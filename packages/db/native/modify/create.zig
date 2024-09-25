@@ -13,11 +13,14 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
+    // std.debug.print("MR SNURFELS field: {d} {any}  \n", .{ ctx.field, data });
+
     if (ctx.fieldType == 14) {
         try references.updateReferences(ctx, data);
     } else if (ctx.fieldType == 13) {
         const id = readInt(u32, data, 0);
         const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
+
         const refTypeEntry = try db.getType(refTypeId);
         const node = db.getNode(id, refTypeEntry);
         if (node == null) {

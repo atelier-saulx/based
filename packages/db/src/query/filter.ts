@@ -116,7 +116,34 @@ export const filter = (
       }
     }
   } else {
-    if (field.typeIndex === 11) {
+    if (field.typeIndex === 9) {
+      const op = operationToByte(operator)
+      // != pretty important
+      if (op === 1) {
+        // single byte equality
+        buf = Buffer.allocUnsafe(4)
+        buf[0] = 5
+        buf.writeInt16LE(field.start, 1)
+        buf[3] = value === true ? 1 : 0
+      } else {
+      }
+    } else if (field.typeIndex === 10) {
+      const op = operationToByte(operator)
+      // != pretty important
+      if (op === 1) {
+        const index = field.reverseEnum[value]
+        if (index != undefined) {
+          // single byte equality
+          buf = Buffer.allocUnsafe(4)
+          buf[0] = 5
+          buf.writeInt16LE(field.start, 1)
+          buf[3] = index + 1
+        } else {
+          throw new Error('incorrect val for enum!')
+        }
+      } else {
+      }
+    } else if (field.typeIndex === 11) {
       const op = operationToByte(operator)
       if (op === 1) {
         const matches = Buffer.from(value)
