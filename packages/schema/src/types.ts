@@ -1,4 +1,57 @@
 import { getPropType } from './parseSchema/utils.js'
+type Letter =
+  | 'A'
+  | 'B'
+  | 'C'
+  | 'D'
+  | 'E'
+  | 'F'
+  | 'G'
+  | 'H'
+  | 'I'
+  | 'J'
+  | 'K'
+  | 'L'
+  | 'M'
+  | 'N'
+  | 'O'
+  | 'P'
+  | 'Q'
+  | 'R'
+  | 'S'
+  | 'T'
+  | 'U'
+  | 'V'
+  | 'W'
+  | 'X'
+  | 'Y'
+  | 'Z'
+  | 'a'
+  | 'b'
+  | 'c'
+  | 'd'
+  | 'e'
+  | 'f'
+  | 'g'
+  | 'h'
+  | 'i'
+  | 'j'
+  | 'k'
+  | 'l'
+  | 'm'
+  | 'n'
+  | 'o'
+  | 'p'
+  | 'q'
+  | 'r'
+  | 's'
+  | 't'
+  | 'u'
+  | 'v'
+  | 'w'
+  | 'x'
+  | 'y'
+  | 'z'
 
 type QueryFn = Function
 type PropValues = { type?: string; default?: any }
@@ -35,16 +88,18 @@ export type SchemaNumber = Prop<{
   step: number | 'any'
 }>
 
+type NumberType =
+  | 'float32'
+  | 'float64'
+  | 'int8'
+  | 'uint8'
+  | 'int16'
+  | 'uint16'
+  | 'int32'
+  | 'uint32'
+
 export type SchemaExactNumber = Prop<{
-  type:
-    | 'float32'
-    | 'float64'
-    | 'int8'
-    | 'uint8'
-    | 'int16'
-    | 'uint16'
-    | 'int32'
-    | 'uint32'
+  type: NumberType
   default?: number
   min?: number
   max?: number
@@ -69,13 +124,19 @@ export type SchemaTimestamp = Prop<{
   default?: number | Date
 }>
 
+export type SchemaReferenceOneWay = Prop<{
+  type?: 'reference'
+  default?: string
+  ref: string
+}>
+
 export type SchemaReference = Prop<{
   type?: 'reference'
   default?: string
   ref: string
   prop: string
-  edge?: SchemaObjectOneWay
-}>
+}> &
+  Record<`$${string}`, SchemaPropOneWay>
 
 export type SchemaObject = Prop<{
   type?: 'object'
@@ -84,10 +145,9 @@ export type SchemaObject = Prop<{
 
 export type SchemaObjectOneWay = Prop<{
   type?: 'object'
-  props: SchemaRootProps
+  props: SchemaPropsOneWay
 }>
 
-export type SchemaReferenceOneWay = Omit<SchemaReference, 'prop' | 'edge'>
 export type SchemaReferenceWithQuery = SchemaReferenceOneWay & {
   query: QueryFn
 }
@@ -101,14 +161,14 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaShorthandProp = (
-  | SchemaText
-  | SchemaNumber
-  | SchemaExactNumber
-  | SchemaString
-  | SchemaTimestamp
-  | SchemaBoolean
-)['type']
+export type SchemaPropShorthand =
+  | 'string'
+  | 'text'
+  | 'number'
+  | 'boolean'
+  | 'timestamp'
+  | NumberType
+  | EnumItem[]
 
 type SetItems =
   | SchemaNumber
@@ -116,7 +176,7 @@ type SetItems =
   | SchemaTimestamp
   | SchemaBoolean
   | SchemaEnum
-  | SchemaShorthandProp
+  | SchemaPropShorthand
 
 export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
   type?: 'set'
@@ -133,7 +193,7 @@ type NonRefSchemaProps =
   | SchemaEnum
   | SchemaExactNumber
   | SchemaSet
-  | SchemaShorthandProp
+  | SchemaPropShorthand
 
 export type SchemaProp =
   | NonRefSchemaProps
@@ -143,13 +203,13 @@ export type SchemaProp =
   | SchemaReferencesWithQuery
   | SchemaObject
 
-export type SchemaRootProp =
+export type SchemaPropOneWay =
   | NonRefSchemaProps
   | SchemaReferenceOneWay
   | SchemaReferencesOneWay
   | SchemaObjectOneWay
 
-export type SchemaAnyProp = SchemaRootProp | SchemaProp
+export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
 export type SchemaProps = Record<string, SchemaProp>
 export type SchemaType = {
@@ -163,14 +223,11 @@ export type SchemaType = {
 }
 
 export type SchemaTypes = Record<string, SchemaType>
-export type SchemaRootProps = Record<
-  string,
-  SchemaRootProp | SchemaShorthandProp
->
+export type SchemaPropsOneWay = Record<`${Letter}${string}`, SchemaPropOneWay>
 
 export type Schema = {
   types?: SchemaTypes
-  props?: SchemaRootProps
+  props?: SchemaPropsOneWay
   locales?: SchemaLocales
 }
 
@@ -193,7 +250,7 @@ export type SchemaPropTypeMap = {
   set: SchemaSet
   reference: SchemaReference
   references: SchemaReferences
-} & Record<SchemaExactNumber['type'], SchemaExactNumber>
+} & Record<NumberType, SchemaExactNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap
 export const isPropType = <T extends SchemaPropTypes>(

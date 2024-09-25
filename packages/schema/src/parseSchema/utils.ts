@@ -25,12 +25,12 @@ export const getPropType = (prop: SchemaAnyProp): SchemaPropTypes => {
     return 'set'
   }
 
-  if ('enum' in prop) {
-    return 'enum'
-  }
-
   if ('props' in prop) {
     return 'object'
+  }
+
+  if ('enum' in prop || Array.isArray(prop)) {
+    return 'enum'
   }
 
   throw Error(MISSING_TYPE)
