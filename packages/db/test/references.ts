@@ -66,12 +66,12 @@ await test('simple', async (t) => {
   db.drain()
 
   deepEqual(db.query('article').include('contributors.name').get().toObject(), [
-    { id: strudelArticle, contributors: [{ id: mrSnurp, name: 'Mr snurp' }] },
+    { id: +strudelArticle, contributors: [{ id: +mrSnurp, name: 'Mr snurp' }] },
     {
-      id: piArticle,
+      id: +piArticle,
       contributors: [
-        { id: mrSnurp, name: 'Mr snurp' },
-        { id: flippie, name: 'Flippie' },
+        { id: +mrSnurp, name: 'Mr snurp' },
+        { id: +flippie, name: 'Flippie' },
       ],
     },
   ])
@@ -264,7 +264,7 @@ await test('update', async (t) => {
       contributors: [
         {
           name: 'Flippie',
-          id: flippie,
+          id: +flippie,
         },
       ],
     },

@@ -1,4 +1,4 @@
-import { create, update, remove } from './modify.js'
+import { create, update, remove, ModifyRes } from './modify.js'
 import { Schema, SchemaType } from '@based/schema'
 import {
   PropDef,
@@ -46,8 +46,8 @@ export class BasedDb {
     lastMain: number
     mergeMain: (PropDef | any)[] | null
     mergeMainSize: number
+    queue: any[]
   }
-
   schema: InternalSchema = DEFAULT_SCHEMA
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -81,6 +81,7 @@ export class BasedDb {
       typePrefix: new Uint8Array([0, 0]),
       id: -1,
       lastMain: -1,
+      queue: [],
     }
     this.fileSystemPath = path
 
@@ -174,29 +175,57 @@ export class BasedDb {
   }
 
   removeSchema() {
-    // fix
+    // TODO fix
   }
 
-  create(type: string, value: any) {
+  create(type: string, value: any): ModifyRes {
     return create(this, type, value)
   }
 
-  update(type: string, id: number, value: any, overwrite?: boolean) {
-    return update(this, type, id, value, overwrite)
+  update(
+    type: string,
+    id: number | ModifyRes,
+    value: any,
+    overwrite?: boolean,
+  ): ModifyRes {
+    return update(
+      this,
+      type,
+      typeof id === 'number' ? id : id.tmpId,
+      value,
+      overwrite,
+    )
   }
 
-  remove(type: string, id: number) {
-    return remove(this, type, id)
+  remove(type: string, id: number | ModifyRes) {
+    return remove(this, type, typeof id === 'number' ? id : id.tmpId)
   }
 
-  query(target: string, id?: number | number[]): Query {
+  query(
+    target: string,
+    id?: number | ModifyRes | (number | ModifyRes)[],
+  ): Query {
+    if (Array.isArray(id)) {
+      let i = id.length
+      while (i--) {
+        if (typeof id[i] == 'object') {
+          // @ts-ignore
+          id[i] = id[i].tmpId
+        }
+      }
+    } else if (typeof id == 'object') {
+      // @ts-ignore
+      id = id.tmpId
+    }
+
+    // @ts-ignore
     return query(this, target, id)
   }
 
   // drain write buffer returns perf in ms
   drain() {
     flushBuffer(this)
-    let t = this.writeTime
+    const t = this.writeTime
     this.writeTime = 0
     return t
   }

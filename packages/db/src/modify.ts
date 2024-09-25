@@ -4,6 +4,31 @@ import { startDrain, flushBuffer } from './operations.js'
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
 
+export type ModifyRes = {
+  tmpId: number
+  error?: Error
+} & Promise<number>
+
+class _ModifyRes {
+  constructor(tmpId, db) {
+    this.tmpId = tmpId
+    this.#db = db
+  }
+  #db: BasedDb
+  tmpId = 0
+  error?: Error;
+  [Symbol.toPrimitive]() {
+    return this.tmpId
+  }
+  then(resolve, reject) {
+    if (this.error) {
+      reject(this.error)
+    } else {
+      this.#db.modifyBuffer.queue.push(resolve, this.tmpId)
+    }
+  }
+}
+
 const setCursor = (
   db: BasedDb,
   schema: SchemaTypeDef,
@@ -244,9 +269,12 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   return true
 }
 
-export const create = (db: BasedDb, type: string, value: any) => {
+export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
+
+  const res = new _ModifyRes(id, db)
+
   def.total++
 
   if (
@@ -298,7 +326,8 @@ export const create = (db: BasedDb, type: string, value: any) => {
     startDrain(db)
   }
 
-  return id
+  // @ts-ignore
+  return res
 }
 
 export const update = (
@@ -307,9 +336,10 @@ export const update = (
   id: number,
   value: any,
   overwrite?: boolean,
-) => {
+): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite, false)
+  const res = new _ModifyRes(id, db)
 
   if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
     const mergeMain = db.modifyBuffer.mergeMain
@@ -360,4 +390,7 @@ export const update = (
   if (!db.isDraining) {
     startDrain(db)
   }
+
+  // @ts-ignore
+  return res
 }

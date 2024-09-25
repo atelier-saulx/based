@@ -124,11 +124,13 @@ db.updateSchema({
   },
 })
 
+const d = Date.now()
+
 for (let i = 0; i < 20e6; i++) {
   db.create('todo', { done: false, age: i })
 }
 
-console.log('db time', db.drain())
+console.log('db time', db.drain(), Date.now() - d)
 
 console.log(db.query('todo').range(0, 100).get())
 

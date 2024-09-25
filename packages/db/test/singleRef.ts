@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, ModifyRes } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 
@@ -328,9 +328,9 @@ await test('nested', async (t) => {
   })
 
   const amount = 1e5
-  let lastID = 0
+  let lastRes: ModifyRes
   for (let i = 0; i < amount; i++) {
-    lastID = db.create('simple', {
+    lastRes = db.create('simple', {
       user,
       vectorClock: i,
       countryCode: 'aa',
@@ -356,9 +356,9 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    db.query('simple', lastID).include('user.location').get().toObject(),
+    db.query('simple', lastRes).include('user.location').get().toObject(),
     {
-      id: lastID,
+      id: +lastRes,
       user: {
         id: 1,
         location: { label: 'BLA BLA', x: 1, y: 2 },
@@ -368,9 +368,9 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    db.query('simple', lastID).include('user').get().toObject(),
+    db.query('simple', lastRes).include('user').get().toObject(),
     {
-      id: lastID,
+      id: +lastRes,
       user: {
         id: 1,
         name: 'Jim de Beer',
@@ -387,14 +387,14 @@ await test('nested', async (t) => {
 
   deepEqual(
     db
-      .query('simple') // lastID
+      .query('simple') // lastRes
       .include('user.myBlup')
-      .range(lastID - 1, 1)
+      .range(+lastRes - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: lastID,
+        id: +lastRes,
         user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
       },
     ],
@@ -402,9 +402,9 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    db.query('simple', lastID).include('user.myBlup').get().toObject(),
+    db.query('simple', lastRes).include('user.myBlup').get().toObject(),
     {
-      id: lastID,
+      id: +lastRes,
       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
     },
     'Get single id myBlup ',
@@ -412,12 +412,12 @@ await test('nested', async (t) => {
 
   deepEqual(
     db
-      .query('simple', lastID)
+      .query('simple', lastRes)
       .include('user.myBlup', 'lilBlup')
       .get()
       .toObject(),
     {
-      id: lastID,
+      id: +lastRes,
       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
       lilBlup: { id: 1, flap: 'A', name: 'blup !' },
     },
@@ -425,7 +425,7 @@ await test('nested', async (t) => {
   )
 
   equal(
-    db.query('simple', lastID).include('user.myBlup').get().node().user.myBlup
+    db.query('simple', lastRes).include('user.myBlup').get().node().user.myBlup
       .flap,
     'A',
     'Read nested field with getter',
@@ -435,12 +435,12 @@ await test('nested', async (t) => {
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup', 'user.name')
-      .range(lastID - 1, 1)
+      .range(+lastRes - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: lastID,
+        id: +lastRes,
         user: {
           id: 1,
           myBlup: { id: 1, flap: 'A', name: 'blup !' },
@@ -453,25 +453,28 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    db.query('simple', lastID).include('user.location.label').get().toObject(),
-    { id: lastID, user: { id: 1, location: { label: 'BLA BLA' } } },
+    db.query('simple', lastRes).include('user.location.label').get().toObject(),
+    { id: +lastRes, user: { id: 1, location: { label: 'BLA BLA' } } },
   )
 
   deepEqual(
-    db.query('simple', lastID).include('user.location').get().toObject(),
-    { id: lastID, user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } } },
+    db.query('simple', lastRes).include('user.location').get().toObject(),
+    {
+      id: +lastRes,
+      user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } },
+    },
   )
 
   deepEqual(
     db
       .query('simple')
       .include('user.myBlup', 'lilBlup')
-      .range(lastID - 1, 1)
+      .range(+lastRes - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: lastID,
+        id: +lastRes,
         user: {
           id: 1,
           myBlup: {
@@ -493,12 +496,12 @@ await test('nested', async (t) => {
     db
       .query('simple')
       .include('user', 'user.myBlup')
-      .range(lastID - 1, 1)
+      .range(+lastRes - 1, 1)
       .get()
       .toObject(),
     [
       {
-        id: lastID,
+        id: +lastRes,
         user: {
           id: 1,
           name: 'Jim de Beer',
@@ -517,12 +520,12 @@ await test('nested', async (t) => {
 
   deepEqual(
     db
-      .query('simple', lastID)
+      .query('simple', lastRes)
       .include('user', 'user.myBlup', 'lilBlup')
       .get()
       .toObject(),
     {
-      id: lastID,
+      id: +lastRes,
       user: {
         id: 1,
         name: 'Jim de Beer',

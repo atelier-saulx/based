@@ -19,9 +19,17 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.hasStringField = -1
     const time = Date.now() - d
     db.writeTime += time
+    let i = db.modifyBuffer.queue.length
+    while (i--) {
+      const tmpId = db.modifyBuffer.queue[i]
+      const resolve = db.modifyBuffer.queue[--i]
+      resolve(tmpId)
+    }
+    db.modifyBuffer.queue = []
     return time
   }
   db.isDraining = false
+
   return 0
 }
 
