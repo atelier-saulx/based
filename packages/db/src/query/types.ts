@@ -1,4 +1,4 @@
-import { PropDef, SchemaTypeDef } from '../schema/schema.js'
+import { PropDef, PropDefEdge, SchemaTypeDef } from '../schema/schema.js'
 
 export type Operation =
   | '='
@@ -47,6 +47,7 @@ export type QueryIncludeDef = {
   }
   includeFields: Set<string>
   includeTree: IncludeTreeArr // meh
+  edgeIncludes?: { [field: string]: PropDefEdge }
   refIncludes?: { [field: string]: QueryIncludeDef } // { } tree for refs prob
 }
 

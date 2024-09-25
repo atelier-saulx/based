@@ -17,6 +17,7 @@ await test('simple', async (t) => {
     types: {
       user: {
         props: {
+          name: 'string',
           articles: {
             items: {
               ref: 'article',
@@ -27,6 +28,7 @@ await test('simple', async (t) => {
       },
       article: {
         props: {
+          name: 'string',
           contributors: {
             items: {
               $role: ['writer', 'editor'],
@@ -41,12 +43,20 @@ await test('simple', async (t) => {
 
   const mrSnurp = db.create('user', {
     name: 'Mr snurp',
-    flap: 10,
   })
 
   db.drain()
 
-  console.info(db.query('articles').include('contributors.$role').get())
+  const strudelArticle = db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: [{ id: mrSnurp, $role: 'writer' }],
+  })
+
+  db.drain()
+
+  db.query('article').include('contributors.$role').get().debug()
+
+  console.info(db.query('article').include('contributors.$role').get())
 
   // deepEqual(db.query('user').include('articles.name').get().toObject(), [
   //   {
