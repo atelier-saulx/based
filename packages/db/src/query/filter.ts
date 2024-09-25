@@ -116,7 +116,24 @@ export const filter = (
       }
     }
   } else {
-    if (field.typeIndex === 11) {
+    if (field.typeIndex === 10) {
+      const op = operationToByte(operator)
+      // != pretty important
+      if (op === 1) {
+        const index = field.reverseEnum[value]
+        if (index != undefined) {
+          // single byte equality
+          buf = Buffer.allocUnsafe(5 + 1)
+          buf[0] = 1
+          buf.writeInt16LE(1, 1)
+          buf.writeInt16LE(field.start, 3)
+          buf[5] = index + 1
+        } else {
+          throw new Error('incorrect val for enum!')
+        }
+      } else {
+      }
+    } else if (field.typeIndex === 11) {
       const op = operationToByte(operator)
       if (op === 1) {
         const matches = Buffer.from(value)

@@ -39,14 +39,20 @@ await test('enum', async (t) => {
 
   db.drain()
 
-  const result = db.query('user').include('fancyness').get()
-
-  console.log(result.toObject())
-
-  deepEqual(result.toObject(), [
+  deepEqual(db.query('user').include('fancyness').get().toObject(), [
     { id: 1, fancyness: 'mid' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
     { id: 4, fancyness: undefined },
   ])
+
+  deepEqual(
+    db
+      .query('user')
+      .include('fancyness')
+      .filter('fancyness', '=', 'fire')
+      .get()
+      .toObject(),
+    [{ id: 2, fancyness: 'fire' }],
+  )
 })
