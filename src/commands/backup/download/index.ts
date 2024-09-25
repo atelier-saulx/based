@@ -5,13 +5,13 @@ import {
   isValidPath,
   replaceTilde,
   sanitizeFileName,
+  AppContext,
 } from '../../../shared/index.js'
 import { join, resolve } from 'node:path'
 import { writeFile } from 'fs/promises'
 import { BasedClient } from '@based/client'
 import { Command } from 'commander'
 import { getList } from '../list/index.js'
-import AppContext from '../../../shared/AppContext.js'
 
 type DownloadArgs = {
   db?: string

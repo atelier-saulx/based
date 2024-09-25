@@ -13,7 +13,7 @@ interface MessageHandler {
   warning: (message: string, icon?: boolean | string) => this
   fail: (message: string, icon?: boolean | string, killCode?: number) => void
   line: () => this
-  separator: () => this
+  separator: (width?: number) => this
 }
 
 export type SelectInputItems =
@@ -58,7 +58,7 @@ type AppContextState = {
   }
 }
 
-class AppContext {
+export class AppContext {
   private static instance: AppContext
   private state: AppContextState = {
     display: 'verbose',
@@ -345,5 +345,3 @@ class AppContext {
     },
   }
 }
-
-export default AppContext

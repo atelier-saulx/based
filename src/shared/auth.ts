@@ -1,7 +1,7 @@
 import { login } from './login.js'
 import { Command } from 'commander'
 import { BasedClient } from '@based/client'
-import AppContext from './AppContext.js'
+import { AppContext } from './AppContext.js'
 
 type BasedAuthReturn = {
   basedClient: BasedClient

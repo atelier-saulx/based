@@ -1,6 +1,5 @@
 import { Command } from 'commander'
-import { login } from '../../shared/index.js'
-import AppContext from '../../shared/AppContext.js'
+import { login, AppContext } from '../../shared/index.js'
 
 export const auth = async (
   program: Command,
