@@ -38,8 +38,11 @@ const results = db
     paid: 0
   })
 
+  db.query('article').filter('url', 'mysnurp').update({
+    name: 'xxx'
+  })
 
-  db.upsert('article[url:ursela]', {
+  db.upsert('article[url:mysnurp]', {
     name: 'xxx'
   })
 
@@ -241,6 +244,13 @@ const results = db
 
   // edge value is { type: 'string' }
   .filter('countries.votes[@key:bla].price', '>', 5)
+
+  .filter((select) => {
+    select('countries.votes')
+    .filter('@key', '=', 'bla')
+    .filter('>', 5)
+  })
+
 
   // edge value is { type: 'objct', prop:{ x, y } }
   .filter('countries.votes.@x', '>', 5)

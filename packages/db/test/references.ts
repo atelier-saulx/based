@@ -17,8 +17,8 @@ await test('simple', async (t) => {
     types: {
       user: {
         props: {
-          flap: { type: 'uint32' },
-          name: { type: 'string' },
+          flap: 'uint32',
+          name: 'string',
           articles: {
             items: {
               ref: 'article',
@@ -29,7 +29,7 @@ await test('simple', async (t) => {
       },
       article: {
         props: {
-          name: { type: 'string' },
+          name: 'string',
           contributors: {
             items: {
               ref: 'user',
@@ -357,12 +357,13 @@ await test('filter', async (t) => {
     'Get reference one get by id',
   )
 
+  console.log('branch bitch')
   deepEqual(
     db
       .query('article', strudelArticle)
-      .include((select) => {
-        select('contributors').include('name').filter('flap', '>', 25)
-      })
+      .include((select) =>
+        select('contributors').include('name').filter('flap', '>', 25),
+      )
       .get()
       .toObject(),
     {
@@ -381,7 +382,6 @@ await test('filter', async (t) => {
       .include((select) => {
         select('contributors').include('flap')
         select('contributors').include('name')
-
         select('contributors').filter('flap', '>', 25)
         select('contributors').filter('flap', '<', 35)
       })

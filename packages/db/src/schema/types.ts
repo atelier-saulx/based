@@ -1,5 +1,11 @@
 import { BasedNode } from '../basedNode/index.js'
 
+// Reserved fields
+// 255: single ref in include
+// 254: multi ref in include
+// 253: to read multi refs in responses better to avoid
+// 0: main buffer
+
 // Dont change the numbers!
 export const TYPE_INDEX_MAP = {
   timestamp: 1,

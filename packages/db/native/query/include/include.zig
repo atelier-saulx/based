@@ -7,7 +7,6 @@ const readInt = @import("../../utils.zig").readInt;
 const getField = db.getField;
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./includeRefs.zig").getRefsFields;
-
 const std = @import("std");
 
 pub fn getFields(

@@ -12,7 +12,6 @@ const propDefBuffer = (
     return [...buf.values()]
   } else if (isType(prop, 'reference') || isType(prop, 'references')) {
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-
     const buf = Buffer.allocUnsafe(4)
     buf.writeUInt8(type, 0)
     prop.inverseTypeId = dstType.id
