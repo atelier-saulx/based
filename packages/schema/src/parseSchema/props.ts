@@ -129,6 +129,9 @@ p.enum = propParser<SchemaEnum>(
       if (!Array.isArray(items)) {
         throw Error(EXPECTED_ARR)
       }
+      if (items.length > 256) {
+        throw Error('Max enum length (256) exceeded')
+      }
       for (const item of items) {
         if (typeof item === 'object') {
           throw Error(EXPECTED_PRIMITIVE)
