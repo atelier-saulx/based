@@ -17,8 +17,8 @@ await test('simple', async (t) => {
     types: {
       user: {
         props: {
-          flap: 'uint32',
-          name: 'string',
+          flap: { type: 'uint32' },
+          name: { type: 'string' },
           articles: {
             items: {
               ref: 'article',
@@ -29,7 +29,7 @@ await test('simple', async (t) => {
       },
       article: {
         props: {
-          name: 'string',
+          name: { type: 'string' },
           contributors: {
             items: {
               ref: 'user',
