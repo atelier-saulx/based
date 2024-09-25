@@ -55,7 +55,7 @@ export const createSchemaTypeDef = (
   let stringFields: number = 0
 
   for (const key in target) {
-    let f = target[key]
+    const f = target[key]
     const p = [...path, key]
     const propType = getPropType(f)
     if (propType === 'object') {
