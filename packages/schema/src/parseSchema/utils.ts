@@ -18,7 +18,6 @@ export const getPropType = (prop: SchemaAnyProp): SchemaPropTypes => {
   }
 
   if ('items' in prop) {
-    // @ts-ignore TODO
     if (getPropType(prop.items) === 'reference') {
       return 'references'
     }
