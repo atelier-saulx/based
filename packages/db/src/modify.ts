@@ -220,7 +220,7 @@ const addModify = (
             console.warn('invalid enum value')
             // skip
           } else {
-            db.modifyBuffer.buffer[t.start + mainIndex] = index
+            db.modifyBuffer.buffer[t.start + mainIndex] = index + 1
           }
         }
       }
@@ -258,6 +258,7 @@ export const create = (db: BasedDb, type: string, value: any) => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
   def.total++
+  // where am i
 
   if (
     !addModify(db, id, value, def.tree, def, 3, false, true) ||
