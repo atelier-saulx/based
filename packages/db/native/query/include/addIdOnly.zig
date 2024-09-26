@@ -9,6 +9,7 @@ pub fn addIdOnly(ctx: *QueryCtx, id: u32) !usize {
         .includeMain = &.{},
         .refType = null,
         .totalRefs = null,
+        .isEdge = false,
     });
     return 5;
 }

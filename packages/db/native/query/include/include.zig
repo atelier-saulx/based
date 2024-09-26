@@ -28,6 +28,24 @@ pub fn getFields(
 
         const operation = include[includeIterator..];
 
+        if (field == 253) {
+            const edgeSize = readInt(u16, operation, 0);
+            const edges = operation[2 .. 2 + edgeSize];
+
+            std.debug.print("Got some edge include here {any} \n", .{edges});
+
+            //      size += getFields(
+            //     refNode,
+            //     ctx,
+            //     db.getNodeId(refNode),
+            //     typeEntry.?,
+            //     includeNested,
+            // ) catch 0;
+
+            includeIterator += edgeSize + 2;
+            continue :includeField;
+        }
+
         if (field == 254) {
             const refSize = readInt(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
@@ -85,6 +103,7 @@ pub fn getFields(
             .includeMain = includeMain,
             .refType = null,
             .totalRefs = null,
+            .isEdge = false,
         };
 
         if (!idIsSet) {
