@@ -22,7 +22,7 @@ await test('ids', async (t) => {
           age: 'timestamp',
           flap: 'uint32',
           blurf: 'number',
-          bla: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          bla: [0, 1, 2, 3, 4, 5],
         },
       },
     },
@@ -37,7 +37,7 @@ await test('ids', async (t) => {
         email: 'blap@blap.blap.blap',
         flap: i,
         blurf: Math.random() * 10000,
-        bla: ~~(Math.random() * 15),
+        bla: ~~(Math.random() * 5),
       }).tmpId,
     )
   }
