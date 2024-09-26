@@ -7,12 +7,13 @@ import { writeFixedLenValue } from './writeFixedLen.js'
 export function writeReferences(
   t: PropDef,
   db: BasedDb,
-  writeKey: number,
+  writeKey: 3 | 6,
   value: any,
   schema: SchemaTypeDef,
   id: number,
   fromCreate: boolean,
 ) {
+  // lot can be shared between reference and this
   if (t.edges) {
     // FIX
     console.log('got edges do different')
@@ -35,6 +36,7 @@ export function writeReferences(
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
     const sizeIndex = db.modifyBuffer.len + 1
     db.modifyBuffer.len += 5
+
     for (let i = 0; i < value.length; i++) {
       const ref = value[i]
       if (typeof ref === 'object') {

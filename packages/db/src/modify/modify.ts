@@ -5,8 +5,6 @@ import { setCursor } from './setCursor.js'
 import { addModify } from './addModify.js'
 import { ModifyRes, _ModifyRes } from './ModifyRes.js'
 
-export { ModifyRes }
-
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
   const nextLen = 1 + 4 + 1 + 1
@@ -140,3 +138,5 @@ export const update = (
   // @ts-ignore
   return res
 }
+
+export { ModifyRes }

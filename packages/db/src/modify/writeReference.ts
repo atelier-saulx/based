@@ -10,7 +10,7 @@ export function writeReference(
   t: PropDef,
   id: number,
   fromCreate: boolean,
-  writeKey: number,
+  writeKey: 3 | 6,
 ) {
   if (value === null) {
     const nextLen = 1 + 4 + 1

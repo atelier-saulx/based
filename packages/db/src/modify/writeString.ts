@@ -10,7 +10,7 @@ export function writeString(
   schema: SchemaTypeDef,
   t: PropDef,
   id: number,
-  writeKey: number,
+  writeKey: 3 | 6,
 ) {
   const len = value === null ? 0 : value.length
   if (len === 0) {
