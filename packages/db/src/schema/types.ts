@@ -27,14 +27,13 @@ export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
 export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
 
-export type PropDefEdge = {
+export type PropDefEdge = Partial<PropDef> & {
+  __isPropDef: true
   typeIndex: TypeIndex
   len: number
   prop: number // (0-250)
   name: string
-  enum?: any[]
-  reverseEnum?: { [key: string]: number }
-  // ref info later
+  edgesTotalLen?: number
 }
 
 export type PropDef = {

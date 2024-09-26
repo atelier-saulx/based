@@ -9,6 +9,20 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
+fn writeEdges(ctx: *ModifyCtx, data: []u8) !void {
+    var i: usize = 0;
+    while (i < data.len) {
+        const prop = data[i];
+        const edgeLen = readInt(u16, data, i + 1);
+        const edgeData = data[i + 3 .. i + 3 + edgeLen];
+        std.debug.print(
+            "WRITE EDGE prop: {d} len {d} nodeId: {d} edgeData: {any} \n",
+            .{ prop, edgeLen, ctx.id, edgeData },
+        );
+        i += edgeLen + 3;
+    }
+}
+
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(refTypeId);
@@ -17,14 +31,15 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     while (i < len) : (i += 5) {
         const hasEdgeData = data[i] == 1;
         const id = readInt(u32, data, i + 1);
+        // TODO Optmize using multi nodes
         var nodes: [1]db.Node = undefined;
-        // maybe this fails?
         nodes[0] = try db.upsertNode(id, refTypeEntry);
         try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
         if (hasEdgeData) {
-            const edgeLen = readInt(u32, data, i + 5);
-            std.debug.print("GOT ME SOME EDGE DATA! {d} \n", .{edgeLen});
-            i += 4 + edgeLen;
+            const totalEdgesLen = readInt(u32, data, i + 5);
+            const edges = data[i + 9 .. i + totalEdgesLen + 9];
+            try writeEdges(ctx, edges);
+            i += edges.len + 4;
         }
     }
 }

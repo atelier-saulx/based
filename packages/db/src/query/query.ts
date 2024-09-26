@@ -74,6 +74,7 @@ export class Query {
       this.includeDef = {
         includePath: [],
         schema: this.schema,
+        props: this.schema.props,
         includeArr: [],
         includeFields: new Set(),
         mainLen: 0,

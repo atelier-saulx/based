@@ -3,6 +3,7 @@ import {
   SchemaPropTree,
   isPropDef,
   ID_FIELD_DEF,
+  PropDefEdge,
 } from '../schema/schema.js'
 import { QueryIncludeDef } from './types.js'
 import { Query } from './query.js'
@@ -19,7 +20,6 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
     id: ID_FIELD_DEF,
   }
 
-  // has to go to include
   if (include.includeFields) {
     let includesMain = false
     for (const f of include.includeFields) {
@@ -83,9 +83,12 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         const refBuffer = addInclude(query, refInclude)
         const size = refBuffer.byteLength
 
+        let edgeBuffer: Buffer
         if (refInclude.edgeIncludes) {
-          console.info('GO INCLUDE THESE MOFOS!', refInclude.edgeIncludes)
+          edgeBuffer = addInclude(query, refInclude.edgeIncludes)
         }
+
+        console.log('EDGEBUFFER:', new Uint8Array(edgeBuffer))
 
         const filterConditions =
           include.referencesFilters[refInclude.fromRef.path.join('.')]
@@ -161,7 +164,7 @@ const convertToIncludeTree = (tree: SchemaPropTree | PropDef) => {
 }
 
 const createOrGetRefIncludeDef = (
-  ref: PropDef,
+  ref: PropDef | PropDefEdge,
   include: QueryIncludeDef,
   query: Query,
   multiple: boolean,
@@ -169,7 +172,6 @@ const createOrGetRefIncludeDef = (
   if (!include.refIncludes) {
     include.refIncludes = {}
   }
-
   const field = ref.prop
   if (!include.refIncludes[field]) {
     include.refIncludes[field] = {
@@ -177,6 +179,7 @@ const createOrGetRefIncludeDef = (
       schema: query.db.schemaTypesParsed[ref.inverseTypeName],
       includeArr: [],
       includeFields: new Set(),
+      props: query.db.schemaTypesParsed[ref.inverseTypeName].props,
       mainLen: 0,
       referencesFilters: {},
       mainIncludes: {},
@@ -187,6 +190,33 @@ const createOrGetRefIncludeDef = (
   }
   const refIncludeDef = include.refIncludes[field]
   return refIncludeDef
+}
+
+const createOrGetEdgeIncludeDef = (
+  ref: PropDef | PropDefEdge,
+  include: QueryIncludeDef,
+  query: Query,
+) => {
+  if (!include.refIncludes) {
+    include.refIncludes = {}
+  }
+  if (!include.edgeIncludes) {
+    include.edgeIncludes = {
+      includePath: include.includePath,
+      schema: include.schema, // tmp
+      props: ref.edges,
+      edgeSchema: ref.edges,
+      includeArr: [],
+      includeFields: new Set(),
+      mainLen: 0,
+      referencesFilters: {},
+      mainIncludes: {},
+      includeTree: [],
+      multiple: false,
+    }
+  }
+  const edgeIncludeDef = include.edgeIncludes
+  return edgeIncludeDef
 }
 
 const addPathToIntermediateTree = (
@@ -220,15 +250,17 @@ const parseInclude = (
   includesMain: boolean,
   includeTree: any,
 ): boolean => {
-  const field = include.schema.props[f]
+  const field = include.props[f]
   const path = f.split('.')
 
   if (!field) {
     if (include.fromRef && f[0] == '$') {
-      if (!include.edgeIncludes) {
-        include.edgeIncludes = {}
-      }
-      include.edgeIncludes[f] = include.fromRef.edges[f]
+      const edgeIncludes = createOrGetEdgeIncludeDef(
+        include.fromRef,
+        include,
+        query,
+      )
+      edgeIncludes.includeFields.add(f)
       return
     }
 
@@ -280,11 +312,11 @@ const parseInclude = (
       query,
       field.typeIndex === 14,
     )
-    for (const f in refIncludeDef.schema.props) {
+    for (const f in refIncludeDef.props) {
       // include all
       if (
-        refIncludeDef.schema.props[f].typeIndex !== 13 &&
-        refIncludeDef.schema.props[f].typeIndex !== 14
+        refIncludeDef.props[f].typeIndex !== 13 &&
+        refIncludeDef.props[f].typeIndex !== 14
       ) {
         refIncludeDef.includeFields.add(f)
       }
@@ -300,7 +332,7 @@ const parseInclude = (
       includesMain = true
     }
     include.mainLen += field.len
-    include.mainIncludes[field.start] = [0, field]
+    include.mainIncludes[field.start] = [0, field as PropDef]
     return true
   }
 }
