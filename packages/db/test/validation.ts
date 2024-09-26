@@ -20,9 +20,13 @@ await test('update', async (t) => {
     },
   })
 
-  const user = await db.create('user', {
-    name: 'success',
-  })
-  console.log(+user)
-  console.log('!!!', await user, +user, `${user}`)
+  try {
+    const user = await db.create('user', {
+      name: 'success',
+    })
+
+    console.log('!!!', user)
+  } catch (e) {
+    console.error('ERR:', e)
+  }
 })

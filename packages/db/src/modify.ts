@@ -80,7 +80,7 @@ const setCursor = (
 // modifyBuffer
 const addModify = (
   db: BasedDb,
-  id: number,
+  res: _ModifyRes,
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef,
@@ -96,7 +96,7 @@ const addModify = (
       if (
         addModify(
           db,
-          id,
+          res,
           value,
           leaf as SchemaTypeDef['tree'],
           schema,
@@ -109,7 +109,7 @@ const addModify = (
       }
     } else {
       const t = leaf as PropDef
-
+      const id = res.tmpId
       // 13: reference
       if (t.typeIndex === 13) {
         if (value === null) {
@@ -316,14 +316,13 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
 export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
-
   const res = new _ModifyRes(id, db)
 
   def.total++
   // where am i
 
   if (
-    !addModify(db, id, value, def.tree, def, 3, false, true) ||
+    !addModify(db, res, value, def.tree, def, 3, false, true) ||
     def.mainLen === 0
   ) {
     setCursor(db, def, 0, id, false, true)
@@ -383,8 +382,8 @@ export const update = (
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite, false)
   const res = new _ModifyRes(id, db)
+  const hasMain = addModify(db, res, value, def.tree, def, 6, !overwrite, false)
 
   if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
     const mergeMain = db.modifyBuffer.mergeMain
