@@ -29,7 +29,7 @@ await test('ids', async (t) => {
   })
 
   const ids: number[] = []
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e5; i++) {
     ids.push(
       db.create('user', {
         age: ~~(Math.random() * 100000),
