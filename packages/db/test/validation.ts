@@ -24,11 +24,13 @@ await test('update', async (t) => {
   const user = db.create('user', {
     name: 'success',
   })
-  try {
-    throw new Error('fu')
-  } catch (e) {
-    console.error('ballz', e)
-  }
+
+  // try {
+
+  // throw new Error('fu')
+  // } catch (e) {
+  // console.error('ballz', e)
+  // }
 
   // await setTimeout(500)
   // await setTimeout(500)
