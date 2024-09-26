@@ -330,7 +330,9 @@ function createRefsBuffer(include: QueryIncludeDef, key: string, query: Query) {
     }
     if (sort) {
       meta.set(sort, 7 + filterSize)
+      // console.log(new Uint8Array(sort))
     }
+
     meta[7 + modsSize] = refInclude.schema.idUint8[0]
     meta[8 + modsSize] = refInclude.schema.idUint8[1]
     meta[9 + modsSize] = refInclude.fromRef.prop

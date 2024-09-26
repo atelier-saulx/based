@@ -54,3 +54,74 @@ await test('ids', async (t) => {
 
   isSorted(db.query('user', ids).sort('bla').get(), 'bla')
 })
+
+await test('references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          flap: { type: 'uint32' },
+          name: { type: 'string' },
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
+      },
+      article: {
+        props: {
+          name: { type: 'string' },
+          contributors: {
+            items: {
+              ref: 'user',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const ids: number[] = []
+  for (let i = 0; i < 1e5; i++) {
+    ids.push(
+      db.create('user', {
+        flap: ~~(Math.random() * 100000),
+        name: 'Mr Dinkelburry ' + i,
+      }).tmpId,
+    )
+  }
+
+  const id = await db.create('article', {
+    name: '100k contributors master piece',
+    contributors: ids,
+  })
+
+  console.log(
+    db
+      .query('article', id)
+      .include((s) => s('contributors').sort('flap'))
+      .get(),
+  )
+
+  isSorted(
+    db
+      .query('article', id)
+      .include((s) => s('contributors').sort('flap'))
+      .get()
+      .node().contributors,
+    'flap',
+  )
+})
