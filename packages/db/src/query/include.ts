@@ -126,7 +126,8 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         meta[0] = multi ? 254 : 255
 
         // size
-        meta.writeUint16LE(size + (multi ? 5 : 3) + filterSize, 1)
+        const edgeSize = edgeBuffer ? edgeBuffer.byteLength + 3 : 0
+        meta.writeUint16LE(size + (multi ? 5 : 3) + filterSize + edgeSize, 1)
 
         if (multi) {
           meta.writeUint16LE(filterSize, 3)

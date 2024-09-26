@@ -15,6 +15,8 @@ pub fn getFields(
     id: u32,
     typeEntry: db.Type,
     include: []u8,
+    reference: ?*selva.SelvaNodeReference,
+    // add reference
 ) !usize {
     var includeMain: []u8 = &.{};
     var size: usize = 0;
@@ -32,7 +34,12 @@ pub fn getFields(
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
 
-            std.debug.print("Got some edge include here {any} \n", .{edges});
+            std.debug.print(
+                "Got some edge include here {any} id: {d} t: {any} node: {any} reference: {any} \n",
+                .{ edges, id, typeEntry, node, reference },
+            );
+
+            // db.getEdgeProp()
 
             //      size += getFields(
             //     refNode,

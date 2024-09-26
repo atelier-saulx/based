@@ -137,7 +137,12 @@ pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !v
 }
 
 // @param index 0 = first; -1 = last.
-pub fn insertReference(value: Node, target: Node, fieldSchema: FieldSchema, index: selva.user_ssize_t) !*selva.SelvaNodeReference {
+pub fn insertReference(
+    value: Node,
+    target: Node,
+    fieldSchema: FieldSchema,
+    index: selva.user_ssize_t,
+) !*selva.SelvaNodeReference {
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
     var ref: [*c]selva.SelvaNodeReference = undefined;

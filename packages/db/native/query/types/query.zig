@@ -30,7 +30,7 @@ pub fn queryId(
         return;
     }
 
-    const size = try getFields(node.?, ctx, id, typeEntry, include);
+    const size = try getFields(node.?, ctx, id, typeEntry, include, null);
 
     if (size > 0) {
         ctx.size += size;
@@ -56,7 +56,7 @@ pub fn queryIds(
         if (!filter(node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
-        const size = try getFields(node.?, ctx, id, typeEntry, include);
+        const size = try getFields(node.?, ctx, id, typeEntry, include, null);
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -105,6 +105,7 @@ pub fn query(
             db.getNodeId(node.?),
             typeEntry,
             include,
+            null,
         );
 
         if (size > 0) {

@@ -53,6 +53,7 @@ pub fn getRefsFields(
 
     var size: usize = 0;
 
+    // add edges here as well..
     const includeNested = include[(5 + filterSize)..include.len];
 
     var i: usize = 0;
@@ -72,6 +73,7 @@ pub fn getRefsFields(
             db.getNodeId(refNode),
             typeEntry.?,
             includeNested,
+            null, // ADD REFERENCE
         ) catch 0;
     }
 
