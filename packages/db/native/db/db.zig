@@ -160,11 +160,11 @@ pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_s
 }
 
 pub fn getEdgeProp(ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
-    if (ref.meta) {
-        return null;
-    } else {
+    if (ref.meta != null) {
         const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(ref.meta, selvaFieldSchema);
         return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
+    } else {
+        return null;
     }
 }
 
