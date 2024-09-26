@@ -20,7 +20,6 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
     id: ID_FIELD_DEF,
   }
 
-  // has to go to include
   if (include.includeFields) {
     let includesMain = false
     for (const f of include.includeFields) {
@@ -88,6 +87,8 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         if (refInclude.edgeIncludes) {
           edgeBuffer = addInclude(query, refInclude.edgeIncludes)
         }
+
+        console.log('EDGEBUFFER:', new Uint8Array(edgeBuffer))
 
         const filterConditions =
           include.referencesFilters[refInclude.fromRef.path.join('.')]
