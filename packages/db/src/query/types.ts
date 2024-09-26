@@ -39,15 +39,18 @@ export type QueryIncludeDef = {
   mainLen: number
   includePath: number[]
   includeArr: number[]
+  isEdges?: boolean
   schema: SchemaTypeDef
-  fromRef?: PropDef
+  props: SchemaTypeDef['props'] | PropDef['edges']
+  edgeSchema?: PropDef['edges']
+  fromRef?: PropDef | PropDefEdge
   multiple: boolean
   referencesFilters: {
     [field: string]: { conditions: Map<number, Buffer[]>; size: number }
   }
   includeFields: Set<string>
   includeTree: IncludeTreeArr // meh
-  edgeIncludes?: { [field: string]: PropDefEdge }
+  edgeIncludes?: QueryIncludeDef
   refIncludes?: { [field: string]: QueryIncludeDef } // { } tree for refs prob
 }
 
