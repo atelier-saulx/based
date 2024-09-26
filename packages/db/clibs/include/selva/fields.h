@@ -101,6 +101,9 @@ int selva_fields_get_mutable_string(
         size_t len,
         struct selva_string **s);
 
+/**
+ * @param index 0 = first; -1 = last.
+ */
 SELVA_EXPORT
 int selva_fields_references_insert(
         struct SelvaDb *db,
