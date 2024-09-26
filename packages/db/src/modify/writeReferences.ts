@@ -44,32 +44,7 @@ export function writeReferences(
         db.modifyBuffer.buffer.writeUint32LE(ref.id, db.modifyBuffer.len + 1)
         const edgeDataSizeIndex = db.modifyBuffer.len + 5
         db.modifyBuffer.len += 9
-
-        for (const key in t.edges) {
-          if (key in ref) {
-            const edge = t.edges[key]
-            const value = ref[key]
-
-            if (edge.len === 0) {
-              if (edge.typeIndex === 11) {
-                //
-              } else if (edge.typeIndex === 13) {
-                // single ref edge
-              } else if (edge.typeIndex === 14) {
-              }
-            } else {
-              // [field] [size] [data]
-              db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
-              db.modifyBuffer.buffer.writeUint16LE(
-                edge.len,
-                db.modifyBuffer.len + 1,
-              )
-              writeFixedLenValue(db, value, db.modifyBuffer.len + 3, t)
-              db.modifyBuffer.len += edge.len + 3
-            }
-          }
-        }
-
+        writeEdges(t, ref, db)
         db.modifyBuffer.buffer.writeUint32LE(
           db.modifyBuffer.len - edgeDataSizeIndex - 4,
           edgeDataSizeIndex,
@@ -101,5 +76,30 @@ export function writeReferences(
       )
     }
     db.modifyBuffer.len += refLen
+  }
+}
+
+function writeEdges(t: PropDef, ref: any, db: BasedDb) {
+  for (const key in t.edges) {
+    if (key in ref) {
+      const edge = t.edges[key]
+      const value = ref[key]
+
+      if (edge.len === 0) {
+        if (edge.typeIndex === 11) {
+          // string
+        } else if (edge.typeIndex === 13) {
+          // single ref edge
+        } else if (edge.typeIndex === 14) {
+          // multi ref
+        }
+      } else {
+        // [field] [size] [data]
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
+        db.modifyBuffer.buffer.writeUint16LE(edge.len, db.modifyBuffer.len + 1)
+        writeFixedLenValue(db, value, db.modifyBuffer.len + 3, t)
+        db.modifyBuffer.len += edge.len + 3
+      }
+    }
   }
 }

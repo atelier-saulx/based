@@ -94,6 +94,7 @@ export const addModify = (
           }
         }
       }
+
       writeFixedLenValue(db, value, t.start + mainIndex, t)
     }
   }
