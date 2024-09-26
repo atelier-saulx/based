@@ -16,8 +16,8 @@ fn writeEdges(ctx: *ModifyCtx, data: []u8) !void {
         const edgeLen = readInt(u16, data, i + 1);
         const edgeData = data[i + 3 .. i + 3 + edgeLen];
         std.debug.print(
-            "GOT ME SOME EDGE DATA! prop: {d} len {d} typeId: {d} edgeData: {any} \n",
-            .{ prop, edgeLen, ctx.typeId, edgeData },
+            "WRITE EDGE prop: {d} len {d} nodeId: {d} edgeData: {any} \n",
+            .{ prop, edgeLen, ctx.id, edgeData },
         );
         i += edgeLen + 3;
     }
@@ -31,8 +31,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     while (i < len) : (i += 5) {
         const hasEdgeData = data[i] == 1;
         const id = readInt(u32, data, i + 1);
-
-        // Optmize using multi nodes
+        // TODO Optmize using multi nodes
         var nodes: [1]db.Node = undefined;
         nodes[0] = try db.upsertNode(id, refTypeEntry);
         try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
