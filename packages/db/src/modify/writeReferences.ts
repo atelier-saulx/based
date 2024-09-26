@@ -15,12 +15,9 @@ export function writeReferences(
 ) {
   // lot can be shared between reference and this
   if (t.edges) {
-    // FIX
-    console.log('got edges do different')
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
     let refLen = 0
     if (t.edgesTotalLen) {
-      console.log('EDGES')
       refLen = (t.edgesTotalLen + 5) * value.length
     } else {
       console.log('Variable len edges implement later... tmp 50 len')
@@ -55,8 +52,9 @@ export function writeReferences(
         db.modifyBuffer.len += 5
       }
     }
+
     db.modifyBuffer.buffer.writeUint32LE(
-      db.modifyBuffer.len - (sizeIndex + 5),
+      db.modifyBuffer.len - (sizeIndex + 4),
       sizeIndex,
     )
   } else {
@@ -79,7 +77,10 @@ export function writeReferences(
   }
 }
 
-function writeEdges(t: PropDef, ref: any, db: BasedDb) {
+// export
+type RefObject = { id?: number; index?: number; [edge: string]: any }
+
+function writeEdges(t: PropDef, ref: RefObject, db: BasedDb) {
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
@@ -97,7 +98,7 @@ function writeEdges(t: PropDef, ref: any, db: BasedDb) {
         // [field] [size] [data]
         db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
         db.modifyBuffer.buffer.writeUint16LE(edge.len, db.modifyBuffer.len + 1)
-        writeFixedLenValue(db, value, db.modifyBuffer.len + 3, t)
+        writeFixedLenValue(db, value, db.modifyBuffer.len + 3, edge)
         db.modifyBuffer.len += edge.len + 3
       }
     }

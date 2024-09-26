@@ -32,6 +32,7 @@ await test('simple', async (t) => {
           contributors: {
             items: {
               $role: ['writer', 'editor'],
+              $rating: 'uint32',
               ref: 'user',
               prop: 'articles',
             },
@@ -49,14 +50,14 @@ await test('simple', async (t) => {
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
-    contributors: [{ id: mrSnurp, $role: 'writer' }],
+    contributors: [{ id: mrSnurp, $role: 'writer', $rating: 99 }],
   })
 
   db.drain()
 
   db.query('article').include('contributors.$role').get().debug()
 
-  console.info(db.query('article').include('contributors.$role').get())
+  // console.info(db.query('article').include('contributors.$role').get())
 
   // deepEqual(db.query('user').include('articles.name').get().toObject(), [
   //   {
