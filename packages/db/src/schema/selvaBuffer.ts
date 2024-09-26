@@ -12,13 +12,23 @@ const propDefBuffer = (
     return [...buf.values()]
   } else if (isType(prop, 'reference') || isType(prop, 'references')) {
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-    const buf = Buffer.allocUnsafe(4)
+    const buf = Buffer.allocUnsafe(8)
     buf.writeUInt8(type, 0)
     prop.inverseTypeId = dstType.id
     prop.inversePropNumber = dstType.props[prop.inversePropName].prop
     buf[1] = prop.inversePropNumber
     buf.writeUInt16LE(dstType.id, 2)
-    return [...buf.values()]
+
+    if (prop.edges) {
+      const eschema = Object.values(prop.edges).map((prop) => propDefBuffer(null, prop as PropDef)).flat(1)
+      eschema.unshift(0)
+
+      buf.writeUint32LE(eschema.length, 4)
+      return [...buf.values(), ...eschema]
+    } else {
+      buf.writeUint32LE(0, 4)
+      return [...buf.values()]
+    }
   } else if (isType(prop, 'string')) {
     return [type, prop.len < 50 ? prop.len : 0]
   } else {

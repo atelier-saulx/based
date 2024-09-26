@@ -586,13 +586,12 @@ static void load_reference_meta(
 
         io->sdb_read(&rd, sizeof(rd), 1, io);
 
-        if (rd.field >= efc->nr_fields) {
-            db_panic("Invalid meta field: %d:%d",
-                     node->type, node->node_id);
+        fs = get_fs_by_fields_schema_field(efc->fields_schema, rd.field);
+        if (!fs) {
+            db_panic("Field schema not found for the field %d", rd.field);
         }
-        fs = &efc->field_schemas[rd.field];
         if (rd.type != SELVA_FIELD_TYPE_NULL && rd.type != fs->type) {
-            db_panic("Invalid field type found %d != %d\n",
+            db_panic("Invalid field type found %d != %d",
                      rd.type, fs->type);
         }
 

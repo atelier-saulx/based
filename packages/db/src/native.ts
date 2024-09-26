@@ -81,6 +81,35 @@ export default {
         )
       }
     }
+
+    if (sort[1] === 1) {
+      if (sortOrder === 1) {
+        return db.getQueryIdsSortAscManual(
+          conditions,
+          typeId,
+          offset,
+          limit,
+          ids,
+          includeBuffer,
+          sort,
+          low,
+          high,
+        )
+      } else {
+        return db.getQueryIdsSortDescManual(
+          conditions,
+          typeId,
+          offset,
+          limit,
+          ids,
+          includeBuffer,
+          sort,
+          low,
+          high,
+        )
+      }
+    }
+
     if (sortOrder === 1) {
       return db.getQueryIdsSortAsc(
         conditions,

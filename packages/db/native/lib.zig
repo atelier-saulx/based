@@ -64,6 +64,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "getQueryIdsSortDesc", Query.getQueryIdsSortDesc) catch return null;
     registerFunction(env, exports, "getQueryIdsSortAscLarge", Query.getQueryIdsSortAscLarge) catch return null;
     registerFunction(env, exports, "getQueryIdsSortDescLarge", Query.getQueryIdsSortDescLarge) catch return null;
+    registerFunction(env, exports, "getQueryIdsSortAscManual", Query.getQueryIdsSortDescManual) catch return null;
+    registerFunction(env, exports, "getQueryIdsSortDescManual", Query.getQueryIdsSortAscManual) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
 
     registerFunction(env, exports, "updateSchema", schema.updateSchema) catch return null;

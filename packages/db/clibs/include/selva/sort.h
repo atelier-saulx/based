@@ -5,6 +5,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include "selva/_export.h"
 
 /*
  * Usage
@@ -38,16 +39,35 @@ enum SelvaSortOrder {
 
 struct SelvaSortCtx;
 
+SELVA_EXPORT
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_len);
+
+SELVA_EXPORT
 void selva_sort_set_lang(struct SelvaSortCtx *ctx, const char lang[8]);
+
+SELVA_EXPORT
 void selva_sort_destroy(struct SelvaSortCtx *ctx);
 
+SELVA_EXPORT
 void selva_sort_insert(struct SelvaSortCtx *ctx, const void *p);
+
+SELVA_EXPORT
 void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
+
+SELVA_EXPORT
 void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p);
+
+SELVA_EXPORT
 void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p);
+
+SELVA_EXPORT
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
 
+SELVA_EXPORT
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
+
+SELVA_EXPORT
 void *selva_sort_foreach(struct SelvaSortCtx *ctx);
+
+SELVA_EXPORT
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);

@@ -71,6 +71,9 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
 SELVA_EXPORT
 struct SelvaNodeSchema *selva_get_ns_by_te(struct SelvaTypeEntry *te);
 
+SELVA_EXPORT
+struct SelvaFieldSchema *get_fs_by_fields_schema_field(struct SelvaFieldsSchema *fields_schema, field_t field);
+
 /**
  * Get the field schema for field.
  */
