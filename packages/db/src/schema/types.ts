@@ -19,6 +19,11 @@ export const TYPE_INDEX_MAP = {
   reference: 13,
   references: 14,
   microbuffer: 17,
+  int8: 18,
+  uint8: 19,
+  int16: 20,
+  uint16: 21,
+  int32: 22,
   // ------- internal only
   id: 0,
 } as const
@@ -92,13 +97,11 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   updated: 8,
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
-  // float32: 8,
-  // float64: 8,
-  // int8: 1,
-  // uint8: 1,
-  // int16: 2,
-  // uint16: 2,
-  // int32: 4,
+  int8: 1,
+  uint8: 1,
+  int16: 2,
+  uint16: 2,
+  int32: 4,
   uint32: 4,
   boolean: 1, // 1bit (6 bits overhead)
   reference: 0, // seperate

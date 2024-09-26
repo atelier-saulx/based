@@ -163,9 +163,6 @@ export const readSeperateFieldFromBuffer = (
         return {
           id,
         }
-        // 5: uint32
-      } else if (requestedField.typeIndex === 5) {
-        return buffer.readUint32LE(i + fIndex)
       }
 
       // 9: Boolean
@@ -173,9 +170,9 @@ export const readSeperateFieldFromBuffer = (
         return Boolean(buffer[i + fIndex])
       }
 
-      // 4: Number
-      if (requestedField.typeIndex === 4) {
-        return buffer.readFloatLE(i + fIndex)
+      // 1: timestamp, 4: number
+      if (requestedField.typeIndex === 4 || requestedField.typeIndex === 1) {
+        return buffer.readDoubleLE(i + fIndex)
       }
 
       // 10: Enum
@@ -185,11 +182,6 @@ export const readSeperateFieldFromBuffer = (
           return undefined
         }
         return requestedField.enum[index - 1]
-      }
-
-      // 1: Timestamp
-      if (requestedField.typeIndex === 1) {
-        return buffer.readFloatLE(i + fIndex)
       }
 
       // 11: String
@@ -204,6 +196,36 @@ export const readSeperateFieldFromBuffer = (
           i + fIndex + len + 1,
         )
         return str
+      }
+
+      // 18: int8
+      if (requestedField.typeIndex === 18) {
+        return buffer.readInt8(i + fIndex)
+      }
+
+      // 19: uint8
+      if (requestedField.typeIndex === 19) {
+        return buffer.readUint8(i + fIndex)
+      }
+
+      // 20: int16
+      if (requestedField.typeIndex === 20) {
+        return buffer.readInt16LE(i + fIndex)
+      }
+
+      // 21: uint16
+      if (requestedField.typeIndex === 21) {
+        return buffer.readUint16LE(i + fIndex)
+      }
+
+      // 22: int32
+      if (requestedField.typeIndex === 22) {
+        return buffer.readInt32LE(i + fIndex)
+      }
+
+      // 5: uint32
+      if (requestedField.typeIndex === 5) {
+        return buffer.readUint32LE(i + fIndex)
       }
 
       i += includeDef.mainLen

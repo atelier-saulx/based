@@ -82,8 +82,6 @@ export type SchemaText = Prop<{
 
 type NumberType =
   | 'number'
-  | 'float32'
-  | 'float64'
   | 'int8'
   | 'uint8'
   | 'int16'
