@@ -409,9 +409,14 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
 
     err = schemabuf_count_fields(&count, buf, len);
     if (!err && count.nr_fields > 0) {
-        efc->fields_schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, count.nr_fields));
+        struct SelvaFieldsSchema *schema;
 
-        err = parse2(ctx, efc->fields_schema, buf, len);
+        schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, count.nr_fields));
+        efc->fields_schema = schema;
+
+        schema->nr_fields = count.nr_fields;
+        schema->nr_fixed_fields = count.nr_fixed_fields;
+        err = parse2(ctx, schema, buf, len);
     }
 
     return err;
