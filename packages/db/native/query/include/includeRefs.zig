@@ -1,7 +1,9 @@
 const readInt = @import("../../utils.zig").readInt;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
-const getFields = @import("./include.zig").getFields;
+const incl = @import("./include.zig");
+const getFields = incl.getFields;
+
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
@@ -19,11 +21,10 @@ pub fn getRefsFields(
     ctx: *QueryCtx,
     include: []u8,
     node: db.Node,
+    originalType: db.Type,
 ) usize {
     const filterSize: db.TypeId = readInt(u16, include, 0);
-
     const filterArr: ?[]u8 = if (filterSize > 0) include[2 .. 2 + filterSize] else null;
-
     const typeId: db.TypeId = readInt(u16, include, 2 + filterSize);
     const refField = include[4 + filterSize];
 
@@ -39,19 +40,21 @@ pub fn getRefsFields(
         .includeMain = &.{},
         .refType = 253,
         .totalRefs = 0,
-        .isEdge = false,
+        .isEdge = 0,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
 
+    // get from edge as well
     const refs = db.getReferences(node, refField);
+
     if (refs == null) {
         return 10;
     }
 
-    const typeEntry = db.getType(typeId) catch null;
+    const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
 
-    const fieldSchema = db.getFieldSchema(refField, typeEntry) catch null;
+    const typeEntry = db.getType(typeId) catch null;
 
     var size: usize = 0;
 
@@ -69,14 +72,18 @@ pub fn getRefsFields(
             continue :checkItem;
         }
         resultsCnt += 1;
+
         size += getFields(
             refNode,
             ctx,
             db.getNodeId(refNode),
             typeEntry.?,
             includeNested,
-            &refs.?.refs[i],
-            edgeConstrain,
+            .{
+                .reference = @ptrCast(&refs.?.refs[i]),
+                .edgeConstaint = edgeConstrain,
+                .getEdge = false,
+            },
         ) catch 0;
     }
 

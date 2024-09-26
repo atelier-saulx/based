@@ -37,7 +37,6 @@ pub fn queryId(
         typeEntry,
         include,
         null,
-        null,
     );
 
     if (size > 0) {
@@ -71,8 +70,8 @@ pub fn queryIds(
             typeEntry,
             include,
             null,
-            null,
         );
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -121,7 +120,6 @@ pub fn query(
             db.getNodeId(node.?),
             typeEntry,
             include,
-            null,
             null,
         );
 

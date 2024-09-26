@@ -1,5 +1,4 @@
 const results = @import("../results.zig");
-const selva = @import("../../selva.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
@@ -8,6 +7,13 @@ const getField = db.getField;
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./includeRefs.zig").getRefsFields;
 const std = @import("std");
+const selva = @import("../../selva.zig");
+
+pub const RefStruct = struct {
+    reference: *selva.SelvaNodeReference,
+    edgeConstaint: *selva.EdgeFieldConstraint,
+    getEdge: bool,
+};
 
 pub fn getFields(
     node: db.Node,
@@ -15,58 +21,33 @@ pub fn getFields(
     id: u32,
     typeEntry: db.Type,
     include: []u8,
-    reference: ?*selva.SelvaNodeReference,
-    edgeConstaint: ?*selva.EdgeFieldConstraint,
-    // add reference
+    ref: ?RefStruct,
 ) !usize {
     var includeMain: []u8 = &.{};
     var size: usize = 0;
     var includeIterator: u16 = 0;
-    var idIsSet: bool = false;
     var main: ?[]u8 = null;
+    const isEdge = ref.?.getEdge;
+    var idIsSet: bool = isEdge;
+    var edgeType: u8 = 0;
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
         includeIterator += 1;
 
         const operation = include[includeIterator..];
-
         if (field == 253) {
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
-
-            var f: usize = 0;
-            while (f < edges.len) {
-                const edgeFieldNumber = edges[f];
-
-                // edgeConstaint
-
-                std.debug.print(" vla field {d} {any} \n", .{ edgeFieldNumber, edgeConstaint });
-                const edgeFieldSchema = selva.get_fs_by_fields_schema_field(edgeConstaint.?.*.fields_schema, edgeFieldNumber);
-
-                std.debug.print("BLA BLA {any} {d} \n", .{ edgeFieldSchema, edgeFieldNumber });
-
-                const v = db.getEdgeProp(reference.?, edgeFieldSchema);
-
-                std.debug.print("BLA BLA {any} \n", .{v});
-
-                f += 1;
+            if (!idIsSet) {
+                idIsSet = true;
+                size += try addIdOnly(ctx, id);
             }
-
-            // selva.get
-            //
-            // db.getEdgeProp(reference.?, fieldSchema );
-
-            // db.getEdgeProp()
-
-            //      size += getFields(
-            //     refNode,
-            //     ctx,
-            //     db.getNodeId(refNode),
-            //     typeEntry.?,
-            //     includeNested,
-            // ) catch 0;
-
+            size += try getFields(node, ctx, id, typeEntry, edges, .{
+                .reference = ref.?.reference,
+                .edgeConstaint = ref.?.edgeConstaint,
+                .getEdge = true,
+            });
             includeIterator += edgeSize + 2;
             continue :includeField;
         }
@@ -79,7 +60,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getRefsFields(ctx, multiRefs, node);
+            size += getRefsFields(ctx, multiRefs, node, typeEntry);
             continue :includeField;
         }
 
@@ -103,9 +84,23 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        const value = db.getField(node, try db.getFieldSchema(field, typeEntry));
+        // add get here
+        var value: []u8 = undefined;
 
-        if (value.len == 0) {
+        if (isEdge) {
+            const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
+                ref.?.edgeConstaint.*.fields_schema,
+                field - 1,
+            );
+            edgeType = edgeFieldSchema.*.type;
+            value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
+        } else {
+            value = db.getField(node, try db.getFieldSchema(field, typeEntry));
+        }
+
+        const valueLen = value.len;
+
+        if (valueLen == 0) {
             continue :includeField;
         }
 
@@ -114,10 +109,14 @@ pub fn getFields(
             if (includeMain.len != 0) {
                 size += readInt(u16, includeMain, 0) + 1;
             } else {
-                size += (value.len + 1);
+                size += (valueLen + 1);
             }
         } else {
-            size += (value.len + 5);
+            size += (valueLen + 5);
+        }
+
+        if (isEdge) {
+            size += 1;
         }
 
         var result: results.Result = .{
@@ -128,7 +127,7 @@ pub fn getFields(
             .includeMain = includeMain,
             .refType = null,
             .totalRefs = null,
-            .isEdge = false,
+            .isEdge = edgeType,
         };
 
         if (!idIsSet) {

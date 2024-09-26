@@ -17,7 +17,7 @@ pub const Result = struct {
     refSize: ?usize,
     includeMain: []u8,
     totalRefs: ?usize,
-    isEdge: bool,
+    isEdge: u8,
 };
 
 pub fn createResultsBuffer(
@@ -68,6 +68,11 @@ pub fn createResultsBuffer(
 
         if (item.field == 255) {
             continue;
+        }
+
+        if (item.isEdge > 0) {
+            data[i] = 252;
+            i += 1;
         }
 
         data[i] = item.field;
