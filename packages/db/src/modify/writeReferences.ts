@@ -42,6 +42,8 @@ export function writeReferences(
 
     for (let i = 0; i < value.length; i++) {
       let ref = value[i]
+
+      // TODO: incorrect
       if (typeof ref !== 'number') {
         if (ref instanceof ModifyState) {
           if (ref.error) {
@@ -49,7 +51,7 @@ export function writeReferences(
             return
           }
           ref = ref.tmpId
-        } else {
+        } else if (typeof ref !== 'object') {
           modifyError(res, t, value)
           return
         }
