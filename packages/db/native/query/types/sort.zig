@@ -21,7 +21,7 @@ pub fn queryIdsManual(
     include: []u8,
     sortBuffer: []u8,
     _: u32,
-    limit: u32,
+    _: u32,
 ) !void {
     const typeEntry = try db.getType(typeId);
     var i: u32 = 0;
@@ -39,8 +39,50 @@ pub fn queryIdsManual(
         len = 0;
     }
 
-    // const selvaFlag:
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC, ids.len).?;
+    var sortFlag: selva.SelvaSortOrder = undefined;
+
+    switch (sortFieldType) {
+        1 => {
+            if (queryType == 10) {
+                sortFlag = selva.SELVA_SORT_ORDER_I64_DESC;
+            } else {
+                sortFlag = selva.SELVA_SORT_ORDER_I64_ASC;
+            }
+        },
+        5 => {
+            if (queryType == 10) {
+                sortFlag = selva.SELVA_SORT_ORDER_I64_DESC;
+            } else {
+                sortFlag = selva.SELVA_SORT_ORDER_I64_ASC;
+            }
+        },
+        10 => {
+            if (queryType == 10) {
+                sortFlag = selva.SELVA_SORT_ORDER_I64_DESC;
+            } else {
+                sortFlag = selva.SELVA_SORT_ORDER_I64_ASC;
+            }
+        },
+        4 => {
+            if (queryType == 10) {
+                sortFlag = selva.SELVA_SORT_ORDER_DOUBLE_DESC;
+            } else {
+                sortFlag = selva.SELVA_SORT_ORDER_DOUBLE_ASC;
+            }
+        },
+        11 => {
+            if (queryType == 10) {
+                sortFlag = selva.SELVA_SORT_ORDER_BUFFER_DESC;
+            } else {
+                sortFlag = selva.SELVA_SORT_ORDER_BUFFER_ASC;
+            }
+        },
+        else => {
+            return errors.DbError.WRONG_SORTFIELD_TYPE;
+        },
+    }
+
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len).?;
 
     sortItem: while (i < ids.len) : (i += 1) {
         const id = ids[i];
@@ -54,24 +96,31 @@ pub fn queryIdsManual(
         const value = db.getField(node.?, try db.getFieldSchema(sortField, typeEntry));
 
         if (sortFieldType == 1) {
-            const nr = utils.readInt(i64, value, 0);
-            std.debug.print("SORT VALUE HELLO {d} -- {d} {d} {any} \n", .{ nr, sortFieldType, id, value });
+            selva.selva_sort_insert_i64(sortCtx, utils.readInt(i64, value, 0), node);
+        } else if (sortFieldType == 11) {
+            selva.selva_sort_insert_buf(sortCtx, value.ptr, value.len, node);
+        } else if (sortFieldType == 4) {
+            // how does double work...
+            selva.selva_sort_insert_double(sortCtx, @floatFromInt(utils.readInt(i64, value, 0)), node);
+        } else if (sortFieldType == 5) {
+            selva.selva_sort_insert_i64(sortCtx, @intCast(utils.readInt(u32, value, 0)), node);
+        } else if (sortFieldType == 10) {
+            selva.selva_sort_insert_i64(sortCtx, @intCast(value[0]), node);
         }
-
-        _ = selva.selva_sort_insert_i64(sortCtx, i, node);
-
-        // selva.s
-        // // 2 loops second loop gets this
-        // const size = try getFields(node.?, ctx, id, typeEntry, include);
-        // if (size > 0) {
-        //     ctx.size += size;
-        //     ctx.totalResults += 1;
-        // }
     }
 
-    if (queryType == 5) {
-        std.debug.print("Start at end {d} {d} {d} {any} {any} \n", .{ limit, include, ctx });
+    selva.selva_sort_foreach_begin(sortCtx);
+    while (!selva.selva_sort_foreach_done(sortCtx)) {
+        // if @limit stop
+        const node: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
+        const size = try getFields(node, ctx, db.getNodeId(node), typeEntry, include);
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
+        }
     }
+
+    selva.selva_sort_destroy(sortCtx);
 }
 
 pub fn queryIdsSort(

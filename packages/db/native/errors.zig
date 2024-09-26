@@ -62,7 +62,7 @@ pub fn selva(rc: c_int) SelvaError!void {
     };
 }
 
-pub const DbError = error{SHARD_NOT_CREATED};
+pub const DbError = error{ SHARD_NOT_CREATED, WRONG_SORTFIELD_TYPE };
 
 pub const MdbError = error{
     // OS errors
