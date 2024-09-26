@@ -25,7 +25,6 @@
  * ```
  */
 
-SELVA_EXPORT
 enum SelvaSortOrder {
     SELVA_SORT_ORDER_NONE = 0,
     SELVA_SORT_ORDER_I64_ASC,
