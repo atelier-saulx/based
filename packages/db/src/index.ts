@@ -1,4 +1,5 @@
-import { create, update, remove, ModifyRes } from './modify/modify.js'
+import { create, update, remove } from './modify/modify.js'
+import { ModifyRes } from './modify/ModifyRes.js'
 import { Schema, SchemaType } from '@based/schema'
 import {
   PropDef,
