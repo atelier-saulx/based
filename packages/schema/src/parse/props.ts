@@ -194,7 +194,13 @@ const numberOpts = {
 }
 
 p.number = propParser<SchemaNumber>(STUB, numberOpts, 0)
+p.int8 = propParser<SchemaNumber>(STUB, numberOpts, 0)
+p.uint8 = propParser<SchemaNumber>(STUB, numberOpts, 0)
+p.int16 = propParser<SchemaNumber>(STUB, numberOpts, 0)
+p.uint16 = propParser<SchemaNumber>(STUB, numberOpts, 0)
+p.int32 = propParser<SchemaNumber>(STUB, numberOpts, 0)
 p.uint32 = propParser<SchemaNumber>(STUB, numberOpts, 0)
+
 p.object = propParser<SchemaObject | SchemaObjectOneWay>(
   {
     props(val, prop, ctx) {

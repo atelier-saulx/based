@@ -26,30 +26,6 @@ export const writeFixedLenValue = (
     return
   }
 
-  // 1: timestamp, 4: number
-  if (t.typeIndex === 1 || t.typeIndex === 4) {
-    if (value === null) {
-      value = 0
-    } else if (typeof value !== 'number') {
-      modifyError(res, t, value)
-      return
-    }
-    db.modifyBuffer.buffer.writeFloatLE(value, pos)
-    return
-  }
-
-  // 6: uint32
-  if (t.typeIndex === 5) {
-    if (value === null) {
-      value = 0
-    } else if (typeof value !== 'number' || value < 0 || value > 4294967295) {
-      modifyError(res, t, value)
-      return
-    }
-    db.modifyBuffer.buffer.writeUint32LE(value, pos)
-    return
-  }
-
   // 9: boolean
   if (t.typeIndex === 9) {
     if (value === null) {
@@ -75,4 +51,80 @@ export const writeFixedLenValue = (
     modifyError(res, t, value)
     return
   }
+
+  // -----------------------ONLY NUMBERS HERE ON DOWN --------------------
+  if (value === null) {
+    value = 0
+  } else if (typeof value !== 'number') {
+    modifyError(res, t, value)
+    return
+  }
+
+  // 1: timestamp, 4: number
+  if (t.typeIndex === 1 || t.typeIndex === 4) {
+    db.modifyBuffer.buffer.writeDoubleLE(value, pos)
+    return
+  }
+
+  // 18: int8
+  if (t.typeIndex === 18) {
+    if (value < -128 || value > 127) {
+      modifyError(res, t, value)
+      return
+    }
+    db.modifyBuffer.buffer.writeInt8(value, pos)
+    return
+  }
+
+  // 19: uint8
+  if (t.typeIndex === 19) {
+    if (value < 0 || value > 255) {
+      modifyError(res, t, value)
+      return
+    }
+    db.modifyBuffer.buffer.writeUint8(value, pos)
+    return
+  }
+
+  // 20: int16
+  if (t.typeIndex === 20) {
+    if (value < -32_768 || value > 32_767) {
+      modifyError(res, t, value)
+      return
+    }
+    db.modifyBuffer.buffer.writeInt16LE(value, pos)
+    return
+  }
+
+  // 21: uint16
+  if (t.typeIndex === 21) {
+    if (value < 0 || value > 65_535) {
+      modifyError(res, t, value)
+      return
+    }
+    db.modifyBuffer.buffer.writeUint16LE(value, pos)
+    return
+  }
+
+  // 22: int32
+  if (t.typeIndex === 22) {
+    if (value < -2_147_483_648 || value > 2_147_483_647) {
+      modifyError(res, t, value)
+      return
+    }
+    db.modifyBuffer.buffer.writeInt32LE(value, pos)
+    return
+  }
+
+  // 6: uint32
+  if (t.typeIndex === 5) {
+    if (value < 0 || value > 4_294_967_295) {
+      modifyError(res, t, value)
+      return
+    }
+    db.modifyBuffer.buffer.writeUint32LE(value, pos)
+    return
+  }
+
+  // -----------------------ONLY NUMBERS ON THE END --------------------
 }
