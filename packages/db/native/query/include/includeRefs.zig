@@ -26,8 +26,11 @@ pub fn getRefsFields(
     const filterSize: db.TypeId = readInt(u16, include, 0);
     const filterArr: ?[]u8 = if (filterSize > 0) include[4 .. 4 + filterSize] else null;
 
-    const typeId: db.TypeId = readInt(u16, include, 4 + filterSize);
-    const refField = include[6 + filterSize];
+    const sortSize: db.TypeId = readInt(u16, include, 2);
+    const sortArr: ?[]u8 = if (sortSize > 0) include[4 + filterSize .. 4 + filterSize + sortSize] else null;
+
+    const typeId: db.TypeId = readInt(u16, include, 4 + filterSize + sortSize);
+    const refField = include[6 + filterSize + sortSize];
 
     // MULTIPLE REFS
     // op u8, field u8, bytes u32, len u32
@@ -60,33 +63,82 @@ pub fn getRefsFields(
     var size: usize = 0;
 
     // add edges here as well..
-    const includeNested = include[(7 + filterSize)..include.len];
-
-    std.debug.print("flap {any} {any} \n", .{ include, includeNested });
+    const includeNested = include[(7 + filterSize + sortSize)..include.len];
 
     var i: usize = 0;
     var resultsCnt: u32 = 0;
 
     const edgeConstrain: *selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
 
-    checkItem: while (i < refs.?.nr_refs) : (i += 1) {
-        const refNode = refs.?.refs[i].dst.?;
-        if (filterArr != null and !filter(refNode, typeEntry.?, filterArr.?)) {
-            continue :checkItem;
+    if (sortArr != null) {
+        const sortBuffer: []u8 = sortArr.?;
+        var start: u16 = undefined;
+        var len: u16 = undefined;
+        const sortField: u8 = sortBuffer[1];
+        const sortFieldType: u8 = sortBuffer[2];
+        if (sortBuffer.len == 7) {
+            start = readInt(u16, sortBuffer, 3);
+            len = readInt(u16, sortBuffer, 5);
+        } else {
+            start = 0;
+            len = 0;
         }
-        resultsCnt += 1;
-        size += getFields(
-            refNode,
-            ctx,
-            db.getNodeId(refNode),
-            typeEntry.?,
-            includeNested,
-            .{
-                .reference = @ptrCast(&refs.?.refs[i]),
-                .edgeConstaint = edgeConstrain,
-                .getEdge = false,
-            },
-        ) catch 0;
+        const sortFlag = db.getSortFlag(sortFieldType, sortBuffer[0] == 1) catch {
+            return 0;
+        };
+
+        const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, refs.?.nr_refs).?;
+
+        checkItem: while (i < refs.?.nr_refs) : (i += 1) {
+            const refNode = refs.?.refs[i].dst.?;
+            if (filterArr != null and !filter(refNode, typeEntry.?, filterArr.?)) {
+                continue :checkItem;
+            }
+            const fs = db.getFieldSchema(sortField, typeEntry.?) catch {
+                return 0;
+            };
+            const value = db.getField(refNode, fs);
+            db.insertSort(sortCtx, refNode, sortFieldType, value, start, len);
+        }
+        selva.selva_sort_foreach_begin(sortCtx);
+        while (!selva.selva_sort_foreach_done(sortCtx)) {
+            // if @limit stop
+            const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
+            resultsCnt += 1;
+            size += getFields(
+                refNode,
+                ctx,
+                db.getNodeId(refNode),
+                typeEntry.?,
+                includeNested,
+                .{
+                    .reference = @ptrCast(&refs.?.refs[i]),
+                    .edgeConstaint = edgeConstrain,
+                    .getEdge = false,
+                },
+            ) catch 0;
+        }
+        selva.selva_sort_destroy(sortCtx);
+    } else {
+        checkItem: while (i < refs.?.nr_refs) : (i += 1) {
+            const refNode = refs.?.refs[i].dst.?;
+            if (filterArr != null and !filter(refNode, typeEntry.?, filterArr.?)) {
+                continue :checkItem;
+            }
+            resultsCnt += 1;
+            size += getFields(
+                refNode,
+                ctx,
+                db.getNodeId(refNode),
+                typeEntry.?,
+                includeNested,
+                .{
+                    .reference = @ptrCast(&refs.?.refs[i]),
+                    .edgeConstaint = edgeConstrain,
+                    .getEdge = false,
+                },
+            ) catch 0;
+        }
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];

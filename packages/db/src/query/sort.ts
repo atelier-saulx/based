@@ -11,25 +11,37 @@ export const createSortBuffer = (
     console.warn('Query: No field def defined for', field)
     return this
   }
-  const includeOrder = order !== undefined
-  const len = includeOrder ? 3 : 2
-  if (fieldDef.prop === 0) {
-    const buf = Buffer.allocUnsafe(len + 4)
-    buf[0] = 0
-    buf[1] = fieldDef.typeIndex
-    if (includeOrder) {
-      buf[2] = order === 'asc' ? 0 : 1
-    }
-    buf.writeUint16LE(fieldDef.start, len)
-    buf.writeUint16LE(fieldDef.len, len + 2)
+
+  if (order !== undefined && fieldDef.prop === 0) {
+    const buf = Buffer.allocUnsafe(7)
+    buf[0] = order === 'asc' ? 0 : 1
+    buf[1] = 0
+    buf[2] = fieldDef.typeIndex
+    buf.writeUint16LE(fieldDef.start, 3)
+    buf.writeUint16LE(fieldDef.len, 5)
     return buf
   }
-  const buf = Buffer.allocUnsafe(len)
+
+  if (order !== undefined) {
+    const buf = Buffer.allocUnsafe(3)
+    buf[0] = order === 'asc' ? 0 : 1
+    buf[1] = fieldDef.prop
+    buf[2] = fieldDef.typeIndex
+    return buf
+  }
+
+  if (fieldDef.prop === 0) {
+    const buf = Buffer.allocUnsafe(6)
+    buf[0] = 0
+    buf[1] = fieldDef.typeIndex
+    buf.writeUint16LE(fieldDef.start, 2)
+    buf.writeUint16LE(fieldDef.len, 4)
+    return buf
+  }
+
+  const buf = Buffer.allocUnsafe(2)
   buf[0] = fieldDef.prop
   buf[1] = fieldDef.typeIndex
-  if (includeOrder) {
-    buf[2] = order === 'asc' ? 0 : 1
-  }
   return buf
 }
 
