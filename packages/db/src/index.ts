@@ -249,6 +249,7 @@ export class BasedDb {
   }
 
   async stop(noSave?: boolean) {
+    this.modifyBuffer.len = 0
     if (!noSave) {
       await this.save()
     }

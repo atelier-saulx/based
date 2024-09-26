@@ -34,6 +34,7 @@ pub fn getSingleRefFields(
         .includeMain = &.{},
         .refType = 254,
         .totalRefs = null,
+        .isEdge = false,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;

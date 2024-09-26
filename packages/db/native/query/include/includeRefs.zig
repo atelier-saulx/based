@@ -39,6 +39,7 @@ pub fn getRefsFields(
         .includeMain = &.{},
         .refType = 253,
         .totalRefs = 0,
+        .isEdge = false,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;

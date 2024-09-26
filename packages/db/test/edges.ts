@@ -55,7 +55,10 @@ await test('simple', async (t) => {
 
   db.drain()
 
-  db.query('article').include('contributors.$role').get().debug()
+  db.query('article')
+    .include('contributors.$role', 'contributors.$rating')
+    .get()
+    .debug()
 
   // console.info(db.query('article').include('contributors.$role').get())
 

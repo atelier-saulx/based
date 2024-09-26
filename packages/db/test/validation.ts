@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('update', async (t) => {
@@ -14,31 +15,69 @@ await test('update', async (t) => {
     types: {
       user: {
         props: {
+          rating: { type: 'uint32' },
           name: { type: 'string' },
+          friend: { ref: 'user', prop: 'friend' },
+          connections: {
+            items: {
+              ref: 'user',
+              prop: 'connections',
+            },
+          },
         },
       },
     },
   })
 
-  let bad
-
-  const youzi = db.create('user', {
+  const good = db.create('user', {
     name: 'youzi',
   })
 
-  // try {
-  bad = db.create('user', {
+  const bad = db.create('user', {
     name: 1,
   })
 
-  const jamex = db.create('user', {
+  db.create('user', {
     name: 'jamex',
+    friend: bad,
   })
 
-  console.log({ youzi, jamex })
+  db.create('user', {
+    name: 'fred',
+    connections: [good, bad],
+  })
 
-  //   throw 'Should throw'
-  // } catch (e) {
-  //   console.log('ERROR!!', e)
-  // }
+  db.create('user', {
+    name: 'wrongRating',
+    rating: 'not a number',
+  })
+
+  db.create('user', {
+    name: 'jame-z',
+    friend: good,
+    connections: [good],
+  })
+
+  db.drain()
+
+  deepEqual(db.query('user').include('name', 'friend').get().toObject(), [
+    {
+      id: 1,
+      name: 'youzi',
+      friend: {
+        id: 2,
+        rating: 0,
+        name: 'jame-z',
+      },
+    },
+    {
+      id: 2,
+      name: 'jame-z',
+      friend: {
+        id: 1,
+        rating: 0,
+        name: 'youzi',
+      },
+    },
+  ])
 })

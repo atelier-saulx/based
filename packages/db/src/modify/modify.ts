@@ -3,7 +3,8 @@ import { PropDef } from '../schema/schema.js'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { addModify } from './addModify.js'
-import { ModifyRes, _ModifyRes } from './ModifyRes.js'
+import { ModifyRes, ModifyState } from './ModifyRes.js'
+import { writeFixedLenValue } from './writeFixedLen.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
@@ -32,21 +33,17 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
 
 export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const len = db.modifyBuffer.len
-  const id = ++def.lastId
-  const res = new _ModifyRes(id, db)
-
-  def.total++
-
+  const id = def.lastId + 1
+  const res = new ModifyState(id, db)
   const wroteMain = addModify(db, res, value, def.tree, def, 3, false, true)
 
   if (res.error) {
-    db.modifyBuffer.len = len
-    def.total--
-    def.lastId--
     // @ts-ignore
     return res
   }
+
+  def.lastId = id
+  def.total++
 
   if (!wroteMain || def.mainLen === 0) {
     setCursor(db, def, 0, id, false, true)
@@ -89,8 +86,15 @@ export const update = (
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const res = new _ModifyRes(id, db)
+  const res = new ModifyState(id, db)
   const hasMain = addModify(db, res, value, def.tree, def, 6, !overwrite, false)
+
+  if (res.error) {
+    db.modifyBuffer.mergeMainSize = 0
+    db.modifyBuffer.mergeMain = null
+    // @ts-ignore
+    return res
+  }
 
   if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
     const mergeMain = db.modifyBuffer.mergeMain
@@ -110,32 +114,11 @@ export const update = (
       db.modifyBuffer.len += 2
       db.modifyBuffer.buffer.writeUint16LE(t.len, db.modifyBuffer.len)
       db.modifyBuffer.len += 2
-
-      // 11: String
-      if (t.typeIndex === 11) {
-        const size = db.modifyBuffer.buffer.write(
-          v,
-          db.modifyBuffer.len + 1,
-          'utf8',
-        )
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = size
-        if (size + 1 > t.len) {
-          console.warn('String does not fit fixed len', v)
-        }
-      } // 1: timestamp, 4: number
-      else if (t.typeIndex === 1 || t.typeIndex === 4) {
-        db.modifyBuffer.buffer.writeFloatLE(v, db.modifyBuffer.len)
-        // 5: uint32
-      } else if (t.typeIndex === 5) {
-        db.modifyBuffer.buffer.writeUint32LE(v, db.modifyBuffer.len)
-        // 9: boolean
-      } else if (t.typeIndex === 9) {
-        db.modifyBuffer.buffer.writeInt8(v ? 1 : 0, db.modifyBuffer.len)
-      }
+      writeFixedLenValue(db, v, db.modifyBuffer.len, t, res)
       db.modifyBuffer.len += t.len
     }
-    db.modifyBuffer.mergeMain = null
     db.modifyBuffer.mergeMainSize = 0
+    db.modifyBuffer.mergeMain = null
   }
 
   if (!db.isDraining) {

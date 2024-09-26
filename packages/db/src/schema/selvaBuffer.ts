@@ -30,14 +30,18 @@ const propDefBuffer = (
 export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
   return Object.values(schema).map((t, i) => {
     const restFields: PropDef[] = []
+    let refFields = 0
     for (const f of Object.values(t.props)) {
       if (f.seperate) {
+        if (f.typeIndex === 13 || f.typeIndex === 14) {
+          refFields++
+        }
         restFields.push(f)
       }
     }
     restFields.sort((a, b) => a.prop - b.prop)
     return Buffer.from([
-      1,
+      1 + refFields,
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,

@@ -88,8 +88,7 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
           edgeBuffer = addInclude(query, refInclude.edgeIncludes)
         }
 
-        console.log('EDGEBUFFER:', new Uint8Array(edgeBuffer))
-
+        // TODO filter edge
         const filterConditions =
           include.referencesFilters[refInclude.fromRef.path.join('.')]
         let filter: Buffer
@@ -126,7 +125,15 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
         // field where ref is stored
         meta[(multi ? 7 : 5) + filterSize] = refInclude.fromRef.prop
 
-        result.push(meta, refBuffer)
+        if (edgeBuffer) {
+          const edgeSize = edgeBuffer.byteLength
+          const metaEdgeBuffer = Buffer.allocUnsafe(3)
+          metaEdgeBuffer[0] = 253
+          metaEdgeBuffer.writeUint16LE(edgeSize, 1)
+          result.push(meta, refBuffer, metaEdgeBuffer, edgeBuffer)
+        } else {
+          result.push(meta, refBuffer)
+        }
       }
     }
     return Buffer.concat(result)

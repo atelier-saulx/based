@@ -1,48 +1,44 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { _ModifyRes } from './ModifyRes.js'
+import { ModifyState, modifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
 export function writeString(
-  value: any,
+  value: string | null,
   fromCreate: boolean,
   db: BasedDb,
-  schema: SchemaTypeDef,
+  def: SchemaTypeDef,
   t: PropDef,
-  res: _ModifyRes,
+  res: ModifyState,
   writeKey: 3 | 6,
 ) {
-  let len
-  if (typeof value === 'string') {
-    len = value.length
-  } else if (value === null) {
-    len = 0
-  } else {
-    res._fail(t, value)
+  if (typeof value !== 'string' && value !== null) {
+    modifyError(res, t, value)
     return
   }
 
-  if (len === 0) {
+  const len = value?.length
+  if (!len) {
     if (!fromCreate) {
       const nextLen = 1 + 4 + 1
       if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
         flushBuffer(db)
       }
-      setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+      setCursor(db, def, t.prop, res.tmpId, false, fromCreate)
       db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
       db.modifyBuffer.len++
     }
   } else {
     if (fromCreate) {
-      schema.stringPropsCurrent[t.prop] = 2
+      def.stringPropsCurrent[t.prop] = 2
       db.modifyBuffer.hasStringField++
     }
     const byteLen = len + len
     if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+    setCursor(db, def, t.prop, res.tmpId, false, fromCreate)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
     db.modifyBuffer.len += 5
     const size = db.modifyBuffer.buffer.write(

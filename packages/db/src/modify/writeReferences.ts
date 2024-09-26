@@ -1,7 +1,7 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { PropDef, SchemaTypeDef } from '../schema/types.js'
-import { _ModifyRes } from './ModifyRes.js'
+import { modifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './writeFixedLen.js'
 
@@ -11,9 +11,14 @@ export function writeReferences(
   writeKey: 3 | 6,
   value: any,
   schema: SchemaTypeDef,
-  res: _ModifyRes,
+  res: ModifyState,
   fromCreate: boolean,
 ) {
+  if (!Array.isArray(value) && value !== null) {
+    modifyError(res, t, value)
+    return
+  }
+
   // lot can be shared between reference and this
   if (t.edges) {
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
@@ -36,13 +41,26 @@ export function writeReferences(
     db.modifyBuffer.len += 5
 
     for (let i = 0; i < value.length; i++) {
-      const ref = value[i]
+      let ref = value[i]
+      if (typeof ref !== 'number') {
+        if (ref instanceof ModifyState) {
+          if (ref.error) {
+            res.error = ref.error
+            return
+          }
+          ref = ref.tmpId
+        } else {
+          modifyError(res, t, value)
+          return
+        }
+      }
+
       if (typeof ref === 'object') {
         db.modifyBuffer.buffer[db.modifyBuffer.len] = 1
         db.modifyBuffer.buffer.writeUint32LE(ref.id, db.modifyBuffer.len + 1)
         const edgeDataSizeIndex = db.modifyBuffer.len + 5
         db.modifyBuffer.len += 9
-        writeEdges(t, ref, db)
+        writeEdges(t, ref, db, res)
         db.modifyBuffer.buffer.writeUint32LE(
           db.modifyBuffer.len - edgeDataSizeIndex - 4,
           edgeDataSizeIndex,
@@ -68,11 +86,21 @@ export function writeReferences(
     db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
     db.modifyBuffer.len += 5
     for (let i = 0; i < value.length; i++) {
+      let ref = value[i]
+      if (typeof ref !== 'number') {
+        if (ref instanceof ModifyState) {
+          if (ref.error) {
+            res.error = ref.error
+            return
+          }
+          ref = ref.tmpId
+        } else {
+          modifyError(res, t, value)
+          return
+        }
+      }
       db.modifyBuffer.buffer[db.modifyBuffer.len + i * 5] = 0
-      db.modifyBuffer.buffer.writeUint32LE(
-        value[i],
-        i * 5 + db.modifyBuffer.len + 1,
-      )
+      db.modifyBuffer.buffer.writeUint32LE(ref, i * 5 + db.modifyBuffer.len + 1)
     }
     db.modifyBuffer.len += refLen
   }
@@ -81,7 +109,7 @@ export function writeReferences(
 // export
 type RefObject = { id?: number; index?: number; [edge: string]: any }
 
-function writeEdges(t: PropDef, ref: RefObject, db: BasedDb) {
+function writeEdges(t: PropDef, ref: RefObject, db: BasedDb, res: ModifyState) {
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
@@ -99,7 +127,7 @@ function writeEdges(t: PropDef, ref: RefObject, db: BasedDb) {
         // [field] [size] [data]
         db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
         db.modifyBuffer.buffer.writeUint16LE(edge.len, db.modifyBuffer.len + 1)
-        writeFixedLenValue(db, value, db.modifyBuffer.len + 3, edge)
+        writeFixedLenValue(db, value, db.modifyBuffer.len + 3, edge, res)
         db.modifyBuffer.len += edge.len + 3
       }
     }

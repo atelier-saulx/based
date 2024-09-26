@@ -1,5 +1,10 @@
+import {
+  PropDef,
+  PropDefEdge,
+  REVERSE_TYPE_INDEX_MAP,
+} from '../schema/types.js'
 import { BasedDb } from '../index.js'
-import { PropDef, REVERSE_TYPE_INDEX_MAP } from '../schema/types.js'
+import { inspect } from 'node:util'
 
 export type ModifyRes = {
   tmpId: number
@@ -7,20 +12,22 @@ export type ModifyRes = {
 } & Promise<number>
 
 class ModifyError {
-  constructor(prop: PropDef, val: any) {
+  constructor(prop: PropDef | PropDefEdge, val: any) {
     this.#prop = prop
     this.#val = val
   }
-  #prop: PropDef
-  #val: PropDef
-  toError() {
-    return new Error(
-      `Invalid value at ${this.#prop.path.join('.')}. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received ${this.#val}`,
-    )
+  #prop: PropDef | PropDefEdge
+  #val: any
+  toString() {
+    return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received ${this.#val}`
+  }
+
+  [inspect.custom]() {
+    return this.toString()
   }
 }
 
-export class _ModifyRes {
+export class ModifyState {
   constructor(tmpId, db) {
     this.tmpId = tmpId
     this.#buf = db.modifyBuffer
@@ -35,7 +42,7 @@ export class _ModifyRes {
   }
   then(resolve, reject) {
     if (this.error) {
-      reject(this.error.toError())
+      reject(this.error.toString())
     }
     if ('offset' in this.#ctx) {
       resolve(this.tmpId + this.#ctx.offset)
@@ -43,8 +50,12 @@ export class _ModifyRes {
       this.#buf.queue.push(resolve, this.tmpId)
     }
   }
-  _fail(prop: PropDef, val: any) {
-    // store error info
-    this.error = new ModifyError(prop, val)
-  }
+}
+
+export const modifyError = (
+  res: ModifyState,
+  prop: PropDef | PropDefEdge,
+  val: any,
+) => {
+  res.error = new ModifyError(prop, val)
 }

@@ -17,6 +17,7 @@ pub const Result = struct {
     refSize: ?usize,
     includeMain: []u8,
     totalRefs: ?usize,
+    isEdge: bool,
 };
 
 pub fn createResultsBuffer(
