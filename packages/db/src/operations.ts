@@ -7,8 +7,6 @@ export const flushBuffer = (db: BasedDb) => {
     // TODO put actual offset here
 
     try {
-      console.log('YO MODIFY WHATS UP', new Uint8Array(db.modifyBuffer.buffer))
-      // todo check if this is smart
       db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
       // or it sends it to the actual db
     } catch (err) {
