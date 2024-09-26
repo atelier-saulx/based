@@ -1,4 +1,5 @@
-import { create, update, remove, ModifyRes } from './modify.js'
+import { create, update, remove } from './modify/modify.js'
+import { ModifyRes } from './modify/ModifyRes.js'
 import { Schema, SchemaType } from '@based/schema'
 import {
   PropDef,
@@ -18,7 +19,7 @@ import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 
 export * from './schema/typeDef.js'
-export * from './modify.js'
+export * from './modify/modify.js'
 export * from './basedNode/index.js'
 
 type InternalSchema = Schema & {
@@ -46,8 +47,10 @@ export class BasedDb {
     lastMain: number
     mergeMain: (PropDef | any)[] | null
     mergeMainSize: number
+    ctx: { offset?: number }
     queue: any[]
   }
+
   schema: InternalSchema = DEFAULT_SCHEMA
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -81,6 +84,7 @@ export class BasedDb {
       typePrefix: new Uint8Array([0, 0]),
       id: -1,
       lastMain: -1,
+      ctx: {},
       queue: [],
     }
     this.fileSystemPath = path

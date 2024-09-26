@@ -3,6 +3,9 @@ import { BasedDb } from './index.js'
 export const flushBuffer = (db: BasedDb) => {
   if (db.modifyBuffer.len) {
     const d = Date.now()
+    const offset = 0
+    // TODO put actual offset here
+
     try {
       // todo check if this is smart
       db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
@@ -19,15 +22,25 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.mergeMain = null
     db.modifyBuffer.mergeMainSize = 0
     db.modifyBuffer.hasStringField = -1
+    db.modifyBuffer.ctx.offset = offset
+    db.modifyBuffer.ctx = {}
+
+    const q = db.modifyBuffer.queue
+    let i = q.length
+
+    if (i) {
+      // resolve any queued ModifyRes's
+      while (i--) {
+        const tmpId = q[i]
+        const resolve = q[--i]
+        resolve(tmpId + offset)
+      }
+      db.modifyBuffer.queue = []
+    }
+
     const time = Date.now() - d
     db.writeTime += time
-    let i = db.modifyBuffer.queue.length
-    while (i--) {
-      const tmpId = db.modifyBuffer.queue[i]
-      const resolve = db.modifyBuffer.queue[--i]
-      resolve(tmpId)
-    }
-    db.modifyBuffer.queue = []
+
     return time
   }
   db.isDraining = false

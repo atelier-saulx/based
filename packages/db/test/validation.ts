@@ -1,4 +1,5 @@
 import { BasedDb } from '../src/index.js'
+import { setTimeout } from 'node:timers/promises'
 import test from './shared/test.js'
 
 await test('update', async (t) => {
@@ -20,13 +21,15 @@ await test('update', async (t) => {
     },
   })
 
+  const user = db.create('user', {
+    name: 'success',
+  })
   try {
-    const user = await db.create('user', {
-      name: 'success',
-    })
-
-    console.log('!!!', user)
+    throw new Error('fu')
   } catch (e) {
-    console.error('ERR:', e)
+    console.error('ballz', e)
   }
+
+  // await setTimeout(500)
+  // await setTimeout(500)
 })
