@@ -13,7 +13,7 @@ await test('simple', async (t) => {
 
   await db.start({ clean: true })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -102,7 +102,7 @@ await test('one to many', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -208,7 +208,7 @@ await test('update', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -285,7 +285,7 @@ await test('filter', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {

@@ -13,7 +13,7 @@ await test('query', async (t) => {
 
   await db.start({ clean: true })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {

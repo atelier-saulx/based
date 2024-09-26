@@ -13,7 +13,7 @@ await test('basic', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -408,7 +408,7 @@ await test('sort - from start (1.5M items)', async (t) => {
 
   await db.start({ clean: true })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {

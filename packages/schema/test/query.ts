@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parseSchema } from '@based/schema'
+import { parse } from '@based/schema'
 
 test('query', () => {
-  parseSchema({
+  parse({
     types: {
       author: {
         props: {

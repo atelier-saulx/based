@@ -29,7 +29,7 @@
 
 // const user = 'user'
 
-// db.updateSchema({
+// db.putSchema({
 //   types: {
 //     [user]: {
 //       fields: {

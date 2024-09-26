@@ -13,7 +13,7 @@ await test('single simple', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -67,7 +67,7 @@ await test('simple nested', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -169,7 +169,7 @@ await test('single reference object', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -251,7 +251,7 @@ await test('nested', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -553,7 +553,7 @@ await test('single reference multi refs strings', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {

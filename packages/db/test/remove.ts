@@ -13,7 +13,7 @@ await test('remove', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       nurp: {
         props: {

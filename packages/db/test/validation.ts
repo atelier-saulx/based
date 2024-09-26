@@ -11,7 +11,7 @@ await test('update', async (t) => {
 
   t.after(() => db.destroy())
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -57,6 +57,13 @@ await test('update', async (t) => {
     friend: good,
     connections: [good],
   })
+
+  console.log(
+    db.create('user', {
+      name: 'nope',
+      randomField: true,
+    }),
+  )
 
   db.drain()
 

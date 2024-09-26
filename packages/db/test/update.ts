@@ -24,7 +24,7 @@ await test('update', async (t) => {
     uint32	Whole JSON numbers that fit in an unsigned 32-bit integer
   */
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       mep: {
         props: {

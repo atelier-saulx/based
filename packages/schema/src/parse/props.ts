@@ -12,6 +12,7 @@ import {
   SchemaObject,
   SchemaObjectOneWay,
   SchemaReferences,
+  SchemaAlias,
 } from '../types.js'
 import {
   expectBoolean,
@@ -33,14 +34,14 @@ import {
   TYPE_MISMATCH,
   UNKNOWN_PROP,
 } from './errors.js'
-import { Parser } from './index.js'
+import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
 
 type PropsFns<PropType> = Record<
   string,
-  (val, prop: PropType, ctx: Parser, key?: string) => void
+  (val, prop: PropType, ctx: SchemaParser, key?: string) => void
 >
-
+const STUB = {}
 const shared: PropsFns<SchemaAnyProp> = {
   type() {},
   required(val) {
@@ -74,7 +75,7 @@ function propParser<PropType extends SchemaAnyProp>(
   optional: PropsFns<PropType>,
   allowShorthand?: number,
 ) {
-  return (prop, ctx: Parser) => {
+  return (prop, ctx: SchemaParser) => {
     if (typeof prop === 'string') {
       // allow string
       if (allowShorthand === 0) {
@@ -113,8 +114,18 @@ function propParser<PropType extends SchemaAnyProp>(
 
 const p: Record<string, ReturnType<typeof propParser>> = {}
 
+p.alias = propParser<SchemaAlias>(
+  STUB,
+  {
+    default(val) {
+      expectString(val)
+    },
+  },
+  0,
+)
+
 p.boolean = propParser<SchemaBoolean>(
-  {},
+  STUB,
   {
     default(val) {
       expectBoolean(val)
@@ -149,44 +160,41 @@ p.enum = propParser<SchemaEnum>(
   1,
 )
 
-p.number = propParser<SchemaNumber>(
-  {
-    min(val) {
-      expectNumber(val)
-    },
-    max(val, prop) {
-      expectNumber(val)
-      if (prop.min > val) {
-        throw Error(MIN_MAX)
-      }
-    },
-    step(val) {
-      if (typeof val !== 'number' && val !== 'any') {
+const numberOpts = {
+  min(val) {
+    expectNumber(val)
+  },
+  max(val, prop) {
+    expectNumber(val)
+    if (prop.min > val) {
+      throw Error(MIN_MAX)
+    }
+  },
+  step(val) {
+    if (typeof val !== 'number' && val !== 'any') {
+      throw Error(INVALID_VALUE)
+    }
+  },
+  default(val, prop) {
+    expectNumber(val)
+    if (val > prop.max || val < prop.min) {
+      throw Error(OUT_OF_RANGE)
+    }
+
+    if (prop.step !== 'any') {
+      const min =
+        typeof prop.min !== 'number' || prop.min === Infinity ? 0 : prop.min
+      const v = val - min
+
+      if (~~(v / prop.step) * prop.step !== v) {
         throw Error(INVALID_VALUE)
       }
-    },
+    }
   },
-  {
-    default(val, prop) {
-      expectNumber(val)
-      if (val > prop.max || val < prop.min) {
-        throw Error(OUT_OF_RANGE)
-      }
+}
 
-      if (prop.step !== 'any') {
-        const min =
-          typeof prop.min !== 'number' || prop.min === Infinity ? 0 : prop.min
-        const v = val - min
-
-        if (~~(v / prop.step) * prop.step !== v) {
-          throw Error(INVALID_VALUE)
-        }
-      }
-    },
-  },
-  0,
-)
-
+p.number = propParser<SchemaNumber>(STUB, numberOpts, 0)
+p.uint32 = propParser<SchemaNumber>(STUB, numberOpts, 0)
 p.object = propParser<SchemaObject | SchemaObjectOneWay>(
   {
     props(val, prop, ctx) {
@@ -209,16 +217,24 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
       const propAllowed = type && !inQuery
       if (propAllowed) {
         expectString(propKey)
-        let targetProp: any = schema.types[prop.ref].props[propKey]
+        const propPath = propKey.split('.')
+        let targetProp: any = schema.types[prop.ref]
+        for (const key of propPath) {
+          targetProp = targetProp.props[key]
+        }
         if ('items' in targetProp) {
           targetProp = targetProp.items
         }
         if ('ref' in targetProp && 'prop' in targetProp) {
-          let t: any = schema.types[targetProp.ref].props[targetProp.prop]
-          if ('items' in t) {
-            t = t.items
+          const inversePath = targetProp.prop.split('.')
+          let inverseProp: any = schema.types[targetProp.ref]
+          for (const key of inversePath) {
+            inverseProp = inverseProp.props[key]
           }
-          if (t === prop) {
+          if ('items' in inverseProp) {
+            inverseProp = inverseProp.items
+          }
+          if (inverseProp === prop) {
             return
           }
         }
@@ -307,10 +323,19 @@ p.references = propParser<SchemaReferences>(
 )
 
 p.string = propParser<SchemaString>(
-  {},
+  STUB,
   {
     default(val) {
       expectString(val)
+    },
+    maxBytes(val) {
+      expectNumber(val)
+    },
+    min(val) {
+      expectNumber(val)
+    },
+    max(val) {
+      expectNumber(val)
     },
   },
   0,
@@ -330,20 +355,22 @@ p.text = propParser<SchemaText>(
   {
     default(val, prop) {
       console.warn('MAKE DEFAULT VALUE FOR TEXT')
-      //   if (typeof val !== 'string') {
-      //     throwErr(ERRORS.EXPECTED_STR, prop, 'default')
-      //   }
     },
   },
   0,
 )
 
 p.timestamp = propParser<SchemaTimestamp>(
-  {},
+  STUB,
   {
     default(val) {
       if (typeof val !== 'number' && !(val instanceof Date)) {
         throw Error(EXPECTED_DATE)
+      }
+    },
+    on(val) {
+      if (val !== 'create' && val !== 'update') {
+        throw Error(INVALID_VALUE)
       }
     },
   },

@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parseSchema } from '@based/schema'
+import { parse } from '@based/schema'
 
 test('text', () => {
-  parseSchema({
+  parse({
     types: {
       hello: {
         props: {
@@ -19,7 +19,7 @@ test('text', () => {
   })
 
   throws(() => {
-    parseSchema({
+    parse({
       props: {
         myText: {
           type: 'text',

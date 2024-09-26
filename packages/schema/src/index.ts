@@ -1,2 +1,2 @@
 export * from './types.js'
-export * from './parseSchema/index.js'
+export * from './parse/index.js'

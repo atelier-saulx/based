@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parseSchema } from '@based/schema'
+import { parse } from '@based/schema'
 
 test('references', () => {
-  parseSchema({
+  parse({
     types: {
       article: {
         props: {
@@ -27,7 +27,7 @@ test('references', () => {
   })
 
   throws(() => {
-    parseSchema({
+    parse({
       types: {
         author: {
           props: {
@@ -44,7 +44,7 @@ test('references', () => {
   }, 'Disallow missing type for ref')
 
   throws(() => {
-    parseSchema({
+    parse({
       props: {
         myRefs: {
           items: {
@@ -56,7 +56,7 @@ test('references', () => {
   }, 'Disallow missing type for refs')
 
   throws(() => {
-    parseSchema({
+    parse({
       types: {
         article: {
           props: {
@@ -92,7 +92,7 @@ test('references', () => {
 })
 
 test('edges', () => {
-  parseSchema({
+  parse({
     types: {
       article: {
         props: {
@@ -119,7 +119,7 @@ test('edges', () => {
   })
 
   throws(() => {
-    parseSchema({
+    parse({
       types: {
         article: {
           props: {

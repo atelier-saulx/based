@@ -1,4 +1,4 @@
-import { getPropType } from './parseSchema/utils.js'
+import { getPropType } from './parse/utils.js'
 type Letter =
   | 'A'
   | 'B'
@@ -80,15 +80,8 @@ export type SchemaText = Prop<{
   default?: Record<string, string>
 }>
 
-export type SchemaNumber = Prop<{
-  type: 'number'
-  default?: number
-  min: number
-  max: number
-  step: number | 'any'
-}>
-
 type NumberType =
+  | 'number'
   | 'float32'
   | 'float64'
   | 'int8'
@@ -98,7 +91,7 @@ type NumberType =
   | 'int32'
   | 'uint32'
 
-export type SchemaExactNumber = Prop<{
+export type SchemaNumber = Prop<{
   type: NumberType
   default?: number
   min?: number
@@ -122,6 +115,7 @@ export type SchemaBoolean = Prop<{
 export type SchemaTimestamp = Prop<{
   type: 'timestamp'
   default?: number | Date
+  on?: 'create' | 'update'
 }>
 
 export type SchemaReferenceOneWay = Prop<{
@@ -161,22 +155,27 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
+export type SchemaAlias = Prop<{
+  type?: 'alias'
+  default?: string
+}>
+
 export type SchemaPropShorthand =
-  | 'string'
-  | 'text'
-  | 'number'
-  | 'boolean'
   | 'timestamp'
+  | 'boolean'
+  | 'string'
+  | 'alias'
+  | 'text'
   | NumberType
   | EnumItem[]
 
 type SetItems =
-  | SchemaNumber
-  | SchemaString
+  | SchemaPropShorthand
   | SchemaTimestamp
   | SchemaBoolean
+  | SchemaNumber
+  | SchemaString
   | SchemaEnum
-  | SchemaPropShorthand
 
 export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
   type?: 'set'
@@ -185,29 +184,29 @@ export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
 }>
 
 type NonRefSchemaProps =
-  | SchemaBoolean
+  | SchemaPropShorthand
   | SchemaTimestamp
+  | SchemaBoolean
   | SchemaNumber
   | SchemaString
+  | SchemaAlias
   | SchemaText
   | SchemaEnum
-  | SchemaExactNumber
   | SchemaSet
-  | SchemaPropShorthand
 
 export type SchemaProp =
-  | NonRefSchemaProps
-  | SchemaReference
-  | SchemaReferenceWithQuery
-  | SchemaReferences
   | SchemaReferencesWithQuery
+  | SchemaReferenceWithQuery
+  | NonRefSchemaProps
+  | SchemaReferences
+  | SchemaReference
   | SchemaObject
 
 export type SchemaPropOneWay =
-  | NonRefSchemaProps
-  | SchemaReferenceOneWay
   | SchemaReferencesOneWay
+  | SchemaReferenceOneWay
   | SchemaObjectOneWay
+  | NonRefSchemaProps
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
@@ -240,19 +239,20 @@ export type SchemaLocales = Record<
 >
 
 export type SchemaPropTypeMap = {
-  string: SchemaString
-  number: SchemaNumber
-  object: SchemaObject
-  boolean: SchemaBoolean
+  references: SchemaReferences
   timestamp: SchemaTimestamp
+  reference: SchemaReference
+  boolean: SchemaBoolean
+  string: SchemaString
+  object: SchemaObject
+  alias: SchemaAlias
   enum: SchemaEnum
   text: SchemaText
   set: SchemaSet
-  reference: SchemaReference
-  references: SchemaReferences
-} & Record<NumberType, SchemaExactNumber>
+} & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap
+
 export const isPropType = <T extends SchemaPropTypes>(
   type: T,
   prop: SchemaProp,

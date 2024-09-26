@@ -35,3 +35,10 @@ export const expectNumber = (v) => {
     throw Error(EXPECTED_NUM)
   }
 }
+
+export const expectPositiveNumber = (v) => {
+  expectNumber(v)
+  if (v < 0) {
+    throw Error('Expected positive number')
+  }
+}
