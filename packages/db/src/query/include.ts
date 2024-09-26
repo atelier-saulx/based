@@ -111,6 +111,8 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
           )
         }
 
+        // make this nice...
+
         // sort
 
         const filterSize = filter?.byteLength ?? 0

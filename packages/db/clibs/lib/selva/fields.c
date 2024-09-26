@@ -1114,6 +1114,10 @@ int selva_fields_set_reference_meta(
         return SELVA_ENOENT;
     }
 
+    if (!efc->fields_schema) {
+        return SELVA_EINVAL;
+    }
+
     fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
     if (!fs) {
         return SELVA_EINVAL;

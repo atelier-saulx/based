@@ -136,23 +136,14 @@ pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !v
     ));
 }
 
-pub fn insertReference(
-    value: Node,
-    target: Node,
-    fieldSchema: FieldSchema,
-    index: selva.user_ssize_t,
-) !void {
+// @param index 0 = first; -1 = last.
+pub fn insertReference(value: Node, target: Node, fieldSchema: FieldSchema, index: selva.user_ssize_t) !*selva.SelvaNodeReference {
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
-    try errors.selva(selva.selva_fields_references_insert(
-        ctx.selva,
-        target,
-        fieldSchema,
-        index,
-        te_dst,
-        value,
-        selva.NULL, // Here could be: struct SelvaNodeReference **ref_out
-    ));
+    var ref: [*c]selva.SelvaNodeReference = undefined;
+
+    try errors.selva(selva.selva_fields_references_insert(ctx.selva, target, fieldSchema, index, te_dst, value, &ref));
+    return ref;
 }
 
 pub fn moveReference(node: Node, fieldSchema: FieldSchema, index_old: selva.user_ssize_t, index_new: selva.user_ssize_t) !void {
@@ -172,7 +163,7 @@ pub fn getEdgeProp(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema)
     }
 }
 
-pub fn writeEdgeProp(data: []u8, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.SelvaNodeReference, field: u8) !void {
+pub fn writeEdgeProp(data: []u8, node: Node, efc: *selva.EdgeFieldConstraint, ref: *selva.SelvaNodeReference, field: u8) !void {
     try errors.selva(selva.selva_fields_set_reference_meta(node, ref, efc, field, data.ptr, data.len));
 }
 
