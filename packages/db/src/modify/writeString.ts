@@ -13,7 +13,16 @@ export function writeString(
   res: _ModifyRes,
   writeKey: 3 | 6,
 ) {
-  const len = value === null ? 0 : value.length
+  let len
+  if (typeof value === 'string') {
+    len = value.length
+  } else if (value === null) {
+    len = 0
+  } else {
+    res._fail(t, value)
+    return
+  }
+
   if (len === 0) {
     if (!fromCreate) {
       const nextLen = 1 + 4 + 1

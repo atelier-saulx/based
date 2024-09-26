@@ -22,6 +22,10 @@ export const addModify = (
 ): boolean => {
   let wroteMain = false
   for (const key in obj) {
+    if (res.error) {
+      wroteMain = false
+      return
+    }
     const leaf = tree[key]
     const value = obj[key]
     if (!leaf.__isPropDef) {
@@ -99,5 +103,6 @@ export const addModify = (
       writeFixedLenValue(db, value, t.start + mainIndex, t)
     }
   }
+
   return wroteMain
 }

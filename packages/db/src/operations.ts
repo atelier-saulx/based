@@ -2,6 +2,7 @@ import { BasedDb } from './index.js'
 
 export const flushBuffer = (db: BasedDb) => {
   if (db.modifyBuffer.len) {
+    console.log('db.modifyBuffer.len:', db.modifyBuffer.len)
     const d = Date.now()
     const offset = 0
     // TODO put actual offset here

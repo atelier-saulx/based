@@ -32,15 +32,23 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
 
 export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const def = db.schemaTypesParsed[type]
+  const len = db.modifyBuffer.len
   const id = ++def.lastId
   const res = new _ModifyRes(id, db)
 
   def.total++
 
-  if (
-    !addModify(db, res, value, def.tree, def, 3, false, true) ||
-    def.mainLen === 0
-  ) {
+  const wroteMain = addModify(db, res, value, def.tree, def, 3, false, true)
+
+  if (res.error) {
+    db.modifyBuffer.len = len
+    def.total--
+    def.lastId--
+    // @ts-ignore
+    return res
+  }
+
+  if (!wroteMain || def.mainLen === 0) {
     setCursor(db, def, 0, id, false, true)
   }
 
