@@ -46,11 +46,18 @@ await test('simple', async (t) => {
     name: 'Mr snurp',
   })
 
+  const mrYur = db.create('user', {
+    name: 'Mr Yur',
+  })
+
   db.drain()
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
-    contributors: [{ id: mrSnurp, $role: 'writer', $rating: 99 }],
+    contributors: [
+      { id: mrSnurp, $role: 'writer', $rating: 99 },
+      { id: mrYur, $role: 'editor', $rating: 10 },
+    ],
   })
 
   db.drain()
@@ -59,6 +66,13 @@ await test('simple', async (t) => {
     .include('contributors.$role', 'contributors.$rating')
     .get()
     .debug()
+
+  console.log(
+    db
+      .query('article')
+      .include('contributors.$role', 'contributors.$rating')
+      .get(),
+  )
 
   // console.info(db.query('article').include('contributors.$role').get())
 

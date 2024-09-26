@@ -54,7 +54,15 @@ pub fn queryIds(
     while (!selva.selva_sort_foreach_done(sortCtx)) {
         // if @limit stop
         const node: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
-        const size = try getFields(node, ctx, db.getNodeId(node), typeEntry, include);
+        const size = try getFields(
+            node,
+            ctx,
+            db.getNodeId(node),
+            typeEntry,
+            include,
+            null,
+            null,
+        );
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -122,7 +130,15 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        const size = try getFields(node.?, ctx, id, typeEntry, include);
+        const size = try getFields(
+            node.?,
+            ctx,
+            id,
+            typeEntry,
+            include,
+            null,
+            null,
+        );
 
         if (size > 0) {
             ctx.size += size;

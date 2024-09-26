@@ -15,6 +15,9 @@ pub fn getFields(
     id: u32,
     typeEntry: db.Type,
     include: []u8,
+    reference: ?*selva.SelvaNodeReference,
+    edgeConstaint: ?*selva.EdgeFieldConstraint,
+    // add reference
 ) !usize {
     var includeMain: []u8 = &.{};
     var size: usize = 0;
@@ -32,7 +35,29 @@ pub fn getFields(
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
 
-            std.debug.print("Got some edge include here {any} \n", .{edges});
+            var f: usize = 0;
+            while (f < edges.len) {
+                const edgeFieldNumber = edges[f];
+
+                // edgeConstaint
+
+                std.debug.print(" vla field {d} {any} \n", .{ edgeFieldNumber, edgeConstaint });
+                const edgeFieldSchema = selva.get_fs_by_fields_schema_field(edgeConstaint.?.*.fields_schema, edgeFieldNumber);
+
+                std.debug.print("BLA BLA {any} {d} \n", .{ edgeFieldSchema, edgeFieldNumber });
+
+                const v = db.getEdgeProp(reference.?, edgeFieldSchema);
+
+                std.debug.print("BLA BLA {any} \n", .{v});
+
+                f += 1;
+            }
+
+            // selva.get
+            //
+            // db.getEdgeProp(reference.?, fieldSchema );
+
+            // db.getEdgeProp()
 
             //      size += getFields(
             //     refNode,

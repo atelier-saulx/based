@@ -82,6 +82,7 @@ export class Query {
         includeTree: [],
         multiple: false,
         referencesFilters: {},
+        referencesSortOptions: {},
       }
     }
 
@@ -99,7 +100,6 @@ export class Query {
         f(select)
         for (const s of selects) {
           const fieldDef = this.includeDef.schema.props[s.field]
-
           const fSchema = this.db.schemaTypesParsed[fieldDef.inverseTypeName]
 
           if (s.filters.length) {
@@ -112,6 +112,9 @@ export class Query {
                 }
               }
               const conditions = this.includeDef.referencesFilters[s.field]
+              if (s.sortOpts) {
+                this.includeDef.referencesSortOptions[s.field] = s.sortOpts
+              }
               for (const f of s.filters) {
                 conditions.size += filter(
                   f.field,

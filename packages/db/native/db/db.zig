@@ -137,7 +137,12 @@ pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !v
 }
 
 // @param index 0 = first; -1 = last.
-pub fn insertReference(value: Node, target: Node, fieldSchema: FieldSchema, index: selva.user_ssize_t) !*selva.SelvaNodeReference {
+pub fn insertReference(
+    value: Node,
+    target: Node,
+    fieldSchema: FieldSchema,
+    index: selva.user_ssize_t,
+) !*selva.SelvaNodeReference {
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
     var ref: [*c]selva.SelvaNodeReference = undefined;
@@ -154,12 +159,12 @@ pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_s
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-pub fn getEdgeProp(ref: selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
-    if (ref.meta) {
-        return null;
-    } else {
+pub fn getEdgeProp(ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) ?[]u8 {
+    if (ref.meta != null) {
         const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(ref.meta, selvaFieldSchema);
         return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
+    } else {
+        return null;
     }
 }
 

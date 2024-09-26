@@ -57,6 +57,8 @@ pub fn getSingleRefFields(
         refId,
         typeEntry,
         includeNested,
+        null, // ADD REFERENCE
+        null,
     ) catch 0;
 
     ctx.results.items[resultIndex].refSize = resultSizeNest;

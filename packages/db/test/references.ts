@@ -397,24 +397,25 @@ await test('filter', async (t) => {
     'Filter references multi select',
   )
 
-  // deepEqual(
-  //   db
-  //     .query('article', strudelArticle)
-  //     .include((select) => {
-  //       select('contributors')
-  //         .include('name')
-  //         .include('flap')
-  //         .filter('flap', '>', 25)
-  //     })
-  //     .get()
-  //     .toObject(),
-  //   {
-  //     id: 1,
-  //     contributors: [
-  //       { id: 3, name: 'Derpie', flap: 30 },
-  //       { id: 3, flap: 40, name: 'Dinkel Doink' },
-  //     ],
-  //   },
-  //   'Filter references and sort',
-  // )
+  deepEqual(
+    db
+      .query('article', strudelArticle)
+      .include((select) => {
+        select('contributors')
+          .include('name')
+          .include('flap')
+          .filter('flap', '>', 25)
+          .sort('flap')
+      })
+      .get()
+      .toObject(),
+    {
+      id: 1,
+      contributors: [
+        { id: 3, name: 'Derpie', flap: 30 },
+        { id: 3, flap: 40, name: 'Dinkel Doink' },
+      ],
+    },
+    'Filter references and sort',
+  )
 })

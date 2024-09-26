@@ -51,14 +51,17 @@ pub fn getRefsFields(
 
     const typeEntry = db.getType(typeId) catch null;
 
+    const fieldSchema = db.getFieldSchema(refField, typeEntry) catch null;
+
     var size: usize = 0;
 
+    // add edges here as well..
     const includeNested = include[(5 + filterSize)..include.len];
 
     var i: usize = 0;
     var resultsCnt: u32 = 0;
 
-    // if sort
+    const edgeConstrain: *selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
 
     checkItem: while (i < refs.?.nr_refs) : (i += 1) {
         const refNode = refs.?.refs[i].dst.?;
@@ -72,6 +75,8 @@ pub fn getRefsFields(
             db.getNodeId(refNode),
             typeEntry.?,
             includeNested,
+            &refs.?.refs[i],
+            edgeConstrain,
         ) catch 0;
     }
 
