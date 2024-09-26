@@ -39,49 +39,7 @@ pub fn queryIds(
         len = 0;
     }
 
-    var sortFlag: selva.SelvaSortOrder = undefined;
-
-    switch (sortFieldType) {
-        1 => {
-            if (queryType == 10) {
-                sortFlag = selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                sortFlag = selva.SELVA_SORT_ORDER_I64_ASC;
-            }
-        },
-        5 => {
-            if (queryType == 10) {
-                sortFlag = selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                sortFlag = selva.SELVA_SORT_ORDER_I64_ASC;
-            }
-        },
-        10 => {
-            if (queryType == 10) {
-                sortFlag = selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                sortFlag = selva.SELVA_SORT_ORDER_I64_ASC;
-            }
-        },
-        4 => {
-            if (queryType == 10) {
-                sortFlag = selva.SELVA_SORT_ORDER_DOUBLE_DESC;
-            } else {
-                sortFlag = selva.SELVA_SORT_ORDER_DOUBLE_ASC;
-            }
-        },
-        11 => {
-            if (queryType == 10) {
-                sortFlag = selva.SELVA_SORT_ORDER_BUFFER_DESC;
-            } else {
-                sortFlag = selva.SELVA_SORT_ORDER_BUFFER_ASC;
-            }
-        },
-        else => {
-            return errors.DbError.WRONG_SORTFIELD_TYPE;
-        },
-    }
-
+    const sortFlag = try db.getSortFlag(sortFieldType, queryType == 10);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len).?;
 
     sortItem: while (i < ids.len) : (i += 1) {

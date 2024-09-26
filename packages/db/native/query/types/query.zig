@@ -46,23 +46,17 @@ pub fn queryIds(
     include: []u8,
 ) !void {
     const typeEntry = try db.getType(typeId);
-
     var i: u32 = 0;
     checkItem: while (i < ids.len) : (i += 1) {
         const id = ids[i];
-
         const node = db.getNode(id, typeEntry);
-
         if (node == null) {
             continue :checkItem;
         }
-
         if (!filter(node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
-
         const size = try getFields(node.?, ctx, id, typeEntry, include);
-
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
