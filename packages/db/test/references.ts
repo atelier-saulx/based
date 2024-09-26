@@ -413,7 +413,7 @@ await test('filter', async (t) => {
       id: 1,
       contributors: [
         { id: 3, name: 'Derpie', flap: 30 },
-        { id: 3, flap: 40, name: 'Dinkel Doink' },
+        { id: 4, name: 'Dinkel Doink', flap: 40 },
       ],
     },
     'Filter references and sort',
