@@ -360,7 +360,6 @@ await test('filter', async (t) => {
     'Get reference one get by id',
   )
 
-  console.log('branch bitch')
   deepEqual(
     db
       .query('article', strudelArticle)
@@ -405,15 +404,15 @@ await test('filter', async (t) => {
           .include('name')
           .include('flap')
           .filter('flap', '>', 25)
-          .sort('flap')
+          .sort('flap', 'desc')
       })
       .get()
       .toObject(),
     {
       id: 1,
       contributors: [
+        { id: 4, name: 'Dinkel Doink', flap: 40 },
         { id: 3, name: 'Derpie', flap: 30 },
-        { id: 3, flap: 40, name: 'Dinkel Doink' },
       ],
     },
     'Filter references and sort',

@@ -39,5 +39,5 @@ export const sort = (
   order: 'asc' | 'desc' = 'asc',
 ) => {
   query.sortOrder = order === 'asc' ? 0 : 1
-  query.sortBuffer = createSortBuffer(query.includeDef.schema, field)
+  query.sortBuffer = createSortBuffer(query.schema, field)
 }

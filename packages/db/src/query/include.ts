@@ -80,83 +80,7 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
     const result: Buffer[] = [includeBuffer]
     if (include.refIncludes) {
       for (const key in include.refIncludes) {
-        const refInclude = include.refIncludes[key]
-        const refBuffer = addInclude(query, refInclude)
-        const size = refBuffer.byteLength
-
-        let edgeBuffer: Buffer
-        if (refInclude.edgeIncludes) {
-          edgeBuffer = addInclude(query, refInclude.edgeIncludes)
-        }
-
-        // TODO filter edge
-        const filterConditions =
-          include.referencesFilters[refInclude.fromRef.path.join('.')]
-        let filter: Buffer
-
-        if (filterConditions) {
-          filter = addConditions(filterConditions, filterConditions.size)
-        }
-
-        // TODO filter edge
-        const sortOpts =
-          include.referencesSortOptions[refInclude.fromRef.path.join('.')]
-        let sort: Buffer
-
-        if (sortOpts) {
-          sort = createSortBuffer(
-            refInclude.schema,
-            sortOpts.field,
-            sortOpts.order,
-          )
-        }
-
-        // make this nice...
-
-        // sort
-
-        const filterSize = filter?.byteLength ?? 0
-
-        const multi = refInclude.multiple
-        const startSize = multi ? 8 : 6
-
-        const meta = Buffer.allocUnsafe(startSize + filterSize)
-
-        // command meaning include single ref or multiple ref
-        meta[0] = multi ? 254 : 255
-
-        // size
-        const edgeSize = edgeBuffer ? edgeBuffer.byteLength + 3 : 0
-        meta.writeUint16LE(size + (multi ? 5 : 3) + filterSize + edgeSize, 1)
-
-        if (multi) {
-          meta.writeUint16LE(filterSize, 3)
-        }
-
-        if (filter) {
-          meta.set(filter, 5)
-        }
-
-        // typeId
-        meta[(multi ? 5 : 3) + filterSize] = refInclude.schema.idUint8[0]
-        meta[(multi ? 6 : 4) + filterSize] = refInclude.schema.idUint8[1]
-
-        // field where ref is stored
-        meta[(multi ? 7 : 5) + filterSize] = refInclude.fromRef.prop
-
-        if (edgeBuffer) {
-          const edgeSize = edgeBuffer.byteLength
-          const metaEdgeBuffer = Buffer.allocUnsafe(3)
-          metaEdgeBuffer[0] = 253
-          metaEdgeBuffer.writeUint16LE(edgeSize, 1)
-          result.push(meta, refBuffer, metaEdgeBuffer, edgeBuffer)
-        } else {
-          result.push(meta)
-          result.push(refBuffer)
-        }
-
-        if (sort) {
-        }
+        result.push(...createRefsBuffer(include, key, query))
       }
     }
     return Buffer.concat(result)
@@ -367,4 +291,70 @@ const parseInclude = (
     include.mainIncludes[field.start] = [0, field as PropDef]
     return true
   }
+}
+function createRefsBuffer(include: QueryIncludeDef, key: string, query: Query) {
+  const result: Buffer[] = []
+  const refInclude = include.refIncludes[key]
+  const refBuffer = addInclude(query, refInclude)
+  let meta: Buffer
+  let edgeBuffer: Buffer
+  if (refInclude.edgeIncludes) {
+    edgeBuffer = addInclude(query, refInclude.edgeIncludes)
+  }
+  const size =
+    (edgeBuffer ? edgeBuffer.byteLength + 3 : 0) + refBuffer.byteLength
+
+  if (refInclude.multiple) {
+    const fieldName = refInclude.fromRef.path.join('.')
+    // TODO filter edge
+    const filterConditions = include.referencesFilters[fieldName]
+    let filter: Buffer
+    if (filterConditions) {
+      filter = addConditions(filterConditions, filterConditions.size)
+    }
+    let sort: Buffer
+    const sortOpts = include.referencesSortOptions[fieldName]
+    if (sortOpts) {
+      sort = createSortBuffer(include.schema, sortOpts.field, sortOpts.order)
+    }
+    const sortSize = sort?.byteLength ?? 0
+    const filterSize = filter?.byteLength ?? 0
+    meta = Buffer.allocUnsafe(filterSize + 10)
+    meta[0] = 254
+    meta.writeUint16LE(size + 7 + filterSize, 1)
+    meta.writeUint16LE(filterSize, 3)
+    meta.writeUint16LE(sortSize, 5)
+
+    if (filter) {
+      meta.set(filter, 7)
+    }
+
+    if (sort) {
+      meta.set(sort, 7 + filterSize)
+    }
+
+    const mods = filterSize + sortSize
+    meta[7 + mods] = refInclude.schema.idUint8[0]
+    meta[8 + mods] = refInclude.schema.idUint8[1]
+    meta[9 + mods] = refInclude.fromRef.prop
+  } else {
+    meta = Buffer.allocUnsafe(6)
+    meta[0] = 255
+    meta.writeUint16LE(size + 3, 1)
+    meta[3] = refInclude.schema.idUint8[0]
+    meta[4] = refInclude.schema.idUint8[1]
+    meta[5] = refInclude.fromRef.prop
+  }
+
+  if (edgeBuffer) {
+    const edgeSize = edgeBuffer.byteLength
+    const metaEdgeBuffer = Buffer.allocUnsafe(3)
+    metaEdgeBuffer[0] = 253
+    metaEdgeBuffer.writeUint16LE(edgeSize, 1)
+    result.push(meta, refBuffer, metaEdgeBuffer, edgeBuffer)
+  } else {
+    result.push(meta, refBuffer)
+  }
+
+  return result
 }
