@@ -12,7 +12,7 @@ const utils = @import("../../utils.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
 
-pub fn queryIdsManual(
+pub fn queryIds(
     comptime queryType: comptime_int,
     ids: []u32,
     ctx: *QueryCtx,
@@ -94,18 +94,20 @@ pub fn queryIdsManual(
             continue :sortItem;
         }
         const value = db.getField(node.?, try db.getFieldSchema(sortField, typeEntry));
-
         if (sortFieldType == 1) {
-            selva.selva_sort_insert_i64(sortCtx, utils.readInt(i64, value, 0), node);
+            selva.selva_sort_insert_i64(sortCtx, utils.readInt(i64, value, start), node);
         } else if (sortFieldType == 11) {
-            selva.selva_sort_insert_buf(sortCtx, value.ptr, value.len, node);
+            if (start > 0 and len > 0) {
+                selva.selva_sort_insert_buf(sortCtx, value[start .. start + len].ptr, value.len, node);
+            } else {
+                selva.selva_sort_insert_buf(sortCtx, value.ptr, value.len, node);
+            }
         } else if (sortFieldType == 4) {
-            // how does double work...
-            selva.selva_sort_insert_double(sortCtx, @floatFromInt(utils.readInt(i64, value, 0)), node);
+            selva.selva_sort_insert_double(sortCtx, @floatFromInt(utils.readInt(u64, value, start)), node);
         } else if (sortFieldType == 5) {
-            selva.selva_sort_insert_i64(sortCtx, @intCast(utils.readInt(u32, value, 0)), node);
+            selva.selva_sort_insert_i64(sortCtx, @intCast(utils.readInt(u32, value, start)), node);
         } else if (sortFieldType == 10) {
-            selva.selva_sort_insert_i64(sortCtx, @intCast(value[0]), node);
+            selva.selva_sort_insert_i64(sortCtx, @intCast(value[start]), node);
         }
     }
 
@@ -121,146 +123,6 @@ pub fn queryIdsManual(
     }
 
     selva.selva_sort_destroy(sortCtx);
-}
-
-pub fn queryIdsSort(
-    comptime queryType: comptime_int,
-    ids: []u32,
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
-    conditions: []u8,
-    include: []u8,
-    sortBuffer: []u8,
-    _: u32,
-    limit: u32,
-    low: u32,
-    high: u32,
-) !void {
-    const readTxn = try sort.initReadTxn();
-    sort.renewTx(readTxn);
-    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id);
-    var end: bool = false;
-    var flag: c_uint = c.MDB_FIRST;
-    if (queryType == 5) {
-        flag = c.MDB_LAST;
-    }
-    var first: bool = true;
-    var lastCheck: usize = ids.len;
-
-    const typeEntry = try db.getType(typeId);
-
-    checkItem: while (!end and ctx.totalResults < limit) {
-        var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
-            end = true;
-            break;
-        };
-        if (first) {
-            first = false;
-            if (queryType == 5) {
-                flag = c.MDB_PREV;
-            } else {
-                flag = c.MDB_NEXT;
-            }
-        }
-        const id = utils.readInt(u32, sort.readData(v), 0);
-        if (!hasId(id, ids, &lastCheck, low, high)) {
-            continue :checkItem;
-        }
-
-        const node = db.getNode(id, typeEntry);
-
-        if (node == null) {
-            continue :checkItem;
-        }
-
-        if (!filter(node.?, typeEntry, conditions)) {
-            continue :checkItem;
-        }
-
-        const size = try getFields(node.?, ctx, id, typeEntry, include);
-
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
-    }
-
-    sort.resetTxn(readTxn);
-}
-
-pub fn queryIdsSortBig(
-    comptime queryType: comptime_int,
-    ids: []u32,
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
-    conditions: []u8,
-    include: []u8,
-    sortBuffer: []u8,
-    _: u32,
-    limit: u32,
-) !void {
-    const readTxn = try sort.initReadTxn();
-    sort.renewTx(readTxn);
-    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id);
-
-    var end: bool = false;
-    var flag: c_uint = c.MDB_FIRST;
-    if (queryType == 7) {
-        flag = c.MDB_LAST;
-    }
-
-    var first: bool = true;
-    var i: u32 = 0;
-    var map: std.AutoHashMap(u32, u8) = undefined;
-    map = std.AutoHashMap(u32, u8).init(ctx.allocator);
-
-    while (i <= ids.len) : (i += 1) {
-        try map.put(ids[i], 0);
-    }
-
-    const typeEntry = try db.getType(typeId);
-
-    checkItem: while (!end and ctx.totalResults < limit) {
-        var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
-            end = true;
-            break;
-        };
-        if (first) {
-            first = false;
-            if (queryType == 7) {
-                flag = c.MDB_PREV;
-            } else {
-                flag = c.MDB_NEXT;
-            }
-        }
-        const id = utils.readInt(u32, sort.readData(v), 0);
-        if (!map.contains(id)) {
-            continue :checkItem;
-        }
-
-        const node = db.getNode(id, typeEntry);
-
-        if (node == null) {
-            continue :checkItem;
-        }
-
-        if (!filter(node.?, typeEntry, conditions)) {
-            continue :checkItem;
-        }
-
-        const size = try getFields(node.?, ctx, id, typeEntry, include);
-
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
-    }
-
-    sort.resetTxn(readTxn);
 }
 
 pub fn querySort(

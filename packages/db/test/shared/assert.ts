@@ -1,5 +1,6 @@
 import { deepEqual as uDeepEqual } from '@saulx/utils'
 import util from 'node:util'
+import { BasedQueryResponse } from '../../src/query/BasedQueryResponse.js'
 
 export const deepEqual = (a, b, msg?: string) => {
   if (!uDeepEqual(a, b)) {
@@ -14,3 +15,37 @@ ${util.inspect(a, { depth: 10 })}
 }
 
 export const equal = deepEqual
+
+const SORT_ERR_MSG = 'Incorrect sort oder'
+
+export const isSorted = (
+  a: BasedQueryResponse,
+  field: string,
+  order: 'asc' | 'desc' = 'asc',
+  msg?: string,
+) => {
+  let last: any
+  for (const result of a) {
+    const current = result[field]
+    if (last !== undefined) {
+      if (typeof last === 'string') {
+        if (order === 'asc') {
+          if (last.localeCompare(current) == 1) {
+            throw new Error(msg || SORT_ERR_MSG + ' String')
+          }
+        } else if (last.localeCompare(current) == -1) {
+          throw new Error(msg || SORT_ERR_MSG + ' String')
+        }
+      } else {
+        if (order === 'asc') {
+          if (last > current) {
+            throw new Error(msg || SORT_ERR_MSG)
+          }
+        } else if (last < current) {
+          throw new Error(msg || SORT_ERR_MSG)
+        }
+      }
+    }
+    last = current
+  }
+}

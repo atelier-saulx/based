@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { isSorted } from './shared/assert.js'
 
 await test('ids', async (t) => {
   const db = new BasedDb({
@@ -29,10 +29,10 @@ await test('ids', async (t) => {
   })
 
   const ids: number[] = []
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 10; i++) {
     ids.push(
       db.create('user', {
-        age: ~~(Math.random() * 1000000),
+        age: ~~(Math.random() * 100000),
         name: 'Mr Dinkelburry ' + i,
         email: 'blap@blap.blap.blap',
         flap: i,
@@ -44,13 +44,13 @@ await test('ids', async (t) => {
 
   db.drain()
 
-  console.log(db.query('user', ids).include('age').sort('age').get())
+  isSorted(db.query('user', ids).sort('age').get(), 'age')
 
-  console.log(db.query('user', ids).include('name').sort('name').get())
+  isSorted(db.query('user', ids).sort('name').get(), 'name')
 
-  console.log(db.query('user', ids).include('flap').sort('flap').get())
+  isSorted(db.query('user', ids).sort('flap').get(), 'flap')
 
-  console.log(db.query('user', ids).include('blurf').sort('blurf').get())
+  isSorted(db.query('user', ids).sort('blurf').get(), 'blurf')
 
-  console.log(db.query('user', ids).include('bla').sort('bla').get())
+  isSorted(db.query('user', ids).sort('bla').get(), 'bla')
 })

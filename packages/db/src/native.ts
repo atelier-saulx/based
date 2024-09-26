@@ -58,60 +58,8 @@ export default {
     low: number,
     high: number,
   ): any => {
-    if (sort[1] === 1 || sort[1] === 11) {
-      if (sortOrder === 1) {
-        return db.getQueryIdsSortAscManual(
-          conditions,
-          typeId,
-          offset,
-          limit,
-          ids,
-          includeBuffer,
-          sort,
-          low,
-          high,
-        )
-      } else {
-        return db.getQueryIdsSortDescManual(
-          conditions,
-          typeId,
-          offset,
-          limit,
-          ids,
-          includeBuffer,
-          sort,
-          low,
-          high,
-        )
-      }
-    }
-
-    if (ids.length > 512 * 4) {
-      if (sortOrder === 1) {
-        return db.getQueryIdsSortAscLarge(
-          conditions,
-          typeId,
-          offset,
-          limit,
-          ids,
-          includeBuffer,
-          sort,
-        )
-      } else {
-        return db.getQueryIdsSortDescLarge(
-          conditions,
-          typeId,
-          offset,
-          limit,
-          ids,
-          includeBuffer,
-          sort,
-        )
-      }
-    }
-
     if (sortOrder === 1) {
-      return db.getQueryIdsSortAsc(
+      return db.getQueryIdsSortDesc(
         conditions,
         typeId,
         offset,
@@ -123,7 +71,7 @@ export default {
         high,
       )
     } else {
-      return db.getQueryIdsSortDesc(
+      return db.getQueryIdsSortAsc(
         conditions,
         typeId,
         offset,

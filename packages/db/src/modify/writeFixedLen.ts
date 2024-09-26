@@ -18,8 +18,14 @@ export const writeFixedLenValue = (
     return
   }
 
-  // 1: timestamp, 4: number
-  if (t.typeIndex === 1 || t.typeIndex === 4) {
+  // 1: timestamp
+  if (t.typeIndex === 1) {
+    db.modifyBuffer.buffer.writeFloatLE(value, pos)
+    return
+  }
+
+  // 4: number
+  if (t.typeIndex === 4) {
     db.modifyBuffer.buffer.writeFloatLE(value, pos)
     return
   }
