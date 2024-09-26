@@ -1,7 +1,7 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { _ModifyRes } from './ModifyRes.js'
+import { modifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './writeFixedLen.js'
 import { writeReference } from './writeReference.js'
@@ -10,9 +10,9 @@ import { writeString } from './writeString.js'
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
 
-export const addModify = (
+const _addModify = (
   db: BasedDb,
-  res: _ModifyRes,
+  res: ModifyState,
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef,
@@ -22,11 +22,14 @@ export const addModify = (
 ): boolean => {
   let wroteMain = false
   for (const key in obj) {
+    if (res.error) {
+      return
+    }
     const leaf = tree[key]
     const value = obj[key]
     if (!leaf.__isPropDef) {
       if (
-        addModify(
+        _addModify(
           db,
           res,
           value,
@@ -41,6 +44,7 @@ export const addModify = (
       }
     } else {
       const t = leaf as PropDef
+
       // 13: reference
       if (t.typeIndex === 13) {
         writeReference(value, db, schema, t, res, fromCreate, writeKey)
@@ -96,8 +100,47 @@ export const addModify = (
         }
       }
 
-      writeFixedLenValue(db, value, t.start + mainIndex, t)
+      writeFixedLenValue(db, value, t.start + mainIndex, t, res)
     }
   }
+
+  return wroteMain
+}
+
+export const addModify = (
+  db: BasedDb,
+  res: ModifyState,
+  obj: { [key: string]: any },
+  tree: SchemaTypeDef['tree'],
+  def: SchemaTypeDef,
+  writeKey: 3 | 6,
+  merge: boolean,
+  fromCreate: boolean,
+) => {
+  const typePrefix = db.modifyBuffer.typePrefix
+  const lastMain = db.modifyBuffer.lastMain
+  const field = db.modifyBuffer.field
+  const len = db.modifyBuffer.len
+  const id = db.modifyBuffer.id
+
+  const wroteMain = _addModify(
+    db,
+    res,
+    obj,
+    tree,
+    def,
+    writeKey,
+    merge,
+    fromCreate,
+  )
+
+  if (res.error) {
+    db.modifyBuffer.typePrefix = typePrefix
+    db.modifyBuffer.lastMain = lastMain
+    db.modifyBuffer.field = field
+    db.modifyBuffer.len = len
+    db.modifyBuffer.id = id
+  }
+
   return wroteMain
 }

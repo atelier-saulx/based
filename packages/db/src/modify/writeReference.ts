@@ -1,15 +1,15 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { _ModifyRes } from './ModifyRes.js'
+import { ModifyState, modifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
 export function writeReference(
-  value: any,
+  value: number | ModifyState,
   db: BasedDb,
   schema: SchemaTypeDef,
   t: PropDef,
-  res: _ModifyRes,
+  res: ModifyState,
   fromCreate: boolean,
   writeKey: 3 | 6,
 ) {
@@ -22,6 +22,19 @@ export function writeReference(
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
     db.modifyBuffer.len++
   } else {
+    if (typeof value !== 'number') {
+      if (value instanceof ModifyState) {
+        if (value.error) {
+          res.error = value.error
+          return
+        }
+        value = value.tmpId
+      } else {
+        modifyError(res, t, value)
+        return
+      }
+    }
+
     if (5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }

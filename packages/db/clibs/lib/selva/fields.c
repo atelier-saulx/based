@@ -1064,10 +1064,9 @@ int selva_fields_references_swap(
  */
 static void ensure_ref_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc)
 {
-    const field_t nr_fields = efc->nr_fields;
+    const field_t nr_fields = efc->fields_schema ? efc->fields_schema->nr_fields : 0;
 
-    if (!ref->meta) {
-
+    if (nr_fields > 0 && !ref->meta) {
         reference_meta_create(ref, nr_fields);
 
         struct SelvaFields *dst_fields = &ref->dst->fields;
@@ -1111,13 +1110,14 @@ int selva_fields_set_reference_meta(
 {
     struct SelvaFieldSchema *fs;
 
-    if (field >= efc->nr_fields) {
-        return SELVA_EINVAL;
-    } else if (!ref->dst) {
+    if (!ref->dst) {
         return SELVA_ENOENT;
     }
 
-    fs = &efc->field_schemas[field];
+    fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
+    if (!fs) {
+        return SELVA_EINVAL;
+    }
     assert(fs->field == field);
 
     /*
@@ -1144,12 +1144,10 @@ int selva_fields_get_reference_meta_mutable_string(
     struct SelvaFieldSchema *fs;
     struct SelvaFieldInfo *nfo;
 
-    if (field >= efc->nr_fields) {
-        return SELVA_EINVAL;
-    }
-
-    fs = &efc->field_schemas[field];
-    if (fs->type != SELVA_FIELD_TYPE_STRING) {
+    fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
+    if (!fs) {
+        return SELVA_EINTYPE;
+    } else if (fs->type != SELVA_FIELD_TYPE_STRING) {
         return SELVA_EINTYPE;
     }
 
@@ -1427,13 +1425,13 @@ static void reference_meta_del(struct SelvaDb *db, const struct EdgeFieldConstra
     struct SelvaFields *fields = ref->meta;
     const struct SelvaFieldSchema *fs;
 
-    if (!fields || field >= efc->nr_fields) {
+    if (!fields) {
         return;
     }
 
-    fs = &efc->field_schemas[field];
-    if (unlikely(!fs)) {
-        db_panic("No field schema found");
+    fs = get_fs_by_fields_schema_field(efc->fields_schema, field);
+    if (!fs) {
+        return;
     }
 
     fields_del(db, NULL, fields, fs);
@@ -1464,12 +1462,12 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, s
     (void)clear_references(db, node, fs);
 }
 
-void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode *node)
+void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
-    node->fields.nr_fields = type->ns.nr_fields;
-    node->fields.data_len = type->field_map_template.fixed_data_size;
-    node->fields.data = (node->fields.data_len > 0) ? selva_calloc(1, node->fields.data_len) : NULL; /* No need to tag yet. */
-    memcpy(node->fields.fields_map, type->field_map_template.buf, type->field_map_template.len);
+    fields->nr_fields = schema->nr_fields;
+    fields->data_len = schema->field_map_template.fixed_data_size;
+    fields->data = (fields->data_len > 0) ? selva_calloc(1, fields->data_len) : NULL; /* No need to tag yet. */
+    memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
 }
 
 /**

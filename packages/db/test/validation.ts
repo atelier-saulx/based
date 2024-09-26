@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { setTimeout } from 'node:timers/promises'
+import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('update', async (t) => {
@@ -15,23 +15,69 @@ await test('update', async (t) => {
     types: {
       user: {
         props: {
+          rating: { type: 'uint32' },
           name: { type: 'string' },
+          friend: { ref: 'user', prop: 'friend' },
+          connections: {
+            items: {
+              ref: 'user',
+              prop: 'connections',
+            },
+          },
         },
       },
     },
   })
 
-  const user = db.create('user', {
-    name: 'success',
+  const good = db.create('user', {
+    name: 'youzi',
   })
 
-  // try {
+  const bad = db.create('user', {
+    name: 1,
+  })
 
-  // throw new Error('fu')
-  // } catch (e) {
-  // console.error('ballz', e)
-  // }
+  db.create('user', {
+    name: 'jamex',
+    friend: bad,
+  })
 
-  // await setTimeout(500)
-  // await setTimeout(500)
+  db.create('user', {
+    name: 'fred',
+    connections: [good, bad],
+  })
+
+  db.create('user', {
+    name: 'wrongRating',
+    rating: 'not a number',
+  })
+
+  db.create('user', {
+    name: 'jame-z',
+    friend: good,
+    connections: [good],
+  })
+
+  db.drain()
+
+  deepEqual(db.query('user').include('name', 'friend').get().toObject(), [
+    {
+      id: 1,
+      name: 'youzi',
+      friend: {
+        id: 2,
+        rating: 0,
+        name: 'jame-z',
+      },
+    },
+    {
+      id: 2,
+      name: 'jame-z',
+      friend: {
+        id: 1,
+        rating: 0,
+        name: 'youzi',
+      },
+    },
+  ])
 })
