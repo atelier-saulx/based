@@ -179,6 +179,14 @@ export class BasedQueryResponse {
         ctx.__q = this
         ctx.__r = null
 
+        if (this.includeDef.edgeIncludes) {
+          // console.log(this.includeDef.edgeIncludes.props)
+          for (const key in this.includeDef.edgeIncludes.props) {
+            // const prop = this.includeDef.edgeIncludes.props[key]
+            console.log('for this we need to do based ctx instanes', key)
+          }
+        }
+
         yield ctx
         i += 4
       } else if (index === 253) {
@@ -189,6 +197,10 @@ export class BasedQueryResponse {
         i += size + 5
       } else if (index === 0) {
         i += this.includeDef.mainLen
+      } else if (index === 252) {
+        const size = this.buffer.readUInt32LE(i + 1)
+        i += 5
+        i += size
       } else {
         const size = this.buffer.readUInt32LE(i)
         i += 4

@@ -72,7 +72,7 @@ await test('simple', async (t) => {
 
   for (const f of x) {
     for (const y of f.contributors) {
-      console.log(y, y.$role)
+      console.log(y, '$ROLE', y.$role)
     }
   }
 
