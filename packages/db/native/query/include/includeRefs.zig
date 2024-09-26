@@ -24,9 +24,10 @@ pub fn getRefsFields(
     originalType: db.Type,
 ) usize {
     const filterSize: db.TypeId = readInt(u16, include, 0);
-    const filterArr: ?[]u8 = if (filterSize > 0) include[2 .. 2 + filterSize] else null;
-    const typeId: db.TypeId = readInt(u16, include, 2 + filterSize);
-    const refField = include[4 + filterSize];
+    const filterArr: ?[]u8 = if (filterSize > 0) include[4 .. 4 + filterSize] else null;
+
+    const typeId: db.TypeId = readInt(u16, include, 4 + filterSize);
+    const refField = include[6 + filterSize];
 
     // MULTIPLE REFS
     // op u8, field u8, bytes u32, len u32
@@ -59,7 +60,9 @@ pub fn getRefsFields(
     var size: usize = 0;
 
     // add edges here as well..
-    const includeNested = include[(5 + filterSize)..include.len];
+    const includeNested = include[(7 + filterSize)..include.len];
+
+    std.debug.print("flap {any} {any} \n", .{ include, includeNested });
 
     var i: usize = 0;
     var resultsCnt: u32 = 0;
@@ -72,7 +75,6 @@ pub fn getRefsFields(
             continue :checkItem;
         }
         resultsCnt += 1;
-
         size += getFields(
             refNode,
             ctx,
