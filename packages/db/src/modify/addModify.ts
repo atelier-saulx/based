@@ -1,6 +1,7 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
+import { _ModifyRes } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './writeFixedLen.js'
 import { writeReference } from './writeReference.js'
@@ -11,7 +12,7 @@ const EMPTY_BUFFER = Buffer.alloc(1000)
 
 export const addModify = (
   db: BasedDb,
-  id: number,
+  res: _ModifyRes,
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef,
@@ -27,7 +28,7 @@ export const addModify = (
       if (
         addModify(
           db,
-          id,
+          res,
           value,
           leaf as SchemaTypeDef['tree'],
           schema,
@@ -42,19 +43,19 @@ export const addModify = (
       const t = leaf as PropDef
       // 13: reference
       if (t.typeIndex === 13) {
-        writeReference(value, db, schema, t, id, fromCreate, writeKey)
+        writeReference(value, db, schema, t, res, fromCreate, writeKey)
         continue
       }
 
       // 14: references
       if (t.typeIndex === 14) {
-        writeReferences(t, db, writeKey, value, schema, id, fromCreate)
+        writeReferences(t, db, writeKey, value, schema, res, fromCreate)
         continue
       }
 
       // 11: string
       if (t.typeIndex === 11 && t.seperate === true) {
-        writeString(value, fromCreate, db, schema, t, id, writeKey)
+        writeString(value, fromCreate, db, schema, t, res, writeKey)
         continue
       }
 
@@ -70,14 +71,14 @@ export const addModify = (
 
       // Fixed length main buffer
       wroteMain = true
-      setCursor(db, schema, t.prop, id, true, fromCreate)
+      setCursor(db, schema, t.prop, res.tmpId, true, fromCreate)
       let mainIndex = db.modifyBuffer.lastMain
       if (mainIndex === -1) {
         const nextLen = schema.mainLen + 1 + 4
         if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t.prop, id, false, fromCreate)
+        setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : writeKey
         db.modifyBuffer.buffer.writeUint32LE(
           schema.mainLen,

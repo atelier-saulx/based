@@ -47,8 +47,10 @@ export class BasedDb {
     lastMain: number
     mergeMain: (PropDef | any)[] | null
     mergeMainSize: number
+    ctx: { offset?: number }
     queue: any[]
   }
+
   schema: InternalSchema = DEFAULT_SCHEMA
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -82,6 +84,7 @@ export class BasedDb {
       typePrefix: new Uint8Array([0, 0]),
       id: -1,
       lastMain: -1,
+      ctx: {},
       queue: [],
     }
     this.fileSystemPath = path

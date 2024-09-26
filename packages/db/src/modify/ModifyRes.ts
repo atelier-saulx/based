@@ -4,12 +4,15 @@ export type ModifyRes = {
   tmpId: number
   error?: Error
 } & Promise<number>
+
 export class _ModifyRes {
   constructor(tmpId, db) {
     this.tmpId = tmpId
-    this.#db = db
+    this.#buf = db.modifyBuffer
+    this.#ctx = db.modifyBuffer.ctx
   }
-  #db: BasedDb
+  #buf: BasedDb['modifyBuffer']
+  #ctx: BasedDb['modifyBuffer']['ctx']
   tmpId = 0
   error?: Error;
   [Symbol.toPrimitive]() {
@@ -18,8 +21,11 @@ export class _ModifyRes {
   then(resolve, reject) {
     if (this.error) {
       reject(this.error)
+    }
+    if ('offset' in this.#ctx) {
+      resolve(this.tmpId + this.#ctx.offset)
     } else {
-      this.#db.modifyBuffer.queue.push(resolve, this.tmpId)
+      this.#buf.queue.push(resolve, this.tmpId)
     }
   }
 }

@@ -1,6 +1,7 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
+import { _ModifyRes } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 
 export function writeString(
@@ -9,7 +10,7 @@ export function writeString(
   db: BasedDb,
   schema: SchemaTypeDef,
   t: PropDef,
-  id: number,
+  res: _ModifyRes,
   writeKey: 3 | 6,
 ) {
   const len = value === null ? 0 : value.length
@@ -19,7 +20,7 @@ export function writeString(
       if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
         flushBuffer(db)
       }
-      setCursor(db, schema, t.prop, id, false, fromCreate)
+      setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
       db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
       db.modifyBuffer.len++
     }
@@ -32,7 +33,7 @@ export function writeString(
     if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, schema, t.prop, id, false, fromCreate)
+    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
     db.modifyBuffer.len += 5
     const size = db.modifyBuffer.buffer.write(

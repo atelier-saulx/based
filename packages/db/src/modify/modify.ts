@@ -33,13 +33,12 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
 export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const id = ++def.lastId
-
   const res = new _ModifyRes(id, db)
 
   def.total++
 
   if (
-    !addModify(db, id, value, def.tree, def, 3, false, true) ||
+    !addModify(db, res, value, def.tree, def, 3, false, true) ||
     def.mainLen === 0
   ) {
     setCursor(db, def, 0, id, false, true)
@@ -82,8 +81,8 @@ export const update = (
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const hasMain = addModify(db, id, value, def.tree, def, 6, !overwrite, false)
   const res = new _ModifyRes(id, db)
+  const hasMain = addModify(db, res, value, def.tree, def, 6, !overwrite, false)
 
   if (hasMain && !overwrite && db.modifyBuffer.mergeMain !== null) {
     const mergeMain = db.modifyBuffer.mergeMain

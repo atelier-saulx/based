@@ -1,6 +1,7 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { PropDef, SchemaTypeDef } from '../schema/types.js'
+import { _ModifyRes } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './writeFixedLen.js'
 
@@ -10,7 +11,7 @@ export function writeReferences(
   writeKey: 3 | 6,
   value: any,
   schema: SchemaTypeDef,
-  id: number,
+  res: _ModifyRes,
   fromCreate: boolean,
 ) {
   // lot can be shared between reference and this
@@ -29,7 +30,7 @@ export function writeReferences(
       flushBuffer(db)
     }
 
-    setCursor(db, schema, t.prop, id, false, fromCreate)
+    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
     const sizeIndex = db.modifyBuffer.len + 1
     db.modifyBuffer.len += 5
@@ -62,7 +63,7 @@ export function writeReferences(
     if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, schema, t.prop, id, false, fromCreate)
+    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
     db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
     db.modifyBuffer.len += 5
