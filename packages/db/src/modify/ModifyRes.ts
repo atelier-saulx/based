@@ -1,7 +1,9 @@
 import {
+  isPropDef,
   PropDef,
   PropDefEdge,
   REVERSE_TYPE_INDEX_MAP,
+  SchemaPropTree,
 } from '../schema/types.js'
 import { BasedDb } from '../index.js'
 import { inspect } from 'node:util'
@@ -12,14 +14,18 @@ export type ModifyRes = {
 } & Promise<number>
 
 class ModifyError {
-  constructor(prop: PropDef | PropDefEdge, val: any) {
+  constructor(prop: PropDef | PropDefEdge | SchemaPropTree, val: any) {
     this.#prop = prop
     this.#val = val
   }
-  #prop: PropDef | PropDefEdge
+  #prop: PropDef | PropDefEdge | SchemaPropTree
   #val: any
   toString() {
-    return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received ${this.#val}`
+    if (isPropDef(this.#prop)) {
+      return `Invalid value at '${this.#prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[this.#prop.typeIndex]}, received ${this.#val}`
+    }
+
+    return `Unknown property '${this.#val}'. Expected one of: ${Object.keys(this.#prop).join(', ')}`
   }
 
   [inspect.custom]() {
@@ -54,7 +60,7 @@ export class ModifyState {
 
 export const modifyError = (
   res: ModifyState,
-  prop: PropDef | PropDefEdge,
+  prop: PropDef | PropDefEdge | SchemaPropTree,
   val: any,
 ) => {
   res.error = new ModifyError(prop, val)

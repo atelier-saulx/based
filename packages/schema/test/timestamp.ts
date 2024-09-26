@@ -1,24 +1,20 @@
 import test from 'node:test'
-import { throws } from 'node:assert'
-import { parseSchema } from '@based/schema'
+import { parse } from '@based/schema'
 
 test('timestamp', () => {
-  parseSchema({
+  parse({
     props: {
       myTimestamp: {
         type: 'timestamp',
       },
+      created: {
+        type: 'timestamp',
+        on: 'create',
+      },
+      lastModified: {
+        type: 'timestamp',
+        on: 'update',
+      },
     },
   })
-
-  throws(() => {
-    parseSchema({
-      props: {
-        // @ts-ignore
-        myEnum: {
-          enum: [{ invalidObj: true }],
-        },
-      },
-    })
-  }, 'should throw with non primitive enum')
 })

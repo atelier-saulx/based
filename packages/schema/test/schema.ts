@@ -1,15 +1,15 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parseSchema } from '@based/schema'
+import { parse } from '@based/schema'
 
 test('schema', () => {
-  parseSchema({
+  parse({
     props: {},
     types: {},
   })
 
   throws(() => {
-    parseSchema({
+    parse({
       props: {},
       types: {},
       // @ts-ignore

@@ -15,7 +15,7 @@ await test('simple', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -74,7 +74,7 @@ await test('string + refs', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {
@@ -234,7 +234,7 @@ await test('Big string', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       file: {
         props: {

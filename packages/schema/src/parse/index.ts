@@ -7,7 +7,7 @@ import { expectBoolean, expectObject } from './assert.js'
 
 export { getPropType }
 
-export class Parser {
+export class SchemaParser {
   constructor(schema: Schema) {
     this.schema = schema
   }
@@ -116,7 +116,7 @@ export const debug = (schema: Schema) => {
       },
     })
   }
-  const parser = new Parser(proxy(schema))
+  const parser = new SchemaParser(proxy(schema))
   try {
     parser.parse()
   } catch (e) {
@@ -126,9 +126,9 @@ export const debug = (schema: Schema) => {
   }
 }
 
-export const parseSchema = (schema: Schema): { schema: Schema } => {
+export const parse = (schema: Schema): { schema: Schema } => {
   try {
-    new Parser(schema).parse()
+    new SchemaParser(schema).parse()
     return { schema }
   } catch (e) {
     debug(schema)

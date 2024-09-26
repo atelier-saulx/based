@@ -25,7 +25,14 @@ const _addModify = (
     if (res.error) {
       return
     }
+
     const leaf = tree[key]
+
+    if (!leaf) {
+      modifyError(res, tree, key)
+      return
+    }
+
     const value = obj[key]
     if (!leaf.__isPropDef) {
       if (

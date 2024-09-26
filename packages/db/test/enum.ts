@@ -13,7 +13,7 @@ await test('enum', async (t) => {
     return db.destroy()
   })
 
-  db.updateSchema({
+  db.putSchema({
     types: {
       user: {
         props: {

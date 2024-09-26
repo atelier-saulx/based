@@ -1,9 +1,9 @@
 import test from 'node:test'
 import { throws } from 'node:assert'
-import { parseSchema } from '@based/schema'
+import { parse } from '@based/schema'
 
 test('boolean', () => {
-  parseSchema({
+  parse({
     props: {
       myBoolean: {
         type: 'boolean',
@@ -13,7 +13,7 @@ test('boolean', () => {
   })
 
   throws(() => {
-    parseSchema({
+    parse({
       props: {
         myBoolean: {
           type: 'boolean',

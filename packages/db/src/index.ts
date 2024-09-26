@@ -1,13 +1,13 @@
 import { create, update, remove } from './modify/modify.js'
 import { ModifyRes } from './modify/ModifyRes.js'
-import { Schema, SchemaType } from '@based/schema'
+import { parse, Schema, SchemaType } from '@based/schema'
 import {
   PropDef,
   SchemaTypeDef,
   createSchemaTypeDef,
   schemaToSelvaBuffer,
 } from './schema/schema.js'
-import { deepMerge, deepCopy, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import db from './native.js'
 import { Query, query } from './query/query.js'
@@ -22,21 +22,9 @@ export * from './schema/typeDef.js'
 export * from './modify/modify.js'
 export * from './basedNode/index.js'
 
-type InternalSchema = Schema & {
-  lastId: number
-  types: Record<string, SchemaType>
-}
-
-const DEFAULT_SCHEMA: InternalSchema = {
-  types: {},
-  lastId: 0,
-}
-
 export class BasedDb {
   isDraining: boolean = false
-
   maxModifySize: number = 100 * 1e3 * 1e3
-
   modifyBuffer: {
     hasStringField: number
     buffer: Buffer
@@ -51,7 +39,7 @@ export class BasedDb {
     queue: any[]
   }
 
-  schema: InternalSchema = DEFAULT_SCHEMA
+  schema: Schema & { lastId: number }
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
 
@@ -88,9 +76,8 @@ export class BasedDb {
       queue: [],
     }
     this.fileSystemPath = path
-
-    this, (this.schemaTypesParsed = {})
-    this.schema = deepCopy(DEFAULT_SCHEMA)
+    this.schemaTypesParsed = {}
+    this.schema = { lastId: 0, types: {} }
   }
 
   async start(opts: { clean?: boolean } = {}): Promise<
@@ -121,7 +108,7 @@ export class BasedDb {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
       if (schema) {
         //  prop need to not call setting in selva
-        this.updateSchema(JSON.parse(schema.toString()), true)
+        this.putSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
 
@@ -154,9 +141,19 @@ export class BasedDb {
     }
   }
 
-  updateSchema(schema: Schema, fromStart: boolean = false): Schema {
-    this.schema = deepMerge(this.schema, schema)
+  putSchema(schema: Schema, fromStart: boolean = false): Schema {
+    if (!fromStart) {
+      parse(schema)
+    }
+
+    const { lastId } = this.schema
+    this.schema = {
+      lastId,
+      ...schema,
+    }
+
     this.updateTypeDefs()
+
     if (!fromStart) {
       fs.writeFile(
         join(this.fileSystemPath, 'schema.json'),

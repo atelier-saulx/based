@@ -80,7 +80,7 @@ const db = new BasedDb({
 
 await db.start()
 
-db.updateSchema({
+db.putSchema({
   types: {
     todo: {
       props: {
@@ -236,7 +236,7 @@ console.log(db.query('todo').range(0, 100).get())
 //   }
 // }
 
-// db.updateSchema({
+// db.putSchema({
 //   types: {
 //     user: {
 //       props: {
