@@ -61,8 +61,8 @@ pub fn queryIds(
             typeEntry,
             include,
             null,
-            null,
         );
+
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
@@ -136,7 +136,6 @@ pub fn querySort(
             id,
             typeEntry,
             include,
-            null,
             null,
         );
 

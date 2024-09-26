@@ -19,6 +19,8 @@ pub fn getSingleRefFields(
     var size: usize = 0;
     const typeId: db.TypeId = readInt(u16, include, 0);
     const refField = include[2];
+
+    // get from edge as well
     const node = db.getReference(originalNode, refField);
 
     // SINGLE REF
@@ -34,7 +36,7 @@ pub fn getSingleRefFields(
         .includeMain = &.{},
         .refType = 254,
         .totalRefs = null,
-        .isEdge = false,
+        .isEdge = 0,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
@@ -58,7 +60,6 @@ pub fn getSingleRefFields(
         typeEntry,
         includeNested,
         null, // ADD REFERENCE
-        null,
     ) catch 0;
 
     ctx.results.items[resultIndex].refSize = resultSizeNest;

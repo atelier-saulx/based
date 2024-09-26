@@ -56,23 +56,33 @@ await test('simple', async (t) => {
     name: 'The wonders of Strudel',
     contributors: [
       { id: mrSnurp, $role: 'writer', $rating: 99 },
-      { id: mrYur, $role: 'editor', $rating: 10 },
+      // { id: mrYur, $role: 'editor', $rating: 10 },
     ],
   })
 
   db.drain()
 
-  db.query('article')
-    .include('contributors.$role', 'contributors.$rating')
+  const x = db
+    .query('article')
+    .include('contributors.$role')
+    .include('contributors.$rating')
     .get()
-    .debug()
 
-  console.log(
-    db
-      .query('article')
-      .include('contributors.$role', 'contributors.$rating')
-      .get(),
-  )
+  x.debug()
+
+  for (const f of x) {
+    for (const y of f.contributors) {
+      console.log(y, y.$role)
+    }
+  }
+
+  // console.log(
+  //   db
+  //     .query('article')
+  //     .include('contributors.$role')
+  //     .include('contributors.$rating')
+  //     .get(),
+  // )
 
   // console.info(db.query('article').include('contributors.$role').get())
 

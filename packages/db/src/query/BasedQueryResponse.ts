@@ -142,6 +142,9 @@ export class BasedQueryResponse {
             if (a[j + i * 20] === 254) {
               return picocolors.green(v)
             }
+            if (a[j + i * 20] === 252) {
+              return picocolors.red(v)
+            }
             return v
           })
           .join(' '),
