@@ -177,27 +177,34 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
     return 1 + sizeof(fixed_len);
 }
 
-static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
+    const char *buf = ctx->buf + 1;
+    size_t len = ctx->len - 1;
+    size_t orig_len = ctx->len;
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
         field_t inverse_field;
         node_type_t dst_node_type;
-#if 0
         uint32_t schema_len;
         /* uint8_t schema[]; */
-#endif
     } __packed constraints;
 
-    if (ctx->len < 1 + sizeof(constraints)) {
+    if (len < sizeof(constraints)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&constraints, ctx->buf + 1, sizeof(constraints));
+    memcpy(&constraints, buf, sizeof(constraints));
+    buf += sizeof(constraints);
+    len -= sizeof(constraints);
+
+    if (constraints.schema_len > len) {
+        return SELVA_EINVAL;
+    }
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
-        .type = SELVA_FIELD_TYPE_REFERENCE,
+        .type = type,
         .edge_constraint = {
             .flags = ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP,
             .inverse_field = constraints.inverse_field,
@@ -205,38 +212,30 @@ static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaField
         },
     };
 
-    return 1 + sizeof(constraints);
+    if (constraints.schema_len > 0) {
+        int err;
+
+        err = parse2efc(ctx, &fs->edge_constraint, buf, constraints.schema_len);
+#if 0
+        buf += constraints.schema_len;
+#endif
+        len -= constraints.schema_len;
+        if (err) {
+            return err;
+        }
+    }
+
+    return orig_len - len;
+}
+
+static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    return type2fs_refs(ctx, schema, field, SELVA_FIELD_TYPE_REFERENCE);
 }
 
 static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-    struct {
-        field_t inverse_field;
-        node_type_t dst_node_type;
-#if 0
-        uint32_t schema_len;
-        /* uint8_t schema[]; */
-#endif
-    } __packed constraints;
-
-    if (ctx->len < 1 + sizeof(constraints)) {
-        return SELVA_EINVAL;
-    }
-
-    memcpy(&constraints, ctx->buf + 1, sizeof(constraints));
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_REFERENCES,
-        .edge_constraint = {
-            .flags = ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP,
-            .inverse_field = constraints.inverse_field,
-            .dst_node_type = constraints.dst_node_type,
-        },
-    };
-
-    return 1 + sizeof(constraints);
+    return type2fs_refs(ctx, schema, field, SELVA_FIELD_TYPE_REFERENCES);
 }
 
 static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
