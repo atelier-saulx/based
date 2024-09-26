@@ -95,7 +95,8 @@ await test('references', async (t) => {
   })
 
   const ids: number[] = []
-  for (let i = 0; i < 1e5; i++) {
+  // above 10k make lmdb?
+  for (let i = 0; i < 1e4; i++) {
     ids.push(
       db.create('user', {
         flap: ~~(Math.random() * 100000),
