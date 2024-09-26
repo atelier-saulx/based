@@ -8,6 +8,7 @@ import {
 import { QueryIncludeDef } from './types.js'
 import { Query } from './query.js'
 import { addConditions } from './filter.js'
+import { createSortBuffer } from './sort.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
@@ -97,6 +98,21 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
           filter = addConditions(filterConditions, filterConditions.size)
         }
 
+        // TODO filter edge
+        const sortOpts =
+          include.referencesSortOptions[refInclude.fromRef.path.join('.')]
+        let sort: Buffer
+
+        if (sortOpts) {
+          sort = createSortBuffer(
+            refInclude.schema,
+            sortOpts.field,
+            sortOpts.order,
+          )
+        }
+
+        // sort
+
         const filterSize = filter?.byteLength ?? 0
 
         const multi = refInclude.multiple
@@ -132,7 +148,11 @@ export const addInclude = (query: Query, include: QueryIncludeDef) => {
           metaEdgeBuffer.writeUint16LE(edgeSize, 1)
           result.push(meta, refBuffer, metaEdgeBuffer, edgeBuffer)
         } else {
-          result.push(meta, refBuffer)
+          result.push(meta)
+          result.push(refBuffer)
+        }
+
+        if (sort) {
         }
       }
     }
@@ -189,6 +209,7 @@ const createOrGetRefIncludeDef = (
       props: query.db.schemaTypesParsed[ref.inverseTypeName].props,
       mainLen: 0,
       referencesFilters: {},
+      referencesSortOptions: {},
       mainIncludes: {},
       includeTree: [],
       fromRef: ref,
@@ -210,6 +231,7 @@ const createOrGetEdgeIncludeDef = (
   if (!include.edgeIncludes) {
     include.edgeIncludes = {
       includePath: include.includePath,
+      referencesSortOptions: {},
       schema: include.schema, // tmp
       props: ref.edges,
       edgeSchema: ref.edges,

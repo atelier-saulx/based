@@ -10,6 +10,7 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 fn writeEdges(ctx: *ModifyCtx, data: []u8) !void {
+    // struct
     var i: usize = 0;
     while (i < data.len) {
         const prop = data[i];
@@ -34,7 +35,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
         // TODO Optmize using multi nodes
         var nodes: [1]db.Node = undefined;
         nodes[0] = try db.upsertNode(id, refTypeEntry);
-        try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
+        try db.writeReferences(nodes, ctx.node.?, ctx.fieldSchema.?);
         if (hasEdgeData) {
             const totalEdgesLen = readInt(u32, data, i + 5);
             const edges = data[i + 9 .. i + totalEdgesLen + 9];

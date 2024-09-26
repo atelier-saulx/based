@@ -60,6 +60,13 @@ await test('simple', async (t) => {
     .get()
     .debug()
 
+  console.log(
+    db
+      .query('article')
+      .include('contributors.$role', 'contributors.$rating')
+      .get(),
+  )
+
   // console.info(db.query('article').include('contributors.$role').get())
 
   // deepEqual(db.query('user').include('articles.name').get().toObject(), [

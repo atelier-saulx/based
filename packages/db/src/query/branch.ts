@@ -4,6 +4,7 @@ import { Operation } from './types.js'
 export class Select {
   field: string
   query: Query
+  sortOpts: { field: string; order: 'asc' | 'desc' }
   includes: (string | undefined)[]
   filters: {
     field: string
@@ -29,6 +30,11 @@ export class Select {
       operator,
       value,
     })
+    return this
+  }
+
+  sort(field: string, order: 'asc' | 'desc' = 'asc'): Select {
+    this.sortOpts = { field, order }
     return this
   }
 }

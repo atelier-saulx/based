@@ -48,6 +48,9 @@ export type QueryIncludeDef = {
   referencesFilters: {
     [field: string]: { conditions: Map<number, Buffer[]>; size: number }
   }
+  referencesSortOptions: {
+    [field: string]: { field: string; order: 'asc' | 'desc' }
+  }
   includeFields: Set<string>
   includeTree: IncludeTreeArr // meh
   edgeIncludes?: QueryIncludeDef
