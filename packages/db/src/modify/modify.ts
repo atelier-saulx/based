@@ -1,6 +1,6 @@
-import { BasedDb } from './index.js'
-import { PropDef, PropDefEdge, SchemaTypeDef } from './schema/schema.js'
-import { startDrain, flushBuffer } from './operations.js'
+import { BasedDb } from '../index.js'
+import { PropDef, PropDefEdge, SchemaTypeDef } from '../schema/schema.js'
+import { startDrain, flushBuffer } from '../operations.js'
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
 

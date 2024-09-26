@@ -1,4 +1,4 @@
-import { create, update, remove, ModifyRes } from './modify.js'
+import { create, update, remove, ModifyRes } from './modify/modify.js'
 import { Schema, SchemaType } from '@based/schema'
 import {
   PropDef,
@@ -18,7 +18,7 @@ import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 
 export * from './schema/typeDef.js'
-export * from './modify.js'
+export * from './modify/modify.js'
 export * from './basedNode/index.js'
 
 type InternalSchema = Schema & {
