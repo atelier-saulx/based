@@ -1,5 +1,5 @@
 import { BasedDb } from './index.js'
-import { PropDef, SchemaTypeDef } from './schema/schema.js'
+import { PropDef, PropDefEdge, SchemaTypeDef } from './schema/schema.js'
 import { startDrain, flushBuffer } from './operations.js'
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
@@ -77,6 +77,55 @@ const setCursor = (
   }
 }
 
+const writeFixedLenValue = (
+  db: BasedDb,
+  value: any,
+  pos: number,
+  t: PropDef | PropDefEdge,
+) => {
+  // 11: string
+  if (t.typeIndex === 11) {
+    const size = db.modifyBuffer.buffer.write(value, pos + 1, 'utf8')
+    db.modifyBuffer.buffer[pos] = size
+    if (size + 1 > t.len) {
+      console.warn('String does not fit fixed len', value)
+      // also skip...
+    }
+    return
+  }
+
+  // 1: timestamp, 4: number
+  if (t.typeIndex === 1 || t.typeIndex === 4) {
+    db.modifyBuffer.buffer.writeFloatLE(value, pos)
+    return
+  }
+
+  // 6: uint32
+  if (t.typeIndex === 5) {
+    db.modifyBuffer.buffer.writeUint32LE(value, pos)
+    return
+  }
+
+  // 9: boolean
+  if (t.typeIndex === 9) {
+    db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, pos)
+    return
+  }
+
+  // 10: Enum
+  if (t.typeIndex === 10) {
+    const index = t.reverseEnum[value]
+    if (index === undefined) {
+      console.warn('invalid enum value')
+      // skip
+      db.modifyBuffer.buffer[pos] = 0
+    } else {
+      db.modifyBuffer.buffer[pos] = index + 1
+    }
+    return
+  }
+}
+
 // modifyBuffer
 const addModify = (
   db: BasedDb,
@@ -139,11 +188,13 @@ const addModify = (
           let refLen = 0
           if (t.edgesTotalLen) {
             console.log('EDGES')
-            refLen = (t.edgesTotalLen + 4 + 1) * value.length
+            refLen = (t.edgesTotalLen + 5) * value.length
           } else {
-            console.log('variable len edges implement later... tmp 50 len')
+            console.log('Variable len edges implement later... tmp 50 len')
+            // loop trough edges and check total len
             refLen = (50 + 4 + 1) * value.length
           }
+
           if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
             flushBuffer(db)
           }
@@ -160,7 +211,38 @@ const addModify = (
                 ref.id,
                 db.modifyBuffer.len + 1,
               )
-              db.modifyBuffer.len += 5
+              const edgeDataSizeIndex = db.modifyBuffer.len + 5
+              db.modifyBuffer.len += 9
+
+              for (const key in t.edges) {
+                if (key in ref) {
+                  const edge = t.edges[key]
+                  const value = ref[key]
+
+                  if (edge.len === 0) {
+                    if (edge.typeIndex === 11) {
+                      //
+                    } else if (edge.typeIndex === 13) {
+                      // single ref edge
+                    } else if (edge.typeIndex === 14) {
+                    }
+                  } else {
+                    // [field] [size] [data]
+                    db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
+                    db.modifyBuffer.buffer.writeUint16LE(
+                      edge.len,
+                      db.modifyBuffer.len + 1,
+                    )
+                    writeFixedLenValue(db, value, db.modifyBuffer.len + 3, t)
+                    db.modifyBuffer.len += edge.len + 3
+                  }
+                }
+              }
+
+              db.modifyBuffer.buffer.writeUint32LE(
+                db.modifyBuffer.len - edgeDataSizeIndex - 4,
+                edgeDataSizeIndex,
+              )
             } else {
               db.modifyBuffer.buffer[db.modifyBuffer.len] = 0
               db.modifyBuffer.buffer.writeUint32LE(ref, db.modifyBuffer.len + 1)
@@ -259,37 +341,7 @@ const addModify = (
           }
         }
 
-        // 11: string
-        if (t.typeIndex === 11) {
-          const size = db.modifyBuffer.buffer.write(
-            value,
-            t.start + mainIndex + 1,
-            'utf8',
-          )
-          db.modifyBuffer.buffer[t.start + mainIndex] = size
-          if (size + 1 > t.len) {
-            console.warn('String does not fit fixed len', value)
-            // also skip...
-          }
-          // 1: timestamp, 4: number
-        } else if (t.typeIndex === 1 || t.typeIndex === 4) {
-          db.modifyBuffer.buffer.writeFloatLE(value, t.start + mainIndex)
-          // 6: uint32
-        } else if (t.typeIndex === 5) {
-          db.modifyBuffer.buffer.writeUint32LE(value, t.start + mainIndex)
-          // 9: boolean
-        } else if (t.typeIndex === 9) {
-          db.modifyBuffer.buffer.writeInt8(value ? 1 : 0, t.start + mainIndex)
-          // 10: Enum
-        } else if (t.typeIndex === 10) {
-          const index = t.reverseEnum[value]
-          if (index === undefined) {
-            console.warn('invalid enum value')
-            // skip
-          } else {
-            db.modifyBuffer.buffer[t.start + mainIndex] = index + 1
-          }
-        }
+        writeFixedLenValue(db, value, t.start + mainIndex, t)
       }
     }
   }
@@ -328,30 +380,12 @@ export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const res = new _ModifyRes(id, db)
 
   def.total++
-  // where am i
 
   if (
     !addModify(db, id, value, def.tree, def, 3, false, true) ||
     def.mainLen === 0
   ) {
     setCursor(db, def, 0, id, false, true)
-
-    // FIXI FIX
-    // const nextLen = 5 + def.mainLen
-    // if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
-    //   flushBuffer(db)
-    // }
-    // setCursor(db, def, 0, id, false, true)
-    // db.modifyBuffer.buffer[db.modifyBuffer.len] = 3
-    // db.modifyBuffer.buffer.writeUint32LE(def.mainLen, db.modifyBuffer.len + 1)
-    // for (
-    //   let i = db.modifyBuffer.len + 5;
-    //   i < db.modifyBuffer.len + nextLen;
-    //   i++
-    // ) {
-    //   db.modifyBuffer.buffer[i] = 0
-    // }
-    // db.modifyBuffer.len += nextLen
   }
 
   // if touched lets see perf impact here

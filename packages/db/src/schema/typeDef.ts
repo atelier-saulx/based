@@ -38,7 +38,8 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       if (edge.len == 0) {
         prop.edgesTotalLen = 0
       } else {
-        prop.edgesTotalLen += edge.len + 1 // field len
+        // [field] [size] [data]
+        prop.edgesTotalLen += 1 + 2 + edge.len // field len
       }
       if (edge.typeIndex === 10) {
         edge.enum = Array.isArray(refProp[key])

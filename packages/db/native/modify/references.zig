@@ -15,10 +15,16 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const len = data.len;
     var i: usize = 0;
     while (i < len) : (i += 5) {
+        const hasEdgeData = data[i] == 1;
         const id = readInt(u32, data, i + 1);
         var nodes: [1]db.Node = undefined;
         // maybe this fails?
         nodes[0] = try db.upsertNode(id, refTypeEntry);
         try db.writeReferences(&nodes, ctx.node.?, ctx.fieldSchema.?);
+        if (hasEdgeData) {
+            const edgeLen = readInt(u32, data, i + 5);
+            std.debug.print("GOT ME SOME EDGE DATA! {d} \n", .{edgeLen});
+            i += 4 + edgeLen;
+        }
     }
 }
