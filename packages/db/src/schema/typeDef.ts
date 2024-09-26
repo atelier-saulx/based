@@ -163,6 +163,23 @@ export const createSchemaTypeDef = (
 
   if (top) {
     const vals = Object.values(result.props)
+
+    // references first is important for perf in selva
+    vals.sort((a, b) => {
+      if (b.seperate && (a.typeIndex === 14 || a.typeIndex === 13)) {
+        return -1
+      }
+      return a.prop - b.prop
+    })
+
+    let lastProp = 0
+    for (const p of vals) {
+      if (p.seperate) {
+        lastProp++
+        p.prop = lastProp
+      }
+    }
+
     let len = 2
     for (const f of vals) {
       if (f.seperate) {
