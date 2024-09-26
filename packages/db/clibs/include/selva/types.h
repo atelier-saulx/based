@@ -41,10 +41,9 @@ struct EdgeFieldConstraint {
          */
         EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP        = 0x80,
     } __packed flags;
-    field_t nr_fields;
     field_t inverse_field;
     node_type_t dst_node_type;
-    struct SelvaFieldSchema *field_schemas __pcounted_by(nr_fields);
+    struct SelvaFieldsSchema *fields_schema;
 };
 
 struct SelvaFieldSchema {
@@ -59,6 +58,23 @@ struct SelvaFieldSchema {
             uint16_t len;
         } smb;
     };
+};
+
+struct SelvaFieldsSchema {
+    field_t nr_fields; /*!< The total number of fields for this node type. */
+    field_t nr_fixed_fields; /*!< Number of fixed fields that are always allocated. */
+    struct {
+        void *buf;
+        size_t len;
+        size_t fixed_data_size;
+    } field_map_template;
+    struct SelvaFieldSchema field_schemas[] __counted_by(nr_fields);
+};
+
+struct SelvaNodeSchema {
+    field_t created_field;
+    field_t updated_field;
+    struct SelvaFieldsSchema fields_schema;
 };
 
 struct SelvaAlias;

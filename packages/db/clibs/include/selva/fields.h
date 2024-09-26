@@ -194,7 +194,7 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, s
  * Init fields of a node.
  */
 SELVA_EXPORT
-void selva_fields_init(const struct SelvaTypeEntry *type, struct SelvaNode *node);
+void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
 
 /**
  * Destroy all fields of a node.

@@ -152,7 +152,7 @@ static void del_type(struct SelvaDb *db, struct SelvaTypeEntry *type)
     (void)SVector_Remove(&db->type_list, SelvaTypeEntry2vecptr(type));
 
     mempool_destroy(&type->nodepool);
-    selva_free(type->field_map_template.buf);
+    schemabuf_deinit_fields_schema(&type->ns.fields_schema);
 #if 0
     memset(type, 0, sizeof(*type));
 #endif
@@ -182,38 +182,6 @@ void selva_db_destroy(struct SelvaDb *db)
     selva_free(db);
 }
 
-static void make_field_map_template(struct SelvaTypeEntry *type)
-{
-    struct SelvaNodeSchema *ns = &type->ns;
-    const size_t nr_fields = ns->nr_fields;
-    const size_t nr_fixed_fields = ns->nr_fixed_fields;
-    size_t fixed_field_off = 0;
-    struct SelvaFieldInfo *nfo = selva_malloc(nr_fields * sizeof(struct SelvaFieldInfo));
-
-    for (size_t i = 0; i < nr_fields; i++) {
-        if (i < nr_fixed_fields) {
-            struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(ns, i);
-
-            assert(fs);
-
-            nfo[i] = (struct SelvaFieldInfo){
-                .type = fs->type,
-                .off = fixed_field_off >> 3,
-            };
-            fixed_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
-        } else {
-            nfo[i] = (struct SelvaFieldInfo){
-                .type = 0,
-                .off = 0,
-            };
-        }
-    }
-
-    type->field_map_template.buf = nfo;
-    type->field_map_template.len = nr_fields * sizeof(struct SelvaFieldInfo);
-    type->field_map_template.fixed_data_size = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
-}
-
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_fields_count count;
@@ -234,16 +202,13 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     memset(te, 0, sizeof(*te) - te_ns_max_size + count.nr_fields * sizeof(struct SelvaFieldSchema));
 
     te->type = type;
-    te->ns.nr_fields = count.nr_fields;
-    te->ns.nr_fixed_fields = count.nr_fixed_fields;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
-    err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
+    err = schemabuf_parse_ns(db, &te->ns, &count, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
     }
-    make_field_map_template(te);
 
     RB_INIT(&te->nodes);
     RB_INIT(&te->aliases.alias_by_name);
@@ -297,13 +262,18 @@ struct SelvaNodeSchema *selva_get_ns_by_te(struct SelvaTypeEntry *te)
     return &te->ns;
 }
 
-struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
+struct SelvaFieldSchema *get_fs_by_fields_schema_field(struct SelvaFieldsSchema *fields_schema, field_t field)
 {
-    if (field >= ns->nr_fields) {
+    if (field >= fields_schema->nr_fields) {
         return NULL;
     }
 
-    return &ns->field_schemas[field];
+    return &fields_schema->field_schemas[field];
+}
+
+struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
+{
+    return get_fs_by_fields_schema_field(&ns->fields_schema, field);
 }
 
 struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
@@ -383,7 +353,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
 #if 0
     node->expire = 0;
 #endif
-    selva_fields_init(type, node);
+    selva_fields_init(&type->ns.fields_schema, &node->fields);
 
     type->nr_nodes++;
     if (!type->max_node || type->max_node->node_id < node_id) {

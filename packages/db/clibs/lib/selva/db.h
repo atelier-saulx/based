@@ -20,14 +20,6 @@ RB_HEAD(SelvaTypeCursorsByNodeId, SelvaTypeCursors);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
 
-struct SelvaNodeSchema {
-    field_t nr_fields; /*!< The total number of fields for this node type. */
-    field_t nr_fixed_fields; /*!< Number of fixed fields that are always allocated. */
-    field_t created_field;
-    field_t updated_field;
-    struct SelvaFieldSchema field_schemas[] __counted_by(nr_fields);
-};
-
 /**
  * Selva node.
  */
@@ -103,11 +95,6 @@ struct SelvaTypeEntry {
         struct SelvaTypeCursorsByNodeId by_node_id; /*!< Lists of cursors indexed by node_id. i.e. find all cursors pointing to a certain node. */
         size_t nr_cursors; /*!< Total count of active cursors allocated. */
     } cursors;
-    struct {
-        void *buf;
-        size_t len;
-        size_t fixed_data_size;
-    } field_map_template;
     const char *schema_buf;
     size_t schema_len;
     struct SelvaNodeSchema ns; /*!< Schema for this node type. Must be last. */
