@@ -12,6 +12,68 @@ const utils = @import("../../utils.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
 
+pub fn queryIdsManual(
+    comptime queryType: comptime_int,
+    ids: []u32,
+    ctx: *QueryCtx,
+    typeId: db.TypeId,
+    conditions: []u8,
+    include: []u8,
+    sortBuffer: []u8,
+    _: u32,
+    limit: u32,
+) !void {
+    const typeEntry = try db.getType(typeId);
+    var i: u32 = 0;
+
+    var start: u16 = undefined;
+    var len: u16 = undefined;
+    const sortField: u8 = sortBuffer[0];
+    const sortFieldType: u8 = sortBuffer[1];
+
+    if (sortBuffer.len == 6) {
+        start = utils.readInt(u16, sortBuffer, 2);
+        len = utils.readInt(u16, sortBuffer, 4);
+    } else {
+        start = 0;
+        len = 0;
+    }
+
+    // const selvaFlag:
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC, ids.len).?;
+
+    sortItem: while (i < ids.len) : (i += 1) {
+        const id = ids[i];
+        const node = db.getNode(id, typeEntry);
+        if (node == null) {
+            continue :sortItem;
+        }
+        if (!filter(node.?, typeEntry, conditions)) {
+            continue :sortItem;
+        }
+        const value = db.getField(node.?, try db.getFieldSchema(sortField, typeEntry));
+
+        if (sortFieldType == 1) {
+            const nr = utils.readInt(i64, value, 0);
+            std.debug.print("SORT VALUE HELLO {d} -- {d} {d} {any} \n", .{ nr, sortFieldType, id, value });
+        }
+
+        _ = selva.selva_sort_insert_i64(sortCtx, i, node);
+
+        // selva.s
+        // // 2 loops second loop gets this
+        // const size = try getFields(node.?, ctx, id, typeEntry, include);
+        // if (size > 0) {
+        //     ctx.size += size;
+        //     ctx.totalResults += 1;
+        // }
+    }
+
+    if (queryType == 5) {
+        std.debug.print("Start at end {d} {d} {d} {any} {any} \n", .{ limit, include, ctx });
+    }
+}
+
 pub fn queryIdsSort(
     comptime queryType: comptime_int,
     ids: []u32,

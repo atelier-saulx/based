@@ -78,13 +78,7 @@ pub fn getSortName(
     start: u16,
 ) SortDbiName {
     const startCasted: [2]u8 = @bitCast(start);
-    // if (startCasted[0] == 0 and startCasted[1] != 0) {
-    //     startCasted[0] = 255;
-    //     startCasted[1] = 255 - startCasted[1];
-    // }
-
     const typePrefix = getPrefix(typeId);
-
     const name: SortDbiName = .{
         typePrefix[0],
         typePrefix[1],

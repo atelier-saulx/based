@@ -74,6 +74,20 @@ pub fn getQueryIdsSortDescLarge(env: c.napi_env, info: c.napi_callback_info) cal
     };
 }
 
+pub fn getQueryIdsSortAscManual(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(9, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryIdsSortDescManual(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryInternal(10, env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
 inline fn getQueryInternal(
     comptime queryType: comptime_int,
     env: c.napi_env,
@@ -162,6 +176,27 @@ inline fn getQueryInternal(
         const include = try napi.get([]u8, env, args[5]);
         const sortBuffer = try napi.get([]u8, env, args[6]);
         try QuerySort.queryIdsSortBig(
+            queryType,
+            ids,
+            &ctx,
+            typeId,
+            conditions,
+            include,
+            sortBuffer,
+            offset,
+            limit,
+        );
+    } else if (queryType == 9 or queryType == 10) {
+        // query ids sorted > 512
+        const args = try napi.getArgs(8, env, info);
+        const conditions = try napi.get([]u8, env, args[0]);
+        const typeId = try napi.get(u16, env, args[1]);
+        const offset = try napi.get(u32, env, args[2]);
+        const limit = try napi.get(u32, env, args[3]);
+        const ids = try napi.get([]u32, env, args[4]);
+        const include = try napi.get([]u8, env, args[5]);
+        const sortBuffer = try napi.get([]u8, env, args[6]);
+        try QuerySort.queryIdsManual(
             queryType,
             ids,
             &ctx,
