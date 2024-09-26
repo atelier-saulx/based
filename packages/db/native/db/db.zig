@@ -3,6 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
+const readInt = @import("../utils.zig").readInt;
 
 pub const TypeId = u16;
 
@@ -222,6 +223,43 @@ pub fn delAliasByName(typeEntry: Type, aliasName: [*]u8) !void {
 
 pub fn getAliasByName(typeEntry: Type, aliasName: [*]u8) ?Node {
     return selva.selva_get_alias(typeEntry, aliasName.ptr, aliasName.len);
+}
+
+pub fn insertSort(
+    sortCtx: *selva.SelvaSortCtx,
+    node: Node,
+    sortFieldType: u8,
+    value: []u8,
+    start: u16,
+    len: u16,
+) void {
+    if (sortFieldType == 1) {
+        selva.selva_sort_insert_i64(sortCtx, readInt(i64, value, start), node);
+        return;
+    }
+
+    if (sortFieldType == 11) {
+        if (start > 0 and len > 0) {
+            selva.selva_sort_insert_buf(sortCtx, value[start .. start + len].ptr, value.len, node);
+        } else {
+            selva.selva_sort_insert_buf(sortCtx, value.ptr, value.len, node);
+        }
+        return;
+    }
+
+    if (sortFieldType == 4) {
+        selva.selva_sort_insert_double(sortCtx, @floatFromInt(readInt(u64, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == 5) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u32, value, start)), node);
+        return;
+    }
+    if (sortFieldType == 10) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(value[start]), node);
+        return;
+    }
 }
 
 pub fn getSortFlag(sortFieldType: u8, asc: bool) !selva.SelvaSortOrder {

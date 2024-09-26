@@ -58,15 +58,14 @@ pub fn getRefsFields(
     var i: usize = 0;
     var resultsCnt: u32 = 0;
 
+    // if sort
+
     checkItem: while (i < refs.?.nr_refs) : (i += 1) {
         const refNode = refs.?.refs[i].dst.?;
-
         if (filterArr != null and !filter(refNode, typeEntry.?, filterArr.?)) {
             continue :checkItem;
         }
-
         resultsCnt += 1;
-
         size += getFields(
             refNode,
             ctx,

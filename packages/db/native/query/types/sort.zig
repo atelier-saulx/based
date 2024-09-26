@@ -25,12 +25,10 @@ pub fn queryIds(
 ) !void {
     const typeEntry = try db.getType(typeId);
     var i: u32 = 0;
-
     var start: u16 = undefined;
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[0];
     const sortFieldType: u8 = sortBuffer[1];
-
     if (sortBuffer.len == 6) {
         start = utils.readInt(u16, sortBuffer, 2);
         len = utils.readInt(u16, sortBuffer, 4);
@@ -38,10 +36,8 @@ pub fn queryIds(
         start = 0;
         len = 0;
     }
-
     const sortFlag = try db.getSortFlag(sortFieldType, queryType == 10);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len).?;
-
     sortItem: while (i < ids.len) : (i += 1) {
         const id = ids[i];
         const node = db.getNode(id, typeEntry);
@@ -52,23 +48,8 @@ pub fn queryIds(
             continue :sortItem;
         }
         const value = db.getField(node.?, try db.getFieldSchema(sortField, typeEntry));
-        if (sortFieldType == 1) {
-            selva.selva_sort_insert_i64(sortCtx, utils.readInt(i64, value, start), node);
-        } else if (sortFieldType == 11) {
-            if (start > 0 and len > 0) {
-                selva.selva_sort_insert_buf(sortCtx, value[start .. start + len].ptr, value.len, node);
-            } else {
-                selva.selva_sort_insert_buf(sortCtx, value.ptr, value.len, node);
-            }
-        } else if (sortFieldType == 4) {
-            selva.selva_sort_insert_double(sortCtx, @floatFromInt(utils.readInt(u64, value, start)), node);
-        } else if (sortFieldType == 5) {
-            selva.selva_sort_insert_i64(sortCtx, @intCast(utils.readInt(u32, value, start)), node);
-        } else if (sortFieldType == 10) {
-            selva.selva_sort_insert_i64(sortCtx, @intCast(value[start]), node);
-        }
+        db.insertSort(sortCtx, node.?, sortFieldType, value, start, len);
     }
-
     selva.selva_sort_foreach_begin(sortCtx);
     while (!selva.selva_sort_foreach_done(sortCtx)) {
         // if @limit stop
@@ -79,10 +60,10 @@ pub fn queryIds(
             ctx.totalResults += 1;
         }
     }
-
     selva.selva_sort_destroy(sortCtx);
 }
 
+// TODO also for references later
 pub fn querySort(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
