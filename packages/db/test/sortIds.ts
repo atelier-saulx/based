@@ -110,13 +110,6 @@ await test('references', async (t) => {
     contributors: ids,
   })
 
-  console.log(
-    db
-      .query('article', id)
-      .include((s) => s('contributors').sort('flap'))
-      .get(),
-  )
-
   isSorted(
     db
       .query('article', id)

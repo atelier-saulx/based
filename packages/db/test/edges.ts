@@ -30,11 +30,12 @@ await test('simple', async (t) => {
         props: {
           name: 'string',
           contributors: {
+            type: 'references',
             items: {
-              $role: ['writer', 'editor'],
-              $rating: 'uint32',
               ref: 'user',
               prop: 'articles',
+              $role: ['writer', 'editor'],
+              $rating: 'uint32',
             },
           },
         },
@@ -56,7 +57,7 @@ await test('simple', async (t) => {
     name: 'The wonders of Strudel',
     contributors: [
       { id: mrSnurp, $role: 'writer', $rating: 99 },
-      // { id: mrYur, $role: 'editor', $rating: 10 },
+      { id: mrYur, $role: 'editor', $rating: 10 },
     ],
   })
 
@@ -67,6 +68,8 @@ await test('simple', async (t) => {
     .include('contributors.$role')
     .include('contributors.$rating')
     .get()
+
+  console.dir(x.toObject(), { depth: 10 })
 
   x.debug()
 
