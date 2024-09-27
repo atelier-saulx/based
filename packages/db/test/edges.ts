@@ -26,6 +26,12 @@ await test('simple', async (t) => {
           },
         },
       },
+      country: {
+        props: {
+          code: { type: 'string', maxBytes: 2 },
+          name: 'string',
+        },
+      },
       article: {
         props: {
           name: 'string',
@@ -36,6 +42,11 @@ await test('simple', async (t) => {
               prop: 'articles',
               $friend: {
                 ref: 'user',
+              },
+              $countries: {
+                items: {
+                  ref: 'country',
+                },
               },
               $role: ['writer', 'editor'],
               $rating: 'uint32',
@@ -57,6 +68,11 @@ await test('simple', async (t) => {
     name: 'Mr Yur',
   })
 
+  const nl = db.create('country', {
+    name: 'Netherlands',
+    code: 'nl',
+  })
+
   db.drain()
 
   const strudelArticle = db.create('article', {
@@ -69,6 +85,7 @@ await test('simple', async (t) => {
         $email: 'AAA',
         $lang: 'en',
         $friend: mrYur,
+        $countries: [nl],
       },
       // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],

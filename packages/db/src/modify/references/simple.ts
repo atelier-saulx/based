@@ -1,26 +1,15 @@
 import { BasedDb } from '../../index.js'
 import { flushBuffer } from '../../operations.js'
-import { PropDef, SchemaTypeDef } from '../../schema/types.js'
+import { PropDef, PropDefEdge, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 
-export function overWriteSimpleReferences(
-  t: PropDef,
+export function simpleRefs(
+  t: PropDef | PropDefEdge,
   db: BasedDb,
-  writeKey: 3 | 6,
   value: any[],
-  schema: SchemaTypeDef,
   res: ModifyState,
-  fromCreate: boolean,
 ) {
-  const refLen = 5 * value.length
-  if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
-    flushBuffer(db)
-  }
-  setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-  db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
-  db.modifyBuffer.len += 5
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]
     let id: number
@@ -47,5 +36,25 @@ export function overWriteSimpleReferences(
     db.modifyBuffer.buffer[db.modifyBuffer.len + i * 5] = 0
     db.modifyBuffer.buffer.writeUint32LE(id, i * 5 + db.modifyBuffer.len + 1)
   }
+}
+
+export function overWriteSimpleReferences(
+  t: PropDef,
+  db: BasedDb,
+  writeKey: 3 | 6,
+  value: any[],
+  schema: SchemaTypeDef,
+  res: ModifyState,
+  fromCreate: boolean,
+) {
+  const refLen = 5 * value.length
+  if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+    flushBuffer(db)
+  }
+  setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+  db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+  db.modifyBuffer.len += 5
+  simpleRefs(t, db, value, res)
   db.modifyBuffer.len += refLen
 }

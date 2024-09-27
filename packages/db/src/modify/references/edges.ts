@@ -5,6 +5,7 @@ import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { writeFixedLenValue } from '../fixedLen.js'
 import { RefModify, RefModifyOpts } from './references.js'
+import { simpleRefs } from './simple.js'
 
 function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   var size = 0
@@ -19,6 +20,7 @@ function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
         } else if (edge.typeIndex === 13) {
           size += 4
         } else if (edge.typeIndex === 14) {
+          size += value.length * 5 + 4
         }
       } else {
         size += edge.len
@@ -87,7 +89,11 @@ function writeEdges(
           db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 6)
           db.modifyBuffer.len += 10
         } else if (edge.typeIndex === 14) {
-          // multi ref
+          const refLen = value.length * 5
+          db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 2)
+          db.modifyBuffer.len += 6
+          simpleRefs(edge, db, value, res)
+          db.modifyBuffer.len += refLen
         }
       } else {
         writeFixedLenValue(db, value, db.modifyBuffer.len + 6, edge, res)

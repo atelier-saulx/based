@@ -28,7 +28,9 @@ fn writeEdges(ctx: *ModifyCtx, ref: *selva.SelvaNodeReference, data: []u8) !void
 
         const edgeData = data[i + 6 .. i + 6 + edgeLen];
 
-        if (typeIndex == 13) {
+        if (typeIndex == 14) {
+            std.debug.print("Hello - got references edgeData: {any} \n", .{edgeData});
+        } else if (typeIndex == 13) {
             std.debug.print("Hello - got a ref edgeData: {any} \n", .{edgeData});
         } else {
             try db.writeEdgeProp(
