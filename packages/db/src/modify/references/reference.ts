@@ -1,8 +1,8 @@
-import { BasedDb } from '../index.js'
-import { flushBuffer } from '../operations.js'
-import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { ModifyState, modifyError } from './ModifyRes.js'
-import { setCursor } from './setCursor.js'
+import { BasedDb } from '../../index.js'
+import { flushBuffer } from '../../operations.js'
+import { SchemaTypeDef, PropDef } from '../../schema/types.js'
+import { ModifyState, modifyError } from '../ModifyRes.js'
+import { setCursor } from '../setCursor.js'
 
 export function writeReference(
   value: number | ModifyState,
