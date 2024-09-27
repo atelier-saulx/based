@@ -158,7 +158,7 @@ static void set_field_string(struct SelvaFields *fields, const struct SelvaField
  * Write a ref to the fields data.
  * Note that this function doesn't touch the destination node.
  */
-static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, struct SelvaNode * restrict dst)
+static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSchema *fs, struct SelvaNode * restrict dst, struct SelvaNodeReference **ref_out)
 {
     struct SelvaFields *fields = &node->fields;
     const enum SelvaFieldType type = fs->type;
@@ -185,6 +185,11 @@ static int write_ref(struct SelvaNode * restrict node, const struct SelvaFieldSc
 
     assert(!memcmp(vp, &(struct SelvaNodeReference){}, sizeof(struct SelvaNodeReference)));
     memcpy(vp, &ref, sizeof(ref));
+
+    if (ref_out) {
+        assert(((uintptr_t)vp & 7) == 0);
+        *ref_out = (struct SelvaNodeReference *)vp;
+    }
 
     return 0;
 }
@@ -311,14 +316,14 @@ static void write_ref_2way(
 #endif
 
     err = (fs_src->type == SELVA_FIELD_TYPE_REFERENCE)
-        ? write_ref(src, fs_src, dst)
+        ? write_ref(src, fs_src, dst, NULL)
         : write_refs(src, fs_src, index, dst, NULL);
     if (err) {
         db_panic("Failed to write ref: %s", selva_strerror(err));
     }
 
     err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
-        ? write_ref(dst, fs_dst, src)
+        ? write_ref(dst, fs_dst, src, NULL)
         : write_refs(dst, fs_dst, -1, src, NULL);
     if (err) {
         db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
@@ -631,7 +636,12 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
 /**
  * Set reference to fields.
  */
-static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dst)
+int selva_fields_reference_set(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict src,
+        const struct SelvaFieldSchema *fs_src,
+        struct SelvaNode * restrict dst,
+        struct SelvaNodeReference **ref_out)
 {
     struct SelvaFieldSchema *fs_dst;
     int err;
@@ -672,12 +682,12 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
      * Two-way write.
      * See: write_ref_2way()
      */
-    err = write_ref(src, fs_src, dst);
+    err = write_ref(src, fs_src, dst, ref_out);
     if (err) {
         db_panic("Failed to write ref: %s", selva_strerror(err));
     }
     err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
-        ? write_ref(dst, fs_dst, src)
+        ? write_ref(dst, fs_dst, src, NULL)
         : write_refs(dst, fs_dst, -1, src, NULL);
     if (err) {
         db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
@@ -831,7 +841,7 @@ copy:
         if (len < sizeof(struct SelvaNode *)) {
             return SELVA_EINVAL;
         }
-        return set_reference(db, fs, node, (struct SelvaNode *)value);
+        return selva_fields_reference_set(db, node, fs, (struct SelvaNode *)value, NULL);
     case SELVA_FIELD_TYPE_REFERENCES:
         if ((len % sizeof(struct SelvaNode **)) != 0) {
             return SELVA_EINVAL;
@@ -891,11 +901,11 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
 
 int selva_fields_references_insert(
         struct SelvaDb *db,
-        struct SelvaNode *node,
+        struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         ssize_t index,
         struct SelvaTypeEntry *te_dst,
-        struct SelvaNode *dst,
+        struct SelvaNode *restrict dst,
         struct SelvaNodeReference **ref_out)
 {
     struct SelvaFieldSchema *fs_dst;
@@ -903,8 +913,8 @@ int selva_fields_references_insert(
     int err;
 
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
-         type_dst != dst->type ||
-         type_dst != fs->edge_constraint.dst_node_type) {
+        type_dst != dst->type ||
+        type_dst != fs->edge_constraint.dst_node_type) {
         return SELVA_EINVAL;
     }
 
@@ -937,7 +947,7 @@ int selva_fields_references_insert(
         db_panic("Failed to write ref: %s", selva_strerror(err));
     }
     err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
-        ? write_ref(dst, fs_dst, node)
+        ? write_ref(dst, fs_dst, node, NULL)
         : write_refs(dst, fs_dst, -1, node, NULL);
     if (err) {
         db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
@@ -1077,6 +1087,8 @@ int selva_fields_references_swap(
 
 /**
  * Create meta if it's not initialized yet.
+ * Most importantly this function makes sure that the object is shared between
+ * both ends of the edge.
  */
 static void ensure_ref_meta(struct SelvaNode *node, struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc)
 {
@@ -1297,6 +1309,20 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
 
     any = selva_fields_get(node, field);
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
+}
+
+struct SelvaNodeWeakReference selva_field_get_weak_reference(struct SelvaFields *fields, field_t field)
+{
+    struct SelvaFieldsAny any = selva_fields_get2(fields, field);
+
+    return (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) ? any.weak_reference : (struct SelvaNodeWeakReference){};
+}
+
+struct SelvaNodeWeakReferences selva_field_get_weak_references(struct SelvaFields *fields, field_t field)
+{
+    struct SelvaFieldsAny any = selva_fields_get2(fields, field);
+
+    return (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCES) ? any.weak_references : (struct SelvaNodeWeakReferences){};
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)

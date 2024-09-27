@@ -104,17 +104,25 @@ int selva_fields_get_mutable_string(
         size_t len,
         struct selva_string **s);
 
+SELVA_EXPORT
+int selva_fields_reference_set(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict src,
+        const struct SelvaFieldSchema *fs_src,
+        struct SelvaNode * restrict dst,
+        struct SelvaNodeReference **ref_out);
+
 /**
  * @param index 0 = first; -1 = last.
  */
 SELVA_EXPORT
 int selva_fields_references_insert(
         struct SelvaDb *db,
-        struct SelvaNode *node,
+        struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         ssize_t index,
         struct SelvaTypeEntry *te_dst,
-        struct SelvaNode *dst,
+        struct SelvaNode * restrict dst,
         struct SelvaNodeReference **ref_out);
 
 /**
@@ -173,6 +181,12 @@ struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, fi
 
 SELVA_EXPORT
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
+
+SELVA_EXPORT
+struct SelvaNodeWeakReference selva_field_get_weak_reference(struct SelvaFields *fields, field_t field);
+
+SELVA_EXPORT
+struct SelvaNodeWeakReferences selva_field_get_weak_references(struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)
