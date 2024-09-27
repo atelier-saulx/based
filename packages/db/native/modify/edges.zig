@@ -35,24 +35,13 @@ pub fn writeEdges(
 
         std.debug.print("YO {any} \n", .{edgeData});
 
-        if (typeIndex == 14) {
-            const len = edgeData.len;
-            var j: usize = 0;
-            while (j < len) : (j += 4) {
-                const refId = readInt(u32, edgeData, j);
-                std.debug.print("Hello - got references  refId: {d} \n", .{refId});
-            }
-        } else if (typeIndex == 13) {
-            std.debug.print("Hello - got a ref edgeData: {any} \n", .{edgeData});
-        } else {
-            try db.writeEdgeProp(
-                edgeData,
-                ctx.node.?,
-                selva.selva_get_edge_field_constraint(ctx.fieldSchema.?),
-                ref,
-                prop - 1,
-            );
-        }
+        try db.writeEdgeProp(
+            edgeData,
+            ctx.node.?,
+            selva.selva_get_edge_field_constraint(ctx.fieldSchema.?),
+            ref,
+            prop - 1,
+        );
         i += edgeLen + 6;
     }
 }
