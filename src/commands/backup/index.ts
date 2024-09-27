@@ -21,12 +21,12 @@ export const backup = async (program: Command, context: AppContext) => {
     .command('list')
     .option(
       '-l, --limit <limit>',
-      'Limit the number of displayed backups (default: 10)(all: 0).',
+      'Limit the number of displayed backups (all: 0).',
       '10',
     )
     .option(
       '-s, --sort <sort>',
-      'Sort the order of the backups ASC/DESC (default: desc).',
+      'Sort the order of the backups asc/desc.',
       'desc',
     )
     .description('List available backups.')

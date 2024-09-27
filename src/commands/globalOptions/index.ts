@@ -41,7 +41,7 @@ export const globalOptions = async (
   program
     .option(
       '--display <level>',
-      `Sets the logging level for the CLI output. (default: verbose)(available levels: info | success | warning | error | silent).`,
+      `Sets the logging level for the CLI output (available levels: info | success | warning | error | silent).`,
       'verbose',
     )
     .option(

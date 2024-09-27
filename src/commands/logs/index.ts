@@ -14,6 +14,10 @@ export const logs = async (program: Command, context: AppContext) => {
   cmd
     .command('filter')
     .option(
+      '--stream',
+      'To display the logs in real time. This option takes precedence over "limit", "before", "after", and "sort" options.',
+    )
+    .option(
       '--collapsed',
       'To display the content of the logs collapsed.',
       false,
@@ -27,15 +31,25 @@ export const logs = async (program: Command, context: AppContext) => {
       'To display the content only about the infrastructure of your environment.',
     )
     .option(
-      '-l, --level <level>',
-      'Filter by level (default: all)(available levels: all | info | error).',
+      '--level <level>',
+      'Filter by level (available levels: all | info | error).',
       'all',
+    )
+    .option(
+      '-l, --limit <limit>',
+      'Limit the number of displayed logs (all: 0, max: 1000)(Limit has no effect when logs are being displayed as a live stream in real-time).',
+      '100',
+    )
+    .option(
+      '-s, --sort <sort>',
+      'Sort the order of the logs asc/desc (Sorting has no effect when logs are being displayed as a live stream in real-time).',
+      'desc',
     )
     .option('-b, --before <DD/MM/YYYY>', 'Filter by date.')
     .option('-a, --after <DD/MM/YYYY>', 'Filter by date.')
     .option('-cs, --checksum <cheksum>', 'Filter by checksum.')
     .option('-f, --function <functions...>', 'Filter by function.')
-    .option('-s --service <services...>', 'Filter by service.')
+    .option('--service <services...>', 'Filter by service.')
     .description('Display all logs')
     .action(filter(program, context))
 

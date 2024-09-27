@@ -53,15 +53,15 @@ and you use the option `--project my-second-project` on the command line, that o
 Therefore, if you want to configure your project for CI/CD, you can pass
 all the parameters you need on the command line.
 
-| Option                      | Description                                                                                                                 |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| `--display <level>`         | Sets the logging level for the CLI output. (default: verbose)(available levels: verbose/info/success/warning/error/silent). |
-| `-y`, `--yes`               | You can use this to skip all the prompts and use a predefined preset in some commands.                                      |
-| `-c`, `--cluster <cluster>` | Define the cluster to use (default: "production").                                                                          |
-| `-o`, `--org <org>`         | Specify the organization.                                                                                                   |
-| `-p`, `--project <project>` | Specify the project name.                                                                                                   |
-| `-e`, `--env <env>`         | Specify witch environment (can be a name or "#branch" if you want to deploy by branch).                                     |
-| `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                                                          |
+| Option                      | Description                                                                                                                  |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| `--display <level>`         | Sets the logging level for the CLI output (default: "verbose")(available levels: verbose/info/success/warning/error/silent). |
+| `-y`, `--yes`               | You can use this to skip all the prompts and use a predefined preset in some commands.                                       |
+| `-c`, `--cluster <cluster>` | Define the cluster to use (default: "production").                                                                           |
+| `-o`, `--org <org>`         | Specify the organization.                                                                                                    |
+| `-p`, `--project <project>` | Specify the project name.                                                                                                    |
+| `-e`, `--env <env>`         | Specify witch environment (can be a name or "#branch" if you want to deploy by branch).                                      |
+| `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                                                           |
 
 ## Basic commands
 ### auth
@@ -107,18 +107,21 @@ Authorize your user in the Based Cloud.
 *Example:* `npx @based/cli logs [sub-command][options]`
 
 #### filter
-| Option                            | Description                                                                        | Required |
-|-----------------------------------|------------------------------------------------------------------------------------|----------|
-| `--collapsed`                     | To display the content of the logs collapsed.                                      | No       |
-| `--app`                           | To display the content only about your app and your functions.                     | No       |
-| `--infra`                         | To display the content only about the infrastructure of your environment.          | No       |
-| `-l`, `--level <level>`           | Filter by level (default: all)(available levels: all/info/error).                  | No       |
-| `--before <DD/MM/YYYY>`           | Filter by date.                                                                    | No       |
-| `--after <DD/MM/YYYY>`            | Filter by date.                                                                    | No       |
-| `-cs`, `--checksum <cheksum>`     | Filter by checksum.                                                                | No       |
-| `-f`, `--function <functions...>` | Filter by function (variadic).                                                     | No       |
-| `-s`, `--service <services...>`   | Filter by service name (variadic).                                                 | No       |
-| `[globals]`                       | You can use any global option                                                      | No       |
+| Option                            | Description                                                                                                                                       | Required |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| `--stream`                        | To display the logs em real time. <br/>This option takes precedence over "limit" and "sort" options.                                              | No       |
+| `--collapsed`                     | To display the content of the logs collapsed.                                                                                                     | No       |
+| `--app`                           | To display the content only about your app and your functions.                                                                                    | No       |
+| `--infra`                         | To display the content only about the infrastructure of your environment.                                                                         | No       |
+| `--level <level>`                 | Filter by level (default: all)(available levels: all/info/error).                                                                                 | No       |
+| `-l`, `--limit <limit>`           | Limit the number of displayed logs (all: 0, max: 1000). <br/>The limit has no effect when logs are being displayed as a live stream in real-time. | No       |
+| `-s`, `--sort <sort>`             | Sort the order of the backups asc/desc.                                                                                                           | No       |
+| `--before <DD/MM/YYYY>`           | Filter by date.                                                                                                                                   | No       |
+| `--after <DD/MM/YYYY>`            | Filter by date.                                                                                                                                   | No       |
+| `-cs`, `--checksum <cheksum>`     | Filter by checksum.                                                                                                                               | No       |
+| `-f`, `--function <functions...>` | Filter by function (variadic).                                                                                                                    | No       |
+| `--service <services...>`         | Filter by service name (variadic).                                                                                                                | No       |
+| `[globals]`                       | You can use any global option                                                                                                                     | No       |
 
 #### clean
 | Option      | Description                   | Required |
