@@ -14,7 +14,12 @@ const IncludeError = error{
     Recursion,
 };
 
-// make the filter as option as well
+fn GetRefsType(comptime isEdge: bool) type {
+    if (isEdge) {
+        return ?*selva.SelvaNodeWeakReferences;
+    }
+    return ?*selva.SelvaNodeReferences;
+}
 
 // pass id
 pub fn getRefsFields(
@@ -62,7 +67,7 @@ pub fn getRefsFields(
 
     var edgeConstrain: ?*selva.EdgeFieldConstraint = null;
 
-    var refs: if (isEdge) ?*selva.SelvaNodeWeakReferences else ?*selva.SelvaNodeReferences = undefined;
+    var refs: GetRefsType(isEdge) = undefined;
 
     if (isEdge) {
         std.debug.print("refs {any} \n", .{ref});
