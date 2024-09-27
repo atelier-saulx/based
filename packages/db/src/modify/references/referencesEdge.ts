@@ -4,6 +4,7 @@ import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { calculateEdgesSize, writeEdges } from './edge.js'
+import { overWriteSimpleReferences } from './simple.js'
 
 export function overWriteEdgeReferences(
   t: PropDef,
@@ -20,11 +21,12 @@ export function overWriteEdgeReferences(
   if (t.edgesTotalLen) {
     refLen = (t.edgesTotalLen + 5) * value.length
   } else {
-    refLen = calculateEdgesSize(t, value, res)
-    if (refLen === 0) {
-      return
-    }
-    refLen += 5
+    refLen = calculateEdgesSize(t, value, res) + 5
+  }
+
+  if (refLen === 0) {
+    overWriteSimpleReferences(t, db, writeKey, value, schema, res, fromCreate)
+    return
   }
 
   if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
