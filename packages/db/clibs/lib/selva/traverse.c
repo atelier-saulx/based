@@ -107,6 +107,7 @@ static int child_callback_stub(
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
+#if 0
 static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNodeWeakReference *weak_ref)
 {
     struct SelvaTypeEntry *dst_te;
@@ -118,6 +119,7 @@ static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNodeWeakR
 
     return selva_find_node(dst_te, weak_ref->dst_id);
 }
+#endif
 
 int selva_traverse_field_bfs(
         struct SelvaDb *db,
@@ -159,13 +161,17 @@ int selva_traverse_field_bfs(
                     }
                 }
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
+#if 0
                 struct SelvaNode *dst_node = weak_ref2node(db, &any.weak_reference);
                 if (dst_node) {
                     struct SelvaFields *edge_data = NULL;
 
                     BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                 }
+#endif
+                return SELVA_ENOTSUP;
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+#if 0
                 const size_t nr_refs = any.weak_references.nr_refs;
 
                 for (size_t i = 0; i < nr_refs; i++) {
@@ -176,6 +182,8 @@ int selva_traverse_field_bfs(
                         BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                     }
                 }
+#endif
+                return SELVA_ENOTSUP;
             } else {
                 return SELVA_EINTYPE;
             }

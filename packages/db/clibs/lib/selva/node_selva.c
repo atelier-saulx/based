@@ -181,7 +181,8 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
         }
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "%u:%u", any->weak_reference.dst_type, any->weak_reference.dst_id), &result);
+        /* TODO Get the type */
+        napi_create_string_utf8(env, buf, snprintf(buf, sizeof(buf) - 1, "<unknown>:%u", any->weak_reference.dst_id), &result);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         /* TODO weak ref */
