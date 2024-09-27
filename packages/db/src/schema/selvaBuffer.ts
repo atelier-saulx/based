@@ -3,6 +3,7 @@ import { SchemaTypeDef, PropDef, EMPTY_MICRO_BUFFER, isType } from './types.js'
 const propDefBuffer = (
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
+  isEdge?: boolean,
 ): number[] => {
   const type = prop.typeIndex
   if (prop.len && isType(prop, 'microbuffer')) {
@@ -11,18 +12,22 @@ const propDefBuffer = (
     buf.writeUint16LE(prop.len, 1)
     return [...buf.values()]
   } else if (isType(prop, 'reference') || isType(prop, 'references')) {
+    const buf: Buffer = Buffer.allocUnsafe(8)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-    const buf = Buffer.allocUnsafe(8)
-    buf.writeUInt8(type, 0)
     prop.inverseTypeId = dstType.id
-    prop.inversePropNumber = dstType.props[prop.inversePropName].prop
-    buf[1] = prop.inversePropNumber
+    buf.writeUInt8(type, 0)
+    if (!isEdge) {
+      prop.inversePropNumber = dstType.props[prop.inversePropName].prop
+      buf[1] = prop.inversePropNumber
+    } else {
+      buf[1] = 0 // TODO: fix reference
+    }
     buf.writeUInt16LE(dstType.id, 2)
-
     if (prop.edges) {
-      const eschema = Object.values(prop.edges).map((prop) => propDefBuffer(null, prop as PropDef)).flat(1)
+      const eschema = Object.values(prop.edges)
+        .map((prop) => propDefBuffer(schema, prop as PropDef, true))
+        .flat(1)
       eschema.unshift(0)
-
       buf.writeUint32LE(eschema.length, 4)
       return [...buf.values(), ...eschema]
     } else {

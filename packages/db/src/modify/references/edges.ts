@@ -84,7 +84,7 @@ function writeEdges(
               return true
             }
           }
-          writeFixedLenValue(db, value, db.modifyBuffer.len + 6, edge, res)
+          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 6)
           db.modifyBuffer.len += 10
         } else if (edge.typeIndex === 14) {
           // multi ref

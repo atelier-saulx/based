@@ -45,6 +45,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         // [field] [size] [data]
         prop.edgesTotalLen += 1 + 2 + edge.len // field len
       }
+
       if (edge.typeIndex === 10) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
@@ -53,7 +54,12 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         for (let i = 0; i < edge.enum.length; i++) {
           edge.reverseEnum[edge.enum[i]] = i
         }
+      } else if (edge.typeIndex === 14) {
+        edge.inverseTypeName = refProp[key].items.ref
+      } else if (edge.typeIndex === 13) {
+        edge.inverseTypeName = refProp[key].ref
       }
+
       prop.edges[key] = edge
       prop.reverseEdges[edge.prop] = edge
     }

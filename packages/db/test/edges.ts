@@ -34,6 +34,9 @@ await test('simple', async (t) => {
             items: {
               ref: 'user',
               prop: 'articles',
+              $friend: {
+                ref: 'user',
+              },
               $role: ['writer', 'editor'],
               $rating: 'uint32',
               $lang: 'string',
@@ -59,7 +62,14 @@ await test('simple', async (t) => {
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
-      { id: mrSnurp, $role: 'writer', $rating: 99, $email: 'AAA', $lang: 'en' },
+      {
+        id: mrSnurp,
+        $role: 'writer',
+        $rating: 99,
+        $email: 'AAA',
+        $lang: 'en',
+        $friend: mrYur,
+      },
       // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],
   })

@@ -103,7 +103,8 @@ function propParser<PropType extends SchemaAnyProp>(
         shared[key](val, prop, ctx)
       } else if (!(key in required)) {
         if (key[0] === '$' && 'ref' in prop) {
-          optional.edge(val, prop, ctx, key)
+          console.log('$edge fix parsing for refs..')
+          // optional.edge(val, prop, ctx, key)
         } else {
           throw Error(UNKNOWN_PROP)
         }
@@ -221,8 +222,10 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     },
     prop(propKey, prop, { schema, type, inQuery }) {
       const propAllowed = type && !inQuery
+
       if (propAllowed) {
         expectString(propKey)
+
         const propPath = propKey.split('.')
         let targetProp: any = schema.types[prop.ref]
         for (const key of propPath) {
@@ -231,6 +234,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         if ('items' in targetProp) {
           targetProp = targetProp.items
         }
+
         if ('ref' in targetProp && 'prop' in targetProp) {
           const inversePath = targetProp.prop.split('.')
           let inverseProp: any = schema.types[targetProp.ref]
@@ -244,7 +248,6 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
             return
           }
         }
-
         throw Error(INVALID_VALUE)
       }
 
