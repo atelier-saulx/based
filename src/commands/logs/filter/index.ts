@@ -1,6 +1,7 @@
 import { Command } from 'commander'
-import { AppContext, basedAuth, streamLogs } from '../../../shared/index.js'
+import { AppContext, basedAuth } from '../../../shared/index.js'
 import { isValid, formatISO } from 'date-fns'
+import { show } from '../show/index.js'
 // import { dirname, join } from 'node:path'
 // import { mkdir, readFile, stat } from 'node:fs/promises'
 // import { AuthState, BasedClient, encodeAuthState } from '@based/client'
@@ -10,17 +11,19 @@ import { isValid, formatISO } from 'date-fns'
 // import { createWriteStream } from 'node:fs'
 // import { SourceMapConsumer } from 'source-map'
 
-type ShowArgs = {
+export type FilterArgs = {
+  stream: boolean
   collapsed: boolean
   app: boolean
   infra: boolean
-  group: 'content' | 'function' | 'service' | 'none'
   level: 'all' | 'info' | 'error'
+  limit: number
+  sort: 'asc' | 'desc'
   before: string
   after: string
   checksum: number
-  functions: string | string[]
-  services: string | string[]
+  function: string | string[]
+  service: string | string[]
 }
 
 // type LogData = {
@@ -178,81 +181,72 @@ type ShowArgs = {
 
 export const filter =
   (program: Command, context: AppContext) =>
-  async ({
-    collapsed,
-    app,
-    infra,
-    level,
-    before,
-    after,
-    checksum,
-    functions,
-    services,
-  }: ShowArgs): Promise<void> => {
+  async (filters: FilterArgs): Promise<void> => {
     const { cluster, org, env, project, yes: skip } = program.opts()
-    const { basedClient, envHubBasedCloud, adminHubBasedCloud } =
+    const { basedClient, envHubBasedCloud, adminHubBasedCloud, destroy } =
       await basedAuth(program, context)
-    const logOptions = ['all', 'info', 'error']
-    let formatedBefore: string = null
-    let formatedAfter: string = null
-    let validChecksum: number = null
-    let filterByDateBefore: string = null
-    let filterByDateAfter: string = null
-    let selectedFunctions: string | string[] = null
-    let filterByChecksum: string = null
-    let selectedServices: string | string[] = null
-    let selectedLevels: string | string[] = level
+    const logOptions: string[] = ['all', 'info', 'error']
 
-    const errorMessage = (section: string, value: string | number) =>
-      context.print.fail(
-        `The <b>${section}</b> date is not valid: '<b><cyan>${value}</cyan></b>'. Check it and try again.`,
+    const errorMessage = (option: string, value: string | number) => {
+      throw new Error(
+        `The <b>${option}</b> option is not valid: '<b>${value}</b>'. Check it and try again.`,
       )
+    }
 
-    if (before) {
-      formatedBefore = formatISO(before)
-      if (!isValid(formatedBefore)) {
-        errorMessage('before', before)
+    if (!filters.stream && filters.sort !== 'asc' && filters.sort !== 'desc') {
+      errorMessage('sort', filters.sort)
+    }
+
+    if (filters.before) {
+      filters.before = formatISO(filters.before)
+      if (!isValid(filters.before)) {
+        errorMessage('before', filters.before)
       }
     }
 
-    if (after) {
-      formatedAfter = formatISO(after)
-      if (!isValid(formatedAfter)) {
-        errorMessage('after', after)
+    if (filters.after) {
+      filters.after = formatISO(filters.after)
+      if (!isValid(filters.after)) {
+        errorMessage('after', filters.after)
       }
     }
 
-    if (checksum) {
-      validChecksum = parseInt(checksum.toString())
-      if (isNaN(validChecksum)) {
-        errorMessage('checksum', checksum)
+    if (filters.checksum) {
+      filters.checksum = parseInt(filters.checksum.toString())
+      if (isNaN(filters.checksum)) {
+        errorMessage('checksum', filters.checksum)
       }
     }
 
-    if (level && !logOptions.includes(level)) {
-      errorMessage('log level', level)
+    if (filters.level && !logOptions.includes(filters.level)) {
+      errorMessage('log level', filters.level)
+    }
+
+    if ((!filters.stream && !filters.limit) || isNaN(Number(filters.limit))) {
+      filters.limit = 100
+    } else if (!filters.stream && filters.limit && filters.limit > 1000) {
+      filters.limit = 1000
+    }
+
+    if (!filters.sort || filters.stream) {
+      filters.sort = 'desc'
     }
 
     if (!skip) {
       context.print.line()
 
-      if (!formatedBefore && !formatedAfter) {
+      if (!filters.before && !filters.after && !filters.stream) {
         const filterByDate: boolean = await context.input.confirm(
-          `Would you like to filter the logs by date?`,
+          `Would you like to filter the logs by date and time?`,
         )
 
         if (filterByDate) {
-          filterByDateAfter = await context.input.date(
-            `Filter logs after:`,
-            true,
-            false,
-          )
-
-          filterByDateBefore = await context.input.date(`Filter logs before:`)
+          filters.before = await context.input.dateTime(`Filter logs before:`)
+          filters.after = await context.input.dateTime(`Filter logs after:`)
         }
       }
 
-      if (!functions || !functions.length) {
+      if (!filters.function || !filters.function.length) {
         const filterByFunction: boolean = await context.input.confirm(
           `Do you want to filter by function?`,
         )
@@ -283,10 +277,10 @@ export const filter =
 
           const functionsItems = functions
             .filter(({ name }) => Boolean(name))
-            .map(({ id, name }) => ({ value: id, name }))
+            .map(({ name }) => ({ value: name, name }))
             .sort((a, b) => (a.name > b.name ? 1 : -1))
 
-          selectedFunctions = await context.input.select(
+          filters.function = await context.input.select(
             `Select the functions: <dim>(A-Z)</dim>`,
             functionsItems,
             true,
@@ -294,7 +288,7 @@ export const filter =
         }
       }
 
-      if (!services || !services.length) {
+      if (!filters.service || !filters.service.length) {
         const filterByService: boolean = await context.input.confirm(
           `Do you want to filter by service?`,
         )
@@ -302,7 +296,7 @@ export const filter =
         // TODO get all the services running
 
         if (filterByService) {
-          selectedServices = await context.input.select(
+          filters.service = await context.input.select(
             'Select the services: <dim>(A-Z)</dim>',
             [
               {
@@ -321,25 +315,24 @@ export const filter =
       }
     }
 
-    await streamLogs({
-      context,
-      basedClient,
-      envHubBasedCloud,
-      adminHubBasedCloud,
-      cluster,
-      org,
-      env,
-      project,
-      filters: {
-        isCollapsed: collapsed,
-        isApp: app,
-        isInfra: infra,
-        byLevel: selectedLevels,
-        byDateBefore: filterByDateBefore,
-        byDateAfter: filterByDateAfter,
-        byChecksum: filterByChecksum,
-        byFunctions: selectedFunctions,
-        byServices: selectedServices,
-      },
-    })
+    try {
+      await show({
+        context,
+        basedClient,
+        envHubBasedCloud,
+        adminHubBasedCloud,
+        cluster,
+        org,
+        env,
+        project,
+        filters,
+      })
+
+      if (!filters.stream) {
+        destroy()
+        return
+      }
+    } catch (error) {
+      throw new Error(error)
+    }
   }
