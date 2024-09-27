@@ -18,11 +18,15 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
 
     if (ctx.fieldType == 14) {
         try references.updateReferences(ctx, data);
-    } else if (ctx.fieldType == 13) {
-        try reference.updateReference(ctx, data);
-    } else {
-        try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
+        return data.len;
     }
+
+    if (ctx.fieldType == 13) {
+        try reference.updateReference(ctx, data);
+        return data.len;
+    }
+
+    try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();

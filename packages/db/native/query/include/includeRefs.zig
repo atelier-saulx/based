@@ -24,7 +24,7 @@ pub fn getRefsFields(
     originalType: db.Type,
     ref: ?RefStruct,
 ) usize {
-    if (ref != null) {
+    if (ref.?.getEdge) {
         std.debug.print("We are in a refs from edge! \n", .{});
         return 0;
     }

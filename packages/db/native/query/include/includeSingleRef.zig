@@ -21,7 +21,7 @@ pub fn getSingleRefFields(
     originalType: db.Type,
     ref: ?RefStruct,
 ) usize {
-    if (ref != null) {
+    if (ref.?.getEdge) {
         std.debug.print("We are in a single ref from edge! \n", .{});
         return 0;
     }
@@ -56,9 +56,13 @@ pub fn getSingleRefFields(
         return 6;
     }
 
-    const node: db.Node = selvaRef.?.*.dst.?;
+    const node: ?db.Node = selvaRef.?.*.dst;
 
-    const refId = db.getNodeId(node);
+    if (node == null) {
+        return 6;
+    }
+
+    const refId = db.getNodeId(node.?);
 
     const typeEntry = db.getType(typeId) catch {
         return 6;
@@ -71,7 +75,7 @@ pub fn getSingleRefFields(
     const edgeConstrain: *selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
 
     const resultSizeNest = getFields(
-        node,
+        node.?,
         ctx,
         refId,
         typeEntry,

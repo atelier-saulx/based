@@ -29,7 +29,7 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 
 inline fn readData(fieldType: u8, operation: []u8) []u8 {
     if (fieldType == 13) {
-        return operation[0..4];
+        return operation[0..5];
     }
     return operation[4 .. readInt(u32, operation, 0) + 4];
 }
