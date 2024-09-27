@@ -1,3 +1,4 @@
+import { wait } from '@saulx/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
