@@ -45,7 +45,8 @@ export function overWriteEdgeReferences(
   setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
   const sizeIndex = db.modifyBuffer.len + 1
-  db.modifyBuffer.len += 5
+  db.modifyBuffer.buffer[sizeIndex + 4] = 0
+  db.modifyBuffer.len += 6
 
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]

@@ -29,31 +29,39 @@ await test('references modify', async (t) => {
     },
   })
 
-  const bob = await db.create('user', {
+  const bob = db.create('user', {
     name: 'bob',
   })
 
-  const marie = await db.create('user', {
+  const marie = db.create('user', {
     name: 'marie',
   })
 
-  const john = await db.create('user', {
+  const john = db.create('user', {
     name: 'john',
     friends: [bob],
   })
 
-  console.log(
-    await db.update('user', john, {
-      friends: {
-        delete: [bob],
-        add: [marie],
-      },
-    }),
+  await db.update('user', john, {
+    friends: {
+      delete: [bob],
+      add: [marie],
+    },
+  })
+
+  deepEqual(
+    db.query('user').include('friends').get().toObject(),
+    [
+      { id: 1, friends: [] },
+      { id: 2, friends: [{ id: 3, name: 'john' }] },
+      { id: 3, friends: [{ id: 2, name: 'marie' }] },
+    ],
+    'add maar ok',
   )
 
-  console.dir(db.query('user').include('friends').get().toObject(), {
-    depth: null,
-  })
+  // console.dir(db.query('user').include('friends').get().toObject(), {
+  //   depth: null,
+  // })
 
   // deepEqual(
   //   db.query('user').include('friends').get().toObject(),
