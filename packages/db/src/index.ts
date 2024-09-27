@@ -13,7 +13,7 @@ import db from './native.js'
 import { Query, query } from './query/query.js'
 import { flushBuffer } from './operations.js'
 import { destroy } from './destroy.js'
-
+import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
@@ -251,6 +251,7 @@ export class BasedDb {
       await this.save()
     }
     db.stop()
+    await setTimeout()
   }
 
   async destroy() {

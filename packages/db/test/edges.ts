@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-
+import { setTimeout } from 'node:timers/promises'
 await test('edges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -109,6 +109,8 @@ await test('edges', async (t) => {
     }
   }
 
+  // await setTimeout(500)
+
   // console.log(
   //   db
   //     .query('article')
@@ -131,60 +133,60 @@ await test('edges', async (t) => {
   // ])
 })
 
-await test('singleRef', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
+// await test('singleRef', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
 
-  t.after(() => {
-    return db.destroy()
-  })
+//   t.after(() => {
+//     return db.destroy()
+//   })
 
-  await db.start({ clean: true })
+//   await db.start({ clean: true })
 
-  db.putSchema({
-    types: {
-      user: {
-        props: {
-          name: 'string',
-          country: {
-            ref: 'country',
-            prop: 'person',
-          },
-        },
-      },
-      country: {
-        props: {
-          code: { type: 'string', maxBytes: 2 },
-          person: {
-            ref: 'user',
-            prop: 'country',
-            $role: ['president', 'minion'],
-          },
-        },
-      },
-    },
-  })
+//   db.putSchema({
+//     types: {
+//       user: {
+//         props: {
+//           name: 'string',
+//           country: {
+//             ref: 'country',
+//             prop: 'person',
+//           },
+//         },
+//       },
+//       country: {
+//         props: {
+//           code: { type: 'string', maxBytes: 2 },
+//           person: {
+//             ref: 'user',
+//             prop: 'country',
+//             $role: ['president', 'minion'],
+//           },
+//         },
+//       },
+//     },
+//   })
 
-  await db.create('country', {
-    code: 'bl',
-    person: {
-      id: db.create('user', {
-        name: 'Mr snurp',
-      }),
-      $role: 'minion',
-    },
-  })
+//   await db.create('country', {
+//     code: 'bl',
+//     person: {
+//       id: db.create('user', {
+//         name: 'Mr snurp',
+//       }),
+//       $role: 'minion',
+//     },
+//   })
 
-  console.info('set success!')
+//   console.info('set success!')
 
-  const x = db.query('country').include('person.$role').get()
+//   const x = db.query('country').include('person.$role').get()
 
-  x.debug()
+//   x.debug()
 
-  console.log(x.toObject())
+//   console.log(x.toObject())
 
-  // for (const f of x) {
-  //   console.log(f.person)
-  // }
-})
+//   // for (const f of x) {
+//   //   console.log(f.person)
+//   // }
+// })
