@@ -91,6 +91,14 @@ pub fn getReference(node: Node, field: u8) ?Node {
     return result.?.*.dst;
 }
 
+pub fn getSingleReference(node: Node, field: u8) ?*selva.SelvaNodeReference {
+    const result = selva.selva_fields_get_reference(node, field);
+    if (result == null) {
+        return null;
+    }
+    return result;
+}
+
 pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
     // make this return []SelvaNode or iterator over references
     return selva.selva_fields_get_references(node, field);

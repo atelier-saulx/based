@@ -18,6 +18,7 @@ pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
     originalNode: db.Node,
+    originalType: db.Type,
     ref: ?RefStruct,
 ) usize {
     if (ref != null) {
@@ -30,7 +31,6 @@ pub fn getSingleRefFields(
     const refField = include[2];
 
     // get from edge as well
-    const node = db.getReference(originalNode, refField);
 
     // SINGLE REF
     // op, field, bytes
@@ -50,11 +50,15 @@ pub fn getSingleRefFields(
 
     const resultIndex: usize = ctx.results.items.len - 1;
 
-    if (node == null) {
+    const selvaRef = db.getSingleReference(originalNode, refField);
+
+    if (selvaRef == null) {
         return 6;
     }
 
-    const refId = db.getNodeId(node.?);
+    const node: db.Node = selvaRef.?.*.dst.?;
+
+    const refId = db.getNodeId(node);
 
     const typeEntry = db.getType(typeId) catch {
         return 6;
@@ -62,13 +66,21 @@ pub fn getSingleRefFields(
 
     const includeNested = include[3..include.len];
 
+    const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
+
+    const edgeConstrain: *selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+
     const resultSizeNest = getFields(
-        node.?,
+        node,
         ctx,
         refId,
         typeEntry,
         includeNested,
-        null, // ADD REFERENCE
+        .{
+            .reference = @ptrCast(selvaRef.?),
+            .edgeConstaint = edgeConstrain,
+            .getEdge = false,
+        },
     ) catch 0;
 
     ctx.results.items[resultIndex].refSize = resultSizeNest;

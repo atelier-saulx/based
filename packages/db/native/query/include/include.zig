@@ -72,7 +72,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getSingleRefFields(ctx, singleRef, node, ref);
+            size += getSingleRefFields(ctx, singleRef, node, typeEntry, ref);
             continue :includeField;
         }
 
