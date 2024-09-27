@@ -61,6 +61,7 @@ pub fn queryIds(
             typeEntry,
             include,
             null,
+            false,
         );
 
         if (size > 0) {
@@ -137,6 +138,7 @@ pub fn querySort(
             typeEntry,
             include,
             null,
+            false,
         );
 
         if (size > 0) {

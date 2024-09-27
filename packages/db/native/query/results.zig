@@ -96,10 +96,10 @@ pub fn createResultsBuffer(
                 i += 8;
             }
         } else if (item.field == 0) {
-            if (item.includeMain.len != 0) {
+            if (item.includeMain != null and item.includeMain.?.len != 0) {
                 var mainPos: usize = 2;
-                while (mainPos < item.includeMain.len) {
-                    const operation = item.includeMain[mainPos..];
+                while (mainPos < item.includeMain.?.len) {
+                    const operation = item.includeMain.?[mainPos..];
                     const start = readInt(u16, operation, 0);
                     const len = readInt(u16, operation, 2);
                     @memcpy(data[i .. i + len], val[start .. start + len]);

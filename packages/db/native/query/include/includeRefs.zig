@@ -48,7 +48,7 @@ pub fn getRefsFields(
         .field = refField,
         .val = null,
         .refSize = 0,
-        .includeMain = &.{},
+        .includeMain = null,
         .refType = 253,
         .totalRefs = 0,
         .isEdge = 0,
@@ -131,7 +131,6 @@ pub fn getRefsFields(
                 refNest = .{
                     .reference = @ptrCast(&refs.?.refs[i]),
                     .edgeConstaint = edgeConstrain.?,
-                    .getEdge = false,
                 };
             }
 
@@ -142,6 +141,7 @@ pub fn getRefsFields(
                 typeEntry.?,
                 includeNested,
                 refNest,
+                false,
             ) catch 0;
         }
         selva.selva_sort_destroy(sortCtx);
@@ -158,7 +158,6 @@ pub fn getRefsFields(
                 refNest = .{
                     .reference = @ptrCast(&refs.?.refs[i]),
                     .edgeConstaint = edgeConstrain.?,
-                    .getEdge = false,
                 };
             }
 
@@ -169,6 +168,7 @@ pub fn getRefsFields(
                 typeEntry.?,
                 includeNested,
                 refNest,
+                false,
             ) catch 0;
         }
     }

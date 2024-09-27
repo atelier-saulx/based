@@ -37,6 +37,7 @@ pub fn queryId(
         typeEntry,
         include,
         null,
+        false,
     );
 
     if (size > 0) {
@@ -70,6 +71,7 @@ pub fn queryIds(
             typeEntry,
             include,
             null,
+            false,
         );
 
         if (size > 0) {
@@ -121,6 +123,7 @@ pub fn query(
             typeEntry,
             include,
             null,
+            false,
         );
 
         if (size > 0) {
