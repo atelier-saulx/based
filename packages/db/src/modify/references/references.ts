@@ -55,7 +55,16 @@ export function writeReferences(
 
   if (Array.isArray(value)) {
     if (t.edges) {
-      overWriteEdgeReferences(t, db, writeKey, value, schema, res, fromCreate)
+      overWriteEdgeReferences(
+        t,
+        db,
+        writeKey,
+        value,
+        schema,
+        res,
+        fromCreate,
+        0,
+      )
     } else {
       overWriteSimpleReferences(
         t,
@@ -88,7 +97,28 @@ export function writeReferences(
       modifyError(res, t, value)
       return
     }
-
-    overWriteSimpleReferences(t, db, writeKey, val, schema, res, fromCreate, op)
+    if (t.edges) {
+      overWriteEdgeReferences(
+        t,
+        db,
+        writeKey,
+        value,
+        schema,
+        res,
+        fromCreate,
+        op,
+      )
+    } else {
+      overWriteSimpleReferences(
+        t,
+        db,
+        writeKey,
+        val,
+        schema,
+        res,
+        fromCreate,
+        op,
+      )
+    }
   }
 }
