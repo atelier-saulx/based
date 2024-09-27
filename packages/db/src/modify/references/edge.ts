@@ -57,13 +57,14 @@ export function writeEdges(
   ref: RefModifyOpts,
   db: BasedDb,
   res: ModifyState,
+  skip = 0,
 ) {
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
-      db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = edge.typeIndex
+      db.modifyBuffer.buffer[db.modifyBuffer.len + skip] = edge.prop
+      db.modifyBuffer.buffer[db.modifyBuffer.len + skip + 1] = edge.typeIndex
       // Buffer: [field] [typeIndex] [size] [data]
       if (edge.len === 0) {
         if (edge.typeIndex === 11) {
