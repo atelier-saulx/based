@@ -55,7 +55,6 @@ pub fn getRefsFields(
 
     const resultIndex: usize = ctx.results.items.len - 1;
 
-    // get from edge as well
     const refs = db.getReferences(node, refField);
 
     if (refs == null) {
@@ -68,7 +67,6 @@ pub fn getRefsFields(
 
     var size: usize = 0;
 
-    // add edges here as well..
     const includeNested = include[(7 + filterSize + sortSize)..include.len];
 
     var i: usize = 0;

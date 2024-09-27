@@ -176,6 +176,8 @@ await test('singleRef', async (t) => {
     },
   })
 
+  console.info('set success!')
+
   const x = db.query('country').include('person.$role').get()
 
   x.debug()
