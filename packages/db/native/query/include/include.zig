@@ -12,7 +12,6 @@ const selva = @import("../../selva.zig");
 pub const RefStruct = struct {
     reference: *selva.SelvaNodeReference,
     edgeConstaint: *selva.EdgeFieldConstraint,
-    getEdge: bool,
 };
 
 pub fn getFields(
@@ -22,12 +21,12 @@ pub fn getFields(
     typeEntry: db.Type,
     include: []u8,
     ref: ?RefStruct,
+    comptime isEdge: bool,
 ) !usize {
-    var includeMain: []u8 = &.{};
+    var includeMain: ?[]u8 = null;
     var size: usize = 0;
     var includeIterator: u16 = 0;
     var main: ?[]u8 = null;
-    const isEdge = ref.?.getEdge;
     var idIsSet: bool = isEdge;
     var edgeType: u8 = 0;
 
@@ -46,8 +45,7 @@ pub fn getFields(
             size += try getFields(node, ctx, id, typeEntry, edges, .{
                 .reference = ref.?.reference,
                 .edgeConstaint = ref.?.edgeConstaint,
-                .getEdge = true,
-            });
+            }, true);
             includeIterator += edgeSize + 2;
             continue :includeField;
         }
@@ -60,7 +58,14 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getRefsFields(ctx, multiRefs, node, typeEntry, ref);
+            size += getRefsFields(
+                ctx,
+                multiRefs,
+                node,
+                typeEntry,
+                ref,
+                isEdge,
+            );
             continue :includeField;
         }
 
@@ -72,7 +77,14 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getSingleRefFields(ctx, singleRef, node, typeEntry, ref);
+            size += getSingleRefFields(
+                ctx,
+                singleRef,
+                node,
+                typeEntry,
+                ref,
+                isEdge,
+            );
             continue :includeField;
         }
 
@@ -92,10 +104,7 @@ pub fn getFields(
                 field - 1,
             );
             edgeType = edgeFieldSchema.*.type;
-
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
-
-            std.debug.print("GET DAT EDGE {d} {any} \n", .{ edgeType, value });
         } else {
             value = db.getField(node, try db.getFieldSchema(field, typeEntry));
         }
@@ -119,8 +128,8 @@ pub fn getFields(
             }
         } else if (field == 0) {
             main = value;
-            if (includeMain.len != 0) {
-                size += readInt(u16, includeMain, 0) + 1;
+            if (includeMain.?.len != 0) {
+                size += readInt(u16, includeMain.?, 0) + 1;
             } else {
                 size += (valueLen + 1);
             }

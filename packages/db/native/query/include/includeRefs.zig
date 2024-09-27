@@ -14,7 +14,12 @@ const IncludeError = error{
     Recursion,
 };
 
-// make the filter as option as well
+fn GetRefsType(comptime isEdge: bool) type {
+    if (isEdge) {
+        return ?*selva.SelvaNodeWeakReferences;
+    }
+    return ?*selva.SelvaNodeReferences;
+}
 
 // pass id
 pub fn getRefsFields(
@@ -23,12 +28,8 @@ pub fn getRefsFields(
     node: db.Node,
     originalType: db.Type,
     ref: ?RefStruct,
+    comptime isEdge: bool,
 ) usize {
-    if (ref.?.getEdge) {
-        std.debug.print("We are in a refs from edge! \n", .{});
-        return 0;
-    }
-
     const filterSize: db.TypeId = readInt(u16, include, 0);
     const filterArr: ?[]u8 = if (filterSize > 0) include[4 .. 4 + filterSize] else null;
 
@@ -47,21 +48,13 @@ pub fn getRefsFields(
         .field = refField,
         .val = null,
         .refSize = 0,
-        .includeMain = &.{},
+        .includeMain = null,
         .refType = 253,
         .totalRefs = 0,
         .isEdge = 0,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
-
-    const refs = db.getReferences(node, refField);
-
-    if (refs == null) {
-        return 10;
-    }
-
-    const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
 
     const typeEntry = db.getType(typeId) catch null;
 
@@ -72,7 +65,30 @@ pub fn getRefsFields(
     var i: usize = 0;
     var resultsCnt: u32 = 0;
 
-    const edgeConstrain: *selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+    var edgeConstrain: ?*selva.EdgeFieldConstraint = null;
+
+    var refs: GetRefsType(isEdge) = undefined;
+
+    if (isEdge) {
+        std.debug.print("refs {any} \n", .{ref});
+        return 0;
+
+        // const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
+        //     ref.?.edgeConstaint.*.fields_schema,
+        //     refField - 1,
+        // );
+
+        // refs = db.getEdgeReferences(ref.?.reference, edgeFieldSchema);
+        // return 0;
+    } else {
+        const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
+        edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
+        refs = db.getReferences(node, refField);
+    }
+
+    if (refs == null) {
+        return 10;
+    }
 
     if (sortArr != null) {
         const sortBuffer: []u8 = sortArr.?;
@@ -109,17 +125,23 @@ pub fn getRefsFields(
             // if @limit stop
             const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
             resultsCnt += 1;
+
+            var refNest: ?RefStruct = null;
+            if (!isEdge) {
+                refNest = .{
+                    .reference = @ptrCast(&refs.?.refs[i]),
+                    .edgeConstaint = edgeConstrain.?,
+                };
+            }
+
             size += getFields(
                 refNode,
                 ctx,
                 db.getNodeId(refNode),
                 typeEntry.?,
                 includeNested,
-                .{
-                    .reference = @ptrCast(&refs.?.refs[i]),
-                    .edgeConstaint = edgeConstrain,
-                    .getEdge = false,
-                },
+                refNest,
+                false,
             ) catch 0;
         }
         selva.selva_sort_destroy(sortCtx);
@@ -130,17 +152,23 @@ pub fn getRefsFields(
                 continue :checkItem;
             }
             resultsCnt += 1;
+
+            var refNest: ?RefStruct = null;
+            if (!isEdge) {
+                refNest = .{
+                    .reference = @ptrCast(&refs.?.refs[i]),
+                    .edgeConstaint = edgeConstrain.?,
+                };
+            }
+
             size += getFields(
                 refNode,
                 ctx,
                 db.getNodeId(refNode),
                 typeEntry.?,
                 includeNested,
-                .{
-                    .reference = @ptrCast(&refs.?.refs[i]),
-                    .edgeConstaint = edgeConstrain,
-                    .getEdge = false,
-                },
+                refNest,
+                false,
             ) catch 0;
         }
     }

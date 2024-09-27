@@ -15,7 +15,7 @@ pub const Result = struct {
     refType: ?u8, // 253 | 254
     val: ?[]u8,
     refSize: ?usize,
-    includeMain: []u8,
+    includeMain: ?[]u8, // make this optional
     totalRefs: ?usize,
     isEdge: u8,
 };
@@ -84,14 +84,6 @@ pub fn createResultsBuffer(
 
         const val = item.val.?;
 
-        // else if (edgeType == 10 or edgeType == 9) {
-        //         size += 1;
-        //     } else if (edgeType == 5) {
-        //         size += 4;
-        //     } else if (edgeType == 4 or edgeType == 1) {
-        //         size += 8;
-        //     }
-
         if (item.isEdge > 0 and item.isEdge < 11) {
             if (item.isEdge == 10 or item.isEdge == 9) {
                 data[i] = val[0];
@@ -103,12 +95,11 @@ pub fn createResultsBuffer(
                 @memcpy(data[i .. i + val.len], val);
                 i += 8;
             }
-            // handle
         } else if (item.field == 0) {
-            if (item.includeMain.len != 0) {
+            if (item.includeMain != null and item.includeMain.?.len != 0) {
                 var mainPos: usize = 2;
-                while (mainPos < item.includeMain.len) {
-                    const operation = item.includeMain[mainPos..];
+                while (mainPos < item.includeMain.?.len) {
+                    const operation = item.includeMain.?[mainPos..];
                     const start = readInt(u16, operation, 0);
                     const len = readInt(u16, operation, 2);
                     @memcpy(data[i .. i + len], val[start .. start + len]);

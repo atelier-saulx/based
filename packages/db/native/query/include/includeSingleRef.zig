@@ -20,9 +20,10 @@ pub fn getSingleRefFields(
     originalNode: db.Node,
     originalType: db.Type,
     ref: ?RefStruct,
+    comptime isEdge: bool,
 ) usize {
-    if (ref.?.getEdge) {
-        std.debug.print("We are in a single ref from edge! \n", .{});
+    if (isEdge) {
+        std.debug.print("ref {any} \n", .{ref});
         return 0;
     }
 
@@ -42,7 +43,7 @@ pub fn getSingleRefFields(
         .field = refField,
         .val = null,
         .refSize = 0,
-        .includeMain = &.{},
+        .includeMain = null,
         .refType = 254,
         .totalRefs = null,
         .isEdge = 0,
@@ -83,8 +84,8 @@ pub fn getSingleRefFields(
         .{
             .reference = @ptrCast(selvaRef.?),
             .edgeConstaint = edgeConstrain,
-            .getEdge = false,
         },
+        false,
     ) catch 0;
 
     ctx.results.items[resultIndex].refSize = resultSizeNest;
