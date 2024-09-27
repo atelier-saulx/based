@@ -20,34 +20,23 @@ await test('references modify', async (t) => {
           name: 'string',
           friends: {
             items: {
-              ref: 'friend',
-              prop: 'users',
+              ref: 'user',
+              prop: 'friends',
             },
-          },
-        },
-      },
-      friend: {
-        props: {
-          name: 'string',
-          users: {
-            ref: 'user',
-            prop: 'friends',
           },
         },
       },
     },
   })
 
-  const a = await db.create('friend', {
+  const a = await db.create('user', {
     name: 'youzi',
   })
-
-  console.log({ a })
 
   const b = await db.create('user', {
     name: 'jamex',
     friends: [a],
   })
 
-  console.log({ b })
+  console.log({ a, b })
 })

@@ -24,6 +24,8 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.hasStringField = -1
     db.modifyBuffer.ctx.offset = offset
     db.modifyBuffer.ctx = {}
+    const time = Date.now() - d
+    db.writeTime += time
     db.isDraining = false
 
     const q = db.modifyBuffer.queue
@@ -39,14 +41,10 @@ export const flushBuffer = (db: BasedDb) => {
       db.modifyBuffer.queue = []
     }
 
-    const time = Date.now() - d
-    db.writeTime += time
-
     return time
-  } else {
-    db.isDraining = false
   }
 
+  db.isDraining = false
   return 0
 }
 
