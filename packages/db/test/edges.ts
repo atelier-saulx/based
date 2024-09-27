@@ -180,7 +180,9 @@ await test('singleRef', async (t) => {
 
   x.debug()
 
-  for (const f of x) {
-    console.log(f.person)
-  }
+  console.log(x.toObject())
+
+  // for (const f of x) {
+  //   console.log(f.person)
+  // }
 })
