@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-await test('references', async (t) => {
+await test('edges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
