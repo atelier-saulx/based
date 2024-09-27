@@ -30,7 +30,7 @@ function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   return size
 }
 
-function calculateEdgesSize(
+export function calculateEdgesSize(
   t: PropDef,
   value: RefModify[],
   res: ModifyState,
@@ -54,7 +54,7 @@ function calculateEdgesSize(
   return size
 }
 
-function writeEdges(
+export function writeEdges(
   t: PropDef,
   ref: RefModifyOpts,
   db: BasedDb,

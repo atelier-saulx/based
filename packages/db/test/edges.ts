@@ -168,14 +168,12 @@ await test('singleRef', async (t) => {
 
   await db.create('country', {
     code: 'bl',
-    contributors: [
-      {
-        id: db.create('user', {
-          name: 'Mr snurp',
-        }),
-        $role: 'president',
-      },
-    ],
+    person: {
+      id: db.create('user', {
+        name: 'Mr snurp',
+      }),
+      $role: 'president',
+    },
   })
 
   const x = db.query('country').include('person.$role').get()
