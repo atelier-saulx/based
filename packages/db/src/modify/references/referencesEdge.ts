@@ -21,7 +21,7 @@ export function overWriteEdgeReferences(
   if (t.edgesTotalLen) {
     refLen = (t.edgesTotalLen + 5) * value.length
   } else {
-    refLen = calculateEdgesSize(t, value, res) + 5
+    refLen = calculateEdgesSize(t, value, res)
   }
 
   if (refLen === 0) {
@@ -38,7 +38,7 @@ export function overWriteEdgeReferences(
     return
   }
 
-  if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+  if (refLen + 10 + db.modifyBuffer.len + 11 > db.maxModifySize) {
     flushBuffer(db)
   }
 
