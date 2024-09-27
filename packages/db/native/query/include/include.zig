@@ -60,7 +60,12 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getRefsFields(ctx, multiRefs, node, typeEntry, ref);
+
+            if (isEdge) {
+                size += getRefsFields(ctx, multiRefs, node, typeEntry, ref, true);
+            } else {
+                size += getRefsFields(ctx, multiRefs, node, typeEntry, ref, false);
+            }
             continue :includeField;
         }
 
@@ -92,10 +97,7 @@ pub fn getFields(
                 field - 1,
             );
             edgeType = edgeFieldSchema.*.type;
-
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
-
-            std.debug.print("GET DAT EDGE {d} {any} \n", .{ edgeType, value });
         } else {
             value = db.getField(node, try db.getFieldSchema(field, typeEntry));
         }

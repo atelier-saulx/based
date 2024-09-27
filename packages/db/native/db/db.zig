@@ -154,37 +154,105 @@ pub fn insertReference(
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
     var ref: [*c]selva.SelvaNodeReference = undefined;
-
-    try errors.selva(selva.selva_fields_references_insert(ctx.selva, target, fieldSchema, index, te_dst, value, &ref));
+    try errors.selva(selva.selva_fields_references_insert(
+        ctx.selva,
+        target,
+        fieldSchema,
+        index,
+        te_dst,
+        value,
+        &ref,
+    ));
     return ref;
 }
 
-pub fn moveReference(node: Node, fieldSchema: FieldSchema, index_old: selva.user_ssize_t, index_new: selva.user_ssize_t) !void {
-    try errors.selva(selva.selva_fields_references_move(node, fieldSchema, index_old, index_new));
+pub fn moveReference(
+    node: Node,
+    fieldSchema: FieldSchema,
+    index_old: selva.user_ssize_t,
+    index_new: selva.user_ssize_t,
+) !void {
+    try errors.selva(selva.selva_fields_references_move(
+        node,
+        fieldSchema,
+        index_old,
+        index_new,
+    ));
 }
 
-pub fn swapReference(node: Node, fieldSchema: FieldSchema, index_a: selva.user_ssize_t, index_b: selva.user_ssize_t) !void {
+pub fn swapReference(
+    node: Node,
+    fieldSchema: FieldSchema,
+    index_a: selva.user_ssize_t,
+    index_b: selva.user_ssize_t,
+) !void {
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-pub fn getEdgeProp(ref: *selva.SelvaNodeReference, selvaFieldSchema: FieldSchema) []u8 {
+pub fn getEdgeProp(
+    ref: *selva.SelvaNodeReference,
+    selvaFieldSchema: FieldSchema,
+) []u8 {
     if (ref.meta != null) {
-        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(ref.meta, selvaFieldSchema);
+        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
+            ref.meta,
+            selvaFieldSchema,
+        );
         return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
     } else {
         return &.{};
     }
 }
 
-pub fn writeEdgeProp(data: []u8, node: Node, efc: *selva.EdgeFieldConstraint, ref: *selva.SelvaNodeReference, field: u8) !void {
-    try errors.selva(selva.selva_fields_set_reference_meta(node, ref, efc, field, data.ptr, data.len));
+pub fn getEdgeReferences(
+    ref: *selva.SelvaNodeReference,
+    selvaFieldSchema: FieldSchema,
+) *selva.SelvaNodeWeakReferences {
+    if (ref.meta != null) {
+        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
+            ref.meta,
+            selvaFieldSchema,
+        );
+        return @ptrCast(result.ptr);
+    } else {
+        return &.{};
+    }
+}
+
+pub fn getEdgeReference(
+    ref: *selva.SelvaNodeReference,
+    selvaFieldSchema: FieldSchema,
+) *selva.SelvaNodeWeakReference {
+    if (ref.meta != null) {
+        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
+            ref.meta,
+            selvaFieldSchema,
+        );
+        return @as(*selva.SelvaNodeWeakReference, @ptrCast(result.ptr));
+    } else {
+        return &.{};
+    }
+}
+
+pub fn writeEdgeProp(
+    data: []u8,
+    node: Node,
+    efc: *selva.EdgeFieldConstraint,
+    ref: *selva.SelvaNodeReference,
+    field: u8,
+) !void {
+    try errors.selva(selva.selva_fields_set_reference_meta(
+        node,
+        ref,
+        efc,
+        field,
+        data.ptr,
+        data.len,
+    ));
 }
 
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     const result = selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
-    // if (result == null) {
-    //     return errors.SelvaError.SELVA_CANNOT_UPSERT;
-    // }
     return result;
 }
 
