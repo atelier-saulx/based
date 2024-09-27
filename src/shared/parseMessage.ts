@@ -13,6 +13,7 @@ export const parseMessage = (message?: string): string => {
     red: pc.red,
     yellow: pc.yellow,
     white: pc.white,
+    green: pc.green,
     blue: pc.blue,
     magenta: pc.magenta,
     cyan: pc.cyan,
