@@ -9,7 +9,12 @@ const ModifyCtx = Modify.ModifyCtx;
 const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
-pub fn writeEdges(ctx: *ModifyCtx, ref: *selva.SelvaNodeReference, data: []u8) !void {
+pub fn writeEdges(
+    ctx: *ModifyCtx,
+    ref: *selva.SelvaNodeReference,
+    data: []u8,
+    offset: usize,
+) !void {
     var i: usize = 0;
     while (i < data.len) {
         const prop = data[i];
@@ -26,7 +31,9 @@ pub fn writeEdges(ctx: *ModifyCtx, ref: *selva.SelvaNodeReference, data: []u8) !
             edgeLen = 8;
         }
 
-        const edgeData = data[i + 6 .. i + 6 + edgeLen];
+        const edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
+
+        std.debug.print("YO {any} \n", .{edgeData});
 
         if (typeIndex == 14) {
             const len = edgeData.len;

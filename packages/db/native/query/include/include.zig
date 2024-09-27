@@ -92,7 +92,10 @@ pub fn getFields(
                 field - 1,
             );
             edgeType = edgeFieldSchema.*.type;
+
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
+
+            std.debug.print("GET DAT EDGE {d} {any} \n", .{ edgeType, value });
         } else {
             value = db.getField(node, try db.getFieldSchema(field, typeEntry));
         }
