@@ -62,7 +62,16 @@ function singleReferencEdges(
   }
 
   writeRef(id, db, schema, t, res, fromCreate, writeKey, true)
+  const sizeIndex = db.modifyBuffer.len
+  db.modifyBuffer.len += 4
+
+  console.log(ref)
+
   writeEdges(t, ref, db, res)
+  db.modifyBuffer.buffer.writeUInt32LE(
+    db.modifyBuffer.len - sizeIndex - 4,
+    sizeIndex,
+  )
   // add edge
 }
 

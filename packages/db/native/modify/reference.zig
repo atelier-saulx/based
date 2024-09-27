@@ -10,6 +10,7 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
+    const hasEdges = data[0] == 1;
     const id = readInt(u32, data, 1);
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(refTypeId);
@@ -18,5 +19,11 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
         std.log.err("Cannot find reference to {d} \n", .{id});
     } else {
         try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
+    }
+
+    //const ref = try db.insertReference(node, ctx.node.?, ctx.fieldSchema.?, -1);
+
+    if (hasEdges) {
+        std.debug.print("YO EDGE FOR REF {any} \n", .{data});
     }
 }

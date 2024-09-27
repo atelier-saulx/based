@@ -172,7 +172,7 @@ await test('singleRef', async (t) => {
       id: db.create('user', {
         name: 'Mr snurp',
       }),
-      $role: 'president',
+      $role: 'minion',
     },
   })
 
