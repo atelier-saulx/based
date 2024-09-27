@@ -184,11 +184,13 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
     size_t orig_len = ctx->len;
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
-        field_t inverse_field;
         node_type_t dst_node_type;
+        field_t inverse_field;
         uint32_t schema_len;
         /* uint8_t schema[]; */
     } __packed constraints;
+
+    static_assert(sizeof(constraints) == 7);
 
     if (len < sizeof(constraints)) {
         return SELVA_EINVAL;
@@ -216,13 +218,13 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         int err;
 
         err = parse2efc(ctx, &fs->edge_constraint, buf, constraints.schema_len);
+        if (err) {
+            return err;
+        }
 #if 0
         buf += constraints.schema_len;
 #endif
         len -= constraints.schema_len;
-        if (err) {
-            return err;
-        }
     }
 
     return orig_len - len;
@@ -236,6 +238,43 @@ static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaField
 static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     return type2fs_refs(ctx, schema, field, SELVA_FIELD_TYPE_REFERENCES);
+}
+
+static int type2fs_weak_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    struct {
+        node_type_t dst_node_type;
+        uint8_t pad[5]; /* Reserved for future use. */
+    } __packed constraints;
+
+    static_assert(sizeof(constraints) == 7);
+
+    if (ctx->len < 1 + sizeof(constraints)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&constraints, ctx->buf + 1, sizeof(constraints));
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = type,
+        .edge_constraint = {
+            .dst_node_type = constraints.dst_node_type,
+        },
+    };
+
+    return 1 + sizeof(constraints);
+}
+
+static int type2fs_weak_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    return type2fs_weak_refs(ctx, schema, field, SELVA_FIELD_TYPE_WEAK_REFERENCE);
+}
+
+static int type2fs_weak_references(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    return type2fs_weak_refs(ctx, schema, field, SELVA_FIELD_TYPE_WEAK_REFERENCES);
 }
 
 static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -319,6 +358,14 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_REFERENCES] = {
         .type = SELVA_FIELD_TYPE_REFERENCES,
         .type2fs = type2fs_references,
+    },
+    [SELVA_FIELD_TYPE_WEAK_REFERENCE] = {
+        .type = SELVA_FIELD_TYPE_WEAK_REFERENCE,
+        .type2fs = type2fs_weak_reference,
+    },
+    [SELVA_FIELD_TYPE_WEAK_REFERENCES] = {
+        .type = SELVA_FIELD_TYPE_WEAK_REFERENCES,
+        .type2fs = type2fs_weak_references,
     },
     [SELVA_FIELD_TYPE_MICRO_BUFFER] = {
         .type = SELVA_FIELD_TYPE_MICRO_BUFFER,

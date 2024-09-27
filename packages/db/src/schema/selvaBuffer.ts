@@ -14,26 +14,27 @@ const propDefBuffer = (
   } else if (isType(prop, 'reference') || isType(prop, 'references')) {
     const buf: Buffer = Buffer.allocUnsafe(8)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-    prop.inverseTypeId = dstType.id
-    buf.writeUInt8(type, 0)
+
+    // @ts-ignore
+    buf.writeUInt8(type + 2 * !!isEdge, 0)
+    buf.writeUInt16LE(dstType.id, 1)
     if (!isEdge) {
+      prop.inverseTypeId = dstType.id
       prop.inversePropNumber = dstType.props[prop.inversePropName].prop
-      buf[1] = prop.inversePropNumber
-    } else {
-      buf[1] = 0 // TODO: fix reference
+      buf[3] = prop.inversePropNumber
+
+      if (prop.edges) {
+        const eschema = Object.values(prop.edges)
+          .map((prop) => propDefBuffer(schema, prop as PropDef, true))
+          .flat(1)
+        eschema.unshift(0)
+        buf.writeUint32LE(eschema.length, 4)
+        return [...buf.values(), ...eschema]
+      }
     }
-    buf.writeUInt16LE(dstType.id, 2)
-    if (prop.edges) {
-      const eschema = Object.values(prop.edges)
-        .map((prop) => propDefBuffer(schema, prop as PropDef, true))
-        .flat(1)
-      eschema.unshift(0)
-      buf.writeUint32LE(eschema.length, 4)
-      return [...buf.values(), ...eschema]
-    } else {
-      buf.writeUint32LE(0, 4)
-      return [...buf.values()]
-    }
+
+    buf.writeUint32LE(0, 4)
+    return [...buf.values()]
   } else if (isType(prop, 'string')) {
     return [type, prop.len < 50 ? prop.len : 0]
   } else {
