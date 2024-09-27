@@ -4,7 +4,7 @@ import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { addModify } from './addModify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
-import { writeFixedLenValue } from './writeFixedLen.js'
+import { writeFixedLenValue } from './fixedLen.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]

@@ -25,7 +25,9 @@ export const isSorted = (
   msg?: string,
 ) => {
   let last: any
+  let i = 0
   for (const result of a) {
+    i++
     const current = result[field]
     if (last !== undefined) {
       if (typeof last === 'string') {
@@ -47,5 +49,8 @@ export const isSorted = (
       }
     }
     last = current
+  }
+  if (i === 0) {
+    throw new Error(msg ?? '' + ' isSorted empty result')
   }
 }

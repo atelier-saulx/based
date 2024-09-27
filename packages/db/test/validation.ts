@@ -15,8 +15,8 @@ await test('update', async (t) => {
     types: {
       user: {
         props: {
-          rating: { type: 'uint32' },
-          name: { type: 'string' },
+          rating: 'uint32',
+          name: 'string',
           friend: { ref: 'user', prop: 'friend' },
           connections: {
             items: {

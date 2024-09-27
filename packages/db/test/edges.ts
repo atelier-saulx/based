@@ -26,15 +26,33 @@ await test('simple', async (t) => {
           },
         },
       },
+      country: {
+        props: {
+          code: { type: 'string', maxBytes: 2 },
+          name: 'string',
+        },
+      },
       article: {
         props: {
           name: 'string',
           contributors: {
+            type: 'references',
             items: {
-              $role: ['writer', 'editor'],
-              $rating: 'uint32',
               ref: 'user',
               prop: 'articles',
+              $friend: {
+                ref: 'user',
+              },
+              $countries: {
+                items: {
+                  ref: 'country',
+                },
+              },
+              $role: ['writer', 'editor'],
+              $rating: 'uint32',
+              $lang: 'string',
+              // $lang: { type: 'string', maxBytes: 2 },
+              $email: 'string',
             },
           },
         },
@@ -50,13 +68,26 @@ await test('simple', async (t) => {
     name: 'Mr Yur',
   })
 
+  const nl = db.create('country', {
+    name: 'Netherlands',
+    code: 'nl',
+  })
+
   db.drain()
 
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
-      { id: mrSnurp, $role: 'writer', $rating: 99 },
-      // { id: mrYur, $role: 'editor', $rating: 10 },
+      {
+        id: mrSnurp,
+        $role: 'writer',
+        $rating: 99,
+        $email: 'AAA',
+        $lang: 'en',
+        $friend: mrYur,
+        $countries: [nl],
+      },
+      // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],
   })
 
@@ -66,6 +97,10 @@ await test('simple', async (t) => {
     .query('article')
     .include('contributors.$role')
     .include('contributors.$rating')
+    .include('contributors.$email')
+    .include('contributors.$lang')
+    .include('contributors.$friend')
+    .include('contributors.$countries')
     .get()
 
   x.debug()
@@ -97,3 +132,102 @@ await test('simple', async (t) => {
   //   { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
   // ])
 })
+
+// await test('reference', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
+
+//   t.after(() => {
+//     return db.destroy()
+//   })
+
+//   await db.start({ clean: true })
+
+//   db.putSchema({
+//     types: {
+//       user: {
+//         props: {
+//           name: 'string',
+//           articles: {
+//             items: {
+//               ref: 'article',
+//               prop: 'contributors',
+//             },
+//           },
+//         },
+//       },
+//       article: {
+//         props: {
+//           name: 'string',
+//           contributors: {
+//             type: 'references',
+//             items: {
+//               ref: 'user',
+//               prop: 'articles',
+//               $role: ['writer', 'editor'],
+//               $rating: 'uint32',
+//             },
+//           },
+//         },
+//       },
+//     },
+//   })
+
+//   const mrSnurp = db.create('user', {
+//     name: 'Mr snurp',
+//   })
+
+//   const mrYur = db.create('user', {
+//     name: 'Mr Yur',
+//   })
+
+//   db.drain()
+
+//   const strudelArticle = db.create('article', {
+//     name: 'The wonders of Strudel',
+//     contributors: [
+//       { id: mrSnurp, $role: 'writer', $rating: 99 },
+//       { id: mrYur, $role: 'editor', $rating: 10 },
+//     ],
+//   })
+
+//   db.drain()
+
+//   const x = db
+//     .query('article')
+//     .include('contributors.$role')
+//     .include('contributors.$rating')
+//     .get()
+
+//   console.dir(x.toObject(), { depth: 10 })
+
+//   x.debug()
+
+//   for (const f of x) {
+//     for (const y of f.contributors) {
+//       console.log(y, '$ROLE', y.$role)
+//     }
+//   }
+
+//   // console.log(
+//   //   db
+//   //     .query('article')
+//   //     .include('contributors.$role')
+//   //     .include('contributors.$rating')
+//   //     .get(),
+//   // )
+
+//   // console.info(db.query('article').include('contributors.$role').get())
+
+//   // deepEqual(db.query('user').include('articles.name').get().toObject(), [
+//   //   {
+//   //     id: 1,
+//   //     articles: [
+//   //       { id: 1, name: 'The wonders of Strudel' },
+//   //       { id: 2, name: 'Apple Pie is a Lie' },
+//   //     ],
+//   //   },
+//   //   { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
+//   // ])
+// })

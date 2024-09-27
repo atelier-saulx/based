@@ -221,8 +221,10 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     },
     prop(propKey, prop, { schema, type, inQuery }) {
       const propAllowed = type && !inQuery
+
       if (propAllowed) {
         expectString(propKey)
+
         const propPath = propKey.split('.')
         let targetProp: any = schema.types[prop.ref]
         for (const key of propPath) {
@@ -231,6 +233,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         if ('items' in targetProp) {
           targetProp = targetProp.items
         }
+
         if ('ref' in targetProp && 'prop' in targetProp) {
           const inversePath = targetProp.prop.split('.')
           let inverseProp: any = schema.types[targetProp.ref]
@@ -244,7 +247,6 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
             return
           }
         }
-
         throw Error(INVALID_VALUE)
       }
 
@@ -265,8 +267,12 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         if (t[key]) {
           throw Error('Edge can not be defined on both props')
         }
+
         const edgePropType = getPropType(val)
+        const inType = ctx.type
+        ctx.type = null
         p[edgePropType](val, ctx)
+        ctx.type = inType
         return
       }
 

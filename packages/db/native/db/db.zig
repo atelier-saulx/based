@@ -269,38 +269,38 @@ pub fn insertSort(
     }
 }
 
-pub fn getSortFlag(sortFieldType: u8, asc: bool) !selva.SelvaSortOrder {
+pub fn getSortFlag(sortFieldType: u8, desc: bool) !selva.SelvaSortOrder {
     switch (sortFieldType) {
         1 => {
-            if (asc) {
+            if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_I64_ASC;
             }
         },
         5 => {
-            if (asc) {
+            if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_I64_ASC;
             }
         },
         10 => {
-            if (asc) {
+            if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_I64_ASC;
             }
         },
         4 => {
-            if (asc) {
+            if (desc) {
                 return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
             }
         },
         11 => {
-            if (asc) {
+            if (desc) {
                 return selva.SELVA_SORT_ORDER_BUFFER_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_BUFFER_ASC;

@@ -102,7 +102,7 @@ export class Query {
           const fieldDef = this.includeDef.schema.props[s.field]
           const fSchema = this.db.schemaTypesParsed[fieldDef.inverseTypeName]
 
-          if (s.filters.length) {
+          if (s.filters.length || s.sortOpts) {
             // 14: references
             if (fieldDef.typeIndex === 14) {
               if (!this.includeDef.referencesFilters[s.field]) {
@@ -132,6 +132,16 @@ export class Query {
           if (s.includes.length) {
             for (const include of s.includes) {
               this.includeDef.includeFields.add(s.field + '.' + include)
+            }
+          } else if (fieldDef.typeIndex === 14 || fieldDef.typeIndex === 13) {
+            const schema = this.db.schemaTypesParsed[fieldDef.inverseTypeName]
+            for (const nestedProp in schema.props) {
+              if (
+                schema.props[nestedProp].typeIndex !== 13 &&
+                schema.props[nestedProp].typeIndex !== 14
+              ) {
+                this.includeDef.includeFields.add(s.field + '.' + nestedProp)
+              }
             }
           }
         }

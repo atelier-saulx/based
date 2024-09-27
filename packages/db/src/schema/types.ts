@@ -32,15 +32,6 @@ export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
 export type TypeIndex = (typeof TYPE_INDEX_MAP)[InternalSchemaProp]
 
-export type PropDefEdge = Partial<PropDef> & {
-  __isPropDef: true
-  typeIndex: TypeIndex
-  len: number
-  prop: number // (0-250)
-  name: string
-  edgesTotalLen?: number
-}
-
 export type PropDef = {
   __isPropDef: true
   prop: number // (0-250)
@@ -62,6 +53,15 @@ export type PropDef = {
   reverseEdges?: {
     [prop: string]: PropDefEdge
   }
+}
+
+export type PropDefEdge = Partial<PropDef> & {
+  __isPropDef: true
+  typeIndex: TypeIndex
+  len: number
+  prop: number // (0-250)
+  name: string
+  edgesTotalLen?: number
 }
 
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }

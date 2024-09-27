@@ -60,7 +60,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getRefsFields(ctx, multiRefs, node, typeEntry);
+            size += getRefsFields(ctx, multiRefs, node, typeEntry, ref);
             continue :includeField;
         }
 
@@ -72,7 +72,7 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
-            size += getSingleRefFields(ctx, singleRef, node);
+            size += getSingleRefFields(ctx, singleRef, node, ref);
             continue :includeField;
         }
 
@@ -84,7 +84,6 @@ pub fn getFields(
             includeIterator += 2 + mainIncludeSize;
         }
 
-        // add get here
         var value: []u8 = undefined;
 
         if (isEdge) {
@@ -104,7 +103,18 @@ pub fn getFields(
             continue :includeField;
         }
 
-        if (field == 0) {
+        if (isEdge) {
+            size += 2;
+            if (edgeType == 11) {
+                size += (valueLen + 4);
+            } else if (edgeType == 10 or edgeType == 9) {
+                size += 1;
+            } else if (edgeType == 5) {
+                size += 4;
+            } else if (edgeType == 4 or edgeType == 1) {
+                size += 8;
+            }
+        } else if (field == 0) {
             main = value;
             if (includeMain.len != 0) {
                 size += readInt(u16, includeMain, 0) + 1;
@@ -113,10 +123,6 @@ pub fn getFields(
             }
         } else {
             size += (valueLen + 5);
-        }
-
-        if (isEdge) {
-            size += 1;
         }
 
         var result: results.Result = .{

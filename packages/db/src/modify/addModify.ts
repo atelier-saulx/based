@@ -3,10 +3,10 @@ import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { writeFixedLenValue } from './writeFixedLen.js'
-import { writeReference } from './writeReference.js'
-import { writeReferences } from './writeReferences.js'
-import { writeString } from './writeString.js'
+import { writeFixedLenValue } from './fixedLen.js'
+import { writeReference } from './reference.js'
+import { writeReferences } from './references/references.js'
+import { writeString } from './string.js'
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
 

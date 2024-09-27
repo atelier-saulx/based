@@ -94,6 +94,14 @@ test('references', () => {
 test('edges', () => {
   parse({
     types: {
+      event: {
+        props: {
+          createdAt: {
+            type: 'timestamp',
+            on: 'create',
+          },
+        },
+      },
       article: {
         props: {
           author: {
@@ -102,6 +110,10 @@ test('edges', () => {
             $role: {
               enum: ['admin', 'collaborator'],
             },
+            $relatedEvent: {
+              ref: 'event',
+            },
+            $enum: ['zzz'],
           },
         },
       },

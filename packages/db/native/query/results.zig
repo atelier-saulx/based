@@ -70,6 +70,10 @@ pub fn createResultsBuffer(
             continue;
         }
 
+        if (item.val == null) {
+            continue;
+        }
+
         if (item.isEdge > 0) {
             data[i] = 252;
             i += 1;
@@ -78,13 +82,29 @@ pub fn createResultsBuffer(
         data[i] = item.field;
         i += 1;
 
-        if (item.val == null) {
-            continue;
-        }
-
         const val = item.val.?;
 
-        if (item.field == 0) {
+        // else if (edgeType == 10 or edgeType == 9) {
+        //         size += 1;
+        //     } else if (edgeType == 5) {
+        //         size += 4;
+        //     } else if (edgeType == 4 or edgeType == 1) {
+        //         size += 8;
+        //     }
+
+        if (item.isEdge > 0 and item.isEdge < 11) {
+            if (item.isEdge == 10 or item.isEdge == 9) {
+                data[i] = val[0];
+                i += 1;
+            } else if (item.isEdge == 5) {
+                @memcpy(data[i .. i + val.len], val);
+                i += 4;
+            } else if (item.isEdge == 4 or item.isEdge == 1) {
+                @memcpy(data[i .. i + val.len], val);
+                i += 8;
+            }
+            // handle
+        } else if (item.field == 0) {
             if (item.includeMain.len != 0) {
                 var mainPos: usize = 2;
                 while (mainPos < item.includeMain.len) {
@@ -93,7 +113,6 @@ pub fn createResultsBuffer(
                     const len = readInt(u16, operation, 2);
                     @memcpy(data[i .. i + len], val[start .. start + len]);
                     i += len;
-
                     mainPos += 4;
                 }
             } else {
@@ -103,7 +122,6 @@ pub fn createResultsBuffer(
         } else {
             writeInt(u32, data, i, val.len);
             i += 4;
-
             @memcpy(data[i .. i + val.len], val);
             i += val.len;
         }

@@ -315,28 +315,27 @@ function createRefsBuffer(include: QueryIncludeDef, key: string, query: Query) {
     let sort: Buffer
     const sortOpts = include.referencesSortOptions[fieldName]
     if (sortOpts) {
-      sort = createSortBuffer(include.schema, sortOpts.field, sortOpts.order)
+      sort = createSortBuffer(refInclude.schema, sortOpts.field, sortOpts.order)
     }
     const sortSize = sort?.byteLength ?? 0
     const filterSize = filter?.byteLength ?? 0
-    meta = Buffer.allocUnsafe(filterSize + 10)
+    const modsSize = filterSize + sortSize
+    meta = Buffer.allocUnsafe(modsSize + 10)
     meta[0] = 254
-    meta.writeUint16LE(size + 7 + filterSize, 1)
+    meta.writeUint16LE(size + 7 + modsSize, 1)
     meta.writeUint16LE(filterSize, 3)
     meta.writeUint16LE(sortSize, 5)
-
     if (filter) {
       meta.set(filter, 7)
     }
-
     if (sort) {
       meta.set(sort, 7 + filterSize)
+      // console.log(new Uint8Array(sort))
     }
 
-    const mods = filterSize + sortSize
-    meta[7 + mods] = refInclude.schema.idUint8[0]
-    meta[8 + mods] = refInclude.schema.idUint8[1]
-    meta[9 + mods] = refInclude.fromRef.prop
+    meta[7 + modsSize] = refInclude.schema.idUint8[0]
+    meta[8 + modsSize] = refInclude.schema.idUint8[1]
+    meta[9 + modsSize] = refInclude.fromRef.prop
   } else {
     meta = Buffer.allocUnsafe(6)
     meta[0] = 255
