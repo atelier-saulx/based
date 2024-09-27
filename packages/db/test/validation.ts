@@ -52,18 +52,41 @@ await test('update', async (t) => {
     rating: 'not a number',
   })
 
-  db.create('user', {
-    name: 'jame-z',
-    friend: good,
-    connections: [good],
-  })
+  const a = await db
+    .create('user', {
+      name: 'jame-z',
+      friend: good,
+      connections: [good],
+    })
+    .then((res) => {
+      console.log({ res })
+      return 'ballz'
+    })
+    .then((ballz) => {
+      console.log({ ballz })
+      return 'random shit'
+    })
+    .catch((e) => {
+      console.log({ e })
+    })
+    .then((ballz) => {
+      console.log({ ballz })
+      return 'random shit2'
+    })
 
-  console.log(
-    db.create('user', {
-      name: 'nope',
-      randomField: true,
-    }),
-  )
+  console.log({ a })
+
+  db.create('user', {
+    name: 'nope',
+    randomField: true,
+  })
+    .catch((e) => {
+      console.log('its wrong!!', e)
+      return 'commando power'
+    })
+    .then((res) => {
+      console.log('floops!', { res })
+    })
 
   db.drain()
 

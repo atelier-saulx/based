@@ -47,14 +47,23 @@ export class ModifyState {
     return this.tmpId
   }
   then(resolve, reject) {
+    return new Promise((resolve) => {
+      if (this.error) {
+        reject(new Error(this.error.toString()))
+      } else if ('offset' in this.#ctx) {
+        resolve(this.tmpId + this.#ctx.offset)
+      } else {
+        this.#buf.queue.push(resolve, this.tmpId)
+      }
+    }).then(resolve, reject)
+  }
+  catch(handler) {
     if (this.error) {
-      reject(this.error.toString())
+      return new Promise((resolve) => {
+        resolve(handler(new Error(this.error.toString())))
+      })
     }
-    if ('offset' in this.#ctx) {
-      resolve(this.tmpId + this.#ctx.offset)
-    } else {
-      this.#buf.queue.push(resolve, this.tmpId)
-    }
+    return this
   }
 }
 
