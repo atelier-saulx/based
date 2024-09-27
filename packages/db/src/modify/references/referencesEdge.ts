@@ -25,7 +25,16 @@ export function overWriteEdgeReferences(
   }
 
   if (refLen === 0) {
-    overWriteSimpleReferences(t, db, writeKey, value, schema, res, fromCreate)
+    overWriteSimpleReferences(
+      t,
+      db,
+      writeKey,
+      value,
+      schema,
+      res,
+      fromCreate,
+      0, // overwrite
+    )
     return
   }
 

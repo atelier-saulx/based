@@ -1,8 +1,8 @@
 import { BasedDb } from './index.js'
 
 export const flushBuffer = (db: BasedDb) => {
-  console.log('flush!!')
   if (db.modifyBuffer.len) {
+    const queue = db.modifyBuffer.queue
     const d = Date.now()
     const offset = 0
     // TODO put actual offset here
@@ -13,9 +13,11 @@ export const flushBuffer = (db: BasedDb) => {
     } catch (err) {
       console.error(err)
     }
+
     // add errors and reset them here
     db.modifyBuffer.len = 0
-    db.modifyBuffer.typePrefix = new Uint8Array([0, 0])
+    db.modifyBuffer.typePrefix[0] = 0
+    db.modifyBuffer.typePrefix[1] = 0
     db.modifyBuffer.field = -1
     db.modifyBuffer.id = -1
     db.modifyBuffer.lastMain = -1
@@ -24,21 +26,17 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.hasStringField = -1
     db.modifyBuffer.ctx.offset = offset
     db.modifyBuffer.ctx = {}
+
     const time = Date.now() - d
+
     db.writeTime += time
     db.isDraining = false
 
-    const q = db.modifyBuffer.queue
-    let i = q.length
-
-    if (i) {
-      // resolve any queued ModifyRes's
-      while (i--) {
-        const tmpId = q[i]
-        const resolve = q[--i]
+    if (queue.size) {
+      for (const [tmpId, resolve] of queue) {
         resolve(tmpId + offset)
       }
-      db.modifyBuffer.queue = []
+      queue.clear()
     }
 
     return time

@@ -10,8 +10,20 @@ const reference = @import("./reference.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
-        db.clearReferences(ctx.node.?, ctx.fieldSchema.?);
-        try references.updateReferences(ctx, data);
+        const op = data[0];
+
+        if (op == 0) {
+            // overwrite
+            db.clearReferences(ctx.node.?, ctx.fieldSchema.?);
+            try references.updateReferences(ctx, data);
+        } else if (op == 1) {
+            // add
+            try references.updateReferences(ctx, data);
+        } else if (op == 2) {
+            // delete
+            try references.deleteReferences(ctx, data);
+        }
+
         return data.len;
     }
 

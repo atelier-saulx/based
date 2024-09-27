@@ -14,17 +14,32 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(refTypeId);
     const len = data.len;
-    var i: usize = 0;
+    var i: usize = 1;
     while (i < len) : (i += 5) {
         const hasEdgeData = data[i] == 1;
         const id = readInt(u32, data, i + 1);
         const node = try db.upsertNode(id, refTypeEntry);
-        const ref = try db.insertReference(node, ctx.node.?, ctx.fieldSchema.?, -1);
+        const ref = try db.insertReference(
+            node,
+            ctx.node.?,
+            ctx.fieldSchema.?,
+            -1,
+        );
         if (hasEdgeData) {
             const totalEdgesLen = readInt(u32, data, i + 5);
             const edges = data[i + 9 .. i + totalEdgesLen + 9];
             try edge.writeEdges(ctx, ref, edges);
             i += edges.len;
         }
+    }
+}
+
+pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !void {
+    const len = data.len;
+    var i: usize = 1;
+    while (i < len) : (i += 5) {
+        // TODO check with olli if this also clean up edges
+        const id = readInt(u32, data, i + 1);
+        try db.deleteReference(ctx.node.?, ctx.fieldSchema.?, id);
     }
 }

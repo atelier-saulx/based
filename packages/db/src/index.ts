@@ -36,7 +36,7 @@ export class BasedDb {
     mergeMain: (PropDef | any)[] | null
     mergeMainSize: number
     ctx: { offset?: number }
-    queue: any[]
+    queue: Map<number, (id: number) => void>
   }
 
   schema: Schema & { lastId: number }
@@ -73,7 +73,7 @@ export class BasedDb {
       id: -1,
       lastMain: -1,
       ctx: {},
-      queue: [],
+      queue: new Map(),
     }
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
