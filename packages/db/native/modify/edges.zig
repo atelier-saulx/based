@@ -31,8 +31,8 @@ pub fn writeEdges(ctx: *ModifyCtx, ref: *selva.SelvaNodeReference, data: []u8) !
         if (typeIndex == 14) {
             const len = edgeData.len;
             var j: usize = 0;
-            while (j < len) : (j += 5) {
-                const refId = readInt(u32, edgeData, j + 1);
+            while (j < len) : (j += 4) {
+                const refId = readInt(u32, edgeData, j);
                 std.debug.print("Hello - got references  refId: {d} \n", .{refId});
             }
         } else if (typeIndex == 13) {

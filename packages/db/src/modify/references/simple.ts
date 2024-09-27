@@ -4,6 +4,39 @@ import { PropDef, PropDefEdge, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 
+export function simpleRefsPacked(
+  t: PropDefEdge,
+  db: BasedDb,
+  value: any[],
+  res: ModifyState,
+) {
+  for (let i = 0; i < value.length; i++) {
+    let ref = value[i]
+    let id: number
+    let $index: number
+    if (typeof ref !== 'number') {
+      if (ref instanceof ModifyState) {
+        if (ref.error) {
+          res.error = ref.error
+          return
+        }
+        id = ref.tmpId
+      } else if (typeof ref === 'object' && 'id' in ref) {
+        id = ref.id
+        if ('$index' in ref) {
+          $index = ref.$index
+        }
+      } else {
+        modifyError(res, t, value)
+        return
+      }
+    } else {
+      id = ref
+    }
+    db.modifyBuffer.buffer.writeUint32LE(id, i * 4 + db.modifyBuffer.len)
+  }
+}
+
 export function simpleRefs(
   t: PropDef | PropDefEdge,
   db: BasedDb,

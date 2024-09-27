@@ -3,7 +3,7 @@ import { PropDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { writeFixedLenValue } from '../fixedLen.js'
 import { RefModify, RefModifyOpts } from './references.js'
-import { simpleRefs } from './simple.js'
+import { simpleRefsPacked } from './simple.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   var size = 0
@@ -87,10 +87,10 @@ export function writeEdges(
           db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 6)
           db.modifyBuffer.len += 10
         } else if (edge.typeIndex === 14) {
-          const refLen = value.length * 5
+          const refLen = value.length * 4
           db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 2)
           db.modifyBuffer.len += 6
-          simpleRefs(edge, db, value, res)
+          simpleRefsPacked(edge, db, value, res)
           db.modifyBuffer.len += refLen
         }
       } else {
