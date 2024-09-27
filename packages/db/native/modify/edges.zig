@@ -13,16 +13,20 @@ pub fn writeEdges(
     ctx: *ModifyCtx,
     ref: *selva.SelvaNodeReference,
     data: []u8,
-    offset: usize,
 ) !void {
     var i: usize = 0;
+
+    std.debug.print("EDGE {d} \n", .{data.len});
+
     while (i < data.len) {
         const prop = data[i];
         const typeIndex = data[i + 1];
 
+        var offset: u32 = 0;
         var edgeLen: u32 = undefined;
         if (typeIndex == 11 or typeIndex == 14) {
             edgeLen = readInt(u32, data, i + 2);
+            offset = 4;
         } else if (typeIndex == 10 or typeIndex == 9) {
             edgeLen = 1;
         } else if (typeIndex == 5 or typeIndex == 13) {
@@ -42,6 +46,7 @@ pub fn writeEdges(
             ref,
             prop - 1,
         );
-        i += edgeLen + 6;
+
+        i += edgeLen + 2 + offset;
     }
 }

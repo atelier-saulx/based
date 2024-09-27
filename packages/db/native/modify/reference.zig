@@ -32,10 +32,11 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
             return;
         }
         const totalEdgesLen = readInt(u32, data, 5);
-        const edges = data[9 .. totalEdgesLen + 9];
+        const edges = data[9 .. totalEdgesLen + 5];
         std.debug.print("YO EDGE FOR REF {any} {any} \n", .{ data, ref });
+        std.debug.print("blaur {any} \n", .{edges});
 
-        try edge.writeEdges(ctx, ref.?, edges, 0);
+        try edge.writeEdges(ctx, ref.?, edges);
 
         return;
     }

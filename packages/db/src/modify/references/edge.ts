@@ -57,14 +57,13 @@ export function writeEdges(
   ref: RefModifyOpts,
   db: BasedDb,
   res: ModifyState,
-  skip = 0,
 ) {
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
-      db.modifyBuffer.buffer[db.modifyBuffer.len + skip] = edge.prop
-      db.modifyBuffer.buffer[db.modifyBuffer.len + skip + 1] = edge.typeIndex
+      db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
+      db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = edge.typeIndex
       // Buffer: [field] [typeIndex] [size] [data]
       if (edge.len === 0) {
         if (edge.typeIndex === 11) {
@@ -85,8 +84,8 @@ export function writeEdges(
               return true
             }
           }
-          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 6)
-          db.modifyBuffer.len += 10
+          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 2)
+          db.modifyBuffer.len += 6
         } else if (edge.typeIndex === 14) {
           const refLen = value.length * 4
           db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 2)
@@ -95,8 +94,8 @@ export function writeEdges(
           db.modifyBuffer.len += refLen
         }
       } else {
-        writeFixedLenValue(db, value, db.modifyBuffer.len + 6, edge, res)
-        db.modifyBuffer.len += edge.len + 6
+        writeFixedLenValue(db, value, db.modifyBuffer.len + 2, edge, res)
+        db.modifyBuffer.len += edge.len + 2
       }
     }
   }
