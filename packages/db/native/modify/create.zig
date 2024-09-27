@@ -5,6 +5,7 @@ const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const references = @import("./references.zig");
+const reference = @import("./reference.zig");
 
 const std = @import("std");
 
@@ -18,16 +19,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
         try references.updateReferences(ctx, data);
     } else if (ctx.fieldType == 13) {
-        const id = readInt(u32, data, 0);
-        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
-
-        const refTypeEntry = try db.getType(refTypeId);
-        const node = db.getNode(id, refTypeEntry);
-        if (node == null) {
-            std.log.err("Cannot find reference to {d} \n", .{id});
-        } else {
-            try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
-        }
+        try reference.updateReference(ctx, data);
     } else {
         try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
     }

@@ -6,12 +6,17 @@ const readInt = @import("../utils.zig").readInt;
 const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 const references = @import("./references.zig");
+const reference = @import("./reference.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.fieldType == 14) {
         db.clearReferences(ctx.node.?, ctx.fieldSchema.?);
-        // gets some special things in there
         try references.updateReferences(ctx, data);
+        return data.len;
+    }
+
+    if (ctx.fieldType == 13) {
+        try reference.updateReference(ctx, data);
         return data.len;
     }
 
@@ -26,22 +31,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 try sort.writeField(ctx.id, data, sortIndex);
             }
         }
-    } else if (ctx.fieldSchema.?.*.type == 13) {
-        const id = readInt(u32, data, 0);
-        const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
-        const refTypeEntry = try db.getType(refTypeId);
-        const node = db.getNode(id, refTypeEntry);
-        if (node == null) {
-            std.debug.print("Cannot find reference to {d} \n", .{id});
-        } else {
-            std.debug.print("Ref found {d} node: {any} currentNode: {any}  types ref: {any} target: {any} \n", .{ id, node, ctx.node, refTypeEntry, ctx.typeEntry });
-            try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
-        }
     } else if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
+
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
     return data.len;
 }
