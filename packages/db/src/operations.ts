@@ -1,6 +1,7 @@
 import { BasedDb } from './index.js'
 
 export const flushBuffer = (db: BasedDb) => {
+  console.log('flush!!')
   if (db.modifyBuffer.len) {
     const d = Date.now()
     const offset = 0
@@ -23,6 +24,7 @@ export const flushBuffer = (db: BasedDb) => {
     db.modifyBuffer.hasStringField = -1
     db.modifyBuffer.ctx.offset = offset
     db.modifyBuffer.ctx = {}
+    db.isDraining = false
 
     const q = db.modifyBuffer.queue
     let i = q.length
@@ -41,8 +43,9 @@ export const flushBuffer = (db: BasedDb) => {
     db.writeTime += time
 
     return time
+  } else {
+    db.isDraining = false
   }
-  db.isDraining = false
 
   return 0
 }
