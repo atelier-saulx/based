@@ -9,7 +9,7 @@
 //       [key: string]: FieldDef
 //     } = {}
 //     const names: string[] = []
-//     const seperate: FieldDef[] = []
+//     const separate: FieldDef[] = []
 //     let i = 0
 //     const decoder = new TextDecoder()
 //     while (i < fieldNames.byteLength) {
@@ -46,7 +46,7 @@
 //           inverseTypeNumber: 0,
 //           type: typeName,
 //           typeByte,
-//           seperate: false,
+//           separate: false,
 //           path,
 //           start: mainLen,
 //           len,
@@ -68,14 +68,14 @@
 //           field: fieldIndex,
 //           type: typeName,
 //           typeByte,
-//           seperate: false,
+//           separate: false,
 //           path,
 //           inverseTypeNumber: 0,
 //           start: mainLen,
 //           len,
 //         }
 //         fields[name] = field
-//         seperate.push(field)
+//         separate.push(field)
 //         setByPath(tree, path, field)
 //         currentName++
 //         cnt++
@@ -88,7 +88,7 @@
 //       prefix: new Uint8Array([buf[0], buf[1]]),
 //       tree,
 //       fields,
-//       seperate,
+//       separate,
 //       cnt,
 //       buf,
 //       type,

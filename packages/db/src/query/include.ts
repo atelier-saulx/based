@@ -280,7 +280,7 @@ const parseInclude = (
     return
   }
 
-  if (field.seperate) {
+  if (field.separate) {
     include.includeArr.push(field.prop)
   } else {
     if (!includesMain) {

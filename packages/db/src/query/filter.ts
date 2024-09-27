@@ -85,7 +85,7 @@ export const filter = (
   const fieldIndexChar = field.prop
 
   let buf: Buffer
-  if (field.seperate === true) {
+  if (field.separate === true) {
     if (field.typeIndex === 11) {
       const op = operationToByte(operator)
       if (op === 1) {
