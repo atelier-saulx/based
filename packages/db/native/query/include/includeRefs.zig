@@ -26,6 +26,7 @@ pub fn getRefsFields(
 ) usize {
     if (ref != null) {
         std.debug.print("We are in a refs from edge! \n", .{});
+        return 0;
     }
 
     const filterSize: db.TypeId = readInt(u16, include, 0);

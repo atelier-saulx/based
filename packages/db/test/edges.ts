@@ -99,6 +99,8 @@ await test('simple', async (t) => {
     .include('contributors.$rating')
     .include('contributors.$email')
     .include('contributors.$lang')
+    .include('contributors.$friend')
+    .include('contributors.$countries')
     .get()
 
   x.debug()

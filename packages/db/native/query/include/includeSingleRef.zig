@@ -22,6 +22,7 @@ pub fn getSingleRefFields(
 ) usize {
     if (ref != null) {
         std.debug.print("We are in a single ref from edge! \n", .{});
+        return 0;
     }
 
     var size: usize = 0;
