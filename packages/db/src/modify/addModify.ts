@@ -4,7 +4,7 @@ import { SchemaTypeDef, PropDef } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './fixedLen.js'
-import { writeReference } from './reference.js'
+import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
 

@@ -26,6 +26,9 @@ await test('simple', async (t) => {
           },
         },
       },
+      flap: {
+        props: {},
+      },
       country: {
         props: {
           code: { type: 'string', maxBytes: 2 },
@@ -51,7 +54,6 @@ await test('simple', async (t) => {
               $role: ['writer', 'editor'],
               $rating: 'uint32',
               $lang: 'string',
-              // $lang: { type: 'string', maxBytes: 2 },
               $email: 'string',
             },
           },
