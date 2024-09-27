@@ -109,7 +109,7 @@ export const printSummary = () => {
       : ''
 
   const msg =
-    nuno +
+    // nuno +
     `
 Test result:
 Errors: ${counts.errors}

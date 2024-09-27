@@ -53,7 +53,7 @@ export class ModifyState {
       } else if ('offset' in this.#ctx) {
         resolve(this.tmpId + this.#ctx.offset)
       } else {
-        this.#buf.queue.push(resolve, this.tmpId)
+        this.#buf.queue.set(this.tmpId, resolve)
       }
     }).then(resolve, reject)
   }

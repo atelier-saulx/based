@@ -79,15 +79,19 @@ export function overWriteSimpleReferences(
   schema: SchemaTypeDef,
   res: ModifyState,
   fromCreate: boolean,
+  op: 0 | 1 | 2,
 ) {
   const refLen = 5 * value.length
-  if (refLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+  const potentialLen = refLen + 1 + 5 + db.modifyBuffer.len + 11
+  if (potentialLen > db.maxModifySize) {
     flushBuffer(db)
   }
   setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-  db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 1)
+  db.modifyBuffer.buffer.writeUint32LE(refLen + 1, db.modifyBuffer.len + 1)
   db.modifyBuffer.len += 5
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = op
+  db.modifyBuffer.len += 1
   simpleRefs(t, db, value, res)
   db.modifyBuffer.len += refLen
 }
