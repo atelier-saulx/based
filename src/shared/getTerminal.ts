@@ -1,7 +1,11 @@
 import blessed from '@farjs/blessed'
 import { parseMessage } from './parseMessage.js'
 
-export const getTerminal = (title: string, header: string) => {
+export const getTerminal = (
+  title: string,
+  header: string,
+  sortMessages: 'asc' | 'desc',
+) => {
   let autoScroll: boolean = true
 
   const screen = blessed.screen({
@@ -49,14 +53,22 @@ export const getTerminal = (title: string, header: string) => {
     }
 
     if (Array.isArray(msg)) {
-      messages.unshift(...msg)
+      if (sortMessages === 'asc') {
+        messages.unshift(...msg)
+      } else {
+        messages.push(...msg)
+      }
     } else {
-      messages.unshift(msg)
+      if (sortMessages === 'asc') {
+        messages.unshift(msg)
+      } else {
+        messages.push(msg)
+      }
     }
 
-    messageBox.setContent(messages.slice().reverse().join('\n'))
+    messageBox.setContent(messages.join('\n'))
 
-    if (autoScroll) {
+    if (autoScroll && sortMessages === 'desc') {
       messageBox.setScrollPerc(100)
     }
 
@@ -92,5 +104,6 @@ export const getTerminal = (title: string, header: string) => {
     render,
     kill,
     addMessage,
+    autoScroll,
   }
 }

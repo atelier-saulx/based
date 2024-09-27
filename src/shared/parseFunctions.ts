@@ -63,7 +63,7 @@ export const parseFunctions = async (
   }
 
   if (!configs.length) {
-    context.print.fail(
+    throw new Error(
       `<yellow>No ${functions ? 'matching ' : ''}function configs found.</yellow>`,
     )
   }
@@ -175,16 +175,19 @@ export const parseFunctions = async (
   const cancelled = invalids.find(Boolean)
 
   if (cancelled) {
-    context.print.fail('<b><red>Build failed.</red></b>')
+    throw new Error('<b><red>Build failed.</red></b>')
   }
 
-  // build the functions
-  const [nodeBundles, browserBundles] = await buildFunctions({
-    publicPath,
-    nodeEntryPoints,
-    browserEntryPoints,
-    cb: onChange,
-  })
+  try {
+    const [nodeBundles, browserBundles] = await buildFunctions({
+      publicPath,
+      nodeEntryPoints,
+      browserEntryPoints,
+      cb: onChange,
+    })
 
-  return { schema, configs, favicons, nodeBundles, browserBundles, files }
+    return { schema, configs, favicons, nodeBundles, browserBundles, files }
+  } catch (error) {
+    throw new Error(error)
+  }
 }

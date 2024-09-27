@@ -44,16 +44,20 @@ export const download =
       selectFile: file ?? true,
     })
 
-    await getDownload({
-      context,
-      basedClient,
-      db: selectedDB,
-      file: selectedFile,
-      path,
-    })
+    try {
+      await getDownload({
+        context,
+        basedClient,
+        db: selectedDB,
+        file: selectedFile,
+        path,
+      })
 
-    destroy()
-    return
+      destroy()
+      return
+    } catch (error) {
+      throw new Error(error)
+    }
   }
 
 export const getDownload = async ({
@@ -88,8 +92,8 @@ export const getDownload = async ({
     path = join(path, sanitizeFileName(file))
 
     if (!isValid) {
-      context.print.fail(
-        'The specified path is invalid or does not exist. Please provide a valid path.\n',
+      throw new Error(
+        'The specified path is invalid or does not exist. Please provide a valid path.',
       )
     }
   } while (!isValid && retry > 0)
@@ -106,7 +110,7 @@ export const getDownload = async ({
     const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      context.print.fail('Download cancelled.')
+      throw new Error('Download cancelled.')
     }
   }
 
@@ -125,10 +129,10 @@ export const getDownload = async ({
 
       context.print.success()
     } catch (error) {
-      context.print.fail(`Was not possible to save the file: ${error}`)
+      new Error(`Was not possible to save the file: ${error}`)
     }
   } catch (error) {
-    context.print.fail(`Error downloading your file: ${error}`)
+    throw new Error(`Error downloading your file: ${error}`)
   }
 
   context.print.success(

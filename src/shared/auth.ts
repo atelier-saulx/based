@@ -24,7 +24,7 @@ export const basedAuth = async (
   })
 
   if (!client || !adminHub || !envHub) {
-    context.print.fail(
+    throw new Error(
       `Fatal error during authorization. Check your 'based.json' configuration file and try again.`,
     )
   }

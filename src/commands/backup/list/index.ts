@@ -23,13 +23,13 @@ export const list =
     sort = sort.toLowerCase() as BasedCli.Backups.List.Args['sort']
 
     if (sort && sort !== 'desc' && sort !== 'asc') {
-      context.print.fail(
+      throw new Error(
         `The <b>sorting</b> option is not valid: '<b><cyan>${sort}</cyan></b>'. Check it and try again.`,
       )
     }
 
     if (isNaN(parseInt(limit.toString()))) {
-      context.print.fail(
+      throw new Error(
         `The <b>limit</b> option is not valid: '<b><cyan>${limit}</cyan></b>'. Check it and try again.`,
       )
     }
@@ -57,16 +57,21 @@ export const list =
           backups,
           sort,
         })
-        await getDownload({
-          context,
-          basedClient,
-          db: selectedDB,
-          file: selectedFile,
-          path: '',
-        })
 
-        destroy()
-        return
+        try {
+          await getDownload({
+            context,
+            basedClient,
+            db: selectedDB,
+            file: selectedFile,
+            path: '',
+          })
+
+          destroy()
+          return
+        } catch (error) {
+          throw new Error(error)
+        }
       }
 
       const restoreBackup: boolean = await context.input.confirm(
@@ -80,16 +85,21 @@ export const list =
           sort,
           showCurrent: false,
         })
-        await setRestore({
-          context,
-          basedClient,
-          db: selectedDB,
-          file: selectedFile,
-          isExternalFile: false,
-        })
 
-        destroy()
-        return
+        try {
+          await setRestore({
+            context,
+            basedClient,
+            db: selectedDB,
+            file: selectedFile,
+            isExternalFile: false,
+          })
+
+          destroy()
+          return
+        } catch (error) {
+          throw new Error(error)
+        }
       }
 
       const deleteBackup: boolean = await context.input.confirm(
@@ -104,18 +114,23 @@ export const list =
           selectFile: false,
           showCurrent: false,
         })
-        await setFlush({
-          context,
-          basedClient,
-          db: selectedDB,
-          org,
-          project,
-          env,
-          cluster,
-        })
 
-        destroy()
-        return
+        try {
+          await setFlush({
+            context,
+            basedClient,
+            db: selectedDB,
+            org,
+            project,
+            env,
+            cluster,
+          })
+
+          destroy()
+          return
+        } catch (error) {
+          throw new Error(error)
+        }
       }
     }
 
@@ -134,7 +149,7 @@ export const getList = async (
   const { backups } = await envHubBasedCloud.call('based:backups-list')
 
   if (!Object.keys(backups).length) {
-    context.print.fail(`There were no backups found.`)
+    throw new Error(`There were no backups found.`)
   } else {
     context.print.stop()
   }

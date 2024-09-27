@@ -13,16 +13,20 @@ export const auth = async (
   cmd.action(async ({ email }) => {
     const { cluster, org, env, project } = program.opts()
 
-    const { destroy } = await login({
-      context,
-      email,
-      cluster,
-      org,
-      env,
-      project,
-      selectUser: true,
-    })
+    try {
+      const { destroy } = await login({
+        context,
+        email,
+        cluster,
+        org,
+        env,
+        project,
+        selectUser: true,
+      })
 
-    destroy()
+      destroy()
+    } catch (error) {
+      throw new Error(error)
+    }
   })
 }

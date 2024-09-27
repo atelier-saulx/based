@@ -43,7 +43,7 @@ export const backupsSummary = (
   verbose: boolean,
 ): void => {
   if (!values.databases || !values.backups) {
-    context.print.fail(`No backups found.`)
+    throw new Error(`No backups found.`)
   } else {
     context.print.info(
       `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases. Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
@@ -80,7 +80,7 @@ const dbSelection = async (
   }
 
   if (!backups?.sorted?.[selectedDB]?.length) {
-    context.print.fail(
+    throw new Error(
       `There were no backups found for the selected database: '<b>${selectedDB}</b>'.`,
     )
   }
@@ -107,7 +107,7 @@ const fileSelection = async (
       return selectedFile
     }
 
-    context.print.fail(
+    throw new Error(
       `There were no backups found with the name: '${selectedFile}'.`,
     )
   }
@@ -211,7 +211,6 @@ export const backupsSorting = (
     })
 
     if (limit !== 0) {
-      console.log('limit', limit !== 0)
       result.sorted[database] = backups[database].slice(0, limit)
     }
   }

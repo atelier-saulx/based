@@ -39,7 +39,7 @@ export const flush =
     const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      context.print.fail('Operation cancelled.')
+      throw new Error('Operation cancelled.')
     }
 
     const backups: BackupsSorted = await getList(context, envHubBasedCloud)
@@ -51,18 +51,22 @@ export const flush =
       showCurrent: false,
     })
 
-    await setFlush({
-      context,
-      basedClient,
-      db: selectedDB,
-      org,
-      project,
-      env,
-      cluster,
-    })
+    try {
+      await setFlush({
+        context,
+        basedClient,
+        db: selectedDB,
+        org,
+        project,
+        env,
+        cluster,
+      })
 
-    destroy()
-    return
+      destroy()
+      return
+    } catch (error) {
+      throw new Error(error)
+    }
   }
 
 export const setFlush = async ({
@@ -95,7 +99,7 @@ export const setFlush = async ({
   const doIt: boolean = await context.input.confirm()
 
   if (!doIt) {
-    context.print.fail('Operation cancelled.')
+    throw new Error('Operation cancelled.')
   }
 
   try {
@@ -104,10 +108,10 @@ export const setFlush = async ({
     const result = await basedClient.call('based:db-flush', { db: dbInfo })
 
     if (!result.ok) {
-      context.print.fail(`Error flushing the current database: '${result}'`)
+      new Error(result)
     }
   } catch (error) {
-    context.print.fail(`Error flushing the current database: '${error}'`)
+    new Error(`Error flushing the current database: '${error}'`)
   }
 
   context.print.success(`Current database flushed successfully!`)

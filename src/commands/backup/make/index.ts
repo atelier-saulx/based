@@ -17,7 +17,7 @@ export const make = (program: Command, context: AppContext) => async () => {
   }
 
   const { envId } = await basedClient.call('based:env-info').catch(() => {
-    context.print.fail(
+    throw new Error(
       `Could not get env info, check your 'based.json' file or your arguments and try again.`,
     )
   })
@@ -33,10 +33,10 @@ export const make = (program: Command, context: AppContext) => async () => {
     })
 
     context.print.success(`Backup completed successfully!`)
-  } catch (error) {
-    context.print.fail(`Error making your backup: '${error}'`)
-  }
 
-  destroy()
-  return
+    destroy()
+    return
+  } catch (error) {
+    throw new Error(`Error making your backup: '${error}'`)
+  }
 }

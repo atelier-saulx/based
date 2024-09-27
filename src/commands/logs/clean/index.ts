@@ -11,7 +11,7 @@ export const clean = (program: Command, context: AppContext) => async () => {
   const doIt: boolean = await context.input.confirm()
 
   if (!doIt) {
-    context.print.fail('Operation cancelled.')
+    throw new Error('Operation cancelled.')
   }
 
   try {
@@ -19,10 +19,10 @@ export const clean = (program: Command, context: AppContext) => async () => {
     await basedClient.call('based:logs-delete')
 
     context.print.success(`Logs cleaned successfully!`)
-  } catch (error) {
-    context.print.fail(`Error cleaning your logs: '${error}'`)
-  }
 
-  destroy()
-  return
+    destroy()
+    return
+  } catch (error) {
+    throw new Error(`Error cleaning your logs: '${error}'`)
+  }
 }

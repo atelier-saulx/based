@@ -31,6 +31,12 @@ type InputHandler = {
     today?: boolean,
     format?: string,
   ) => Promise<string | null>
+  dateTime: (
+    message: string,
+    skip?: boolean,
+    now?: boolean,
+    format?: string,
+  ) => Promise<string | null>
   number: (message: string, skip?: boolean) => Promise<string | null>
   email: (message: string) => Promise<string>
   confirm: (message?: string, defaultValue?: boolean) => Promise<boolean>
@@ -124,6 +130,39 @@ export class AppContext {
       })
 
       if (today && (await prompt) === 't') {
+        return formatDate(toDate(new Date()), format)
+      }
+
+      if ((await prompt) === 's') {
+        return null
+      }
+
+      return prompt
+    },
+    dateTime: async (
+      message: string,
+      skip: boolean = true,
+      now: boolean = true,
+      format: string = 'dd/MM/yyyy HH:mm:ss:SSS',
+    ) => {
+      message = message + ` <b>(${format.toUpperCase()})</b>`
+
+      if (skip) {
+        message = message + ' <dim>(S to skip)</dim>'
+      }
+      if (now) {
+        message = message + ' <dim>(N for now)</dim>'
+      }
+
+      const prompt = input({
+        message: parseMessage(message),
+        validate: (value) =>
+          (skip && value.toLowerCase() === 's') ||
+          (now && value.toLowerCase() === 'n') ||
+          isValid(parse(value, format, new Date())),
+      })
+
+      if (now && (await prompt) === 'n') {
         return formatDate(toDate(new Date()), format)
       }
 

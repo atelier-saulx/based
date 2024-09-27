@@ -46,16 +46,20 @@ export const restore =
       selectedFile = file
     }
 
-    await setRestore({
-      context,
-      basedClient,
-      db: selectedDB,
-      file: selectedFile,
-      isExternalFile,
-    })
+    try {
+      await setRestore({
+        context,
+        basedClient,
+        db: selectedDB,
+        file: selectedFile,
+        isExternalFile,
+      })
 
-    destroy()
-    return
+      destroy()
+      return
+    } catch (error) {
+      throw new Error(error)
+    }
   }
 
 export const setRestore = async ({
@@ -72,15 +76,14 @@ export const setRestore = async ({
 
   if (isExternalFile) {
     if (!(await pathExists(file))) {
-      context.print.fail(
+      throw new Error(
         `The specified file '<cyan>${file}</cyan>' is invalid or does not exist. Please provide a valid file.`,
       )
     }
 
     if (!file.endsWith('.rdb')) {
-      context.print.fail(
-        `The specified file '<cyan>${file}</cyan>' is invalid. Only '<b>.rdb</b>' files can be restored.
-`,
+      throw new Error(
+        `The specified file '<cyan>${file}</cyan>' is invalid. Only '<b>.rdb</b>' files can be restored.`,
       )
     }
 
@@ -102,7 +105,7 @@ export const setRestore = async ({
     const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      context.print.fail('Restoration cancelled.')
+      throw new Error('Restoration cancelled.')
     }
 
     try {
@@ -113,7 +116,7 @@ export const setRestore = async ({
         key: file,
       })
     } catch (error) {
-      context.print.fail(`Error restoring your file: '${error}'`)
+      throw new Error(`Error restoring your file: '${error}'`)
     }
   }
 
@@ -129,12 +132,12 @@ export const setRestore = async ({
       })
 
       if (!result.ok) {
-        context.print.fail(`Error uploading your file: '${result}'`)
+        new Error(result)
       }
+
+      context.print.success(`Backup restored successfully!`)
     } catch (error) {
-      context.print.fail(`Error uploading your file: '${error}'`)
+      throw new Error(`Error uploading your file: '${error}'`)
     }
   }
-
-  context.print.success(`Backup restored successfully!`)
 }

@@ -79,7 +79,7 @@ export const login = async ({
   })
 
   if (!Object.keys(adminHub).length) {
-    context.print.fail(
+    throw new Error(
       'Fatal error during authorization, was not possible to connect to the Admin Hub. Try again.',
     )
   }
@@ -144,7 +144,7 @@ export const login = async ({
   })
 
   if (!Object.keys(client).length) {
-    context.print.fail(
+    throw new Error(
       'Fatal error during authorization, was not possible to connect to the User Env. Try again.',
     )
   }
@@ -166,7 +166,7 @@ export const login = async ({
   })
 
   if (!Object.keys(envHub).length) {
-    context.print.fail(
+    throw new Error(
       'Fatal error during authorization, was not possible to connect to the Env Hub. Try again.',
     )
   }

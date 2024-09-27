@@ -12,7 +12,11 @@ export const version = async (
     join(fileURLToPath(dirname(import.meta.url)), '../package.json'),
   )
 
-  context.print.info(`<b>Based CLI</b> <dim>${version}</dim>`)
+  context.set('appName', 'Based CLI')
+  context.set('appVersion', version)
+  context.set('appTitle', `<b>Based CLI</b> <dim>${version}</dim>`)
+
+  context.print.info(context.get('appTitle'))
 
   program.version(version, '-v, --version')
 }
