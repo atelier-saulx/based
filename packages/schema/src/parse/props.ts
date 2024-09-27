@@ -103,8 +103,7 @@ function propParser<PropType extends SchemaAnyProp>(
         shared[key](val, prop, ctx)
       } else if (!(key in required)) {
         if (key[0] === '$' && 'ref' in prop) {
-          console.log('$edge fix parsing for refs..')
-          // optional.edge(val, prop, ctx, key)
+          optional.edge(val, prop, ctx, key)
         } else {
           throw Error(UNKNOWN_PROP)
         }
@@ -268,8 +267,12 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         if (t[key]) {
           throw Error('Edge can not be defined on both props')
         }
+
         const edgePropType = getPropType(val)
+        const inType = ctx.type
+        ctx.type = null
         p[edgePropType](val, ctx)
+        ctx.type = inType
         return
       }
 
