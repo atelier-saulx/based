@@ -27,13 +27,18 @@ fn writeEdges(ctx: *ModifyCtx, ref: *selva.SelvaNodeReference, data: []u8) !void
         }
 
         const edgeData = data[i + 6 .. i + 6 + edgeLen];
-        try db.writeEdgeProp(
-            edgeData,
-            ctx.node.?,
-            selva.selva_get_edge_field_constraint(ctx.fieldSchema.?),
-            ref,
-            prop - 1,
-        );
+
+        if (typeIndex == 13) {
+            std.debug.print("Hello - got a ref edgeData: {any} \n", .{edgeData});
+        } else {
+            try db.writeEdgeProp(
+                edgeData,
+                ctx.node.?,
+                selva.selva_get_edge_field_constraint(ctx.fieldSchema.?),
+                ref,
+                prop - 1,
+            );
+        }
         i += edgeLen + 6;
     }
 }

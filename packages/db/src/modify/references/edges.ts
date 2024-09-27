@@ -17,6 +17,7 @@ function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
           const len = value.length
           size += len + len + 4
         } else if (edge.typeIndex === 13) {
+          size += 4
         } else if (edge.typeIndex === 14) {
         }
       } else {
@@ -60,7 +61,7 @@ function writeEdges(
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
-      const value = ref[key]
+      let value = ref[key]
       db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
       db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = edge.typeIndex
       // [field] [typeIndex] [size] [data]
@@ -74,7 +75,17 @@ function writeEdges(
           db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 2)
           db.modifyBuffer.len += size + 6
         } else if (edge.typeIndex === 13) {
-          // single ref edge
+          // TODO: value get id
+          if (typeof value !== 'number') {
+            if (value instanceof ModifyState) {
+              value = value.tmpId
+            } else {
+              modifyError(res, t, value)
+              return true
+            }
+          }
+          writeFixedLenValue(db, value, db.modifyBuffer.len + 6, edge, res)
+          db.modifyBuffer.len += 10
         } else if (edge.typeIndex === 14) {
           // multi ref
         }
@@ -84,6 +95,7 @@ function writeEdges(
       }
     }
   }
+  return false
 }
 
 export function overWriteEdgeReferences(
@@ -136,7 +148,9 @@ export function overWriteEdgeReferences(
       db.modifyBuffer.buffer.writeUint32LE(ref.id, db.modifyBuffer.len + 1)
       const edgeDataSizeIndex = db.modifyBuffer.len + 5
       db.modifyBuffer.len += 9
-      writeEdges(t, ref, db, res)
+      if (writeEdges(t, ref, db, res)) {
+        return
+      }
       db.modifyBuffer.buffer.writeUint32LE(
         db.modifyBuffer.len - edgeDataSizeIndex - 4,
         edgeDataSizeIndex,

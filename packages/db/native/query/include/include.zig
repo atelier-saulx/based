@@ -104,9 +104,9 @@ pub fn getFields(
         }
 
         if (isEdge) {
-            size += 1;
+            size += 2;
             if (edgeType == 11) {
-                size += (valueLen + 5);
+                size += (valueLen + 4);
             } else if (edgeType == 10 or edgeType == 9) {
                 size += 1;
             } else if (edgeType == 5) {
