@@ -36,7 +36,10 @@ struct SelvaNodeReferences {
 };
 
 struct SelvaNodeWeakReference {
+    /* THe type can be found from the schema. */
+#if 0
     node_type_t dst_type;
+#endif
     node_id_t dst_id;
 };
 

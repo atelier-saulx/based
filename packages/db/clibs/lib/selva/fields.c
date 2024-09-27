@@ -498,9 +498,8 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
     }
 }
 
-static void remove_weak_reference(struct SelvaNode *src, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
+static void remove_weak_reference(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, node_id_t orig_dst)
 {
-    struct SelvaFields *fields = &src->fields;
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
     void *vp = nfo2p(fields, nfo);
 
@@ -582,9 +581,8 @@ static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const 
     }
 }
 
-static void remove_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static void remove_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
-    struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
     struct SelvaNodeWeakReferences refs;
 
@@ -731,10 +729,10 @@ static int insert_references(struct SelvaDb *db, const struct SelvaFieldSchema *
     return 0;
 }
 
-static int set_weak_references(const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
+static int set_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs_src, struct SelvaNodeWeakReference dsts[], size_t nr_dsts)
 {
-    struct SelvaFieldInfo *nfo = &src->fields.fields_map[fs_src->field];
-    void *vp = nfo2p(&src->fields, nfo);
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
+    void *vp = nfo2p(fields, nfo);
     struct SelvaNodeWeakReferences refs;
 
     assert(fs_src->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
@@ -785,6 +783,7 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
         break;
+        /* TODO Verify len for all types. */
     case SELVA_FIELD_TYPE_TIMESTAMP:
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
@@ -795,12 +794,12 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
-        /*
-         * Presumable we want to only use weak refs for edge references that can't use
-         * the normal refs.
-         */
+        goto copy;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        /* TODO Verify len */
+        if (len != sizeof(struct SelvaNodeWeakReference)) {
+            return SELVA_EINVAL;
+        }
+copy:
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
@@ -827,10 +826,11 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
         return insert_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
+            fprintf(stderr, "weak len: %d\n", (int)len);
             return SELVA_EINVAL;
         }
 
-        return set_weak_references(fs, node, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
+        return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
         do {
             struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
@@ -930,7 +930,7 @@ int selva_fields_references_insert(
     return 0;
 }
 
-static int get_refs( struct SelvaNodeReferences *refs, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+static int get_refs(struct SelvaNodeReferences *refs, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFieldInfo *nfo;
 
@@ -1399,16 +1399,18 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         /* TODO Text fields */
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
+        assert(node);
         remove_reference(db, node, fs, 0);
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
+        assert(node);
         remove_references(db, node, fs);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-        remove_weak_reference(node, fs, 0);
+        remove_weak_reference(fields, fs, 0);
         break;
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-        remove_weak_references(node, fs);
+        remove_weak_references(fields, fs);
         break;
     }
 
