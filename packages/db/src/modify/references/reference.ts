@@ -3,7 +3,7 @@ import { flushBuffer } from '../../operations.js'
 import { SchemaTypeDef, PropDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
-import { getEdgeSize } from './edge.js'
+import { getEdgeSize, writeEdges } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
 function writeRef(
@@ -14,11 +14,13 @@ function writeRef(
   res: ModifyState,
   fromCreate: boolean,
   writeKey: 3 | 6,
+  hasEdges: boolean,
 ) {
   setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-  db.modifyBuffer.buffer.writeUint32LE(id, db.modifyBuffer.len + 1)
-  db.modifyBuffer.len += 5
+  db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = hasEdges ? 1 : 0
+  db.modifyBuffer.buffer.writeUint32LE(id, db.modifyBuffer.len + 2)
+  db.modifyBuffer.len += 6
 }
 
 function singleReferencEdges(
@@ -50,17 +52,17 @@ function singleReferencEdges(
   } else {
     edgesLen = getEdgeSize(t, ref)
     if (edgesLen === 0) {
-      writeRef(id, db, schema, t, res, fromCreate, writeKey)
+      writeRef(id, db, schema, t, res, fromCreate, writeKey, false)
       return
     }
   }
 
-  if (5 + db.modifyBuffer.len + 11 + edgesLen > db.maxModifySize) {
+  if (6 + db.modifyBuffer.len + 11 + edgesLen > db.maxModifySize) {
     flushBuffer(db)
   }
 
-  writeRef(id, db, schema, t, res, fromCreate, writeKey)
-
+  writeRef(id, db, schema, t, res, fromCreate, writeKey, true)
+  writeEdges(t, ref, db, res)
   // add edge
 }
 
@@ -100,9 +102,9 @@ export function writeReference(
     }
   }
 
-  if (5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+  if (6 + db.modifyBuffer.len + 11 > db.maxModifySize) {
     flushBuffer(db)
   }
 
-  writeRef(value, db, schema, t, res, fromCreate, writeKey)
+  writeRef(value, db, schema, t, res, fromCreate, writeKey, false)
 }
