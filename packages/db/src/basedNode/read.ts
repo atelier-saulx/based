@@ -4,7 +4,7 @@ import { PropDef } from '../schema/schema.js'
 import { BasedNode } from './index.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
 
-export const readSeperateFieldFromBuffer = (
+export const readseparateFieldFromBuffer = (
   requestedField: PropDef,
   basedNode: BasedNode,
   includeDef: QueryIncludeDef = basedNode.__q.includeDef,
@@ -119,7 +119,7 @@ export const readSeperateFieldFromBuffer = (
           continue
         }
 
-        return readSeperateFieldFromBuffer(
+        return readseparateFieldFromBuffer(
           requestedField,
           basedNode,
           singleRef,

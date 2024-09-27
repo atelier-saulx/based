@@ -15,8 +15,8 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   setCursor(db, def, 0, id)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
   db.modifyBuffer.len++
-  if (def.seperate) {
-    for (const s of def.seperate) {
+  if (def.separate) {
+    for (const s of def.separate) {
       const nextLen = 1 + 4 + 1
       if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
         flushBuffer(db)

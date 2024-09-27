@@ -65,7 +65,7 @@ const _addModify = (
       }
 
       // 11: string
-      if (t.typeIndex === 11 && t.seperate === true) {
+      if (t.typeIndex === 11 && t.separate === true) {
         writeString(value, fromCreate, db, schema, t, res, writeKey)
         continue
       }

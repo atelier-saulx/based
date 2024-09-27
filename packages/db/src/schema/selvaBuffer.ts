@@ -47,7 +47,7 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
     const restFields: PropDef[] = []
     let refFields = 0
     for (const f of Object.values(t.props)) {
-      if (f.seperate) {
+      if (f.separate) {
         if (f.typeIndex === 13 || f.typeIndex === 14) {
           refFields++
         }

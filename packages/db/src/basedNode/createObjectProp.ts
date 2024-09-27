@@ -1,6 +1,6 @@
 import { PropDef, SchemaPropTree, SchemaTypeDef } from '../schema/schema.js'
 import { BasedNode } from './index.js'
-import { readSeperateFieldFromBuffer } from './read.js'
+import { readseparateFieldFromBuffer } from './read.js'
 import { singleRefProp } from './singleRefProp.js'
 import { BasedDb } from '../index.js'
 
@@ -9,7 +9,7 @@ const defineLeafProp = (leaf: PropDef, node: BasedNode, obj: any) => {
     enumerable: true,
     set: () => undefined,
     get: () => {
-      return readSeperateFieldFromBuffer(leaf, node)
+      return readseparateFieldFromBuffer(leaf, node)
     },
   })
 }

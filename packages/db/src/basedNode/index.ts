@@ -1,4 +1,4 @@
-import { readSeperateFieldFromBuffer } from './read.js'
+import { readseparateFieldFromBuffer } from './read.js'
 import { SchemaTypeDef } from '../schema/schema.js'
 import { createObjectProp } from './createObjectProp.js'
 import { BasedQueryResponse } from '../query/BasedQueryResponse.js'
@@ -45,7 +45,7 @@ export class BasedNode {
             enumerable: true,
             set: () => undefined,
             get() {
-              return readSeperateFieldFromBuffer(fieldDef, ctx)
+              return readseparateFieldFromBuffer(fieldDef, ctx)
             },
           })
         }

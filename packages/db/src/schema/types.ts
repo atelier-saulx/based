@@ -36,7 +36,7 @@ export type PropDef = {
   __isPropDef: true
   prop: number // (0-250)
   typeIndex: TypeIndex
-  seperate: boolean
+  separate: boolean
   path: string[]
   start: number
   len: number
@@ -81,7 +81,7 @@ export type SchemaTypeDef = {
   }
   id: number
   idUint8: Uint8Array
-  seperate: PropDef[]
+  separate: PropDef[]
   tree: SchemaPropTree
   responseCtx: BasedNode
   hasStringProp: boolean
@@ -104,7 +104,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   int32: 4,
   uint32: 4,
   boolean: 1, // 1bit (6 bits overhead)
-  reference: 0, // seperate
+  reference: 0, // separate
   enum: 1, // enum
   string: 0, // var length fixed length will be different
   references: 0,
@@ -122,7 +122,7 @@ export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
 
 export const ID_FIELD_DEF: PropDef = {
   typeIndex: TYPE_INDEX_MAP['id'],
-  seperate: true,
+  separate: true,
   path: ['id'],
   start: 0,
   prop: 0,
@@ -132,7 +132,7 @@ export const ID_FIELD_DEF: PropDef = {
 
 export const EMPTY_MICRO_BUFFER: PropDef = {
   typeIndex: TYPE_INDEX_MAP['microbuffer'],
-  seperate: true,
+  separate: true,
   path: [''],
   start: 0,
   prop: 0,

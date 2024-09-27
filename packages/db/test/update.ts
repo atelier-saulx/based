@@ -218,6 +218,6 @@ await test('update', async (t) => {
   equal(
     total / len < 1e3,
     true,
-    'Is at least faster then 1 second for 100k seperate updates and query',
+    'Is at least faster then 1 second for 100k separate updates and query',
   )
 })

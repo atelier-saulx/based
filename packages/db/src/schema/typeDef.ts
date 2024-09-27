@@ -35,7 +35,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         name: key,
         typeIndex: TYPE_INDEX_MAP[edgeType],
         len: SIZE_MAP[edgeType],
-        seperate: true,
+        separate: true,
         path: [...prop.path, key],
       }
 
@@ -78,7 +78,7 @@ export const createSchemaTypeDef = (
     idUint8: new Uint8Array([0, 0]),
     id: 0,
     mainLen: 0,
-    seperate: [],
+    separate: [],
     tree: {},
     // TODO will go to specific manager hub
     total: 0,
@@ -132,18 +132,19 @@ export const createSchemaTypeDef = (
           stringFields++
         }
       }
-      const isSeperate = len === 0
-      if (isSeperate) {
+
+      const isseparate = len === 0
+      if (isseparate) {
         result.cnt++
       }
       const prop: PropDef = {
         typeIndex: TYPE_INDEX_MAP[propType],
         __isPropDef: true,
-        seperate: isSeperate,
+        separate: isseparate,
         path: propPath,
         start: 0,
         len,
-        prop: isSeperate ? result.cnt : 0,
+        prop: isseparate ? result.cnt : 0,
       }
       if (isPropType('enum', schemaProp)) {
         prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
@@ -161,8 +162,8 @@ export const createSchemaTypeDef = (
         addEdges(prop, schemaProp)
       }
       result.props[propPath.join('.')] = prop
-      if (isSeperate) {
-        result.seperate.push(prop)
+      if (isseparate) {
+        result.separate.push(prop)
       }
     }
   }
@@ -172,7 +173,7 @@ export const createSchemaTypeDef = (
 
     // references first is important for perf in selva
     vals.sort((a, b) => {
-      if (b.seperate && (a.typeIndex === 14 || a.typeIndex === 13)) {
+      if (b.separate && (a.typeIndex === 14 || a.typeIndex === 13)) {
         return -1
       }
       return a.prop - b.prop
@@ -180,7 +181,7 @@ export const createSchemaTypeDef = (
 
     let lastProp = 0
     for (const p of vals) {
-      if (p.seperate) {
+      if (p.separate) {
         lastProp++
         p.prop = lastProp
       }
@@ -188,7 +189,7 @@ export const createSchemaTypeDef = (
 
     let len = 2
     for (const f of vals) {
-      if (f.seperate) {
+      if (f.separate) {
         len += 2
         setByPath(result.tree, f.path, f)
       } else {
@@ -206,7 +207,7 @@ export const createSchemaTypeDef = (
     const restFields: PropDef[] = []
 
     for (const f of vals) {
-      if (f.seperate) {
+      if (f.separate) {
         restFields.push(f)
       } else {
         mainFields.push(f)
@@ -226,7 +227,7 @@ export const createSchemaTypeDef = (
     if (result.mainLen) {
       result.buf[i] = 0
       for (const f of vals) {
-        if (!f.seperate) {
+        if (!f.separate) {
           i++
           result.buf[i] = f.typeIndex
           const name = encoder.encode(f.path.join('.'))
@@ -238,7 +239,7 @@ export const createSchemaTypeDef = (
       result.buf[i] = 0
     }
     for (const f of vals) {
-      if (f.seperate) {
+      if (f.separate) {
         i++
         result.buf[i] = f.prop
         i++
@@ -262,7 +263,7 @@ export const createSchemaTypeDef = (
     if (stringFields > 0) {
       result.hasStringProp = true
       let max = 0
-      for (const f of result.seperate) {
+      for (const f of result.separate) {
         if (isType(f, 'string')) {
           if (f.prop > max) {
             max = f.prop
@@ -270,7 +271,7 @@ export const createSchemaTypeDef = (
         }
       }
       result.stringProps = Buffer.allocUnsafe(max + 1)
-      for (const f of result.seperate) {
+      for (const f of result.separate) {
         if (isType(f, 'string')) {
           result.stringProps[f.prop] = 1
           result.stringPropsLoop.push(f)
