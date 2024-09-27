@@ -36,7 +36,7 @@ await test('simple', async (t) => {
               prop: 'articles',
               $role: ['writer', 'editor'],
               $rating: 'uint32',
-              $key: { type: 'string', maxBytes: 10 },
+              $lang: { type: 'string', maxBytes: 2 },
               $email: 'string',
             },
           },
@@ -58,8 +58,8 @@ await test('simple', async (t) => {
   const strudelArticle = db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
-      { id: mrSnurp, $role: 'writer', $rating: 99, email: 'snurp@snurp.inc' },
-      { id: mrYur, $role: 'editor', $rating: 10, email: 'yur@yuru.ur' },
+      { id: mrSnurp, $role: 'writer', $rating: 99, $email: 'AAA', $lang: 'en' },
+      // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],
   })
 
@@ -69,9 +69,9 @@ await test('simple', async (t) => {
     .query('article')
     .include('contributors.$role')
     .include('contributors.$rating')
+    .include('contributors.$email')
+    .include('contributors.$lang')
     .get()
-
-  console.dir(x.toObject(), { depth: 10 })
 
   x.debug()
 

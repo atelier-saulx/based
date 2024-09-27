@@ -1,7 +1,10 @@
 const readInt = @import("../../utils.zig").readInt;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
-const getFields = @import("./include.zig").getFields;
+const incl = @import("./include.zig");
+const getFields = incl.getFields;
+const RefStruct = incl.RefStruct;
+
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
@@ -15,7 +18,12 @@ pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
     originalNode: db.Node,
+    ref: ?RefStruct,
 ) usize {
+    if (ref != null) {
+        std.debug.print("We are in a single ref from edge! \n", .{});
+    }
+
     var size: usize = 0;
     const typeId: db.TypeId = readInt(u16, include, 0);
     const refField = include[2];

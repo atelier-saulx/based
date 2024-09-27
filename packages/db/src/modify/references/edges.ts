@@ -14,11 +14,10 @@ function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
       const value = ref[key]
       if (edge.len === 0) {
         if (edge.typeIndex === 11) {
-          // string
+          const len = value.length
+          size += len + len + 4
         } else if (edge.typeIndex === 13) {
-          // single ref edge
         } else if (edge.typeIndex === 14) {
-          // multi ref
         }
       } else {
         size += edge.len
@@ -40,13 +39,13 @@ function calculateEdgesSize(
       if (ref instanceof ModifyState) {
         ref = ref.tmpId
       } else if (typeof ref === 'object') {
-        size += getEdgeSize(t, ref) + 5
+        size += getEdgeSize(t, ref) + 6
       } else {
         modifyError(res, t, value)
         return 0
       }
     } else {
-      size += 5
+      size += 6
     }
   }
   return size
@@ -62,21 +61,26 @@ function writeEdges(
     if (key in ref) {
       const edge = t.edges[key]
       const value = ref[key]
-
+      db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
+      db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = edge.typeIndex
+      // [field] [typeIndex] [size] [data]
       if (edge.len === 0) {
         if (edge.typeIndex === 11) {
-          // string
+          const size = db.modifyBuffer.buffer.write(
+            value,
+            db.modifyBuffer.len + 6,
+            'utf8',
+          )
+          db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 2)
+          db.modifyBuffer.len += size + 6
         } else if (edge.typeIndex === 13) {
           // single ref edge
         } else if (edge.typeIndex === 14) {
           // multi ref
         }
       } else {
-        // [field] [size] [data]
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
-        db.modifyBuffer.buffer.writeUint16LE(edge.len, db.modifyBuffer.len + 1)
-        writeFixedLenValue(db, value, db.modifyBuffer.len + 3, edge, res)
-        db.modifyBuffer.len += edge.len + 3
+        writeFixedLenValue(db, value, db.modifyBuffer.len + 6, edge, res)
+        db.modifyBuffer.len += edge.len + 6
       }
     }
   }

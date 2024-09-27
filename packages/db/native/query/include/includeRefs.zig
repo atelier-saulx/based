@@ -3,7 +3,7 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const incl = @import("./include.zig");
 const getFields = incl.getFields;
-
+const RefStruct = incl.RefStruct;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
@@ -22,7 +22,12 @@ pub fn getRefsFields(
     include: []u8,
     node: db.Node,
     originalType: db.Type,
+    ref: ?RefStruct,
 ) usize {
+    if (ref != null) {
+        std.debug.print("We are in a refs from edge! \n", .{});
+    }
+
     const filterSize: db.TypeId = readInt(u16, include, 0);
     const filterArr: ?[]u8 = if (filterSize > 0) include[4 .. 4 + filterSize] else null;
 
