@@ -1,7 +1,7 @@
 import { BasedDb } from '../../index.js'
 import { PropDef, SchemaTypeDef } from '../../schema/types.js'
-import { modifyError, ModifyState } from '../ModifyRes.js'
-import { overWriteEdgeReferences } from './edges.js'
+import { ModifyState } from '../ModifyRes.js'
+import { overWriteEdgeReferences } from './referencesEdge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
 // export

@@ -3,10 +3,11 @@ import { flushBuffer } from '../../operations.js'
 import { SchemaTypeDef, PropDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
+import { getEdgeSize } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
 function singleReferencEdges(
-  value: RefModifyOpts,
+  ref: RefModifyOpts,
   db: BasedDb,
   schema: SchemaTypeDef,
   t: PropDef,
@@ -14,7 +15,40 @@ function singleReferencEdges(
   fromCreate: boolean,
   writeKey: 3 | 6,
 ) {
-  console.log('GO GO GO')
+  const id =
+    typeof ref.id === 'number'
+      ? ref.id
+      : ref instanceof ModifyState
+        ? ref.tmpId
+        : 0
+
+  if (id === 0) {
+    modifyError(res, t, ref)
+    return
+  }
+
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+  let edgesLen = 0
+
+  if (t.edgesTotalLen) {
+    edgesLen = t.edgesTotalLen
+  } else {
+    edgesLen = getEdgeSize(t, ref)
+    if (edgesLen === 0) {
+      return
+    }
+  }
+
+  if (5 + db.modifyBuffer.len + 11 + edgesLen > db.maxModifySize) {
+    flushBuffer(db)
+  }
+
+  setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+  // @ts-ignore
+  db.modifyBuffer.buffer.writeUint32LE(ref.id, db.modifyBuffer.len + 1)
+  db.modifyBuffer.len += 5
+  // add edge
 }
 
 export function writeReference(
