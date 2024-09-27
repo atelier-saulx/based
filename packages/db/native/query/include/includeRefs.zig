@@ -65,12 +65,16 @@ pub fn getRefsFields(
     var refs: if (isEdge) ?*selva.SelvaNodeWeakReferences else ?*selva.SelvaNodeReferences = undefined;
 
     if (isEdge) {
-        const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-            ref.?.edgeConstaint.*.fields_schema,
-            refField - 1,
-        );
-        refs = db.getEdgeReferences(ref.?.reference, edgeFieldSchema);
+        std.debug.print("refs {any} \n", .{ref});
         return 0;
+
+        // const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
+        //     ref.?.edgeConstaint.*.fields_schema,
+        //     refField - 1,
+        // );
+
+        // refs = db.getEdgeReferences(ref.?.reference, edgeFieldSchema);
+        // return 0;
     } else {
         const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
