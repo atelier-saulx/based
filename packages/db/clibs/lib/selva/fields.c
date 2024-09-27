@@ -668,7 +668,20 @@ static int set_reference(struct SelvaDb *db, const struct SelvaFieldSchema *fs_s
         remove_reference(db, dst, fs_dst, 0);
     }
 
-    write_ref_2way(src, fs_src, -1, dst, fs_dst);
+    /*
+     * Two-way write.
+     * See: write_ref_2way()
+     */
+    err = write_ref(src, fs_src, dst);
+    if (err) {
+        db_panic("Failed to write ref: %s", selva_strerror(err));
+    }
+    err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
+        ? write_ref(dst, fs_dst, src)
+        : write_refs(dst, fs_dst, -1, src, NULL);
+    if (err) {
+        db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
+    }
 
     return 0;
 }
@@ -915,11 +928,14 @@ int selva_fields_references_insert(
         remove_reference(db, dst, fs_dst, 0);
     }
 
+    /*
+     * Two-way write.
+     * See: write_ref_2way()
+     */
     err = write_refs(node, fs, index, dst, ref_out);
     if (err) {
         db_panic("Failed to write ref: %s", selva_strerror(err));
     }
-
     err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
         ? write_ref(dst, fs_dst, node)
         : write_refs(dst, fs_dst, -1, node, NULL);
