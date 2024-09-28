@@ -4,6 +4,14 @@ import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
 import { text, italy, euobserver } from './examples.js'
+import {
+  createQueryDef,
+  debugQueryDef,
+} from '../../src/query/internal/queryDef.js'
+import { QueryDefType } from '../../src/query/internal/types.js'
+import { includeFields } from '../../src/query/internal/include/includeFields.js'
+import { addInclude } from '../../src/query/internal/include/addInclude.js'
+import { addRefInclude } from '../../src/query/internal/include/addRefInclude.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -90,6 +98,70 @@ db.putSchema({
         age: { type: 'uint32' },
       },
     },
+    user: {
+      props: {
+        flap: 'uint32',
+        name: 'string',
+        articles: {
+          items: {
+            ref: 'article',
+            prop: 'contributors',
+          },
+        },
+      },
+    },
+    article: {
+      props: {
+        name: 'string',
+        contributors: {
+          items: {
+            ref: 'user',
+            prop: 'articles',
+          },
+        },
+      },
+    },
+    user2: {
+      props: {
+        name: 'string',
+        articles: {
+          items: {
+            ref: 'article2',
+            prop: 'contributors',
+          },
+        },
+      },
+    },
+    country: {
+      props: {
+        code: { type: 'string', maxBytes: 2 },
+        name: 'string',
+      },
+    },
+    article2: {
+      props: {
+        name: 'string',
+        contributors: {
+          type: 'references',
+          items: {
+            ref: 'user2',
+            prop: 'articles',
+            // $friend: {
+            //   ref: 'user',
+            // },
+            // $countries: {
+            //   items: {
+            //     ref: 'country',
+            //   },
+            // },
+            $role: ['writer', 'editor'],
+            // $rating: 'uint32',
+            // $lang: 'string',
+            // $email: 'string',
+          },
+        },
+      },
+    },
   },
 })
 
@@ -109,11 +181,121 @@ for (let i = 0; i < 2; i++) {
 
 console.log('db time', db.drain(), Date.now() - d)
 
-const x = db.query('todo').range(0, 100).get()
+var x = db.query('todo').range(0, 100).get()
 
 console.log(x.debug())
 
 console.log(x)
+
+var def = createQueryDef(db, QueryDefType.Root, {
+  type: 'todo',
+})
+
+includeFields(def, ['*'])
+
+var buffer = addInclude(db, def)
+
+debugQueryDef(def)
+
+console.log(
+  'old:',
+  new Uint8Array(x.query.includeBuffer),
+  'new:',
+  new Uint8Array(Buffer.concat(buffer)),
+)
+
+console.log('-------------------------------------------------------------')
+
+x = db.query('article').include('contributors.name').get()
+
+def = createQueryDef(db, QueryDefType.References, {
+  type: 'article',
+  propDef: {
+    typeIndex: 13,
+    prop: 250,
+    path: [],
+    __isPropDef: true,
+    len: 0,
+    separate: true,
+    name: 'root',
+  },
+})
+
+includeFields(def, ['contributors.name'])
+
+buffer = addRefInclude(db, def)
+
+debugQueryDef(def)
+
+console.log(
+  'old:',
+  new Uint8Array(x.query.includeBuffer),
+  'new:',
+  new Uint8Array(Buffer.concat(buffer)),
+)
+
+console.log('-------------------------------------------------------------')
+
+x = db.query('article').include('contributors.name').get()
+
+def = createQueryDef(db, QueryDefType.Root, { type: 'article' })
+
+includeFields(def, ['contributors.name'])
+
+buffer = addInclude(db, def)
+
+debugQueryDef(def)
+
+console.log(
+  'old:',
+  new Uint8Array(x.query.includeBuffer),
+  'new:',
+  new Uint8Array(Buffer.concat(buffer)),
+)
+
+console.log('-------------------------------------------------------------')
+
+x = db.query('article').include('contributors').get()
+
+def = createQueryDef(db, QueryDefType.Root, {
+  type: 'article',
+})
+
+includeFields(def, ['contributors'])
+
+buffer = addInclude(db, def)
+
+debugQueryDef(def)
+
+console.log(
+  'old:',
+  new Uint8Array(x.query.includeBuffer),
+  'new:',
+  new Uint8Array(Buffer.concat(buffer)),
+)
+
+console.log('-------------------------------------------------------------')
+
+x = db.query('article2').include('contributors.$role').get()
+
+def = createQueryDef(db, QueryDefType.Root, {
+  type: 'article2',
+})
+
+includeFields(def, ['contributors.$role'])
+
+buffer = addInclude(db, def)
+
+debugQueryDef(def)
+
+console.log(
+  'old:',
+  new Uint8Array(x.query.includeBuffer),
+  'new:',
+  new Uint8Array(Buffer.concat(buffer)),
+)
+
+// --------------------------------------------------------------
 
 // how to do make a funciton and the include type def
 // no query constructor yet just fns where we can add include stuff to the include def
@@ -121,14 +303,10 @@ console.log(x)
 // then execute on db
 // give it a different name
 // QueryDef scince its all
-
 // todo make a full toObject() speedy (later)
-
 // use this queryDef to read things
 // then at the end we can make the Query Constructor thing
 // this makes the query irrelevant everywhere else except the nessecary info of include
-
 // big thing only type to store things
 // easy functions to create things
-
 // then put it together afterwards

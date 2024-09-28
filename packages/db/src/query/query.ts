@@ -16,6 +16,8 @@ export class Query {
   offset: number
   limit: number
 
+  includeBuffer: Buffer
+
   sortBuffer: Buffer
   sortOrder: 0 | 1
 
