@@ -41,7 +41,9 @@ export const create = (
   const def = db.schemaTypesParsed[type]
   const id = def.lastId + 1
   const res = new ModifyState(id, db)
-  const hasMain = addModify(db, res, obj, def, CREATE, false, def.tree)
+  const mod = db.modifyBuffer
+
+  addModify(db, res, obj, def, CREATE, false, def.tree)
 
   if (res.error) {
     // @ts-ignore
@@ -51,13 +53,13 @@ export const create = (
   def.lastId = id
   def.total++
 
-  if (!hasMain || def.mainLen === 0) {
+  const wroteMain = mod.mergeMain || mod.lastMain !== -1
+  if (wroteMain || def.mainLen === 0) {
     setCursor(db, def, 0, id, CREATE)
   }
 
   // if touched lets see perf impact here
   if (def.hasStringProp) {
-    const mod = db.modifyBuffer
     if (mod.hasStringField != def.stringPropsSize - 1) {
       mod.buffer[mod.len] = 7
       let sizeIndex = mod.len + 1
@@ -95,41 +97,39 @@ export const update = (
   const def = db.schemaTypesParsed[type]
   const res = new ModifyState(id, db)
   const merge = !overwrite
-  const hasMain = addModify(db, res, obj, def, UPDATE, merge, def.tree)
+
+  addModify(db, res, obj, def, UPDATE, merge, def.tree)
+
+  const mod = db.modifyBuffer
 
   if (res.error) {
-    const mod = db.modifyBuffer
     mod.mergeMainSize = 0
     mod.mergeMain = null
     // @ts-ignore
     return res
   }
 
-  if (hasMain && merge) {
-    const mod = db.modifyBuffer
-    const mergeMain = mod.mergeMain
-    if (mergeMain) {
-      const buf = mod.buffer
-      const size = mod.mergeMainSize
-      // TODO is this 9 correct?
-      if (mod.len + size + 9 > db.maxModifySize) {
-        flushBuffer(db)
-      }
-      setCursor(db, def, 0, id, UPDATE)
-      buf[mod.len] = 5
-      buf.writeUint32LE(size, mod.len + 1)
-      mod.len += 5
-      for (let i = 0; i < mergeMain.length; i += 2) {
-        const t: PropDef = mergeMain[i]
-        const v = mergeMain[i + 1]
-        buf.writeUint16LE(t.start, mod.len)
-        buf.writeUint16LE(t.len, mod.len + 2)
-        writeFixedLenValue(db, v, mod.len + 4, t, res)
-        mod.len += t.len + 4
-      }
-      mod.mergeMainSize = 0
-      mod.mergeMain = null
+  if (mod.mergeMain) {
+    const buf = mod.buffer
+    const size = mod.mergeMainSize
+    // TODO is this 9 correct?
+    if (mod.len + size + 9 > db.maxModifySize) {
+      flushBuffer(db)
     }
+    setCursor(db, def, 0, id, UPDATE)
+    buf[mod.len] = 5
+    buf.writeUint32LE(size, mod.len + 1)
+    mod.len += 5
+    for (let i = 0; i < mod.mergeMain.length; i += 2) {
+      const t: PropDef = mod.mergeMain[i]
+      const v = mod.mergeMain[i + 1]
+      buf.writeUint16LE(t.start, mod.len)
+      buf.writeUint16LE(t.len, mod.len + 2)
+      writeFixedLenValue(db, v, mod.len + 4, t, res)
+      mod.len += t.len + 4
+    }
+    mod.mergeMainSize = 0
+    mod.mergeMain = null
   }
 
   if (!db.isDraining) {

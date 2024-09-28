@@ -26,8 +26,7 @@ const _addModify = (
   modifyOp: ModifyOp,
   merge: boolean,
   tree: SchemaTypeDef['tree'],
-): boolean => {
-  let wroteMain = false
+) => {
   for (const key in obj) {
     if (res.error !== undefined) {
       return
@@ -54,7 +53,6 @@ const _addModify = (
         continue
       }
       if (merge) {
-        wroteMain = true
         const mod = db.modifyBuffer
         if (mod.mergeMain) {
           mod.mergeMain.push(propDef, value)
@@ -67,7 +65,6 @@ const _addModify = (
       }
 
       // Fixed length main buffer
-      wroteMain = true
       setCursor(db, schema, propDef.prop, res.tmpId, modifyOp, true)
       const mod = db.modifyBuffer
       if (mod.lastMain === -1) {
@@ -94,14 +91,11 @@ const _addModify = (
       }
 
       writeFixedLenValue(db, value, propDef.start + mod.lastMain, propDef, res)
-    } else {
-      if (_addModify(db, res, value, schema, modifyOp, merge, propDef)) {
-        wroteMain = true
-      }
+      continue
     }
-  }
 
-  return wroteMain
+    _addModify(db, res, value, schema, modifyOp, merge, propDef)
+  }
 }
 
 export const addModify: typeof _addModify = (
@@ -114,7 +108,8 @@ export const addModify: typeof _addModify = (
   tree,
 ) => {
   const { lastMain, prefix0, prefix1, field, len, id } = db.modifyBuffer
-  const wroteMain = _addModify(db, res, obj, def, modifyOp, merge, tree)
+
+  _addModify(db, res, obj, def, modifyOp, merge, tree)
 
   if (res.error) {
     const mod = db.modifyBuffer
@@ -125,6 +120,4 @@ export const addModify: typeof _addModify = (
     mod.len = len
     mod.id = id
   }
-
-  return wroteMain
 }
