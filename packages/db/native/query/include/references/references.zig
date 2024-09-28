@@ -61,9 +61,10 @@ pub inline fn getRefsFields(
             const resultRaw = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
             std.debug.print(" resultRaw {any} \n", .{resultRaw});
         }
-        // refs = db.getEdgeReferences(ref.?.reference, refField - 1);
-        // std.debug.print(" refs {any} \n", .{refs});
-        return 10;
+        // this is wrong
+        refs = db.getEdgeReferences(ref.?.reference, refField - 1);
+        std.debug.print(" refs {any} \n", .{refs});
+        return 0;
     } else {
         const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
         edgeConstrain = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -71,7 +72,7 @@ pub inline fn getRefsFields(
     }
 
     if (refs == null) {
-        return 10;
+        return 0;
     }
 
     var result: types.RefsResult = undefined;

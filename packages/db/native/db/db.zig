@@ -232,33 +232,36 @@ pub fn getEdgeFieldSchema(edgeConstaint: *selva.EdgeFieldConstraint, field: u8) 
     return edgeFieldSchema;
 }
 
-// pub fn getEdgeReferences(
-//     ref: *selva.SelvaNodeReference,
-//     field: u8,
-// ) ?*selva.SelvaNodeWeakReferences {
-//     if (ref.meta != null) {
-//         var result: selva.SelvaNodeWeakReferences = selva.selva_field_get_weak_references(
-//             ref.meta,
-//             field,
-//         );
-//         return &result;
-//     }
-//     return null;
-// }
-// pub fn getEdgeReference(
-//     ref: *selva.SelvaNodeReference,
-//     selvaFieldSchema: FieldSchema,
-// ) *selva.SelvaNodeWeakReference {
-//     if (ref.meta != null) {
-//         const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
-//             ref.meta,
-//             selvaFieldSchema,
-//         );
-//         return @as(*selva.SelvaNodeWeakReference, @ptrCast(result.ptr));
-//     } else {
-//         return &.{};
-//     }
-// }
+// TODO fix this
+pub fn getEdgeReferences(
+    ref: *selva.SelvaNodeReference,
+    field: u8,
+) ?*selva.SelvaNodeWeakReferences {
+    if (ref.meta != null) {
+        var result: selva.SelvaNodeWeakReferences = selva.selva_field_get_weak_references(
+            ref.meta,
+            field,
+        );
+        return &result;
+    }
+    return null;
+}
+
+// TODO fix this
+pub fn getEdgeReference(
+    ref: *selva.SelvaNodeReference,
+    selvaFieldSchema: FieldSchema,
+) *selva.SelvaNodeWeakReference {
+    if (ref.meta != null) {
+        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
+            ref.meta,
+            selvaFieldSchema,
+        );
+        return @as(*selva.SelvaNodeWeakReference, @ptrCast(result.ptr));
+    } else {
+        return &.{};
+    }
+}
 
 pub fn writeEdgeProp(
     data: []u8,
