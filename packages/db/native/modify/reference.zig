@@ -21,8 +21,6 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
         return;
     }
 
-    //const ref = try db.insertReference(node, ctx.node.?, ctx.fieldSchema.?, -1);
-
     if (hasEdges) {
         // TODO: replace with an insert type thing
         try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
@@ -33,11 +31,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
         }
         const totalEdgesLen = readInt(u32, data, 5);
         const edges = data[9 .. totalEdgesLen + 5];
-        std.debug.print("YO EDGE FOR REF {any} {any} \n", .{ data, ref });
-        std.debug.print("blaur {any} \n", .{edges});
-
         try edge.writeEdges(ctx, ref.?, edges);
-
         return;
     }
 

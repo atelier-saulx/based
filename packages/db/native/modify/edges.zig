@@ -16,8 +16,6 @@ pub fn writeEdges(
 ) !void {
     var i: usize = 0;
 
-    std.debug.print("EDGE {d} \n", .{data.len});
-
     while (i < data.len) {
         const prop = data[i];
         const typeIndex = data[i + 1];
@@ -36,8 +34,6 @@ pub fn writeEdges(
         }
 
         const edgeData = data[i + 2 + offset .. i + 2 + offset + edgeLen];
-
-        std.debug.print("YO {any} \n", .{edgeData});
 
         try db.writeEdgeProp(
             edgeData,

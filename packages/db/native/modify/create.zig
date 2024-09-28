@@ -14,8 +14,6 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
-    // std.debug.print("MR SNURFELS field: {d} {any}  \n", .{ ctx.field, data });
-
     if (ctx.fieldType == 14) {
         try references.updateReferences(ctx, data);
         return data.len;
