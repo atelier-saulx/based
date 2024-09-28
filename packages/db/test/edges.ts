@@ -104,13 +104,13 @@ await test('edges', async (t) => {
 
   x.debug()
 
-  console.log(x)
+  // console.log(x)
 
-  for (const f of x) {
-    for (const y of f.contributors) {
-      console.log(y, '$ROLE', y.$role)
-    }
-  }
+  // for (const f of x) {
+  // for (const y of f.contributors) {
+  // console.log(y, '$ROLE', y.$role)
+  // }
+  // }
 
   // await setTimeout(500)
 

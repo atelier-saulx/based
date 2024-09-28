@@ -52,6 +52,7 @@ pub fn createResultsBuffer(
                 // [253, 2, 2124, 10]
                 data[i] = 253;
                 data[i + 1] = item.field;
+
                 writeInt(u32, data, i + 2, item.refSize.?);
                 writeInt(u32, data, i + 6, item.totalRefs.?);
                 i += 10;

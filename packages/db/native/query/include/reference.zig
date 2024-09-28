@@ -1,29 +1,23 @@
 const readInt = @import("../../utils.zig").readInt;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
-const incl = @import("./include.zig");
-const getFields = incl.getFields;
-const RefStruct = incl.RefStruct;
-
+const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const selva = @import("../../selva.zig");
 const std = @import("std");
 const results = @import("../results.zig");
-
-const IncludeError = error{
-    Recursion,
-};
+const types = @import("./types.zig");
 
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
     include: []u8,
     originalNode: db.Node,
     originalType: db.Type,
-    ref: ?RefStruct,
+    ref: ?types.RefStruct,
     comptime isEdge: bool,
 ) usize {
     if (isEdge) {
-        std.debug.print("ref {any} \n", .{ref});
+        std.debug.print("SINGLE REF {any} \n", .{ref.?.reference});
         return 0;
     }
 

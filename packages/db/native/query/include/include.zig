@@ -1,18 +1,12 @@
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
-const getSingleRefFields = @import("./includeSingleRef.zig").getSingleRefFields;
+const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const readInt = @import("../../utils.zig").readInt;
-const getField = db.getField;
 const db = @import("../../db//db.zig");
-const getRefsFields = @import("./includeRefs.zig").getRefsFields;
+const getRefsFields = @import("./references/references.zig").getRefsFields;
 const std = @import("std");
-const selva = @import("../../selva.zig");
-
-pub const RefStruct = struct {
-    reference: *selva.SelvaNodeReference,
-    edgeConstaint: *selva.EdgeFieldConstraint,
-};
+const types = @import("./types.zig");
 
 pub fn getFields(
     node: db.Node,
@@ -20,7 +14,7 @@ pub fn getFields(
     id: u32,
     typeEntry: db.Type,
     include: []u8,
-    ref: ?RefStruct,
+    ref: ?types.RefStruct,
     comptime isEdge: bool,
 ) !usize {
     var includeMain: ?[]u8 = null;
@@ -99,10 +93,7 @@ pub fn getFields(
         var value: []u8 = undefined;
 
         if (isEdge) {
-            const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-                ref.?.edgeConstaint.*.fields_schema,
-                field - 1,
-            );
+            const edgeFieldSchema = try db.getEdgeFieldSchema(ref.?.edgeConstaint, field);
             edgeType = edgeFieldSchema.*.type;
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
         } else {
