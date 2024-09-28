@@ -95,19 +95,19 @@ db.putSchema({
 
 const d = Date.now()
 
-// for (let i = 0; i < 20e6; i++) {
-//   db.create('todo', { done: false, age: i })
-// }
-
-// console.log('db time', db.drain(), Date.now() - d)
-
-// console.log(db.query('todo').range(0, 100).get())
-
-for (let i = 0; i < 2; i++) {
-  db.create('todo', { done: true, age: i + 99, bla: 2 })
+for (let i = 0; i < 20e6; i++) {
+  db.create('todo', { done: false, age: i })
 }
 
 console.log('db time', db.drain(), Date.now() - d)
+
+// // console.log(db.query('todo').range(0, 100).get())
+
+// for (let i = 0; i < 2; i++) {
+//   db.create('todo', { done: true, age: i + 99, bla: 2 })
+// }
+
+// console.log('db time', db.drain(), Date.now() - d)
 
 const x = db.query('todo').range(0, 100).get()
 

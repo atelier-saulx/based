@@ -7,6 +7,7 @@ import { writeFixedLenValue } from './fixedLen.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
+import { ModifyOp } from './types.js'
 
 const EMPTY_BUFFER = Buffer.alloc(1000)
 
@@ -16,7 +17,7 @@ const _addModify = (
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   schema: SchemaTypeDef,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
   merge: boolean,
 ): boolean => {
   let wroteMain = false
@@ -41,7 +42,7 @@ const _addModify = (
           value,
           leaf as SchemaTypeDef['tree'],
           schema,
-          writeKey,
+          modifyOp,
           merge,
         )
       ) {
@@ -52,19 +53,19 @@ const _addModify = (
 
       // 13: reference
       if (t.typeIndex === 13) {
-        writeReference(value, db, schema, t, res, writeKey)
+        writeReference(value, db, schema, t, res, modifyOp)
         continue
       }
 
       // 14: references
       if (t.typeIndex === 14) {
-        writeReferences(t, db, writeKey, value, schema, res)
+        writeReferences(t, db, modifyOp, value, schema, res)
         continue
       }
 
       // 11: string
       if (t.typeIndex === 11 && t.separate === true) {
-        writeString(value, db, schema, t, res, writeKey)
+        writeString(value, db, schema, t, res, modifyOp)
         continue
       }
 
@@ -80,15 +81,15 @@ const _addModify = (
 
       // Fixed length main buffer
       wroteMain = true
-      setCursor(db, schema, t.prop, res.tmpId, writeKey, true)
+      setCursor(db, schema, t.prop, res.tmpId, modifyOp, true)
       let mainIndex = db.modifyBuffer.lastMain
       if (mainIndex === -1) {
         const nextLen = schema.mainLen + 1 + 4
         if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t.prop, res.tmpId, writeKey)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : writeKey
+        setCursor(db, schema, t.prop, res.tmpId, modifyOp)
+        db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : modifyOp
         db.modifyBuffer.buffer.writeUint32LE(
           schema.mainLen,
           db.modifyBuffer.len + 1,
@@ -118,18 +119,20 @@ export const addModify = (
   obj: { [key: string]: any },
   tree: SchemaTypeDef['tree'],
   def: SchemaTypeDef,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
   merge: boolean,
 ) => {
-  const typePrefix = db.modifyBuffer.typePrefix
+  const prefix0 = db.modifyBuffer.prefix0
+  const prefix1 = db.modifyBuffer.prefix1
   const lastMain = db.modifyBuffer.lastMain
   const field = db.modifyBuffer.field
   const len = db.modifyBuffer.len
   const id = db.modifyBuffer.id
-  const wroteMain = _addModify(db, res, obj, tree, def, writeKey, merge)
+  const wroteMain = _addModify(db, res, obj, tree, def, modifyOp, merge)
 
   if (res.error) {
-    db.modifyBuffer.typePrefix = typePrefix
+    db.modifyBuffer.prefix0 = prefix0
+    db.modifyBuffer.prefix1 = prefix1
     db.modifyBuffer.lastMain = lastMain
     db.modifyBuffer.field = field
     db.modifyBuffer.len = len

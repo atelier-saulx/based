@@ -3,6 +3,7 @@ import { flushBuffer } from '../../operations.js'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
+import { ModifyOp } from '../types.js'
 
 export function simpleRefsPacked(
   t: PropDefEdge,
@@ -89,7 +90,7 @@ export function simpleRefs(
 export function overWriteSimpleReferences(
   t: PropDef,
   db: BasedDb,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
@@ -100,11 +101,11 @@ export function overWriteSimpleReferences(
   if (potentialLen > db.maxModifySize) {
     flushBuffer(db)
   }
-  setCursor(db, schema, t.prop, res.tmpId, writeKey)
+  setCursor(db, schema, t.prop, res.tmpId, modifyOp)
   const len = db.modifyBuffer.len
   db.modifyBuffer.len += 6
   const added = simpleRefs(t, db, value, res)
-  db.modifyBuffer.buffer[len] = writeKey
+  db.modifyBuffer.buffer[len] = modifyOp
   db.modifyBuffer.buffer.writeUint32LE(added + 1, len + 1)
   db.modifyBuffer.buffer[len + 5] = op
   db.modifyBuffer.len += added

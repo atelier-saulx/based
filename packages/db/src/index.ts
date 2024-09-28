@@ -30,7 +30,8 @@ export class BasedDb {
     buffer: Buffer
     len: number
     field: number
-    typePrefix: Uint8Array
+    prefix0: number
+    prefix1: number
     id: number
     lastMain: number
     mergeMain: (PropDef | any)[] | null
@@ -69,7 +70,8 @@ export class BasedDb {
       buffer: Buffer.allocUnsafe(max),
       len: 0,
       field: -1,
-      typePrefix: new Uint8Array([0, 0]),
+      prefix0: 0,
+      prefix1: 0,
       id: -1,
       lastMain: -1,
       ctx: {},

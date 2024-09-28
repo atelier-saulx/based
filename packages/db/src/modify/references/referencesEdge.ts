@@ -3,19 +3,20 @@ import { flushBuffer } from '../../operations.js'
 import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
+import { ModifyOp } from '../types.js'
 import { calculateEdgesSize, writeEdges } from './edge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
 export function overWriteEdgeReferences(
   t: PropDef,
   db: BasedDb,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
   op: 0 | 1 | 2,
 ) {
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
   let refLen = 0
 
   if (t.edgesTotalLen) {
@@ -28,7 +29,7 @@ export function overWriteEdgeReferences(
     overWriteSimpleReferences(
       t,
       db,
-      writeKey,
+      modifyOp,
       value,
       schema,
       res,
@@ -41,8 +42,8 @@ export function overWriteEdgeReferences(
     flushBuffer(db)
   }
 
-  setCursor(db, schema, t.prop, res.tmpId, writeKey)
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
+  setCursor(db, schema, t.prop, res.tmpId, modifyOp)
+  db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
   const sizeIndex = db.modifyBuffer.len + 1
   db.modifyBuffer.buffer[sizeIndex + 4] = op
   db.modifyBuffer.len += 6

@@ -3,6 +3,7 @@ import { flushBuffer } from '../../operations.js'
 import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
+import { ModifyOp } from '../types.js'
 import { overWriteEdgeReferences } from './referencesEdge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
@@ -26,7 +27,7 @@ export type Refs =
 export function writeReferences(
   t: PropDef,
   db: BasedDb,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
   value: any,
   schema: SchemaTypeDef,
   res: ModifyState,
@@ -40,7 +41,7 @@ export function writeReferences(
     if (db.modifyBuffer.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, schema, t.prop, res.tmpId, writeKey)
+    setCursor(db, schema, t.prop, res.tmpId, modifyOp)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
     db.modifyBuffer.len++
     return
@@ -48,9 +49,9 @@ export function writeReferences(
 
   if (Array.isArray(value)) {
     if (t.edges) {
-      overWriteEdgeReferences(t, db, writeKey, value, schema, res, 0)
+      overWriteEdgeReferences(t, db, modifyOp, value, schema, res, 0)
     } else {
-      overWriteSimpleReferences(t, db, writeKey, value, schema, res, 0)
+      overWriteSimpleReferences(t, db, modifyOp, value, schema, res, 0)
     }
     return
   }
@@ -70,9 +71,9 @@ export function writeReferences(
     }
 
     if (t.edges) {
-      overWriteEdgeReferences(t, db, writeKey, value, schema, res, op)
+      overWriteEdgeReferences(t, db, modifyOp, value, schema, res, op)
     } else {
-      overWriteSimpleReferences(t, db, writeKey, val, schema, res, op)
+      overWriteSimpleReferences(t, db, modifyOp, val, schema, res, op)
     }
   }
 }

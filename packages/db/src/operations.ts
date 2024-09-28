@@ -16,8 +16,8 @@ export const flushBuffer = (db: BasedDb) => {
 
     // add errors and reset them here
     db.modifyBuffer.len = 0
-    db.modifyBuffer.typePrefix[0] = 0
-    db.modifyBuffer.typePrefix[1] = 0
+    db.modifyBuffer.prefix0 = 0
+    db.modifyBuffer.prefix1 = 0
     db.modifyBuffer.field = -1
     db.modifyBuffer.id = -1
     db.modifyBuffer.lastMain = -1
