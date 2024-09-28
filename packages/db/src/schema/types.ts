@@ -9,46 +9,43 @@ import { BasedNode } from '../basedNode/index.js'
 // TODO make nice CONSTS
 
 // Dont change the numbers!
-export const TIMESTAMP = 1
-export const CREATED = 2
-export const UPDATED = 3
-export const NUMBER = 4
-export const UINT32 = 5
 export const BOOLEAN = 9
+export const CREATED = 2
 export const ENUM = 10
-export const STRING = 11
+export const ID = 0
+export const INT16 = 20
+export const INT32 = 22
+export const INT8 = 18
+export const MICROBUFFER = 17
+export const NUMBER = 4
 export const REFERENCE = 13
 export const REFERENCES = 14
-export const MICROBUFFER = 17
-export const INT8 = 18
-export const UINT8 = 19
-export const INT16 = 20
+export const STRING = 11
+export const TIMESTAMP = 1
 export const UINT16 = 21
-export const INT32 = 22
+export const UINT32 = 5
+export const UINT8 = 19
+export const UPDATED = 3
 
-// ------- internal only
-export const ID = 0
-
-export const TYPE_INDEX_MAP = {
-  timestamp: 1,
-  created: 2,
-  updated: 3,
-  number: 4,
-  uint32: 5,
-  boolean: 9,
-  enum: 10,
-  string: 11,
-  reference: 13,
-  references: 14,
-  microbuffer: 17,
-  int8: 18,
-  uint8: 19,
-  int16: 20,
-  uint16: 21,
-  int32: 22,
-  // ------- internal only
-  id: 0,
-} as const
+const TYPE_INDEX_MAP = {
+  microbuffer: MICROBUFFER,
+  references: REFERENCES,
+  reference: REFERENCE,
+  timestamp: TIMESTAMP,
+  boolean: BOOLEAN,
+  created: CREATED,
+  updated: UPDATED,
+  number: NUMBER,
+  string: STRING,
+  uint16: UINT16,
+  uint32: UINT32,
+  int16: INT16,
+  int32: INT32,
+  uint8: UINT8,
+  enum: ENUM,
+  int8: INT8,
+  id: ID,
+}
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
