@@ -52,6 +52,9 @@ pub fn getFields(
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
             }
+            if (isEdge) {
+                std.debug.print("need to handle isEdge multi refs (write edge field here) \n", .{});
+            }
             size += getRefsFields(
                 ctx,
                 multiRefs,
@@ -67,6 +70,9 @@ pub fn getFields(
             const refSize = readInt(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
+            if (isEdge) {
+                std.debug.print("need to handle isEdge single refs (write edge field here) \n", .{});
+            }
             if (!idIsSet) {
                 idIsSet = true;
                 size += try addIdOnly(ctx, id);
