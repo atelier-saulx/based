@@ -39,6 +39,7 @@ pub const SelvaError = error{
     // Other errors
     UNKNOWN_ERROR,
     SELVA_CANNOT_UPSERT,
+    SELVA_NO_EDGE_FIELDSCHEMA,
 };
 
 pub fn selva(rc: c_int) SelvaError!void {

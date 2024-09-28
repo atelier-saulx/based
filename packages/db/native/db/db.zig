@@ -15,6 +15,8 @@ pub const Type = *selva.SelvaTypeEntry;
 
 pub const FieldSchema = *selva.SelvaFieldSchema;
 
+pub const EdgeFieldConstraint = *selva.EdgeFieldConstraint;
+
 pub const DbCtx = struct {
     initialized: bool,
     allocator: std.mem.Allocator,
@@ -213,21 +215,39 @@ pub fn getEdgeProp(
     }
 }
 
-pub fn getEdgeReferences(
-    ref: *selva.SelvaNodeReference,
-    selvaFieldSchema: FieldSchema,
-) *selva.SelvaNodeWeakReferences {
-    if (ref.meta != null) {
-        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
-            ref.meta,
-            selvaFieldSchema,
-        );
-        return @ptrCast(result.ptr);
-    } else {
-        return &.{};
+// TODO add in db...
+// const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
+//     ref.?.edgeConstaint.*.fields_schema,
+//     field - 1,
+// );
+
+pub fn getEdgeFieldSchema(edgeConstaint: *selva.EdgeFieldConstraint, field: u8) !FieldSchema {
+    const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
+        edgeConstaint.*.fields_schema,
+        field - 1,
+    );
+    if (edgeFieldSchema == null) {
+        return errors.SelvaError.SELVA_NO_EDGE_FIELDSCHEMA;
     }
+    return edgeFieldSchema;
 }
 
+// TODO fix this
+pub fn getEdgeReferences(
+    ref: *selva.SelvaNodeReference,
+    field: u8,
+) ?*selva.SelvaNodeWeakReferences {
+    if (ref.meta != null) {
+        var result: selva.SelvaNodeWeakReferences = selva.selva_field_get_weak_references(
+            ref.meta,
+            field,
+        );
+        return &result;
+    }
+    return null;
+}
+
+// TODO fix this
 pub fn getEdgeReference(
     ref: *selva.SelvaNodeReference,
     selvaFieldSchema: FieldSchema,

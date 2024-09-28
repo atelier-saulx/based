@@ -13,6 +13,8 @@ export type Operation =
   | '!exists'
 
 export const operationToByte = (op: Operation) => {
+  // useless remove this just constants...
+  // also put this in filter
   if (op === '=') {
     return 1
   }
@@ -34,6 +36,9 @@ export const operationToByte = (op: Operation) => {
 
 export type MainIncludes = { [start: string]: [number, PropDef] }
 
+// ADD ALL INFO HERE
+// FILTER
+// SORT
 export type QueryIncludeDef = {
   mainIncludes: MainIncludes
   mainLen: number
@@ -42,13 +47,16 @@ export type QueryIncludeDef = {
   isEdges?: boolean
   schema: SchemaTypeDef
   props: SchemaTypeDef['props'] | PropDef['edges']
+  // SEEMS exseive to put eerything here
   edgeSchema?: PropDef['edges']
   fromRef?: PropDef | PropDefEdge
   multiple: boolean
   referencesFilters: {
+    // MAKE IT A BIT CLEARER JUST FILTER
     [field: string]: { conditions: Map<number, Buffer[]>; size: number }
   }
   referencesSortOptions: {
+    // MAKE IT A BIT CLEARER JUST SORT
     [field: string]: { field: string; order: 'asc' | 'desc' }
   }
   includeFields: Set<string>
@@ -57,6 +65,7 @@ export type QueryIncludeDef = {
   refIncludes?: { [field: string]: QueryIncludeDef } // { } tree for refs prob
 }
 
+// call this filter no from ref / reference etc just goes into the QueryDef
 export type QueryConditions = {
   conditions: Map<number, Buffer[]>
   references?: Map<number, QueryConditions>

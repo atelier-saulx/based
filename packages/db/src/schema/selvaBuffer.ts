@@ -1,4 +1,4 @@
-import { SchemaTypeDef, PropDef, EMPTY_MICRO_BUFFER, isType } from './types.js'
+import { SchemaTypeDef, PropDef, EMPTY_MICRO_BUFFER } from './types.js'
 
 const propDefBuffer = (
   schema: { [key: string]: SchemaTypeDef },
@@ -6,12 +6,12 @@ const propDefBuffer = (
   isEdge?: boolean,
 ): number[] => {
   const type = prop.typeIndex
-  if (prop.len && isType(prop, 'microbuffer')) {
+  if (prop.len && type === 17) {
     const buf = Buffer.allocUnsafe(3)
     buf[0] = type
     buf.writeUint16LE(prop.len, 1)
     return [...buf.values()]
-  } else if (isType(prop, 'reference') || isType(prop, 'references')) {
+  } else if (type === 13 || type === 14) {
     const buf: Buffer = Buffer.allocUnsafe(8)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
 
@@ -35,7 +35,7 @@ const propDefBuffer = (
 
     buf.writeUint32LE(0, 4)
     return [...buf.values()]
-  } else if (isType(prop, 'string')) {
+  } else if (type === 11) {
     return [type, prop.len < 50 ? prop.len : 0]
   } else {
     return [type]

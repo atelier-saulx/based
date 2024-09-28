@@ -65,6 +65,8 @@ await test('references', async (t) => {
 
   db.drain()
 
+  console.log(db.query('article').include('contributors.name').get().debug())
+
   deepEqual(db.query('article').include('contributors.name').get().toObject(), [
     {
       id: strudelArticle.tmpId,

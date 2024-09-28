@@ -6,6 +6,8 @@ import { BasedNode } from '../basedNode/index.js'
 // 253: to read multi refs in responses better to avoid
 // 0: main buffer
 
+// TODO make nice CONSTS
+
 // Dont change the numbers!
 export const TIMESTAMP = 1
 export const CREATED = 2
@@ -123,12 +125,12 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   uint16: 2,
   int32: 4,
   uint32: 4,
-  boolean: 1, // 1bit (6 bits overhead)
+  boolean: 1,
   reference: 0, // separate
   enum: 1, // enum
-  string: 0, // var length fixed length will be different
-  references: 0,
-  microbuffer: 0,
+  string: 0, // separate
+  references: 0, // separate
+  microbuffer: 0, // separate
   id: 4,
 }
 
@@ -169,8 +171,4 @@ export const isPropDef = (prop: any): prop is PropDef => {
     return true
   }
   return false
-}
-
-export const isType = (prop: PropDef, type: InternalSchemaProp): boolean => {
-  return REVERSE_TYPE_INDEX_MAP[prop.typeIndex] === type
 }

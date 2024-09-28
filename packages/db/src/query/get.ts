@@ -5,6 +5,7 @@ import { addConditions } from './filter.js'
 
 export const get = (query: Query): BasedQueryResponse => {
   if (!query.includeDef) {
+    // Make a function for this get all except refs
     for (const f in query.schema.props) {
       if (
         query.schema.props[f].typeIndex !== 13 &&

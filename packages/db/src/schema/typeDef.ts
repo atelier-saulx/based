@@ -14,7 +14,6 @@ import {
   SchemaTypeDef,
   SIZE_MAP,
   TYPE_INDEX_MAP,
-  isType,
   PropDefEdge,
 } from './types.js'
 
@@ -264,7 +263,7 @@ export const createSchemaTypeDef = (
       result.hasStringProp = true
       let max = 0
       for (const f of result.separate) {
-        if (isType(f, 'string')) {
+        if (f.typeIndex === 11) {
           if (f.prop > max) {
             max = f.prop
           }
@@ -272,7 +271,7 @@ export const createSchemaTypeDef = (
       }
       result.stringProps = Buffer.allocUnsafe(max + 1)
       for (const f of result.separate) {
-        if (isType(f, 'string')) {
+        if (f.typeIndex === 11) {
           result.stringProps[f.prop] = 1
           result.stringPropsLoop.push(f)
           result.stringPropsSize++

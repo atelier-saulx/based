@@ -1,6 +1,9 @@
 import { Query } from './query.js'
 import { Operation } from './types.js'
 
+// replace this completely
+// check if you are selection references OR a reference
+// then just make it allrdy and dont add the stuff to query
 export class Select {
   field: string
   query: Query

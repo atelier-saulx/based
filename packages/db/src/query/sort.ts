@@ -1,6 +1,8 @@
 import { SchemaTypeDef } from '../schema/types.js'
 import { Query } from './query.js'
 
+// some sort things are now in query put all on INCLUDE DEF
+// same for filter add it to INCLUDE DEF
 export const createSortBuffer = (
   schema: SchemaTypeDef,
   field: string,
