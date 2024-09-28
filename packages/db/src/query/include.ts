@@ -10,6 +10,9 @@ import { Query } from './query.js'
 import { addConditions } from './filter.js'
 import { createSortBuffer } from './sort.js'
 
+// this can be completely reused
+// clean up by putting in a folder
+
 const EMPTY_BUFFER = Buffer.alloc(0)
 
 export const addInclude = (query: Query, include: QueryIncludeDef) => {

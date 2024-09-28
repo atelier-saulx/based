@@ -215,6 +215,7 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
+// rename to add filter
 export const addConditions = (conditions: QueryConditions, size: number) => {
   let result: Buffer
   if (size > 0) {

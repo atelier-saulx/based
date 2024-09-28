@@ -114,3 +114,21 @@ const x = db.query('todo').range(0, 100).get()
 console.log(x.debug())
 
 console.log(x)
+
+// how to do make a funciton and the include type def
+// no query constructor yet just fns where we can add include stuff to the include def
+// combine them and create the buffer
+// then execute on db
+// give it a different name
+// QueryDef scince its all
+
+// todo make a full toObject() speedy (later)
+
+// use this queryDef to read things
+// then at the end we can make the Query Constructor thing
+// this makes the query irrelevant everywhere else except the nessecary info of include
+
+// big thing only type to store things
+// easy functions to create things
+
+// then put it together afterwards
