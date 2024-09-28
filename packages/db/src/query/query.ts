@@ -19,6 +19,7 @@ export class Query {
   limit: number
 
   includeBuffer: Buffer
+  filterTime: Buffer
 
   sortBuffer: Buffer
   sortOrder: 0 | 1

@@ -1,7 +1,8 @@
-import { BasedDb } from '../../../index.js'
-import { createSortBuffer } from '../../sort.js'
-import { QueryDef, QueryDefType } from '../types.js'
+import { BasedDb } from '../../index.js'
+import { createSortBuffer } from '../sort.js'
+import { QueryDef, QueryDefType } from './types.js'
 import { addInclude } from './addInclude.js'
+import { filterToBuffer } from './internal.js'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
@@ -27,8 +28,10 @@ export function addRefInclude(db: BasedDb, def: QueryDef): Buffer[] {
   if (def.type === QueryDefType.References) {
     // TODO filter edge
     let filter: Buffer
+
+    console.log(def.filter)
     if (def.filter.size) {
-      // filter = addConditions(filterConditions, filterConditions.size)
+      filter = filterToBuffer(def.filter)
     }
 
     let sort: Buffer

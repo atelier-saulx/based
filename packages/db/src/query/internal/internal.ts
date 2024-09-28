@@ -1,14 +1,16 @@
 import { BasedDb } from '../../index.js'
-import { addInclude } from './include/addInclude.js'
+import { addInclude } from './addInclude.js'
 import { createQueryDef, debugQueryDef } from './queryDef.js'
 import { QueryDefType, QueryDef } from './types.js'
-import { includeFields } from './include/props.js'
+import { includeFields } from './props.js'
 
 export * from './queryDef.js'
 export * from './types.js'
-export * from './include/props.js'
-export * from './include/addInclude.js'
-export * from './include/addRefInclude.js'
+export * from './props.js'
+export * from './addInclude.js'
+export * from './addRefInclude.js'
+export * from './filter/addFilter.js'
+export * from './filter/toBuffer.js'
 
 export const run = (db: BasedDb, type: string, fields: string[]): QueryDef => {
   console.log('flap')

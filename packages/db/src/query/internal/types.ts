@@ -32,8 +32,16 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
   )
 }
 
+export type QueryDefFilter = {
+  size: number
+  conditions: Map<number, Buffer[]>
+  references?: Map<number, QueryDefFilter>
+  fromRef?: PropDef
+  schema?: SchemaTypeDef
+}
+
 export type QueryDefShared = {
-  filter: { conditions: Map<number, Buffer[]>; size: number }
+  filter: QueryDefFilter
 
   sort: null | { field: number; order: 0 | 1; start: number; len: number }
 

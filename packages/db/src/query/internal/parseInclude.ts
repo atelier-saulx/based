@@ -1,12 +1,12 @@
-import { BasedDb } from '../../../index.js'
+import { BasedDb } from '../../index.js'
 import {
   isPropDef,
   PropDef,
   PropDefEdge,
   SchemaPropTree,
-} from '../../../schema/types.js'
-import { createQueryDef } from '../queryDef.js'
-import { isRefDef, QueryDef, QueryDefType } from '../types.js'
+} from '../../schema/types.js'
+import { createQueryDef } from './queryDef.js'
+import { isRefDef, QueryDef, QueryDefType } from './types.js'
 import { includeAllProps, includeFields, includeProp } from './props.js'
 
 const getAllFieldFromObject = (
@@ -57,21 +57,15 @@ export const parseInclude = (
   def: QueryDef,
   f: string,
   includesMain: boolean,
-  //   includeTree: any,
 ): boolean => {
   const prop = def.props[f]
   const path = f.split('.')
 
-  // means does not exist on the schema def
   if (!prop) {
-    // check if last is *
-    // handle select all...
-
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
       const p = path[i]
 
-      // todo does not work fully nested e.g. with an object in edges { x, y } for example
       if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(db, QueryDefType.Edge, {
@@ -115,11 +109,10 @@ export const parseInclude = (
 
     const tree = def.schema.tree[path[0]]
 
-    // means its an object
+    // object
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
-        // includeTree
         if (parseInclude(db, def, field, includesMain)) {
           includesMain = true
         }
@@ -128,9 +121,6 @@ export const parseInclude = (
     }
     return
   }
-
-  // tmp format to read stuff later
-  //   addPathToIntermediateTree(field, includeTree, field.path)
 
   if (prop.typeIndex === 13 || prop.typeIndex === 14) {
     const refDef = createOrGetRefQueryDef(db, def, prop)

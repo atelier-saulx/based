@@ -9,9 +9,10 @@ import {
   debugQueryDef,
 } from '../../src/query/internal/queryDef.js'
 import { QueryDefType } from '../../src/query/internal/types.js'
-import { includeFields } from '../../src/query/internal/include/props.js'
-import { addInclude } from '../../src/query/internal/include/addInclude.js'
-import { addRefInclude } from '../../src/query/internal/include/addRefInclude.js'
+import { includeFields } from '../../src/query/internal/props.js'
+import { addInclude } from '../../src/query/internal/addInclude.js'
+import { addRefInclude } from '../../src/query/internal/addRefInclude.js'
+import { filter, filterToBuffer } from '../../src/query/internal/internal.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -124,6 +125,10 @@ db.putSchema({
     user2: {
       props: {
         name: 'string',
+        bla: {
+          ref: 'article2',
+          prop: 'bla',
+        },
         articles: {
           items: {
             ref: 'article2',
@@ -142,6 +147,10 @@ db.putSchema({
       props: {
         name: 'string',
         burp: [1, 2],
+        bla: {
+          ref: 'user2',
+          prop: 'bla',
+        },
         contributors: {
           type: 'references',
           items: {
@@ -277,7 +286,14 @@ console.log(
 
 console.log('-------------------------------------------------------------')
 
-x = db.query('article2').include('contributors.$role').get()
+x = db
+  .query('article2')
+  .include('contributors.$role')
+  .filter('name', '=', 'flap')
+  .filter('burp', '=', 2)
+  .filter('bla.name', '=', 'yurk')
+
+  .get()
 
 def = createQueryDef(db, QueryDefType.Root, {
   type: 'article2',
@@ -285,9 +301,35 @@ def = createQueryDef(db, QueryDefType.Root, {
 
 includeFields(def, ['contributors.$role'])
 
+def.filter.size += filter(db, 'name', '=', 'flap', def.schema, def.filter)
+def.filter.size += filter(db, 'burp', '=', 2, def.schema, def.filter)
+def.filter.size += filter(db, 'bla.name', '=', 'yurk', def.schema, def.filter)
+
+// eqv to BRANCH
+const refDef = createQueryDef(db, QueryDefType.References, {
+  type: 'user2',
+  propDef: def.schema.props.contributors,
+})
+
+def.references.set(1, refDef)
+refDef.filter.size += filter(
+  db,
+  'bla.name',
+  '=',
+  'flap',
+  refDef.schema,
+  refDef.filter,
+)
+
 buffer = addInclude(db, def)
 
-debugQueryDef(def)
+// add all in 1 buffer also for the wire...
+
+// debugQueryDef(def)
+console.log('REF FILTER:', new Uint8Array(filterToBuffer(refDef.filter)))
+
+console.log('FILTER:', new Uint8Array(filterToBuffer(def.filter)))
+console.log('OLD FILTER:', new Uint8Array(x.query.filterTime))
 
 console.log(
   'old:',
@@ -302,40 +344,40 @@ var dx = Date.now()
 
 var a, b
 
-for (let i = 0; i < 1e6; i++) {
-  // db.query('article').include('contributors.name').toBuffer()
-  def = createQueryDef(db, QueryDefType.Root, { type: 'article2' })
-  includeFields(def, [
-    'contributors.name',
-    'contributors.$role',
-    'name',
-    'burp',
-  ])
-  // includeFields(def, ['name', 'burp'])
+// for (let i = 0; i < 1e6; i++) {
+//   // db.query('article').include('contributors.name').toBuffer()
+//   def = createQueryDef(db, QueryDefType.Root, { type: 'article2' })
+//   includeFields(def, [
+//     'contributors.name',
+//     'contributors.$role',
+//     'name',
+//     'burp',
+//   ])
+//   // includeFields(def, ['name', 'burp'])
 
-  buffer = addInclude(db, def)
-  a = Buffer.concat(buffer)
+//   buffer = addInclude(db, def)
+//   a = Buffer.concat(buffer)
 
-  // debugQueryDef(def)
-}
+//   // debugQueryDef(def)
+// }
 
-console.log('1m nested query defs', Date.now() - dx, 'ms')
+// console.log('1m nested query defs', Date.now() - dx, 'ms')
 
-dx = Date.now()
+// dx = Date.now()
 
-for (let i = 0; i < 1e6; i++) {
-  b = db
-    .query('article2')
-    // .include('name', 'burp')
-    .include('contributors.name', 'contributors.$role', 'name', 'burp')
-    .toBuffer().include
+// for (let i = 0; i < 1e6; i++) {
+//   b = db
+//     .query('article2')
+//     // .include('name', 'burp')
+//     .include('contributors.name', 'contributors.$role', 'name', 'burp')
+//     .toBuffer().include
 
-  // debugQueryDef(def)
-}
+//   // debugQueryDef(def)
+// }
 
-console.log('1m nested old query ', Date.now() - dx, 'ms')
+// console.log('1m nested old query ', Date.now() - dx, 'ms')
 
-console.log(new Uint8Array(a), new Uint8Array(b))
+// console.log(new Uint8Array(a), new Uint8Array(b))
 
 const q = db.query('article2')
 b = q
@@ -343,7 +385,7 @@ b = q
   .include('contributors.name', 'contributors.$role', 'name', 'burp')
   .toBuffer().include
 
-console.log(q.includeDef.includeTree)
+// console.log(q.includeDef.includeTree)
 // --------------------------------------------------------------
 
 // how to do make a funciton and the include type def
