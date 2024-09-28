@@ -6,6 +6,8 @@ import { BasedNode } from '../basedNode/index.js'
 // 253: to read multi refs in responses better to avoid
 // 0: main buffer
 
+// make nice CONSTS
+
 // Dont change the numbers!
 export const TYPE_INDEX_MAP = {
   timestamp: 1,
@@ -149,8 +151,4 @@ export const isPropDef = (prop: any): prop is PropDef => {
     return true
   }
   return false
-}
-
-export const isType = (prop: PropDef, type: InternalSchemaProp): boolean => {
-  return REVERSE_TYPE_INDEX_MAP[prop.typeIndex] === type
 }

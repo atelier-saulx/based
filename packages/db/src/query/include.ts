@@ -209,7 +209,9 @@ const parseInclude = (
   const field = include.props[f]
   const path = f.split('.')
 
+  // means does not exist on the schema def
   if (!field) {
+    // todo does not work fully nested e.g. with an object in edges { x, y } for example
     if (include.fromRef && f[0] == '$') {
       const edgeIncludes = createOrGetEdgeIncludeDef(
         include.fromRef,
@@ -247,6 +249,7 @@ const parseInclude = (
 
     const tree = include.schema.tree[path[0]]
 
+    // means its an object
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
@@ -259,6 +262,7 @@ const parseInclude = (
     return
   }
 
+  // tmp format to read stuff later
   addPathToIntermediateTree(field, includeTree, field.path)
 
   if (field.typeIndex === 13 || field.typeIndex === 14) {
@@ -292,6 +296,7 @@ const parseInclude = (
     return true
   }
 }
+
 function createRefsBuffer(include: QueryIncludeDef, key: string, query: Query) {
   const result: Buffer[] = []
   const refInclude = include.refIncludes[key]
