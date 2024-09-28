@@ -16,7 +16,7 @@ export function overWriteEdgeReferences(
   res: ModifyState,
   op: 0 | 1 | 2,
 ) {
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
+  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
   let refLen = 0
 
   if (t.edgesTotalLen) {
@@ -38,15 +38,15 @@ export function overWriteEdgeReferences(
     return
   }
 
-  if (refLen + 10 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+  if (refLen + 10 + db.modifyCtx.len + 11 > db.maxModifySize) {
     flushBuffer(db)
   }
 
   setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
-  const sizeIndex = db.modifyBuffer.len + 1
-  db.modifyBuffer.buffer[sizeIndex + 4] = op
-  db.modifyBuffer.len += 6
+  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
+  const sizeIndex = db.modifyCtx.len + 1
+  db.modifyCtx.buffer[sizeIndex + 4] = op
+  db.modifyCtx.len += 6
 
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]
@@ -63,26 +63,26 @@ export function overWriteEdgeReferences(
       }
     }
     if (typeof ref === 'object') {
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = 1
-      db.modifyBuffer.buffer.writeUint32LE(ref.id, db.modifyBuffer.len + 1)
-      const edgeDataSizeIndex = db.modifyBuffer.len + 5
-      db.modifyBuffer.len += 9
+      db.modifyCtx.buffer[db.modifyCtx.len] = 1
+      db.modifyCtx.buffer.writeUint32LE(ref.id, db.modifyCtx.len + 1)
+      const edgeDataSizeIndex = db.modifyCtx.len + 5
+      db.modifyCtx.len += 9
       if (writeEdges(t, ref, db, res)) {
         return
       }
-      db.modifyBuffer.buffer.writeUint32LE(
-        db.modifyBuffer.len - edgeDataSizeIndex - 4,
+      db.modifyCtx.buffer.writeUint32LE(
+        db.modifyCtx.len - edgeDataSizeIndex - 4,
         edgeDataSizeIndex,
       )
     } else {
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = 0
-      db.modifyBuffer.buffer.writeUint32LE(ref, db.modifyBuffer.len + 1)
-      db.modifyBuffer.len += 5
+      db.modifyCtx.buffer[db.modifyCtx.len] = 0
+      db.modifyCtx.buffer.writeUint32LE(ref, db.modifyCtx.len + 1)
+      db.modifyCtx.len += 5
     }
   }
 
-  db.modifyBuffer.buffer.writeUint32LE(
-    db.modifyBuffer.len - (sizeIndex + 4),
+  db.modifyCtx.buffer.writeUint32LE(
+    db.modifyCtx.len - (sizeIndex + 4),
     sizeIndex,
   )
 }

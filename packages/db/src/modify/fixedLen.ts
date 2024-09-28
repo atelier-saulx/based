@@ -23,7 +23,7 @@ export const writeFixedLenValue = (
   res: ModifyState,
 ) => {
   const type = propDef.typeIndex
-  const buf = db.modifyBuffer.buffer
+  const buf = db.modifyCtx.buffer
   if (type === STRING) {
     if (value === null) {
       value = ''

@@ -21,31 +21,27 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {
-      if (db.modifyBuffer.len + 11 > db.maxModifySize) {
+      if (db.modifyCtx.len + 11 > db.maxModifySize) {
         flushBuffer(db)
       }
       setCursor(db, def, t.prop, res.tmpId, modifyOp)
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
-      db.modifyBuffer.len++
+      db.modifyCtx.buffer[db.modifyCtx.len] = 11
+      db.modifyCtx.len++
     }
   } else {
     if (modifyOp === CREATE) {
       def.stringPropsCurrent[t.prop] = 2
-      db.modifyBuffer.hasStringField++
+      db.modifyCtx.hasStringField++
     }
     const byteLen = len + len
-    if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+    if (byteLen + 5 + db.modifyCtx.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
     setCursor(db, def, t.prop, res.tmpId, modifyOp)
-    db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
-    db.modifyBuffer.len += 5
-    const size = db.modifyBuffer.buffer.write(
-      value,
-      db.modifyBuffer.len,
-      'utf8',
-    )
-    db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
-    db.modifyBuffer.len += size
+    db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
+    db.modifyCtx.len += 5
+    const size = db.modifyCtx.buffer.write(value, db.modifyCtx.len, 'utf8')
+    db.modifyCtx.buffer.writeUint32LE(size, db.modifyCtx.len + 1 - 5)
+    db.modifyCtx.len += size
   }
 }

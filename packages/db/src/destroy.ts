@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import { BasedDb } from './index.js'
 
 export const destroy = async (db: BasedDb) => {
-  db.modifyBuffer.len = 0
+  db.modifyCtx.len = 0
   // make stop
   await db.stop(true)
   const path = db.fileSystemPath

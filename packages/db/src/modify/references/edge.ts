@@ -62,18 +62,18 @@ export function writeEdges(
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
-      db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = edge.typeIndex
+      db.modifyCtx.buffer[db.modifyCtx.len] = edge.prop
+      db.modifyCtx.buffer[db.modifyCtx.len + 1] = edge.typeIndex
       // Buffer: [field] [typeIndex] [size] [data]
       if (edge.len === 0) {
         if (edge.typeIndex === 11) {
-          const size = db.modifyBuffer.buffer.write(
+          const size = db.modifyCtx.buffer.write(
             value,
-            db.modifyBuffer.len + 6,
+            db.modifyCtx.len + 6,
             'utf8',
           )
-          db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 2)
-          db.modifyBuffer.len += size + 6
+          db.modifyCtx.buffer.writeUint32LE(size, db.modifyCtx.len + 2)
+          db.modifyCtx.len += size + 6
         } else if (edge.typeIndex === 13) {
           // TODO: value get id
           if (typeof value !== 'number') {
@@ -84,18 +84,18 @@ export function writeEdges(
               return true
             }
           }
-          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 2)
-          db.modifyBuffer.len += 6
+          db.modifyCtx.buffer.writeUint32LE(value, db.modifyCtx.len + 2)
+          db.modifyCtx.len += 6
         } else if (edge.typeIndex === 14) {
           const refLen = value.length * 4
-          db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 2)
-          db.modifyBuffer.len += 6
+          db.modifyCtx.buffer.writeUint32LE(refLen, db.modifyCtx.len + 2)
+          db.modifyCtx.len += 6
           simpleRefsPacked(edge, db, value, res)
-          db.modifyBuffer.len += refLen
+          db.modifyCtx.len += refLen
         }
       } else {
-        writeFixedLenValue(db, value, db.modifyBuffer.len + 2, edge, res)
-        db.modifyBuffer.len += edge.len + 2
+        writeFixedLenValue(db, value, db.modifyCtx.len + 2, edge, res)
+        db.modifyCtx.len += edge.len + 2
       }
     }
   }

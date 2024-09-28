@@ -33,12 +33,12 @@ const _addModify = (
       if (type === REFERENCE) {
         writeReference(obj[key], db, schema, propDef, res, modifyOp)
       } else if (type === REFERENCES) {
-        writeReferences(propDef, db, modifyOp, obj[key], schema, res)
+        writeReferences(obj[key], db, schema, propDef, res, modifyOp)
       } else if (type === STRING && propDef.separate === true) {
         writeString(obj[key], db, schema, propDef, res, modifyOp)
       } else if (overwrite) {
         setCursor(db, schema, propDef.prop, res.tmpId, modifyOp, true)
-        const mod = db.modifyBuffer
+        const mod = db.modifyCtx
         if (mod.lastMain === -1) {
           const buf = mod.buffer
           const mainLen = schema.mainLen
@@ -65,7 +65,7 @@ const _addModify = (
           res,
         )
       } else {
-        const mod = db.modifyBuffer
+        const mod = db.modifyCtx
         if (mod.mergeMain) {
           mod.mergeMain.push(propDef, obj[key])
           mod.mergeMainSize += propDef.len + 4
@@ -94,12 +94,12 @@ export const addModify: typeof _addModify = (
   overwrite,
 ) => {
   // TODO we dont need this stuff here
-  const { lastMain, prefix0, prefix1, field, len, id } = db.modifyBuffer
+  const { lastMain, prefix0, prefix1, field, len, id } = db.modifyCtx
 
   _addModify(db, res, obj, def, modifyOp, tree, overwrite)
 
   if (res.error) {
-    const mod = db.modifyBuffer
+    const mod = db.modifyCtx
     mod.lastMain = lastMain
     mod.prefix0 = prefix0
     mod.prefix1 = prefix1

@@ -15,7 +15,7 @@ export const setCursor = (
   // 2 switch type
   const prefix0 = schema.idUint8[0]
   const prefix1 = schema.idUint8[1]
-  const mod = db.modifyBuffer
+  const mod = db.modifyCtx
 
   if (mod.prefix0 !== prefix0 || mod.prefix1 !== prefix1) {
     // switch type

@@ -17,10 +17,10 @@ function writeRef(
   hasEdges: boolean,
 ) {
   setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
-  db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = hasEdges ? 1 : 0
-  db.modifyBuffer.buffer.writeUint32LE(id, db.modifyBuffer.len + 2)
-  db.modifyBuffer.len += 6
+  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
+  db.modifyCtx.buffer[db.modifyCtx.len + 1] = hasEdges ? 1 : 0
+  db.modifyCtx.buffer.writeUint32LE(id, db.modifyCtx.len + 2)
+  db.modifyCtx.len += 6
 }
 
 function singleReferencEdges(
@@ -43,7 +43,7 @@ function singleReferencEdges(
     return
   }
 
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = modifyOp
+  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
   let edgesLen = 0
 
   if (t.edgesTotalLen) {
@@ -56,18 +56,15 @@ function singleReferencEdges(
     }
   }
 
-  if (6 + db.modifyBuffer.len + 11 + edgesLen > db.maxModifySize) {
+  if (6 + db.modifyCtx.len + 11 + edgesLen > db.maxModifySize) {
     flushBuffer(db)
   }
 
   writeRef(id, db, schema, t, res, modifyOp, true)
-  const sizeIndex = db.modifyBuffer.len
-  db.modifyBuffer.len += 4
+  const sizeIndex = db.modifyCtx.len
+  db.modifyCtx.len += 4
   writeEdges(t, ref, db, res)
-  db.modifyBuffer.buffer.writeUInt32LE(
-    db.modifyBuffer.len - sizeIndex,
-    sizeIndex,
-  )
+  db.modifyCtx.buffer.writeUInt32LE(db.modifyCtx.len - sizeIndex, sizeIndex)
   // add edge
 }
 
@@ -81,12 +78,12 @@ export function writeReference(
 ) {
   if (value === null) {
     const nextLen = 1 + 4 + 1
-    if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+    if (db.modifyCtx.len + nextLen > db.maxModifySize) {
       flushBuffer(db)
     }
     setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-    db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
-    db.modifyBuffer.len++
+    db.modifyCtx.buffer[db.modifyCtx.len] = 11
+    db.modifyCtx.len++
     return
   }
 
@@ -106,7 +103,7 @@ export function writeReference(
     }
   }
 
-  if (6 + db.modifyBuffer.len + 11 > db.maxModifySize) {
+  if (6 + db.modifyCtx.len + 11 > db.maxModifySize) {
     flushBuffer(db)
   }
 

@@ -8,7 +8,7 @@ import { writeFixedLenValue } from './fixedLen.js'
 import { CREATE, UPDATE } from './types.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
-  const mod = db.modifyBuffer
+  const mod = db.modifyCtx
   const def = db.schemaTypesParsed[type]
   const nextLen = 1 + 4 + 1 + 1
   const separate = def.separate
@@ -45,7 +45,7 @@ export const create = (
   const def = db.schemaTypesParsed[type]
   const id = def.lastId + 1
   const res = new ModifyState(id, db)
-  const mod = db.modifyBuffer
+  const mod = db.modifyCtx
   const len = mod.len
 
   addModify(db, res, obj, def, CREATE, def.tree, true)
@@ -113,7 +113,7 @@ export const update = (
 
   addModify(db, res, obj, def, UPDATE, def.tree, overwrite)
 
-  const mod = db.modifyBuffer
+  const mod = db.modifyCtx
 
   if (res.error) {
     mod.mergeMainSize = 0

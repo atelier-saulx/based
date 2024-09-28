@@ -25,7 +25,7 @@ export * from './basedNode/index.js'
 export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
-  modifyBuffer: {
+  modifyCtx: {
     buffer: Buffer
     hasStringField: number
     len: number
@@ -63,7 +63,7 @@ export class BasedDb {
       this.maxModifySize = maxModifySize
     }
     const max = this.maxModifySize
-    this.modifyBuffer = {
+    this.modifyCtx = {
       hasStringField: -1,
       mergeMainSize: 0,
       mergeMain: null,
@@ -248,7 +248,7 @@ export class BasedDb {
   }
 
   async stop(noSave?: boolean) {
-    this.modifyBuffer.len = 0
+    this.modifyCtx.len = 0
     if (!noSave) {
       await this.save()
     }

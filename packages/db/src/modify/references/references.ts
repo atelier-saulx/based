@@ -25,12 +25,12 @@ export type Refs =
     }
 
 export function writeReferences(
-  t: PropDef,
-  db: BasedDb,
-  modifyOp: ModifyOp,
   value: any,
+  db: BasedDb,
   schema: SchemaTypeDef,
+  t: PropDef,
   res: ModifyState,
+  modifyOp: ModifyOp,
 ) {
   if (typeof value !== 'object') {
     modifyError(res, t, value)
@@ -38,12 +38,12 @@ export function writeReferences(
   }
 
   if (value === null) {
-    if (db.modifyBuffer.len + 11 > db.maxModifySize) {
+    if (db.modifyCtx.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
     setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-    db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
-    db.modifyBuffer.len++
+    db.modifyCtx.buffer[db.modifyCtx.len] = 11
+    db.modifyCtx.len++
     return
   }
 

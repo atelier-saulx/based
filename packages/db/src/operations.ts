@@ -1,31 +1,31 @@
 import { BasedDb } from './index.js'
 
 export const flushBuffer = (db: BasedDb) => {
-  if (db.modifyBuffer.len) {
-    const queue = db.modifyBuffer.queue
+  if (db.modifyCtx.len) {
+    const queue = db.modifyCtx.queue
     const d = Date.now()
     const offset = 0
     // TODO put actual offset here
 
     try {
-      db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
+      db.native.modify(db.modifyCtx.buffer, db.modifyCtx.len)
       // or it sends it to the actual db
     } catch (err) {
       console.error(err)
     }
 
     // add errors and reset them here
-    db.modifyBuffer.len = 0
-    db.modifyBuffer.prefix0 = 0
-    db.modifyBuffer.prefix1 = 0
-    db.modifyBuffer.field = -1
-    db.modifyBuffer.id = -1
-    db.modifyBuffer.lastMain = -1
-    db.modifyBuffer.mergeMain = null
-    db.modifyBuffer.mergeMainSize = 0
-    db.modifyBuffer.hasStringField = -1
-    db.modifyBuffer.ctx.offset = offset
-    db.modifyBuffer.ctx = {}
+    db.modifyCtx.len = 0
+    db.modifyCtx.prefix0 = 0
+    db.modifyCtx.prefix1 = 0
+    db.modifyCtx.field = -1
+    db.modifyCtx.id = -1
+    db.modifyCtx.lastMain = -1
+    db.modifyCtx.mergeMain = null
+    db.modifyCtx.mergeMainSize = 0
+    db.modifyCtx.hasStringField = -1
+    db.modifyCtx.ctx.offset = offset
+    db.modifyCtx.ctx = {}
 
     const time = Date.now() - d
 
