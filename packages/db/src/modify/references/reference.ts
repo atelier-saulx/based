@@ -12,11 +12,10 @@ function writeRef(
   schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
-  fromCreate: boolean,
   writeKey: 3 | 6,
   hasEdges: boolean,
 ) {
-  setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+  setCursor(db, schema, t.prop, res.tmpId, writeKey)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
   db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = hasEdges ? 1 : 0
   db.modifyBuffer.buffer.writeUint32LE(id, db.modifyBuffer.len + 2)
@@ -29,7 +28,6 @@ function singleReferencEdges(
   schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
-  fromCreate: boolean,
   writeKey: 3 | 6,
 ) {
   const id =
@@ -52,7 +50,7 @@ function singleReferencEdges(
   } else {
     edgesLen = getEdgeSize(t, ref)
     if (edgesLen === 0) {
-      writeRef(id, db, schema, t, res, fromCreate, writeKey, false)
+      writeRef(id, db, schema, t, res, writeKey, false)
       return
     }
   }
@@ -61,7 +59,7 @@ function singleReferencEdges(
     flushBuffer(db)
   }
 
-  writeRef(id, db, schema, t, res, fromCreate, writeKey, true)
+  writeRef(id, db, schema, t, res, writeKey, true)
   const sizeIndex = db.modifyBuffer.len
   db.modifyBuffer.len += 4
   writeEdges(t, ref, db, res)
@@ -78,7 +76,6 @@ export function writeReference(
   schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
-  fromCreate: boolean,
   writeKey: 3 | 6,
 ) {
   if (value === null) {
@@ -86,7 +83,7 @@ export function writeReference(
     if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+    setCursor(db, schema, t.prop, res.tmpId, writeKey)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
     db.modifyBuffer.len++
     return
@@ -100,7 +97,7 @@ export function writeReference(
       }
       value = value.tmpId
     } else if (t.edges && typeof value === 'object') {
-      singleReferencEdges(value, db, schema, t, res, fromCreate, writeKey)
+      singleReferencEdges(value, db, schema, t, res, writeKey)
       return
     } else {
       modifyError(res, t, value)
@@ -112,5 +109,5 @@ export function writeReference(
     flushBuffer(db)
   }
 
-  writeRef(value, db, schema, t, res, fromCreate, writeKey, false)
+  writeRef(value, db, schema, t, res, writeKey, false)
 }

@@ -13,7 +13,6 @@ export function overWriteEdgeReferences(
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
-  fromCreate: boolean,
   op: 0 | 1 | 2,
 ) {
   db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
@@ -33,7 +32,6 @@ export function overWriteEdgeReferences(
       value,
       schema,
       res,
-      fromCreate,
       op, // overwrite
     )
     return
@@ -43,7 +41,7 @@ export function overWriteEdgeReferences(
     flushBuffer(db)
   }
 
-  setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+  setCursor(db, schema, t.prop, res.tmpId, writeKey)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
   const sizeIndex = db.modifyBuffer.len + 1
   db.modifyBuffer.buffer[sizeIndex + 4] = op

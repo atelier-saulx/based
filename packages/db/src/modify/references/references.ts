@@ -30,7 +30,6 @@ export function writeReferences(
   value: any,
   schema: SchemaTypeDef,
   res: ModifyState,
-  fromCreate: boolean,
 ) {
   if (typeof value !== 'object') {
     modifyError(res, t, value)
@@ -41,7 +40,7 @@ export function writeReferences(
     if (db.modifyBuffer.len + 11 > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+    setCursor(db, schema, t.prop, res.tmpId, writeKey)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
     db.modifyBuffer.len++
     return
@@ -49,27 +48,9 @@ export function writeReferences(
 
   if (Array.isArray(value)) {
     if (t.edges) {
-      overWriteEdgeReferences(
-        t,
-        db,
-        writeKey,
-        value,
-        schema,
-        res,
-        fromCreate,
-        0,
-      )
+      overWriteEdgeReferences(t, db, writeKey, value, schema, res, 0)
     } else {
-      overWriteSimpleReferences(
-        t,
-        db,
-        writeKey,
-        value,
-        schema,
-        res,
-        fromCreate,
-        0,
-      )
+      overWriteSimpleReferences(t, db, writeKey, value, schema, res, 0)
     }
     return
   }
@@ -89,27 +70,9 @@ export function writeReferences(
     }
 
     if (t.edges) {
-      overWriteEdgeReferences(
-        t,
-        db,
-        writeKey,
-        value,
-        schema,
-        res,
-        fromCreate,
-        op,
-      )
+      overWriteEdgeReferences(t, db, writeKey, value, schema, res, op)
     } else {
-      overWriteSimpleReferences(
-        t,
-        db,
-        writeKey,
-        val,
-        schema,
-        res,
-        fromCreate,
-        op,
-      )
+      overWriteSimpleReferences(t, db, writeKey, val, schema, res, op)
     }
   }
 }

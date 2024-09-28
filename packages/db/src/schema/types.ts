@@ -27,7 +27,7 @@ export const UINT32 = 5
 export const UINT8 = 19
 export const UPDATED = 3
 
-const TYPE_INDEX_MAP = {
+export const TYPE_INDEX_MAP = {
   microbuffer: MICROBUFFER,
   references: REFERENCES,
   reference: REFERENCE,
