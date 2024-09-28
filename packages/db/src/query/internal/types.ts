@@ -53,7 +53,7 @@ export type QueryDefShared = {
     }
   }
 
-  references: { [key: string]: QueryDef }
+  references: Map<number, QueryDef>
 
   edges?: QueryDef
 

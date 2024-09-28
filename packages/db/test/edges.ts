@@ -120,7 +120,7 @@ await test('edges', async (t) => {
     f.map((f) => f.split('.')[1]),
   )
 
-  def.references.set(1, refDef)
+  def.references[1] = refDef
 
   const buf = internal.addInclude(db, def)
 

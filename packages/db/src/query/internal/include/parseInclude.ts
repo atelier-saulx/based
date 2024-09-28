@@ -37,7 +37,7 @@ const createRefQueryDef = (
       propDef: t,
     },
   )
-  def.references[t.prop] = defRef
+  def.references.set(t.prop, defRef)
   return defRef
 }
 
@@ -46,10 +46,10 @@ const createOrGetRefQueryDef = (
   def: QueryDef,
   t: PropDef | PropDefEdge,
 ) => {
-  if (!def.references[t.prop]) {
+  if (!def.references.has(t.prop)) {
     return createRefQueryDef(db, def, t)
   }
-  return def.references[t.prop]
+  return def.references.get(t.prop)
 }
 
 export const parseInclude = (
