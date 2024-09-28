@@ -11,14 +11,17 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const mod = db.modifyBuffer
   const def = db.schemaTypesParsed[type]
   const nextLen = 1 + 4 + 1 + 1
+  const separate = def.separate
+
   if (mod.len + nextLen > db.maxModifySize) {
     flushBuffer(db)
   }
   setCursor(db, def, 0, id, UPDATE)
   mod.buffer[mod.len] = 4
   mod.len++
-  if (def.separate) {
-    for (const s of def.separate) {
+
+  if (separate) {
+    for (const s of separate) {
       const nextLen = 1 + 4 + 1
       if (mod.len + nextLen > db.maxModifySize) {
         flushBuffer(db)
@@ -28,6 +31,7 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       mod.len++
     }
   }
+
   mod.buffer[mod.len] = 10
   mod.len++
   return true
@@ -42,10 +46,11 @@ export const create = (
   const id = def.lastId + 1
   const res = new ModifyState(id, db)
   const mod = db.modifyBuffer
+  const len = mod.len
 
-  addModify(db, res, obj, def, CREATE, false, def.tree)
+  addModify(db, res, obj, def, CREATE, def.tree, true)
 
-  if (res.error) {
+  if (res.error !== undefined) {
     // @ts-ignore
     return res
   }
@@ -53,28 +58,37 @@ export const create = (
   def.lastId = id
   def.total++
 
-  const wroteMain = mod.mergeMain || mod.lastMain !== -1
-  if (wroteMain || def.mainLen === 0) {
+  if (mod.len === len || def.mainLen === 0) {
     setCursor(db, def, 0, id, CREATE)
   }
 
   // if touched lets see perf impact here
   if (def.hasStringProp) {
-    if (mod.hasStringField != def.stringPropsSize - 1) {
-      mod.buffer[mod.len] = 7
-      let sizeIndex = mod.len + 1
+    if (mod.hasStringField !== def.stringPropsSize - 1) {
+      const sizeIndex = mod.len + 1
+      const stringPropsLoop = def.stringPropsLoop
+      const stringPropsCurrent = def.stringPropsCurrent
+      const buf = mod.buffer
       let size = 0
+      let i = stringPropsLoop.length
+
+      buf[mod.len] = 7
       mod.len += 3
-      for (const propDef of def.stringPropsLoop) {
-        if (def.stringPropsCurrent[propDef.prop] === 1) {
-          mod.buffer[mod.len] = propDef.prop
-          mod.len += 1
-          size += 1
+
+      while (i--) {
+        const prop = stringPropsLoop[i].prop
+        if (stringPropsCurrent[prop] === 1) {
+          buf[mod.len] = prop
+          size++
         }
       }
-      mod.buffer.writeUint16LE(size, sizeIndex)
+
+      buf[sizeIndex] = size
+      buf[sizeIndex + 1] = size >>> 8
+      mod.len += size
     }
-    if (mod.hasStringField != -1) {
+
+    if (mod.hasStringField !== -1) {
       def.stringProps.copy(def.stringPropsCurrent)
     }
   }
@@ -96,9 +110,8 @@ export const update = (
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const res = new ModifyState(id, db)
-  const merge = !overwrite
 
-  addModify(db, res, obj, def, UPDATE, merge, def.tree)
+  addModify(db, res, obj, def, UPDATE, def.tree, overwrite)
 
   const mod = db.modifyBuffer
 
@@ -120,6 +133,7 @@ export const update = (
     buf[mod.len] = 5
     buf.writeUint32LE(size, mod.len + 1)
     mod.len += 5
+
     for (let i = 0; i < mod.mergeMain.length; i += 2) {
       const t: PropDef = mod.mergeMain[i]
       const v = mod.mergeMain[i + 1]
@@ -128,6 +142,7 @@ export const update = (
       writeFixedLenValue(db, v, mod.len + 4, t, res)
       mod.len += t.len + 4
     }
+
     mod.mergeMainSize = 0
     mod.mergeMain = null
   }

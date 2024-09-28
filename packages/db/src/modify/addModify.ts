@@ -2,7 +2,6 @@ import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import {
   SchemaTypeDef,
-  PropDef,
   isPropDef,
   REFERENCE,
   REFERENCES,
@@ -16,85 +15,72 @@ import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
 import { MERGE_MAIN, ModifyOp } from './types.js'
 
-const EMPTY_BUFFER = Buffer.alloc(1000)
-
 const _addModify = (
   db: BasedDb,
   res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,
   modifyOp: ModifyOp,
-  merge: boolean,
   tree: SchemaTypeDef['tree'],
+  overwrite: boolean,
 ) => {
   for (const key in obj) {
-    if (res.error !== undefined) {
-      return
-    }
-
     const propDef = tree[key]
     if (propDef === undefined) {
       modifyError(res, tree, key)
-      return
-    }
-
-    const value = obj[key]
-    if (isPropDef(propDef)) {
-      if (propDef.typeIndex === REFERENCE) {
-        writeReference(value, db, schema, propDef, res, modifyOp)
-        continue
-      }
-      if (propDef.typeIndex === REFERENCES) {
-        writeReferences(propDef, db, modifyOp, value, schema, res)
-        continue
-      }
-      if (propDef.typeIndex === STRING && propDef.separate === true) {
-        writeString(value, db, schema, propDef, res, modifyOp)
-        continue
-      }
-      if (merge) {
+    } else if (isPropDef(propDef)) {
+      const type = propDef.typeIndex
+      if (type === REFERENCE) {
+        writeReference(obj[key], db, schema, propDef, res, modifyOp)
+      } else if (type === REFERENCES) {
+        writeReferences(propDef, db, modifyOp, obj[key], schema, res)
+      } else if (type === STRING && propDef.separate === true) {
+        writeString(obj[key], db, schema, propDef, res, modifyOp)
+      } else if (overwrite) {
+        setCursor(db, schema, propDef.prop, res.tmpId, modifyOp, true)
+        const mod = db.modifyBuffer
+        if (mod.lastMain === -1) {
+          const buf = mod.buffer
+          const mainLen = schema.mainLen
+          const nextLen = mainLen + 1 + 4
+          if (mod.len + nextLen + 5 > db.maxModifySize) {
+            flushBuffer(db)
+          }
+          setCursor(db, schema, propDef.prop, res.tmpId, modifyOp)
+          const pos = mod.len
+          buf[pos] = overwrite ? modifyOp : MERGE_MAIN
+          buf[pos + 1] = mainLen
+          buf[pos + 2] = mainLen >>> 8
+          buf[pos + 3] = mainLen >>> 16
+          buf[pos + 4] = mainLen >>> 24
+          mod.lastMain = pos + 1 + 4
+          mod.len += nextLen
+          buf.fill(0, mod.len - mainLen, mainLen)
+        }
+        writeFixedLenValue(
+          db,
+          obj[key],
+          propDef.start + mod.lastMain,
+          propDef,
+          res,
+        )
+      } else {
         const mod = db.modifyBuffer
         if (mod.mergeMain) {
-          mod.mergeMain.push(propDef, value)
+          mod.mergeMain.push(propDef, obj[key])
           mod.mergeMainSize += propDef.len + 4
         } else {
-          mod.mergeMain = [propDef, value]
+          mod.mergeMain = [propDef, obj[key]]
           mod.mergeMainSize = propDef.len + 4
         }
-        continue
       }
-
-      // Fixed length main buffer
-      setCursor(db, schema, propDef.prop, res.tmpId, modifyOp, true)
-      const mod = db.modifyBuffer
-      if (mod.lastMain === -1) {
-        const buf = mod.buffer
-        const mainLen = schema.mainLen
-        const nextLen = mainLen + 1 + 4
-        if (mod.len + nextLen + 5 > db.maxModifySize) {
-          flushBuffer(db)
-        }
-        setCursor(db, schema, propDef.prop, res.tmpId, modifyOp)
-        buf[mod.len] = merge ? MERGE_MAIN : modifyOp
-        buf.writeUint32LE(mainLen, mod.len + 1)
-        mod.lastMain = mod.len + 1 + 4
-        mod.len += nextLen
-        const size = mod.len - mainLen
-        if (mainLen < 1e3) {
-          EMPTY_BUFFER.copy(buf, size, 0, mainLen)
-        } else {
-          let i = mainLen + size
-          while (i--) {
-            buf[i] = 0
-          }
-        }
-      }
-
-      writeFixedLenValue(db, value, propDef.start + mod.lastMain, propDef, res)
-      continue
+    } else {
+      _addModify(db, res, obj[key], schema, modifyOp, propDef, overwrite)
     }
 
-    _addModify(db, res, value, schema, modifyOp, merge, propDef)
+    if (res.error !== undefined) {
+      return
+    }
   }
 }
 
@@ -104,12 +90,13 @@ export const addModify: typeof _addModify = (
   obj,
   def,
   modifyOp,
-  merge,
   tree,
+  overwrite,
 ) => {
+  // TODO we dont need this stuff here
   const { lastMain, prefix0, prefix1, field, len, id } = db.modifyBuffer
 
-  _addModify(db, res, obj, def, modifyOp, merge, tree)
+  _addModify(db, res, obj, def, modifyOp, tree, overwrite)
 
   if (res.error) {
     const mod = db.modifyBuffer

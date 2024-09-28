@@ -95,4 +95,5 @@ export const modifyError = (
   val: any,
 ) => {
   res.error = new ModifyError(prop, val)
+  console.info(res.error.toString())
 }

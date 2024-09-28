@@ -23,15 +23,19 @@ await test('boolean', async (t) => {
     },
   })
 
-  db.create('user', {})
+  console.log(db.create('user', {}))
 
-  db.create('user', {
-    isNice: true,
-  })
+  console.log(
+    db.create('user', {
+      isNice: true,
+    }),
+  )
 
-  db.create('user', {
-    isNice: false,
-  })
+  console.log(
+    db.create('user', {
+      isNice: false,
+    }),
+  )
 
   db.drain() // will become async
 
