@@ -14,7 +14,7 @@ import {
 import picocolors from 'picocolors'
 
 const createEmptySharedDef = () => {
-  const q: QueryDefShared = {
+  const q: Partial<QueryDefShared> = {
     filter: { conditions: new Map(), size: 0 },
     range: { offset: 0, limit: 0 },
     include: {
@@ -36,7 +36,7 @@ export const createQueryDef = (
   type: QueryDefType,
   target: QueryTarget,
 ): QueryDef => {
-  const queryDef: QueryDefShared = createEmptySharedDef()
+  const queryDef = createEmptySharedDef()
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget
     const q = queryDef as QueryDefEdges

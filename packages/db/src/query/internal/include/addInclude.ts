@@ -1,5 +1,6 @@
 import { BasedDb } from '../../../index.js'
 import { ID_FIELD_DEF } from '../../../schema/schema.js'
+import { debugQueryDef } from '../queryDef.js'
 import { QueryDef } from '../types.js'
 import { addRefInclude } from './addRefInclude.js'
 import { parseInclude } from './parseInclude.js'
@@ -7,7 +8,11 @@ import { parseInclude } from './parseInclude.js'
 const EMPTY_BUFFER = Buffer.alloc(0)
 
 export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
-  if (!def.include.stringFields.size && !def.include.props.size) {
+  if (
+    !def.include.stringFields.size &&
+    !def.include.props.size &&
+    !def.references.size
+  ) {
     return [EMPTY_BUFFER]
   }
 
@@ -21,10 +26,13 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
   let includeBuffer: Buffer
 
   // includeTreeIntermediate
+  const result: Buffer[] = []
 
-  for (const f of def.include.stringFields) {
-    if (parseInclude(db, def, f, includesMain)) {
-      includesMain = true
+  if (def.include.stringFields) {
+    for (const f of def.include.stringFields) {
+      if (parseInclude(db, def, f, includesMain)) {
+        includesMain = true
+      }
     }
   }
 
@@ -58,20 +66,24 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
     }
   }
 
+  const propSize = def.include.props.size ?? 0
+
   if (mainBuffer) {
-    len = mainBuffer.byteLength + 1 + 2 + def.include.props.size
+    len = mainBuffer.byteLength + 3 + propSize
     includeBuffer = Buffer.allocUnsafe(len)
     includeBuffer[0] = 0
     includeBuffer.writeInt16LE(mainBuffer.byteLength, 1)
     const offset = 3 + mainBuffer.byteLength
     mainBuffer.copy(includeBuffer, 3)
-    let i = 0
-    for (const prop of def.include.props) {
-      includeBuffer[i + offset] = prop
-      i++
+    if (propSize) {
+      let i = 0
+      for (const prop of def.include.props) {
+        includeBuffer[i + offset] = prop
+        i++
+      }
     }
-  } else {
-    const buf = Buffer.allocUnsafe(def.include.props.size)
+  } else if (propSize) {
+    const buf = Buffer.allocUnsafe(propSize)
     let i = 0
     for (const prop of def.include.props) {
       buf[i] = prop
@@ -80,12 +92,14 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
     includeBuffer = buf
   }
 
+  if (includeBuffer) {
+    result.push(includeBuffer)
+  }
+
   // include.includeTree = convertToIncludeTree(includeTreeIntermediate)
 
-  const result: Buffer[] = [includeBuffer]
-
-  def.references.forEach((refs, key) => {
-    result.push(...addRefInclude(db, refs))
+  def.references.forEach((ref) => {
+    result.push(...addRefInclude(db, ref))
   })
 
   return result

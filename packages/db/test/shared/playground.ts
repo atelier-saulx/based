@@ -9,7 +9,7 @@ import {
   debugQueryDef,
 } from '../../src/query/internal/queryDef.js'
 import { QueryDefType } from '../../src/query/internal/types.js'
-import { includeFields } from '../../src/query/internal/include/includeFields.js'
+import { includeFields } from '../../src/query/internal/include/props.js'
 import { addInclude } from '../../src/query/internal/include/addInclude.js'
 import { addRefInclude } from '../../src/query/internal/include/addRefInclude.js'
 
@@ -141,6 +141,7 @@ db.putSchema({
     article2: {
       props: {
         name: 'string',
+        burp: [1, 2],
         contributors: {
           type: 'references',
           items: {
@@ -294,6 +295,42 @@ console.log(
   'new:',
   new Uint8Array(Buffer.concat(buffer)),
 )
+
+var dx = Date.now()
+
+//   db.query('article').include('contributors.name').get()
+
+var a, b
+
+for (let i = 0; i < 1e6; i++) {
+  // db.query('article').include('contributors.name').toBuffer()
+  def = createQueryDef(db, QueryDefType.Root, { type: 'article2' })
+  // includeFields(def, ['contributors.name', 'contributors.$role'])
+  includeFields(def, ['name', 'burp'])
+
+  buffer = addInclude(db, def)
+  a = Buffer.concat(buffer)
+
+  // debugQueryDef(def)
+}
+
+console.log('1m nested query defs', Date.now() - dx, 'ms')
+
+dx = Date.now()
+
+for (let i = 0; i < 1e6; i++) {
+  b = db
+    .query('article2')
+    .include('name', 'burp')
+    // .include('contributors.name', 'contributors.$role')
+    .toBuffer().include
+
+  // debugQueryDef(def)
+}
+
+console.log('1m nested old query ', Date.now() - dx, 'ms')
+
+console.log(new Uint8Array(a), new Uint8Array(b))
 
 // --------------------------------------------------------------
 

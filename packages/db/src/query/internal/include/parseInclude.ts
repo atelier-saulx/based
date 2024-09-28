@@ -7,7 +7,7 @@ import {
 } from '../../../schema/types.js'
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
-import { includeAll, includeFields } from './includeFields.js'
+import { includeAllProps, includeFields, includeProp } from './props.js'
 
 const getAllFieldFromObject = (
   tree: SchemaPropTree | PropDef,
@@ -29,17 +29,27 @@ const createRefQueryDef = (
   def: QueryDef,
   t: PropDef | PropDefEdge,
 ) => {
-  def.references.set(
-    t.prop,
-    createQueryDef(
-      db,
-      t.typeIndex === 13 ? QueryDefType.Reference : QueryDefType.References,
-      {
-        type: t.inverseTypeName,
-        propDef: t,
-      },
-    ),
+  const defRef = createQueryDef(
+    db,
+    t.typeIndex === 13 ? QueryDefType.Reference : QueryDefType.References,
+    {
+      type: t.inverseTypeName,
+      propDef: t,
+    },
   )
+  def.references.set(t.prop, defRef)
+  return defRef
+}
+
+const createOrGetRefQueryDef = (
+  db: BasedDb,
+  def: QueryDef,
+  t: PropDef | PropDefEdge,
+) => {
+  if (!def.references.has(t.prop)) {
+    return createRefQueryDef(db, def, t)
+  }
+  return def.references.get(t.prop)
 }
 
 export const parseInclude = (
@@ -49,53 +59,56 @@ export const parseInclude = (
   includesMain: boolean,
   //   includeTree: any,
 ): boolean => {
-  const field = def.props[f]
+  const prop = def.props[f]
   const path = f.split('.')
 
   // means does not exist on the schema def
-  if (!field) {
-    // todo does not work fully nested e.g. with an object in edges { x, y } for example
-
-    if (isRefDef(def) && f[0] == '$') {
-      if (!def.edges) {
-        def.edges = createQueryDef(db, QueryDefType.Edge, {
-          ref: def.target.propDef,
-        })
-      }
-      const edgeProp = def.target.propDef.edges[f]
-      def.edges.include.props.add(edgeProp.prop)
-      return
-    }
-
-    // if (include.fromRef && f[0] == '$') {
-    //   const edgeIncludes = createOrGetEdgeIncludeDef(
-    //     include.fromRef,
-    //     include,
-    //     query,
-    //   )
-    //   edgeIncludes.includeFields.add(f)
-    //   return
-    // }
+  if (!prop) {
+    // check if last is *
+    // handle select all...
 
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
       const p = path[i]
+
+      // todo does not work fully nested e.g. with an object in edges { x, y } for example
+      if (isRefDef(def) && p[0] == '$') {
+        if (!def.edges) {
+          def.edges = createQueryDef(db, QueryDefType.Edge, {
+            ref: def.target.propDef,
+          })
+        }
+        const edgeProp = def.edges.props[p]
+        if (edgeProp.typeIndex === 13 || edgeProp.typeIndex === 14) {
+          const refDef = createOrGetRefQueryDef(db, def.edges, edgeProp)
+          if (path.length - 1 === i) {
+            includeAllProps(refDef)
+          } else {
+            const f = path.slice(i + 1).join('.')
+            if (includeProp(refDef, f)) {
+              return
+            } else {
+              includeFields(refDef, [f])
+            }
+          }
+        } else {
+          def.edges.include.props.add(edgeProp.prop)
+        }
+        return
+      }
 
       t = t[p]
       if (!t) {
         return
       }
 
-      // 13: reference
-      // 14: references
       if (isPropDef(t) && (t.typeIndex === 13 || t.typeIndex === 14)) {
-        if (!def.references.has(t.prop)) {
-          createRefQueryDef(db, def, t)
+        const refDef = createOrGetRefQueryDef(db, def, t)
+        const f = path.slice(i + 1).join('.')
+        if (includeProp(refDef, f)) {
+          return
         }
-        const refDef = def.references.get(t.prop)
-        const field = path.slice(i + 1).join('.')
-        includeFields(refDef, [field])
-        // addPathToIntermediateTree(t, includeTree, t.path)
+        includeFields(refDef, [f])
         return
       }
     }
@@ -119,23 +132,20 @@ export const parseInclude = (
   // tmp format to read stuff later
   //   addPathToIntermediateTree(field, includeTree, field.path)
 
-  if (field.typeIndex === 13 || field.typeIndex === 14) {
-    if (!def.references.has(field.prop)) {
-      createRefQueryDef(db, def, field)
-    }
-    const refDef = def.references.get(field.prop)
-    includeFields(refDef, includeAll(refDef.props))
+  if (prop.typeIndex === 13 || prop.typeIndex === 14) {
+    const refDef = createOrGetRefQueryDef(db, def, prop)
+    includeAllProps(refDef)
     return
   }
 
-  if (field.separate) {
-    def.include.props.add(field.prop)
+  if (prop.separate) {
+    def.include.props.add(prop.prop)
   } else {
     if (!includesMain) {
       includesMain = true
     }
-    def.include.main.len += field.len
-    def.include.main.include[field.start] = [0, field as PropDef]
+    def.include.main.len += prop.len
+    def.include.main.include[prop.start] = [0, prop as PropDef]
     return true
   }
 }

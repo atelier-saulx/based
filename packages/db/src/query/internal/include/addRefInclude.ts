@@ -11,17 +11,18 @@ const byteSize = (arr: Buffer[]) => {
 
 export function addRefInclude(db: BasedDb, def: QueryDef): Buffer[] {
   const result: Buffer[] = []
-
   const include = addInclude(db, def)
 
   let meta: Buffer
   let edges: Buffer[]
+  let edgesSize = 0
 
   if (def.edges) {
     edges = addInclude(db, def.edges)
+    edgesSize = byteSize(edges)
   }
 
-  const size = (edges ? byteSize(edges) + 3 : 0) + byteSize(include)
+  const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
 
   if (def.type === QueryDefType.References) {
     // TODO filter edge
@@ -64,10 +65,9 @@ export function addRefInclude(db: BasedDb, def: QueryDef): Buffer[] {
   }
 
   if (edges) {
-    const edgeSize = byteSize(edges)
     const metaEdgeBuffer = Buffer.allocUnsafe(3)
     metaEdgeBuffer[0] = 253
-    metaEdgeBuffer.writeUint16LE(edgeSize, 1)
+    metaEdgeBuffer.writeUint16LE(edgesSize, 1)
     result.push(meta, ...include, metaEdgeBuffer, ...edges)
   } else {
     result.push(meta, ...include)
