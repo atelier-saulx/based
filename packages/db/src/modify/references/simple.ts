@@ -4,9 +4,10 @@ import { PropDef, PropDefEdge, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { ModifyOp } from '../types.js'
+import { maybeFlush } from '../utils.js'
 
 export function simpleRefsPacked(
-  t: PropDefEdge,
+  propDef: PropDefEdge,
   db: BasedDb,
   value: any[],
   res: ModifyState,
@@ -28,7 +29,7 @@ export function simpleRefsPacked(
           $index = ref.$index
         }
       } else {
-        modifyError(res, t, value)
+        modifyError(res, propDef, value)
         return
       }
     } else {
@@ -39,7 +40,7 @@ export function simpleRefsPacked(
 }
 
 export function simpleRefs(
-  t: PropDef | PropDefEdge,
+  propDef: PropDef | PropDefEdge,
   db: BasedDb,
   value: any[],
   res: ModifyState,
@@ -62,7 +63,7 @@ export function simpleRefs(
         if ('$index' in ref) {
           const $index = ref.$index
           if (typeof $index !== 'number' || $index > 2_147_483_647) {
-            modifyError(res, t, value)
+            modifyError(res, propDef, value)
             return
           }
           buf[len + added] = 3
@@ -73,7 +74,7 @@ export function simpleRefs(
           continue
         }
       } else {
-        modifyError(res, t, value)
+        modifyError(res, propDef, value)
         return
       }
     } else {
@@ -88,25 +89,24 @@ export function simpleRefs(
 }
 
 export function overWriteSimpleReferences(
-  t: PropDef,
+  propDef: PropDef,
   db: BasedDb,
   modifyOp: ModifyOp,
   value: any[],
-  schema: SchemaTypeDef,
   res: ModifyState,
   op: 0 | 1 | 2,
 ) {
+  const mod = db.modifyCtx
   const refLen = 9 * value.length
-  const potentialLen = refLen + 1 + 5 + db.modifyCtx.len + 11
-  if (potentialLen > db.maxModifySize) {
-    flushBuffer(db)
-  }
-  setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-  const len = db.modifyCtx.len
-  db.modifyCtx.len += 6
-  const added = simpleRefs(t, db, value, res)
-  db.modifyCtx.buffer[len] = modifyOp
-  db.modifyCtx.buffer.writeUint32LE(added + 1, len + 1)
-  db.modifyCtx.buffer[len + 5] = op
-  db.modifyCtx.len += added
+  const potentialLen = refLen + 1 + 5 + mod.len + 11
+
+  maybeFlush(db, potentialLen)
+
+  const len = mod.len
+  mod.len += 6
+  const added = simpleRefs(propDef, db, value, res)
+  mod.buffer[len] = modifyOp
+  mod.buffer.writeUint32LE(added + 1, len + 1)
+  mod.buffer[len + 5] = op
+  mod.len += added
 }

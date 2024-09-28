@@ -6,6 +6,7 @@ import { addModify } from './addModify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { writeFixedLenValue } from './fixedLen.js'
 import { CREATE, UPDATE } from './types.js'
+import { maybeFlush, setField, setId, setType } from './utils.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const mod = db.modifyCtx
@@ -13,20 +14,34 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const nextLen = 1 + 4 + 1 + 1
   const separate = def.separate
 
-  if (mod.len + nextLen > db.maxModifySize) {
-    flushBuffer(db)
-  }
-  setCursor(db, def, 0, id, UPDATE)
+  maybeFlush(db, mod.len + nextLen)
+  setType(db, def)
+  setField(db, 0)
+  setId(db, id, UPDATE)
+  // // set id
+  // mod.hasStringField = -1
+  // mod.buffer[mod.len] = 1 // update
+  // mod.buffer.writeUInt32LE(id, mod.len + 1)
+  // mod.len += 5
+  // mod.id = id
+  // mod.lastMain = -1
+
+  // if (mod.len + nextLen > db.maxModifySize) {
+  //   flushBuffer(db)
+  // }
+  // setCursor(db, def, 0, id, UPDATE)
   mod.buffer[mod.len] = 4
   mod.len++
 
   if (separate) {
     for (const s of separate) {
       const nextLen = 1 + 4 + 1
-      if (mod.len + nextLen > db.maxModifySize) {
-        flushBuffer(db)
-      }
-      setCursor(db, def, s.prop, id, UPDATE)
+      maybeFlush(db, mod.len + nextLen)
+      setField(db, s.prop)
+      // if (mod.len + nextLen > db.maxModifySize) {
+      //   flushBuffer(db)
+      // }
+      // setCursor(db, def, s.prop, id, UPDATE)
       mod.buffer[mod.len] = 4
       mod.len++
     }
@@ -46,7 +61,6 @@ export const create = (
   const id = def.lastId + 1
   const res = new ModifyState(id, db)
   const mod = db.modifyCtx
-  const len = mod.len
 
   addModify(db, res, obj, def, CREATE, def.tree, true)
 
@@ -57,10 +71,6 @@ export const create = (
 
   def.lastId = id
   def.total++
-
-  if (mod.len === len || def.mainLen === 0) {
-    setCursor(db, def, 0, id, CREATE)
-  }
 
   // if touched lets see perf impact here
   if (def.hasStringProp) {
@@ -126,10 +136,11 @@ export const update = (
     const buf = mod.buffer
     const size = mod.mergeMainSize
     // TODO is this 9 correct?
-    if (mod.len + size + 9 > db.maxModifySize) {
-      flushBuffer(db)
-    }
-    setCursor(db, def, 0, id, UPDATE)
+    maybeFlush(db, mod.len + size + 9)
+    // if (mod.len + size + 9 > db.maxModifySize) {
+    //   flushBuffer(db)
+    // }
+    // setCursor(db, def, 0, id, UPDATE)
     buf[mod.len] = 5
     buf.writeUint32LE(size, mod.len + 1)
     mod.len += 5

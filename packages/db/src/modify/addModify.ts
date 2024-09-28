@@ -13,7 +13,8 @@ import { writeFixedLenValue } from './fixedLen.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
-import { MERGE_MAIN, ModifyOp } from './types.js'
+import { CREATE, MERGE_MAIN, ModifyOp } from './types.js'
+import { maybeFlush, setField, setId, setType } from './utils.js'
 
 const _addModify = (
   db: BasedDb,
@@ -23,40 +24,47 @@ const _addModify = (
   modifyOp: ModifyOp,
   tree: SchemaTypeDef['tree'],
   overwrite: boolean,
-) => {
+  initiated: boolean,
+): boolean => {
   for (const key in obj) {
     const propDef = tree[key]
     if (propDef === undefined) {
       modifyError(res, tree, key)
     } else if (isPropDef(propDef)) {
+      setField(db, propDef.prop)
+      if (!initiated) {
+        setId(db, res.tmpId, modifyOp)
+        initiated = true
+      }
       const type = propDef.typeIndex
       if (type === REFERENCE) {
-        writeReference(obj[key], db, schema, propDef, res, modifyOp)
+        writeReference(obj[key], db, propDef, res, modifyOp)
       } else if (type === REFERENCES) {
-        writeReferences(obj[key], db, schema, propDef, res, modifyOp)
+        writeReferences(obj[key], db, propDef, res, modifyOp)
       } else if (type === STRING && propDef.separate === true) {
         writeString(obj[key], db, schema, propDef, res, modifyOp)
       } else if (overwrite) {
-        setCursor(db, schema, propDef.prop, res.tmpId, modifyOp, true)
         const mod = db.modifyCtx
         if (mod.lastMain === -1) {
           const buf = mod.buffer
           const mainLen = schema.mainLen
-          const nextLen = mainLen + 1 + 4
-          if (mod.len + nextLen + 5 > db.maxModifySize) {
-            flushBuffer(db)
-          }
-          setCursor(db, schema, propDef.prop, res.tmpId, modifyOp)
-          const pos = mod.len
-          buf[pos] = overwrite ? modifyOp : MERGE_MAIN
-          buf[pos + 1] = mainLen
-          buf[pos + 2] = mainLen >>> 8
-          buf[pos + 3] = mainLen >>> 16
-          buf[pos + 4] = mainLen >>> 24
-          mod.lastMain = pos + 1 + 4
-          mod.len += nextLen
-          buf.fill(0, mod.len - mainLen, mainLen)
+          const requiredLen = mod.len + mainLen + 1 + 4 + 5
+
+          maybeFlush(db, requiredLen)
+
+          let pos = mod.len
+          let val = mainLen
+
+          buf[pos++] = overwrite ? modifyOp : MERGE_MAIN
+          buf[pos++] = val
+          buf[pos++] = val >>>= 8
+          buf[pos++] = val >>>= 8
+          buf[pos++] = val >>>= 8
+          mod.lastMain = pos
+          mod.len = pos + mainLen
+          buf.fill(0, mod.len - mainLen, mod.len)
         }
+
         writeFixedLenValue(
           db,
           obj[key],
@@ -75,16 +83,27 @@ const _addModify = (
         }
       }
     } else {
-      _addModify(db, res, obj[key], schema, modifyOp, propDef, overwrite)
+      _addModify(
+        db,
+        res,
+        obj[key],
+        schema,
+        modifyOp,
+        propDef,
+        overwrite,
+        initiated,
+      )
     }
 
     if (res.error !== undefined) {
       return
     }
   }
+
+  return initiated
 }
 
-export const addModify: typeof _addModify = (
+export const addModify = (
   db,
   res,
   obj,
@@ -92,19 +111,38 @@ export const addModify: typeof _addModify = (
   modifyOp,
   tree,
   overwrite,
-) => {
-  // TODO we dont need this stuff here
-  const { lastMain, prefix0, prefix1, field, len, id } = db.modifyCtx
+): void => {
+  const mod = db.modifyCtx
+  const { lastMain, prefix0, prefix1, field, len } = mod
 
-  _addModify(db, res, obj, def, modifyOp, tree, overwrite)
+  mod.modifyOp = modifyOp
+
+  setType(db, def)
+
+  const initiated = _addModify(
+    db,
+    res,
+    obj,
+    def,
+    modifyOp,
+    tree,
+    overwrite,
+    false,
+  )
 
   if (res.error) {
-    const mod = db.modifyCtx
+    // this is wrong in case of a flush....
     mod.lastMain = lastMain
     mod.prefix0 = prefix0
     mod.prefix1 = prefix1
     mod.field = field
     mod.len = len
-    mod.id = id
+    mod.id = -1
+  } else if (modifyOp === CREATE) {
+    if (!initiated || def.mainLen === 0) {
+      setField(db, 0)
+      setId(db, res.tmpId, modifyOp)
+      // setCursor(db, def, 0, res.tmpId, CREATE)
+    }
   }
 }

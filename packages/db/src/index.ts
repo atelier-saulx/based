@@ -17,6 +17,7 @@ import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
+import { ModifyOp } from './modify/types.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
@@ -38,6 +39,7 @@ export class BasedDb {
     mergeMainSize: number
     ctx: { offset?: number }
     queue: Map<number, (id: number) => void>
+    modifyOp?: ModifyOp
   }
 
   schema: Schema & { lastId: number }

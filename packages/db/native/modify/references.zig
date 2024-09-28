@@ -22,7 +22,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
         const id = readInt(u32, data, i + 1);
         const index: i32 = if (hasIndex) readInt(i32, data, i + 5) else -1;
 
-        std.debug.print("update/insert reference {d} at index {d}\n", .{ id, index });
+        // std.debug.print("update/insert reference {d} at index {d}\n", .{ id, index });
 
         const node = try db.upsertNode(id, refTypeEntry);
         const ref = try db.insertReference(

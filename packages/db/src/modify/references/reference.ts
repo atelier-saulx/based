@@ -1,32 +1,28 @@
 import { BasedDb } from '../../index.js'
-import { flushBuffer } from '../../operations.js'
 import { SchemaTypeDef, PropDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
-import { setCursor } from '../setCursor.js'
 import { ModifyOp } from '../types.js'
+import { maybeFlush } from '../utils.js'
 import { getEdgeSize, writeEdges } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
 function writeRef(
-  id: number,
   db: BasedDb,
-  schema: SchemaTypeDef,
-  t: PropDef,
-  res: ModifyState,
+  id: number,
   modifyOp: ModifyOp,
   hasEdges: boolean,
 ) {
-  setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
-  db.modifyCtx.buffer[db.modifyCtx.len + 1] = hasEdges ? 1 : 0
-  db.modifyCtx.buffer.writeUint32LE(id, db.modifyCtx.len + 2)
-  db.modifyCtx.len += 6
+  const mod = db.modifyCtx
+  const buf = mod.buffer
+  buf[mod.len] = modifyOp
+  buf[mod.len + 1] = hasEdges ? 1 : 0
+  buf.writeUint32LE(id, mod.len + 2)
+  mod.len += 6
 }
 
 function singleReferencEdges(
   ref: RefModifyOpts,
   db: BasedDb,
-  schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
   modifyOp: ModifyOp,
@@ -43,47 +39,45 @@ function singleReferencEdges(
     return
   }
 
-  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
-  let edgesLen = 0
+  const mod = db.modifyCtx
+  const buf = mod.buffer
 
+  buf[mod.len] = modifyOp
+
+  let edgesLen = 0
   if (t.edgesTotalLen) {
     edgesLen = t.edgesTotalLen
   } else {
     edgesLen = getEdgeSize(t, ref)
     if (edgesLen === 0) {
-      writeRef(id, db, schema, t, res, modifyOp, false)
+      writeRef(db, id, modifyOp, false)
       return
     }
   }
 
-  if (6 + db.modifyCtx.len + 11 + edgesLen > db.maxModifySize) {
-    flushBuffer(db)
-  }
+  maybeFlush(db, 6 + 11 + edgesLen)
+  writeRef(db, id, modifyOp, true)
 
-  writeRef(id, db, schema, t, res, modifyOp, true)
-  const sizeIndex = db.modifyCtx.len
-  db.modifyCtx.len += 4
+  const sizeIndex = mod.len
+  mod.len += 4
   writeEdges(t, ref, db, res)
-  db.modifyCtx.buffer.writeUInt32LE(db.modifyCtx.len - sizeIndex, sizeIndex)
+  buf.writeUInt32LE(mod.len - sizeIndex, sizeIndex)
   // add edge
 }
 
 export function writeReference(
   value: number | ModifyState,
   db: BasedDb,
-  schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
   modifyOp: ModifyOp,
 ) {
   if (value === null) {
+    const mod = db.modifyCtx
     const nextLen = 1 + 4 + 1
-    if (db.modifyCtx.len + nextLen > db.maxModifySize) {
-      flushBuffer(db)
-    }
-    setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-    db.modifyCtx.buffer[db.modifyCtx.len] = 11
-    db.modifyCtx.len++
+    maybeFlush(db, nextLen)
+    mod.buffer[mod.len] = 11
+    mod.len++
     return
   }
 
@@ -95,7 +89,7 @@ export function writeReference(
       }
       value = value.tmpId
     } else if (t.edges && typeof value === 'object') {
-      singleReferencEdges(value, db, schema, t, res, modifyOp)
+      singleReferencEdges(value, db, t, res, modifyOp)
       return
     } else {
       modifyError(res, t, value)
@@ -103,9 +97,6 @@ export function writeReference(
     }
   }
 
-  if (6 + db.modifyCtx.len + 11 > db.maxModifySize) {
-    flushBuffer(db)
-  }
-
-  writeRef(value, db, schema, t, res, modifyOp, false)
+  maybeFlush(db, 6 + 11)
+  writeRef(db, value, modifyOp, false)
 }

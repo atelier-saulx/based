@@ -109,11 +109,11 @@ console.log('db time', db.drain(), Date.now() - d)
 
 // console.log('db time', db.drain(), Date.now() - d)
 
-const x = db.query('todo').range(0, 100).get()
+// const x = db.query('todo').range(0, 100).get()
 
-console.log(x.debug())
+// console.log(x.debug())
 
-console.log(x)
+// console.log(x)
 
 // how to do make a funciton and the include type def
 // no query constructor yet just fns where we can add include stuff to the include def
