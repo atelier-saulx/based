@@ -7,6 +7,8 @@ import { filter } from './filter.js'
 import { inspect } from 'node:util'
 import { sort } from './sort.js'
 import { BranchInclude, Select } from './branch.js'
+import { buffer } from 'stream/consumers'
+import { toBuffer } from './buffer.js'
 
 export class Query {
   db: BasedDb
@@ -15,6 +17,8 @@ export class Query {
   ids: number[] | void
   offset: number
   limit: number
+
+  includeBuffer: Buffer
 
   sortBuffer: Buffer
   sortOrder: 0 | 1
@@ -183,6 +187,10 @@ export class Query {
 
   [inspect.custom](_depth, { nested }) {
     return `BasedQuery[]`
+  }
+
+  toBuffer() {
+    return toBuffer(this)
   }
 }
 
