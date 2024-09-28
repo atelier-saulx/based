@@ -26,7 +26,7 @@ const createEmptySharedDef = () => {
       },
     },
     sort: null,
-    references: new Map(),
+    references: {},
   }
   return q
 }

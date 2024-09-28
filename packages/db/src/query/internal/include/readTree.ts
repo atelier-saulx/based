@@ -11,26 +11,26 @@
 //   return arr
 // }
 
-// export const addPathToIntermediateTree = (
-//   field: any,
-//   includeTree: any,
-//   path: string[],
-// ): boolean => {
-//   const len = path.length - 1
-//   let t = includeTree
-//   for (let i = 0; i <= len; i++) {
-//     const key = path[i]
-//     if (i === len) {
-//       if (t[key]) {
-//         return false
-//       }
-//       t[key] = field
-//     } else {
-//       if (!(key in t)) {
-//         t[key] = {}
-//       }
-//       t = t[key]
-//     }
-//   }
-//   return true
-// }
+export const addPathToIntermediateTree = (
+  field: any,
+  includeTree: any,
+  path: string[],
+): boolean => {
+  const len = path.length - 1
+  let t = includeTree
+  for (let i = 0; i <= len; i++) {
+    const key = path[i]
+    if (i === len) {
+      if (t[key]) {
+        return false
+      }
+      t[key] = field
+    } else {
+      if (!(key in t)) {
+        t[key] = {}
+      }
+      t = t[key]
+    }
+  }
+  return true
+}
