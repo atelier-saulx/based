@@ -12,12 +12,12 @@ function writeRef(
   modifyOp: ModifyOp,
   hasEdges: boolean,
 ) {
-  const mod = db.modifyCtx
-  const buf = mod.buffer
-  buf[mod.len] = modifyOp
-  buf[mod.len + 1] = hasEdges ? 1 : 0
-  buf.writeUint32LE(id, mod.len + 2)
-  mod.len += 6
+  const ctx = db.modifyCtx
+  const buf = ctx.buffer
+  buf[ctx.len] = modifyOp
+  buf[ctx.len + 1] = hasEdges ? 1 : 0
+  buf.writeUint32LE(id, ctx.len + 2)
+  ctx.len += 6
 }
 
 function singleReferencEdges(
@@ -39,10 +39,10 @@ function singleReferencEdges(
     return
   }
 
-  const mod = db.modifyCtx
-  const buf = mod.buffer
+  const ctx = db.modifyCtx
+  const buf = ctx.buffer
 
-  buf[mod.len] = modifyOp
+  buf[ctx.len] = modifyOp
 
   let edgesLen = 0
   if (t.edgesTotalLen) {
@@ -58,10 +58,10 @@ function singleReferencEdges(
   maybeFlush(db, 6 + 11 + edgesLen)
   writeRef(db, id, modifyOp, true)
 
-  const sizeIndex = mod.len
-  mod.len += 4
+  const sizeIndex = ctx.len
+  ctx.len += 4
   writeEdges(t, ref, db, res)
-  buf.writeUInt32LE(mod.len - sizeIndex, sizeIndex)
+  buf.writeUInt32LE(ctx.len - sizeIndex, sizeIndex)
   // add edge
 }
 
@@ -73,11 +73,11 @@ export function writeReference(
   modifyOp: ModifyOp,
 ) {
   if (value === null) {
-    const mod = db.modifyCtx
+    const ctx = db.modifyCtx
     const nextLen = 1 + 4 + 1
     maybeFlush(db, nextLen)
-    mod.buffer[mod.len] = 11
-    mod.len++
+    ctx.buffer[ctx.len] = 11
+    ctx.len++
     return
   }
 

@@ -1,8 +1,6 @@
 import { BasedDb } from '../../index.js'
-import { flushBuffer } from '../../operations.js'
-import { PropDef, SchemaTypeDef } from '../../schema/types.js'
+import { PropDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
-import { setCursor } from '../setCursor.js'
 import {
   DELETE_FIELD,
   ModifyOp,
@@ -42,10 +40,10 @@ export function writeReferences(
   if (typeof value !== 'object') {
     modifyError(res, t, value)
   } else if (value === null) {
-    const mod = db.modifyCtx
+    const ctx = db.modifyCtx
     maybeFlush(db, 11)
-    mod.buffer[mod.len] = DELETE_FIELD
-    mod.len++
+    ctx.buffer[ctx.len] = DELETE_FIELD
+    ctx.len++
   } else if (Array.isArray(value)) {
     if (t.edges) {
       overWriteEdgeReferences(t, db, modifyOp, value, res, REFS_PUT)
@@ -55,21 +53,21 @@ export function writeReferences(
   } else {
     for (const key in value) {
       const val = value[key]
-      let op
+      let refsOp
       if (key === 'add') {
-        op = REFS_ADD
+        refsOp = REFS_ADD
       } else if (key === 'delete') {
-        op = REFS_DELETE
+        refsOp = REFS_DELETE
       } else if (key === 'update') {
-        op = REFS_UPDATE
+        refsOp = REFS_UPDATE
       } else {
         modifyError(res, t, value)
         return
       }
       if (t.edges) {
-        overWriteEdgeReferences(t, db, modifyOp, value, res, op)
+        overWriteEdgeReferences(t, db, modifyOp, value, res, refsOp)
       } else {
-        overWriteSimpleReferences(t, db, modifyOp, val, res, op)
+        overWriteSimpleReferences(t, db, modifyOp, val, res, refsOp)
       }
     }
   }

@@ -1,6 +1,6 @@
 import { BasedDb } from '../index.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { CREATE, UPDATE, ModifyOp } from './types.js'
+import { CREATE, UPDATE, ModifyOp, DELETE_FIELD } from './types.js'
 import { ModifyState, modifyError } from './ModifyRes.js'
 import { maybeFlush } from './utils.js'
 
@@ -18,23 +18,25 @@ export function writeString(
   }
 
   const len = value?.length
+  const ctx = db.modifyCtx
+  const buf = ctx.buffer
   if (!len) {
     if (modifyOp === UPDATE) {
       maybeFlush(db, 11)
-      db.modifyCtx.buffer[db.modifyCtx.len] = 11
-      db.modifyCtx.len++
+      buf[ctx.len] = DELETE_FIELD
+      ctx.len++
     }
   } else {
     if (modifyOp === CREATE) {
       def.stringPropsCurrent[propDef.prop] = 2
-      db.modifyCtx.hasStringField++
+      ctx.hasStringField++
     }
     const byteLen = len + len
     maybeFlush(db, byteLen + 5 + 11)
-    db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
-    db.modifyCtx.len += 5
-    const size = db.modifyCtx.buffer.write(value, db.modifyCtx.len, 'utf8')
-    db.modifyCtx.buffer.writeUint32LE(size, db.modifyCtx.len + 1 - 5)
-    db.modifyCtx.len += size
+    buf[ctx.len] = modifyOp
+    ctx.len += 5
+    const size = buf.write(value, ctx.len, 'utf8')
+    buf.writeUint32LE(size, ctx.len + 1 - 5)
+    ctx.len += size
   }
 }

@@ -8,13 +8,12 @@ import {
   STRING,
 } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
-import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './fixedLen.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
 import { CREATE, MERGE_MAIN, ModifyOp } from './types.js'
-import { maybeFlush, setField, setId, setType } from './utils.js'
+import { maybeFlush, initField, initId, initType } from './utils.js'
 
 const _addModify = (
   db: BasedDb,
@@ -31,9 +30,9 @@ const _addModify = (
     if (propDef === undefined) {
       modifyError(res, tree, key)
     } else if (isPropDef(propDef)) {
-      setField(db, propDef.prop)
+      initField(db, propDef.prop)
       if (!initiated) {
-        setId(db, res.tmpId, modifyOp)
+        initId(db, res.tmpId, modifyOp)
         initiated = true
       }
       const type = propDef.typeIndex
@@ -44,15 +43,15 @@ const _addModify = (
       } else if (type === STRING && propDef.separate === true) {
         writeString(obj[key], db, schema, propDef, res, modifyOp)
       } else if (overwrite) {
-        const mod = db.modifyCtx
-        if (mod.lastMain === -1) {
-          const buf = mod.buffer
+        const ctx = db.modifyCtx
+        if (ctx.lastMain === -1) {
+          const buf = ctx.buffer
           const mainLen = schema.mainLen
-          const requiredLen = mod.len + mainLen + 1 + 4 + 5
+          const requiredLen = ctx.len + mainLen + 1 + 4 + 5
 
           maybeFlush(db, requiredLen)
 
-          let pos = mod.len
+          let pos = ctx.len
           let val = mainLen
 
           buf[pos++] = overwrite ? modifyOp : MERGE_MAIN
@@ -60,26 +59,26 @@ const _addModify = (
           buf[pos++] = val >>>= 8
           buf[pos++] = val >>>= 8
           buf[pos++] = val >>>= 8
-          mod.lastMain = pos
-          mod.len = pos + mainLen
-          buf.fill(0, mod.len - mainLen, mod.len)
+          ctx.lastMain = pos
+          ctx.len = pos + mainLen
+          buf.fill(0, ctx.len - mainLen, ctx.len)
         }
 
         writeFixedLenValue(
           db,
           obj[key],
-          propDef.start + mod.lastMain,
+          propDef.start + ctx.lastMain,
           propDef,
           res,
         )
       } else {
-        const mod = db.modifyCtx
-        if (mod.mergeMain) {
-          mod.mergeMain.push(propDef, obj[key])
-          mod.mergeMainSize += propDef.len + 4
+        const ctx = db.modifyCtx
+        if (ctx.mergeMain) {
+          ctx.mergeMain.push(propDef, obj[key])
+          ctx.mergeMainSize += propDef.len + 4
         } else {
-          mod.mergeMain = [propDef, obj[key]]
-          mod.mergeMainSize = propDef.len + 4
+          ctx.mergeMain = [propDef, obj[key]]
+          ctx.mergeMainSize = propDef.len + 4
         }
       }
     } else {
@@ -104,20 +103,20 @@ const _addModify = (
 }
 
 export const addModify = (
-  db,
-  res,
-  obj,
-  def,
-  modifyOp,
-  tree,
-  overwrite,
+  db: BasedDb,
+  res: ModifyState,
+  obj: Record<string, any>,
+  def: SchemaTypeDef,
+  modifyOp: ModifyOp,
+  tree: SchemaTypeDef['tree'],
+  overwrite: boolean,
 ): void => {
-  const mod = db.modifyCtx
-  const { lastMain, prefix0, prefix1, field, len } = mod
+  const ctx = db.modifyCtx
+  const { lastMain, prefix0, prefix1, field, len } = ctx
 
-  mod.modifyOp = modifyOp
+  ctx.modifyOp = modifyOp
 
-  setType(db, def)
+  initType(db, def)
 
   const initiated = _addModify(
     db,
@@ -132,17 +131,16 @@ export const addModify = (
 
   if (res.error) {
     // this is wrong in case of a flush....
-    mod.lastMain = lastMain
-    mod.prefix0 = prefix0
-    mod.prefix1 = prefix1
-    mod.field = field
-    mod.len = len
-    mod.id = -1
+    ctx.lastMain = lastMain
+    ctx.prefix0 = prefix0
+    ctx.prefix1 = prefix1
+    ctx.field = field
+    ctx.len = len
+    ctx.id = -1
   } else if (modifyOp === CREATE) {
     if (!initiated || def.mainLen === 0) {
-      setField(db, 0)
-      setId(db, res.tmpId, modifyOp)
-      // setCursor(db, def, 0, res.tmpId, CREATE)
+      initField(db, 0)
+      initId(db, res.tmpId, modifyOp)
     }
   }
 }

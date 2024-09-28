@@ -63,39 +63,38 @@ export function writeEdges(
   for (const key in propDef.edges) {
     if (key in ref) {
       const edge = propDef.edges[key]
-      const mod = db.modifyCtx
-      const buf = mod.buffer
+      const ctx = db.modifyCtx
+      const buf = ctx.buffer
+      const type = edge.typeIndex
       let value = ref[key]
-      buf[mod.len] = edge.prop
-      buf[mod.len + 1] = edge.typeIndex
+      buf[ctx.len] = edge.prop
+      buf[ctx.len + 1] = type
       // Buffer: [field] [typeIndex] [size] [data]
-      if (edge.len === 0) {
-        if (edge.typeIndex === STRING) {
-          const size = buf.write(value, mod.len + 6, 'utf8')
-          buf.writeUint32LE(size, mod.len + 2)
-          mod.len += size + 6
-        } else if (edge.typeIndex === REFERENCE) {
-          // TODO: value get id
-          if (typeof value !== 'number') {
-            if (value instanceof ModifyState) {
-              value = value.tmpId
-            } else {
-              modifyError(res, propDef, value)
-              return true
-            }
+      if (edge.len !== 0) {
+        writeFixedLenValue(db, value, ctx.len + 2, edge, res)
+        ctx.len += edge.len + 2
+      } else if (type === STRING) {
+        const size = buf.write(value, ctx.len + 6, 'utf8')
+        buf.writeUint32LE(size, ctx.len + 2)
+        ctx.len += size + 6
+      } else if (type === REFERENCE) {
+        // TODO: value get id
+        if (typeof value !== 'number') {
+          if (value instanceof ModifyState) {
+            value = value.tmpId
+          } else {
+            modifyError(res, propDef, value)
+            return true
           }
-          buf.writeUint32LE(value, mod.len + 2)
-          mod.len += 6
-        } else if (edge.typeIndex === REFERENCES) {
-          const refLen = value.length * 4
-          buf.writeUint32LE(refLen, mod.len + 2)
-          mod.len += 6
-          simpleRefsPacked(edge, db, value, res)
-          mod.len += refLen
         }
-      } else {
-        writeFixedLenValue(db, value, mod.len + 2, edge, res)
-        mod.len += edge.len + 2
+        buf.writeUint32LE(value, ctx.len + 2)
+        ctx.len += 6
+      } else if (edge.typeIndex === REFERENCES) {
+        const refLen = value.length * 4
+        buf.writeUint32LE(refLen, ctx.len + 2)
+        ctx.len += 6
+        simpleRefsPacked(edge, db, value, res)
+        ctx.len += refLen
       }
     }
   }
