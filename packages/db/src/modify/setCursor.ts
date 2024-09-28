@@ -13,40 +13,39 @@ export const setCursor = (
   // 0 switch field
   // 1 switch id
   // 2 switch type
-  const prefix = schema.idUint8
-  const a = prefix[0]
-  const b = prefix[1]
+  const prefix0 = schema.idUint8[0]
+  const prefix1 = schema.idUint8[1]
+  const mod = db.modifyBuffer
 
-  if (db.modifyBuffer.prefix0 !== a || db.modifyBuffer.prefix1 !== b) {
-    const len = db.modifyBuffer.len
-
-    db.modifyBuffer.buffer[len] = 2
-    db.modifyBuffer.buffer[len + 1] = a
-    db.modifyBuffer.buffer[len + 2] = b
-    db.modifyBuffer.len += 3
-    db.modifyBuffer.prefix0 = a
-    db.modifyBuffer.prefix1 = b
-    db.modifyBuffer.field = -1
-    db.modifyBuffer.id = -1
-    db.modifyBuffer.lastMain = -1
+  if (mod.prefix0 !== prefix0 || mod.prefix1 !== prefix1) {
+    // switch type
+    mod.buffer[mod.len] = 2
+    mod.buffer[mod.len + 1] = prefix0
+    mod.buffer[mod.len + 2] = prefix1
+    mod.len += 3
+    mod.prefix0 = prefix0
+    mod.prefix1 = prefix1
+    mod.field = -1
+    mod.id = -1
+    mod.lastMain = -1
   }
 
-  if (!ignoreField && db.modifyBuffer.field !== field) {
-    const len = db.modifyBuffer.len
-    db.modifyBuffer.buffer[len] = 0
+  if (!ignoreField && mod.field !== field) {
+    // switch field
+    mod.buffer[mod.len] = 0
     // make field 2 bytes
-    db.modifyBuffer.buffer[len + 1] = field // 1 byte (max size 255 - 1)
-    db.modifyBuffer.len += 2
-    db.modifyBuffer.field = field
+    mod.buffer[mod.len + 1] = field // 1 byte (max size 255 - 1)
+    mod.len += 2
+    mod.field = field
   }
 
-  if (db.modifyBuffer.id !== id) {
-    db.modifyBuffer.hasStringField = -1
-    const len = db.modifyBuffer.len
-    db.modifyBuffer.buffer[len] = modifyOp === CREATE ? 9 : 1
-    db.modifyBuffer.buffer.writeUInt32LE(id, len + 1)
-    db.modifyBuffer.len += 5
-    db.modifyBuffer.id = id
-    db.modifyBuffer.lastMain = -1
+  if (mod.id !== id) {
+    // switch node
+    mod.hasStringField = -1
+    mod.buffer[mod.len] = modifyOp === CREATE ? 9 : 1
+    mod.buffer.writeUInt32LE(id, mod.len + 1)
+    mod.len += 5
+    mod.id = id
+    mod.lastMain = -1
   }
 }

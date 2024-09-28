@@ -26,8 +26,8 @@ export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyBuffer: {
-    hasStringField: number
     buffer: Buffer
+    hasStringField: number
     len: number
     field: number
     prefix0: number
