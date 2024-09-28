@@ -1,6 +1,8 @@
 import { BasedDb } from '../../index.js'
+import { flushBuffer } from '../../operations.js'
 import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
+import { setCursor } from '../setCursor.js'
 import { overWriteEdgeReferences } from './referencesEdge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
@@ -21,18 +23,6 @@ export type Refs =
       upsert: RefModify[] | RefModify
     }
 
-const getId = (val) => {
-  if (typeof val === 'number') {
-    return val
-  }
-  if (typeof val === 'object') {
-    if (val instanceof ModifyState) {
-      return val.tmpId
-    }
-    return val.id instanceof ModifyState ? val.id.tmpId : val.id
-  }
-}
-
 export function writeReferences(
   t: PropDef,
   db: BasedDb,
@@ -48,8 +38,12 @@ export function writeReferences(
   }
 
   if (value === null) {
-    console.info('DELETE REFERENCES')
-    // delete field:
+    if (db.modifyBuffer.len + 11 > db.maxModifySize) {
+      flushBuffer(db)
+    }
+    setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+    db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
+    db.modifyBuffer.len++
     return
   }
 
@@ -87,16 +81,13 @@ export function writeReferences(
       op = 1
     } else if (key === 'delete') {
       op = 2
-      // } else if (key === 'update') {
-      //   // ? I think add also just does this?
-      //   op = 3
-      // } else if (key === 'upsert') {
-      //   // ? is this not just add?
-      //   op = 4
+    } else if (key === 'update') {
+      op = 3
     } else {
       modifyError(res, t, value)
       return
     }
+
     if (t.edges) {
       overWriteEdgeReferences(
         t,

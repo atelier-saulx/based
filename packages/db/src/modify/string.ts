@@ -21,8 +21,7 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (!fromCreate) {
-      const nextLen = 1 + 4 + 1
-      if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+      if (db.modifyBuffer.len + 11 > db.maxModifySize) {
         flushBuffer(db)
       }
       setCursor(db, def, t.prop, res.tmpId, false, fromCreate)

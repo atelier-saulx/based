@@ -16,20 +16,29 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const len = data.len;
     var i: usize = 1;
     while (i < len) : (i += 5) {
-        const hasEdgeData = data[i] == 1;
+        const op = data[i];
+        const hasEdgeData = op == 1 or op == 2;
+        const hasIndex = op == 2 or op == 3;
         const id = readInt(u32, data, i + 1);
+        const index: i32 = if (hasIndex) readInt(i32, data, i + 5) else -1;
+
+        std.debug.print("update/insert reference {d} at index {d}\n", .{ id, index });
+
         const node = try db.upsertNode(id, refTypeEntry);
         const ref = try db.insertReference(
             node,
             ctx.node.?,
             ctx.fieldSchema.?,
-            -1,
+            index,
         );
         if (hasEdgeData) {
             const totalEdgesLen = readInt(u32, data, i + 5);
             const edges = data[i + 9 .. i + totalEdgesLen + 9];
             try edge.writeEdges(ctx, ref, edges);
             i += edges.len;
+        }
+        if (hasIndex) {
+            i += 4;
         }
     }
 }

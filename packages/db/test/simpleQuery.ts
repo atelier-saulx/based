@@ -58,4 +58,10 @@ await test('query', async (t) => {
       .toObject(),
     [],
   )
+
+  deepEqual(
+    db.query('user').include('*').get().toObject(),
+    db.query('user').get().toObject(),
+    'include * works as "get all fields"',
+  )
 })

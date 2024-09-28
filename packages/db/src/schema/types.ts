@@ -7,6 +7,26 @@ import { BasedNode } from '../basedNode/index.js'
 // 0: main buffer
 
 // Dont change the numbers!
+export const TIMESTAMP = 1
+export const CREATED = 2
+export const UPDATED = 3
+export const NUMBER = 4
+export const UINT32 = 5
+export const BOOLEAN = 9
+export const ENUM = 10
+export const STRING = 11
+export const REFERENCE = 13
+export const REFERENCES = 14
+export const MICROBUFFER = 17
+export const INT8 = 18
+export const UINT8 = 19
+export const INT16 = 20
+export const UINT16 = 21
+export const INT32 = 22
+
+// ------- internal only
+export const ID = 0
+
 export const TYPE_INDEX_MAP = {
   timestamp: 1,
   created: 2,
