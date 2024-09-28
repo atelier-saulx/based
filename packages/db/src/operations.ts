@@ -1,31 +1,32 @@
 import { BasedDb } from './index.js'
 
 export const flushBuffer = (db: BasedDb) => {
-  if (db.modifyBuffer.len) {
-    const queue = db.modifyBuffer.queue
+  const mod = db.modifyCtx
+  if (mod.len) {
+    const queue = mod.queue
     const d = Date.now()
     const offset = 0
     // TODO put actual offset here
 
     try {
-      db.native.modify(db.modifyBuffer.buffer, db.modifyBuffer.len)
+      db.native.modify(mod.buffer, mod.len)
       // or it sends it to the actual db
     } catch (err) {
       console.error(err)
     }
 
     // add errors and reset them here
-    db.modifyBuffer.len = 0
-    db.modifyBuffer.typePrefix[0] = 0
-    db.modifyBuffer.typePrefix[1] = 0
-    db.modifyBuffer.field = -1
-    db.modifyBuffer.id = -1
-    db.modifyBuffer.lastMain = -1
-    db.modifyBuffer.mergeMain = null
-    db.modifyBuffer.mergeMainSize = 0
-    db.modifyBuffer.hasStringField = -1
-    db.modifyBuffer.ctx.offset = offset
-    db.modifyBuffer.ctx = {}
+    mod.len = 0
+    mod.prefix0 = 0
+    mod.prefix1 = 0
+    mod.field = -1
+    mod.id = -1
+    mod.lastMain = -1
+    mod.mergeMain = null
+    mod.mergeMainSize = 0
+    mod.hasStringField = -1
+    mod.ctx.offset = offset
+    mod.ctx = {}
 
     const time = Date.now() - d
 

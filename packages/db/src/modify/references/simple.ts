@@ -1,16 +1,20 @@
 import { BasedDb } from '../../index.js'
-import { flushBuffer } from '../../operations.js'
-import { PropDef, PropDefEdge, SchemaTypeDef } from '../../schema/types.js'
+import { PropDef, PropDefEdge } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
-import { setCursor } from '../setCursor.js'
+import { ModifyOp } from '../types.js'
+import { maybeFlush } from '../utils.js'
 
 export function simpleRefsPacked(
-  t: PropDefEdge,
+  propDef: PropDefEdge,
   db: BasedDb,
   value: any[],
   res: ModifyState,
 ) {
-  for (let i = 0; i < value.length; i++) {
+  const ctx = db.modifyCtx
+  const len = ctx.len
+  const buf = ctx.buffer
+  let i = value.length
+  while (i--) {
     let ref = value[i]
     let id: number
     let $index: number
@@ -27,26 +31,25 @@ export function simpleRefsPacked(
           $index = ref.$index
         }
       } else {
-        modifyError(res, t, value)
+        modifyError(res, propDef, value)
         return
       }
     } else {
       id = ref
     }
-    db.modifyBuffer.buffer.writeUint32LE(id, i * 4 + db.modifyBuffer.len)
+    buf.writeUint32LE(id, i * 4 + len)
   }
 }
 
 export function simpleRefs(
-  t: PropDef | PropDefEdge,
+  propDef: PropDef | PropDefEdge,
   db: BasedDb,
   value: any[],
   res: ModifyState,
 ): number {
-  const buf = db.modifyBuffer.buffer
-  const len = db.modifyBuffer.len
+  const buf = db.modifyCtx.buffer
+  const len = db.modifyCtx.len
   let added = 0
-
   for (const ref of value) {
     let id: number
     if (typeof ref !== 'number') {
@@ -61,7 +64,7 @@ export function simpleRefs(
         if ('$index' in ref) {
           const $index = ref.$index
           if (typeof $index !== 'number' || $index > 2_147_483_647) {
-            modifyError(res, t, value)
+            modifyError(res, propDef, value)
             return
           }
           buf[len + added] = 3
@@ -72,7 +75,7 @@ export function simpleRefs(
           continue
         }
       } else {
-        modifyError(res, t, value)
+        modifyError(res, propDef, value)
         return
       }
     } else {
@@ -87,25 +90,24 @@ export function simpleRefs(
 }
 
 export function overWriteSimpleReferences(
-  t: PropDef,
+  propDef: PropDef,
   db: BasedDb,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
   value: any[],
-  schema: SchemaTypeDef,
   res: ModifyState,
   op: 0 | 1 | 2,
 ) {
+  const ctx = db.modifyCtx
   const refLen = 9 * value.length
-  const potentialLen = refLen + 1 + 5 + db.modifyBuffer.len + 11
-  if (potentialLen > db.maxModifySize) {
-    flushBuffer(db)
-  }
-  setCursor(db, schema, t.prop, res.tmpId, writeKey)
-  const len = db.modifyBuffer.len
-  db.modifyBuffer.len += 6
-  const added = simpleRefs(t, db, value, res)
-  db.modifyBuffer.buffer[len] = writeKey
-  db.modifyBuffer.buffer.writeUint32LE(added + 1, len + 1)
-  db.modifyBuffer.buffer[len + 5] = op
-  db.modifyBuffer.len += added
+  const potentialLen = refLen + 1 + 5 + ctx.len + 11
+
+  maybeFlush(db, potentialLen)
+
+  const len = ctx.len
+  ctx.len += 6
+  const added = simpleRefs(propDef, db, value, res)
+  ctx.buffer[len] = modifyOp
+  ctx.buffer.writeUint32LE(added + 1, len + 1)
+  ctx.buffer[len + 5] = op
+  ctx.len += added
 }

@@ -1,23 +1,24 @@
 import { BasedDb } from '../../index.js'
-import { PropDef } from '../../schema/types.js'
+import { PropDef, REFERENCE, REFERENCES, STRING } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { writeFixedLenValue } from '../fixedLen.js'
 import { RefModify, RefModifyOpts } from './references.js'
 import { simpleRefsPacked } from './simple.js'
 
-export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
-  var size = 0
-  for (const key in t.edges) {
+export function getEdgeSize(propDef: PropDef, ref: RefModifyOpts) {
+  let size = 0
+  for (const key in propDef.edges) {
     if (key in ref) {
-      const edge = t.edges[key]
+      const edge = propDef.edges[key]
       const value = ref[key]
       if (edge.len === 0) {
-        if (edge.typeIndex === 11) {
+        const type = edge.typeIndex
+        if (type === STRING) {
           const len = value.length
           size += len + len + 4
-        } else if (edge.typeIndex === 13) {
+        } else if (type === REFERENCE) {
           size += 4
-        } else if (edge.typeIndex === 14) {
+        } else if (type === REFERENCES) {
           size += value.length * 5 + 4
         }
       } else {
@@ -29,20 +30,21 @@ export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
 }
 
 export function calculateEdgesSize(
-  t: PropDef,
+  propDef: PropDef,
   value: RefModify[],
   res: ModifyState,
 ): number {
   let size = 0
-  for (let i = 0; i < value.length; i++) {
+  let i = value.length
+  while (i--) {
     let ref = value[i]
     if (typeof ref !== 'number') {
       if (ref instanceof ModifyState) {
         ref = ref.tmpId
       } else if (typeof ref === 'object') {
-        size += getEdgeSize(t, ref) + 6
+        size += getEdgeSize(propDef, ref) + 6
       } else {
-        modifyError(res, t, value)
+        modifyError(res, propDef, value)
         return 0
       }
     } else {
@@ -53,49 +55,46 @@ export function calculateEdgesSize(
 }
 
 export function writeEdges(
-  t: PropDef,
+  propDef: PropDef,
   ref: RefModifyOpts,
   db: BasedDb,
   res: ModifyState,
 ) {
-  for (const key in t.edges) {
+  for (const key in propDef.edges) {
     if (key in ref) {
-      const edge = t.edges[key]
+      const edge = propDef.edges[key]
+      const ctx = db.modifyCtx
+      const buf = ctx.buffer
+      const type = edge.typeIndex
       let value = ref[key]
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = edge.prop
-      db.modifyBuffer.buffer[db.modifyBuffer.len + 1] = edge.typeIndex
+      buf[ctx.len] = edge.prop
+      buf[ctx.len + 1] = type
       // Buffer: [field] [typeIndex] [size] [data]
-      if (edge.len === 0) {
-        if (edge.typeIndex === 11) {
-          const size = db.modifyBuffer.buffer.write(
-            value,
-            db.modifyBuffer.len + 6,
-            'utf8',
-          )
-          db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 2)
-          db.modifyBuffer.len += size + 6
-        } else if (edge.typeIndex === 13) {
-          // TODO: value get id
-          if (typeof value !== 'number') {
-            if (value instanceof ModifyState) {
-              value = value.tmpId
-            } else {
-              modifyError(res, t, value)
-              return true
-            }
+      if (edge.len !== 0) {
+        writeFixedLenValue(db, value, ctx.len + 2, edge, res)
+        ctx.len += edge.len + 2
+      } else if (type === STRING) {
+        const size = buf.write(value, ctx.len + 6, 'utf8')
+        buf.writeUint32LE(size, ctx.len + 2)
+        ctx.len += size + 6
+      } else if (type === REFERENCE) {
+        // TODO: value get id
+        if (typeof value !== 'number') {
+          if (value instanceof ModifyState) {
+            value = value.tmpId
+          } else {
+            modifyError(res, propDef, value)
+            return true
           }
-          db.modifyBuffer.buffer.writeUint32LE(value, db.modifyBuffer.len + 2)
-          db.modifyBuffer.len += 6
-        } else if (edge.typeIndex === 14) {
-          const refLen = value.length * 4
-          db.modifyBuffer.buffer.writeUint32LE(refLen, db.modifyBuffer.len + 2)
-          db.modifyBuffer.len += 6
-          simpleRefsPacked(edge, db, value, res)
-          db.modifyBuffer.len += refLen
         }
-      } else {
-        writeFixedLenValue(db, value, db.modifyBuffer.len + 2, edge, res)
-        db.modifyBuffer.len += edge.len + 2
+        buf.writeUint32LE(value, ctx.len + 2)
+        ctx.len += 6
+      } else if (edge.typeIndex === REFERENCES) {
+        const refLen = value.length * 4
+        buf.writeUint32LE(refLen, ctx.len + 2)
+        ctx.len += 6
+        simpleRefsPacked(edge, db, value, res)
+        ctx.len += refLen
       }
     }
   }

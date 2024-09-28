@@ -1,140 +1,146 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
-import { SchemaTypeDef, PropDef } from '../schema/types.js'
+import {
+  SchemaTypeDef,
+  isPropDef,
+  REFERENCE,
+  REFERENCES,
+  STRING,
+} from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
-import { setCursor } from './setCursor.js'
 import { writeFixedLenValue } from './fixedLen.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
-
-const EMPTY_BUFFER = Buffer.alloc(1000)
+import { CREATE, MERGE_MAIN, ModifyOp } from './types.js'
+import { maybeFlush, initField, initId, initType } from './utils.js'
 
 const _addModify = (
   db: BasedDb,
   res: ModifyState,
-  obj: { [key: string]: any },
-  tree: SchemaTypeDef['tree'],
+  obj: Record<string, any>,
   schema: SchemaTypeDef,
-  writeKey: 3 | 6,
-  merge: boolean,
+  modifyOp: ModifyOp,
+  tree: SchemaTypeDef['tree'],
+  overwrite: boolean,
+  initiated: boolean,
 ): boolean => {
-  let wroteMain = false
   for (const key in obj) {
-    if (res.error) {
-      return
-    }
-
-    const leaf = tree[key]
-
-    if (!leaf) {
+    const propDef = tree[key]
+    if (propDef === undefined) {
       modifyError(res, tree, key)
-      return
-    }
+    } else if (isPropDef(propDef)) {
+      initField(db, propDef.prop)
+      if (!initiated) {
+        initId(db, res.tmpId, modifyOp)
+        initiated = true
+      }
+      const type = propDef.typeIndex
+      if (type === REFERENCE) {
+        writeReference(obj[key], db, propDef, res, modifyOp)
+      } else if (type === REFERENCES) {
+        writeReferences(obj[key], db, propDef, res, modifyOp)
+      } else if (type === STRING && propDef.separate === true) {
+        writeString(obj[key], db, schema, propDef, res, modifyOp)
+      } else if (overwrite) {
+        const ctx = db.modifyCtx
+        if (ctx.lastMain === -1) {
+          const buf = ctx.buffer
+          const mainLen = schema.mainLen
+          const requiredLen = ctx.len + mainLen + 1 + 4 + 5
 
-    const value = obj[key]
-    if (!leaf.__isPropDef) {
-      if (
-        _addModify(
+          maybeFlush(db, requiredLen)
+
+          let pos = ctx.len
+          let val = mainLen
+
+          buf[pos++] = overwrite ? modifyOp : MERGE_MAIN
+          buf[pos++] = val
+          buf[pos++] = val >>>= 8
+          buf[pos++] = val >>>= 8
+          buf[pos++] = val >>>= 8
+          ctx.lastMain = pos
+          ctx.len = pos + mainLen
+          buf.fill(0, ctx.len - mainLen, ctx.len)
+        }
+
+        writeFixedLenValue(
           db,
+          obj[key],
+          propDef.start + ctx.lastMain,
+          propDef,
           res,
-          value,
-          leaf as SchemaTypeDef['tree'],
-          schema,
-          writeKey,
-          merge,
         )
-      ) {
-        wroteMain = true
+      } else {
+        const ctx = db.modifyCtx
+        if (ctx.mergeMain) {
+          ctx.mergeMain.push(propDef, obj[key])
+          ctx.mergeMainSize += propDef.len + 4
+        } else {
+          ctx.mergeMain = [propDef, obj[key]]
+          ctx.mergeMainSize = propDef.len + 4
+        }
       }
     } else {
-      const t = leaf as PropDef
+      _addModify(
+        db,
+        res,
+        obj[key],
+        schema,
+        modifyOp,
+        propDef,
+        overwrite,
+        initiated,
+      )
+    }
 
-      // 13: reference
-      if (t.typeIndex === 13) {
-        writeReference(value, db, schema, t, res, writeKey)
-        continue
-      }
-
-      // 14: references
-      if (t.typeIndex === 14) {
-        writeReferences(t, db, writeKey, value, schema, res)
-        continue
-      }
-
-      // 11: string
-      if (t.typeIndex === 11 && t.separate === true) {
-        writeString(value, db, schema, t, res, writeKey)
-        continue
-      }
-
-      if (merge) {
-        wroteMain = true
-        if (!db.modifyBuffer.mergeMain) {
-          db.modifyBuffer.mergeMain = []
-        }
-        db.modifyBuffer.mergeMain.push(t, value)
-        db.modifyBuffer.mergeMainSize += t.len + 4
-        continue
-      }
-
-      // Fixed length main buffer
-      wroteMain = true
-      setCursor(db, schema, t.prop, res.tmpId, writeKey, true)
-      let mainIndex = db.modifyBuffer.lastMain
-      if (mainIndex === -1) {
-        const nextLen = schema.mainLen + 1 + 4
-        if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
-          flushBuffer(db)
-        }
-        setCursor(db, schema, t.prop, res.tmpId, writeKey)
-        db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : writeKey
-        db.modifyBuffer.buffer.writeUint32LE(
-          schema.mainLen,
-          db.modifyBuffer.len + 1,
-        )
-        mainIndex = db.modifyBuffer.lastMain = db.modifyBuffer.len + 1 + 4
-        db.modifyBuffer.len += nextLen
-        const size = db.modifyBuffer.len - schema.mainLen
-        if (schema.mainLen < 1e3) {
-          EMPTY_BUFFER.copy(db.modifyBuffer.buffer, size, 0, schema.mainLen)
-        } else {
-          for (let x = 0; x < schema.mainLen; x++) {
-            db.modifyBuffer.buffer[size + x] = 0
-          }
-        }
-      }
-
-      writeFixedLenValue(db, value, t.start + mainIndex, t, res)
+    if (res.error !== undefined) {
+      return
     }
   }
 
-  return wroteMain
+  return initiated
 }
 
 export const addModify = (
   db: BasedDb,
   res: ModifyState,
-  obj: { [key: string]: any },
-  tree: SchemaTypeDef['tree'],
+  obj: Record<string, any>,
   def: SchemaTypeDef,
-  writeKey: 3 | 6,
-  merge: boolean,
-) => {
-  const typePrefix = db.modifyBuffer.typePrefix
-  const lastMain = db.modifyBuffer.lastMain
-  const field = db.modifyBuffer.field
-  const len = db.modifyBuffer.len
-  const id = db.modifyBuffer.id
-  const wroteMain = _addModify(db, res, obj, tree, def, writeKey, merge)
+  modifyOp: ModifyOp,
+  tree: SchemaTypeDef['tree'],
+  overwrite: boolean,
+): void => {
+  const ctx = db.modifyCtx
+  const { lastMain, prefix0, prefix1, field, len } = ctx
+
+  ctx.modifyOp = modifyOp
+
+  initType(db, def)
+
+  const initiated = _addModify(
+    db,
+    res,
+    obj,
+    def,
+    modifyOp,
+    tree,
+    overwrite,
+    false,
+  )
 
   if (res.error) {
-    db.modifyBuffer.typePrefix = typePrefix
-    db.modifyBuffer.lastMain = lastMain
-    db.modifyBuffer.field = field
-    db.modifyBuffer.len = len
-    db.modifyBuffer.id = id
+    // this is wrong in case of a flush....
+    ctx.lastMain = lastMain
+    ctx.prefix0 = prefix0
+    ctx.prefix1 = prefix1
+    ctx.field = field
+    ctx.len = len
+    ctx.id = -1
+  } else if (modifyOp === CREATE) {
+    if (!initiated || def.mainLen === 0) {
+      initField(db, 0)
+      initId(db, res.tmpId, modifyOp)
+    }
   }
-
-  return wroteMain
 }

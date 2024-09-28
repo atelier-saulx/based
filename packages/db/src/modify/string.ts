@@ -1,51 +1,42 @@
 import { BasedDb } from '../index.js'
-import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { CREATE, UPDATE } from './constants.js'
+import { CREATE, UPDATE, ModifyOp, DELETE_FIELD } from './types.js'
 import { ModifyState, modifyError } from './ModifyRes.js'
-import { setCursor } from './setCursor.js'
+import { maybeFlush } from './utils.js'
 
 export function writeString(
   value: string | null,
   db: BasedDb,
   def: SchemaTypeDef,
-  t: PropDef,
+  propDef: PropDef,
   res: ModifyState,
-  writeKey: 3 | 6,
+  modifyOp: ModifyOp,
 ) {
   if (typeof value !== 'string' && value !== null) {
-    modifyError(res, t, value)
+    modifyError(res, propDef, value)
     return
   }
 
   const len = value?.length
+  const ctx = db.modifyCtx
+  const buf = ctx.buffer
   if (!len) {
-    if (writeKey === UPDATE) {
-      if (db.modifyBuffer.len + 11 > db.maxModifySize) {
-        flushBuffer(db)
-      }
-      setCursor(db, def, t.prop, res.tmpId, writeKey)
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = 11
-      db.modifyBuffer.len++
+    if (modifyOp === UPDATE) {
+      maybeFlush(db, 11)
+      buf[ctx.len] = DELETE_FIELD
+      ctx.len++
     }
   } else {
-    if (writeKey === CREATE) {
-      def.stringPropsCurrent[t.prop] = 2
-      db.modifyBuffer.hasStringField++
+    if (modifyOp === CREATE) {
+      def.stringPropsCurrent[propDef.prop] = 2
+      ctx.hasStringField++
     }
     const byteLen = len + len
-    if (byteLen + 5 + db.modifyBuffer.len + 11 > db.maxModifySize) {
-      flushBuffer(db)
-    }
-    setCursor(db, def, t.prop, res.tmpId, writeKey)
-    db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-    db.modifyBuffer.len += 5
-    const size = db.modifyBuffer.buffer.write(
-      value,
-      db.modifyBuffer.len,
-      'utf8',
-    )
-    db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len + 1 - 5)
-    db.modifyBuffer.len += size
+    maybeFlush(db, byteLen + 5 + 11)
+    buf[ctx.len] = modifyOp
+    ctx.len += 5
+    const size = buf.write(value, ctx.len, 'utf8')
+    buf.writeUint32LE(size, ctx.len + 1 - 5)
+    ctx.len += size
   }
 }

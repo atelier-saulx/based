@@ -17,6 +17,7 @@ import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
+import { ModifyOp } from './modify/types.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
@@ -25,18 +26,20 @@ export * from './basedNode/index.js'
 export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
-  modifyBuffer: {
-    hasStringField: number
+  modifyCtx: {
     buffer: Buffer
+    hasStringField: number
     len: number
     field: number
-    typePrefix: Uint8Array
+    prefix0: number
+    prefix1: number
     id: number
     lastMain: number
     mergeMain: (PropDef | any)[] | null
     mergeMainSize: number
     ctx: { offset?: number }
     queue: Map<number, (id: number) => void>
+    modifyOp?: ModifyOp
   }
 
   schema: Schema & { lastId: number }
@@ -62,14 +65,15 @@ export class BasedDb {
       this.maxModifySize = maxModifySize
     }
     const max = this.maxModifySize
-    this.modifyBuffer = {
+    this.modifyCtx = {
       hasStringField: -1,
       mergeMainSize: 0,
       mergeMain: null,
       buffer: Buffer.allocUnsafe(max),
       len: 0,
       field: -1,
-      typePrefix: new Uint8Array([0, 0]),
+      prefix0: 0,
+      prefix1: 0,
       id: -1,
       lastMain: -1,
       ctx: {},
@@ -246,7 +250,7 @@ export class BasedDb {
   }
 
   async stop(noSave?: boolean) {
-    this.modifyBuffer.len = 0
+    this.modifyCtx.len = 0
     if (!noSave) {
       await this.save()
     }

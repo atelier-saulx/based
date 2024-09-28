@@ -43,7 +43,6 @@ await test('number', async (t) => {
 
   const res = db.query('user').get().toObject()
 
-  console.log('??', res)
   // deepEqual(
   //   db.query('user').get().toObject(),
   //   payloads.map((payload, index) => {

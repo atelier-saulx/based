@@ -58,11 +58,11 @@ class ModifyError {
 export class ModifyState {
   constructor(tmpId, db) {
     this.tmpId = tmpId
-    this.#buf = db.modifyBuffer
-    this.#ctx = db.modifyBuffer.ctx
+    this.#buf = db.modifyCtx
+    this.#ctx = db.modifyCtx.ctx
   }
-  #buf: BasedDb['modifyBuffer']
-  #ctx: BasedDb['modifyBuffer']['ctx']
+  #buf: BasedDb['modifyCtx']
+  #ctx: BasedDb['modifyCtx']['ctx']
   tmpId: number
   error?: ModifyError;
   [Symbol.toPrimitive]() {
@@ -95,4 +95,5 @@ export const modifyError = (
   val: any,
 ) => {
   res.error = new ModifyError(prop, val)
+  console.info(res.error.toString())
 }
