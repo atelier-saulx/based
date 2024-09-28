@@ -18,7 +18,6 @@ const _addModify = (
   schema: SchemaTypeDef,
   writeKey: 3 | 6,
   merge: boolean,
-  fromCreate: boolean,
 ): boolean => {
   let wroteMain = false
   for (const key in obj) {
@@ -44,7 +43,6 @@ const _addModify = (
           schema,
           writeKey,
           merge,
-          fromCreate,
         )
       ) {
         wroteMain = true
@@ -54,19 +52,19 @@ const _addModify = (
 
       // 13: reference
       if (t.typeIndex === 13) {
-        writeReference(value, db, schema, t, res, fromCreate, writeKey)
+        writeReference(value, db, schema, t, res, writeKey)
         continue
       }
 
       // 14: references
       if (t.typeIndex === 14) {
-        writeReferences(t, db, writeKey, value, schema, res, fromCreate)
+        writeReferences(t, db, writeKey, value, schema, res)
         continue
       }
 
       // 11: string
       if (t.typeIndex === 11 && t.separate === true) {
-        writeString(value, fromCreate, db, schema, t, res, writeKey)
+        writeString(value, db, schema, t, res, writeKey)
         continue
       }
 
@@ -82,14 +80,14 @@ const _addModify = (
 
       // Fixed length main buffer
       wroteMain = true
-      setCursor(db, schema, t.prop, res.tmpId, true, fromCreate)
+      setCursor(db, schema, t.prop, res.tmpId, writeKey, true)
       let mainIndex = db.modifyBuffer.lastMain
       if (mainIndex === -1) {
         const nextLen = schema.mainLen + 1 + 4
         if (db.modifyBuffer.len + nextLen + 5 > db.maxModifySize) {
           flushBuffer(db)
         }
-        setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
+        setCursor(db, schema, t.prop, res.tmpId, writeKey)
         db.modifyBuffer.buffer[db.modifyBuffer.len] = merge ? 4 : writeKey
         db.modifyBuffer.buffer.writeUint32LE(
           schema.mainLen,
@@ -122,24 +120,13 @@ export const addModify = (
   def: SchemaTypeDef,
   writeKey: 3 | 6,
   merge: boolean,
-  fromCreate: boolean,
 ) => {
   const typePrefix = db.modifyBuffer.typePrefix
   const lastMain = db.modifyBuffer.lastMain
   const field = db.modifyBuffer.field
   const len = db.modifyBuffer.len
   const id = db.modifyBuffer.id
-
-  const wroteMain = _addModify(
-    db,
-    res,
-    obj,
-    tree,
-    def,
-    writeKey,
-    merge,
-    fromCreate,
-  )
+  const wroteMain = _addModify(db, res, obj, tree, def, writeKey, merge)
 
   if (res.error) {
     db.modifyBuffer.typePrefix = typePrefix

@@ -1,13 +1,14 @@
 import { BasedDb } from '../index.js'
 import { SchemaTypeDef } from '../schema/types.js'
+import { CREATE } from './constants.js'
 
 export const setCursor = (
   db: BasedDb,
   schema: SchemaTypeDef,
   field: number,
   id: number,
+  writeKey: 3 | 6,
   ignoreField?: boolean,
-  isCreate?: boolean,
 ) => {
   // 0 switch field
   // 1 switch id
@@ -45,8 +46,7 @@ export const setCursor = (
   if (db.modifyBuffer.id !== id) {
     db.modifyBuffer.hasStringField = -1
     const len = db.modifyBuffer.len
-    // --- hello
-    db.modifyBuffer.buffer[len] = isCreate ? 9 : 1
+    db.modifyBuffer.buffer[len] = writeKey === CREATE ? 9 : 1
     db.modifyBuffer.buffer.writeUInt32LE(id, len + 1)
     db.modifyBuffer.len += 5
     db.modifyBuffer.id = id

@@ -90,7 +90,18 @@ export class Query {
 
     for (const f of fields) {
       if (typeof f === 'string') {
-        this.includeDef.includeFields.add(f)
+        if (f === '*') {
+          for (const f in this.schema.props) {
+            if (
+              this.schema.props[f].typeIndex !== 13 &&
+              this.schema.props[f].typeIndex !== 14
+            ) {
+              this.include(f)
+            }
+          }
+        } else {
+          this.includeDef.includeFields.add(f)
+        }
       } else if (typeof f === 'function') {
         // ------------------------------- fix that it becomes recursive..
         var selects = []

@@ -5,6 +5,7 @@ import { setCursor } from './setCursor.js'
 import { addModify } from './addModify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { writeFixedLenValue } from './fixedLen.js'
+import { CREATE, UPDATE } from './constants.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const def = db.schemaTypesParsed[type]
@@ -12,7 +13,7 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
     flushBuffer(db)
   }
-  setCursor(db, def, 0, id)
+  setCursor(db, def, 0, id, UPDATE)
   db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
   db.modifyBuffer.len++
   if (def.separate) {
@@ -21,7 +22,7 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
         flushBuffer(db)
       }
-      setCursor(db, def, s.prop, id)
+      setCursor(db, def, s.prop, id, UPDATE)
       db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
       db.modifyBuffer.len++
     }
@@ -35,7 +36,7 @@ export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const id = def.lastId + 1
   const res = new ModifyState(id, db)
-  const wroteMain = addModify(db, res, value, def.tree, def, 3, false, true)
+  const wroteMain = addModify(db, res, value, def.tree, def, CREATE, false)
 
   if (res.error) {
     // @ts-ignore
@@ -46,7 +47,7 @@ export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   def.total++
 
   if (!wroteMain || def.mainLen === 0) {
-    setCursor(db, def, 0, id, false, true)
+    setCursor(db, def, 0, id, CREATE)
   }
 
   // if touched lets see perf impact here
@@ -87,7 +88,7 @@ export const update = (
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const res = new ModifyState(id, db)
-  const hasMain = addModify(db, res, value, def.tree, def, 6, !overwrite, false)
+  const hasMain = addModify(db, res, value, def.tree, def, UPDATE, !overwrite)
 
   if (res.error) {
     db.modifyBuffer.mergeMainSize = 0
@@ -102,7 +103,7 @@ export const update = (
     if (db.modifyBuffer.len + size + 9 > db.maxModifySize) {
       flushBuffer(db)
     }
-    setCursor(db, def, 0, id)
+    setCursor(db, def, 0, id, UPDATE)
     db.modifyBuffer.buffer[db.modifyBuffer.len] = 5
     db.modifyBuffer.len += 1
     db.modifyBuffer.buffer.writeUint32LE(size, db.modifyBuffer.len)

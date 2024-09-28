@@ -50,14 +50,81 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    db.query('user').include('friends').get().toObject(),
+    db.query('user').include('*', 'friends').get().toObject(),
     [
-      { id: 1, friends: [] },
-      { id: 2, friends: [{ id: 3, name: 'john' }] },
-      { id: 3, friends: [{ id: 2, name: 'marie' }] },
+      { id: 1, name: 'bob', friends: [] },
+      { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
+      { id: 3, name: 'john', friends: [{ id: 2, name: 'marie' }] },
     ],
-    'add maar ok',
+    'add/delete',
   )
+
+  await db.update('user', john, {
+    friends: {
+      add: [bob],
+    },
+  })
+
+  deepEqual(
+    db.query('user').include('*', 'friends').get().toObject(),
+    [
+      { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
+      { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
+      {
+        id: 3,
+        name: 'john',
+        friends: [
+          { id: 2, name: 'marie' },
+          { id: 1, name: 'bob' },
+        ],
+      },
+    ],
+    'add',
+  )
+
+  await db.update('user', john, {
+    friends: null,
+  })
+
+  deepEqual(
+    db.query('user').include('*', 'friends').get().toObject(),
+    [
+      { id: 1, name: 'bob', friends: [] },
+      { id: 2, name: 'marie', friends: [] },
+      { id: 3, name: 'john', friends: [] },
+    ],
+    'delete',
+  )
+
+  /*
+  await db.update('user', john, {
+    friends: {
+      update: [
+        {
+          id: bob,
+          $index: 0,
+        },
+      ],
+    },
+  })
+
+  deepEqual(
+    db.query('user').include('*', 'friends').get().toObject(),
+    [
+      { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
+      { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
+      {
+        id: 3,
+        name: 'john',
+        friends: [
+          { id: 1, name: 'bob' },
+          { id: 2, name: 'marie' },
+        ],
+      },
+    ],
+    'update index',
+  )
+  */
 
   // console.dir(db.query('user').include('friends').get().toObject(), {
   //   depth: null,

@@ -42,11 +42,13 @@ export function simpleRefs(
   db: BasedDb,
   value: any[],
   res: ModifyState,
-) {
-  for (let i = 0; i < value.length; i++) {
-    let ref = value[i]
+): number {
+  const buf = db.modifyBuffer.buffer
+  const len = db.modifyBuffer.len
+  let added = 0
+
+  for (const ref of value) {
     let id: number
-    let $index: number
     if (typeof ref !== 'number') {
       if (ref instanceof ModifyState) {
         if (ref.error) {
@@ -57,7 +59,17 @@ export function simpleRefs(
       } else if (typeof ref === 'object' && 'id' in ref) {
         id = ref.id
         if ('$index' in ref) {
-          $index = ref.$index
+          const $index = ref.$index
+          if (typeof $index !== 'number' || $index > 2_147_483_647) {
+            modifyError(res, t, value)
+            return
+          }
+          buf[len + added] = 3
+          buf.writeUint32LE(id, len + added + 1)
+          buf.writeInt32LE($index, len + added + 5)
+          added += 9
+          console.log('Hell yeah', { $index })
+          continue
         }
       } else {
         modifyError(res, t, value)
@@ -66,9 +78,12 @@ export function simpleRefs(
     } else {
       id = ref
     }
-    db.modifyBuffer.buffer[db.modifyBuffer.len + i * 5] = 0
-    db.modifyBuffer.buffer.writeUint32LE(id, i * 5 + db.modifyBuffer.len + 1)
+    buf[len + added] = 0
+    buf.writeUint32LE(id, len + added + 1)
+    added += 5
   }
+
+  return added
 }
 
 export function overWriteSimpleReferences(
@@ -78,20 +93,19 @@ export function overWriteSimpleReferences(
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
-  fromCreate: boolean,
   op: 0 | 1 | 2,
 ) {
-  const refLen = 5 * value.length
+  const refLen = 9 * value.length
   const potentialLen = refLen + 1 + 5 + db.modifyBuffer.len + 11
   if (potentialLen > db.maxModifySize) {
     flushBuffer(db)
   }
-  setCursor(db, schema, t.prop, res.tmpId, false, fromCreate)
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = writeKey
-  db.modifyBuffer.buffer.writeUint32LE(refLen + 1, db.modifyBuffer.len + 1)
-  db.modifyBuffer.len += 5
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = op
-  db.modifyBuffer.len += 1
-  simpleRefs(t, db, value, res)
-  db.modifyBuffer.len += refLen
+  setCursor(db, schema, t.prop, res.tmpId, writeKey)
+  const len = db.modifyBuffer.len
+  db.modifyBuffer.len += 6
+  const added = simpleRefs(t, db, value, res)
+  db.modifyBuffer.buffer[len] = writeKey
+  db.modifyBuffer.buffer.writeUint32LE(added + 1, len + 1)
+  db.modifyBuffer.buffer[len + 5] = op
+  db.modifyBuffer.len += added
 }
