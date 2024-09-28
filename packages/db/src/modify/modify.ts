@@ -8,35 +8,40 @@ import { writeFixedLenValue } from './fixedLen.js'
 import { CREATE, UPDATE } from './types.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
+  const mod = db.modifyBuffer
   const def = db.schemaTypesParsed[type]
   const nextLen = 1 + 4 + 1 + 1
-  if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+  if (mod.len + nextLen > db.maxModifySize) {
     flushBuffer(db)
   }
   setCursor(db, def, 0, id, UPDATE)
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
-  db.modifyBuffer.len++
+  mod.buffer[mod.len] = 4
+  mod.len++
   if (def.separate) {
     for (const s of def.separate) {
       const nextLen = 1 + 4 + 1
-      if (db.modifyBuffer.len + nextLen > db.maxModifySize) {
+      if (mod.len + nextLen > db.maxModifySize) {
         flushBuffer(db)
       }
       setCursor(db, def, s.prop, id, UPDATE)
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = 4
-      db.modifyBuffer.len++
+      mod.buffer[mod.len] = 4
+      mod.len++
     }
   }
-  db.modifyBuffer.buffer[db.modifyBuffer.len] = 10
-  db.modifyBuffer.len++
+  mod.buffer[mod.len] = 10
+  mod.len++
   return true
 }
 
-export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
+export const create = (
+  db: BasedDb,
+  type: string,
+  obj: Record<string, any>,
+): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const id = def.lastId + 1
   const res = new ModifyState(id, db)
-  const wroteMain = addModify(db, res, value, def.tree, def, CREATE, false)
+  const hasMain = addModify(db, res, obj, def, CREATE, false, def.tree)
 
   if (res.error) {
     // @ts-ignore
@@ -46,27 +51,28 @@ export const create = (db: BasedDb, type: string, value: any): ModifyRes => {
   def.lastId = id
   def.total++
 
-  if (!wroteMain || def.mainLen === 0) {
+  if (!hasMain || def.mainLen === 0) {
     setCursor(db, def, 0, id, CREATE)
   }
 
   // if touched lets see perf impact here
   if (def.hasStringProp) {
-    if (db.modifyBuffer.hasStringField != def.stringPropsSize - 1) {
-      db.modifyBuffer.buffer[db.modifyBuffer.len] = 7
-      let sizeIndex = db.modifyBuffer.len + 1
+    const mod = db.modifyBuffer
+    if (mod.hasStringField != def.stringPropsSize - 1) {
+      mod.buffer[mod.len] = 7
+      let sizeIndex = mod.len + 1
       let size = 0
-      db.modifyBuffer.len += 3
-      for (const x of def.stringPropsLoop) {
-        if (def.stringPropsCurrent[x.prop] === 1) {
-          db.modifyBuffer.buffer[db.modifyBuffer.len] = x.prop
+      mod.len += 3
+      for (const propDef of def.stringPropsLoop) {
+        if (def.stringPropsCurrent[propDef.prop] === 1) {
+          mod.buffer[mod.len] = propDef.prop
+          mod.len += 1
           size += 1
-          db.modifyBuffer.len += 1
         }
       }
-      db.modifyBuffer.buffer.writeUint16LE(size, sizeIndex)
+      mod.buffer.writeUint16LE(size, sizeIndex)
     }
-    if (db.modifyBuffer.hasStringField != -1) {
+    if (mod.hasStringField != -1) {
       def.stringProps.copy(def.stringPropsCurrent)
     }
   }
@@ -83,48 +89,46 @@ export const update = (
   db: BasedDb,
   type: string,
   id: number,
-  value: any,
+  obj: Record<string, any>,
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const res = new ModifyState(id, db)
   const merge = !overwrite
-  const hasMain = addModify(db, res, value, def.tree, def, UPDATE, merge)
+  const hasMain = addModify(db, res, obj, def, UPDATE, merge, def.tree)
 
   if (res.error) {
-    const m = db.modifyBuffer
-    m.mergeMainSize = 0
-    m.mergeMain = null
+    const mod = db.modifyBuffer
+    mod.mergeMainSize = 0
+    mod.mergeMain = null
     // @ts-ignore
     return res
   }
 
   if (hasMain && merge) {
-    const m = db.modifyBuffer
-    const mergeMain = m.mergeMain
-    if (mergeMain !== null) {
-      const buf = m.buffer
-      const size = m.mergeMainSize
+    const mod = db.modifyBuffer
+    const mergeMain = mod.mergeMain
+    if (mergeMain) {
+      const buf = mod.buffer
+      const size = mod.mergeMainSize
       // TODO is this 9 correct?
-      if (m.len + size + 9 > db.maxModifySize) {
+      if (mod.len + size + 9 > db.maxModifySize) {
         flushBuffer(db)
       }
       setCursor(db, def, 0, id, UPDATE)
-      let pos = m.len
-      buf[pos] = 5
-      buf.writeUint32LE(size, pos + 1)
-      pos += 5
+      buf[mod.len] = 5
+      buf.writeUint32LE(size, mod.len + 1)
+      mod.len += 5
       for (let i = 0; i < mergeMain.length; i += 2) {
         const t: PropDef = mergeMain[i]
         const v = mergeMain[i + 1]
-        buf.writeUint16LE(t.start, pos)
-        buf.writeUint16LE(t.len, pos + 2)
-        writeFixedLenValue(db, v, pos + 4, t, res)
-        pos += t.len + 4
+        buf.writeUint16LE(t.start, mod.len)
+        buf.writeUint16LE(t.len, mod.len + 2)
+        writeFixedLenValue(db, v, mod.len + 4, t, res)
+        mod.len += t.len + 4
       }
-      m.mergeMainSize = 0
-      m.mergeMain = null
-      m.len = pos
+      mod.mergeMainSize = 0
+      mod.mergeMain = null
     }
   }
 
