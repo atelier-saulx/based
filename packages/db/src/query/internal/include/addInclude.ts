@@ -97,9 +97,10 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
   }
 
   // include.includeTree = convertToIncludeTree(includeTreeIntermediate)
-  for (const k in def.references) {
-    result.push(...addRefInclude(db, def.references[k]))
-  }
+
+  def.references.forEach((ref) => {
+    result.push(...addRefInclude(db, ref))
+  })
 
   return result
 }

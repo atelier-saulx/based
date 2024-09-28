@@ -305,8 +305,13 @@ var a, b
 for (let i = 0; i < 1e6; i++) {
   // db.query('article').include('contributors.name').toBuffer()
   def = createQueryDef(db, QueryDefType.Root, { type: 'article2' })
-  // includeFields(def, ['contributors.name', 'contributors.$role'])
-  includeFields(def, ['name', 'burp'])
+  includeFields(def, [
+    'contributors.name',
+    'contributors.$role',
+    'name',
+    'burp',
+  ])
+  // includeFields(def, ['name', 'burp'])
 
   buffer = addInclude(db, def)
   a = Buffer.concat(buffer)
@@ -321,8 +326,8 @@ dx = Date.now()
 for (let i = 0; i < 1e6; i++) {
   b = db
     .query('article2')
-    .include('name', 'burp')
-    // .include('contributors.name', 'contributors.$role')
+    // .include('name', 'burp')
+    .include('contributors.name', 'contributors.$role', 'name', 'burp')
     .toBuffer().include
 
   // debugQueryDef(def)
@@ -332,6 +337,13 @@ console.log('1m nested old query ', Date.now() - dx, 'ms')
 
 console.log(new Uint8Array(a), new Uint8Array(b))
 
+const q = db.query('article2')
+b = q
+  // .include('name', 'burp')
+  .include('contributors.name', 'contributors.$role', 'name', 'burp')
+  .toBuffer().include
+
+console.log(q.includeDef.includeTree)
 // --------------------------------------------------------------
 
 // how to do make a funciton and the include type def
