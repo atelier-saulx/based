@@ -89,6 +89,7 @@ const d = Date.now()
 
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
+  ids: new Uint32Array([1, 2]),
 })
 
 q.includeFields(def, [
@@ -98,7 +99,9 @@ q.includeFields(def, [
   'contributors.$role',
 ])
 
-console.log(new Uint8Array(Buffer.concat(q.defToBuffer(db, def))))
+q.sort(def, 'name', 'desc')
+
+console.log(q.debug(q.defToBuffer(db, def)))
 
 // console.log(
 //   new Uint8Array(

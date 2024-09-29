@@ -1,0 +1,145 @@
+import picocolors from 'picocolors'
+import { BasedNode } from '../../index.js'
+import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../../schema/types.js'
+import { QueryDef, QueryDefType } from './types.js'
+
+export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
+  const loggableObject: any = { type: 'bla', schema: null }
+
+  const f = (a) => {
+    if (a === null) {
+      return null
+    }
+    if (a instanceof BasedNode) {
+      return 'basedNode'
+    }
+    if (a instanceof Buffer) {
+      return new Uint8Array(a)
+    }
+    if (a instanceof Uint8Array) {
+      return a
+    }
+    if (a instanceof Set) {
+      return a
+    }
+    if (a instanceof Map) {
+      const b = new Map()
+      walk(a, b)
+      return b
+    } else if (typeof a === 'object') {
+      if (a.type && a.include && a.filter && a.range) {
+        return debugQueryDef(a, true)
+      }
+
+      if (isPropDef(a)) {
+        return `${a.path.join('.')}: ${a.prop} ${REVERSE_TYPE_INDEX_MAP[a.typeIndex]}`
+      } else {
+        const b = Array.isArray(a) ? [] : {}
+        walk(a, b)
+        return b
+      }
+    }
+    return a
+  }
+
+  const walk = (a, b) => {
+    if (a instanceof Map) {
+      a.forEach((v, k) => {
+        b.set(k, f(v))
+      })
+    } else {
+      for (const key in a) {
+        b[key] = f(a[key])
+      }
+    }
+  }
+
+  walk(q, loggableObject)
+
+  loggableObject.type = QueryDefType[q.type]
+  loggableObject.schema = q.schema?.type || null
+
+  //   for (const key in q) {
+  //     if (key === 'include') {
+  //       const include = {}
+
+  //       for (const k in q[key]) {
+  //         if (k === 'main') {
+  //         } else {
+  //           include[k] = q[key][k]
+  //         }
+  //       }
+
+  //       loggableObject[key] = include
+  //     } else if (key === 'schema') {
+  //       if (q[key]) {
+  //         loggableObject[key] = q[key].type
+  //       }
+  //     } else if (key === 'props') {
+  //       loggableObject.props = {}
+  //       for (const key in q.props) {
+  //         loggableObject.props[key] =
+  //           `${q.props[key].prop} ${REVERSE_TYPE_INDEX_MAP[q.props[key].typeIndex]}`
+  //       }
+
+  //   }
+
+  if (!returnIt) {
+    console.dir(loggableObject, { depth: 10 })
+  }
+  return loggableObject
+}
+
+export const debug = (x: any, start: number = 0, end: number = 0) => {
+  if (Array.isArray(x) && x[0] instanceof Buffer) {
+    debug(Buffer.concat(x))
+  } else if (x instanceof Buffer) {
+    // add include
+    // add filter in the same way
+    // make a function for this
+
+    // -------- debug -----------
+    console.log('')
+    if (!end) {
+      end = x.byteLength
+    }
+    const a = [...new Uint8Array(x.slice(start, end))]
+    for (let i = 0; i < Math.ceil(x.byteLength / 20); i++) {
+      console.log(
+        picocolors.gray(
+          a
+            .slice(i * 20, (i + 1) * 20)
+            .map((v, j) => {
+              return String(j + i * 20).padStart(3, '0')
+            })
+            .join(' '),
+        ),
+      )
+      console.log(
+        a
+          .slice(i * 20, (i + 1) * 20)
+          .map((v) => String(v).padStart(3, '0'))
+          .map((v, j) => {
+            if (a[j + i * 20] === 253) {
+              return picocolors.magenta(v)
+            }
+            if (a[j + i * 20] === 255) {
+              return picocolors.blue(v)
+            }
+            if (a[j + i * 20] === 254) {
+              return picocolors.green(v)
+            }
+            if (a[j + i * 20] === 252) {
+              return picocolors.red(v)
+            }
+            return v
+          })
+          .join(' '),
+      )
+    }
+    console.log('')
+    // -------------------------
+  } else if ('type' in x && 'schema' in x && 'props' in x) {
+    debugQueryDef(x)
+  }
+}

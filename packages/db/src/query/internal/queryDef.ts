@@ -11,7 +11,6 @@ import {
   QueryTarget,
   Target,
 } from './types.js'
-import picocolors from 'picocolors'
 
 const createEmptySharedDef = () => {
   const q: Partial<QueryDefShared> = {
@@ -54,98 +53,15 @@ export const createQueryDef = (
 
     if (type === QueryDefType.Root) {
       // IDS sort
-      q.range.limit = 1e3 // 1k?
+      if (t.ids) {
+        q.range.limit = t.ids.length // 1k?
+      } else {
+        q.range.limit = 1e3 // 1k?
+      }
     } else if (type === QueryDefType.References) {
       q.range.limit = 1e4 // 100k?
     }
 
     return q
   }
-}
-
-export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
-  const loggableObject: any = { type: 'bla', schema: null }
-
-  const f = (a) => {
-    if (a === null) {
-      return null
-    }
-    if (a instanceof BasedNode) {
-      return 'basedNode'
-    }
-    if (a instanceof Buffer) {
-      return new Uint8Array(a)
-    }
-    if (a instanceof Uint8Array) {
-      return a
-    }
-    if (a instanceof Set) {
-      return a
-    }
-    if (a instanceof Map) {
-      const b = new Map()
-      walk(a, b)
-      return b
-    } else if (typeof a === 'object') {
-      if (a.type && a.include && a.filter && a.range) {
-        return debugQueryDef(a, true)
-      }
-
-      if (isPropDef(a)) {
-        return `${a.path.join('.')}: ${a.prop} ${REVERSE_TYPE_INDEX_MAP[a.typeIndex]}`
-      } else {
-        const b = Array.isArray(a) ? [] : {}
-        walk(a, b)
-        return b
-      }
-    }
-    return a
-  }
-
-  const walk = (a, b) => {
-    if (a instanceof Map) {
-      a.forEach((v, k) => {
-        b.set(k, f(v))
-      })
-    } else {
-      for (const key in a) {
-        b[key] = f(a[key])
-      }
-    }
-  }
-
-  walk(q, loggableObject)
-
-  loggableObject.type = QueryDefType[q.type]
-  loggableObject.schema = q.schema?.type || null
-
-  //   for (const key in q) {
-  //     if (key === 'include') {
-  //       const include = {}
-
-  //       for (const k in q[key]) {
-  //         if (k === 'main') {
-  //         } else {
-  //           include[k] = q[key][k]
-  //         }
-  //       }
-
-  //       loggableObject[key] = include
-  //     } else if (key === 'schema') {
-  //       if (q[key]) {
-  //         loggableObject[key] = q[key].type
-  //       }
-  //     } else if (key === 'props') {
-  //       loggableObject.props = {}
-  //       for (const key in q.props) {
-  //         loggableObject.props[key] =
-  //           `${q.props[key].prop} ${REVERSE_TYPE_INDEX_MAP[q.props[key].typeIndex]}`
-  //       }
-
-  //   }
-
-  if (!returnIt) {
-    console.dir(loggableObject, { depth: 10 })
-  }
-  return loggableObject
 }
