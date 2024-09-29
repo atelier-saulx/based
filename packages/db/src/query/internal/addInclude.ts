@@ -1,32 +1,25 @@
-import { BasedDb } from '../../../index.js'
-import { ID_FIELD_DEF } from '../../../schema/schema.js'
-import { debugQueryDef } from '../queryDef.js'
-import { QueryDef } from '../types.js'
+import { BasedDb } from '../../index.js'
+import { QueryDef } from './types.js'
 import { addRefInclude } from './addRefInclude.js'
 import { parseInclude } from './parseInclude.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
 export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
+  const result: Buffer[] = []
+
   if (
     !def.include.stringFields.size &&
     !def.include.props.size &&
     !def.references.size
   ) {
-    return [EMPTY_BUFFER]
+    return result
   }
-
-  //   const includeTreeIntermediate = {
-  //     id: ID_FIELD_DEF,
-  //   }
 
   let includesMain = false
   let mainBuffer: Buffer
   let len = 0
   let includeBuffer: Buffer
-
-  // includeTreeIntermediate
-  const result: Buffer[] = []
 
   if (def.include.stringFields) {
     for (const f of def.include.stringFields) {
@@ -95,8 +88,6 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
   if (includeBuffer) {
     result.push(includeBuffer)
   }
-
-  // include.includeTree = convertToIncludeTree(includeTreeIntermediate)
 
   def.references.forEach((ref) => {
     result.push(...addRefInclude(db, ref))

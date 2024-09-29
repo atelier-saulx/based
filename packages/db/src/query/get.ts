@@ -25,6 +25,8 @@ export const get = (query: Query): BasedQueryResponse => {
     query.totalConditionSize,
   )
 
+  query.filterTime = conditionsBuffer
+
   let result: Buffer
   const d = performance.now()
   if (query.ids) {
