@@ -31,25 +31,30 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
   debug(include)
 
   if (def.type === QueryDefType.Root) {
+    let filter: Buffer
+    let filterSize = 0
+    if (def.filter.size) {
+      filter = filterToBuffer(def.filter)
+      debug(filter)
+      filterSize = filter.byteLength
+    }
     // [type,type]
     // [q type] 0 == id, 1 === ids, 2 === type only
     if (def.target.id) {
       // type 0
       // 0: 4 [id]
-      const buf = Buffer.allocUnsafe(7)
+      // 0: 2 [filterSize]
+      const buf = Buffer.allocUnsafe(9 + filterSize)
       buf[0] = 0
       buf[1] = def.schema.idUint8[0]
       buf[2] = def.schema.idUint8[1]
       buf.writeUInt32LE(def.target.id, 3)
+      buf.writeUint16LE(filterSize, 7)
+      if (filterSize) {
+        buf.set(filter, 9)
+      }
       result.push(buf)
     } else {
-      let filter: Buffer
-      let filterSize = 0
-      if (def.filter.size) {
-        filter = filterToBuffer(def.filter)
-        debug(filter)
-        filterSize = filter.byteLength
-      }
       let sort: Buffer
       let sortSize = 0
       if (def.sort) {

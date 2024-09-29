@@ -47,7 +47,7 @@ pub fn queryId(
 }
 
 pub fn queryIds(
-    ids: []u32,
+    ids: []u8,
     ctx: *QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
@@ -55,8 +55,8 @@ pub fn queryIds(
 ) !void {
     const typeEntry = try db.getType(typeId);
     var i: u32 = 0;
-    checkItem: while (i < ids.len) : (i += 1) {
-        const id = ids[i];
+    checkItem: while (i < ids.len) : (i += 4) {
+        const id = utils.readInt(u32, ids, i);
         const node = db.getNode(id, typeEntry);
         if (node == null) {
             continue :checkItem;

@@ -14,7 +14,7 @@ const mem = std.mem;
 
 pub fn queryIds(
     comptime queryType: comptime_int,
-    ids: []u32,
+    ids: []u8,
     ctx: *QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
@@ -37,9 +37,9 @@ pub fn queryIds(
         len = 0;
     }
     const sortFlag = try db.getSortFlag(sortFieldType, queryType == 10);
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len).?;
-    sortItem: while (i < ids.len) : (i += 1) {
-        const id = ids[i];
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len * 4).?;
+    sortItem: while (i < ids.len) : (i += 4) {
+        const id = utils.readInt(u32, ids, i);
         const node = db.getNode(id, typeEntry);
         if (node == null) {
             continue :sortItem;
@@ -63,7 +63,6 @@ pub fn queryIds(
             null,
             false,
         );
-
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;

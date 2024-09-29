@@ -95,7 +95,8 @@ db.drain()
 
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'todo',
-  // ids: new Uint32Array([1, 2]),
+  // id: 1,
+  ids: new Uint32Array([1, 2]),
 })
 
 def.range.limit = 10
@@ -112,16 +113,19 @@ console.log(q.debug(b))
 console.log('RESULT')
 q.debug(db.native.getQueryBuf(b))
 
-// console.log(
-//   new Uint8Array(
-//     db
-//       .query('article')
-//       .include(
-//         ...['published', 'name', 'contributors.name', 'contributors.$role'],
-//       )
-//       .toBuffer().include,
-//   ),
-// )
+console.log('RESULT')
+
+q.debug(
+  db.query('todo', [1, 2]).include('age').sort('age').filter('done').toBuffer()
+    .include,
+)
+
+db.query('todo', [1, 2])
+  .include(...['age'])
+  .sort('age')
+  .filter('done')
+  .get()
+  .debug()
 
 // how to do make a funciton and the include type def
 // no query constructor yet just fns where we can add include stuff to the include def
