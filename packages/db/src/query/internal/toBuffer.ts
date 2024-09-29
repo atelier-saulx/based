@@ -28,8 +28,6 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
 
   const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
 
-  debug(include)
-
   if (def.type === QueryDefType.Root) {
     let filter: Buffer
     let filterSize = 0

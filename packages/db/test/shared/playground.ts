@@ -96,19 +96,15 @@ db.drain()
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'todo',
   // id: 1,
-  ids: new Uint32Array([1, 2]),
+  // ids: new Uint32Array([1, 2]),
 })
-
 def.range.limit = 10
-
 q.includeFields(def, ['age'])
-
-q.sort(def, 'age', 'asc')
+q.sort(def, 'age', 'desc')
 q.filter(db, def, 'done', '=', true)
-
 const b = Buffer.concat(q.defToBuffer(db, def))
 
-console.log(q.debug(b))
+// console.log(q.debug(b))
 
 console.log('RESULT')
 q.debug(db.native.getQueryBuf(b))
