@@ -2,7 +2,7 @@ import { BasedDb } from '../../index.js'
 import { createSortBuffer } from './sort.js'
 import { QueryDef, QueryDefType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
-import { filterToBuffer } from './internal.js'
+import { filterToBuffer, debug } from './internal.js'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
@@ -43,6 +43,7 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
       let filterSize = 0
       if (def.filter.size) {
         filter = filterToBuffer(def.filter)
+        debug(filter)
         filterSize = filter.byteLength
       }
       let sort: Buffer

@@ -89,7 +89,7 @@ const d = Date.now()
 
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
-  ids: new Uint32Array([1, 2]),
+  // ids: new Uint32Array([1, 2]),
 })
 
 q.includeFields(def, [
@@ -100,6 +100,7 @@ q.includeFields(def, [
 ])
 
 q.sort(def, 'name', 'desc')
+q.filter(db, def, 'name', '=', 'bla')
 
 console.log(q.debug(q.defToBuffer(db, def)))
 

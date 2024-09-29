@@ -103,33 +103,34 @@ export const debug = (x: any, start: number = 0, end: number = 0) => {
     if (!end) {
       end = x.byteLength
     }
+    const w = Math.floor(process.stdout.columns / 4) ?? 20
     const a = [...new Uint8Array(x.slice(start, end))]
-    for (let i = 0; i < Math.ceil(x.byteLength / 20); i++) {
+    for (let i = 0; i < Math.ceil(x.byteLength / w); i++) {
       console.log(
         picocolors.gray(
           a
-            .slice(i * 20, (i + 1) * 20)
+            .slice(i * w, (i + 1) * w)
             .map((v, j) => {
-              return String(j + i * 20).padStart(3, '0')
+              return String(j + i * w).padStart(3, '0')
             })
             .join(' '),
         ),
       )
       console.log(
         a
-          .slice(i * 20, (i + 1) * 20)
+          .slice(i * w, (i + 1) * w)
           .map((v) => String(v).padStart(3, '0'))
           .map((v, j) => {
-            if (a[j + i * 20] === 253) {
+            if (a[j + i * w] === 253) {
               return picocolors.magenta(v)
             }
-            if (a[j + i * 20] === 255) {
+            if (a[j + i * w] === 255) {
               return picocolors.blue(v)
             }
-            if (a[j + i * 20] === 254) {
+            if (a[j + i * w] === 254) {
               return picocolors.green(v)
             }
-            if (a[j + i * 20] === 252) {
+            if (a[j + i * w] === 252) {
               return picocolors.red(v)
             }
             return v
