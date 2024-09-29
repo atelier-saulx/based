@@ -3,7 +3,7 @@ import {
   BOOLEAN,
   ENUM,
   INT16,
-  INT32,
+  // INT32,
   INT8,
   NUMBER,
   PropDef,
@@ -11,7 +11,7 @@ import {
   STRING,
   TIMESTAMP,
   UINT16,
-  UINT32,
+  // UINT32,
   UINT8,
 } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
