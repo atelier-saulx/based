@@ -1,42 +1,47 @@
 import { BasedDb } from '../index.js'
+import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { CREATE, UPDATE, ModifyOp, DELETE_FIELD } from './types.js'
+import { CREATE, UPDATE, ModifyOp } from './types.js'
 import { ModifyState, modifyError } from './ModifyRes.js'
-import { maybeFlush } from './utils.js'
+import { setCursor } from './setCursor.js'
 
 export function writeString(
   value: string | null,
   db: BasedDb,
   def: SchemaTypeDef,
-  propDef: PropDef,
+  t: PropDef,
   res: ModifyState,
   modifyOp: ModifyOp,
 ) {
   if (typeof value !== 'string' && value !== null) {
-    modifyError(res, propDef, value)
+    modifyError(res, t, value)
     return
   }
 
   const len = value?.length
-  const ctx = db.modifyCtx
-  const buf = ctx.buffer
   if (!len) {
     if (modifyOp === UPDATE) {
-      maybeFlush(db, 11)
-      buf[ctx.len] = DELETE_FIELD
-      ctx.len++
+      if (db.modifyCtx.len + 11 > db.maxModifySize) {
+        flushBuffer(db)
+      }
+      setCursor(db, def, t.prop, res.tmpId, modifyOp)
+      db.modifyCtx.buffer[db.modifyCtx.len] = 11
+      db.modifyCtx.len++
     }
   } else {
     if (modifyOp === CREATE) {
-      def.stringPropsCurrent[propDef.prop] = 2
-      ctx.hasStringField++
+      def.stringPropsCurrent[t.prop] = 2
+      db.modifyCtx.hasStringField++
     }
     const byteLen = len + len
-    maybeFlush(db, byteLen + 5 + 11)
-    buf[ctx.len] = modifyOp
-    ctx.len += 5
-    const size = buf.write(value, ctx.len, 'utf8')
-    buf.writeUint32LE(size, ctx.len + 1 - 5)
-    ctx.len += size
+    if (byteLen + 5 + db.modifyCtx.len + 11 > db.maxModifySize) {
+      flushBuffer(db)
+    }
+    setCursor(db, def, t.prop, res.tmpId, modifyOp)
+    db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
+    db.modifyCtx.len += 5
+    const size = db.modifyCtx.buffer.write(value, db.modifyCtx.len, 'utf8')
+    db.modifyCtx.buffer.writeUint32LE(size, db.modifyCtx.len + 1 - 5)
+    db.modifyCtx.len += size
   }
 }
