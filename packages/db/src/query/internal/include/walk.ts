@@ -1,58 +1,11 @@
-import { BasedDb } from '../../index.js'
-import {
-  isPropDef,
-  PropDef,
-  PropDefEdge,
-  SchemaPropTree,
-} from '../../schema/types.js'
-import { createQueryDef } from './queryDef.js'
-import { isRefDef, QueryDef, QueryDefType } from './types.js'
+import { BasedDb } from '../../../index.js'
+import { isPropDef, PropDef, SchemaPropTree } from '../../../schema/types.js'
+import { createQueryDef } from '../queryDef.js'
+import { isRefDef, QueryDef, QueryDefType } from '../types.js'
+import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeAllProps, includeFields, includeProp } from './props.js'
 
-const getAllFieldFromObject = (
-  tree: SchemaPropTree | PropDef,
-  arr: string[] = [],
-) => {
-  for (const key in tree) {
-    const leaf = tree[key]
-    if (!leaf.typeIndex && !leaf.__isPropDef) {
-      getAllFieldFromObject(leaf, arr)
-    } else {
-      arr.push(leaf.path.join('.'))
-    }
-  }
-  return arr
-}
-
-const createRefQueryDef = (
-  db: BasedDb,
-  def: QueryDef,
-  t: PropDef | PropDefEdge,
-) => {
-  const defRef = createQueryDef(
-    db,
-    t.typeIndex === 13 ? QueryDefType.Reference : QueryDefType.References,
-    {
-      type: t.inverseTypeName,
-      propDef: t,
-    },
-  )
-  def.references.set(t.prop, defRef)
-  return defRef
-}
-
-const createOrGetRefQueryDef = (
-  db: BasedDb,
-  def: QueryDef,
-  t: PropDef | PropDefEdge,
-) => {
-  if (!def.references.has(t.prop)) {
-    return createRefQueryDef(db, def, t)
-  }
-  return def.references.get(t.prop)
-}
-
-export const parseInclude = (
+export const walkDefs = (
   db: BasedDb,
   def: QueryDef,
   f: string,
@@ -109,11 +62,10 @@ export const parseInclude = (
 
     const tree = def.schema.tree[path[0]]
 
-    // object
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {
-        if (parseInclude(db, def, field, includesMain)) {
+        if (walkDefs(db, def, field, includesMain)) {
           includesMain = true
         }
       }
