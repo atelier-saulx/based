@@ -35,7 +35,6 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
     let filterSize = 0
     if (def.filter.size) {
       filter = filterToBuffer(def.filter)
-      debug(filter)
       filterSize = filter.byteLength
     }
     // [type,type]
@@ -59,7 +58,6 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
       let sortSize = 0
       if (def.sort) {
         sort = createSortBuffer(def.sort)
-        debug(sort)
         sortSize = sort.byteLength
       }
       if (def.target.ids) {
@@ -123,9 +121,7 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
     if (def.sort) {
       sort = createSortBuffer(def.sort)
     }
-
-    // ADD RANGE [offset,limit] (8 bytes)
-
+    // TODO: ADD RANGE [offset,limit] (8 bytes)
     const sortSize = sort?.byteLength ?? 0
     const filterSize = filter?.byteLength ?? 0
     const modsSize = filterSize + sortSize

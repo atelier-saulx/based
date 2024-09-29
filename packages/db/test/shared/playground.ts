@@ -113,19 +113,19 @@ console.log(q.debug(b))
 console.log('RESULT')
 q.debug(db.native.getQueryBuf(b))
 
-console.log('RESULT')
+// console.log('RESULT')
 
-q.debug(
-  db.query('todo', [1, 2]).include('age').sort('age').filter('done').toBuffer()
-    .include,
-)
+// q.debug(
+//   db.query('todo', [1, 2]).include('age').sort('age').filter('done').toBuffer()
+//     .include,
+// )
 
-db.query('todo', [1, 2])
-  .include(...['age'])
-  .sort('age')
-  .filter('done')
-  .get()
-  .debug()
+// db.query('todo', [1, 2])
+//   .include(...['age'])
+//   .sort('age')
+//   .filter('done')
+//   .get()
+//   .debug()
 
 // how to do make a funciton and the include type def
 // no query constructor yet just fns where we can add include stuff to the include def

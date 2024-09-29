@@ -41,7 +41,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const queryType = q[0];
     const typeId: db.TypeId = readInt(u16, q, 1);
 
-    // TODO make these into fns and then you can read from root in branches as well
+    // TODO maybe make these into fns and then you can read from root in branches as well ?
 
     // default query
     if (queryType == 2) {
@@ -76,11 +76,10 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const sortSize = readInt(u16, q, 17 + filterSize + idsSize);
         const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
         const include = q[19 + idsSize + filterSize + sortSize .. q.len];
-
-        std.debug.print("i {any} {d} \n", .{ include, q.len });
         if (sortSize == 0) {
             try Query.queryIds(ids, &ctx, typeId, filterBuf, include);
         } else if (sortBuf[0] == 0) {
+            // later change fn signature
             try QuerySort.queryIds(9, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
         } else {
             try QuerySort.queryIds(10, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
