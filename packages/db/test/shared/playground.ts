@@ -100,16 +100,16 @@ q.includeFields(def, [
 
 console.log(new Uint8Array(Buffer.concat(q.defToBuffer(db, def))))
 
-console.log(
-  new Uint8Array(
-    db
-      .query('article')
-      .include(
-        ...['published', 'name', 'contributors.name', 'contributors.$role'],
-      )
-      .toBuffer().include,
-  ),
-)
+// console.log(
+//   new Uint8Array(
+//     db
+//       .query('article')
+//       .include(
+//         ...['published', 'name', 'contributors.name', 'contributors.$role'],
+//       )
+//       .toBuffer().include,
+//   ),
+// )
 
 // how to do make a funciton and the include type def
 // no query constructor yet just fns where we can add include stuff to the include def

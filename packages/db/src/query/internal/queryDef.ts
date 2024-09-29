@@ -51,6 +51,14 @@ export const createQueryDef = (
     q.props = q.schema.props
     q.type = type
     q.target = t
+
+    if (type === QueryDefType.Root) {
+      // IDS sort
+      q.range.limit = 1e3 // 1k?
+    } else if (type === QueryDefType.References) {
+      q.range.limit = 1e4 // 100k?
+    }
+
     return q
   }
 }
