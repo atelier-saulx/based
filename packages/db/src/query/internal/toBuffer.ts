@@ -28,15 +28,19 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
 
   const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
 
+  debug(include)
+
   if (def.type === QueryDefType.Root) {
     // [type,type]
     // [q type] 0 == id, 1 === ids, 2 === type only
     if (def.target.id) {
+      // type 0
       // 0: 4 [id]
-      const buf = Buffer.allocUnsafe(6)
-      buf[0] = def.schema.idUint8[0]
-      buf[1] = def.schema.idUint8[1]
-      buf.writeUInt32LE(def.target.id, 2)
+      const buf = Buffer.allocUnsafe(7)
+      buf[0] = 0
+      buf[1] = def.schema.idUint8[0]
+      buf[2] = def.schema.idUint8[1]
+      buf.writeUInt32LE(def.target.id, 3)
       result.push(buf)
     } else {
       let filter: Buffer
@@ -50,51 +54,56 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
       let sortSize = 0
       if (def.sort) {
         sort = createSortBuffer(def.sort)
+        debug(sort)
         sortSize = sort.byteLength
       }
       if (def.target.ids) {
+        // type 1
         // 1: 4 + ids * 4 [ids len] [id,id,id]
-        // 1,2: 8 [offset, limit]
-        // 1,2: 2 [filter size]
+        // 1: 8 [offset, limit]
+        // 1: 2 [filter size]
         // ?filter
-        // 1,2: 2 [sort size]
+        // 1: 2 [sort size]
         // ?sort
         const idsSize = def.target.ids.length * 4
-        const buf = Buffer.allocUnsafe(18 + idsSize + filterSize + sortSize)
-        buf[0] = def.schema.idUint8[0]
-        buf[1] = def.schema.idUint8[1]
-        buf.writeUint32LE(idsSize, 2)
-        buf.set(new Uint8Array(def.target.ids.buffer), 6)
-        buf.writeUint32LE(def.range.offset, idsSize + 6)
-        buf.writeUint32LE(def.range.limit, idsSize + 10)
-        buf.writeUint16LE(filterSize, idsSize + 14)
+        const buf = Buffer.allocUnsafe(19 + idsSize + filterSize + sortSize)
+        buf[0] = 1
+        buf[1] = def.schema.idUint8[0]
+        buf[2] = def.schema.idUint8[1]
+        buf.writeUint32LE(idsSize, 3)
+        buf.set(new Uint8Array(def.target.ids.buffer), 7)
+        buf.writeUint32LE(def.range.offset, idsSize + 7)
+        buf.writeUint32LE(def.range.limit, idsSize + 11)
+        buf.writeUint16LE(filterSize, idsSize + 15)
         if (filterSize) {
-          buf.set(filter, idsSize + 16)
+          buf.set(filter, idsSize + 17)
         }
-        buf.writeUint16LE(sortSize, 16 + filterSize + idsSize)
+        buf.writeUint16LE(sortSize, 17 + filterSize + idsSize)
         if (sortSize) {
-          buf.set(sort, 18 + filterSize + idsSize)
+          buf.set(sort, 19 + filterSize + idsSize)
         }
         result.push(buf)
       } else {
+        // type 2
         // 2: 0
-        // 1,2: 8 [offset, limit]
-        // 1,2: 2 [filter size]
+        // 2: 8 [offset, limit]
+        // 2: 2 [filter size]
         // ?filter
-        // 1,2: 2 [sort size]
+        // 2: 2 [sort size]
         // ?sort
-        const buf = Buffer.allocUnsafe(14 + filterSize + sortSize)
-        buf[0] = def.schema.idUint8[0]
-        buf[1] = def.schema.idUint8[1]
-        buf.writeUint32LE(def.range.offset, 2)
-        buf.writeUint32LE(def.range.limit, 6)
-        buf.writeUint16LE(filterSize, 10)
+        const buf = Buffer.allocUnsafe(15 + filterSize + sortSize)
+        buf[0] = 2
+        buf[1] = def.schema.idUint8[0]
+        buf[2] = def.schema.idUint8[1]
+        buf.writeUint32LE(def.range.offset, 3)
+        buf.writeUint32LE(def.range.limit, 7)
+        buf.writeUint16LE(filterSize, 11)
         if (filterSize) {
-          buf.set(filter, 12)
+          buf.set(filter, 13)
         }
-        buf.writeUint16LE(sortSize, 12 + filterSize)
+        buf.writeUint16LE(sortSize, 13 + filterSize)
         if (sortSize) {
-          buf.set(sort, 14 + filterSize)
+          buf.set(sort, 15 + filterSize)
         }
         result.push(buf)
       }

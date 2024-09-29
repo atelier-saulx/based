@@ -5,12 +5,12 @@ import { QueryDef, QueryDefType } from './types.js'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   const loggableObject: any = { type: 'bla', schema: null }
-
   const f = (a) => {
     if (a === null) {
       return null
     }
     if (a instanceof BasedNode) {
+      // will be changed
       return 'basedNode'
     }
     if (a instanceof Buffer) {
@@ -30,7 +30,6 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
       if (a.type && a.include && a.filter && a.range) {
         return debugQueryDef(a, true)
       }
-
       if (isPropDef(a)) {
         return `${a.path.join('.')}: ${a.prop} ${REVERSE_TYPE_INDEX_MAP[a.typeIndex]}`
       } else {
@@ -41,7 +40,6 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
     }
     return a
   }
-
   const walk = (a, b) => {
     if (a instanceof Map) {
       a.forEach((v, k) => {
@@ -53,37 +51,9 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
       }
     }
   }
-
   walk(q, loggableObject)
-
   loggableObject.type = QueryDefType[q.type]
   loggableObject.schema = q.schema?.type || null
-
-  //   for (const key in q) {
-  //     if (key === 'include') {
-  //       const include = {}
-
-  //       for (const k in q[key]) {
-  //         if (k === 'main') {
-  //         } else {
-  //           include[k] = q[key][k]
-  //         }
-  //       }
-
-  //       loggableObject[key] = include
-  //     } else if (key === 'schema') {
-  //       if (q[key]) {
-  //         loggableObject[key] = q[key].type
-  //       }
-  //     } else if (key === 'props') {
-  //       loggableObject.props = {}
-  //       for (const key in q.props) {
-  //         loggableObject.props[key] =
-  //           `${q.props[key].prop} ${REVERSE_TYPE_INDEX_MAP[q.props[key].typeIndex]}`
-  //       }
-
-  //   }
-
   if (!returnIt) {
     console.dir(loggableObject, { depth: 10 })
   }
@@ -91,14 +61,14 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
 }
 
 export const debug = (x: any, start: number = 0, end: number = 0) => {
+  if (x === null || typeof x !== 'object') {
+    console.log(x)
+    return
+  }
+
   if (Array.isArray(x) && x[0] instanceof Buffer) {
     debug(Buffer.concat(x))
   } else if (x instanceof Buffer) {
-    // add include
-    // add filter in the same way
-    // make a function for this
-
-    // -------- debug -----------
     console.log('')
     if (!end) {
       end = x.byteLength

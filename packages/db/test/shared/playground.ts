@@ -81,6 +81,12 @@ const d = Date.now()
 //   db.create('todo', { done: false, age: i })
 // }
 
+for (let i = 0; i < 1e6; i++) {
+  db.create('todo', { done: i % 2 > 0, age: i })
+}
+
+db.drain()
+
 // console.log('db time', db.drain(), Date.now() - d)
 
 // console.log(db.query('todo').range(0, 100).get())
@@ -88,21 +94,23 @@ const d = Date.now()
 // --------------------------------------------------------------
 
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
-  type: 'article',
+  type: 'todo',
   // ids: new Uint32Array([1, 2]),
 })
 
-q.includeFields(def, [
-  'published',
-  'name',
-  'contributors.name',
-  'contributors.$role',
-])
+def.range.limit = 10
 
-q.sort(def, 'name', 'desc')
-q.filter(db, def, 'name', '=', 'bla')
+q.includeFields(def, ['age'])
 
-console.log(q.debug(q.defToBuffer(db, def)))
+q.sort(def, 'age', 'asc')
+q.filter(db, def, 'done', '=', true)
+
+const b = Buffer.concat(q.defToBuffer(db, def))
+
+console.log(q.debug(b))
+
+console.log('RESULT')
+q.debug(db.native.getQueryBuf(b))
 
 // console.log(
 //   new Uint8Array(

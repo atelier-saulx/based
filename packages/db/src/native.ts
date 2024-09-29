@@ -6,6 +6,10 @@ export default {
     return db.modify(buffer, len)
   },
 
+  getQueryBuf: (q: Buffer): Buffer | null => {
+    return db.getQueryBuf(q)
+  },
+
   getQuery: (
     conditions: Buffer,
     typeId: number,
