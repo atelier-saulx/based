@@ -99,6 +99,7 @@ export const addModify: typeof _addModify = (
   _addModify(db, res, obj, def, modifyOp, tree, overwrite)
 
   if (res.error) {
+    // TODO this is not correct if its flushed
     const mod = db.modifyCtx
     mod.lastMain = lastMain
     mod.prefix0 = prefix0
