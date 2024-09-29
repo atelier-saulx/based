@@ -1,15 +1,9 @@
 import { BasedDb } from '../../index.js'
-import { PropDef } from '../../schema/types.js'
+import { flushBuffer } from '../../operations.js'
+import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
-import {
-  DELETE_FIELD,
-  ModifyOp,
-  REFS_ADD,
-  REFS_DELETE,
-  REFS_PUT,
-  REFS_UPDATE,
-} from '../types.js'
-import { maybeFlush } from '../utils.js'
+import { setCursor } from '../setCursor.js'
+import { ModifyOp } from '../types.js'
 import { overWriteEdgeReferences } from './referencesEdge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
@@ -33,42 +27,53 @@ export type Refs =
 export function writeReferences(
   value: any,
   db: BasedDb,
+  schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
   modifyOp: ModifyOp,
 ) {
   if (typeof value !== 'object') {
     modifyError(res, t, value)
-  } else if (value === null) {
-    const ctx = db.modifyCtx
-    maybeFlush(db, 11)
-    ctx.buffer[ctx.len] = DELETE_FIELD
-    ctx.len++
-  } else if (Array.isArray(value)) {
-    if (t.edges) {
-      overWriteEdgeReferences(t, db, modifyOp, value, res, REFS_PUT)
-    } else {
-      overWriteSimpleReferences(t, db, modifyOp, value, res, REFS_PUT)
+    return
+  }
+
+  if (value === null) {
+    if (db.modifyCtx.len + 11 > db.maxModifySize) {
+      flushBuffer(db)
     }
-  } else {
-    for (const key in value) {
-      const val = value[key]
-      let refsOp
-      if (key === 'add') {
-        refsOp = REFS_ADD
-      } else if (key === 'delete') {
-        refsOp = REFS_DELETE
-      } else if (key === 'update') {
-        refsOp = REFS_UPDATE
-      } else {
-        modifyError(res, t, value)
-        return
-      }
-      if (t.edges) {
-        overWriteEdgeReferences(t, db, modifyOp, value, res, refsOp)
-      } else {
-        overWriteSimpleReferences(t, db, modifyOp, val, res, refsOp)
-      }
+    setCursor(db, schema, t.prop, res.tmpId, modifyOp)
+    db.modifyCtx.buffer[db.modifyCtx.len] = 11
+    db.modifyCtx.len++
+    return
+  }
+
+  if (Array.isArray(value)) {
+    if (t.edges) {
+      overWriteEdgeReferences(t, db, modifyOp, value, schema, res, 0)
+    } else {
+      overWriteSimpleReferences(t, db, modifyOp, value, schema, res, 0)
+    }
+    return
+  }
+
+  for (const key in value) {
+    const val = value[key]
+    let op
+    if (key === 'add') {
+      op = 1
+    } else if (key === 'delete') {
+      op = 2
+    } else if (key === 'update') {
+      op = 3
+    } else {
+      modifyError(res, t, value)
+      return
+    }
+
+    if (t.edges) {
+      overWriteEdgeReferences(t, db, modifyOp, value, schema, res, op)
+    } else {
+      overWriteSimpleReferences(t, db, modifyOp, val, schema, res, op)
     }
   }
 }
