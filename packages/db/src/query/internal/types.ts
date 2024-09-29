@@ -12,7 +12,7 @@ enum QueryDefType {
   Edge = 1,
   Reference = 2,
   References = 3,
-  Root = 4,
+  Root = 4, // need id
 }
 
 export type EdgeTarget = {

@@ -54,7 +54,6 @@ const filterReferences = (
   let t: PropDef | SchemaPropTree = schema.tree
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
-    console.log('trying to find', p, t)
 
     t = t[p]
     if (!t) {

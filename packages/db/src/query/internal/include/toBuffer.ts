@@ -1,11 +1,10 @@
-import { BasedDb } from '../../index.js'
-import { QueryDef } from './types.js'
-import { addRefInclude } from './addRefInclude.js'
-import { parseInclude } from './parseInclude.js'
+import { BasedDb } from '../../../index.js'
+import { QueryDef } from '../types.js'
+import { walkDefs } from './walk.js'
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
-export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
+export const includeToBuffer = (db: BasedDb, def: QueryDef): Buffer[] => {
   const result: Buffer[] = []
 
   if (
@@ -23,7 +22,7 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
 
   if (def.include.stringFields) {
     for (const f of def.include.stringFields) {
-      if (parseInclude(db, def, f, includesMain)) {
+      if (walkDefs(db, def, f, includesMain)) {
         includesMain = true
       }
     }
@@ -88,10 +87,6 @@ export const addInclude = (db: BasedDb, def: QueryDef): Buffer[] => {
   if (includeBuffer) {
     result.push(includeBuffer)
   }
-
-  def.references.forEach((ref) => {
-    result.push(...addRefInclude(db, ref))
-  })
 
   return result
 }

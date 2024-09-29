@@ -1,15 +1,15 @@
 import { BasedDb } from '../../index.js'
-import { addInclude } from './addInclude.js'
+import { defToBuffer } from './toBuffer.js'
 import { createQueryDef, debugQueryDef } from './queryDef.js'
 import { QueryDefType, QueryDef } from './types.js'
-import { includeFields } from './props.js'
+import { includeFields } from './include/props.js'
 
 export * from './queryDef.js'
 export * from './types.js'
-export * from './props.js'
-export * from './addInclude.js'
-export * from './addRefInclude.js'
-export * from './filter/addFilter.js'
+export * from './include/props.js'
+export * from './include/toBuffer.js'
+export * from './toBuffer.js'
+export * from './filter/filter.js'
 export * from './filter/toBuffer.js'
 
 export const run = (db: BasedDb, type: string, fields: string[]): QueryDef => {
@@ -18,7 +18,7 @@ export const run = (db: BasedDb, type: string, fields: string[]): QueryDef => {
     type,
   })
   includeFields(def, fields)
-  const buffer = addInclude(db, def)
+  const buffer = defToBuffer(db, def)
   debugQueryDef(def)
   console.log('BUF', new Uint8Array(Buffer.concat(buffer)))
   return def

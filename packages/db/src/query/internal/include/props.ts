@@ -1,4 +1,4 @@
-import { QueryDef } from './types.js'
+import { QueryDef } from '../types.js'
 
 export const getAll = (props: QueryDef['props']): string[] => {
   const fields: string[] = []

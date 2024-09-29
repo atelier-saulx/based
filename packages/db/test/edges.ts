@@ -1,8 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
-import * as internal from '../src/query/internal/internal.js'
-
 await test('edges', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -94,37 +92,6 @@ await test('edges', async (t) => {
   })
 
   db.drain()
-
-  console.log('GO RUN')
-  // run(db, 'article', ['contributors.$friend'])
-
-  const f = [
-    'contributors.$role',
-    'contributors.$rating',
-    'contributors.$email',
-    'contributors.$lang',
-  ]
-  // internal.run(db, 'article', f)
-
-  const def = internal.createQueryDef(db, internal.QueryDefType.Root, {
-    type: 'article',
-  })
-
-  const refDef = internal.createQueryDef(db, internal.QueryDefType.References, {
-    type: 'user',
-    propDef: def.schema.props.contributors,
-  })
-
-  internal.includeFields(
-    refDef,
-    f.map((f) => f.split('.')[1]),
-  )
-
-  def.references[1] = refDef
-
-  const buf = internal.addInclude(db, def)
-
-  internal.debugQueryDef(def)
 
   const x = db
     .query('article')
