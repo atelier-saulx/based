@@ -20,6 +20,7 @@ export const createSortBuffer = (sort: QueryDefSort) => {
 
 // NO REF / REFERENCES SUPPORT
 export const sort = (def: QueryDef, field: string, order?: 'asc' | 'desc') => {
+  console.log(field, def)
   def.sort = {
     prop: def.props[field],
     order: order === 'asc' || order === undefined ? 0 : 1,
