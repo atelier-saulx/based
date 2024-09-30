@@ -183,10 +183,10 @@ SELVA_EXPORT
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReference selva_field_get_weak_reference(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_field_get_weak_references(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)

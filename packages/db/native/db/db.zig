@@ -238,7 +238,7 @@ pub fn getEdgeReferences(
     field: u8,
 ) ?*selva.SelvaNodeWeakReferences {
     if (ref.meta != null) {
-        var result: selva.SelvaNodeWeakReferences = selva.selva_field_get_weak_references(
+        var result: selva.SelvaNodeWeakReferences = selva.selva_fields_get_weak_references(
             ref.meta,
             field,
         );

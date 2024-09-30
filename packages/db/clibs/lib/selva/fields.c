@@ -1311,14 +1311,14 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
 }
 
-struct SelvaNodeWeakReference selva_field_get_weak_reference(struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
     struct SelvaFieldsAny any = selva_fields_get2(fields, field);
 
     return (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) ? any.weak_reference : (struct SelvaNodeWeakReference){};
 }
 
-struct SelvaNodeWeakReferences selva_field_get_weak_references(struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
     struct SelvaFieldsAny any = selva_fields_get2(fields, field);
 
