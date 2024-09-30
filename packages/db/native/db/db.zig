@@ -236,13 +236,12 @@ pub fn getEdgeFieldSchema(edgeConstaint: *selva.EdgeFieldConstraint, field: u8) 
 pub fn getEdgeReferences(
     ref: *selva.SelvaNodeReference,
     field: u8,
-) ?*selva.SelvaNodeWeakReferences {
+) ?selva.SelvaNodeWeakReferences {
     if (ref.meta != null) {
-        var result: selva.SelvaNodeWeakReferences = selva.selva_fields_get_weak_references(
+        return selva.selva_fields_get_weak_references(
             ref.meta,
             field,
         );
-        return &result;
     }
     return null;
 }
@@ -250,17 +249,15 @@ pub fn getEdgeReferences(
 // TODO fix this
 pub fn getEdgeReference(
     ref: *selva.SelvaNodeReference,
-    selvaFieldSchema: FieldSchema,
-) *selva.SelvaNodeWeakReference {
+    field: u8,
+) ?selva.SelvaNodeWeakReference {
     if (ref.meta != null) {
-        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
+        return selva.selva_fields_get_weak_reference(
             ref.meta,
-            selvaFieldSchema,
+            field,
         );
-        return @as(*selva.SelvaNodeWeakReference, @ptrCast(result.ptr));
-    } else {
-        return &.{};
     }
+    return null;
 }
 
 pub fn writeEdgeProp(
