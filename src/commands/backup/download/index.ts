@@ -1,6 +1,4 @@
 import {
-  backupsSelection,
-  BackupsSorted,
   basedAuth,
   isValidPath,
   replaceTilde,
@@ -12,6 +10,7 @@ import { writeFile } from 'fs/promises'
 import { BasedClient } from '@based/client'
 import { Command } from 'commander'
 import { getList } from '../list/index.js'
+import { backupsSelection, BackupsSorted } from '../manageBackups.js'
 
 type DownloadArgs = {
   db?: string

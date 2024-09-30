@@ -23,7 +23,6 @@ declare global {
     namespace Backups {
       namespace List {
         type Args = {
-          yes?: boolean
           limit?: number
           sort?: 'asc' | 'desc'
         }

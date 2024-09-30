@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { AppContext, basedAuth } from '../../../shared/index.js'
-import { isValid, formatISO } from 'date-fns'
+import { isValid, formatISO, parse, isBefore } from 'date-fns'
 import { show } from '../show/index.js'
 // import { dirname, join } from 'node:path'
 // import { mkdir, readFile, stat } from 'node:fs/promises'
@@ -19,8 +19,8 @@ export type FilterArgs = {
   level: 'all' | 'info' | 'error'
   limit: number
   sort: 'asc' | 'desc'
-  before: string
-  after: string
+  startDate: string
+  endDate: string
   checksum: number
   function: string | string[]
   service: string | string[]
@@ -189,7 +189,7 @@ export const filter =
 
     const errorMessage = (option: string, value: string | number) => {
       throw new Error(
-        `The <b>${option}</b> option is not valid: '<b>${value}</b>'. Check it and try again.`,
+        `The <b>${option}</b> provided is not valid: '<b>${value}</b>'. Check it and try again.`,
       )
     }
 
@@ -197,17 +197,17 @@ export const filter =
       errorMessage('sort', filters.sort)
     }
 
-    if (filters.before) {
-      filters.before = formatISO(filters.before)
-      if (!isValid(filters.before)) {
-        errorMessage('before', filters.before)
+    if (filters.endDate) {
+      filters.endDate = formatISO(filters.endDate)
+      if (!isValid(filters.endDate)) {
+        errorMessage('before', filters.endDate)
       }
     }
 
-    if (filters.after) {
-      filters.after = formatISO(filters.after)
-      if (!isValid(filters.after)) {
-        errorMessage('after', filters.after)
+    if (filters.startDate) {
+      filters.startDate = formatISO(filters.startDate)
+      if (!isValid(filters.startDate)) {
+        errorMessage('after', filters.startDate)
       }
     }
 
@@ -235,14 +235,25 @@ export const filter =
     if (!skip) {
       context.print.line()
 
-      if (!filters.before && !filters.after && !filters.stream) {
+      if (!filters.endDate && !filters.startDate && !filters.stream) {
         const filterByDate: boolean = await context.input.confirm(
           `Would you like to filter the logs by date and time?`,
         )
 
         if (filterByDate) {
-          filters.before = await context.input.dateTime(`Filter logs before:`)
-          filters.after = await context.input.dateTime(`Filter logs after:`)
+          filters.startDate = await context.input.dateTime(
+            `Please enter the start date and time for filtering logs:`,
+          )
+          filters.endDate = await context.input.dateTime(
+            `Please enter the end date and time for filtering logs:`,
+          )
+
+          if (context.format.isBefore(filters.endDate, filters.startDate)) {
+            errorMessage(
+              'dates interval',
+              `The end date cannot be before the start date. Start date: ${filters.startDate} | End date: ${filters.endDate}`,
+            )
+          }
         }
       }
 
@@ -281,7 +292,7 @@ export const filter =
             .sort((a, b) => (a.name > b.name ? 1 : -1))
 
           filters.function = await context.input.select(
-            `Select the functions: <dim>(A-Z)</dim>`,
+            `Please select the functions: <dim>(A-Z)</dim>`,
             functionsItems,
             true,
           )
@@ -297,7 +308,7 @@ export const filter =
 
         if (filterByService) {
           filters.service = await context.input.select(
-            'Select the services: <dim>(A-Z)</dim>',
+            'Please select the services: <dim>(A-Z)</dim>',
             [
               {
                 name: 'env-hub',

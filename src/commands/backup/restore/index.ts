@@ -1,15 +1,10 @@
 import { Command } from 'commander'
-import {
-  backupsSelection,
-  BackupsSorted,
-  basedAuth,
-  replaceTilde,
-  AppContext,
-} from '../../../shared/index.js'
+import { basedAuth, replaceTilde, AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 import { BasedClient } from '@based/client'
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
+import { backupsSelection, BackupsSorted } from '../manageBackups.js'
 
 type RestoreArgs = {
   db?: string

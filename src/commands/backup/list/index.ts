@@ -1,16 +1,15 @@
 import { Command } from 'commander'
-import {
-  backupsSummary,
-  backupsSelection,
-  backupsSorting,
-  basedAuth,
-  BackupsSorted,
-  AppContext,
-} from '../../../shared/index.js'
+import { basedAuth, AppContext } from '../../../shared/index.js'
 import { getDownload } from '../download/index.js'
 import { BasedClient } from '@based/client'
 import { setRestore } from '../restore/index.js'
 import { setFlush } from '../flush/index.js'
+import {
+  backupsSelection,
+  BackupsSorted,
+  backupsSorting,
+  backupsSummary,
+} from '../manageBackups.js'
 
 export const list =
   (program: Command, context: AppContext) =>

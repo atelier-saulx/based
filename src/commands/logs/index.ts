@@ -45,10 +45,17 @@ export const logs = async (program: Command, context: AppContext) => {
       'Sort the order of the logs asc/desc (Sorting has no effect when logs are being displayed as a live stream in real-time).',
       'desc',
     )
-    .option('-b, --before <DD/MM/YYYY>', 'Filter by date.')
-    .option('-a, --after <DD/MM/YYYY>', 'Filter by date.')
+    .option(
+      '-sD, --start-date <DD/MM/YYYY HH:MM:SS>',
+      'The start date and time for filtering logs.',
+    )
+    .option(
+      '-eD, --end-date <DD/MM/YYYY HH:MM:SS>',
+      'The end date and time for filtering logs.',
+    )
     .option('-cs, --checksum <cheksum>', 'Filter by checksum.')
     .option('-f, --function <functions...>', 'Filter by function.')
+    .option('--service <services...>', 'Filter by service.')
     .option('--service <services...>', 'Filter by service.')
     .description('Display all logs')
     .action(filter(program, context))

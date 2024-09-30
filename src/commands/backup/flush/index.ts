@@ -1,12 +1,8 @@
 import { Command } from 'commander'
 import { BasedClient } from '@based/client'
-import {
-  backupsSelection,
-  BackupsSorted,
-  basedAuth,
-  AppContext,
-} from '../../../shared/index.js'
+import { basedAuth, AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
+import { backupsSelection, BackupsSorted } from '../manageBackups.js'
 
 type FlushArgs = {
   db?: string

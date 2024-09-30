@@ -14,14 +14,14 @@ export const getTerminal = (
     title,
   })
 
-  const headerHeight: number = 4
+  const headerHeight: number = header.split('\n').length + 1
 
   const headerElement = blessed.box({
     top: 0,
     left: 0,
     width: '100%',
     height: headerHeight,
-    content: parseMessage(header),
+    content: parseMessage(header) + '\n' + '─'.repeat(process.stdout.columns),
     align: 'left',
     valign: 'top',
     style: {

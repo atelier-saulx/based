@@ -2,7 +2,7 @@ import { spinner } from './spinner.js'
 import { parseMessage } from './parseMessage.js'
 import { checkbox, input, select, Separator } from '@inquirer/prompts'
 import { isValid } from 'date-fns/isValid'
-import { format as formatDate, parse, toDate } from 'date-fns'
+import { format as formatDate, isBefore, parse, toDate } from 'date-fns'
 import confirm from '@inquirer/confirm'
 
 interface MessageHandler {
@@ -23,6 +23,13 @@ export type SelectInputItems =
       value: any
     }
   | Separator
+
+export type DateTimeResult = {
+  value: string
+  date: Date
+  timestamp: number
+  format: string
+}
 
 type InputHandler = {
   date: (
@@ -105,12 +112,22 @@ export class AppContext {
     return this.state[key]
   }
 
+  public format = {
+    dateAndTime: 'dd/MM/yyyy HH:mm:ss',
+    date: 'dd/MM/yyyy',
+    isBefore: (endDate: string, startDate: string) =>
+      isBefore(
+        parse(endDate, this.format.dateAndTime, new Date()),
+        parse(startDate, this.format.dateAndTime, new Date()),
+      ),
+  }
+
   public input: InputHandler = {
     date: async (
       message: string,
       skip: boolean = true,
       today: boolean = true,
-      format: string = 'dd/MM/yyyy',
+      format: string = this.format.date,
     ) => {
       message = message + ` <b>(${format.toUpperCase()})</b>`
 
@@ -121,7 +138,7 @@ export class AppContext {
         message = message + ' <dim>(T for today)</dim>'
       }
 
-      const prompt = input({
+      const value: string = await input({
         message: parseMessage(message),
         validate: (value) =>
           (skip && value.toLowerCase() === 's') ||
@@ -129,21 +146,40 @@ export class AppContext {
           isValid(parse(value, format, new Date())),
       })
 
-      if (today && (await prompt) === 't') {
-        return formatDate(toDate(new Date()), format)
+      if (today && value === 't') {
+        const date: Date = toDate(new Date())
+        const value: string = formatDate(date, format)
+
+        return value
+
+        // return {
+        //   value,
+        //   date,
+        //   timestamp: date.getTime(),
+        //   format,
+        // }
       }
 
-      if ((await prompt) === 's') {
+      if (value === 's') {
         return null
       }
 
-      return prompt
+      const date: Date = toDate(value)
+
+      return value
+
+      // return {
+      //   value,
+      //   date,
+      //   timestamp: date.getTime(),
+      //   format,
+      // }
     },
     dateTime: async (
       message: string,
       skip: boolean = true,
       now: boolean = true,
-      format: string = 'dd/MM/yyyy HH:mm:ss:SSS',
+      format: string = this.format.dateAndTime,
     ) => {
       message = message + ` <b>(${format.toUpperCase()})</b>`
 
@@ -154,7 +190,7 @@ export class AppContext {
         message = message + ' <dim>(N for now)</dim>'
       }
 
-      const prompt = input({
+      const value = await input({
         message: parseMessage(message),
         validate: (value) =>
           (skip && value.toLowerCase() === 's') ||
@@ -162,15 +198,34 @@ export class AppContext {
           isValid(parse(value, format, new Date())),
       })
 
-      if (now && (await prompt) === 'n') {
-        return formatDate(toDate(new Date()), format)
+      if (now && value === 'n') {
+        const date: Date = toDate(new Date())
+        const value: string = formatDate(date, format)
+
+        return value
+
+        // return {
+        //   value,
+        //   date,
+        //   timestamp: date.getTime(),
+        //   format,
+        // }
       }
 
-      if ((await prompt) === 's') {
+      if (value === 's') {
         return null
       }
 
-      return prompt
+      const date: Date = toDate(value)
+
+      return value
+
+      // return {
+      //   value,
+      //   date,
+      //   timestamp: date.getTime(),
+      //   format,
+      // }
     },
     number: async (message: string, skip: boolean = true) => {
       if (skip) {

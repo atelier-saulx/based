@@ -46,18 +46,18 @@ export const show = async ({
     filterLabels.push(templateLabels('level', filters.level))
   }
 
-  if (filters.before) {
-    filterLabels.push(templateLabels('before', filters.before))
+  if (filters.startDate) {
+    filterLabels.push(templateLabels('start date', filters.startDate))
   }
 
-  if (filters.after) {
-    filterLabels.push(templateLabels('after', filters.after))
+  if (filters.endDate) {
+    filterLabels.push(templateLabels('end date', filters.endDate))
   }
 
   if (filters.function) {
     filterLabels.push(
       templateLabels(
-        'functions',
+        'function',
         Array.isArray(filters.function)
           ? filters.function.join(', ')
           : filters.function,
@@ -68,7 +68,7 @@ export const show = async ({
   if (filters.service) {
     filterLabels.push(
       templateLabels(
-        'services',
+        'service',
         Array.isArray(filters.service)
           ? filters.service.join(', ')
           : filters.service,
@@ -91,8 +91,7 @@ export const show = async ({
     context.get('appName'),
     `${context.get('appTitle')}\n` +
       `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}\n` +
-      `Active Filters: [${filterLabels.join(' | ')}]\n` +
-      '─'.repeat(process.stdout.columns),
+      `Active Filters: [${filterLabels.join(' | ')}]`,
     filters.sort,
   )
 
@@ -103,10 +102,10 @@ export const show = async ({
     process.exit(0)
   })
 
-  // const newData = (data: AdminLogsData[] | EnvLogsData[]) =>
-  //   addMessage(formatLogs(filterLogs(data, filters)))
   const newData = (data: AdminLogsData[] | EnvLogsData[]) =>
-    console.log(filterLogs(data, filters).length)
+    addMessage(formatLogs(filterLogs(data, filters)))
+  // const newData = (data: AdminLogsData[] | EnvLogsData[]) =>
+  //   formatLogs(filterLogs(data, filters))
 
   try {
     if (filters.stream) {

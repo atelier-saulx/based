@@ -63,6 +63,7 @@ export const filterLogs = (
   }
 
   const sliceMessage: number = process.stdout.columns - 5
+  const thresholdMessageLength: number = 4
 
   if (!filters.stream) {
     data = data.slice(0, filters.limit)
@@ -70,15 +71,17 @@ export const filterLogs = (
 
   return data
     .map((log: any) => {
-      console.log(format(log.ts, 'dd/MM/yyyy'))
       if (
+        !log.msg ||
+        log.msg.length < thresholdMessageLength ||
         (filters.level === 'info' && log.lvl === 'error') ||
         (filters.level === 'error' && log.lvl === 'info') ||
         (Array.isArray(filters.function) &&
           !filters.function.includes(log.fn)) ||
         (Array.isArray(filters.service) &&
           !filters.service.includes(log.srvc)) ||
-        (filters.checksum && log.cs !== filters.checksum)
+        (filters.checksum && log.cs !== filters.checksum) ||
+        filters.startDate
       ) {
         return false
       }
@@ -89,13 +92,19 @@ export const filterLogs = (
         '',
       )
 
+      // To guarantee non-empty logs are shown
+      // TODO remove this if after refactoring the cloud function
+      if (log.msg.length < thresholdMessageLength) {
+        return false
+      }
+
       if (filters.collapsed && log.msg.length > sliceMessage) {
         log.msg = log.msg?.slice(0, sliceMessage) + '...'
       }
 
       return log
     })
-    .filter((log) => (log.msg && log.msg.length > 4) || Boolean(log))
+    .filter(Boolean)
 }
 
 export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
@@ -108,8 +117,8 @@ export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
       labels = [
         '<b><magenta>[app]</magenta></b>',
         logLevelColor(lvl),
-        `<yellow>[function: '<b>${fn}</b>']</yellow>`,
-        `<blue>[checksum: '<b>${cs}</b>']</blue>`,
+        `<yellow>[function: <b>${fn}</b>]</yellow>`,
+        `<blue>[checksum: <b>${cs}</b>]</blue>`,
       ]
 
       return templateMessage(ts, labels, msg)
@@ -119,9 +128,9 @@ export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
       labels = [
         '<b><magenta>[infra]</magenta></b>',
         logLevelColor(lvl),
-        `<yellow>[service: '<b>${srvc}</b>']</yellow>`,
-        `<green>[machineID: '<b>${mid}</b>']</green>`,
-        `<blue>[IP: '<b>${url}</b>']</blue>`,
+        `<yellow>[service: <b>${srvc}</b>]</yellow>`,
+        `<green>[machineID: <b>${mid}</b>]</green>`,
+        `<blue>[IP: <b>${url}</b>]</blue>`,
       ]
 
       return templateMessage(ts, labels, msg)
