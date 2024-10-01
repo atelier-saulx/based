@@ -15,6 +15,18 @@ declare global {
         }
       }
 
+      type Parse = {
+        date: (
+          value: string | Date,
+          formatIN?: string,
+          formatOUT?: string,
+        ) => {
+          value: string
+          date: Date
+          timestamp: number
+        }
+      }
+
       interface MessageHandler {
         loading: (message: string, timeout?: number) => this
         stop: () => this

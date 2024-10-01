@@ -27,16 +27,17 @@ export class AppContext {
     return AppContext.instance
   }
 
+  private logLevels = [
+    'verbose',
+    'info',
+    'success',
+    'warning',
+    'error',
+    'silent',
+  ]
+
   public set(key: string, value: any) {
-    if (
-      key === 'display' &&
-      value !== 'verbose' &&
-      value !== 'info' &&
-      value !== 'success' &&
-      value !== 'warning' &&
-      value !== 'error' &&
-      value !== 'silent'
-    ) {
+    if (key === 'display' && !this.logLevels.includes(value)) {
       value = 'verbose'
     }
 
@@ -47,14 +48,20 @@ export class AppContext {
     return this.state[key]
   }
 
-  public parse = {
+  public parse: BasedCli.Context.Parse = {
     date: (
-      value: string,
-      formatIN: string = dateOnly,
+      value: string | Date,
+      formatIN: string | undefined = dateOnly,
       formatOUT: string = dateOnly,
     ) => {
-      const date: Date = parse(value, formatIN, new Date())
-      value = formatDate(date, formatOUT)
+      let date: Date = new Date()
+
+      if (typeof value === 'string') {
+        date = parse(value, formatIN, new Date())
+        value = formatDate(date, formatOUT)
+      } else {
+        value = formatDate(value, formatOUT)
+      }
 
       return {
         value,

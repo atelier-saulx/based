@@ -47,11 +47,11 @@ export const logs = async (program: Command, context: AppContext) => {
       'desc',
     )
     .option(
-      `-sD, --start-date <${externalDateAndTime}>`,
+      `-sD, --start-date <${externalDateAndTime.toLowerCase()}>`,
       'The start date and time for filtering logs.',
     )
     .option(
-      `-eD, --end-date <${externalDateAndTime}>`,
+      `-eD, --end-date <${externalDateAndTime.toLowerCase()}>`,
       'The end date and time for filtering logs.',
     )
     .option('-cs, --checksum <cheksum>', 'Filter by checksum.')
