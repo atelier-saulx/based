@@ -962,18 +962,21 @@ int selva_fields_references_insert(
     return 0;
 }
 
-static void prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min)
+void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min)
 {
     struct SelvaFields *fields = &node->fields;
-    const enum SelvaFieldType type = fs->type;
     const field_t field = fs->field;
     struct SelvaFieldInfo *nfo;
+
+    if (unlikely(fs->type != SELVA_FIELD_TYPE_REFERENCES)) {
+        db_panic("Invalid type: %s", selva_str_field_type(fs->type));
+    }
 
     nfo = &fields->fields_map[field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
         *nfo = alloc_block(fields, fs);
         memset(nfo2p(fields, nfo), 0, sizeof(struct SelvaNodeReferences));
-    } else if (nfo->type != type) {
+    } else if (nfo->type != SELVA_FIELD_TYPE_REFERENCES) {
         db_panic("Invalid type: %s", selva_str_field_type(nfo->type));
     }
 
@@ -1015,7 +1018,7 @@ int selva_fields_references_insert_tail_wupsert(
         return SELVA_EINTYPE;
     }
 
-    prealloc_refs(node, fs, nr_ids);
+    selva_fields_prealloc_refs(node, fs, nr_ids);
 
     for (size_t i = 0; i < nr_ids; i++) {
         node_id_t dst_id = ids[i];

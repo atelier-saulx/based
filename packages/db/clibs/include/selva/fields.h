@@ -129,6 +129,9 @@ int selva_fields_references_insert(
     __attribute__((access(write_only, 7)));
 
 SELVA_EXPORT
+void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
+
+SELVA_EXPORT
 int selva_fields_references_insert_tail_wupsert(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
