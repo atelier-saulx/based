@@ -3,7 +3,7 @@ import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
 import { AuthState, BasedClient } from '@based/client'
-import { AppContext, SelectInputItems } from './AppContext.js'
+import { AppContext } from './AppContext.js'
 
 type User = {
   email: string
@@ -111,10 +111,12 @@ export const login = async ({
       })
 
     if (selectUser) {
-      const choices: SelectInputItems[] = users.map((user) => ({
-        name: user.email,
-        value: user,
-      }))
+      const choices: BasedCli.Context.SelectInputItems[] = users.map(
+        (user) => ({
+          name: user.email,
+          value: user,
+        }),
+      )
       choices.push({
         name: 'Other user',
         value: null,

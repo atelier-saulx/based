@@ -1,9 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import {
-  isCurrentDump,
-  AppContext,
-  SelectInputItems,
-} from '../../shared/index.js'
+import { isCurrentDump, AppContext } from '../../shared/index.js'
 
 type BackupInfo = {
   key: string
@@ -73,7 +69,9 @@ const dbSelection = async (
   selectedDB?: string,
 ): Promise<string> => {
   if (!selectedDB) {
-    const choices: SelectInputItems[] = Object.keys(backups.sorted)
+    const choices: BasedCli.Context.SelectInputItems[] = Object.keys(
+      backups.sorted,
+    )
       .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
       .map((key) => ({ name: key, value: key }))
 
@@ -121,16 +119,16 @@ const fileSelection = async (
     )
   }
 
-  const choices: SelectInputItems[] = backups.sorted[selectedDB].map(
-    (file: { key: string; lastModified: string }, index, array) => ({
-      name: file.key,
-      description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(
-        parseISO(file.lastModified),
-        'dd/MM/yyyy - HH:mm:ss',
-      )}`,
-      value: file.key,
-    }),
-  )
+  const choices: BasedCli.Context.SelectInputItems[] = backups.sorted[
+    selectedDB
+  ].map((file: { key: string; lastModified: string }, index, array) => ({
+    name: file.key,
+    description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(
+      parseISO(file.lastModified),
+      'dd/MM/yyyy - HH:mm:ss',
+    )}`,
+    value: file.key,
+  }))
 
   selectedFile = await context.input.select(
     `Choose backup ${getSortingText(sort)}:`,

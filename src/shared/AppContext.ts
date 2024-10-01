@@ -2,78 +2,13 @@ import { spinner } from './spinner.js'
 import { parseMessage } from './parseMessage.js'
 import { checkbox, input, select, Separator } from '@inquirer/prompts'
 import { isValid } from 'date-fns/isValid'
-import { format as formatDate, isBefore, parse, toDate } from 'date-fns'
+import { format as formatDate, parse } from 'date-fns'
 import confirm from '@inquirer/confirm'
-
-interface MessageHandler {
-  loading: (message: string, timeout?: number) => this
-  stop: () => this
-  info: (message: string, icon?: boolean | string) => this
-  success: (message?: string, icon?: boolean | string) => this
-  warning: (message: string, icon?: boolean | string) => this
-  fail: (message: string, icon?: boolean | string, killCode?: number) => void
-  line: () => this
-  separator: (width?: number) => this
-}
-
-export type SelectInputItems =
-  | {
-      name?: string
-      description?: string
-      value: any
-    }
-  | Separator
-
-export type DateTimeResult = {
-  value: string
-  date: Date
-  timestamp: number
-  format: string
-}
-
-type InputHandler = {
-  date: (
-    message: string,
-    skip?: boolean,
-    today?: boolean,
-    format?: string,
-  ) => Promise<string | null>
-  dateTime: (
-    message: string,
-    skip?: boolean,
-    now?: boolean,
-    format?: string,
-  ) => Promise<string | null>
-  number: (message: string, skip?: boolean) => Promise<string | null>
-  email: (message: string) => Promise<string>
-  confirm: (message?: string, defaultValue?: boolean) => Promise<boolean>
-  default: (
-    message: string,
-    defaultValue: string,
-    validate?: (value: string) => boolean | string | Promise<string | boolean>,
-  ) => Promise<string>
-  select: (
-    message: string,
-    choices: SelectInputItems[],
-    multiSelection?: boolean,
-    separator?: boolean,
-  ) => Promise<any>
-}
-
-type AppContextState = {
-  [key: string]: any
-  display: 'verbose' | 'info' | 'success' | 'warning' | 'error' | 'silent'
-  emojis: {
-    warning: string
-    success: string
-    error: string
-    info: string
-  }
-}
+import { dateAndTime, dateOnly } from './dateAndTimeFormats.js'
 
 export class AppContext {
   private static instance: AppContext
-  private state: AppContextState = {
+  private state: BasedCli.Context.State = {
     display: 'verbose',
     emojis: {
       info: '💬',
@@ -112,22 +47,29 @@ export class AppContext {
     return this.state[key]
   }
 
-  public format = {
-    dateAndTime: 'dd/MM/yyyy HH:mm:ss',
-    date: 'dd/MM/yyyy',
-    isBefore: (endDate: string, startDate: string) =>
-      isBefore(
-        parse(endDate, this.format.dateAndTime, new Date()),
-        parse(startDate, this.format.dateAndTime, new Date()),
-      ),
+  public parse = {
+    date: (
+      value: string,
+      formatIN: string = dateOnly,
+      formatOUT: string = dateOnly,
+    ) => {
+      const date: Date = parse(value, formatIN, new Date())
+      value = formatDate(date, formatOUT)
+
+      return {
+        value,
+        date,
+        timestamp: date.getTime(),
+      }
+    },
   }
 
-  public input: InputHandler = {
+  public input: BasedCli.Context.InputHandler = {
     date: async (
       message: string,
       skip: boolean = true,
       today: boolean = true,
-      format: string = this.format.date,
+      format: string = dateOnly,
     ) => {
       message = message + ` <b>(${format.toUpperCase()})</b>`
 
@@ -147,39 +89,20 @@ export class AppContext {
       })
 
       if (today && value === 't') {
-        const date: Date = toDate(new Date())
-        const value: string = formatDate(date, format)
-
-        return value
-
-        // return {
-        //   value,
-        //   date,
-        //   timestamp: date.getTime(),
-        //   format,
-        // }
+        return this.parse.date(new Date().getTime().toString())
       }
 
       if (value === 's') {
         return null
       }
 
-      const date: Date = toDate(value)
-
-      return value
-
-      // return {
-      //   value,
-      //   date,
-      //   timestamp: date.getTime(),
-      //   format,
-      // }
+      return this.parse.date(value)
     },
     dateTime: async (
       message: string,
       skip: boolean = true,
       now: boolean = true,
-      format: string = this.format.dateAndTime,
+      format: string = dateAndTime,
     ) => {
       message = message + ` <b>(${format.toUpperCase()})</b>`
 
@@ -199,33 +122,18 @@ export class AppContext {
       })
 
       if (now && value === 'n') {
-        const date: Date = toDate(new Date())
-        const value: string = formatDate(date, format)
-
-        return value
-
-        // return {
-        //   value,
-        //   date,
-        //   timestamp: date.getTime(),
-        //   format,
-        // }
+        return this.parse.date(
+          new Date().getTime().toString(),
+          dateAndTime,
+          dateAndTime,
+        )
       }
 
       if (value === 's') {
         return null
       }
 
-      const date: Date = toDate(value)
-
-      return value
-
-      // return {
-      //   value,
-      //   date,
-      //   timestamp: date.getTime(),
-      //   format,
-      // }
+      return this.parse.date(value, dateAndTime, dateAndTime)
     },
     number: async (message: string, skip: boolean = true) => {
       if (skip) {
@@ -278,7 +186,7 @@ export class AppContext {
       }),
     select: async (
       message: string,
-      choices: SelectInputItems[],
+      choices: BasedCli.Context.SelectInputItems[],
       multiSelection: boolean = false,
       separator: boolean = true,
     ) => {
@@ -326,8 +234,8 @@ export class AppContext {
     return ''
   }
 
-  public print: MessageHandler = {
-    loading: (message: string): MessageHandler => {
+  public print: BasedCli.Context.MessageHandler = {
+    loading: (message: string): BasedCli.Context.MessageHandler => {
       if (
         this.state.display === 'verbose' ||
         this.state.display === 'info' ||
@@ -338,12 +246,15 @@ export class AppContext {
 
       return this.print
     },
-    stop: (): MessageHandler => {
+    stop: (): BasedCli.Context.MessageHandler => {
       spinner.stop()
 
       return this.print
     },
-    info: (message: string, icon: boolean | string = false): MessageHandler => {
+    info: (
+      message: string,
+      icon: boolean | string = false,
+    ): BasedCli.Context.MessageHandler => {
       if (this.state.display === 'verbose' || this.state.display === 'info') {
         if (!icon) {
           console.info(parseMessage(message))
@@ -361,7 +272,7 @@ export class AppContext {
     success: (
       message?: string,
       icon: boolean | string = false,
-    ): MessageHandler => {
+    ): BasedCli.Context.MessageHandler => {
       if (
         this.state.display === 'verbose' ||
         this.state.display === 'success'
@@ -382,7 +293,7 @@ export class AppContext {
     warning: (
       message: string,
       icon: boolean | string = false,
-    ): MessageHandler => {
+    ): BasedCli.Context.MessageHandler => {
       if (
         this.state.display === 'verbose' ||
         this.state.display === 'warning'
@@ -419,7 +330,7 @@ export class AppContext {
 
       process.exit(killCode)
     },
-    line: (): MessageHandler => {
+    line: (): BasedCli.Context.MessageHandler => {
       if (this.state.display === 'silent') {
         return this.print
       }
@@ -428,7 +339,7 @@ export class AppContext {
 
       return this.print
     },
-    separator: (width: number = 15): MessageHandler => {
+    separator: (width: number = 15): BasedCli.Context.MessageHandler => {
       if (this.state.display === 'silent') {
         return this.print
       }

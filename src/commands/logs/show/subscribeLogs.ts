@@ -9,7 +9,7 @@ export const subscribeLogs = async ({
   env,
   project,
   filters,
-  newData,
+  renderData,
 }) => {
   let adminLogsPrevious: AdminLogsData[] = []
   let envLogsPrevious: EnvLogsData[] = []
@@ -58,7 +58,7 @@ export const subscribeLogs = async ({
   }
 
   setInterval(() => {
-    newData(...finalAdminData, ...finalEnvData)
+    renderData(...finalAdminData, ...finalEnvData)
 
     finalAdminData = []
     finalEnvData = []
