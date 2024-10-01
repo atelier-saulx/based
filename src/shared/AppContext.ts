@@ -346,12 +346,14 @@ export class AppContext {
 
       return this.print
     },
-    separator: (width: number = 15): BasedCli.Context.MessageHandler => {
+    separator: (
+      width: number = process.stdout.columns,
+    ): BasedCli.Context.MessageHandler => {
       if (this.state.display === 'silent') {
         return this.print
       }
 
-      console.info('─'.repeat(width))
+      console.info(parseMessage('<gray>─</gray>').repeat(width))
 
       return this.print
     },

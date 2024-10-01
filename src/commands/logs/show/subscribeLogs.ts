@@ -15,12 +15,12 @@ export const subscribeLogs = async ({
   let envLogsPrevious: EnvLogsData[] = []
   let finalAdminData = []
   let finalEnvData = []
+  const isOnlyApp: boolean = filters.app && !filters.infra
+  const isOnlyInfra: boolean = !filters.app && filters.infra
+  const isBoth: boolean = filters.app && filters.infra
+  const isNone: boolean = !filters.app && !filters.infra
 
-  if (
-    (filters.app && filters.infra) ||
-    (!filters.app && filters.infra) ||
-    (!filters.app && !filters.infra)
-  ) {
+  if (isBoth || isOnlyInfra || isNone) {
     await adminHubBasedCloud
       .query('logs', {
         cluster,
@@ -39,11 +39,7 @@ export const subscribeLogs = async ({
       })
   }
 
-  if (
-    (filters.app && filters.infra) ||
-    (filters.app && !filters.infra) ||
-    (!filters.app && !filters.infra)
-  ) {
+  if (isBoth || isOnlyApp || isNone) {
     await envHubBasedCloud
       .query('based:logs')
       .subscribe(async (data: EnvLogsData[]) => {

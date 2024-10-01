@@ -18,6 +18,7 @@ export const parseMessage = (message?: string): string => {
     magenta: pc.magenta,
     cyan: pc.cyan,
     gray: pc.gray,
+    grey: pc.gray,
     dim: (text: string) => pc.reset(pc.dim(text)),
     reset: pc.reset,
   }

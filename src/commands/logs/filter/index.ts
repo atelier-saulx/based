@@ -179,8 +179,6 @@ export const filter =
       }
     }
 
-    context.print.line().info('Reading the logs...')
-
     try {
       await show({
         context,

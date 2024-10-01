@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import { isCurrentDump, AppContext } from '../../shared/index.js'
+import { isCurrentDump, AppContext, dateAndTime } from '../../shared/index.js'
 
 type BackupInfo = {
   key: string
@@ -58,7 +58,6 @@ export const backupsSummary = (
       for (let i = 0; i < values.sorted[database].length; i++) {
         context.print.info(`File: <dim>${values.sorted[database][i].key}</dim>`)
       }
-      context.print.separator()
     }
   }
 }
@@ -77,7 +76,7 @@ const dbSelection = async (
 
     selectedDB = await context.input.select('Choose database:', choices)
   } else {
-    console.info(`<b>Selected database:</b> <cyan>${selectedDB}</cyan>`)
+    context.print.info(`<b>Selected database:</b> <cyan>${selectedDB}</cyan>`)
   }
 
   if (!backups?.sorted?.[selectedDB]?.length) {
@@ -125,7 +124,7 @@ const fileSelection = async (
     name: file.key,
     description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(
       parseISO(file.lastModified),
-      'dd/MM/yyyy - HH:mm:ss',
+      dateAndTime,
     )}`,
     value: file.key,
   }))

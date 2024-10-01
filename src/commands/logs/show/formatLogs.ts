@@ -45,8 +45,53 @@ const templateMessage = (
 
   return (
     parseMessage(
-      `\n<gray>${format(timestamp, logViewerDateAndTime)}</gray> ${labels.join(' ')}`,
-    ) + `\n${message.trim()}`
+      `<gray>${format(timestamp, logViewerDateAndTime)}</gray> ${labels.join(' ')}`,
+    ) + `\n${message.trim()}\n`
+  )
+}
+
+const isToBeFiltered = (
+  log: EnvLogsData & AdminLogsData,
+  filters: BasedCli.Logs.Filter.Args,
+) => {
+  const isLogLevelNotInfo = filters.level === 'info' && log.lvl === 'error'
+  const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
+  const isFunctionNotIncluded =
+    Array.isArray(filters.function) && !filters.function.includes(log.fn)
+  const isServiceNotIncluded =
+    Array.isArray(filters.service) && !filters.service.includes(log.srvc)
+  const isChecksumInvalid = filters.checksum && log.cs !== filters.checksum
+  const isMachineIDInvalid = filters.machine && log.mid !== filters.machine
+  const isDateNotWithinInterval =
+    typeof filters.startDate !== 'string' &&
+    typeof filters.endDate !== 'string' &&
+    filters.startDate?.timestamp &&
+    filters.endDate?.timestamp &&
+    !isWithinInterval(toDate(log.ts), {
+      start: filters.startDate?.timestamp,
+      end: filters.endDate?.timestamp,
+    })
+  const isCannotBeBefore =
+    typeof filters.startDate !== 'string' &&
+    !filters.endDate &&
+    filters.startDate?.timestamp &&
+    isBefore(log.ts, filters.startDate?.timestamp)
+  const isCannotBeAfter =
+    !filters.startDate &&
+    typeof filters.endDate !== 'string' &&
+    filters.endDate?.timestamp &&
+    isAfter(log.ts, filters.endDate?.timestamp)
+
+  return (
+    isLogLevelNotInfo ||
+    isLogLevelNotError ||
+    isFunctionNotIncluded ||
+    isServiceNotIncluded ||
+    isChecksumInvalid ||
+    isMachineIDInvalid ||
+    isDateNotWithinInterval ||
+    isCannotBeBefore ||
+    isCannotBeAfter
   )
 }
 
@@ -58,57 +103,18 @@ export const filterLogs = (
     return []
   }
 
-  const sliceMessage: number = process.stdout.columns - 5
-  const thresholdMessageLength: number = 4
-
   if (!filters.stream) {
     data = data.slice(0, filters.limit)
   }
 
+  const sliceMessage: number = process.stdout.columns - 5
+
   return data
     .map((log: any) => {
-      const isMessageInvalid =
-        !log.msg || log.msg.length < thresholdMessageLength
-      const isLogLevelNotInfo = filters.level === 'info' && log.lvl === 'error'
-      const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
-      const isFunctionNotIncluded =
-        Array.isArray(filters.function) && !filters.function.includes(log.fn)
-      const isServiceNotIncluded =
-        Array.isArray(filters.service) && !filters.service.includes(log.srvc)
-      const isChecksumInvalid = filters.checksum && log.cs !== filters.checksum
-      const isMachineIDInvalid = filters.machine && log.mid !== filters.machine
-      const isDateNotWithinInterval =
-        typeof filters.startDate !== 'string' &&
-        typeof filters.endDate !== 'string' &&
-        filters.startDate?.timestamp &&
-        filters.endDate?.timestamp &&
-        !isWithinInterval(toDate(log.ts), {
-          start: filters.startDate?.timestamp,
-          end: filters.endDate?.timestamp,
-        })
-      const isCannotBeBefore =
-        typeof filters.startDate !== 'string' &&
-        !filters.endDate &&
-        filters.startDate?.timestamp &&
-        isBefore(log.ts, filters.startDate?.timestamp)
-      const isCannotBeAfter =
-        !filters.startDate &&
-        typeof filters.endDate !== 'string' &&
-        filters.endDate?.timestamp &&
-        isAfter(log.ts, filters.endDate?.timestamp)
+      const thresholdMessageLength: number = 4
+      const isCollapsed = filters.collapsed && log.msg.length > sliceMessage
 
-      if (
-        isMessageInvalid ||
-        isLogLevelNotInfo ||
-        isLogLevelNotError ||
-        isFunctionNotIncluded ||
-        isServiceNotIncluded ||
-        isChecksumInvalid ||
-        isMachineIDInvalid ||
-        isDateNotWithinInterval ||
-        isCannotBeBefore ||
-        isCannotBeAfter
-      ) {
+      if (isToBeFiltered(log, filters)) {
         return false
       }
 
@@ -118,19 +124,41 @@ export const filterLogs = (
         '',
       )
 
+      const isMessageInvalid =
+        !log.msg || log.msg.length < thresholdMessageLength
+
       // To guarantee non-empty logs are shown
       // TODO remove this if after refactoring the cloud function
-      if (log.msg.length < thresholdMessageLength) {
+      if (isMessageInvalid) {
         return false
       }
 
-      if (filters.collapsed && log.msg.length > sliceMessage) {
+      if (isCollapsed) {
         log.msg = log.msg?.slice(0, sliceMessage) + '...'
       }
 
       return log
     })
     .filter(Boolean)
+    .sort((a, b) => {
+      const dateA: number = a.ts
+      const dateB: number = b.ts
+      const isDesc = filters.sort === 'desc'
+      const isAsc = filters.sort === 'asc'
+      const isMonitor = filters.monitor
+
+      if (isMonitor) {
+        return dateA - dateB
+      } else {
+        if (isAsc) {
+          return dateB - dateA
+        } else if (isDesc) {
+          return dateA - dateB
+        }
+      }
+
+      return 0
+    })
 }
 
 export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {

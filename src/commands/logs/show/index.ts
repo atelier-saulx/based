@@ -87,19 +87,7 @@ export const show = async ({
     )
   }
 
-  let renderData = (data: AdminLogsData[] | EnvLogsData[]) => {
-    const filteredData = formatLogs(filterLogs(data, filters))
-
-    for (const line of filteredData) {
-      console.log(line)
-    }
-
-    context.print
-      .separator()
-      .info(
-        `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
-      )
-  }
+  let renderData: (data: AdminLogsData[] | EnvLogsData[]) => void
 
   if (filters.monitor) {
     const { kill, addMessage } = getTerminal(
@@ -119,6 +107,36 @@ export const show = async ({
 
     renderData = (data: AdminLogsData[] | EnvLogsData[]) =>
       addMessage(formatLogs(filterLogs(data, filters)))
+  } else {
+    renderData = (data: AdminLogsData[] | EnvLogsData[]) => {
+      const filteredData = formatLogs(filterLogs(data, filters))
+
+      context.print.stop()
+
+      if (filteredData.length) {
+        context.print.success('These are the logs:', true)
+      }
+
+      for (const line of filteredData) {
+        console.log(line)
+      }
+
+      if (filteredData.length) {
+        context.print.separator()
+      }
+
+      context.print.info(
+        `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
+      )
+    }
+  }
+
+  if (filters.monitor) {
+    context.print
+      .line()
+      .success('Opening the <b>UI</b> to show the logs...', true)
+  } else {
+    context.print.line().loading('Reading the logs...')
   }
 
   try {

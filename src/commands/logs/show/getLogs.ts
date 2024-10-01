@@ -9,12 +9,12 @@ export const getLogs = async ({
   renderData,
 }) => {
   const finalData = []
+  const isOnlyApp: boolean = filters.app && !filters.infra
+  const isOnlyInfra: boolean = !filters.app && filters.infra
+  const isBoth: boolean = filters.app && filters.infra
+  const isNone: boolean = !filters.app && !filters.infra
 
-  if (
-    (filters.app && filters.infra) ||
-    (!filters.app && filters.infra) ||
-    (!filters.app && !filters.infra)
-  ) {
+  if (isBoth || isOnlyInfra || isNone) {
     finalData.push(
       await adminHubBasedCloud
         .query('logs', {
@@ -27,11 +27,7 @@ export const getLogs = async ({
     )
   }
 
-  if (
-    (filters.app && filters.infra) ||
-    (filters.app && !filters.infra) ||
-    (!filters.app && !filters.infra)
-  ) {
+  if (isBoth || isOnlyApp || isNone) {
     finalData.push(await envHubBasedCloud.query('based:logs').get())
   }
 
