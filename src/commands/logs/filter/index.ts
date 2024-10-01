@@ -1,187 +1,16 @@
 import { Command } from 'commander'
-import { AppContext, basedAuth } from '../../../shared/index.js'
-import { isValid, formatISO, parse, isBefore } from 'date-fns'
+import {
+  AppContext,
+  basedAuth,
+  dateAndTime,
+  externalDateAndTime,
+} from '../../../shared/index.js'
+import { isValid, parse, isBefore, isAfter } from 'date-fns'
 import { show } from '../show/index.js'
-// import { dirname, join } from 'node:path'
-// import { mkdir, readFile, stat } from 'node:fs/promises'
-// import { AuthState, BasedClient, encodeAuthState } from '@based/client'
-// import { homedir } from 'os'
-// import { hash } from '@saulx/hash'
-// import { pipeline } from 'node:stream/promises'
-// import { createWriteStream } from 'node:fs'
-// import { SourceMapConsumer } from 'source-map'
-
-export type FilterArgs = {
-  stream: boolean
-  collapsed: boolean
-  app: boolean
-  infra: boolean
-  level: 'all' | 'info' | 'error'
-  limit: number
-  sort: 'asc' | 'desc'
-  startDate: string
-  endDate: string
-  checksum: number
-  function: string | string[]
-  service: string | string[]
-}
-
-// type LogData = {
-//   msg: string
-//   ts: number
-//   lvl?: string
-//   fn: string
-//   cs: number
-//   stack: LogStack
-//   location: any
-//   internalLog: boolean
-//   srvc: string
-//   i: string // instance id/key
-//   mid: string // machine id
-//   url: string // ip/url
-//   eid: string
-// }
-//
-// type LogStack = {
-//   message: string
-//   functionName?: string
-//   path?: string
-//   line?: number
-//   column?: number
-//   parseFail?: boolean
-// }
-
-// export const parseStack = (error: Error | string): LogStack => {
-//   const re = /(.*?)\s{3,}at (.*?) \((.*?):(\d+):(\d+)\)/s
-//   const match = re.exec(String(error))
-//   if (!match) {
-//     return {
-//       message: String(error),
-//       parseFail: true,
-//     }
-//   }
-//   return {
-//     message: match[1],
-//     functionName: match[2],
-//     path: match[3],
-//     line: Number(match[4]),
-//     column: Number(match[5]),
-//   }
-// }
-//
-// export const BASED_DIR = join(homedir(), '.based')
-// export const SOURCEMAPS_DIR = join(BASED_DIR, 'sourcemaps')
-// let envAdminHubHost: string
-// let envAdminHubPort: string
-// const sourcemapsCache: {
-//   [key: string]: any
-// } = {}
-// export const getHostAndPortFromUrl = (url: string) => {
-//   const m = /^(http|ws)s?:\/\/([^/]*?)(?::(\d*))?\//.exec(url)
-//   if (m) {
-//     return { protocol: m[1], host: m[2], port: m[3] }
-//   }
-//   return null
-// }
-// const downloadInProgress = new Map<number, Promise<void>>()
-// const exists = (path: string) =>
-//   stat(path)
-//     .then(() => true)
-//     .catch(() => false)
-// const _downloadFile = async (
-//   url: string,
-//   path: string,
-//   authState: AuthState,
-// ) => {
-//   const folder = dirname(path)
-//   if (!(await exists(folder))) {
-//     await mkdir(folder, { recursive: true })
-//   }
-//
-//   const controller = new AbortController()
-//   const timeout = setTimeout(() => {
-//     controller.abort()
-//   }, 5e3)
-//   let response: Awaited<ReturnType<typeof fetch>>
-//   try {
-//     response = await fetch(url, {
-//       signal: controller.signal,
-//       headers: {
-//         authorization: encodeAuthState(authState),
-//       },
-//     })
-//   } catch (error) {
-//     return null
-//   } finally {
-//     clearTimeout(timeout)
-//   }
-//   if (!response.ok) {
-//     throw new Error('Error downloading ' + response.statusText)
-//   }
-//   await pipeline(response.body, createWriteStream(path))
-// }
-// const downloadFile = async (
-//   url: string,
-//   path: string,
-//   authState: AuthState,
-// ) => {
-//   const key = hash([url, path])
-//   if (!downloadInProgress.has(key)) {
-//     downloadInProgress.set(
-//       key,
-//       _downloadFile(url, path, authState).then((res) => {
-//         downloadInProgress.delete(key)
-//         return res
-//       }),
-//     )
-//   }
-//   return downloadInProgress.get(key)
-// }
-//
-// const getSourcemap = async (
-//   client: BasedClient,
-//   checksum: string,
-//   envId: string,
-// ) => {
-//   const key = `${envId}-${checksum}`
-//   if (!sourcemapsCache[key]) {
-//     const cachedSourcemapPath = join(
-//       SOURCEMAPS_DIR,
-//       envId + '-' + checksum + '.map',
-//     )
-//     if (!(await exists(cachedSourcemapPath))) {
-//       if (!envAdminHubHost) {
-//         ;({ host: envAdminHubHost, port: envAdminHubPort } =
-//           getHostAndPortFromUrl(await client.url()))
-//       }
-//
-//       const url = `http://${envAdminHubHost}:${
-//         envAdminHubPort || '80'
-//       }/based:get-sourcemap?checksum=${checksum}&envId=${envId}`
-//       try {
-//         await downloadFile(url, cachedSourcemapPath, client.authState)
-//       } catch (error) {
-//         if (error.message !== 'Error downloading Forbidden') {
-//           console.error(error)
-//         }
-//         return null
-//       }
-//     }
-//     try {
-//       sourcemapsCache[key] = JSON.parse(
-//         (await readFile(cachedSourcemapPath)).toString(),
-//       )
-//     } catch (error) {
-//       // console.error(error)
-//       return null
-//     }
-//   }
-//   return sourcemapsCache[key]
-// }
 
 export const filter =
   (program: Command, context: AppContext) =>
-  async (filters: FilterArgs): Promise<void> => {
+  async (filters: BasedCli.Logs.Filter.Args): Promise<void> => {
     const { cluster, org, env, project, yes: skip } = program.opts()
     const { basedClient, envHubBasedCloud, adminHubBasedCloud, destroy } =
       await basedAuth(program, context)
@@ -197,17 +26,27 @@ export const filter =
       errorMessage('sort', filters.sort)
     }
 
-    if (filters.endDate) {
-      filters.endDate = formatISO(filters.endDate)
-      if (!isValid(filters.endDate)) {
-        errorMessage('before', filters.endDate)
+    if (filters.startDate && typeof filters.startDate === 'string') {
+      if (!isValid(parse(filters.startDate, externalDateAndTime, new Date()))) {
+        errorMessage('start date', filters.startDate)
+      } else {
+        filters.startDate = context.parse.date(
+          filters.startDate,
+          externalDateAndTime,
+          dateAndTime,
+        )
       }
     }
 
-    if (filters.startDate) {
-      filters.startDate = formatISO(filters.startDate)
-      if (!isValid(filters.startDate)) {
-        errorMessage('after', filters.startDate)
+    if (filters.endDate && typeof filters.endDate === 'string') {
+      if (!isValid(parse(filters.endDate, externalDateAndTime, new Date()))) {
+        errorMessage('end date', filters.endDate)
+      } else {
+        filters.endDate = context.parse.date(
+          filters.endDate,
+          externalDateAndTime,
+          dateAndTime,
+        )
       }
     }
 
@@ -247,13 +86,6 @@ export const filter =
           filters.endDate = await context.input.dateTime(
             `Please enter the end date and time for filtering logs:`,
           )
-
-          if (context.format.isBefore(filters.endDate, filters.startDate)) {
-            errorMessage(
-              'dates interval',
-              `The end date cannot be before the start date. Start date: ${filters.startDate} | End date: ${filters.endDate}`,
-            )
-          }
         }
       }
 
@@ -325,6 +157,29 @@ export const filter =
         }
       }
     }
+
+    if (
+      typeof filters.startDate !== 'string' &&
+      typeof filters.endDate !== 'string' &&
+      filters.startDate?.date &&
+      filters.endDate?.date
+    ) {
+      let message: string = `Start date: ${filters.startDate.value} | End date: ${filters.endDate.value}`
+
+      if (isBefore(filters.endDate.date, filters.startDate.date)) {
+        errorMessage(
+          'date interval',
+          `The end date cannot be before the start date. ${message}`,
+        )
+      } else if (isAfter(filters.startDate.date, new Date())) {
+        errorMessage(
+          'date interval',
+          `The start date cannot be after now. ${message}`,
+        )
+      }
+    }
+
+    context.print.line().info('Reading the logs...')
 
     try {
       await show({

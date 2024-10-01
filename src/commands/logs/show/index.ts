@@ -30,13 +30,13 @@ export const show = async ({
     templateLabels('env', env),
   ]
 
-  if (!filters.app && !filters.infra) {
-    filterLabels.push(templateLabels('logs from', 'app + infra'))
-  } else if (!filters.app && filters.infra) {
-    filterLabels.push(templateLabels('logs from', 'infra'))
-  } else if (filters.app && !filters.infra) {
-    filterLabels.push(templateLabels('logs from', 'app'))
-  }
+  const isLogsFrom =
+    !filters.app && !filters.infra
+      ? 'app + infra'
+      : !filters.app && filters.infra
+        ? 'infra'
+        : 'app'
+  filterLabels.push(templateLabels('logs from', isLogsFrom))
 
   if (filters.collapsed) {
     filterLabels.push(templateLabels('collapsed', String(filters.collapsed)))
@@ -47,11 +47,11 @@ export const show = async ({
   }
 
   if (filters.startDate) {
-    filterLabels.push(templateLabels('start date', filters.startDate))
+    filterLabels.push(templateLabels('start date', filters.startDate.value))
   }
 
   if (filters.endDate) {
-    filterLabels.push(templateLabels('end date', filters.endDate))
+    filterLabels.push(templateLabels('end date', filters.endDate.value))
   }
 
   if (filters.function) {
@@ -87,25 +87,39 @@ export const show = async ({
     )
   }
 
-  const { kill, addMessage } = getTerminal(
-    context.get('appName'),
-    `${context.get('appTitle')}\n` +
-      `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}\n` +
-      `Active Filters: [${filterLabels.join(' | ')}]`,
-    filters.sort,
-  )
+  let renderData = (data: AdminLogsData[] | EnvLogsData[]) => {
+    const filteredData = formatLogs(filterLogs(data, filters))
 
-  kill(() => {
-    basedClient.destroy()
-    envHubBasedCloud.destroy()
-    adminHubBasedCloud.destroy()
-    process.exit(0)
-  })
+    // for (const line of filteredData) {
+    //   console.log(line)
+    // }
 
-  const newData = (data: AdminLogsData[] | EnvLogsData[]) =>
-    addMessage(formatLogs(filterLogs(data, filters)))
-  // const newData = (data: AdminLogsData[] | EnvLogsData[]) =>
-  //   formatLogs(filterLogs(data, filters))
+    context.print
+      .separator()
+      .info(
+        `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
+      )
+  }
+
+  if (filters.monitor) {
+    const { kill, addMessage } = getTerminal(
+      context.get('appName'),
+      `${context.get('appTitle')}\n` +
+        `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}\n` +
+        `Active Filters: [${filterLabels.join(' | ')}]`,
+      filters.sort,
+    )
+
+    kill(() => {
+      basedClient.destroy()
+      envHubBasedCloud.destroy()
+      adminHubBasedCloud.destroy()
+      process.exit(0)
+    })
+
+    renderData = (data: AdminLogsData[] | EnvLogsData[]) =>
+      addMessage(formatLogs(filterLogs(data, filters)))
+  }
 
   try {
     if (filters.stream) {
@@ -117,7 +131,7 @@ export const show = async ({
         env,
         project,
         filters,
-        newData,
+        renderData,
       })
     } else {
       await getLogs({
@@ -128,7 +142,7 @@ export const show = async ({
         env,
         project,
         filters,
-        newData,
+        renderData,
       })
     }
   } catch (error) {

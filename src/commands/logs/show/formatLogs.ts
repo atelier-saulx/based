@@ -1,6 +1,5 @@
-import { format } from 'date-fns'
-import { parseMessage } from '../../../shared/parseMessage.js'
-import { FilterArgs } from '../filter/index.js'
+import { format, isWithinInterval, toDate } from 'date-fns'
+import { logViewerDateAndTime, parseMessage } from '../../../shared/index.js'
 
 export type EnvLogsData = {
   cs: number
@@ -24,13 +23,13 @@ export type AdminLogsData = {
 const logLevelColor = (level: string): string => {
   switch (level) {
     case 'error': {
-      return `<b><red>[${level}]</red></b>`
+      return `<red>[${level}]</red>`
     }
     case 'info': {
-      return `<b><blue>[${level}]</blue></b>`
+      return `<blue>[${level}]</blue>`
     }
     default: {
-      return `<b><white>[${level}]</white></b>`
+      return `<white>[${level}]</white>`
     }
   }
 }
@@ -40,23 +39,20 @@ const templateMessage = (
   labels: string[],
   message: string,
 ): string => {
-  const formatStr: string = 'dd/MM/yyyy-HH:mm:ss:SSS'
-
   if (!message) {
     return ''
   }
 
   return (
     parseMessage(
-      // `<gray>${'─'.repeat(process.stdout.columns - 1)}</gray>\n` +
-      `<gray>${format(timestamp, formatStr)}</gray> ${labels.join(' ')}`,
-    ) + `\n${message.trim()}\n`
+      `\n<gray>${format(timestamp, logViewerDateAndTime)}</gray> ${labels.join(' ')}`,
+    ) + `\n${message.trim()}`
   )
 }
 
 export const filterLogs = (
   data: EnvLogsData[] | AdminLogsData[],
-  filters: FilterArgs,
+  filters: BasedCli.Logs.Filter.Args,
 ) => {
   if (!data?.length) {
     return []
@@ -71,17 +67,33 @@ export const filterLogs = (
 
   return data
     .map((log: any) => {
+      const isMessageInvalid =
+        !log.msg || log.msg.length < thresholdMessageLength
+      const isLogLeveNotInfo = filters.level === 'info' && log.lvl === 'error'
+      const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
+      const isFunctionNotIncluded =
+        Array.isArray(filters.function) && !filters.function.includes(log.fn)
+      const isServiceNotIncluded =
+        Array.isArray(filters.service) && !filters.service.includes(log.srvc)
+      const isChecksumInvalid = filters.checksum && log.cs !== filters.checksum
+      const isDateNotWithinInterval =
+        typeof filters.startDate !== 'string' &&
+        typeof filters.endDate !== 'string' &&
+        filters.startDate?.timestamp &&
+        filters.endDate?.timestamp &&
+        !isWithinInterval(toDate(log.ts), {
+          start: filters.startDate?.timestamp,
+          end: filters.endDate?.timestamp,
+        })
+
       if (
-        !log.msg ||
-        log.msg.length < thresholdMessageLength ||
-        (filters.level === 'info' && log.lvl === 'error') ||
-        (filters.level === 'error' && log.lvl === 'info') ||
-        (Array.isArray(filters.function) &&
-          !filters.function.includes(log.fn)) ||
-        (Array.isArray(filters.service) &&
-          !filters.service.includes(log.srvc)) ||
-        (filters.checksum && log.cs !== filters.checksum) ||
-        filters.startDate
+        isMessageInvalid ||
+        isLogLeveNotInfo ||
+        isLogLevelNotError ||
+        isFunctionNotIncluded ||
+        isServiceNotIncluded ||
+        isChecksumInvalid ||
+        isDateNotWithinInterval
       ) {
         return false
       }
@@ -116,7 +128,7 @@ export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
 
       labels = [
         '<b><magenta>[app]</magenta></b>',
-        logLevelColor(lvl),
+        `<b>${logLevelColor(lvl)}</b>`,
         `<yellow>[function: <b>${fn}</b>]</yellow>`,
         `<blue>[checksum: <b>${cs}</b>]</blue>`,
       ]
@@ -127,7 +139,7 @@ export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
 
       labels = [
         '<b><magenta>[infra]</magenta></b>',
-        logLevelColor(lvl),
+        `<b>${logLevelColor(lvl)}</b>`,
         `<yellow>[service: <b>${srvc}</b>]</yellow>`,
         `<green>[machineID: <b>${mid}</b>]</green>`,
         `<blue>[IP: <b>${url}</b>]</blue>`,
