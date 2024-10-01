@@ -6,7 +6,7 @@ import {
   externalDateAndTime,
 } from '../../../shared/index.js'
 import { isValid, parse, isBefore, isAfter } from 'date-fns'
-import { show } from '../show/index.js'
+import { visualizer } from '../visualizer/index.js'
 
 export const filter =
   (program: Command, context: AppContext) =>
@@ -180,7 +180,7 @@ export const filter =
     }
 
     try {
-      await show({
+      await visualizer({
         context,
         basedClient,
         envHubBasedCloud,

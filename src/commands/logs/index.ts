@@ -58,7 +58,7 @@ export const logs = async (program: Command, context: AppContext) => {
     .option('-f, --function <functions...>', 'Filter by function.')
     .option('--service <services...>', 'Filter by service.')
     .option('-m, --machine <machines...>', 'Filter by machine ID.')
-    .description('Display all logs')
+    .description('List and filter your logs.')
     .action(filter(program, context))
 
   cmd

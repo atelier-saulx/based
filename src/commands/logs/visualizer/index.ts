@@ -8,7 +8,7 @@ import {
 import { subscribeLogs } from './subscribeLogs.js'
 import { getLogs } from './getLogs.js'
 
-export const show = async ({
+export const visualizer = async ({
   context,
   basedClient,
   envHubBasedCloud,
