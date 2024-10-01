@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { filter } from './filter/index.js'
-import { clean } from './clean/index.js'
-import { AppContext } from '../../shared/index.js'
+import { clear } from './clear/index.js'
+import { AppContext, externalDateAndTime } from '../../shared/index.js'
 
 export const logs = async (program: Command, context: AppContext) => {
   const cmd: Command = program
@@ -13,6 +13,7 @@ export const logs = async (program: Command, context: AppContext) => {
 
   cmd
     .command('filter')
+    .option('--monitor', 'To display the logs in a interactive UI.')
     .option(
       '--stream',
       'To display the logs in real time. This option takes precedence over "limit", "before", "after", and "sort" options.',
@@ -46,22 +47,22 @@ export const logs = async (program: Command, context: AppContext) => {
       'desc',
     )
     .option(
-      '-sD, --start-date <DD/MM/YYYY HH:MM:SS>',
+      `-sD, --start-date <${externalDateAndTime}>`,
       'The start date and time for filtering logs.',
     )
     .option(
-      '-eD, --end-date <DD/MM/YYYY HH:MM:SS>',
+      `-eD, --end-date <${externalDateAndTime}>`,
       'The end date and time for filtering logs.',
     )
     .option('-cs, --checksum <cheksum>', 'Filter by checksum.')
     .option('-f, --function <functions...>', 'Filter by function.')
     .option('--service <services...>', 'Filter by service.')
-    .option('--service <services...>', 'Filter by service.')
+    .option('-m, --machine <machines...>', 'Filter by machine ID.')
     .description('Display all logs')
     .action(filter(program, context))
 
   cmd
-    .command('clean')
-    .description('Clean the logs.')
-    .action(clean(program, context))
+    .command('clear')
+    .description('Clear the logs.')
+    .action(clear(program, context))
 }

@@ -6,7 +6,7 @@ export const getLogs = async ({
   env,
   project,
   filters,
-  newData,
+  renderData,
 }) => {
   const finalData = []
 
@@ -35,5 +35,5 @@ export const getLogs = async ({
     finalData.push(await envHubBasedCloud.query('based:logs').get())
   }
 
-  newData(...finalData)
+  renderData(...finalData)
 }
