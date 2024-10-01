@@ -1,4 +1,4 @@
-import { format, isWithinInterval, toDate } from 'date-fns'
+import { format, isAfter, isBefore, isWithinInterval, toDate } from 'date-fns'
 import { logViewerDateAndTime, parseMessage } from '../../../shared/index.js'
 
 export type EnvLogsData = {
@@ -69,13 +69,14 @@ export const filterLogs = (
     .map((log: any) => {
       const isMessageInvalid =
         !log.msg || log.msg.length < thresholdMessageLength
-      const isLogLeveNotInfo = filters.level === 'info' && log.lvl === 'error'
+      const isLogLevelNotInfo = filters.level === 'info' && log.lvl === 'error'
       const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
       const isFunctionNotIncluded =
         Array.isArray(filters.function) && !filters.function.includes(log.fn)
       const isServiceNotIncluded =
         Array.isArray(filters.service) && !filters.service.includes(log.srvc)
       const isChecksumInvalid = filters.checksum && log.cs !== filters.checksum
+      const isMachineIDInvalid = filters.machine && log.mid !== filters.machine
       const isDateNotWithinInterval =
         typeof filters.startDate !== 'string' &&
         typeof filters.endDate !== 'string' &&
@@ -85,15 +86,28 @@ export const filterLogs = (
           start: filters.startDate?.timestamp,
           end: filters.endDate?.timestamp,
         })
+      const isCannotBeBefore =
+        typeof filters.startDate !== 'string' &&
+        !filters.endDate &&
+        filters.startDate?.timestamp &&
+        isBefore(log.ts, filters.startDate?.timestamp)
+      const isCannotBeAfter =
+        !filters.startDate &&
+        typeof filters.endDate !== 'string' &&
+        filters.endDate?.timestamp &&
+        isAfter(log.ts, filters.endDate?.timestamp)
 
       if (
         isMessageInvalid ||
-        isLogLeveNotInfo ||
+        isLogLevelNotInfo ||
         isLogLevelNotError ||
         isFunctionNotIncluded ||
         isServiceNotIncluded ||
         isChecksumInvalid ||
-        isDateNotWithinInterval
+        isMachineIDInvalid ||
+        isDateNotWithinInterval ||
+        isCannotBeBefore ||
+        isCannotBeAfter
       ) {
         return false
       }

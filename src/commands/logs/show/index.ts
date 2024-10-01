@@ -90,9 +90,9 @@ export const show = async ({
   let renderData = (data: AdminLogsData[] | EnvLogsData[]) => {
     const filteredData = formatLogs(filterLogs(data, filters))
 
-    // for (const line of filteredData) {
-    //   console.log(line)
-    // }
+    for (const line of filteredData) {
+      console.log(line)
+    }
 
     context.print
       .separator()
