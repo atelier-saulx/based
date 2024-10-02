@@ -58,6 +58,7 @@ db.putSchema({
       props: {
         name: 'string',
         burp: [1, 2],
+        flap: 'uint32',
         published: 'boolean',
         favouritedBy: {
           items: {
@@ -80,7 +81,7 @@ db.putSchema({
 
 const d = Date.now()
 
-for (let i = 0; i < 10e6; i++) {
+for (let i = 0; i < 20e6; i++) {
   db.create('todo', { done: false, age: i })
 }
 
@@ -89,11 +90,11 @@ for (let i = 0; i < 1e6; i++) {
 }
 
 const ids: any = new Set()
-const x = 1e4 // ~~(Math.random() * 1e3)
+const x = 100 // ~~(Math.random() * 1e3)
 for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
-const y = [...ids.values()]
+const y = [...ids.values()].sort()
 console.log(y)
 
 for (let i = 0; i < 1e3; i++) {
@@ -114,17 +115,21 @@ console.log('db time', db.drain(), Date.now() - d)
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
   // id: 1,
-  // ids: new Uint32Array([1, 2]),
+  ids: new Uint32Array([1, 2]),
 })
 def.range.limit = 1000
-q.includeFields(def, ['contributors'])
+q.includeFields(def, ['contributors.name'])
 // 'contributors.$role' if undefined wrong
 
-// q.sort(def, 'flap', 'desc')
-// q.filter(db, def, 'flap', '>', 2)
+q.sort(def, 'flap', 'desc')
+q.filter(db, def, 'flap', '>', 2)
+q.filter(db, def, 'published', '=', true)
+
 const b = Buffer.concat(q.defToBuffer(db, def))
 
-// console.log(q.debug(b))
+console.log(b.toString('base64'))
+
+console.log(q.debug(b))
 
 console.log('RESULT')
 db.native.getQueryBuf(b)
