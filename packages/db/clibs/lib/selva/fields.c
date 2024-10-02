@@ -642,6 +642,8 @@ static int check_ref_eexists_fast(
         const struct SelvaFieldSchema * restrict fs_src,
         const struct SelvaFieldSchema * restrict fs_dst)
 {
+    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+
     /*
      * It's cheaper/faster to check from a reference field rather
      * than a references field.
