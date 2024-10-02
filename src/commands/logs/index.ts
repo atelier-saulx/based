@@ -1,9 +1,9 @@
 import { Command } from 'commander'
 import { filter } from './filter/index.js'
 import { clear } from './clear/index.js'
-import { AppContext, externalDateAndTime } from '../../shared/index.js'
+import { externalDateAndTime } from '../../shared/index.js'
 
-export const logs = async (program: Command, context: AppContext) => {
+export const logs = async (program: Command) => {
   const cmd: Command = program
     .command('logs [command]')
     .description(
@@ -59,10 +59,7 @@ export const logs = async (program: Command, context: AppContext) => {
     .option('--service <services...>', 'Filter by service.')
     .option('-m, --machine <machines...>', 'Filter by machine ID.')
     .description('List and filter your logs.')
-    .action(filter(program, context))
+    .action(filter(program))
 
-  cmd
-    .command('clear')
-    .description('Clear the logs.')
-    .action(clear(program, context))
+  cmd.command('clear').description('Clear the logs.').action(clear(program))
 }

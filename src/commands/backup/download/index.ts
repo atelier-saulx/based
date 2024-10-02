@@ -8,9 +8,9 @@ import {
 import { join, resolve } from 'node:path'
 import { writeFile } from 'fs/promises'
 import { BasedClient } from '@based/client'
-import { Command } from 'commander'
 import { getList } from '../list/index.js'
-import { backupsSelection, BackupsSorted } from '../manageBackups.js'
+import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
+import { Command } from 'commander'
 
 type DownloadArgs = {
   db?: string
@@ -28,12 +28,10 @@ type GetDownloadsArgs = {
 }
 
 export const download =
-  (program: Command, context: AppContext) =>
+  (program: Command) =>
   async ({ db, file, path }: DownloadArgs) => {
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
-      program,
-      context,
-    )
+    const context: AppContext = AppContext.getInstance(program)
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(context)
 
     const backups: BackupsSorted = await getList(context, envHubBasedCloud)
     let { selectedFile, selectedDB } = await backupsSelection({

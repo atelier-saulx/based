@@ -1,5 +1,4 @@
 import { login } from './login.js'
-import { Command } from 'commander'
 import { BasedClient } from '@based/client'
 import { AppContext } from './AppContext.js'
 
@@ -11,10 +10,9 @@ type BasedAuthReturn = {
 }
 
 export const basedAuth = async (
-  program: Command,
   context: AppContext,
 ): Promise<BasedAuthReturn> => {
-  const { cluster, org, env, project } = program.opts()
+  const { cluster, org, env, project } = context.get('project')
   const { client, adminHub, envHub, destroy } = await login({
     cluster,
     org,

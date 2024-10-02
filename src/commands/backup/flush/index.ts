@@ -1,8 +1,8 @@
-import { Command } from 'commander'
 import { BasedClient } from '@based/client'
 import { basedAuth, AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
-import { backupsSelection, BackupsSorted } from '../manageBackups.js'
+import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
+import { Command } from 'commander'
 
 type FlushArgs = {
   db?: string
@@ -20,13 +20,11 @@ type SetFlushArgs = {
 }
 
 export const flush =
-  (program: Command, context: AppContext) =>
+  (program: Command) =>
   async ({ db }: FlushArgs) => {
-    const { org, project, env, cluster } = program.opts()
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
-      program,
-      context,
-    )
+    const context: AppContext = AppContext.getInstance(program)
+    const { cluster, org, env, project } = context.get('project')
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(context)
 
     context.print.warning(
       `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,

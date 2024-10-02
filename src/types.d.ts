@@ -4,6 +4,19 @@ import { Separator } from '@inquirer/prompts'
 declare global {
   namespace BasedCli {
     namespace Context {
+      type Project = {
+        cluster?: string
+        project?: string
+        org?: string
+        env?: string
+        apiKey?: string
+      }
+
+      type Options = {
+        yes: boolean
+        display: State['display']
+      }
+
       type State = {
         [key: string]: any
         display: 'verbose' | 'info' | 'success' | 'warning' | 'error' | 'silent'

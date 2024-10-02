@@ -4,9 +4,8 @@ import { list } from './list/index.js'
 import { restore } from './restore/index.js'
 import { flush } from './flush/index.js'
 import { download } from './download/index.js'
-import { AppContext } from '../../shared/index.js'
 
-export const backup = async (program: Command, context: AppContext) => {
+export const backup = async (program: Command) => {
   const cmd: Command = program
     .command('backups [command]')
     .description('Backup and restore your databases.')
@@ -15,7 +14,7 @@ export const backup = async (program: Command, context: AppContext) => {
   cmd
     .command('make')
     .description('Backup current environment state.')
-    .action(make(program, context))
+    .action(make(program))
 
   cmd
     .command('list')
@@ -30,7 +29,7 @@ export const backup = async (program: Command, context: AppContext) => {
       'desc',
     )
     .description('List available backups.')
-    .action(list(program, context))
+    .action(list(program))
 
   cmd
     .command('download')
@@ -38,7 +37,7 @@ export const backup = async (program: Command, context: AppContext) => {
     .option('--file <file>', '.rdb backup file to upload.')
     .option('--path <path>', 'The path to save the file.')
     .description('Download previous backups.')
-    .action(download(program, context))
+    .action(download(program))
 
   cmd
     .command('restore')
@@ -47,11 +46,11 @@ export const backup = async (program: Command, context: AppContext) => {
     )
     .option('--db <db>', 'DB instance name.')
     .option('--file <file>', '.rdb backup file to upload.')
-    .action(restore(program, context))
+    .action(restore(program))
 
   cmd
     .command('flush')
     .description('Flush the current database.')
     .option('--db <db>', 'DB instance name.')
-    .action(flush(program, context))
+    .action(flush(program))
 }

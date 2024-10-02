@@ -85,7 +85,8 @@ const queuedFnDeploy = queued(
   { dedup: (_based, checksum) => checksum, concurrency: 10 },
 )
 
-export const deploy = async (program: Command, context: AppContext) => {
+export const deploy = async (program: Command) => {
+  const context: AppContext = AppContext.getInstance(program)
   const cmd: Command = program
     .command('deploy')
     .description('Push your app to Based Cloud super fast as hell.')
@@ -97,7 +98,7 @@ export const deploy = async (program: Command, context: AppContext) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { basedClient, destroy } = await basedAuth(program, context)
+      const { basedClient, destroy } = await basedAuth(context)
       const { publicPath } = await basedClient.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
         await parseFunctions(context, functions, watch && update, publicPath)
@@ -106,8 +107,9 @@ export const deploy = async (program: Command, context: AppContext) => {
       let previous = new Set<string | number>()
 
       await update(null)
+
       if (!watch) {
-        await destroy()
+        destroy()
       }
 
       async function update(err) {

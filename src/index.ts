@@ -1,37 +1,28 @@
 import { Command } from 'commander'
 import { version } from './version.js'
-import {
-  auth,
-  logs,
-  deploy,
-  globalOptions,
-  dev,
-  backup,
-} from './commands/index.js'
+import { auth, logs, deploy, dev, backup } from './commands/index.js'
+import { globalOptions } from './helpers/index.js'
 import { AppContext } from './shared/index.js'
 
-export const init = async () => {
+export const init = async (extract?: boolean) => {
   const program: Command = new Command()
-  const context: AppContext = AppContext.getInstance()
+  const context: AppContext = AppContext.getInstance(program)
 
   try {
     await Promise.all([
-      version(program, context),
-      globalOptions(program, context),
-      auth(program, context),
-      dev(program, context),
-      deploy(program, context),
-      backup(program, context),
-      logs(program, context),
+      version(program),
+      globalOptions(program),
+      auth(program),
+      dev(program),
+      deploy(program),
+      backup(program),
+      logs(program),
     ])
 
-    const { org, project, env, display } = program.opts()
-
-    context.set('display', display)
-    context.print
-      .info(`<dim>org:</dim> <b>${org}</b>`)
-      .info(`<dim>project:</dim> <b>${project}</b>`)
-      .info(`<dim>env:</dim> <b>${env}</b>`)
+    if (extract) {
+      program.parse(process.argv)
+      return program
+    }
 
     await program.parseAsync(process.argv)
   } catch (e) {

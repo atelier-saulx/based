@@ -1,12 +1,10 @@
-import { Command } from 'commander'
 import { basedAuth, AppContext } from '../../../shared/index.js'
+import { Command } from 'commander'
 
-export const make = (program: Command, context: AppContext) => async () => {
-  const { org, project, env } = program.opts()
-  const { basedClient, adminHubBasedCloud, destroy } = await basedAuth(
-    program,
-    context,
-  )
+export const make = (program: Command) => async () => {
+  const context: AppContext = AppContext.getInstance(program)
+  const { org, env, project } = context.get('project')
+  const { basedClient, adminHubBasedCloud, destroy } = await basedAuth(context)
 
   const doIt: boolean = await context.input.confirm(
     `Would you like to make a backup for the env '<cyan>${org}/${project}/${env}</cyan>'?`,

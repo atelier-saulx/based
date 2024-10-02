@@ -1,8 +1,9 @@
-import { Command } from 'commander'
 import { basedAuth, AppContext } from '../../../shared/index.js'
+import { Command } from 'commander'
 
-export const clear = (program: Command, context: AppContext) => async () => {
-  const { basedClient, destroy } = await basedAuth(program, context)
+export const clear = (program: Command) => async () => {
+  const context: AppContext = AppContext.getInstance(program)
+  const { basedClient, destroy } = await basedAuth(context)
 
   context.print.info(
     `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,

@@ -4,10 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { AppContext } from './shared/index.js'
 
-export const version = async (
-  program: Command,
-  context: AppContext,
-): Promise<void> => {
+export const version = async (program: Command): Promise<void> => {
+  const context: AppContext = AppContext.getInstance(program)
   const { version } = await readJSON(
     join(fileURLToPath(dirname(import.meta.url)), '../package.json'),
   )

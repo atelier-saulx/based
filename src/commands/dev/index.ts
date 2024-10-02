@@ -18,7 +18,8 @@ import pc from 'picocolors'
 // import handler from 'serve-handler'
 // import http from 'http'
 
-export const dev = async (program: Command, context: AppContext) => {
+export const dev = async (program: Command) => {
+  const context: AppContext = AppContext.getInstance(program)
   const cmd = program
     .command('dev')
     .description('Develop your app running the Based Cloud locally.')
@@ -29,7 +30,7 @@ export const dev = async (program: Command, context: AppContext) => {
     )
 
   cmd.action(async ({ functions, port }) => {
-    const { basedClient } = await basedAuth(program, context)
+    const { basedClient } = await basedAuth(context)
 
     const { BasedServer } = await import('@based/server')
     const ip: string = getMyIp()

@@ -1,10 +1,10 @@
-import { Command } from 'commander'
 import { basedAuth, replaceTilde, AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 import { BasedClient } from '@based/client'
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
-import { backupsSelection, BackupsSorted } from '../manageBackups.js'
+import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
+import { Command } from 'commander'
 
 type RestoreArgs = {
   db?: string
@@ -20,13 +20,11 @@ type SetRestoreArgs = {
 }
 
 export const restore =
-  (program: Command, context: AppContext) =>
+  (program: Command) =>
   async ({ db, file }: RestoreArgs): Promise<void> => {
+    const context: AppContext = AppContext.getInstance(program)
     const isExternalFile: boolean = file !== undefined
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
-      program,
-      context,
-    )
+    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(context)
     const backups: BackupsSorted = await getList(context, envHubBasedCloud)
 
     let { selectedFile, selectedDB } = await backupsSelection({

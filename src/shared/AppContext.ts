@@ -5,6 +5,8 @@ import { isValid } from 'date-fns/isValid'
 import { format as formatDate, parse } from 'date-fns'
 import confirm from '@inquirer/confirm'
 import { dateAndTime, dateOnly } from './dateAndTimeFormats.js'
+import { Command } from 'commander'
+import { getBasedFile } from './getBasedFile.js'
 
 export class AppContext {
   private static instance: AppContext
@@ -17,17 +19,7 @@ export class AppContext {
       error: '🚨',
     },
   }
-
-  private constructor() {}
-
-  public static getInstance(): AppContext {
-    if (!AppContext.instance) {
-      AppContext.instance = new AppContext()
-    }
-    return AppContext.instance
-  }
-
-  private logLevels = [
+  private logLevels: string[] = [
     'verbose',
     'info',
     'success',
@@ -35,6 +27,24 @@ export class AppContext {
     'error',
     'silent',
   ]
+  public program: Command
+
+  private constructor(program: Command) {
+    if (!this.program) {
+      this.program = program
+    }
+  }
+
+  public static getInstance(program: Command): AppContext {
+    if (!AppContext.instance) {
+      if (!program) {
+        throw new Error('Program must be provided.')
+      }
+
+      AppContext.instance = new AppContext(program)
+    }
+    return AppContext.instance
+  }
 
   public set(key: string, value: any) {
     if (key === 'display' && !this.logLevels.includes(value)) {
@@ -46,6 +56,61 @@ export class AppContext {
 
   public get(key: string) {
     return this.state[key]
+  }
+
+  public async getProgram(): Promise<
+    BasedCli.Context.Project & BasedCli.Context.Options
+  > {
+    let basedFile: BasedCli.Context.Project
+    const cacheProject: BasedCli.Context.Project = this.get('project')
+    const cacheOptions: BasedCli.Context.Options = this.get('options')
+    const {
+      cluster,
+      org,
+      project,
+      env,
+      apiKey,
+      yes: skip,
+      display,
+    } = this.program.opts()
+
+    if (cluster || org || project || env) {
+      this.set('project', {
+        ...cacheProject,
+        cluster,
+        org,
+        project,
+        env,
+        apiKey,
+      })
+    }
+
+    if (skip || display) {
+      this.set('options', {
+        ...cacheOptions,
+        skip,
+        display,
+      })
+    }
+
+    if (!cacheProject) {
+      basedFile = await getBasedFile()
+
+      if (!basedFile) {
+        this.print.warning(
+          `No <b>'based.json'</b> configuration file found. <b>It is recommended to create one.</b>`,
+        )
+      } else {
+        this.set('project', basedFile)
+      }
+    }
+
+    this.print
+      .info(`<dim>org:</dim> <b>${basedFile.org}</b>`)
+      .info(`<dim>project:</dim> <b>${basedFile.project}</b>`)
+      .info(`<dim>env:</dim> <b>${basedFile.env}</b>`)
+
+    return { ...this.get('project'), ...this.get('options') }
   }
 
   public parse: BasedCli.Context.Parse = {
