@@ -102,7 +102,8 @@ int selva_fields_get_mutable_string(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         size_t len,
-        struct selva_string **s);
+        struct selva_string **s)
+    __attribute__((access(write_only, 4)));
 
 SELVA_EXPORT
 int selva_fields_reference_set(
@@ -110,7 +111,8 @@ int selva_fields_reference_set(
         struct SelvaNode * restrict src,
         const struct SelvaFieldSchema *fs_src,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReference **ref_out);
+        struct SelvaNodeReference **ref_out)
+    __attribute__((access(write_only, 5)));
 
 /**
  * @param index 0 = first; -1 = last.
@@ -123,7 +125,21 @@ int selva_fields_references_insert(
         ssize_t index,
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReference **ref_out);
+        struct SelvaNodeReference **ref_out)
+    __attribute__((access(write_only, 7)));
+
+SELVA_EXPORT
+void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
+
+SELVA_EXPORT
+int selva_fields_references_insert_tail_wupsert(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        struct SelvaTypeEntry *te_dst,
+        const node_id_t ids[],
+        size_t nr_ids)
+    __attribute__((access(read_only, 6, 7)));
 
 /**
  * Move reference from old to new index in a references field array.
@@ -183,10 +199,10 @@ SELVA_EXPORT
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReference selva_field_get_weak_reference(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_field_get_weak_references(struct SelvaFields *fields, field_t field);
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)

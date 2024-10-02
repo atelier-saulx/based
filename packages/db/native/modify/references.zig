@@ -10,11 +10,42 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 const edge = @import("./edges.zig");
 
+fn prealloc_refs(ctx: *ModifyCtx, data: []u8) void {
+    const len = data.len;
+    var i: usize = 1;
+    var nr_refs: usize = 0;
+
+    while (i < len) : (i += 5) {
+        const op = data[i];
+        const hasEdgeData = op == 1 or op == 2;
+        const hasIndex = op == 2 or op == 3;
+
+        if (hasEdgeData) {
+            const totalEdgesLen = readInt(u32, data, i + 5);
+            const edges = data[i + 9 .. i + totalEdgesLen + 9];
+
+            i += edges.len;
+        }
+        if (hasIndex) {
+            i += 4;
+        }
+
+        nr_refs += 1;
+    }
+
+    if (nr_refs > 0) {
+        selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, nr_refs);
+    }
+}
+
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(refTypeId);
     const len = data.len;
     var i: usize = 1;
+
+    prealloc_refs(ctx, data);
+
     while (i < len) : (i += 5) {
         const op = data[i];
         const hasEdgeData = op == 1 or op == 2;
