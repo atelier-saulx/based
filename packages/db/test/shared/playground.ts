@@ -72,12 +72,16 @@ db.putSchema({
             ref: 'user',
             prop: 'articles',
             $role: ['writer', 'editor'],
+            $friend: { ref: 'user' },
           },
         },
       },
     },
   },
 })
+
+db.create('user', { flap: 1 })
+db.drain()
 
 const d = Date.now()
 
@@ -95,13 +99,14 @@ for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
 const y = [...ids.values()].sort()
-console.log(y)
 
 for (let i = 0; i < 1e3; i++) {
   db.create('article', {
     name: 'Ultra article ' + i,
     published: !!(i % 2),
-    contributors: y,
+    contributors: y.map((v) => {
+      return { id: v, $friend: 1 }
+    }),
   })
 }
 // just 10M but slow
