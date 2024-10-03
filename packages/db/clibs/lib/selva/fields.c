@@ -255,11 +255,11 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     }
     if ((size_t)index + 1 < new_len) {
         /* Move old refs to the right to make space. */
-        assert(index + 1 + (new_len - index) < new_len);
+        assert(index + 1 + (new_len - index) <= new_len);
         memmove(refs.refs + index + 1, refs.refs + index, (new_len - index) * sizeof(*refs.refs));
     } else if (new_len - refs.nr_refs > 1) {
         /* Clear the gap created. */
-        assert(refs.nr_refs + (new_len - refs.nr_refs) < new_len);
+        assert(refs.nr_refs + (new_len - refs.nr_refs) <= new_len);
         memset(refs.refs + refs.nr_refs, 0, (new_len - refs.nr_refs) * sizeof(*refs.refs));
     }
     refs.nr_refs = new_len;
