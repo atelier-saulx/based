@@ -22,7 +22,7 @@ export type EdgeTarget = {
 export type Target = {
   type: string
   id?: number | void
-  ids?: number[] | void
+  ids?: Uint32Array | void
   propDef?: PropDef | PropDefEdge
 }
 
@@ -40,10 +40,12 @@ export type QueryDefFilter = {
   schema?: SchemaTypeDef
 }
 
+export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
+
 export type QueryDefShared = {
   filter: QueryDefFilter
 
-  sort: null | { field: number; order: 0 | 1; start: number; len: number }
+  sort: null | QueryDefSort
 
   range: {
     offset: number

@@ -73,7 +73,7 @@ const filterReferences = (
         }
         conditions.references.set(t.prop, refConditions)
       }
-      size += filter(
+      size += filterRaw(
         db,
         path.slice(i + 1).join('.'),
         operator,
@@ -92,7 +92,7 @@ const filterReferences = (
   return size
 }
 
-export const filter = (
+export const filterRaw = (
   db: BasedDb,
   fieldStr: string,
   operator: Operation,
@@ -201,4 +201,21 @@ export const filter = (
   size += buf.byteLength
   arr.push(buf)
   return size
+}
+
+export const filter = (
+  db: BasedDb,
+  def: QueryDef,
+  fieldStr: string,
+  operator: Operation,
+  value: any,
+) => {
+  def.filter.size += filterRaw(
+    db,
+    fieldStr,
+    operator,
+    value,
+    def.schema,
+    def.filter,
+  )
 }

@@ -248,8 +248,11 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
 
     index = (index == -1) ? refs.nr_refs : index;
     const size_t new_len = (index > refs.nr_refs) ? index + 1 : refs.nr_refs + 1;
+    const size_t new_size = new_len * sizeof(*refs.refs);
 
-    refs.refs = selva_realloc(refs.refs, new_len * sizeof(*refs.refs));
+    if (!refs.refs || selva_sallocx(refs.refs, 0) < new_size) {
+        refs.refs = selva_realloc(refs.refs, new_size);
+    }
     if ((size_t)index + 1 < new_len) {
         /* Move old refs to the right to make space. */
         assert(index + 1 + (new_len - index) < new_len);
@@ -633,6 +636,23 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
     return 0;
 }
 
+static int check_ref_eexists_fast(
+        struct SelvaNode * restrict src,
+        struct SelvaNode * restrict dst,
+        const struct SelvaFieldSchema * restrict fs_src,
+        const struct SelvaFieldSchema * restrict fs_dst)
+{
+    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+
+    /*
+     * It's cheaper/faster to check from a reference field rather
+     * than a references field.
+     */
+    return (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
+        ? check_ref_eexists(&dst->fields, fs_dst, src)
+        : check_ref_eexists(&src->fields, fs_src, dst);
+}
+
 /**
  * Set reference to fields.
  */
@@ -696,7 +716,7 @@ int selva_fields_reference_set(
     return 0;
 }
 
-static int insert_references(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dsts[], size_t nr_dsts)
+static int tail_insert_references(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, struct SelvaNode * restrict src, struct SelvaNode * restrict dsts[], size_t nr_dsts)
 {
     struct SelvaTypeEntry *te_dst;
     struct SelvaFieldSchema *fs_dst;
@@ -727,13 +747,7 @@ static int insert_references(struct SelvaDb *db, const struct SelvaFieldSchema *
             return SELVA_EINTYPE;
         }
 
-        /*
-         * It's cheaper/faster to check from a reference field rather
-         * than a references field.
-         */
-        err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
-            ? check_ref_eexists(&dst->fields, fs_dst, src)
-            : check_ref_eexists(&src->fields, fs_src, dst);
+        err = check_ref_eexists_fast(src, dst, fs_src, fs_dst);
         if (err) {
             return err;
         }
@@ -846,7 +860,7 @@ copy:
         if ((len % sizeof(struct SelvaNode **)) != 0) {
             return SELVA_EINVAL;
         }
-        return insert_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
+        return tail_insert_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
             fprintf(stderr, "weak len: %d\n", (int)len);
@@ -923,16 +937,10 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-    /*
-     * It's cheaper/faster to check from a reference field rather
-     * than a references field.
-     */
-    err = (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
-        ? check_ref_eexists(&dst->fields, fs_dst, node)
-        : check_ref_eexists(&node->fields, fs, dst);
-    if (err) {
-        return err;
-    }
+     err = check_ref_eexists_fast(node, dst, fs, fs_dst);
+     if (err) {
+         return err;
+     }
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         remove_reference(db, dst, fs_dst, 0);
@@ -951,6 +959,87 @@ int selva_fields_references_insert(
         : write_refs(dst, fs_dst, -1, node, NULL);
     if (err) {
         db_panic("Failed to write the inverse reference field: %s", selva_strerror(err));
+    }
+
+    return 0;
+}
+
+void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min)
+{
+    struct SelvaFields *fields = &node->fields;
+    const field_t field = fs->field;
+    struct SelvaFieldInfo *nfo;
+
+    if (unlikely(fs->type != SELVA_FIELD_TYPE_REFERENCES)) {
+        db_panic("Invalid type: %s", selva_str_field_type(fs->type));
+    }
+
+    nfo = &fields->fields_map[field];
+    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
+        *nfo = alloc_block(fields, fs);
+        memset(nfo2p(fields, nfo), 0, sizeof(struct SelvaNodeReferences));
+    } else if (nfo->type != SELVA_FIELD_TYPE_REFERENCES) {
+        db_panic("Invalid type: %s", selva_str_field_type(nfo->type));
+    }
+
+    struct SelvaNodeReferences refs;
+    void *vp = nfo2p(fields, nfo);
+
+    if (refs.nr_refs >= nr_refs_min) {
+        return;
+    }
+
+    size_t new_size = nr_refs_min * sizeof(*refs.refs);
+
+    memcpy(&refs, vp, sizeof(refs));
+    refs.refs = selva_realloc(refs.refs, new_size);
+    memcpy(vp, &refs, sizeof(refs));
+}
+
+int selva_fields_references_insert_tail_wupsert(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        struct SelvaTypeEntry *te_dst,
+        const node_id_t ids[],
+        size_t nr_ids) {
+    struct SelvaFieldSchema *fs_dst;
+    node_type_t type_dst = te_dst->type;
+
+    if (fs->type != SELVA_FIELD_TYPE_REFERENCES ||
+        type_dst != fs->edge_constraint.dst_node_type) {
+        return SELVA_EINVAL;
+    }
+
+    if (nr_ids == 0) {
+        return 0;
+    }
+
+    fs_dst = selva_get_fs_by_ns_field(&te_dst->ns, fs->edge_constraint.inverse_field);
+    if (!fs_dst) {
+        return SELVA_EINTYPE;
+    }
+
+    selva_fields_prealloc_refs(node, fs, nr_ids);
+
+    for (size_t i = 0; i < nr_ids; i++) {
+        node_id_t dst_id = ids[i];
+        struct SelvaNode *dst = selva_upsert_node(te_dst, dst_id);
+        int err;
+
+        if (!dst) {
+            /* TODO wat do? */
+            continue;
+        }
+
+        err = check_ref_eexists_fast(node, dst, fs, fs_dst);
+        if (!err) {
+            if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+                remove_reference(db, dst, fs_dst, 0);
+            }
+
+            write_ref_2way(node, fs, -1, dst, fs_dst);
+        }
     }
 
     return 0;
@@ -1311,14 +1400,14 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : NULL;
 }
 
-struct SelvaNodeWeakReference selva_field_get_weak_reference(struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
     struct SelvaFieldsAny any = selva_fields_get2(fields, field);
 
     return (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) ? any.weak_reference : (struct SelvaNodeWeakReference){};
 }
 
-struct SelvaNodeWeakReferences selva_field_get_weak_references(struct SelvaFields *fields, field_t field)
+struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
     struct SelvaFieldsAny any = selva_fields_get2(fields, field);
 

@@ -2,8 +2,16 @@
 import db from '../../nativebla.cjs'
 
 export default {
+  markMerkleBlock: (buf: Buffer): any => {
+    // pstart,
+  },
+
   modify: (buffer: Buffer, len: number): any => {
     return db.modify(buffer, len)
+  },
+
+  getQueryBuf: (q: Buffer): Buffer | null => {
+    return db.getQueryBuf(q)
   },
 
   getQuery: (

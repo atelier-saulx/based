@@ -7,7 +7,7 @@ pub const IncludeError = error{
 
 pub fn Refs(comptime isEdge: bool) type {
     if (isEdge) {
-        return ?*selva.SelvaNodeWeakReferences;
+        return ?selva.SelvaNodeWeakReferences;
     }
     return ?*selva.SelvaNodeReferences;
 }
