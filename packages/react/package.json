@@ -11,6 +11,10 @@
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
+  "exports": {
+    "./ssr": "./dist/ssr.js",
+    ".": "./dist/index.js"
+  },
   "sideEffects": false,
   "dependencies": {
     "@saulx/hash": "^2.0.0",
@@ -27,6 +31,7 @@
   },
   "peerDependencies": {
     "@based/client": "*",
-    "react": "16||17||18"
+    "react": "16||17||18",
+    "react-dom": "*"
   }
 }

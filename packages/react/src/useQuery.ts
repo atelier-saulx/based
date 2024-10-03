@@ -3,6 +3,9 @@ import { BasedClient, QueryMap } from '@based/client'
 import { BasedError } from '@based/errors'
 import { Ctx } from './Ctx.js'
 import { hooksLoading, useLoadingListeners } from './useLoading.js'
+import { collectQuery } from './collectQuery.js'
+
+const IS_NODE = typeof window === 'undefined'
 
 export const useQueries = <T = any>(
   name?: string,
@@ -16,7 +19,6 @@ export const useQueries = <T = any>(
   error?: BasedError
   checksum?: string
 }[] => {
-  // TODO add error handling
   const client: BasedClient = useContext(Ctx)
   let key = ''
   let sum = ''
@@ -125,6 +127,10 @@ export const useQuery = <N extends keyof QueryMap>(
         update(0)
       }
     }, [id])
+
+    if (IS_NODE) {
+      collectQuery(q)
+    }
 
     if (checksumOrError) {
       const isLoading = hooksLoading.size > 0
