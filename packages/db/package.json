@@ -11,7 +11,7 @@
     "watch": "npx tsc --watch",
     "clean-selva": "rm -rf build && make -C clibs clean",
     "clean": "rimraf {.turbo,dist,node_modules,.zig-cache,.zig-out,tmp} && npm run clean-selva",
-    "playground": "npm run build && LOCPATH=./build/locale node ./dist/test/shared/playground.js",
+    "playground": "npm run build && LOCPATH=./build/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./dist/test/shared/playground.js",
     "playground-fast": "node ./dist/test/shared/playground.js",
     "test": "npm run build && LOCPATH=./build/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./scripts/test.js",
     "test-fast": "LOCPATH=./build/locale node ./scripts/test.js",

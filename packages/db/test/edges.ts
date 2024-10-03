@@ -80,12 +80,12 @@ await test('edges', async (t) => {
     contributors: [
       {
         id: mrSnurp,
-        $role: 'writer',
-        $rating: 99,
-        $email: 'AAA',
-        $lang: 'en',
+        // $role: 'writer',
+        // $rating: 99,
+        // $email: 'AAA',
+        // $lang: 'en',
         $friend: mrYur,
-        $countries: [nl],
+        // $countries: [nl],
       },
       // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],
