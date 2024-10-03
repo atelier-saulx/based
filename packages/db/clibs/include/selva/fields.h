@@ -83,7 +83,7 @@ struct SelvaFieldsPointer {
 #if __has_c_attribute(unsequenced)
 [[unsequenced]]
 #else
-__attribute__((pure))
+__purefn
 #endif
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 
