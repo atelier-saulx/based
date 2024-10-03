@@ -58,7 +58,7 @@ struct SelvaFieldSchema {
             uint16_t len;
         } smb;
     };
-};
+} __designated_init;
 
 struct SelvaFieldsSchema {
     field_t nr_fields; /*!< The total number of fields for this node type. */

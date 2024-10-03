@@ -1,4 +1,9 @@
-import { SchemaTypeDef, PropDef, EMPTY_MICRO_BUFFER } from './types.js'
+import { SchemaTypeDef, PropDef, PropDefEdge, EMPTY_MICRO_BUFFER } from './types.js'
+
+function sepPropCount(props: Array<PropDef | PropDefEdge>): number
+{
+    return props.filter((prop) => prop.separate).length
+}
 
 const propDefBuffer = (
   schema: { [key: string]: SchemaTypeDef },
@@ -14,27 +19,28 @@ const propDefBuffer = (
   } else if (type === 13 || type === 14) {
     const buf: Buffer = Buffer.allocUnsafe(8)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
+    let eschema = []
 
     // @ts-ignore
-    buf.writeUInt8(type + 2 * !!isEdge, 0)
+    buf[0] = type + 2 * !!isEdge
     buf.writeUInt16LE(dstType.id, 1)
+    buf.writeUint32LE(0, 4)
     if (!isEdge) {
       prop.inverseTypeId = dstType.id
       prop.inversePropNumber = dstType.props[prop.inversePropName].prop
       buf[3] = prop.inversePropNumber
 
       if (prop.edges) {
-        const eschema = Object.values(prop.edges)
+        const props = Object.values(prop.edges)
+        eschema = props
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
-        eschema.unshift(0)
+        eschema.unshift(sepPropCount(props), 0)
         buf.writeUint32LE(eschema.length, 4)
-        return [...buf.values(), ...eschema]
       }
     }
 
-    buf.writeUint32LE(0, 4)
-    return [...buf.values()]
+    return [...buf.values(), ...eschema]
   } else if (type === 11) {
     return [type, prop.len < 50 ? prop.len : 0]
   } else {
@@ -45,24 +51,25 @@ const propDefBuffer = (
 // todo rewrite
 export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
   return Object.values(schema).map((t, i) => {
-    const restFields: PropDef[] = []
+    const props = Object.values(t.props)
+    const rest: PropDef[] = []
     let refFields = 0
-    for (const f of Object.values(t.props)) {
+    for (const f of props) {
       if (f.separate) {
         if (f.typeIndex === 13 || f.typeIndex === 14) {
           refFields++
         }
-        restFields.push(f)
+        rest.push(f)
       }
     }
-    restFields.sort((a, b) => a.prop - b.prop)
+    rest.sort((a, b) => a.prop - b.prop)
     return Buffer.from([
-      1 + refFields,
+      1 + sepPropCount(props), 1 + refFields,
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,
       }),
-      ...restFields.map((f) => propDefBuffer(schema, f)).flat(1),
+      ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
     ])
   })
 }
