@@ -95,11 +95,11 @@ await test('edges', async (t) => {
 
   const x = db
     .query('article')
-    .include('contributors.$role')
-    .include('contributors.$rating')
-    .include('contributors.$email')
-    .include('contributors.$lang')
-    // .include('contributors.$friend')
+    // .include('contributors.$role')
+    // .include('contributors.$rating')
+    // .include('contributors.$email')
+    // .include('contributors.$lang')
+    .include('contributors.$friend')
     // .include('contributors.$countries')
     .get()
 

@@ -80,7 +80,7 @@ db.putSchema({
   },
 })
 
-db.create('user', { flap: 1 })
+const user = await db.create('user', { flap: 1 })
 db.drain()
 
 const d = Date.now()
@@ -104,9 +104,10 @@ for (let i = 0; i < 1e3; i++) {
   db.create('article', {
     name: 'Ultra article ' + i,
     published: !!(i % 2),
-    contributors: y.map((v) => {
-      return { id: v, $friend: 1 }
-    }),
+    contributors: y,
+    // contributors: y.map((v) => {
+    //   return { id: v, $friend: user }
+    // }),
   })
 }
 // just 10M but slow
