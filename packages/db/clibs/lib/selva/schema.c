@@ -208,7 +208,7 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         .field = field,
         .type = type,
         .edge_constraint = {
-            .flags = ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP,
+            .flags = ref_save_map_insert(ctx->ref_save_map, ctx->te->type, constraints.dst_node_type, field, constraints.inverse_field) ? 0 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP,
             .inverse_field = constraints.inverse_field,
             .dst_node_type = constraints.dst_node_type,
         },
