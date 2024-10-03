@@ -3,10 +3,7 @@ import db from '../../nativebla.cjs'
 
 export default {
   markMerkleBlock: (buf: Buffer): any => {
-    // start, end, start, end, start, end
-    // [8 bytes] - can be as long as you want
-    // returns
-    // mekrleHash TOTAL[0...16]  hashes [0...16]
+    // pstart,
   },
 
   modify: (buffer: Buffer, len: number): any => {
