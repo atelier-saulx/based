@@ -1,6 +1,5 @@
-import { BasedClient, BasedQuery } from '@based/client'
+import { BasedQuery } from '@based/client'
 import { renderToString } from 'react-dom/server'
-import { createInlineCache } from '@based/client/ssr'
 import { lastCollected } from './collectQuery.js'
 
 // unsubscribe
@@ -37,8 +36,8 @@ const clean = () => {
       const now = Date.now()
       isActive.forEach((v, k) => {
         if (v.close && v.date < now + 60e3) {
-          v.close()
           isActive.delete(k)
+          v.close()
         }
       })
       if (isActive.size > 0) {
@@ -53,7 +52,13 @@ const clean = () => {
 export const render = async (
   reactApp: React.ReactElement,
   head?: React.ReactElement,
+  depth: number = 0,
 ): Promise<{ html: string; head: string }> => {
+  if (depth > 4) {
+    console.warn(
+      '@based/react/ssr render: Data depth is larger then 4, this can impact performance significantly',
+    )
+  }
   let headStr = head ? renderToString(head) : ''
   let html = renderToString(reactApp)
   let collected = lastCollected.q
@@ -67,6 +72,7 @@ export const render = async (
       isActive.get(q.id).date = d
     }
   }
+
   if (rdy.length > 0) {
     collected = [...lastCollected.q]
     lastCollected.q = []
@@ -78,10 +84,7 @@ export const render = async (
         date: d,
       })
     }
-    headStr = head
-      ? renderToString(head) + syncCacheScript(collected)
-      : syncCacheScript(collected)
-    html = renderToString(reactApp)
+    return render(reactApp, head, ++depth)
   } else {
     headStr = headStr + syncCacheScript(collected)
     lastCollected.q = []
