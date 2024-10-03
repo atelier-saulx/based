@@ -9,7 +9,7 @@ export const auth = async (program: Command): Promise<void> => {
     .option('--email <email>', 'To speed up the login process.')
 
   cmd.action(async ({ email }) => {
-    const { cluster, org, env, project } = context.get('project')
+    const { cluster, org, env, project } = await context.getProgram()
 
     try {
       const { destroy } = await login({

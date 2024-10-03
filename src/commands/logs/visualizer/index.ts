@@ -10,15 +10,15 @@ import { getLogs } from './getLogs.js'
 
 export const visualizer = async ({
   context,
-  basedClient,
-  envHubBasedCloud,
-  adminHubBasedCloud,
   cluster,
   org,
   env,
   project,
   filters,
 }) => {
+  const { basedClient, envHubBasedCloud, adminHubBasedCloud } =
+    await context.getBasedClient()
+
   const templateLabels = (name: string, value: string) =>
     `${name}: <b>${value}</b>`
 
@@ -111,54 +111,41 @@ export const visualizer = async ({
     renderData = (data: AdminLogsData[] | EnvLogsData[]) => {
       const filteredData = formatLogs(filterLogs(data, filters))
 
-      context.print.stop()
-
-      if (filteredData.length) {
-        context.print.success('These are the logs:', true)
-      }
-
       for (const line of filteredData) {
         console.log(line)
       }
 
-      if (filteredData.length) {
+      if (filteredData.length && !filters.stream) {
         context.print.separator()
       }
 
-      context.print.info(
-        `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
-      )
+      if (!filters.stream) {
+        context.print.info(
+          `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
+        )
+      }
     }
   }
 
   if (filters.monitor) {
     context.print
       .line()
+      .stop()
       .success('Opening the <b>UI</b> to show the logs...', true)
   } else {
-    context.print.line().loading('Reading the logs...')
+    context.print.line().stop().success('These are the logs:', true).separator()
   }
 
   try {
     if (filters.stream) {
       await subscribeLogs({
-        envHubBasedCloud,
-        adminHubBasedCloud,
-        cluster,
-        org,
-        env,
-        project,
+        context,
         filters,
         renderData,
       })
     } else {
       await getLogs({
-        envHubBasedCloud,
-        adminHubBasedCloud,
-        cluster,
-        org,
-        env,
-        project,
+        context,
         filters,
         renderData,
       })

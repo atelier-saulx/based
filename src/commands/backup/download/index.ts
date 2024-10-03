@@ -1,5 +1,4 @@
 import {
-  basedAuth,
   isValidPath,
   replaceTilde,
   sanitizeFileName,
@@ -7,33 +6,18 @@ import {
 } from '../../../shared/index.js'
 import { join, resolve } from 'node:path'
 import { writeFile } from 'fs/promises'
-import { BasedClient } from '@based/client'
 import { getList } from '../list/index.js'
 import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
 import { Command } from 'commander'
 
-type DownloadArgs = {
-  db?: string
-  file?: string
-  path?: string
-}
-
-type GetDownloadsArgs = {
-  context: AppContext
-  basedClient: BasedClient
-  db: string
-  file: string
-  path: string
-  retry?: number
-}
-
 export const download =
   (program: Command) =>
-  async ({ db, file, path }: DownloadArgs) => {
+  async ({ db, file, path }) => {
     const context: AppContext = AppContext.getInstance(program)
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(context)
+    await context.getProgram()
+    const { destroy } = await context.getBasedClient()
 
-    const backups: BackupsSorted = await getList(context, envHubBasedCloud)
+    const backups: BackupsSorted = await getList(context)
     let { selectedFile, selectedDB } = await backupsSelection({
       context,
       backups,
@@ -44,7 +28,6 @@ export const download =
     try {
       await getDownload({
         context,
-        basedClient,
         db: selectedDB,
         file: selectedFile,
         path,
@@ -59,14 +42,14 @@ export const download =
 
 export const getDownload = async ({
   context,
-  basedClient,
   db,
   file,
   path,
   retry = 3,
-}: GetDownloadsArgs): Promise<void> => {
+}: BasedCli.Backups.Downloads): Promise<void> => {
   let isValid: boolean = false
   const isExternalPath: boolean = path !== undefined && path !== ''
+  const { basedClient } = await context.getBasedClient()
 
   if (isExternalPath) {
     context.print.info(`<b>Selected path:</b> <cyan>${path}</cyan>`)
@@ -116,7 +99,7 @@ export const getDownload = async ({
     const response = await basedClient.call('based:backups-download', {
       key: file,
     })
-    context.print.success()
+    context.print.stop()
 
     try {
       context.print.loading('Saving file...')
@@ -124,7 +107,7 @@ export const getDownload = async ({
       const buffer: Buffer = Buffer.from(response.data)
       await writeFile(replaceTilde(path), buffer)
 
-      context.print.success()
+      context.print.stop()
     } catch (error) {
       new Error(`Was not possible to save the file: ${error}`)
     }
@@ -133,6 +116,7 @@ export const getDownload = async ({
   }
 
   context.print.success(
-    `Saved backup in: '<cyan>${resolve(replaceTilde(path))}<cyan>'`,
+    `Saved backup in: '<b><cyan>${resolve(replaceTilde(path))}</cyan></b>'`,
+    true,
   )
 }

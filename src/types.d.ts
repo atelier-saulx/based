@@ -1,5 +1,7 @@
 import { BasedFunctionConfig } from '@based/functions'
 import { Separator } from '@inquirer/prompts'
+import { AuthState, BasedClient } from '@based/client'
+import { AppContext } from './shared/index.js'
 
 declare global {
   namespace BasedCli {
@@ -12,10 +14,15 @@ declare global {
         apiKey?: string
       }
 
-      type Options = {
-        yes: boolean
-        display: State['display']
-      }
+      type GlobalOptions<T extends 'yes' | 'skip'> = T extends 'yes'
+        ? {
+            display?: State['display']
+            yes?: boolean
+          }
+        : {
+            display?: State['display']
+            skip?: boolean
+          }
 
       type State = {
         [key: string]: any
@@ -101,24 +108,70 @@ declare global {
       }
     }
 
+    namespace Auth {
+      type User = {
+        email: string
+        userId?: string
+        token?: string
+        ts?: number
+      }
+
+      type AuthenticatedUser = AuthState & {
+        email: string
+      }
+
+      type Clients = {
+        basedClient: BasedClient
+        adminHubBasedCloud: BasedClient
+        envHubBasedCloud: BasedClient
+        destroy: () => void
+      }
+
+      type Login = Context.Project & {
+        context: AppContext
+        email?: string
+        selectUser?: boolean
+      }
+    }
+
+    namespace Backups {
+      type Downloads = {
+        context: AppContext
+        db: string
+        file: string
+        path: string
+        retry?: number
+      }
+
+      type Flush = Context.Project & {
+        context: AppContext
+        db: string
+      }
+
+      type Restore = {
+        context: AppContext
+        db: string
+        file: string
+        isExternalFile: boolean
+      }
+    }
+
     namespace Logs {
-      namespace Filter {
-        type Args = {
-          monitor?: boolean
-          stream?: boolean
-          collapsed?: boolean
-          app?: boolean
-          infra?: boolean
-          level?: 'all' | 'info' | 'error'
-          limit?: number
-          sort?: 'asc' | 'desc'
-          startDate?: Context.DateTimeResult | string | null
-          endDate?: Context.DateTimeResult | string | null
-          checksum?: number
-          function?: string | string[]
-          service?: string | string[]
-          machine?: string | string[]
-        }
+      type Filter = {
+        monitor?: boolean
+        stream?: boolean
+        collapsed?: boolean
+        app?: boolean
+        infra?: boolean
+        level?: 'all' | 'info' | 'error'
+        limit?: number
+        sort?: 'asc' | 'desc'
+        startDate?: Context.DateTimeResult | string | null
+        endDate?: Context.DateTimeResult | string | null
+        checksum?: number
+        function?: string | string[]
+        service?: string | string[]
+        machine?: string | string[]
       }
     }
 
@@ -138,15 +191,6 @@ declare global {
       index?: string
       app?: string
       favicon?: string
-    }
-
-    namespace Backups {
-      namespace List {
-        type Args = {
-          limit?: number
-          sort?: 'asc' | 'desc'
-        }
-      }
     }
   }
 }

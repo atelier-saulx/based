@@ -52,7 +52,7 @@ const templateMessage = (
 
 const isToBeFiltered = (
   log: EnvLogsData & AdminLogsData,
-  filters: BasedCli.Logs.Filter.Args,
+  filters: BasedCli.Logs.Filter,
 ) => {
   const isLogLevelNotInfo = filters.level === 'info' && log.lvl === 'error'
   const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
@@ -97,7 +97,7 @@ const isToBeFiltered = (
 
 export const filterLogs = (
   data: EnvLogsData[] | AdminLogsData[],
-  filters: BasedCli.Logs.Filter.Args,
+  filters: BasedCli.Logs.Filter,
 ) => {
   if (!data?.length) {
     return []

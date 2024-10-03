@@ -17,7 +17,7 @@ type BackupSelectionArgs = {
   selectDB?: string | boolean
   selectFile?: string | boolean
   showCurrent?: boolean
-  sort?: BasedCli.Backups.List.Args['sort']
+  sort?: string
 }
 
 export type BackupsSorted = {
@@ -38,18 +38,21 @@ export const backupsSummary = (
   context: AppContext,
   values: BackupsSorted,
   limit: number,
-  sort: BasedCli.Backups.List.Args['sort'],
+  sort: string,
   verbose: boolean,
 ): void => {
   if (!values.databases || !values.backups) {
     throw new Error(`No backups found.`)
   } else {
     context.print.info(
-      `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases. Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
+      `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases.`,
     )
   }
 
   if (verbose) {
+    context.print.info(
+      `Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
+    )
     for (const database in values.sorted) {
       context.print
         .separator()
@@ -91,7 +94,7 @@ const dbSelection = async (
 const fileSelection = async (
   context: AppContext,
   backups: BackupsSorted,
-  sort: BasedCli.Backups.List.Args['sort'],
+  sort: string,
   selectedDB: string,
   selectedFile?: string,
   showCurrent: boolean = true,
@@ -181,7 +184,7 @@ export const backupsSelection = async ({
 export const backupsSorting = (
   backups: BackupsSelection,
   limit: number,
-  sort: BasedCli.Backups.List.Args['sort'],
+  sort: string,
 ): BackupsSorted => {
   const result: BackupsSorted = {
     databases: 0,

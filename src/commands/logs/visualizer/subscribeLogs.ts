@@ -1,16 +1,10 @@
 import diff from 'arr-diff'
 import { AdminLogsData, EnvLogsData } from './formatLogs.js'
 
-export const subscribeLogs = async ({
-  adminHubBasedCloud,
-  envHubBasedCloud,
-  cluster,
-  org,
-  env,
-  project,
-  filters,
-  renderData,
-}) => {
+export const subscribeLogs = async ({ context, filters, renderData }) => {
+  const { envHubBasedCloud, adminHubBasedCloud } =
+    await context.getBasedClient()
+  const { cluster, org, env, project } = await context.getProgram()
   let adminLogsPrevious: AdminLogsData[] = []
   let envLogsPrevious: EnvLogsData[] = []
   let finalAdminData = []
@@ -19,6 +13,8 @@ export const subscribeLogs = async ({
   const isOnlyInfra: boolean = !filters.app && filters.infra
   const isBoth: boolean = filters.app && filters.infra
   const isNone: boolean = !filters.app && !filters.infra
+
+  context.print.stop()
 
   if (isBoth || isOnlyInfra || isNone) {
     await adminHubBasedCloud

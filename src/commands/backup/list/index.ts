@@ -1,7 +1,5 @@
-import { Command } from 'commander'
-import { basedAuth, AppContext } from '../../../shared/index.js'
+import { AppContext } from '../../../shared/index.js'
 import { getDownload } from '../download/index.js'
-import { BasedClient } from '@based/client'
 import { setRestore } from '../restore/index.js'
 import { setFlush } from '../flush/index.js'
 import {
@@ -9,17 +7,17 @@ import {
   BackupsSorted,
   backupsSorting,
   backupsSummary,
-} from '../manageBackups.js'
+} from '../../../helpers/index.js'
+import { Command } from 'commander'
 
 export const list =
-  (program: Command, context: AppContext) =>
-  async ({ limit = 10, sort = 'desc' }: BasedCli.Backups.List.Args) => {
-    const { org, project, env, cluster, yes: skip } = program.opts()
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(
-      program,
-      context,
-    )
-    sort = sort.toLowerCase() as BasedCli.Backups.List.Args['sort']
+  (program: Command) =>
+  async ({ limit = 10, sort = 'desc' }) => {
+    const context: AppContext = AppContext.getInstance(program)
+    const { skip } = context.getGlobalOptions()
+    const { cluster, org, env, project } = await context.getProgram()
+    const { destroy } = await context.getBasedClient()
+    sort = sort.toLowerCase()
 
     if (sort && sort !== 'desc' && sort !== 'asc') {
       throw new Error(
@@ -35,17 +33,10 @@ export const list =
 
     limit = Number(limit)
 
-    const backups: BackupsSorted = await getList(
-      context,
-      envHubBasedCloud,
-      limit,
-      sort,
-      true,
-    )
-
-    context.print.line()
+    const backups: BackupsSorted = await getList(context, limit, sort, true)
 
     if (!skip) {
+      context.print.line()
       const downloadBackup = await context.input.confirm(
         `Would you like to download any of this backups?`,
       )
@@ -60,7 +51,6 @@ export const list =
         try {
           await getDownload({
             context,
-            basedClient,
             db: selectedDB,
             file: selectedFile,
             path: '',
@@ -88,7 +78,6 @@ export const list =
         try {
           await setRestore({
             context,
-            basedClient,
             db: selectedDB,
             file: selectedFile,
             isExternalFile: false,
@@ -117,7 +106,6 @@ export const list =
         try {
           await setFlush({
             context,
-            basedClient,
             db: selectedDB,
             org,
             project,
@@ -139,12 +127,14 @@ export const list =
 
 export const getList = async (
   context: AppContext,
-  envHubBasedCloud: BasedClient,
   limit: number = 10,
-  sort: BasedCli.Backups.List.Args['sort'] = 'desc',
+  sort = 'desc',
   verbose: boolean = false,
 ): Promise<BackupsSorted> => {
+  const { envHubBasedCloud } = await context.getBasedClient()
+
   context.print.line().loading(`Searching for databases and backups...`)
+
   const { backups } = await envHubBasedCloud.call('based:backups-list')
 
   if (!Object.keys(backups).length) {

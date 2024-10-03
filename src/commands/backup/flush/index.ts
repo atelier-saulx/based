@@ -1,30 +1,14 @@
-import { BasedClient } from '@based/client'
-import { basedAuth, AppContext } from '../../../shared/index.js'
+import { AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
 import { Command } from 'commander'
 
-type FlushArgs = {
-  db?: string
-  file?: string
-}
-
-type SetFlushArgs = {
-  context: AppContext
-  basedClient: BasedClient
-  db: string
-  org: string
-  project: string
-  env: string
-  cluster: string
-}
-
 export const flush =
   (program: Command) =>
-  async ({ db }: FlushArgs) => {
+  async ({ db }) => {
     const context: AppContext = AppContext.getInstance(program)
-    const { cluster, org, env, project } = context.get('project')
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(context)
+    const { cluster, org, env, project } = await context.getProgram()
+    const { destroy } = await context.getBasedClient()
 
     context.print.warning(
       `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
@@ -36,7 +20,7 @@ export const flush =
       throw new Error('Operation cancelled.')
     }
 
-    const backups: BackupsSorted = await getList(context, envHubBasedCloud)
+    const backups: BackupsSorted = await getList(context)
     let { selectedDB } = await backupsSelection({
       context,
       backups,
@@ -48,7 +32,6 @@ export const flush =
     try {
       await setFlush({
         context,
-        basedClient,
         db: selectedDB,
         org,
         project,
@@ -65,13 +48,13 @@ export const flush =
 
 export const setFlush = async ({
   context,
-  basedClient,
   db,
   org,
   project,
   env,
   cluster,
-}: SetFlushArgs) => {
+}: BasedCli.Backups.Flush) => {
+  const { basedClient } = await context.getBasedClient()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')

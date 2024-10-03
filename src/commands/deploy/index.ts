@@ -1,11 +1,6 @@
 import { Command } from 'commander'
 import { OutputFile } from '@based/bundle'
-import {
-  basedAuth,
-  parseFunctions,
-  parseSchema,
-  AppContext,
-} from '../../shared/index.js'
+import { parseFunctions, parseSchema, AppContext } from '../../shared/index.js'
 import { hash, hashCompact } from '@saulx/hash'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
@@ -98,7 +93,7 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { basedClient, destroy } = await basedAuth(context)
+      const { basedClient, destroy } = await context.getBasedClient()
       const { publicPath } = await basedClient.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
         await parseFunctions(context, functions, watch && update, publicPath)

@@ -1,31 +1,19 @@
-import { basedAuth, replaceTilde, AppContext } from '../../../shared/index.js'
+import { replaceTilde, AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
-import { BasedClient } from '@based/client'
+
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
 import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
 import { Command } from 'commander'
 
-type RestoreArgs = {
-  db?: string
-  file?: string
-}
-
-type SetRestoreArgs = {
-  context: AppContext
-  basedClient: BasedClient
-  db: string
-  file: string
-  isExternalFile: boolean
-}
-
 export const restore =
   (program: Command) =>
-  async ({ db, file }: RestoreArgs): Promise<void> => {
+  async ({ db, file }): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
+    await context.getProgram()
+    const { destroy } = await context.getBasedClient()
     const isExternalFile: boolean = file !== undefined
-    const { basedClient, envHubBasedCloud, destroy } = await basedAuth(context)
-    const backups: BackupsSorted = await getList(context, envHubBasedCloud)
+    const backups: BackupsSorted = await getList(context)
 
     let { selectedFile, selectedDB } = await backupsSelection({
       context,
@@ -42,7 +30,6 @@ export const restore =
     try {
       await setRestore({
         context,
-        basedClient,
         db: selectedDB,
         file: selectedFile,
         isExternalFile,
@@ -57,11 +44,11 @@ export const restore =
 
 export const setRestore = async ({
   context,
-  basedClient,
   db,
   file,
   isExternalFile,
-}: SetRestoreArgs) => {
+}: BasedCli.Backups.Restore) => {
+  const { basedClient } = await context.getBasedClient()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
@@ -90,7 +77,7 @@ export const setRestore = async ({
     // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
     .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
     .info(
-      `<b>File to be restored:</b> '<cyan>${resolve(replaceTilde(file))}</cyan>'`,
+      `<b>File to be restored:</b> '<cyan>${isExternalFile ? resolve(replaceTilde(file)) : file}</cyan>'`,
     )
     .line()
 
@@ -127,10 +114,10 @@ export const setRestore = async ({
       if (!result.ok) {
         new Error(result)
       }
-
-      context.print.success(`Backup restored successfully!`)
     } catch (error) {
       throw new Error(`Error uploading your file: '${error}'`)
     }
   }
+
+  context.print.success(`Backup restored successfully!`, true)
 }

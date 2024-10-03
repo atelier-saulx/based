@@ -7,6 +7,7 @@ import confirm from '@inquirer/confirm'
 import { dateAndTime, dateOnly } from './dateAndTimeFormats.js'
 import { Command } from 'commander'
 import { getBasedFile } from './getBasedFile.js'
+import { login } from './login.js'
 
 export class AppContext {
   private static instance: AppContext
@@ -58,59 +59,99 @@ export class AppContext {
     return this.state[key]
   }
 
-  public async getProgram(): Promise<
-    BasedCli.Context.Project & BasedCli.Context.Options
-  > {
-    let basedFile: BasedCli.Context.Project
-    const cacheProject: BasedCli.Context.Project = this.get('project')
-    const cacheOptions: BasedCli.Context.Options = this.get('options')
-    const {
-      cluster,
-      org,
-      project,
-      env,
-      apiKey,
-      yes: skip,
-      display,
-    } = this.program.opts()
+  public getGlobalOptions(): BasedCli.Context.GlobalOptions<'skip'> {
+    let globalOptions: BasedCli.Context.GlobalOptions<'skip'> =
+      this.get('globalOptions')
 
-    if (cluster || org || project || env) {
-      this.set('project', {
-        ...cacheProject,
-        cluster,
-        org,
-        project,
-        env,
-        apiKey,
-      })
+    const { yes: skip, display } =
+      this.program.opts() as BasedCli.Context.GlobalOptions<'yes'>
+
+    globalOptions = {
+      ...globalOptions,
+      ...(skip && { skip }),
+      ...(display && { display }),
     }
 
-    if (skip || display) {
-      this.set('options', {
-        ...cacheOptions,
-        skip,
-        display,
+    this.set('globalOptions', globalOptions)
+
+    return globalOptions
+  }
+
+  public async getBasedClient(): Promise<BasedCli.Auth.Clients> {
+    const basedProject: BasedCli.Context.Project = this.get('basedProject')
+    let basedClients: BasedCli.Auth.Clients = this.get('basedClients')
+
+    if (!basedClients) {
+      basedClients = await login({
+        ...basedProject,
+        context: this,
       })
-    }
 
-    if (!cacheProject) {
-      basedFile = await getBasedFile()
-
-      if (!basedFile) {
-        this.print.warning(
-          `No <b>'based.json'</b> configuration file found. <b>It is recommended to create one.</b>`,
+      if (
+        !basedClients.basedClient ||
+        !basedClients.adminHubBasedCloud ||
+        !basedClients.envHubBasedCloud
+      ) {
+        throw new Error(
+          `Fatal error during <b>authorization</b>. Check your <b>'based.json'</b> file or <b>your arguments</b> and try again.`,
         )
-      } else {
-        this.set('project', basedFile)
       }
     }
 
-    this.print
-      .info(`<dim>org:</dim> <b>${basedFile.org}</b>`)
-      .info(`<dim>project:</dim> <b>${basedFile.project}</b>`)
-      .info(`<dim>env:</dim> <b>${basedFile.env}</b>`)
+    const { basedClient, adminHubBasedCloud, envHubBasedCloud, destroy } =
+      basedClients
 
-    return { ...this.get('project'), ...this.get('options') }
+    basedClients = {
+      ...basedClients,
+      ...(basedClient && { basedClient }),
+      ...(adminHubBasedCloud && { adminHubBasedCloud }),
+      ...(envHubBasedCloud && { envHubBasedCloud }),
+      ...(destroy && { destroy }),
+    }
+
+    this.set('basedClients', basedClients)
+
+    return basedClients
+  }
+
+  public async getProgram(): Promise<BasedCli.Context.Project> {
+    let basedProject: BasedCli.Context.Project = this.get('basedProject')
+    let basedFile: BasedCli.Context.Project = {}
+
+    if (basedProject) {
+      return basedProject
+    }
+
+    const { cluster, org, project, env, apiKey } =
+      this.program.opts() as BasedCli.Context.Project
+
+    if (!basedProject) {
+      basedFile = await getBasedFile()
+
+      if (!basedFile || !Object.keys(basedFile)?.length) {
+        this.print.warning(
+          `No <b>'based.json'</b> configuration file found. <b>It is recommended to create one.</b>`,
+        )
+      }
+    }
+
+    basedProject = {
+      ...basedFile,
+      ...(cluster && { cluster }),
+      ...(org && { org }),
+      ...(project && { project }),
+      ...(env && { env }),
+      ...(apiKey && { apiKey }),
+    }
+
+    this.set('basedProject', basedProject)
+
+    this.print
+      .info(`<dim>org:</dim> <b>${basedProject.org}</b>`)
+      .info(`<dim>project:</dim> <b>${basedProject.project}</b>`)
+      .info(`<dim>env:</dim> <b>${basedProject.env}</b>`)
+
+    return basedProject
   }
 
   public parse: BasedCli.Context.Parse = {

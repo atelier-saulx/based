@@ -1,19 +1,19 @@
-import { Command } from 'commander'
 import {
   AppContext,
-  basedAuth,
   dateAndTime,
   externalDateAndTime,
 } from '../../../shared/index.js'
 import { isValid, parse, isBefore, isAfter } from 'date-fns'
 import { visualizer } from '../visualizer/index.js'
+import { Command } from 'commander'
 
 export const filter =
-  (program: Command, context: AppContext) =>
-  async (filters: BasedCli.Logs.Filter.Args): Promise<void> => {
-    const { cluster, org, env, project, yes: skip } = program.opts()
-    const { basedClient, envHubBasedCloud, adminHubBasedCloud, destroy } =
-      await basedAuth(program, context)
+  (program: Command) =>
+  async (filters: BasedCli.Logs.Filter): Promise<void> => {
+    const context: AppContext = AppContext.getInstance(program)
+    const { skip } = context.getGlobalOptions()
+    const { cluster, org, env, project } = await context.getProgram()
+    const { basedClient, destroy } = await context.getBasedClient()
     const logOptions: string[] = ['all', 'info', 'error']
 
     const errorMessage = (option: string, value: string | number) => {
@@ -182,9 +182,6 @@ export const filter =
     try {
       await visualizer({
         context,
-        basedClient,
-        envHubBasedCloud,
-        adminHubBasedCloud,
         cluster,
         org,
         env,

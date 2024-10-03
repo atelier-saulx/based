@@ -2,36 +2,8 @@ import { join } from 'node:path'
 import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
 import { getBasedClient } from './getBasedClient.js'
-import { AuthState, BasedClient } from '@based/client'
+import { BasedClient } from '@based/client'
 import { AppContext } from './AppContext.js'
-
-type User = {
-  email: string
-  userId?: string
-  token?: string
-  ts?: number
-}
-
-type LoginArgs = {
-  context: AppContext
-  email?: string
-  cluster: string
-  org: string
-  env: string
-  project: string
-  selectUser?: boolean
-}
-
-type LoginReturn = {
-  client: BasedClient
-  adminHub: BasedClient
-  envHub: BasedClient
-  destroy: () => void
-}
-
-type AuthenticateUserReturn = AuthState & {
-  email: string
-}
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
@@ -41,7 +13,7 @@ const authenticateUser = async (
   hub: BasedClient,
   cluster: string,
   context: AppContext,
-): Promise<AuthenticateUserReturn> => {
+): Promise<BasedCli.Auth.AuthenticatedUser> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
   context.print.loading(
     `Please check your inbox at '<b>${email}</b>', your login code is: '<b>${code}</b>'`,
@@ -69,7 +41,7 @@ export const login = async ({
   env,
   project,
   selectUser,
-}: LoginArgs): Promise<LoginReturn> => {
+}: BasedCli.Auth.Login): Promise<BasedCli.Auth.Clients> => {
   const adminHub: BasedClient = getBasedClient(context, {
     org: 'saulx',
     env: 'platform',
@@ -86,8 +58,8 @@ export const login = async ({
 
   await adminHub.once('connect')
 
-  let users: User[] = await readJSON(authPath).catch(() => [])
-  let user: User
+  let users: BasedCli.Auth.User[] = await readJSON(authPath).catch(() => [])
+  let user: BasedCli.Auth.User
 
   if (email) {
     user = await authenticateUser(email, adminHub, cluster, context)
@@ -97,7 +69,7 @@ export const login = async ({
   }
 
   if (users.length && !email) {
-    const lastUser: User = users.sort((a: User, b: User) => b?.ts - a?.ts)[0]
+    const lastUser: BasedCli.Auth.User = users.sort((a, b) => b?.ts - a?.ts)[0]
     await adminHub
       .setAuthState({
         ...lastUser,
@@ -183,9 +155,9 @@ export const login = async ({
   context.print.success(`User: '${user.email}' logged in successfully!`, '👨‍🦱')
 
   return {
-    client,
-    adminHub,
-    envHub,
+    basedClient: client,
+    adminHubBasedCloud: adminHub,
+    envHubBasedCloud: envHub,
     destroy() {
       client.destroy()
       adminHub.destroy()

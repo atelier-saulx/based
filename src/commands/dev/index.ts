@@ -5,7 +5,6 @@ import {
   parseFunctions,
   invalidate,
   spinner,
-  basedAuth,
   AppContext,
 } from '../../shared/index.js'
 import { OutputFile } from '@based/bundle'
@@ -20,6 +19,7 @@ import pc from 'picocolors'
 
 export const dev = async (program: Command) => {
   const context: AppContext = AppContext.getInstance(program)
+
   const cmd = program
     .command('dev')
     .description('Develop your app running the Based Cloud locally.')
@@ -30,7 +30,7 @@ export const dev = async (program: Command) => {
     )
 
   cmd.action(async ({ functions, port }) => {
-    const { basedClient } = await basedAuth(context)
+    const { basedClient } = await context.getBasedClient()
 
     const { BasedServer } = await import('@based/server')
     const ip: string = getMyIp()

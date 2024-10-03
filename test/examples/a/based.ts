@@ -1,6 +1,6 @@
 export default {
   org: 'saulx',
-  project: 'eu-observer', //"based-ui"
+  project: 'eu-observer',
   env: 'production',
 }
 
