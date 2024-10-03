@@ -1,5 +1,5 @@
 import { format, isAfter, isBefore, isWithinInterval, toDate } from 'date-fns'
-import { logViewerDateAndTime, parseMessage } from '../../../shared/index.js'
+import { logViewerDateAndTime, parseMessage } from '../../shared/index.js'
 
 export type EnvLogsData = {
   cs: number

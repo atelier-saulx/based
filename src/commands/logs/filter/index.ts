@@ -4,7 +4,7 @@ import {
   externalDateAndTime,
 } from '../../../shared/index.js'
 import { isValid, parse, isBefore, isAfter } from 'date-fns'
-import { visualizer } from '../visualizer/index.js'
+import { visualizer } from '../../../helpers/index.js'
 import { Command } from 'commander'
 
 export const filter =
@@ -12,7 +12,6 @@ export const filter =
   async (filters: BasedCli.Logs.Filter): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     const { skip } = context.getGlobalOptions()
-    const { cluster, org, env, project } = await context.getProgram()
     const { basedClient, destroy } = await context.getBasedClient()
     const logOptions: string[] = ['all', 'info', 'error']
 
@@ -180,14 +179,7 @@ export const filter =
     }
 
     try {
-      await visualizer({
-        context,
-        cluster,
-        org,
-        env,
-        project,
-        filters,
-      })
+      await visualizer(context, filters)
 
       if (!filters.stream) {
         destroy()

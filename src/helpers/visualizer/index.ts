@@ -1,23 +1,20 @@
-import { getTerminal } from '../../../shared/index.js'
+import { AppContext, getTerminal } from '../../shared/index.js'
 import {
   AdminLogsData,
   EnvLogsData,
   filterLogs,
   formatLogs,
-} from './formatLogs.js'
-import { subscribeLogs } from './subscribeLogs.js'
-import { getLogs } from './getLogs.js'
+  subscribeLogs,
+  getLogs,
+} from '../logs/index.js'
 
-export const visualizer = async ({
-  context,
-  cluster,
-  org,
-  env,
-  project,
-  filters,
-}) => {
+export const visualizer = async (
+  context: AppContext,
+  filters: BasedCli.Logs.Filter,
+) => {
   const { basedClient, envHubBasedCloud, adminHubBasedCloud } =
     await context.getBasedClient()
+  const { cluster, org, env, project } = await context.getProgram()
 
   const templateLabels = (name: string, value: string) =>
     `${name}: <b>${value}</b>`
@@ -46,11 +43,11 @@ export const visualizer = async ({
     filterLabels.push(templateLabels('level', filters.level))
   }
 
-  if (filters.startDate) {
+  if (filters.startDate && typeof filters.startDate !== 'string') {
     filterLabels.push(templateLabels('start date', filters.startDate.value))
   }
 
-  if (filters.endDate) {
+  if (filters.endDate && typeof filters.endDate !== 'string') {
     filterLabels.push(templateLabels('end date', filters.endDate.value))
   }
 
@@ -87,7 +84,7 @@ export const visualizer = async ({
     )
   }
 
-  let renderData: (data: AdminLogsData[] | EnvLogsData[]) => void
+  let renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void
 
   if (filters.monitor) {
     const { kill, addMessage } = getTerminal(
@@ -105,10 +102,10 @@ export const visualizer = async ({
       process.exit(0)
     })
 
-    renderData = (data: AdminLogsData[] | EnvLogsData[]) =>
+    renderData = (...data: AdminLogsData[] | EnvLogsData[]) =>
       addMessage(formatLogs(filterLogs(data, filters)))
   } else {
-    renderData = (data: AdminLogsData[] | EnvLogsData[]) => {
+    renderData = (...data: AdminLogsData[] | EnvLogsData[]) => {
       const filteredData = formatLogs(filterLogs(data, filters))
 
       for (const line of filteredData) {
@@ -138,17 +135,9 @@ export const visualizer = async ({
 
   try {
     if (filters.stream) {
-      await subscribeLogs({
-        context,
-        filters,
-        renderData,
-      })
+      await subscribeLogs(context, filters, renderData)
     } else {
-      await getLogs({
-        context,
-        filters,
-        renderData,
-      })
+      await getLogs(context, filters, renderData)
     }
   } catch (error) {
     throw new Error(error)

@@ -1,7 +1,12 @@
 import diff from 'arr-diff'
 import { AdminLogsData, EnvLogsData } from './formatLogs.js'
+import { AppContext } from '../../shared/index.js'
 
-export const subscribeLogs = async ({ context, filters, renderData }) => {
+export const subscribeLogs = async (
+  context: AppContext,
+  filters: BasedCli.Logs.Filter,
+  renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
+) => {
   const { envHubBasedCloud, adminHubBasedCloud } =
     await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
@@ -17,7 +22,7 @@ export const subscribeLogs = async ({ context, filters, renderData }) => {
   context.print.stop()
 
   if (isBoth || isOnlyInfra || isNone) {
-    await adminHubBasedCloud
+    adminHubBasedCloud
       .query('logs', {
         cluster,
         org,
@@ -36,7 +41,7 @@ export const subscribeLogs = async ({ context, filters, renderData }) => {
   }
 
   if (isBoth || isOnlyApp || isNone) {
-    await envHubBasedCloud
+    envHubBasedCloud
       .query('based:logs')
       .subscribe(async (data: EnvLogsData[]) => {
         if (!Array.isArray(data)) {

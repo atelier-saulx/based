@@ -81,6 +81,10 @@ export class AppContext {
     const basedProject: BasedCli.Context.Project = this.get('basedProject')
     let basedClients: BasedCli.Auth.Clients = this.get('basedClients')
 
+    if (basedClients) {
+      return basedClients
+    }
+
     if (!basedClients) {
       basedClients = await login({
         ...basedProject,

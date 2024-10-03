@@ -1,4 +1,11 @@
-export const getLogs = async ({ context, filters, renderData }) => {
+import { AppContext } from '../../shared/index.js'
+import { AdminLogsData, EnvLogsData } from './formatLogs.js'
+
+export const getLogs = async (
+  context: AppContext,
+  filters: BasedCli.Logs.Filter,
+  renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
+) => {
   const { envHubBasedCloud, adminHubBasedCloud } =
     await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
