@@ -13,7 +13,7 @@
 
 static int lang_compare(const struct selva_lang *a, const struct selva_lang *b)
 {
-    return memcmp(a->name, b->name, LANG_NAME_MAX);
+    return memcmp(a->name, b->name, SELVA_LANG_NAME_MAX);
 }
 
 static int wrap_lang_compare(const void *a, const void *b)

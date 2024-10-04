@@ -13,10 +13,10 @@
 #include <wctype.h>
 #include "cdefs.h"
 
-#define LANG_NAME_MAX 4ul
+#define SELVA_LANG_NAME_MAX 4ul
 
 struct selva_lang {
-    __nonstring char name[LANG_NAME_MAX];
+    __nonstring char name[SELVA_LANG_NAME_MAX];
     const char loc_name[8];
     locale_t locale;
 };
