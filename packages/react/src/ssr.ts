@@ -1,6 +1,7 @@
 import { BasedQuery } from '@based/client'
 import { renderToString } from 'react-dom/server'
 import { lastCollected } from './collectQuery.js'
+import { meta } from './Head.js'
 
 // unsubscribe
 
@@ -44,6 +45,18 @@ const clean = () => {
         clean()
       }
     }, 60e3)
+  }
+}
+
+export const handleHeadComponents = (html: string) => {
+  if (meta.isCalled) {
+    const tmpHead = html.match(/<tmphead>(.*?)<\/tmphead>/g)
+    const extractedHead = tmpHead
+      ? tmpHead.join('\n').replace(/<\/?tmphead>/g, '')
+      : ''
+    return extractedHead ? `<!-- x6Wa2 -->${extractedHead}<!-- x6Wa2 -->` : ''
+  } else {
+    return ''
   }
 }
 
@@ -94,6 +107,17 @@ export const render = async (
   }
 
   clean()
+
+  const extractedHeadComponents = handleHeadComponents(html)
+
+  headStr = headStr + extractedHeadComponents
+
+  if (extractedHeadComponents) {
+    return {
+      html: html.replace(/<tmphead>(.*?)<\/tmphead>/g, ''),
+      head: headStr,
+    }
+  }
 
   return { html, head: headStr }
 }
