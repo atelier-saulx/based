@@ -110,7 +110,7 @@ export const render = async (
 
   const extractedHeadComponents = handleHeadComponents(html)
 
-  headStr = headStr + extractedHeadComponents
+  headStr = extractedHeadComponents + headStr
 
   if (extractedHeadComponents) {
     return {
