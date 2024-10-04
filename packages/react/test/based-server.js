@@ -3,6 +3,8 @@ import { render } from '../dist/ssr.js'
 import { Provider, useClient, useQuery } from '../dist/index.js'
 import React from 'react'
 import based from '@based/client'
+import reactDom from 'react-dom'
+import rr from 'react-dom/server'
 
 const counter = (_based, payload, update) => {
   let cnt = 0
@@ -54,20 +56,42 @@ const Smup = ({ cnt }) => {
   return `cnt fast  ${cnt} cnt  slow ${data.cnt}`
 }
 
-const Flap = () => {
-  const { data, loading } = useQuery('counter', {
-    speed: 100,
+const c = React.createElement
+
+const Title = () => {
+  const { data } = useQuery('counter', { speed: 100 })
+
+  return c('title', { children: 'POWER TITLE ' + data?.cnt })
+}
+
+const Head = ({ children }) => {
+  return c('tmphead', {
+    children: children,
   })
-  if (loading) {
-    return 'loading...'
-  }
-  return React.createElement(Smup, { cnt: data.cnt })
+}
+
+const Bla = () => {
+  return c('div', {
+    children: [
+      c(Head, {
+        children: [c(Title)],
+      }),
+      'MY NICE TEXT!',
+      c(Head, {
+        children: [c(Title)],
+      }),
+      'MY NICE TEXT!',
+      c(Head, {
+        children: [c(Title)],
+      }),
+    ],
+  })
 }
 
 const MyApp = () => {
-  return React.createElement(Provider, {
+  return c(Provider, {
     client,
-    children: [React.createElement(Flap)],
+    children: [c(Bla)],
   })
 }
 
@@ -87,8 +111,16 @@ const server = new BasedServer({
           })
         },
         fn: async () => {
-          const { html } = await render(React.createElement(MyApp))
-          return html
+          console.log('rENDER TO STRING')
+          const { html, head } = await render(React.createElement(MyApp))
+
+          // const x = rr.renderToString(xyz)
+          const tmpHead = html.match(/<tmphead>(.*?)<\/tmphead>/g)
+          const y = tmpHead.join('\n').replace(/<\/?tmphead>/g, '')
+          // console.log('xxx', fakeHtmlElement.innerHTML, fakeHtmlElement)
+          return `<head>${head}
+           <!-- -->
+          ${y}</head><body>${html.replace(/<tmphead>(.*?)<\/tmphead>/g, '')}  </body>`
         },
       },
       counter: {

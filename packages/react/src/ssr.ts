@@ -64,6 +64,9 @@ export const render = async (
   let collected = lastCollected.q
   let d = Date.now()
   const rdy: Promise<{ id: number; close: () => void }>[] = []
+
+  // HEAD COLLECTOR [] REACT ELEM
+
   for (const q of lastCollected.q) {
     if (!isActive.has(q.id)) {
       rdy.push(subAsPromise(q))
