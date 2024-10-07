@@ -107,19 +107,18 @@ static int child_callback_stub(
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
-#if 0
-static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNodeWeakReference *weak_ref)
+static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNode *src, field_t src_field, struct SelvaNodeWeakReference *weak_ref)
 {
     struct SelvaTypeEntry *dst_te;
+    struct SelvaFieldSchema *src_fs = selva_get_fs_by_node(db, src, src_field);
 
-    dst_te = selva_get_type_by_index(db, weak_ref->dst_type);
+    dst_te = selva_get_type_by_index(db, src_fs->edge_constraint.dst_node_type);
     if (!dst_te) {
         return NULL;
     }
 
     return selva_find_node(dst_te, weak_ref->dst_id);
 }
-#endif
 
 int selva_traverse_field_bfs(
         struct SelvaDb *db,
@@ -161,28 +160,24 @@ int selva_traverse_field_bfs(
                     }
                 }
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
-#if 0
-                struct SelvaNode *dst_node = weak_ref2node(db, &any.weak_reference);
+                struct SelvaNode *dst_node = weak_ref2node(db, node, field, &any.weak_reference);
                 if (dst_node) {
                     struct SelvaFields *edge_data = NULL;
 
                     BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                 }
-#endif
                 return SELVA_ENOTSUP;
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCES) {
-#if 0
                 const size_t nr_refs = any.weak_references.nr_refs;
 
                 for (size_t i = 0; i < nr_refs; i++) {
-                    struct SelvaNode *dst_node = weak_ref2node(db, &any.weak_references.refs[i]);
+                    struct SelvaNode *dst_node = weak_ref2node(db, node, field, &any.weak_references.refs[i]);
                     if (dst_node) {
                         struct SelvaFields *edge_data = NULL;
 
                         BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                     }
                 }
-#endif
                 return SELVA_ENOTSUP;
             } else {
                 return SELVA_EINTYPE;
