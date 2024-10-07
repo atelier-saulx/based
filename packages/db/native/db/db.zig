@@ -85,6 +85,19 @@ pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
     return @as([*]u8, @ptrCast(result.ptr))[result.off..result.len];
 }
 
+pub fn setTextField(node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8, str: *u8) !void {
+    errors.selva(selva.selva_fields_set_text(ctx.selva, node, selvaFieldSchema, lang.ptr, str.ptr, str.len));
+}
+
+pub fn getTextField(node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8) !?*u8 {
+    var len: selva.user_size_t = 0;
+    var str: [len]u8 = undefined;
+
+    errors.selva(selva.selva_fields_get_text(ctx.selva, node, selvaFieldSchema, lang.ptr, &str, &len));
+
+    return str;
+}
+
 pub fn getReference(node: Node, field: u8) ?Node {
     const result = selva.selva_fields_get_reference(node, field);
     if (result == null) {
@@ -104,10 +117,6 @@ pub fn getSingleReference(node: Node, field: u8) ?*selva.SelvaNodeReference {
 pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
     // make this return []SelvaNode or iterator over references
     return selva.selva_fields_get_references(node, field);
-}
-
-pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
-    try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
 pub fn clearReferences(node: Node, selvaFieldSchema: FieldSchema) void {
@@ -275,6 +284,10 @@ pub fn writeEdgeProp(
         data.ptr,
         data.len,
     ));
+}
+
+pub fn deleteField(node: Node, selvaFieldSchema: FieldSchema) !void {
+    try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
 }
 
 pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {

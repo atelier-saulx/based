@@ -5,9 +5,10 @@
 #pragma once
 
 #include "selva/_export.h"
+#ifndef __zig
+#include "util/selva_string.h"
+#endif
 #include "selva/types.h"
-
-struct selva_string;
 
 /**
  * Reserved (N/A) field id.
@@ -17,6 +18,15 @@ struct selva_string;
  * Techinally fields 251..255 are all reserved.
  */
 #define SELVA_FIELDS_RESERVED 255
+
+#ifdef __zig
+struct selva_string;
+#else
+struct SelvaTextField {
+    struct selva_string *tl __pcounted_by(len);
+    uint8_t len;
+} __packed;
+#endif
 
 struct SelvaNodeReference {
     struct SelvaNode *dst;
@@ -66,6 +76,7 @@ struct SelvaFieldsAny {
         uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
         uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
         uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
+        struct SelvaTextField *text; /*!< SELVA_FIELD_TYPE_TEXT */
         struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
         struct SelvaNodeReferences *references; /*!< SELVA_FIELD_TYPE_REFERENCES */
         struct SelvaNodeWeakReference weak_reference; /*!< SELVA_FIELD_TYPE_WEAK_REFERENCE */
@@ -181,6 +192,22 @@ int selva_fields_get_reference_meta_mutable_string(
         field_t field,
         size_t len,
         struct selva_string **s);
+
+int selva_fields_set_text(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        const char *str,
+        size_t len);
+
+int selva_fields_get_text(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        const char **str,
+        size_t *len);
 
 /**
  * Get field value.

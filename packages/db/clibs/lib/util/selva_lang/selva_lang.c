@@ -13,7 +13,7 @@
 
 static int lang_compare(const struct selva_lang *a, const struct selva_lang *b)
 {
-    return memcmp(a->name, b->name, LANG_NAME_MAX);
+    return memcmp(a->name, b->name, SELVA_LANG_NAME_MAX);
 }
 
 static int wrap_lang_compare(const void *a, const void *b)
@@ -95,10 +95,32 @@ locale_t selva_lang_getlocale(struct selva_langs *langs, const char *lang_str, s
                 goto fallback;
             }
         }
+
         return slang->locale;
     } else {
 fallback:
         assert(langs->fallback);
         return langs->fallback;
+    }
+}
+
+locale_t selva_lang_getlocale2(struct selva_langs *langs, enum selva_lang_code lang)
+{
+    if (lang < langs->len && langs->langs[lang].code == lang) {
+        struct selva_lang *slang = &langs->langs[lang];
+
+        if (!slang->locale) {
+            int err = load_lang(slang);
+            if (err) {
+                langs->err_cb(slang, err);
+                goto fallback;
+            }
+        }
+
+        return slang->locale;
+    } else {
+fallback:
+        assert(langs->fallback);
+        return  langs->fallback;
     }
 }

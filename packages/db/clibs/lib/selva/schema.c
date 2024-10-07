@@ -179,18 +179,19 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
 
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
-    const char *buf = ctx->buf + 1;
-    size_t len = ctx->len - 1;
+    const char *buf = ctx->buf;
+    size_t len = ctx->len;
     size_t orig_len = ctx->len;
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
+        field_t field;
         node_type_t dst_node_type;
         field_t inverse_field;
         uint32_t schema_len;
         /* uint8_t schema[]; */
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 7);
+    static_assert(sizeof(constraints) == 8);
 
     if (len < sizeof(constraints)) {
         return SELVA_EINVAL;
@@ -351,6 +352,10 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_STRING,
         .type2fs = type2fs_string,
     },
+    [SELVA_FIELD_TYPE_TEXT] = {
+        .type = SELVA_FIELD_TYPE_TEXT,
+        .type2fs = type2fs_reserved, /* TODO */
+    },
     [SELVA_FIELD_TYPE_REFERENCE] = {
         .type = SELVA_FIELD_TYPE_REFERENCE,
         .type2fs = type2fs_reference,
@@ -375,12 +380,12 @@ static struct schemabuf_parser {
 
 int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, size_t len)
 {
-    if (len < 1) {
+    if (len < 2) {
         return SELVA_EINVAL;
     }
 
-    count->nr_fixed_fields = buf[0];
-    count->nr_fields = len - 1;
+    count->nr_fields = buf[0];
+    count->nr_fixed_fields = buf[1];
 
     if (count->nr_fixed_fields > count->nr_fields) {
         return SELVA_EINVAL;
@@ -425,7 +430,7 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
 {
     field_t field_idx = 0;
 
-    for (size_t i = 1; i < len;) {
+    for (size_t i = 0; i < len;) {
         enum SelvaFieldType field_type = buf[i];
         int res;
 
@@ -435,8 +440,12 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
 
         ctx->buf = buf + i;
         ctx->len = len - i;
+        if (field_idx >= fields_schema->nr_fields) {
+            return SELVA_EINVAL;
+        }
         res = schemabuf_parsers[field_type].type2fs(ctx, fields_schema, field_idx);
         if (res < 0) {
+            /* TODO Potential memory leak */
             return res;
         }
 
@@ -444,6 +453,8 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
         field_idx++;
     }
 
+    /* TODO Better error handling */
+    assert(field_idx == fields_schema->nr_fields);
     make_field_map_template(fields_schema);
 
     return 0;
@@ -463,7 +474,7 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
 
         schema->nr_fields = count.nr_fields;
         schema->nr_fixed_fields = count.nr_fixed_fields;
-        err = parse2(ctx, schema, buf, len);
+        err = parse2(ctx, schema, buf + 2, len - 2);
     }
 
     return err;
@@ -482,7 +493,7 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, struct sc
         .te = containerof(ns, struct SelvaTypeEntry, ns),
     };
 
-    if (len == 0) {
+    if (len < 2) {
         return SELVA_EINVAL;
     }
 
@@ -493,7 +504,7 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, struct sc
     ns->created_field = SELVA_FIELDS_RESERVED;
     ns->updated_field = SELVA_FIELDS_RESERVED;
 
-    return parse2(&ctx, fields_schema, buf, len);
+    return parse2(&ctx, fields_schema, buf + 2, len - 2);
 }
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)

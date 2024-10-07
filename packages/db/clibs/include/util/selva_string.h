@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include "selva_lang.h"
 
 struct finalizer;
 struct selva_string;
@@ -27,31 +28,31 @@ enum selva_string_flags {
      * data is deemoed necessary then a separate verification step should be
      * implemented outside of selva_string.
      */
-    SELVA_STRING_CRC = 0x0001,
+    SELVA_STRING_CRC = 0x01,
     /**
      * Permanently shared string; Shouldn't be freed.
      */
-    SELVA_STRING_FREEZE = 0x0002,
+    SELVA_STRING_FREEZE = 0x02,
     /**
      * A mutable string.
      */
-    SELVA_STRING_MUTABLE = 0x0004,
+    SELVA_STRING_MUTABLE = 0x04,
     /**
      * Fixed size mutable string.
      * Mutable only with selva_string_replace() and selva_string_to_mstr().
      */
-    SELVA_STRING_MUTABLE_FIXED = 0x0008,
+    SELVA_STRING_MUTABLE_FIXED = 0x08,
     /**
      * Static string.
      * The selva_string structure is not allocated by selva_string.
      */
-    SELVA_STRING_STATIC = 0x0010,
+    SELVA_STRING_STATIC = 0x10,
     /**
      * Compressed string.
      */
-    SELVA_STRING_COMPRESS = 0x0020,
-    SELVA_STRING_LEN_PARITY =  0x8000,
-};
+    SELVA_STRING_COMPRESS = 0x20,
+    SELVA_STRING_LEN_PARITY =  0x80,
+} __packed;
 
 #define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_STATIC | SELVA_STRING_COMPRESS | SELVA_STRING_LEN_PARITY))
 
@@ -71,7 +72,8 @@ struct selva_string_compressed_hdr {
 struct selva_string {
     struct {
         uint64_t len: 48;
-        enum selva_string_flags flags: 16;
+        enum selva_lang_code lang: 8;
+        enum selva_string_flags flags: 8;
     };
     /* Don't add __counted_by(len) here because it's not the real size. */
     union {

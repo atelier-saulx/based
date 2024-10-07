@@ -85,9 +85,24 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
     io->sdb_write(str, sizeof(char), sdb_len, io);
 }
 
-static void save_field_text(struct selva_io *io)
+static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
 {
-    /* TODO Save text field. */
+    const uint8_t len = text->len;
+
+    io->sdb_write(&len, sizeof(len), 1, io);
+
+    for (uint8_t i = 0; i < len; i++) {
+        struct selva_string *tl = &text->tl[i];
+        size_t len;
+        const char *str = selva_string_to_str(tl, &len);
+        enum selva_lang_code lang = tl->lang;
+
+        static_assert(sizeof(uint64_t) == sizeof(size_t));
+
+        io->sdb_write(&lang, sizeof(enum selva_lang_code), 1, io);
+        io->sdb_write(&len, sizeof(len), 1, io);
+        io->sdb_write(str, sizeof(char), len, io);
+    }
 }
 
 static void save_ref(struct selva_io *io, struct SelvaNodeReference *ref)
@@ -189,7 +204,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             save_field_string(io, any.string);
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            save_field_text(io);
+            save_field_text(io, any.text);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (any.reference && any.reference->dst) {
@@ -548,9 +563,24 @@ static int load_reference_meta_field_string(
     return 0;
 }
 
-static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNodeSchema *ns, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
-    /* TODO load text */
+    uint8_t len;
+
+    io->sdb_read(&len, sizeof(len), 1, io);
+
+    for (uint8_t i = 0; i < len; i++) {
+        enum selva_lang_code lang;
+        size_t len = 0;
+        char *str;
+
+        io->sdb_read(&lang, sizeof(lang), 1, io);
+        io->sdb_read(&len, sizeof(len), 1, io);
+        str = selva_malloc(len); /* TODO Optimize */
+        io->sdb_read(str, sizeof(char), len, io);
+        selva_fields_set_text(db, node, fs, lang, str, len);
+        selva_free(str);
+    }
 
     return 0;
 }
@@ -625,7 +655,7 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_TEXT:
             /* TODO Text field support in meta */
 #if 0
-            err = load_field_text(io, db, ns, node, fs, rd.field);
+            err = load_field_text(io, db, ns, node, fs);
 #endif
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
@@ -815,7 +845,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = load_field_string(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            err = load_field_text(io, db, ns, node, fs, rd.field);
+            err = load_field_text(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             err = load_field_reference(io, db, node, fs, rd.field);

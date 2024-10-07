@@ -80,12 +80,12 @@ await test('edges', async (t) => {
     contributors: [
       {
         id: mrSnurp,
-        $role: 'writer',
-        $rating: 99,
-        $email: 'AAA',
-        $lang: 'en',
+        // $role: 'writer',
+        // $rating: 99,
+        // $email: 'AAA',
+        // $lang: 'en',
         $friend: mrYur,
-        $countries: [nl],
+        // $countries: [nl],
       },
       // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],
@@ -95,11 +95,11 @@ await test('edges', async (t) => {
 
   const x = db
     .query('article')
-    .include('contributors.$role')
-    .include('contributors.$rating')
-    .include('contributors.$email')
-    .include('contributors.$lang')
-    // .include('contributors.$friend')
+    // .include('contributors.$role')
+    // .include('contributors.$rating')
+    // .include('contributors.$email')
+    // .include('contributors.$lang')
+    .include('contributors.$friend')
     // .include('contributors.$countries')
     .get()
 

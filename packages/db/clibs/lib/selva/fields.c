@@ -9,6 +9,7 @@
 #include "util/align.h"
 #include "util/array_field.h"
 #include "util/ptag.h"
+#include "util/selva_lang.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "db_panic.h"
@@ -44,7 +45,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
     [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
     [SELVA_FIELD_TYPE_STRING] = sizeof(struct selva_string),
-    [SELVA_FIELD_TYPE_TEXT] = 0, /* TODO */
+    [SELVA_FIELD_TYPE_TEXT] = sizeof(struct SelvaTextField),
     [SELVA_FIELD_TYPE_REFERENCE] = sizeof(struct SelvaNodeReference),
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
     [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
@@ -255,11 +256,11 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     }
     if ((size_t)index + 1 < new_len) {
         /* Move old refs to the right to make space. */
-        assert(index + 1 + (new_len - index) < new_len);
+        assert(index + 1 + (new_len - index) <= new_len);
         memmove(refs.refs + index + 1, refs.refs + index, (new_len - index) * sizeof(*refs.refs));
     } else if (new_len - refs.nr_refs > 1) {
         /* Clear the gap created. */
-        assert(refs.nr_refs + (new_len - refs.nr_refs) < new_len);
+        assert(refs.nr_refs + (new_len - refs.nr_refs) <= new_len);
         memset(refs.refs + refs.nr_refs, 0, (new_len - refs.nr_refs) * sizeof(*refs.refs));
     }
     refs.nr_refs = new_len;
@@ -846,7 +847,7 @@ copy:
         set_field_string(fields, fs, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_TEXT:
-        /* TODO Implement text fields */
+        /* Use selva_fields_set_text() */
         return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_REFERENCE:
 #if 0
@@ -911,6 +912,134 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
 
     *s = get_mutable_string(fields, fs, nfo, len);
     return 0;
+}
+
+static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
+{
+    const size_t len = text->len;
+
+    for (size_t i = 0; i < len; i++) {
+        if (text->tl[i].lang == lang) {
+            return &text->tl[i];
+        }
+    }
+
+    return NULL;
+}
+
+static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
+{
+    struct SelvaTextField *text;
+
+    assert(nfo->type == SELVA_FIELD_TYPE_TEXT);
+    text = nfo2p(fields, nfo);
+
+    const size_t len = text->len;
+    for (size_t i = 0; i < len; i++) {
+        selva_string_free(&text->tl[i]);
+    }
+
+    selva_free(text->tl);
+    memset(text, 0, sizeof(*text));
+}
+
+int selva_fields_set_text(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        const char *str,
+        size_t len)
+{
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo;
+    struct SelvaTextField *text;
+    struct selva_string *tl;
+
+    if (fs->type != SELVA_FIELD_TYPE_TEXT) {
+        return SELVA_EINVAL;
+    }
+
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type == SELVA_FIELD_TYPE_NULL) {
+
+        *nfo = alloc_block(fields, fs);
+        text = nfo2p(fields, nfo);
+
+        memset(text, 0, sizeof(*text));
+        tl = NULL;
+    } else if (nfo->type == SELVA_FIELD_TYPE_TEXT) {
+        text = nfo2p(fields, nfo);
+
+        tl = find_text_by_lang(text, lang);
+    } else {
+        db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)\n",
+                 node->type, node->node_id, fs->field,
+                 selva_str_field_type(nfo->type), nfo->type,
+                 selva_str_field_type(fs->type), fs->type);
+    }
+
+    if (tl) {
+        /* Never fails in this case. */
+        (void)selva_string_replace(tl, str, len);
+        tl->lang = lang; /* TODO Is this necessary? */
+    } else {
+        int err;
+
+        text->tl = selva_realloc(text->tl, ++text->len * sizeof(*text->tl));
+        tl = &text->tl[text->len - 1];
+
+        err = selva_string_init(tl, str, len, SELVA_STRING_MUTABLE);
+        if (err) {
+            /* TODO Error handling? */
+            db_panic("Failed to init a text field");
+        }
+        tl->lang = lang;
+    }
+
+    return 0;
+}
+
+int selva_fields_get_text(
+        struct SelvaDb *db,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        const char **str,
+        size_t *len)
+{
+    struct SelvaFields *fields = &node->fields;
+    const struct SelvaFieldInfo *nfo;
+    const struct SelvaTextField *text;
+    struct selva_string *s;
+
+    if (fs->type != SELVA_FIELD_TYPE_TEXT) {
+        return SELVA_EINVAL;
+    }
+
+    nfo = &fields->fields_map[fs->field];
+    if (nfo->type != SELVA_FIELD_TYPE_TEXT) {
+        return SELVA_ENOENT;
+    }
+
+    text = nfo2p(fields, nfo);
+    s = find_text_by_lang(text, lang);
+    if (s) {
+        const char *res_str;
+        size_t res_len;
+
+        res_str = selva_string_to_str(s, &res_len);
+        if (str) {
+            *str = res_str;
+        }
+        if (len) {
+            *len = res_len;
+        }
+
+        return 0;
+    }
+
+    return SELVA_ENOENT;
 }
 
 int selva_fields_references_insert(
@@ -1341,8 +1470,8 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
         }
         break;
     case SELVA_FIELD_TYPE_TEXT:
-        /* TODO */
-        any.type = SELVA_FIELD_TYPE_NULL;
+        /* Prefer selva_fields_get_text() */
+        any.text = p;
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
         do {
@@ -1527,7 +1656,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         del_field_string(fields, nfo);
         return 0; /* Don't clear. */
     case SELVA_FIELD_TYPE_TEXT:
-        /* TODO Text fields */
+        del_field_text(fields, nfo);
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
         assert(node);
