@@ -116,24 +116,24 @@ console.log('db time', db.drain(), Date.now() - d)
 
 // --------------------------------------------------------------
 
-// const def = q.createQueryDef(db, q.QueryDefType.Root, {
-//   type: 'article',
-//   // id: 1,
-//   ids: new Uint32Array([1, 2]),
-// })
-// def.range.limit = 1000
-// q.includeFields(def, ['contributors.name'])
-// // 'contributors.$role' if undefined wrong
+const def = q.createQueryDef(db, q.QueryDefType.Root, {
+  type: 'article',
+  // id: 1,
+  ids: new Uint32Array([1, 2]),
+})
+def.range.limit = 1000
+q.includeFields(def, ['contributors.name'])
+// 'contributors.$role' if undefined wrong
 
-// q.sort(def, 'flap', 'desc')
-// q.filter(db, def, 'flap', '>', 2)
-// q.filter(db, def, 'published', '=', true)
+q.sort(def, 'flap', 'desc')
+q.filter(db, def, 'flap', '>', 2)
+q.filter(db, def, 'published', '=', true)
 
-// const b = Buffer.concat(q.defToBuffer(db, def))
+const b = Buffer.concat(q.defToBuffer(db, def))
 
-// console.log(b.toString('base64'))
+console.log(b.toString('base64'))
 
-// console.log(q.debug(b))
+console.log(q.debug(b))
 
-// console.log('RESULT')
-// db.native.getQueryBuf(b)
+console.log('RESULT')
+db.native.getQueryBuf(b)
