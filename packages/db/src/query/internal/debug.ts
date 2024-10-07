@@ -73,7 +73,8 @@ export const debug = (x: any, start: number = 0, end: number = 0) => {
     if (!end) {
       end = x.byteLength
     }
-    const w = Math.floor(process.stdout.columns / 4) ?? 20
+
+    const w = Math.floor(process.stdout.columns / 4) || 20
     const a = [...new Uint8Array(x.slice(start, end))]
     for (let i = 0; i < Math.ceil(x.byteLength / w); i++) {
       console.log(
