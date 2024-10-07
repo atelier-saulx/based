@@ -1,6 +1,13 @@
 import { Command } from 'commander'
-import { version } from './version.js'
-import { auth, logs, deploy, dev, backup } from './commands/index.js'
+import {
+  auth,
+  logs,
+  deploy,
+  dev,
+  backup,
+  version,
+  test,
+} from './commands/index.js'
 import { globalOptions } from './helpers/index.js'
 import { AppContext } from './shared/index.js'
 
@@ -17,6 +24,7 @@ export const init = async (extract?: boolean) => {
       deploy(program),
       backup(program),
       logs(program),
+      test(program),
     ])
 
     if (extract) {

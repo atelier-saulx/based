@@ -1,13 +1,13 @@
 import { Command } from 'commander'
+import { AppContext } from '../../shared/index.js'
 import { readJSON } from 'fs-extra/esm'
-import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { AppContext } from './shared/index.js'
+import { fileURLToPath } from 'node:url'
 
 export const version = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
   const { version } = await readJSON(
-    join(fileURLToPath(dirname(import.meta.url)), '../package.json'),
+    join(fileURLToPath(dirname(import.meta.url)), '../../../package.json'),
   )
 
   context.set('appName', 'Based CLI')
