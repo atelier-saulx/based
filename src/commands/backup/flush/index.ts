@@ -5,19 +5,21 @@ import { Command } from 'commander'
 
 export const flush =
   (program: Command) =>
-  async ({ db }) => {
+  async ({ db, force }) => {
     const context: AppContext = AppContext.getInstance(program)
     const { cluster, org, env, project } = await context.getProgram()
     const { destroy } = await context.getBasedClient()
 
-    context.print.warning(
-      `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
-    )
+    if (!force) {
+      context.print.warning(
+        `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
+      )
 
-    const doIt: boolean = await context.input.confirm()
+      const doIt: boolean = await context.input.confirm()
 
-    if (!doIt) {
-      throw new Error('Operation cancelled.')
+      if (!doIt) {
+        throw new Error('Operation cancelled.')
+      }
     }
 
     const backups: BackupsSorted = await getList(context)
@@ -37,6 +39,7 @@ export const flush =
         project,
         env,
         cluster,
+        force,
       })
 
       destroy()
@@ -53,6 +56,7 @@ export const setFlush = async ({
   project,
   env,
   cluster,
+  force,
 }: BasedCli.Backups.Flush) => {
   const { basedClient } = await context.getBasedClient()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
@@ -73,10 +77,12 @@ export const setFlush = async ({
     .info(`<b>Instance:</b> '<cyan>${dbInfo.instance}</cyan>`)
     .line()
 
-  const doIt: boolean = await context.input.confirm()
+  if (!force) {
+    const doIt: boolean = await context.input.confirm()
 
-  if (!doIt) {
-    throw new Error('Operation cancelled.')
+    if (!doIt) {
+      throw new Error('Operation cancelled.')
+    }
   }
 
   try {
@@ -91,5 +97,5 @@ export const setFlush = async ({
     new Error(`Error flushing the current database: '${error}'`)
   }
 
-  context.print.success(`Current database flushed successfully!`)
+  context.print.stop().success(`Current database flushed successfully!`, true)
 }

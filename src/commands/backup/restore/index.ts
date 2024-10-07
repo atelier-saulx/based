@@ -33,6 +33,7 @@ export const restore =
         db: selectedDB,
         file: selectedFile,
         isExternalFile,
+        verbose: true,
       })
 
       destroy()
@@ -47,45 +48,56 @@ export const setRestore = async ({
   db,
   file,
   isExternalFile,
+  verbose,
 }: BasedCli.Backups.Restore) => {
   const { basedClient } = await context.getBasedClient()
+  const { skip } = context.getGlobalOptions()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
   const dbInfo = { ...defaultDBInfo[0], name: db }
+  const isCloudFile = file.startsWith('env-db/')
 
   if (isExternalFile) {
-    if (!(await pathExists(file))) {
-      throw new Error(
-        `The specified file '<cyan>${file}</cyan>' is invalid or does not exist. Please provide a valid file.`,
-      )
+    if (!isCloudFile) {
+      if (!(await pathExists(file))) {
+        throw new Error(
+          `The specified file '${file}' is invalid or does not exist. Please provide a valid file.`,
+        )
+      }
+
+      if (!file.endsWith('.rdb')) {
+        throw new Error(
+          `The specified file '${file}' is invalid. Only '<b>.rdb</b>' files can be restored.`,
+        )
+      }
     }
 
-    if (!file.endsWith('.rdb')) {
-      throw new Error(
-        `The specified file '<cyan>${file}</cyan>' is invalid. Only '<b>.rdb</b>' files can be restored.`,
-      )
+    if (verbose) {
+      context.print.info(`<b>Selected file:</b> <cyan>${file}</cyan>`)
     }
-
-    context.print.info(`<b>Selected file:</b> <cyan>${file}</cyan>`)
   }
 
-  context.print
-    .line()
-    .info(`<b>Restore summary:</b>`)
-    // TODO Fix the value coming from 'db'
-    // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-    .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
-    .info(
-      `<b>File to be restored:</b> '<cyan>${isExternalFile ? resolve(replaceTilde(file)) : file}</cyan>'`,
-    )
-    .line()
+  if (verbose) {
+    context.print
+      .line()
+      .info(`<b>Restore summary:</b>`)
+      // TODO Fix the value coming from 'db'
+      // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
+      .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
+      .info(
+        `<b>File to be restored:</b> '<cyan>${isExternalFile ? resolve(replaceTilde(file)) : file}</cyan>'`,
+      )
+      .line()
+  }
 
-  if (!isExternalFile) {
-    const doIt: boolean = await context.input.confirm()
+  if (!isExternalFile || isCloudFile) {
+    if (!skip) {
+      const doIt: boolean = await context.input.confirm()
 
-    if (!doIt) {
-      throw new Error('Restoration cancelled.')
+      if (!doIt) {
+        throw new Error('Restoration cancelled.')
+      }
     }
 
     try {
@@ -100,7 +112,7 @@ export const setRestore = async ({
     }
   }
 
-  if (isExternalFile) {
+  if (isExternalFile && !isCloudFile) {
     try {
       context.print.loading('Uploading file...')
 

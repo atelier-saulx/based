@@ -81,6 +81,7 @@ export const list =
             db: selectedDB,
             file: selectedFile,
             isExternalFile: false,
+            verbose: true,
           })
 
           destroy()
@@ -111,6 +112,7 @@ export const list =
             project,
             env,
             cluster,
+            force: false,
           })
 
           destroy()

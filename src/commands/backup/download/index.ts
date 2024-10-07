@@ -50,6 +50,7 @@ export const getDownload = async ({
   let isValid: boolean = false
   const isExternalPath: boolean = path !== undefined && path !== ''
   const { basedClient } = await context.getBasedClient()
+  const { skip } = context.getGlobalOptions()
 
   if (isExternalPath) {
     context.print.info(`<b>Selected path:</b> <cyan>${path}</cyan>`)
@@ -86,7 +87,7 @@ export const getDownload = async ({
     .info(`<b>Saving to:</b> '<cyan>${resolve(replaceTilde(path))}</cyan>'`)
     .line()
 
-  if (!isExternalPath) {
+  if (!skip) {
     const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {

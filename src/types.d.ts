@@ -146,6 +146,7 @@ declare global {
       type Flush = Context.Project & {
         context: AppContext
         db: string
+        force: boolean
       }
 
       type Restore = {
@@ -153,6 +154,7 @@ declare global {
         db: string
         file: string
         isExternalFile: boolean
+        verbose: boolean
       }
     }
 

@@ -43,16 +43,17 @@ export const backupsSummary = (
 ): void => {
   if (!values.databases || !values.backups) {
     throw new Error(`No backups found.`)
-  } else {
-    context.print.info(
-      `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases.`,
-    )
   }
 
   if (verbose) {
-    context.print.info(
-      `Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
-    )
+    context.print
+      .info(
+        `<b>${values.backups}</b> backups found in <b>${values.databases}</b> databases.`,
+      )
+      .info(
+        `Showing <b>${limit === 0 ? 'all' : limit}</b> items <b>${getSortingText(sort)}</b>.`,
+      )
+
     for (const database in values.sorted) {
       context.print
         .separator()

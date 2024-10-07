@@ -1,3 +1,9 @@
+export * from './download/index.js'
+export * from './flush/index.js'
+export * from './list/index.js'
+export * from './make/index.js'
+export * from './restore/index.js'
+
 import { Command } from 'commander'
 import { make } from './make/index.js'
 import { list } from './list/index.js'
@@ -52,5 +58,9 @@ export const backup = async (program: Command) => {
     .command('flush')
     .description('Flush the current database.')
     .option('--db <db>', 'DB instance name.')
+    .option(
+      '--force',
+      'Flush without confirmation. Warning! This action cannot be undone.',
+    )
     .action(flush(program))
 }
