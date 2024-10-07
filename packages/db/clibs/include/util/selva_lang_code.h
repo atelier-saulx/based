@@ -8,8 +8,8 @@
 
 enum selva_lang_code {
     selva_lang_none = 0,
-    selva_lang_ab,
     selva_lang_aa,
+    selva_lang_ab,
     selva_lang_af,
     selva_lang_ak,
     selva_lang_sq,

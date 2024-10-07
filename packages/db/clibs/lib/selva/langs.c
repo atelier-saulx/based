@@ -49,8 +49,8 @@
     apply(zh, zh_CN)
 #elif (__linux__)
 #define FORALL_LANGS(apply) \
-    apply(ab, ab_GE) \
     apply(aa, aa_DJ) \
+    apply(ab, ab_GE) \
     apply(af, af_ZA) \
     apply(ak, ak_GH) \
     apply(sq, sq_AL) \
