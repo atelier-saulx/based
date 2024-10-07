@@ -85,7 +85,7 @@ db.drain()
 
 const d = Date.now()
 
-for (let i = 0; i < 20e6; i++) {
+for (let i = 0; i < 5e6; i++) {
   db.create('todo', { done: false, age: i })
 }
 
@@ -102,10 +102,11 @@ const y = [...ids.values()].sort()
 
 for (let i = 0; i < 1e3; i++) {
   db.create('article', {
+    flap: (i % 2) * 10,
     name: 'Ultra article ' + i,
     published: !!(i % 2),
     // contributors: [{ id: 10, $friend: user }],
-    // contributors: y,
+    contributors: y,
     // contributors: y.map((v) => {
     //   return { id: v, $friend: user }
     // }),
@@ -117,10 +118,10 @@ console.log('db time', db.drain(), Date.now() - d)
 // --------------------------------------------------------------
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
-  ids: new Uint32Array([1, 2]),
+  // ids: new Uint32Array([1, 2]),
 })
-def.range.limit = 1000
-q.includeFields(def, ['contributors.name'])
+def.range.limit = 10
+q.includeFields(def, ['flap'])
 
 q.sort(def, 'flap', 'desc')
 q.filter(db, def, 'flap', '>', 2)
@@ -133,4 +134,9 @@ console.log(b.toString('base64'))
 console.log(q.debug(b))
 
 console.log('RESULT')
-db.native.getQueryBuf(b)
+
+const result = db.native.getQueryBuf(b)
+
+console.log(q.debug(result))
+
+console.log(q.resultToObject(def, result))

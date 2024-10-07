@@ -74,7 +74,12 @@ export const debug = (x: any, start: number = 0, end: number = 0) => {
       end = x.byteLength
     }
 
-    const w = Math.floor(process.stdout.columns / 4) || 20
+    let len = 4
+    if (x.byteLength > 999) {
+      len = 5
+    }
+
+    const w = Math.floor(process.stdout.columns / len) || 20
     const a = [...new Uint8Array(x.slice(start, end))]
     for (let i = 0; i < Math.ceil(x.byteLength / w); i++) {
       console.log(
@@ -82,7 +87,7 @@ export const debug = (x: any, start: number = 0, end: number = 0) => {
           a
             .slice(i * w, (i + 1) * w)
             .map((v, j) => {
-              return String(j + i * w).padStart(3, '0')
+              return String(j + i * w).padStart(len - 1, '0')
             })
             .join(' '),
         ),
@@ -90,7 +95,7 @@ export const debug = (x: any, start: number = 0, end: number = 0) => {
       console.log(
         a
           .slice(i * w, (i + 1) * w)
-          .map((v) => String(v).padStart(3, '0'))
+          .map((v) => String(v).padStart(len - 1, '0'))
           .map((v, j) => {
             if (a[j + i * w] === 253) {
               return picocolors.magenta(v)
