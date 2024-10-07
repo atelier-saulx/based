@@ -104,7 +104,7 @@ for (let i = 0; i < 1e3; i++) {
   db.create('article', {
     name: 'Ultra article ' + i,
     published: !!(i % 2),
-    contributors: [{ id: 10, $friend: user }],
+    // contributors: [{ id: 10, $friend: user }],
     // contributors: y,
     // contributors: y.map((v) => {
     //   return { id: v, $friend: user }
@@ -115,15 +115,12 @@ for (let i = 0; i < 1e3; i++) {
 console.log('db time', db.drain(), Date.now() - d)
 
 // --------------------------------------------------------------
-
 const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
-  // id: 1,
   ids: new Uint32Array([1, 2]),
 })
 def.range.limit = 1000
 q.includeFields(def, ['contributors.name'])
-// 'contributors.$role' if undefined wrong
 
 q.sort(def, 'flap', 'desc')
 q.filter(db, def, 'flap', '>', 2)
