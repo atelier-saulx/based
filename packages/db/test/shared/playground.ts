@@ -111,63 +111,29 @@ for (let i = 0; i < 1e3; i++) {
     // }),
   })
 }
-// just 10M but slow
 
 console.log('db time', db.drain(), Date.now() - d)
 
-// console.log(db.query('todo').range(0, 100).get())
-
 // --------------------------------------------------------------
 
-const def = q.createQueryDef(db, q.QueryDefType.Root, {
-  type: 'article',
-  // id: 1,
-  ids: new Uint32Array([1, 2]),
-})
-def.range.limit = 1000
-q.includeFields(def, ['contributors.name'])
-// 'contributors.$role' if undefined wrong
+// const def = q.createQueryDef(db, q.QueryDefType.Root, {
+//   type: 'article',
+//   // id: 1,
+//   ids: new Uint32Array([1, 2]),
+// })
+// def.range.limit = 1000
+// q.includeFields(def, ['contributors.name'])
+// // 'contributors.$role' if undefined wrong
 
-q.sort(def, 'flap', 'desc')
-q.filter(db, def, 'flap', '>', 2)
-q.filter(db, def, 'published', '=', true)
+// q.sort(def, 'flap', 'desc')
+// q.filter(db, def, 'flap', '>', 2)
+// q.filter(db, def, 'published', '=', true)
 
-const b = Buffer.concat(q.defToBuffer(db, def))
+// const b = Buffer.concat(q.defToBuffer(db, def))
 
-console.log(b.toString('base64'))
+// console.log(b.toString('base64'))
 
-console.log(q.debug(b))
-
-console.log('RESULT')
-db.native.getQueryBuf(b)
-// q.debug(db.native.getQueryBuf(b))
-
-//
+// console.log(q.debug(b))
 
 // console.log('RESULT')
-
-// q.debug(
-//   db.query('todo', [1, 2]).include('age').sort('age').filter('done').toBuffer()
-//     .include,
-// )
-
-// db.query('todo', [1, 2])
-//   .include(...['age'])
-//   .sort('age')
-//   .filter('done')
-//   .get()
-//   .debug()
-
-// how to do make a funciton and the include type def
-// no query constructor yet just fns where we can add include stuff to the include def
-// combine them and create the buffer
-// then execute on db
-// give it a different name
-// QueryDef scince its all
-// todo make a full toObject() speedy (later)
-// use this queryDef to read things
-// then at the end we can make the Query Constructor thing
-// this makes the query irrelevant everywhere else except the nessecary info of include
-// big thing only type to store things
-// easy functions to create things
-// then put it together afterwards
+// db.native.getQueryBuf(b)
