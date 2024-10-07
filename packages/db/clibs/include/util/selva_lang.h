@@ -12,10 +12,12 @@
 #include <locale.h>
 #include <wctype.h>
 #include "cdefs.h"
+#include "selva_lang_code.h"
 
 #define SELVA_LANG_NAME_MAX 4ul
 
 struct selva_lang {
+    enum selva_lang_code code;
     __nonstring char name[SELVA_LANG_NAME_MAX];
     const char loc_name[8];
     locale_t locale;
@@ -42,6 +44,8 @@ int selva_lang_set_fallback(struct selva_langs *langs, const char *lang_str, siz
  * @returns a POSIX locale.
  */
 locale_t selva_lang_getlocale(struct selva_langs *langs, const char *lang_str, size_t lang_len);
+
+locale_t selva_lang_getlocale2(struct selva_langs *langs, enum selva_lang_code lang);
 
 /**
  * Transform a multibyte string.

@@ -23,10 +23,7 @@
 struct selva_string;
 #else
 struct SelvaTextField {
-    struct SelvaTextFieldTl {
-        struct selva_string s;
-        __nonstring char lang[4];
-    } *tl __pcounted_by(len);
+    struct selva_string *tl __pcounted_by(len);
     uint8_t len;
 } __packed;
 #endif
@@ -200,7 +197,7 @@ int selva_fields_set_text(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
-        const char *lang,
+        enum selva_lang_code lang,
         const char *str,
         size_t len);
 
@@ -208,7 +205,7 @@ int selva_fields_get_text(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
-        const char *lang,
+        enum selva_lang_code lang,
         const char **str,
         size_t *len);
 

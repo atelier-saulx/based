@@ -202,7 +202,8 @@
     + 1
 
 #define LANG_ENTRY(lang, loc_lang) \
-    { \
+    [selva_lang_ ## lang] = { \
+        .code = selva_lang_ ## lang, \
         .name = #lang, \
         .loc_name = #loc_lang, \
     },
