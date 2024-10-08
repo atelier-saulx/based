@@ -194,7 +194,12 @@ const flap = db
 for (let i = 0; i < 1; i++) {
   flap.toObject()
 }
-console.log(Date.now() - xx, 'ms')
+console.log(
+  Date.now() - xx,
+  'ms',
+  Math.floor(flap.buffer.byteLength / 1e3 / 1e3),
+  'mb',
+)
 
 // console.dir(q.resultToObject(def, result), { depth: 10 })
 
@@ -204,3 +209,5 @@ console.log(Date.now() - xx, 'ms')
 //   './tmp/flap.txt',
 //   JSON.stringify(q.resultToObject(def, result)),
 // )
+
+// go make range work offset, limit
