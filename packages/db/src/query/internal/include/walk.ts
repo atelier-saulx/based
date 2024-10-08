@@ -52,10 +52,15 @@ export const walkDefs = (
       if (isPropDef(t) && (t.typeIndex === 13 || t.typeIndex === 14)) {
         const refDef = createOrGetRefQueryDef(db, def, t)
         const f = path.slice(i + 1).join('.')
-        if (includeProp(refDef, f)) {
-          return
-        }
         includeFields(refDef, [f])
+
+        // let includeMain = refDef.include.main.len
+        // if (walkDefs(db, refDef, f, includesMain)) {
+        //   // includesMain = true
+        // }
+        // if (includeProp(refDef, f)) {
+        //   return
+        // }
         return
       }
     }
@@ -76,7 +81,8 @@ export const walkDefs = (
 
   if (prop.typeIndex === 13 || prop.typeIndex === 14) {
     const refDef = createOrGetRefQueryDef(db, def, prop)
-    includeAllProps(refDef)
+    // includeAllProps(refDef)
+    includeFields(refDef, ['*'])
     return
   }
 

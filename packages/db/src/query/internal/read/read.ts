@@ -1,5 +1,6 @@
 import { PropDef, PropDefEdge } from '../../../schema/types.js'
 import { QueryDef } from '../types.js'
+import { debug } from '../internal.js'
 
 type Item = {
   id: number
@@ -42,6 +43,8 @@ const readMainValue = (
 }
 
 const readMain = (q: QueryDef, result: Buffer, offset: number, item: Item) => {
+  debug(q)
+
   const mainInclude = q.include.main
   let i = offset
   if (mainInclude.len === q.schema.mainLen) {
@@ -67,33 +70,54 @@ const readAllFields = (
   item: Item,
 ): number => {
   let i = offset
+
   while (i < end) {
     const index = result[i]
+
+    console.log({ index })
+
     i++
+
     if (index === 255) {
       return i - offset
     }
 
-    if (index === 253) {
+    if (index === 254) {
+      // const field = result[i]
+      // i++
+      // const size = result.readUint32LE(i)
+      // i += 4
+      // const ref = q.references.get(field)
+      // console.log('BLAAARF')
+      // if (size === 0) {
+      //   console.log('snurp')
+      //   // @ts-ignore
+      //   // addField(ref.target.propDef, null, item)
+      // } else {
+      //   i++
+      //   let id = result.readUInt32LE(i)
+      //   i += 4
+      //   const refItem: Item = {
+      //     id,
+      //   }
+      //   // readAllFields(q.references.get(field), result, i, size + i, item)
+      // }
+      // i += size
+    } else if (index === 253) {
+      console.log('BLA', { index })
       const field = result[i]
       i++
-
       const ref = q.references.get(field)
-
       const size = result.readUint32LE(i)
       i += 4
-
-      const refs = resultToObject(ref, result, size + i, i)
-
+      const refs = resultToObject(ref, result, size + i + 4, i)
       // @ts-ignore
       addField(ref.target.propDef, refs, item)
-
-      i += size
-      return i - offset
-    }
-
-    if (index === 0) {
+      i += size + 4
+      console.log('DERP =', { i, end })
+    } else if (index === 0) {
       i += readMain(q, result, i, item)
+      console.log('BLABLA', { i })
     } else {
       const prop = q.schema.reverseProps[index]
       if (prop.typeIndex === 11) {
@@ -107,6 +131,9 @@ const readAllFields = (
       }
     }
   }
+
+  console.log('DERP', i - offset)
+
   return i - offset
 }
 
@@ -116,8 +143,10 @@ export const resultToObject = (
   end: number = result.byteLength,
   offset: number = 0,
 ) => {
-  console.log('derp', { offset })
   const len = result.readUint32LE(offset)
+
+  console.log('resultToObject', offset, end, len, result.byteLength)
+
   if (len === 0) {
     return []
   }
@@ -130,6 +159,8 @@ export const resultToObject = (
       id,
     }
     const l = readAllFields(q, result, i, end, item)
+    console.log({ id, l, i })
+
     i += l
     items.push(item)
   }

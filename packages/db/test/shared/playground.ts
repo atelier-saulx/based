@@ -36,6 +36,7 @@ db.putSchema({
       props: {
         name: 'string',
         flap: 'uint32',
+        derp: 'boolean',
         ownedArticles: {
           items: {
             ref: 'article',
@@ -100,7 +101,7 @@ for (let i = 0; i < 5e6; i++) {
 }
 
 for (let i = 0; i < 1e6; i++) {
-  db.create('user', { flap: i, name: 'my flap ' + i })
+  db.create('user', { flap: i, name: 'my flap ' + (i + 2) + '!' })
 }
 
 const ids: any = new Set()
@@ -116,6 +117,7 @@ for (let i = 0; i < 1e3; i++) {
     name: 'Ultra article ' + i,
     published: !!(i % 2),
     burp: ['derp', 'flappie'][i % 2],
+    // owner: ~~(Math.random() * 1e6 - 1) + 1,
     // contributors: [{ id: 10, $friend: user }],
     contributors: y,
     // contributors: y.map((v) => {
@@ -132,15 +134,23 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   // ids: new Uint32Array([1, 2]),
 })
 def.range.limit = 1
-q.includeFields(def, ['flap', 'burp', 'published', 'name', 'contributors.name'])
+q.includeFields(def, [
+  // 'flap',
+  // 'burp',
+  // 'published',
+  // 'name',
+  'contributors.name',
+  'contributors.flap',
+  'contributors.derp',
+
+  // 'owner',
+])
 
 // q.sort(def, 'flap', 'desc')
 // q.filter(db, def, 'flap', '>', 2)
 // q.filter(db, def, 'published', '=', true)
 
 const b = Buffer.concat(q.defToBuffer(db, def))
-
-console.log(b.toString('base64'))
 
 q.debug(b)
 
@@ -166,4 +176,4 @@ q.debug(result)
 // }
 // console.log(Date.now() - xx, 'ms')
 
-console.log(q.resultToObject(def, result)[0])
+console.dir(q.resultToObject(def, result), { depth: 10 })
