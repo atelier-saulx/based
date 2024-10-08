@@ -55,25 +55,21 @@ export function calculateEdgesSize(
 export function writeEdges(
   t: PropDef,
   ref: RefModifyOpts,
-  db: BasedDb,
+  ctx: BasedDb['modifyCtx'],
   res: ModifyState,
 ) {
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
-      db.modifyCtx.buffer[db.modifyCtx.len] = edge.prop
-      db.modifyCtx.buffer[db.modifyCtx.len + 1] = edge.typeIndex
+      ctx.buf[ctx.len] = edge.prop
+      ctx.buf[ctx.len + 1] = edge.typeIndex
       // Buffer: [field] [typeIndex] [size] [data]
       if (edge.len === 0) {
         if (edge.typeIndex === 11) {
-          const size = db.modifyCtx.buffer.write(
-            value,
-            db.modifyCtx.len + 6,
-            'utf8',
-          )
-          db.modifyCtx.buffer.writeUint32LE(size, db.modifyCtx.len + 2)
-          db.modifyCtx.len += size + 6
+          const size = ctx.buf.write(value, ctx.len + 6, 'utf8')
+          ctx.buf.writeUint32LE(size, ctx.len + 2)
+          ctx.len += size + 6
         } else if (edge.typeIndex === 13) {
           // TODO: value get id
           if (typeof value !== 'number') {
@@ -84,18 +80,18 @@ export function writeEdges(
               return true
             }
           }
-          db.modifyCtx.buffer.writeUint32LE(value, db.modifyCtx.len + 2)
-          db.modifyCtx.len += 6
+          ctx.buf.writeUint32LE(value, ctx.len + 2)
+          ctx.len += 6
         } else if (edge.typeIndex === 14) {
           const refLen = value.length * 4
-          db.modifyCtx.buffer.writeUint32LE(refLen, db.modifyCtx.len + 2)
-          db.modifyCtx.len += 6
-          simpleRefsPacked(edge, db, value, res)
-          db.modifyCtx.len += refLen
+          ctx.buf.writeUint32LE(refLen, ctx.len + 2)
+          ctx.len += 6
+          simpleRefsPacked(edge, ctx, value, res)
+          ctx.len += refLen
         }
       } else {
-        writeFixedLenValue(db, value, db.modifyCtx.len + 2, edge, res)
-        db.modifyCtx.len += edge.len + 2
+        writeFixedLenValue(ctx, value, ctx.len + 2, edge, res)
+        ctx.len += edge.len + 2
       }
     }
   }

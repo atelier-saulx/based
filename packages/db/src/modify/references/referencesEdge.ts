@@ -9,14 +9,14 @@ import { overWriteSimpleReferences } from './simple.js'
 
 export function overWriteEdgeReferences(
   t: PropDef,
-  db: BasedDb,
+  ctx: BasedDb['modifyCtx'],
   modifyOp: ModifyOp,
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
   op: 0 | 1 | 2,
 ) {
-  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
+  ctx.buf[ctx.len] = modifyOp
   let refLen = 0
 
   if (t.edgesTotalLen) {
@@ -28,7 +28,7 @@ export function overWriteEdgeReferences(
   if (refLen === 0) {
     overWriteSimpleReferences(
       t,
-      db,
+      ctx,
       modifyOp,
       value,
       schema,
@@ -38,15 +38,15 @@ export function overWriteEdgeReferences(
     return
   }
 
-  if (refLen + 10 + db.modifyCtx.len + 11 > db.maxModifySize) {
-    flushBuffer(db)
+  if (refLen + 10 + ctx.len + 11 > ctx.max) {
+    flushBuffer(ctx.db)
   }
 
-  setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-  db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
-  const sizeIndex = db.modifyCtx.len + 1
-  db.modifyCtx.buffer[sizeIndex + 4] = op
-  db.modifyCtx.len += 6
+  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+  ctx.buf[ctx.len] = modifyOp
+  const sizeIndex = ctx.len + 1
+  ctx.buf[sizeIndex + 4] = op
+  ctx.len += 6
 
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]
@@ -63,26 +63,20 @@ export function overWriteEdgeReferences(
       }
     }
     if (typeof ref === 'object') {
-      db.modifyCtx.buffer[db.modifyCtx.len] = 1
-      db.modifyCtx.buffer.writeUint32LE(ref.id, db.modifyCtx.len + 1)
-      const edgeDataSizeIndex = db.modifyCtx.len + 5
-      db.modifyCtx.len += 9
-      if (writeEdges(t, ref, db, res)) {
+      ctx.buf[ctx.len] = 1
+      ctx.buf.writeUint32LE(ref.id, ctx.len + 1)
+      const edgeDataSizeIndex = ctx.len + 5
+      ctx.len += 9
+      if (writeEdges(t, ref, ctx, res)) {
         return
       }
-      db.modifyCtx.buffer.writeUint32LE(
-        db.modifyCtx.len - edgeDataSizeIndex - 4,
-        edgeDataSizeIndex,
-      )
+      ctx.buf.writeUint32LE(ctx.len - edgeDataSizeIndex - 4, edgeDataSizeIndex)
     } else {
-      db.modifyCtx.buffer[db.modifyCtx.len] = 0
-      db.modifyCtx.buffer.writeUint32LE(ref, db.modifyCtx.len + 1)
-      db.modifyCtx.len += 5
+      ctx.buf[ctx.len] = 0
+      ctx.buf.writeUint32LE(ref, ctx.len + 1)
+      ctx.len += 5
     }
   }
 
-  db.modifyCtx.buffer.writeUint32LE(
-    db.modifyCtx.len - (sizeIndex + 4),
-    sizeIndex,
-  )
+  ctx.buf.writeUint32LE(ctx.len - (sizeIndex + 4), sizeIndex)
 }

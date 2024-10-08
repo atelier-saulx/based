@@ -16,14 +16,14 @@ import {
 } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
 export const writeFixedLenValue = (
-  db: BasedDb,
+  ctx: BasedDb['modifyCtx'],
   value: any,
   pos: number,
   propDef: PropDef | PropDefEdge,
   res: ModifyState,
 ) => {
   const type = propDef.typeIndex
-  const buf = db.modifyCtx.buffer
+  const buf = ctx.buf
   if (type === STRING) {
     if (value === null) {
       value = ''
