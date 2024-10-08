@@ -27,7 +27,8 @@ export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: {
-    buffer: Buffer
+    max: number
+    buf: Buffer
     hasStringField: number
     len: number
     field: number
@@ -39,7 +40,7 @@ export class BasedDb {
     mergeMainSize: number
     ctx: { offset?: number }
     queue: Map<number, (id: number) => void>
-    modifyOp?: ModifyOp
+    db: BasedDb
   }
 
   schema: Schema & { lastId: number }
@@ -66,10 +67,11 @@ export class BasedDb {
     }
     const max = this.maxModifySize
     this.modifyCtx = {
+      max,
       hasStringField: -1,
       mergeMainSize: 0,
       mergeMain: null,
-      buffer: Buffer.allocUnsafe(max),
+      buf: Buffer.allocUnsafe(max),
       len: 0,
       field: -1,
       prefix0: 0,
@@ -78,7 +80,9 @@ export class BasedDb {
       lastMain: -1,
       ctx: {},
       queue: new Map(),
+      db: this,
     }
+
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
@@ -227,7 +231,7 @@ export class BasedDb {
     return query(this, target, id)
   }
 
-  // drain write buffer returns perf in ms
+  // drain write buf returns perf in ms
   drain() {
     flushBuffer(this)
     const t = this.writeTime

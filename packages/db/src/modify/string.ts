@@ -7,7 +7,7 @@ import { setCursor } from './setCursor.js'
 
 export function writeString(
   value: string | null,
-  db: BasedDb,
+  ctx: BasedDb['modifyCtx'],
   def: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
@@ -21,27 +21,27 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {
-      if (db.modifyCtx.len + 11 > db.maxModifySize) {
-        flushBuffer(db)
+      if (ctx.len + 11 > ctx.max) {
+        flushBuffer(ctx.db)
       }
-      setCursor(db, def, t.prop, res.tmpId, modifyOp)
-      db.modifyCtx.buffer[db.modifyCtx.len] = 11
-      db.modifyCtx.len++
+      setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+      ctx.buf[ctx.len] = 11
+      ctx.len++
     }
   } else {
     if (modifyOp === CREATE) {
       def.stringPropsCurrent[t.prop] = 2
-      db.modifyCtx.hasStringField++
+      ctx.hasStringField++
     }
     const byteLen = len + len
-    if (byteLen + 5 + db.modifyCtx.len + 11 > db.maxModifySize) {
-      flushBuffer(db)
+    if (byteLen + 5 + ctx.len + 11 > ctx.max) {
+      flushBuffer(ctx.db)
     }
-    setCursor(db, def, t.prop, res.tmpId, modifyOp)
-    db.modifyCtx.buffer[db.modifyCtx.len] = modifyOp
-    db.modifyCtx.len += 5
-    const size = db.modifyCtx.buffer.write(value, db.modifyCtx.len, 'utf8')
-    db.modifyCtx.buffer.writeUint32LE(size, db.modifyCtx.len + 1 - 5)
-    db.modifyCtx.len += size
+    setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+    ctx.buf[ctx.len] = modifyOp
+    ctx.len += 5
+    const size = ctx.buf.write(value, ctx.len, 'utf8')
+    ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
+    ctx.len += size
   }
 }

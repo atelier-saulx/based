@@ -16,7 +16,7 @@ import { writeString } from './string.js'
 import { MERGE_MAIN, ModifyOp } from './types.js'
 
 const _addModify = (
-  db: BasedDb,
+  ctx: BasedDb['modifyCtx'],
   res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,
@@ -31,51 +31,49 @@ const _addModify = (
     } else if (isPropDef(propDef)) {
       const type = propDef.typeIndex
       if (type === REFERENCE) {
-        writeReference(obj[key], db, schema, propDef, res, modifyOp)
+        writeReference(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (type === REFERENCES) {
-        writeReferences(obj[key], db, schema, propDef, res, modifyOp)
+        writeReferences(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (type === STRING && propDef.separate === true) {
-        writeString(obj[key], db, schema, propDef, res, modifyOp)
+        writeString(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (overwrite) {
-        setCursor(db, schema, propDef.prop, res.tmpId, modifyOp, true)
-        const mod = db.modifyCtx
-        if (mod.lastMain === -1) {
-          const buf = mod.buffer
+        setCursor(ctx, schema, propDef.prop, res.tmpId, modifyOp, true)
+        if (ctx.lastMain === -1) {
+          const buf = ctx.buf
           const mainLen = schema.mainLen
           const nextLen = mainLen + 1 + 4
-          if (mod.len + nextLen + 5 > db.maxModifySize) {
-            flushBuffer(db)
+          if (ctx.len + nextLen + 5 > ctx.max) {
+            flushBuffer(ctx.db)
           }
-          setCursor(db, schema, propDef.prop, res.tmpId, modifyOp)
-          const pos = mod.len
+          setCursor(ctx, schema, propDef.prop, res.tmpId, modifyOp)
+          const pos = ctx.len
           buf[pos] = overwrite ? modifyOp : MERGE_MAIN
           buf[pos + 1] = mainLen
           buf[pos + 2] = mainLen >>> 8
           buf[pos + 3] = mainLen >>> 16
           buf[pos + 4] = mainLen >>> 24
-          mod.lastMain = pos + 1 + 4
-          mod.len += nextLen
-          buf.fill(0, mod.len - mainLen, mod.len)
+          ctx.lastMain = pos + 1 + 4
+          ctx.len += nextLen
+          buf.fill(0, ctx.len - mainLen, ctx.len)
         }
         writeFixedLenValue(
-          db,
+          ctx,
           obj[key],
-          propDef.start + mod.lastMain,
+          propDef.start + ctx.lastMain,
           propDef,
           res,
         )
       } else {
-        const mod = db.modifyCtx
-        if (mod.mergeMain) {
-          mod.mergeMain.push(propDef, obj[key])
-          mod.mergeMainSize += propDef.len + 4
+        if (ctx.mergeMain) {
+          ctx.mergeMain.push(propDef, obj[key])
+          ctx.mergeMainSize += propDef.len + 4
         } else {
-          mod.mergeMain = [propDef, obj[key]]
-          mod.mergeMainSize = propDef.len + 4
+          ctx.mergeMain = [propDef, obj[key]]
+          ctx.mergeMainSize = propDef.len + 4
         }
       }
     } else {
-      _addModify(db, res, obj[key], schema, modifyOp, propDef, overwrite)
+      _addModify(ctx, res, obj[key], schema, modifyOp, propDef, overwrite)
     }
 
     if (res.error !== undefined) {
@@ -85,7 +83,7 @@ const _addModify = (
 }
 
 export const addModify: typeof _addModify = (
-  db,
+  ctx,
   res,
   obj,
   def,
@@ -94,18 +92,17 @@ export const addModify: typeof _addModify = (
   overwrite,
 ) => {
   // TODO we dont need this stuff here
-  const { lastMain, prefix0, prefix1, field, len, id } = db.modifyCtx
+  const { lastMain, prefix0, prefix1, field, len, id } = ctx
 
-  _addModify(db, res, obj, def, modifyOp, tree, overwrite)
+  _addModify(ctx, res, obj, def, modifyOp, tree, overwrite)
 
   if (res.error) {
     // TODO this is not correct if its flushed
-    const mod = db.modifyCtx
-    mod.lastMain = lastMain
-    mod.prefix0 = prefix0
-    mod.prefix1 = prefix1
-    mod.field = field
-    mod.len = len
-    mod.id = id
+    ctx.lastMain = lastMain
+    ctx.prefix0 = prefix0
+    ctx.prefix1 = prefix1
+    ctx.field = field
+    ctx.len = len
+    ctx.id = id
   }
 }

@@ -26,7 +26,7 @@ export type Refs =
 
 export function writeReferences(
   value: any,
-  db: BasedDb,
+  ctx: BasedDb['modifyCtx'],
   schema: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
@@ -38,20 +38,20 @@ export function writeReferences(
   }
 
   if (value === null) {
-    if (db.modifyCtx.len + 11 > db.maxModifySize) {
-      flushBuffer(db)
+    if (ctx.len + 11 > ctx.max) {
+      flushBuffer(ctx.db)
     }
-    setCursor(db, schema, t.prop, res.tmpId, modifyOp)
-    db.modifyCtx.buffer[db.modifyCtx.len] = 11
-    db.modifyCtx.len++
+    setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+    ctx.buf[ctx.len] = 11
+    ctx.len++
     return
   }
 
   if (Array.isArray(value)) {
     if (t.edges) {
-      overWriteEdgeReferences(t, db, modifyOp, value, schema, res, 0)
+      overWriteEdgeReferences(t, ctx, modifyOp, value, schema, res, 0)
     } else {
-      overWriteSimpleReferences(t, db, modifyOp, value, schema, res, 0)
+      overWriteSimpleReferences(t, ctx, modifyOp, value, schema, res, 0)
     }
     return
   }
@@ -71,9 +71,9 @@ export function writeReferences(
     }
 
     if (t.edges) {
-      overWriteEdgeReferences(t, db, modifyOp, value, schema, res, op)
+      overWriteEdgeReferences(t, ctx, modifyOp, value, schema, res, op)
     } else {
-      overWriteSimpleReferences(t, db, modifyOp, val, schema, res, op)
+      overWriteSimpleReferences(t, ctx, modifyOp, val, schema, res, op)
     }
   }
 }
