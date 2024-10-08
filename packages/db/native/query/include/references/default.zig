@@ -16,15 +16,17 @@ pub fn defaultReferences(
     edgeConstrain: ?db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
+    offset: u32,
+    limit: u32,
 ) types.RefsResult {
     if (isEdge) {
         return 0;
     }
 
     var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
-    var i: usize = 0;
+    var i: usize = offset;
 
-    checkItem: while (i < refs.?.nr_refs) : (i += 1) {
+    checkItem: while (i < refs.?.nr_refs and result.cnt < limit) : (i += 1) {
         const refNode = refs.?.refs[i].dst.?;
         if (hasFilter and !filter(refNode, typeEntry, filterArr)) {
             continue :checkItem;

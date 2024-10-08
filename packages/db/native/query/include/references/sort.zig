@@ -17,6 +17,8 @@ pub fn sortedReferences(
     edgeConstrain: ?db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
+    offset: u32,
+    limit: u32,
 ) types.RefsResult {
     if (isEdge) {
         return 0;
@@ -57,6 +59,9 @@ pub fn sortedReferences(
     while (!selva.selva_sort_foreach_done(sortCtx)) {
         const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
         result.cnt += 1;
+        if (offset != 0 and result.cnt < offset) {
+            continue;
+        }
         result.size += getFields(
             refNode,
             ctx,
@@ -66,6 +71,9 @@ pub fn sortedReferences(
             types.RefResult(isEdge, refs, edgeConstrain, i),
             false,
         ) catch 0;
+        if (result.cnt - offset > limit) {
+            break;
+        }
     }
     selva.selva_sort_destroy(sortCtx);
 

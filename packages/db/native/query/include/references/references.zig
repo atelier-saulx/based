@@ -26,15 +26,18 @@ pub inline fn getRefsFields(
     ref: ?types.RefStruct,
     comptime isEdge: bool,
 ) usize {
-    const filterSize: db.TypeId = readInt(u16, include, 0);
-    const filterArr: ?[]u8 = if (filterSize > 0) include[4 .. 4 + filterSize] else null;
+    const filterSize: u16 = readInt(u16, include, 0);
+    const sortSize: u16 = readInt(u16, include, 2);
+    const offset: u32 = readInt(u32, include, 4);
+    const limit: u32 = readInt(u32, include, 8);
+    const start: comptime_int = 12;
+    const filterArr: ?[]u8 = if (filterSize > 0) include[start .. start + filterSize] else null;
     const hasFilter: bool = filterArr != null;
-    const sortSize: db.TypeId = readInt(u16, include, 2);
-    const sortArr: ?[]u8 = if (sortSize > 0) include[4 + filterSize .. 4 + filterSize + sortSize] else null;
-    const typeId: db.TypeId = readInt(u16, include, 4 + filterSize + sortSize);
-    const refField = include[6 + filterSize + sortSize];
+    const sortArr: ?[]u8 = if (sortSize > 0) include[start + filterSize .. start + filterSize + sortSize] else null;
+    const typeId: db.TypeId = readInt(u16, include, start + filterSize + sortSize);
+    const refField = include[start + 2 + filterSize + sortSize];
     const typeEntry = db.getType(typeId) catch null;
-    const includeNested = include[(7 + filterSize + sortSize)..include.len];
+    const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];
 
     ctx.results.append(.{
         .id = null,
@@ -79,14 +82,14 @@ pub inline fn getRefsFields(
 
     if (sortArr != null) {
         if (hasFilter) {
-            result = sortedReferences(isEdge, refs, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, true, filterArr.?);
+            result = sortedReferences(isEdge, refs, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
         } else {
-            result = sortedReferences(isEdge, refs, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, false, null);
+            result = sortedReferences(isEdge, refs, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, false, null, offset, limit);
         }
     } else if (hasFilter) {
-        result = defaultReferences(isEdge, refs, ctx, includeNested, typeEntry.?, edgeConstrain, true, filterArr.?);
+        result = defaultReferences(isEdge, refs, ctx, includeNested, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
     } else {
-        result = defaultReferences(isEdge, refs, ctx, includeNested, typeEntry.?, edgeConstrain, false, null);
+        result = defaultReferences(isEdge, refs, ctx, includeNested, typeEntry.?, edgeConstrain, false, null, offset, limit);
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];

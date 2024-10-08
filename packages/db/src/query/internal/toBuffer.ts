@@ -119,24 +119,30 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
     if (def.sort) {
       sort = createSortBuffer(def.sort)
     }
+    // ADD IT
     // TODO: ADD RANGE [offset,limit] (8 bytes)
     const sortSize = sort?.byteLength ?? 0
     const filterSize = filter?.byteLength ?? 0
+
     const modsSize = filterSize + sortSize
-    const meta = Buffer.allocUnsafe(modsSize + 10)
+    const meta = Buffer.allocUnsafe(modsSize + 10 + 8)
     meta[0] = 254
-    meta.writeUint16LE(size + 7 + modsSize, 1)
+    meta.writeUint16LE(size + 7 + modsSize + 8, 1)
     meta.writeUint16LE(filterSize, 3)
     meta.writeUint16LE(sortSize, 5)
+
+    meta.writeUint32LE(def.range.offset, 7)
+    meta.writeUint32LE(def.range.limit, 7 + 4)
+
     if (filter) {
-      meta.set(filter, 7)
+      meta.set(filter, 15)
     }
     if (sort) {
-      meta.set(sort, 7 + filterSize)
+      meta.set(sort, 15 + filterSize)
     }
-    meta[7 + modsSize] = def.schema.idUint8[0]
-    meta[8 + modsSize] = def.schema.idUint8[1]
-    meta[9 + modsSize] = def.target.propDef.prop
+    meta[15 + modsSize] = def.schema.idUint8[0]
+    meta[15 + 1 + modsSize] = def.schema.idUint8[1]
+    meta[15 + 2 + modsSize] = def.target.propDef.prop
     result.push(meta)
   } else if (def.type === QueryDefType.Reference) {
     const meta = Buffer.allocUnsafe(6)

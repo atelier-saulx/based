@@ -141,22 +141,36 @@ const include = [
   'burp',
   'published',
   'name',
-  'contributors.name',
-  'contributors.flap',
-  'contributors.derp',
-  'contributors.ownedArticles.name',
-  'contributors.favourite.name',
-  'contributors.favourite.contributors.name',
-  'owner.flap',
+  // 'contributors.name',
+  // 'contributors.flap',
+  // 'contributors.derp',
+  // 'contributors.ownedArticles.name',
+  // 'contributors.favourite.name',
+  // 'contributors.favourite.contributors.name',
+  // 'owner.flap',
 ]
-
 q.includeFields(def, include)
+
+const refDef = q.createQueryDef(db, q.QueryDefType.References, {
+  propDef: def.props.contributors,
+  type: 'user',
+})
+
+refDef.range.limit = 1
+
+q.includeFields(refDef, ['name', 'flap'])
+
+def.references.set(def.props.contributors.prop, refDef)
+
+def.range.limit = 3
 
 // q.sort(def, 'flap', 'desc')
 // q.filter(db, def, 'flap', '>', 2)
 // q.filter(db, def, 'published', '=', true)
 
 const b = Buffer.concat(q.defToBuffer(db, def))
+
+q.debug(def)
 
 q.debug(b)
 
@@ -186,20 +200,22 @@ console.log(
   'mb',
 )
 
-const xx = Date.now()
-const flap = db
-  .query('article')
-  .include(...include)
-  .get()
-for (let i = 0; i < 1; i++) {
-  flap.toObject()
-}
-console.log(
-  Date.now() - xx,
-  'ms',
-  Math.floor(flap.buffer.byteLength / 1e3 / 1e3),
-  'mb',
-)
+console.log(q.resultToObject(def, result))
+
+// const xx = Date.now()
+// const flap = db
+//   .query('article')
+//   .include(...include)
+//   .get()
+// for (let i = 0; i < 1; i++) {
+//   flap.toObject()
+// }
+// console.log(
+//   Date.now() - xx,
+//   'ms',
+//   Math.floor(flap.buffer.byteLength / 1e3 / 1e3),
+//   'mb',
+// )
 
 // console.dir(q.resultToObject(def, result), { depth: 10 })
 
