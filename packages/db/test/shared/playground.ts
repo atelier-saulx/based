@@ -111,7 +111,7 @@ for (let j = 0; j < x; j++) {
 }
 const y = [1, ...ids.values()].sort()
 
-for (let i = 0; i < 1e3; i++) {
+for (let i = 0; i < 10e3; i++) {
   db.create('article', {
     flap: (i % 2) * 10,
     name: 'Ultra article ' + i,
@@ -134,7 +134,7 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
   // ids: new Uint32Array([1, 2]),
 })
-def.range.limit = 2
+def.range.limit = 1000
 
 const include = [
   'flap',
@@ -162,15 +162,29 @@ q.debug(b)
 
 console.log('RESULT')
 
+const xxx = Date.now()
+
 const result = db.native.getQueryBuf(b)
+console.log(
+  'getting result',
+  Date.now() - xxx,
+  'ms',
+  Math.floor(result.byteLength / 1e3 / 1e3),
+  'mb',
+)
 
 // q.debug(result)
 
 const s = Date.now()
-for (let i = 0; i < 1e3; i++) {
+for (let i = 0; i < 1; i++) {
   q.resultToObject(def, result)
 }
-console.log(Date.now() - s, 'ms')
+console.log(
+  Date.now() - s,
+  'ms',
+  Math.floor(result.byteLength / 1e3 / 1e3),
+  'mb',
+)
 
 const xx = Date.now()
 const flap = db
@@ -184,4 +198,9 @@ console.log(Date.now() - xx, 'ms')
 
 // console.dir(q.resultToObject(def, result), { depth: 10 })
 
-// console.dir(JSON.q.resultToObject(def, result), { depth: 10 })
+// console.log(JSON.stringify(q.resultToObject(def, result)))
+
+// await fs.writeFile(
+//   './tmp/flap.txt',
+//   JSON.stringify(q.resultToObject(def, result)),
+// )
