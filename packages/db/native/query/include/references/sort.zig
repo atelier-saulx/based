@@ -59,7 +59,7 @@ pub fn sortedReferences(
     while (!selva.selva_sort_foreach_done(sortCtx)) {
         const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
         result.cnt += 1;
-        if (offset != 0 and result.cnt < offset) {
+        if (offset != 0 and result.cnt <= offset) {
             continue;
         }
         result.size += getFields(
@@ -71,7 +71,7 @@ pub fn sortedReferences(
             types.RefResult(isEdge, refs, edgeConstrain, i),
             false,
         ) catch 0;
-        if (result.cnt - offset > limit) {
+        if (result.cnt - offset >= limit) {
             break;
         }
     }

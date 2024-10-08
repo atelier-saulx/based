@@ -101,7 +101,10 @@ for (let i = 0; i < 5e6; i++) {
 }
 
 for (let i = 0; i < 1e6; i++) {
-  db.create('user', { flap: i, name: 'my flap ' + (i + 2) + '!' })
+  db.create('user', {
+    flap: ~~(Math.random() * 10),
+    name: 'my flap ' + (i + 2) + '!',
+  })
 }
 
 const ids: any = new Set()
@@ -156,7 +159,11 @@ const refDef = q.createQueryDef(db, q.QueryDefType.References, {
   type: 'user',
 })
 
-refDef.range.limit = 1
+refDef.range.offset = 1
+
+refDef.range.limit = 2
+
+q.sort(refDef, 'flap', 'desc')
 
 q.includeFields(refDef, ['name', 'flap'])
 
@@ -200,7 +207,7 @@ console.log(
   'mb',
 )
 
-console.log(q.resultToObject(def, result))
+console.dir(q.resultToObject(def, result), { depth: 10 })
 
 // const xx = Date.now()
 // const flap = db
