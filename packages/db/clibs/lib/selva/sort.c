@@ -2,7 +2,6 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <assert.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/funmap.h"
@@ -10,13 +9,10 @@
 #include "selva/sort.h"
 #include "langs.h"
 
-#define EN_ASSERT 0
-
 struct SelvaSortCtx {
     struct SVector out;
     struct SVectorIterator it;
-    enum SelvaSortOrder order;
-    char lang[8];
+    enum selva_lang_code lang;
 };
 
 struct SelvaSortItem {
@@ -130,14 +126,14 @@ struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_l
     struct SelvaSortCtx *ctx = selva_malloc(sizeof(*ctx));
 
     SVector_Init(&ctx->out, initial_len, get_cmp_fun(order));
-    memset(ctx->lang, 0, sizeof(ctx->lang));
+    ctx->lang = selva_lang_none;
 
     return ctx;
 }
 
-void selva_sort_set_lang(struct SelvaSortCtx *ctx, const typeof(ctx->lang) lang)
+void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang)
 {
-    strlcpy(ctx->lang, lang, sizeof(ctx->lang));
+    ctx->lang = lang;
 }
 
 void selva_sort_destroy(struct SelvaSortCtx *ctx)
@@ -194,12 +190,12 @@ static struct SelvaSortItem *create_item_buffer(const void *buf, size_t len, con
     return item;
 }
 
-static struct SelvaSortItem *create_item_text(const char *lang, const char *str, size_t len, const void *p)
+static struct SelvaSortItem *create_item_text(enum selva_lang_code lang, const char *str, size_t len, const void *p)
 {
     struct SelvaSortItem *item;
 
     if (likely(len > 0)) {
-        locale_t locale = selva_lang_getlocale(&selva_langs, lang, strlen(lang));
+        locale_t locale = selva_lang_getlocale2(&selva_langs, lang);
         size_t data_len = strxfrm_l(NULL, str, 0, locale);
 
         item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
@@ -217,46 +213,26 @@ static struct SelvaSortItem *create_item_text(const char *lang, const char *str,
 
 void selva_sort_insert(struct SelvaSortCtx *ctx, const void *p)
 {
-#if EN_ASSERT
-    assert(ctx->order == SELVA_SORT_ORDER_NONE);
-#endif
-
     (void)SVector_Insert(&ctx->out, create_item_empty(p));
 }
 
 void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
 {
-#if EN_ASSERT
-    assert(ctx->order == SELVA_SORT_ORDER_I64_ASC || ctx->order == SELVA_SORT_ORDER_I64_DESC);
-#endif
-
     (void)SVector_Insert(&ctx->out, create_item_i64(v, p));
 }
 
 void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p)
 {
-#if EN_ASSERT
-    assert(ctx->order == SELVA_SORT_ORDER_DOUBLE_ASC || ctx->order SELVA_SORT_ORDER_DOUBLE_DESC);
-#endif
-
     (void)SVector_Insert(&ctx->out, create_item_d(d, p));
 }
 
 void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
 {
-#if EN_ASSERT
-    assert(ctx->order == SELVA_SORT_ORDER_BUFFER_ASC || ctx->order SELVA_SORT_ORDER_BUFFER_DESC);
-#endif
-
     (void)SVector_Insert(&ctx->out, create_item_buffer(buf, len, p));
 }
 
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p)
 {
-#if EN_ASSERT
-    assert(ctx->order == SELVA_SORT_ORDER_TEXT_ASC || ctx->order SELVA_SORT_ORDER_TEXT_DESC);
-#endif
-
     (void)SVector_Insert(&ctx->out, create_item_text(ctx->lang, str, len, p));
 }
 

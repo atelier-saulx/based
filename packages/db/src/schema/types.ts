@@ -95,12 +95,17 @@ export type SchemaTypeDef = {
   buf: Buffer
   propNames: Buffer
   props: {
-    // path including .
-    [key: string]: PropDef
+    [path: string]: PropDef
+  }
+  reverseProps: {
+    [field: string]: PropDef
   }
   id: number
   idUint8: Uint8Array
   separate: PropDef[]
+  main: {
+    [start: string]: PropDef
+  }
   tree: SchemaPropTree
   responseCtx: BasedNode
   hasStringProp: boolean

@@ -74,6 +74,7 @@ export const createSchemaTypeDef = (
     checksum: hashObjectIgnoreKeyOrder(type),
     type: typeName,
     props: {},
+    reverseProps: {},
     idUint8: new Uint8Array([0, 0]),
     id: 0,
     mainLen: 0,
@@ -84,6 +85,7 @@ export const createSchemaTypeDef = (
     lastId: 0,
     stringPropsSize: 0,
     stringPropsLoop: [],
+    main: {},
   },
   path: string[] = [],
   top: boolean = true,
@@ -170,7 +172,6 @@ export const createSchemaTypeDef = (
   if (top) {
     const vals = Object.values(result.props)
 
-    // references first is important for perf in selva
     vals.sort((a, b) => {
       if (b.separate && (a.typeIndex === 14 || a.typeIndex === 13)) {
         return -1
@@ -237,6 +238,7 @@ export const createSchemaTypeDef = (
       i++
       result.buf[i] = 0
     }
+
     for (const f of vals) {
       if (f.separate) {
         i++
@@ -279,6 +281,15 @@ export const createSchemaTypeDef = (
       }
       result.stringPropsCurrent = Buffer.allocUnsafe(max + 1)
       result.stringProps.copy(result.stringPropsCurrent)
+    }
+
+    for (const p in result.props) {
+      const x = result.props[p]
+      if (!x.separate) {
+        result.main[x.start] = x
+      } else {
+        result.reverseProps[x.prop] = x
+      }
     }
   }
 
