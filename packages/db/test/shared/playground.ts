@@ -36,6 +36,12 @@ db.putSchema({
       props: {
         name: 'string',
         flap: 'uint32',
+        ownedArticles: {
+          items: {
+            ref: 'article',
+            prop: 'owner',
+          },
+        },
         favourite: {
           ref: 'article',
           prop: 'favouritedBy',
@@ -66,6 +72,10 @@ db.putSchema({
             prop: 'favourite',
           },
         },
+        owner: {
+          ref: 'user',
+          prop: 'ownedArticles',
+        },
         contributors: {
           type: 'references',
           items: {
@@ -90,11 +100,11 @@ for (let i = 0; i < 5e6; i++) {
 }
 
 for (let i = 0; i < 1e6; i++) {
-  db.create('user', { flap: i })
+  db.create('user', { flap: i, name: 'my flap ' + i })
 }
 
 const ids: any = new Set()
-const x = 100 // ~~(Math.random() * 1e3)
+const x = 2 // ~~(Math.random() * 1e3)
 for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
@@ -121,8 +131,8 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
   // ids: new Uint32Array([1, 2]),
 })
-def.range.limit = 10
-q.includeFields(def, ['flap', 'burp', 'published', 'name'])
+def.range.limit = 1
+q.includeFields(def, ['flap', 'burp', 'published', 'name', 'contributors.name'])
 
 // q.sort(def, 'flap', 'desc')
 // q.filter(db, def, 'flap', '>', 2)
@@ -140,4 +150,20 @@ const result = db.native.getQueryBuf(b)
 
 q.debug(result)
 
-console.log(q.resultToObject(def, result))
+// const s = Date.now()
+// for (let i = 0; i < 1e3; i++) {
+//   q.resultToObject(def, result)
+// }
+// console.log(Date.now() - s, 'ms')
+
+// const xx = Date.now()
+// const flap = db
+//   .query('article')
+//   .include('flap', 'burp', 'published', 'name')
+//   .get()
+// for (let i = 0; i < 1e3; i++) {
+//   flap.toObject()
+// }
+// console.log(Date.now() - xx, 'ms')
+
+console.log(q.resultToObject(def, result)[0])

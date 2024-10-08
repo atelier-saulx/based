@@ -63,21 +63,40 @@ const readAllFields = (
   q: QueryDef,
   result: Buffer,
   offset: number,
+  end: number,
   item: Item,
 ): number => {
   let i = offset
-  while (i < result.byteLength) {
+  while (i < end) {
     const index = result[i]
     i++
     if (index === 255) {
       return i - offset
     }
+
+    if (index === 253) {
+      const field = result[i]
+      i++
+
+      const ref = q.references.get(field)
+
+      const size = result.readUint32LE(i)
+      i += 4
+
+      const refs = resultToObject(ref, result, size + i, i)
+
+      // @ts-ignore
+      addField(ref.target.propDef, refs, item)
+
+      i += size
+      return i - offset
+    }
+
     if (index === 0) {
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
       if (prop.typeIndex === 11) {
-        // string
         const size = result.readUint32LE(i)
         if (size === 0) {
           addField(prop, '', item)
@@ -86,27 +105,31 @@ const readAllFields = (
         }
         i += size + 4
       }
-      // reverse fields index
-      // if (q.schema.)
     }
   }
   return i - offset
 }
 
-export const resultToObject = (q: QueryDef, result: Buffer) => {
-  const len = result.readUint32LE(0)
+export const resultToObject = (
+  q: QueryDef,
+  result: Buffer,
+  end: number = result.byteLength,
+  offset: number = 0,
+) => {
+  console.log('derp', { offset })
+  const len = result.readUint32LE(offset)
   if (len === 0) {
     return []
   }
   const items = []
-  let i = 5
-  while (i < result.byteLength) {
+  let i = 5 + offset
+  while (i < end) {
     let id = result.readUInt32LE(i)
     i += 4
     const item: Item = {
       id,
     }
-    const l = readAllFields(q, result, i, item)
+    const l = readAllFields(q, result, i, end, item)
     i += l
     items.push(item)
   }
