@@ -131,12 +131,12 @@ const b = Buffer.concat(q.defToBuffer(db, def))
 
 console.log(b.toString('base64'))
 
-console.log(q.debug(b))
+q.debug(b)
 
 console.log('RESULT')
 
 const result = db.native.getQueryBuf(b)
 
-console.log(q.debug(result))
+q.debug(result)
 
 console.log(q.resultToObject(def, result))

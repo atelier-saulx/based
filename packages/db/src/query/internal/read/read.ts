@@ -4,6 +4,8 @@ type Item = {
   id: number
 } & { [key: string]: any }
 
+// read Main
+
 const readAllFields = (
   q: QueryDef,
   result: Buffer,
@@ -38,7 +40,6 @@ const readAllFields = (
             const value = result.readUInt32LE(i + index)
             console.log({ value })
           }
-          // etc etc
         }
 
         i += mainInclude.len
