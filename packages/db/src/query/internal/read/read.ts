@@ -27,7 +27,7 @@ const readAllFields = (
       // make oposite map there 0 -> also
 
       if (mainInclude.len === q.schema.mainLen) {
-        console.log('includes all')
+        // console.log('includes all')
       } else {
         // console.log(mainInclude)
 
@@ -36,7 +36,7 @@ const readAllFields = (
 
           if (prop.typeIndex === 5) {
             const value = result.readUInt32LE(i + index)
-            // console.log({ value })
+            console.log({ value })
           }
           // etc etc
         }
@@ -52,34 +52,22 @@ const readAllFields = (
 export const resultToObject = (q: QueryDef, result: Buffer) => {
   const len = result.readUint32LE(0)
 
-  console.log('derp', { len })
-
   if (len === 0) {
     return []
   }
 
   const items = []
-
-  for (let i = 5; i < result.byteLength; i++) {
+  let i = 5
+  while (i < result.byteLength) {
     let id = result.readUInt32LE(i)
     i += 4
     const item: Item = {
       id,
     }
     const l = readAllFields(q, result, i, item)
-    console.log({ l }, i, result.byteLength)
     i += l
-
     items.push(item)
-
-    // go trough each in q make recursive
-
-    // break
   }
-
-  // check all
-
-  // first this as efficient as possible then make it nice
 
   return items
 }
