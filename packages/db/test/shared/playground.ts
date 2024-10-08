@@ -57,7 +57,7 @@ db.putSchema({
     article: {
       props: {
         name: 'string',
-        burp: [1, 2],
+        burp: ['derp', 'flappie'],
         flap: 'uint32',
         published: 'boolean',
         favouritedBy: {
@@ -105,6 +105,7 @@ for (let i = 0; i < 1e3; i++) {
     flap: (i % 2) * 10,
     name: 'Ultra article ' + i,
     published: !!(i % 2),
+    burp: ['derp', 'flappie'][i % 2],
     // contributors: [{ id: 10, $friend: user }],
     contributors: y,
     // contributors: y.map((v) => {
@@ -121,11 +122,11 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   // ids: new Uint32Array([1, 2]),
 })
 def.range.limit = 10
-q.includeFields(def, ['flap'])
+q.includeFields(def, ['flap', 'burp', 'published']) // 'published'
 
-q.sort(def, 'flap', 'desc')
-q.filter(db, def, 'flap', '>', 2)
-q.filter(db, def, 'published', '=', true)
+// q.sort(def, 'flap', 'desc')
+// q.filter(db, def, 'flap', '>', 2)
+// q.filter(db, def, 'published', '=', true)
 
 const b = Buffer.concat(q.defToBuffer(db, def))
 

@@ -1,10 +1,63 @@
+import { PropDef, PropDefEdge } from '../../../schema/types.js'
 import { QueryDef } from '../types.js'
 
 type Item = {
   id: number
 } & { [key: string]: any }
 
-// read Main
+const addField = (p: PropDef | PropDefEdge, value: any, item: Item) => {
+  const len = p.path.length
+  if (len === 1) {
+    item[p.path[0]] = value
+  } else {
+    let select: any = item
+    for (let i = 0; i < len; i++) {
+      const field = p.path[i]
+      if (i === len - 1) {
+        select[field] = value
+      } else {
+        select = select[field] = {}
+      }
+    }
+  }
+}
+
+const readMainValue = (
+  prop: PropDef | PropDefEdge,
+  result: Buffer,
+  index: number,
+  item: Item,
+) => {
+  if (prop.typeIndex === 5) {
+    addField(prop, result.readUInt32LE(index), item)
+  } else if (prop.typeIndex === 9) {
+    addField(prop, !!result[index], item)
+  } else if (prop.typeIndex === 10) {
+    if (result[index] === 0) {
+      addField(prop, undefined, item)
+    } else {
+      addField(prop, prop.enum[result[index] - 1], item)
+    }
+  }
+}
+
+const readMain = (q: QueryDef, result: Buffer, offset: number, item: Item) => {
+  const mainInclude = q.include.main
+  let i = offset
+  if (mainInclude.len === q.schema.mainLen) {
+    for (const start in q.schema.main) {
+      readMainValue(q.schema.main[start], result, Number(start) + i, item)
+    }
+    i += q.schema.mainLen
+  } else {
+    for (const k in mainInclude.include) {
+      const [index, prop] = mainInclude.include[k]
+      readMainValue(prop, result, index + i, item)
+    }
+    i += mainInclude.len
+  }
+  return i - offset
+}
 
 const readAllFields = (
   q: QueryDef,
@@ -13,50 +66,24 @@ const readAllFields = (
   item: Item,
 ): number => {
   let i = offset
-
   while (i < result.byteLength) {
     const index = result[i]
     i++
-
     if (index === 255) {
       return i - offset
     }
-
     if (index === 0) {
-      const mainInclude = q.include.main
-
-      // q.schema
-      // make oposite map there 0 -> also
-
-      if (mainInclude.len === q.schema.mainLen) {
-        // console.log('includes all')
-      } else {
-        // console.log(mainInclude)
-
-        for (const k in mainInclude.include) {
-          const [index, prop] = mainInclude.include[k]
-
-          if (prop.typeIndex === 5) {
-            const value = result.readUInt32LE(i + index)
-            console.log({ value })
-          }
-        }
-
-        i += mainInclude.len
-      }
+      i += readMain(q, result, i, item)
     }
   }
-
   return i - offset
 }
 
 export const resultToObject = (q: QueryDef, result: Buffer) => {
   const len = result.readUint32LE(0)
-
   if (len === 0) {
     return []
   }
-
   const items = []
   let i = 5
   while (i < result.byteLength) {
@@ -69,6 +96,5 @@ export const resultToObject = (q: QueryDef, result: Buffer) => {
     i += l
     items.push(item)
   }
-
   return items
 }
