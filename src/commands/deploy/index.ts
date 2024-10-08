@@ -93,7 +93,7 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { basedClient, destroy } = await context.getBasedClient()
+      const { basedClient, destroy } = await context.getBasedClients()
       const { publicPath } = await basedClient.call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
         await parseFunctions(context, functions, watch && update, publicPath)

@@ -15,7 +15,7 @@ export const download =
   async ({ db, file, path }) => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
-    const { destroy } = await context.getBasedClient()
+    const { destroy } = await context.getBasedClients()
 
     const backups: BackupsSorted = await getList(context)
     let { selectedFile, selectedDB } = await backupsSelection({
@@ -49,7 +49,7 @@ export const getDownload = async ({
 }: BasedCli.Backups.Downloads): Promise<void> => {
   let isValid: boolean = false
   const isExternalPath: boolean = path !== undefined && path !== ''
-  const { basedClient } = await context.getBasedClient()
+  const { basedClient } = await context.getBasedClients()
   const { skip } = context.getGlobalOptions()
 
   if (isExternalPath) {

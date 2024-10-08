@@ -7,7 +7,7 @@ export const getLogs = async (
   renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
 ) => {
   const { envHubBasedCloud, adminHubBasedCloud } =
-    await context.getBasedClient()
+    await context.getBasedClients()
   const { cluster, org, env, project } = await context.getProgram()
   const finalData = []
   const isOnlyApp: boolean = filters.app && !filters.infra

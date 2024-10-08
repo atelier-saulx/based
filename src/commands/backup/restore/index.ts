@@ -1,4 +1,4 @@
-import { replaceTilde, AppContext } from '../../../shared/index.js'
+import { replaceTilde, AppContext, isCloudFile } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 
 import { pathExists } from 'fs-extra'
@@ -11,7 +11,7 @@ export const restore =
   async ({ db, file }): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
-    const { destroy } = await context.getBasedClient()
+    const { destroy } = await context.getBasedClients()
     const isExternalFile: boolean = file !== undefined
     const backups: BackupsSorted = await getList(context)
 
@@ -50,16 +50,15 @@ export const setRestore = async ({
   isExternalFile,
   verbose,
 }: BasedCli.Backups.Restore) => {
-  const { basedClient } = await context.getBasedClient()
+  const { basedClient } = await context.getBasedClients()
   const { skip } = context.getGlobalOptions()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
   const dbInfo = { ...defaultDBInfo[0], name: db }
-  const isCloudFile = file.startsWith('env-db/')
 
   if (isExternalFile) {
-    if (!isCloudFile) {
+    if (!isCloudFile(file)) {
       if (!(await pathExists(file))) {
         throw new Error(
           `The specified file '${file}' is invalid or does not exist. Please provide a valid file.`,

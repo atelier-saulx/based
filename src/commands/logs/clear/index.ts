@@ -3,7 +3,7 @@ import { Command } from 'commander'
 
 export const clear = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
-  const { basedClient, destroy } = await context.getBasedClient()
+  const { basedClient, destroy } = await context.getBasedClients()
 
   context.print.info(
     `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,

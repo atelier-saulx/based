@@ -13,7 +13,7 @@ export const visualizer = async (
   filters: BasedCli.Logs.Filter,
 ) => {
   const { basedClient, envHubBasedCloud, adminHubBasedCloud } =
-    await context.getBasedClient()
+    await context.getBasedClients()
   const { cluster, org, env, project } = await context.getProgram()
 
   const templateLabels = (name: string, value: string) =>
@@ -116,6 +116,10 @@ export const visualizer = async (
         context.print.separator()
       }
 
+      if (!filteredData.length) {
+        context.print.line()
+      }
+
       if (!filters.stream) {
         context.print.info(
           `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
@@ -129,8 +133,6 @@ export const visualizer = async (
       .line()
       .stop()
       .success('Opening the <b>UI</b> to show the logs...', true)
-  } else {
-    context.print.line().stop().success('These are the logs:', true).separator()
   }
 
   try {

@@ -11,8 +11,9 @@ export const filter =
   (program: Command) =>
   async (filters: BasedCli.Logs.Filter): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
+    await context.getProgram()
+    const { basedClient, destroy } = await context.getBasedClients()
     const { skip } = context.getGlobalOptions()
-    const { basedClient, destroy } = await context.getBasedClient()
     const logOptions: string[] = ['all', 'info', 'error']
 
     const errorMessage = (option: string, value: string | number) => {
@@ -130,31 +131,32 @@ export const filter =
         }
       }
 
-      if (!filters.service || !filters.service.length) {
-        const filterByService: boolean = await context.input.confirm(
-          `Do you want to filter by service?`,
-        )
-
-        // TODO get all the services running
-
-        if (filterByService) {
-          filters.service = await context.input.select(
-            'Please select the services: <dim>(A-Z)</dim>',
-            [
-              {
-                name: 'env-hub',
-                value: 'env-hub',
-              },
-              {
-                name: 'admin-hub',
-                value: 'admin-hub',
-              },
-            ],
-            true,
-            true,
-          )
-        }
-      }
+      // TODO get all the services running to conclude this feature
+      // if (!filters.service || !filters.service.length) {
+      //   const filterByService: boolean = await context.input.confirm(
+      //     `Do you want to filter by service?`,
+      //   )
+      //
+      //
+      //
+      //   if (filterByService) {
+      //     filters.service = await context.input.select(
+      //       'Please select the services: <dim>(A-Z)</dim>',
+      //       [
+      //         {
+      //           name: 'env-hub',
+      //           value: 'env-hub',
+      //         },
+      //         {
+      //           name: 'admin-hub',
+      //           value: 'admin-hub',
+      //         },
+      //       ],
+      //       true,
+      //       true,
+      //     )
+      //   }
+      // }
     }
 
     if (

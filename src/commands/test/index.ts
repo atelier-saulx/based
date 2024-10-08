@@ -1,10 +1,12 @@
 import { Command } from 'commander'
-import { AppContext } from '../../shared/index.js'
+import { AppContext, isCloudFile } from '../../shared/index.js'
 import { setMake, getList, setRestore } from '../backup/index.js'
 import { BackupsSorted, checkScript, runTests } from '../../helpers/index.js'
 
 export const test = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
+  await context.getProgram()
+
   const cmd: Command = program
     .command('test')
     .description("Run your application's tests using your environment data.")
@@ -23,7 +25,7 @@ export const test = async (program: Command): Promise<void> => {
     )
     .option(
       '-ud, --use-database <database>',
-      'To use this database to create/restore your backups.',
+      "To use this database to create/restore your backups. This option also sets '--no-restore' to 'true'",
       'default',
     )
     .option(
@@ -32,7 +34,7 @@ export const test = async (program: Command): Promise<void> => {
     )
 
   cmd.action(async ({ command, backup, restore, useDatabase, useBackup }) => {
-    const { destroy } = await context.getBasedClient()
+    const { destroy } = await context.getBasedClients()
 
     try {
       if (command) {
@@ -42,20 +44,18 @@ export const test = async (program: Command): Promise<void> => {
       if (backup && !useBackup) {
         await setMake(context)
       } else if (useBackup) {
-        const isCloudFile = useBackup.startsWith('env-db/')
-
         await setRestore({
           context,
           db: useDatabase ?? 'default',
           file: useBackup,
-          isExternalFile: isCloudFile,
+          isExternalFile: isCloudFile(useBackup),
           verbose: false,
         })
       }
 
       await runTests({ context, command })
 
-      if (restore) {
+      if (restore && !useBackup) {
         const backups: BackupsSorted = await getList(context)
         const previousBackup = backups?.sorted?.[useDatabase]?.[1]?.key
 

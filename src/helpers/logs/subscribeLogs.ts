@@ -8,7 +8,7 @@ export const subscribeLogs = async (
   renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
 ) => {
   const { envHubBasedCloud, adminHubBasedCloud } =
-    await context.getBasedClient()
+    await context.getBasedClients()
   const { cluster, org, env, project } = await context.getProgram()
   let adminLogsPrevious: AdminLogsData[] = []
   let envLogsPrevious: EnvLogsData[] = []

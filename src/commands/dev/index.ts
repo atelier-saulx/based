@@ -30,18 +30,19 @@ export const dev = async (program: Command) => {
     )
 
   cmd.action(async ({ functions, port }) => {
-    const { basedClient } = await context.getBasedClient()
+    const { basedClient } = await context.getBasedClients()
 
     const { BasedServer } = await import('@based/server')
     const ip: string = getMyIp()
-    const [devPort, filePort, staticPort, lrPort] = await Promise.all([
+    // TODO 'staticPort' come from this destructuring
+    const [devPort, filePort, lrPort] = await Promise.all([
       getPort({ port: port ?? 1234 }),
       getPort({ port: 2000 }),
       getPort({ port: 3000 }),
       getPort({ port: 4000 }),
     ])
     const publicPath: string = `http://${ip}:${filePort}`
-    const staticPath: string = `http://${ip}:${staticPort}`
+    // const staticPath: string = `http://${ip}:${staticPort}`
 
     spinner.succeed(
       `🚀 Dev server: http://localhost:${devPort} ${pc.dim(`http://${ip}:${devPort}`)}`,

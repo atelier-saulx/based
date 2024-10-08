@@ -1,4 +1,4 @@
-export * from './getBasedClient.js'
+export * from './SharedBasedClient.js'
 export * from './login.js'
 export * from './spinner.js'
 export * from './getMyIp.js'
