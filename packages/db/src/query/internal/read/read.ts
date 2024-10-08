@@ -43,8 +43,6 @@ const readMainValue = (
 }
 
 const readMain = (q: QueryDef, result: Buffer, offset: number, item: Item) => {
-  debug(q)
-
   const mainInclude = q.include.main
   let i = offset
   if (mainInclude.len === q.schema.mainLen) {
@@ -75,9 +73,6 @@ const readAllFields = (
 
   while (i < end) {
     const index = result[i]
-
-    console.log({ index })
-
     i++
 
     if (index === 255) {
@@ -101,7 +96,6 @@ const readAllFields = (
         const refItem: Item = {
           id,
         }
-        // console.info({ i, size, id })
         readAllFields(q.references.get(field), result, i, size + i - 5, refItem)
         // @ts-ignore
         addField(ref.target.propDef, refItem, item)
@@ -143,7 +137,6 @@ export const resultToObject = (
   offset: number = 0,
 ) => {
   const len = result.readUint32LE(offset)
-
   if (len === 0) {
     return []
   }
@@ -156,8 +149,6 @@ export const resultToObject = (
       id,
     }
     const l = readAllFields(q, result, i, end, item)
-    console.log({ id, l, i })
-
     i += l
     items.push(item)
   }

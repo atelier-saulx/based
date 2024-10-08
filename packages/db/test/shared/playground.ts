@@ -109,7 +109,7 @@ const x = 2 // ~~(Math.random() * 1e3)
 for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
-const y = [...ids.values()].sort()
+const y = [1, ...ids.values()].sort()
 
 for (let i = 0; i < 1e3; i++) {
   db.create('article', {
@@ -118,6 +118,7 @@ for (let i = 0; i < 1e3; i++) {
     published: !!(i % 2),
     burp: ['derp', 'flappie'][i % 2],
     owner: 1,
+    favouritedBy: [1],
     // contributors: [{ id: 10, $friend: user }],
     contributors: y,
     // contributors: y.map((v) => {
@@ -133,7 +134,7 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
   // ids: new Uint32Array([1, 2]),
 })
-def.range.limit = 10
+def.range.limit = 2
 q.includeFields(def, [
   'flap',
   'burp',
@@ -142,7 +143,8 @@ q.includeFields(def, [
   'contributors.name',
   'contributors.flap',
   'contributors.derp',
-
+  'contributors.ownedArticles.name',
+  'contributors.favourite.name',
   'owner.flap',
 ])
 
