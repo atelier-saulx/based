@@ -117,7 +117,7 @@ for (let i = 0; i < 1e3; i++) {
     name: 'Ultra article ' + i,
     published: !!(i % 2),
     burp: ['derp', 'flappie'][i % 2],
-    // owner: ~~(Math.random() * 1e6 - 1) + 1,
+    owner: 1,
     // contributors: [{ id: 10, $friend: user }],
     contributors: y,
     // contributors: y.map((v) => {
@@ -133,17 +133,17 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   type: 'article',
   // ids: new Uint32Array([1, 2]),
 })
-def.range.limit = 1
+def.range.limit = 10
 q.includeFields(def, [
-  // 'flap',
-  // 'burp',
-  // 'published',
-  // 'name',
+  'flap',
+  'burp',
+  'published',
+  'name',
   'contributors.name',
   'contributors.flap',
   'contributors.derp',
 
-  // 'owner',
+  'owner.flap',
 ])
 
 // q.sort(def, 'flap', 'desc')

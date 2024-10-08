@@ -83,26 +83,28 @@ const readAllFields = (
     }
 
     if (index === 254) {
-      // const field = result[i]
-      // i++
-      // const size = result.readUint32LE(i)
-      // i += 4
-      // const ref = q.references.get(field)
-      // console.log('BLAAARF')
-      // if (size === 0) {
-      //   console.log('snurp')
-      //   // @ts-ignore
-      //   // addField(ref.target.propDef, null, item)
-      // } else {
-      //   i++
-      //   let id = result.readUInt32LE(i)
-      //   i += 4
-      //   const refItem: Item = {
-      //     id,
-      //   }
-      //   // readAllFields(q.references.get(field), result, i, size + i, item)
-      // }
-      // i += size
+      const field = result[i]
+      i++
+      const size = result.readUint32LE(i)
+      i += 4
+      const ref = q.references.get(field)
+      if (size === 0) {
+        // @ts-ignore
+        addField(ref.target.propDef, null, item)
+        i += size
+      } else {
+        i++
+        let id = result.readUInt32LE(i)
+        i += 4
+        const refItem: Item = {
+          id,
+        }
+        // console.info({ i, size, id })
+        readAllFields(q.references.get(field), result, i, size + i - 5, refItem)
+        // @ts-ignore
+        addField(ref.target.propDef, refItem, item)
+        i += size - 5
+      }
     } else if (index === 253) {
       console.log('BLA', { index })
       const field = result[i]
