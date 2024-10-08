@@ -950,7 +950,7 @@ static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nf
 }
 
 int selva_fields_set_text(
-        struct SelvaDb *db,
+        struct SelvaDb *,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,
@@ -1007,7 +1007,7 @@ int selva_fields_set_text(
 }
 
 int selva_fields_get_text(
-        struct SelvaDb *db,
+        struct SelvaDb *,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,
