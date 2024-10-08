@@ -74,10 +74,10 @@ export const debug = (x: any, start: number = 0, end: number = 0) => {
       end = x.byteLength
     }
 
-    let len = 4
-    if (x.byteLength > 999) {
-      len = 5
-    }
+    let len = Math.max(4, String(x.byteLength).length + 1)
+    // if (x.byteLength > 999) {
+    //   len = 5
+    // }
 
     const w = Math.floor(process.stdout.columns / len) || 20
     const a = [...new Uint8Array(x.slice(start, end))]

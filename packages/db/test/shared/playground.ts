@@ -135,7 +135,8 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   // ids: new Uint32Array([1, 2]),
 })
 def.range.limit = 2
-q.includeFields(def, [
+
+const include = [
   'flap',
   'burp',
   'published',
@@ -145,8 +146,11 @@ q.includeFields(def, [
   'contributors.derp',
   'contributors.ownedArticles.name',
   'contributors.favourite.name',
+  'contributors.favourite.contributors.name',
   'owner.flap',
-])
+]
+
+q.includeFields(def, include)
 
 // q.sort(def, 'flap', 'desc')
 // q.filter(db, def, 'flap', '>', 2)
@@ -160,22 +164,24 @@ console.log('RESULT')
 
 const result = db.native.getQueryBuf(b)
 
-q.debug(result)
+// q.debug(result)
 
-// const s = Date.now()
-// for (let i = 0; i < 1e3; i++) {
-//   q.resultToObject(def, result)
-// }
-// console.log(Date.now() - s, 'ms')
+const s = Date.now()
+for (let i = 0; i < 1e3; i++) {
+  q.resultToObject(def, result)
+}
+console.log(Date.now() - s, 'ms')
 
-// const xx = Date.now()
-// const flap = db
-//   .query('article')
-//   .include('flap', 'burp', 'published', 'name')
-//   .get()
-// for (let i = 0; i < 1e3; i++) {
-//   flap.toObject()
-// }
-// console.log(Date.now() - xx, 'ms')
+const xx = Date.now()
+const flap = db
+  .query('article')
+  .include(...include)
+  .get()
+for (let i = 0; i < 1; i++) {
+  flap.toObject()
+}
+console.log(Date.now() - xx, 'ms')
 
-console.dir(q.resultToObject(def, result), { depth: 10 })
+// console.dir(q.resultToObject(def, result), { depth: 10 })
+
+// console.dir(JSON.q.resultToObject(def, result), { depth: 10 })
