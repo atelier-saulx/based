@@ -20,6 +20,8 @@ export type AdminLogsData = {
   msg: string
 }
 
+const thresholdMessageLength: number = 4
+
 const logLevelColor = (level: string): string => {
   switch (level) {
     case 'error': {
@@ -54,6 +56,7 @@ const isToBeFiltered = (
   log: EnvLogsData & AdminLogsData,
   filters: BasedCli.Logs.Filter,
 ) => {
+  const isMessageInvalid = !log.msg || log.msg.length < thresholdMessageLength
   const isLogLevelNotInfo = filters.level === 'info' && log.lvl === 'error'
   const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
   const isFunctionNotIncluded =
@@ -83,6 +86,7 @@ const isToBeFiltered = (
     isAfter(log.ts, filters.endDate?.timestamp)
 
   return (
+    isMessageInvalid ||
     isLogLevelNotInfo ||
     isLogLevelNotError ||
     isFunctionNotIncluded ||
@@ -111,7 +115,6 @@ export const filterLogs = (
 
   return data
     .map((log: any) => {
-      const thresholdMessageLength: number = 4
       const isCollapsed = filters.collapsed && log.msg.length > sliceMessage
 
       if (isToBeFiltered(log, filters)) {

@@ -3,19 +3,7 @@ import { Command } from 'commander'
 
 export const make = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
-  const { org, env, project } = await context.getProgram()
-  const { destroy } = await context.getBasedClient()
-  const { skip } = context.getGlobalOptions()
-
-  if (!skip) {
-    const doIt: boolean = await context.input.confirm(
-      `Would you like to make a backup for the env '<cyan>${org}/${project}/${env}</cyan>'?`,
-    )
-
-    if (!doIt) {
-      return
-    }
-  }
+  const { destroy } = await context.getBasedClients()
 
   try {
     await setMake(context)
@@ -28,8 +16,21 @@ export const make = (program: Command) => async () => {
 }
 
 export const setMake = async (context: AppContext) => {
-  const { basedClient, adminHubBasedCloud } = await context.getBasedClient()
+  const { basedClient, adminHubBasedCloud } = await context.getBasedClients()
   const { org, env, project } = await context.getProgram()
+  const { skip } = context.getGlobalOptions()
+
+  context.print.line()
+
+  if (!skip) {
+    const doIt: boolean = await context.input.confirm(
+      `Would you like to make a backup for the env '<cyan>${org}/${project}/${env}</cyan>'?`,
+    )
+
+    if (!doIt) {
+      return
+    }
+  }
 
   const { envId } = await basedClient.call('based:env-info').catch(() => {
     throw new Error(
@@ -37,7 +38,7 @@ export const setMake = async (context: AppContext) => {
     )
   })
 
-  context.print.line().loading('Making a new backup...')
+  context.print.loading('Making a new backup...')
 
   await adminHubBasedCloud.call('backup-env', {
     org,
@@ -46,5 +47,5 @@ export const setMake = async (context: AppContext) => {
     envId,
   })
 
-  context.print.success(`Backup completed successfully!`, true)
+  context.print.success(`Backup created successfully!`, true)
 }
