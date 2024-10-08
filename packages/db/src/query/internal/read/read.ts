@@ -1,6 +1,5 @@
 import { PropDef, PropDefEdge } from '../../../schema/types.js'
 import { QueryDef } from '../types.js'
-import { debug } from '../internal.js'
 
 type Item = {
   id: number
@@ -59,8 +58,6 @@ const readMain = (q: QueryDef, result: Buffer, offset: number, item: Item) => {
   }
   return i - offset
 }
-
-// add edges
 
 const readAllFields = (
   q: QueryDef,
