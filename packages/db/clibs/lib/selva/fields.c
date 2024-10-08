@@ -51,6 +51,8 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_WEAK_REFERENCE] = sizeof(struct SelvaNodeWeakReference),
     [SELVA_FIELD_TYPE_WEAK_REFERENCES] = sizeof(struct SelvaNodeWeakReferences),
     [SELVA_FIELD_TYPE_MICRO_BUFFER] = sizeof(struct SelvaMicroBuffer),
+    [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
+    [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
@@ -877,6 +879,10 @@ copy:
             memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
             memcpy(buffer->data, value, buf_len);
         } while (0);
+    case SELVA_FIELD_TYPE_ALIAS:
+        return SELVA_ENOTSUP; /* TODO Support */
+    case SELVA_FIELD_TYPE_ALIASES:
+        return SELVA_ENOTSUP; /* TODO Support */
     }
 
     return 0;
@@ -1500,6 +1506,12 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         any.smb = (struct SelvaMicroBuffer *)p;
         break;
+    case SELVA_FIELD_TYPE_ALIAS:
+        /* TODO This would be easy to support. */
+        break;
+    case SELVA_FIELD_TYPE_ALIASES:
+        /* TODO Not really supported. */
+        break;
     }
 
 #if 0
@@ -1604,6 +1616,13 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, stru
             .len = selva_fields_get_data_size(fs),
         };
         static_assert(offsetof(struct SelvaMicroBuffer, data) == sizeof_field(struct SelvaMicroBuffer, len));
+    case SELVA_FIELD_TYPE_ALIAS:
+    case SELVA_FIELD_TYPE_ALIASES:
+        return (struct SelvaFieldsPointer){
+            .ptr = NULL,
+            .off = 0,
+            .len = 0,
+        };
     }
     db_panic("Invalid type");
 }
@@ -1672,6 +1691,9 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         remove_weak_references(fields, fs);
         break;
+    case SELVA_FIELD_TYPE_ALIAS:
+    case SELVA_FIELD_TYPE_ALIASES:
+        return SELVA_ENOTSUP;
     }
 
     memset(nfo2p(fields, nfo), 0, selva_fields_get_data_size(fs));

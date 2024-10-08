@@ -203,29 +203,38 @@ void selva_prefetch_type(struct SelvaTypeEntry *type);
  * Get the number of aliases under given type.
  */
 SELVA_EXPORT
-size_t selva_alias_count(const struct SelvaTypeEntry *type);
+size_t selva_alias_count(const struct SelvaAliases *aliases);
 
 /**
  * Set new alias.
  * @param name is copied.
  */
 SELVA_EXPORT
-void selva_set_alias(struct SelvaTypeEntry *type, node_id_t dest, const char *name_str, size_t name_len);
+void selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *name_str, size_t name_len);
 
 /**
  * Delete alias by name.
  */
 SELVA_EXPORT
-int selva_del_alias_by_name(struct SelvaTypeEntry *type, const char *name_str, size_t name_len);
+int selva_del_alias_by_name(struct SelvaAliases *aliases, const char *name_str, size_t name_len);
 
 /**
  * Delete all aliases pointing to dest.
  */
 SELVA_EXPORT
-void selva_del_alias_by_dest(struct SelvaTypeEntry *type, node_id_t dest);
+void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
 
 /**
  * Get alias by name.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, const char *name_str, size_t name_len);
+struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len);
+
+SELVA_EXPORT
+struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field);
+
+/***
+ * Remove all aliases to the given node_id.
+ */
+SELVA_EXPORT
+void selva_remove_all_aliases(struct SelvaTypeEntry *type, node_id_t node_id);

@@ -114,6 +114,8 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
 
     switch (any->type) {
     case SELVA_FIELD_TYPE_NULL:
+    case SELVA_FIELD_TYPE_ALIAS:
+    case SELVA_FIELD_TYPE_ALIASES:
         napi_get_null(env, &result);
         break;
     case SELVA_FIELD_TYPE_TIMESTAMP:
@@ -667,106 +669,6 @@ static napi_value node_db_del_field(napi_env env, napi_callback_info info)
     return res2napi(env, selva_fields_del(db, node, fs));
 }
 
-// node_db_set_alias(db, type_id, node_id, alias): number
-static napi_value node_db_set_alias(napi_env env, napi_callback_info info)
-{
-    int err;
-    size_t argc = 4;
-    napi_value argv[4];
-
-    err = get_args(env, info, &argc, argv, false);
-    if (err) {
-        return res2napi(env, err);
-    }
-
-    struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type = selva_napi_get_node_type(env, argv[1]);
-    node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
-
-    void *p;
-    size_t alias_len;
-    const char *alias_str;
-    napi_status status = napi_get_buffer_info(env, argv[3], &p, &alias_len);
-    assert(status == napi_ok);
-    alias_str = p;
-
-    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
-    assert(te->type == type);
-    if (!te) {
-        return res2napi(env, SELVA_EINTYPE);
-    }
-
-    selva_set_alias(te, node_id, alias_str, alias_len);
-
-    return res2napi(env, 0);
-}
-
-// node_db_del_alias(db, type_id, alias): number
-static napi_value node_db_del_alias(napi_env env, napi_callback_info info)
-{
-    int err;
-    size_t argc = 3;
-    napi_value argv[3];
-
-    err = get_args(env, info, &argc, argv, false);
-    if (err) {
-        return res2napi(env, err);
-    }
-
-    struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type = selva_napi_get_node_type(env, argv[1]);
-
-    void *p;
-    size_t alias_len;
-    const char *alias_str;
-    napi_status status = napi_get_buffer_info(env, argv[2], &p, &alias_len);
-    assert(status == napi_ok);
-    alias_str = p;
-
-    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
-    assert(te->type == type);
-    if (!te) {
-        return res2napi(env, SELVA_EINTYPE);
-    }
-
-    selva_del_alias_by_name(te, alias_str, alias_len);
-
-    return res2napi(env, 0);
-}
-
-// node_db_get_alias(db, type_id, alias): number
-static napi_value node_db_get_alias(napi_env env, napi_callback_info info)
-{
-    int err;
-    size_t argc = 3;
-    napi_value argv[3];
-
-    err = get_args(env, info, &argc, argv, false);
-    if (err) {
-        return res2napi(env, err);
-    }
-
-    struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type = selva_napi_get_node_type(env, argv[1]);
-
-    void *p;
-    size_t alias_len;
-    const char *alias_str;
-    napi_status status = napi_get_buffer_info(env, argv[2], &p, &alias_len);
-    assert(status == napi_ok);
-    alias_str = p;
-
-    struct SelvaTypeEntry *te = selva_get_type_by_index(db, type);
-    assert(te->type == type);
-    if (!te) {
-        return res2napi(env, SELVA_EINTYPE);
-    }
-
-    const struct SelvaNode *node = selva_get_alias(te, alias_str, alias_len);
-
-    return res2napi(env, node->node_id);
-}
-
 struct node_cb_js_trampoline {
     napi_env env;
     napi_value this; /*!< js object. */
@@ -1063,9 +965,6 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_get_field", node_db_get_field),
       DECLARE_NAPI_METHOD("db_get_field_p", node_db_get_field_p),
       DECLARE_NAPI_METHOD("db_del_field", node_db_del_field),
-      DECLARE_NAPI_METHOD("db_set_alias", node_db_set_alias),
-      DECLARE_NAPI_METHOD("db_del_alias", node_db_del_alias),
-      DECLARE_NAPI_METHOD("db_get_alias", node_db_get_alias),
       DECLARE_NAPI_METHOD("traverse_field_bfs", node_traverse_field_bfs),
       DECLARE_NAPI_METHOD("find", node_find),
   };

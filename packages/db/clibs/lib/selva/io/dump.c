@@ -242,6 +242,10 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             io->sdb_write(any.smb, sizeof(uint8_t), sizeof(*any.smb) + any.smb->len, io);
             break;
+        case SELVA_FIELD_TYPE_ALIAS:
+        case SELVA_FIELD_TYPE_ALIASES:
+            /* NOP */
+            break;
         }
 
         write_dump_magic(io, DUMP_MAGIC_FIELD_END);
@@ -272,6 +276,7 @@ static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
+#if 0
     struct SelvaAliases *aliases = &te->aliases;
     const sdb_nr_aliases_t nr_aliases = te->nr_aliases;
     struct SelvaAlias *alias;
@@ -286,6 +291,7 @@ static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
         io->sdb_write(alias->name, sizeof(char), name_len, io);
         io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
     }
+#endif
 }
 
 static void save_schema(struct selva_io *io, struct SelvaDb *db)
@@ -663,6 +669,10 @@ static void load_reference_meta(
             db_panic("References not supported in edge meta");
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             db_panic("Muffer not supported in edge meta");
+        case SELVA_FIELD_TYPE_ALIAS:
+        case SELVA_FIELD_TYPE_ALIASES:
+            /* NOP */
+            break;
         }
         if (err) {
             db_panic("Failed to set field (%d:%d:%d): %s",
@@ -859,6 +869,10 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             err = load_field_micro_buffer(io, db, node, fs);
             break;
+        case SELVA_FIELD_TYPE_ALIAS:
+        case SELVA_FIELD_TYPE_ALIASES:
+            /* NOP */
+            break;
         }
         if (err) {
             db_panic("Failed to set field (%d:%d:%d): %s",
@@ -903,6 +917,7 @@ static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
+#if 0
     sdb_nr_aliases_t nr_aliases;
 
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
@@ -922,6 +937,7 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 
         selva_set_alias_p(te, alias);
     }
+#endif
 }
 
 static void load_types(struct selva_io *io, struct SelvaDb *db)
