@@ -25,6 +25,8 @@ export const isValidPath = (path: string): boolean => {
   }
 }
 
+export const isCloudFile = (key: string) => key.startsWith('env-db/')
+
 export const cwd = process.cwd()
 
 export const rel = (str: string) => relative(cwd, str)

@@ -1,6 +1,6 @@
 import { readJSON } from 'fs-extra/esm'
 import { resolve } from 'node:path'
-import { replaceTilde } from '../../shared/index.js'
+import { AppContext, replaceTilde } from '../../shared/index.js'
 import { promisify } from 'util'
 import { exec } from 'child_process'
 
@@ -18,23 +18,34 @@ export const checkScript = async (command: string) => {
   }
 }
 
-export const runTests = async ({ context, command }) => {
+export const runTests = async ({
+  context,
+  command,
+}: {
+  context: AppContext
+  command: string
+}) => {
   await checkScript(command)
 
   try {
-    context.print.loading('Running your tests...')
+    context.print
+      .line()
+      .info(`Running your command: '<b>${command}</b>'...`)
+      .separator()
     const { stdout, stderr } = await execAsync(`npm run ${command}`)
 
-    context.print.stop().info(`The result of the command '${command}':`)
-    console.log(stdout)
+    context.print.stop().info(`The result of the command:`)
+    console.log(stdout.trim())
+
+    context.print.separator()
 
     if (stderr) {
-      context.print.line().info(`The error of the command '${command}':`)
-      console.error(stderr)
+      context.print.stop().info(`The error of the command`).separator()
+      console.error(stderr.trim())
     }
   } catch (error) {
     throw new Error(
-      `Error running your tests: ${error.message}\nDetails: ${error.stderr || error.stdout}`,
+      `${error.message}\n<b>Details</b>: ${error.stderr.trim() || error.stdout.trim()}`,
     )
   }
 }

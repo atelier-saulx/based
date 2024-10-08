@@ -1,12 +1,13 @@
 import { join } from 'node:path'
 import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
-import { getBasedClient } from './getBasedClient.js'
-import { BasedClient } from '@based/client'
+import { getBasedClient } from './SharedBasedClient.js'
+import { BasedClient, BasedOpts } from '@based/client'
 import { AppContext } from './AppContext.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
+const connectionTimeout = 10e3
 
 const authenticateUser = async (
   email: string,
@@ -33,6 +34,40 @@ const authenticateUser = async (
   }
 }
 
+const hubConnection = async (
+  context: AppContext,
+  opts: BasedOpts,
+): Promise<BasedClient> => {
+  const errorMessage = `Fatal error trying to <b>connect to the cloud</b>. Check your <b>'based.json'</b> file, your <b>username</b>, or <b>your arguments</b> and try again.`
+  const [emoji, target] =
+    opts.org === 'saulx' && opts.project === 'based-cloud'
+      ? ['📡', 'Based Cloud']
+      : opts.optionalKey
+        ? ['🌎', 'the environment manager']
+        : ['🪐', 'the environment']
+
+  context.print.loading(`Connecting to ${target}...`)
+
+  const hubClient: BasedClient = getBasedClient(context, opts)
+
+  if (!Object.keys(hubClient).length) {
+    throw new Error(errorMessage)
+  }
+
+  const timeout = setTimeout(() => {
+    context.print.stop().fail(errorMessage, true)
+  }, connectionTimeout)
+
+  await hubClient.once('connect').catch(() => {
+    throw new Error(errorMessage)
+  })
+
+  context.print.stop().success(`${emoji} Connected to ${target}.`)
+  clearTimeout(timeout)
+
+  return hubClient
+}
+
 export const login = async ({
   context,
   email,
@@ -42,21 +77,13 @@ export const login = async ({
   project,
   selectUser,
 }: BasedCli.Auth.Login): Promise<BasedCli.Auth.Clients> => {
-  const adminHub: BasedClient = getBasedClient(context, {
+  const adminHub: BasedClient = await hubConnection(context, {
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
     name: '@based/admin-hub',
     cluster,
   })
-
-  if (!Object.keys(adminHub).length) {
-    throw new Error(
-      'Fatal error during authorization, was not possible to connect to the Admin Hub. Try again.',
-    )
-  }
-
-  await adminHub.once('connect')
 
   let users: BasedCli.Auth.User[] = await readJSON(authPath).catch(() => [])
   let user: BasedCli.Auth.User
@@ -110,27 +137,19 @@ export const login = async ({
   user.ts = Date.now()
   await outputJSON(authPath, users)
 
-  const client: BasedClient = getBasedClient(context, {
+  const client: BasedClient = await hubConnection(context, {
     cluster,
     org,
     env,
     project,
   })
 
-  if (!Object.keys(client).length) {
-    throw new Error(
-      'Fatal error during authorization, was not possible to connect to the User Env. Try again.',
-    )
-  }
-
-  await client.once('connect')
-
   await client.setAuthState({
     ...adminHub.authState,
     type: 'based',
   })
 
-  const envHub: BasedClient = getBasedClient(context, {
+  const envHub: BasedClient = await hubConnection(context, {
     cluster,
     org,
     env,
@@ -138,14 +157,6 @@ export const login = async ({
     key: 'cms',
     optionalKey: true,
   })
-
-  if (!Object.keys(envHub).length) {
-    throw new Error(
-      'Fatal error during authorization, was not possible to connect to the Env Hub. Try again.',
-    )
-  }
-
-  await envHub.once('connect')
 
   await envHub.setAuthState({
     ...adminHub.authState,
