@@ -1,6 +1,6 @@
 import { create, update, remove } from './modify/modify.js'
 import { ModifyRes } from './modify/ModifyRes.js'
-import { parse, Schema, SchemaType } from '@based/schema'
+import { parse, Schema } from '@based/schema'
 import {
   PropDef,
   SchemaTypeDef,
@@ -17,7 +17,7 @@ import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
-import { ModifyOp } from './modify/types.js'
+import * as q2 from './query/internal/Query.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
@@ -208,6 +208,26 @@ export class BasedDb {
 
   remove(type: string, id: number | ModifyRes) {
     return remove(this, type, typeof id === 'number' ? id : id.tmpId)
+  }
+
+  query2(
+    type: string,
+    id?: number | ModifyRes | (number | ModifyRes)[],
+  ): Query {
+    if (Array.isArray(id)) {
+      let i = id.length
+      while (i--) {
+        if (typeof id[i] == 'object') {
+          // @ts-ignore
+          id[i] = id[i].tmpId
+        }
+      }
+    } else if (typeof id == 'object') {
+      // @ts-ignore
+      id = id.tmpId
+    }
+    // @ts-ignore
+    return new q2.Query(this, type, id)
   }
 
   query(

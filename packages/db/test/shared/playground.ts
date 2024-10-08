@@ -209,6 +209,10 @@ console.log(
 
 console.dir(q.resultToObject(def, result), { depth: 10 })
 
+console.log(
+  db.query2('article').include('flap', 'burp', 'published', 'name').get(),
+)
+
 // const xx = Date.now()
 // const flap = db
 //   .query('article')
