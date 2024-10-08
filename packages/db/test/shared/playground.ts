@@ -122,7 +122,7 @@ const def = q.createQueryDef(db, q.QueryDefType.Root, {
   // ids: new Uint32Array([1, 2]),
 })
 def.range.limit = 10
-q.includeFields(def, ['flap', 'burp', 'published']) // 'published'
+q.includeFields(def, ['flap', 'burp', 'published', 'name'])
 
 // q.sort(def, 'flap', 'desc')
 // q.filter(db, def, 'flap', '>', 2)

@@ -74,6 +74,7 @@ export const createSchemaTypeDef = (
     checksum: hashObjectIgnoreKeyOrder(type),
     type: typeName,
     props: {},
+    reverseProps: {},
     idUint8: new Uint8Array([0, 0]),
     id: 0,
     mainLen: 0,
@@ -286,6 +287,8 @@ export const createSchemaTypeDef = (
       const x = result.props[p]
       if (!x.separate) {
         result.main[x.start] = x
+      } else {
+        result.reverseProps[x.prop] = x
       }
     }
   }

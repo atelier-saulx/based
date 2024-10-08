@@ -74,6 +74,20 @@ const readAllFields = (
     }
     if (index === 0) {
       i += readMain(q, result, i, item)
+    } else {
+      const prop = q.schema.reverseProps[index]
+      if (prop.typeIndex === 11) {
+        // string
+        const size = result.readUint32LE(i)
+        if (size === 0) {
+          addField(prop, '', item)
+        } else {
+          addField(prop, result.toString('utf8', i + 4, size + i + 4), item)
+        }
+        i += size + 4
+      }
+      // reverse fields index
+      // if (q.schema.)
     }
   }
   return i - offset
