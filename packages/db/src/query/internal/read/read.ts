@@ -62,6 +62,8 @@ const readMain = (q: QueryDef, result: Buffer, offset: number, item: Item) => {
   return i - offset
 }
 
+// add edges
+
 const readAllFields = (
   q: QueryDef,
   result: Buffer,
@@ -106,7 +108,6 @@ const readAllFields = (
         i += size - 5
       }
     } else if (index === 253) {
-      console.log('BLA', { index })
       const field = result[i]
       i++
       const ref = q.references.get(field)
@@ -116,10 +117,8 @@ const readAllFields = (
       // @ts-ignore
       addField(ref.target.propDef, refs, item)
       i += size + 4
-      console.log('DERP =', { i, end })
     } else if (index === 0) {
       i += readMain(q, result, i, item)
-      console.log('BLABLA', { i })
     } else {
       const prop = q.schema.reverseProps[index]
       if (prop.typeIndex === 11) {
@@ -134,8 +133,6 @@ const readAllFields = (
     }
   }
 
-  console.log('DERP', i - offset)
-
   return i - offset
 }
 
@@ -146,8 +143,6 @@ export const resultToObject = (
   offset: number = 0,
 ) => {
   const len = result.readUint32LE(offset)
-
-  console.log('resultToObject', offset, end, len, result.byteLength)
 
   if (len === 0) {
     return []
