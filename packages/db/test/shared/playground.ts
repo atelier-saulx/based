@@ -159,11 +159,11 @@ const refDef = q.createQueryDef(db, q.QueryDefType.References, {
   type: 'user',
 })
 
-refDef.range.offset = 1
+refDef.range.offset = 0
 
 refDef.range.limit = 2
 
-q.sort(refDef, 'flap', 'desc')
+// q.sort(refDef, 'flap', 'desc')
 
 q.includeFields(refDef, ['name', 'flap'])
 
