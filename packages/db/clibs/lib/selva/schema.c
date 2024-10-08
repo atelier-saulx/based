@@ -23,6 +23,7 @@ struct schemabuf_parser_ctx {
     struct SelvaTypeEntry *te;
     const char *buf; /*!< Current position in the schema buf. */
     size_t len;
+    size_t alias_index;
 };
 
 static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const char *buf, size_t len);
@@ -300,6 +301,32 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
     return 1 + sizeof(len);
 }
 
+static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_ALIAS,
+        .alias_index = ctx->alias_index++,
+    };
+
+    return 1;
+}
+
+static int type2fs_aliases(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_ALIASES,
+        .alias_index = ctx->alias_index++,
+    };
+
+    return 1;
+}
+
 static struct schemabuf_parser {
     enum SelvaFieldType type;
     int (*type2fs)(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field_idx);
@@ -375,6 +402,14 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_MICRO_BUFFER] = {
         .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
         .type2fs = type2fs_micro_buffer,
+    },
+    [SELVA_FIELD_TYPE_ALIAS] = {
+        .type = SELVA_FIELD_TYPE_ALIAS,
+        .type2fs = type2fs_alias,
+    },
+    [SELVA_FIELD_TYPE_ALIASES] = {
+        .type = SELVA_FIELD_TYPE_ALIASES,
+        .type2fs = type2fs_aliases,
     },
 };
 
@@ -472,6 +507,13 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
         schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, count.nr_fields));
         efc->fields_schema = schema;
 
+        /*
+         * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_WEAK_REFERENCES,
+         * SELVA_FIELD_TYPE_ALIAS, and SELVA_FIELD_TYPE_ALIASES are not
+         * supported here.
+         * TODO Should we fail on unsupported types?
+         */
+
         schema->nr_fields = count.nr_fields;
         schema->nr_fixed_fields = count.nr_fixed_fields;
         err = parse2(ctx, schema, buf + 2, len - 2);
@@ -491,6 +533,7 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, struct sc
     struct schemabuf_parser_ctx ctx = {
         .ref_save_map = &db->schema.ref_save_map,
         .te = containerof(ns, struct SelvaTypeEntry, ns),
+        .alias_index = 0,
     };
 
     if (len < 2) {

@@ -76,11 +76,14 @@ struct SelvaTypeEntry {
     node_type_t type;
     struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
     struct SelvaAliases {
+        field_t field; /*!< Alias field. */
+        bool single; /*!< Only allow a single alias per node + field. */
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
-    } aliases;
+        size_t nr_aliases; /*!< Number of aliases by name. */
+    } *aliases __pcounted_by(nr_aliases);
+    size_t nr_aliases; /*!< Number of alias fields in this type. */
     size_t nr_nodes; /*!< Number of nodes of this type. */
-    size_t nr_aliases; /*!< Number of aliases by name. */
     struct mempool nodepool; /*!< Pool for struct SelvaNode of this type. */
     /**
      * Max node inserted so far.
@@ -157,10 +160,18 @@ int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
 
+void selva_init_aliases(struct SelvaTypeEntry *type);
+
+/**
+ * Free type->aliases.
+ * All the aliases must be freed before calling this function.
+ */
+void selva_destroy_aliases(struct SelvaTypeEntry *type);
+
 /**
  * Set new alias.
  * `new_alias` must be allocated with selva_jemalloc.
  */
-void selva_set_alias_p(struct SelvaTypeEntry *type, struct SelvaAlias *new_alias);
+void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
 
 #include "selva/db.h"

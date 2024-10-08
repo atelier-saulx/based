@@ -32,6 +32,8 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_WEAK_REFERENCE = 15,
     SELVA_FIELD_TYPE_WEAK_REFERENCES = 16,
     SELVA_FIELD_TYPE_MICRO_BUFFER = 17,
+    SELVA_FIELD_TYPE_ALIAS = 18,
+    SELVA_FIELD_TYPE_ALIASES = 19,
 } __packed;
 
 struct EdgeFieldConstraint {
@@ -57,6 +59,7 @@ struct SelvaFieldSchema {
         struct {
             uint16_t len;
         } smb;
+        size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
     };
 } __designated_init;
 

@@ -147,7 +147,11 @@ static void del_type(struct SelvaDb *db, struct SelvaTypeEntry *type)
 {
     selva_destroy_all_cursors(type);
     del_all_nodes(db, type);
-    /* We assume that as the nodes are deleted the aliases are also freed. */
+    /*
+     * We assume that as the nodes are deleted the aliases are also freed.
+     * The following function will just free type->aliases.
+     */
+    selva_destroy_aliases(type);
 
     (void)SVector_Remove(&db->type_list, SelvaTypeEntry2vecptr(type));
 
@@ -211,8 +215,7 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
     }
 
     RB_INIT(&te->nodes);
-    RB_INIT(&te->aliases.alias_by_name);
-    RB_INIT(&te->aliases.alias_by_dest);
+    selva_init_aliases(te);
 
     const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, count.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
@@ -297,7 +300,7 @@ struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSch
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    selva_del_alias_by_dest(type, node->node_id);
+    selva_remove_all_aliases(type, node->node_id);
     selva_cursors_node_going_away(type, node);
     RB_REMOVE(SelvaNodeIndex, &type->nodes, node);
     if (node == type->max_node) {
