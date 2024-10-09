@@ -881,9 +881,9 @@ copy:
         } while (0);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
-        return SELVA_ENOTSUP; /* TODO Support */
+        return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_ALIASES:
-        return SELVA_ENOTSUP; /* TODO Support */
+        return SELVA_ENOTSUP;
     }
 
     return 0;
@@ -1508,10 +1508,12 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
         any.smb = (struct SelvaMicroBuffer *)p;
         break;
     case SELVA_FIELD_TYPE_ALIAS:
-        /* TODO This would be easy to support. */
+        /*
+         * This would be easy to support but we also expose the
+         * alias API also directly.
+         */
         break;
     case SELVA_FIELD_TYPE_ALIASES:
-        /* TODO Not really supported. */
         break;
     }
 
