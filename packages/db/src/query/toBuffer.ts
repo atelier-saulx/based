@@ -67,7 +67,10 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         // 1: 2 [sort size]
         // ?sort
 
-        if (def.range.offset || def.range.limit < def.target.ids.length) {
+        if (
+          !sortSize &&
+          (def.range.offset || def.range.limit < def.target.ids.length)
+        ) {
           def.target.ids = def.target.ids.slice(
             def.range.offset,
             def.range.offset + def.range.limit,
