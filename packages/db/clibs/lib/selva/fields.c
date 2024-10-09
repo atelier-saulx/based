@@ -149,7 +149,6 @@ static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
     }
 }
 
-
 static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
 {
     struct selva_string *s;
@@ -160,6 +159,20 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
 
     s = get_mutable_string(fields, fs, nfo, len);
     (void)selva_string_replace(s, str, len);
+
+    return 0;
+}
+
+static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
+{
+    struct selva_string *s;
+
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
+    (void)selva_string_replace_crc(s, str, len, crc);
 
     return 0;
 }
@@ -912,6 +925,19 @@ int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct Se
     assert(selva_get_fs_by_node(db, node, fs->field) == fs);
 #endif
     return fields_set(db, node, fs, &node->fields, value, len);
+}
+
+int selva_fields_set_wcrc(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len, uint32_t crc)
+{
+    struct SelvaFieldInfo *nfo = ensure_field(node, &node->fields, fs);
+    const enum SelvaFieldType type = fs->type;
+
+    switch (type) {
+    case SELVA_FIELD_TYPE_STRING:
+        return set_field_string_crc(&node->fields, fs, nfo, value, len, crc);
+    default:
+        return SELVA_ENOTSUP;
+    }
 }
 
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
