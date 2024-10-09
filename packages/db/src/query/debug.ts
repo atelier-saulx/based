@@ -46,13 +46,16 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
       })
     } else {
       for (const key in a) {
-        b[key] = f(a[key])
+        if (key === 'schema') {
+          b[key] = `Schema [${a.schema?.type}]`
+        } else {
+          b[key] = f(a[key])
+        }
       }
     }
   }
   walk(q, loggableObject)
   loggableObject.type = QueryDefType[q.type]
-  loggableObject.schema = q.schema?.type || null
   if (!returnIt) {
     console.dir(loggableObject, { depth: 10 })
   }

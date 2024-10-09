@@ -132,7 +132,11 @@ for (let i = 0; i < 10e3; i++) {
 console.log('db time', db.drain(), Date.now() - d)
 
 console.log(
-  db.query('article').include('flap', 'burp', 'published', 'name').get(),
+  db
+    .query('article')
+    .include('flap', 'burp', 'published', 'name')
+    .get()
+    .toObject(),
 )
 
 // const xx = Date.now()

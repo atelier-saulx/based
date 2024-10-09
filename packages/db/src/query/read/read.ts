@@ -1,4 +1,5 @@
 import { PropDef, PropDefEdge } from '../../schema/types.js'
+import { debug } from '../debug.js'
 import { QueryDef } from '../types.js'
 
 type Item = {
@@ -38,6 +39,36 @@ const readMainValue = (
     } else {
       addField(prop, prop.enum[result[index] - 1], item)
     }
+  } else if (prop.typeIndex === 11) {
+    const len = result[index]
+    let str = ''
+    if (len !== 0) {
+      str = result.toString('utf-8', index + 1, index + len + 1)
+    }
+    addField(prop, str, item)
+    // 18: int8
+  } else if (prop.typeIndex === 18) {
+    addField(prop, result.readInt8(index), item)
+  }
+  // 19: uint8
+  else if (prop.typeIndex === 19) {
+    addField(prop, result.readUint8(index), item)
+  }
+  // 20: int16
+  else if (prop.typeIndex === 20) {
+    addField(prop, result.readInt16LE(index), item)
+  }
+  // 21: uint16
+  else if (prop.typeIndex === 21) {
+    addField(prop, result.readUint16LE(index), item)
+  }
+  // 22: int32
+  else if (prop.typeIndex === 22) {
+    addField(prop, result.readInt32LE(index), item)
+  }
+  // 5: uint32
+  else if (prop.typeIndex === 5) {
+    addField(prop, result.readUint32LE(index), item)
   }
 }
 
@@ -71,6 +102,8 @@ const readAllFields = (
   while (i < end) {
     const index = result[i]
     i++
+
+    console.log('GET INDEX', { index })
 
     if (index === 255) {
       return i - offset
@@ -112,6 +145,9 @@ const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
+      debug(q)
+      console.log('GET THIS', index, prop)
+
       if (prop.typeIndex === 11) {
         const size = result.readUint32LE(i)
         if (size === 0) {

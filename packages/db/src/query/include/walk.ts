@@ -3,7 +3,9 @@ import { isPropDef, PropDef, SchemaPropTree } from '../../schema/types.js'
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
-import { includeAllProps, includeFields, includeProp } from './props.js'
+// import { includeAllProps, includeFields, includeProp } from './props.js'
+
+import { includeFields } from './props.js'
 
 export const walkDefs = (
   db: BasedDb,
@@ -28,16 +30,16 @@ export const walkDefs = (
         const edgeProp = def.edges.props[p]
         if (edgeProp.typeIndex === 13 || edgeProp.typeIndex === 14) {
           const refDef = createOrGetRefQueryDef(db, def.edges, edgeProp)
-          if (path.length - 1 === i) {
-            includeAllProps(refDef)
-          } else {
-            const f = path.slice(i + 1).join('.')
-            if (includeProp(refDef, f)) {
-              return
-            } else {
-              includeFields(refDef, [f])
-            }
-          }
+          // if (path.length - 1 === i) {
+          //   includeAllProps(refDef)
+          // } else {
+          const f = path.slice(i + 1).join('.')
+          // if (includeProp(refDef, f)) {
+          //   return
+          // } else {
+          includeFields(refDef, [f])
+          // }
+          // }
         } else {
           def.edges.include.props.add(edgeProp.prop)
         }

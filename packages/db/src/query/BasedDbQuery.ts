@@ -9,6 +9,7 @@ import {
   Operation,
   sort,
   defToBuffer,
+  debug,
 } from './query.js'
 
 import { BasedIterable } from './BasedIterable.js'
@@ -76,9 +77,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     super(db, def)
   }
 
-  // this can be a partyial class
-
   get() {
+    if (!this.def.include.stringFields.size) {
+      includeFields(this.def, ['*'])
+    }
+    debug(this.def)
     const b = defToBuffer(this.db, this.def)
     const d = Date.now()
     const result = this.db.native.getQueryBuf(Buffer.concat(b))
