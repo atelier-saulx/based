@@ -204,6 +204,32 @@ await test('update', async (t) => {
 
   equal(db.query('snurp', ids).range(10, 100).get().length, 100)
 
+  deepEqual(
+    db.query('snurp', ids).range(1e5, 2).sort('a', 'desc').get().toObject(),
+    [
+      {
+        id: 900000,
+        a: 899998,
+        countryCode: '',
+        b: 0,
+        c: 0,
+        nested: { derp: 'b' },
+        name: 'mr snurp 899998',
+        email: '',
+      },
+      {
+        id: 899999,
+        a: 899997,
+        countryCode: '',
+        b: 0,
+        c: 0,
+        nested: { derp: 'b' },
+        name: 'mr snurp 899997',
+        email: '',
+      },
+    ],
+  )
+
   let total = 0
   let len = 0
   for (var j = 0; j < 1; j++) {

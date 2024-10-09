@@ -20,8 +20,8 @@ pub fn queryIds(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
-    _: u32,
-    _: u32,
+    offset: u32,
+    limit: u32,
 ) !void {
     const typeEntry = try db.getType(typeId);
     var i: u32 = 0;
@@ -38,6 +38,7 @@ pub fn queryIds(
     }
     const sortFlag = try db.getSortFlag(sortFieldType, queryType == 10);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len * 4).?;
+
     sortItem: while (i < ids.len) : (i += 4) {
         const id = utils.readInt(u32, ids, i);
         const node = db.getNode(id, typeEntry);
@@ -50,10 +51,19 @@ pub fn queryIds(
         const value = db.getField(node.?, try db.getFieldSchema(sortField, typeEntry));
         db.insertSort(sortCtx, node.?, sortFieldType, value, start, len);
     }
+
     selva.selva_sort_foreach_begin(sortCtx);
+
     while (!selva.selva_sort_foreach_done(sortCtx)) {
         // if @limit stop
         const node: db.Node = @ptrCast(selva.selva_sort_foreach(sortCtx));
+
+        ctx.totalResults += 1;
+
+        if (offset != 0 and ctx.totalResults <= offset) {
+            continue;
+        }
+
         const size = try getFields(
             node,
             ctx,
@@ -63,11 +73,20 @@ pub fn queryIds(
             null,
             false,
         );
+
         if (size > 0) {
             ctx.size += size;
-            ctx.totalResults += 1;
+        }
+
+        if (ctx.totalResults - offset >= limit) {
+            break;
         }
     }
+
+    if (offset != 0) {
+        ctx.totalResults -= offset;
+    }
+
     selva.selva_sort_destroy(sortCtx);
 }
 
