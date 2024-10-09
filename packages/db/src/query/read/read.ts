@@ -5,16 +5,26 @@ type Item = {
   id: number
 } & { [key: string]: any }
 
-const addField = (p: PropDef | PropDefEdge, value: any, item: Item) => {
+const addField = (
+  p: PropDef | PropDefEdge,
+  value: any,
+  item: Item,
+  defaultOnly: boolean = false,
+) => {
   const len = p.path.length
   if (len === 1) {
-    item[p.path[0]] = value
+    const field = p.path[0]
+    if (!defaultOnly || !(field in item)) {
+      item[field] = value
+    }
   } else {
     let select: any = item
     for (let i = 0; i < len; i++) {
       const field = p.path[i]
       if (i === len - 1) {
-        select[field] = value
+        if (!defaultOnly || !(field in select)) {
+          select[field] = value
+        }
       } else {
         select = select[field] ?? (select[field] = {})
       }
