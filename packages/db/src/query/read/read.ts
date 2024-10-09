@@ -103,8 +103,6 @@ const readAllFields = (
     const index = result[i]
     i++
 
-    console.log('GET INDEX', { index })
-
     if (index === 255) {
       return i - offset
     }
@@ -145,9 +143,6 @@ const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
-      debug(q)
-      console.log('GET THIS', index, prop)
-
       if (prop.typeIndex === 11) {
         const size = result.readUint32LE(i)
         if (size === 0) {
