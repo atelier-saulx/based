@@ -183,6 +183,7 @@ const readAllFields = (
       }
     }
   }
+  // to add defaults - may not optimal for perfromance
   for (const k in q.include.propsRead) {
     if (q.include.propsRead[k] !== id) {
       addField(q.schema.reverseProps[k], '', item)
