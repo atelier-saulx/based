@@ -132,20 +132,16 @@ static void set_crc(struct selva_string *s, uint32_t csum)
  * Calculate the CRC of a selva_string.
  * @param hdr is the header part of a selva_string i.e. without the actual string.
  */
-static uint32_t calc_crc(const struct selva_string *hdr, const char *str) __attribute__((pure, access(read_only, 1), access(read_only, 2)));
-static uint32_t calc_crc(const struct selva_string *hdr, const char *str)
+static uint32_t calc_crc(const struct selva_string *s) __attribute__((pure, access(read_only, 1), access(read_only, 2)));
+static uint32_t calc_crc(const struct selva_string *s)
 {
-    uint32_t res;
-
-    res = crc32c(0, hdr, sizeof(struct selva_string) - sizeof_field(struct selva_string, emb));
-    res = crc32c(res, str, hdr->len + 1);
-    return res;
+    return crc32c(0, get_buf(s), s->len + 1);
 }
 
 static void update_crc(struct selva_string *s)
 {
     if (s->flags & SELVA_STRING_CRC) {
-        set_crc(s, calc_crc(s, get_buf(s)));
+        set_crc(s, calc_crc(s));
     }
 }
 
@@ -240,6 +236,30 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
     return (flags & SELVA_STRING_MUTABLE)
         ? set_string(alloc_mutable(len + trail), str, len, flags)
         : set_string(alloc_immutable(len + trail), str, len, flags);
+}
+
+struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
+{
+    const size_t trail = sizeof(uint32_t); /* Space for the CRC */
+    struct selva_string *s;
+
+    if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
+        test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
+        return NULL; /* Invalid flags */
+    }
+    flags &= ~SELVA_STRING_CRC; /* This is also implicit but it must not be set yet. */
+
+    s = (flags & SELVA_STRING_MUTABLE)
+        ? set_string(alloc_mutable(len + trail), str, len, flags)
+        : set_string(alloc_immutable(len + trail), str, len, flags);
+    s->flags |= SELVA_STRING_CRC;
+    /*
+     * We just trust that this is the correct crc and that the data isn't
+     * corrupted yet.
+     */
+    set_crc(s, crc);
+
+    return s;
 }
 
 struct selva_string *selva_string_createf(const char *fmt, ...)
@@ -650,7 +670,7 @@ void selva_string_freeze(struct selva_string *s)
 
 int selva_string_verify_crc(const struct selva_string *s)
 {
-    return verify_parity(s) && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s, get_buf(s));
+    return verify_parity(s) && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s);
 }
 
 uint32_t selva_string_get_crc(const struct selva_string *s)

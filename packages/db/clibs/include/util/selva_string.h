@@ -19,13 +19,9 @@ enum selva_string_flags {
      * CRC enabled.
      * Note that the CRC is always calculated from the data that's stored
      * in-mem and not the uncompressed string if SELVA_STRING_COMPRESS is
-     * used. The CRC is calculated first over the metadata and then the
-     * stored string. It's possible to use the calculated CRC for
-     * comparisons but it's not possible to verify it with plain CRC.
-     * The function selva_string_verify_crc() is provided to verify the CRC.
-     *
+     * used.
      * If verifying that decompressed is the same as the original uncompressed
-     * data is deemoed necessary then a separate verification step should be
+     * data is deemed necessary then a separate verification step should be
      * implemented outside of selva_string.
      */
     SELVA_STRING_CRC = 0x01,
@@ -109,6 +105,13 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
  */
 [[nodiscard]]
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
+    __attribute__((access(read_only, 1, 2)));
+
+/**
+ * Create a new string with a user provided CRC.
+ * @param str can be NULL.
+ */
+struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
     __attribute__((access(read_only, 1, 2)));
 
 /**
