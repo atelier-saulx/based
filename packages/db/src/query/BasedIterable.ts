@@ -104,6 +104,9 @@ export class BasedIterable {
   // bit weird...
   node(index: number = 0): any {
     let i = 0
+    if ('id' in this.def.target) {
+      return this.toObject()
+    }
     for (const x of this) {
       if (i === index) {
         return x
