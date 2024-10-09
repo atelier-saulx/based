@@ -203,8 +203,7 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
 int selva_string_init(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
 {
     /* TODO Support compression. */
-    /* TODO Support CRC. */
-    if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_CRC | SELVA_STRING_COMPRESS)) ||
+    if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_COMPRESS)) ||
         test_mutually_exclusive_flags(flags, (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
         (!(flags & (SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_MUTABLE)) && !str)) {
         memset(s, 0, sizeof(*s));
@@ -215,7 +214,9 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
         set_string(s, str, len, flags);
     } else if (flags & SELVA_STRING_MUTABLE) {
-        s->p = selva_malloc(len + 1);
+        const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+
+        s->p = selva_malloc(len + 1 + trail);
         set_string(s, str, len, flags);
     } else {
         set_string(s, str, len, flags);

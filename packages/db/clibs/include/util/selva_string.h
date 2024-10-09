@@ -79,13 +79,22 @@ struct selva_string {
 };
 
 #define SELVA_STRING_STATIC_BUF_SIZE(len) \
-    ((len < sizeof(char *)) ? 0 : len - sizeof(char *) + 1)
+    (((len + 1) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *))
 
-#define SELVA_STRING_STATIC(name, len) \
+#define SELVA_STRING_STATIC_BUF_SIZE_WCRC(len) \
+    (((len + 1 + sizeof(uint32_t)) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *) + sizeof(uint32_t))
+
+#define SELVA_STRING_STATIC_S(name, len) \
     struct { \
         struct selva_string name; \
-        char buf[SELVA_STRING_STATIC_BUF_SIZE]; \
-    } name
+        char name ## buf[SELVA_STRING_STATIC_BUF_SIZE(len)]; \
+    }
+
+#define SELVA_STRING_STATIC_S_WCRC(name, len) \
+    struct { \
+        struct selva_string name; \
+        char name ## buf[SELVA_STRING_STATIC_BUF_SIZE_WCRC(len)]; \
+    }
 #endif
 
 /**
