@@ -1,4 +1,4 @@
-import { PropDef, PropDefEdge } from '../../../schema/types.js'
+import { PropDef, PropDefEdge } from '../../schema/types.js'
 import { QueryDef } from '../types.js'
 
 type Item = {

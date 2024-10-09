@@ -1,6 +1,4 @@
-import { deepCopy } from '@saulx/utils'
-import { BasedDb, BasedNode } from '../../index.js'
-import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../../schema/types.js'
+import { BasedDb } from '../index.js'
 import {
   EdgeTarget,
   QueryDef,

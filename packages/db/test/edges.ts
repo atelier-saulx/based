@@ -103,10 +103,6 @@ await test('edges', async (t) => {
     // .include('contributors.$countries')
     .get()
 
-  console.log('old', new Uint8Array(x.query.includeBuffer))
-
-  x.debug()
-
   // console.log(x)
 
   // for (const f of x) {

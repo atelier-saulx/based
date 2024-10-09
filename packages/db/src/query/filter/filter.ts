@@ -4,8 +4,8 @@ import {
   SchemaTypeDef,
   SchemaPropTree,
   PropDef,
-} from '../../../schema/schema.js'
-import { BasedDb } from '../../../index.js'
+} from '../../schema/schema.js'
+import { BasedDb } from '../../index.js'
 
 export type Operation =
   | '='

@@ -7,7 +7,6 @@ import {
 } from '@based/schema'
 import { setByPath } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { BasedNode } from '../basedNode/index.js'
 import { BasedDb } from '../index.js'
 import {
   PropDef,
@@ -259,7 +258,7 @@ export const createSchemaTypeDef = (
       lastWritten += f.byteLength + 1
     }
 
-    result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
+    // result.responseCtx = new BasedNode(result as SchemaTypeDef, parsed)
 
     if (stringFields > 0) {
       result.hasStringProp = true

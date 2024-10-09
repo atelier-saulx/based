@@ -10,18 +10,16 @@ import {
 import { wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import db from './native.js'
-import { Query, query } from './query/query.js'
+import { BasedDbQuery } from './query/BasedDbQuery.js'
 import { flushBuffer } from './operations.js'
 import { destroy } from './destroy.js'
 import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
-import * as q2 from './query/internal/Query.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
-export * from './basedNode/index.js'
 
 export class BasedDb {
   isDraining: boolean = false
@@ -210,10 +208,10 @@ export class BasedDb {
     return remove(this, type, typeof id === 'number' ? id : id.tmpId)
   }
 
-  query2(
+  query(
     type: string,
     id?: number | ModifyRes | (number | ModifyRes)[],
-  ): Query {
+  ): BasedDbQuery {
     if (Array.isArray(id)) {
       let i = id.length
       while (i--) {
@@ -223,35 +221,11 @@ export class BasedDb {
         }
       }
     } else if (typeof id == 'object') {
-      // @ts-ignore
       id = id.tmpId
     }
-    // @ts-ignore
-    return new q2.Query(this, type, id)
+    return new BasedDbQuery(this, type, id as number | number[])
   }
 
-  query(
-    target: string,
-    id?: number | ModifyRes | (number | ModifyRes)[],
-  ): Query {
-    if (Array.isArray(id)) {
-      let i = id.length
-      while (i--) {
-        if (typeof id[i] == 'object') {
-          // @ts-ignore
-          id[i] = id[i].tmpId
-        }
-      }
-    } else if (typeof id == 'object') {
-      // @ts-ignore
-      id = id.tmpId
-    }
-
-    // @ts-ignore
-    return query(this, target, id)
-  }
-
-  // drain write buf returns perf in ms
   drain() {
     flushBuffer(this)
     const t = this.writeTime

@@ -1,8 +1,8 @@
-import { BasedDb } from '../../index.js'
+import { BasedDb } from '../index.js'
 import { createSortBuffer } from './sort.js'
 import { QueryDef, QueryDefType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
-import { filterToBuffer, debug } from './internal.js'
+import { filterToBuffer, debug } from './query.js'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {

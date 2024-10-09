@@ -4,7 +4,6 @@ import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
 import { text, italy, euobserver } from './examples.js'
-import * as q from '../../src/query/internal/internal.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
@@ -132,85 +131,8 @@ for (let i = 0; i < 10e3; i++) {
 
 console.log('db time', db.drain(), Date.now() - d)
 
-// --------------------------------------------------------------
-const def = q.createQueryDef(db, q.QueryDefType.Root, {
-  type: 'article',
-  // ids: new Uint32Array([1, 2]),
-})
-def.range.limit = 1000
-
-const include = [
-  'flap',
-  'burp',
-  'published',
-  'name',
-  // 'contributors.name',
-  // 'contributors.flap',
-  // 'contributors.derp',
-  // 'contributors.ownedArticles.name',
-  // 'contributors.favourite.name',
-  // 'contributors.favourite.contributors.name',
-  // 'owner.flap',
-]
-q.includeFields(def, include)
-
-const refDef = q.createQueryDef(db, q.QueryDefType.References, {
-  propDef: def.props.contributors,
-  type: 'user',
-})
-
-refDef.range.offset = 0
-
-refDef.range.limit = 2
-
-// q.sort(refDef, 'flap', 'desc')
-
-q.includeFields(refDef, ['name', 'flap'])
-
-def.references.set(def.props.contributors.prop, refDef)
-
-def.range.limit = 3
-
-// q.sort(def, 'flap', 'desc')
-// q.filter(db, def, 'flap', '>', 2)
-// q.filter(db, def, 'published', '=', true)
-
-const b = Buffer.concat(q.defToBuffer(db, def))
-
-q.debug(def)
-
-q.debug(b)
-
-console.log('RESULT')
-
-const xxx = Date.now()
-
-const result = db.native.getQueryBuf(b)
 console.log(
-  'getting result',
-  Date.now() - xxx,
-  'ms',
-  Math.floor(result.byteLength / 1e3 / 1e3),
-  'mb',
-)
-
-// q.debug(result)
-
-const s = Date.now()
-for (let i = 0; i < 1; i++) {
-  q.resultToObject(def, result)
-}
-console.log(
-  Date.now() - s,
-  'ms',
-  Math.floor(result.byteLength / 1e3 / 1e3),
-  'mb',
-)
-
-console.dir(q.resultToObject(def, result), { depth: 10 })
-
-console.log(
-  db.query2('article').include('flap', 'burp', 'published', 'name').get(),
+  db.query('article').include('flap', 'burp', 'published', 'name').get(),
 )
 
 // const xx = Date.now()

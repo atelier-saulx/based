@@ -1,4 +1,4 @@
-import { BasedDb } from '../../index.js'
+import { BasedDb } from '../index.js'
 import {
   QueryDef,
   createQueryDef,
@@ -8,28 +8,31 @@ import {
   filter,
   Operation,
   sort,
-  resultToObject,
   defToBuffer,
-} from './internal.js'
+} from './query.js'
+
+import { BasedIterable } from './BasedIterable.js'
 
 // partial class
 // range, include, filter, sort, traverse* later
 // include will support branching (rest not yet)
 
-export class QueryBranch {
+export class QueryBranch<T> {
   db: BasedDb
   def: QueryDef
+
   constructor(db: BasedDb, def: QueryDef) {
     this.db = db
     this.def = def
   }
 
-  sort(field: string, order: 'asc' | 'desc' = 'asc'): QueryBranch {
+  sort(field: string, order: 'asc' | 'desc' = 'asc'): T {
     sort(this.def, field, order)
+    // @ts-ignore
     return this
   }
 
-  filter(field: string, operator?: Operation | boolean, value?: any) {
+  filter(field: string, operator?: Operation | boolean, value?: any): T {
     if (operator === undefined) {
       operator = '='
       value = true
@@ -38,36 +41,25 @@ export class QueryBranch {
       value = operator
     }
     filter(this.db, this.def, field, operator, value)
+    // @ts-ignore
     return this
   }
 
-  range(offset: number, limit: number): QueryBranch {
+  range(offset: number, limit: number): T {
     this.def.range.offset = offset
     this.def.range.limit = limit
+    // @ts-ignore
     return this
   }
 
-  include(...fields: string[]): QueryBranch {
+  include(...fields: (string | any)[]): T {
     includeFields(this.def, fields)
+    // @ts-ignore
     return this
   }
 }
 
-export class QueryResult {
-  #result: Buffer
-  #def: QueryDef
-  execTime: number
-  constructor(def: QueryDef, result: Buffer, execTime: number) {
-    this.#def = def
-    this.#result = result
-    this.execTime = execTime
-  }
-  toObject(): any {
-    return resultToObject(this.#def, this.#result)
-  }
-}
-
-export class Query extends QueryBranch {
+export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   constructor(db: BasedDb, type: string, id?: number | number[]) {
     const target: QueryTarget = {
       type,
@@ -90,6 +82,6 @@ export class Query extends QueryBranch {
     const b = defToBuffer(this.db, this.def)
     const d = Date.now()
     const result = this.db.native.getQueryBuf(Buffer.concat(b))
-    return new QueryResult(this.def, result, Date.now() - d)
+    return new BasedIterable(this.def, result, Date.now() - d)
   }
 }

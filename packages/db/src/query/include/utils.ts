@@ -1,5 +1,5 @@
-import { BasedDb } from '../../../index.js'
-import { PropDef, PropDefEdge, SchemaPropTree } from '../../../schema/types.js'
+import { BasedDb } from '../../index.js'
+import { PropDef, PropDefEdge, SchemaPropTree } from '../../schema/types.js'
 import { createQueryDef } from '../queryDef.js'
 import { QueryDef, QueryDefType } from '../types.js'
 

@@ -1,4 +1,4 @@
-import { BasedDb } from '../../../index.js'
+import { BasedDb } from '../../index.js'
 import { QueryDef } from '../types.js'
 import { walkDefs } from './walk.js'
 

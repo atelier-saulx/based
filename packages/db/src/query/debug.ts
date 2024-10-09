@@ -1,6 +1,5 @@
 import picocolors from 'picocolors'
-import { BasedNode } from '../../index.js'
-import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../../schema/types.js'
+import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../schema/types.js'
 import { QueryDef, QueryDefType } from './types.js'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
@@ -9,10 +8,10 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
     if (a === null) {
       return null
     }
-    if (a instanceof BasedNode) {
-      // will be changed
-      return 'basedNode'
-    }
+    // if (a instanceof BasedNode) {
+    //   // will be changed
+    //   return 'basedNode'
+    // }
     if (a instanceof Buffer) {
       return new Uint8Array(a)
     }

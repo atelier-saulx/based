@@ -1,5 +1,3 @@
-import { BasedNode } from '../basedNode/index.js'
-
 // Reserved fields
 // 255: single ref in include
 // 254: multi ref in include
@@ -107,7 +105,7 @@ export type SchemaTypeDef = {
     [start: string]: PropDef
   }
   tree: SchemaPropTree
-  responseCtx: BasedNode
+  // responseCtx: BasedNode
   hasStringProp: boolean
   stringPropsSize: number
   stringProps: Buffer // size will be max field
