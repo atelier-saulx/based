@@ -29,25 +29,38 @@ const readMainValue = (
   index: number,
   item: Item,
 ) => {
-  if (prop.typeIndex === 5) {
+  // 1: timestamp, 4: number
+  if (prop.typeIndex === 4 || prop.typeIndex === 1) {
+    addField(prop, result.readDoubleLE(index), item)
+  }
+  // 5: uint32
+  else if (prop.typeIndex === 5) {
     addField(prop, result.readUInt32LE(index), item)
-  } else if (prop.typeIndex === 9) {
-    addField(prop, !!result[index], item)
-  } else if (prop.typeIndex === 10) {
+  }
+  // 9: boolean
+  else if (prop.typeIndex === 9) {
+    addField(prop, Boolean(result[index]), item)
+  }
+  // 10: Enum
+  else if (prop.typeIndex === 10) {
     if (result[index] === 0) {
       addField(prop, undefined, item)
     } else {
       addField(prop, prop.enum[result[index] - 1], item)
     }
-  } else if (prop.typeIndex === 11) {
+  }
+  // 11: string
+  else if (prop.typeIndex === 11) {
+    console.log('hello STRING')
     const len = result[index]
     let str = ''
     if (len !== 0) {
       str = result.toString('utf-8', index + 1, index + len + 1)
     }
     addField(prop, str, item)
-    // 18: int8
-  } else if (prop.typeIndex === 18) {
+  }
+  // 18: int8
+  else if (prop.typeIndex === 18) {
     addField(prop, result.readInt8(index), item)
   }
   // 19: uint8
