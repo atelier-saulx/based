@@ -108,6 +108,17 @@ int selva_fields_set(
         const struct SelvaFieldSchema *fs,
         const void *value, size_t len);
 
+/**
+ * Set field value with CRC.
+ */
+SELVA_EXPORT
+int selva_fields_set_wcrc(
+        struct SelvaDb *db,
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs,
+        const void *value, size_t len,
+        uint32_t crc);
+
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
         struct SelvaNode *node,

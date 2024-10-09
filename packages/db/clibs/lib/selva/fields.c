@@ -60,7 +60,7 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
     const enum SelvaFieldType type = fs->type;
 
     if (type == SELVA_FIELD_TYPE_STRING) {
-        return sizeof(struct selva_string) + SELVA_STRING_STATIC_BUF_SIZE(fs->string.fixed_len);
+        return sizeof(struct selva_string) + SELVA_STRING_STATIC_BUF_SIZE_WCRC(fs->string.fixed_len);
     } else if (type == SELVA_FIELD_TYPE_MICRO_BUFFER) {
         return sizeof(struct SelvaMicroBuffer) + fs->smb.len;
     } else {
@@ -120,10 +120,10 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
 
     if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
         if (fs->string.fixed_len == 0) {
-            selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE);
+            selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
         } else {
             assert(len < fs->string.fixed_len);
-            selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED);
+            selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
         }
     }
 
@@ -149,12 +149,32 @@ static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
     }
 }
 
-
-static void set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
+static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
 {
-    struct selva_string *s = get_mutable_string(fields, fs, nfo, len);
+    struct selva_string *s;
 
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
     (void)selva_string_replace(s, str, len);
+
+    return 0;
+}
+
+static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
+{
+    struct selva_string *s;
+
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
+    (void)selva_string_replace_crc(s, str, len, crc);
+
+    return 0;
 }
 
 /**
@@ -801,11 +821,11 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
 }
 
 /**
- * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
- * @param db Can be NULL if field type is not a strong reference.
- * @param node Can be NULL if field type is not a strong reference.
+ * Ensure that a field is allocated properly.
+ * @param node Optional node context.
+ * @param fields is the fields structure modified.
  */
-static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
+static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     const enum SelvaFieldType type = fs->type;
     struct SelvaFieldInfo *nfo;
@@ -813,12 +833,25 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     nfo = &fields->fields_map[fs->field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
         *nfo = alloc_block(fields, fs);
-    } else if (unlikely(nfo->type != fs->type)) {
+    } else if (unlikely(nfo->type != type)) {
         db_panic("Invalid nfo type for %.d:%d.%d: %s (%d) != %s (%d)\n",
                  node->type, node->node_id, fs->field,
                  selva_str_field_type(nfo->type), nfo->type,
-                 selva_str_field_type(fs->type), fs->type);
+                 selva_str_field_type(type), type);
     }
+
+    return nfo;
+}
+
+/**
+ * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
+ * @param db Can be NULL if field type is not a strong reference.
+ * @param node Can be NULL if field type is not a strong reference.
+ */
+static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFields *fields, const void *value, size_t len)
+{
+    struct SelvaFieldInfo *nfo = ensure_field(node, fields, fs);
+    const enum SelvaFieldType type = fs->type;
 
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
@@ -843,10 +876,7 @@ copy:
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
-        if (fs->string.fixed_len && len > fs->string.fixed_len) {
-            return SELVA_ENOBUFS;
-        }
-        set_field_string(fields, fs, nfo, value, len);
+        return set_field_string(fields, fs, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* Use selva_fields_set_text() */
@@ -895,6 +925,19 @@ int selva_fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct Se
     assert(selva_get_fs_by_node(db, node, fs->field) == fs);
 #endif
     return fields_set(db, node, fs, &node->fields, value, len);
+}
+
+int selva_fields_set_wcrc(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len, uint32_t crc)
+{
+    struct SelvaFieldInfo *nfo = ensure_field(node, &node->fields, fs);
+    const enum SelvaFieldType type = fs->type;
+
+    switch (type) {
+    case SELVA_FIELD_TYPE_STRING:
+        return set_field_string_crc(&node->fields, fs, nfo, value, len, crc);
+    default:
+        return SELVA_ENOTSUP;
+    }
 }
 
 int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)

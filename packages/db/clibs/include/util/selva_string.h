@@ -19,13 +19,9 @@ enum selva_string_flags {
      * CRC enabled.
      * Note that the CRC is always calculated from the data that's stored
      * in-mem and not the uncompressed string if SELVA_STRING_COMPRESS is
-     * used. The CRC is calculated first over the metadata and then the
-     * stored string. It's possible to use the calculated CRC for
-     * comparisons but it's not possible to verify it with plain CRC.
-     * The function selva_string_verify_crc() is provided to verify the CRC.
-     *
+     * used.
      * If verifying that decompressed is the same as the original uncompressed
-     * data is deemoed necessary then a separate verification step should be
+     * data is deemed necessary then a separate verification step should be
      * implemented outside of selva_string.
      */
     SELVA_STRING_CRC = 0x01,
@@ -83,13 +79,22 @@ struct selva_string {
 };
 
 #define SELVA_STRING_STATIC_BUF_SIZE(len) \
-    ((len < sizeof(char *)) ? 0 : len - sizeof(char *) + 1)
+    (((len + 1) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *))
 
-#define SELVA_STRING_STATIC(name, len) \
+#define SELVA_STRING_STATIC_BUF_SIZE_WCRC(len) \
+    (((len + 1 + sizeof(uint32_t)) < sizeof(char *)) ? 0 : len + 1 - sizeof(char *) + sizeof(uint32_t))
+
+#define SELVA_STRING_STATIC_S(name, len) \
     struct { \
         struct selva_string name; \
-        char buf[SELVA_STRING_STATIC_BUF_SIZE]; \
-    } name
+        char name ## buf[SELVA_STRING_STATIC_BUF_SIZE(len)]; \
+    }
+
+#define SELVA_STRING_STATIC_S_WCRC(name, len) \
+    struct { \
+        struct selva_string name; \
+        char name ## buf[SELVA_STRING_STATIC_BUF_SIZE_WCRC(len)]; \
+    }
 #endif
 
 /**
@@ -109,6 +114,13 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
  */
 [[nodiscard]]
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
+    __attribute__((access(read_only, 1, 2)));
+
+/**
+ * Create a new string with a user provided CRC.
+ * @param str can be NULL.
+ */
+struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
     __attribute__((access(read_only, 1, 2)));
 
 /**
@@ -163,8 +175,7 @@ struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_s
 
 /**
  * Truncate the string s to a new length of newlen.
- * s must be mutable.
- * @param s is a pointer to a selva_string.
+ * @param s is a pointer to a selva_string. Must be mutable.
  * @param newlen is the new length of the string.
  * @returns 0 if succeeded; Otherwise an error code.
  */
@@ -173,8 +184,7 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
 
 /**
  * Append str of length len to the string s.
- * s must be mutable.
- * @param s is a pointer to a selva_string.
+ * @param s is a pointer to a selva_string. Must be mutable.
  * @returns 0 if succeeded; Otherwise an error code.
  */
 int selva_string_append(struct selva_string *s, const char *str, size_t len)
@@ -182,10 +192,18 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
 
 /**
  * Replace current value of the string s with str.
- * s must be mutable.
+ * @param s must be mutable.
  * @returns 0 if succeeded; Otherwise an error code.
  */
 int selva_string_replace(struct selva_string *s, const char *str, size_t len)
+    __attribute__((access(read_only, 2, 3)));
+
+/**
+ * Replace current value of the string s with str and an externally computed crc.
+ * @param s must be mutable.
+ * @returns 0 if succeeded; Otherwise an error code.
+ */
+int selva_string_replace_crc(struct selva_string *s, const char *str, size_t len, uint32_t crc)
     __attribute__((access(read_only, 2, 3)));
 
 /**
