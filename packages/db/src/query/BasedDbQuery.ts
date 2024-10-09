@@ -9,14 +9,19 @@ import {
   Operation,
   sort,
   defToBuffer,
-  debug,
 } from './query.js'
 
 import { BasedIterable } from './BasedIterable.js'
+import { createOrGetRefQueryDef } from './include/utils.js'
 
 // partial class
 // range, include, filter, sort, traverse* later
 // include will support branching (rest not yet)
+
+// fix nested type...
+export type SelectFn = (field: string) => BasedDbReferenceQuery
+
+export type BranchInclude = (select: SelectFn) => any
 
 export class QueryBranch<T> {
   db: BasedDb
@@ -53,12 +58,33 @@ export class QueryBranch<T> {
     return this
   }
 
-  include(...fields: (string | any)[]): T {
-    includeFields(this.def, fields)
+  include(...fields: (string | BranchInclude)[]): T {
+    const strIncludes = []
+    for (const f of fields) {
+      if (typeof f === 'string') {
+        strIncludes.push(f)
+      } else if (typeof f === 'function') {
+        f((field: string) => {
+          const prop = this.def.props[field]
+          if (prop && (prop.typeIndex === 13 || prop.typeIndex === 14)) {
+            const refDef = createOrGetRefQueryDef(this.db, this.def, prop)
+            // @ts-ignore
+            return new QueryBranch(this.db, refDef)
+          }
+          throw new Error(`No ref field named ${field}`)
+        })
+      } else if (f !== undefined) {
+        throw new Error('Invalid include statement')
+      }
+    }
+
+    includeFields(this.def, strIncludes)
     // @ts-ignore
     return this
   }
 }
+
+export class BasedDbReferenceQuery extends QueryBranch<BasedDbReferenceQuery> {}
 
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   constructor(db: BasedDb, type: string, id?: number | number[]) {
@@ -78,7 +104,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   }
 
   get() {
-    if (!this.def.include.stringFields.size) {
+    if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeFields(this.def, ['*'])
     }
     const b = defToBuffer(this.db, this.def)

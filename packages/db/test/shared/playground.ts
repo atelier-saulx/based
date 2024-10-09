@@ -131,13 +131,17 @@ for (let i = 0; i < 10e3; i++) {
 
 console.log('db time', db.drain(), Date.now() - d)
 
-console.log(
-  db
-    .query('article')
-    .include('flap', 'burp', 'published', 'name')
-    .get()
-    .toObject(),
-)
+db.query('article').range(10, 10).get().debug()
+
+// console.log()
+
+// console.log(
+//   db
+//     .query('article')
+//     .include('flap', 'burp', 'published', 'name')
+//     .get()
+//     .toObject(),
+// )
 
 // const xx = Date.now()
 // const flap = db
