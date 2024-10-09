@@ -879,6 +879,7 @@ copy:
             memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
             memcpy(buffer->data, value, buf_len);
         } while (0);
+        break;
     case SELVA_FIELD_TYPE_ALIAS:
         return SELVA_ENOTSUP; /* TODO Support */
     case SELVA_FIELD_TYPE_ALIASES:
