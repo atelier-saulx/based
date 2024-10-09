@@ -122,15 +122,12 @@ const readAllFields = (
   id: number,
 ): number => {
   let i = offset
-
   while (i < end) {
     const index = result[i]
     i++
-
     if (index === 255) {
       return i - offset
     }
-
     if (index === 254) {
       const field = result[i]
       i++
@@ -186,7 +183,11 @@ const readAllFields = (
       }
     }
   }
-
+  for (const k in q.include.propsRead) {
+    if (q.include.propsRead[k] !== id) {
+      addField(q.schema.reverseProps[k], '', item)
+    }
+  }
   return i - offset
 }
 
@@ -210,17 +211,10 @@ export const resultToObject = (
     }
     const l = readAllFields(q, result, i, end, item, id)
     i += l
-    for (const k in q.include.propsRead) {
-      if (q.include.propsRead[k] !== id) {
-        addField(q.schema.reverseProps[k], '', item)
-      }
-    }
     items.push(item)
   }
-
   if ('id' in q.target) {
     return items[0]
   }
-
   return items
 }
