@@ -81,7 +81,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     if (!this.def.include.stringFields.size) {
       includeFields(this.def, ['*'])
     }
-    debug(this.def)
     const b = defToBuffer(this.db, this.def)
     const d = Date.now()
     const result = this.db.native.getQueryBuf(Buffer.concat(b))
