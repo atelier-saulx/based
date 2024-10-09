@@ -50,12 +50,12 @@ const readMainValue = (
   }
   // 11: string
   else if (prop.typeIndex === 11) {
+    // Also remove this default then (same as other string)
     const len = result[index]
-    let str = ''
     if (len !== 0) {
-      str = result.toString('utf-8', index + 1, index + len + 1)
+      const str = result.toString('utf-8', index + 1, index + len + 1)
+      addField(prop, str, item)
     }
-    addField(prop, str, item)
   }
   // 18: int8
   else if (prop.typeIndex === 18) {
