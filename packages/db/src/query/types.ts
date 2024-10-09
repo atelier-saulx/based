@@ -57,6 +57,7 @@ export type QueryDefShared = {
     // if branch you immediatly make a queryDef
     stringFields: Set<string>
     props: Set<number>
+    propsRead: { [propName: number]: number }
     main: {
       include: MainIncludes
       len: number

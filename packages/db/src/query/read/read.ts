@@ -55,6 +55,8 @@ const readMainValue = (
     if (len !== 0) {
       const str = result.toString('utf-8', index + 1, index + len + 1)
       addField(prop, str, item)
+    } else {
+      addField(prop, '', item)
     }
   }
   // 18: int8
@@ -107,6 +109,7 @@ const readAllFields = (
   offset: number,
   end: number,
   item: Item,
+  id: number,
 ): number => {
   let i = offset
 
@@ -135,7 +138,14 @@ const readAllFields = (
         const refItem: Item = {
           id,
         }
-        readAllFields(q.references.get(field), result, i, size + i - 5, refItem)
+        readAllFields(
+          q.references.get(field),
+          result,
+          i,
+          size + i - 5,
+          refItem,
+          id,
+        )
         // @ts-ignore
         addField(ref.target.propDef, refItem, item)
         i += size - 5
@@ -155,6 +165,7 @@ const readAllFields = (
     } else {
       const prop = q.schema.reverseProps[index]
       if (prop.typeIndex === 11) {
+        q.include.propsRead[index] = id
         const size = result.readUint32LE(i)
         if (size === 0) {
           addField(prop, '', item)
@@ -187,8 +198,13 @@ export const resultToObject = (
     const item: Item = {
       id,
     }
-    const l = readAllFields(q, result, i, end, item)
+    const l = readAllFields(q, result, i, end, item, id)
     i += l
+    for (const k in q.include.propsRead) {
+      if (q.include.propsRead[k] !== id) {
+        addField(q.schema.reverseProps[k], '', item)
+      }
+    }
     items.push(item)
   }
   return items

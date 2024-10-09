@@ -85,6 +85,9 @@ export const includeToBuffer = (db: BasedDb, def: QueryDef): Buffer[] => {
   }
 
   if (includeBuffer) {
+    def.include.props.forEach((v) => {
+      def.include.propsRead[v] = 0
+    })
     result.push(includeBuffer)
   }
 

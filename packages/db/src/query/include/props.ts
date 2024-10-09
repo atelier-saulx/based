@@ -22,7 +22,6 @@ export const getAll = (props: QueryDef['props']): string[] => {
 export const includeFields = (def: QueryDef, fields: string[]) => {
   for (const field of fields) {
     if (field === '*') {
-      console.log(getAll(def.props))
       includeFields(def, getAll(def.props))
       // includeAllProps(def)
     } else {

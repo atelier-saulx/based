@@ -17,6 +17,7 @@ const createEmptySharedDef = () => {
     include: {
       stringFields: new Set(),
       props: new Set(),
+      propsRead: {},
       main: {
         len: 0,
         include: {},
