@@ -175,8 +175,7 @@ struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_s
 
 /**
  * Truncate the string s to a new length of newlen.
- * s must be mutable.
- * @param s is a pointer to a selva_string.
+ * @param s is a pointer to a selva_string. Must be mutable.
  * @param newlen is the new length of the string.
  * @returns 0 if succeeded; Otherwise an error code.
  */
@@ -185,8 +184,7 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
 
 /**
  * Append str of length len to the string s.
- * s must be mutable.
- * @param s is a pointer to a selva_string.
+ * @param s is a pointer to a selva_string. Must be mutable.
  * @returns 0 if succeeded; Otherwise an error code.
  */
 int selva_string_append(struct selva_string *s, const char *str, size_t len)
@@ -194,10 +192,18 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
 
 /**
  * Replace current value of the string s with str.
- * s must be mutable.
+ * @param s must be mutable.
  * @returns 0 if succeeded; Otherwise an error code.
  */
 int selva_string_replace(struct selva_string *s, const char *str, size_t len)
+    __attribute__((access(read_only, 2, 3)));
+
+/**
+ * Replace current value of the string s with str and an externally computed crc.
+ * @param s must be mutable.
+ * @returns 0 if succeeded; Otherwise an error code.
+ */
+int selva_string_replace_crc(struct selva_string *s, const char *str, size_t len, uint32_t crc)
     __attribute__((access(read_only, 2, 3)));
 
 /**

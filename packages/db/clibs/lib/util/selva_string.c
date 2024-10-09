@@ -469,9 +469,48 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
         memcpy(s->p, str, len);
 
         return 0;
+    } else {
+        return SELVA_ENOTSUP;
     }
 
-    return SELVA_ENOTSUP;
+    update_crc(s);
+    return 0;
+}
+
+int selva_string_replace_crc(struct selva_string *s, const char *str, size_t len, uint32_t crc)
+{
+    const enum selva_string_flags flags = s->flags;
+
+    if (!(flags & SELVA_STRING_CRC)) {
+        return SELVA_ENOTSUP;
+    }
+
+    if (flags & SELVA_STRING_MUTABLE_FIXED) {
+        if (len > s->len) {
+            return SELVA_EINVAL;
+        }
+
+        if (likely(len > 0)) {
+            memcpy(s->emb, str, len);
+        }
+        if (len < s->len) {
+            memset(s->emb + len, 0, s->len - len);
+        }
+
+        return 0;
+    } else if (flags & SELVA_STRING_MUTABLE) {
+        s->len = len;
+        s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
+        s->p = selva_realloc(s->p, len + 1);
+        memcpy(s->p, str, len);
+
+        return 0;
+    } else {
+        return SELVA_ENOTSUP;
+    }
+
+    set_crc(s, crc);
+    return 0;
 }
 
 void selva_string_free(_selva_string_ptr_t _s)
