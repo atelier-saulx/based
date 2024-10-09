@@ -113,6 +113,14 @@ const readMain = (q: QueryDef, result: Buffer, offset: number, item: Item) => {
   return i - offset
 }
 
+const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
+  for (const k in q.include.propsRead) {
+    if (q.include.propsRead[k] !== id) {
+      addField(q.schema.reverseProps[k], '', item)
+    }
+  }
+}
+
 const readAllFields = (
   q: QueryDef,
   result: Buffer,
@@ -126,6 +134,7 @@ const readAllFields = (
     const index = result[i]
     i++
     if (index === 255) {
+      handleUndefinedProps(id, q, item)
       return i - offset
     }
     if (index === 254) {
@@ -184,11 +193,7 @@ const readAllFields = (
     }
   }
   // to add defaults - may not optimal for perfromance
-  for (const k in q.include.propsRead) {
-    if (q.include.propsRead[k] !== id) {
-      addField(q.schema.reverseProps[k], '', item)
-    }
-  }
+  handleUndefinedProps(id, q, item)
   return i - offset
 }
 
