@@ -14,10 +14,11 @@ const addField = (p: PropDef | PropDefEdge, value: any, item: Item) => {
     let select: any = item
     for (let i = 0; i < len; i++) {
       const field = p.path[i]
+      console.log(field, select)
       if (i === len - 1) {
         select[field] = value
       } else {
-        select = select[field] = {}
+        select = select[field] ?? (select[field] = {})
       }
     }
   }
@@ -29,6 +30,8 @@ const readMainValue = (
   index: number,
   item: Item,
 ) => {
+  console.log('main read', prop)
+
   // 1: timestamp, 4: number
   if (prop.typeIndex === 4 || prop.typeIndex === 1) {
     addField(prop, result.readDoubleLE(index), item)
@@ -51,7 +54,6 @@ const readMainValue = (
   }
   // 11: string
   else if (prop.typeIndex === 11) {
-    console.log('hello STRING')
     const len = result[index]
     let str = ''
     if (len !== 0) {
