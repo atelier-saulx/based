@@ -66,6 +66,14 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         // ?filter
         // 1: 2 [sort size]
         // ?sort
+
+        if (def.range.offset || def.range.limit < def.target.ids.length) {
+          def.target.ids = def.target.ids.slice(
+            def.range.offset,
+            def.range.offset + def.range.limit,
+          )
+        }
+
         const idsSize = def.target.ids.length * 4
         const buf = Buffer.allocUnsafe(19 + idsSize + filterSize + sortSize)
         buf[0] = 1
@@ -73,6 +81,7 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         buf[2] = def.schema.idUint8[1]
         buf.writeUint32LE(idsSize, 3)
         buf.set(new Uint8Array(def.target.ids.buffer), 7)
+
         buf.writeUint32LE(def.range.offset, idsSize + 7)
         buf.writeUint32LE(def.range.limit, idsSize + 11)
         buf.writeUint16LE(filterSize, idsSize + 15)
@@ -98,6 +107,7 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         buf[2] = def.schema.idUint8[1]
         buf.writeUint32LE(def.range.offset, 3)
         buf.writeUint32LE(def.range.limit, 7)
+
         buf.writeUint16LE(filterSize, 11)
         if (filterSize) {
           buf.set(filter, 13)

@@ -202,7 +202,7 @@ await test('update', async (t) => {
 
   equal(db.query('snurp', ids).range(0, 100).get().length, 100)
 
-  equal(db.query('snurp', ids).range(10, 100).get().length, 90)
+  equal(db.query('snurp', ids).range(10, 100).get().length, 100)
 
   let total = 0
   let len = 0

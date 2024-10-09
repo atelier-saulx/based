@@ -217,5 +217,10 @@ export const resultToObject = (
     }
     items.push(item)
   }
+
+  if ('id' in q.target) {
+    return items[0]
+  }
+
   return items
 }
