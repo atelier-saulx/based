@@ -746,7 +746,7 @@ static int selva_string_cmp_blongz(const struct selva_string *a, const struct se
  * - 3: b_len > DEFLATE_STRINGS_THRESHOLD_SIZE
  * - 4: b >= a
  */
-static int (*selva_string_cmp_fn[])(const struct selva_string *a, const struct selva_string *b) = {
+static int (*const selva_string_cmp_fn[])(const struct selva_string *a, const struct selva_string *b) = {
     [0x00] = selva_string_cmp_unz, /* 00000, neither is compressed and b < a. */
     [0x04] = selva_string_cmp_unz, /* 00100. */
     [0x08] = selva_string_cmp_unz, /* 01000. */
