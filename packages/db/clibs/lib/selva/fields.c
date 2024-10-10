@@ -1038,6 +1038,7 @@ int selva_fields_set_text(
         text->tl = selva_realloc(text->tl, ++text->len * sizeof(*text->tl));
         tl = &text->tl[text->len - 1];
 
+        memset(tl, 0, sizeof(*tl));
         err = selva_string_init(tl, str, len, SELVA_STRING_MUTABLE);
         if (err) {
             /* TODO Error handling? */
