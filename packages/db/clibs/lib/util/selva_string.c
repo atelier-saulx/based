@@ -246,7 +246,6 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
 
 struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
 {
-    const size_t trail = sizeof(uint32_t); /* Space for the CRC */
     struct selva_string *s;
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
@@ -255,7 +254,7 @@ struct selva_string *selva_string_create_crc(const char *str, size_t len, enum s
     }
     flags &= ~SELVA_STRING_CRC; /* This is also implicit but it must not be set yet. */
 
-    s = make_string(len + trail, str, len, flags);
+    s = make_string(len + sizeof(uint32_t), str, len, flags);
     s->flags |= SELVA_STRING_CRC;
     /*
      * We just trust that this is the correct crc and that the data isn't
