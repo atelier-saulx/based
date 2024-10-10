@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { AppContext, isCloudFile } from '../../shared/index.js'
+import { AppContext, dateOnly } from '../../shared/index.js'
 import { setMake, getList, setRestore } from '../backup/index.js'
 import { BackupsSorted, checkScript, runTests } from '../../helpers/index.js'
 
@@ -24,16 +24,20 @@ export const test = async (program: Command): Promise<void> => {
       'To not restore the backup after running the tests.',
     )
     .option(
-      '-ud, --use-database <database>',
-      "To use this database to create/restore your backups. This option also sets '--no-restore' to 'true'",
+      '--db <db>',
+      'The DB instance name to be used to create/restore your backups.',
       'default',
     )
     .option(
-      '-ub, --use-backup <file name>',
-      'To restore this backup file previously uploaded as the current version before to run the tests.',
+      '--file <file>',
+      "Use an '.rdb' backup file to restore your data to the current version before running the tests. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option also sets '--no-backup' to 'false'.",
+    )
+    .option(
+      `--date <${dateOnly.toLowerCase()}>`,
+      'You can provide a date to use the most recent backup created on that date.',
     )
 
-  cmd.action(async ({ command, backup, restore, useDatabase, useBackup }) => {
+  cmd.action(async ({ command, backup, restore, db, file, date }) => {
     const { destroy } = await context.getBasedClients()
 
     try {
@@ -41,30 +45,32 @@ export const test = async (program: Command): Promise<void> => {
         await checkScript(command)
       }
 
-      if (backup && !useBackup) {
+      if (backup || file) {
         await setMake(context)
-      } else if (useBackup) {
+      }
+
+      if (file) {
         await setRestore({
           context,
-          db: useDatabase ?? 'default',
-          file: useBackup,
-          isExternalFile: isCloudFile(useBackup),
+          db: db ?? 'default',
+          file,
+          date,
           verbose: false,
         })
       }
 
       await runTests({ context, command })
 
-      if (restore && !useBackup) {
+      if (restore) {
         const backups: BackupsSorted = await getList(context)
-        const previousBackup = backups?.sorted?.[useDatabase]?.[1]?.key
+        const previousBackup = backups?.sorted?.[db]?.[1]?.key
 
         if (previousBackup) {
           await setRestore({
             context,
-            db: useDatabase ?? 'default',
+            db: db ?? 'default',
             file: previousBackup,
-            isExternalFile: false,
+            date,
             verbose: false,
           })
         }
