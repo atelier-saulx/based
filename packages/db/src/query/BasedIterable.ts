@@ -40,7 +40,7 @@ const time = (time: number) => {
   }
 }
 
-export const inspectData = (q: BasedIterable, nested: boolean) => {
+export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
   const length = q.length
   const max = Math.min(length, nested ? 2 : 10)
   let str = ''
@@ -69,7 +69,7 @@ export const inspectData = (q: BasedIterable, nested: boolean) => {
   return `${picocolors.bold(`BasedIterable[${q.def.schema.type}]`)} (${q.length}) ${str}`
 }
 
-export class BasedIterable {
+export class BasedQueryResponse {
   result: Buffer
   def: QueryDef
   execTime: number

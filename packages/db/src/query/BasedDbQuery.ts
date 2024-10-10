@@ -11,7 +11,7 @@ import {
   defToBuffer,
 } from './query.js'
 
-import { BasedIterable } from './BasedIterable.js'
+import { BasedQueryResponse } from './BasedIterable.js'
 import { createOrGetRefQueryDef } from './include/utils.js'
 
 // partial class
@@ -110,6 +110,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     const b = defToBuffer(this.db, this.def)
     const d = Date.now()
     const result = this.db.native.getQueryBuf(Buffer.concat(b))
-    return new BasedIterable(this.def, result, Date.now() - d)
+    return new BasedQueryResponse(this.def, result, Date.now() - d)
   }
 }

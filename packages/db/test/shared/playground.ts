@@ -141,8 +141,4 @@ const r = db
 
 console.dir(r.toObject(), { depth: 10 })
 
-for (const item of r) {
-  console.log('derp', item)
-}
-
 console.log(r)
