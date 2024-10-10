@@ -1,10 +1,17 @@
-import { differenceInMilliseconds, format, parse, parseISO } from 'date-fns'
+import {
+  differenceInMilliseconds,
+  endOfDay,
+  format,
+  isValid,
+  parse,
+  parseISO,
+} from 'date-fns'
 import {
   isCurrentDump,
   AppContext,
   dateAndTime,
-  dateOnly,
   isFileFromCloud,
+  dateOnly,
 } from '../../shared/index.js'
 
 type BackupInfo = {
@@ -106,24 +113,28 @@ const isBackupExists = (backups: BackupInfo[], selectedFile: string) =>
   isFileFromCloud(selectedFile) &&
   backups.findIndex((file) => file.key === selectedFile)
 
-const findLatestBackup = (backups: BackupInfo[], date: string): string => {
+const findLatestBackup = (backups: BackupInfo[], date: string) => {
   let now = new Date()
 
   if (date) {
-    now = parse(date, dateOnly, new Date())
+    const parsedDate = parse(date, dateOnly, new Date())
+
+    if (isValid(parsedDate)) {
+      now = endOfDay(parsedDate)
+    }
   }
 
-  const closestDate: BackupInfo = backups.reduce((closest, backup) => {
+  const closestBackup = backups.reduce((closest, backup) => {
     const backupDate = parseISO(backup.lastModified)
     const closestDate = parseISO(closest.lastModified)
 
     return Math.abs(differenceInMilliseconds(backupDate, now)) <
       Math.abs(differenceInMilliseconds(closestDate, now))
-      ? closest
-      : backup
-  })
+      ? backup
+      : closest
+  }, backups[0])
 
-  return closestDate.key
+  return closestBackup.key
 }
 
 const removeTheCurrent = (backups: BackupInfo[]) =>
