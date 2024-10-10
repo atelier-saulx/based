@@ -45,10 +45,7 @@ export const inspectData = (q: BasedIterable, nested: boolean) => {
   const max = Math.min(length, nested ? 2 : 10)
   let str = ''
   let i = 0
-
   for (const x of q) {
-    console.log('BLAARF', x)
-    // @ts-ignore
     str += inspect(x)
     i++
     if (i >= max) {
