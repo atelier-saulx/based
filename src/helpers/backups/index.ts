@@ -199,7 +199,7 @@ const fileSelection = async ({
   return file
 }
 
-export const databaseGetter = (db: any, name: string) => {
+export const mountDBName = (db: any, name: string) => {
   if (!Array.isArray(db)) {
     return null
   }

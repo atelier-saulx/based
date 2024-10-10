@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 import {
   backupsSelection,
   BackupsSorted,
-  databaseGetter,
+  mountDBName,
 } from '../../../helpers/index.js'
 import { Command } from 'commander'
 
@@ -49,7 +49,7 @@ export const setRestore = async ({
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
-  const dbInfo = databaseGetter(defaultDBInfo, db)
+  const dbInfo = mountDBName(defaultDBInfo, db)
   const backups: BackupsSorted = await getList(context)
 
   let { selectedFile, selectedDB } = await backupsSelection({
