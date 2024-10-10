@@ -29,6 +29,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       const edgeType = getPropType(refProp[key])
       const edge: PropDefEdge = {
         __isPropDef: true,
+        __isEdge: true,
         prop: edgesCnt,
         name: key,
         typeIndex: TYPE_INDEX_MAP[edgeType],

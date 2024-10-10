@@ -70,6 +70,7 @@ export type PropDef = {
   reverseEdges?: {
     [prop: string]: PropDefEdge
   }
+  __isEdge?: boolean
 }
 
 export type PropDefEdge = Partial<PropDef> & {
@@ -79,6 +80,7 @@ export type PropDefEdge = Partial<PropDef> & {
   prop: number // (0-250)
   name: string
   edgesTotalLen?: number
+  __isEdge: true
 }
 
 export type SchemaPropTree = { [key: string]: SchemaPropTree | PropDef }

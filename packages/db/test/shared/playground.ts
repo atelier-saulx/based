@@ -111,7 +111,12 @@ const x = 2
 for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
-const y = [1, ...ids.values()].sort()
+const y = [1, ...ids.values()].sort().map((v) => {
+  return {
+    id: v,
+    $role: 'writer',
+  }
+})
 
 for (let i = 0; i < 10e3; i++) {
   db.create('article', {
@@ -129,15 +134,18 @@ console.log('db time', db.drain(), Date.now() - d)
 
 const r = db
   .query('article')
-  .include((s) => {
-    s('contributors')
-      .filter('name', '=', 'derp')
-      .include('name', (s) => {
-        s('favourite').include('*')
-      })
-  })
+  // .include((s) => {
+  //   s('contributors')
+  //     .filter('name', '=', 'derp')
+  //     .include('name', (s) => {
+  //       s('favourite').include('*')
+  //     })
+  // })
+  .include('contributors.$role')
   .range(10, 3)
   .get()
+
+r.debug()
 
 console.dir(r.toObject(), { depth: 10 })
 

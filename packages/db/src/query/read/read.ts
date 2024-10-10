@@ -11,15 +11,16 @@ const addField = (
   item: Item,
   defaultOnly: boolean = false,
 ) => {
+  let i = p.__isEdge === true ? 1 : 0
   const len = p.path.length
-  if (len === 1) {
-    const field = p.path[0]
+  if (len - i === 1) {
+    const field = p.path[i]
     if (!defaultOnly || !(field in item)) {
       item[field] = value
     }
   } else {
     let select: any = item
-    for (let i = 0; i < len; i++) {
+    for (; i < len; i++) {
       const field = p.path[i]
       if (i === len - 1) {
         if (!defaultOnly || !(field in select)) {
@@ -137,7 +138,22 @@ export const readAllFields = (
       handleUndefinedProps(id, q, item)
       return i - offset
     }
-    if (index === 254) {
+    if (index === 252) {
+      const prop = result[i + 1]
+      i++
+      const edgeDef = q.edges.reverseProps[prop]
+      // if 13 / 14 / 11
+      const t = edgeDef.typeIndex
+      if (t === 13) {
+      } else if (t === 14) {
+      } else if (t === 1) {
+      } else {
+        readMainValue(edgeDef, result, i, item)
+        i += edgeDef.len
+      }
+
+      console.log('EDGE TIME', edgeDef)
+    } else if (index === 254) {
       const field = result[i]
       i++
       const size = result.readUint32LE(i)
@@ -239,7 +255,9 @@ const nextItem = (
     if (index === 255) {
       return i - offset
     }
-    if (index === 254) {
+    if (index === 252) {
+      // con
+    } else if (index === 254) {
       const size = result.readUint32LE(i)
       i += 5 + size
     } else if (index === 253) {

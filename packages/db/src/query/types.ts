@@ -47,6 +47,8 @@ export type QueryDefShared = {
 
   sort: null | QueryDefSort
 
+  reverseProps: any
+
   range: {
     offset: number
     limit: number
@@ -79,6 +81,7 @@ export type QueryDefEdges = {
   target: EdgeTarget
   schema: null
   props: PropDef['edges']
+  reverseProps: PropDef['edges']
 } & QueryDefShared
 
 export type QueryDefRest = {
