@@ -127,18 +127,22 @@ for (let i = 0; i < 10e3; i++) {
 
 console.log('db time', db.drain(), Date.now() - d)
 
-console.dir(
-  db
-    .query('article')
-    .include((s) => {
-      s('contributors')
-        .filter('name', '=', 'derp')
-        .include('name', (s) => {
-          s('favourite').include('*')
-        })
-    })
-    .range(10, 3)
-    .get()
-    .toObject(),
-  { depth: 10 },
-)
+const r = db
+  .query('article')
+  .include((s) => {
+    s('contributors')
+      .filter('name', '=', 'derp')
+      .include('name', (s) => {
+        s('favourite').include('*')
+      })
+  })
+  .range(10, 3)
+  .get()
+
+console.dir(r.toObject(), { depth: 10 })
+
+for (const item of r) {
+  console.log('derp', item)
+}
+
+console.log(r)

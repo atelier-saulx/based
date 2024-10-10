@@ -45,9 +45,11 @@ export const inspectData = (q: BasedIterable, nested: boolean) => {
   const max = Math.min(length, nested ? 2 : 10)
   let str = ''
   let i = 0
+
   for (const x of q) {
+    console.log('BLAARF', x)
     // @ts-ignore
-    str += inspect(x, { nested: true })
+    str += inspect(x)
     i++
     if (i >= max) {
       break
@@ -56,7 +58,12 @@ export const inspectData = (q: BasedIterable, nested: boolean) => {
   }
   if (length > max) {
     str +=
-      ',\n' + picocolors.dim(picocolors.italic(`...${length - max} More items`))
+      ',\n' +
+      picocolors.dim(
+        picocolors.italic(
+          `...${length - max} More item${length - max !== 1 ? 's' : ''}`,
+        ),
+      )
   }
   str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
   if (nested) {
@@ -87,21 +94,23 @@ export class BasedIterable {
   }
 
   [inspect.custom](_depth) {
-    return 'todo...'
-    // const target = this.id ? this.schema.type + ':' + this.id : this.schema.type
-    // let str = ''
-    // str += '\n  execTime: ' + time(this.execTime)
-    // str += '\n  size: ' + size(this.size)
-    // const dataStr = inspectData(this, true).replaceAll('\n', '\n  ').trim()
-    // str += '\n  ' + dataStr
-    // return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
+    // @ts-ignore
+    const target = this.def.target.id
+      ? // @ts-ignore
+        this.def.schema.type + ':' + this.def.target.id
+      : this.def.schema.type
+    let str = ''
+    str += '\n  execTime: ' + time(this.execTime)
+    str += '\n  size: ' + size(this.result.byteLength)
+    const dataStr = inspectData(this, true).replaceAll('\n', '\n  ').trim()
+    str += '\n  ' + dataStr
+    return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
   debug() {
     return debug(this.result, this.offset, this.end)
   }
 
-  // bit weird...
   node(index: number = 0): any {
     let i = 0
     if ('id' in this.def.target) {
@@ -117,17 +126,14 @@ export class BasedIterable {
   }
 
   *[Symbol.iterator]() {
-    let cnt = 0
     let i = 5
     const result = this.result
-    const len = result.readUint32LE(0)
-    while (i < len) {
+    while (i < result.byteLength) {
       let id = result.readUInt32LE(i)
       i += 4
       const item: Item = {
         id,
       }
-      cnt++
       const l = readAllFields(this.def, result, i, result.byteLength, item, id)
       i += l
       yield item
