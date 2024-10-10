@@ -134,14 +134,14 @@ console.log('db time', db.drain(), Date.now() - d)
 
 const r = db
   .query('article')
-  // .include((s) => {
-  //   s('contributors')
-  //     .filter('name', '=', 'derp')
-  //     .include('name', (s) => {
-  //       s('favourite').include('*')
-  //     })
-  // })
-  .include('contributors.$role')
+  .include((s) => {
+    s('contributors')
+      .filter('name', '=', 'derp')
+      .include('name', '$role', (s) => {
+        s('favourite').include('*')
+      })
+  })
+  // .include('contributors.$role')
   .range(10, 3)
   .get()
 

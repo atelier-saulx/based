@@ -247,7 +247,9 @@ await test('Big string', async (t) => {
   const file = db.create('file', {
     contents: euobserver,
   })
+
   db.drain()
+
   equal(
     db.query('file', file).get().node().contents,
     euobserver,

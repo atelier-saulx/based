@@ -151,8 +151,6 @@ export const readAllFields = (
         readMainValue(edgeDef, result, i, item)
         i += edgeDef.len
       }
-
-      console.log('EDGE TIME', edgeDef)
     } else if (index === 254) {
       const field = result[i]
       i++

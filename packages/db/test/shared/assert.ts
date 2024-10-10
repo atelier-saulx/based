@@ -1,6 +1,6 @@
 import { deepEqual as uDeepEqual } from '@saulx/utils'
 import util from 'node:util'
-import { BasedIterable } from '../../src/query/BasedIterable.js'
+import { BasedQueryResponse } from '../../src/query/BasedIterable.js'
 
 export const deepEqual = (a, b, msg?: string) => {
   if (!uDeepEqual(a, b)) {
@@ -19,7 +19,7 @@ export const equal = deepEqual
 const SORT_ERR_MSG = 'Incorrect sort oder'
 
 export const isSorted = (
-  a: BasedIterable,
+  a: BasedQueryResponse,
   field: string,
   order: 'asc' | 'desc' = 'asc',
   msg?: string,
