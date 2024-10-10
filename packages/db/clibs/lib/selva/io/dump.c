@@ -455,9 +455,9 @@ static int handle_child_status(pid_t pid, int status, char *out_buf, size_t *out
     } else if (WIFSIGNALED(status)) {
         int termsig = WTERMSIG(status);
             *out_len = format_errmsg(out_buf, *out_len,
-                     "child %d killed by signal SIG%s (%s)%s",
+                     "child %d killed by signal %s (%s) %s",
                      (int)pid, sigstr_abbrev(termsig), sigstr_descr(termsig),
-                     (WCOREDUMP(status)) ? " (core dumped)" : NULL);
+                     (WCOREDUMP(status)) ? " (core dumped)" : "");
         return SELVA_EGENERAL;
     } else {
             *out_len = format_errmsg(out_buf, *out_len,

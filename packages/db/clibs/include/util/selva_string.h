@@ -332,6 +332,8 @@ int selva_string_verify_crc(const struct selva_string *s)
 uint32_t selva_string_get_crc(const struct selva_string *s)
     __attribute((access(read_only, 1)));
 
+void selva_string_set_crc(struct selva_string *s, uint32_t csum);
+
 /**
  * Set SELVA_STRING_COMPRESS flag on an existing string.
  * Setting the flag won't compress the string but mark it as compressed;
