@@ -60,7 +60,13 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
     const enum SelvaFieldType type = fs->type;
 
     if (type == SELVA_FIELD_TYPE_STRING) {
-        return sizeof(struct selva_string) + SELVA_STRING_STATIC_BUF_SIZE_WCRC(fs->string.fixed_len);
+        const size_t fixed_len = fs->string.fixed_len;
+
+        if (fixed_len > 0) {
+            return sizeof(struct selva_string) + SELVA_STRING_STATIC_BUF_SIZE_WCRC(fs->string.fixed_len);
+        } else {
+            return sizeof(struct selva_string);
+        }
     } else if (type == SELVA_FIELD_TYPE_MICRO_BUFFER) {
         return sizeof(struct SelvaMicroBuffer) + fs->smb.len;
     } else {
@@ -122,7 +128,7 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
         if (fs->string.fixed_len == 0) {
             selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
         } else {
-            assert(len < fs->string.fixed_len);
+            assert(len <= fs->string.fixed_len);
             selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
         }
     }
