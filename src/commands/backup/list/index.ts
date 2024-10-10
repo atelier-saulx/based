@@ -80,7 +80,7 @@ export const list =
             context,
             db: selectedDB,
             file: selectedFile,
-            isExternalFile: false,
+            date: '',
             verbose: true,
           })
 
@@ -100,7 +100,7 @@ export const list =
           context,
           backups,
           sort,
-          selectFile: false,
+          file: '',
           showCurrent: false,
         })
 

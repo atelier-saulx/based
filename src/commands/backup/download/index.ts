@@ -21,8 +21,8 @@ export const download =
     let { selectedFile, selectedDB } = await backupsSelection({
       context,
       backups,
-      selectDB: db ?? true,
-      selectFile: file ?? true,
+      db,
+      file,
     })
 
     try {

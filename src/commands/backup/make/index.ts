@@ -47,5 +47,5 @@ export const setMake = async (context: AppContext) => {
     envId,
   })
 
-  context.print.success(`Backup created successfully!`, true)
+  context.print.stop().success(`Backup created successfully!`, true)
 }

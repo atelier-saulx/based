@@ -5,6 +5,8 @@ import { AppContext } from './shared/index.js'
 
 declare global {
   namespace BasedCli {
+    type BasedFile = 'based' | 'based.schema' | 'based.config' | 'based.infra'
+
     namespace Context {
       type Project = {
         cluster?: string
@@ -153,7 +155,7 @@ declare global {
         context: AppContext
         db: string
         file: string
-        isExternalFile: boolean
+        date: string
         verbose: boolean
       }
     }

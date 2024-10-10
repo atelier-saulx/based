@@ -1,5 +1,11 @@
-import { format, parseISO } from 'date-fns'
-import { isCurrentDump, AppContext, dateAndTime } from '../../shared/index.js'
+import { differenceInMilliseconds, format, parse, parseISO } from 'date-fns'
+import {
+  isCurrentDump,
+  AppContext,
+  dateAndTime,
+  dateOnly,
+  isFileFromCloud,
+} from '../../shared/index.js'
 
 type BackupInfo = {
   key: string
@@ -14,8 +20,9 @@ type BackupsSelection = {
 type BackupSelectionArgs = {
   context: AppContext
   backups: BackupsSorted
-  selectDB?: string | boolean
-  selectFile?: string | boolean
+  db?: string
+  file?: string
+  date?: string
   showCurrent?: boolean
   sort?: string
 }
@@ -66,120 +73,130 @@ export const backupsSummary = (
   }
 }
 
-const dbSelection = async (
-  context: AppContext,
-  backups: BackupsSorted,
-  selectedDB?: string,
-): Promise<string> => {
-  if (!selectedDB) {
+const dbSelection = async ({ context, backups, db }): Promise<string> => {
+  if (!db) {
     const choices: BasedCli.Context.SelectInputItems[] = Object.keys(
       backups.sorted,
     )
       .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
       .map((key) => ({ name: key, value: key }))
 
-    selectedDB = await context.input.select('Choose database:', choices)
+    db = await context.input.select('Choose database:', choices)
   } else {
-    context.print.info(`<b>Selected database:</b> <cyan>${selectedDB}</cyan>`)
+    context.print.info(`<b>Selected database:</b> <cyan>${db}</cyan>`)
   }
 
-  if (!backups?.sorted?.[selectedDB]?.length) {
+  if (!backups?.sorted?.[db]?.length) {
     throw new Error(
-      `There were no backups found for the selected database: '<b>${selectedDB}</b>'.`,
+      `There were no backups found for the selected database: '<b>${db}</b>'.`,
     )
   }
 
-  return selectedDB
+  return db
 }
 
-const fileSelection = async (
-  context: AppContext,
-  backups: BackupsSorted,
-  sort: string,
-  selectedDB: string,
-  selectedFile?: string,
-  showCurrent: boolean = true,
-): Promise<string> => {
-  if (selectedFile) {
-    const isBackupExists: number = backups.sorted[selectedDB].findIndex(
-      (file) => file.key === selectedFile,
-    )
+const isBackupExists = (backups: BackupInfo[], selectedFile: string) =>
+  backups.findIndex((file) => file.key === selectedFile)
 
-    if (isBackupExists > -1) {
-      context.print.info(`<b>Selected file:</b> <b>${selectedFile}</b>`)
+const findLatestBackup = (backups: BackupInfo[], date: string): string => {
+  let now = new Date()
 
-      return selectedFile
+  if (date) {
+    now = parse(date, dateOnly, new Date())
+  }
+
+  const closestDate: BackupInfo = backups.reduce((closest, backup) => {
+    const backupDate = parseISO(backup.lastModified)
+    const closestDate = parseISO(closest.lastModified)
+
+    return Math.abs(differenceInMilliseconds(backupDate, now)) <
+      Math.abs(differenceInMilliseconds(closestDate, now))
+      ? backup
+      : closest
+  })
+
+  return closestDate.key
+}
+
+const fileSelection = async ({
+  context,
+  backups,
+  sort,
+  db,
+  file,
+  date,
+  showCurrent = true,
+}): Promise<string> => {
+  let sortedBackups: BackupInfo[] = backups.sorted[db]
+
+  if (file) {
+    if (isBackupExists(sortedBackups, file) > -1) {
+      context.print.info(`<b>Selected file:</b> <b>${file}</b>`)
+
+      return file
     }
 
-    throw new Error(
-      `There were no backups found with the name: '${selectedFile}'.`,
-    )
+    throw new Error(`There were no backups found with the name: '${file}'.`)
   }
 
   if (!showCurrent) {
-    backups.sorted[selectedDB] = backups.sorted[selectedDB].filter(
-      ({ key }) => !isCurrentDump(key),
-    )
+    sortedBackups = sortedBackups.filter(({ key }) => !isCurrentDump(key))
   }
 
-  const choices: BasedCli.Context.SelectInputItems[] = backups.sorted[
-    selectedDB
-  ].map((file: { key: string; lastModified: string }, index, array) => ({
-    name: file.key,
-    description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(
-      parseISO(file.lastModified),
-      dateAndTime,
-    )}`,
-    value: file.key,
-  }))
+  if (!date && !file) {
+    const choices: BasedCli.Context.SelectInputItems[] = sortedBackups.map(
+      (file: { key: string; lastModified: string }, index, array) => ({
+        name: file.key,
+        description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(
+          parseISO(file.lastModified),
+          dateAndTime,
+        )}`,
+        value: file.key,
+      }),
+    )
 
-  selectedFile = await context.input.select(
-    `Choose backup ${getSortingText(sort)}:`,
-    choices,
-  )
+    file = await context.input.select(
+      `Choose backup ${getSortingText(sort)}:`,
+      choices,
+    )
+  } else if (date && !file) {
+    file = findLatestBackup(sortedBackups, date)
 
-  return selectedFile
+    context.print.info(`<b>Selected file:</b> <b>${file}</b>`)
+  }
+
+  return file
 }
 
 export const backupsSelection = async ({
   context,
   backups,
   sort,
-  selectDB = true,
-  selectFile = true,
+  db = '',
+  file = '',
+  date = '',
   showCurrent = true,
 }: BackupSelectionArgs): Promise<BackupSelectionReturn> => {
-  if (typeof selectDB === 'string') {
-    selectDB = await dbSelection(context, backups, selectDB)
-  } else if (typeof selectDB === 'boolean' && selectDB === true) {
-    selectDB = await dbSelection(context, backups, '')
-  } else {
-    selectDB = ''
-  }
+  const isCloudFile: boolean = isFileFromCloud(file)
 
-  if (typeof selectFile === 'string') {
-    selectFile = await fileSelection(
+  db = await dbSelection({ context, backups, db })
+
+  if ((!file && !date) || isCloudFile) {
+    file = await fileSelection({
       context,
       backups,
       sort,
-      selectDB,
-      selectFile,
+      db,
+      file,
+      date,
       showCurrent,
-    )
-  } else if (typeof selectFile === 'boolean' && selectFile === true) {
-    selectFile = await fileSelection(
-      context,
-      backups,
-      sort,
-      selectDB,
-      '',
-      showCurrent,
-    )
-  } else {
-    selectFile = ''
+    })
   }
 
-  return { selectedDB: selectDB, selectedFile: selectFile }
+  if (date && !file) {
+  }
+
+  return { selectedDB: db, selectedFile: file }
 }
 
 export const backupsSorting = (

@@ -1,16 +1,19 @@
 import * as fs from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
 import { homedir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 
-export const isSchemaFile = (file: string) =>
-  file === 'based.schema.js' ||
-  file === 'based.schema.json' ||
-  file === 'based.schema.ts'
+export const mainFileName: BasedCli.BasedFile = 'based'
+export const schemaFileName: BasedCli.BasedFile = `${mainFileName}.schema`
+export const configFileName: BasedCli.BasedFile = `${mainFileName}.config`
+export const infraFileName: BasedCli.BasedFile = `${mainFileName}.infra`
 
-export const isConfigFile = (file: string) =>
-  file === 'based.config.js' ||
-  file === 'based.config.json' ||
-  file === 'based.config.ts'
+const isBasedFile = (file: string, type: BasedCli.BasedFile) =>
+  file === `${type}.js` || file === `${type}.json` || file === `${type}.ts`
+
+export const isSchemaFile = (file: string) => isBasedFile(file, schemaFileName)
+export const isConfigFile = (file: string) => isBasedFile(file, configFileName)
+export const isInfraFile = (file: string) => isBasedFile(file, infraFileName)
 
 export const isIndexFile = (file: string) =>
   file === 'index.ts' || file === 'index.js'
@@ -25,7 +28,7 @@ export const isValidPath = (path: string): boolean => {
   }
 }
 
-export const isCloudFile = (key: string) => key.startsWith('env-db/')
+export const isFileFromCloud = (key: string) => key.startsWith('env-db/')
 
 export const cwd = process.cwd()
 
@@ -39,3 +42,32 @@ export const sanitizeFileName = (fileName: string) =>
 
 export const replaceTilde = (path: string) =>
   path.replace(/^~(?=$|\/|\\)/, homedir())
+
+export const formatAsTypeScriptObject = (obj: Record<string, any>): string => {
+  const entries = Object.entries(obj).map(([key, value]) => {
+    if (typeof value === 'string') {
+      return `${key}: '${value}'`
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      return `${key}: ${value}`
+    } else {
+      return `${key}: ${JSON.stringify(value)}`
+    }
+  })
+
+  return `{\n  ${entries.join(',\n  ')}\n}`
+}
+
+export const saveAsTypeScriptFile = async (
+  obj: Record<string, any>,
+  filePath: string,
+): Promise<boolean> => {
+  const content = `export default ${formatAsTypeScriptObject(obj)};\n`
+
+  try {
+    await writeFile(filePath, content, 'utf8')
+
+    return true
+  } catch (error) {
+    throw new Error(error)
+  }
+}

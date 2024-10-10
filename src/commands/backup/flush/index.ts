@@ -26,8 +26,8 @@ export const flush =
     let { selectedDB } = await backupsSelection({
       context,
       backups,
-      selectDB: db,
-      selectFile: false,
+      db,
+      file: '',
       showCurrent: false,
     })
 

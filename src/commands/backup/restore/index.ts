@@ -1,4 +1,8 @@
-import { replaceTilde, AppContext, isCloudFile } from '../../../shared/index.js'
+import {
+  replaceTilde,
+  AppContext,
+  isFileFromCloud,
+} from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 
 import { pathExists } from 'fs-extra'
@@ -8,31 +12,17 @@ import { Command } from 'commander'
 
 export const restore =
   (program: Command) =>
-  async ({ db, file }): Promise<void> => {
+  async ({ db, file, date }): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const { destroy } = await context.getBasedClients()
-    const isExternalFile: boolean = file !== undefined
-    const backups: BackupsSorted = await getList(context)
-
-    let { selectedFile, selectedDB } = await backupsSelection({
-      context,
-      backups,
-      selectDB: db,
-      selectFile: !file,
-      showCurrent: false,
-    })
-
-    if (isExternalFile) {
-      selectedFile = file
-    }
 
     try {
       await setRestore({
         context,
-        db: selectedDB,
-        file: selectedFile,
-        isExternalFile,
+        db,
+        file,
+        date,
         verbose: true,
       })
 
@@ -47,7 +37,6 @@ export const setRestore = async ({
   context,
   db,
   file,
-  isExternalFile,
   verbose,
 }: BasedCli.Backups.Restore) => {
   const { basedClient } = await context.getBasedClients()
@@ -56,24 +45,35 @@ export const setRestore = async ({
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
   const dbInfo = { ...defaultDBInfo[0], name: db }
+  const backups: BackupsSorted = await getList(context)
+  const isCloudFile: boolean = isFileFromCloud(file)
+  const isExternalFile: boolean = !isCloudFile
+
+  console.log('defaultDBInfo', defaultDBInfo)
+
+  let { selectedFile, selectedDB } = await backupsSelection({
+    context,
+    backups,
+    db,
+    file,
+    showCurrent: false,
+  })
 
   if (isExternalFile) {
-    if (!isCloudFile(file)) {
-      if (!(await pathExists(file))) {
-        throw new Error(
-          `The specified file '${file}' is invalid or does not exist. Please provide a valid file.`,
-        )
-      }
+    if (!(await pathExists(selectedFile))) {
+      throw new Error(
+        `The specified file '${selectedFile}' is invalid or does not exist. Please provide a valid file.`,
+      )
+    }
 
-      if (!file.endsWith('.rdb')) {
-        throw new Error(
-          `The specified file '${file}' is invalid. Only '<b>.rdb</b>' files can be restored.`,
-        )
-      }
+    if (!file.endsWith('.rdb')) {
+      throw new Error(
+        `The specified file '${selectedFile}' is invalid. Only '<b>.rdb</b>' files can be restored.`,
+      )
     }
 
     if (verbose) {
-      context.print.info(`<b>Selected file:</b> <cyan>${file}</cyan>`)
+      context.print.info(`<b>Selected file:</b> <cyan>${selectedFile}</cyan>`)
     }
   }
 
@@ -85,12 +85,12 @@ export const setRestore = async ({
       // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
       .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
       .info(
-        `<b>File to be restored:</b> '<cyan>${isExternalFile ? resolve(replaceTilde(file)) : file}</cyan>'`,
+        `<b>File to be restored:</b> '<cyan>${isExternalFile ? resolve(replaceTilde(selectedFile)) : selectedFile}</cyan>'`,
       )
       .line()
   }
 
-  if (!isExternalFile || isCloudFile) {
+  if (isCloudFile) {
     if (!skip) {
       const doIt: boolean = await context.input.confirm()
 
@@ -111,7 +111,7 @@ export const setRestore = async ({
     }
   }
 
-  if (isExternalFile && !isCloudFile) {
+  if (isExternalFile) {
     try {
       context.print.loading('Uploading file...')
 
@@ -130,5 +130,5 @@ export const setRestore = async ({
     }
   }
 
-  context.print.success(`Backup restored successfully!`, true)
+  context.print.stop().success(`Backup restored successfully!`, true)
 }

@@ -10,6 +10,7 @@ import { list } from './list/index.js'
 import { restore } from './restore/index.js'
 import { flush } from './flush/index.js'
 import { download } from './download/index.js'
+import { dateOnly } from '../../shared/index.js'
 
 export const backup = async (program: Command) => {
   const cmd: Command = program
@@ -40,7 +41,14 @@ export const backup = async (program: Command) => {
   cmd
     .command('download')
     .option('--db <db>', 'DB instance name.')
-    .option('--file <file>', '.rdb backup file to upload.')
+    .option(
+      '--file <file>',
+      "The '.rdb' backup file to be downloaded. This option takes precedence over the '--date' option.",
+    )
+    .option(
+      `-d, --date <${dateOnly.toLowerCase()}>`,
+      'Select a date to get the latest available backup.',
+    )
     .option('--path <path>', 'The path to save the file.')
     .description('Download previous backups.')
     .action(download(program))
@@ -51,7 +59,14 @@ export const backup = async (program: Command) => {
       'Upload a backup file or restore a previous version as the current one.',
     )
     .option('--db <db>', 'DB instance name.')
-    .option('--file <file>', '.rdb backup file to upload.')
+    .option(
+      '--file <file>',
+      "The '.rdb' backup file to be used. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option takes precedence over the '--date' option.",
+    )
+    .option(
+      `-d, --date <${dateOnly.toLowerCase()}>`,
+      'Select a date to restore the latest available backup.',
+    )
     .action(restore(program))
 
   cmd
