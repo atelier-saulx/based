@@ -122,6 +122,16 @@ static uint32_t get_crc(const struct selva_string *s)
  */
 static void set_crc(struct selva_string *s, uint32_t csum)
 {
+#if 0
+    assert(s->flags & SELVA_STRING_CRC);
+    if (s->flags & SELVA_STRING_MUTABLE) {
+        if (selva_sallocx(s->p, 0) < s->len + 1 + sizeof(csum)) {
+            fprintf(stderr, "ERROR: %zu < %zu\n", selva_sallocx(s->p, 0), s->len + 1 + sizeof(csum));
+        }
+        assert(selva_sallocx(s->p, 0) >= s->len + 1 + sizeof(csum));
+    }
+#endif
+
     /*
      * Space for the CRC was hopefully allocated when alloc_immutable() or
      * alloc_mutable() was called.
@@ -158,7 +168,7 @@ static struct selva_string *alloc_mutable(size_t len)
 }
 
 /**
- * Calculate the buffer size needed for an immuatable selva_string.
+ * Calculate the buffer size needed for an immutable selva_string.
  */
 static size_t calc_immutable_alloc_size(size_t len)
 {
@@ -345,7 +355,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
         memcpy(buf, &hdr, sizeof(hdr));
     }
 
-    tmp = selva_realloc(s, calc_immutable_alloc_size(s->len));
+    tmp = selva_realloc(s, calc_immutable_alloc_size(s->len + trail));
     if (tmp) {
         s = tmp;
     }
@@ -410,9 +420,11 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
     if (newlen >= oldlen) {
         return SELVA_EINVAL;
     } else if (newlen < oldlen) {
+        const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+
         s->len = newlen;
         s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(newlen);
-        s->p = selva_realloc(s->p, newlen + 1);
+        s->p = selva_realloc(s->p, newlen + 1 + trail);
         s->p[newlen] = '\0';
 
         update_crc(s);
@@ -431,10 +443,11 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
 
     if (len > 0) {
         size_t old_len = s->len;
+        const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
         s->len += len;
         s->flags = (s->flags & ~SELVA_STRING_LEN_PARITY) | len_parity(s->len);
-        s->p = selva_realloc(s->p, s->len + 1);
+        s->p = selva_realloc(s->p, s->len + 1 + trail);
         if (str) {
             memcpy(s->p + old_len, str, len);
         } else {
@@ -452,8 +465,6 @@ static int replace_str(struct selva_string *s, const char *str, size_t len)
 {
     const enum selva_string_flags flags = s->flags;
 
-    fprintf(stderr, "replace string @%p: \"%s\" => \"%.*s\"\n", s, get_buf(s), (int)len, str);
-
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
         if (len > s->len) {
             return SELVA_EINVAL;
@@ -462,9 +473,11 @@ static int replace_str(struct selva_string *s, const char *str, size_t len)
         memcpy(s->emb, str, len);
         (void)memset_s(s->emb + len, s->len - len, 0, s->len - len);
     } else if (flags & SELVA_STRING_MUTABLE) {
+        const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+
         s->len = len;
         s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
-        s->p = selva_realloc(s->p, len + 1);
+        s->p = selva_realloc(s->p, len + 1 + trail);
         memcpy(s->p, str, len);
         s->p[len] = '\0';
     } else {
