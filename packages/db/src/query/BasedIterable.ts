@@ -1,7 +1,7 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
-import { debug, resultToObject } from './query.js'
+import { debug, resultToObject, Item, readAllFields } from './query.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -117,12 +117,21 @@ export class BasedIterable {
   }
 
   *[Symbol.iterator]() {
-    const x = this.toObject()
-
-    for (let i = 0; i < x.length; i++) {
-      yield x[i]
+    let cnt = 0
+    let i = 5
+    const result = this.result
+    const len = result.readUint32LE(0)
+    while (i < len) {
+      let id = result.readUInt32LE(i)
+      i += 4
+      const item: Item = {
+        id,
+      }
+      cnt++
+      const l = readAllFields(this.def, result, i, result.byteLength, item, id)
+      i += l
+      yield item
     }
-    // just expand all nested data in a node for now?
   }
 
   forEach(fn: (item: any, key: number) => void) {

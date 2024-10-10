@@ -90,7 +90,7 @@ db.putSchema({
   },
 })
 
-const user = await db.create('user', { flap: 1 })
+await db.create('user', { flap: 1, name: 'derp' })
 db.drain()
 
 const d = Date.now()
@@ -107,7 +107,7 @@ for (let i = 0; i < 1e6; i++) {
 }
 
 const ids: any = new Set()
-const x = 2 // ~~(Math.random() * 1e3)
+const x = 2
 for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
@@ -121,50 +121,24 @@ for (let i = 0; i < 10e3; i++) {
     burp: ['derp', 'flappie'][i % 2],
     owner: 1,
     favouritedBy: [1],
-    // contributors: [{ id: 10, $friend: user }],
     contributors: y,
-    // contributors: y.map((v) => {
-    //   return { id: v, $friend: user }
-    // }),
   })
 }
 
 console.log('db time', db.drain(), Date.now() - d)
 
-db.query('article').range(10, 10).get().debug()
-
-// console.log()
-
-// console.log(
-//   db
-//     .query('article')
-//     .include('flap', 'burp', 'published', 'name')
-//     .get()
-//     .toObject(),
-// )
-
-// const xx = Date.now()
-// const flap = db
-//   .query('article')
-//   .include(...include)
-//   .get()
-// for (let i = 0; i < 1; i++) {
-//   flap.toObject()
-// }
-// console.log(
-//   Date.now() - xx,
-//   'ms',
-//   Math.floor(flap.buffer.byteLength / 1e3 / 1e3),
-//   'mb',
-// )
-
-// console.dir(q.resultToObject(def, result), { depth: 10 })
-
-// console.log(JSON.stringify(q.resultToObject(def, result)))
-
-// await fs.writeFile(
-//   './tmp/flap.txt',
-//   JSON.stringify(q.resultToObject(def, result)),
-// )
-
-// go make range work offset, limit
+console.dir(
+  db
+    .query('article')
+    .include((s) => {
+      s('contributors')
+        .filter('name', '=', 'derp')
+        .include('name', (s) => {
+          s('favourite').include('*')
+        })
+    })
+    .range(10, 3)
+    .get()
+    .toObject(),
+  { depth: 10 },
+)

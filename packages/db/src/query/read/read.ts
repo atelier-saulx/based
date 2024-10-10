@@ -1,7 +1,7 @@
 import { PropDef, PropDefEdge } from '../../schema/types.js'
 import { QueryDef } from '../types.js'
 
-type Item = {
+export type Item = {
   id: number
 } & { [key: string]: any }
 
@@ -121,7 +121,7 @@ const handleUndefinedProps = (id: number, q: QueryDef, item: Item) => {
   }
 }
 
-const readAllFields = (
+export const readAllFields = (
   q: QueryDef,
   result: Buffer,
   offset: number,
@@ -221,6 +221,70 @@ export const resultToObject = (
   }
   if ('id' in q.target) {
     return items[0]
+  }
+  return items
+}
+
+// use
+const nextItem = (
+  q: QueryDef,
+  result: Buffer,
+  offset: number,
+  end: number,
+): number => {
+  let i = offset
+  while (i < end) {
+    const index = result[i]
+    i++
+    if (index === 255) {
+      return i - offset
+    }
+    if (index === 254) {
+      const size = result.readUint32LE(i)
+      i += 5 + size
+    } else if (index === 253) {
+      const size = result.readUint32LE(i)
+      i += size + 9
+    } else if (index === 0) {
+      if (q.include.main.len === q.schema.mainLen) {
+        i += q.schema.mainLen
+      } else {
+        // console.log(q.include.main.len)
+        i += q.include.main.len
+      }
+    } else {
+      const prop = q.schema.reverseProps[index]
+      if (prop.typeIndex === 11) {
+        const size = result.readUint32LE(i)
+        i += size + 4
+      }
+    }
+  }
+  return i - offset
+}
+
+// add generator
+export function* toObjectRange(q: QueryDef, result: Buffer) {
+  let cnt = 0
+  const items = []
+  let i = 5
+  const len = result.readUint32LE(0)
+
+  while (i < len) {
+    // if (cnt >= offset) {
+    //   i += 4
+    //   i += nextItem(q, result, i, result.byteLength)
+    // } else {
+    let id = result.readUInt32LE(i)
+    i += 4
+    const item: Item = {
+      id,
+    }
+    cnt++
+    const l = readAllFields(q, result, i, result.byteLength, item, id)
+    i += l
+    items.push(item)
+    // }
   }
   return items
 }
