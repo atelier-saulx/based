@@ -717,6 +717,13 @@ uint32_t selva_string_get_crc(const struct selva_string *s)
     return get_crc(s);
 }
 
+void selva_string_set_crc(struct selva_string *s, uint32_t csum)
+{
+    if (s->flags & SELVA_STRING_CRC) {
+        set_crc(s, csum);
+    }
+}
+
 void selva_string_set_compress(struct selva_string *s)
 {
     s->flags |= SELVA_STRING_COMPRESS;
