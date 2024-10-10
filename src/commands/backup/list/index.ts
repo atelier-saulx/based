@@ -54,6 +54,7 @@ export const list =
             db: selectedDB,
             file: selectedFile,
             path: '',
+            date: '',
           })
 
           destroy()
@@ -135,7 +136,9 @@ export const getList = async (
 ): Promise<BackupsSorted> => {
   const { envHubBasedCloud } = await context.getBasedClients()
 
-  context.print.line().loading(`Searching for databases and backups...`)
+  if (verbose) {
+    context.print.line().loading(`Searching for databases and backups...`)
+  }
 
   const { backups } = await envHubBasedCloud.call('based:backups-list')
 

@@ -1,6 +1,10 @@
 import { AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
-import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
+import {
+  backupsSelection,
+  BackupsSorted,
+  databaseGetter,
+} from '../../../helpers/index.js'
 import { Command } from 'commander'
 
 export const flush =
@@ -62,7 +66,7 @@ export const setFlush = async ({
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
-  const dbInfo = { ...defaultDBInfo[0], name: db }
+  const dbInfo = databaseGetter(defaultDBInfo, db)
 
   context.print
     .line()

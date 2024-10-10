@@ -73,7 +73,12 @@ export const backupsSummary = (
   }
 }
 
-const dbSelection = async ({ context, backups, db }): Promise<string> => {
+const dbSelection = async ({
+  context,
+  backups,
+  db,
+  verbose = false,
+}): Promise<string> => {
   if (!db) {
     const choices: BasedCli.Context.SelectInputItems[] = Object.keys(
       backups.sorted,
@@ -83,7 +88,9 @@ const dbSelection = async ({ context, backups, db }): Promise<string> => {
 
     db = await context.input.select('Choose database:', choices)
   } else {
-    context.print.info(`<b>Selected database:</b> <cyan>${db}</cyan>`)
+    if (verbose) {
+      context.print.info(`<b>Selected database:</b> <cyan>${db}</cyan>`)
+    }
   }
 
   if (!backups?.sorted?.[db]?.length) {
@@ -111,8 +118,8 @@ const findLatestBackup = (backups: BackupInfo[], date: string): string => {
 
     return Math.abs(differenceInMilliseconds(backupDate, now)) <
       Math.abs(differenceInMilliseconds(closestDate, now))
-      ? backup
-      : closest
+      ? closest
+      : backup
   })
 
   return closestDate.key
@@ -126,12 +133,17 @@ const fileSelection = async ({
   file,
   date,
   showCurrent = true,
+  verbose = false,
 }): Promise<string> => {
   let sortedBackups: BackupInfo[] = backups.sorted[db]
 
   if (file) {
     if (isBackupExists(sortedBackups, file) > -1) {
-      context.print.info(`<b>Selected file:</b> <b>${file}</b>`)
+      if (verbose) {
+        context.print.info(
+          `<b>Selected file:</b> <reset><cyan>${file}</cyan></reset>`,
+        )
+      }
 
       return file
     }
@@ -143,7 +155,7 @@ const fileSelection = async ({
     sortedBackups = sortedBackups.filter(({ key }) => !isCurrentDump(key))
   }
 
-  if (!date && !file) {
+  if (!file && !date) {
     const choices: BasedCli.Context.SelectInputItems[] = sortedBackups.map(
       (file: { key: string; lastModified: string }, index, array) => ({
         name: file.key,
@@ -159,13 +171,31 @@ const fileSelection = async ({
       `Choose backup ${getSortingText(sort)}:`,
       choices,
     )
-  } else if (date && !file) {
+  } else if (!file && date) {
     file = findLatestBackup(sortedBackups, date)
 
-    context.print.info(`<b>Selected file:</b> <b>${file}</b>`)
+    if (verbose) {
+      context.print.info(
+        `<b>Selected file:</b> <reset><cyan>${file}</cyan></reset>`,
+      )
+    }
   }
 
   return file
+}
+
+export const databaseGetter = (db: any, name: string) => {
+  if (!Array.isArray(db)) {
+    return null
+  }
+
+  if (db.length === 1) {
+    return { ...db[0], name: 'default' }
+  } else if (db.length > 1) {
+    return db.filter((elm) => elm.name === name)
+  }
+
+  return null
 }
 
 export const backupsSelection = async ({
@@ -181,7 +211,7 @@ export const backupsSelection = async ({
 
   db = await dbSelection({ context, backups, db })
 
-  if ((!file && !date) || isCloudFile) {
+  if (!file || isCloudFile) {
     file = await fileSelection({
       context,
       backups,
@@ -191,9 +221,6 @@ export const backupsSelection = async ({
       date,
       showCurrent,
     })
-  }
-
-  if (date && !file) {
   }
 
   return { selectedDB: db, selectedFile: file }

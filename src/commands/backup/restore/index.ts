@@ -7,7 +7,11 @@ import { getList } from '../list/index.js'
 
 import { pathExists } from 'fs-extra'
 import { resolve } from 'node:path'
-import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
+import {
+  backupsSelection,
+  BackupsSorted,
+  databaseGetter,
+} from '../../../helpers/index.js'
 import { Command } from 'commander'
 
 export const restore =
@@ -35,29 +39,30 @@ export const restore =
 
 export const setRestore = async ({
   context,
-  db,
-  file,
-  verbose,
+  db = '',
+  file = '',
+  date = '',
+  verbose = false,
 }: BasedCli.Backups.Restore) => {
   const { basedClient } = await context.getBasedClients()
   const { skip } = context.getGlobalOptions()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
-  const dbInfo = { ...defaultDBInfo[0], name: db }
+  const dbInfo = databaseGetter(defaultDBInfo, db)
   const backups: BackupsSorted = await getList(context)
-  const isCloudFile: boolean = isFileFromCloud(file)
-  const isExternalFile: boolean = !isCloudFile
-
-  console.log('defaultDBInfo', defaultDBInfo)
 
   let { selectedFile, selectedDB } = await backupsSelection({
     context,
     backups,
-    db,
+    db: dbInfo.name,
     file,
     showCurrent: false,
+    date,
   })
+
+  const isCloudFile: boolean = isFileFromCloud(selectedFile)
+  const isExternalFile: boolean = !isCloudFile
 
   if (isExternalFile) {
     if (!(await pathExists(selectedFile))) {
@@ -83,9 +88,9 @@ export const setRestore = async ({
       .info(`<b>Restore summary:</b>`)
       // TODO Fix the value coming from 'db'
       // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-      .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
+      .info(`<b>Database:</b> <cyan>${selectedDB}</cyan>`)
       .info(
-        `<b>File to be restored:</b> '<cyan>${isExternalFile ? resolve(replaceTilde(selectedFile)) : selectedFile}</cyan>'`,
+        `<b>File to be restored:</b> <cyan>${isExternalFile ? resolve(replaceTilde(selectedFile)) : selectedFile}</cyan>`,
       )
       .line()
   }

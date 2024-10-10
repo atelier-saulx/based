@@ -28,7 +28,7 @@ export const isValidPath = (path: string): boolean => {
   }
 }
 
-export const isFileFromCloud = (key: string) => key.startsWith('env-db/')
+export const isFileFromCloud = (key: string) => key && key.startsWith('env-db/')
 
 export const cwd = process.cwd()
 

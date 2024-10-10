@@ -141,6 +141,7 @@ declare global {
         context: AppContext
         db: string
         file: string
+        date: string
         path: string
         retry?: number
       }

@@ -49,7 +49,10 @@ export const backup = async (program: Command) => {
       `-d, --date <${dateOnly.toLowerCase()}>`,
       'Select a date to get the latest available backup.',
     )
-    .option('--path <path>', 'The path to save the file.')
+    .option(
+      '--path <path>',
+      "The path to save the file. This option take precedence over the '--date' option.",
+    )
     .description('Download previous backups.')
     .action(download(program))
 

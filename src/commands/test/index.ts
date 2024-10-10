@@ -30,7 +30,7 @@ export const test = async (program: Command): Promise<void> => {
     )
     .option(
       '--file <file>',
-      "Use an '.rdb' backup file to restore your data to the current version before running the tests. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option also sets '--no-backup' to 'false'.",
+      "Use an '.rdb' backup file to restore your data to the current version before running the tests. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option also sets '--no-backup' to 'false'. This option takes precedence over the '--date' option.",
     )
     .option(
       `--date <${dateOnly.toLowerCase()}>`,
@@ -39,6 +39,7 @@ export const test = async (program: Command): Promise<void> => {
 
   cmd.action(async ({ command, backup, restore, db, file, date }) => {
     const { destroy } = await context.getBasedClients()
+    db = db !== '' ? db : 'default'
 
     try {
       if (command) {
@@ -49,10 +50,10 @@ export const test = async (program: Command): Promise<void> => {
         await setMake(context)
       }
 
-      if (file) {
+      if (file || date) {
         await setRestore({
           context,
-          db: db ?? 'default',
+          db,
           file,
           date,
           verbose: false,
@@ -62,17 +63,27 @@ export const test = async (program: Command): Promise<void> => {
       await runTests({ context, command })
 
       if (restore) {
-        const backups: BackupsSorted = await getList(context)
-        const previousBackup = backups?.sorted?.[db]?.[1]?.key
-
-        if (previousBackup) {
+        if (file || date) {
           await setRestore({
             context,
-            db: db ?? 'default',
-            file: previousBackup,
+            db,
+            file,
             date,
             verbose: false,
           })
+        } else {
+          const backups: BackupsSorted = await getList(context)
+          const previousBackup = backups?.sorted?.[db]?.[1]?.key
+
+          if (previousBackup) {
+            await setRestore({
+              context,
+              db,
+              file: previousBackup,
+              date: '',
+              verbose: false,
+            })
+          }
         }
       }
 

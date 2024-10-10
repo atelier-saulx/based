@@ -24,7 +24,7 @@ export const setMake = async (context: AppContext) => {
 
   if (!skip) {
     const doIt: boolean = await context.input.confirm(
-      `Would you like to make a backup for the env '<cyan>${org}/${project}/${env}</cyan>'?`,
+      `Would you like to make a backup for the env <reset><cyan>${org}/${project}/${env}</cyan></reset>?`,
     )
 
     if (!doIt) {
