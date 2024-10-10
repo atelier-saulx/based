@@ -225,6 +225,13 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
     return 0;
 }
 
+static struct selva_string *make_string(size_t alloc_len, const char *str, size_t len, enum selva_string_flags flags)
+{
+    return (flags & SELVA_STRING_MUTABLE)
+        ? set_string(alloc_mutable(alloc_len), str, len, flags)
+        : set_string(alloc_immutable(alloc_len), str, len, flags);
+}
+
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
     const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
@@ -234,9 +241,7 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
         return NULL; /* Invalid flags */
     }
 
-    return (flags & SELVA_STRING_MUTABLE)
-        ? set_string(alloc_mutable(len + trail), str, len, flags)
-        : set_string(alloc_immutable(len + trail), str, len, flags);
+    return make_string(len + trail, str, len, flags);
 }
 
 struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
@@ -250,9 +255,7 @@ struct selva_string *selva_string_create_crc(const char *str, size_t len, enum s
     }
     flags &= ~SELVA_STRING_CRC; /* This is also implicit but it must not be set yet. */
 
-    s = (flags & SELVA_STRING_MUTABLE)
-        ? set_string(alloc_mutable(len + trail), str, len, flags)
-        : set_string(alloc_immutable(len + trail), str, len, flags);
+    s = make_string(len + trail, str, len, flags);
     s->flags |= SELVA_STRING_CRC;
     /*
      * We just trust that this is the correct crc and that the data isn't
