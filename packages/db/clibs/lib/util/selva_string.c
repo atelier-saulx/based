@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
+#define __STDC_WANT_LIB_EXT1__ 1
 #include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -451,17 +452,15 @@ static int replace_str(struct selva_string *s, const char *str, size_t len)
 {
     const enum selva_string_flags flags = s->flags;
 
+    fprintf(stderr, "replace string @%p: \"%s\" => \"%.*s\"\n", s, get_buf(s), (int)len, str);
+
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
         if (len > s->len) {
             return SELVA_EINVAL;
         }
 
-        if (likely(len > 0)) {
-            memcpy(s->emb, str, len);
-        }
-        if (len < s->len) {
-            memset(s->emb + len, 0, s->len - len);
-        }
+        memcpy(s->emb, str, len);
+        (void)memset_s(s->emb + len, s->len - len, 0, s->len - len);
     } else if (flags & SELVA_STRING_MUTABLE) {
         s->len = len;
         s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
