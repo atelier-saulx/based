@@ -12,24 +12,17 @@ import { Command } from 'commander'
 
 export const download =
   (program: Command) =>
-  async ({ db, file, path }) => {
+  async ({ db, file, path, date }) => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const { destroy } = await context.getBasedClients()
 
-    const backups: BackupsSorted = await getList(context)
-    let { selectedFile, selectedDB } = await backupsSelection({
-      context,
-      backups,
-      db,
-      file,
-    })
-
     try {
       await getDownload({
         context,
-        db: selectedDB,
-        file: selectedFile,
+        db,
+        file,
+        date,
         path,
       })
 
@@ -42,15 +35,25 @@ export const download =
 
 export const getDownload = async ({
   context,
-  db,
-  file,
-  path,
+  db = '',
+  file = '',
+  path = '',
+  date = '',
   retry = 3,
 }: BasedCli.Backups.Downloads): Promise<void> => {
   let isValid: boolean = false
-  const isExternalPath: boolean = path !== undefined && path !== ''
   const { basedClient } = await context.getBasedClients()
   const { skip } = context.getGlobalOptions()
+  const isExternalPath: boolean = path !== undefined && path !== ''
+
+  const backups: BackupsSorted = await getList(context)
+  let { selectedFile, selectedDB } = await backupsSelection({
+    context,
+    backups,
+    db,
+    file,
+    date,
+  })
 
   if (isExternalPath) {
     context.print.info(`<b>Selected path:</b> <cyan>${path}</cyan>`)
@@ -82,9 +85,11 @@ export const getDownload = async ({
   context.print
     .line()
     .info(`<b>Download summary:</b>`)
-    .info(`<b>Database:</b> '<cyan>${db}</cyan>'`)
-    .info(`<b>Backup file:</b> '<cyan>${file}</cyan>'`)
-    .info(`<b>Saving to:</b> '<cyan>${resolve(replaceTilde(path))}</cyan>'`)
+    .info(`<b>Database:</b> <reset><cyan>${selectedDB}</cyan></reset>`)
+    .info(`<b>Backup file:</b> <reset><cyan>${selectedFile}</cyan></reset>`)
+    .info(
+      `<b>Saving to:</b> <reset><cyan>${resolve(replaceTilde(path), selectedFile)}</cyan></reset>`,
+    )
     .line()
 
   if (!skip) {
@@ -98,7 +103,7 @@ export const getDownload = async ({
   try {
     context.print.loading('Downloading file...')
     const response = await basedClient.call('based:backups-download', {
-      key: file,
+      key: selectedFile,
     })
     context.print.stop()
 
@@ -117,7 +122,7 @@ export const getDownload = async ({
   }
 
   context.print.success(
-    `Saved backup in: '<b><cyan>${resolve(replaceTilde(path))}</cyan></b>'`,
+    `Saved backup in: <reset><cyan>${resolve(replaceTilde(path), selectedFile)}</cyan></reset>`,
     true,
   )
 }

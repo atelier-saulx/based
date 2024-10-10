@@ -109,7 +109,7 @@ export const setRestore = async ({
 
       await basedClient.call('based:backups-select', {
         db: dbInfo,
-        key: file,
+        key: selectedFile,
       })
     } catch (error) {
       throw new Error(`Error restoring your file: '${error}'`)
@@ -121,7 +121,7 @@ export const setRestore = async ({
       context.print.loading('Uploading file...')
 
       const result = await basedClient.stream('based:backups-upload', {
-        path: file,
+        path: selectedFile,
         payload: {
           db: dbInfo,
         },
@@ -135,5 +135,7 @@ export const setRestore = async ({
     }
   }
 
-  context.print.stop().success(`Backup restored successfully!`, true)
+  context.print
+    .stop()
+    .success(`Backup <cyan>${selectedFile}</cyan> restored successfully!`, true)
 }

@@ -76,7 +76,7 @@ export const backupsSummary = (
 const dbSelection = async ({
   context,
   backups,
-  db,
+  db = '',
   verbose = false,
 }): Promise<string> => {
   if (!db) {
@@ -103,6 +103,7 @@ const dbSelection = async ({
 }
 
 const isBackupExists = (backups: BackupInfo[], selectedFile: string) =>
+  isFileFromCloud(selectedFile) &&
   backups.findIndex((file) => file.key === selectedFile)
 
 const findLatestBackup = (backups: BackupInfo[], date: string): string => {
@@ -125,13 +126,16 @@ const findLatestBackup = (backups: BackupInfo[], date: string): string => {
   return closestDate.key
 }
 
+const removeTheCurrent = (backups: BackupInfo[]) =>
+  backups.filter(({ key }) => !isCurrentDump(key))
+
 const fileSelection = async ({
   context,
   backups,
   sort,
-  db,
-  file,
-  date,
+  db = '',
+  file = '',
+  date = '',
   showCurrent = true,
   verbose = false,
 }): Promise<string> => {
@@ -152,7 +156,7 @@ const fileSelection = async ({
   }
 
   if (!showCurrent) {
-    sortedBackups = sortedBackups.filter(({ key }) => !isCurrentDump(key))
+    sortedBackups = removeTheCurrent(sortedBackups)
   }
 
   if (!file && !date) {
@@ -172,7 +176,7 @@ const fileSelection = async ({
       choices,
     )
   } else if (!file && date) {
-    file = findLatestBackup(sortedBackups, date)
+    file = findLatestBackup(removeTheCurrent(sortedBackups), date)
 
     if (verbose) {
       context.print.info(
@@ -211,7 +215,7 @@ export const backupsSelection = async ({
 
   db = await dbSelection({ context, backups, db })
 
-  if (!file || isCloudFile) {
+  if (isCloudFile || date) {
     file = await fileSelection({
       context,
       backups,
