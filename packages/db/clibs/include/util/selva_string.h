@@ -108,6 +108,12 @@ struct selva_string {
  */
 int selva_string_init(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags);
 
+
+/**
+ * Same as selva_string_init() but with a precalculated CRC32-C.
+ */
+int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, uint32_t crc, enum selva_string_flags flags);
+
 /**
  * Create a new string.
  * @param str can be NULL.
