@@ -146,7 +146,7 @@ static void set_crc(struct selva_string *s, uint32_t csum)
 static uint32_t calc_crc(const struct selva_string *s) __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 static uint32_t calc_crc(const struct selva_string *s)
 {
-    return crc32c(0, get_buf(s), s->len + 1);
+    return crc32c(0, get_buf(s), s->len);
 }
 
 static void update_crc(struct selva_string *s)
@@ -712,7 +712,7 @@ void selva_string_freeze(struct selva_string *s)
 
 int selva_string_verify_crc(const struct selva_string *s)
 {
-    return verify_parity(s) && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s);
+    return verify_parity(s) && get_buf(s)[s->len] == '\0' && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s);
 }
 
 uint32_t selva_string_get_crc(const struct selva_string *s)

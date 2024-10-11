@@ -195,10 +195,12 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
 
     nfo = &fields->fields_map[fs->field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
-        *nfo = alloc_block(fields, fs);
-        void *p = nfo2p(fields, nfo);
+        void *p;
 
-        switch (fs->type) {
+        *nfo = alloc_block(fields, fs);
+        p = nfo2p(fields, nfo);
+
+        switch (type) {
         case SELVA_FIELD_TYPE_STRING:
             memset(p, 0, sizeof(struct selva_string));
             break;
@@ -900,7 +902,6 @@ copy:
         return tail_insert_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
-            fprintf(stderr, "weak len: %d\n", (int)len);
             return SELVA_EINVAL;
         }
 

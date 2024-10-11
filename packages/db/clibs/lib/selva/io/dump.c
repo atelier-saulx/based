@@ -79,10 +79,17 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
 {
     size_t len;
     const char *str = selva_string_to_str(string, &len);
+    uint32_t crc = selva_string_get_crc(string);
     sdb_arr_len_t sdb_len = len;
+
+    assert(selva_string_get_flags(string) & SELVA_STRING_CRC);
+    if (!selva_string_verify_crc(string)) {
+        db_panic("%p Invalid CRC: %u \"%.*s\"\n", string, (unsigned)crc, (int)len, str);
+    }
 
     io->sdb_write(&sdb_len, sizeof(sdb_len), 1, io);
     io->sdb_write(str, sizeof(char), sdb_len, io);
+    io->sdb_write(&crc, sizeof(crc), 1, io);
 }
 
 static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
@@ -524,6 +531,24 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
+static int load_string(struct selva_io *io, struct selva_string *s, size_t len)
+{
+    uint32_t crc;
+
+    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
+        selva_string_free(s);
+        return SELVA_EIO;
+    }
+
+    if (io->sdb_read(&crc, sizeof(crc), 1, io) != 1) {
+        selva_string_free(s);
+        return SELVA_EIO;
+    }
+
+    selva_string_set_crc(s, crc);
+    return 0;
+}
+
 static int load_field_string(struct selva_io *io, struct SelvaNode *node, struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t len;
@@ -536,12 +561,7 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, struct
         return err;
     }
 
-    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
-        selva_string_free(s);
-        return SELVA_EIO;
-    }
-
-    return 0;
+    return load_string(io, s, len);
 }
 
 static int load_reference_meta_field_string(
@@ -561,12 +581,7 @@ static int load_reference_meta_field_string(
         return err;
     }
 
-    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
-        selva_string_free(s);
-        return SELVA_EIO;
-    }
-
-    return 0;
+    return load_string(io, s, len);
 }
 
 static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
