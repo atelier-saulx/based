@@ -900,7 +900,6 @@ copy:
         return tail_insert_references(db, fs, node, (struct SelvaNode **)value, len / sizeof(struct SelvaNode **));
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
         if ((len % sizeof(struct SelvaNodeWeakReference)) != 0) {
-            fprintf(stderr, "weak len: %d\n", (int)len);
             return SELVA_EINVAL;
         }
 
