@@ -157,9 +157,6 @@ var yy = Date.now()
 // .include('name', 'flap', 'burp')
 for (let i = 0; i < 1e6; i++) {
   // allow arrays
-  q.defToBuffer(
-    db,
-    db.query('article').include(['name', 'flap', 'burp', 'contributors']).def,
-  )
+  q.defToBuffer(db, db.query('article').include('contributors', 'flap').def)
 }
 console.log(Date.now() - yy, 'ms')
