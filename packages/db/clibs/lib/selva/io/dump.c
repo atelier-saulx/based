@@ -82,9 +82,8 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
     uint32_t crc = selva_string_get_crc(string);
     sdb_arr_len_t sdb_len = len;
 
-    assert(selva_string_get_flags(string) & SELVA_STRING_CRC);
     if (!selva_string_verify_crc(string)) {
-        db_panic("%p Invalid CRC: %u \"%.*s\"\n", string, (unsigned)crc, (int)len, str);
+        db_panic("%p Invalid CRC: %u", string, (unsigned)crc);
     }
 
     io->sdb_write(&sdb_len, sizeof(sdb_len), 1, io);
@@ -106,6 +105,10 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
         enum selva_lang_code lang = tl->lang;
 
         static_assert(sizeof(uint64_t) == sizeof(size_t));
+
+        if (!selva_string_verify_crc(tl)) {
+            db_panic("%p Invalid CRC: %u", tl, (unsigned)crc);
+        }
 
         io->sdb_write(&lang, sizeof(enum selva_lang_code), 1, io);
         io->sdb_write(&len, sizeof(len), 1, io);
