@@ -9,6 +9,7 @@ import {
   Operation,
   sort,
   defToBuffer,
+  getAll,
 } from './query.js'
 
 import { BasedQueryResponse } from './BasedIterable.js'
@@ -58,11 +59,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  include(...fields: (string | BranchInclude)[]): T {
-    const strIncludes = []
+  include(...fields: (string | BranchInclude | string[])[]): T {
     for (const f of fields) {
       if (typeof f === 'string') {
-        strIncludes.push(f)
+        if (f === '*') {
+          includeFields(this.def, getAll(this.def.props))
+        } else {
+          this.def.include.stringFields.add(f)
+        }
       } else if (typeof f === 'function') {
         f((field: string) => {
           const prop = this.def.props[field]
@@ -73,12 +77,13 @@ export class QueryBranch<T> {
           }
           throw new Error(`No ref field named ${field}`)
         })
+      } else if (Array.isArray(f)) {
+        includeFields(this.def, f)
       } else if (f !== undefined) {
         throw new Error('Invalid include statement')
       }
     }
 
-    includeFields(this.def, strIncludes)
     // @ts-ignore
     return this
   }

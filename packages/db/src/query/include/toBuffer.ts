@@ -10,25 +10,23 @@ export const includeToBuffer = (db: BasedDb, def: QueryDef): Buffer[] => {
   if (
     !def.include.stringFields.size &&
     !def.include.props.size &&
-    !def.references.size
+    !def.references.size &&
+    !def.include.main.len
   ) {
     return result
   }
 
-  let includesMain = false
   let mainBuffer: Buffer
   let len = 0
   let includeBuffer: Buffer
 
   if (def.include.stringFields) {
     for (const f of def.include.stringFields) {
-      if (walkDefs(db, def, f, includesMain)) {
-        includesMain = true
-      }
+      walkDefs(db, def, f)
     }
   }
 
-  if (includesMain) {
+  if (def.include.main.len > 0) {
     if (def.include.main.len === def.schema.mainLen) {
       // GET ALL MAIN FIELDS
       let m = 0

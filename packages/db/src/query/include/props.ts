@@ -1,3 +1,4 @@
+import { PropDef, PropDefEdge } from '../../schema/types.js'
 import { QueryDef } from '../types.js'
 
 export const getAll = (props: QueryDef['props']): string[] => {
@@ -11,46 +12,35 @@ export const getAll = (props: QueryDef['props']): string[] => {
   return fields
 }
 
-// export const getAllProps = (def: QueryDef) => {
-//   const f: number[] = []
-//   for (const key in def.props) {
-//     f.push(def.props[key].prop)
-//   }
-//   return f
-// }
-
 export const includeFields = (def: QueryDef, fields: string[]) => {
   for (const field of fields) {
     if (field === '*') {
       includeFields(def, getAll(def.props))
-      // includeAllProps(def)
     } else {
       def.include.stringFields.add(field)
-      // do something...
     }
   }
 }
 
-// export const includeAllProps = (def: QueryDef) => {
-//   for (const key in def.props) {
-//     const prop = def.props[key]
-//     if (prop.typeIndex !== 13 && prop.typeIndex !== 14) {
-//       def.include.props.add(prop.prop)
-//     }
-//   }
-// }
+export const includeAllProps = (def: QueryDef) => {
+  for (const key in def.props) {
+    const prop = def.props[key]
+    if (prop.typeIndex !== 13 && prop.typeIndex !== 14) {
+      includeProp(def, prop)
+    }
+  }
+}
 
-// export const includeProps = (def: QueryDef, fields: number[]) => {
-//   for (const elem of fields) {
-//     def.include.props.add(elem)
-//   }
-// }
-
-// export const includeProp = (def: QueryDef, field: string) => {
-//   const p = def.props[field]
-//   if (p) {
-//     def.include.props.add(p.prop)
-//     return true
-//   }
-//   return false
-// }
+export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
+  if (!prop || prop.typeIndex === 13 || prop.typeIndex === 14) {
+    return false
+  }
+  if (prop.separate) {
+    def.include.props.add(prop.prop)
+  } else {
+    def.include.main.len += prop.len
+    def.include.main.include[prop.start] = [0, prop as PropDef]
+    return true
+  }
+  return false
+}

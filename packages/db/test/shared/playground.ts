@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
+import * as q from '../../src/query/toBuffer.js'
 import { text, italy, euobserver } from './examples.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -141,7 +142,6 @@ const r = db
         s('favourite').include('*')
       })
   })
-  // .include('contributors.$role')
   .range(10, 3)
   .get()
 
@@ -150,3 +150,16 @@ r.debug()
 console.dir(r.toObject(), { depth: 10 })
 
 console.log(r)
+
+var yy = Date.now()
+
+// 'contributors',
+// .include('name', 'flap', 'burp')
+for (let i = 0; i < 1e6; i++) {
+  // allow arrays
+  q.defToBuffer(
+    db,
+    db.query('article').include(['name', 'flap', 'burp', 'contributors']).def,
+  )
+}
+console.log(Date.now() - yy, 'ms')
