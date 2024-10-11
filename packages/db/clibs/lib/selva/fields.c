@@ -195,10 +195,12 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
 
     nfo = &fields->fields_map[fs->field];
     if (nfo->type == SELVA_FIELD_TYPE_NULL) {
-        *nfo = alloc_block(fields, fs);
-        void *p = nfo2p(fields, nfo);
+        void *p;
 
-        switch (fs->type) {
+        *nfo = alloc_block(fields, fs);
+        p = nfo2p(fields, nfo);
+
+        switch (type) {
         case SELVA_FIELD_TYPE_STRING:
             memset(p, 0, sizeof(struct selva_string));
             break;
