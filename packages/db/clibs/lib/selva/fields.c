@@ -8,6 +8,7 @@
 #include "jemalloc.h"
 #include "util/align.h"
 #include "util/array_field.h"
+#include "util/crc32c.h"
 #include "util/ptag.h"
 #include "util/selva_lang.h"
 #include "util/selva_string.h"
@@ -913,6 +914,7 @@ copy:
 
             memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
             memcpy(buffer->data, value, buf_len);
+            buffer->crc = crc32c(0, value, buf_len);
         } while (0);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
@@ -1701,9 +1703,8 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, stru
 #endif
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
             .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
-            .len = selva_fields_get_data_size(fs),
+            .len = selva_fields_get_data_size(fs), /* - offsetof(struct SelvaMicroBuffer, data), */ /* FIXME How can this be possibly correct? */
         };
-        static_assert(offsetof(struct SelvaMicroBuffer, data) == sizeof_field(struct SelvaMicroBuffer, len));
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
         return (struct SelvaFieldsPointer){

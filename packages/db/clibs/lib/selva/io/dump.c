@@ -253,6 +253,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             io->sdb_write(any.smb, sizeof(uint8_t), sizeof(*any.smb) + any.smb->len, io);
+            /* TODO Verify CRC */
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
@@ -807,6 +808,7 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, stru
     struct SelvaFieldsAny any;
     any = selva_fields_get2(&node->fields, fs->field);
 
+    io->sdb_read(&any.smb->crc, sizeof(any.smb->crc), 1, io);
     io->sdb_read(&any.smb->len, sizeof(any.smb->len), 1, io);
     io->sdb_read(any.smb->data, sizeof(uint8_t), any.smb->len, io);
 

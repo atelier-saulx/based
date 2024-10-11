@@ -60,6 +60,7 @@ struct SelvaNodeWeakReferences {
 };
 
 struct SelvaMicroBuffer {
+    uint32_t crc;
     uint16_t len;
     uint8_t data[] __counted_by(len);
 } __packed;
