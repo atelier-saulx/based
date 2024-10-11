@@ -212,6 +212,15 @@ int selva_fields_set_text(
         const char *str,
         size_t len);
 
+int selva_fields_set_text_crc(
+        struct SelvaDb *,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        const char *str,
+        size_t len,
+        uint32_t crc);
+
 int selva_fields_get_text(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,

@@ -102,6 +102,7 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
         struct selva_string *tl = &text->tl[i];
         size_t len;
         const char *str = selva_string_to_str(tl, &len);
+        uint32_t crc = selva_string_get_crc(tl);
         enum selva_lang_code lang = tl->lang;
 
         static_assert(sizeof(uint64_t) == sizeof(size_t));
@@ -109,6 +110,7 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
         io->sdb_write(&lang, sizeof(enum selva_lang_code), 1, io);
         io->sdb_write(&len, sizeof(len), 1, io);
         io->sdb_write(str, sizeof(char), len, io);
+        io->sdb_write(&crc, sizeof(crc), 1, io);
     }
 }
 
@@ -594,12 +596,14 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
         enum selva_lang_code lang;
         size_t len = 0;
         char *str;
+        uint32_t crc;
 
         io->sdb_read(&lang, sizeof(lang), 1, io);
         io->sdb_read(&len, sizeof(len), 1, io);
         str = selva_malloc(len); /* TODO Optimize */
         io->sdb_read(str, sizeof(char), len, io);
-        selva_fields_set_text(db, node, fs, lang, str, len);
+        io->sdb_read(&crc, sizeof(crc), 1, io);
+        selva_fields_set_text_crc(db, node, fs, lang, str, len, crc);
         selva_free(str);
     }
 
