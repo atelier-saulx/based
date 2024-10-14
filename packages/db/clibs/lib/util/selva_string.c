@@ -192,7 +192,7 @@ static struct selva_string *alloc_immutable(size_t len)
     return s;
 }
 
-static struct selva_string *set_string(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
+static void _set_string(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
 {
     char *buf;
 
@@ -206,19 +206,42 @@ static struct selva_string *set_string(struct selva_string *s, const char *str, 
     } else {
         memset(buf, '\0', s->len + 1);
     }
+}
 
+static struct selva_string *set_string(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
+{
+    _set_string(s, str, len, flags);
     update_crc(s);
+
     return s;
 }
 
-int selva_string_init(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
+static struct selva_string *set_string_crc(struct selva_string *s, const char *str, size_t len, uint32_t crc, enum selva_string_flags flags)
+{
+    _set_string(s, str, len, flags);
+    set_crc(s, crc);
+
+    return s;
+}
+
+static int init_check(const char *str, size_t len __unused, enum selva_string_flags flags)
 {
     /* TODO Support compression. */
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_COMPRESS)) ||
         test_mutually_exclusive_flags(flags, (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED)) ||
         (!(flags & (SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_MUTABLE)) && !str)) {
-        memset(s, 0, sizeof(*s));
         return SELVA_EINVAL;
+    }
+    return 0;
+}
+
+int selva_string_init(struct selva_string *s, const char *str, size_t len, enum selva_string_flags flags)
+{
+    int err;
+
+    err = init_check(str, len, flags);
+    if (err) {
+        return err;
     }
 
     flags |= SELVA_STRING_STATIC | len_parity(len);
@@ -236,44 +259,63 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
     return 0;
 }
 
-static struct selva_string *make_string(size_t alloc_len, const char *str, size_t len, enum selva_string_flags flags)
+int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, uint32_t crc, enum selva_string_flags flags)
 {
-    return (flags & SELVA_STRING_MUTABLE)
-        ? set_string(alloc_mutable(alloc_len), str, len, flags)
-        : set_string(alloc_immutable(alloc_len), str, len, flags);
+    int err;
+
+    err = init_check(str, len, flags);
+    if (err) {
+        return err;
+    }
+
+    flags |= SELVA_STRING_STATIC | SELVA_STRING_CRC | len_parity(len);
+    if (flags & SELVA_STRING_MUTABLE_FIXED) {
+        set_string_crc(s, str, len, crc, flags);
+    } else if (flags & SELVA_STRING_MUTABLE) {
+        const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+
+        s->p = selva_malloc(len + 1 + trail);
+        set_string_crc(s, str, len, crc, flags);
+    } else {
+        set_string_crc(s, str, len, crc, flags);
+    }
+
+    return 0;
 }
 
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
     const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+    const size_t alloc_len = len + trail;
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
         test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
         return NULL; /* Invalid flags */
     }
 
-    return make_string(len + trail, str, len, flags);
+    return (flags & SELVA_STRING_MUTABLE)
+        ? set_string(alloc_mutable(alloc_len), str, len, flags)
+        : set_string(alloc_immutable(alloc_len), str, len, flags);
 }
 
 struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
 {
     struct selva_string *s;
+    const size_t alloc_len = len + sizeof(uint32_t);
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
         test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
         return NULL; /* Invalid flags */
     }
-    flags &= ~SELVA_STRING_CRC; /* This is also implicit but it must not be set yet. */
 
-    s = make_string(len + sizeof(uint32_t), str, len, flags);
-    s->flags |= SELVA_STRING_CRC;
     /*
      * We just trust that this is the correct crc and that the data isn't
      * corrupted yet.
      */
-    set_crc(s, crc);
-
-    return s;
+    flags |= SELVA_STRING_CRC;
+    return (flags & SELVA_STRING_MUTABLE)
+        ? set_string_crc(alloc_mutable(alloc_len), str, len, crc, flags)
+        : set_string_crc(alloc_immutable(alloc_len), str, len, crc, flags);
 }
 
 struct selva_string *selva_string_createf(const char *fmt, ...)

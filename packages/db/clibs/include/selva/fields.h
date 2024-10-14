@@ -60,6 +60,7 @@ struct SelvaNodeWeakReferences {
 };
 
 struct SelvaMicroBuffer {
+    uint32_t crc;
     uint16_t len;
     uint8_t data[] __counted_by(len);
 } __packed;
@@ -204,6 +205,7 @@ int selva_fields_get_reference_meta_mutable_string(
         size_t len,
         struct selva_string **s);
 
+SELVA_EXPORT
 int selva_fields_set_text(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
@@ -212,6 +214,17 @@ int selva_fields_set_text(
         const char *str,
         size_t len);
 
+SELVA_EXPORT
+int selva_fields_set_text_crc(
+        struct SelvaDb *,
+        struct SelvaNode * restrict node,
+        const struct SelvaFieldSchema *fs,
+        enum selva_lang_code lang,
+        const char *str,
+        size_t len,
+        uint32_t crc);
+
+SELVA_EXPORT
 int selva_fields_get_text(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
