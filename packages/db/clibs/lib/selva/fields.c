@@ -116,76 +116,6 @@ static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInf
 }
 
 /**
- * Get a mutable string in fields at fs/nfo.
- */
-static struct selva_string *get_mutable_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
-{
-    struct selva_string *s = nfo2p(fields, nfo);
-
-    assert(nfo->type == SELVA_FIELD_TYPE_STRING);
-    assert(((uintptr_t)s & 7) == 0);
-    assert(s);
-
-    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
-        if (fs->string.fixed_len == 0) {
-            selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
-        } else {
-            assert(len <= fs->string.fixed_len);
-            selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
-        }
-    }
-
-    return s;
-}
-
-static void remove_refs_offset(struct SelvaNodeReferences *refs)
-{
-    if (refs->offset > 0) {
-        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
-        refs->refs -= refs->offset;
-        refs->offset = 0;
-    }
-}
-
-static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
-{
-    /* If offset > 0 then refs is also allocated. */
-    if (refs->offset > 0) {
-        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
-        refs->refs -= refs->offset;
-        refs->offset = 0;
-    }
-}
-
-static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
-{
-    struct selva_string *s;
-
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
-        return SELVA_ENOBUFS;
-    }
-
-    s = get_mutable_string(fields, fs, nfo, len);
-    (void)selva_string_replace(s, str, len);
-
-    return 0;
-}
-
-static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
-{
-    struct selva_string *s;
-
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
-        return SELVA_ENOBUFS;
-    }
-
-    s = get_mutable_string(fields, fs, nfo, len);
-    (void)selva_string_replace_crc(s, str, len, crc);
-
-    return 0;
-}
-
-/**
  * Ensure that a field is allocated properly.
  * @param node Optional node context.
  * @param fields is the fields structure modified.
@@ -223,6 +153,76 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
     }
 
     return nfo;
+}
+
+/**
+ * Get a mutable string in fields at fs/nfo.
+ */
+static struct selva_string *get_mutable_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
+{
+    struct selva_string *s = nfo2p(fields, nfo);
+
+    assert(nfo->type == SELVA_FIELD_TYPE_STRING);
+    assert(((uintptr_t)s & 7) == 0);
+    assert(s);
+
+    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
+        if (fs->string.fixed_len == 0) {
+            selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+        } else {
+            assert(len <= fs->string.fixed_len);
+            selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
+        }
+    }
+
+    return s;
+}
+
+static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
+{
+    struct selva_string *s;
+
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
+    (void)selva_string_replace(s, str, len);
+
+    return 0;
+}
+
+static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
+{
+    struct selva_string *s;
+
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
+    (void)selva_string_replace_crc(s, str, len, crc);
+
+    return 0;
+}
+
+static void remove_refs_offset(struct SelvaNodeReferences *refs)
+{
+    if (refs->offset > 0) {
+        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+        refs->refs -= refs->offset;
+        refs->offset = 0;
+    }
+}
+
+static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
+{
+    /* If offset > 0 then refs is also allocated. */
+    if (refs->offset > 0) {
+        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+        refs->refs -= refs->offset;
+        refs->offset = 0;
+    }
 }
 
 /**
