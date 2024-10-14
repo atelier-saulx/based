@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
-import * as q from '../../src/query/toBuffer.js'
+import * as q from '../../src/query/query.js'
 import { text, italy, euobserver } from './examples.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -84,6 +84,7 @@ db.putSchema({
             prop: 'articles',
             $role: ['writer', 'editor'],
             $friend: { ref: 'user' },
+            $friends: { items: { ref: 'user' } },
           },
         },
       },
@@ -91,7 +92,7 @@ db.putSchema({
   },
 })
 
-await db.create('user', { flap: 1, name: 'derp' })
+const mrDerp = await db.create('user', { flap: 1, name: 'mr derp' })
 db.drain()
 
 const d = Date.now()
@@ -108,18 +109,21 @@ for (let i = 0; i < 1e6; i++) {
 }
 
 const ids: any = new Set()
-const x = 2
+const x = 100
 for (let j = 0; j < x; j++) {
   ids.add(~~(Math.random() * 1e6 - 1) + 1)
 }
+
 const y = [1, ...ids.values()].sort().map((v) => {
   return {
     id: v,
+    // $friend: mrDerp,
+    // $friends: [mrDerp],
     $role: 'writer',
   }
 })
 
-for (let i = 0; i < 10e3; i++) {
+for (let i = 0; i < 1e4; i++) {
   db.create('article', {
     flap: (i % 2) * 10,
     name: 'Ultra article ' + i,
@@ -131,32 +135,50 @@ for (let i = 0; i < 10e3; i++) {
   })
 }
 
+// BasedUserQueryFunction
+// BasedUserQuerySession
+
 console.log('db time', db.drain(), Date.now() - d)
 
 const r = db
   .query('article')
-  .include((s) => {
-    s('contributors')
-      .filter('name', '=', 'derp')
-      .include('name', '$role', (s) => {
-        s('favourite').include('*')
-      })
-  })
-  .range(10, 3)
+  // .filter('flap', '>', 1)
+  // .filter('pbulished', '>', 1)
+  // .filter('burp', '=', 'derp')
+  .include('contributors', 'name', 'flap', 'burp')
+  // .include((s) => {
+  //   s('contributors')
+  //     .filter('name', '=', 'mr derp')
+  //     .include('name', '$role', 'favourite')
+  // })
+  .range(0, 5e6)
+  // .sort('name', 'desc')
   .get()
 
-r.debug()
-
-console.dir(r.toObject(), { depth: 10 })
-
 console.log(r)
+// r.debug()
 
-var yy = Date.now()
+// console.dir(r.toObject(), { depth: 10 })
+// console.log(r)
+
+q.debug(q.defToBuffer(db, r.def))
+
+// var yy = Date.now()
 
 // 'contributors',
 // .include('name', 'flap', 'burp')
-for (let i = 0; i < 1e6; i++) {
-  // allow arrays
-  q.defToBuffer(db, db.query('article').def)
-}
-console.log(Date.now() - yy, 'ms')
+// for (let i = 0; i < 1e6; i++) {
+//   // allow arrays
+//   q.defToBuffer(db, db.query('article').def)
+// }
+// console.log(Date.now() - yy, 'ms')
+
+// const r2 = db
+//   .query('article')
+//   .include((s) => {
+//     s('contributors').include('*')
+//   })
+//   .range(10, 3)
+//   .get()
+
+// r.debug()
