@@ -851,6 +851,34 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
     return 0;
 }
 
+static inline void set_smb(struct SelvaMicroBuffer *buffer, const void *value, size_t len)
+{
+    typeof(buffer->len) buf_len = (typeof(buf_len))len;
+
+    memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
+    memcpy(buffer->data, value, buf_len);
+}
+
+static int set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
+{
+    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
+
+    set_smb(buffer, value, len);
+    buffer->crc = crc32c(0, value, len);
+
+    return 0;
+}
+
+static int set_field_smb_crc(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len, uint32_t crc)
+{
+    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
+
+    set_smb(buffer, value, len);
+    buffer->crc = crc;
+
+    return 0;
+}
+
 /**
  * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
  * @param db Can be NULL if field type is not a strong reference.
@@ -909,14 +937,7 @@ copy:
 
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        do {
-            struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
-            typeof(buffer->len) buf_len = (typeof(buf_len))len;
-
-            memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
-            memcpy(buffer->data, value, buf_len);
-            buffer->crc = crc32c(0, value, buf_len);
-        } while (0);
+        return set_field_smb(fields, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
         return SELVA_ENOTSUP;
@@ -943,6 +964,8 @@ int selva_fields_set_wcrc(struct SelvaDb *, struct SelvaNode *node, const struct
     switch (type) {
     case SELVA_FIELD_TYPE_STRING:
         return set_field_string_crc(&node->fields, fs, nfo, value, len, crc);
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        return set_field_smb_crc(&node->fields, nfo, value, len, crc);
     default:
         return SELVA_ENOTSUP;
     }
