@@ -300,7 +300,6 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
 
 struct selva_string *selva_string_create_crc(const char *str, size_t len, enum selva_string_flags flags, uint32_t crc)
 {
-    struct selva_string *s;
     const size_t alloc_len = len + sizeof(uint32_t);
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
