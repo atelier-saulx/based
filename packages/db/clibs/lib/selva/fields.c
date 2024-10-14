@@ -1703,7 +1703,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, stru
 #endif
             .ptr = (uint8_t *)PTAG_GETP(fields->data),
             .off = (nfo->off << 3) + offsetof(struct SelvaMicroBuffer, data),
-            .len = selva_fields_get_data_size(fs), /* - offsetof(struct SelvaMicroBuffer, data), */ /* FIXME How can this be possibly correct? */
+            .len = selva_fields_get_data_size(fs) - offsetof(struct SelvaMicroBuffer, data),
         };
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
