@@ -12,7 +12,7 @@ export async function contextProgram(): Promise<BasedCli.Context.Project> {
     this.program.opts() as BasedCli.Context.Project
 
   if (!basedProject) {
-    basedFile = await getBasedFile()
+    basedFile = await getBasedFile(['based.json', 'based.js', 'based.ts'])
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
       this.print.warning(
