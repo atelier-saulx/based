@@ -27,6 +27,10 @@ export const globalOptions = async (program: Command): Promise<void> => {
       '--api-key <api-key>',
       'API Key generated on Based.io for Service Account.',
     )
+    .option(
+      '--file <file>',
+      'If you want to use a specific Based configuration file. All other project options take precedence over this option.',
+    )
 
   program.helpOption('-h, --help', 'Display the help for each command.')
   program.helpCommand(

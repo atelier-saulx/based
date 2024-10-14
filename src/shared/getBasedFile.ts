@@ -3,26 +3,27 @@ import { readJSON } from 'fs-extra/esm'
 import { bundle } from '@based/bundle'
 
 export const getBasedFile = async (
-  file: string[],
+  files: string[],
 ): Promise<BasedCli.Context.Project | null> => {
-  if (!file || !file.length) {
+  if (!files || !files.length) {
     return null
   }
 
-  const basedFile = await findUp(file)
+  const basedFile = await findUp(files)
   let basedFileContent: BasedCli.Context.Project = {}
   const basedProject: BasedCli.Context.Project = {}
+  const file: string = basedFile.split('/').at(-1)
 
   if (basedFile) {
     if (basedFile.endsWith('.json')) {
-      basedFileContent = await readJSON(basedFile)
+      basedFileContent = { ...(await readJSON(basedFile)), file }
     } else {
       const bundled = await bundle({
         entryPoints: [basedFile],
       })
       const compiled = bundled.require()
 
-      basedFileContent = compiled.default || compiled
+      basedFileContent = { ...(compiled.default || compiled), file }
     }
 
     Object.assign(basedProject, basedFileContent)

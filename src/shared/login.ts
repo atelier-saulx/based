@@ -38,7 +38,8 @@ const hubConnection = async (
   context: AppContext,
   opts: BasedOpts,
 ): Promise<BasedClient> => {
-  const errorMessage = `Fatal error trying to <b>connect to the cloud</b>. Check your <b>'based.json'</b> file, your <b>username</b>, or <b>your arguments</b> and try again.`
+  const { file } = await context.get('basedProject')
+  const errorMessage = `Fatal error trying to <b>connect to the cloud</b>. Check your '<b>${file}</b>' file, your <b>username</b>, or <b>your arguments</b> and try again.`
   const [emoji, target] =
     opts.org === 'saulx' && opts.project === 'based-cloud'
       ? ['📡', 'Based Cloud']
@@ -69,14 +70,12 @@ const hubConnection = async (
 }
 
 export const login = async ({
-  context,
   email,
-  cluster,
-  org,
-  env,
-  project,
   selectUser,
 }: BasedCli.Auth.Login): Promise<BasedCli.Auth.Clients> => {
+  const context: AppContext = AppContext.getInstance()
+  const { cluster, org, env, project } = await context.getProgram()
+
   const adminHub: BasedClient = await hubConnection(context, {
     org: 'saulx',
     env: 'platform',

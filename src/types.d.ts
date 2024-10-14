@@ -14,6 +14,7 @@ declare global {
         org?: string
         env?: string
         apiKey?: string
+        file?: string
       }
 
       type GlobalOptions<T extends 'yes' | 'skip'> = T extends 'yes'
@@ -129,8 +130,7 @@ declare global {
         destroy: () => void
       }
 
-      type Login = Context.Project & {
-        context: AppContext
+      type Login = {
         email?: string
         selectUser?: boolean
       }
@@ -158,6 +158,18 @@ declare global {
         file: string
         date: string
         verbose: boolean
+      }
+    }
+
+    namespace Infra {
+      type Init = {
+        name
+        description
+        domains
+        machine
+        min
+        max
+        path
       }
     }
 

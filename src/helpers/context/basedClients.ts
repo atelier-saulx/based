@@ -1,17 +1,15 @@
 import { login } from '../../shared/index.js'
 
 export async function contextBasedClients(): Promise<BasedCli.Auth.Clients> {
-  const basedProject: BasedCli.Context.Project = this.get('basedProject')
   let basedClients: BasedCli.Auth.Clients = this.get('basedClients')
+  const { file } = await this.get('basedProject')
+
   if (basedClients) {
     return basedClients
   }
 
   if (!basedClients) {
-    basedClients = await login({
-      ...basedProject,
-      context: this,
-    })
+    basedClients = await login({})
 
     if (
       !basedClients.basedClient ||
@@ -19,7 +17,7 @@ export async function contextBasedClients(): Promise<BasedCli.Auth.Clients> {
       !basedClients.envHubBasedCloud
     ) {
       throw new Error(
-        `Fatal error during <b>authorization</b>. Check your <b>'based.json'</b> file or <b>your arguments</b> and try again.`,
+        `Fatal error during <b>authorization</b>. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.`,
       )
     }
   }
@@ -34,8 +32,6 @@ export async function contextBasedClients(): Promise<BasedCli.Auth.Clients> {
     ...(envHubBasedCloud && { envHubBasedCloud }),
     ...(destroy && { destroy }),
   }
-
-  this.set('basedClients', basedClients)
 
   return basedClients
 }

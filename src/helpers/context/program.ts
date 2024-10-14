@@ -8,11 +8,13 @@ export async function contextProgram(): Promise<BasedCli.Context.Project> {
     return basedProject
   }
 
-  const { cluster, org, project, env, apiKey } =
+  const { cluster, org, project, env, apiKey, file } =
     this.program.opts() as BasedCli.Context.Project
 
   if (!basedProject) {
-    basedFile = await getBasedFile(['based.json', 'based.js', 'based.ts'])
+    basedFile = await getBasedFile(
+      file ? [file] : ['based.json', 'based.js', 'based.ts'],
+    )
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
       this.print.warning(
@@ -28,11 +30,13 @@ export async function contextProgram(): Promise<BasedCli.Context.Project> {
     ...(project && { project }),
     ...(env && { env }),
     ...(apiKey && { apiKey }),
+    ...(file && { file }),
   }
 
   this.set('basedProject', basedProject)
 
   this.print
+    .info(`<dim>project file:</dim> <b>${basedProject.file}</b>`)
     .info(`<dim>org:</dim> <b>${basedProject.org}</b>`)
     .info(`<dim>project:</dim> <b>${basedProject.project}</b>`)
     .info(`<dim>env:</dim> <b>${basedProject.env}</b>`)

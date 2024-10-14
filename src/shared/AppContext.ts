@@ -29,18 +29,16 @@ export class AppContext {
   ]
   public program: Command
 
-  private constructor(program: Command) {
-    if (!this.program) {
+  private constructor(program?: Command) {
+    if (!program && !this.program) {
+      throw new Error('Program must be provided.')
+    } else if (program && !this.program) {
       this.program = program
     }
   }
 
-  public static getInstance(program: Command): AppContext {
+  public static getInstance(program?: Command): AppContext {
     if (!AppContext.instance) {
-      if (!program) {
-        throw new Error('Program must be provided.')
-      }
-
       AppContext.instance = new AppContext(program)
     }
     return AppContext.instance
@@ -59,8 +57,8 @@ export class AppContext {
   }
 
   public getGlobalOptions = contextGlobalOptions
-  public getBasedClients = contextBasedClients
   public getProgram = contextProgram
+  public getBasedClients = contextBasedClients
   public parse = contextParse
   public input = contextInput
   public print = contextPrint(this.state)

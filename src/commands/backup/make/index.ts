@@ -17,7 +17,7 @@ export const make = (program: Command) => async () => {
 
 export const setMake = async (context: AppContext) => {
   const { basedClient, adminHubBasedCloud } = await context.getBasedClients()
-  const { org, env, project } = await context.getProgram()
+  const { org, env, project, file } = await context.getProgram()
   const { skip } = context.getGlobalOptions()
 
   context.print.line()
@@ -34,7 +34,7 @@ export const setMake = async (context: AppContext) => {
 
   const { envId } = await basedClient.call('based:env-info').catch(() => {
     throw new Error(
-      `Fatal error during <b>get your environment info</b>. Check your <b>'based.json'</b> file or <b>your arguments</b> and try again.`,
+      `Fatal error during <b>get your environment info</b>. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.`,
     )
   })
 
