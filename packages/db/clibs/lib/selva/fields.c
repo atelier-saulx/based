@@ -40,8 +40,13 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_UPDATED] = sizeof(int64_t),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof(double),
     [SELVA_FIELD_TYPE_INTEGER] = sizeof(int32_t),
+    [SELVA_FIELD_TYPE_INT8] = sizeof(int8_t),
     [SELVA_FIELD_TYPE_UINT8] = sizeof(uint8_t),
+    [SELVA_FIELD_TYPE_INT16] = sizeof(int16_t),
+    [SELVA_FIELD_TYPE_UINT16] = sizeof(uint16_t),
+    [SELVA_FIELD_TYPE_INT32] = sizeof(int32_t),
     [SELVA_FIELD_TYPE_UINT32] = sizeof(uint32_t),
+    [SELVA_FIELD_TYPE_INT64] = sizeof(int64_t),
     [SELVA_FIELD_TYPE_UINT64] = sizeof(uint64_t),
     [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
     [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
@@ -898,8 +903,13 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
@@ -1566,12 +1576,19 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
     case SELVA_FIELD_TYPE_INTEGER:
         memcpy(&any.integer, p, sizeof(any.integer));
         break;
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
         memcpy(&any.uint8, p, sizeof(any.uint8));
         break;
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+        memcpy(&any.uint32, p, sizeof(any.uint16));
+        break;
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
         memcpy(&any.uint32, p, sizeof(any.uint32));
         break;
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
         memcpy(&any.uint64, p, sizeof(any.uint64));
         break;
@@ -1691,8 +1708,13 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, stru
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
@@ -1776,8 +1798,13 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:

@@ -197,12 +197,19 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         case SELVA_FIELD_TYPE_INTEGER:
             io->sdb_write(&any.integer, sizeof(any.integer), 1, io);
             break;
+        case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
             io->sdb_write(&any.uint8, sizeof(any.uint8), 1, io);
             break;
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+            io->sdb_write(&any.uint16, sizeof(any.uint16), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
             io->sdb_write(&any.uint32, sizeof(any.uint32), 1, io);
             break;
+        case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
             io->sdb_write(&any.uint64, sizeof(any.uint64), 1, io);
             break;
@@ -667,8 +674,13 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+        case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:
@@ -865,8 +877,13 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+        case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:

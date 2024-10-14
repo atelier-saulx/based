@@ -73,9 +73,14 @@ struct SelvaFieldsAny {
         int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP */
         int32_t integer; /*!< SELVA_FIELD_TYPE_INTEGER */
         struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
-        uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
-        uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
+        int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
         uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */
+        int16_t int16; /*!< SELVA_FIELD_TYPE_INT16 */
+        uint16_t uint16; /*!< SELVA_FIELD_TYPE_UINT16 */
+        int32_t int32; /*!< SELVA_FIELD_TYPE_INT32 */
+        uint32_t uint32; /*!< SELVA_FIELD_TYPE_UINT32 */
+        int64_t int64; /* SELVA_FIELD_TYPE_INT64 */
+        uint64_t uint64; /*!< SELVA_FIELD_TYPE_UINT64 */
         uint8_t enu; /*!< SELVA_FIELD_TYPE_ENUM */
         struct SelvaTextField *text; /*!< SELVA_FIELD_TYPE_TEXT */
         struct SelvaNodeReference *reference; /*!< SELVA_FIELD_TYPE_REFERENCE */
