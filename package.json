@@ -1,10 +1,10 @@
 {
   "name": "@based/cli",
-  "version": "8.0.0",
+  "version": "8.0.0-alpha.1",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
-  "private": true,
+  "private": false,
   "bin": "bin/cmd.js",
   "files": [
     "bin",
