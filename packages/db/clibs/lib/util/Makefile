@@ -17,7 +17,6 @@ OBJ := \
 	base64.o \
 	base64url.o \
 	bitmap.o \
-	crc32c/crc32c.o \
 	cstrings.o \
 	ctime.o \
 	eztrie.o \
@@ -47,6 +46,17 @@ OBJ := \
 	tcp.o \
 	timestamp.o \
 	trx.o
+
+ifeq ($(uname_M),x86_64)
+OBJ += \
+	crc32c/crc32c_x64.o
+else ifeq ($(uname_M),arm64)
+OBJ += \
+	crc32c/crc32c_arm64.o
+else
+OBJ += \
+	crc32c/crc32c.o
+endif
 
 LDFLAGS += -ljemalloc_selva -ldeflate
 ifeq ($(uname_S),Linux)
