@@ -51,32 +51,32 @@
         crc2 = __crc32cd(crc2, ReadUint64LE((P) + SEGMENTBYTES * 2 + (IND)*8)); \
         crc3 = __crc32cd(crc3, ReadUint64LE((P) + SEGMENTBYTES * 3 + (IND)*8)); \
         crc0 = __crc32cd(crc0, ReadUint64LE((P) + SEGMENTBYTES * 0 + (IND)*8)); \
-    } while (0);
+    } while (0)
 
 /**
  * compute 8*8 bytes for each segment parallelly
  */
 #define CRC32C256BYTES(P, IND) \
     do { \
-        CRC32C32BYTES((P), (IND)*8 + 0) \
-        CRC32C32BYTES((P), (IND)*8 + 1) \
-        CRC32C32BYTES((P), (IND)*8 + 2) \
-        CRC32C32BYTES((P), (IND)*8 + 3) \
-        CRC32C32BYTES((P), (IND)*8 + 4) \
-        CRC32C32BYTES((P), (IND)*8 + 5) \
-        CRC32C32BYTES((P), (IND)*8 + 6) \
-        CRC32C32BYTES((P), (IND)*8 + 7) \
-    } while (0);
+        CRC32C32BYTES((P), (IND)*8 + 0); \
+        CRC32C32BYTES((P), (IND)*8 + 1); \
+        CRC32C32BYTES((P), (IND)*8 + 2); \
+        CRC32C32BYTES((P), (IND)*8 + 3); \
+        CRC32C32BYTES((P), (IND)*8 + 4); \
+        CRC32C32BYTES((P), (IND)*8 + 5); \
+        CRC32C32BYTES((P), (IND)*8 + 6); \
+        CRC32C32BYTES((P), (IND)*8 + 7); \
+    } while (0)
 
 /**
  * compute 4*8*8 bytes for each segment parallelly
  */
 #define CRC32C1024BYTES(P) \
     do { \
-        CRC32C256BYTES((P), 0)   \
-        CRC32C256BYTES((P), 1)   \
-        CRC32C256BYTES((P), 2)   \
-        CRC32C256BYTES((P), 3)   \
+        CRC32C256BYTES((P), 0); \
+        CRC32C256BYTES((P), 1); \
+        CRC32C256BYTES((P), 2); \
+        CRC32C256BYTES((P), 3); \
         (P) += 4 * SEGMENTBYTES; \
     } while (0)
 
