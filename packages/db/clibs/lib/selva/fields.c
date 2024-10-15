@@ -2022,14 +2022,11 @@ static inline void hash_ref(XXH3_state_t *hash_state, const struct SelvaNodeRefe
     /* TODO meta */
 }
 
-typedef unsigned _BitInt(128) selva_fields_hash_t;
-
 selva_fields_hash_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     const field_t nr_fields = schema->nr_fields;
-    XXH3_state_t *hash_state;
+    XXH3_state_t *hash_state = XXH3_createState();
 
-    hash_state = XXH3_createState();
     XXH3_128bits_reset(hash_state);
 
     for (field_t field = 0; field < nr_fields; field++) {
