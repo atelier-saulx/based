@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
+#include "xxhash.h"
 #include "util/align.h"
 #include "util/array_field.h"
 #include "util/crc32c.h"
@@ -2013,4 +2014,99 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
     }
 
     destroy_fields(fields);
+}
+
+static inline void hash_ref(XXH3_state_t *hash_state, const struct SelvaNodeReference *ref)
+{
+    XXH3_128bits_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
+    /* TODO meta */
+}
+
+typedef unsigned _BitInt(128) selva_fields_hash_t;
+
+selva_fields_hash_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+{
+    const field_t nr_fields = schema->nr_fields;
+    XXH3_state_t *hash_state;
+
+    hash_state = XXH3_createState();
+    XXH3_128bits_reset(hash_state);
+
+    for (field_t field = 0; field < nr_fields; field++) {
+        const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+        const struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+        const void *p = nfo2p(fields, nfo);
+
+        switch (nfo->type) {
+        case SELVA_FIELD_TYPE_NULL:
+            /* Also NULL must cause a change in the hash. */
+            XXH3_128bits_update(hash_state, 0, 1);
+            break;
+        case SELVA_FIELD_TYPE_TIMESTAMP:
+        case SELVA_FIELD_TYPE_CREATED:
+        case SELVA_FIELD_TYPE_UPDATED:
+        case SELVA_FIELD_TYPE_NUMBER:
+        case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_INT8:
+        case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+        case SELVA_FIELD_TYPE_INT32:
+        case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_INT64:
+        case SELVA_FIELD_TYPE_UINT64:
+        case SELVA_FIELD_TYPE_BOOLEAN:
+        case SELVA_FIELD_TYPE_ENUM:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        case SELVA_FIELD_TYPE_MICRO_BUFFER:
+            XXH3_128bits_update(hash_state, p, selva_fields_get_data_size(fs));
+            break;
+        case SELVA_FIELD_TYPE_TEXT:
+            do {
+                const struct SelvaTextField *text = p;
+
+                for (size_t i = 0; i < text->len; i++) {
+                    uint32_t crc = selva_string_get_crc(&text->tl[i]);
+                    XXH3_128bits_update(hash_state, &crc, sizeof(crc));
+                }
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_REFERENCE:
+            hash_ref(hash_state, p);
+            break;
+        case SELVA_FIELD_TYPE_REFERENCES:
+            do {
+                const struct SelvaNodeReferences *refs = p;
+
+                for (size_t i = 0; i < refs->nr_refs; i++) {
+                    hash_ref(hash_state, &refs->refs[i]);
+                }
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+            do {
+                const struct SelvaNodeWeakReferences *refs = p;
+
+                XXH3_128bits_update(hash_state, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_STRING:
+            do {
+                const struct selva_string *s = p;
+                uint32_t crc = selva_string_get_crc(s);
+                XXH3_128bits_update(hash_state, &crc, sizeof(crc));
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_ALIAS:
+        case SELVA_FIELD_TYPE_ALIASES:
+            /* FIXME Hash alias? */
+            fprintf(stderr, "Alias not hashed at field: %d\n", field);
+            break;
+        }
+    }
+
+    XXH128_hash_t res = XXH3_128bits_digest(hash_state);
+    XXH3_freeState(hash_state);
+
+    return (selva_fields_hash_t)res.low64 | (selva_fields_hash_t)res.high64 << 64;
 }
