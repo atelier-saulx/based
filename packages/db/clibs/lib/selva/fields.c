@@ -107,7 +107,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     };
 }
 
-static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
+static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
     char *data = (char *)PTAG_GETP(fields->data);
 
@@ -119,6 +119,13 @@ static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInf
 
     return p;
 }
+
+#define NFO2P_QP(T, F, S, ...) \
+    STATIC_IF(IS_POINTER_CONST((S)), \
+            (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
+            (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
+
+#define nfo2p(FIELDS, NFO) NFO2P_QP(void, nfo2p, (FIELDS), (NFO))
 
 /**
  * Ensure that a field is allocated properly.
