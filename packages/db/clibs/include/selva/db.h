@@ -93,7 +93,7 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
  * struct SelvaFieldSchema *dst_fs = selva_get_fs_by_node(db, dst, efc->inverse_field);
  */
 SELVA_EXPORT
-struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSchema *fs);
+const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs);
 
 /**
  * Delete a node.

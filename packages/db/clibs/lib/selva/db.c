@@ -291,7 +291,7 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
     return selva_get_fs_by_ns_field(&type->ns, field);
 }
 
-struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSchema *fs)
+const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs)
 {
     return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
         ? &fs->edge_constraint
