@@ -49,11 +49,9 @@ const inspectObject = (
 ) => {
   const prefix = ''.padEnd(level * 2 + 2, ' ')
   let str = '{\n'
-
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
-
     let v = object[k]
     str += prefix + `${k}: `
     if (key === 'id') {
@@ -61,10 +59,9 @@ const inspectObject = (
       str += '\n'
     } else if (!def) {
       str += inspectObject(v, q, key, level + 1)
-      // str += '\n'
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
-        // fix
+        // fix and add
       } else if (def.typeIndex === 13) {
         if (!v.id) {
           str += 'null'
@@ -96,7 +93,7 @@ const inspectObject = (
         } else {
           str += `"${v}"`
         }
-      } else if (def.typeIndex === 8) {
+      } else if (def.typeIndex === 1) {
         str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {
         str += v

@@ -52,6 +52,7 @@ db.putSchema({
         name: { type: 'string' },
         body: { type: 'string' },
         done: { type: 'boolean' },
+        created: 'timestamp',
         address: {
           props: {
             street: 'string',
@@ -103,6 +104,7 @@ for (let i = 0; i < 1e4; i++) {
     done: !!(i % 2),
     name: 'flap ' + i,
     body: italy,
+    created: Date.now(),
     address: {
       street: 'kanaalstraat',
       nr: 102,
