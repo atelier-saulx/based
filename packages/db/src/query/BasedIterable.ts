@@ -78,14 +78,14 @@ const inspectObject = (
         if (v === undefined) {
           return ''
         }
-        if (v.length > 80) {
+        if (v.length > 60) {
           const chars = picocolors.italic(
             picocolors.dim(
               `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
             ),
           )
           v =
-            v.slice(0, 80).replace(/\n/g, '\\n ') +
+            v.slice(0, 60).replace(/\n/g, '\\n ') +
             picocolors.dim('...') +
             '" ' +
             chars
