@@ -2,6 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
+import { PropDef, PropDefEdge } from '../schema/types.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -40,29 +41,106 @@ const time = (time: number) => {
   }
 }
 
-export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
+const inspectObject = (
+  object: any,
+  q: QueryDef,
+  path: string,
+  level: number = 0,
+) => {
+  const prefix = ''.padEnd(level * 2 + 2, ' ')
+  let str = '{\n'
+  for (const k in object) {
+    const key = path ? path + '.' + k : k
+    const def: PropDef | PropDefEdge = q.props[key]
+    let v = object[k]
+    str += prefix + `${k}: `
+    if (key === 'id') {
+      str += `${v}`
+      str += '\n'
+    } else if (!def) {
+      str += inspectObject(v, q, key, level + 1)
+    } else if ('__isPropDef' in def) {
+      if (def.typeIndex === 14) {
+        // fix and add
+        str += inspectData(v, q.references.get(def.prop), true, level + 1)
+      } else if (def.typeIndex === 13) {
+        if (!v.id) {
+          str += 'null'
+        } else {
+          str += inspectObject(
+            v,
+            q.references.get(def.prop),
+            key,
+            level + 2,
+          ).slice(0, -1)
+        }
+        str += '\n'
+      } else if (def.typeIndex === 11) {
+        if (v === undefined) {
+          return ''
+        }
+        if (v.length > 60) {
+          const chars = picocolors.italic(
+            picocolors.dim(
+              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+            ),
+          )
+          v =
+            v.slice(0, 60).replace(/\n/g, '\\n ') +
+            picocolors.dim('...') +
+            '" ' +
+            chars
+          str += `"${v}`
+        } else {
+          str += `"${v}"`
+        }
+      } else if (def.typeIndex === 1) {
+        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+      } else {
+        str += v
+      }
+      str += '\n'
+    } else {
+      str += '\n'
+    }
+  }
+
+  if (level === 0) {
+  } else {
+    str += '}\n'.padStart(level * 2 + 2, ' ')
+  }
+  return str
+}
+
+export const inspectData = (
+  q: BasedQueryResponse,
+  def: QueryDef,
+  nested: boolean,
+  level: number = 0,
+) => {
   const length = q.length
   const max = Math.min(length, nested ? 2 : 10)
   let str = ''
   let i = 0
   for (const x of q) {
-    str += inspect(x)
+    str += inspectObject(x, def, '', level)
     i++
     if (i >= max) {
+      str += '}'
       break
     }
-    str += ',\n'
+    str += '},\n'
   }
   if (length > max) {
     str +=
-      ',\n' +
+      '},\n' +
       picocolors.dim(
         picocolors.italic(
           `...${length - max} More item${length - max !== 1 ? 's' : ''}`,
         ),
       )
   }
-  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n${']'.padStart(level * 2 + 1, ' ')}`
   if (nested) {
     return str
   }
@@ -99,7 +177,9 @@ export class BasedQueryResponse {
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, true).replaceAll('\n', '\n  ').trim()
+    const dataStr = inspectData(this, this.def, true)
+      .replaceAll('\n', '\n  ')
+      .trim()
     str += '\n  ' + dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
