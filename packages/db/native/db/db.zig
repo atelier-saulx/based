@@ -70,7 +70,7 @@ pub fn getType(typePrefix: TypeId) !Type {
 }
 
 pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
-    const s: ?*selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
+    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_ns_field(
         selva.selva_get_ns_by_te(typeEntry.?),
         @bitCast(field),
     );

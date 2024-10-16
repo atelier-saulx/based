@@ -165,7 +165,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
              * do the following:
              */
             struct SelvaNode *node = containerof(fields, struct SelvaNode, fields);
-            struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
+            const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
 
             assert(fs->type == any.type);
 
@@ -566,7 +566,7 @@ static int load_string(struct selva_io *io, struct selva_string *s, size_t len)
     return 0;
 }
 
-static int load_field_string(struct selva_io *io, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+static int load_field_string(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t len;
     struct selva_string *s;
@@ -585,7 +585,7 @@ static int load_reference_meta_field_string(
         struct selva_io *io,
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
-        struct EdgeFieldConstraint *efc,
+        const struct EdgeFieldConstraint *efc,
         field_t field)
 {
     sdb_arr_len_t len;
@@ -601,7 +601,7 @@ static int load_reference_meta_field_string(
     return load_string(io, s, len);
 }
 
-static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     uint8_t len;
 
@@ -631,7 +631,7 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
 static void load_reference_meta(
         struct selva_io *io,
         struct SelvaNode *node,
-        struct SelvaNodeReference *ref, struct EdgeFieldConstraint *efc)
+        struct SelvaNodeReference *ref, const struct EdgeFieldConstraint *efc)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
         db_panic("Load ref meta fields of %d:%d: Invalid magic", node->type, node->node_id);
@@ -645,7 +645,7 @@ static void load_reference_meta(
             field_t field;
             enum SelvaFieldType type;
         } __packed rd;
-        struct SelvaFieldSchema *fs;
+        const struct SelvaFieldSchema *fs;
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
         if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {
@@ -726,7 +726,7 @@ static void load_reference_meta(
     }
 }
 
-static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, field_t field)
 {
     node_id_t dst_id;
     uint8_t meta_present;
@@ -769,7 +769,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
     return 0;
 }
 
-static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, field_t field)
 {
     sdb_arr_len_t nr_refs;
 
@@ -777,7 +777,7 @@ static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct 
     return (nr_refs) ? load_ref(io, db, node, fs, field) : 0;
 }
 
-static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs, field_t field)
+static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, field_t field)
 {
     sdb_arr_len_t nr_refs;
 
@@ -789,7 +789,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     return 0;
 }
 
-static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     sdb_arr_len_t nr_refs;
 
@@ -811,7 +811,7 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
     return 0;
 }
 
-static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs)
+static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     int err;
 
@@ -845,7 +845,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             field_t field;
             enum SelvaFieldType type;
         } __packed rd;
-        struct SelvaFieldSchema *fs;
+        const struct SelvaFieldSchema *fs;
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
         if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {

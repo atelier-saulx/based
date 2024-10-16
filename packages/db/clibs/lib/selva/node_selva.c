@@ -567,7 +567,7 @@ static napi_value node_db_set_field(napi_env env, napi_callback_info info)
 
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
-    struct SelvaFieldSchema *fs;
+    const struct SelvaFieldSchema *fs;
 
     te = selva_get_type_by_index(db, type);
     if (!te) {
@@ -676,7 +676,7 @@ static napi_value node_db_del_field(napi_env env, napi_callback_info info)
         return res2napi(env, SELVA_ENOENT); /* TODO New error codes */
     }
 
-    struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
+    const struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&selva_get_type_by_node(db, node)->ns, field);
     if (!fs) {
         return res2napi(env, SELVA_ENOENT);
     }
