@@ -28,14 +28,16 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
 
     for (size_t i = 0; i < fields_schema->nr_fields; i++) {
         const struct SelvaFieldSchema *fs = &fields_schema->field_schemas[i];
+        struct SelvaAliases *field_aliases = &type->aliases[fs->alias_index];
 
         switch (fs->type) {
         case SELVA_FIELD_TYPE_ALIAS:
-            type->aliases[fs->alias_index].single = true;
+            field_aliases->single = true;
             __attribute__((__fallthrough__));
         case SELVA_FIELD_TYPE_ALIASES:
-            RB_INIT(&type->aliases[fs->alias_index].alias_by_name);
-            RB_INIT(&type->aliases[fs->alias_index].alias_by_dest);
+            field_aliases->field = fs->field;
+            RB_INIT(&field_aliases->alias_by_name);
+            RB_INIT(&field_aliases->alias_by_dest);
             __attribute__((__fallthrough__));
         default:
         }
