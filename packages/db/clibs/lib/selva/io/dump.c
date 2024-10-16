@@ -197,12 +197,19 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         case SELVA_FIELD_TYPE_INTEGER:
             io->sdb_write(&any.integer, sizeof(any.integer), 1, io);
             break;
+        case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
             io->sdb_write(&any.uint8, sizeof(any.uint8), 1, io);
             break;
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+            io->sdb_write(&any.uint16, sizeof(any.uint16), 1, io);
+            break;
+        case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
             io->sdb_write(&any.uint32, sizeof(any.uint32), 1, io);
             break;
+        case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
             io->sdb_write(&any.uint64, sizeof(any.uint64), 1, io);
             break;
@@ -289,22 +296,26 @@ static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
-#if 0
-    struct SelvaAliases *aliases = &te->aliases;
     const sdb_nr_aliases_t nr_aliases = te->nr_aliases;
     struct SelvaAlias *alias;
 
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
     io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
 
-    RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
-        sdb_arr_len_t name_len = strlen(alias->name);
+    for (size_t i = 0; i < nr_aliases; i++) {
+        struct SelvaAliases *aliases = &te->aliases[i];
+        const sdb_nr_aliases_t n = aliases->nr_aliases;
 
-        io->sdb_write(&name_len, sizeof(name_len), 1, io);
-        io->sdb_write(alias->name, sizeof(char), name_len, io);
-        io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
+        io->sdb_write(&n, sizeof(n), 1, io);
+
+        RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
+            sdb_arr_len_t name_len = strlen(alias->name);
+
+            io->sdb_write(&name_len, sizeof(name_len), 1, io);
+            io->sdb_write(alias->name, sizeof(char), name_len, io);
+            io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
+        }
     }
-#endif
 }
 
 static void save_schema(struct selva_io *io, struct SelvaDb *db)
@@ -667,8 +678,13 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+        case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:
@@ -865,8 +881,13 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
         case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+        case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
         case SELVA_FIELD_TYPE_BOOLEAN:
         case SELVA_FIELD_TYPE_ENUM:
@@ -941,7 +962,6 @@ static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
-#if 0
     sdb_nr_aliases_t nr_aliases;
 
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
@@ -949,19 +969,22 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
     }
 
     io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
-
     for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
-        sdb_arr_len_t name_len;
+        sdb_nr_aliases_t n;
 
-        io->sdb_read(&name_len, sizeof(name_len), 1, io);
-        struct SelvaAlias *alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
-        io->sdb_read(alias->name, sizeof(char), name_len, io);
-        alias->name[name_len] = '\0';
-        io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
+        io->sdb_read(&n, sizeof(n), 1, io);
+        for (size_t j = 0; j < n; j++) {
+            sdb_arr_len_t name_len;
 
-        selva_set_alias_p(te, alias);
+            io->sdb_read(&name_len, sizeof(name_len), 1, io);
+            struct SelvaAlias *alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+            io->sdb_read(alias->name, sizeof(char), name_len, io);
+            alias->name[name_len] = '\0';
+            io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
+
+            selva_set_alias_p(&te->aliases[i], alias);
+        }
     }
-#endif
 }
 
 static void load_types(struct selva_io *io, struct SelvaDb *db)

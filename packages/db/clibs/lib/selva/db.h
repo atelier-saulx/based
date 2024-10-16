@@ -27,6 +27,7 @@ struct SelvaNode {
     node_id_t node_id;
     node_type_t type;
     struct trx_label trx_label;
+    selva_fields_hash_t node_hash;
     RB_ENTRY(SelvaNode) _index_entry;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8

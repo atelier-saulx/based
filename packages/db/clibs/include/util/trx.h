@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -8,7 +8,9 @@
 
 #include "cdefs.h"
 
-typedef uint8_t trxid_t;
+#define TRX_BITS 8
+
+typedef _BitInt(TRX_BITS) trxid_t;
 
 /**
  * Global transaction state.
@@ -20,9 +22,9 @@ typedef uint8_t trxid_t;
  * new transaction.
  */
 struct trx_state {
-    trxid_t id; /*!< Id of the currently executing transaction. */
-    trxid_t cl; /*!< Traversal colors used in the transaction. */
-    trxid_t ex; /*!< Traversal colors that have finished in this transaction. */
+    trxid_t id: TRX_BITS; /*!< Id of the currently executing transaction. */
+    trxid_t cl: TRX_BITS; /*!< Traversal colors used in the transaction. */
+    trxid_t ex: TRX_BITS; /*!< Traversal colors that have finished in this transaction. */
 };
 
 /**
@@ -31,9 +33,9 @@ struct trx_state {
  * this type.
  */
 struct trx_label {
-    trxid_t id; /*!< Id of the currently executing transaction. */
-    trxid_t cl; /*!< Color of the currently executing traversal. */
-};
+    trxid_t id: TRX_BITS; /*!< Id of the currently executing transaction. */
+    trxid_t cl: TRX_BITS; /*!< Color of the currently executing traversal. */
+} __packed;
 
 /**
  * Current transaction state.
@@ -41,8 +43,8 @@ struct trx_label {
  * allocated as a stack variable called trx_cur.
  */
 struct trx {
-    trxid_t id; /*!< Id of the currently executing transaction. */
-    trxid_t cl; /*!< Color of the currently executing traversal. */
+    trxid_t id: TRX_BITS; /*!< Id of the currently executing transaction. */
+    trxid_t cl: TRX_BITS; /*!< Color of the currently executing traversal. */
 };
 
 /**

@@ -31,7 +31,7 @@ struct selva_io {
     struct libdeflate_compressor *compressor;
     struct libdeflate_decompressor *decompressor;
 
-    XXH3_state_t* hash_state;
+    XXH3_state_t *hash_state;
     uint8_t computed_hash[SELVA_IO_HASH_SIZE]; /*!< Updated at the end of load/save. */
     uint8_t stored_hash[SELVA_IO_HASH_SIZE]; /*!< The hash found in the footer. */
 

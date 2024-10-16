@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
+#include "xxhash.h"
 #include "util/align.h"
 #include "util/array_field.h"
 #include "util/crc32c.h"
@@ -40,8 +41,13 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_UPDATED] = sizeof(int64_t),
     [SELVA_FIELD_TYPE_NUMBER] = sizeof(double),
     [SELVA_FIELD_TYPE_INTEGER] = sizeof(int32_t),
+    [SELVA_FIELD_TYPE_INT8] = sizeof(int8_t),
     [SELVA_FIELD_TYPE_UINT8] = sizeof(uint8_t),
+    [SELVA_FIELD_TYPE_INT16] = sizeof(int16_t),
+    [SELVA_FIELD_TYPE_UINT16] = sizeof(uint16_t),
+    [SELVA_FIELD_TYPE_INT32] = sizeof(int32_t),
     [SELVA_FIELD_TYPE_UINT32] = sizeof(uint32_t),
+    [SELVA_FIELD_TYPE_INT64] = sizeof(int64_t),
     [SELVA_FIELD_TYPE_UINT64] = sizeof(uint64_t),
     [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
     [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
@@ -102,7 +108,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     };
 }
 
-static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
+static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
     char *data = (char *)PTAG_GETP(fields->data);
 
@@ -115,74 +121,12 @@ static inline void *nfo2p(struct SelvaFields *fields, const struct SelvaFieldInf
     return p;
 }
 
-/**
- * Get a mutable string in fields at fs/nfo.
- */
-static struct selva_string *get_mutable_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
-{
-    struct selva_string *s = nfo2p(fields, nfo);
+#define NFO2P_QP(T, F, S, ...) \
+    STATIC_IF(IS_POINTER_CONST((S)), \
+            (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
+            (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
-    assert(((uintptr_t)s & 7) == 0);
-    assert(s);
-
-    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
-        if (fs->string.fixed_len == 0) {
-            selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
-        } else {
-            assert(len <= fs->string.fixed_len);
-            selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
-        }
-    }
-
-    return s;
-}
-
-static void remove_refs_offset(struct SelvaNodeReferences *refs)
-{
-    if (refs->offset > 0) {
-        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
-        refs->refs -= refs->offset;
-        refs->offset = 0;
-    }
-}
-
-static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
-{
-    /* If offset > 0 then refs is also allocated. */
-    if (refs->offset > 0) {
-        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
-        refs->refs -= refs->offset;
-        refs->offset = 0;
-    }
-}
-
-static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
-{
-    struct selva_string *s;
-
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
-        return SELVA_ENOBUFS;
-    }
-
-    s = get_mutable_string(fields, fs, nfo, len);
-    (void)selva_string_replace(s, str, len);
-
-    return 0;
-}
-
-static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
-{
-    struct selva_string *s;
-
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
-        return SELVA_ENOBUFS;
-    }
-
-    s = get_mutable_string(fields, fs, nfo, len);
-    (void)selva_string_replace_crc(s, str, len, crc);
-
-    return 0;
-}
+#define nfo2p(FIELDS, NFO) NFO2P_QP(void, nfo2p, (FIELDS), (NFO))
 
 /**
  * Ensure that a field is allocated properly.
@@ -222,6 +166,76 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaNode *node, struct SelvaF
     }
 
     return nfo;
+}
+
+/**
+ * Get a mutable string in fields at fs/nfo.
+ */
+static struct selva_string *get_mutable_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
+{
+    struct selva_string *s = nfo2p(fields, nfo);
+
+    assert(nfo->type == SELVA_FIELD_TYPE_STRING);
+    assert(((uintptr_t)s & 7) == 0);
+    assert(s);
+
+    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
+        if (fs->string.fixed_len == 0) {
+            selva_string_init(s, NULL, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+        } else {
+            assert(len <= fs->string.fixed_len);
+            selva_string_init(s, NULL, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
+        }
+    }
+
+    return s;
+}
+
+static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
+{
+    struct selva_string *s;
+
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
+    (void)selva_string_replace(s, str, len);
+
+    return 0;
+}
+
+static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
+{
+    struct selva_string *s;
+
+    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+        return SELVA_ENOBUFS;
+    }
+
+    s = get_mutable_string(fields, fs, nfo, len);
+    (void)selva_string_replace_crc(s, str, len, crc);
+
+    return 0;
+}
+
+static void remove_refs_offset(struct SelvaNodeReferences *refs)
+{
+    if (refs->offset > 0) {
+        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+        refs->refs -= refs->offset;
+        refs->offset = 0;
+    }
+}
+
+static void remove_weak_refs_offset(struct SelvaNodeWeakReferences *refs)
+{
+    /* If offset > 0 then refs is also allocated. */
+    if (refs->offset > 0) {
+        memmove(refs->refs - refs->offset, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+        refs->refs -= refs->offset;
+        refs->offset = 0;
+    }
 }
 
 /**
@@ -850,6 +864,34 @@ static int set_weak_references(struct SelvaFields *fields, const struct SelvaFie
     return 0;
 }
 
+static inline void set_smb(struct SelvaMicroBuffer *buffer, const void *value, size_t len)
+{
+    typeof(buffer->len) buf_len = (typeof(buf_len))len;
+
+    memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
+    memcpy(buffer->data, value, buf_len);
+}
+
+static int set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len)
+{
+    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
+
+    set_smb(buffer, value, len);
+    buffer->crc = crc32c(0, value, len);
+
+    return 0;
+}
+
+static int set_field_smb_crc(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len, uint32_t crc)
+{
+    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
+
+    set_smb(buffer, value, len);
+    buffer->crc = crc;
+
+    return 0;
+}
+
 /**
  * Generic set function for SelvaFields that can be used for node fields as well as for edge metadata.
  * @param db Can be NULL if field type is not a strong reference.
@@ -869,8 +911,13 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
@@ -908,14 +955,7 @@ copy:
 
         return set_weak_references(fields, fs, (struct SelvaNodeWeakReference *)value, len / sizeof(struct SelvaNodeWeakReference));
     case SELVA_FIELD_TYPE_MICRO_BUFFER: /* JBOB or MUFFER? */
-        do {
-            struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
-            typeof(buffer->len) buf_len = (typeof(buf_len))len;
-
-            memcpy(&buffer->len, &buf_len, sizeof(buffer->len));
-            memcpy(buffer->data, value, buf_len);
-            buffer->crc = crc32c(0, value, buf_len);
-        } while (0);
+        return set_field_smb(fields, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
         return SELVA_ENOTSUP;
@@ -942,6 +982,8 @@ int selva_fields_set_wcrc(struct SelvaDb *, struct SelvaNode *node, const struct
     switch (type) {
     case SELVA_FIELD_TYPE_STRING:
         return set_field_string_crc(&node->fields, fs, nfo, value, len, crc);
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        return set_field_smb_crc(&node->fields, nfo, value, len, crc);
     default:
         return SELVA_ENOTSUP;
     }
@@ -1542,12 +1584,19 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
     case SELVA_FIELD_TYPE_INTEGER:
         memcpy(&any.integer, p, sizeof(any.integer));
         break;
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
         memcpy(&any.uint8, p, sizeof(any.uint8));
         break;
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+        memcpy(&any.uint32, p, sizeof(any.uint16));
+        break;
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
         memcpy(&any.uint32, p, sizeof(any.uint32));
         break;
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
         memcpy(&any.uint64, p, sizeof(any.uint64));
         break;
@@ -1667,8 +1716,13 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, stru
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
@@ -1752,8 +1806,13 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
@@ -1955,4 +2014,96 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
     }
 
     destroy_fields(fields);
+}
+
+static inline void hash_ref(XXH3_state_t *hash_state, const struct SelvaNodeReference *ref)
+{
+    XXH3_128bits_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
+    /* TODO meta */
+}
+
+selva_fields_hash_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+{
+    const field_t nr_fields = schema->nr_fields;
+    XXH3_state_t *hash_state = XXH3_createState();
+
+    XXH3_128bits_reset(hash_state);
+
+    for (field_t field = 0; field < nr_fields; field++) {
+        const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+        const struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+        const void *p = nfo2p(fields, nfo);
+
+        switch (nfo->type) {
+        case SELVA_FIELD_TYPE_NULL:
+            /* Also NULL must cause a change in the hash. */
+            XXH3_128bits_update(hash_state, 0, 1);
+            break;
+        case SELVA_FIELD_TYPE_TIMESTAMP:
+        case SELVA_FIELD_TYPE_CREATED:
+        case SELVA_FIELD_TYPE_UPDATED:
+        case SELVA_FIELD_TYPE_NUMBER:
+        case SELVA_FIELD_TYPE_INTEGER:
+        case SELVA_FIELD_TYPE_INT8:
+        case SELVA_FIELD_TYPE_UINT8:
+        case SELVA_FIELD_TYPE_INT16:
+        case SELVA_FIELD_TYPE_UINT16:
+        case SELVA_FIELD_TYPE_INT32:
+        case SELVA_FIELD_TYPE_UINT32:
+        case SELVA_FIELD_TYPE_INT64:
+        case SELVA_FIELD_TYPE_UINT64:
+        case SELVA_FIELD_TYPE_BOOLEAN:
+        case SELVA_FIELD_TYPE_ENUM:
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
+        case SELVA_FIELD_TYPE_MICRO_BUFFER:
+            XXH3_128bits_update(hash_state, p, selva_fields_get_data_size(fs));
+            break;
+        case SELVA_FIELD_TYPE_TEXT:
+            do {
+                const struct SelvaTextField *text = p;
+
+                for (size_t i = 0; i < text->len; i++) {
+                    uint32_t crc = selva_string_get_crc(&text->tl[i]);
+                    XXH3_128bits_update(hash_state, &crc, sizeof(crc));
+                }
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_REFERENCE:
+            hash_ref(hash_state, p);
+            break;
+        case SELVA_FIELD_TYPE_REFERENCES:
+            do {
+                const struct SelvaNodeReferences *refs = p;
+
+                for (size_t i = 0; i < refs->nr_refs; i++) {
+                    hash_ref(hash_state, &refs->refs[i]);
+                }
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+            do {
+                const struct SelvaNodeWeakReferences *refs = p;
+
+                XXH3_128bits_update(hash_state, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_STRING:
+            do {
+                const struct selva_string *s = p;
+                uint32_t crc = selva_string_get_crc(s);
+                XXH3_128bits_update(hash_state, &crc, sizeof(crc));
+            } while (0);
+            break;
+        case SELVA_FIELD_TYPE_ALIAS:
+        case SELVA_FIELD_TYPE_ALIASES:
+            /* FIXME Hash alias? */
+            fprintf(stderr, "Alias not hashed at field: %d\n", field);
+            break;
+        }
+    }
+
+    XXH128_hash_t res = XXH3_128bits_digest(hash_state);
+    XXH3_freeState(hash_state);
+
+    return (selva_fields_hash_t)res.low64 | (selva_fields_hash_t)res.high64 << 64;
 }

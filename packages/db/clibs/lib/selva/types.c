@@ -14,8 +14,13 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
     case SELVA_FIELD_TYPE_INTEGER:
+    case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
+    case SELVA_FIELD_TYPE_INT16:
+    case SELVA_FIELD_TYPE_UINT16:
+    case SELVA_FIELD_TYPE_INT32:
     case SELVA_FIELD_TYPE_UINT32:
+    case SELVA_FIELD_TYPE_INT64:
     case SELVA_FIELD_TYPE_UINT64:
     case SELVA_FIELD_TYPE_BOOLEAN:
     case SELVA_FIELD_TYPE_ENUM:
@@ -49,10 +54,20 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"number";
     case SELVA_FIELD_TYPE_INTEGER:
         return (const char *)"integer";
+    case SELVA_FIELD_TYPE_INT8:
+        return (const char *)"int8";
     case SELVA_FIELD_TYPE_UINT8:
         return (const char *)"uint8";
+    case SELVA_FIELD_TYPE_INT16:
+        return (const char *)"int16";
+    case SELVA_FIELD_TYPE_UINT16:
+        return (const char *)"uint16";
+    case SELVA_FIELD_TYPE_INT32:
+        return (const char *)"int32";
     case SELVA_FIELD_TYPE_UINT32:
         return (const char *)"uint32";
+    case SELVA_FIELD_TYPE_INT64:
+        return (const char *)"int64";
     case SELVA_FIELD_TYPE_UINT64:
         return (const char *)"uint64";
     case SELVA_FIELD_TYPE_BOOLEAN:

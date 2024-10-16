@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdint.h>
@@ -8,7 +8,7 @@
 int Trx_Begin(struct trx_state * restrict state, struct trx * restrict trx) {
     const trxid_t cl = (trxid_t)1 << __builtin_popcountl(state->cl);
 
-    if (cl == (trxid_t)1 << (sizeof(trxid_t) * 8 - 1)) {
+    if (cl == (trxid_t)1 << (sizeof(trxid_t) * TRX_BITS - 1)) {
         return -1;
     }
 

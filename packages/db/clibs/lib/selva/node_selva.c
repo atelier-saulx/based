@@ -129,11 +129,26 @@ static napi_value any2napi(napi_env env, struct SelvaFieldsAny *any)
     case SELVA_FIELD_TYPE_INTEGER:
         napi_create_int32(env, any->integer, &result);
         break;
+    case SELVA_FIELD_TYPE_INT8:
+        napi_create_int32(env, any->int8, &result);
+        break;
     case SELVA_FIELD_TYPE_UINT8:
         napi_create_uint32(env, any->uint8, &result);
         break;
+    case SELVA_FIELD_TYPE_INT16:
+        napi_create_int32(env, any->int16, &result);
+        break;
+    case SELVA_FIELD_TYPE_UINT16:
+        napi_create_uint32(env, any->uint16, &result);
+        break;
+    case SELVA_FIELD_TYPE_INT32:
+        napi_create_int32(env, any->int32, &result);
+        break;
     case SELVA_FIELD_TYPE_UINT32:
         napi_create_uint32(env, any->uint32, &result);
+        break;
+    case SELVA_FIELD_TYPE_INT64:
+        napi_create_bigint_int64(env, any->int64, &result);
         break;
     case SELVA_FIELD_TYPE_UINT64:
         napi_create_bigint_uint64(env, any->uint64, &result);

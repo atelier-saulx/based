@@ -12,6 +12,7 @@ typedef uint8_t field_t;
 typedef uint32_t node_id_t;
 typedef uint16_t node_type_t;
 typedef int32_t cursor_id_t;
+typedef unsigned _BitInt(128) selva_fields_hash_t;
 
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
@@ -20,8 +21,13 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_UPDATED = 3,
     SELVA_FIELD_TYPE_NUMBER = 4,
     SELVA_FIELD_TYPE_INTEGER = 5,
+    SELVA_FIELD_TYPE_INT8 = 20,
     SELVA_FIELD_TYPE_UINT8 = 6,
+    SELVA_FIELD_TYPE_INT16 = 21,
+    SELVA_FIELD_TYPE_UINT16 = 22,
+    SELVA_FIELD_TYPE_INT32 = 23,
     SELVA_FIELD_TYPE_UINT32 = 7,
+    SELVA_FIELD_TYPE_INT64 = 24,
     SELVA_FIELD_TYPE_UINT64 = 8,
     SELVA_FIELD_TYPE_BOOLEAN = 9,
     SELVA_FIELD_TYPE_ENUM = 10,
