@@ -45,7 +45,7 @@ export class QueryBranch<T> {
       value = true
     } else if (typeof operator === 'boolean') {
       operator = '='
-      value = operator
+      value = true
     }
     filter(this.db, this.def, field, operator, value)
     // @ts-ignore

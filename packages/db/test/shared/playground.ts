@@ -22,6 +22,8 @@ const db = new BasedDb({
 
 await db.start()
 
+const role = ['creator', 'editor', 'reader']
+
 db.putSchema({
   types: {
     todo: {
@@ -34,7 +36,7 @@ db.putSchema({
           items: {
             ref: 'user',
             prop: 'todos',
-            $role: ['creator', 'editor', 'reader'],
+            $role: role,
           },
         },
       },
@@ -58,12 +60,21 @@ const mrDerp = await db.create('user', { name: 'mr derp' })
 // db.drain()
 
 for (let i = 0; i < 1e4; i++) {
-  db.create('todo', { done: !!(i % 2), name: 'flap ' + i, body: italy })
+  db.create('todo', {
+    done: !!(i % 2),
+    name: 'flap ' + i,
+    collaborators: [
+      {
+        id: mrDerp,
+        $role: role[Math.floor(Math.random() * role.length)],
+      },
+    ],
+  })
 }
 
 console.log(db.drain())
 
-console.log(db.query('todo').filter('done', true).range(0, 1).get())
+console.log(db.query('todo').filter('done').range(0, 100).get())
 
 // const d = Date.now()
 
