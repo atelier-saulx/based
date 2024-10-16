@@ -824,7 +824,6 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, stru
     struct SelvaFieldsAny any;
     any = selva_fields_get2(&node->fields, fs->field);
 
-    io->sdb_read(&any.smb->crc, sizeof(any.smb->crc), 1, io);
     io->sdb_read(&any.smb->len, sizeof(any.smb->len), 1, io);
     io->sdb_read(any.smb->data, sizeof(uint8_t), any.smb->len, io);
 

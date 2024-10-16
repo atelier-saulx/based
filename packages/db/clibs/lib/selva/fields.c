@@ -9,7 +9,6 @@
 #include "xxhash.h"
 #include "util/align.h"
 #include "util/array_field.h"
-#include "util/crc32c.h"
 #include "util/ptag.h"
 #include "util/selva_lang.h"
 #include "util/selva_string.h"
@@ -877,17 +876,6 @@ static int set_field_smb(struct SelvaFields *fields, struct SelvaFieldInfo *nfo,
     struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
 
     set_smb(buffer, value, len);
-    buffer->crc = crc32c(0, value, len);
-
-    return 0;
-}
-
-static int set_field_smb_crc(struct SelvaFields *fields, struct SelvaFieldInfo *nfo, const void *value, size_t len, uint32_t crc)
-{
-    struct SelvaMicroBuffer *buffer = nfo2p(fields, nfo);
-
-    set_smb(buffer, value, len);
-    buffer->crc = crc;
 
     return 0;
 }
@@ -982,8 +970,6 @@ int selva_fields_set_wcrc(struct SelvaDb *, struct SelvaNode *node, const struct
     switch (type) {
     case SELVA_FIELD_TYPE_STRING:
         return set_field_string_crc(&node->fields, fs, nfo, value, len, crc);
-    case SELVA_FIELD_TYPE_MICRO_BUFFER:
-        return set_field_smb_crc(&node->fields, nfo, value, len, crc);
     default:
         return SELVA_ENOTSUP;
     }
