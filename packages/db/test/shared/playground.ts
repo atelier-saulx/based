@@ -128,7 +128,14 @@ for (let i = 0; i < 1e4; i++) {
 
 console.log(db.drain())
 
-console.log(db.query('todo').filter('done').range(0, 1).get())
+console.log(
+  db
+    .query('todo')
+    .filter('done')
+    .include('*', 'collaborators.*') //  'collaborators.$role'
+    .range(0, 1)
+    .get(),
+)
 
 // const d = Date.now()
 

@@ -44,7 +44,7 @@ const time = (time: number) => {
 const inspectObject = (
   object: any,
   q: QueryDef,
-  path: string = '',
+  path: string,
   level: number = 0,
 ) => {
   const prefix = ''.padEnd(level * 2 + 2, ' ')
@@ -62,6 +62,7 @@ const inspectObject = (
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
         // fix and add
+        str += inspectData(v, q.references.get(def.prop), true, level + 1)
       } else if (def.typeIndex === 13) {
         if (!v.id) {
           str += 'null'
@@ -70,7 +71,7 @@ const inspectObject = (
             v,
             q.references.get(def.prop),
             key,
-            level + 1,
+            level + 2,
           ).slice(0, -1)
         }
         str += '\n'
@@ -111,13 +112,18 @@ const inspectObject = (
   return str
 }
 
-export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
+export const inspectData = (
+  q: BasedQueryResponse,
+  def: QueryDef,
+  nested: boolean,
+  level: number = 0,
+) => {
   const length = q.length
   const max = Math.min(length, nested ? 2 : 10)
   let str = ''
   let i = 0
   for (const x of q) {
-    str += inspectObject(x, q.def)
+    str += inspectObject(x, def, '', level)
     i++
     if (i >= max) {
       str += '}'
@@ -134,7 +140,7 @@ export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
         ),
       )
   }
-  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n]`
+  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n${']'.padStart(level * 2 + 1, ' ')}`
   if (nested) {
     return str
   }
@@ -171,7 +177,9 @@ export class BasedQueryResponse {
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, true).replaceAll('\n', '\n  ').trim()
+    const dataStr = inspectData(this, this.def, true)
+      .replaceAll('\n', '\n  ')
+      .trim()
     str += '\n  ' + dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
