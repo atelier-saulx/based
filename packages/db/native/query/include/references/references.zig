@@ -52,7 +52,7 @@ pub inline fn getRefsFields(
 
     const resultIndex: usize = ctx.results.items.len - 1;
 
-    var edgeConstrain: ?*selva.EdgeFieldConstraint = null;
+    var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
     var refs: types.Refs(isEdge) = undefined;
 
     if (isEdge) {

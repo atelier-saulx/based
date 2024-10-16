@@ -12,7 +12,7 @@ typedef uint8_t field_t;
 typedef uint32_t node_id_t;
 typedef uint16_t node_type_t;
 typedef int32_t cursor_id_t;
-typedef unsigned _BitInt(128) selva_fields_hash_t;
+typedef unsigned _BitInt(128) selva_hash128_t;
 
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
@@ -92,7 +92,6 @@ struct SelvaDb;
 struct SelvaFieldInfo;
 struct SelvaFields;
 struct SelvaNode;
-struct SelvaNodeSchema;
 struct SelvaTypeEntry;
 
 SELVA_EXPORT

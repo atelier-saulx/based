@@ -60,7 +60,6 @@ struct SelvaNodeWeakReferences {
 };
 
 struct SelvaMicroBuffer {
-    uint32_t crc;
     uint16_t len;
     uint8_t data[] __counted_by(len);
 } __packed;
@@ -197,7 +196,7 @@ SELVA_EXPORT
 int selva_fields_set_reference_meta(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
-        struct EdgeFieldConstraint *efc,
+        const struct EdgeFieldConstraint *efc,
         field_t field,
         const void *value, size_t len);
 
@@ -205,7 +204,7 @@ SELVA_EXPORT
 int selva_fields_get_reference_meta_mutable_string(
         struct SelvaNode *node,
         struct SelvaNodeReference *ref,
-        struct EdgeFieldConstraint *efc,
+        const struct EdgeFieldConstraint *efc,
         field_t field,
         size_t len,
         struct selva_string **s);
@@ -261,17 +260,17 @@ SELVA_EXPORT
 struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field);
 
 SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, struct SelvaFieldSchema *fs)
+struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, struct SelvaFieldSchema *fs);
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
 /**
  * Delete field.
  */
 SELVA_EXPORT
-int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs);
+int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
 /**
  * Delete an edge from a references field.
@@ -280,7 +279,7 @@ SELVA_EXPORT
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t field, node_id_t dst_node_id);
 
 SELVA_EXPORT
-void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFieldSchema *fs);
+void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
 /**
  * Init fields of a node.
@@ -295,3 +294,6 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
  */
 SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);
+
+SELVA_EXPORT
+selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);

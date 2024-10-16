@@ -93,7 +93,7 @@ struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNo
  * struct SelvaFieldSchema *dst_fs = selva_get_fs_by_node(db, dst, efc->inverse_field);
  */
 SELVA_EXPORT
-struct EdgeFieldConstraint *selva_get_edge_field_constraint(struct SelvaFieldSchema *fs);
+const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs);
 
 /**
  * Delete a node.
@@ -112,6 +112,24 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
  */
 SELVA_EXPORT
 struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
+
+/**
+ * Calculate the node hash.
+ */
+SELVA_EXPORT
+void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node);
+
+/**
+ * Clear the node hash.
+ */
+SELVA_EXPORT
+void selva_node_hash_clear(struct SelvaNode *node);
+
+/**
+ * Get the current node_hash value.
+ */
+SELVA_EXPORT
+selva_hash128_t selva_node_hash_get(struct SelvaNode *node);
 
 /**
  * **Example**

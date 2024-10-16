@@ -14,9 +14,9 @@ pub const Node = *selva.SelvaNode;
 
 pub const Type = *selva.SelvaTypeEntry;
 
-pub const FieldSchema = *selva.SelvaFieldSchema;
+pub const FieldSchema = *const selva.SelvaFieldSchema;
 
-pub const EdgeFieldConstraint = *selva.EdgeFieldConstraint;
+pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
 pub const DbCtx = struct {
     initialized: bool,
@@ -231,7 +231,7 @@ pub fn getEdgeProp(
 //     field - 1,
 // );
 
-pub fn getEdgeFieldSchema(edgeConstaint: *selva.EdgeFieldConstraint, field: u8) !FieldSchema {
+pub fn getEdgeFieldSchema(edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
         edgeConstaint.*.fields_schema,
         field - 1,
@@ -273,7 +273,7 @@ pub fn getEdgeReference(
 pub fn writeEdgeProp(
     data: []u8,
     node: Node,
-    efc: *selva.EdgeFieldConstraint,
+    efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeReference,
     field: u8,
 ) !void {
