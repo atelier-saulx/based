@@ -41,33 +41,42 @@ const time = (time: number) => {
   }
 }
 
-const inspectObject = (object: any, q: QueryDef, level: number = 0) => {
+const inspectObject = (
+  object: any,
+  q: QueryDef,
+  path: string = '',
+  level: number = 0,
+) => {
   const prefix = ''.padEnd(level * 2 + 2, ' ')
   let str = '{\n'
 
-  for (const key in object) {
+  for (const k in object) {
+    const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
-    let v = object[key]
-    str += prefix + `${key}: `
 
+    let v = object[k]
+    str += prefix + `${k}: `
     if (key === 'id') {
       str += `${v}`
+      str += '\n'
     } else if (!def) {
-      // tree
+      str += inspectObject(v, q, key, level + 1)
+      // str += '\n'
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
-        if (v instanceof BasedQueryResponse) {
-          str += inspectData(v, true)
-        }
+        // fix
       } else if (def.typeIndex === 13) {
         if (!v.id) {
           str += 'null'
         } else {
-          str += inspectObject(v, q.references.get(def.prop), level + 1).slice(
-            0,
-            -1,
-          )
+          str += inspectObject(
+            v,
+            q.references.get(def.prop),
+            key,
+            level + 1,
+          ).slice(0, -1)
         }
+        str += '\n'
       } else if (def.typeIndex === 11) {
         if (v === undefined) {
           return ''
@@ -92,13 +101,16 @@ const inspectObject = (object: any, q: QueryDef, level: number = 0) => {
       } else {
         str += v
       }
+      str += '\n'
     } else {
-      // str += inspectObject(v, def, level + 1)
+      str += '\n'
     }
-    str += '\n'
   }
 
-  str += '}\n'.padStart(level * 2 + 2, ' ')
+  if (level === 0) {
+  } else {
+    str += '}\n'.padStart(level * 2 + 2, ' ')
+  }
   return str
 }
 
@@ -111,13 +123,14 @@ export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
     str += inspectObject(x, q.def)
     i++
     if (i >= max) {
+      str += '}'
       break
     }
-    str += ',\n'
+    str += '},\n'
   }
   if (length > max) {
     str +=
-      ',\n' +
+      '},\n' +
       picocolors.dim(
         picocolors.italic(
           `...${length - max} More item${length - max !== 1 ? 's' : ''}`,

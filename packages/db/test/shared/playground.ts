@@ -24,10 +24,30 @@ await db.start()
 
 const role = ['creator', 'editor', 'reader']
 
+// db.query('todo', todoId)
+//   .filter('orgs', 'has', db.query('user', userId).include('orgs'))
+//   .bool()
+
 db.putSchema({
   types: {
     todo: {
       props: {
+        // orgs: {
+        // default:
+        // filter()
+        // get: (info) => {
+        //   return based.query('my-sql', info)
+        // },
+        // set: (info, value) => {
+        //   return based.call('my-sql-insert', info, value)
+        // },
+        // query: (id) =>
+        //   db
+        //     .query('todo', id)
+        //     .traverse('collaborators')
+        //     .filter('$role', '=', 'owner')
+        //     .include('orgs'),
+        // },
         file: { type: 'string' },
         name: { type: 'string' },
         body: { type: 'string' },
@@ -61,6 +81,7 @@ db.putSchema({
     },
     user: {
       props: {
+        // orgs: { }
         name: { type: 'string', max: 100 },
         age: { type: 'number', step: 1, min: 0, max: 200 },
         todos: {
@@ -105,7 +126,7 @@ for (let i = 0; i < 1e4; i++) {
 
 console.log(db.drain())
 
-console.log(db.query('todo').filter('done').range(0, 1000).get())
+console.log(db.query('todo').filter('done').range(0, 1).get())
 
 // const d = Date.now()
 
