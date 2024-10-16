@@ -67,7 +67,7 @@ pub fn getSingleRefFields(
 
     const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
 
-    const edgeConstrain: *selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+    const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
 
     const resultSizeNest = getFields(
         node.?,
