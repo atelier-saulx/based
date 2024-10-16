@@ -24,6 +24,12 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         return data.len;
     }
 
+    if (ctx.fieldType == types.Prop.ALIAS) {
+        // try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
+        // return data.len;
+        return 0;
+    }
+
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {

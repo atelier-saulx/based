@@ -11,7 +11,7 @@ pub const TypeId = u16;
 pub const StartSet = std.AutoHashMap(u16, u8);
 
 pub const Node = *selva.SelvaNode;
-
+pub const Aliases = *selva.SelvaAliases;
 pub const Type = *selva.SelvaTypeEntry;
 
 pub const FieldSchema = *const selva.SelvaFieldSchema;
@@ -336,8 +336,13 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn setAlias(typeEntry: Type, dest: Node, aliasName: [*]u8) void {
-    selva.selva_set_alias(typeEntry, dest, aliasName.ptr, aliasName.len);
+pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
+    const typeAliases = selva.selva_get_aliases(typeEntry, field);
+    // _ = id;
+    // _ = typeAliases;
+    // _ = aliasName;
+    std.debug.print("YOOOOO {d} {any} {d}", .{ id, aliasName.ptr, aliasName.len });
+    selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
 }
 
 pub fn delAliasByName(typeEntry: Type, aliasName: [*]u8) !void {

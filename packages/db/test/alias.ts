@@ -1,5 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { setTimeout } from 'node:timers/promises'
 
 await test('alias', async (t) => {
   const db = new BasedDb({
@@ -22,11 +23,11 @@ await test('alias', async (t) => {
     },
   })
 
-  console.log(
-    db.create('user', {
-      externalId: 'cool',
-    }),
-  )
+  await setTimeout(1e3)
+  const user = db.create('user', {
+    externalId: 'cool',
+  })
+  console.log({ user })
 
   // console.log(
   //   db.create('user', {
@@ -34,5 +35,13 @@ await test('alias', async (t) => {
   //   }),
   // )
 
+  db.drain()
+  console.log('EVERYTHING IS FINE')
+  await setTimeout(1e3)
+  console.log(
+    db.update('user', user, {
+      externalId: 'ballz',
+    }),
+  )
   db.drain()
 })

@@ -24,7 +24,7 @@ pub fn writeEdges(
         const t: p = @enumFromInt(data[i + 1]);
         var offset: u32 = 0;
         var edgeLen: u32 = undefined;
-        if (t == p.STRING or t == p.REFERENCES) {
+        if (t == p.STRING or t == p.REFERENCES or t == p.ALIAS) {
             edgeLen = readInt(u32, data, i + 2);
             offset = 4;
         } else if (t == p.ENUM or t == p.BOOLEAN or t == p.INT8 or t == p.UINT8) {

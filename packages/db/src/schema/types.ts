@@ -71,8 +71,8 @@ export const ALIAS = 18
 export const ALIASES = 19
 
 export const TYPE_INDEX_MAP = {
-  // alias: ALIAS,
-  // aliases: ALIASES,
+  alias: ALIAS,
+  aliases: ALIASES,
   microbuffer: MICRO_BUFFER,
   references: REFERENCES,
   reference: REFERENCE,
@@ -180,8 +180,8 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   string: 0, // separate
   references: 0, // separate
   microbuffer: 0, // separate
-  // alias: 0,
-  // aliases: 0,
+  alias: 0,
+  aliases: 0,
   id: 4,
 }
 

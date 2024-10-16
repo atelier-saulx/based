@@ -53,6 +53,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
 
+    if (ctx.fieldType == types.Prop.ALIAS) {
+        // return 0;
+        try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
+        return data.len;
+    }
+
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
     return data.len;
 }
