@@ -6,12 +6,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "xxhash.h"
 #include "util/align.h"
 #include "util/array_field.h"
 #include "util/ptag.h"
 #include "util/selva_lang.h"
 #include "util/selva_string.h"
+#include "xxhash.h"
 #include "selva_error.h"
 #include "db_panic.h"
 #include "db.h"
@@ -2002,8 +2002,6 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
     destroy_fields(fields);
 }
 
-static void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
-
 static inline void hash_ref(XXH3_state_t *hash_state, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)
 {
     XXH3_128bits_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
@@ -2012,7 +2010,7 @@ static inline void hash_ref(XXH3_state_t *hash_state, const struct EdgeFieldCons
     }
 }
 
-static void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     const field_t nr_fields = schema->nr_fields;
 

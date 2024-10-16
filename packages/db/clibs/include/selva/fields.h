@@ -19,6 +19,8 @@
  */
 #define SELVA_FIELDS_RESERVED 255
 
+struct XXH3_state_s;
+
 #ifdef __zig
 struct selva_string;
 #else
@@ -294,6 +296,9 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
  */
 SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);
+
+SELVA_EXPORT
+void selva_fields_hash_update(struct XXH3_state_s *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
 
 SELVA_EXPORT
 selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
