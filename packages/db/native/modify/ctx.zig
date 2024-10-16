@@ -2,6 +2,7 @@ const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const c = @import("../c.zig");
 const selva = @import("../selva.zig");
+const types = @import("../types.zig");
 
 pub const ModifyCtx = struct {
     field: u8,
@@ -13,7 +14,7 @@ pub const ModifyCtx = struct {
     typeEntry: ?db.Type,
     fieldSchema: ?db.FieldSchema,
     node: ?db.Node,
-    fieldType: u8,
+    fieldType: types.Prop,
 };
 
 pub fn getSortIndex(ctx: *ModifyCtx, start: u16) !?sort.SortIndex {

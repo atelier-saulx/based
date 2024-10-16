@@ -4,29 +4,76 @@
 // 253: to read multi refs in responses better to avoid
 // 0: main buffer
 
-// TODO make nice CONSTS
-
 // Dont change the numbers!
-export const BOOLEAN = 9
+// export const BOOLEAN = 9
+// export const CREATED = 2
+// export const ENUM = 10
+// export const ID = 0
+// export const INT16 = 20
+// export const INT32 = 22
+// export const INT8 = 18
+// export const MICRO_BUFFER = 17
+// export const NUMBER = 4
+// export const REFERENCE = 13
+// export const REFERENCES = 14
+// export const STRING = 11
+// export const TIMESTAMP = 1
+// export const UINT16 = 21
+// export const UINT32 = 5
+// export const UINT8 = 19
+// export const UPDATED = 3
+
+// export const TYPE_INDEX_MAP = {
+//   microbuffer: MICRO_BUFFER,
+//   references: REFERENCES,
+//   reference: REFERENCE,
+//   timestamp: TIMESTAMP,
+//   boolean: BOOLEAN,
+//   created: CREATED,
+//   updated: UPDATED,
+//   number: NUMBER,
+//   string: STRING,
+//   uint16: UINT16,
+//   uint32: UINT32,
+//   int16: INT16,
+//   int32: INT32,
+//   uint8: UINT8,
+//   enum: ENUM,
+//   int8: INT8,
+//   id: ID,
+// }
+
+// TODO make nice CONSTS
+export const NULL = 0
+export const TIMESTAMP = 1
 export const CREATED = 2
-export const ENUM = 10
-export const ID = 0
-export const INT16 = 20
-export const INT32 = 22
-export const INT8 = 18
-export const MICROBUFFER = 17
+export const UPDATED = 3
 export const NUMBER = 4
+// export const INTEGER = 5
+export const INT8 = 20
+export const UINT8 = 6
+export const INT16 = 21
+export const UINT16 = 22
+export const INT32 = 23
+export const UINT32 = 7
+export const INT64 = 24
+export const UINT64 = 8
+export const BOOLEAN = 9
+export const ENUM = 10
+export const STRING = 11
+export const TEXT = 12
 export const REFERENCE = 13
 export const REFERENCES = 14
-export const STRING = 11
-export const TIMESTAMP = 1
-export const UINT16 = 21
-export const UINT32 = 5
-export const UINT8 = 19
-export const UPDATED = 3
+export const WEAK_REFERENCE = 15
+export const WEAK_REFERENCES = 16
+export const MICRO_BUFFER = 17
+export const ALIAS = 18
+export const ALIASES = 19
 
 export const TYPE_INDEX_MAP = {
-  microbuffer: MICROBUFFER,
+  // alias: ALIAS,
+  // aliases: ALIASES,
+  microbuffer: MICRO_BUFFER,
   references: REFERENCES,
   reference: REFERENCE,
   timestamp: TIMESTAMP,
@@ -42,7 +89,7 @@ export const TYPE_INDEX_MAP = {
   uint8: UINT8,
   enum: ENUM,
   int8: INT8,
-  id: ID,
+  id: NULL,
 }
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
@@ -133,6 +180,8 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   string: 0, // separate
   references: 0, // separate
   microbuffer: 0, // separate
+  // alias: 0,
+  // aliases: 0,
   id: 4,
 }
 

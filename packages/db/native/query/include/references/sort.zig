@@ -2,14 +2,15 @@ const readInt = @import("../../../utils.zig").readInt;
 const db = @import("../../../db/db.zig");
 const QueryCtx = @import("../../ctx.zig").QueryCtx;
 const getFields = @import("../include.zig").getFields;
-const types = @import("../types.zig");
+const queryTypes = @import("../types.zig");
+const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
 
 const selva = @import("../../../selva.zig");
 
 pub fn sortedReferences(
     comptime isEdge: bool,
-    refs: types.Refs(isEdge),
+    refs: queryTypes.Refs(isEdge),
     ctx: *QueryCtx,
     include: []u8,
     sortBuffer: []u8,
@@ -19,18 +20,18 @@ pub fn sortedReferences(
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
     limit: u32,
-) types.RefsResult {
+) queryTypes.RefsResult {
     if (isEdge) {
         return 0;
     }
 
-    var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
+    var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = 0;
     var start: u16 = undefined;
     var len: u16 = undefined;
 
     const sortField: u8 = sortBuffer[1];
-    const sortFieldType: u8 = sortBuffer[2];
+    const sortFieldType: types.Prop = @enumFromInt(sortBuffer[2]);
     if (sortBuffer.len == 7) {
         start = readInt(u16, sortBuffer, 3);
         len = readInt(u16, sortBuffer, 5);
@@ -68,7 +69,7 @@ pub fn sortedReferences(
             db.getNodeId(refNode),
             typeEntry,
             include,
-            types.RefResult(isEdge, refs, edgeConstrain, i),
+            queryTypes.RefResult(isEdge, refs, edgeConstrain, i),
             false,
         ) catch 0;
         if (result.cnt - offset >= limit) {

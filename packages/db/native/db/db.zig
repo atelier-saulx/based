@@ -4,6 +4,7 @@ const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
 const readInt = @import("../utils.zig").readInt;
+const types = @import("../types.zig");
 
 pub const TypeId = u16;
 
@@ -350,17 +351,17 @@ pub fn getAliasByName(typeEntry: Type, aliasName: [*]u8) ?Node {
 pub fn insertSort(
     sortCtx: *selva.SelvaSortCtx,
     node: Node,
-    sortFieldType: u8,
+    sortFieldType: types.Prop,
     value: []u8,
     start: u16,
     len: u16,
 ) void {
-    if (sortFieldType == 1) {
+    if (sortFieldType == types.Prop.TIMESTAMP) {
         selva.selva_sort_insert_i64(sortCtx, readInt(i64, value, start), node);
         return;
     }
 
-    if (sortFieldType == 11) {
+    if (sortFieldType == types.Prop.STRING) {
         if (start > 0 and len > 0) {
             selva.selva_sort_insert_buf(sortCtx, value[start .. start + len].ptr, value.len, node);
         } else {
@@ -369,52 +370,84 @@ pub fn insertSort(
         return;
     }
 
-    if (sortFieldType == 4) {
+    if (sortFieldType == types.Prop.NUMBER) {
         selva.selva_sort_insert_double(sortCtx, @floatFromInt(readInt(u64, value, start)), node);
         return;
     }
 
-    if (sortFieldType == 5) {
+    if (sortFieldType == types.Prop.INT8) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i8, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.INT16) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i16, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.INT32) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i32, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.INT64) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(i64, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.UINT8) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u8, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.UINT16) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u16, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.UINT32) {
         selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u32, value, start)), node);
         return;
     }
-    if (sortFieldType == 10) {
+
+    if (sortFieldType == types.Prop.UINT64) {
+        selva.selva_sort_insert_i64(sortCtx, @intCast(readInt(u64, value, start)), node);
+        return;
+    }
+
+    if (sortFieldType == types.Prop.ENUM) {
         selva.selva_sort_insert_i64(sortCtx, @intCast(value[start]), node);
         return;
     }
 }
 
-pub fn getSortFlag(sortFieldType: u8, desc: bool) !selva.SelvaSortOrder {
+pub fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     switch (sortFieldType) {
-        1 => {
+        types.Prop.TIMESTAMP,
+        types.Prop.INT8,
+        types.Prop.UINT8,
+        types.Prop.INT16,
+        types.Prop.UINT16,
+        types.Prop.INT32,
+        types.Prop.UINT32,
+        types.Prop.INT64,
+        types.Prop.UINT64,
+        types.Prop.ENUM,
+        => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_I64_ASC;
             }
         },
-        5 => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_I64_ASC;
-            }
-        },
-        10 => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_I64_ASC;
-            }
-        },
-        4 => {
+        types.Prop.NUMBER => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
             }
         },
-        11 => {
+        types.Prop.STRING => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_BUFFER_DESC;
             } else {

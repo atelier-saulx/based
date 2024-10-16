@@ -6,7 +6,7 @@ const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
-
+const types = @import("../types.zig");
 const std = @import("std");
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -14,12 +14,12 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
-    if (ctx.fieldType == 14) {
+    if (ctx.fieldType == types.Prop.REFERENCES) {
         try references.updateReferences(ctx, data);
         return data.len;
     }
 
-    if (ctx.fieldType == 13) {
+    if (ctx.fieldType == types.Prop.REFERENCE) {
         try reference.updateReference(ctx, data);
         return data.len;
     }

@@ -6,6 +6,7 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
+  // ALIAS,
 } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -30,6 +31,10 @@ const _addModify = (
       modifyError(res, tree, key)
     } else if (isPropDef(propDef)) {
       const type = propDef.typeIndex
+      // if (type === ALIAS) {
+      //   console.warn('*alias not supported*')
+      //   // writeString(obj[key], ctx, schema, propDef, res, modifyOp)
+      // } else
       if (type === REFERENCE) {
         writeReference(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (type === REFERENCES) {
@@ -42,10 +47,12 @@ const _addModify = (
           const buf = ctx.buf
           const mainLen = schema.mainLen
           const nextLen = mainLen + 1 + 4
+
           if (ctx.len + nextLen + 5 > ctx.max) {
             flushBuffer(ctx.db)
           }
           setCursor(ctx, schema, propDef.prop, res.tmpId, modifyOp)
+
           const pos = ctx.len
           buf[pos] = overwrite ? modifyOp : MERGE_MAIN
           buf[pos + 1] = mainLen
