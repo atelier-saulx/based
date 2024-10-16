@@ -32,6 +32,24 @@ db.putSchema({
         name: { type: 'string' },
         body: { type: 'string' },
         done: { type: 'boolean' },
+        address: {
+          props: {
+            street: 'string',
+            nr: 'uint32',
+            postalCode: 'uint16',
+            city: {
+              props: {
+                name: 'string',
+                location: {
+                  props: {
+                    long: 'number',
+                    lat: 'number',
+                  },
+                },
+              },
+            },
+          },
+        },
         collaborators: {
           items: {
             ref: 'user',
@@ -63,6 +81,19 @@ for (let i = 0; i < 1e4; i++) {
   db.create('todo', {
     done: !!(i % 2),
     name: 'flap ' + i,
+    body: italy,
+    address: {
+      street: 'kanaalstraat',
+      nr: 102,
+      postalCode: 50123,
+      city: {
+        name: 'amsterdam',
+        location: {
+          long: 52.12,
+          lat: 52.23,
+        },
+      },
+    },
     collaborators: [
       {
         id: mrDerp,
@@ -74,7 +105,7 @@ for (let i = 0; i < 1e4; i++) {
 
 console.log(db.drain())
 
-console.log(db.query('todo').filter('done').range(0, 100).get())
+console.log(db.query('todo').filter('done').range(0, 1000).get())
 
 // const d = Date.now()
 

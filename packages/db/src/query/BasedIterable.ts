@@ -2,6 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
+import { PropDef, PropDefEdge } from '../schema/types.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -40,13 +41,74 @@ const time = (time: number) => {
   }
 }
 
+const inspectObject = (object: any, q: QueryDef, level: number = 0) => {
+  const prefix = ''.padEnd(level * 2 + 2, ' ')
+  let str = '{\n'
+
+  for (const key in object) {
+    const def: PropDef | PropDefEdge = q.props[key]
+    let v = object[key]
+    str += prefix + `${key}: `
+
+    if (key === 'id') {
+      str += `${v}`
+    } else if (!def) {
+      // tree
+    } else if ('__isPropDef' in def) {
+      if (def.typeIndex === 14) {
+        if (v instanceof BasedQueryResponse) {
+          str += inspectData(v, true)
+        }
+      } else if (def.typeIndex === 13) {
+        if (!v.id) {
+          str += 'null'
+        } else {
+          str += inspectObject(v, q.references.get(def.prop), level + 1).slice(
+            0,
+            -1,
+          )
+        }
+      } else if (def.typeIndex === 11) {
+        if (v === undefined) {
+          return ''
+        }
+        if (v.length > 80) {
+          const chars = picocolors.italic(
+            picocolors.dim(
+              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+            ),
+          )
+          v =
+            v.slice(0, 80).replace(/\n/g, '\\n ') +
+            picocolors.dim('...') +
+            '" ' +
+            chars
+          str += `"${v}`
+        } else {
+          str += `"${v}"`
+        }
+      } else if (def.typeIndex === 8) {
+        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+      } else {
+        str += v
+      }
+    } else {
+      // str += inspectObject(v, def, level + 1)
+    }
+    str += '\n'
+  }
+
+  str += '}\n'.padStart(level * 2 + 2, ' ')
+  return str
+}
+
 export const inspectData = (q: BasedQueryResponse, nested: boolean) => {
   const length = q.length
   const max = Math.min(length, nested ? 2 : 10)
   let str = ''
   let i = 0
   for (const x of q) {
-    str += inspect(x)
+    str += inspectObject(x, q.def)
     i++
     if (i >= max) {
       break
