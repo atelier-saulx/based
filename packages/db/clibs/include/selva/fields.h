@@ -295,3 +295,6 @@ void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaField
  */
 SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node);
+
+SELVA_EXPORT
+selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);

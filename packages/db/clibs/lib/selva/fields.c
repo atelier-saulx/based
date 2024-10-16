@@ -2022,7 +2022,7 @@ static inline void hash_ref(XXH3_state_t *hash_state, const struct SelvaNodeRefe
     /* TODO meta */
 }
 
-selva_fields_hash_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     const field_t nr_fields = schema->nr_fields;
     XXH3_state_t *hash_state = XXH3_createState();
@@ -2105,5 +2105,5 @@ selva_fields_hash_t selva_fields_hash(const struct SelvaFieldsSchema *schema, co
     XXH128_hash_t res = XXH3_128bits_digest(hash_state);
     XXH3_freeState(hash_state);
 
-    return (selva_fields_hash_t)res.low64 | (selva_fields_hash_t)res.high64 << 64;
+    return (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
 }

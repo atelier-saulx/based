@@ -336,6 +336,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
 
     node->node_id = node_id;
     node->type = type->type;
+    node->node_hash = 0;
 
     if (type->max_node && type->max_node->node_id < node_id) {
         /*
@@ -364,6 +365,21 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     }
 
     return node;
+}
+
+void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
+{
+    node->node_hash = selva_fields_hash(&type->ns.fields_schema, &node->fields);
+}
+
+void selva_node_hash_clear(struct SelvaNode *node)
+{
+    node->node_hash = 0;
+}
+
+selva_hash128_t selva_node_hash_get(struct SelvaNode *node)
+{
+    return node->node_hash;
 }
 
 struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type)
