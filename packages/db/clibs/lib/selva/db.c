@@ -331,6 +331,15 @@ struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id
     return RB_FIND(SelvaNodeIndex, &type->nodes, &find);
 }
 
+struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id)
+{
+    struct SelvaNode find = {
+        .node_id = node_id,
+    };
+
+    return RB_NFIND(SelvaNodeIndex, &type->nodes, &find);
+}
+
 struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
@@ -366,53 +375,6 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
     }
 
     return node;
-}
-
-/**
- * Hash the aliases pointing to the given node.
- */
-static void hash_aliases(XXH3_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
-{
-    for (size_t i = 0; i < type->nr_aliases; i++) {
-        struct SelvaAliases *aliases = &type->aliases[i];
-        const struct SelvaAlias *alias;
-        struct SelvaAlias find = {
-            .dest = dest,
-        };
-
-        alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
-        while (alias) {
-            const char *name = alias->name;
-            size_t len = strlen(name);
-
-            XXH3_128bits_update(hash_state, name, len);
-            alias = alias->next;
-        }
-    }
-}
-
-void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
-{
-    XXH3_state_t *hash_state = XXH3_createState();
-    XXH128_hash_t res;
-
-    XXH3_128bits_reset(hash_state);
-    selva_fields_hash_update(hash_state, &type->ns.fields_schema, &node->fields);
-    hash_aliases(hash_state, type, node->node_id);
-    res = XXH3_128bits_digest(hash_state);
-    XXH3_freeState(hash_state);
-
-    node->node_hash = (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
-}
-
-void selva_node_hash_clear(struct SelvaNode *node)
-{
-    node->node_hash = 0;
-}
-
-selva_hash128_t selva_node_hash_get(struct SelvaNode *node)
-{
-    return node->node_hash;
 }
 
 struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type)
@@ -649,6 +611,79 @@ size_t selva_node_count(const struct SelvaTypeEntry *type)
 node_id_t selva_get_node_id(const struct SelvaNode *node)
 {
     return node->node_id;
+}
+
+/**
+ * Hash the aliases pointing to the given node.
+ */
+static void hash_aliases(XXH3_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
+{
+    for (size_t i = 0; i < type->nr_aliases; i++) {
+        struct SelvaAliases *aliases = &type->aliases[i];
+        const struct SelvaAlias *alias;
+        struct SelvaAlias find = {
+            .dest = dest,
+        };
+
+        alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
+        while (alias) {
+            const char *name = alias->name;
+            size_t len = strlen(name);
+
+            XXH3_128bits_update(hash_state, name, len);
+            alias = alias->next;
+        }
+    }
+}
+
+void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
+{
+    XXH3_state_t *hash_state = XXH3_createState();
+    XXH128_hash_t res;
+
+    XXH3_128bits_reset(hash_state);
+    selva_fields_hash_update(hash_state, &type->ns.fields_schema, &node->fields);
+    hash_aliases(hash_state, type, node->node_id);
+    res = XXH3_128bits_digest(hash_state);
+    XXH3_freeState(hash_state);
+
+    node->node_hash = (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
+}
+
+void selva_node_hash_clear(struct SelvaNode *node)
+{
+    node->node_hash = 0;
+}
+
+selva_hash128_t selva_node_hash_get(struct SelvaNode *node)
+{
+    return node->node_hash;
+}
+
+selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end)
+{
+    XXH3_state_t *hash_state = XXH3_createState();
+    XXH128_hash_t res;
+
+    struct SelvaNode *node = selva_nfind_node(type, start);
+    if (!node) {
+        return 0;
+    }
+
+    do {
+        if (node->node_hash == 0) {
+            selva_node_hash_update(type, node);
+        }
+
+        XXH3_128bits_update(hash_state, &node->node_hash, sizeof(node->node_hash));
+
+        node = selva_next_node(type, node);
+    } while (node && node->node_id <= end);
+
+    res = XXH3_128bits_digest(hash_state);
+    XXH3_freeState(hash_state);
+
+    return (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
 }
 
 void selva_archive_type(struct SelvaTypeEntry *type)
