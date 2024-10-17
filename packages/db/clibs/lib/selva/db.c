@@ -261,12 +261,12 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
     return te;
 }
 
-struct SelvaNodeSchema *selva_get_ns_by_te(struct SelvaTypeEntry *te)
+const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te)
 {
     return &te->ns;
 }
 
-struct SelvaFieldSchema *get_fs_by_fields_schema_field(struct SelvaFieldsSchema *fields_schema, field_t field)
+const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
 {
     if (field >= fields_schema->nr_fields) {
         return NULL;
@@ -275,12 +275,12 @@ struct SelvaFieldSchema *get_fs_by_fields_schema_field(struct SelvaFieldsSchema 
     return &fields_schema->field_schemas[field];
 }
 
-struct SelvaFieldSchema *selva_get_fs_by_ns_field(struct SelvaNodeSchema *ns, field_t field)
+const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field)
 {
     return get_fs_by_fields_schema_field(&ns->fields_schema, field);
 }
 
-struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
+const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field)
 {
     struct SelvaTypeEntry *type;
 

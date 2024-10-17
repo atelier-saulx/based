@@ -438,7 +438,7 @@ static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
 
     for (size_t i = 0; i < nr_fields; i++) {
         if (i < nr_fixed_fields) {
-            struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(fields_schema, i);
+            const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(fields_schema, i);
 
             assert(fs);
 

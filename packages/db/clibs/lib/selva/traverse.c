@@ -110,8 +110,9 @@ static int child_callback_stub(
 static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNode *src, field_t src_field, struct SelvaNodeWeakReference *weak_ref)
 {
     struct SelvaTypeEntry *dst_te;
-    struct SelvaFieldSchema *src_fs = selva_get_fs_by_node(db, src, src_field);
+    const struct SelvaFieldSchema *src_fs;
 
+    src_fs = selva_get_fs_by_node(db, src, src_field);
     dst_te = selva_get_type_by_index(db, src_fs->edge_constraint.dst_node_type);
     if (!dst_te) {
         return NULL;
