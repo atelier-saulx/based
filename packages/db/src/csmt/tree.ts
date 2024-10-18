@@ -170,7 +170,7 @@ export function createTree(createHash: () => any): Csmt {
       diffAB(diffA, diffB, leftA, leftB)
     }
     if (rightA || rightB) {
-      // Recurese to the right branch
+      // Recurse to the right branch
       diffAB(diffA, diffB, rightA, rightB)
     }
   }
