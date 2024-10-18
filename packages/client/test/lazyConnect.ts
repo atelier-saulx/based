@@ -79,7 +79,7 @@ test('lazyConnect', async (t: T) => {
     },
   )
 
-  await wait(1000)
+  await wait(2000)
 
   // To solve this we need a new protocol msg
   // what it will do will send fns added
