@@ -110,8 +110,8 @@ export class BasedClient extends Emitter {
     }
   }
 
+  // --------- Restfallback http 1.1 / Proxies
   restFallBack?: Settings['restFallBack']
-
   // --------- Force reconnect
   lastForceId: number = lastReloadSeqId
   // --------- Persistent Storage
@@ -274,6 +274,11 @@ export class BasedClient extends Emitter {
           env: await getEnv(),
         }
       }
+      if (opts.lazy === true) {
+        opts.lazy = {
+          keepAlive: 3e3,
+        }
+      }
       if (this.opts) {
         if (deepEqual(this.opts, opts)) {
           return
@@ -291,7 +296,7 @@ export class BasedClient extends Emitter {
       return
     }
 
-    if (this.url && !this.connection) {
+    if (this.url && !this.connection && !this.opts.lazy) {
       this.connection = connectWebsocket(this, this.url)
     }
   }

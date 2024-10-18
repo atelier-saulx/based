@@ -7,4 +7,6 @@ export class Connection {
   public fallBackTimer?: ReturnType<typeof setTimeout>
   public fallBackInProgress?: boolean
   public useFallback?: string
+  public keepAliveCloseTimer?: ReturnType<typeof setTimeout>
+  public keeAliveLastUpdated?: number
 }

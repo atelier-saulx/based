@@ -22,6 +22,12 @@ export type BasedOpts = {
   params?: {
     [key: string]: string | number
   }
+  lazy?:
+    | {
+        keepAlive?: number
+      }
+    | true
+    | false
 }
 
 export type Settings = {

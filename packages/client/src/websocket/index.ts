@@ -95,6 +95,7 @@ const connect = (
   url: string | (() => Promise<string>),
   connection: Connection = {
     destroy: () => {
+      clearInterval(connection.keepAliveCloseTimer)
       activityListeners.delete(connection)
     },
   },
@@ -161,6 +162,26 @@ const connect = (
         })
       }
 
+      if (client.opts?.lazy && !connection.keeAliveLastUpdated) {
+        // @ts-ignore
+        const keepAlive = client.opts?.lazy.keepAlive
+        connection.keepAliveCloseTimer = setInterval(
+          () => {
+            connection.keeAliveLastUpdated -= keepAlive / 2
+            if (
+              connection.keeAliveLastUpdated <= 0 &&
+              client.observeState.size === 0
+            ) {
+              client.disconnect()
+              clearInterval(connection.keepAliveCloseTimer)
+            }
+          },
+          // @ts-ignore
+          keepAlive / 2, // loop
+        )
+        connection.keeAliveLastUpdated = keepAlive
+      }
+
       ws.addEventListener('error', (err) => {
         clearTimeout(connection.fallBackTimer)
         // maybe this is a bad idea
@@ -180,7 +201,6 @@ const connect = (
       ws.addEventListener('open', () => {
         clearTimeout(connection.fallBackTimer)
         connection.fallBackInProgress = false
-
         if (isActive) {
           if (connection.disconnected) {
             return
@@ -196,7 +216,6 @@ const connect = (
       ws.addEventListener('close', () => {
         clearTimeout(connection.fallBackTimer)
         connection.fallBackInProgress = false
-
         if (isActive) {
           if (connection.disconnected) {
             return

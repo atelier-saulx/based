@@ -11,6 +11,7 @@ import {
   encodeSubscribeChannelMessage,
 } from './protocol.js'
 import { deepEqual } from '@saulx/utils'
+import connect from '../websocket/index.js'
 
 const PING = new Uint8Array(0)
 
@@ -41,6 +42,12 @@ const hasQueue = (client: BasedClient): boolean => {
 
 export const drainQueue = (client: BasedClient) => {
   if (client.connected && !client.drainInProgress && hasQueue(client)) {
+    if (client.opts.lazy) {
+      // @ts-ignore
+      const keepAlive = client.opts?.lazy.keepAlive
+      client.connection.keeAliveLastUpdated = keepAlive
+    }
+
     client.drainInProgress = true
     const drainOutgoing = () => {
       client.drainInProgress = false
@@ -123,6 +130,8 @@ export const drainQueue = (client: BasedClient) => {
     }
 
     client.drainTimeout = setTimeout(drainOutgoing, 0)
+  } else if (client.opts?.lazy && !client.connection) {
+    client.connection = connect(client, client.url)
   }
 }
 
