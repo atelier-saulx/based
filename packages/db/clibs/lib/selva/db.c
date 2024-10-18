@@ -666,7 +666,7 @@ selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t sta
     XXH128_hash_t res;
 
     struct SelvaNode *node = selva_nfind_node(type, start);
-    if (!node) {
+    if (!node || node->node_id > end) {
         return 0;
     }
 
@@ -680,7 +680,16 @@ selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t sta
         node = selva_next_node(type, node);
     } while (node && node->node_id <= end);
 
+retry:
     res = XXH3_128bits_digest(hash_state);
+    if (res.low64 == 0 && res.high64 == 0) {
+        /*
+         * We don't allow zero hash.
+         * RFE Is this a good approach?
+         */
+        XXH3_128bits_update(hash_state, &(int64_t){ 1 }, sizeof(int64_t));
+        goto retry;
+    }
     XXH3_freeState(hash_state);
 
     return (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
