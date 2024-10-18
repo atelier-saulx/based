@@ -1,6 +1,7 @@
 const std = @import("std");
 const c = @import("../c.zig");
 const selva = @import("../selva.zig");
+const types = @import("../types.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
@@ -27,8 +28,8 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     };
 }
 
-inline fn readData(fieldType: u8, operation: []u8) []u8 {
-    if (fieldType == 13) {
+inline fn readData(fieldType: types.Prop, operation: []u8) []u8 {
+    if (fieldType == types.Prop.REFERENCE) {
         if (operation[0] == 1) {
             return operation[0 .. 5 + readInt(u32, operation, 5)];
         } else {
@@ -60,7 +61,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
-        .fieldType = 0,
+        .fieldType = types.Prop.NULL,
     };
 
     var offset: u32 = 0;
@@ -80,8 +81,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.currentSortIndex = null;
             }
             ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
-            ctx.fieldType = ctx.fieldSchema.?.*.type;
-            if (ctx.fieldType == 13) {
+            ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
+            if (ctx.fieldType == types.Prop.REFERENCE) {
                 offset = 1;
             } else {
                 offset = 5;

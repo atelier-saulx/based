@@ -120,7 +120,7 @@ export const createSchemaTypeDef = (
       )
     } else {
       let len = SIZE_MAP[propType]
-      if (isPropType('string', schemaProp)) {
+      if (isPropType('string', schemaProp) || isPropType('alias', schemaProp)) {
         if (typeof schemaProp === 'object') {
           if (schemaProp.maxBytes < 60) {
             len = schemaProp.maxBytes + 1

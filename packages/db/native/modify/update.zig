@@ -7,9 +7,10 @@ const ModifyCtx = Modify.ModifyCtx;
 const getSortIndex = Modify.getSortIndex;
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
+const types = @import("../types.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
-    if (ctx.fieldType == 14) {
+    if (ctx.fieldType == types.Prop.REFERENCES) {
         const op = data[0];
 
         if (op == 0) {
@@ -30,7 +31,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         return data.len;
     }
 
-    if (ctx.fieldType == 13) {
+    if (ctx.fieldType == types.Prop.REFERENCE) {
         try reference.updateReference(ctx, data);
         return data.len;
     }
@@ -50,6 +51,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
+    }
+
+    if (ctx.fieldType == types.Prop.ALIAS) {
+        // return 0;
+        try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
+        return data.len;
     }
 
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);

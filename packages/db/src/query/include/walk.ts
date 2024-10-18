@@ -1,5 +1,11 @@
 import { BasedDb } from '../../index.js'
-import { isPropDef, PropDef, SchemaPropTree } from '../../schema/types.js'
+import {
+  isPropDef,
+  PropDef,
+  REFERENCE,
+  REFERENCES,
+  SchemaPropTree,
+} from '../../schema/types.js'
 import { createQueryDef } from '../queryDef.js'
 import { isRefDef, QueryDef, QueryDefType } from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
@@ -19,7 +25,10 @@ export const walkDefs = (db: BasedDb, def: QueryDef, f: string) => {
           })
         }
         const edgeProp = def.edges.props[p]
-        if (edgeProp.typeIndex === 13 || edgeProp.typeIndex === 14) {
+        if (
+          edgeProp.typeIndex === REFERENCE ||
+          edgeProp.typeIndex === REFERENCES
+        ) {
           const refDef = createOrGetRefQueryDef(db, def.edges, edgeProp)
           if (path.length - 1 === i) {
             includeAllProps(refDef)
@@ -39,7 +48,10 @@ export const walkDefs = (db: BasedDb, def: QueryDef, f: string) => {
       if (!t) {
         return
       }
-      if (isPropDef(t) && (t.typeIndex === 13 || t.typeIndex === 14)) {
+      if (
+        isPropDef(t) &&
+        (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
+      ) {
         const refDef = createOrGetRefQueryDef(db, def, t)
         const f = path.slice(i + 1).join('.')
         if (!includeProp(refDef, refDef.props[f])) {
@@ -55,7 +67,7 @@ export const walkDefs = (db: BasedDb, def: QueryDef, f: string) => {
         walkDefs(db, def, field)
       }
     }
-  } else if (prop.typeIndex === 13 || prop.typeIndex === 14) {
+  } else if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
     const refDef = createOrGetRefQueryDef(db, def, prop)
     includeAllProps(refDef)
     return

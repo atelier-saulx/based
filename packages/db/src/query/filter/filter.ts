@@ -4,6 +4,11 @@ import {
   SchemaTypeDef,
   SchemaPropTree,
   PropDef,
+  REFERENCES,
+  BOOLEAN,
+  ENUM,
+  STRING,
+  UINT32,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
 
@@ -122,7 +127,7 @@ export const filterRaw = (
       } else if (op === 7) {
         // TODO MAKE HAS
       }
-    } else if (field.typeIndex === 14) {
+    } else if (field.typeIndex === REFERENCES) {
       const op = operationToByte(operator)
       const matches = value
       const len = matches.length
@@ -141,7 +146,7 @@ export const filterRaw = (
       }
     }
   } else {
-    if (field.typeIndex === 9) {
+    if (field.typeIndex === BOOLEAN) {
       const op = operationToByte(operator)
       // != pretty important
       if (op === 1) {
@@ -152,7 +157,7 @@ export const filterRaw = (
         buf[3] = value === true ? 1 : 0
       } else {
       }
-    } else if (field.typeIndex === 10) {
+    } else if (field.typeIndex === ENUM) {
       const op = operationToByte(operator)
       // != pretty important
       if (op === 1) {
@@ -168,7 +173,7 @@ export const filterRaw = (
         }
       } else {
       }
-    } else if (field.typeIndex === 11) {
+    } else if (field.typeIndex === STRING) {
       const op = operationToByte(operator)
       if (op === 1) {
         const matches = Buffer.from(value)
@@ -180,7 +185,7 @@ export const filterRaw = (
       } else if (op === 7) {
         // TODO MAKE HAS
       }
-    } else if (field.typeIndex === 5) {
+    } else if (field.typeIndex === UINT32) {
       const op = operationToByte(operator)
       if (op === 1 || op === 3 || op === 4) {
         buf = Buffer.allocUnsafe(9)

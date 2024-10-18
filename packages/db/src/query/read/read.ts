@@ -1,4 +1,18 @@
-import { PropDef, PropDefEdge } from '../../schema/types.js'
+import {
+  BOOLEAN,
+  ENUM,
+  INT16,
+  INT32,
+  INT8,
+  NUMBER,
+  PropDef,
+  PropDefEdge,
+  STRING,
+  TIMESTAMP,
+  UINT16,
+  UINT32,
+  UINT8,
+} from '../../schema/types.js'
 import { QueryDef } from '../types.js'
 
 export type Item = {
@@ -40,19 +54,19 @@ const readMainValue = (
   item: Item,
 ) => {
   // 1: timestamp, 4: number
-  if (prop.typeIndex === 4 || prop.typeIndex === 1) {
+  if (prop.typeIndex === TIMESTAMP || prop.typeIndex === NUMBER) {
     addField(prop, result.readDoubleLE(index), item)
   }
   // 5: uint32
-  else if (prop.typeIndex === 5) {
+  else if (prop.typeIndex === UINT32) {
     addField(prop, result.readUInt32LE(index), item)
   }
   // 9: boolean
-  else if (prop.typeIndex === 9) {
+  else if (prop.typeIndex === BOOLEAN) {
     addField(prop, Boolean(result[index]), item)
   }
   // 10: Enum
-  else if (prop.typeIndex === 10) {
+  else if (prop.typeIndex === ENUM) {
     if (result[index] === 0) {
       addField(prop, undefined, item)
     } else {
@@ -60,7 +74,7 @@ const readMainValue = (
     }
   }
   // 11: string
-  else if (prop.typeIndex === 11) {
+  else if (prop.typeIndex === STRING) {
     // Also remove this default then (same as other string)
     const len = result[index]
     if (len !== 0) {
@@ -71,27 +85,27 @@ const readMainValue = (
     }
   }
   // 18: int8
-  else if (prop.typeIndex === 18) {
+  else if (prop.typeIndex === INT8) {
     addField(prop, result.readInt8(index), item)
   }
   // 19: uint8
-  else if (prop.typeIndex === 19) {
+  else if (prop.typeIndex === UINT8) {
     addField(prop, result.readUint8(index), item)
   }
   // 20: int16
-  else if (prop.typeIndex === 20) {
+  else if (prop.typeIndex === INT16) {
     addField(prop, result.readInt16LE(index), item)
   }
   // 21: uint16
-  else if (prop.typeIndex === 21) {
+  else if (prop.typeIndex === UINT16) {
     addField(prop, result.readUint16LE(index), item)
   }
   // 22: int32
-  else if (prop.typeIndex === 22) {
+  else if (prop.typeIndex === INT32) {
     addField(prop, result.readInt32LE(index), item)
   }
   // 5: uint32
-  else if (prop.typeIndex === 5) {
+  else if (prop.typeIndex === UINT32) {
     addField(prop, result.readUint32LE(index), item)
   }
 }

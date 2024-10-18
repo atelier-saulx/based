@@ -9,6 +9,7 @@ const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const sort = @import("../../db/sort.zig");
 const utils = @import("../../utils.zig");
+const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
 
@@ -28,7 +29,7 @@ pub fn queryIds(
     var start: u16 = undefined;
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[0];
-    const sortFieldType: u8 = sortBuffer[1];
+    const sortFieldType: types.Prop = @enumFromInt(sortBuffer[1]);
     if (sortBuffer.len == 6) {
         start = utils.readInt(u16, sortBuffer, 2);
         len = utils.readInt(u16, sortBuffer, 4);

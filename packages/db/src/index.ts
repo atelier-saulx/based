@@ -174,7 +174,7 @@ export class BasedDb {
         try {
           this.native.updateSchemaType(type.id, s[i])
         } catch (err) {
-          console.error('Cannot update schema on selva', type.type, err)
+          console.error('Cannot update schema on selva', type.type, err, s[i])
         }
       }
     }

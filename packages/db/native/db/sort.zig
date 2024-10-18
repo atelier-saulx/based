@@ -1,5 +1,6 @@
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
+const types = @import("../types.zig");
 const std = @import("std");
 const db = @import("./db.zig");
 const readInt = @import("../utils.zig").readInt;
@@ -154,7 +155,7 @@ fn createSortIndex(
     start: u16,
     len: u16,
     field: u8,
-    fieldType: u8,
+    fieldType: types.Prop,
 ) !void {
     const txn = try createTransaction(false);
     const typePrefix: [2]u8 = .{ name[0], name[1] };
@@ -168,7 +169,17 @@ fn createSortIndex(
     flags |= c.MDB_DUPFIXED;
     flags |= c.MDB_INTEGERDUP;
 
-    if (fieldType == 5 or fieldType == 4 or fieldType == 1) {
+    if (fieldType == types.Prop.TIMESTAMP //
+    or fieldType == types.Prop.NUMBER //
+    or fieldType == types.Prop.INT8 //
+    or fieldType == types.Prop.UINT8 //
+    or fieldType == types.Prop.INT16 //
+    or fieldType == types.Prop.UINT16 //
+    or fieldType == types.Prop.INT32 //
+    or fieldType == types.Prop.UINT32 //
+    or fieldType == types.Prop.INT64 //
+    or fieldType == types.Prop.UINT64 //
+    ) {
         flags |= c.MDB_INTEGERKEY;
     }
 
@@ -236,7 +247,7 @@ pub fn getOrCreateReadSortIndex(
     queryId: u32,
 ) !SortIndex {
     const field: u8 = sort[0];
-    const fieldType: u8 = sort[1];
+    const fieldType: types.Prop = @enumFromInt(sort[1]);
     var start: u16 = undefined;
     var len: u16 = undefined;
 

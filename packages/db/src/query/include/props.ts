@@ -1,11 +1,16 @@
-import { PropDef, PropDefEdge } from '../../schema/types.js'
+import {
+  PropDef,
+  PropDefEdge,
+  REFERENCE,
+  REFERENCES,
+} from '../../schema/types.js'
 import { QueryDef } from '../types.js'
 
 export const getAll = (props: QueryDef['props']): string[] => {
   const fields: string[] = []
   for (const key in props) {
     const prop = props[key]
-    if (prop.typeIndex !== 13 && prop.typeIndex !== 14) {
+    if (prop.typeIndex !== REFERENCE && prop.typeIndex !== REFERENCES) {
       fields.push(prop.path.join('.'))
     }
   }
@@ -25,14 +30,14 @@ export const includeFields = (def: QueryDef, fields: string[]) => {
 export const includeAllProps = (def: QueryDef) => {
   for (const key in def.props) {
     const prop = def.props[key]
-    if (prop.typeIndex !== 13 && prop.typeIndex !== 14) {
+    if (prop.typeIndex !== REFERENCE && prop.typeIndex !== REFERENCES) {
       includeProp(def, prop)
     }
   }
 }
 
 export const includeProp = (def: QueryDef, prop: PropDef | PropDefEdge) => {
-  if (!prop || prop.typeIndex === 13 || prop.typeIndex === 14) {
+  if (!prop || prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
     return false
   }
   if (prop.separate) {

@@ -64,14 +64,14 @@ await test('update', async (t) => {
     })
     .then((ballz) => {
       console.log({ ballz })
-      return 'random shit'
+      return 'random thing'
     })
     .catch((e) => {
       console.log({ e })
     })
     .then((ballz) => {
       console.log({ ballz })
-      return 'random shit2'
+      return 'random thing2'
     })
 
   console.log({ a })
