@@ -175,4 +175,11 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
  */
 void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
 
+/**
+ * Get alias by destination id.
+ * This may not seem very useful but this is actually the way you can traverse
+ * all aliases to the given node_id by following the `next` pointer.
+ */
+const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
+
 #include "selva/db.h"
