@@ -69,25 +69,11 @@ export function createTree(createHash: () => any): Csmt {
     const lDist = distance(k, (left && left.key) || TreeKeyNil)
     const rDist = distance(k, (right && right.key) || TreeKeyNil)
     if (lDist < rDist) {
-      if (left) {
-        node.left = insert(left, newLeaf)
-      } else {
-        node.left = newLeaf
-      }
+      node.left = (left) ? insert(left, newLeaf) : newLeaf
     } else if (lDist > rDist) {
-      if (right) {
-        node.right = insert(right, newLeaf)
-      } else {
-        node.right = newLeaf
-      }
+      node.right = (right) ? insert(right, newLeaf) : newLeaf
     } else {
-      const minKey = min(left, right)
-
-      if (k < minKey) {
-        return createNode(newLeaf, node)
-      } else {
-        return createNode(node, newLeaf)
-      }
+      return (k < min(left, right)) ? createNode(newLeaf, node) : createNode(node, newLeaf)
     }
 
     updateNode(node)
@@ -212,11 +198,7 @@ export function createTree(createHash: () => any): Csmt {
 
       const newLeaf = createLeaf(k, h)
 
-      if (root) {
-        root = insert(root, newLeaf)
-      } else {
-        root = newLeaf
-      }
+      root = (root) ? insert(root, newLeaf) : newLeaf
     },
     delete: (k: TreeKey) => {
       if (!root) {
