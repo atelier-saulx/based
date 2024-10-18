@@ -1,4 +1,4 @@
-import { TreeNode } from './types.js'
+import { TreeKey, TreeNode } from './types.js'
 import { minInSubtree, maxInSubtree } from './tree-utils.js'
 import match from './match.js'
 
@@ -8,8 +8,8 @@ export enum Direction {
 }
 
 export type Proof =
-  | [bigint | null, bigint | null]
-  | [bigint | Buffer, bigint | Direction][]
+  | [TreeKey | null, TreeKey | null]
+  | [TreeKey | Buffer, TreeKey | Direction][]
 
 function reverse(direction: Direction): Direction {
   switch (direction) {
@@ -31,8 +31,8 @@ function isList(x: any): boolean {
 }
 
 function nonMembershipProof(
-  k: bigint,
-  key: bigint,
+  k: TreeKey,
+  key: TreeKey,
   direction: Direction,
   sibling: TreeNode,
 ) {
@@ -50,13 +50,13 @@ function membershipProofR(
   sibling: TreeNode | null,
   direction: Direction | null,
   node: TreeNode,
-  k: bigint,
+  k: TreeKey,
 ): Proof {
   const left = node.left
   const right = node.right
 
   if (k === undefined || k === null) {
-    throw new TypeError('k is not a bigint')
+    throw new TypeError('k is not a TreeKey')
   }
 
   // && would be more accurate here but there is never a case where only one
@@ -123,7 +123,7 @@ function membershipProofR(
 
 export default function membershipProof(
   root: TreeNode | null,
-  k: bigint,
+  k: TreeKey,
 ): Proof {
   if (!root) {
     return []

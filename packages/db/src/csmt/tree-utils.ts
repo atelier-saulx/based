@@ -1,10 +1,10 @@
-import { TreeNode } from './types.js'
+import { TreeKey, TreeKeyNil, TreeNode } from './types.js'
 
-export function distance(x: bigint, y: bigint): bigint {
+export function distance(x: TreeKey, y: TreeKey): TreeKey {
   let v = x ^ y
-  let r = 0n
+  let r = TreeKeyNil
 
-  while ((v >>= 1n)) {
+  while ((v >>= 1)) {
     r++
   }
 
@@ -12,21 +12,21 @@ export function distance(x: bigint, y: bigint): bigint {
 }
 
 export function min(x: TreeNode | null, y: TreeNode | null) {
-  const a = (x && x.key) || 0n
-  const b = (y && y.key) || 0n
+  const a = (x && x.key) || TreeKeyNil
+  const b = (y && y.key) || TreeKeyNil
 
   return a < b ? a : b
 }
 
 export function max(x: TreeNode | null, y: TreeNode | null) {
-  const a = (x && x.key) || 0n
-  const b = (y && y.key) || 0n
+  const a = (x && x.key) || TreeKeyNil
+  const b = (y && y.key) || TreeKeyNil
 
   return a > b ? a : b
 }
 
 // Find min key in a subtree.
-export function minInSubtree(node: TreeNode): bigint {
+export function minInSubtree(node: TreeNode): TreeKey {
   if (!node.left) {
     // We assume that the tree is always full and the last left node we can
     // find is the min.
@@ -37,6 +37,6 @@ export function minInSubtree(node: TreeNode): bigint {
 }
 
 // Find max key in a subtree.
-export function maxInSubtree(node: TreeNode): bigint {
+export function maxInSubtree(node: TreeNode): TreeKey {
   return node.key
 }

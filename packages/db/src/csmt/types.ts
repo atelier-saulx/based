@@ -1,13 +1,16 @@
 import { Proof } from './memebership-proof.js'
 
+export type TreeKey = number
+export const TreeKeyNil = 0
+
 export interface TreeNode {
   hash: Buffer
-  key: bigint
+  key: TreeKey
   left: TreeNode | null
   right: TreeNode | null
 }
 
-export type KeyHashPair = [bigint, Buffer]
+export type KeyHashPair = [TreeKey, Buffer]
 
 export interface TreeDiff {
   left: KeyHashPair[]
@@ -23,18 +26,18 @@ export interface Csmt {
   /**
    * Insert a new key-hash pair.
    */
-  insert: (k: bigint, h: Buffer) => void
+  insert: (k: TreeKey, h: Buffer) => void
 
   /**
    * Delete a key-hash pair from the tree.
    */
-  delete: (k: bigint) => void
+  delete: (k: TreeKey) => void
 
   /**
    * Provide a proof of membership if a key exist in the three;
    * Otherwise a proof of non-membership is returned.
    */
-  membershipProof: (k: bigint) => Proof
+  membershipProof: (k: TreeKey) => Proof
 
   /**
    * Compute the diff between this and a given tree.

@@ -1,4 +1,4 @@
-import { Csmt, TreeNode, TreeDiff } from './types.js'
+import { Csmt, TreeKey, TreeKeyNil, TreeNode, TreeDiff } from './types.js'
 import { distance, min, max } from './tree-utils.js'
 import membershipProof, { Proof } from './memebership-proof.js'
 
@@ -27,7 +27,7 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function createLeaf(k: bigint, h: Buffer): TreeNode {
+  function createLeaf(k: TreeKey, h: Buffer): TreeNode {
     return {
       hash: h,
       key: k,
@@ -66,8 +66,8 @@ export function createTree(createHash: () => any): Csmt {
       }
     }
 
-    const lDist = distance(k, (left && left.key) || 0n)
-    const rDist = distance(k, (right && right.key) || 0n)
+    const lDist = distance(k, (left && left.key) || TreeKeyNil)
+    const rDist = distance(k, (right && right.key) || TreeKeyNil)
     if (lDist < rDist) {
       if (left) {
         node.left = insert(left, newLeaf)
@@ -94,11 +94,11 @@ export function createTree(createHash: () => any): Csmt {
     return node
   }
 
-  function checkForLeaf(node: TreeNode, k: bigint) {
+  function checkForLeaf(node: TreeNode, k: TreeKey) {
     return !node.left && !node.right && node.key === k
   }
 
-  function deleteNode(node: TreeNode, k: bigint): TreeNode {
+  function deleteNode(node: TreeNode, k: TreeKey): TreeNode {
     const left = node.left
     const right = node.right
 
@@ -135,8 +135,8 @@ export function createTree(createHash: () => any): Csmt {
   }
 
   function diffAB(
-    diffA: Map<bigint, Buffer>,
-    diffB: Map<bigint, Buffer>,
+    diffA: Map<TreeKey, Buffer>,
+    diffB: Map<TreeKey, Buffer>,
     nodeA: TreeNode | null,
     nodeB: TreeNode | null,
   ) {
@@ -190,8 +190,8 @@ export function createTree(createHash: () => any): Csmt {
   }
 
   function diff(tree: Csmt): TreeDiff {
-    const leftMap = new Map<bigint, Buffer>()
-    const rightMap = new Map<bigint, Buffer>()
+    const leftMap = new Map<TreeKey, Buffer>()
+    const rightMap = new Map<TreeKey, Buffer>()
     const nodeA = root
     const nodeB = tree.getRoot()
 
@@ -205,7 +205,7 @@ export function createTree(createHash: () => any): Csmt {
 
   return {
     getRoot: () => root,
-    insert: (k: bigint, h: Buffer) => {
+    insert: (k: TreeKey, h: Buffer) => {
       if (!(h instanceof Buffer)) {
         throw new TypeError('`h` must be a Buffer')
       }
@@ -218,7 +218,7 @@ export function createTree(createHash: () => any): Csmt {
         root = newLeaf
       }
     },
-    delete: (k: bigint) => {
+    delete: (k: TreeKey) => {
       if (!root) {
         throw new Error('The tree is empty')
       }
@@ -226,6 +226,6 @@ export function createTree(createHash: () => any): Csmt {
       root = deleteNode(root, k)
     },
     diff,
-    membershipProof: (k: bigint): Proof => membershipProof(root, k),
+    membershipProof: (k: TreeKey): Proof => membershipProof(root, k),
   }
 }
