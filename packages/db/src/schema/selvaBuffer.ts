@@ -8,6 +8,7 @@ import {
   REFERENCES,
   STRING,
   ALIAS,
+  BINARY,
 } from './types.js'
 
 function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
@@ -19,7 +20,13 @@ const propDefBuffer = (
   prop: PropDef,
   isEdge?: boolean,
 ): number[] => {
-  const type = prop.typeIndex
+  let type = prop.typeIndex
+
+  if (type === BINARY) {
+    // TODO MAKE NATIVE TYPE
+    type = STRING
+  }
+
   if (prop.len && type === MICRO_BUFFER) {
     const buf = Buffer.allocUnsafe(3)
     buf[0] = type
