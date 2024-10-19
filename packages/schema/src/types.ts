@@ -105,6 +105,12 @@ export type SchemaString = Prop<{
   min?: number
 }>
 
+export type SchemaBinary = Prop<{
+  type: 'binary'
+  default?: ArrayBuffer
+  maxBytes?: number
+}>
+
 export type SchemaBoolean = Prop<{
   type: 'boolean'
   default?: boolean
@@ -196,6 +202,7 @@ export type SchemaProp =
   | SchemaReferences
   | SchemaReference
   | SchemaObject
+  | SchemaBinary
 
 export type SchemaPropOneWay =
   | SchemaReferencesOneWay
@@ -244,6 +251,7 @@ export type SchemaPropTypeMap = {
   enum: SchemaEnum
   text: SchemaText
   set: SchemaSet
+  binary: SchemaBinary
 } & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap

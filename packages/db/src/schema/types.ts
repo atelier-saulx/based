@@ -69,6 +69,7 @@ export const WEAK_REFERENCES = 16
 export const MICRO_BUFFER = 17
 export const ALIAS = 18
 export const ALIASES = 19
+export const BINARY = 20
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,
@@ -90,6 +91,7 @@ export const TYPE_INDEX_MAP = {
   enum: ENUM,
   int8: INT8,
   id: NULL,
+  binary: BINARY,
 }
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
@@ -183,6 +185,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   alias: 0,
   aliases: 0,
   id: 4,
+  binary: 0,
 }
 
 const reverseMap: any = {}
