@@ -29,8 +29,8 @@
  */
 #define DUMP_MAGIC_SCHEMA       3360690301
 #define DUMP_MAGIC_TYPES        3550908863
+#define DUMP_MAGIC_TYPE_BEGIN   2460238717
 #define DUMP_MAGIC_TYPE_END     4229893463
-#define DUMP_MAGIC_NODES        2460238717
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -321,8 +321,6 @@ static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
     const sdb_nr_nodes_t nr_nodes = te->nr_nodes;
     struct SelvaNode *node;
 
-    write_dump_magic(io, DUMP_MAGIC_NODES);
-
     io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
 
     RB_FOREACH(node, SelvaNodeIndex, nodes) {
@@ -355,19 +353,22 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
 static void save_types(struct selva_io *io, struct SelvaDb *db)
 {
     SVector *types = &db->type_list;
+    const sdb_nr_types_t nr_types = SVector_Size(types);
     struct SVectorIterator it;
     struct SelvaTypeEntry *te;
 
     write_dump_magic(io, DUMP_MAGIC_TYPES);
     /*
-     * We don't save nr_types here again because it's already known from the
-     * schema that should have been saved before.
+     * This is somewhat redundant information as the schema tells this too but
+     * it helps us to split up the dumps into multiple files.
      */
+    io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
 
     SVector_ForeachBegin(&it, types);
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         const node_type_t type = te->type;
 
+        write_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN);
         io->sdb_write(&type, sizeof(type), 1, io);
         save_nodes(io, db, te);
         write_dump_magic(io, DUMP_MAGIC_TYPE_END);
@@ -461,6 +462,78 @@ pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename)
     return pid;
 }
 
+int selva_dump_save_common(struct SelvaDb *db, const char *filename)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    /*
+     * Save all the common data here that can't be split up.
+     */
+    save_schema(&io, db);
+
+    selva_io_end(&io, NULL);
+    return 0;
+}
+
+static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start, node_id_t end, struct SelvaNode **start_node)
+{
+    struct SelvaNode *node;
+    sdb_nr_nodes_t n = 0;
+
+    node = selva_nfind_node(te, start);
+    if (!node || node->node_id > end) {
+        return 0;
+    }
+
+    *start_node = node;
+
+    do {
+        n++;
+        node = selva_next_node(te, node);
+    } while (node && node->node_id <= end);
+
+    return n;
+}
+
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    const sdb_nr_types_t nr_types = 1;
+    write_dump_magic(&io, DUMP_MAGIC_TYPES);
+    io.sdb_write(&nr_types, sizeof(nr_types), 1, &io); /* only one type in this dump. */
+
+    write_dump_magic(&io, DUMP_MAGIC_TYPE_BEGIN);
+    io.sdb_write(&te->type, sizeof(te->type), 1, &io);
+
+    struct SelvaNode *node;
+    const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
+
+    io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
+
+    do {
+        save_node(&io, db, node);
+        save_aliases_node(&io, te, node->node_id);
+        node = selva_next_node(te, node);
+    } while (node && node->node_id <= end);
+
+    write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
+
+    selva_io_end(&io, NULL);
+    return 0;
+}
 
 static size_t format_errmsg(char *out_buf, size_t out_len, const char * format, ...)
 {
@@ -989,10 +1062,6 @@ static void load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, no
 
 static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    if (!read_dump_magic(io, DUMP_MAGIC_NODES)) {
-        db_panic("Invalid nodes magic for type %d", te->type);
-    }
-
     sdb_nr_nodes_t nr_nodes;
     io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
 
@@ -1006,6 +1075,7 @@ static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void load_types(struct selva_io *io, struct SelvaDb *db)
 {
+    sdb_nr_types_t nr_types;
     SVector *types = &db->type_list;
     struct SVectorIterator it;
     struct SelvaTypeEntry *te;
@@ -1013,20 +1083,55 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
         db_panic("Ivalid types magic");
     }
+    io->sdb_read(&nr_types, sizeof(nr_types), 1, io);
 
-    SVector_ForeachBegin(&it, types);
-    while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-        node_type_t type;
+    if (nr_types == SVector_Size(types)) {
+        /*
+         * All types in a single dump.
+         */
+        SVector_ForeachBegin(&it, types);
+        while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
+            node_type_t type;
 
-        io->sdb_read(&type, sizeof(type), 1, io);
-        if (type != te->type) {
-            db_panic("Incorrect type found: %d != %d", type, te->type);
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
+                db_panic("Invalid nodes magic for type %d", te->type);
+            }
+
+            io->sdb_read(&type, sizeof(type), 1, io);
+            if (type != te->type) {
+                db_panic("Incorrect type found: %d != %d", type, te->type);
+            }
+
+            load_nodes(io, db, te);
+
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
+                db_panic("Invalid entry magic for type %d", te->type);
+            }
         }
+    } else {
+        /*
+         * Load only the types found in this file.
+         */
+        for (sdb_nr_types_t i = 0; i < nr_types; i++) {
+            node_type_t type;
+            struct SelvaTypeEntry *te;
 
-        load_nodes(io, db, te);
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
+                db_panic("Invalid nodes magic for type");
+            }
 
-        if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
-            db_panic("Invalid entry magic for type %d", te->type);
+            io->sdb_read(&type, sizeof(type), 1, io);
+
+            te = selva_get_type_by_index(db, type);
+            if (!te) {
+                db_panic("Type not found: %d", type);
+            }
+
+            load_nodes(io, db, te);
+
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
+                db_panic("Invalid entry magic for type %d", te->type);
+            }
         }
     }
 }
