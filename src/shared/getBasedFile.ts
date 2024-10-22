@@ -4,14 +4,14 @@ import { bundle } from '@based/bundle'
 
 export const getBasedFile = async (
   files: string[],
-): Promise<BasedCli.Context.Project | null> => {
+): Promise<Based.Context.Project | null> => {
   if (!files || !files.length) {
     return null
   }
 
   const basedFile = await findUp(files)
-  let basedFileContent: BasedCli.Context.Project = {}
-  const basedProject: BasedCli.Context.Project = {}
+  let basedFileContent: Based.Context.Project = {}
+  const basedProject: Based.Context.Project = {}
   const file: string = basedFile.split('/').at(-1)
 
   if (basedFile) {

@@ -3,7 +3,7 @@ import { dateAndTime, dateOnly, parseMessage } from '../../shared/index.js'
 import { isValid, parse } from 'date-fns'
 import { contextParse } from './parse.js'
 
-export const contextInput: BasedCli.Context.InputHandler = {
+export const contextInput: Based.Context.InputHandler = {
   date: async (
     message: string,
     skip: boolean = true,
@@ -129,7 +129,7 @@ export const contextInput: BasedCli.Context.InputHandler = {
 
   select: async (
     message: string,
-    choices: BasedCli.Context.SelectInputItems[],
+    choices: Based.Context.SelectInputItems[],
     multiSelection: boolean = false,
     separator: boolean = true,
   ) => {

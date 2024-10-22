@@ -1,15 +1,15 @@
 import { getBasedFile } from '../../shared/getBasedFile.js'
 
-export async function contextProgram(): Promise<BasedCli.Context.Project> {
-  let basedProject: BasedCli.Context.Project = this.get('basedProject')
-  let basedFile: BasedCli.Context.Project = {}
+export async function contextProgram(): Promise<Based.Context.Project> {
+  let basedProject: Based.Context.Project = this.get('basedProject')
+  let basedFile: Based.Context.Project = {}
 
   if (basedProject) {
     return basedProject
   }
 
   const { cluster, org, project, env, apiKey, file } =
-    this.program.opts() as BasedCli.Context.Project
+    this.program.opts() as Based.Context.Project
 
   if (!basedProject) {
     basedFile = await getBasedFile(
@@ -18,7 +18,7 @@ export async function contextProgram(): Promise<BasedCli.Context.Project> {
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
       this.print.warning(
-        `No <b>'based.json'</b> configuration file found or is empty. <b>It is recommended to create one.</b>`,
+        `No <b>Based</b> configuration file found or is empty. <b>It is recommended to create one.</b>`,
       )
     }
   }
@@ -36,10 +36,10 @@ export async function contextProgram(): Promise<BasedCli.Context.Project> {
   this.set('basedProject', basedProject)
 
   this.print
-    .info(`<dim>project file:</dim> <b>${basedProject.file}</b>`)
-    .info(`<dim>org:</dim> <b>${basedProject.org}</b>`)
-    .info(`<dim>project:</dim> <b>${basedProject.project}</b>`)
-    .info(`<dim>env:</dim> <b>${basedProject.env}</b>`)
+    .info(`<dim>Project file:</dim> <b>${basedProject.file}</b>`)
+    .info(`<dim>Org:</dim> <b>${basedProject.org}</b>`)
+    .info(`<dim>Project:</dim> <b>${basedProject.project}</b>`)
+    .info(`<dim>Env:</dim> <b>${basedProject.env}</b>`)
 
   return basedProject
 }

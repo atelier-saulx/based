@@ -87,7 +87,7 @@ const dbSelection = async ({
   verbose = false,
 }): Promise<string> => {
   if (!db) {
-    const choices: BasedCli.Context.SelectInputItems[] = Object.keys(
+    const choices: Based.Context.SelectInputItems[] = Object.keys(
       backups.sorted,
     )
       .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
@@ -171,7 +171,7 @@ const fileSelection = async ({
   }
 
   if (!file && !date) {
-    const choices: BasedCli.Context.SelectInputItems[] = sortedBackups.map(
+    const choices: Based.Context.SelectInputItems[] = sortedBackups.map(
       (file: { key: string; lastModified: string }, index, array) => ({
         name: file.key,
         description: `<dim>${index}/${array.length}</dim><white> | <b>Generated at:</b></white> ${format(

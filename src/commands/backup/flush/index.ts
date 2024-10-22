@@ -61,7 +61,7 @@ export const setFlush = async ({
   env,
   cluster,
   force,
-}: BasedCli.Backups.Flush) => {
+}: Based.Backups.Flush) => {
   const { basedClient } = await context.getBasedClients()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function

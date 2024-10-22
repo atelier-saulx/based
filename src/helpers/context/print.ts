@@ -12,9 +12,9 @@ const iconDecider = (icon: boolean | string, defaultValue: string): string => {
 }
 
 export const contextPrint = (
-  state: BasedCli.Context.State,
-): BasedCli.Context.MessageHandler => ({
-  loading: (message: string): BasedCli.Context.MessageHandler => {
+  state: Based.Context.State,
+): Based.Context.MessageHandler => ({
+  loading: (message: string): Based.Context.MessageHandler => {
     if (
       state.display === 'verbose' ||
       state.display === 'info' ||
@@ -25,7 +25,7 @@ export const contextPrint = (
 
     return contextPrint(state)
   },
-  stop: (): BasedCli.Context.MessageHandler => {
+  stop: (): Based.Context.MessageHandler => {
     spinner.stop()
 
     return contextPrint(state)
@@ -33,7 +33,7 @@ export const contextPrint = (
   info: (
     message: string,
     icon: boolean | string = false,
-  ): BasedCli.Context.MessageHandler => {
+  ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'info') {
       if (!icon) {
         console.info(parseMessage(message))
@@ -51,7 +51,7 @@ export const contextPrint = (
   success: (
     message?: string,
     icon: boolean | string = false,
-  ): BasedCli.Context.MessageHandler => {
+  ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'success') {
       if (!icon) {
         console.info(parseMessage(message))
@@ -69,7 +69,7 @@ export const contextPrint = (
   warning: (
     message: string,
     icon: boolean | string = false,
-  ): BasedCli.Context.MessageHandler => {
+  ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'warning') {
       if (!icon) {
         console.info(parseMessage(message))
@@ -103,7 +103,7 @@ export const contextPrint = (
 
     process.exit(killCode)
   },
-  line: (): BasedCli.Context.MessageHandler => {
+  line: (): Based.Context.MessageHandler => {
     if (state.display === 'silent') {
       return contextPrint(state)
     }
@@ -114,7 +114,7 @@ export const contextPrint = (
   },
   separator: (
     width: number = process.stdout.columns,
-  ): BasedCli.Context.MessageHandler => {
+  ): Based.Context.MessageHandler => {
     if (state.display === 'silent') {
       return contextPrint(state)
     }

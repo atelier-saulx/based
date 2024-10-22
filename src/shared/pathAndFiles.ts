@@ -3,12 +3,12 @@ import { isAbsolute, join, relative } from 'node:path'
 import { homedir } from 'node:os'
 import { writeFile } from 'node:fs/promises'
 
-export const mainFileName: BasedCli.BasedFile = 'based'
-export const schemaFileName: BasedCli.BasedFile = `${mainFileName}.schema`
-export const configFileName: BasedCli.BasedFile = `${mainFileName}.config`
-export const infraFileName: BasedCli.BasedFile = `${mainFileName}.infra`
+export const mainFileName: Based.BasedFile = 'based'
+export const schemaFileName: Based.BasedFile = `${mainFileName}.schema`
+export const configFileName: Based.BasedFile = `${mainFileName}.config`
+export const infraFileName: Based.BasedFile = `${mainFileName}.infra`
 
-const isBasedFile = (file: string, type: BasedCli.BasedFile) =>
+const isBasedFile = (file: string, type: Based.BasedFile) =>
   file === `${type}.js` || file === `${type}.json` || file === `${type}.ts`
 
 export const isSchemaFile = (file: string) => isBasedFile(file, schemaFileName)

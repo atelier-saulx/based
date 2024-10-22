@@ -3,7 +3,7 @@ import { AdminLogsData, EnvLogsData } from './formatLogs.js'
 
 export const getLogs = async (
   context: AppContext,
-  filters: BasedCli.Logs.Filter,
+  filters: Based.Logs.Filter,
   renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
 ) => {
   const { envHubBasedCloud, adminHubBasedCloud } =

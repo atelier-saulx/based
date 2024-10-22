@@ -1,9 +1,9 @@
-export function contextGlobalOptions(): BasedCli.Context.GlobalOptions<'skip'> {
-  let globalOptions: BasedCli.Context.GlobalOptions<'skip'> =
+export function contextGlobalOptions(): Based.Context.GlobalOptions<'skip'> {
+  let globalOptions: Based.Context.GlobalOptions<'skip'> =
     this.get('globalOptions')
 
   const { yes: skip, display } =
-    this.program.opts() as BasedCli.Context.GlobalOptions<'yes'>
+    this.program.opts() as Based.Context.GlobalOptions<'yes'>
 
   globalOptions = {
     ...globalOptions,

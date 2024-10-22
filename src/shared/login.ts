@@ -14,7 +14,7 @@ const authenticateUser = async (
   hub: BasedClient,
   cluster: string,
   context: AppContext,
-): Promise<BasedCli.Auth.AuthenticatedUser> => {
+): Promise<Based.Auth.AuthenticatedUser> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
   context.print.loading(
     `Please check your inbox at '<b>${email}</b>', your login code is: '<b>${code}</b>'`,
@@ -72,7 +72,7 @@ const hubConnection = async (
 export const login = async ({
   email,
   selectUser,
-}: BasedCli.Auth.Login): Promise<BasedCli.Auth.Clients> => {
+}: Based.Auth.Login): Promise<Based.Auth.Clients> => {
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
 
@@ -84,8 +84,8 @@ export const login = async ({
     cluster,
   })
 
-  let users: BasedCli.Auth.User[] = await readJSON(authPath).catch(() => [])
-  let user: BasedCli.Auth.User
+  let users: Based.Auth.User[] = await readJSON(authPath).catch(() => [])
+  let user: Based.Auth.User
 
   if (email) {
     user = await authenticateUser(email, adminHub, cluster, context)
@@ -95,7 +95,7 @@ export const login = async ({
   }
 
   if (users.length && !email) {
-    const lastUser: BasedCli.Auth.User = users.sort((a, b) => b?.ts - a?.ts)[0]
+    const lastUser: Based.Auth.User = users.sort((a, b) => b?.ts - a?.ts)[0]
     await adminHub
       .setAuthState({
         ...lastUser,
@@ -109,12 +109,10 @@ export const login = async ({
       })
 
     if (selectUser) {
-      const choices: BasedCli.Context.SelectInputItems[] = users.map(
-        (user) => ({
-          name: user.email,
-          value: user,
-        }),
-      )
+      const choices: Based.Context.SelectInputItems[] = users.map((user) => ({
+        name: user.email,
+        value: user,
+      }))
       choices.push({
         name: 'Other user',
         value: null,

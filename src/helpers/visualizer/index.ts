@@ -10,7 +10,7 @@ import {
 
 export const visualizer = async (
   context: AppContext,
-  filters: BasedCli.Logs.Filter,
+  filters: Based.Logs.Filter,
 ) => {
   const { basedClient, envHubBasedCloud, adminHubBasedCloud } =
     await context.getBasedClients()

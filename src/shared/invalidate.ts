@@ -12,7 +12,7 @@ const types = {
 
 export const invalidate = async (
   fileName: string,
-  config: BasedCli.ConfigBase,
+  config: Based.ConfigBase,
 ): Promise<string | undefined> => {
   const source = (await readFile(fileName)).toString()
   const target = ts.ScriptTarget.ESNext

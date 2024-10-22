@@ -9,7 +9,7 @@ import { Command } from 'commander'
 
 export const filter =
   (program: Command) =>
-  async (filters: BasedCli.Logs.Filter): Promise<void> => {
+  async (filters: Based.Logs.Filter): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const { basedClient, destroy } = await context.getBasedClients()

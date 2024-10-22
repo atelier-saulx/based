@@ -1,7 +1,7 @@
 import { format, parse } from 'date-fns'
 import { dateOnly } from '../../shared/index.js'
 
-export const contextParse: BasedCli.Context.Parse = {
+export const contextParse: Based.Context.Parse = {
   date: (
     value: string | Date,
     formatIN: string | undefined = dateOnly,

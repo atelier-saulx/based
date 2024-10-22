@@ -43,7 +43,7 @@ export const setRestore = async ({
   file = '',
   date = '',
   verbose = false,
-}: BasedCli.Backups.Restore) => {
+}: Based.Backups.Restore) => {
   const { basedClient } = await context.getBasedClients()
   const { skip } = context.getGlobalOptions()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI

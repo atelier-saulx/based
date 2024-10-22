@@ -1,7 +1,7 @@
 import { login } from '../../shared/index.js'
 
-export async function contextBasedClients(): Promise<BasedCli.Auth.Clients> {
-  let basedClients: BasedCli.Auth.Clients = this.get('basedClients')
+export async function contextBasedClients(): Promise<Based.Auth.Clients> {
+  let basedClients: Based.Auth.Clients = this.get('basedClients')
   const { file } = await this.get('basedProject')
 
   if (basedClients) {

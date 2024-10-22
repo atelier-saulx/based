@@ -18,7 +18,7 @@ const { glob } = fg
 
 type ParseFunctionsResult = {
   schema: string
-  configs: BasedCli.ConfigStore[]
+  configs: Based.ConfigStore[]
   favicons: Set<string>
   nodeBundles: BundleResult
   browserBundles: BundleResult
@@ -45,7 +45,7 @@ export const parseFunctions = async (
   })
 
   // read configs
-  let configs: BasedCli.ConfigStore[] = await Promise.all(
+  let configs: Based.ConfigStore[] = await Promise.all(
     configPaths.map(async (path, index) => {
       const dir = targets[index][0]
       if (path.endsWith('.json')) {
