@@ -112,7 +112,7 @@ declare global {
     }
 
     namespace Commands {
-      type Names = 'auth'
+      type Names = 'auth' | 'globalOptions'
     }
 
     namespace Auth {

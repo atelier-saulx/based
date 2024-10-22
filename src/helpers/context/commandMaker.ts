@@ -4,9 +4,12 @@ export function contextCommandMaker(command: Based.Commands.Names): Command {
   const commandKey = `commands.${command}`
 
   const options = this.i18n(`${commandKey}.options`)
+  const description = this.i18n(`${commandKey}.description`)
   const cmd: Command = this.program
-    .command(command)
-    .description(this.i18n(`${commandKey}.description`))
+
+  if (description) {
+    cmd.command(command).description(description)
+  }
 
   if (options.length) {
     for (const option of options) {
@@ -21,7 +24,7 @@ export function contextCommandMaker(command: Based.Commands.Names): Command {
         method = 'requiredOption'
       }
 
-      if (option.default) {
+      if (option.default !== undefined) {
         args.push(option.default)
       }
 

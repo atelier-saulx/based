@@ -18,5 +18,5 @@ export const version = async (program: Command): Promise<void> => {
   context.set('appTitle', appTitle)
   context.print.info(appTitle)
 
-  program.version(version, context.i18n('commands.version.parameter'))
+  program.version(version, context.i18n('version.parameter'))
 }
