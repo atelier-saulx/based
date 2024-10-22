@@ -7,10 +7,11 @@ import {
   contextInput,
   contextPrint,
 } from '../helpers/index.js'
+import { i18n } from '@based/i18n'
 
 export class AppContext {
   private static instance: AppContext
-  private state: BasedCli.Context.State = {
+  private state: Based.Context.State = {
     display: 'verbose',
     emojis: {
       info: '💬',
@@ -29,17 +30,32 @@ export class AppContext {
   ]
   public program: Command
 
-  private constructor(program?: Command) {
+  private constructor(
+    program?: Command,
+    internationalization?: Based.i18n.TranslationsModel,
+  ) {
     if (!program && !this.program) {
       throw new Error('Program must be provided.')
     } else if (program && !this.program) {
       this.program = program
     }
+
+    if (internationalization) {
+      const defaultLanguage = internationalization.default || 'en'
+
+      this.set('languages', internationalization.languages)
+      this.set('language', defaultLanguage)
+
+      this.i18n = i18n(internationalization.languages[defaultLanguage])
+    }
   }
 
-  public static getInstance(program?: Command): AppContext {
+  public static getInstance(
+    program?: Command,
+    languages?: Based.i18n.TranslationsModel,
+  ): AppContext {
     if (!AppContext.instance) {
-      AppContext.instance = new AppContext(program)
+      AppContext.instance = new AppContext(program, languages)
     }
     return AppContext.instance
   }
@@ -56,6 +72,7 @@ export class AppContext {
     return this.state[key]
   }
 
+  public i18n: Based.i18n.Translate
   public getGlobalOptions = contextGlobalOptions
   public getProgram = contextProgram
   public getBasedClients = contextBasedClients

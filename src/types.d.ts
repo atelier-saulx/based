@@ -4,7 +4,7 @@ import { AuthState, BasedClient } from '@based/client'
 import { AppContext } from './shared/index.js'
 
 declare global {
-  namespace BasedCli {
+  namespace Based {
     type BasedFile = 'based' | 'based.schema' | 'based.config' | 'based.infra'
 
     namespace Context {
