@@ -10,11 +10,13 @@ export const version = async (program: Command): Promise<void> => {
     join(fileURLToPath(dirname(import.meta.url)), '../../../package.json'),
   )
 
-  context.set('appName', 'Based CLI')
+  const appName = context.i18n('appName')
+  const appTitle = `<b>${appName}</b> <dim>${version}</dim>`
+
+  context.set('appName', appName)
   context.set('appVersion', version)
-  context.set('appTitle', `<b>Based CLI</b> <dim>${version}</dim>`)
+  context.set('appTitle', appTitle)
+  context.print.info(appTitle)
 
-  context.print.info(context.get('appTitle'))
-
-  program.version(version, '-v, --version')
+  program.version(version, context.i18n('commands.version.parameter'))
 }

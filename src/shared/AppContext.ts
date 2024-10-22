@@ -6,6 +6,7 @@ import {
   contextProgram,
   contextInput,
   contextPrint,
+  contextCommandMaker,
 } from '../helpers/index.js'
 import { i18n } from '@based/i18n'
 
@@ -73,6 +74,7 @@ export class AppContext {
   }
 
   public i18n: Based.i18n.Translate
+  public commandMaker = contextCommandMaker
   public getGlobalOptions = contextGlobalOptions
   public getProgram = contextProgram
   public getBasedClients = contextBasedClients

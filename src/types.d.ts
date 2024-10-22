@@ -111,6 +111,10 @@ declare global {
       }
     }
 
+    namespace Commands {
+      type Names = 'auth'
+    }
+
     namespace Auth {
       type User = {
         email: string
