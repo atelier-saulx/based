@@ -9,6 +9,7 @@ import {
   ENUM,
   STRING,
   UINT32,
+  ALIAS,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
 
@@ -116,7 +117,7 @@ export const filterRaw = (
 
   let buf: Buffer
   if (field.separate === true) {
-    if (field.typeIndex === 11) {
+    if (field.typeIndex === STRING || field.typeIndex === ALIAS) {
       const op = operationToByte(operator)
       if (op === 1) {
         const matches = Buffer.from(value)
