@@ -39,7 +39,7 @@ pub fn isReady(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.
     return res;
 }
 
-pub fn save_common(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     var res: c.napi_value = null;
@@ -50,7 +50,7 @@ pub fn save_common(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C
     return res;
 }
 
-pub fn save_range(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn saveRange(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(3, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const typeCode = napi.get(u16, napi_env, args[1]) catch return null;
@@ -70,7 +70,7 @@ pub fn save_range(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     return res;
 }
 
-pub fn load_common(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     var res: c.napi_value = null;
@@ -81,7 +81,7 @@ pub fn load_common(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C
     return res;
 }
 
-pub fn load_range(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn loadRange(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     var res: c.napi_value = null;
