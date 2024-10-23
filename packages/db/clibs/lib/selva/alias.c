@@ -241,6 +241,19 @@ const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, n
     return RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
 }
 
+const struct SelvaAlias *selva_get_next_alias(struct SelvaAlias *alias)
+{
+    return (alias) ? alias->next : NULL;
+}
+
+const char *selva_get_alias_name(struct SelvaAlias *alias, size_t *len)
+{
+    if (len) {
+        *len = strlen(alias->name);
+    }
+    return alias->name;
+}
+
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field)
 {
     size_t nr_aliases = type->nr_aliases;
