@@ -54,6 +54,20 @@ SELVA_EXPORT
 int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len);
 
 /**
+ * **Usage:**
+ * ```c
+ * struct SelvaDb *db = selva_db_create();
+ * selva_dump_load_common(db, filename_common);
+ * selva_dump_load_range(db, filename_range_n);
+ *  ```
+ */
+SELVA_EXPORT
+int selva_dump_load_common(struct SelvaDb *db, const char *filename);
+
+SELVA_EXPORT
+int selva_dump_load_range(struct SelvaDb *db, const char *filename);
+
+/**
  * Load a db dump.
  */
 SELVA_EXPORT

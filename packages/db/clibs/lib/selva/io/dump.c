@@ -1136,6 +1136,39 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
+
+int selva_dump_load_common(struct SelvaDb *db, const char *filename)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    load_schema(&io, db);
+    selva_io_end(&io, NULL);
+
+    return 0;
+}
+
+int selva_dump_load_range(struct SelvaDb *db, const char *filename)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    load_types(&io, db);
+    selva_io_end(&io, NULL);
+
+    return 0;
+}
+
 static struct SelvaDb *load_db(struct selva_io *io)
 {
     struct SelvaDb *db = selva_db_create();
