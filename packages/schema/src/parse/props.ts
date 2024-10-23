@@ -334,6 +334,19 @@ p.references = propParser<SchemaReferences>(
   },
 )
 
+p.binary = propParser<SchemaString>(
+  STUB,
+  {
+    default(val) {
+      return val instanceof ArrayBuffer
+    },
+    maxBytes(val) {
+      expectNumber(val)
+    },
+  },
+  0,
+)
+
 p.string = propParser<SchemaString>(
   STUB,
   {

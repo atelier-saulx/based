@@ -232,6 +232,15 @@ struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAlias
     return node;
 }
 
+const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
+{
+    struct SelvaAlias find = {
+        .dest = dest,
+    };
+
+    return RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
+}
+
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field)
 {
     size_t nr_aliases = type->nr_aliases;

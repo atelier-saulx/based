@@ -35,6 +35,12 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
 SELVA_EXPORT
 pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename);
 
+SELVA_EXPORT
+int selva_dump_save_common(struct SelvaDb *db, const char *filename);
+
+SELVA_EXPORT
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end);
+
 /**
  * Check if an ongoing dump has finished.
  * This function must be called to reap the zombie.
@@ -46,6 +52,20 @@ pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename);
  */
 SELVA_EXPORT
 int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len);
+
+/**
+ * **Usage:**
+ * ```c
+ * struct SelvaDb *db = selva_db_create();
+ * selva_dump_load_common(db, filename_common);
+ * selva_dump_load_range(db, filename_range_n);
+ *  ```
+ */
+SELVA_EXPORT
+int selva_dump_load_common(struct SelvaDb *db, const char *filename);
+
+SELVA_EXPORT
+int selva_dump_load_range(struct SelvaDb *db, const char *filename);
 
 /**
  * Load a db dump.

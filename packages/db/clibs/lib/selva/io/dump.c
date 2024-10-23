@@ -29,8 +29,8 @@
  */
 #define DUMP_MAGIC_SCHEMA       3360690301
 #define DUMP_MAGIC_TYPES        3550908863
+#define DUMP_MAGIC_TYPE_BEGIN   2460238717
 #define DUMP_MAGIC_TYPE_END     4229893463
-#define DUMP_MAGIC_NODES        2460238717
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -279,42 +279,53 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
     save_fields(io, db, &node->fields);
 }
 
-static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
-{
-    struct SelvaNodeIndex *nodes = &te->nodes;
-    const sdb_nr_nodes_t nr_nodes = te->nr_nodes;
-    struct SelvaNode *node;
-
-    write_dump_magic(io, DUMP_MAGIC_NODES);
-
-    io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
-
-    RB_FOREACH(node, SelvaNodeIndex, nodes) {
-        save_node(io, db, node);
-    }
-}
-
-static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
+static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
 {
     const sdb_nr_aliases_t nr_aliases = te->nr_aliases;
-    struct SelvaAlias *alias;
 
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
     io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
 
     for (size_t i = 0; i < nr_aliases; i++) {
         struct SelvaAliases *aliases = &te->aliases[i];
-        const sdb_nr_aliases_t n = aliases->nr_aliases;
+        const struct SelvaAlias *alias_first;
+        const struct SelvaAlias *alias;
+        sdb_nr_aliases_t n = 0;
+
+
+        alias_first = alias = selva_get_alias_by_dest(aliases, node_id);
+        while (alias_first && (alias = alias->next)) {
+            n++;
+        }
 
         io->sdb_write(&n, sizeof(n), 1, io);
+        if (n == 0) {
+            /* No aliases on this field. */
+            continue;
+        }
 
-        RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
-            sdb_arr_len_t name_len = strlen(alias->name);
+        alias = alias_first;
+        while ((alias = alias->next)) {
+            const char *name_str = alias->name;
+            const size_t name_len = strlen(name_str);
 
             io->sdb_write(&name_len, sizeof(name_len), 1, io);
-            io->sdb_write(alias->name, sizeof(char), name_len, io);
-            io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
+            io->sdb_write(name_str, sizeof(*name_str), name_len, io);
         }
+    }
+}
+
+static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
+{
+    struct SelvaNodeIndex *nodes = &te->nodes;
+    const sdb_nr_nodes_t nr_nodes = te->nr_nodes;
+    struct SelvaNode *node;
+
+    io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
+
+    RB_FOREACH(node, SelvaNodeIndex, nodes) {
+        save_node(io, db, node);
+        save_aliases_node(io, te, node->node_id);
     }
 }
 
@@ -342,27 +353,29 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
 static void save_types(struct selva_io *io, struct SelvaDb *db)
 {
     SVector *types = &db->type_list;
+    const sdb_nr_types_t nr_types = SVector_Size(types);
     struct SVectorIterator it;
     struct SelvaTypeEntry *te;
 
     write_dump_magic(io, DUMP_MAGIC_TYPES);
     /*
-     * We don't save nr_types here again because it's already known from the
-     * schema that should have been saved before.
+     * This is somewhat redundant information as the schema tells this too but
+     * it helps us to split up the dumps into multiple files.
      */
+    io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
 
     SVector_ForeachBegin(&it, types);
     while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         const node_type_t type = te->type;
 
+        write_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN);
         io->sdb_write(&type, sizeof(type), 1, io);
         save_nodes(io, db, te);
-        save_aliases(io, te);
         write_dump_magic(io, DUMP_MAGIC_TYPE_END);
     }
 }
 
-static void save_db(struct selva_io *io, struct SelvaDb *db)
+static void save_full_db(struct selva_io *io, struct SelvaDb *db)
 {
     save_schema(io, db);
     save_types(io, db);
@@ -431,7 +444,7 @@ pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename)
             return err;
         }
 
-        save_db(&io, db);
+        save_full_db(&io, db);
         selva_io_end(&io, hash);
 
         ts_monotime(&ts_end);
@@ -449,6 +462,78 @@ pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename)
     return pid;
 }
 
+int selva_dump_save_common(struct SelvaDb *db, const char *filename)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    /*
+     * Save all the common data here that can't be split up.
+     */
+    save_schema(&io, db);
+
+    selva_io_end(&io, NULL);
+    return 0;
+}
+
+static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start, node_id_t end, struct SelvaNode **start_node)
+{
+    struct SelvaNode *node;
+    sdb_nr_nodes_t n = 0;
+
+    node = selva_nfind_node(te, start);
+    if (!node || node->node_id > end) {
+        return 0;
+    }
+
+    *start_node = node;
+
+    do {
+        n++;
+        node = selva_next_node(te, node);
+    } while (node && node->node_id <= end);
+
+    return n;
+}
+
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    const sdb_nr_types_t nr_types = 1;
+    write_dump_magic(&io, DUMP_MAGIC_TYPES);
+    io.sdb_write(&nr_types, sizeof(nr_types), 1, &io); /* only one type in this dump. */
+
+    write_dump_magic(&io, DUMP_MAGIC_TYPE_BEGIN);
+    io.sdb_write(&te->type, sizeof(te->type), 1, &io);
+
+    struct SelvaNode *node;
+    const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
+
+    io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
+
+    do {
+        save_node(&io, db, node);
+        save_aliases_node(&io, te, node->node_id);
+        node = selva_next_node(te, node);
+    } while (node && node->node_id <= end);
+
+    write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
+
+    selva_io_end(&io, NULL);
+    return 0;
+}
 
 static size_t format_errmsg(char *out_buf, size_t out_len, const char * format, ...)
 {
@@ -456,7 +541,7 @@ static size_t format_errmsg(char *out_buf, size_t out_len, const char * format, 
     int r;
 
     va_start(args, format);
-    r = vsnprintf(out_buf , out_len, format, args);
+    r = vsnprintf(out_buf, out_len, format, args);
     va_end(args);
 
     return r > 0 && (size_t)r < out_len ? r : 0;
@@ -931,7 +1016,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
     }
 }
 
-static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
+static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     if (!read_dump_magic(io, DUMP_MAGIC_NODE)) {
         db_panic("Invalid node magic for type %d", te->type);
@@ -943,23 +1028,11 @@ static void load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
     struct SelvaNode *node = selva_upsert_node(te, node_id);
     assert(node->type == te->type);
     load_node_fields(io, db, te, node);
+
+    return node_id;
 }
 
-static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
-{
-    if (!read_dump_magic(io, DUMP_MAGIC_NODES)) {
-        db_panic("Invalid nodes magic for type %d", te->type);
-    }
-
-    sdb_nr_nodes_t nr_nodes;
-    io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
-
-    for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
-        load_node(io, db, te);
-    }
-}
-
-static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
+static void load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
 {
     sdb_nr_aliases_t nr_aliases;
 
@@ -974,20 +1047,35 @@ static void load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
         io->sdb_read(&n, sizeof(n), 1, io);
         for (size_t j = 0; j < n; j++) {
             sdb_arr_len_t name_len;
+            struct SelvaAlias *alias;
 
             io->sdb_read(&name_len, sizeof(name_len), 1, io);
-            struct SelvaAlias *alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
+            alias = selva_malloc(sizeof(struct SelvaAlias) + name_len + 1);
             io->sdb_read(alias->name, sizeof(char), name_len, io);
             alias->name[name_len] = '\0';
-            io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
+            alias->dest = node_id;
 
             selva_set_alias_p(&te->aliases[i], alias);
         }
     }
 }
 
+static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
+{
+    sdb_nr_nodes_t nr_nodes;
+    io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
+
+    for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
+        node_id_t node_id;
+
+        node_id = load_node(io, db, te);
+        load_aliases_node(io, te, node_id);
+    }
+}
+
 static void load_types(struct selva_io *io, struct SelvaDb *db)
 {
+    sdb_nr_types_t nr_types;
     SVector *types = &db->type_list;
     struct SVectorIterator it;
     struct SelvaTypeEntry *te;
@@ -995,23 +1083,90 @@ static void load_types(struct selva_io *io, struct SelvaDb *db)
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
         db_panic("Ivalid types magic");
     }
+    io->sdb_read(&nr_types, sizeof(nr_types), 1, io);
 
-    SVector_ForeachBegin(&it, types);
-    while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-        node_type_t type;
+    if (nr_types == SVector_Size(types)) {
+        /*
+         * All types in a single dump.
+         */
+        SVector_ForeachBegin(&it, types);
+        while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
+            node_type_t type;
 
-        io->sdb_read(&type, sizeof(type), 1, io);
-        if (type != te->type) {
-            db_panic("Incorrect type found: %d != %d", type, te->type);
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
+                db_panic("Invalid nodes magic for type %d", te->type);
+            }
+
+            io->sdb_read(&type, sizeof(type), 1, io);
+            if (type != te->type) {
+                db_panic("Incorrect type found: %d != %d", type, te->type);
+            }
+
+            load_nodes(io, db, te);
+
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
+                db_panic("Invalid entry magic for type %d", te->type);
+            }
         }
+    } else {
+        /*
+         * Load only the types found in this file.
+         */
+        for (sdb_nr_types_t i = 0; i < nr_types; i++) {
+            node_type_t type;
+            struct SelvaTypeEntry *te;
 
-        load_nodes(io, db, te);
-        load_aliases(io, te);
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
+                db_panic("Invalid nodes magic for type");
+            }
 
-        if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
-            db_panic("Invalid entry magic for type %d", te->type);
+            io->sdb_read(&type, sizeof(type), 1, io);
+
+            te = selva_get_type_by_index(db, type);
+            if (!te) {
+                db_panic("Type not found: %d", type);
+            }
+
+            load_nodes(io, db, te);
+
+            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
+                db_panic("Invalid entry magic for type %d", te->type);
+            }
         }
     }
+}
+
+
+int selva_dump_load_common(struct SelvaDb *db, const char *filename)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    load_schema(&io, db);
+    selva_io_end(&io, NULL);
+
+    return 0;
+}
+
+int selva_dump_load_range(struct SelvaDb *db, const char *filename)
+{
+    struct selva_io io;
+    int err;
+
+    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    load_types(&io, db);
+    selva_io_end(&io, NULL);
+
+    return 0;
 }
 
 static struct SelvaDb *load_db(struct selva_io *io)
