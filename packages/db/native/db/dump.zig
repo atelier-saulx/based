@@ -5,6 +5,10 @@ const napi = @import("../napi.zig");
 const selva = @import("../selva.zig");
 const std = @import("std");
 
+pub fn load(filename: []u8) !void {
+    try errors.selva(selva.selva_dump_load(filename.ptr, &db.ctx.selva));
+}
+
 pub fn save(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     const args = napi.getArgs(1, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
