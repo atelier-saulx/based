@@ -25,9 +25,8 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     if (ctx.fieldType == types.Prop.ALIAS) {
-        // try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
-        // return data.len;
-        return 0;
+        try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
+        return data.len;
     }
 
     try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);

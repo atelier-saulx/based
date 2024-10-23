@@ -11,7 +11,7 @@ const getSortIndex = Modify.getSortIndex;
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+            const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
@@ -22,7 +22,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         return 0;
     }
     if (ctx.currentSortIndex != null) {
-        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+        const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
         sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?) catch {
             return 0;
         };
@@ -32,7 +32,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
 pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
     if (ctx.currentSortIndex != null) {
-        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+        const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
@@ -41,7 +41,7 @@ pub fn deleteFieldOnly(ctx: *ModifyCtx) !usize {
 
 pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
     if (ctx.currentSortIndex != null) {
-        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+        const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }

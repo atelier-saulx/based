@@ -81,7 +81,16 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
     return s.?;
 }
 
-pub fn getField(node: Node, selvaFieldSchema: FieldSchema) []u8 {
+pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) []u8 {
+    const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
+    if (fieldType == types.Prop.ALIAS) {
+        const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
+        const alias = selva.selva_get_alias_by_dest(typeAliases, if (id == 0) getNodeId(node) else id);
+        // const alias = selva.selva_get_next_alias(aliasIterator);
+        var len: selva.user_size_t = 0;
+        const res = selva.selva_get_alias_name(alias, &len);
+        return @as([*]u8, @constCast(res))[0..len];
+    }
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
@@ -341,7 +350,7 @@ pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
     // _ = id;
     // _ = typeAliases;
     // _ = aliasName;
-    std.debug.print("YOOOOO {d} {any} {d}", .{ id, aliasName.ptr, aliasName.len });
+    // std.debug.print("YOOOOO {d} {any} {d}", .{ id, aliasName.ptr, aliasName.len });
     selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
 }
 

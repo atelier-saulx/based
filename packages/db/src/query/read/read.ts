@@ -1,4 +1,5 @@
 import {
+  ALIAS,
   BOOLEAN,
   ENUM,
   INT16,
@@ -154,6 +155,7 @@ export const readAllFields = (
     }
     if (index === 252) {
       const prop = result[i + 1]
+
       i++
       const edgeDef = q.edges.reverseProps[prop]
       // if 13 / 14 / 11
@@ -208,7 +210,7 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
-      if (prop.typeIndex === 11) {
+      if (prop.typeIndex === STRING || prop.typeIndex === ALIAS) {
         q.include.propsRead[index] = id
         const size = result.readUint32LE(i)
         if (size === 0) {

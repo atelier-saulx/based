@@ -201,8 +201,9 @@ fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = db.getField(node.?, fieldSchema);
-        try writeDataToSortIndex(db.getNodeId(node.?), data, start, len, cursor, field);
+        const id = db.getNodeId(node.?);
+        const data = db.getField(typeEntry, id, node.?, fieldSchema);
+        try writeDataToSortIndex(id, data, start, len, cursor, field);
     }
 
     try commitTxn(txn);

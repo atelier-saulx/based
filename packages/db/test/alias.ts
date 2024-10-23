@@ -27,21 +27,10 @@ await test('alias', async (t) => {
   const user = db.create('user', {
     externalId: 'cool',
   })
-  console.log({ user })
-
-  // console.log(
-  //   db.create('user', {
-  //     isNice: false,
-  //   }),
-  // )
 
   db.drain()
-  console.log('EVERYTHING IS FINE')
-  await setTimeout(1e3)
-  console.log(
-    db.update('user', user, {
-      externalId: 'ballz',
-    }),
-  )
-  db.drain()
+
+  const res = db.query('user', user).get()
+
+  console.log({ res })
 })
