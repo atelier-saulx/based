@@ -296,10 +296,10 @@ SELVA_EXPORT
 const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
 
 SELVA_EXPORT
-const struct SelvaAlias *selva_get_next_alias(struct SelvaAlias *alias);
+const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias);
 
 SELVA_EXPORT
-const char *selva_get_alias_name(struct SelvaAlias *alias, size_t *len) __attribute__((nonnull(1), pure));
+const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len) __attribute__((nonnull(1), pure));
 
 SELVA_EXPORT
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field);
