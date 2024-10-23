@@ -39,9 +39,18 @@ await test('alias', async (t) => {
   db.drain()
 
   const res2 = db.query('user', user1).get()
-
   const res3 = db.query('user').filter('externalId', '=', 'cool').get()
   const res4 = db.query('user').filter('externalId', '=', 'tornado').get()
 
-  console.log({ res1, res2, res3, res4 })
+  db.update('user', user1, {
+    externalId: null,
+  })
+
+  db.drain()
+
+  const res5 = db.query('user', user1).get()
+  const res6 = db.query('user').filter('externalId', '=', 'tornado').get()
+
+  console.log({ res1, res2, res3, res4, res5, res6 })
+  // const res2 = db.query('user', user1).get()
 })

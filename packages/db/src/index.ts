@@ -189,6 +189,12 @@ export class BasedDb {
     return create(this, type, value)
   }
 
+  upsert(type: string, aliases: Record<string, string>, value: any) {
+    console.warn('TODO upsert nice')
+    for (const key in aliases) {
+    }
+  }
+
   update(
     type: string,
     id: number | ModifyRes,

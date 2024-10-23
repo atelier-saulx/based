@@ -46,7 +46,7 @@ pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
 
-    try db.deleteField(ctx.node.?, ctx.fieldSchema.?);
+    try db.deleteField(ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
 
     return 0;
 }
