@@ -58,7 +58,8 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     };
 
     if (sdb_filename) |filename| {
-        try dump.load(filename);
+        // We assume it's nul-terminated in js
+        try dump.load(filename[0..filename.len :0]);
     } else {
         db.ctx.selva = selva.selva_db_create();
     }
