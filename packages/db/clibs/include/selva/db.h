@@ -286,6 +286,18 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
 SELVA_EXPORT
 struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len);
 
+/**
+ * Get alias by destination id.
+ * This may not seem very useful but this is actually the way that allows you to
+ * traverse all aliases to the given node_id by following the `next` pointer or
+ * by calling selva_get_next_alias().
+ */
+SELVA_EXPORT
+const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
+
+SELVA_EXPORT
+const struct SelvaAlias *selva_get_next_alias(struct SelvaAlias *alias);
+
 SELVA_EXPORT
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field);
 
