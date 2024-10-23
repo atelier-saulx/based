@@ -5,7 +5,7 @@ const napi = @import("../napi.zig");
 const selva = @import("../selva.zig");
 const std = @import("std");
 
-pub fn load(filename: []u8) !void {
+pub fn load(filename: [:0]u8) !void {
     try errors.selva(selva.selva_dump_load(filename.ptr, &db.ctx.selva));
 }
 
@@ -37,4 +37,20 @@ pub fn isReady(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.
         napi.jsThrow(napi_env, "dump failed"); // TODO pass better error
     }
     return res;
+}
+
+pub fn save_common(filename: [:0]u8) !void {
+    try errors.selva(selva.selva_dump_save_common(db.ctx.selva, filename.ptr));
+}
+
+pub fn save_range(te: db.Type, filename: [:0]u8, start: u32, end: u32) !void {
+    try errors.selva(selva.selva_dump_save_range(db.ctx.selva, te, filename.ptr, start, end));
+}
+
+pub fn load_common(filename: [:0]u8) !void {
+    try errors.selva(selva.selva_dump_load_common(db.ctx.selva, filename.ptr));
+}
+
+pub fn load_range(filename: [:0]u8) !void {
+    try errors.selva(selva.selva_dump_load_range(db.ctx.selva, filename.ptr));
 }
