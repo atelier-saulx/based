@@ -4,12 +4,13 @@ const selva = @import("../selva.zig");
 const napi = @import("../napi.zig");
 
 pub fn ofType(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    const args = napi.getArgs(1, env, info) catch return null;
+    const args = napi.getArgs(2, env, info) catch return null;
     const typeId = napi.get(u16, env, args[0]) catch {
         return null;
     };
+    const ctx = napi.get(*db.DbCtx, env, args[1]) catch return null;
 
-    const te = selva.selva_get_type_by_index(db.ctx.selva, typeId);
+    const te = selva.selva_get_type_by_index(ctx.selva, typeId);
     if (te == null) {
         return null;
     }

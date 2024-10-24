@@ -13,6 +13,7 @@ const getField = db.getField;
 const idToShard = db.idToShard;
 
 pub fn filter(
+    ctx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
@@ -31,11 +32,11 @@ pub fn filter(
             if (refNode == null) {
                 return false;
             }
-            const refTypeEntry = db.getType(refTypePrefix) catch {
+            const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
                 return false;
             };
             const refConditions: []u8 = operation[5 .. 1 + querySize];
-            if (!filter(refNode.?, refTypeEntry, refConditions)) {
+            if (!filter(ctx, refNode.?, refTypeEntry, refConditions)) {
                 return false;
             }
         } else {

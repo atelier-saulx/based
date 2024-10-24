@@ -7,6 +7,7 @@ const Query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
+const db = @import("./db/db.zig");
 
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
@@ -37,18 +38,6 @@ pub fn registerFunction(
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     std.debug.print("register napi fn \n", .{});
-    // need every thing here
-
-    // here a stack allocated global struct
-    // also add multipl envs as possiblity that can be part of the same struct
-    // so createEnv will create a nested global struct
-
-    // destroy env (ignore file path)
-    // close env
-    // close dbis
-    // remove transactions
-    // startEnv
-    // stopEnv those are the 2 fns
 
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
@@ -60,19 +49,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "loadRange", dump.loadRange) catch return null;
     registerFunction(env, exports, "getTypeInfo", info.ofType) catch return null;
 
-    registerFunction(env, exports, "getQueryById", Query.getQueryId) catch return null;
-    registerFunction(env, exports, "getQueryByIds", Query.getQueryIds) catch return null;
-    registerFunction(env, exports, "getQuery", Query.getQuery) catch return null;
-    registerFunction(env, exports, "getQuerySortAsc", Query.getQuerySortAsc) catch return null;
-    registerFunction(env, exports, "getQuerySortDesc", Query.getQuerySortDesc) catch return null;
-    registerFunction(env, exports, "getQueryIdsSortAsc", Query.getQueryIdsSortAsc) catch return null;
-    registerFunction(env, exports, "getQueryIdsSortDesc", Query.getQueryIdsSortDesc) catch return null;
-
-    registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
-
-    registerFunction(env, exports, "modify", modify) catch return null;
-
     registerFunction(env, exports, "updateSchema", schema.updateSchema) catch return null;
 
+    registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
+    registerFunction(env, exports, "modify", modify) catch return null;
     return exports;
 }

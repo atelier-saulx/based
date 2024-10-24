@@ -36,7 +36,7 @@ pub inline fn getRefsFields(
     const sortArr: ?[]u8 = if (sortSize > 0) include[start + filterSize .. start + filterSize + sortSize] else null;
     const typeId: db.TypeId = readInt(u16, include, start + filterSize + sortSize);
     const refField = include[start + 2 + filterSize + sortSize];
-    const typeEntry = db.getType(typeId) catch null;
+    const typeEntry = db.getType(ctx.db, typeId) catch null;
     const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];
 
     ctx.results.append(.{

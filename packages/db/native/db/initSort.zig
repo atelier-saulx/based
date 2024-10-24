@@ -7,13 +7,13 @@ const sort = @import("../db/sort.zig");
 const readInt = @import("../utils.zig").readInt;
 const mdb = errors.mdb;
 
-pub fn initSort() !void {
+pub fn initSort(ctx: *db.DbCtx) !void {
     var s: c.MDB_stat = undefined;
     var txn: ?*c.MDB_txn = null;
     var dbi: c.MDB_dbi = 0;
     var cursor: ?*c.MDB_cursor = null;
 
-    try mdb(c.mdb_txn_begin(db.ctx.env, null, c.MDB_RDONLY, &txn));
+    try mdb(c.mdb_txn_begin(ctx.env, null, c.MDB_RDONLY, &txn));
     try mdb(c.mdb_dbi_open(txn, null, 0, &dbi));
     try mdb(c.mdb_cursor_open(txn, dbi, &cursor));
 
@@ -60,7 +60,7 @@ pub fn initSort() !void {
 
         dbiCnt += 1;
         entries += s.ms_entries;
-        _ = c.mdb_dbi_close(db.ctx.env, dbi2);
+        _ = c.mdb_dbi_close(ctx.env, dbi2);
 
         const dbiSize = s.ms_psize * (s.ms_branch_pages + s.ms_leaf_pages + s.ms_overflow_pages);
         size += dbiSize;
@@ -85,19 +85,19 @@ pub fn initSort() !void {
                 const len: u16 = @intCast(sort.readData(k).len);
                 const start = readInt(u16, dbName, 3);
 
-                const newSortIndex = sort.createReadSortIndex(name, queryId, len, start) catch |err| {
+                const newSortIndex = sort.createReadSortIndex(ctx, name, queryId, len, start) catch |err| {
                     std.log.err("Init: Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
                     return err;
                 };
-                try db.ctx.sortIndexes.put(name, newSortIndex);
+                try ctx.sortIndexes.put(name, newSortIndex);
                 continue;
             }
 
-            const newSortIndex = sort.createReadSortIndex(name, 0, 0, 0) catch |err| {
+            const newSortIndex = sort.createReadSortIndex(ctx, name, 0, 0, 0) catch |err| {
                 std.log.err("Init: Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
                 return err;
             };
-            try db.ctx.sortIndexes.put(name, newSortIndex);
+            try ctx.sortIndexes.put(name, newSortIndex);
 
             continue;
         }

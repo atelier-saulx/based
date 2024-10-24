@@ -23,17 +23,31 @@ fn getOptPath(
     return if (!(t == c.napi_null or t == c.napi_undefined)) try napi.get([]u8, env, value) else null;
 }
 
+// have to pass the pointer to js
+// NAPI_VALUE here has to be the pointer
+
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(3, napi_env, info);
+    const args = try napi.getArgs(4, napi_env, info);
     const path = try napi.get([]u8, napi_env, args[0]);
     const readOnly = try napi.get(bool, napi_env, args[1]);
     const sdb_filename = try getOptPath(napi_env, args[2]);
+    const id = try napi.get(u32, napi_env, args[3]);
 
-    try errors.mdb(c.mdb_env_create(&db.ctx.env));
-    errdefer c.mdb_env_close(db.ctx.env);
-    try errors.mdb(c.mdb_env_set_mapsize(db.ctx.env, 1000 * 1000 * 1000 * 100));
-    try errors.mdb(c.mdb_env_set_maxdbs(db.ctx.env, 20_000_000));
-    try errors.mdb(c.mdb_env_set_maxreaders(db.ctx.env, 126));
+    const ctx = try db.createDbCtx(id);
+
+    // std.debug.print("HELLO START id: {d} {s} {*} ex: {any} \n", .{ id, path, ctx, externalNapi });
+    // std.debug.print("ok pointer {d} - {*} \n", .{
+    //     id,
+    //     @as(*db.DbCtx, @ptrCast(@alignCast(externalNapi))),
+    // });
+
+    // externalNapi
+
+    try errors.mdb(c.mdb_env_create(&ctx.env));
+    errdefer c.mdb_env_close(ctx.env);
+    try errors.mdb(c.mdb_env_set_mapsize(ctx.env, 1000 * 1000 * 1000 * 100));
+    try errors.mdb(c.mdb_env_set_maxdbs(ctx.env, 20_000_000));
+    try errors.mdb(c.mdb_env_set_maxreaders(ctx.env, 126));
 
     var flags: c_uint = 0;
 
@@ -53,63 +67,60 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
     // writable mmap
     flags |= c.MDB_WRITEMAP;
 
-    errors.mdb(c.mdb_env_open(db.ctx.env, path.ptr, flags, 0o664)) catch |err| {
+    errors.mdb(c.mdb_env_open(ctx.env, path.ptr, flags, 0o664)) catch |err| {
         std.log.err("Open lmdb env {any}", .{err});
     };
 
     if (sdb_filename) |filename| {
         // We assume it's nul-terminated in js
-        try dump.load(filename[0..filename.len :0]);
+        try dump.load(ctx, filename[0..filename.len :0]);
     } else {
-        db.ctx.selva = selva.selva_db_create();
+        ctx.selva = selva.selva_db_create();
     }
 
-    try initSort();
+    try initSort(ctx);
 
-    return null;
+    // make db ctx
+    var externalNapi: c.napi_value = undefined;
+    _ = c.napi_create_external(napi_env, ctx, null, null, &externalNapi);
+
+    return externalNapi;
 }
 
-// make extra method
-// LOCK
+fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, napi_env, info);
+    const id = try napi.get(u32, napi_env, args[0]);
+    const ctx = try napi.get(*db.DbCtx, napi_env, args[1]);
 
-fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+    std.debug.print("\nSTOP - RECEIVE: clear from hash map clear allocator  id: {d}  \n\n", .{id});
 
-    // selva_dump_save_async
-    // done :/
-    // TODO: fix
+    selva.selva_db_destroy(ctx.selva);
 
-    // if last is magic string
-    // check every second
-
-    selva.selva_db_destroy(db.ctx.selva);
-
-    db.ctx.selva = null;
-
-    var sortIt = db.ctx.sortIndexes.iterator();
+    var sortIt = ctx.sortIndexes.iterator();
     while (sortIt.next()) |item| {
         const sortIndex = item.value_ptr.*;
-        if (db.ctx.sortIndexes.remove(item.key_ptr.*)) {
+        if (ctx.sortIndexes.remove(item.key_ptr.*)) {
             c.mdb_cursor_close(sortIndex.cursor);
-            c.mdb_dbi_close(db.ctx.env, sortIndex.dbi);
+            c.mdb_dbi_close(ctx.env, sortIndex.dbi);
         }
     }
 
-    var mainSortIt = db.ctx.mainSortIndexes.iterator();
+    var mainSortIt = ctx.mainSortIndexes.iterator();
     while (mainSortIt.next()) |item| {
         const mainSort = item.value_ptr.*;
         mainSort.deinit();
-        _ = db.ctx.mainSortIndexes.remove(item.key_ptr.*);
+        _ = ctx.mainSortIndexes.remove(item.key_ptr.*);
     }
 
-    db.ctx.mainSortIndexes.clearRetainingCapacity();
+    ctx.mainSortIndexes.clearRetainingCapacity();
 
-    if (db.ctx.readTxnCreated) {
-        c.mdb_txn_abort(db.ctx.readTxn);
+    if (ctx.readTxnCreated) {
+        c.mdb_txn_abort(ctx.readTxn);
     }
 
-    c.mdb_env_close(db.ctx.env);
+    c.mdb_env_close(ctx.env);
 
-    db.ctx.readTxnCreated = false;
+    ctx.readTxnCreated = false;
 
     return null;
 }

@@ -6,132 +6,45 @@ export default {
     // pstart,
   },
 
-  modify: (buffer: Buffer, len: number): any => {
-    return db.modify(buffer, len)
+  modify: (buffer: Buffer, len: number, dbCtx: any): any => {
+    return db.modify(buffer, len, dbCtx)
   },
 
-  getQueryBuf: (q: Buffer): Buffer | null => {
-    return db.getQueryBuf(q)
+  getQueryBuf: (q: Buffer, dbCtx: any): Buffer | null => {
+    return db.getQueryBuf(dbCtx, q)
   },
 
-  getQuery: (
-    conditions: Buffer,
-    typeId: number,
-    offset: number,
-    limit: number, // def 1k ?
-    includeBuffer: Buffer,
-  ): any => {
-    return db.getQuery(conditions, typeId, offset, limit, includeBuffer)
-  },
-
-  getQuerySort: (
-    conditions: Buffer,
-    typeId: number,
-    offset: number,
-    limit: number, // def 1k ?
-    includeBuffer: Buffer,
-    sort: Buffer,
-    sortOrder: 0 | 1,
-  ): any => {
-    if (sortOrder === 1) {
-      return db.getQuerySortDesc(
-        conditions,
-        typeId,
-        offset,
-        limit,
-        includeBuffer,
-        sort,
-      )
-    } else {
-      return db.getQuerySortAsc(
-        conditions,
-        typeId,
-        offset,
-        limit,
-        includeBuffer,
-        sort,
-      )
-    }
-  },
-
-  getQueryIdsSort: (
-    conditions: Buffer,
-    typeId: number,
-    offset: number,
-    limit: number, // def 1k ?
-    ids: Buffer,
-    includeBuffer: Buffer,
-    sort: Buffer,
-    sortOrder: 0 | 1,
-    low: number,
-    high: number,
-  ): any => {
-    if (sortOrder === 1) {
-      return db.getQueryIdsSortDesc(
-        conditions,
-        typeId,
-        offset,
-        limit,
-        ids,
-        includeBuffer,
-        sort,
-        low,
-        high,
-      )
-    } else {
-      return db.getQueryIdsSortAsc(
-        conditions,
-        typeId,
-        offset,
-        limit,
-        ids,
-        includeBuffer,
-        sort,
-        low,
-        high,
-      )
-    }
-  },
-
-  getQueryById: (
-    conditions: Buffer,
-    typeId: number,
-    id: number,
-    includeBuffer: Buffer,
-  ): any => {
-    return db.getQueryById(conditions, typeId, id, includeBuffer)
-  },
-
-  getQueryByIds: (
-    conditions: Buffer,
-    typeId: number,
-    ids: Buffer,
-    includeBuffer: Buffer,
-  ): any => {
-    return db.getQueryByIds(conditions, typeId, ids, includeBuffer)
-  },
-
-  start: (path: string, dumpPath: string, readOnly: boolean) => {
+  start: (path: string, dumpPath: string, readOnly: boolean, id: number) => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
     const dumpPathBuf = dumpPath
       ? Buffer.concat([Buffer.from(dumpPath), Buffer.from([0])])
       : null
-    return db.start(buf, readOnly, dumpPathBuf)
+    return db.start(buf, readOnly, dumpPathBuf, id)
   },
 
-  save: (path: string): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.save(buf)
+  stop: (id: number, dbCtx: any) => {
+    return db.stop(id, dbCtx)
   },
 
-  saveCommon: (path: string): number => {
+  save: (path: string, dbCtx: any): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.save(buf)
+    return db.save(buf, dbCtx)
   },
 
-  saveRange: (path: string, typeCode: number, start: number, end: number): number => {
+  saveCommon: (path: string, dbCtx: any): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.saveRange(buf, typeCode, start, end)
+    return db.save(buf, dbCtx)
+  },
+
+  saveRange: (
+    path: string,
+    typeCode: number,
+    start: number,
+    end: number,
+    dbCtx: any,
+  ): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.saveRange(buf, typeCode, start, end, dbCtx)
   },
 
   isSaveReady: (pid: number, path: string): boolean => {
@@ -145,15 +58,11 @@ export default {
     }
   },
 
-  stop: () => {
-    return db.stop()
+  getTypeInfo: (type: number, dbCtx: any) => {
+    return db.getTypeInfo(type, dbCtx)
   },
 
-  getTypeInfo: (type: number) => {
-    return db.getTypeInfo(type)
-  },
-
-  updateSchemaType: (prefix: number, buf: Buffer) => {
-    return db.updateSchema(prefix, buf)
+  updateSchemaType: (prefix: number, buf: Buffer, dbCtx: any) => {
+    return db.updateSchema(prefix, buf, dbCtx)
   },
 }

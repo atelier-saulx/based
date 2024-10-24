@@ -8,7 +8,7 @@ import {
   schemaToSelvaBuffer,
 } from './schema/schema.js'
 import { wait } from '@saulx/utils'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, hash, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
 import { flushBuffer } from './operations.js'
@@ -40,6 +40,10 @@ export class BasedDb {
     queue: Map<number, (id: number) => void>
     db: BasedDb
   }
+
+  id: number
+
+  dbCtxExternal: any
 
   schema: Schema & { lastId: number }
 
@@ -108,19 +112,28 @@ export class BasedDb {
 
     const s = await fs.stat(dumppath).catch(() => null)
 
-    db.start(this.fileSystemPath, s ? dumppath : null, false)
+    this.id = stringHash(this.fileSystemPath) >>> 0
+    this.dbCtxExternal = db.start(
+      this.fileSystemPath,
+      s ? dumppath : null,
+      false,
+      this.id,
+    )
 
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
       if (schema) {
-        //  prop need to not call setting in selva
+        // Prop need to not call setting in selva
         this.putSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
 
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      const [total, lastId] = this.native.getTypeInfo(def.id)
+      const [total, lastId] = this.native.getTypeInfo(
+        def.id,
+        this.dbCtxExternal,
+      )
       def.total = total
       def.lastId = lastId
     }
@@ -172,7 +185,7 @@ export class BasedDb {
         const type = this.schemaTypesParsed[types[i]]
         // TODO should not crash!
         try {
-          this.native.updateSchemaType(type.id, s[i])
+          this.native.updateSchemaType(type.id, s[i], this.dbCtxExternal)
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }
@@ -243,7 +256,7 @@ export class BasedDb {
     const dumppath = join(this.fileSystemPath, 'data.sdb')
     await fs.rm(dumppath).catch(() => {})
     var rdy = false
-    const pid = this.native.save(dumppath)
+    const pid = this.native.save(dumppath, this.dbCtxExternal)
     while (!rdy) {
       await wait(100)
       if (this.native.isSaveReady(pid, dumppath)) {
@@ -258,7 +271,7 @@ export class BasedDb {
     if (!noSave) {
       await this.save()
     }
-    db.stop()
+    db.stop(this.id, this.dbCtxExternal)
     await setTimeout()
   }
 

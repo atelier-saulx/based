@@ -59,7 +59,7 @@ pub fn getSingleRefFields(
 
     const refId = db.getNodeId(node.?);
 
-    const typeEntry = db.getType(typeId) catch {
+    const typeEntry = db.getType(ctx.db, typeId) catch {
         return 6;
     };
 

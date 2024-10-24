@@ -26,8 +26,12 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     defer arena.deinit();
     const allocator = arena.allocator();
 
+    const args = try napi.getArgs(2, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),
+        .db = dbCtx,
         // maybe unnecessary might want to the real 8 byte Qid and add in response
         .id = db.getQueryId(),
         .size = 0,
@@ -35,9 +39,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .allocator = allocator,
     };
 
-    const args = try napi.getArgs(1, env, info);
-    const q = try napi.get([]u8, env, args[0]);
-
+    const q = try napi.get([]u8, env, args[1]);
     const queryType = q[0];
     const typeId: db.TypeId = readInt(u16, q, 1);
 
@@ -86,135 +88,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         }
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
-    }
-
-    return results.createResultsBuffer(&ctx, env);
-}
-
-// ------------- can all go away
-
-pub fn getQuery(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(0, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQueryId(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(1, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQueryIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(2, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQuerySortAsc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(3, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQuerySortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(4, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQueryIdsSortAsc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(9, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQueryIdsSortDesc(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return getQueryInternal(10, env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-inline fn getQueryInternal(
-    comptime queryType: comptime_int,
-    env: c.napi_env,
-    info: c.napi_callback_info,
-) !c.napi_value {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var ctx: QueryCtx = .{
-        .results = std.ArrayList(results.Result).init(allocator),
-        .id = db.getQueryId(), // maybe unnecessary
-        .size = 0,
-        .totalResults = 0,
-        .allocator = allocator,
-    };
-
-    if (queryType == 0) {
-        // query no sort
-        const args = try napi.getArgs(6, env, info);
-        const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.get(u16, env, args[1]);
-        const offset = try napi.get(u32, env, args[2]);
-        const limit = try napi.get(u32, env, args[3]);
-        const include = try napi.get([]u8, env, args[4]);
-        try Query.query(&ctx, offset, limit, typeId, conditions, include);
-    } else if (queryType == 1) {
-        // single id
-        const args = try napi.getArgs(4, env, info);
-        const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.get(u16, env, args[1]);
-        const id = try napi.get(u32, env, args[2]);
-        const include = try napi.get([]u8, env, args[3]);
-        try Query.queryId(id, &ctx, typeId, conditions, include);
-    } else if (queryType == 2) {
-        // ids list
-        const args = try napi.getArgs(4, env, info);
-        const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.get(u16, env, args[1]);
-        const ids = try napi.get([]u8, env, args[2]);
-        const include = try napi.get([]u8, env, args[3]);
-        try Query.queryIds(ids, &ctx, typeId, conditions, include);
-    } else if (queryType == 3 or queryType == 4) {
-        // query sorted
-        const args = try napi.getArgs(7, env, info);
-        const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.get(u16, env, args[1]);
-        const offset = try napi.get(u32, env, args[2]);
-        const limit = try napi.get(u32, env, args[3]);
-        const include = try napi.get([]u8, env, args[4]);
-        const sortBuffer = try napi.get([]u8, env, args[5]);
-        try QuerySort.querySort(queryType, &ctx, offset, limit, typeId, conditions, include, sortBuffer);
-    } else if (queryType == 9 or queryType == 10) {
-        // query ids sorted
-        const args = try napi.getArgs(8, env, info);
-        const conditions = try napi.get([]u8, env, args[0]);
-        const typeId = try napi.get(u16, env, args[1]);
-        const offset = try napi.get(u32, env, args[2]);
-        const limit = try napi.get(u32, env, args[3]);
-        const ids = try napi.get([]u8, env, args[4]);
-        const include = try napi.get([]u8, env, args[5]);
-        const sortBuffer = try napi.get([]u8, env, args[6]);
-        try QuerySort.queryIds(
-            queryType,
-            ids,
-            &ctx,
-            typeId,
-            conditions,
-            include,
-            sortBuffer,
-            offset,
-            limit,
-        );
     }
 
     return results.createResultsBuffer(&ctx, env);

@@ -18,7 +18,11 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
+var arena2 = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+const allocator2 = arena2.allocator();
+
 pub const DbCtx = struct {
+    id: u32,
     initialized: bool,
     allocator: std.mem.Allocator,
     readTxn: *c.MDB_txn,
@@ -30,22 +34,28 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
 };
 
-var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-const allocator = arena.allocator();
-const sortIndexes = sort.Indexes.init(allocator);
-const mainSortIndexes = std.AutoHashMap([2]u8, *StartSet).init(allocator);
+var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(allocator2);
 
-pub var ctx: DbCtx = .{
-    .allocator = allocator,
-    .readTxn = undefined,
-    .env = undefined,
-    .sortIndexes = sortIndexes,
-    .mainSortIndexes = mainSortIndexes,
-    .readTxnCreated = false,
-    .initialized = false,
-    .readOnly = false,
-    .selva = null,
-};
+pub fn createDbCtx(id: u32) !*DbCtx {
+    // magic with allocators
+    const sortIndexes2 = sort.Indexes.init(allocator2);
+    const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator2);
+    const b = try allocator2.create(DbCtx);
+    b.* = .{
+        .id = 0,
+        .allocator = allocator2,
+        .readTxn = undefined,
+        .env = undefined,
+        .sortIndexes = sortIndexes2,
+        .mainSortIndexes = mainSortIndexes2,
+        .readTxnCreated = false,
+        .initialized = false,
+        .readOnly = false,
+        .selva = null,
+    };
+    try dbHashmap.put(id, b);
+    return b;
+}
 
 var lastQueryId: u32 = 0;
 pub fn getQueryId() u32 {
@@ -56,7 +66,7 @@ pub fn getQueryId() u32 {
     return lastQueryId;
 }
 
-pub fn getType(typePrefix: TypeId) !Type {
+pub fn getType(ctx: *DbCtx, typePrefix: TypeId) !Type {
     // make fn getSelvaTypeIndex
     const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
         ctx.selva.?,
@@ -98,16 +108,14 @@ pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSc
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn setTextField(node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8, str: *u8) !void {
+pub fn setTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8, str: *u8) !void {
     errors.selva(selva.selva_fields_set_text(ctx.selva, node, selvaFieldSchema, lang.ptr, str.ptr, str.len));
 }
 
-pub fn getTextField(node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8) !?*u8 {
+pub fn getTextField(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, lang: [4]u8) !?*u8 {
     var len: selva.user_size_t = 0;
     var str: [len]u8 = undefined;
-
     errors.selva(selva.selva_fields_get_text(ctx.selva, node, selvaFieldSchema, lang.ptr, &str, &len));
-
     return str;
 }
 
@@ -132,11 +140,11 @@ pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
     return selva.selva_fields_get_references(node, field);
 }
 
-pub fn clearReferences(node: Node, selvaFieldSchema: FieldSchema) void {
+pub fn clearReferences(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema) void {
     selva.selva_fields_clear_references(ctx.selva, node, selvaFieldSchema);
 }
 
-pub fn deleteReference(node: Node, selvaFieldSchema: FieldSchema, id: u32) !void {
+pub fn deleteReference(ctx: *DbCtx, node: Node, selvaFieldSchema: FieldSchema, id: u32) !void {
     try errors.selva(selva.selva_fields_del_ref(
         ctx.selva,
         node,
@@ -145,7 +153,7 @@ pub fn deleteReference(node: Node, selvaFieldSchema: FieldSchema, id: u32) !void
     ));
 }
 
-pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
+pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
         node,
@@ -155,7 +163,7 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
     ));
 }
 
-pub fn writeReference(value: Node, target: Node, fieldSchema: FieldSchema) !void {
+pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_set(
         ctx.selva,
         target,
@@ -165,7 +173,7 @@ pub fn writeReference(value: Node, target: Node, fieldSchema: FieldSchema) !void
     ));
 }
 
-pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !void {
+pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: FieldSchema) !void {
     // selva_fields_references_insert() is slightly more optimized than this for insertions to
     // a `references` field but does it really make a difference?
     try errors.selva(selva.selva_fields_set(
@@ -179,6 +187,7 @@ pub fn writeReferences(value: []Node, target: Node, fieldSchema: FieldSchema) !v
 
 // @param index 0 = first; -1 = last.
 pub fn insertReference(
+    ctx: *DbCtx,
     value: Node,
     target: Node,
     fieldSchema: FieldSchema,
@@ -299,7 +308,7 @@ pub fn writeEdgeProp(
     ));
 }
 
-pub fn deleteField(typeEntry: Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) !void {
+pub fn deleteField(ctx: *DbCtx, typeEntry: Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) !void {
     const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
     if (fieldType == types.Prop.ALIAS) {
         const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
@@ -317,7 +326,7 @@ pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     return result;
 }
 
-pub fn deleteNode(node: Node, typeEntry: Type) !void {
+pub fn deleteNode(ctx: *DbCtx, node: Node, typeEntry: Type) !void {
     selva.selva_del_node(
         ctx.selva,
         typeEntry,

@@ -114,7 +114,10 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
     const b = defToBuffer(this.db, this.def)
     const d = Date.now()
-    const result = this.db.native.getQueryBuf(Buffer.concat(b))
+    const result = this.db.native.getQueryBuf(
+      Buffer.concat(b),
+      this.db.dbCtxExternal,
+    )
     return new BasedQueryResponse(this.def, result, Date.now() - d)
   }
 }
