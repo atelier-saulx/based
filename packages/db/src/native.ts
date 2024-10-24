@@ -14,32 +14,13 @@ export default {
     return db.getQueryBuf(dbCtx, q)
   },
 
-  start: (path: string, dumpPath: string, readOnly: boolean, id: number) => {
+  start: (path: string, readOnly: boolean, id: number) => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    const dumpPathBuf = dumpPath
-      ? Buffer.concat([Buffer.from(dumpPath), Buffer.from([0])])
-      : null
-    return db.start(buf, readOnly, dumpPathBuf, id)
+    return db.start(buf, readOnly, id)
   },
 
   stop: (dbCtx: any) => {
     return db.stop(dbCtx)
-  },
-
-  save: (path: string, dbCtx: any): number => {
-    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.save(buf, dbCtx)
-  },
-
-  isSaveReady: (pid: number, path: string): boolean => {
-    const errBuf = Buffer.alloc(80)
-    try {
-      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-      return db.isSaveReady(pid, buf, errBuf)
-    } catch (err) {
-      console.log('ERROR SAVE READY', errBuf.toString())
-      throw err
-    }
   },
 
   saveCommon: (path: string, dbCtx: any): number => {

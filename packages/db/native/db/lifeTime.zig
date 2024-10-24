@@ -27,11 +27,10 @@ fn getOptPath(
 // NAPI_VALUE here has to be the pointer
 
 fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    const args = try napi.getArgs(4, napi_env, info);
+    const args = try napi.getArgs(3, napi_env, info);
     const path = try napi.get([]u8, napi_env, args[0]);
     const readOnly = try napi.get(bool, napi_env, args[1]);
-    const sdb_filename = try getOptPath(napi_env, args[2]);
-    const id = try napi.get(u32, napi_env, args[3]);
+    const id = try napi.get(u32, napi_env, args[2]);
 
     const ctx = try db.createDbCtx(id);
 
@@ -63,12 +62,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         std.log.err("Open lmdb env {any}", .{err});
     };
 
-    if (sdb_filename) |filename| {
-        // We assume it's nul-terminated in js
-        try dump.load(ctx, filename[0..filename.len :0]);
-    } else {
-        ctx.selva = selva.selva_db_create();
-    }
+    ctx.selva = selva.selva_db_create();
 
     try initSort(ctx);
 

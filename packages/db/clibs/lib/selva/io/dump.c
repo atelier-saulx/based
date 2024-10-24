@@ -315,20 +315,6 @@ static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, no
     }
 }
 
-static void save_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
-{
-    struct SelvaNodeIndex *nodes = &te->nodes;
-    const sdb_nr_nodes_t nr_nodes = te->nr_nodes;
-    struct SelvaNode *node;
-
-    io->sdb_write(&nr_nodes, sizeof(nr_nodes), 1, io);
-
-    RB_FOREACH(node, SelvaNodeIndex, nodes) {
-        save_node(io, db, node);
-        save_aliases_node(io, te, node->node_id);
-    }
-}
-
 static void save_schema(struct selva_io *io, struct SelvaDb *db)
 {
     SVector *types = &db->type_list;
@@ -350,37 +336,6 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static void save_types(struct selva_io *io, struct SelvaDb *db)
-{
-    SVector *types = &db->type_list;
-    const sdb_nr_types_t nr_types = SVector_Size(types);
-    struct SVectorIterator it;
-    struct SelvaTypeEntry *te;
-
-    write_dump_magic(io, DUMP_MAGIC_TYPES);
-    /*
-     * This is somewhat redundant information as the schema tells this too but
-     * it helps us to split up the dumps into multiple files.
-     */
-    io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
-
-    SVector_ForeachBegin(&it, types);
-    while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-        const node_type_t type = te->type;
-
-        write_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN);
-        io->sdb_write(&type, sizeof(type), 1, io);
-        save_nodes(io, db, te);
-        write_dump_magic(io, DUMP_MAGIC_TYPE_END);
-    }
-}
-
-static void save_full_db(struct selva_io *io, struct SelvaDb *db)
-{
-    save_schema(io, db);
-    save_types(io, db);
-}
-
 static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
 {
     static const char map[] = "0123456789abcdef";
@@ -394,7 +349,7 @@ static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELV
     return s;
 }
 
-static void print_ready(
+__used static void print_ready(
         char *msg,
         struct timespec * restrict ts_start,
         struct timespec * restrict ts_end,
@@ -424,42 +379,6 @@ static void print_ready(
             msg,
             t, t_unit,
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash));
-}
-
-pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename)
-{
-    pid_t pid;
-
-    pid = fork();
-    if (pid == 0) {
-        struct selva_io io;
-        uint8_t hash[SELVA_IO_HASH_SIZE];
-        struct timespec ts_start, ts_end;
-        int err;
-
-        ts_monotime(&ts_start);
-
-        err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
-        if (err) {
-            return err;
-        }
-
-        save_full_db(&io, db);
-        selva_io_end(&io, hash);
-
-        ts_monotime(&ts_end);
-        print_ready("save", &ts_start, &ts_end, &io);
-
-#if defined(__APPLE__) && defined(__MACH__)
-        _Exit(EXIT_SUCCESS);
-#else
-        quick_exit(EXIT_SUCCESS);
-#endif
-    } else if (pid < 0) {
-        return SELVA_EGENERAL;
-    }
-
-    return pid;
 }
 
 int selva_dump_save_common(struct SelvaDb *db, const char *filename)
@@ -503,8 +422,11 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
 
 int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end)
 {
+    struct timespec ts_start, ts_end;
     struct selva_io io;
     int err;
+
+    ts_monotime(&ts_start);
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
@@ -532,76 +454,14 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     }
 
     write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
-
     selva_io_end(&io, NULL);
+
+    ts_monotime(&ts_end);
+#if 0
+    print_ready("save", &ts_start, &ts_end, &io);
+#endif
+
     return 0;
-}
-
-static size_t format_errmsg(char *out_buf, size_t out_len, const char * format, ...)
-{
-    va_list args;
-    int r;
-
-    va_start(args, format);
-    r = vsnprintf(out_buf, out_len, format, args);
-    va_end(args);
-
-    return r > 0 && (size_t)r < out_len ? r : 0;
-}
-
-/**
- * Translate child exit status into a selva_error and log messages.
- */
-static int handle_child_status(pid_t pid, int status, char *out_buf, size_t *out_len)
-{
-    if (WIFEXITED(status)) {
-        int code = WEXITSTATUS(status);
-
-        if (code != 0) {
-            *out_len = format_errmsg(out_buf, *out_len,
-                                     "child %d terminated with exit code: %d",
-                                     (int)pid, code);
-            return SELVA_EGENERAL;
-        }
-    } else if (WIFSIGNALED(status)) {
-        int termsig = WTERMSIG(status);
-            *out_len = format_errmsg(out_buf, *out_len,
-                     "child %d killed by signal %s (%s) %s",
-                     (int)pid, sigstr_abbrev(termsig), sigstr_descr(termsig),
-                     (WCOREDUMP(status)) ? " (core dumped)" : "");
-        return SELVA_EGENERAL;
-    } else {
-            *out_len = format_errmsg(out_buf, *out_len,
-                                     "child %d terminated abnormally", pid);
-        return SELVA_EGENERAL;
-    }
-
-    *out_len = 0;
-    return 0;
-}
-
-int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len)
-{
-    pid_t pid;
-    int status, err;
-
-    pid = waitpid(child, &status, WNOHANG);
-    if (pid <= 0) {
-        return SELVA_EINPROGRESS;
-    }
-
-    err = handle_child_status(pid, status, out_buf, out_len);
-    if (err) {
-        return err;
-    }
-    *out_len = 0;
-
-    err = selva_io_quick_verify(filename);
-    if (err) {
-        return err;
-    }
-
-    return err;
 }
 
 static void load_schema(struct selva_io *io, struct SelvaDb *db)
@@ -1168,39 +1028,5 @@ int selva_dump_load_range(struct SelvaDb *db, const char *filename)
     load_types(&io, db);
     selva_io_end(&io, NULL);
 
-    return 0;
-}
-
-static struct SelvaDb *load_db(struct selva_io *io)
-{
-    struct SelvaDb *db = selva_db_create();
-
-    load_schema(io, db);
-    load_types(io, db);
-
-    return db;
-}
-
-int selva_dump_load(const char *filename, struct SelvaDb **db_out)
-{
-    struct selva_io io;
-    struct timespec ts_start, ts_end;
-    struct SelvaDb *db;
-    int err;
-
-    ts_monotime(&ts_start);
-
-    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
-    if (err) {
-        return err;
-    }
-
-    db = load_db(&io);
-    selva_io_end(&io, NULL);
-
-    ts_monotime(&ts_end);
-    print_ready("load", &ts_start, &ts_end, &io);
-
-    *db_out = db;
     return 0;
 }
