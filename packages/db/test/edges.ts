@@ -113,4 +113,15 @@ await test('edges', async (t) => {
       contributors: [{ id: 1, $rating: 5 }],
     },
   ])
+
+  const z = db.query('article').include('contributors.$lang').get()
+
+  z.debug()
+
+  deepEqual(z.toObject(), [
+    {
+      id: 1,
+      contributors: [{ id: 1, $lang: 'en' }],
+    },
+  ])
 })

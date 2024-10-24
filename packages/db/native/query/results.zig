@@ -85,11 +85,11 @@ pub fn createResultsBuffer(
 
         const val = item.val.?;
 
-        if (item.isEdge > 0 and item.isEdge < 11) {
+        if (item.isEdge > 0 and item.isEdge < 11 or item.isEdge == 23) {
             if (item.isEdge == 10 or item.isEdge == 9) {
                 data[i] = val[0];
                 i += 1;
-            } else if (item.isEdge == 5) {
+            } else if (item.isEdge == 5 or item.isEdge == 7 or item.isEdge == 23) {
                 @memcpy(data[i .. i + val.len], val);
                 i += 4;
             } else if (item.isEdge == 4 or item.isEdge == 1) {

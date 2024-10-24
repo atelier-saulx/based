@@ -122,12 +122,13 @@ pub fn getFields(
         }
 
         if (isEdge) {
+            // handle this correctly...
             size += 2;
             if (edgeType == 11) {
                 size += (valueLen + 4);
             } else if (edgeType == 10 or edgeType == 9) {
                 size += 1;
-            } else if (edgeType == 5) {
+            } else if (edgeType == 5 or edgeType == 7 or edgeType == 23) {
                 size += 4;
             } else if (edgeType == 4 or edgeType == 1) {
                 size += 8;

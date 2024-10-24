@@ -160,7 +160,16 @@ export const readAllFields = (
       const edgeDef = q.edges.reverseProps[prop]
       // if 13 / 14 / 11
       const t = edgeDef.typeIndex
-      if (t === 13) {
+      if (t === 11) {
+        i++
+        const size = result.readUint32LE(i)
+        if (size === 0) {
+          addField(edgeDef, '', item)
+        } else {
+          addField(edgeDef, result.toString('utf8', i + 4, size + i + 4), item)
+        }
+        i += size + 4
+      } else if (t === 13) {
       } else if (t === 14) {
       } else if (t === 1) {
       } else {
