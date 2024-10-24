@@ -44,7 +44,7 @@ export default {
 
   saveCommon: (path: string, dbCtx: any): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.save(buf, dbCtx)
+    return db.saveCommon(buf, dbCtx)
   },
 
   saveRange: (
