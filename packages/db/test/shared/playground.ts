@@ -25,7 +25,7 @@ const makeDb = async (path: string) => {
 
   await db.start()
 
-  console.log('\nJS GO DO BUT')
+  console.log('\nJS GO DO BUT', Date.now(), path)
 
   db.putSchema({
     types: {
@@ -39,9 +39,11 @@ const makeDb = async (path: string) => {
 
   console.log(db.query('bla').get())
 
-  console.log('YO')
+  console.log('YO', Date.now(), path)
 
   await wait(100)
+
+  console.log('CLOSE', Date.now(), path)
 
   await db.stop()
 }
