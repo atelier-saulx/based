@@ -31,6 +31,17 @@ export default {
     return db.save(buf, dbCtx)
   },
 
+  isSaveReady: (pid: number, path: string): boolean => {
+    const errBuf = Buffer.alloc(80)
+    try {
+      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+      return db.isSaveReady(pid, buf, errBuf)
+    } catch (err) {
+      console.log('ERROR SAVE READY', errBuf.toString())
+      throw err
+    }
+  },
+
   saveCommon: (path: string, dbCtx: any): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
     return db.save(buf, dbCtx)
@@ -47,22 +58,21 @@ export default {
     return db.saveRange(buf, typeCode, start, end, dbCtx)
   },
 
-  isSaveReady: (pid: number, path: string): boolean => {
-    const errBuf = Buffer.alloc(80)
-    try {
-      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-      return db.isSaveReady(pid, buf, errBuf)
-    } catch (err) {
-      console.log('ERROR SAVE READY', errBuf.toString())
-      throw err
-    }
+  loadCommon: (path: string, dbCtx: any): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.loadCommon(buf, dbCtx)
   },
 
-  getTypeInfo: (type: number, dbCtx: any) => {
-    return db.getTypeInfo(type, dbCtx)
+  loadRange: (path: string, dbCtx: any): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.loadRange(buf, dbCtx)
   },
 
   updateSchemaType: (prefix: number, buf: Buffer, dbCtx: any) => {
     return db.updateSchema(prefix, buf, dbCtx)
+  },
+
+  getTypeInfo: (typeId: number, defCtx: any) => {
+    return db.getTypeInfo(typeId, defCtx)
   },
 }

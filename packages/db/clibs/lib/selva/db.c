@@ -187,11 +187,23 @@ void selva_db_destroy(struct SelvaDb *db)
     selva_free(db);
 }
 
+static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
+{
+    struct SelvaTypeEntry *te;
+
+    te = selva_get_type_by_index(db, type);
+    return (te && te->schema_len == schema_len && !memcmp(te->schema_buf, schema_buf, schema_len));
+}
+
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
     struct schema_fields_count count;
     const size_t te_ns_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
     int err;
+
+    if (eq_type_exists(db, type, schema_buf, schema_len)) {
+        return SELVA_EEXIST;
+    }
 
     err = schemabuf_count_fields(&count, schema_buf, schema_len);
     if (err) {

@@ -35,14 +35,6 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 
     const ctx = try db.createDbCtx(id);
 
-    // std.debug.print("HELLO START id: {d} {s} {*} ex: {any} \n", .{ id, path, ctx, externalNapi });
-    // std.debug.print("ok pointer {d} - {*} \n", .{
-    //     id,
-    //     @as(*db.DbCtx, @ptrCast(@alignCast(externalNapi))),
-    // });
-
-    // externalNapi
-
     try errors.mdb(c.mdb_env_create(&ctx.env));
     errdefer c.mdb_env_close(ctx.env);
     try errors.mdb(c.mdb_env_set_mapsize(ctx.env, 1000 * 1000 * 1000 * 100));
@@ -80,10 +72,9 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 
     try initSort(ctx);
 
-    // make db ctx
+    // TODO: MAKE A UTIL
     var externalNapi: c.napi_value = undefined;
     _ = c.napi_create_external(napi_env, ctx, null, null, &externalNapi);
-
     return externalNapi;
 }
 
@@ -95,6 +86,15 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     std.debug.print("\nSTOP - RECEIVE: clear from hash map clear allocator  id: {d}  \n\n", .{id});
 
     selva.selva_db_destroy(ctx.selva);
+
+    // if last is magic string
+    // check every second
+
+    if (ctx.selva != null) {
+        selva.selva_db_destroy(ctx.selva);
+    }
+
+    ctx.selva = null;
 
     var sortIt = ctx.sortIndexes.iterator();
     while (sortIt.next()) |item| {
