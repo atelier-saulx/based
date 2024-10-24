@@ -1,19 +1,19 @@
-// use realworld data
 import { Schema } from '@based/schema'
-import { readdir, readFile } from 'fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const dir = join(__dirname, 'shared/tmp/transfermarkt').replace(
-  '/dist/test/',
-  '/test/',
-)
-const cache = join(dir, 'cache.json')
+// ORDER IS IMPORTANT (FOR SQL)
+export const types = [
+  'competition',
+  'club',
+  'player',
+  'game',
+  'transfer',
+  'game_event',
+  'appearance',
+  'game_lineup',
+  'player_valuation',
+]
 
-const schema: Schema = {
+export const schema: Schema = {
   // --- club
   types: {
     club: {
@@ -35,6 +35,7 @@ const schema: Schema = {
         last_season: 'uint16', // '2023'
         filename: 'string', // '../data/raw/transfermarkt-scraper/2023/clubs.json.gz'
         url: 'string', // 'https://www.transfermarkt.co.uk/sv-darmstadt-98/startseite/verein/105'
+
         // --- refs
         outgoing_transfers: {
           items: {
@@ -122,6 +123,7 @@ const schema: Schema = {
         confederation: 'string', // 'europa'
         url: 'string', // 'https://www.transfermarkt.co.uk/italy-cup/startseite/wettbewerb/CIT'
         is_major_national_league: 'boolean', // 'false'
+
         // --- refs
         clubs: {
           items: {
@@ -162,6 +164,7 @@ const schema: Schema = {
         transfer_fee: 'number', // '0.000'
         market_value_in_eur: 'number', // '12000000.000'
         player_name: 'string', // 'Alexander Nübel'
+
         // --- refs
         player: {
           ref: 'player',
@@ -228,6 +231,7 @@ const schema: Schema = {
         current_club_name: 'string', // 'Società Sportiva Lazio S.p.A.'
         market_value_in_eur: 'number', // '1000000'
         highest_market_value_in_eur: 'number', // '30000000'
+
         // --- refs
         transfers: {
           items: {
@@ -286,6 +290,7 @@ const schema: Schema = {
         market_value_in_eur: 'number', // '150000'
         current_club_id: 'uint32', // '3057'
         player_club_domestic_competition_id: 'string', // 'BE1'
+
         // --- refs
         player: {
           ref: 'player',
@@ -327,6 +332,7 @@ const schema: Schema = {
         away_club_name: 'string', // 'Eintracht Braunschweig'
         aggregate: 'string', // '2:1'
         competition_type: 'string', // 'domestic_league'
+
         // --- refs
         competition: {
           ref: 'competition',
@@ -352,6 +358,12 @@ const schema: Schema = {
             prop: 'game',
           },
         },
+        appearances: {
+          items: {
+            ref: 'appearance',
+            prop: 'game',
+          },
+        },
       },
     },
     // --- game_event
@@ -367,6 +379,7 @@ const schema: Schema = {
         description: 'string', // '1. Yellow card Mass confrontation'
         player_in_id: 'uint32', // '' (nullable)
         player_assist_id: 'uint32', // '' (nullable)
+
         // --- refs
         game: {
           ref: 'game',
@@ -406,7 +419,12 @@ const schema: Schema = {
         goals: 'uint8', // '2'
         assists: 'uint8', // '0'
         minutes_played: 'uint16', // '90'
+
         // --- refs
+        game: {
+          ref: 'game',
+          prop: 'appearances',
+        },
         player: {
           ref: 'player',
           prop: 'appearances',
@@ -435,6 +453,7 @@ const schema: Schema = {
         position: 'string', // 'Defensive Midfield'
         number: 'uint8', // '5'
         team_captain: 'boolean', // '0' (interpreted as false)
+
         // --- refs
         game: {
           ref: 'game',
@@ -452,182 +471,3 @@ const schema: Schema = {
     },
   },
 }
-
-let label
-const log = console.log
-const time = (l) => console.time((label = l))
-const timeEnd = () => console.timeEnd(label)
-const csvToJson = (type, csv) => {
-  const { props } = schema.types[type]
-  const [header, ...rows] = csv.split('\n')
-  const keys = header.split(',')
-  return rows.map((row) => {
-    const values = row.split(',')
-    return keys.reduce((obj, key, index) => {
-      const prop = props[key]
-      if (prop === 'string') {
-        obj[key] = values[index] || ''
-      } else if (prop === 'boolean') {
-        obj[key] = Boolean(values[index])
-      } else {
-        obj[key] = Number(values[index])
-      }
-      return obj
-    }, {})
-  })
-}
-
-const num = (n) => {
-  const str = String(n)
-  let i = str.length
-  let x = 0
-  let res = ''
-  while (i--) {
-    if (!x || x % 3) {
-      res = str[i] + res
-    } else {
-      res = str[i] + '.' + res
-    }
-    x++
-  }
-  return res
-}
-
-await test('transfermarkt', async (t) => {
-  const files = await readdir(dir).catch((e) => {})
-  if (!files) {
-    console.info('no files for transfermarkt test, skipping...')
-    return
-  }
-
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  db.putSchema(schema)
-
-  let amount = 0
-
-  time('read')
-  let map
-
-  try {
-    map = JSON.parse((await readFile(cache)).toString())
-  } catch (e) {
-    map = {}
-    await Promise.all(
-      files.map(async (file) => {
-        if (file.endsWith('.csv')) {
-          const type = file.slice(0, -5)
-          if (type in schema.types) {
-            const buff = await readFile(join(dir, file))
-            const data = csvToJson(type, buff.toString())
-            const idKey = type + '_id'
-            const head = data[0]
-            log(type + ': ' + num(data.length))
-            amount += data.length
-            map[type] = { data, idKey: idKey in head && idKey }
-          }
-        }
-      }),
-    )
-
-    // const writeStream = createWriteStream(cache)
-    // const stringifyStream = bigJson.createStringifyStream({
-    //   body: map,
-    // })
-    // stringifyStream.pipe(writeStream)
-
-    // stringifyStream.on('data', function (strChunk) {
-    //   // => BIG_POJO will be sent out in JSON chunks as the object is traversed
-    // })
-    // // dont await
-    // // writeFile(cache, JSON.stringify(map))
-  }
-
-  log()
-  log('total: ' + num(amount))
-  timeEnd()
-
-  time('create')
-  const refMap = {}
-  for (const type in map) {
-    const { idKey, data } = map[type]
-    for (const node of data) {
-      const id = db.create(type, node)
-      node.id = id
-      if (idKey) {
-        const originId = node[idKey]
-        refMap[type] ??= {}
-        refMap[type][originId] = id
-      }
-    }
-  }
-  const d = db.drain()
-  timeEnd()
-  log('create drain: ' + d / 1e3 + 's')
-
-  time('set refs')
-  let refCnt = 0
-  let updates = 0
-  for (const type in map) {
-    const { data } = map[type]
-    for (const node of data) {
-      const { props } = schema.types[type]
-      for (const key in node) {
-        if (key.endsWith('_id')) {
-          const refProp = key.slice(0, -3)
-          if (refProp in props) {
-            const val = node[key]
-            // @ts-ignore
-            const refType = props[refProp].ref
-            if (val in refMap[refType]) {
-              node._refs ??= {}
-              node._refs[refProp] = refMap[refType][val]
-              refCnt++
-            }
-          }
-        }
-      }
-
-      if (node._refs) {
-        updates++
-        db.update(type, node.id, node._refs)
-      }
-    }
-  }
-
-  const d2 = db.drain()
-  timeEnd()
-  log('set refs drain: ' + d2 / 1e3 + 's', { updates, refCnt })
-
-  console.log(
-    'RES:',
-    db
-      .query('club')
-      .include(
-        '*',
-        'outgoing_transfers',
-        'incoming_transfers',
-        'domestic_competition',
-        'home_games',
-        'away_games',
-        'players',
-        'valuations',
-        'game_events',
-        'appearances',
-        'game_lineups',
-      )
-      .range(0, 1)
-      .get()
-      .toObject(),
-  )
-
-  time('stop db')
-  await db.stop(true)
-  timeEnd()
-})
