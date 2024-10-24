@@ -21,6 +21,8 @@ import { genId } from './schema/utils.js'
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
 
+const SCHEMA_FILE = 'schema.json'
+
 export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
@@ -51,12 +53,15 @@ export class BasedDb {
   native = db
 
   fileSystemPath: string
+  splitDump: boolean
 
   constructor({
     path,
+    splitDump,
     maxModifySize,
   }: {
     path: string
+    splitDump?: boolean,
     maxModifySize?: number
     fresh?: boolean
   }) {
@@ -82,6 +87,7 @@ export class BasedDb {
     }
 
     this.fileSystemPath = path
+    this.splitDump = !!splitDump
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
   }
@@ -104,19 +110,26 @@ export class BasedDb {
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
-    const dumppath = join(this.fileSystemPath, 'data.sdb')
+    if (this.splitDump) {
+      const dumps = (await fs.readdir(this.fileSystemPath)).filter((fname: string) => fname.endsWith('.sdb') && fname != 'common.sdb')
 
-    const s = await fs.stat(dumppath).catch(() => null)
+      db.start(this.fileSystemPath, null, false)
+      db.loadCommon(join(this.fileSystemPath, 'common.sdb'))
+      dumps.forEach((fname) => db.loadRange(join(this.fileSystemPath, fname)))
+    } else {
+      const dumppath = join(this.fileSystemPath, 'data.sdb')
+      const s = await fs.stat(dumppath).catch(() => null)
 
-    db.start(this.fileSystemPath, s ? dumppath : null, false)
+      db.start(this.fileSystemPath, s ? dumppath : null, false)
+    }
 
     try {
-      const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
+      const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
       if (schema) {
         //  prop need to not call setting in selva
         this.putSchema(JSON.parse(schema.toString()), true)
       }
-    } catch (err) {}
+    } catch (err) { }
 
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
@@ -162,7 +175,7 @@ export class BasedDb {
 
     if (!fromStart) {
       fs.writeFile(
-        join(this.fileSystemPath, 'schema.json'),
+        join(this.fileSystemPath, SCHEMA_FILE),
         JSON.stringify(this.schema),
       )
       let types = Object.keys(this.schemaTypesParsed)

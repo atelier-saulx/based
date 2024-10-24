@@ -124,6 +124,17 @@ export default {
     return db.save(buf)
   },
 
+  isSaveReady: (pid: number, path: string): boolean => {
+    const errBuf = Buffer.alloc(80)
+    try {
+      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+      return db.isSaveReady(pid, buf, errBuf)
+    } catch (err) {
+      console.log('ERROR SAVE READY', errBuf.toString())
+      throw err
+    }
+  },
+
   saveCommon: (path: string): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
     return db.saveCommon(buf)
@@ -134,15 +145,15 @@ export default {
     return db.saveRange(buf, typeCode, start, end)
   },
 
-  isSaveReady: (pid: number, path: string): boolean => {
-    const errBuf = Buffer.alloc(80)
-    try {
-      const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-      return db.isSaveReady(pid, buf, errBuf)
-    } catch (err) {
-      console.log('ERROR SAVE READY', errBuf.toString())
-      throw err
-    }
+
+  loadCommon: (path: string): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.loadCommon(buf)
+  },
+
+  loadRange: (path: string): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.loadRange(buf)
   },
 
   stop: () => {

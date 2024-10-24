@@ -81,7 +81,9 @@ fn stopInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
     // if last is magic string
     // check every second
 
-    selva.selva_db_destroy(db.ctx.selva);
+    if (db.ctx.selva != null) {
+        selva.selva_db_destroy(db.ctx.selva);
+    }
 
     db.ctx.selva = null;
 
