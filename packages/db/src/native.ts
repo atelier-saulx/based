@@ -22,8 +22,8 @@ export default {
     return db.start(buf, readOnly, dumpPathBuf, id)
   },
 
-  stop: (id: number, dbCtx: any) => {
-    return db.stop(id, dbCtx)
+  stop: (dbCtx: any) => {
+    return db.stop(dbCtx)
   },
 
   save: (path: string, dbCtx: any): number => {

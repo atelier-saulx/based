@@ -46,6 +46,6 @@ await wait(100)
 
 // await db2.start()
 
-// await db.stop()
+await db.stop()
 
 // await db2.stop()

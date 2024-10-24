@@ -289,7 +289,7 @@ export class BasedDb {
     if (!noSave) {
       await this.save()
     }
-    db.stop(this.id, this.dbCtxExternal)
+    db.stop(this.dbCtxExternal)
     await setTimeout()
   }
 

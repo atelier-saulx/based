@@ -80,10 +80,7 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 
 fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, napi_env, info);
-    const id = try napi.get(u32, napi_env, args[0]);
-    const ctx = try napi.get(*db.DbCtx, napi_env, args[1]);
-
-    std.debug.print("\nSTOP - RECEIVE: clear from hash map clear allocator  id: {d}  \n\n", .{id});
+    const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
 
     selva.selva_db_destroy(ctx.selva);
 
@@ -121,6 +118,10 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     c.mdb_env_close(ctx.env);
 
     ctx.readTxnCreated = false;
+
+    // delete instance
+    _ = db.dbHashmap.remove(ctx.id);
+    ctx.arena.deinit();
 
     return null;
 }

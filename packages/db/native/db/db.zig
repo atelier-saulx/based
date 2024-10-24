@@ -18,13 +18,14 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
-var arena2 = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-const allocator2 = arena2.allocator();
+var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+const globalAllocator = globalAllocatorArena.allocator();
 
 pub const DbCtx = struct {
     id: u32,
     initialized: bool,
     allocator: std.mem.Allocator,
+    arena: std.heap.ArenaAllocator,
     readTxn: *c.MDB_txn,
     readTxnCreated: bool,
     env: ?*c.MDB_env,
@@ -34,16 +35,21 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
 };
 
-var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(allocator2);
+pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
 
 pub fn createDbCtx(id: u32) !*DbCtx {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    const allocator = arena.allocator();
+
     // magic with allocators
-    const sortIndexes2 = sort.Indexes.init(allocator2);
-    const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator2);
-    const b = try allocator2.create(DbCtx);
+    const sortIndexes2 = sort.Indexes.init(allocator);
+    const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator);
+
+    const b = try allocator.create(DbCtx);
     b.* = .{
         .id = 0,
-        .allocator = allocator2,
+        .arena = arena,
+        .allocator = allocator,
         .readTxn = undefined,
         .env = undefined,
         .sortIndexes = sortIndexes2,
@@ -53,6 +59,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .readOnly = false,
         .selva = null,
     };
+
     try dbHashmap.put(id, b);
     return b;
 }
