@@ -82,7 +82,7 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*db.DbCtx, napi_env, args[0]);
 
-    selva.selva_db_destroy(ctx.selva);
+    // selva.selva_db_destroy(ctx.selva);
 
     // if last is magic string
     // check every second

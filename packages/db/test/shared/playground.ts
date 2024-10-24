@@ -45,7 +45,7 @@ const makeDb = async (path: string) => {
 
   console.log('CLOSE', Date.now(), path)
 
-  await db.stop()
+  await db.stop(true)
 }
 
 await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])

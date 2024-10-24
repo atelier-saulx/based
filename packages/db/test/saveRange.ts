@@ -1,5 +1,5 @@
 // import { join as pathJoin } from 'node:path'
-// import { readdir } from 'node:fs/promises';
+// import { readdir } from 'node:fs/promises'
 // import { BasedDb } from '../src/index.js'
 // import test from './shared/test.js'
 // import { deepEqual, equal } from './shared/assert.js'
@@ -41,13 +41,23 @@
 
 //   db.drain()
 
-//   let err: number;
+//   let err: number
 
 //   err = db.native.saveCommon(pathJoin(db.fileSystemPath, 'common.sdb'))
 //   equal(err, 0)
-//   err = db.native.saveRange(pathJoin(db.fileSystemPath, 'user_0.sdb'), db.schema.types.user.id, 1, 1)
+//   err = db.native.saveRange(
+//     pathJoin(db.fileSystemPath, 'user_0.sdb'),
+//     db.schema.types.user.id,
+//     1,
+//     1,
+//   )
 //   equal(err, 0)
-//   err = db.native.saveRange(pathJoin(db.fileSystemPath, 'user_1.sdb'), db.schema.types.user.id, 2, 2)
+//   err = db.native.saveRange(
+//     pathJoin(db.fileSystemPath, 'user_1.sdb'),
+//     db.schema.types.user.id,
+//     2,
+//     2,
+//   )
 //   equal(err, 0)
 //   const ls = await readdir(db.fileSystemPath)
 //   equal(ls.includes('common.sdb'), true)
