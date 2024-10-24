@@ -38,6 +38,7 @@ pub const DbCtx = struct {
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
 
 pub fn createDbCtx(id: u32) !*DbCtx {
+    // if you want any var to persist out of the stack you have to do this
     var arena = try globalAllocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
