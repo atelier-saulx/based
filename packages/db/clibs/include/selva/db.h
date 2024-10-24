@@ -27,31 +27,11 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 SELVA_EXPORT
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len) __attribute__((nonnull));
 
-/**
- * Save a db dump.
- * selva_is_dump_ready() must be called after calling this function to
- * reap the child once the dump is ready.
- */
-SELVA_EXPORT
-pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
-
 SELVA_EXPORT
 int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
 
 SELVA_EXPORT
 int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end) __attribute__((nonnull));
-
-/**
- * Check if an ongoing dump has finished.
- * This function must be called to reap the zombie.
- * This function must be called until 0 is returned.
- * @returns 0 if the dump was successful;
- *          SELVA_EINPROGRESS if the chil process is still busy;
- *          SELVA_EGENERAL if the child crashed;
- *          Some other selva error.
- */
-SELVA_EXPORT
-int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len);
 
 /**
  * **Usage:**
@@ -66,12 +46,6 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename) __attribute
 
 SELVA_EXPORT
 int selva_dump_load_range(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
-
-/**
- * Load a db dump.
- */
-SELVA_EXPORT
-int selva_dump_load(const char *filename, struct SelvaDb **db_out) __attribute__((nonnull));
 
 /**
  * Find a type by type id.

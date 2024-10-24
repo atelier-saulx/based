@@ -7,7 +7,6 @@ import { deepEqual, equal } from './shared/assert.js'
 await test('save simple range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
-    splitDump: true,
   })
 
   await db.start({ clean: true })
@@ -49,7 +48,6 @@ await test('save simple range', async (t) => {
   //db.start()
   const newDb = new BasedDb({
     path: t.tmp,
-    splitDump: true,
   })
   await newDb.start()
   t.after(() => {

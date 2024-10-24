@@ -59,15 +59,12 @@ export class BasedDb {
   native = db
 
   fileSystemPath: string
-  splitDump: boolean
 
   constructor({
     path,
-    splitDump,
     maxModifySize,
   }: {
     path: string
-    splitDump?: boolean
     maxModifySize?: number
     fresh?: boolean
   }) {
@@ -93,7 +90,6 @@ export class BasedDb {
     }
 
     this.fileSystemPath = path
-    this.splitDump = !!splitDump
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
   }
@@ -118,27 +114,15 @@ export class BasedDb {
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
-    if (this.splitDump) {
-      const dumps = (await fs.readdir(this.fileSystemPath)).filter(
-        (fname: string) => fname.endsWith('.sdb') && fname != COMMON_SDB_FILE,
-      )
+    const dumps = (await fs.readdir(this.fileSystemPath)).filter(
+      (fname: string) => fname.endsWith('.sdb') && fname != COMMON_SDB_FILE,
+    )
 
-      this.dbCtxExternal = db.start(this.fileSystemPath, null, false, this.id)
-      db.loadCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
-      dumps.forEach((fname) =>
-        db.loadRange(join(this.fileSystemPath, fname), this.dbCtxExternal),
-      )
-    } else {
-      // todo remove later
-      const dumppath = join(this.fileSystemPath, 'data.sdb')
-      const s = await fs.stat(dumppath).catch(() => null)
-      this.dbCtxExternal = db.start(
-        this.fileSystemPath,
-        s ? dumppath : null,
-        false,
-        this.id,
-      )
-    }
+    this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
+    db.loadCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
+    dumps.forEach((fname) =>
+      db.loadRange(join(this.fileSystemPath, fname), this.dbCtxExternal),
+    )
 
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
@@ -273,37 +257,27 @@ export class BasedDb {
   }
 
   async save() {
-    if (this.splitDump) {
-      let err: number
+    let err: number
 
-      err = this.native.saveCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
-      console.error('common err', err)
+    err = this.native.saveCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
+    if (err) {
+      console.error(`Save common failed: ${err}`)
+    }
 
-      for (const key in this.schemaTypesParsed) {
-        const def = this.schemaTypesParsed[key]
-        const [_total, lastId] = this.native.getTypeInfo(
-          def.id,
-          this.dbCtxExternal,
-        )
-        const step = 10000 // TODO Make configurable/variable
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      const [_total, lastId] = this.native.getTypeInfo(
+        def.id,
+        this.dbCtxExternal,
+      )
+      const step = 10000 // TODO Make configurable/variable
 
-        for (let start = 0; start < lastId; start += step) {
-          const end = start + step - 1
-          const path = join(this.fileSystemPath, block_sdb_file(def.id, start))
-          err = this.native.saveRange(path, this.schema.types.user.id, start, end, this.dbCtxExternal)
-          console.error('err', err)
-        }
-      }
-    } else {
-      const dumppath = join(this.fileSystemPath, 'data.sdb')
-      await fs.rm(dumppath).catch(() => {})
-      var rdy = false
-      const pid = this.native.save(dumppath, this.dbCtxExternal)
-      while (!rdy) {
-        await wait(100)
-        if (this.native.isSaveReady(pid, dumppath)) {
-          rdy = true
-          break
+      for (let start = 0; start < lastId; start += step) {
+        const end = start + step - 1
+        const path = join(this.fileSystemPath, block_sdb_file(def.id, start))
+        err = this.native.saveRange(path, def.id, start, end, this.dbCtxExternal)
+        if (err) {
+          console.error(`Save ${def.id}:${start}-${end} failed: ${err}`)
         }
       }
     }
