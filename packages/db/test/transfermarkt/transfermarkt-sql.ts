@@ -265,6 +265,7 @@ await test('sql', async () => {
 
   console.log('Database and tables have been created successfully.')
 
+  const start = Date.now()
   time('insert')
   const errors = []
   const queries = {
@@ -445,6 +446,9 @@ await test('sql', async () => {
   timeEnd()
 
   console.log('errors:', errors.length, errors[0])
+
+  const end = Date.now()
+  console.log('TIME SPENT:', end - start) // 30285
 
   // Close the database connection
   db.close()
