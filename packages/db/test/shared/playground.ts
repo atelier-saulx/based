@@ -29,15 +29,16 @@ const makeDb = async (path: string) => {
 
   db.putSchema({
     types: {
-      bla: { props: { name: 'string' } },
+      bla: { props: { name: 'string', x: 'uint16' } },
     },
   })
 
   await db.create('bla', {
     name: 'DERP ',
+    x: 1,
   })
 
-  console.log(db.query('bla').get())
+  console.log(db.query('bla').sort('x').get())
 
   console.log('YO', Date.now(), path)
 
