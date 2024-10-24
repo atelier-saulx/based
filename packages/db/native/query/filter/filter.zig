@@ -19,6 +19,7 @@ pub fn filter(
 ) bool {
     var fieldIndex: usize = 0;
     var main: ?[]u8 = undefined;
+
     while (fieldIndex < conditions.len) {
         const field = conditions[fieldIndex];
         const operation = conditions[fieldIndex + 1 ..];
@@ -44,7 +45,7 @@ pub fn filter(
                     const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                         return false;
                     };
-                    main = db.getField(node, fieldSchema);
+                    main = db.getField(typeEntry, 0, node, fieldSchema);
                     if (main.?.len == 0) {
                         return false;
                     }
@@ -56,7 +57,7 @@ pub fn filter(
                 const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                     return false;
                 };
-                const value = db.getField(node, fieldSchema);
+                const value = db.getField(typeEntry, 0, node, fieldSchema);
                 if (value.len == 0) {
                     return false;
                 }

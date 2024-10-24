@@ -124,6 +124,16 @@ export default {
     return db.save(buf)
   },
 
+  saveCommon: (path: string): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.save(buf)
+  },
+
+  saveRange: (path: string, typeCode: number, start: number, end: number): number => {
+    const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
+    return db.saveRange(buf, typeCode, start, end)
+  },
+
   isSaveReady: (pid: number, path: string): boolean => {
     const errBuf = Buffer.alloc(80)
     try {

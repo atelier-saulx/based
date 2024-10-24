@@ -103,7 +103,12 @@ pub fn getFields(
             edgeType = edgeFieldSchema.*.type;
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
         } else {
-            value = db.getField(node, try db.getFieldSchema(field, typeEntry));
+            value = db.getField(
+                typeEntry,
+                id,
+                node,
+                try db.getFieldSchema(field, typeEntry),
+            );
         }
 
         const valueLen = value.len;

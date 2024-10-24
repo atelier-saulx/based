@@ -24,24 +24,33 @@ await test('alias', async (t) => {
   })
 
   await setTimeout(1e3)
-  const user = db.create('user', {
+  const user1 = db.create('user', {
     externalId: 'cool',
   })
-  console.log({ user })
-
-  // console.log(
-  //   db.create('user', {
-  //     isNice: false,
-  //   }),
-  // )
 
   db.drain()
-  console.log('EVERYTHING IS FINE')
-  await setTimeout(1e3)
-  console.log(
-    db.update('user', user, {
-      externalId: 'ballz',
-    }),
-  )
+
+  const res1 = db.query('user', user1).get()
+
+  db.update('user', user1, {
+    externalId: 'tornado',
+  })
+
   db.drain()
+
+  const res2 = db.query('user', user1).get()
+  const res3 = db.query('user').filter('externalId', '=', 'cool').get()
+  const res4 = db.query('user').filter('externalId', '=', 'tornado').get()
+
+  db.update('user', user1, {
+    externalId: null,
+  })
+
+  db.drain()
+
+  const res5 = db.query('user', user1).get()
+  const res6 = db.query('user').filter('externalId', '=', 'tornado').get()
+
+  console.log({ res1, res2, res3, res4, res5, res6 })
+  // const res2 = db.query('user', user1).get()
 })

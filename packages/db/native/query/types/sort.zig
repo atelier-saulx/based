@@ -49,7 +49,7 @@ pub fn queryIds(
         if (!filter(node.?, typeEntry, conditions)) {
             continue :sortItem;
         }
-        const value = db.getField(node.?, try db.getFieldSchema(sortField, typeEntry));
+        const value = db.getField(typeEntry, id, node.?, try db.getFieldSchema(sortField, typeEntry));
         db.insertSort(sortCtx, node.?, sortFieldType, value, start, len);
     }
 

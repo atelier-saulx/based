@@ -159,7 +159,7 @@ export type SchemaEnum = Prop<{
   enum: EnumItem[]
 }>
 
-export type SchemaAlias = SchemaString & { type: 'alias' }
+export type SchemaAlias = Omit<SchemaString, 'type'> & { type: 'alias' }
 
 export type SchemaPropShorthand =
   | 'timestamp'

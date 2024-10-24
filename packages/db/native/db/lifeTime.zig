@@ -3,6 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
 const db = @import("./db.zig");
+const dump = @import("./dump.zig");
 const initSort = @import("./initSort.zig").initSort;
 const selva = @import("../selva.zig");
 
@@ -56,8 +57,9 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
         std.log.err("Open lmdb env {any}", .{err});
     };
 
-    if (sdb_filename != null) {
-        try errors.selva(selva.selva_dump_load(sdb_filename.?.ptr, &db.ctx.selva));
+    if (sdb_filename) |filename| {
+        // We assume it's nul-terminated in js
+        try dump.load(filename[0..filename.len :0]);
     } else {
         db.ctx.selva = selva.selva_db_create();
     }

@@ -23,3 +23,16 @@ pub usingnamespace @cImport({
 
     @cInclude("selva/sort.h");
 });
+
+const selvaError = @cImport({
+    @cDefine("__zig", "1");
+
+    @cInclude("cdefs.h");
+    @cInclude("selva_error.h");
+});
+const std = @import("std");
+
+pub fn strerror(err: i32) [:0]const u8 {
+    const s = selvaError.selva_strerror(err);
+    return s[0..std.mem.len(s) :0];
+}

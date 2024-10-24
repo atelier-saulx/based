@@ -38,7 +38,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
     if (ctx.field == 0) {
         if (sort.hasMainSortIndexes(ctx.typeId)) {
-            const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+            const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
             var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
@@ -48,13 +48,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        const currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+        const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
         try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
         try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
     }
 
     if (ctx.fieldType == types.Prop.ALIAS) {
-        // return 0;
         try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
         return data.len;
     }
@@ -64,7 +63,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
-    var currentData = db.getField(ctx.node.?, ctx.fieldSchema.?);
+    var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
     if (currentData.len != 0) {
         var j: usize = 0;
         const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.typeId));

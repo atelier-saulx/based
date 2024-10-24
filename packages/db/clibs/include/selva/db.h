@@ -18,14 +18,14 @@ struct SelvaDb *selva_db_create(void);
  * Destroy a DB instance.
  */
 SELVA_EXPORT
-void selva_db_destroy(struct SelvaDb *db);
+void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 
 /**
  * Create a new node type with a schema.
  * @param type must not exist before.
  */
 SELVA_EXPORT
-int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len);
+int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len) __attribute__((nonnull));
 
 /**
  * Save a db dump.
@@ -33,7 +33,13 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
  * reap the child once the dump is ready.
  */
 SELVA_EXPORT
-pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename);
+pid_t selva_dump_save_async(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+
+SELVA_EXPORT
+int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+
+SELVA_EXPORT
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end) __attribute__((nonnull));
 
 /**
  * Check if an ongoing dump has finished.
@@ -48,43 +54,57 @@ SELVA_EXPORT
 int selva_is_dump_ready(pid_t child, const char *filename, char *out_buf, size_t *out_len);
 
 /**
+ * **Usage:**
+ * ```c
+ * struct SelvaDb *db = selva_db_create();
+ * selva_dump_load_common(db, filename_common);
+ * selva_dump_load_range(db, filename_range_n);
+ *  ```
+ */
+SELVA_EXPORT
+int selva_dump_load_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+
+SELVA_EXPORT
+int selva_dump_load_range(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+
+/**
  * Load a db dump.
  */
 SELVA_EXPORT
-int selva_dump_load(const char *filename, struct SelvaDb **db_out);
+int selva_dump_load(const char *filename, struct SelvaDb **db_out) __attribute__((nonnull));
 
 /**
  * Find a type by type id.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type);
+struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type) __attribute__((nonnull));
 
 /**
  * Get the type for node.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node);
+struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
 
 /**
  * Get the node schema for type.
  */
 SELVA_EXPORT
-const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
+const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te) __attribute__((nonnull, pure));
 
 SELVA_EXPORT
-const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field);
-
-/**
- * Get the field schema for field.
- */
-SELVA_EXPORT
-const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field);
+const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field) __attribute__((nonnull, pure));
 
 /**
  * Get the field schema for field.
  */
 SELVA_EXPORT
-const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field);
+const struct SelvaFieldSchema *selva_get_fs_by_ns_field(const struct SelvaNodeSchema *ns, field_t field) __attribute__((nonnull, pure));
+
+/**
+ * Get the field schema for field.
+ */
+SELVA_EXPORT
+const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field) __attribute__((nonnull, pure));
 
 /**
  * Get the EdgeFieldConstraint from a ref field schema.
@@ -93,31 +113,31 @@ const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct S
  * struct SelvaFieldSchema *dst_fs = selva_get_fs_by_node(db, dst, efc->inverse_field);
  */
 SELVA_EXPORT
-const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs);
+const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct SelvaFieldSchema *fs) __attribute__((nonnull));
 
 /**
  * Delete a node.
  */
 SELVA_EXPORT
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Get a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id);
+struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * Find the first node greater than or equal to the provided id, or NULL.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id);
+struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * Get or create a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id);
+struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * **Example**
@@ -126,7 +146,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
  * ```
  */
 SELVA_EXPORT
-struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type);
+struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * **Example**
@@ -135,19 +155,19 @@ struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type);
  * ```
  */
 SELVA_EXPORT
-struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type);
+struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * Get previous node with a lower node id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node);
+struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Get next node with higher node id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node);
+struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Create a new cursor pointing to node.
@@ -155,43 +175,43 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
  * node using selva_next_node().
  */
 SELVA_EXPORT
-cursor_id_t selva_cursor_new(struct SelvaTypeEntry *type, struct SelvaNode *node);
+cursor_id_t selva_cursor_new(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Get a pointer to the node from a cursor.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_cursor_get(struct SelvaTypeEntry *type, cursor_id_t id);
+struct SelvaNode *selva_cursor_get(struct SelvaTypeEntry *type, cursor_id_t id) __attribute__((nonnull));
 
 /**
  * Update a cursor to point to a new node.
  */
 SELVA_EXPORT
-int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct SelvaNode *node);
+int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Delete a cursor.
  */
 SELVA_EXPORT
-void selva_cursor_del(struct SelvaTypeEntry *type, cursor_id_t id);
+void selva_cursor_del(struct SelvaTypeEntry *type, cursor_id_t id) __attribute__((nonnull));
 
 /**
  * Total count of cursors of type.
  */
 SELVA_EXPORT
-size_t selva_cursor_count(const struct SelvaTypeEntry *type);
+size_t selva_cursor_count(const struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * Total count of nodes of type.
  */
 SELVA_EXPORT
-size_t selva_node_count(const struct SelvaTypeEntry *type);
+size_t selva_node_count(const struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * Get the node id of of node.
  */
 SELVA_EXPORT
-node_id_t selva_get_node_id(const struct SelvaNode *node);
+node_id_t selva_get_node_id(const struct SelvaNode *node) __attribute__((nonnull, pure));
 
 /**
  * \addtogroup node_hash
@@ -202,22 +222,22 @@ node_id_t selva_get_node_id(const struct SelvaNode *node);
  * Calculate the node hash.
  */
 SELVA_EXPORT
-void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node);
+void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Clear the node hash.
  */
 SELVA_EXPORT
-void selva_node_hash_clear(struct SelvaNode *node);
+void selva_node_hash_clear(struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Get the current node_hash value.
  */
 SELVA_EXPORT
-selva_hash128_t selva_node_hash_get(struct SelvaNode *node);
+selva_hash128_t selva_node_hash_get(struct SelvaNode *node) __attribute__((nonnull));
 
 SELVA_EXPORT
-selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end);
+selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end) __attribute__((nonnull));
 
 /**
  * @}
@@ -265,6 +285,21 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
  */
 SELVA_EXPORT
 struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len);
+
+/**
+ * Get alias by destination id.
+ * This may not seem very useful but this is actually the way that allows you to
+ * traverse all aliases to the given node_id by following the `next` pointer or
+ * by calling selva_get_next_alias().
+ */
+SELVA_EXPORT
+const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
+
+SELVA_EXPORT
+const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias);
+
+SELVA_EXPORT
+const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len) __attribute__((nonnull(1), pure));
 
 SELVA_EXPORT
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field);
