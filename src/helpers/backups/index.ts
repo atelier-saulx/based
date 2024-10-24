@@ -226,7 +226,7 @@ export const backupsSelection = async ({
 
   db = await dbSelection({ context, backups, db })
 
-  if (isCloudFile || date) {
+  if (!file || isCloudFile || date) {
     file = await fileSelection({
       context,
       backups,

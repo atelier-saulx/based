@@ -26,19 +26,10 @@ export const flush =
       }
     }
 
-    const backups: BackupsSorted = await getList(context)
-    let { selectedDB } = await backupsSelection({
-      context,
-      backups,
-      db,
-      file: '',
-      showCurrent: false,
-    })
-
     try {
       await setFlush({
         context,
-        db: selectedDB,
+        db,
         org,
         project,
         env,
@@ -63,22 +54,30 @@ export const setFlush = async ({
   force,
 }: Based.Backups.Flush) => {
   const { basedClient } = await context.getBasedClients()
+  const backups: BackupsSorted = await getList(context)
+  let { selectedDB } = await backupsSelection({
+    context,
+    backups,
+    db,
+    file: '',
+    showCurrent: false,
+  })
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call('based:db-list')
-  const dbInfo = mountDBName(defaultDBInfo, db)
+  const dbInfo = mountDBName(defaultDBInfo, selectedDB)
 
   context.print
     .line()
     .info(`<b>Flush summary:</b>`)
     .info(`<b>Cluster:</b> <cyan>${cluster}</cyan>`)
     .info(
-      `<b>Org:</b> '<cyan>${org}</cyan>' / <b>Project:</b> '<cyan>${project}</cyan>' / <b>Env:</b> '<cyan>${env}</cyan>'`,
+      `<b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>`,
     )
-    .info(`<b>Config:</b> '<cyan>${dbInfo.configName}</cyan>'`)
-    .info(`<b>Service:</b> '<cyan>@based/env-db</cyan>'`)
-    .info(`<b>Database:</b> '<cyan>${dbInfo.name}</cyan>'`)
-    .info(`<b>Instance:</b> '<cyan>${dbInfo.instance}</cyan>`)
+    .info(`<b>Config:</b> <cyan>${dbInfo.configName}</cyan>`)
+    .info(`<b>Service:</b> <cyan>@based/env-db</cyan>`)
+    .info(`<b>Database:</b> <cyan>${dbInfo.name}</cyan>`)
+    .info(`<b>Instance:</b> <cyan>${dbInfo.instance}</cyan>`)
     .line()
 
   if (!force) {

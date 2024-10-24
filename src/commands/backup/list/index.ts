@@ -3,7 +3,6 @@ import { getDownload } from '../download/index.js'
 import { setRestore } from '../restore/index.js'
 import { setFlush } from '../flush/index.js'
 import {
-  backupsSelection,
   BackupsSorted,
   backupsSorting,
   backupsSummary,
@@ -34,7 +33,7 @@ export const list =
 
     limit = Number(limit)
 
-    const backups: BackupsSorted = await getList(context, limit, sort, true)
+    await getList(context, limit, sort, true)
 
     if (!skip) {
       context.print.line()
@@ -43,19 +42,9 @@ export const list =
       )
 
       if (downloadBackup) {
-        const { selectedFile, selectedDB } = await backupsSelection({
-          context,
-          backups,
-          sort,
-        })
-
         try {
           await getDownload({
             context,
-            db: selectedDB,
-            file: selectedFile,
-            path: '',
-            date: '',
           })
 
           destroy()
@@ -70,19 +59,9 @@ export const list =
       )
 
       if (restoreBackup) {
-        const { selectedFile, selectedDB } = await backupsSelection({
-          context,
-          backups,
-          sort,
-          showCurrent: false,
-        })
-
         try {
           await setRestore({
             context,
-            db: selectedDB,
-            file: selectedFile,
-            date: '',
             verbose: true,
           })
 
@@ -98,18 +77,9 @@ export const list =
       )
 
       if (deleteBackup) {
-        const { selectedDB } = await backupsSelection({
-          context,
-          backups,
-          sort,
-          file: '',
-          showCurrent: false,
-        })
-
         try {
           await setFlush({
             context,
-            db: selectedDB,
             org,
             project,
             env,

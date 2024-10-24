@@ -148,24 +148,24 @@ declare global {
     namespace Backups {
       type Downloads = {
         context: AppContext
-        db: string
-        file: string
-        date: string
-        path: string
+        db?: string
+        file?: string
+        date?: string
+        path?: string
         retry?: number
       }
 
       type Flush = Context.Project & {
         context: AppContext
-        db: string
+        db?: string
         force: boolean
       }
 
       type Restore = {
         context: AppContext
-        db: string
-        file: string
-        date: string
+        db?: string
+        file?: string
+        date?: string
         verbose: boolean
       }
     }

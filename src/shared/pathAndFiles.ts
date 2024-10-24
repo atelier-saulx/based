@@ -29,7 +29,7 @@ export const isValidPath = (path: string): boolean => {
 }
 
 export const isFileFromCloud = (key: string) =>
-  key && key.startsWith('env-db/') && key.endsWith('.rdb')
+  !!(key && key.startsWith('env-db/') && key.endsWith('.rdb'))
 
 export const cwd = process.cwd()
 

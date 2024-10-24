@@ -73,12 +73,18 @@ export const getDownload = async ({
     }
 
     isValid = isValidPath(path)
-    path = join(path, sanitizeFileName(file))
+    path = resolve(join(path, sanitizeFileName(selectedFile)))
 
     if (!isValid) {
-      throw new Error(
+      if (!retry) {
+        throw new Error('The specified path is invalid or does not exist.')
+      }
+
+      context.print.info(
         'The specified path is invalid or does not exist. Please provide a valid path.',
+        true,
       )
+      path = ''
     }
   } while (!isValid && retry > 0)
 
@@ -87,9 +93,7 @@ export const getDownload = async ({
     .info(`<b>Download summary:</b>`)
     .info(`<b>Database:</b> <reset><cyan>${selectedDB}</cyan></reset>`)
     .info(`<b>Backup file:</b> <reset><cyan>${selectedFile}</cyan></reset>`)
-    .info(
-      `<b>Saving to:</b> <reset><cyan>${resolve(replaceTilde(path), selectedFile)}</cyan></reset>`,
-    )
+    .info(`<b>Saving to:</b> <reset><cyan>${path}</cyan></reset>`)
     .line()
 
   if (!skip) {
@@ -122,7 +126,7 @@ export const getDownload = async ({
   }
 
   context.print.success(
-    `Saved backup in: <reset><cyan>${resolve(replaceTilde(path), selectedFile)}</cyan></reset>`,
+    `Saved backup in: <reset><cyan>${path}</cyan></reset>`,
     true,
   )
 }
