@@ -83,9 +83,9 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     char *data = (char *)PTAG_GETP(fields->data);
-    size_t off = fields->data_len;
-    size_t field_data_size = selva_fields_get_data_size(fs);
-    size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
+    const size_t off = fields->data_len;
+    const size_t field_data_size = selva_fields_get_data_size(fs);
+    const size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
 
     if (new_size > 0xFFFFFF) {
         db_panic("new_size too large: %zu", new_size);
