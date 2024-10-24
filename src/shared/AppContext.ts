@@ -94,6 +94,6 @@ export class AppContext {
   public getProgram = contextProgram
   public getBasedClients = contextBasedClients
   public parse = contextParse
-  public input = contextInput
+  public input = contextInput(this)
   public print = contextPrint(this.state)
 }

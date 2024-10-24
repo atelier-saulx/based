@@ -17,7 +17,7 @@ const authenticateUser = async (
 ): Promise<Based.Auth.AuthenticatedUser> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
   context.print.loading(
-    `Please check your inbox at '<b>${email}</b>', your login code is: '<b>${code}</b>'`,
+    context.i18n('methods.authenticateUser.loading', email, code),
   )
 
   await hub.call('login', {
@@ -26,7 +26,7 @@ const authenticateUser = async (
     code,
   })
 
-  context.print.stop().success("Email verified. Welcome, <b>let's rock!</b> 🔥")
+  context.print.stop().success(context.i18n('methods.authenticateUser.sucess'))
 
   return {
     ...(await hub.once('authstate-change')),
@@ -42,12 +42,14 @@ const hubConnection = async (
   const errorMessage = context.i18n('errors.404', file)
   const [emoji, target] =
     opts.org === 'saulx' && opts.project === 'based-cloud'
-      ? ['📡', 'Based Cloud']
+      ? ['📡', context.i18n('methods.hubConnection.cloud')]
       : opts.optionalKey
-        ? ['🌎', 'the environment manager']
-        : ['🪐', 'the environment']
+        ? ['🌎', context.i18n('methods.hubConnection.environmentManager')]
+        : ['🪐', context.i18n('methods.hubConnection.environment')]
 
-  context.print.loading(`Connecting to ${target}...`)
+  context.print.loading(
+    context.i18n('methods.hubConnection.connecting', target),
+  )
 
   const hubClient: BasedClient = getBasedClient(context, opts)
   if (!Object.keys(hubClient).length) {
@@ -60,7 +62,9 @@ const hubConnection = async (
 
   await hubClient.once('connect')
 
-  context.print.stop().success(`${emoji} Connected to ${target}.`)
+  context.print
+    .stop()
+    .success(context.i18n('methods.hubConnection.connected', emoji, target))
   clearTimeout(timeout)
 
   return hubClient
@@ -117,16 +121,23 @@ export const login = async ({
         value: user,
       }))
       choices.push({
-        name: 'Other user',
+        name: context.i18n('methods.login.otherUser'),
         value: null,
       })
 
-      user = await context.input.select('Select user:', choices, false, false)
+      user = await context.input.select(
+        context.i18n('methods.login.selectUser'),
+        choices,
+        false,
+        false,
+      )
     }
   }
 
   if ((!user && !email) || !users || !users.length) {
-    const email: string = await context.input.email('Enter your email address:')
+    const email: string = await context.input.email(
+      context.i18n('methods.login.email'),
+    )
 
     user = await authenticateUser(email, adminHub, cluster, context)
 
@@ -163,7 +174,7 @@ export const login = async ({
     type: 'based',
   })
 
-  context.print.success(`User: '${user.email}' logged in successfully!`, '👨‍🦱')
+  context.print.success(context.i18n('methods.login.success', user.email), '👨‍🦱')
 
   return {
     basedClient: client,

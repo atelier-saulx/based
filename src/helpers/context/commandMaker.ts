@@ -58,7 +58,6 @@ export function contextCommandMaker(
 
       addOptions(options, subCommand)
 
-      // Associa a ação ao subcomando
       if (subCommandsList && subCommandsList[name]) {
         subCommand.action(subCommandsList[name](subCommand))
       }

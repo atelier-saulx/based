@@ -353,4 +353,38 @@ export default {
     404: "Fatal error while trying to establish a <b>connection to the cloud</b>. Check your '<b>${file}</b>' file or <b>arguments</b> and try again.",
     499: "Could not connect. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.",
   },
+  context: {
+    configurationFileNotFound:
+      'No <b>Based</b> configuration file found or is empty. <b>It is recommended to create one.</b>',
+    file: '<dim>Project file:</dim> <b>${file}</b>',
+    org: '<dim>Org:</dim> <b>${org}</b>',
+    project: '<dim>Project:</dim> <b>${project}</b>',
+    env: '<dim>Env:</dim> <b>${env}</b>',
+    input: {
+      skip: '<dim>(S to skip)</dim>',
+      today: '<dim>(T for today)</dim>',
+      now: '<dim>(N for now)</dim>',
+      continue: 'Continue?',
+    },
+  },
+  methods: {
+    login: {
+      otherUser: 'Other user',
+      selectUser: 'Select user',
+      email: 'Enter your email address:',
+      success: 'User: <b>${email}</b> logged in successfully!',
+    },
+    hubConnection: {
+      cloud: 'Based Cloud',
+      environmentManager: 'the environment manager',
+      environment: 'the environment',
+      connecting: 'Connecting to ${target}...',
+      connected: '${emoji} Connected to ${target}.',
+    },
+    authenticateUser: {
+      loading:
+        'Please check your inbox at <b>${email}</b>, your login code is: <b>${code}</b>.',
+      sucess: "<b>Email verified. Welcome, let's rock!</b> 🔥",
+    },
+  },
 }

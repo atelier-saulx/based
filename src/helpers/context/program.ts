@@ -17,9 +17,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     )
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
-      this.print.warning(
-        `No <b>Based</b> configuration file found or is empty. <b>It is recommended to create one.</b>`,
-      )
+      this.print.warning(this.i18n('context.configurationFileNotFound'))
     }
   }
 
@@ -36,10 +34,10 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   this.set('basedProject', basedProject)
 
   this.print
-    .info(`<dim>Project file:</dim> <b>${basedProject.file}</b>`)
-    .info(`<dim>Org:</dim> <b>${basedProject.org}</b>`)
-    .info(`<dim>Project:</dim> <b>${basedProject.project}</b>`)
-    .info(`<dim>Env:</dim> <b>${basedProject.env}</b>`)
+    .info(this.i18n('context.file', basedProject.file))
+    .info(this.i18n('context.org', basedProject.org))
+    .info(this.i18n('context.project', basedProject.project))
+    .info(this.i18n('context.env', basedProject.env))
 
   return basedProject
 }
