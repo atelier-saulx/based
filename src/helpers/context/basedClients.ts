@@ -25,10 +25,10 @@ export async function contextBasedClients(): Promise<Based.Auth.Clients> {
 
   basedClients = {
     ...basedClients,
-    ...(basedClient && { basedClient }),
-    ...(adminHubBasedCloud && { adminHubBasedCloud }),
-    ...(envHubBasedCloud && { envHubBasedCloud }),
-    ...(destroy && { destroy }),
+    ...(basedClient !== undefined && { basedClient }),
+    ...(adminHubBasedCloud !== undefined && { adminHubBasedCloud }),
+    ...(envHubBasedCloud !== undefined && { envHubBasedCloud }),
+    ...(destroy !== undefined && { destroy }),
   }
 
   this.set('basedClients', basedClients)

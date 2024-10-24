@@ -236,6 +236,41 @@ export default {
         },
       ],
     },
+    test: {
+      name: 'test',
+      description: "Run your application's tests using your environment data.",
+      options: [
+        {
+          parameter: '-co, --command <command>',
+          description: "To run a specific command in your 'package.json'.",
+          default: 'test',
+        },
+        {
+          parameter: '-nb, --no-backup',
+          description: 'To not make a new backup before running the tests.',
+        },
+        {
+          parameter: '-nr, --no-restore',
+          description: 'To not restore the backup after running the tests.',
+        },
+        {
+          parameter: '--db <db>',
+          description:
+            'The DB instance name to be used to create/restore your backups.',
+          default: 'default',
+        },
+        {
+          parameter: '--file <file>',
+          description:
+            "Use an '.rdb' backup file to restore your data to the current version before running the tests. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option also sets '--no-backup' to 'false'. This option takes precedence over the '--date' option.",
+        },
+        {
+          parameter: `--date <${dateOnly.toLowerCase()}>`,
+          description:
+            'You can provide a date to use the most recent backup created on that date.',
+        },
+      ],
+    },
   },
   errors: {
     401: 'It seems you are not logged in. One possible reason could be an expired or invalid token. Please log in again to continue.',

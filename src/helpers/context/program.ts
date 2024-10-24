@@ -25,12 +25,12 @@ export async function contextProgram(): Promise<Based.Context.Project> {
 
   basedProject = {
     ...basedFile,
-    ...(cluster && { cluster }),
-    ...(org && { org }),
-    ...(project && { project }),
-    ...(env && { env }),
-    ...(apiKey && { apiKey }),
-    ...(file && { file }),
+    ...(cluster !== undefined && { cluster }),
+    ...(org !== undefined && { org }),
+    ...(project !== undefined && { project }),
+    ...(env !== undefined && { env }),
+    ...(apiKey !== undefined && { apiKey }),
+    ...(file !== undefined && { file }),
   }
 
   this.set('basedProject', basedProject)

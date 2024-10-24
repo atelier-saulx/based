@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { AppContext, dateOnly } from '../../shared/index.js'
+import { AppContext } from '../../shared/index.js'
 import { setMake, getList, setRestore } from '../backup/index.js'
 import { BackupsSorted, checkScript, runTests } from '../../helpers/index.js'
 
@@ -7,39 +7,16 @@ export const test = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
   await context.getProgram()
 
-  const cmd: Command = program
-    .command('test')
-    .description("Run your application's tests using your environment data.")
-    .option(
-      '-co, --command <command>',
-      "To run a specific command in your 'package.json'.",
-      'test',
-    )
-    .option(
-      '-nb, --no-backup',
-      'To not make a new backup before running the tests.',
-    )
-    .option(
-      '-nr, --no-restore',
-      'To not restore the backup after running the tests.',
-    )
-    .option(
-      '--db <db>',
-      'The DB instance name to be used to create/restore your backups.',
-      'default',
-    )
-    .option(
-      '--file <file>',
-      "Use an '.rdb' backup file to restore your data to the current version before running the tests. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option also sets '--no-backup' to 'false'. This option takes precedence over the '--date' option.",
-    )
-    .option(
-      `--date <${dateOnly.toLowerCase()}>`,
-      'You can provide a date to use the most recent backup created on that date.',
-    )
+  const cmd: Command = context.commandMaker('test')
 
   cmd.action(async ({ command, backup, restore, db, file, date }) => {
     const { destroy } = await context.getBasedClients()
+    const { skip } = context.getGlobalOptions()
     db = db !== '' ? db : 'default'
+
+    if (!skip) {
+      context.put('globalOptions', { skip: true })
+    }
 
     try {
       if (command) {

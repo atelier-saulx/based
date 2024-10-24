@@ -70,6 +70,20 @@ export class AppContext {
     this.state[key] = value
   }
 
+  public put(key: string, value: any) {
+    if (Array.isArray(this.state[key])) {
+      this.state[key] = [...this.state[key], value]
+    } else if (
+      typeof this.state[key] === 'object' &&
+      this.state[key] !== null
+    ) {
+      this.state[key] = {
+        ...this.state[key],
+        ...value,
+      }
+    }
+  }
+
   public get(key: string) {
     return this.state[key]
   }
