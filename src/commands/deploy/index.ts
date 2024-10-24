@@ -82,14 +82,7 @@ const queuedFnDeploy = queued(
 
 export const deploy = async (program: Command) => {
   const context: AppContext = AppContext.getInstance(program)
-  const cmd: Command = program
-    .command('deploy')
-    .description('Push your app to Based Cloud super fast as hell.')
-    .option('-w, --watch', 'watch mode')
-    .option(
-      '-f, --functions <functions...>',
-      'function names to deploy (variadic)',
-    )
+  const cmd: Command = context.commandMaker('deploy')
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {

@@ -112,7 +112,15 @@ declare global {
     }
 
     namespace Commands {
-      type Names = 'auth' | 'globalOptions' | 'backups' | 'logs'
+      type Names =
+        | 'auth'
+        | 'globalOptions'
+        | 'backups'
+        | 'logs'
+        | 'test'
+        | 'infra'
+        | 'deploy'
+        | 'dev'
 
       type SubCommandsList = Record<
         string,

@@ -271,6 +271,81 @@ export default {
         },
       ],
     },
+    infra: {
+      name: 'infra',
+      description: 'Manage your services running, create and destroy machines.',
+      usage: '[command]',
+      subCommands: [
+        {
+          name: 'init',
+          description:
+            'To create a very basic infra file in your repo to be used as your infra.',
+          options: [
+            {
+              parameter: '--path <path>',
+              description: 'The path to save the file.',
+            },
+            {
+              parameter: '-n, --name <name>',
+              description: 'The name of your machine.',
+            },
+            {
+              parameter: '-d, --description <description>',
+              description: 'Give a description to your machine.',
+            },
+            {
+              parameter: '-do, --domains <domains...>',
+              description: 'Your domains to be assigned to the machine.',
+            },
+            {
+              parameter: '-m, --machine <machine>',
+              description: 'The size of your machine.',
+              default: 't3.micro',
+            },
+            {
+              parameter: '--min <min>',
+              description:
+                'The minimum number of machines that will run your app.',
+              default: '1',
+            },
+            {
+              parameter: '--max <max>',
+              description:
+                'The maximum number of machines that you want to scale your app.',
+              default: '1',
+            },
+          ],
+        },
+      ],
+    },
+    deploy: {
+      name: 'deploy',
+      description: 'Push your app to Based Cloud super fast as hell.',
+      options: [
+        {
+          parameter: '-w, --watch',
+          description: 'watch mode',
+        },
+        {
+          parameter: '-f, --functions <functions...>',
+          description: 'function names to deploy (variadic)',
+        },
+      ],
+    },
+    dev: {
+      name: 'dev',
+      description: 'Develop your app running the Based Cloud locally.',
+      options: [
+        {
+          parameter: '--port <port>',
+          description: 'To set manually the Based Dev Server port.',
+        },
+        {
+          parameter: '-f, --function <functions...>',
+          description: 'The function names to be served (variadic).',
+        },
+      ],
+    },
   },
   errors: {
     401: 'It seems you are not logged in. One possible reason could be an expired or invalid token. Please log in again to continue.',

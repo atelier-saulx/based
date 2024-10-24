@@ -19,15 +19,7 @@ import pc from 'picocolors'
 
 export const dev = async (program: Command) => {
   const context: AppContext = AppContext.getInstance(program)
-
-  const cmd = program
-    .command('dev')
-    .description('Develop your app running the Based Cloud locally.')
-    .option('--port <port>', 'To set manually the Based Dev Server port.')
-    .option(
-      '-f, --function <functions...>',
-      'The function names to be served (variadic).',
-    )
+  const cmd: Command = context.commandMaker('dev')
 
   cmd.action(async ({ functions, port }) => {
     const { basedClient } = await context.getBasedClients()
