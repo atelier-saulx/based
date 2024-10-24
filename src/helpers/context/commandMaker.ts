@@ -1,6 +1,5 @@
 import { Command } from 'commander'
 
-// Função externa para processar opções
 const processOption = (option: any) => {
   const args: string[] = [option.parameter, option.description]
   const method: string = option.required ? 'requiredOption' : 'option'

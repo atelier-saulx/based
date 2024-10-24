@@ -8,7 +8,7 @@ export async function contextBasedClients(): Promise<Based.Auth.Clients> {
     return basedClients
   }
 
-  if (!basedClients) {
+  if (!basedClients || !Object.keys(basedClients).length) {
     basedClients = await login({})
 
     if (
@@ -16,9 +16,7 @@ export async function contextBasedClients(): Promise<Based.Auth.Clients> {
       !basedClients.adminHubBasedCloud ||
       !basedClients.envHubBasedCloud
     ) {
-      throw new Error(
-        `Fatal error during <b>authorization</b>. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.`,
-      )
+      throw new Error(this.i18n('errors.404', file))
     }
   }
 
@@ -32,6 +30,8 @@ export async function contextBasedClients(): Promise<Based.Auth.Clients> {
     ...(envHubBasedCloud && { envHubBasedCloud }),
     ...(destroy && { destroy }),
   }
+
+  this.set('basedClients', basedClients)
 
   return basedClients
 }

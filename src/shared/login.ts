@@ -7,7 +7,7 @@ import { AppContext } from './AppContext.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 10e3
+const connectionTimeout = 60e3
 
 const authenticateUser = async (
   email: string,
@@ -39,7 +39,7 @@ const hubConnection = async (
   opts: BasedOpts,
 ): Promise<BasedClient> => {
   const { file } = await context.get('basedProject')
-  const errorMessage = `Fatal error trying to <b>connect to the cloud</b>. Check your '<b>${file}</b>' file, your <b>username</b>, or <b>your arguments</b> and try again.`
+  const errorMessage = context.i18n('errors.404', file)
   const [emoji, target] =
     opts.org === 'saulx' && opts.project === 'based-cloud'
       ? ['📡', 'Based Cloud']
@@ -50,18 +50,15 @@ const hubConnection = async (
   context.print.loading(`Connecting to ${target}...`)
 
   const hubClient: BasedClient = getBasedClient(context, opts)
-
   if (!Object.keys(hubClient).length) {
     throw new Error(errorMessage)
   }
 
   const timeout = setTimeout(() => {
-    context.print.stop().fail(errorMessage, true)
+    context.print.stop().fail(context.i18n('errors.408'), true)
   }, connectionTimeout)
 
-  await hubClient.once('connect').catch(() => {
-    throw new Error(errorMessage)
-  })
+  await hubClient.once('connect')
 
   context.print.stop().success(`${emoji} Connected to ${target}.`)
   clearTimeout(timeout)
@@ -96,17 +93,23 @@ export const login = async ({
 
   if (users.length && !email) {
     const lastUser: Based.Auth.User = users.sort((a, b) => b?.ts - a?.ts)[0]
-    await adminHub
-      .setAuthState({
+
+    try {
+      await adminHub.setAuthState({
         ...lastUser,
         type: 'based',
       })
-      .then(() => {
-        user = lastUser
-      })
-      .catch(() => {
-        users = users.filter((user) => user !== lastUser)
-      })
+
+      user = lastUser
+    } catch (error) {
+      users = users.filter((user) => user !== lastUser)
+
+      if (!isNaN(error)) {
+        context.print.warning(context.i18n(`errors.${error}`), true)
+      } else {
+        context.print.warning(error)
+      }
+    }
 
     if (selectUser) {
       const choices: Based.Context.SelectInputItems[] = users.map((user) => ({
@@ -122,7 +125,7 @@ export const login = async ({
     }
   }
 
-  if (!user && !email) {
+  if ((!user && !email) || !users || !users.length) {
     const email: string = await context.input.email('Enter your email address:')
 
     user = await authenticateUser(email, adminHub, cluster, context)

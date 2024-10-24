@@ -25,16 +25,22 @@ class SharedBasedClient extends BasedClient {
 
       this.context.print
         .stop()
-        .fail(
-          `Could not connect. Check your '<b>${file}</b>' file or your arguments.`,
-          true,
-        )
+        .fail(this.context.i18n('errors.499', file), true)
     }, 5e3)
 
-    const authState = await super.setAuthState(args)
-    clearTimeout(timeout)
+    let authState: AuthState
 
-    return authState
+    try {
+      await super.setAuthState(args)
+
+      clearTimeout(timeout)
+
+      return authState
+    } catch (error) {
+      clearTimeout(timeout)
+
+      throw String(error).includes('token expired') ? 401 : error
+    }
   }
 
   override async destroy() {
