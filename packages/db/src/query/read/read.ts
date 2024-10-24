@@ -1,5 +1,6 @@
 import {
   ALIAS,
+  BINARY,
   BOOLEAN,
   ENUM,
   INT16,
@@ -210,7 +211,12 @@ export const readAllFields = (
       i += readMain(q, result, i, item)
     } else {
       const prop = q.schema.reverseProps[index]
-      if (prop.typeIndex === STRING || prop.typeIndex === ALIAS) {
+      if (prop.typeIndex === BINARY) {
+        q.include.propsRead[index] = id
+        const size = result.readUint32LE(i)
+        addField(prop, new Uint8Array(result.buffer, i + 4, size), item)
+        i += size + 4
+      } else if (prop.typeIndex === STRING || prop.typeIndex === ALIAS) {
         q.include.propsRead[index] = id
         const size = result.readUint32LE(i)
         if (size === 0) {
@@ -255,45 +261,48 @@ export const resultToObject = (
   return items
 }
 
-// use
-const nextItem = (
-  q: QueryDef,
-  result: Buffer,
-  offset: number,
-  end: number,
-): number => {
-  let i = offset
-  while (i < end) {
-    const index = result[i]
-    i++
-    if (index === 255) {
-      return i - offset
-    }
-    if (index === 252) {
-      // con
-    } else if (index === 254) {
-      const size = result.readUint32LE(i)
-      i += 5 + size
-    } else if (index === 253) {
-      const size = result.readUint32LE(i)
-      i += size + 9
-    } else if (index === 0) {
-      if (q.include.main.len === q.schema.mainLen) {
-        i += q.schema.mainLen
-      } else {
-        // console.log(q.include.main.len)
-        i += q.include.main.len
-      }
-    } else {
-      const prop = q.schema.reverseProps[index]
-      if (prop.typeIndex === 11) {
-        const size = result.readUint32LE(i)
-        i += size + 4
-      }
-    }
-  }
-  return i - offset
-}
+// // use
+// const nextItem = (
+//   q: QueryDef,
+//   result: Buffer,
+//   offset: number,
+//   end: number,
+// ): number => {
+//   let i = offset
+//   while (i < end) {
+//     const index = result[i]
+//     i++
+//     if (index === 255) {
+//       return i - offset
+//     }
+//     if (index === 252) {
+//       // con
+//     } else if (index === 254) {
+//       const size = result.readUint32LE(i)
+//       i += 5 + size
+//     } else if (index === 253) {
+//       const size = result.readUint32LE(i)
+//       i += size + 9
+//     } else if (index === 0) {
+//       if (q.include.main.len === q.schema.mainLen) {
+//         i += q.schema.mainLen
+//       } else {
+//         // console.log(q.include.main.len)
+//         i += q.include.main.len
+//       }
+//     } else {
+//       const prop = q.schema.reverseProps[index]
+//       if (prop.typeIndex === 11) {
+//         const size = result.readUint32LE(i)
+//         i += size + 4
+//       } else if (prop.typeIndex === 20) {
+//         const size = result.readUint32LE(i)
+//         i += size + 4
+//       }
+//     }
+//   }
+//   return i - offset
+// }
 
 // add generator
 export function* toObjectRange(q: QueryDef, result: Buffer) {

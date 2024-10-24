@@ -26,14 +26,24 @@ await test('simple', async (t) => {
   })
 
   db.create('user', {
-    file: new Uint8Array([1, 2, 3, 4]),
+    file: new Uint32Array([1, 2, 3, 4]),
   })
 
   db.drain()
 
   deepEqual(db.query('user').get().toObject(), [
     {
-      name: new Uint8Array([1, 2, 3, 4]),
+      id: 1,
+      file: new Uint8Array(new Uint32Array([1, 2, 3, 4]).buffer),
     },
   ])
+
+  const id = await db.create('user', {
+    file: new Uint8Array([1, 2, 3, 4]),
+  })
+
+  deepEqual(db.query('user', id).get().toObject(), {
+    id,
+    file: new Uint8Array([1, 2, 3, 4]),
+  })
 })

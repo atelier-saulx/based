@@ -7,18 +7,15 @@ const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
 pub const TypeId = u16;
-
 pub const StartSet = std.AutoHashMap(u16, u8);
-
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
 pub const Type = *selva.SelvaTypeEntry;
-
 pub const FieldSchema = *const selva.SelvaFieldSchema;
-
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
 var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+// does not need to be a global one
 const globalAllocator = globalAllocatorArena.allocator();
 
 pub const DbCtx = struct {
@@ -38,7 +35,7 @@ pub const DbCtx = struct {
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
 
 pub fn createDbCtx(id: u32) !*DbCtx {
-    // if you want any var to persist out of the stack you have to do this
+    // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try globalAllocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
