@@ -1,23 +1,22 @@
 import diff from 'arr-diff'
-import { AdminLogsData, EnvLogsData } from './formatLogs.js'
 import { AppContext } from '../../shared/index.js'
 
 export const subscribeLogs = async (
   context: AppContext,
   filters: Based.Logs.Filter,
-  renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
+  renderData: Based.Logs.RenderData,
 ) => {
   const { envHubBasedCloud, adminHubBasedCloud } =
     await context.getBasedClients()
   const { cluster, org, env, project } = await context.getProgram()
-  let adminLogsPrevious: AdminLogsData[] = []
-  let envLogsPrevious: EnvLogsData[] = []
+  let adminLogsPrevious: Based.Logs.AdminLogsData[] = []
+  let envLogsPrevious: Based.Logs.EnvLogsData[] = []
   let finalAdminData = []
   let finalEnvData = []
   const isOnlyApp: boolean = filters.app && !filters.infra
   const isOnlyInfra: boolean = !filters.app && filters.infra
   const isBoth: boolean = filters.app && filters.infra
-  const isNone: boolean = !filters.app && !filters.infra
+  const isNone: boolean = !isBoth
 
   context.print.stop()
 
@@ -29,13 +28,15 @@ export const subscribeLogs = async (
         env,
         project,
       })
-      .subscribe(async (data: AdminLogsData[]) => {
+      .subscribe(async (data: Based.Logs.AdminLogsData[]) => {
         if (!Array.isArray(data)) {
           throw new Error('Fatal error reading your logs. Try again.')
         }
 
         const finalData = diff(adminLogsPrevious, data)
+
         finalAdminData.push(finalData)
+
         adminLogsPrevious = data
       })
   }
@@ -43,21 +44,23 @@ export const subscribeLogs = async (
   if (isBoth || isOnlyApp || isNone) {
     envHubBasedCloud
       .query('based:logs')
-      .subscribe(async (data: EnvLogsData[]) => {
+      .subscribe(async (data: Based.Logs.EnvLogsData[]) => {
         if (!Array.isArray(data)) {
           throw new Error('Fatal error reading your logs. Try again.')
         }
 
         const finalData = diff(envLogsPrevious, data)
+
         finalEnvData.push(finalData)
+
         envLogsPrevious = data
       })
   }
 
   setInterval(() => {
-    renderData(...finalAdminData, ...finalEnvData)
+    renderData([...finalAdminData, ...finalEnvData].flat())
 
     finalAdminData = []
     finalEnvData = []
-  }, 1000)
+  }, 1e3)
 }

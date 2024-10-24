@@ -132,6 +132,7 @@ export const filter =
       }
 
       // TODO get all the services running to conclude this feature
+      // THE OPTION IS ALREADY DECLARED YOU JUST NEED TO ADD TO THE I18N TO SHOW IT
       // if (!filters.service || !filters.service.length) {
       //   const filterByService: boolean = await context.input.confirm(
       //     `Do you want to filter by service?`,

@@ -1,7 +1,5 @@
 import { AppContext, getTerminal } from '../../shared/index.js'
 import {
-  AdminLogsData,
-  EnvLogsData,
   filterLogs,
   formatLogs,
   subscribeLogs,
@@ -84,7 +82,7 @@ export const visualizer = async (
     )
   }
 
-  let renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void
+  let renderData: Based.Logs.RenderData
 
   if (filters.monitor) {
     const { kill, addMessage } = getTerminal(
@@ -102,10 +100,9 @@ export const visualizer = async (
       process.exit(0)
     })
 
-    renderData = (...data: AdminLogsData[] | EnvLogsData[]) =>
-      addMessage(formatLogs(filterLogs(data, filters)))
+    renderData = (data) => addMessage(formatLogs(filterLogs(data, filters)))
   } else {
-    renderData = (...data: AdminLogsData[] | EnvLogsData[]) => {
+    renderData = (data) => {
       const filteredData = formatLogs(filterLogs(data, filters))
 
       for (const line of filteredData) {

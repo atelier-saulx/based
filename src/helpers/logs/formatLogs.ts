@@ -1,25 +1,6 @@
 import { format, isAfter, isBefore, isWithinInterval, toDate } from 'date-fns'
 import { logViewerDateAndTime, parseMessage } from '../../shared/index.js'
 
-export type EnvLogsData = {
-  cs: number
-  lvl?: 'error' | 'info'
-  ts: number
-  fn: string
-  msg: string
-}
-
-export type AdminLogsData = {
-  i: string // instance id/key
-  eid: string
-  lvl?: 'error' | 'info'
-  ts: number
-  mid: string // machine id
-  url: string // ip/url
-  srvc: string
-  msg: string
-}
-
 const thresholdMessageLength: number = 4
 
 const logLevelColor = (level: string): string => {
@@ -53,7 +34,7 @@ const templateMessage = (
 }
 
 const isToBeFiltered = (
-  log: EnvLogsData & AdminLogsData,
+  log: Based.Logs.EnvLogsData & Based.Logs.AdminLogsData,
   filters: Based.Logs.Filter,
 ) => {
   const isMessageInvalid = !log.msg || log.msg.length < thresholdMessageLength
@@ -100,7 +81,7 @@ const isToBeFiltered = (
 }
 
 export const filterLogs = (
-  data: EnvLogsData[] | AdminLogsData[],
+  data: Based.Logs.EnvLogsData[] | Based.Logs.AdminLogsData[],
   filters: Based.Logs.Filter,
 ) => {
   if (!data?.length) {
@@ -164,12 +145,14 @@ export const filterLogs = (
     })
 }
 
-export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
-  return data.map((log: EnvLogsData | AdminLogsData) => {
+export const formatLogs = (
+  data: Based.Logs.EnvLogsData[] | Based.Logs.AdminLogsData[],
+) => {
+  return data.map((log: Based.Logs.EnvLogsData | Based.Logs.AdminLogsData) => {
     let labels: string[]
 
     if ('cs' in log) {
-      const { lvl, ts, fn, cs, msg } = log as EnvLogsData
+      const { lvl, ts, fn, cs, msg } = log as Based.Logs.EnvLogsData
 
       labels = [
         '<b><magenta>[app]</magenta></b>',
@@ -180,7 +163,7 @@ export const formatLogs = (data: EnvLogsData[] | AdminLogsData[]) => {
 
       return templateMessage(ts, labels, msg)
     } else {
-      const { lvl, ts, srvc, mid, url, msg } = log as AdminLogsData
+      const { lvl, ts, srvc, mid, url, msg } = log as Based.Logs.AdminLogsData
 
       labels = [
         '<b><magenta>[infra]</magenta></b>',

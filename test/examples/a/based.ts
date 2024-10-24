@@ -1,8 +1,8 @@
-// export default {
-//   org: 'saulx',
-//   project: 'eu-observer',
-//   env: 'production',
-// }
+export default {
+  org: 'saulx',
+  project: 'eu-observer',
+  env: 'production',
+}
 
 // export default {
 //   org: 'saulx',
@@ -10,11 +10,11 @@
 //   env: 'production',
 // }
 
-export default {
-  org: 'github-actions',
-  project: 'cli-test',
-  env: 'production',
-}
+// export default {
+//   org: 'github-actions',
+//   project: 'cli-test',
+//   env: 'production',
+// }
 
 // export default {
 //   org: 'error',

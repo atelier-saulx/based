@@ -1,10 +1,9 @@
 import { AppContext } from '../../shared/index.js'
-import { AdminLogsData, EnvLogsData } from './formatLogs.js'
 
 export const getLogs = async (
   context: AppContext,
   filters: Based.Logs.Filter,
-  renderData: (...data: AdminLogsData[] | EnvLogsData[]) => void,
+  renderData: Based.Logs.RenderData,
 ) => {
   const { envHubBasedCloud, adminHubBasedCloud } =
     await context.getBasedClients()
@@ -13,7 +12,7 @@ export const getLogs = async (
   const isOnlyApp: boolean = filters.app && !filters.infra
   const isOnlyInfra: boolean = !filters.app && filters.infra
   const isBoth: boolean = filters.app && filters.infra
-  const isNone: boolean = !filters.app && !filters.infra
+  const isNone: boolean = !isBoth
 
   context.print.stop()
 
@@ -34,5 +33,5 @@ export const getLogs = async (
     finalData.push(await envHubBasedCloud.query('based:logs').get())
   }
 
-  renderData(...finalData)
+  renderData(finalData.flat())
 }

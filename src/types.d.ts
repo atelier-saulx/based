@@ -112,7 +112,7 @@ declare global {
     }
 
     namespace Commands {
-      type Names = 'auth' | 'globalOptions' | 'backups'
+      type Names = 'auth' | 'globalOptions' | 'backups' | 'logs'
 
       type SubCommandsList = Record<
         string,
@@ -199,6 +199,27 @@ declare global {
         service?: string | string[]
         machine?: string | string[]
       }
+
+      type EnvLogsData = {
+        cs: number
+        lvl?: 'error' | 'info'
+        ts: number
+        fn: string
+        msg: string
+      }
+
+      type AdminLogsData = {
+        i: string // instance id/key
+        eid: string
+        lvl?: 'error' | 'info'
+        ts: number
+        mid: string // machine id
+        url: string // ip/url
+        srvc: string
+        msg: string
+      }
+
+      type RenderData = (data: AdminLogsData[] | EnvLogsData[]) => void
     }
 
     type ConfigBase = BasedFunctionConfig & {

@@ -1,4 +1,4 @@
-import { dateOnly } from '../shared/dateAndTimeFormats.js'
+import { dateOnly, externalDateAndTime } from '../shared/dateAndTimeFormats.js'
 
 export default {
   appName: 'Based CLI',
@@ -153,6 +153,86 @@ export default {
                 'Flush without confirmation. Warning! This action cannot be undone.',
             },
           ],
+        },
+      ],
+    },
+    logs: {
+      name: 'logs',
+      usage: '[command]',
+      description:
+        'Visualize the logs stream about your functions or the cloud infrastructure.',
+      subCommands: [
+        {
+          name: 'filter',
+          description: 'List and filter your logs.',
+          options: [
+            {
+              parameter: '--monitor',
+              description: 'To display the logs in an interactive UI.',
+            },
+            {
+              parameter: '--stream',
+              description:
+                'To display the logs in real time. This option takes precedence over "limit", "before", "after", and "sort" options.',
+            },
+            {
+              parameter: '--collapsed',
+              description: 'To display the content of the logs collapsed.',
+              default: false,
+            },
+            {
+              parameter: '--app',
+              description:
+                'To display the content only about your app and your functions.',
+            },
+            {
+              parameter: '--infra',
+              description:
+                'To display the content only about the infrastructure of your environment.',
+            },
+            {
+              parameter: '--level <level>',
+              description:
+                'Filter by level (available levels: all | info | error).',
+              default: 'all',
+            },
+            {
+              parameter: '-l, --limit <limit>',
+              description:
+                'Limit the number of displayed logs (all: 0, max: 1000)(Limit has no effect when logs are being displayed as a live stream in real-time).',
+              default: '100',
+            },
+            {
+              parameter: '-s, --sort <sort>',
+              description:
+                'Sort the order of the logs asc/desc (Sorting has no effect when logs are being displayed as a live stream in real-time).',
+              default: 'desc',
+            },
+            {
+              parameter: `-sD, --start-date <${externalDateAndTime.toLowerCase()}>`,
+              description: 'The start date and time for filtering logs.',
+            },
+            {
+              parameter: `-eD, --end-date <${externalDateAndTime.toLowerCase()}>`,
+              description: 'The end date and time for filtering logs.',
+            },
+            {
+              parameter: '-cs, --checksum <cheksum>',
+              description: 'Filter by checksum.',
+            },
+            {
+              parameter: '-f, --function <functions...>',
+              description: 'Filter by function.',
+            },
+            {
+              parameter: '-m, --machine <machines...>',
+              description: 'Filter by machine ID.',
+            },
+          ],
+        },
+        {
+          name: 'clear',
+          description: 'Clear the logs.',
         },
       ],
     },
