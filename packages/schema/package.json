@@ -25,6 +25,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "@saulx/utils": "^5.0.0",
     "picocolors": "^1.1.0"
   }
 }

@@ -1,3 +1,4 @@
+import { deepEqual } from '@saulx/utils'
 import {
   SchemaAnyProp,
   SchemaBoolean,
@@ -243,10 +244,12 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
           if ('items' in inverseProp) {
             inverseProp = inverseProp.items
           }
-          if (inverseProp === prop) {
+
+          if (deepEqual(prop, inverseProp)) {
             return
           }
         }
+
         throw Error(INVALID_VALUE)
       }
 
