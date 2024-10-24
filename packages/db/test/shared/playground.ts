@@ -16,36 +16,34 @@ try {
   await fs.rm(dbFolder, { recursive: true })
 } catch (err) {}
 
-const db = new BasedDb({
-  path: dbFolder,
-})
+// dbFolder
 
-await db.start()
+const makeDb = async (path: string) => {
+  const db = new BasedDb({
+    path,
+  })
 
-// const db2 = new BasedDb({
-//   path: dbFolder + '/2',
-// })
+  await db.start()
 
-console.log('\nJS GO DO BUT')
+  console.log('\nJS GO DO BUT')
 
-db.putSchema({
-  types: {
-    bla: { props: { name: 'string' } },
-  },
-})
+  db.putSchema({
+    types: {
+      bla: { props: { name: 'string' } },
+    },
+  })
 
-await db.create('bla', {
-  name: 'DERP ',
-})
+  await db.create('bla', {
+    name: 'DERP ',
+  })
 
-console.log(db.query('bla').get())
+  console.log(db.query('bla').get())
 
-console.log('YO')
+  console.log('YO')
 
-await wait(100)
+  await wait(100)
 
-// await db2.start()
+  await db.stop()
+}
 
-await db.stop()
-
-// await db2.stop()
+await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])
