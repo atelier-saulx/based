@@ -69,7 +69,8 @@ export const WEAK_REFERENCES = 16
 export const MICRO_BUFFER = 17
 export const ALIAS = 18
 export const ALIASES = 19
-export const BINARY = 20
+
+export const BINARY = 25
 
 export const TYPE_INDEX_MAP = {
   alias: ALIAS,

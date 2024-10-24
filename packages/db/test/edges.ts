@@ -1,5 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { deepEqual } from './shared/assert.js'
 
 await test('edges', async (t) => {
   const db = new BasedDb({
@@ -49,8 +50,9 @@ await test('edges', async (t) => {
               //     ref: 'country',
               //   },
               // },
+              $lang: 'string',
               $role: ['writer', 'editor'],
-              // $rating: 'uint32',
+              $rating: 'uint32',
               // $price: ['mep', 'map'],
               // $email: 'string',
             },
@@ -80,26 +82,35 @@ await test('edges', async (t) => {
     contributors: [
       {
         id: mrSnurp,
+        $lang: 'en',
+        $rating: 5,
         $role: 'writer',
+        // $lang: 'en',
       },
     ],
   })
 
   db.drain()
 
-  const x = db
-    .query('article')
-    // .include('name')
-    // .include('contributors.$role')
-    // .include('contributors.$rating')
-    // .include('contributors.$email')
-    // .include('contributors.$lang')
-    // .include('contributors.$friend')
-    .include('contributors.$role')
-    // .include('contributors.$countries')
-    .get()
+  const x = db.query('article').include('contributors.$role').get()
 
   x.debug()
 
-  console.log(x)
+  deepEqual(x.toObject(), [
+    {
+      id: 1,
+      contributors: [{ id: 1, $role: 'writer' }],
+    },
+  ])
+
+  const y = db.query('article').include('contributors.$rating').get()
+
+  y.debug()
+
+  deepEqual(y.toObject(), [
+    {
+      id: 1,
+      contributors: [{ id: 1, $rating: 5 }],
+    },
+  ])
 })

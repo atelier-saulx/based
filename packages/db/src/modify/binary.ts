@@ -1,10 +1,9 @@
 import { BasedDb } from '../index.js'
 import { flushBuffer } from '../operations.js'
 import { SchemaTypeDef, PropDef } from '../schema/types.js'
-import { CREATE, UPDATE, ModifyOp } from './types.js'
+import { UPDATE, ModifyOp } from './types.js'
 import { ModifyState, modifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { buffer } from 'stream/consumers'
 
 export function writeBinary(
   value: Buffer | null,

@@ -45,6 +45,7 @@ const inspectObject = (
   object: any,
   q: QueryDef,
   path: string,
+  // make this nice
   level: number = 0,
 ) => {
   const prefix = ''.padEnd(level * 2 + 2, ' ')
@@ -52,9 +53,15 @@ const inspectObject = (
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
+
+    // console.log(key, def)
     let v = object[k]
     str += prefix + `${k}: `
-    if (key === 'id') {
+
+    if (k[0] === '$') {
+      str += `${v}`
+      str += '\n'
+    } else if (key === 'id') {
       str += `${v}`
       str += '\n'
     } else if (!def) {

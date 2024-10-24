@@ -155,9 +155,8 @@ export const readAllFields = (
       return i - offset
     }
     if (index === 252) {
-      const prop = result[i + 1]
+      const prop = result[i]
 
-      i++
       const edgeDef = q.edges.reverseProps[prop]
       // if 13 / 14 / 11
       const t = edgeDef.typeIndex
@@ -165,7 +164,9 @@ export const readAllFields = (
       } else if (t === 14) {
       } else if (t === 1) {
       } else {
+        i++
         readMainValue(edgeDef, result, i, item)
+        console.log('DERP', i, prop)
         i += edgeDef.len
       }
     } else if (index === 254) {
