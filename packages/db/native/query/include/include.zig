@@ -124,6 +124,7 @@ pub fn getFields(
         if (isEdge) {
             // handle this correctly...
             size += 2;
+            // include alias and binary
             if (edgeType == 11) {
                 size += (valueLen + 4);
             } else if (edgeType == 10 or edgeType == 9) {
