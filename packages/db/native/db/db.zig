@@ -38,7 +38,8 @@ pub const DbCtx = struct {
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
 
 pub fn createDbCtx(id: u32) !*DbCtx {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena = try globalAllocator.create(std.heap.ArenaAllocator);
+    arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
 
     // magic with allocators
@@ -48,7 +49,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     const b = try allocator.create(DbCtx);
     b.* = .{
         .id = 0,
-        .arena = arena,
+        .arena = arena.*,
         .allocator = allocator,
         .readTxn = undefined,
         .env = undefined,

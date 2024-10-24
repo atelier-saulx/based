@@ -105,6 +105,7 @@ pub fn querySort(
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
     const typeEntry = try db.getType(ctx.db, typeId);
+
     const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
 
     var end: bool = false;

@@ -160,7 +160,6 @@ fn createSortIndex(
 ) !void {
     const txn = try createTransaction(false, ctx);
     const typePrefix: [2]u8 = .{ name[0], name[1] };
-
     const typeId: u16 = @bitCast(typePrefix);
 
     var dbi: c.MDB_dbi = 0;
@@ -263,12 +262,15 @@ pub fn getOrCreateReadSortIndex(
     }
 
     const name = getSortName(typeId, field, start);
+
     var s = ctx.sortIndexes.get(name);
+
     if (s == null) {
         createSortIndex(ctx, name, start, len, field, fieldType) catch |err| {
             std.log.err("Cannot create writeSortIndex name: {any} err: {any} \n", .{ name, err });
             return err;
         };
+
         const newSortIndex = createReadSortIndex(ctx, name, queryId, len, start) catch |err| {
             std.log.err("Cannot create readSortIndex  name: {any} err: {any} \n", .{ name, err });
             return err;
