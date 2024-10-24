@@ -27,6 +27,7 @@ export const getBasedFile = async (
     }
 
     Object.assign(basedProject, basedFileContent)
+
     return basedProject
   } else {
     return null

@@ -58,6 +58,7 @@ export class AppContext {
     if (!AppContext.instance) {
       AppContext.instance = new AppContext(program, languages)
     }
+
     return AppContext.instance
   }
 

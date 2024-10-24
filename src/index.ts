@@ -37,6 +37,6 @@ export const init = async (extract?: boolean) => {
 
     await program.parseAsync(process.argv)
   } catch (e) {
-    context.print.fail(`<red>${e.message}</red>`)
+    context.print.fail(`<reset><red>${e.message}</red></reset>`)
   }
 }

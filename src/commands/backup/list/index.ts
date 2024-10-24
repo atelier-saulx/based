@@ -17,6 +17,7 @@ export const list =
     const { skip } = context.getGlobalOptions()
     const { cluster, org, env, project } = await context.getProgram()
     const { destroy } = await context.getBasedClients()
+
     sort = sort.toLowerCase()
 
     if (sort && sort !== 'desc' && sort !== 'asc') {

@@ -112,7 +112,12 @@ declare global {
     }
 
     namespace Commands {
-      type Names = 'auth' | 'globalOptions'
+      type Names = 'auth' | 'globalOptions' | 'backups'
+
+      type SubCommandsList = Record<
+        string,
+        (program: Command) => (...args: any[]) => Promise<void> | void
+      >
     }
 
     namespace Auth {

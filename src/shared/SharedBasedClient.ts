@@ -21,10 +21,12 @@ class SharedBasedClient extends BasedClient {
 
   override async setAuthState(args: AuthState) {
     const timeout = setTimeout(() => {
+      const { file } = this.context.get('basedProject')
+
       this.context.print
         .stop()
         .fail(
-          `Could not connect. Check your '<b>based.json</b>' file or your arguments.`,
+          `Could not connect. Check your '<b>${file}</b>' file or your arguments.`,
           true,
         )
     }, 5e3)
