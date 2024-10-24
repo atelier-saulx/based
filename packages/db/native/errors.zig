@@ -18,6 +18,7 @@ pub const Napi = error{
     CannotGetInt,
     CannotGetType,
     CannotGetBool,
+    CannotGetExternal,
 };
 
 pub const SelvaError = error{

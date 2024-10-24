@@ -14,15 +14,18 @@ pub fn updateSchema(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.
 }
 
 fn updateSchemaInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
-    if (db.ctx.selva == null) {
+    const args = try napi.getArgs(3, env, info);
+    const typeId = try napi.get(u16, env, args[0]);
+    const schema = try napi.get([]u8, env, args[1]);
+    const ctx = try napi.get(*db.DbCtx, env, args[2]);
+
+    // std.debug.print("new eq", .{})
+
+    if (ctx.selva == null) {
         return errors.SelvaError.DB_NOT_CREATED;
     }
 
-    const args = try napi.getArgs(2, env, info);
-    const typeId = try napi.get(u16, env, args[0]);
-    const schema = try napi.get([]u8, env, args[1]);
-
-    try errors.selva(selva.selva_db_schema_create(db.ctx.selva, typeId, schema.ptr, schema.len));
+    try errors.selva(selva.selva_db_schema_create(ctx.selva, typeId, schema.ptr, schema.len));
 
     return null;
 }

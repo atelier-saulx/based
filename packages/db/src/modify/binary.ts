@@ -4,21 +4,28 @@ import { SchemaTypeDef, PropDef } from '../schema/types.js'
 import { CREATE, UPDATE, ModifyOp } from './types.js'
 import { ModifyState, modifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
+import { buffer } from 'stream/consumers'
 
-export function writeString(
-  value: string | null,
+export function writeBinary(
+  value: Buffer | null,
   ctx: BasedDb['modifyCtx'],
   def: SchemaTypeDef,
   t: PropDef,
   res: ModifyState,
   modifyOp: ModifyOp,
 ) {
-  if (typeof value !== 'string' && value !== null) {
-    modifyError(res, t, value)
-    return
+  if (!(value instanceof Buffer) && value !== null) {
+    // @ts-ignore
+    if (value && value.buffer instanceof ArrayBuffer) {
+      // @ts-ignore
+      value = Buffer.from(value.buffer)
+    } else {
+      modifyError(res, t, value)
+      return
+    }
   }
-  const len = value?.length
-  if (!len) {
+  const byteLen = value?.byteLength
+  if (!byteLen) {
     if (modifyOp === UPDATE) {
       if (ctx.len + 11 > ctx.max) {
         flushBuffer(ctx.db)
@@ -28,19 +35,14 @@ export function writeString(
       ctx.len++
     }
   } else {
-    if (modifyOp === CREATE) {
-      def.stringPropsCurrent[t.prop] = 2
-      ctx.hasStringField++
-    }
-    const byteLen = len + len
     if (byteLen + 5 + ctx.len + 11 > ctx.max) {
       flushBuffer(ctx.db)
     }
     setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
-    const size = ctx.buf.write(value, ctx.len, 'utf8')
-    ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
-    ctx.len += size
+    ctx.buf.set(value, ctx.len)
+    ctx.buf.writeUint32LE(byteLen, ctx.len + 1 - 5)
+    ctx.len += byteLen
   }
 }

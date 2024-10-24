@@ -29,10 +29,10 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         return data.len;
     }
 
-    try db.writeField(data, ctx.node.?, ctx.fieldSchema.?);
+    try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
     if (ctx.field == 0) {
-        if (sort.hasMainSortIndexes(ctx.typeId)) {
-            var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
+        if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
+            var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |start| {
                 const sortIndex = try getSortIndex(ctx, start.*);
                 try sort.writeField(ctx.id, data, sortIndex.?);

@@ -40,7 +40,7 @@ fn prealloc_refs(ctx: *ModifyCtx, data: []u8) void {
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try db.getType(refTypeId);
+    const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const len = data.len;
     var i: usize = 1;
 
@@ -57,6 +57,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
 
         const node = try db.upsertNode(id, refTypeEntry);
         const ref = try db.insertReference(
+            ctx.db,
             node,
             ctx.node.?,
             ctx.fieldSchema.?,
@@ -80,6 +81,6 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !void {
     while (i < len) : (i += 5) {
         // TODO check with olli if this also clean up edges
         const id = readInt(u32, data, i + 1);
-        try db.deleteReference(ctx.node.?, ctx.fieldSchema.?, id);
+        try db.deleteReference(ctx.db, ctx.node.?, ctx.fieldSchema.?, id);
     }
 }

@@ -24,7 +24,7 @@ pub fn queryIds(
     offset: u32,
     limit: u32,
 ) !void {
-    const typeEntry = try db.getType(typeId);
+    const typeEntry = try db.getType(ctx.db, typeId);
     var i: u32 = 0;
     var start: u16 = undefined;
     var len: u16 = undefined;
@@ -46,7 +46,7 @@ pub fn queryIds(
         if (node == null) {
             continue :sortItem;
         }
-        if (!filter(node.?, typeEntry, conditions)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions)) {
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, try db.getFieldSchema(sortField, typeEntry));
@@ -102,10 +102,11 @@ pub fn querySort(
     include: []u8,
     sortBuffer: []u8,
 ) !void {
-    const readTxn = try sort.initReadTxn();
+    const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
-    const typeEntry = try db.getType(typeId);
-    const sortIndex = try sort.getOrCreateReadSortIndex(typeId, sortBuffer, ctx.id);
+    const typeEntry = try db.getType(ctx.db, typeId);
+
+    const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
 
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
@@ -141,7 +142,7 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        if (!filter(node.?, typeEntry, conditions)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
 

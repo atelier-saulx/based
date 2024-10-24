@@ -10,9 +10,9 @@ const getSortIndex = Modify.getSortIndex;
 // TODO maybe remove this completely
 pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.field == 0) {
-        if (sort.hasMainSortIndexes(ctx.typeId)) {
+        if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
             const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-            var it = db.ctx.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
+            var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
             while (it.next()) |key| {
                 const start = key.*;
                 const sortIndex = (try getSortIndex(ctx, start)).?;
@@ -46,7 +46,7 @@ pub fn deleteFieldOnlyReal(ctx: *ModifyCtx) !usize {
         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, ctx.currentSortIndex.?);
     }
 
-    try db.deleteField(ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+    try db.deleteField(ctx.db, ctx.typeEntry.?, ctx.id, ctx.node.?, ctx.fieldSchema.?);
 
     return 0;
 }

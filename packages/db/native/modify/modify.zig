@@ -43,6 +43,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const size = try napi.get(u32, env, args[1]);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -62,6 +63,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeEntry = null,
         .fieldSchema = null,
         .fieldType = types.Prop.NULL,
+        .db = dbCtx,
     };
 
     var offset: u32 = 0;
@@ -88,7 +90,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 offset = 5;
             }
         } else if (operationType == 10) {
-            db.deleteNode(ctx.node.?, ctx.typeEntry.?) catch {};
+            db.deleteNode(ctx.db, ctx.node.?, ctx.typeEntry.?) catch {};
             i = i + 1;
         } else if (operationType == 9) {
             // create or get
@@ -103,7 +105,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         } else if (operationType == 2) {
             // SWITCH TYPE
             ctx.typeId = readInt(u16, operation, 0);
-            ctx.typeEntry = try db.getType(ctx.typeId);
+            ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
             i = i + 3;
         } else if (operationType == 3) {
             i += try createField(&ctx, readData(ctx.fieldType, operation)) + offset;

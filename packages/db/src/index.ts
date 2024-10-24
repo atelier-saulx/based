@@ -8,7 +8,7 @@ import {
   schemaToSelvaBuffer,
 } from './schema/schema.js'
 import { wait } from '@saulx/utils'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, hash, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
 import { flushBuffer } from './operations.js'
@@ -20,6 +20,10 @@ import { genId } from './schema/utils.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
+
+const SCHEMA_FILE = 'schema.json'
+const COMMON_SDB_FILE = 'common.sdb'
+const block_sdb_file = (typeId: number, start: number) => `${typeId}_${start}.sdb`
 
 export class BasedDb {
   isDraining: boolean = false
@@ -41,6 +45,10 @@ export class BasedDb {
     db: BasedDb
   }
 
+  id: number
+
+  dbCtxExternal: any
+
   schema: Schema & { lastId: number }
 
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -51,12 +59,15 @@ export class BasedDb {
   native = db
 
   fileSystemPath: string
+  splitDump: boolean
 
   constructor({
     path,
+    splitDump,
     maxModifySize,
   }: {
     path: string
+    splitDump?: boolean
     maxModifySize?: number
     fresh?: boolean
   }) {
@@ -82,6 +93,7 @@ export class BasedDb {
     }
 
     this.fileSystemPath = path
+    this.splitDump = !!splitDump
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
   }
@@ -95,6 +107,8 @@ export class BasedDb {
       lastId: number
     }[]
   > {
+    this.id = stringHash(this.fileSystemPath) >>> 0
+
     if (opts.clean) {
       try {
         await fs.rm(this.fileSystemPath, { recursive: true })
@@ -104,23 +118,42 @@ export class BasedDb {
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
-    const dumppath = join(this.fileSystemPath, 'data.sdb')
+    if (this.splitDump) {
+      const dumps = (await fs.readdir(this.fileSystemPath)).filter(
+        (fname: string) => fname.endsWith('.sdb') && fname != COMMON_SDB_FILE,
+      )
 
-    const s = await fs.stat(dumppath).catch(() => null)
-
-    db.start(this.fileSystemPath, s ? dumppath : null, false)
+      this.dbCtxExternal = db.start(this.fileSystemPath, null, false, this.id)
+      db.loadCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
+      dumps.forEach((fname) =>
+        db.loadRange(join(this.fileSystemPath, fname), this.dbCtxExternal),
+      )
+    } else {
+      // todo remove later
+      const dumppath = join(this.fileSystemPath, 'data.sdb')
+      const s = await fs.stat(dumppath).catch(() => null)
+      this.dbCtxExternal = db.start(
+        this.fileSystemPath,
+        s ? dumppath : null,
+        false,
+        this.id,
+      )
+    }
 
     try {
-      const schema = await fs.readFile(join(this.fileSystemPath, 'schema.json'))
+      const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
       if (schema) {
-        //  prop need to not call setting in selva
+        // Prop need to not call setting in selva
         this.putSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
 
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      const [total, lastId] = this.native.getTypeInfo(def.id)
+      const [total, lastId] = this.native.getTypeInfo(
+        def.id,
+        this.dbCtxExternal,
+      )
       def.total = total
       def.lastId = lastId
     }
@@ -162,7 +195,7 @@ export class BasedDb {
 
     if (!fromStart) {
       fs.writeFile(
-        join(this.fileSystemPath, 'schema.json'),
+        join(this.fileSystemPath, SCHEMA_FILE),
         JSON.stringify(this.schema),
       )
       let types = Object.keys(this.schemaTypesParsed)
@@ -172,7 +205,7 @@ export class BasedDb {
         const type = this.schemaTypesParsed[types[i]]
         // TODO should not crash!
         try {
-          this.native.updateSchemaType(type.id, s[i])
+          this.native.updateSchemaType(type.id, s[i], this.dbCtxExternal)
         } catch (err) {
           console.error('Cannot update schema on selva', type.type, err, s[i])
         }
@@ -240,15 +273,38 @@ export class BasedDb {
   }
 
   async save() {
-    const dumppath = join(this.fileSystemPath, 'data.sdb')
-    await fs.rm(dumppath).catch(() => {})
-    var rdy = false
-    const pid = this.native.save(dumppath)
-    while (!rdy) {
-      await wait(100)
-      if (this.native.isSaveReady(pid, dumppath)) {
-        rdy = true
-        break
+    if (this.splitDump) {
+      let err: number
+
+      err = this.native.saveCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
+      console.error('common err', err)
+
+      for (const key in this.schemaTypesParsed) {
+        const def = this.schemaTypesParsed[key]
+        const [_total, lastId] = this.native.getTypeInfo(
+          def.id,
+          this.dbCtxExternal,
+        )
+        const step = 10000 // TODO Make configurable/variable
+
+        for (let start = 0; start < lastId; start += step) {
+          const end = start + step - 1
+          const path = join(this.fileSystemPath, block_sdb_file(def.id, start))
+          err = this.native.saveRange(path, this.schema.types.user.id, start, end, this.dbCtxExternal)
+          console.error('err', err)
+        }
+      }
+    } else {
+      const dumppath = join(this.fileSystemPath, 'data.sdb')
+      await fs.rm(dumppath).catch(() => {})
+      var rdy = false
+      const pid = this.native.save(dumppath, this.dbCtxExternal)
+      while (!rdy) {
+        await wait(100)
+        if (this.native.isSaveReady(pid, dumppath)) {
+          rdy = true
+          break
+        }
       }
     }
   }
@@ -258,7 +314,7 @@ export class BasedDb {
     if (!noSave) {
       await this.save()
     }
-    db.stop()
+    db.stop(this.dbCtxExternal)
     await setTimeout()
   }
 

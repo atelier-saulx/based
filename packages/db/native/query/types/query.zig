@@ -18,7 +18,7 @@ pub fn queryId(
     conditions: []u8,
     include: []u8,
 ) !void {
-    const typeEntry = try db.getType(typeId);
+    const typeEntry = try db.getType(ctx.db, typeId);
     // pass this refactor single ref
     const node = db.getNode(id, typeEntry);
 
@@ -26,7 +26,7 @@ pub fn queryId(
         return;
     }
 
-    if (!filter(node.?, typeEntry, conditions)) {
+    if (!filter(ctx.db, node.?, typeEntry, conditions)) {
         return;
     }
 
@@ -53,7 +53,7 @@ pub fn queryIds(
     conditions: []u8,
     include: []u8,
 ) !void {
-    const typeEntry = try db.getType(typeId);
+    const typeEntry = try db.getType(ctx.db, typeId);
     var i: u32 = 0;
     checkItem: while (i < ids.len) : (i += 4) {
         const id = utils.readInt(u32, ids, i);
@@ -61,7 +61,7 @@ pub fn queryIds(
         if (node == null) {
             continue :checkItem;
         }
-        if (!filter(node.?, typeEntry, conditions)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
         const size = try getFields(
@@ -91,7 +91,7 @@ pub fn query(
 ) !void {
     var correctedForOffset: u32 = offset;
 
-    const typeEntry = try db.getType(typeId);
+    const typeEntry = try db.getType(ctx.db, typeId);
 
     var first = true;
     var node = db.getFirstNode(typeEntry);
@@ -107,7 +107,7 @@ pub fn query(
             break :checkItem;
         }
 
-        if (!filter(node.?, typeEntry, conditions)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions)) {
             continue :checkItem;
         }
 

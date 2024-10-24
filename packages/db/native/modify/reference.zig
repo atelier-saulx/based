@@ -14,7 +14,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
     const hasEdges = data[0] == 1;
     const id = readInt(u32, data, 1);
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try db.getType(refTypeId);
+    const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const node = db.getNode(id, refTypeEntry);
     if (node == null) {
         std.log.err("Cannot find reference to {d} \n", .{id});
@@ -23,7 +23,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
 
     if (hasEdges) {
         // TODO: replace with an insert type thing
-        try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
+        try db.writeReference(ctx.db, node.?, ctx.node.?, ctx.fieldSchema.?);
         const ref = db.getSingleReference(node.?, ctx.field);
         if (ref == null) {
             std.log.err("Cannot find select ref to {d} \n", .{id});
@@ -35,5 +35,5 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !void {
         return;
     }
 
-    try db.writeReference(node.?, ctx.node.?, ctx.fieldSchema.?);
+    try db.writeReference(ctx.db, node.?, ctx.node.?, ctx.fieldSchema.?);
 }

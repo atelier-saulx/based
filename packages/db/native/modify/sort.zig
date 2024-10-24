@@ -13,10 +13,10 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     while (i < len) : (i += 1) {
         const field = data[i + 2];
         const sortIndexName = sort.getSortName(ctx.typeId, field, 0);
-        if (sort.hasReadSortIndex(sortIndexName)) {
+        if (sort.hasReadSortIndex(ctx.db, sortIndexName)) {
             var sortIndex = ctx.sortIndexes.get(sortIndexName);
             if (sortIndex == null) {
-                sortIndex = try sort.createWriteSortIndex(sortIndexName, ctx.sortWriteTxn);
+                sortIndex = try sort.createWriteSortIndex(ctx.db, sortIndexName, ctx.sortWriteTxn);
                 try ctx.sortIndexes.put(sortIndexName, sortIndex.?);
             }
             try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, sortIndex.?);

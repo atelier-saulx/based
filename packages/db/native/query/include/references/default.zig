@@ -28,7 +28,7 @@ pub fn defaultReferences(
 
     checkItem: while (i < refs.?.nr_refs and result.cnt < limit) : (i += 1) {
         const refNode = refs.?.refs[i].dst.?;
-        if (hasFilter and !filter(refNode, typeEntry, filterArr)) {
+        if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr)) {
             continue :checkItem;
         }
         result.cnt += 1;

@@ -7,6 +7,7 @@ import {
   REFERENCES,
   STRING,
   ALIAS,
+  BINARY,
   // ALIAS,
 } from '../schema/types.js'
 import { modifyError, ModifyState } from './ModifyRes.js'
@@ -16,6 +17,7 @@ import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
 import { MERGE_MAIN, ModifyOp } from './types.js'
+import { writeBinary } from './binary.js'
 
 const _addModify = (
   ctx: BasedDb['modifyCtx'],
@@ -38,6 +40,8 @@ const _addModify = (
         writeReference(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (type === REFERENCES) {
         writeReferences(obj[key], ctx, schema, propDef, res, modifyOp)
+      } else if (type === BINARY) {
+        writeBinary(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (type === STRING && propDef.separate === true) {
         writeString(obj[key], ctx, schema, propDef, res, modifyOp)
       } else if (overwrite) {

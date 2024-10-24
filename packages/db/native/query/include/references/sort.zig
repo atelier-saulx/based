@@ -46,7 +46,7 @@ pub fn sortedReferences(
 
     checkItem: while (i < refs.?.nr_refs) : (i += 1) {
         const refNode = refs.?.refs[i].dst.?;
-        if (hasFilter and !filter(refNode, typeEntry, filterArr)) {
+        if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr)) {
             continue :checkItem;
         }
         const fs = db.getFieldSchema(sortField, typeEntry) catch {
