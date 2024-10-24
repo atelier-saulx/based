@@ -41,18 +41,18 @@ await test('edges', async (t) => {
             items: {
               ref: 'user',
               prop: 'articles',
-              $friend: {
-                ref: 'user',
-              },
-              $countries: {
-                items: {
-                  ref: 'country',
-                },
-              },
+              // $friend: {
+              //   ref: 'user',
+              // },
+              // $countries: {
+              //   items: {
+              //     ref: 'country',
+              //   },
+              // },
               $role: ['writer', 'editor'],
-              $rating: 'uint32',
-              $lang: 'string',
-              $email: 'string',
+              // $rating: 'uint32',
+              // $price: ['mep', 'map'],
+              // $email: 'string',
             },
           },
         },
@@ -80,14 +80,8 @@ await test('edges', async (t) => {
     contributors: [
       {
         id: mrSnurp,
-        // $role: 'writer',
-        // $rating: 99,
-        // $email: 'AAA',
-        // $lang: 'en',
-        $friend: mrYur,
-        // $countries: [nl],
+        $role: 'writer',
       },
-      // { id: mrYur, $role: 'editor', $rating: 10, $email: 'BBB', $lang: 'de' },
     ],
   })
 
@@ -95,100 +89,17 @@ await test('edges', async (t) => {
 
   const x = db
     .query('article')
+    // .include('name')
     // .include('contributors.$role')
     // .include('contributors.$rating')
     // .include('contributors.$email')
     // .include('contributors.$lang')
-    .include('contributors.$friend')
+    // .include('contributors.$friend')
+    .include('contributors.$role')
     // .include('contributors.$countries')
     .get()
 
-  // console.log(x)
+  x.debug()
 
-  // for (const f of x) {
-  // for (const y of f.contributors) {
-  // console.log(y, '$ROLE', y.$role)
-  // }
-  // }
-
-  // await setTimeout(500)
-
-  // console.log(
-  //   db
-  //     .query('article')
-  //     .include('contributors.$role')
-  //     .include('contributors.$rating')
-  //     .get(),
-  // )
-
-  // console.info(db.query('article').include('contributors.$role').get())
-
-  // deepEqual(db.query('user').include('articles.name').get().toObject(), [
-  //   {
-  //     id: 1,
-  //     articles: [
-  //       { id: 1, name: 'The wonders of Strudel' },
-  //       { id: 2, name: 'Apple Pie is a Lie' },
-  //     ],
-  //   },
-  //   { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
-  // ])
+  console.log(x)
 })
-
-// await test('singleRef', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-
-//   t.after(() => {
-//     return db.destroy()
-//   })
-
-//   await db.start({ clean: true })
-
-//   db.putSchema({
-//     types: {
-//       user: {
-//         props: {
-//           name: 'string',
-//           country: {
-//             ref: 'country',
-//             prop: 'person',
-//           },
-//         },
-//       },
-//       country: {
-//         props: {
-//           code: { type: 'string', maxBytes: 2 },
-//           person: {
-//             ref: 'user',
-//             prop: 'country',
-//             $role: ['president', 'minion'],
-//           },
-//         },
-//       },
-//     },
-//   })
-
-//   await db.create('country', {
-//     code: 'bl',
-//     person: {
-//       id: db.create('user', {
-//         name: 'Mr snurp',
-//       }),
-//       $role: 'minion',
-//     },
-//   })
-
-//   console.info('set success!')
-
-//   const x = db.query('country').include('person.$role').get()
-
-//   x.debug()
-
-//   console.log(x.toObject())
-
-//   // for (const f of x) {
-//   //   console.log(f.person)
-//   // }
-// })

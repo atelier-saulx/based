@@ -100,7 +100,11 @@ pub fn getFields(
 
         if (isEdge) {
             const edgeFieldSchema = try db.getEdgeFieldSchema(ref.?.edgeConstaint, field);
+
             edgeType = edgeFieldSchema.*.type;
+
+            std.debug.print("FLAP f {d} t {d} \n", .{ field, edgeType });
+
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
         } else {
             value = db.getField(
