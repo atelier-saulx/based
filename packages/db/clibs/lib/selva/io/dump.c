@@ -523,11 +523,13 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
-    do {
-        save_node(&io, db, node);
-        save_aliases_node(&io, te, node->node_id);
-        node = selva_next_node(te, node);
-    } while (node && node->node_id <= end);
+    if (nr_nodes > 0) {
+        do {
+            save_node(&io, db, node);
+            save_aliases_node(&io, te, node->node_id);
+            node = selva_next_node(te, node);
+        } while (node && node->node_id <= end);
+    }
 
     write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
 

@@ -126,7 +126,7 @@ export default {
 
   saveCommon: (path: string): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.save(buf)
+    return db.saveCommon(buf)
   },
 
   saveRange: (path: string, typeCode: number, start: number, end: number): number => {
