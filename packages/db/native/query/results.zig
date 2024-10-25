@@ -3,7 +3,7 @@ const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const QueryCtx = @import("./ctx.zig").QueryCtx;
 const utils = @import("../utils.zig");
-
+const t = @import("../types.zig");
 const std = @import("std");
 
 const readInt = utils.readInt;
@@ -17,7 +17,7 @@ pub const Result = struct {
     refSize: ?usize,
     includeMain: ?[]u8, // make this optional
     totalRefs: ?usize,
-    isEdge: u8,
+    isEdge: t.Prop,
 };
 
 pub fn createResultsBuffer(
@@ -52,7 +52,6 @@ pub fn createResultsBuffer(
                 // [253, 2, 2124, 10]
                 data[i] = 253;
                 data[i + 1] = item.field;
-
                 writeInt(u32, data, i + 2, item.refSize.?);
                 writeInt(u32, data, i + 6, item.totalRefs.?);
                 i += 10;
@@ -75,7 +74,7 @@ pub fn createResultsBuffer(
             continue;
         }
 
-        if (item.isEdge > 0) {
+        if (item.isEdge != t.Prop.NULL) {
             data[i] = 252;
             i += 1;
         }
@@ -86,17 +85,11 @@ pub fn createResultsBuffer(
         const val = item.val.?;
 
         // STRING & ALIAS
-        if (item.isEdge > 0 and item.isEdge < 11 or item.isEdge == 23) {
-            if (item.isEdge == 10 or item.isEdge == 9) {
-                data[i] = val[0];
-                i += 1;
-            } else if (item.isEdge == 5 or item.isEdge == 7 or item.isEdge == 23) {
-                @memcpy(data[i .. i + val.len], val);
-                i += 4;
-            } else if (item.isEdge == 4 or item.isEdge == 1) {
-                @memcpy(data[i .. i + val.len], val);
-                i += 8;
-            }
+        if (item.isEdge != t.Prop.NULL and t.Size(item.isEdge) != 0) {
+            const propLen = t.Size(item.isEdge);
+            // if 1 len can optmize
+            @memcpy(data[i .. i + propLen], val);
+            i += propLen;
         } else if (item.field == 0) {
             if (item.includeMain != null and item.includeMain.?.len != 0) {
                 var mainPos: usize = 2;
