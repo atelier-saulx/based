@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { create, update, remove } from './modify/modify.js'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
@@ -17,13 +18,14 @@ import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
+import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
 
 const SCHEMA_FILE = 'schema.json'
 const COMMON_SDB_FILE = 'common.sdb'
-const block_sdb_file = (typeId: number, start: number) => `${typeId}_${start}.sdb`
+const block_sdb_file = (typeId: number, start: number, end: number) => `${typeId}_${start}_${end}.sdb`
 
 export class BasedDb {
   isDraining: boolean = false
@@ -44,6 +46,7 @@ export class BasedDb {
     queue: Map<number, (id: number) => void>
     db: BasedDb
   }
+  blockSize = 10000
 
   id: number
 
@@ -120,9 +123,12 @@ export class BasedDb {
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
     db.loadCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
-    dumps.forEach((fname) =>
-      db.loadRange(join(this.fileSystemPath, fname), this.dbCtxExternal),
-    )
+    dumps.forEach((fname) => {
+      const err = db.loadRange(join(this.fileSystemPath, fname), this.dbCtxExternal)
+      if (err) {
+        console.log(`Failed to load a range. file: "${fname}": ${err}`)
+      }
+    })
 
     try {
       const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
@@ -258,6 +264,7 @@ export class BasedDb {
 
   async save() {
     let err: number
+    const mt = createMerkleTree(() => createHash('sha256'))
 
     err = this.native.saveCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
     if (err) {
@@ -270,19 +277,20 @@ export class BasedDb {
         def.id,
         this.dbCtxExternal,
       )
-      const step = 10000 // TODO Make configurable/variable
+      const step = this.blockSize
 
-      for (let start = 0; start < lastId; start += step) {
+      for (let start = 1; start <= lastId; start += step) {
         const end = start + step - 1
-        const path = join(this.fileSystemPath, block_sdb_file(def.id, start))
+        const path = join(this.fileSystemPath, block_sdb_file(def.id, start, end))
         const hash = Buffer.allocUnsafe(16)
-        // TODO path = type_start_end_file_hash.sdb
-        // TODO Merkle tree of ranges
-        // TODO Append into a file
         err = this.native.saveRange(path, def.id, start, end, this.dbCtxExternal, hash)
         if (err) {
           console.error(`Save ${def.id}:${start}-${end} failed: ${err}`)
+          continue
         }
+
+        const mtKey = def.id * 4294967296 + start
+	    mt.insert(mtKey, hash)
       }
     }
   }
