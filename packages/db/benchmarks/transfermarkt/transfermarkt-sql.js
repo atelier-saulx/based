@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { mkdir, rm } from 'fs/promises'
 import { join } from 'path'
-import { time, timeEnd, tmpDir } from './shared/utils.js'
+import { tmpDir } from './shared/utils.js'
 import { parseData } from './shared/parseData.js'
 
 const map = await parseData()
@@ -9,19 +9,14 @@ const path = join(tmpDir, 'transfermarkt.db')
 
 await mkdir(tmpDir).catch(() => {})
 await rm(path).catch(() => {})
-
-// Create a new database or open an existing one
 const db = new Database(path)
-
-// Enable foreign key constraints
 db.pragma('foreign_keys = ON')
 
-// Wrap table creation in a transaction
-const createTables = db
-  .transaction(() => {
-    // --- Table: club
-    db.prepare(
-      `
+const schemaPerf = perf('insert schema - sqlite3')
+db.transaction(() => {
+  // --- Table: club
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS club (
       club_id INTEGER PRIMARY KEY,
       club_code TEXT,
@@ -43,11 +38,11 @@ const createTables = db
       FOREIGN KEY (domestic_competition_id) REFERENCES competition(competition_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: competition
-    db.prepare(
-      `
+  // --- Table: competition
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS competition (
       competition_id TEXT PRIMARY KEY,
       competition_code TEXT,
@@ -62,11 +57,11 @@ const createTables = db
       is_major_national_league INTEGER
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: player
-    db.prepare(
-      `
+  // --- Table: player
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS player (
       player_id INTEGER PRIMARY KEY,
       first_name TEXT,
@@ -94,11 +89,11 @@ const createTables = db
       FOREIGN KEY (current_club_id) REFERENCES club(club_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: transfer
-    db.prepare(
-      `
+  // --- Table: transfer
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS transfer (
       player_id INTEGER,
       transfer_date INTEGER,
@@ -116,11 +111,11 @@ const createTables = db
       FOREIGN KEY (to_club_id) REFERENCES club(club_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: club_game
-    db.prepare(
-      `
+  // --- Table: club_game
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS club_game (
       game_id INTEGER,
       club_id INTEGER,
@@ -139,11 +134,11 @@ const createTables = db
       FOREIGN KEY (opponent_id) REFERENCES club(club_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: player_valuation
-    db.prepare(
-      `
+  // --- Table: player_valuation
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS player_valuation (
       player_id INTEGER,
       date INTEGER,
@@ -155,11 +150,11 @@ const createTables = db
       FOREIGN KEY (current_club_id) REFERENCES club(club_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: game
-    db.prepare(
-      `
+  // --- Table: game
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS game (
       game_id INTEGER PRIMARY KEY,
       competition_id TEXT,
@@ -189,11 +184,11 @@ const createTables = db
       FOREIGN KEY (away_club_id) REFERENCES club(club_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: game_event
-    db.prepare(
-      `
+  // --- Table: game_event
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS game_event (
       game_event_id TEXT PRIMARY KEY,
       date INTEGER,
@@ -210,11 +205,11 @@ const createTables = db
       FOREIGN KEY (player_id) REFERENCES player(player_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: appearance
-    db.prepare(
-      `
+  // --- Table: appearance
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS appearance (
       appearance_id TEXT PRIMARY KEY,
       game_id INTEGER,
@@ -235,11 +230,11 @@ const createTables = db
       FOREIGN KEY (competition_id) REFERENCES competition(competition_id)
     );
   `,
-    ).run()
+  ).run()
 
-    // --- Table: game_lineup
-    db.prepare(
-      `
+  // --- Table: game_lineup
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS game_lineup (
       game_lineups_id TEXT PRIMARY KEY,
       date INTEGER,
@@ -256,15 +251,12 @@ const createTables = db
       FOREIGN KEY (club_id) REFERENCES club(club_id)
     );
   `,
-    ).run()
-  })
-  .immediate()
+  ).run()
+}).immediate()
 
+schemaPerf()
 console.log('Database and tables have been created successfully.')
 
-const start = Date.now()
-time('insert')
-const errors = []
 const queries = {
   competition: [
     'competition_id',
@@ -408,7 +400,6 @@ const queries = {
   ],
 }
 
-let timeSpent = 0
 for (const type in queries) {
   const keys = queries[type]
   const query = db.prepare(`INSERT OR IGNORE INTO ${type} (
@@ -438,20 +429,10 @@ for (const type in queries) {
     }
   }
 
-  const start = Date.now()
+  const insertPerf = perf('insert node - sql')
   insert(map[type].data)
-  const end = Date.now()
-  timeSpent += end - start
+  insertPerf()
 }
-
-timeEnd()
-
-console.log('errors:', errors.length, errors[0])
-
-const end = Date.now()
-console.log('TIME SPENT:', end - start, { timeSpent }) // 30285
 
 // Close the database connection
 db.close()
-
-console.log('Database has been populated successfully.')
