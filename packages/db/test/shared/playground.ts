@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
-// import { italy } from './examples.js'
+import { italy } from './examples.js'
 // import * as q from '../../src/query/query.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -45,6 +45,12 @@ const makeDb = async (path: string) => {
   await wait(100)
 
   console.log('CLOSE', Date.now(), path)
+
+  await db.create('bla', {
+    name: italy,
+  })
+
+  console.log(db.query('bla'))
 
   await db.stop(true)
 }
