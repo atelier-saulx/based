@@ -3,27 +3,25 @@ import { mkdir, rm } from 'fs/promises'
 import { join } from 'path'
 import { time, timeEnd, tmpDir } from './shared/utils.js'
 import { parseData } from './shared/parseData.js'
-import test from '../shared/test.js'
 
-await test('sql', async () => {
-  const map = await parseData()
-  const path = join(tmpDir, 'transfermarkt.db')
+const map = await parseData()
+const path = join(tmpDir, 'transfermarkt.db')
 
-  await mkdir(tmpDir).catch(() => {})
-  await rm(path).catch(() => {})
+await mkdir(tmpDir).catch(() => {})
+await rm(path).catch(() => {})
 
-  // Create a new database or open an existing one
-  const db = new Database(path)
+// Create a new database or open an existing one
+const db = new Database(path)
 
-  // Enable foreign key constraints
-  db.pragma('foreign_keys = ON')
+// Enable foreign key constraints
+db.pragma('foreign_keys = ON')
 
-  // Wrap table creation in a transaction
-  const createTables = db
-    .transaction(() => {
-      // --- Table: club
-      db.prepare(
-        `
+// Wrap table creation in a transaction
+const createTables = db
+  .transaction(() => {
+    // --- Table: club
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS club (
       club_id INTEGER PRIMARY KEY,
       club_code TEXT,
@@ -45,11 +43,11 @@ await test('sql', async () => {
       FOREIGN KEY (domestic_competition_id) REFERENCES competition(competition_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: competition
-      db.prepare(
-        `
+    // --- Table: competition
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS competition (
       competition_id TEXT PRIMARY KEY,
       competition_code TEXT,
@@ -64,11 +62,11 @@ await test('sql', async () => {
       is_major_national_league INTEGER
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: player
-      db.prepare(
-        `
+    // --- Table: player
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS player (
       player_id INTEGER PRIMARY KEY,
       first_name TEXT,
@@ -96,11 +94,11 @@ await test('sql', async () => {
       FOREIGN KEY (current_club_id) REFERENCES club(club_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: transfer
-      db.prepare(
-        `
+    // --- Table: transfer
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS transfer (
       player_id INTEGER,
       transfer_date INTEGER,
@@ -118,11 +116,11 @@ await test('sql', async () => {
       FOREIGN KEY (to_club_id) REFERENCES club(club_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: club_game
-      db.prepare(
-        `
+    // --- Table: club_game
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS club_game (
       game_id INTEGER,
       club_id INTEGER,
@@ -141,11 +139,11 @@ await test('sql', async () => {
       FOREIGN KEY (opponent_id) REFERENCES club(club_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: player_valuation
-      db.prepare(
-        `
+    // --- Table: player_valuation
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS player_valuation (
       player_id INTEGER,
       date INTEGER,
@@ -157,11 +155,11 @@ await test('sql', async () => {
       FOREIGN KEY (current_club_id) REFERENCES club(club_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: game
-      db.prepare(
-        `
+    // --- Table: game
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS game (
       game_id INTEGER PRIMARY KEY,
       competition_id TEXT,
@@ -191,11 +189,11 @@ await test('sql', async () => {
       FOREIGN KEY (away_club_id) REFERENCES club(club_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: game_event
-      db.prepare(
-        `
+    // --- Table: game_event
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS game_event (
       game_event_id TEXT PRIMARY KEY,
       date INTEGER,
@@ -212,11 +210,11 @@ await test('sql', async () => {
       FOREIGN KEY (player_id) REFERENCES player(player_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: appearance
-      db.prepare(
-        `
+    // --- Table: appearance
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS appearance (
       appearance_id TEXT PRIMARY KEY,
       game_id INTEGER,
@@ -237,11 +235,11 @@ await test('sql', async () => {
       FOREIGN KEY (competition_id) REFERENCES competition(competition_id)
     );
   `,
-      ).run()
+    ).run()
 
-      // --- Table: game_lineup
-      db.prepare(
-        `
+    // --- Table: game_lineup
+    db.prepare(
+      `
     CREATE TABLE IF NOT EXISTS game_lineup (
       game_lineups_id TEXT PRIMARY KEY,
       date INTEGER,
@@ -258,203 +256,202 @@ await test('sql', async () => {
       FOREIGN KEY (club_id) REFERENCES club(club_id)
     );
   `,
-      ).run()
-    })
-    .immediate()
+    ).run()
+  })
+  .immediate()
 
-  console.log('Database and tables have been created successfully.')
+console.log('Database and tables have been created successfully.')
 
-  const start = Date.now()
-  time('insert')
-  const errors = []
-  const queries = {
-    competition: [
-      'competition_id',
-      'competition_code',
-      'name',
-      'sub_type',
-      'type',
-      'country_id',
-      'country_name',
-      'domestic_league_code',
-      'confederation',
-      'url',
-      'is_major_national_league',
-    ],
-    club: [
-      'club_id',
-      'club_code',
-      'name',
-      'domestic_competition_id',
-      'total_market_value',
-      'squad_size',
-      'average_age',
-      'foreigners_number',
-      'foreigners_percentage',
-      'national_team_players',
-      'stadium_name',
-      'stadium_seats',
-      'net_transfer_record',
-      'coach_name',
-      'last_season',
-      'filename',
-      'url',
-    ],
-    player: [
-      'player_id',
-      'first_name',
-      'last_name',
-      'name',
-      'last_season',
-      'current_club_id',
-      'player_code',
-      'country_of_birth',
-      'city_of_birth',
-      'country_of_citizenship',
-      'date_of_birth',
-      'sub_position',
-      'position',
-      'foot',
-      'height_in_cm',
-      'contract_expiration_date',
-      'agent_name',
-      'image_url',
-      'url',
-      'current_club_domestic_competition_id',
-      'current_club_name',
-      'market_value_in_eur',
-      'highest_market_value_in_eur',
-    ],
-    game: [
-      'game_id',
-      'competition_id',
-      'season',
-      'round',
-      'date',
-      'home_club_id',
-      'away_club_id',
-      'home_club_goals',
-      'away_club_goals',
-      'home_club_position',
-      'away_club_position',
-      'home_club_manager_name',
-      'away_club_manager_name',
-      'stadium',
-      'attendance',
-      'referee',
-      'url',
-      'home_club_formation',
-      'away_club_formation',
-      'home_club_name',
-      'away_club_name',
-      'aggregate',
-      'competition_type',
-    ],
-    transfer: [
-      'player_id',
-      'transfer_date',
-      'transfer_season',
-      'from_club_id',
-      'to_club_id',
-      'from_club_name',
-      'to_club_name',
-      'transfer_fee',
-      'market_value_in_eur',
-      'player_name',
-    ],
-    game_event: [
-      'game_event_id',
-      'date',
-      'game_id',
-      'minute',
-      'type',
-      'club_id',
-      'player_id',
-      'description',
-      'player_in_id',
-      'player_assist_id',
-    ],
-    appearance: [
-      'appearance_id',
-      'game_id',
-      'player_id',
-      'player_club_id',
-      'player_current_club_id',
-      'date',
-      'player_name',
-      'competition_id',
-      'yellow_cards',
-      'red_cards',
-      'goals',
-      'assists',
-      'minutes_played',
-    ],
-    game_lineup: [
-      'game_lineups_id',
-      'date',
-      'game_id',
-      'player_id',
-      'club_id',
-      'player_name',
-      'type',
-      'position',
-      'number',
-      'team_captain',
-    ],
-    player_valuation: [
-      'player_id',
-      'date',
-      'market_value_in_eur',
-      'current_club_id',
-      'player_club_domestic_competition_id',
-    ],
-  }
+const start = Date.now()
+time('insert')
+const errors = []
+const queries = {
+  competition: [
+    'competition_id',
+    'competition_code',
+    'name',
+    'sub_type',
+    'type',
+    'country_id',
+    'country_name',
+    'domestic_league_code',
+    'confederation',
+    'url',
+    'is_major_national_league',
+  ],
+  club: [
+    'club_id',
+    'club_code',
+    'name',
+    'domestic_competition_id',
+    'total_market_value',
+    'squad_size',
+    'average_age',
+    'foreigners_number',
+    'foreigners_percentage',
+    'national_team_players',
+    'stadium_name',
+    'stadium_seats',
+    'net_transfer_record',
+    'coach_name',
+    'last_season',
+    'filename',
+    'url',
+  ],
+  player: [
+    'player_id',
+    'first_name',
+    'last_name',
+    'name',
+    'last_season',
+    'current_club_id',
+    'player_code',
+    'country_of_birth',
+    'city_of_birth',
+    'country_of_citizenship',
+    'date_of_birth',
+    'sub_position',
+    'position',
+    'foot',
+    'height_in_cm',
+    'contract_expiration_date',
+    'agent_name',
+    'image_url',
+    'url',
+    'current_club_domestic_competition_id',
+    'current_club_name',
+    'market_value_in_eur',
+    'highest_market_value_in_eur',
+  ],
+  game: [
+    'game_id',
+    'competition_id',
+    'season',
+    'round',
+    'date',
+    'home_club_id',
+    'away_club_id',
+    'home_club_goals',
+    'away_club_goals',
+    'home_club_position',
+    'away_club_position',
+    'home_club_manager_name',
+    'away_club_manager_name',
+    'stadium',
+    'attendance',
+    'referee',
+    'url',
+    'home_club_formation',
+    'away_club_formation',
+    'home_club_name',
+    'away_club_name',
+    'aggregate',
+    'competition_type',
+  ],
+  transfer: [
+    'player_id',
+    'transfer_date',
+    'transfer_season',
+    'from_club_id',
+    'to_club_id',
+    'from_club_name',
+    'to_club_name',
+    'transfer_fee',
+    'market_value_in_eur',
+    'player_name',
+  ],
+  game_event: [
+    'game_event_id',
+    'date',
+    'game_id',
+    'minute',
+    'type',
+    'club_id',
+    'player_id',
+    'description',
+    'player_in_id',
+    'player_assist_id',
+  ],
+  appearance: [
+    'appearance_id',
+    'game_id',
+    'player_id',
+    'player_club_id',
+    'player_current_club_id',
+    'date',
+    'player_name',
+    'competition_id',
+    'yellow_cards',
+    'red_cards',
+    'goals',
+    'assists',
+    'minutes_played',
+  ],
+  game_lineup: [
+    'game_lineups_id',
+    'date',
+    'game_id',
+    'player_id',
+    'club_id',
+    'player_name',
+    'type',
+    'position',
+    'number',
+    'team_captain',
+  ],
+  player_valuation: [
+    'player_id',
+    'date',
+    'market_value_in_eur',
+    'current_club_id',
+    'player_club_domestic_competition_id',
+  ],
+}
 
-  let timeSpent = 0
-  for (const type in queries) {
-    const keys = queries[type]
-    const query = db.prepare(`INSERT OR IGNORE INTO ${type} (
+let timeSpent = 0
+for (const type in queries) {
+  const keys = queries[type]
+  const query = db.prepare(`INSERT OR IGNORE INTO ${type} (
       ${keys.join(', ')}
     ) VALUES (
       ${keys.map((key) => '@' + key).join(', ')}
     );`)
 
-    const insert = db.transaction((data) => {
-      for (const item of data) {
-        query.run(item.data)
-      }
-    })
+  const insert = db.transaction((data) => {
+    for (const item of data) {
+      query.run(item.data)
+    }
+  })
 
-    for (const item of map[type].data) {
-      for (const key of keys) {
-        if (key in item.data) {
-          const val = item.data[key]
-          if (typeof val === 'boolean') {
-            item.data[key] = val ? 1 : 0
-          } else {
-            item.data[key] = val
-          }
+  for (const item of map[type].data) {
+    for (const key of keys) {
+      if (key in item.data) {
+        const val = item.data[key]
+        if (typeof val === 'boolean') {
+          item.data[key] = val ? 1 : 0
         } else {
-          item.data[key] = null
+          item.data[key] = val
         }
+      } else {
+        item.data[key] = null
       }
     }
-
-    const start = Date.now()
-    insert(map[type].data)
-    const end = Date.now()
-    timeSpent += end - start
   }
 
-  timeEnd()
-
-  console.log('errors:', errors.length, errors[0])
-
+  const start = Date.now()
+  insert(map[type].data)
   const end = Date.now()
-  console.log('TIME SPENT:', end - start, { timeSpent }) // 30285
+  timeSpent += end - start
+}
 
-  // Close the database connection
-  db.close()
+timeEnd()
 
-  console.log('Database has been populated successfully.')
-})
+console.log('errors:', errors.length, errors[0])
+
+const end = Date.now()
+console.log('TIME SPENT:', end - start, { timeSpent }) // 30285
+
+// Close the database connection
+db.close()
+
+console.log('Database has been populated successfully.')

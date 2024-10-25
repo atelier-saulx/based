@@ -38,9 +38,7 @@ const parseCsv = (type, csv, map, idKey) => {
   })
 }
 
-export const parseData = async (): Promise<
-  Record<string, { data: any[]; refProps: Record<string, any> }>
-> => {
+export const parseData = async () => {
   const files = await readdir(dir).catch((e) => {})
   if (!files) {
     console.info('no files for transfermarkt test, skipping...')
@@ -51,10 +49,7 @@ export const parseData = async (): Promise<
 
   time('read')
 
-  const map: Record<
-    string,
-    { data: any[]; refProps: any; map: any; idKey: string }
-  > = {}
+  const map = {}
   await Promise.all(
     files.map(async (file) => {
       if (file.endsWith('.csv')) {
@@ -80,8 +75,6 @@ export const parseData = async (): Promise<
               }
             }
           }
-
-          console.log({ type, refProps })
 
           map[type] = { data, refProps, map: m, idKey }
         }
