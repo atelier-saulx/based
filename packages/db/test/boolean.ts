@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { perf } from './shared/perf.js'
 
 await test('boolean', async (t) => {
   const db = new BasedDb({
@@ -22,6 +23,8 @@ await test('boolean', async (t) => {
       },
     },
   })
+
+  const end = perf('boolean')
 
   console.log(db.create('user', {}))
 
@@ -57,4 +60,6 @@ await test('boolean', async (t) => {
     { id: 1, isNice: false },
     { id: 3, isNice: false },
   ])
+
+  end()
 })
