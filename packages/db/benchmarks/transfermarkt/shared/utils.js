@@ -1,6 +1,5 @@
 import { dirname, join } from 'path/posix'
 import { fileURLToPath } from 'url'
-import { schema } from './schema.js'
 
 export const __dirname = dirname(fileURLToPath(import.meta.url))
 export const tmpDir = join(__dirname, 'tmp')

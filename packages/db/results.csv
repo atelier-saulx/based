@@ -1,5 +1,2 @@
-commit,user,modified,init alias,rando,boolean
-dbe272a3,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T10:08:21,1.009,0.102
-dce03dcf,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T10:12:35,1.009,0.102
-1b8decc0,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T10:17:11,1.01,0.102
-eeaf560f,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T10:18:02,,,0.002
+commit,user,modified,insert schema,insert nodes
+a5fd3132,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T10:39:32,0.012,13.834

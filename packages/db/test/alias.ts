@@ -1,5 +1,4 @@
 import { BasedDb } from '../src/index.js'
-import { perf } from './shared/perf.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
@@ -13,8 +12,6 @@ await test('alias', async (t) => {
   t.after(() => {
     return db.destroy()
   })
-
-  const stop = perf('init alias')
 
   db.putSchema({
     types: {
@@ -56,9 +53,6 @@ await test('alias', async (t) => {
 
   // console.log({ res1, res2, res3, res4, res5, res6 })
   // const res2 = db.query('user', user1).get()
-  stop()
 
-  const stop2 = perf('rando')
   await setTimeout(100)
-  stop2()
 })

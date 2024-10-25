@@ -1,5 +1,3 @@
-import { Schema } from '@based/schema'
-
 // ORDER IS IMPORTANT (FOR SQL)
 export const types = [
   'competition',
@@ -13,7 +11,7 @@ export const types = [
   'player_valuation',
 ]
 
-export const schema: Schema = {
+export const schema = {
   // --- club
   types: {
     club: {

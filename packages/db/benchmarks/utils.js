@@ -38,11 +38,7 @@ const relevantFilesChanged = (prevCommit, commit) => {
   }
   const changed = getChangedFiles(prevCommit, commit)
   for (const change of changed) {
-    if (
-      change.includes('packages/db/test') ||
-      change.includes('packages/db/src') ||
-      change.includes('packages/db/native')
-    ) {
+    if (/(\.csv|\.json|\.md)$/.test(change)) {
       cache.set(id, true)
       return true
     }
@@ -50,15 +46,11 @@ const relevantFilesChanged = (prevCommit, commit) => {
   cache.set(id, false)
 }
 
-const files: Record<string, File> = {}
+const files = {}
 
-let info: {
-  commit: string
-  user: string
-  dir: string
-}
+let info
 
-const getFile = (name: string): File => {
+const getFile = (name) => {
   if (!(name in files)) {
     if (!info) {
       info = {
@@ -129,7 +121,7 @@ const getFile = (name: string): File => {
 }
 
 let hooked
-const updateFile = (file: File) => {
+const updateFile = (file) => {
   if (hooked) return
   exitHook(() => {
     file.current[2] = date()
@@ -142,15 +134,6 @@ const updateFile = (file: File) => {
         file.affix,
     )
   })
-}
-
-type File = {
-  name: string
-  prefix: string
-  affix: string
-  headers: string[]
-  current: string[]
-  prevCommit?: string
 }
 
 const date = () => {
@@ -175,7 +158,7 @@ export const perf = (label, filename = 'results.csv') => {
       console.info(label, res)
     }
 
-    if (relevantFilesChanged(commit, 'HEAD')) {
+    if (relevantFilesChanged(commit, '')) {
       console.log('files have changed, not writing ' + filename)
       return
     }
