@@ -3,6 +3,7 @@ import { mkdir, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpDir } from './shared/utils.js'
 import { parseData } from './shared/parseData.js'
+import { perf } from '../utils.js'
 
 const map = await parseData()
 const path = join(tmpDir, 'transfermarkt.db')
@@ -400,6 +401,8 @@ const queries = {
   ],
 }
 
+const inserts = []
+
 for (const type in queries) {
   const keys = queries[type]
   const query = db.prepare(`INSERT OR IGNORE INTO ${type} (
@@ -429,10 +432,14 @@ for (const type in queries) {
     }
   }
 
-  const insertPerf = perf('insert node - sql')
-  insert(map[type].data)
-  insertPerf()
+  inserts.push(() => insert(map[type].data))
 }
+
+const insertPerf = perf('insert node - sql')
+for (const fn of inserts) {
+  fn()
+}
+insertPerf()
 
 // Close the database connection
 db.close()
