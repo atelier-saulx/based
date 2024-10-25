@@ -38,7 +38,7 @@ const relevantFilesChanged = (prevCommit, commit) => {
   }
   const changed = getChangedFiles(prevCommit, commit)
   for (const change of changed) {
-    if (/(\.csv|\.json|\.md)$/.test(change)) {
+    if (!/(\.csv|\.json|\.md)$/.test(change)) {
       cache.set(id, true)
       return true
     }
