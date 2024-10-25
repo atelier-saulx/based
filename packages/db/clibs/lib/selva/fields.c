@@ -1211,17 +1211,16 @@ void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldS
 
     nfo = ensure_field(node, fields, fs);
 
-    struct SelvaNodeReferences refs;
     void *vp = nfo2p(fields, nfo);
+    struct SelvaNodeReferences refs;
+
+    memcpy(&refs, vp, sizeof(refs));
 
     if (refs.nr_refs >= nr_refs_min) {
         return;
     }
 
-    size_t new_size = nr_refs_min * sizeof(*refs.refs);
-
-    memcpy(&refs, vp, sizeof(refs));
-    refs.refs = selva_realloc(refs.refs, new_size);
+    refs.refs = selva_realloc(refs.refs, nr_refs_min * sizeof(*refs.refs));
     memcpy(vp, &refs, sizeof(refs));
 }
 
