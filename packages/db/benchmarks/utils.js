@@ -140,37 +140,47 @@ const date = () => {
   return new Date().toISOString().slice(0, -5)
 }
 
-export const perf = (label, filename = 'results.csv') => {
+export const perf = (label, filename, res) => {
+  if (typeof filename === 'number') {
+    store(label, null, filename)
+    return
+  }
+  if (typeof res === 'number') {
+    store(label, filename, res)
+  }
   const start = Date.now()
 
   return () => {
     const end = Date.now()
     const res = (end - start) / 1e3
-    const file = getFile(filename)
-    const index = file.headers.indexOf(label)
-    const prev = file.current[index]
-    const prevCommit = file.prevCommit
-    const commit = file.current[0]
+    store(label, filename, res)
+  }
+}
 
-    if (prev) {
-      console.info(label, prev, '->', res)
+const store = (label, filename, res) => {
+  const file = getFile(filename || 'results.csv')
+  const index = file.headers.indexOf(label)
+  const prev = file.current[index]
+  const prevCommit = file.prevCommit
+  const commit = file.current[0]
+
+  if (prev) {
+    console.info(label, prev, '->', res)
+  } else {
+    console.info(label, res)
+  }
+
+  if (prevCommit && relevantFilesChanged(commit, '')) {
+    return
+  }
+
+  if (!prevCommit || relevantFilesChanged(prevCommit, commit)) {
+    if (index === -1) {
+      file.headers.push(label)
+      file.current.push(String(res))
     } else {
-      console.info(label, res)
+      file.current[index] = String(res)
     }
-
-    if (relevantFilesChanged(commit, '')) {
-      return
-    }
-
-    if (!prevCommit || relevantFilesChanged(prevCommit, commit)) {
-      if (index === -1) {
-        file.headers.push(label)
-        file.current.push(String(res))
-      } else {
-        file.current[index] = String(res)
-      }
-      updateFile(file)
-      return
-    }
+    updateFile(file)
   }
 }

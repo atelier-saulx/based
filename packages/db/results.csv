@@ -1,2 +1,2 @@
-commit,user,modified,insert schema - sqlite3,insert nodes - sql,insert schema,insert nodes
-df5a3302,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T11:01:03,0.002,24.196,0.007,13.767
+commit,user,modified,insert schema - sqlite3,insert nodes - sql,insert schema,insert nodes,insert drain
+cbe54101,Youris-MBP-darwin23.4.0-arm64-11cores-36.00GB,2024-10-25T14:47:27,,,0.011,13.539,5.807

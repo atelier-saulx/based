@@ -51,7 +51,6 @@ for (const type in map) {
   }
 }
 
-const drainPerf = perf('insert drain')
-db.drain()
-drainPerf()
+const drainTime = db.drain()
 insertPerf()
+perf('insert drain', drainTime / 1e3)
