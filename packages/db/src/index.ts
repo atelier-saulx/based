@@ -275,7 +275,11 @@ export class BasedDb {
       for (let start = 0; start < lastId; start += step) {
         const end = start + step - 1
         const path = join(this.fileSystemPath, block_sdb_file(def.id, start))
-        err = this.native.saveRange(path, def.id, start, end, this.dbCtxExternal)
+        const hash = Buffer.allocUnsafe(16)
+        // TODO path = type_start_end_file_hash.sdb
+        // TODO Merkle tree of ranges
+        // TODO Append into a file
+        err = this.native.saveRange(path, def.id, start, end, this.dbCtxExternal, hash)
         if (err) {
           console.error(`Save ${def.id}:${start}-${end} failed: ${err}`)
         }

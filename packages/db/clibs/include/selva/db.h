@@ -31,7 +31,7 @@ SELVA_EXPORT
 int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *hash_out) __attribute__((nonnull));
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out) __attribute__((nonnull));
 
 /**
  * **Usage:**

@@ -354,6 +354,7 @@ __used static void print_ready(
         char *msg,
         struct timespec * restrict ts_start,
         struct timespec * restrict ts_end,
+        selva_hash128_t *range_hash,
         struct selva_io *io)
 {
     struct timespec ts_diff;
@@ -376,10 +377,11 @@ __used static void print_ready(
         t_unit = "h";
     }
 
-    fprintf(stderr, "%s ready in %.2f %s hash: %.*s\n",
+    fprintf(stderr, "%s ready in %.2f %s hash: %.*s range_hash: %.*s\n",
             msg,
             t, t_unit,
-            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash));
+            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash),
+            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash));
 }
 
 int selva_dump_save_common(struct SelvaDb *db, const char *filename)
@@ -421,7 +423,7 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
     return n;
 }
 
-int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *hash_out)
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out)
 {
     struct timespec ts_start, ts_end;
     struct selva_io io;
@@ -460,7 +462,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
         } while (node && node->node_id <= end);
     }
 
-    *hash_out = selva_hash_digest(hash_state);
+    *range_hash_out = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
 
     write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
@@ -468,7 +470,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     ts_monotime(&ts_end);
 #if 0
-    print_ready("save", &ts_start, &ts_end, &io);
+    print_ready("save", &ts_start, &ts_end, range_hash_out, &io);
 #endif
 
     return 0;
