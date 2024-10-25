@@ -1,11 +1,9 @@
-// Filename: create_database.js
-
 import Database from 'better-sqlite3'
 import { mkdir, rm } from 'fs/promises'
 import { join } from 'path'
 import { time, timeEnd, tmpDir } from './shared/utils.js'
-import test from '../shared/test.js'
 import { parseData } from './shared/parseData.js'
+import test from '../shared/test.js'
 
 await test('sql', async () => {
   const map = await parseData()
@@ -13,6 +11,7 @@ await test('sql', async () => {
 
   await mkdir(tmpDir).catch(() => {})
   await rm(path).catch(() => {})
+
   // Create a new database or open an existing one
   const db = new Database(path)
 
@@ -411,6 +410,7 @@ await test('sql', async () => {
     ],
   }
 
+  let timeSpent = 0
   for (const type in queries) {
     const keys = queries[type]
     const query = db.prepare(`INSERT OR IGNORE INTO ${type} (
@@ -418,29 +418,32 @@ await test('sql', async () => {
     ) VALUES (
       ${keys.map((key) => '@' + key).join(', ')}
     );`)
+
     const insert = db.transaction((data) => {
       for (const item of data) {
-        try {
-          for (const key of keys) {
-            if (key in item.data) {
-              const val = item.data[key]
-              if (typeof val === 'boolean') {
-                item.data[key] = val ? 1 : 0
-              }
-            } else {
-              item.data[key] = null
-            }
-          }
-          query.run(item.data)
-        } catch (error) {
-          console.error(type, item.data, error)
-          errors.push(item.data)
-          process.exit()
-        }
+        query.run(item.data)
       }
     })
 
+    for (const item of map[type].data) {
+      for (const key of keys) {
+        if (key in item.data) {
+          const val = item.data[key]
+          if (typeof val === 'boolean') {
+            item.data[key] = val ? 1 : 0
+          } else {
+            item.data[key] = val
+          }
+        } else {
+          item.data[key] = null
+        }
+      }
+    }
+
+    const start = Date.now()
     insert(map[type].data)
+    const end = Date.now()
+    timeSpent += end - start
   }
 
   timeEnd()
@@ -448,7 +451,7 @@ await test('sql', async () => {
   console.log('errors:', errors.length, errors[0])
 
   const end = Date.now()
-  console.log('TIME SPENT:', end - start) // 30285
+  console.log('TIME SPENT:', end - start, { timeSpent }) // 30285
 
   // Close the database connection
   db.close()
