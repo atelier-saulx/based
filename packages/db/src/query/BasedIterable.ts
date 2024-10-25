@@ -59,16 +59,29 @@ const inspectObject = (
     str = prefix + '{\n'
   }
   const prefixBody = ''.padEnd(level + 3, ' ')
+  let edges = []
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
     let v = object[k]
-    str += prefixBody + `${k}: `
-    if (k[0] === '$') {
-      str += `${v}`
-      str += ',\n'
+    const isEdge = k[0] === '$'
+
+    if (isEdge) {
+      edges.push({ k, v })
+      // collect at end...
+      // str += prefixBody + picocolors.bold(`${k}: `)
+    } else {
+      str += prefixBody + `${k}: `
+    }
+
+    if (isEdge) {
+      // str += `${v}`
+      // str += ',\n'
     } else if (key === 'id') {
-      str += `${v}`
+      // @ts-ignore
+      str += v + picocolors.italic(picocolors.dim(` ${q.target.type}`))
+
+      // str += picocolors.blue(`${v}`) + picocolors.dim(` ${q.target.type}`)
       str += ',\n'
     } else if (!def) {
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
@@ -137,13 +150,22 @@ const inspectObject = (
       } else if (def.typeIndex === 1) {
         str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {
+        // if (typeof v === 'number') {
+        //   str += picocolors.blue(v)
+        // } else {
         str += v
+        // }
       }
       str += ',\n'
     } else {
       str += ',\n'
     }
   }
+
+  for (const edge of edges) {
+    str += prefixBody + picocolors.bold(`${edge.k}: `) + edge.v + ',\n'
+  }
+
   if (isObject) {
     str += prefix + ' },\n'
   } else if (isLast) {
@@ -163,7 +185,7 @@ export const inspectData = (
   hasId: boolean = false,
 ) => {
   const length = q.length
-  const max = Math.min(length, depth === 0 ? (top ? 3 : 1) : depth)
+  const max = Math.min(length, depth)
   const prefix = top ? '  ' : ''
   let str: string
   let i = 0
@@ -210,8 +232,7 @@ export const inspectData = (
     } else {
       str += prefix + ']'.padStart(level + 2, ' ')
     }
-  }
-  if (hasId) {
+  } else if (hasId) {
   } else if (top) {
     str += '\n' + prefix + ']'
   } else {
@@ -249,7 +270,7 @@ export class BasedQueryResponse {
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 0, hasId)
+    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 2, hasId)
     str += '\n'
     str += dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
