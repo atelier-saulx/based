@@ -52,17 +52,13 @@ const inspectObject = (
   depth: number,
 ) => {
   const prefix = ''.padEnd(level, ' ')
-  // if top dont add this
   let str = ''
-
   if (isFirst || isObject) {
     str = '{\n'
   } else {
     str = prefix + '{\n'
   }
-
   const prefixBody = ''.padEnd(level + 3, ' ')
-
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
@@ -75,7 +71,6 @@ const inspectObject = (
       str += `${v}`
       str += ',\n'
     } else if (!def) {
-      // remove last comma
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
@@ -131,9 +126,6 @@ const inspectObject = (
       str += ',\n'
     }
   }
-
-  // remove comma
-
   if (isObject) {
     str += prefix + ' },\n'
   } else if (isLast) {
@@ -157,7 +149,6 @@ export const inspectData = (
   const prefix = top ? '  ' : ''
   let str: string
   let i = 0
-
   if (hasId) {
     str = prefix
     level = level + 1
@@ -167,7 +158,6 @@ export const inspectData = (
   } else {
     str = prefix + '['
   }
-
   for (const x of q) {
     str += inspectObject(
       x,
@@ -203,14 +193,12 @@ export const inspectData = (
       str += prefix + ']'.padStart(level + 2, ' ')
     }
   }
-
   if (hasId) {
   } else if (top) {
     str += '\n' + prefix + ']'
   } else {
     str += ']'
   }
-
   return str
 }
 
@@ -220,7 +208,6 @@ export class BasedQueryResponse {
   execTime: number
   offset: number
   end: number
-
   constructor(
     def: QueryDef,
     result: Buffer,
@@ -241,7 +228,6 @@ export class BasedQueryResponse {
       ? // @ts-ignore
         this.def.schema.type + ':' + this.def.target.id
       : this.def.schema.type
-
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
