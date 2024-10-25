@@ -2,6 +2,7 @@ import os from 'node:os'
 import { execSync } from 'node:child_process'
 import { packageDirectorySync } from 'pkg-dir'
 import { readFileSync, writeFileSync } from 'node:fs'
+import exitHook from 'exit-hook'
 
 const getUser = () => {
   const hostname = os.hostname()
@@ -18,10 +19,34 @@ const getCommit = () => {
   return execSync('git rev-parse --short HEAD').toString().trim()
 }
 
+const getChangedFiles = (prevCommit, commit) => {
+  try {
+    const output = execSync(`git diff --name-only ${prevCommit} ${commit}`)
+      .toString()
+      .trim()
+    return output ? output.split('\n') : [] // Split output into an array of file names
+  } catch (error) {
+    return []
+  }
+}
+
+const relevantFilesChanged = (prevCommit, commit) => {
+  const changed = getChangedFiles(prevCommit, commit)
+  for (const change of changed) {
+    if (
+      change.includes('packages/db/test') ||
+      change.includes('packages/db/src') ||
+      change.includes('packages/db/native')
+    ) {
+      return true
+    }
+  }
+}
+
 const files: Record<string, File> = {}
 
 let info: {
-  pcommit: string
+  commit: string
   user: string
   dir: string
 }
@@ -30,7 +55,7 @@ const getFile = (name: string): File => {
   if (!(name in files)) {
     if (!info) {
       info = {
-        pcommit: getCommit(),
+        commit: getCommit(),
         user: getUser(),
         dir: packageDirectorySync(),
       }
@@ -41,9 +66,10 @@ const getFile = (name: string): File => {
       const split = csv.split('\n')
       const headers = split[0].split(',')
 
-      if (headers.length > 2) {
-        const id = `${info.pcommit},${info.user}`
+      if (headers.length > 3) {
+        const id = `${info.commit},${info.user},`
         let i = split.length
+        let prevCommit
         let current
         let prefix = ''
         let affix = ''
@@ -51,6 +77,7 @@ const getFile = (name: string): File => {
         while (--i) {
           const line = split[i]
           if (current) {
+            prevCommit ??= line.substring(0, line.indexOf(','))
             prefix = `${line}\n${prefix}`
           } else if (line.startsWith(id)) {
             current = line.split(',')
@@ -63,8 +90,12 @@ const getFile = (name: string): File => {
           prefix = affix
           affix = ''
           current = Array.from({ length: headers.length }).fill('')
-          current[0] = info.pcommit
+          current[0] = info.commit
           current[1] = info.user
+          if (split.length > 1) {
+            const prev = split[split.length - 1]
+            prevCommit = prev.substring(0, prev.indexOf(','))
+          }
         }
 
         // parse csv
@@ -73,6 +104,7 @@ const getFile = (name: string): File => {
           prefix,
           affix,
           headers,
+          prevCommit,
           current,
         }
       }
@@ -82,23 +114,27 @@ const getFile = (name: string): File => {
       name,
       prefix: '',
       affix: '',
-      headers: ['pcommit', 'user'],
-      current: [info.pcommit, info.user],
+      headers: ['commit', 'user', 'modified'],
+      current: [info.commit, info.user, ''],
     }
-
-    console.log(files[name])
   }
   return files[name]
 }
 
+let hooked
 const updateFile = (file: File) => {
-  const csv =
-    file.headers.join(',') +
-    '\n' +
-    file.prefix +
-    file.current.join(',') +
-    file.affix
-  writeFileSync(file.name, csv)
+  if (hooked) return
+  exitHook(() => {
+    file.current[2] = date()
+    writeFileSync(
+      file.name,
+      file.headers.join(',') +
+        '\n' +
+        file.prefix +
+        file.current.join(',') +
+        file.affix,
+    )
+  })
 }
 
 type File = {
@@ -107,6 +143,11 @@ type File = {
   affix: string
   headers: string[]
   current: string[]
+  prevCommit?: string
+}
+
+const date = () => {
+  return new Date().toISOString().slice(0, -5)
 }
 
 export const perf = (label, filename = 'results.csv') => {
@@ -114,18 +155,35 @@ export const perf = (label, filename = 'results.csv') => {
 
   return () => {
     const end = Date.now()
-    const res = (end - start) / 1e3 + 's'
-    // const row = [info.pcommit, info.user, (end - start) / 1e3 + 's']
+    const res = (end - start) / 1e3
     const file = getFile(filename)
     const index = file.headers.indexOf(label)
+    const prev = file.current[index]
+    const prevCommit = file.prevCommit
+    const commit = file.current[0]
 
-    if (index === -1) {
-      file.headers.push(label)
-      file.current.push(res)
+    if (prev) {
+      console.info(label, prev, '->', res)
     } else {
-      file.current[index] = res
+      console.info(label, res)
     }
 
-    updateFile(file)
+    if (relevantFilesChanged(commit, 'HEAD')) {
+      console.log('files have changed, not writing ' + filename)
+      return
+    }
+
+    if (!prevCommit || relevantFilesChanged(prevCommit, commit)) {
+      if (index === -1) {
+        file.headers.push(label)
+        file.current.push(String(res))
+      } else {
+        file.current[index] = String(res)
+      }
+      console.log('updating... ' + filename)
+      updateFile(file)
+    } else {
+      console.log('no updates between commits, not writing ' + filename)
+    }
   }
 }
