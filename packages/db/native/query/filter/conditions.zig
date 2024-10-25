@@ -157,8 +157,15 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 }
                 return false;
             },
+            8 => {
+                if (q[j + 1] != v[j]) {
+                    return false;
+                }
+                j += 2;
+                continue :outside;
+            },
             else => {
-                std.log.err("\nIncorrectly encoded condition (operation not handled)", .{});
+                std.log.err("\nIncorrectly encoded condition op:{d} (operation not handled)", .{operation});
                 return false;
             },
         }

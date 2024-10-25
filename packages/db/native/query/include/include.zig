@@ -31,7 +31,7 @@ pub fn getFields(
 
         const operation = include[includeIterator..];
 
-        // EDGE
+        // EDGE (todo rename to 252)
         if (field == 253) {
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];

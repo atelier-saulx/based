@@ -46,7 +46,7 @@ pub fn queryIds(
         if (node == null) {
             continue :sortItem;
         }
-        if (!filter(ctx.db, node.?, typeEntry, conditions)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null)) {
             continue :sortItem;
         }
         const value = db.getField(typeEntry, id, node.?, try db.getFieldSchema(sortField, typeEntry));
@@ -142,7 +142,7 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        if (!filter(ctx.db, node.?, typeEntry, conditions)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null)) {
             continue :checkItem;
         }
 

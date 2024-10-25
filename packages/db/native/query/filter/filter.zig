@@ -6,7 +6,7 @@ const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
-
+const types = @import("../include//types.zig");
 const std = @import("std");
 
 const getField = db.getField;
@@ -17,6 +17,7 @@ pub fn filter(
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
+    ref: ?types.RefStruct,
 ) bool {
     var fieldIndex: usize = 0;
     var main: ?[]u8 = undefined;
@@ -25,7 +26,25 @@ pub fn filter(
         const field = conditions[fieldIndex];
         const operation = conditions[fieldIndex + 1 ..];
         const querySize: u16 = readInt(u16, operation, 0);
-        if (field == 254) {
+        if (field == 252) {
+            if (ref != null) {
+                const edgeField: u8 = operation[2];
+                const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, edgeField) catch null;
+                if (edgeFieldSchema == null) {
+                    return false;
+                }
+                const value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
+                if (value.len == 0) {
+                    return false;
+                }
+                if (!runCondition(value, operation[3 .. 3 + querySize])) {
+                    return false;
+                }
+                fieldIndex += querySize + 3;
+            } else {
+                return false;
+            }
+        } else if (field == 254) {
             const refField: u8 = operation[2];
             const refTypePrefix = readInt(u16, operation, 3);
             const refNode = db.getReference(node, refField);
@@ -36,7 +55,7 @@ pub fn filter(
                 return false;
             };
             const refConditions: []u8 = operation[5 .. 1 + querySize];
-            if (!filter(ctx, refNode.?, refTypeEntry, refConditions)) {
+            if (!filter(ctx, refNode.?, refTypeEntry, refConditions, null)) {
                 return false;
             }
         } else {

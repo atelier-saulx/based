@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { defToBuffer } from '../src/query/toBuffer.js'
 
 await test('edges', async (t) => {
   const db = new BasedDb({
@@ -155,17 +156,18 @@ await test('edges', async (t) => {
     })
   }
 
+  console.log('GO GO')
   const x = db
     .query('article')
-    .include('contributors.*', 'contributors.$role', '*')
-    .get()
+    .include('*', (s) =>
+      s('contributors').filter('$role', '=', 'writer').include('*', '$role'),
+    )
+  // .include('*', (s) =>
+  //   s('contributors').filter('name', '=', 'Mr Derp').include('*', '$role'),
+  // )
 
-  console.log(x)
+  console.log(x.get())
+  // filter('contributors.$role') // only include artiocle with contributors that are writers
 
-  const y = db
-    .query('article', lastArticle)
-    .include('contributors.*', '*')
-    .get()
-
-  console.log(y)
+  // console.log(x)
 })

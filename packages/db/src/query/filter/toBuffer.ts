@@ -20,7 +20,6 @@ export const fillConditionsBuffer = (
   })
   if (conditions.references) {
     for (const [refField, refConditions] of conditions.references) {
-      lastWritten
       result[lastWritten] = 254
       const sizeIndex = lastWritten + 1
       result[lastWritten + 3] = refField
@@ -34,6 +33,21 @@ export const fillConditionsBuffer = (
       lastWritten += size
     }
   }
+  conditions.edges.forEach((v, k) => {
+    result[lastWritten] = 252
+    let sizeIndex = lastWritten + 1
+    lastWritten += 3
+    result[lastWritten] = k
+    lastWritten++
+
+    let conditionSize = 0
+    for (const condition of v) {
+      conditionSize += condition.byteLength
+      result.set(condition, lastWritten)
+      lastWritten += condition.byteLength
+    }
+    result.writeInt16LE(conditionSize, sizeIndex)
+  })
   return lastWritten - offset
 }
 
