@@ -101,14 +101,15 @@ const inspectObject = (
         if (v === undefined) {
           return ''
         }
-        const isLarger = v.length > 10
-        const arr = isLarger ? [...v.slice(0, 10)] : [...v]
-        const x = [...v.slice(0, 10)].map((v) => {
+        const nr = 12
+        const isLarger = v.length > nr
+        const arr = isLarger ? [...v.slice(0, nr)] : [...v]
+        const x = [...v.slice(0, nr)].map((v) => {
           return `${v}`.padStart(3, '0') + ' '
         })
         str +=
           picocolors.blue(x.join('')) +
-          (isLarger ? '... ' : '') +
+          (isLarger ? picocolors.dim('... ') : '') +
           picocolors.italic(
             picocolors.dim(
               `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
@@ -118,14 +119,14 @@ const inspectObject = (
         if (v === undefined) {
           return ''
         }
-        if (v.length > 60) {
+        if (v.length > 40) {
           const chars = picocolors.italic(
             picocolors.dim(
               `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
             ),
           )
           v =
-            v.slice(0, 60).replace(/\n/g, '\\n ') +
+            v.slice(0, 40).replace(/\n/g, '\\n ') +
             picocolors.dim('...') +
             '" ' +
             chars
