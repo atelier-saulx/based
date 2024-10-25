@@ -29,7 +29,7 @@ const makeDb = async (path: string) => {
 
   db.putSchema({
     types: {
-      bla: { props: { name: 'string', x: 'uint16' } },
+      bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
     },
   })
 
@@ -48,9 +48,10 @@ const makeDb = async (path: string) => {
 
   await db.create('bla', {
     name: italy,
+    flap: Buffer.from(italy, 'utf-8'),
   })
 
-  console.log(db.query('bla'))
+  console.log(db.query('bla').get())
 
   await db.stop(true)
 }

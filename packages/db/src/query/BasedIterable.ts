@@ -2,7 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
-import { PropDef, PropDefEdge } from '../schema/types.js'
+import { BINARY, PropDef, PropDefEdge, STRING } from '../schema/types.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -97,7 +97,24 @@ const inspectObject = (
           )
         }
         str += ',\n'
-      } else if (def.typeIndex === 11) {
+      } else if (def.typeIndex === BINARY) {
+        if (v === undefined) {
+          return ''
+        }
+        const isLarger = v.length > 10
+        const arr = isLarger ? [...v.slice(0, 10)] : [...v]
+        const x = [...v.slice(0, 10)].map((v) => {
+          return `${v}`.padStart(3, '0') + ' '
+        })
+        str +=
+          picocolors.blue(x.join('')) +
+          (isLarger ? '... ' : '') +
+          picocolors.italic(
+            picocolors.dim(
+              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+            ),
+          )
+      } else if (def.typeIndex === STRING) {
         if (v === undefined) {
           return ''
         }
