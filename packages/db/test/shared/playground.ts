@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
-// import { italy } from './examples.js'
+import { italy } from './examples.js'
 // import * as q from '../../src/query/query.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -29,7 +29,7 @@ const makeDb = async (path: string) => {
 
   db.putSchema({
     types: {
-      bla: { props: { name: 'string', x: 'uint16' } },
+      bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
     },
   })
 
@@ -45,6 +45,13 @@ const makeDb = async (path: string) => {
   await wait(100)
 
   console.log('CLOSE', Date.now(), path)
+
+  await db.create('bla', {
+    name: italy,
+    flap: Buffer.from(italy, 'utf-8'),
+  })
+
+  console.log(db.query('bla').get())
 
   await db.stop(true)
 }

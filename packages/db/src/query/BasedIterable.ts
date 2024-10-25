@@ -2,7 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
-import { PropDef, PropDefEdge } from '../schema/types.js'
+import { BINARY, PropDef, PropDefEdge, STRING } from '../schema/types.js'
 
 const decimals = (v) => ~~(v * 100) / 100
 
@@ -97,18 +97,36 @@ const inspectObject = (
           )
         }
         str += ',\n'
-      } else if (def.typeIndex === 11) {
+      } else if (def.typeIndex === BINARY) {
         if (v === undefined) {
           return ''
         }
-        if (v.length > 60) {
+        const nr = 12
+        const isLarger = v.length > nr
+        const arr = isLarger ? [...v.slice(0, nr)] : [...v]
+        const x = [...v.slice(0, nr)].map((v) => {
+          return `${v}`.padStart(3, '0') + ' '
+        })
+        str +=
+          picocolors.blue(x.join('')) +
+          (isLarger ? picocolors.dim('... ') : '') +
+          picocolors.italic(
+            picocolors.dim(
+              `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
+            ),
+          )
+      } else if (def.typeIndex === STRING) {
+        if (v === undefined) {
+          return ''
+        }
+        if (v.length > 40) {
           const chars = picocolors.italic(
             picocolors.dim(
               `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
             ),
           )
           v =
-            v.slice(0, 60).replace(/\n/g, '\\n ') +
+            v.slice(0, 40).replace(/\n/g, '\\n ') +
             picocolors.dim('...') +
             '" ' +
             chars
