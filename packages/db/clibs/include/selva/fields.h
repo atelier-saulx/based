@@ -8,6 +8,7 @@
 #ifndef __zig
 #include "util/selva_string.h"
 #endif
+#include "selva/node_id_set.h"
 #include "selva/types.h"
 
 /**
@@ -38,13 +39,8 @@ struct SelvaNodeReference {
 struct SelvaNodeReferences {
     uint32_t nr_refs;
     uint16_t offset;
-    /*!<
-     * Greatest node_id ever inserted in this field. (Compressed/packed).
-     * This can be zeroed when the gretest node is deleted, which may
-     * cause some lookup slowdown.
-     */
-    uint16_t great_idz;
     struct SelvaNodeReference *refs __pcounted_by(nr_refs);
+    struct node_id_set index; /*!< Sorted index of all nodes in `.refs`. */
 };
 
 struct SelvaNodeWeakReference {
