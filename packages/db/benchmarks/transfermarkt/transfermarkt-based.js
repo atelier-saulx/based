@@ -15,7 +15,6 @@ await db.start({ clean: true })
 const schemaPerf = perf('insert schema')
 db.putSchema(schema)
 schemaPerf()
-console.log('??')
 
 const insertPerf = perf('insert nodes')
 const refMap = {}
@@ -52,5 +51,7 @@ for (const type in map) {
   }
 }
 
+const drainPerf = perf('insert drain')
 db.drain()
+drainPerf()
 insertPerf()

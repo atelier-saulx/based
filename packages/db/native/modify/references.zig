@@ -38,6 +38,7 @@ fn prealloc_refs(ctx: *ModifyCtx, data: []u8) void {
     }
 }
 
+//
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
