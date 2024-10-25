@@ -13,6 +13,7 @@
 #include "util/selva_string.h"
 #include "xxhash.h"
 #include "selva_error.h"
+#include "selva_hash128.h"
 #include "db_panic.h"
 #include "db.h"
 #include "idz.h"
@@ -1210,17 +1211,16 @@ void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldS
 
     nfo = ensure_field(node, fields, fs);
 
-    struct SelvaNodeReferences refs;
     void *vp = nfo2p(fields, nfo);
+    struct SelvaNodeReferences refs;
+
+    memcpy(&refs, vp, sizeof(refs));
 
     if (refs.nr_refs >= nr_refs_min) {
         return;
     }
 
-    size_t new_size = nr_refs_min * sizeof(*refs.refs);
-
-    memcpy(&refs, vp, sizeof(refs));
-    refs.refs = selva_realloc(refs.refs, new_size);
+    refs.refs = selva_realloc(refs.refs, nr_refs_min * sizeof(*refs.refs));
     memcpy(vp, &refs, sizeof(refs));
 }
 
@@ -1971,15 +1971,15 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
     destroy_fields(fields);
 }
 
-static inline void hash_ref(XXH3_state_t *hash_state, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)
+static inline void hash_ref(selva_hash_state_t *hash_state, const struct EdgeFieldConstraint *efc, const struct SelvaNodeReference *ref)
 {
-    XXH3_128bits_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
+    selva_hash_update(hash_state, &ref->dst->node_id, sizeof(ref->dst->node_id));
     if (ref->meta) {
         selva_fields_hash_update(hash_state, efc->fields_schema, ref->meta);
     }
 }
 
-void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
     const field_t nr_fields = schema->nr_fields;
 
@@ -1991,7 +1991,7 @@ void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFields
         switch (nfo->type) {
         case SELVA_FIELD_TYPE_NULL:
             /* Also NULL must cause a change in the hash. */
-            XXH3_128bits_update(hash_state, 0, 1);
+            selva_hash_update(hash_state, 0, 1);
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_CREATED:
@@ -2010,7 +2010,7 @@ void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFields
         case SELVA_FIELD_TYPE_ENUM:
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            XXH3_128bits_update(hash_state, p, selva_fields_get_data_size(fs));
+            selva_hash_update(hash_state, p, selva_fields_get_data_size(fs));
             break;
         case SELVA_FIELD_TYPE_TEXT:
             do {
@@ -2018,7 +2018,7 @@ void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFields
 
                 for (size_t i = 0; i < text->len; i++) {
                     uint32_t crc = selva_string_get_crc(&text->tl[i]);
-                    XXH3_128bits_update(hash_state, &crc, sizeof(crc));
+                    selva_hash_update(hash_state, &crc, sizeof(crc));
                 }
             } while (0);
             break;
@@ -2038,14 +2038,14 @@ void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFields
             do {
                 const struct SelvaNodeWeakReferences *refs = p;
 
-                XXH3_128bits_update(hash_state, refs->refs, refs->nr_refs * sizeof(*refs->refs));
+                selva_hash_update(hash_state, refs->refs, refs->nr_refs * sizeof(*refs->refs));
             } while (0);
             break;
         case SELVA_FIELD_TYPE_STRING:
             do {
                 const struct selva_string *s = p;
                 uint32_t crc = selva_string_get_crc(s);
-                XXH3_128bits_update(hash_state, &crc, sizeof(crc));
+                selva_hash_update(hash_state, &crc, sizeof(crc));
             } while (0);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
@@ -2059,12 +2059,13 @@ void selva_fields_hash_update(XXH3_state_t *hash_state, const struct SelvaFields
 
 selva_hash128_t selva_fields_hash(const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
 {
-    XXH3_state_t *hash_state = XXH3_createState();
+    selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_hash128_t res;
 
-    XXH3_128bits_reset(hash_state);
+    selva_hash_reset(hash_state);
     selva_fields_hash_update(hash_state, schema, fields);
-    XXH128_hash_t res = XXH3_128bits_digest(hash_state);
-    XXH3_freeState(hash_state);
+    res = selva_hash_digest(hash_state);
+    selva_hash_free_state(hash_state);
 
-    return (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
+    return res;
 }

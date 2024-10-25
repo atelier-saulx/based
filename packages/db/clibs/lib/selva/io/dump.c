@@ -19,6 +19,7 @@
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
+#include "../selva_hash128.h"
 #include "../io.h"
 #include "io_struct.h"
 
@@ -420,7 +421,7 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
     return n;
 }
 
-int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end)
+int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *hash_out)
 {
     struct timespec ts_start, ts_end;
     struct selva_io io;
@@ -445,13 +446,22 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
+    selva_hash_state_t *hash_state = selva_hash_create_state();
+
+    selva_hash_reset(hash_state);
+
     if (nr_nodes > 0) {
         do {
+            selva_node_hash_update2(te, node, hash_state);
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
+
             node = selva_next_node(te, node);
         } while (node && node->node_id <= end);
     }
+
+    *hash_out = selva_hash_digest(hash_state);
+    selva_hash_free_state(hash_state);
 
     write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
     selva_io_end(&io, NULL);

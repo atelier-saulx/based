@@ -32,7 +32,8 @@ pub fn saveRange(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
         return res;
     }
 
-    const rc = selva.selva_dump_save_range(ctx.selva, te, sdb_filename.ptr, start, end);
+    var hash: selva.SelvaHash128 = undefined;
+    const rc = selva.selva_dump_save_range(ctx.selva, te, sdb_filename.ptr, start, end, &hash);
     _ = c.napi_create_int32(napi_env, rc, &res);
 
     return res;
