@@ -460,7 +460,6 @@ static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
     fields_schema->field_map_template.fixed_data_size = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
-
 static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fields_schema, const char *buf, size_t len)
 {
     field_t field_idx = 0;

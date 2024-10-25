@@ -8,6 +8,7 @@ await test('save simple range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+  db.blockSize = 1
 
   await db.start({ clean: true })
   t.after(() => {
@@ -43,12 +44,14 @@ await test('save simple range', async (t) => {
 
   const ls = await readdir(t.tmp)
   equal(ls.includes('common.sdb'), true)
-  equal(ls.includes('65281_0.sdb'), true)
+  equal(ls.includes('65281_1_1.sdb'), true)
+  equal(ls.includes('65281_2_2.sdb'), true)
 
   //db.start()
   const newDb = new BasedDb({
     path: t.tmp,
   })
+  db.blockSize = 1
   await newDb.start()
   t.after(() => {
     return newDb.destroy()

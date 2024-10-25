@@ -27,10 +27,11 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
-  function createLeaf(k: TreeKey, h: Buffer): TreeNode {
+  function createLeaf(k: TreeKey, h: Buffer, data: any): TreeNode {
     return {
       hash: h,
       key: k,
+      data,
       left: null,
       right: null,
     }
@@ -69,11 +70,13 @@ export function createTree(createHash: () => any): Csmt {
     const lDist = distance(k, (left && left.key) || TreeKeyNil)
     const rDist = distance(k, (right && right.key) || TreeKeyNil)
     if (lDist < rDist) {
-      node.left = (left) ? insert(left, newLeaf) : newLeaf
+      node.left = left ? insert(left, newLeaf) : newLeaf
     } else if (lDist > rDist) {
-      node.right = (right) ? insert(right, newLeaf) : newLeaf
+      node.right = right ? insert(right, newLeaf) : newLeaf
     } else {
-      return (k < min(left, right)) ? createNode(newLeaf, node) : createNode(node, newLeaf)
+      return k < min(left, right)
+        ? createNode(newLeaf, node)
+        : createNode(node, newLeaf)
     }
 
     updateNode(node)
@@ -189,16 +192,25 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
+  function _visitLeafNodes(node: TreeNode, cb: (leaf: TreeNode) => void) {
+    if (!node) return
+    if (!node.left && !node.right) cb(node)
+    else {
+      if (node.left) _visitLeafNodes(node.left, cb)
+      if (node.right) _visitLeafNodes(node.right, cb)
+    }
+  }
+
   return {
     getRoot: () => root,
-    insert: (k: TreeKey, h: Buffer) => {
+    insert: (k: TreeKey, h: Buffer, data: any = null) => {
       if (!(h instanceof Buffer)) {
         throw new TypeError('`h` must be a Buffer')
       }
 
-      const newLeaf = createLeaf(k, h)
+      const newLeaf = createLeaf(k, h, data)
 
-      root = (root) ? insert(root, newLeaf) : newLeaf
+      root = root ? insert(root, newLeaf) : newLeaf
     },
     delete: (k: TreeKey) => {
       if (!root) {
@@ -209,5 +221,6 @@ export function createTree(createHash: () => any): Csmt {
     },
     diff,
     membershipProof: (k: TreeKey): Proof => membershipProof(root, k),
+    visitLeafNodes: (cb: (leaf: TreeNode) => void) => _visitLeafNodes(root, cb),
   }
 }
