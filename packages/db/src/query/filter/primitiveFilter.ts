@@ -28,6 +28,9 @@ export const operationToByte = (
 ) => {
   if (op === '=') {
     if (field.separate) {
+      if (field.typeIndex === UINT32) {
+        return 9
+      }
       if (field.typeIndex === BOOLEAN || field.typeIndex === ENUM) {
         return 8
       }
@@ -67,7 +70,11 @@ export const primitiveFilter = (
   if (field.separate === true) {
     if (field.typeIndex !== REFERENCES) {
       if (op === '=') {
-        if (field.typeIndex === ENUM) {
+        if (field.typeIndex === UINT32) {
+          buf = Buffer.allocUnsafe(5)
+          buf[0] = operationToByte(op, field)
+          buf.writeInt32LE(value, 1)
+        } else if (field.typeIndex === ENUM) {
           // undefined
           const index = field.reverseEnum[value]
           if (index != undefined) {

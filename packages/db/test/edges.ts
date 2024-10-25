@@ -152,36 +152,51 @@ await test('edges', async (t) => {
   for (let i = 0; i < 3; i++) {
     lastArticle = await db.create('article', {
       name: 'The wonders of Strudel ' + i,
-      contributors: [mrYur, mrDerp, mrSnurp],
+      contributors: [
+        { id: mrYur, $role: 'editor', $rating: 5 },
+        mrDerp,
+        mrSnurp,
+      ],
     })
   }
 
   deepEqual(
     db
       .query('article')
-      .include('*', (s) =>
-        s('contributors').filter('$role', '=', 'writer').include('*', '$role'),
+      .include((s) =>
+        s('contributors').filter('$role', '=', 'writer').include('$role'),
       )
       .get()
       .toObject(),
     [
       {
         id: 1,
-        name: 'The wonders of Strudel',
         contributors: [
           {
             id: 1,
-            location: { long: 42.12, lat: 32.14 },
-            name: 'Mr snurp',
             $role: 'writer',
-            email: '',
-            smurp: '',
           },
         ],
       },
-      { id: 2, name: 'The wonders of Strudel 0', contributors: [] },
-      { id: 3, name: 'The wonders of Strudel 1', contributors: [] },
-      { id: 4, name: 'The wonders of Strudel 2', contributors: [] },
+      { id: 2, contributors: [] },
+      { id: 3, contributors: [] },
+      { id: 4, contributors: [] },
+    ],
+  )
+
+  deepEqual(
+    db
+      .query('article')
+      .include((s) =>
+        s('contributors').filter('$rating', '=', 5).include('$rating'),
+      )
+      .get()
+      .toObject(),
+    [
+      { id: 1, contributors: [{ id: 1, $rating: 5 }] },
+      { id: 2, contributors: [{ id: 2, $rating: 5 }] },
+      { id: 3, contributors: [{ id: 2, $rating: 5 }] },
+      { id: 4, contributors: [{ id: 2, $rating: 5 }] },
     ],
   )
 })

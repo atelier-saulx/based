@@ -158,10 +158,17 @@ pub fn runConditions(v: []u8, q: []u8) bool {
                 return false;
             },
             8 => {
-                if (q[j + 1] != v[j]) {
+                if (q[j + 1] != v[0]) {
                     return false;
                 }
                 j += 2;
+                continue :outside;
+            },
+            9 => {
+                if (!std.mem.eql(u8, q[j + 1 .. j + 5], v)) {
+                    return false;
+                }
+                j += 5;
                 continue :outside;
             },
             else => {
