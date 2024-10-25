@@ -45,31 +45,42 @@ const inspectObject = (
   object: any,
   q: QueryDef,
   path: string,
-  // make this nice
-  level: number = 0,
+  level: number,
+  isLast: boolean,
+  isFirst: boolean,
+  isObject: boolean,
+  depth: number,
 ) => {
-  const prefix = ''.padEnd(level * 2 + 2, ' ')
-  let str = '{\n'
+  const prefix = ''.padEnd(level, ' ')
+  let str = ''
+  if (isFirst || isObject) {
+    str = '{\n'
+  } else {
+    str = prefix + '{\n'
+  }
+  const prefixBody = ''.padEnd(level + 3, ' ')
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
-
-    // console.log(key, def)
     let v = object[k]
-    str += prefix + `${k}: `
-
+    str += prefixBody + `${k}: `
     if (k[0] === '$') {
       str += `${v}`
-      str += '\n'
+      str += ',\n'
     } else if (key === 'id') {
       str += `${v}`
-      str += '\n'
+      str += ',\n'
     } else if (!def) {
-      str += inspectObject(v, q, key, level + 1)
+      str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
-        // fix and add
-        str += inspectData(v, q.references.get(def.prop), true, level + 1)
+        str += inspectData(
+          v,
+          q.references.get(def.prop),
+          level + 2,
+          false,
+          depth,
+        )
       } else if (def.typeIndex === 13) {
         if (!v.id) {
           str += 'null'
@@ -79,9 +90,13 @@ const inspectObject = (
             q.references.get(def.prop),
             key,
             level + 2,
-          ).slice(0, -1)
+            false,
+            false,
+            true,
+            depth,
+          )
         }
-        str += '\n'
+        str += ',\n'
       } else if (def.typeIndex === 11) {
         if (v === undefined) {
           return ''
@@ -106,15 +121,17 @@ const inspectObject = (
       } else {
         str += v
       }
-      str += '\n'
+      str += ',\n'
     } else {
-      str += '\n'
+      str += ',\n'
     }
   }
-
-  if (level === 0) {
+  if (isObject) {
+    str += prefix + ' },\n'
+  } else if (isLast) {
+    str += prefix + '}'
   } else {
-    str += '}\n'.padStart(level * 2 + 2, ' ')
+    str += prefix + '},\n'
   }
   return str
 }
@@ -122,36 +139,67 @@ const inspectObject = (
 export const inspectData = (
   q: BasedQueryResponse,
   def: QueryDef,
-  nested: boolean,
-  level: number = 0,
+  level: number,
+  top: boolean,
+  depth: number,
+  hasId: boolean = false,
 ) => {
   const length = q.length
-  const max = Math.min(length, nested ? 2 : 10)
-  let str = ''
+  const max = Math.min(length, depth === 0 ? (top ? 3 : 1) : depth)
+  const prefix = top ? '  ' : ''
+  let str: string
   let i = 0
+  if (hasId) {
+    str = prefix
+    level = level + 1
+  } else if (top) {
+    level = level + 3
+    str = prefix + '[\n' + prefix + '  '
+  } else {
+    str = prefix + '['
+  }
   for (const x of q) {
-    str += inspectObject(x, def, '', level)
+    str += inspectObject(
+      x,
+      def,
+      '',
+      level + 1,
+      i === max - 1,
+      i === 0,
+      false,
+      depth,
+    )
     i++
     if (i >= max) {
-      str += '}'
       break
     }
-    str += '},\n'
   }
   if (length > max) {
+    const morePrefix = ''.padStart(top ? 2 : level + 3, ' ')
     str +=
-      '},\n' +
+      ',\n' +
       picocolors.dim(
         picocolors.italic(
-          `...${length - max} More item${length - max !== 1 ? 's' : ''}`,
+          prefix +
+            morePrefix +
+            `...${length - max} More item${length - max !== 1 ? 's' : ''}\n`,
         ),
       )
+    if (hasId) {
+      str += ''
+    } else if (top) {
+      str += prefix + ']'
+    } else {
+      str += prefix + ']'.padStart(level + 2, ' ')
+    }
   }
-  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n${']'.padStart(level * 2 + 1, ' ')}`
-  if (nested) {
-    return str
+  if (hasId) {
+  } else if (top) {
+    str += '\n' + prefix + ']'
+  } else {
+    str += ']'
   }
-  return `${picocolors.bold(`BasedIterable[${q.def.schema.type}]`)} (${q.length}) ${str}`
+  return str
 }
 
 export class BasedQueryResponse {
@@ -160,7 +208,6 @@ export class BasedQueryResponse {
   execTime: number
   offset: number
   end: number
-
   constructor(
     def: QueryDef,
     result: Buffer,
@@ -175,19 +222,18 @@ export class BasedQueryResponse {
     this.end = end
   }
 
-  [inspect.custom](_depth) {
-    // @ts-ignore
-    const target = this.def.target.id
+  [inspect.custom]() {
+    const hasId = 'id' in this.def.target
+    const target = hasId
       ? // @ts-ignore
         this.def.schema.type + ':' + this.def.target.id
       : this.def.schema.type
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, this.def, true)
-      .replaceAll('\n', '\n  ')
-      .trim()
-    str += '\n  ' + dataStr
+    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 0, hasId)
+    str += '\n'
+    str += dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
