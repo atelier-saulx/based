@@ -33,21 +33,23 @@ export const fillConditionsBuffer = (
       lastWritten += size
     }
   }
-  conditions.edges.forEach((v, k) => {
-    result[lastWritten] = 252
-    let sizeIndex = lastWritten + 1
-    lastWritten += 3
-    result[lastWritten] = k
-    lastWritten++
+  if (conditions.edges) {
+    conditions.edges.forEach((v, k) => {
+      result[lastWritten] = 252
+      let sizeIndex = lastWritten + 1
+      lastWritten += 3
+      result[lastWritten] = k
+      lastWritten++
 
-    let conditionSize = 0
-    for (const condition of v) {
-      conditionSize += condition.byteLength
-      result.set(condition, lastWritten)
-      lastWritten += condition.byteLength
-    }
-    result.writeInt16LE(conditionSize, sizeIndex)
-  })
+      let conditionSize = 0
+      for (const condition of v) {
+        conditionSize += condition.byteLength
+        result.set(condition, lastWritten)
+        lastWritten += condition.byteLength
+      }
+      result.writeInt16LE(conditionSize, sizeIndex)
+    })
+  }
   return lastWritten - offset
 }
 

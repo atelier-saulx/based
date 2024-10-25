@@ -7,9 +7,9 @@ pub const IncludeError = error{
 
 pub fn Refs(comptime isEdge: bool) type {
     if (isEdge) {
-        return ?selva.SelvaNodeWeakReferences;
+        return selva.SelvaNodeWeakReferences;
     }
-    return ?*selva.SelvaNodeReferences;
+    return *selva.SelvaNodeReferences;
 }
 
 pub const RefStruct = struct {
@@ -24,7 +24,7 @@ pub const RefsResult = struct {
 
 pub inline fn RefResult(
     comptime isEdge: bool,
-    refs: Refs(isEdge),
+    refs: ?Refs(isEdge),
     edgeConstrain: ?db.EdgeFieldConstraint,
     i: usize,
 ) ?RefStruct {
