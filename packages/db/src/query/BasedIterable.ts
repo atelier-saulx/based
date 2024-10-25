@@ -59,16 +59,27 @@ const inspectObject = (
     str = prefix + '{\n'
   }
   const prefixBody = ''.padEnd(level + 3, ' ')
+  let edges = []
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
     let v = object[k]
-    str += prefixBody + `${k}: `
-    if (k[0] === '$') {
-      str += `${v}`
-      str += ',\n'
+    const isEdge = k[0] === '$'
+
+    if (isEdge) {
+      edges.push({ k, v })
+      // collect at end...
+      // str += prefixBody + picocolors.bold(`${k}: `)
+    } else {
+      str += prefixBody + `${k}: `
+    }
+
+    if (isEdge) {
+      // str += `${v}`
+      // str += ',\n'
     } else if (key === 'id') {
-      str += `${v}`
+      // @ts-ignore
+      str += picocolors.blue(`${v}`) + picocolors.dim(` ${q.target.type}`)
       str += ',\n'
     } else if (!def) {
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
@@ -137,13 +148,22 @@ const inspectObject = (
       } else if (def.typeIndex === 1) {
         str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {
-        str += v
+        if (typeof v === 'number') {
+          str += picocolors.blue(v)
+        } else {
+          str += v
+        }
       }
       str += ',\n'
     } else {
       str += ',\n'
     }
   }
+
+  for (const edge of edges) {
+    str += prefixBody + picocolors.bold(`${edge.k}: `) + edge.v + ',\n'
+  }
+
   if (isObject) {
     str += prefix + ' },\n'
   } else if (isLast) {
