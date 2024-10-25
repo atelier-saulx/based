@@ -156,18 +156,32 @@ await test('edges', async (t) => {
     })
   }
 
-  console.log('GO GO')
-  const x = db
-    .query('article')
-    .include('*', (s) =>
-      s('contributors').filter('$role', '=', 'writer').include('*', '$role'),
-    )
-  // .include('*', (s) =>
-  //   s('contributors').filter('name', '=', 'Mr Derp').include('*', '$role'),
-  // )
-
-  console.log(x.get())
-  // filter('contributors.$role') // only include artiocle with contributors that are writers
-
-  // console.log(x)
+  deepEqual(
+    db
+      .query('article')
+      .include('*', (s) =>
+        s('contributors').filter('$role', '=', 'writer').include('*', '$role'),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        name: 'The wonders of Strudel',
+        contributors: [
+          {
+            id: 1,
+            location: { long: 42.12, lat: 32.14 },
+            name: 'Mr snurp',
+            $role: 'writer',
+            email: '',
+            smurp: '',
+          },
+        ],
+      },
+      { id: 2, name: 'The wonders of Strudel 0', contributors: [] },
+      { id: 3, name: 'The wonders of Strudel 1', contributors: [] },
+      { id: 4, name: 'The wonders of Strudel 2', contributors: [] },
+    ],
+  )
 })

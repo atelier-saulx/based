@@ -20,6 +20,7 @@ pub fn defaultReferences(
     limit: u32,
 ) types.RefsResult {
     if (isEdge) {
+        // later...
         return 0;
     }
 
