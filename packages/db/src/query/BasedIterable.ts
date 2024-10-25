@@ -230,8 +230,7 @@ export const inspectData = (
     } else {
       str += prefix + ']'.padStart(level + 2, ' ')
     }
-  }
-  if (hasId) {
+  } else if (hasId) {
   } else if (top) {
     str += '\n' + prefix + ']'
   } else {
