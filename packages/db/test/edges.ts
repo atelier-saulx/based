@@ -77,7 +77,7 @@ await test('edges', async (t) => {
 
   db.drain()
 
-  db.create('article', {
+  const strudel = await db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
@@ -90,8 +90,6 @@ await test('edges', async (t) => {
       },
     ],
   })
-
-  db.drain()
 
   deepEqual(
     db.query('article').include('contributors.$role').get().toObject(),
@@ -139,4 +137,23 @@ await test('edges', async (t) => {
       },
     ],
   )
+
+  await db.update('article', strudel, {
+    contributors: {
+      add: [
+        {
+          id: mrSnurp,
+          $lang: 'en',
+          $rating: 5,
+          $role: 'writer',
+          $on: true,
+          $file: new Uint8Array([1, 2, 3, 4]),
+        },
+      ],
+    },
+  })
+
+  const x = db.query('article').include('contributors.*', '*').get()
+
+  console.log(x)
 })
