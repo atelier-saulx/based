@@ -32,7 +32,6 @@ const getChangedFiles = (prevCommit, commit) => {
 
 const relevantFilesChanged = (prevCommit, commit) => {
   const changed = getChangedFiles(prevCommit, commit)
-  console.log({ prevCommit, commit, changed })
   for (const change of changed) {
     if (
       change.includes('packages/db/test') ||
@@ -181,10 +180,8 @@ export const perf = (label, filename = 'results.csv') => {
       } else {
         file.current[index] = String(res)
       }
-      console.log('updating... ' + filename)
       updateFile(file)
-    } else {
-      console.log('no updates between commits, not writing ' + filename)
+      return
     }
   }
 }
