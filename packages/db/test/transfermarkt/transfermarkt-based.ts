@@ -18,12 +18,15 @@ await test('based', async (t) => {
 
   db.putSchema(schema)
 
-  time('create')
+  const start = Date.now()
+
+  // time('create')
+
   const refMap = {}
   for (const type in map) {
     const { data } = map[type]
     for (const node of data) {
-      node._id = db.create(type, node.data)
+      node._id = db.create(type, node.data).tmpId
       if (node.id) {
         refMap[type] ??= {}
         refMap[type][node.id] = node._id
@@ -31,11 +34,12 @@ await test('based', async (t) => {
     }
   }
 
-  const d = db.drain()
-  timeEnd()
-  log('create drain: ' + d / 1e3 + 's')
+  // const d = db.drain()
 
-  time('set refs')
+  // timeEnd()
+  // log('create drain: ' + d / 1e3 + 's')
+
+  // time('set refs')
   let refCnt = 0
   let updates = 0
 
@@ -59,30 +63,34 @@ await test('based', async (t) => {
   }
 
   const d2 = db.drain()
-  timeEnd()
+  // timeEnd()
   log('set refs drain: ' + d2 / 1e3 + 's', { updates, refCnt })
 
-  // console.log(
-  //   'RES:',
-  //   db
-  //     .query('club')
-  //     .include(
-  //       '*',
-  //       'outgoing_transfers',
-  //       'incoming_transfers',
-  //       'domestic_competition',
-  //       'home_games',
-  //       'away_games',
-  //       'players',
-  //       'valuations',
-  //       'game_events',
-  //       'appearances',
-  //       'game_lineups',
-  //     )
-  //     .range(0, 1)
-  //     .get()
-  //     .toObject(),
-  // )
+  const end = Date.now()
+
+  console.log('TIME SPENT:', end - start) // 14748
+
+  console.log(
+    'RES:',
+    db
+      .query('club')
+      .include(
+        '*',
+        'outgoing_transfers',
+        'incoming_transfers',
+        'domestic_competition',
+        'home_games',
+        'away_games',
+        'players',
+        'valuations',
+        'game_events',
+        'appearances',
+        'game_lineups',
+      )
+      .range(0, 1)
+      .get()
+      .toObject(),
+  )
 
   time('stop db')
   await db.stop(true)

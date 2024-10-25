@@ -1,3 +1,4 @@
 /build
 *.trace
-/.zig-cache
+/zig-cache
+/.cache
