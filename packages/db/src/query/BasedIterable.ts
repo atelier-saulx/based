@@ -79,7 +79,9 @@ const inspectObject = (
       // str += ',\n'
     } else if (key === 'id') {
       // @ts-ignore
-      str += picocolors.blue(`${v}`) + picocolors.dim(` ${q.target.type}`)
+      str += v + picocolors.dim(` ${q.target.type}`)
+
+      // str += picocolors.blue(`${v}`) + picocolors.dim(` ${q.target.type}`)
       str += ',\n'
     } else if (!def) {
       str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
@@ -148,11 +150,11 @@ const inspectObject = (
       } else if (def.typeIndex === 1) {
         str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
       } else {
-        if (typeof v === 'number') {
-          str += picocolors.blue(v)
-        } else {
-          str += v
-        }
+        // if (typeof v === 'number') {
+        //   str += picocolors.blue(v)
+        // } else {
+        str += v
+        // }
       }
       str += ',\n'
     } else {

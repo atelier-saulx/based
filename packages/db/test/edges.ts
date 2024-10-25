@@ -167,5 +167,5 @@ await test('edges', async (t) => {
     .include('contributors.*', '*')
     .get()
 
-  // console.log(y)
+  console.log(y)
 })
