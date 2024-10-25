@@ -435,7 +435,7 @@ for (const type in queries) {
   inserts.push(() => insert(map[type].data))
 }
 
-const insertPerf = perf('insert node - sql')
+const insertPerf = perf('insert nodes - sql')
 for (const fn of inserts) {
   fn()
 }
