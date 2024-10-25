@@ -34,9 +34,10 @@ export default {
     start: number,
     end: number,
     dbCtx: any,
+    hashOut: Buffer
   ): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
-    return db.saveRange(buf, typeCode, start, end, dbCtx)
+    return db.saveRange(buf, typeCode, start, end, dbCtx, hashOut)
   },
 
   loadCommon: (path: string, dbCtx: any): number => {
