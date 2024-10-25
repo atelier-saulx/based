@@ -32,6 +32,7 @@ OBJ := \
 	langs.o \
 	ref_save_map.o \
 	schema.o \
+	node_id_set.o \
 	sort.o \
 	traverse.o \
 	types.o \

@@ -337,38 +337,14 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
         .dst = dst,
     };
 
+    node_id_set_add(&refs.index, dst->node_id);
+
     if (ref_out) {
         *ref_out = &refs.refs[index];
     }
 
-    /*
-     * Update the greatest id observed.
-     */
-    if (dst->node_id >= idz_unpack(refs.great_idz)) {
-        refs.great_idz = idz_pack(dst->node_id);
-    }
-
     memcpy(vp, &refs, sizeof(refs));
     return 0;
-}
-
-/**
- * This function must be called if the greatest node_id is removed from refs.
- */
-static void update_great_idz(struct SelvaNodeReferences *refs)
-{
-    size_t nr_refs = refs->nr_refs;
-    node_id_t great = 0;
-
-    for (size_t i = 0; i < nr_refs; i++) {
-        struct SelvaNode *dst = refs->refs[i].dst;
-
-        if (dst && dst->node_id > great) {
-            great = dst->node_id;
-        }
-    }
-
-    refs->great_idz = idz_pack(great);
 }
 
 static void write_ref_2way(
@@ -424,11 +400,16 @@ static struct SelvaNode *del_single_ref(struct SelvaDb *db, const struct EdgeFie
  */
 static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs, size_t i)
 {
+    struct SelvaNodeReference *ref;
+
     if (!refs->refs) {
         return;
     }
 
-    reference_meta_destroy(db, efc, &refs->refs[i]);
+    ref = &refs->refs[i];
+    reference_meta_destroy(db, efc, ref);
+    node_id_set_remove(&refs->index, ref->dst->node_id);
+    ref = NULL;
 
     if (i < refs->nr_refs - 1) {
         if (i == 0) {
@@ -501,9 +482,6 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
 
             if (tmp && tmp->node_id == orig_dst) {
                 del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
-                if (tmp->node_id >= idz_unpack(refs.great_idz)) {
-                    update_great_idz(&refs);
-                }
                 dst = tmp;
                 break;
             }
@@ -561,9 +539,6 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 tmp = refs.refs[i].dst;
                 if (tmp == src) {
                     del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
-                    if (tmp->node_id >= idz_unpack(refs.great_idz)) {
-                        update_great_idz(&refs);
-                    }
                     break;
                 }
             }
@@ -631,6 +606,9 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 
     refs = nfo2p(fields, nfo);
     assert(((uintptr_t)refs & 7) == 0);
+
+    node_id_set_clear(&refs->index); /* fasty */
+
     while (refs->nr_refs > 0) {
         /*
          * Deleting the last ref first is faster because a memmove() is not needed.
@@ -678,28 +656,18 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
         struct SelvaNodeReference ref;
 
         memcpy(&ref, nfo2p(fields, nfo), sizeof(ref));
-        if (ref.dst == dst) {
-            return SELVA_EEXIST;
-        }
+
+        return (ref.dst == dst) ? SELVA_EEXIST : 0;
     } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences refs;
-        node_id_t great_id;
+        node_id_t dst_id = dst->node_id;
 
         memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
-        great_id = idz_unpack(refs.great_idz);
 
-        if (dst->node_id <= great_id || great_id == 0) {
-            for (size_t i = 0; i < refs.nr_refs; i++) {
-                struct SelvaNode *tmp = refs.refs[i].dst;
-
-                if (tmp == dst) {
-                    return SELVA_EEXIST;
-                }
-            }
-        }
+        return node_id_set_has(&refs.index, dst_id) ? SELVA_EEXIST : 0;
+    } else {
+        return 0;
     }
-
-    return 0;
 }
 
 static int check_ref_eexists_fast(
