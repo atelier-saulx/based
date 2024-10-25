@@ -46,6 +46,16 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
 
     prealloc_refs(ctx, data);
 
+    // TODO if !edges use batch operation
+    // set this whole thing
+
+    // check if ref b has ref a
+    // optional faster check of the id
+    // BST
+    // TODO if a node gets created optmize insert on the other
+    // check in schema if ASS
+
+    // 4 bytes buffer
     while (i < len) : (i += 5) {
         const op = data[i];
         const hasEdgeData = op == 1 or op == 2;

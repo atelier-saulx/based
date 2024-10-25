@@ -85,6 +85,7 @@ pub fn createResultsBuffer(
 
         const val = item.val.?;
 
+        // STRING & ALIAS
         if (item.isEdge > 0 and item.isEdge < 11 or item.isEdge == 23) {
             if (item.isEdge == 10 or item.isEdge == 9) {
                 data[i] = val[0];
