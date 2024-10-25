@@ -32,6 +32,7 @@ const getChangedFiles = (prevCommit, commit) => {
 
 const relevantFilesChanged = (prevCommit, commit) => {
   const changed = getChangedFiles(prevCommit, commit)
+  console.log({ prevCommit, commit, changed })
   for (const change of changed) {
     if (
       change.includes('packages/db/test') ||
