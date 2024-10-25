@@ -32,15 +32,18 @@ await test('references modify', async (t) => {
   const bob = db.create('user', {
     name: 'bob',
   })
+  db.drain()
 
   const marie = db.create('user', {
     name: 'marie',
   })
+  db.drain()
 
   const john = db.create('user', {
     name: 'john',
     friends: [bob],
   })
+  db.drain()
 
   await db.update('user', john, {
     friends: {
@@ -48,6 +51,7 @@ await test('references modify', async (t) => {
       add: [marie],
     },
   })
+  db.drain()
 
   deepEqual(
     db.query('user').include('*', 'friends').get().toObject(),
@@ -64,6 +68,7 @@ await test('references modify', async (t) => {
       add: [bob],
     },
   })
+  db.drain()
 
   deepEqual(
     db.query('user').include('*', 'friends').get().toObject(),
