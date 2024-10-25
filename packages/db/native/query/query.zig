@@ -12,8 +12,6 @@ const QuerySort = @import("./types/sort.zig");
 const Query = @import("./types/query.zig");
 const readInt = @import("../utils.zig").readInt;
 
-// ------------------------------------------------------------
-
 pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
@@ -42,8 +40,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const q = try napi.get([]u8, env, args[1]);
     const queryType = q[0];
     const typeId: db.TypeId = readInt(u16, q, 1);
-
-    // TODO maybe make these into fns and then you can read from root in branches as well ?
 
     // default query
     if (queryType == 2) {
@@ -81,7 +77,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         if (sortSize == 0) {
             try Query.queryIds(ids, &ctx, typeId, filterBuf, include);
         } else if (sortBuf[0] == 0) {
-            // later change fn signature
             try QuerySort.queryIds(9, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
         } else {
             try QuerySort.queryIds(10, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);

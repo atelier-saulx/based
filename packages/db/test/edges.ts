@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { defToBuffer } from '../src/query/toBuffer.js'
 
 await test('edges', async (t) => {
   const db = new BasedDb({
@@ -151,21 +152,51 @@ await test('edges', async (t) => {
   for (let i = 0; i < 3; i++) {
     lastArticle = await db.create('article', {
       name: 'The wonders of Strudel ' + i,
-      contributors: [mrYur, mrDerp, mrSnurp],
+      contributors: [
+        { id: mrYur, $role: 'editor', $rating: 5 },
+        mrDerp,
+        mrSnurp,
+      ],
     })
   }
 
-  const x = db
-    .query('article')
-    .include('contributors.*', 'contributors.$role', '*')
-    .get()
+  deepEqual(
+    db
+      .query('article')
+      .include((s) =>
+        s('contributors').filter('$role', '=', 'writer').include('$role'),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $role: 'writer',
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+      { id: 3, contributors: [] },
+      { id: 4, contributors: [] },
+    ],
+  )
 
-  console.log(x)
-
-  const y = db
-    .query('article', lastArticle)
-    .include('contributors.*', '*')
-    .get()
-
-  console.log(y)
+  deepEqual(
+    db
+      .query('article')
+      .include((s) =>
+        s('contributors').filter('$rating', '=', 5).include('$rating'),
+      )
+      .get()
+      .toObject(),
+    [
+      { id: 1, contributors: [{ id: 1, $rating: 5 }] },
+      { id: 2, contributors: [{ id: 2, $rating: 5 }] },
+      { id: 3, contributors: [{ id: 2, $rating: 5 }] },
+      { id: 4, contributors: [{ id: 2, $rating: 5 }] },
+    ],
+  )
 })

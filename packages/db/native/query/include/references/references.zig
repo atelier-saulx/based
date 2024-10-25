@@ -54,7 +54,7 @@ pub inline fn getRefsFields(
     const resultIndex: usize = ctx.results.items.len - 1;
 
     var edgeConstrain: ?*const selva.EdgeFieldConstraint = null;
-    var refs: types.Refs(isEdge) = undefined;
+    var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
         const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
@@ -83,14 +83,14 @@ pub inline fn getRefsFields(
 
     if (sortArr != null) {
         if (hasFilter) {
-            result = sortedReferences(isEdge, refs, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
+            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
         } else {
-            result = sortedReferences(isEdge, refs, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, false, null, offset, limit);
+            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstrain, false, null, offset, limit);
         }
     } else if (hasFilter) {
-        result = defaultReferences(isEdge, refs, ctx, includeNested, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
+        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstrain, true, filterArr.?, offset, limit);
     } else {
-        result = defaultReferences(isEdge, refs, ctx, includeNested, typeEntry.?, edgeConstrain, false, null, offset, limit);
+        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstrain, false, null, offset, limit);
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];

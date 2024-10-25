@@ -42,11 +42,11 @@ pub fn sortedReferences(
     const sortFlag = db.getSortFlag(sortFieldType, sortBuffer[0] == 1) catch {
         return result;
     };
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, refs.?.nr_refs).?;
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, refs.nr_refs).?;
 
-    checkItem: while (i < refs.?.nr_refs) : (i += 1) {
-        const refNode = refs.?.refs[i].dst.?;
-        if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr)) {
+    checkItem: while (i < refs.nr_refs) : (i += 1) {
+        const refNode = refs.refs[i].dst.?;
+        if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null)) {
             continue :checkItem;
         }
         const fs = db.getFieldSchema(sortField, typeEntry) catch {

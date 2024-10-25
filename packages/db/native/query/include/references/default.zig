@@ -20,15 +20,23 @@ pub fn defaultReferences(
     limit: u32,
 ) types.RefsResult {
     if (isEdge) {
+        // later...
         return 0;
     }
 
     var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
 
-    checkItem: while (i < refs.?.nr_refs and result.cnt < limit) : (i += 1) {
-        const refNode = refs.?.refs[i].dst.?;
-        if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr)) {
+    checkItem: while (i < refs.nr_refs and result.cnt < limit) : (i += 1) {
+        const refNode = refs.refs[i].dst.?;
+        const refStruct = types.RefResult(isEdge, refs, edgeConstrain, i);
+        if (hasFilter and !filter(
+            ctx.db,
+            refNode,
+            typeEntry,
+            filterArr,
+            refStruct,
+        )) {
             continue :checkItem;
         }
         result.cnt += 1;
@@ -38,7 +46,7 @@ pub fn defaultReferences(
             db.getNodeId(refNode),
             typeEntry,
             include,
-            types.RefResult(isEdge, refs, edgeConstrain, i),
+            refStruct,
             false,
         ) catch 0;
     }
