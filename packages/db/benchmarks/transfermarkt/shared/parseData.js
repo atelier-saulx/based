@@ -118,6 +118,7 @@ export const parseData = async () => {
           added[type] ??= {}
           added[type][refType] ??= 0
           added[type][refType]++
+          amount++
         }
       }
     }
@@ -126,7 +127,6 @@ export const parseData = async () => {
   log()
   log('total: ' + num(amount))
   timeEnd()
-  log('added:', added)
 
   return map
 }

@@ -61,14 +61,14 @@ const getFile = (name) => {
     }
 
     try {
-      const csv = readFileSync(name).toString()
+      const csv = readFileSync(name).toString().trim()
       const split = csv.split('\n')
       const headers = split[0].split(',')
 
       if (headers.length > 3) {
         const id = `${info.commit},${info.user},`
         let i = split.length
-        let prevCommit
+        let prev
         let current
         let prefix = ''
         let affix = ''
@@ -76,7 +76,7 @@ const getFile = (name) => {
         while (--i) {
           const line = split[i]
           if (current) {
-            prevCommit ??= line.substring(0, line.indexOf(','))
+            prev ??= line.split(',')
             prefix = `${line}\n${prefix}`
           } else if (line.startsWith(id)) {
             current = line.split(',')
@@ -92,8 +92,7 @@ const getFile = (name) => {
           current[0] = info.commit
           current[1] = info.user
           if (split.length > 1) {
-            const prev = split[split.length - 1]
-            prevCommit = prev.substring(0, prev.indexOf(','))
+            prev ??= split[split.length - 1].split(',')
           }
         }
 
@@ -103,7 +102,7 @@ const getFile = (name) => {
           prefix,
           affix,
           headers,
-          prevCommit,
+          prev,
           current,
         }
       }
@@ -160,8 +159,8 @@ export const perf = (label, filename, res) => {
 const store = (label, filename, res) => {
   const file = getFile(filename || 'results.csv')
   const index = file.headers.indexOf(label)
-  const prev = file.current[index]
-  const prevCommit = file.prevCommit
+  const prev = file.current[index] || file.prev?.[index]
+  const prevCommit = file.prev?.[0]
   const commit = file.current[0]
 
   if (prev) {
