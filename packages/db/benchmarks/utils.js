@@ -159,7 +159,6 @@ export const perf = (label, filename = 'results.csv') => {
     }
 
     if (relevantFilesChanged(commit, '')) {
-      console.log('files have changed, not writing ' + filename)
       return
     }
 

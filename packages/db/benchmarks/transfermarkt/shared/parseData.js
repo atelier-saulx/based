@@ -76,8 +76,6 @@ export const parseData = async () => {
             }
           }
 
-          console.log({ type, refProps })
-
           map[type] = { data, refProps, map: m, idKey }
         }
       }
