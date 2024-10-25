@@ -17,7 +17,7 @@
     "test": "npm run build && LOCPATH=./build/locale lldb -b -o run --one-line-on-crash bt -o \"script import os; os._exit(0)\" node ./scripts/test.js",
     "test-fast": "LOCPATH=./build/locale node ./scripts/test.js",
     "test-ts": "tsc && node ./scripts/test.js",
-    "perf": "npm run build && node benchmarks/transfermarkt/transfermarkt-based.js"
+    "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js"
   },
   "sideEffects": false,
   "files": [
