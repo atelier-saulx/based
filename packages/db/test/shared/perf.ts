@@ -30,7 +30,12 @@ const getChangedFiles = (prevCommit, commit) => {
   }
 }
 
+const cache = new Map()
 const relevantFilesChanged = (prevCommit, commit) => {
+  const id = prevCommit + commit
+  if (cache.has(id)) {
+    return cache.get(id)
+  }
   const changed = getChangedFiles(prevCommit, commit)
   for (const change of changed) {
     if (
@@ -38,9 +43,11 @@ const relevantFilesChanged = (prevCommit, commit) => {
       change.includes('packages/db/src') ||
       change.includes('packages/db/native')
     ) {
+      cache.set(id, true)
       return true
     }
   }
+  cache.set(id, false)
 }
 
 const files: Record<string, File> = {}
