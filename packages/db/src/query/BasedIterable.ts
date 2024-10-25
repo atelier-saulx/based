@@ -183,7 +183,7 @@ export const inspectData = (
   hasId: boolean = false,
 ) => {
   const length = q.length
-  const max = Math.min(length, depth === 0 ? (top ? 3 : 1) : depth)
+  const max = Math.min(length, depth)
   const prefix = top ? '  ' : ''
   let str: string
   let i = 0
@@ -269,7 +269,7 @@ export class BasedQueryResponse {
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 0, hasId)
+    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 2, hasId)
     str += '\n'
     str += dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
