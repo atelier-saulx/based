@@ -154,60 +154,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 break;
             },
         }
-
-        // if (op == Op.SWITCH_FIELD) {
-        //     // SWITCH FIELD
-        //     ctx.field = payload[0];
-        //     i = i + 2;
-        //     if (ctx.field != 0) {
-        //         ctx.currentSortIndex = try getSortIndex(&ctx, 0);
-        //     } else {
-        //         ctx.currentSortIndex = null;
-        //     }
-        //     ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
-        //     ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
-        //     if (ctx.fieldType == types.Prop.REFERENCE) {
-        //         offset = 1;
-        //     } else {
-        //         offset = 5;
-        //     }
-        // } else if (op == 10) {
-        //     db.deleteNode(ctx.db, ctx.node.?, ctx.typeEntry.?) catch {};
-        //     i = i + 1;
-        // } else if (op == 9) {
-        //     // create or get
-        //     ctx.id = readInt(u32, payload, 0);
-        //     ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
-        //     i = i + 5;
-        // } else if (op == 1) {
-        //     // SWITCH ID
-        //     ctx.id = readInt(u32, payload, 0);
-        //     ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
-        //     i = i + 5;
-        // } else if (op == 2) {
-        //     // SWITCH TYPE
-        //     ctx.typeId = readInt(u16, payload, 0);
-        //     ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
-        //     i = i + 3;
-        // } else if (op == 3) {
-        //     i += try createField(&ctx, readData(ctx.fieldType, payload)) + offset;
-        // } else if (op == 5) {
-        //     i += try updatePartialField(&ctx, readData(ctx.fieldType, payload)) + offset;
-        // } else if (op == 6) {
-        //     i += try updateField(&ctx, readData(ctx.fieldType, payload)) + offset;
-        // } else if (op == 7) {
-        //     i += try addEmptyToSortIndex(&ctx, payload) + 1;
-        // } else if (op == 8) {
-        //     i += try deleteFieldOnly(&ctx) + 1;
-        // } else if (op == 11) {
-        //     i += try deleteFieldOnlyReal(&ctx) + 1;
-        // } else if (op == 4) {
-        //     // special case
-        //     i += try deleteField(&ctx) + 1;
-        // } else {
-        //     std.log.err("Something went wrong, incorrect modify payload\n", .{});
-        //     break;
-        // }
     }
 
     if (ctx.sortWriteTxn != null) {
