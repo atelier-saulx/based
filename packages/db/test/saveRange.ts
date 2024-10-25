@@ -43,7 +43,6 @@ await test('save simple range', async (t) => {
   await db.stop()
 
   const ls = await readdir(t.tmp)
-  console.log(ls)
   equal(ls.includes('common.sdb'), true)
   equal(ls.includes('65281_1_1.sdb'), true)
   equal(ls.includes('65281_2_2.sdb'), true)

@@ -25,7 +25,8 @@ export * from './modify/modify.js'
 
 const SCHEMA_FILE = 'schema.json'
 const COMMON_SDB_FILE = 'common.sdb'
-const block_sdb_file = (typeId: number, start: number, end: number) => `${typeId}_${start}_${end}.sdb`
+const block_sdb_file = (typeId: number, start: number, end: number) =>
+  `${typeId}_${start}_${end}.sdb`
 
 export class BasedDb {
   isDraining: boolean = false
@@ -122,9 +123,15 @@ export class BasedDb {
     )
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
-    db.loadCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
+    db.loadCommon(
+      join(this.fileSystemPath, COMMON_SDB_FILE),
+      this.dbCtxExternal,
+    )
     dumps.forEach((fname) => {
-      const err = db.loadRange(join(this.fileSystemPath, fname), this.dbCtxExternal)
+      const err = db.loadRange(
+        join(this.fileSystemPath, fname),
+        this.dbCtxExternal,
+      )
       if (err) {
         console.log(`Failed to load a range. file: "${fname}": ${err}`)
       }
@@ -264,9 +271,13 @@ export class BasedDb {
 
   async save() {
     let err: number
+    const ts = Date.now()
     const mt = createMerkleTree(() => createHash('sha256'))
 
-    err = this.native.saveCommon(join(this.fileSystemPath, COMMON_SDB_FILE), this.dbCtxExternal)
+    err = this.native.saveCommon(
+      join(this.fileSystemPath, COMMON_SDB_FILE),
+      this.dbCtxExternal,
+    )
     if (err) {
       console.error(`Save common failed: ${err}`)
     }
@@ -281,18 +292,37 @@ export class BasedDb {
 
       for (let start = 1; start <= lastId; start += step) {
         const end = start + step - 1
-        const path = join(this.fileSystemPath, block_sdb_file(def.id, start, end))
+        const file = block_sdb_file(def.id, start, end)
+        const path = join(this.fileSystemPath, file)
         const hash = Buffer.allocUnsafe(16)
-        err = this.native.saveRange(path, def.id, start, end, this.dbCtxExternal, hash)
+        err = this.native.saveRange(
+          path,
+          def.id,
+          start,
+          end,
+          this.dbCtxExternal,
+          hash,
+        )
         if (err) {
           console.error(`Save ${def.id}:${start}-${end} failed: ${err}`)
           continue
         }
 
         const mtKey = def.id * 4294967296 + start
-	    mt.insert(mtKey, hash)
+        mt.insert(mtKey, hash, { file, start, end })
       }
     }
+
+    const dumps = []
+    mt.visitLeafNodes((leaf) =>
+      dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
+    )
+    const data = { ts, hash: mt.getRoot().hash.toString('hex'), dumps }
+    fs.appendFile(
+      join(this.fileSystemPath, 'writelog.json'),
+      JSON.stringify(data),
+      { flag: 'w', flush: true },
+    )
   }
 
   async stop(noSave?: boolean) {
