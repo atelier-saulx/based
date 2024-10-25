@@ -13,6 +13,7 @@
 #include "selva/fields.h"
 #include "queue.h"
 #include "selva_error.h"
+#include "selva_hash128.h"
 #include "schema.h"
 #include "db_panic.h"
 #include "db.h"
@@ -628,7 +629,7 @@ node_id_t selva_get_node_id(const struct SelvaNode *node)
 /**
  * Hash the aliases pointing to the given node.
  */
-static void hash_aliases(XXH3_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
+static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
 {
     for (size_t i = 0; i < type->nr_aliases; i++) {
         struct SelvaAliases *aliases = &type->aliases[i];
@@ -642,7 +643,7 @@ static void hash_aliases(XXH3_state_t *hash_state, struct SelvaTypeEntry *type, 
             const char *name = alias->name;
             size_t len = strlen(name);
 
-            XXH3_128bits_update(hash_state, name, len);
+            selva_hash_update(hash_state, name, len);
             alias = alias->next;
         }
     }
@@ -650,17 +651,27 @@ static void hash_aliases(XXH3_state_t *hash_state, struct SelvaTypeEntry *type, 
 
 void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    XXH3_state_t *hash_state = XXH3_createState();
-    XXH128_hash_t res;
+    selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_hash128_t res;
 
-    XXH3_128bits_reset(hash_state);
+    selva_hash_reset(hash_state);
     selva_fields_hash_update(hash_state, &type->ns.fields_schema, &node->fields);
     hash_aliases(hash_state, type, node->node_id);
-    res = XXH3_128bits_digest(hash_state);
-    XXH3_freeState(hash_state);
+    res = selva_hash_digest(hash_state);
+    selva_hash_free_state(hash_state);
 
-    node->node_hash = (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
+    node->node_hash = res;
 }
+
+void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *hash_state)
+{
+    if (node->node_hash == 0) {
+        selva_node_hash_update(type, node);
+    }
+
+    selva_hash_update(hash_state, &node->node_hash, sizeof(node->node_hash));
+}
+
 
 void selva_node_hash_clear(struct SelvaNode *node)
 {
@@ -674,8 +685,10 @@ selva_hash128_t selva_node_hash_get(struct SelvaNode *node)
 
 selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end)
 {
-    XXH3_state_t *hash_state = XXH3_createState();
-    XXH128_hash_t res;
+    selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_hash128_t res;
+
+    selva_hash_reset(hash_state);
 
     struct SelvaNode *node = selva_nfind_node(type, start);
     if (!node || node->node_id > end) {
@@ -683,28 +696,15 @@ selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t sta
     }
 
     do {
-        if (node->node_hash == 0) {
-            selva_node_hash_update(type, node);
-        }
-
-        XXH3_128bits_update(hash_state, &node->node_hash, sizeof(node->node_hash));
+        selva_node_hash_update2(type, node, hash_state);
 
         node = selva_next_node(type, node);
     } while (node && node->node_id <= end);
 
-retry:
-    res = XXH3_128bits_digest(hash_state);
-    if (res.low64 == 0 && res.high64 == 0) {
-        /*
-         * We don't allow zero hash.
-         * RFE Is this a good approach?
-         */
-        XXH3_128bits_update(hash_state, &(int64_t){ 1 }, sizeof(int64_t));
-        goto retry;
-    }
-    XXH3_freeState(hash_state);
+    res = selva_hash_digest(hash_state);
+    selva_hash_free_state(hash_state);
 
-    return (selva_hash128_t)res.low64 | (selva_hash128_t)res.high64 << 64;
+    return res;
 }
 
 void selva_archive_type(struct SelvaTypeEntry *type)

@@ -73,12 +73,14 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
             ctx.fieldSchema.?,
             index,
         );
+
         if (hasEdgeData) {
             const totalEdgesLen = readInt(u32, data, i + 5);
             const edges = data[i + 9 .. i + totalEdgesLen + 9];
             try edge.writeEdges(ctx, ref, edges);
             i += edges.len + 4;
         }
+
         if (hasIndex) {
             i += 4;
         }

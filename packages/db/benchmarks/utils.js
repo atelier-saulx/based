@@ -61,14 +61,14 @@ const getFile = (name) => {
     }
 
     try {
-      const csv = readFileSync(name).toString()
+      const csv = readFileSync(name).toString().trim()
       const split = csv.split('\n')
       const headers = split[0].split(',')
 
       if (headers.length > 3) {
         const id = `${info.commit},${info.user},`
         let i = split.length
-        let prevCommit
+        let prev
         let current
         let prefix = ''
         let affix = ''
@@ -76,7 +76,7 @@ const getFile = (name) => {
         while (--i) {
           const line = split[i]
           if (current) {
-            prevCommit ??= line.substring(0, line.indexOf(','))
+            prev ??= line.split(',')
             prefix = `${line}\n${prefix}`
           } else if (line.startsWith(id)) {
             current = line.split(',')
@@ -92,8 +92,7 @@ const getFile = (name) => {
           current[0] = info.commit
           current[1] = info.user
           if (split.length > 1) {
-            const prev = split[split.length - 1]
-            prevCommit = prev.substring(0, prev.indexOf(','))
+            prev ??= split[split.length - 1].split(',')
           }
         }
 
@@ -103,7 +102,7 @@ const getFile = (name) => {
           prefix,
           affix,
           headers,
-          prevCommit,
+          prev,
           current,
         }
       }
@@ -140,37 +139,47 @@ const date = () => {
   return new Date().toISOString().slice(0, -5)
 }
 
-export const perf = (label, filename = 'results.csv') => {
+export const perf = (label, filename, res) => {
+  if (typeof filename === 'number') {
+    store(label, null, filename)
+    return
+  }
+  if (typeof res === 'number') {
+    store(label, filename, res)
+  }
   const start = Date.now()
 
   return () => {
     const end = Date.now()
     const res = (end - start) / 1e3
-    const file = getFile(filename)
-    const index = file.headers.indexOf(label)
-    const prev = file.current[index]
-    const prevCommit = file.prevCommit
-    const commit = file.current[0]
+    store(label, filename, res)
+  }
+}
 
-    if (prev) {
-      console.info(label, prev, '->', res)
+const store = (label, filename, res) => {
+  const file = getFile(filename || 'results.csv')
+  const index = file.headers.indexOf(label)
+  const prev = file.current[index] || file.prev?.[index]
+  const prevCommit = file.prev?.[0]
+  const commit = file.current[0]
+
+  if (prev) {
+    console.info(label, prev, '->', res)
+  } else {
+    console.info(label, res)
+  }
+
+  if (prevCommit && relevantFilesChanged(commit, '')) {
+    return
+  }
+
+  if (!prevCommit || relevantFilesChanged(prevCommit, commit)) {
+    if (index === -1) {
+      file.headers.push(label)
+      file.current.push(String(res))
     } else {
-      console.info(label, res)
+      file.current[index] = String(res)
     }
-
-    if (relevantFilesChanged(commit, '')) {
-      return
-    }
-
-    if (!prevCommit || relevantFilesChanged(prevCommit, commit)) {
-      if (index === -1) {
-        file.headers.push(label)
-        file.current.push(String(res))
-      } else {
-        file.current[index] = String(res)
-      }
-      updateFile(file)
-      return
-    }
+    updateFile(file)
   }
 }

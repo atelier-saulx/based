@@ -6,50 +6,53 @@ import { tmpdir } from 'os'
 import { perf } from '../utils.js'
 
 const map = await parseData()
-const db = new BasedDb({
-  path: tmpdir(),
-})
+if (map) {
+  const db = new BasedDb({
+    path: tmpdir(),
+  })
 
-await db.start({ clean: true })
+  await db.start({ clean: true })
 
-const schemaPerf = perf('insert schema')
-db.putSchema(schema)
-schemaPerf()
-console.log('??')
-const insertPerf = perf('insert nodes')
-const refMap = {}
-for (const type in map) {
-  const { data } = map[type]
-  for (const node of data) {
-    node._id = db.create(type, node.data).tmpId
-    if (node.id) {
-      refMap[type] ??= {}
-      refMap[type][node.id] = node._id
-    }
-  }
-}
+  const schemaPerf = perf('insert schema')
+  db.putSchema(schema)
+  schemaPerf()
 
-let refCnt = 0
-let updates = 0
-
-for (const type in map) {
-  const { data, refProps } = map[type]
-  for (const node of data) {
-    for (const key in refProps) {
-      const { refType, refProp } = refProps[key]
-      const val = node.data[key]
-      if (val in refMap[refType]) {
-        node._refs ??= {}
-        node._refs[refProp] = refMap[refType][val]
-        refCnt++
+  const insertPerf = perf('insert nodes')
+  const refMap = {}
+  for (const type in map) {
+    const { data } = map[type]
+    for (const node of data) {
+      node._id = db.create(type, node.data).tmpId
+      if (node.id) {
+        refMap[type] ??= {}
+        refMap[type][node.id] = node._id
       }
     }
-    if (node._refs) {
-      updates++
-      db.update(type, node._id, node._refs)
+  }
+
+  let refCnt = 0
+  let updates = 0
+
+  for (const type in map) {
+    const { data, refProps } = map[type]
+    for (const node of data) {
+      for (const key in refProps) {
+        const { refType, refProp } = refProps[key]
+        const val = node.data[key]
+        if (val in refMap[refType]) {
+          node._refs ??= {}
+          node._refs[refProp] = refMap[refType][val]
+          refCnt++
+        }
+      }
+      if (node._refs) {
+        updates++
+        db.update(type, node._id, node._refs)
+      }
     }
   }
-}
 
-db.drain()
-insertPerf()
+  const drainTime = db.drain()
+  insertPerf()
+  perf('insert drain', drainTime / 1e3)
+}

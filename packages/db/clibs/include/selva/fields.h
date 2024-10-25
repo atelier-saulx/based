@@ -20,6 +20,7 @@
  */
 #define SELVA_FIELDS_RESERVED 255
 
+/* RFE Not good? */
 struct XXH3_state_s;
 
 #ifdef __zig
