@@ -153,6 +153,12 @@ await test('edges', async (t) => {
     },
   })
 
+  for (let i = 0; i < 3; i++) {
+    await db.create('article', {
+      name: 'The wonders of Strudel ' + i,
+    })
+  }
+
   const x = db.query('article').include('contributors.*', '*').get()
 
   console.log(x)

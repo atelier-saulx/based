@@ -45,19 +45,27 @@ const inspectObject = (
   object: any,
   q: QueryDef,
   path: string,
-  // make this nice
   level: number = 0,
+  isLast: boolean = false,
+  isFirst: boolean = false,
 ) => {
-  const prefix = ''.padEnd(level * 2 + 2, ' ')
-  let str = '{\n'
+  const prefix = ''.padEnd(level, ' ')
+  // if top dont add this
+  let str = ''
+
+  if (isFirst) {
+    str = '{\n'
+  } else {
+    str = prefix + '{\n'
+  }
+
+  const prefixBody = ''.padEnd(level + 3, ' ')
+
   for (const k in object) {
     const key = path ? path + '.' + k : k
     const def: PropDef | PropDefEdge = q.props[key]
-
-    // console.log(key, def)
     let v = object[k]
-    str += prefix + `${k}: `
-
+    str += prefixBody + `${k}: `
     if (k[0] === '$') {
       str += `${v}`
       str += '\n'
@@ -68,8 +76,7 @@ const inspectObject = (
       str += inspectObject(v, q, key, level + 1)
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
-        // fix and add
-        str += inspectData(v, q.references.get(def.prop), true, level + 1)
+        str += inspectData(v, q.references.get(def.prop), level + 2, false)
       } else if (def.typeIndex === 13) {
         if (!v.id) {
           str += 'null'
@@ -79,6 +86,7 @@ const inspectObject = (
             q.references.get(def.prop),
             key,
             level + 2,
+            true,
           ).slice(0, -1)
         }
         str += '\n'
@@ -112,46 +120,56 @@ const inspectObject = (
     }
   }
 
-  if (level === 0) {
+  if (isLast) {
+    str += prefix + '}'
   } else {
-    str += '}\n'.padStart(level * 2 + 2, ' ')
+    str += prefix + '},\n'
   }
+
   return str
 }
 
 export const inspectData = (
   q: BasedQueryResponse,
   def: QueryDef,
-  nested: boolean,
-  level: number = 0,
+  level: number,
+  top: boolean,
 ) => {
   const length = q.length
-  const max = Math.min(length, nested ? 2 : 10)
-  let str = ''
+  const max = length // Math.min(length, 3)
+
+  const prefix = top ? '  ' : ''
+
+  let str = prefix + '['
   let i = 0
+
+  if (top) {
+    level = level + 2
+  }
+
   for (const x of q) {
-    str += inspectObject(x, def, '', level)
+    str += inspectObject(x, def, '', level + 1, i === max - 1, i === 0)
     i++
     if (i >= max) {
-      str += '}'
+      // str += '}'.padStart(level + 4, ' ')
       break
     }
-    str += '},\n'
+    // str += ','
   }
-  if (length > max) {
-    str +=
-      '},\n' +
-      picocolors.dim(
-        picocolors.italic(
-          `...${length - max} More item${length - max !== 1 ? 's' : ''}`,
-        ),
-      )
-  }
-  str = `[\n  ${str.replaceAll('\n', '\n  ').trim()}\n${']'.padStart(level * 2 + 1, ' ')}`
-  if (nested) {
-    return str
-  }
-  return `${picocolors.bold(`BasedIterable[${q.def.schema.type}]`)} (${q.length}) ${str}`
+  // if (length > max) {
+  //   str +=
+  //     ',\n' +
+  //     picocolors.dim(
+  //       picocolors.italic(
+  //         `...${length - max} More item${length - max !== 1 ? 's' : ''}\n`.padStart(
+  //           level + 2,
+  //           ' DERP',
+  //         ),
+  //       ),
+  //     )
+  // }
+  str += ']'
+  return str
 }
 
 export class BasedQueryResponse {
@@ -184,10 +202,9 @@ export class BasedQueryResponse {
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, this.def, true)
-      .replaceAll('\n', '\n  ')
-      .trim()
-    str += '\n  ' + dataStr
+    const dataStr = inspectData(this, this.def, 0, true)
+    str += '\n'
+    str += dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
