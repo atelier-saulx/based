@@ -163,6 +163,7 @@ export type SchemaAlias = Omit<SchemaString, 'type'> & { type: 'alias' }
 
 export type SchemaPropShorthand =
   | 'timestamp'
+  | 'binary'
   | 'boolean'
   | 'string'
   | 'alias'
@@ -194,6 +195,7 @@ type NonRefSchemaProps =
   | SchemaText
   | SchemaEnum
   | SchemaSet
+  | SchemaBinary
 
 export type SchemaProp =
   | SchemaReferencesWithQuery

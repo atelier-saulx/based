@@ -1,5 +1,6 @@
 import {
   ALIAS,
+  ALIASES,
   BINARY,
   BOOLEAN,
   ENUM,
@@ -9,6 +10,8 @@ import {
   NUMBER,
   PropDef,
   PropDefEdge,
+  REFERENCE,
+  REFERENCES,
   STRING,
   TIMESTAMP,
   UINT16,
@@ -156,11 +159,15 @@ export const readAllFields = (
     }
     if (index === 252) {
       const prop = result[i]
-
       const edgeDef = q.edges.reverseProps[prop]
-      // if 13 / 14 / 11
       const t = edgeDef.typeIndex
-      if (t === 11) {
+
+      if (t === BINARY) {
+        i++
+        const size = result.readUint32LE(i)
+        addField(edgeDef, new Uint8Array(result.buffer, i + 4, size), item)
+        i += size + 4
+      } else if (t === STRING || t === ALIAS || t === ALIASES) {
         i++
         const size = result.readUint32LE(i)
         if (size === 0) {
@@ -169,13 +176,11 @@ export const readAllFields = (
           addField(edgeDef, result.toString('utf8', i + 4, size + i + 4), item)
         }
         i += size + 4
-      } else if (t === 13) {
-      } else if (t === 14) {
-      } else if (t === 1) {
+      } else if (t === REFERENCE) {
+      } else if (t === REFERENCES) {
       } else {
         i++
         readMainValue(edgeDef, result, i, item)
-        console.log('DERP', i, prop)
         i += edgeDef.len
       }
     } else if (index === 254) {

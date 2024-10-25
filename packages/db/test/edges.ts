@@ -50,11 +50,11 @@ await test('edges', async (t) => {
               //     ref: 'country',
               //   },
               // },
+              $file: 'binary',
               $lang: 'string',
               $role: ['writer', 'editor'],
               $rating: 'uint32',
-              // $price: ['mep', 'map'],
-              // $email: 'string',
+              $on: 'boolean',
             },
           },
         },
@@ -77,7 +77,7 @@ await test('edges', async (t) => {
 
   db.drain()
 
-  const strudelArticle = db.create('article', {
+  db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
@@ -85,43 +85,58 @@ await test('edges', async (t) => {
         $lang: 'en',
         $rating: 5,
         $role: 'writer',
-        // $lang: 'en',
+        $on: true,
+        $file: new Uint8Array([1, 2, 3, 4]),
       },
     ],
   })
 
   db.drain()
 
-  const x = db.query('article').include('contributors.$role').get()
+  deepEqual(
+    db.query('article').include('contributors.$role').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $role: 'writer' }],
+      },
+    ],
+  )
 
-  x.debug()
+  deepEqual(
+    db.query('article').include('contributors.$rating').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $rating: 5 }],
+      },
+    ],
+  )
 
-  deepEqual(x.toObject(), [
+  deepEqual(
+    db.query('article').include('contributors.$lang').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $lang: 'en' }],
+      },
+    ],
+  )
+
+  deepEqual(db.query('article').include('contributors.$on').get().toObject(), [
     {
       id: 1,
-      contributors: [{ id: 1, $role: 'writer' }],
+      contributors: [{ id: 1, $on: true }],
     },
   ])
 
-  const y = db.query('article').include('contributors.$rating').get()
-
-  y.debug()
-
-  deepEqual(y.toObject(), [
-    {
-      id: 1,
-      contributors: [{ id: 1, $rating: 5 }],
-    },
-  ])
-
-  const z = db.query('article').include('contributors.$lang').get()
-
-  z.debug()
-
-  deepEqual(z.toObject(), [
-    {
-      id: 1,
-      contributors: [{ id: 1, $lang: 'en' }],
-    },
-  ])
+  deepEqual(
+    db.query('article').include('contributors.$file').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $file: new Uint8Array([1, 2, 3, 4]) }],
+      },
+    ],
+  )
 })
