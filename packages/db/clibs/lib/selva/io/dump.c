@@ -19,6 +19,7 @@
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
+#include "../selva_hash128.h"
 #include "../io.h"
 #include "io_struct.h"
 

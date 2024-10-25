@@ -14,6 +14,7 @@
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "../db_panic.h"
+#include "../selva_hash128.h"
 #include "../io.h"
 #include "io_struct.h"
 #include "sdb.h"
@@ -76,25 +77,25 @@ static const char magic_end[]   = { 'D', 'N', 'E', 'A', 'V', 'L', 'E', 'S' };
 
 static inline void sdb_hash_init(struct selva_io *io)
 {
-    io->hash_state = XXH3_createState();
-    XXH3_128bits_reset(io->hash_state);
+    io->hash_state = selva_hash_create_state();
+    selva_hash_reset(io->hash_state);
 }
 
 static inline void sdb_hash_deinit(struct selva_io *io)
 {
-    XXH3_freeState(io->hash_state);
+    selva_hash_free_state(io->hash_state);
 }
 
 static inline void sdb_hash_update(struct selva_io *io, void const *in, size_t len)
 {
-    XXH3_128bits_update(io->hash_state, in, len);
+    selva_hash_update(io->hash_state, in, len);
 }
 
 static inline void sdb_hash_finalize(struct selva_io *io)
 {
-    XXH128_hash_t result = XXH3_128bits_digest(io->hash_state);
+    selva_hash128_t result = selva_hash_digest(io->hash_state);
     memcpy(io->computed_hash, &result, sizeof(result));
-    static_assert(sizeof(io->computed_hash) == sizeof(XXH128_hash_t));
+    static_assert(sizeof(io->computed_hash) == sizeof(result));
 }
 
 /**
