@@ -45,10 +45,11 @@ const inspectObject = (
   object: any,
   q: QueryDef,
   path: string,
-  level: number = 0,
-  isLast: boolean = false,
-  isFirst: boolean = false,
-  isObject: boolean = false,
+  level: number,
+  isLast: boolean,
+  isFirst: boolean,
+  isObject: boolean,
+  depth: number,
 ) => {
   const prefix = ''.padEnd(level, ' ')
   // if top dont add this
@@ -75,10 +76,16 @@ const inspectObject = (
       str += ',\n'
     } else if (!def) {
       // remove last comma
-      str += inspectObject(v, q, key, level + 2, false, false, true) + ''
+      str += inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
-        str += inspectData(v, q.references.get(def.prop), level + 2, false)
+        str += inspectData(
+          v,
+          q.references.get(def.prop),
+          level + 2,
+          false,
+          depth,
+        )
       } else if (def.typeIndex === 13) {
         if (!v.id) {
           str += 'null'
@@ -91,6 +98,7 @@ const inspectObject = (
             false,
             false,
             true,
+            depth,
           )
         }
         str += ',\n'
@@ -141,20 +149,36 @@ export const inspectData = (
   def: QueryDef,
   level: number,
   top: boolean,
+  depth: number,
+  hasId: boolean = false,
 ) => {
   const length = q.length
-  const max = Math.min(length, top ? 3 : 1)
+  const max = Math.min(length, depth === 0 ? (top ? 3 : 1) : depth)
   const prefix = top ? '  ' : ''
   let str: string
   let i = 0
-  if (top) {
+
+  if (hasId) {
+    str = prefix
+    level = level + 1
+  } else if (top) {
     level = level + 3
     str = prefix + '[\n' + prefix + '  '
   } else {
     str = prefix + '['
   }
+
   for (const x of q) {
-    str += inspectObject(x, def, '', level + 1, i === max - 1, i === 0)
+    str += inspectObject(
+      x,
+      def,
+      '',
+      level + 1,
+      i === max - 1,
+      i === 0,
+      false,
+      depth,
+    )
     i++
     if (i >= max) {
       break
@@ -171,16 +195,22 @@ export const inspectData = (
             `...${length - max} More item${length - max !== 1 ? 's' : ''}\n`,
         ),
       )
-    if (top) {
+    if (hasId) {
+      str += ''
+    } else if (top) {
       str += prefix + ']'
     } else {
       str += prefix + ']'.padStart(level + 2, ' ')
     }
+  }
+
+  if (hasId) {
   } else if (top) {
     str += '\n' + prefix + ']'
   } else {
     str += ']'
   }
+
   return str
 }
 
@@ -205,16 +235,17 @@ export class BasedQueryResponse {
     this.end = end
   }
 
-  [inspect.custom](depth) {
-    // @ts-ignore
-    const target = this.def.target.id
+  [inspect.custom]() {
+    const hasId = 'id' in this.def.target
+    const target = hasId
       ? // @ts-ignore
         this.def.schema.type + ':' + this.def.target.id
       : this.def.schema.type
+
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, this.def, 0, true)
+    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 0, hasId)
     str += '\n'
     str += dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
