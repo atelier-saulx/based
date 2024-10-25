@@ -48,12 +48,13 @@ const inspectObject = (
   level: number = 0,
   isLast: boolean = false,
   isFirst: boolean = false,
+  isObject: boolean = false,
 ) => {
   const prefix = ''.padEnd(level, ' ')
   // if top dont add this
   let str = ''
 
-  if (isFirst) {
+  if (isFirst || isObject) {
     str = '{\n'
   } else {
     str = prefix + '{\n'
@@ -68,12 +69,13 @@ const inspectObject = (
     str += prefixBody + `${k}: `
     if (k[0] === '$') {
       str += `${v}`
-      str += '\n'
+      str += ',\n'
     } else if (key === 'id') {
       str += `${v}`
-      str += '\n'
+      str += ',\n'
     } else if (!def) {
-      str += inspectObject(v, q, key, level + 1)
+      // remove last comma
+      str += inspectObject(v, q, key, level + 2, false, false, true) + ''
     } else if ('__isPropDef' in def) {
       if (def.typeIndex === 14) {
         str += inspectData(v, q.references.get(def.prop), level + 2, false)
@@ -86,10 +88,12 @@ const inspectObject = (
             q.references.get(def.prop),
             key,
             level + 2,
+            false,
+            false,
             true,
-          ).slice(0, -1)
+          )
         }
-        str += '\n'
+        str += ',\n'
       } else if (def.typeIndex === 11) {
         if (v === undefined) {
           return ''
@@ -114,18 +118,21 @@ const inspectObject = (
       } else {
         str += v
       }
-      str += '\n'
+      str += ',\n'
     } else {
-      str += '\n'
+      str += ',\n'
     }
   }
 
-  if (isLast) {
+  // remove comma
+
+  if (isObject) {
+    str += prefix + ' },\n'
+  } else if (isLast) {
     str += prefix + '}'
   } else {
     str += prefix + '},\n'
   }
-
   return str
 }
 
@@ -136,39 +143,44 @@ export const inspectData = (
   top: boolean,
 ) => {
   const length = q.length
-  const max = length // Math.min(length, 3)
-
+  const max = Math.min(length, top ? 3 : 1)
   const prefix = top ? '  ' : ''
-
-  let str = prefix + '['
+  let str: string
   let i = 0
-
   if (top) {
-    level = level + 2
+    level = level + 3
+    str = prefix + '[\n' + prefix + '  '
+  } else {
+    str = prefix + '['
   }
-
   for (const x of q) {
     str += inspectObject(x, def, '', level + 1, i === max - 1, i === 0)
     i++
     if (i >= max) {
-      // str += '}'.padStart(level + 4, ' ')
       break
     }
-    // str += ','
   }
-  // if (length > max) {
-  //   str +=
-  //     ',\n' +
-  //     picocolors.dim(
-  //       picocolors.italic(
-  //         `...${length - max} More item${length - max !== 1 ? 's' : ''}\n`.padStart(
-  //           level + 2,
-  //           ' DERP',
-  //         ),
-  //       ),
-  //     )
-  // }
-  str += ']'
+  if (length > max) {
+    const morePrefix = ''.padStart(top ? 2 : level + 3, ' ')
+    str +=
+      ',\n' +
+      picocolors.dim(
+        picocolors.italic(
+          prefix +
+            morePrefix +
+            `...${length - max} More item${length - max !== 1 ? 's' : ''}\n`,
+        ),
+      )
+    if (top) {
+      str += prefix + ']'
+    } else {
+      str += prefix + ']'.padStart(level + 2, ' ')
+    }
+  } else if (top) {
+    str += '\n' + prefix + ']'
+  } else {
+    str += ']'
+  }
   return str
 }
 
@@ -193,7 +205,7 @@ export class BasedQueryResponse {
     this.end = end
   }
 
-  [inspect.custom](_depth) {
+  [inspect.custom](depth) {
     // @ts-ignore
     const target = this.def.target.id
       ? // @ts-ignore

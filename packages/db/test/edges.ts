@@ -26,6 +26,12 @@ await test('edges', async (t) => {
               prop: 'contributors',
             },
           },
+          location: {
+            props: {
+              long: 'number',
+              lat: 'number',
+            },
+          },
         },
       },
       country: {
@@ -64,15 +70,18 @@ await test('edges', async (t) => {
 
   const mrSnurp = db.create('user', {
     name: 'Mr snurp',
+    location: {
+      long: 42.12,
+      lat: 32.14,
+    },
   })
 
   const mrYur = db.create('user', {
     name: 'Mr Yur',
   })
 
-  const nl = db.create('country', {
-    name: 'Netherlands',
-    code: 'nl',
+  const mrDerp = db.create('user', {
+    name: 'Mr Derp',
   })
 
   db.drain()
@@ -138,28 +147,17 @@ await test('edges', async (t) => {
     ],
   )
 
-  await db.update('article', strudel, {
-    contributors: {
-      add: [
-        {
-          id: mrSnurp,
-          $lang: 'en',
-          $rating: 5,
-          $role: 'writer',
-          $on: true,
-          $file: new Uint8Array([1, 2, 3, 4]),
-        },
-      ],
-    },
-  })
-
   for (let i = 0; i < 3; i++) {
     await db.create('article', {
       name: 'The wonders of Strudel ' + i,
+      contributors: [mrYur, mrDerp, mrSnurp],
     })
   }
 
-  const x = db.query('article').include('contributors.*', '*').get()
+  const x = db
+    .query('article')
+    .include('contributors.*', 'contributors.$role', '*')
+    .get()
 
   console.log(x)
 })
