@@ -50,11 +50,11 @@ await test('edges', async (t) => {
               //     ref: 'country',
               //   },
               // },
+              $file: 'binary',
               $lang: 'string',
               $role: ['writer', 'editor'],
               $rating: 'uint32',
-              // $price: ['mep', 'map'],
-              // $email: 'string',
+              $on: 'boolean',
             },
           },
         },
@@ -77,7 +77,7 @@ await test('edges', async (t) => {
 
   db.drain()
 
-  const strudelArticle = db.create('article', {
+  const strudel = await db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
@@ -85,32 +85,75 @@ await test('edges', async (t) => {
         $lang: 'en',
         $rating: 5,
         $role: 'writer',
-        // $lang: 'en',
+        $on: true,
+        $file: new Uint8Array([1, 2, 3, 4]),
       },
     ],
   })
 
-  db.drain()
+  deepEqual(
+    db.query('article').include('contributors.$role').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $role: 'writer' }],
+      },
+    ],
+  )
 
-  const x = db.query('article').include('contributors.$role').get()
+  deepEqual(
+    db.query('article').include('contributors.$rating').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $rating: 5 }],
+      },
+    ],
+  )
 
-  x.debug()
+  deepEqual(
+    db.query('article').include('contributors.$lang').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $lang: 'en' }],
+      },
+    ],
+  )
 
-  deepEqual(x.toObject(), [
+  deepEqual(db.query('article').include('contributors.$on').get().toObject(), [
     {
       id: 1,
-      contributors: [{ id: 1, $role: 'writer' }],
+      contributors: [{ id: 1, $on: true }],
     },
   ])
 
-  const y = db.query('article').include('contributors.$rating').get()
+  deepEqual(
+    db.query('article').include('contributors.$file').get().toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $file: new Uint8Array([1, 2, 3, 4]) }],
+      },
+    ],
+  )
 
-  y.debug()
-
-  deepEqual(y.toObject(), [
-    {
-      id: 1,
-      contributors: [{ id: 1, $rating: 5 }],
+  await db.update('article', strudel, {
+    contributors: {
+      add: [
+        {
+          id: mrSnurp,
+          $lang: 'en',
+          $rating: 5,
+          $role: 'writer',
+          $on: true,
+          $file: new Uint8Array([1, 2, 3, 4]),
+        },
+      ],
     },
-  ])
+  })
+
+  const x = db.query('article').include('contributors.*', '*').get()
+
+  console.log(x)
 })

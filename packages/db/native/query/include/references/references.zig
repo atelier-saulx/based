@@ -13,6 +13,7 @@ const sortedReferences = @import("./sort.zig").sortedReferences;
 const defaultReferences = @import("./default.zig").defaultReferences;
 
 const std = @import("std");
+const t = @import("../../../types.zig");
 
 // MULTIPLE REFS RESULT BUFFER
 // [ op u8, field u8, bytes u32, len u32 ]
@@ -47,7 +48,7 @@ pub inline fn getRefsFields(
         .includeMain = null,
         .refType = 253,
         .totalRefs = 0,
-        .isEdge = 0,
+        .isEdge = t.Prop.NULL,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;

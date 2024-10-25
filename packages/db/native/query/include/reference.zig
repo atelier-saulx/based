@@ -7,6 +7,7 @@ const selva = @import("../../selva.zig");
 const std = @import("std");
 const results = @import("../results.zig");
 const types = @import("./types.zig");
+const t = @import("../../types.zig");
 
 pub fn getSingleRefFields(
     ctx: *QueryCtx,
@@ -40,7 +41,7 @@ pub fn getSingleRefFields(
         .includeMain = null,
         .refType = 254,
         .totalRefs = null,
-        .isEdge = 0,
+        .isEdge = t.Prop.NULL,
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;

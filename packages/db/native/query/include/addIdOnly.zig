@@ -1,4 +1,5 @@
 const QueryCtx = @import("../ctx.zig").QueryCtx;
+const t = @import("../../types.zig");
 
 pub fn addIdOnly(ctx: *QueryCtx, id: u32) !usize {
     try ctx.results.append(.{
@@ -9,7 +10,7 @@ pub fn addIdOnly(ctx: *QueryCtx, id: u32) !usize {
         .includeMain = &.{},
         .refType = null,
         .totalRefs = null,
-        .isEdge = 0,
+        .isEdge = t.Prop.NULL,
     });
     return 5;
 }

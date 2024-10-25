@@ -7,6 +7,7 @@ const db = @import("../../db//db.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
 const std = @import("std");
 const types = @import("./types.zig");
+const t = @import("../../types.zig");
 
 pub fn getFields(
     node: db.Node,
@@ -22,13 +23,15 @@ pub fn getFields(
     var includeIterator: u16 = 0;
     var main: ?[]u8 = null;
     var idIsSet: bool = isEdge;
-    var edgeType: u8 = 0;
+    var edgeType: t.Prop = t.Prop.NULL;
 
     includeField: while (includeIterator < include.len) {
         const field: u8 = include[includeIterator];
         includeIterator += 1;
 
         const operation = include[includeIterator..];
+
+        // EDGE
         if (field == 253) {
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
@@ -44,6 +47,7 @@ pub fn getFields(
             continue :includeField;
         }
 
+        // MULTI REF
         if (field == 254) {
             const refSize = readInt(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
@@ -66,6 +70,7 @@ pub fn getFields(
             continue :includeField;
         }
 
+        // SINGLE REF
         if (field == 255) {
             const refSize = readInt(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
@@ -88,6 +93,7 @@ pub fn getFields(
             continue :includeField;
         }
 
+        // MAIN
         if (field == 0) {
             const mainIncludeSize = readInt(u16, operation, 0);
             if (mainIncludeSize != 0) {
@@ -100,11 +106,7 @@ pub fn getFields(
 
         if (isEdge) {
             const edgeFieldSchema = try db.getEdgeFieldSchema(ref.?.edgeConstaint, field);
-
-            edgeType = edgeFieldSchema.*.type;
-
-            std.debug.print("FLAP f {d} t {d} \n", .{ field, edgeType });
-
+            edgeType = @enumFromInt(edgeFieldSchema.*.type);
             value = db.getEdgeProp(ref.?.reference, edgeFieldSchema);
         } else {
             value = db.getField(
@@ -123,14 +125,11 @@ pub fn getFields(
 
         if (isEdge) {
             size += 2;
-            if (edgeType == 11) {
+            const propLen = t.Size(edgeType);
+            if (propLen == 0) {
                 size += (valueLen + 4);
-            } else if (edgeType == 10 or edgeType == 9) {
-                size += 1;
-            } else if (edgeType == 5) {
-                size += 4;
-            } else if (edgeType == 4 or edgeType == 1) {
-                size += 8;
+            } else {
+                size += propLen;
             }
         } else if (field == 0) {
             main = value;

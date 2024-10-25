@@ -1,5 +1,5 @@
 import { BasedDb } from '../../index.js'
-import { PropDef } from '../../schema/types.js'
+import { BINARY, PropDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { writeFixedLenValue } from '../fixedLen.js'
 import { RefModify, RefModifyOpts } from './references.js'
@@ -64,9 +64,17 @@ export function writeEdges(
       let value = ref[key]
       ctx.buf[ctx.len] = edge.prop
       ctx.buf[ctx.len + 1] = edge.typeIndex
-      // Buffer: [field] [typeIndex] [size] [data]
       if (edge.len === 0) {
-        if (edge.typeIndex === 11) {
+        if (edge.typeIndex === 25) {
+          ctx.buf[ctx.len + 1] = 11
+          if (value && value.buffer instanceof ArrayBuffer) {
+            value = Buffer.from(value)
+          }
+          const size = value.byteLength
+          ctx.buf.set(value, ctx.len + 6)
+          ctx.buf.writeUint32LE(size, ctx.len + 2)
+          ctx.len += size + 6
+        } else if (edge.typeIndex === 11) {
           const size = ctx.buf.write(value, ctx.len + 6, 'utf8')
           ctx.buf.writeUint32LE(size, ctx.len + 2)
           ctx.len += size + 6
