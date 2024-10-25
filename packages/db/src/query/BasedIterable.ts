@@ -79,7 +79,7 @@ const inspectObject = (
       // str += ',\n'
     } else if (key === 'id') {
       // @ts-ignore
-      str += v + picocolors.dim(` ${q.target.type}`)
+      str += v + picocolors.italic(picocolors.dim(` ${q.target.type}`))
 
       // str += picocolors.blue(`${v}`) + picocolors.dim(` ${q.target.type}`)
       str += ',\n'
