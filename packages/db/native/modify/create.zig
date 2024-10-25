@@ -14,32 +14,33 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
-    if (ctx.fieldType == types.Prop.REFERENCES) {
-        try references.updateReferences(ctx, data);
-        return data.len;
-    }
-
-    if (ctx.fieldType == types.Prop.REFERENCE) {
-        try reference.updateReference(ctx, data);
-        return data.len;
-    }
-
-    if (ctx.fieldType == types.Prop.ALIAS) {
-        try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
-        return data.len;
-    }
-
-    try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
-    if (ctx.field == 0) {
-        if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
-            var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
-            while (it.next()) |start| {
-                const sortIndex = try getSortIndex(ctx, start.*);
-                try sort.writeField(ctx.id, data, sortIndex.?);
+    switch (ctx.fieldType) {
+        types.Prop.REFERENCES => {
+            try references.updateReferences(ctx, data);
+            return data.len;
+        },
+        types.Prop.REFERENCE => {
+            try reference.updateReference(ctx, data);
+            return data.len;
+        },
+        types.Prop.ALIAS => {
+            try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
+            return data.len;
+        },
+        else => {
+            try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
+            if (ctx.field == 0) {
+                if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
+                    var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
+                    while (it.next()) |start| {
+                        const sortIndex = try getSortIndex(ctx, start.*);
+                        try sort.writeField(ctx.id, data, sortIndex.?);
+                    }
+                }
+            } else if (ctx.currentSortIndex != null) {
+                try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
             }
-        }
-    } else if (ctx.currentSortIndex != null) {
-        try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
+            return data.len;
+        },
     }
-    return data.len;
 }
