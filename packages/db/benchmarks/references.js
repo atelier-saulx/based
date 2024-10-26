@@ -33,7 +33,7 @@ db.putSchema({
   },
 })
 
-const articles = Array.from({ length: 100_000 }).map((_, i) => {
+const articles = Array.from({ length: 10_000_000 }).map((_, i) => {
   return db.create('article', {
     body: 'cool body ' + i,
   })
@@ -46,13 +46,13 @@ const writer = db.create('writer', {
   articles,
 })
 
-perf('1e5 references drain', db.drain())
+perf('1e7 references drain', db.drain())
 
 db.update('writer', writer, {
   articles: [articles[0]],
 })
 
-perf('1e5 references update drain', db.drain())
+perf('1e7 references update drain', db.drain())
 
 console.log(
   '----',
