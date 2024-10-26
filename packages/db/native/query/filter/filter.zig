@@ -117,14 +117,15 @@ pub fn filter(
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return false;
             };
-            // get edge
 
-            // struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
             var value: []u8 = undefined;
             if (fieldSchema.type == 14) {
-                const refs = db.getReferences(node, field).?;
-                const arr: [*]u8 = @ptrCast(@alignCast(refs.*.index));
-                value = arr[0 .. refs.nr_refs * 4];
+                const refs = db.getReferences(node, field);
+                if (refs == null) {
+                    return false;
+                }
+                const arr: [*]u8 = @ptrCast(@alignCast(refs.?.*.index));
+                value = arr[0 .. refs.?.nr_refs * 4];
             } else {
                 value = db.getField(typeEntry, 0, node, fieldSchema);
             }
