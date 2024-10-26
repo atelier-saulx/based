@@ -2,13 +2,29 @@
  * Copyright (c) 2024 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <stddef.h>
-#include <sys/types.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "selva/node_id_set.h"
 
-static ssize_t bsearch_id_arr(const node_id_t *a, size_t n, node_id_t x)
+void node_id_set_init(struct node_id_set *set)
+{
+    set->len = 0;
+    set->arr = NULL;
+}
+
+void node_id_set_prealloc(struct node_id_set *set, size_t new_len)
+{
+    if (new_len > set->len) {
+        set->arr = selva_realloc(set->arr, new_len * sizeof(set->arr[0]));
+    }
+}
+
+void node_id_set_destroy(struct node_id_set *set)
+{
+    node_id_set_clear(set);
+}
+
+ssize_t node_id_set_bsearch(const node_id_t *a, size_t n, node_id_t x)
 {
     ssize_t i = 0;
     ssize_t j = n - 1;
@@ -40,31 +56,13 @@ out:
     return -1;
 }
 
-void node_id_set_init(struct node_id_set *set)
-{
-    set->len = 0;
-    set->arr = NULL;
-}
-
-void node_id_set_prealloc(struct node_id_set *set, size_t new_len)
-{
-    if (new_len > set->len) {
-        set->arr = selva_realloc(set->arr, new_len * sizeof(set->arr[0]));
-    }
-}
-
-void node_id_set_destroy(struct node_id_set *set)
-{
-    node_id_set_clear(set);
-}
-
 bool node_id_set_has(const struct node_id_set *set, node_id_t id)
 {
     if (set->len == 0) {
         return false;
     }
 
-    return bsearch_id_arr(set->arr, set->len, id) >= 0;
+    return node_id_set_bsearch(set->arr, set->len, id) >= 0;
 }
 
 bool node_id_set_add(struct node_id_set *set, node_id_t id)
@@ -117,7 +115,7 @@ bool node_id_set_remove(struct node_id_set *set, node_id_t id)
         return false;
     }
 
-    idx = bsearch_id_arr(set->arr, set->len, id);
+    idx = node_id_set_bsearch(set->arr, set->len, id);
     if (idx < 0) {
         return false;
     }

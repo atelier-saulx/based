@@ -786,17 +786,13 @@ static int tail_insert_references(struct SelvaDb *db, const struct SelvaFieldSch
         int err;
 
         if (dst->type != type_dst) {
-            return SELVA_EINTYPE;
+            continue; /* ignore. */
         }
 
         err = check_ref_eexists_fast(src, dst, fs_src, fs_dst);
         if (err) {
-            return err;
+            continue; /* ignore. */
         }
-    }
-
-    for (size_t i = 0; i < nr_dsts; i++) {
-        struct SelvaNode *dst = dsts[i];
 
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             remove_reference(db, dst, fs_dst, 0, -1);
@@ -1264,18 +1260,18 @@ int selva_fields_references_insert_tail_wupsert(
         int err;
 
         if (!dst) {
-            /* TODO wat do? */
             continue;
         }
 
         err = check_ref_eexists_fast(node, dst, fs, fs_dst);
-        if (!err) {
-            if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-                remove_reference(db, dst, fs_dst, 0, -1);
-            }
-
-            write_ref_2way(node, fs, -1, dst, fs_dst);
+        if (err) {
+            continue; /* ignore. */
         }
+
+        if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+            remove_reference(db, dst, fs_dst, 0, -1);
+        }
+        write_ref_2way(node, fs, -1, dst, fs_dst);
     }
 
     return 0;
