@@ -202,7 +202,7 @@ pub fn insertReference(
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.selva, value);
     var ref: [*c]selva.SelvaNodeReference = undefined;
-    try errors.selva(selva.selva_fields_references_insert(
+    const code = selva.selva_fields_references_insert(
         ctx.selva,
         target,
         fieldSchema,
@@ -210,7 +210,12 @@ pub fn insertReference(
         te_dst,
         value,
         &ref,
-    ));
+    );
+
+    if (code != selva.SELVA_EEXIST) {
+        try errors.selva(code);
+    }
+
     return ref;
 }
 

@@ -1,7 +1,7 @@
 import picocolors from 'picocolors'
-
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
+import { perf } from '../../benchmarks/utils.js'
 
 export const counts = {
   errors: 0,
@@ -32,7 +32,9 @@ const test = async (name: string, fn: (t?: any) => Promise<void>) => {
     tmp: resolve(join(__dirname, relativePath)),
   }
   try {
+    const end = perf(name, 'test-results.csv')
     await fn(t)
+    end()
     counts.success++
     console.log(
       picocolors.green(`✓ ${name}`),

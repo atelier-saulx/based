@@ -10,56 +10,58 @@ const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
-    if (ctx.fieldType == types.Prop.REFERENCES) {
-        const op = data[0];
+    switch (ctx.fieldType) {
+        types.Prop.REFERENCES => {
+            const op = data[0];
 
-        if (op == 0) {
-            // overwrite
-            db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-            try references.updateReferences(ctx, data);
-        } else if (op == 1) {
-            // add
-            try references.updateReferences(ctx, data);
-        } else if (op == 2) {
-            // delete
-            try references.deleteReferences(ctx, data);
-        } else if (op == 3) {
-            // update
-            try references.updateReferences(ctx, data);
-        }
-
-        return data.len;
-    }
-
-    if (ctx.fieldType == types.Prop.REFERENCE) {
-        try reference.updateReference(ctx, data);
-        return data.len;
-    }
-
-    if (ctx.field == 0) {
-        if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
-            const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-            var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
-            while (it.next()) |key| {
-                const start = key.*;
-                const sortIndex = (try getSortIndex(ctx, start)).?;
-                try sort.deleteField(ctx.id, currentData, sortIndex);
-                try sort.writeField(ctx.id, data, sortIndex);
+            if (op == 0) {
+                // overwrite
+                db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+                try references.updateReferences(ctx, data);
+            } else if (op == 1) {
+                // add
+                try references.updateReferences(ctx, data);
+            } else if (op == 2) {
+                // delete
+                try references.deleteReferences(ctx, data);
+            } else if (op == 3) {
+                // update
+                try references.updateReferences(ctx, data);
             }
-        }
-    } else if (ctx.currentSortIndex != null) {
-        const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-        try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
-        try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
-    }
 
-    if (ctx.fieldType == types.Prop.ALIAS) {
-        try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
-        return data.len;
-    }
+            return data.len;
+        },
+        types.Prop.REFERENCE => {
+            try reference.updateReference(ctx, data);
+            return data.len;
+        },
+        else => {
+            if (ctx.field == 0) {
+                if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
+                    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                    var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
+                    while (it.next()) |key| {
+                        const start = key.*;
+                        const sortIndex = (try getSortIndex(ctx, start)).?;
+                        try sort.deleteField(ctx.id, currentData, sortIndex);
+                        try sort.writeField(ctx.id, data, sortIndex);
+                    }
+                }
+            } else if (ctx.currentSortIndex != null) {
+                const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
+                try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
+            }
 
-    try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
-    return data.len;
+            if (ctx.fieldType == types.Prop.ALIAS) {
+                try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
+                return data.len;
+            }
+
+            try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
+            return data.len;
+        },
+    }
 }
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {

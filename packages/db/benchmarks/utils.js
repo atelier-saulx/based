@@ -53,7 +53,9 @@ let info
 const getFile = (name) => {
   if (!(name in files)) {
     if (!info) {
+      const alwaysStore = process.argv.includes('--perf')
       info = {
+        alwaysStore,
         commit: getCommit(),
         user: getUser(),
         dir: packageDirectorySync(),
@@ -156,6 +158,16 @@ export const perf = (label, filename, res) => {
   }
 }
 
+const update = (index, file, label, res) => {
+  if (index === -1) {
+    file.headers.push(label)
+    file.current.push(String(res))
+  } else {
+    file.current[index] = String(res)
+  }
+  updateFile(file)
+}
+
 const store = (label, filename, res) => {
   const file = getFile(filename || 'results.csv')
   const index = file.headers.indexOf(label)
@@ -169,17 +181,15 @@ const store = (label, filename, res) => {
     console.info(label, res)
   }
 
-  if (prevCommit && relevantFilesChanged(commit, '')) {
+  if (info.alwaysStore || !prevCommit) {
+    update(index, file, label, res)
     return
   }
 
-  if (!prevCommit || relevantFilesChanged(prevCommit, commit)) {
-    if (index === -1) {
-      file.headers.push(label)
-      file.current.push(String(res))
-    } else {
-      file.current[index] = String(res)
-    }
-    updateFile(file)
+  if (
+    !relevantFilesChanged(commit, '') &&
+    relevantFilesChanged(prevCommit, commit)
+  ) {
+    update(index, file, label, res)
   }
 }

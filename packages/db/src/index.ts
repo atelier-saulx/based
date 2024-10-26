@@ -313,7 +313,16 @@ export class BasedDb {
       }
     }
 
-    const dumps = []
+    const dumps: {
+      file: string
+      hash?: string
+      start?: number
+      end?: number
+    }[] = [
+      {
+        file: COMMON_SDB_FILE,
+      },
+    ]
     mt.visitLeafNodes((leaf) =>
       dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
     )
