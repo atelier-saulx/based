@@ -18,7 +18,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refsLen: usize = readInt(u32, data, 1);
     var i: usize = 5;
 
-    selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
+    _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
     // prealloc_refs(ctx, data);
 
     // TODO if !edges use batch operation
