@@ -39,22 +39,22 @@ const articles = Array.from({ length: 10_000_000 }).map((_, i) => {
   })
 })
 
-db.drain()
-
 const writer = db.create('writer', {
   name: 'youzi',
   articles,
 })
 
+// db.drain()
+
 perf('1e7 references drain', db.drain())
 
-db.update('writer', writer, {
-  articles: [articles[0]],
-})
+// db.update('writer', writer, {
+//   articles: [articles[0]],
+// })
 
-perf('1e7 references update drain', db.drain())
+// perf('1e7 references update drain', db.drain())
 
-console.log(
-  '----',
-  db.query('writer').include('*', 'articles').get().toObject(),
-)
+// console.log(
+//   '----',
+//   db.query('writer').include('*', 'articles').get().toObject(),
+// )

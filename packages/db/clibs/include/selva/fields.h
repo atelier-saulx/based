@@ -8,7 +8,6 @@
 #ifndef __zig
 #include "util/selva_string.h"
 #endif
-#include "selva/node_id_set.h"
 #include "selva/types.h"
 
 /**
@@ -41,7 +40,7 @@ struct SelvaNodeReferences {
     uint32_t nr_refs;
     uint16_t offset;
     struct SelvaNodeReference *refs __pcounted_by(nr_refs);
-    struct node_id_set index; /*!< Sorted index of all nodes in `.refs`. */
+    node_id_t *index __pcounted_by(nr_refs); /*!< Sorted index of all nodes in `.refs`. */
 };
 
 struct SelvaNodeWeakReference {
@@ -154,8 +153,12 @@ int selva_fields_references_insert(
         struct SelvaNodeReference **ref_out)
     __attribute__((access(write_only, 7)));
 
+/**
+ * Prealloc a references field buffer.
+ * @returns nr_refs.
+ */
 SELVA_EXPORT
-void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
+size_t selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
 
 SELVA_EXPORT
 int selva_fields_references_insert_tail_wupsert(

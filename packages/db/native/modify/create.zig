@@ -16,31 +16,46 @@ const getSortIndex = Modify.getSortIndex;
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
-            try references.updateReferences(ctx, data);
-            return data.len;
+            switch (@as(types.RefOp, @enumFromInt(data[4]))) {
+                // overwrite, add
+                types.RefOp.OVERWRITE, types.RefOp.ADD => {
+                    return references.updateReferences(ctx, data);
+                },
+                // put
+                types.RefOp.PUT_OVERWRITE, types.RefOp.PUT_ADD => {
+                    return references.putReferences(ctx, data);
+                },
+                else => {
+                    const len = readInt(u32, data, 0);
+                    // invalid command
+                    return len;
+                },
+            }
         },
         types.Prop.REFERENCE => {
-            try reference.updateReference(ctx, data);
-            return data.len;
-        },
-        types.Prop.ALIAS => {
-            try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
-            return data.len;
+            return reference.updateReference(ctx, data);
         },
         else => {
-            try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
+            const len = readInt(u32, data, 0);
+            const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
                 if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
                     var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
                     while (it.next()) |start| {
                         const sortIndex = try getSortIndex(ctx, start.*);
-                        try sort.writeField(ctx.id, data, sortIndex.?);
+                        try sort.writeField(ctx.id, slice, sortIndex.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
+                try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
             }
-            return data.len;
+
+            if (ctx.fieldType == types.Prop.ALIAS) {
+                try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
+            } else {
+                try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
+            }
+            return len;
         },
     }
 }

@@ -191,6 +191,17 @@ pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: Fi
     ));
 }
 
+pub fn putReferences(ctx: *DbCtx, ids: []u32, target: Node, fieldSchema: FieldSchema, typeEntry: Type) !void {
+    try errors.selva(selva.selva_fields_references_insert_tail_wupsert(
+        ctx.selva,
+        target,
+        fieldSchema,
+        typeEntry,
+        ids.ptr,
+        ids.len,
+    ));
+}
+
 // @param index 0 = first; -1 = last.
 pub fn insertReference(
     ctx: *DbCtx,
@@ -323,9 +334,6 @@ pub fn deleteField(ctx: *DbCtx, typeEntry: Type, id: u32, node: Node, selvaField
     const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
     if (fieldType == types.Prop.ALIAS) {
         const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
-        // _ = typeAliases;
-        // _ = id;
-        std.debug.print("WHAT?! {any} {d}", .{ typeAliases, id });
         selva.selva_del_alias_by_dest(typeAliases, if (id == 0) getNodeId(node) else id);
     } else {
         try errors.selva(selva.selva_fields_del(ctx.selva, node, selvaFieldSchema));
