@@ -18,7 +18,8 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refsLen: usize = readInt(u32, data, 5);
     var i: usize = 9;
 
-    selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
+    _ = selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
+    // prealloc_refs(ctx, data);
 
     // TODO if !edges use batch operation
     // set this whole thing
@@ -81,20 +82,9 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = readInt(u32, data, 0);
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
-    const u32ids = std.mem.bytesAsSlice(u32, data[5..len]);
-
-    //    const refOp = operation[4];
-    //         if (refOp == 3 or refOp == 4) {
-    //             const d = (i + 2) & 3;
-    //             if (d != 0) {
-    //                 // align it!!
-    //                 const offset = 4 - d;
-    //                 const slice = operation[4 + offset .. readInt(u32, operation, 0) + 4];
-    //                 slice[0] = refOp;
-    //                 std.debug.print("OK {any}", .{slice});
-    //                 return slice;
-    //             }
-    //         }
+    const address = @intFromPtr(data.ptr);
+    const offset = (4 - (address + 1)) & 3;
+    const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
 
     try db.putReferences(
         ctx.db,
