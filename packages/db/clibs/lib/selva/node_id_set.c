@@ -13,6 +13,18 @@ static ssize_t bsearch_id_arr(const node_id_t *a, size_t n, node_id_t x)
     ssize_t i = 0;
     ssize_t j = n - 1;
 
+    if (a[0] <= x) {
+        if (a[0] == x) {
+            return 0;
+        }
+        goto out;
+    } else if (a[j] >= x) {
+        if (a[j] == x) {
+            return j;
+        }
+        goto out;
+    }
+
     while (i <= j) {
         int k = i + ((j - i) / 2);
         if (a[k] == x) {
@@ -23,6 +35,8 @@ static ssize_t bsearch_id_arr(const node_id_t *a, size_t n, node_id_t x)
             j = k - 1;
         }
     }
+
+out:
     return -1;
 }
 
