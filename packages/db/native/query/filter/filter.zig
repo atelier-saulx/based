@@ -14,44 +14,47 @@ const idToShard = db.idToShard;
 
 // -------------------------------------------
 // meta
-// 0 conditions field check
-// 1 or
-// 252 edge
-// 254 reference
+// 0 = conditions
+// 1 = or
+// 252 = edge
+// 254 = reference
 // -------------------------------------------
 // or
-// [1, next, next]
+// 1, next, next
 // -------------------------------------------
 // edge
-// [252, edgeField]
+// 252, edgeField
 // -------------------------------------------
 // ref
-// [254, field]
+// 254, field
 // -------------------------------------------
-// normal
-// [0, field, [size 2], [start 2], op, value...]
-
-// or fixed
-// [1, [repeat 2], field, [size 2], [start 2], op, value...]
-
-// or VAR
-// [2, [repeat 2], field, [size 4], [start 2], op, [size 2], value.., [size 2], value..]
+// conditions normal
+// 0, field, [size 2], [start 2], op, value...
 // -------------------------------------------
-// operations
+// conditions or fixed
+// 1, [repeat 2], field, [size 2], [start 2], op, value...
+// -------------------------------------------
+// conditions or variable
+// 2, [repeat 2], field, [size 4], [start 2], op, [size 2], value.., [size 2], value..
+// -------------------------------------------
+// operations shared
 // 1 = equality
 // 2 = has (simd)
 // 3 = checksum equality
 // 4 = ends with
 // 5 = starts with
-
+// -------------------------------------------
+// operations numbers
 // 6 = larger then
 // 7 = smaller then
-
-// lower case for strings
-// 8 = equality to lower case
-// 9 = has to lower case (simd)
-// 10 = starts with to lower case
-// 11 = ends with to lower case
+// 8 = range
+// 9 = exclude range
+// -------------------------------------------
+// operations strings
+// 10 = equality to lower case
+// 11 = has to lower case (simd)
+// 12 = starts with to lower case
+// 13 = ends with to lower case
 // -------------------------------------------
 
 pub fn filter(
