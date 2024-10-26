@@ -191,6 +191,17 @@ pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: Fi
     ));
 }
 
+pub fn putReferences(ctx: *DbCtx, ids: []u32, target: Node, fieldSchema: FieldSchema, typeEntry: Type) !void {
+    try errors.selva(selva.selva_fields_references_insert_tail_wupsert(
+        ctx.selva,
+        target,
+        fieldSchema,
+        typeEntry,
+        ids.ptr,
+        ids.len,
+    ));
+}
+
 // @param index 0 = first; -1 = last.
 pub fn insertReference(
     ctx: *DbCtx,

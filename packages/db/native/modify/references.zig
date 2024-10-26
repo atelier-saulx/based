@@ -65,6 +65,22 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !void {
 
     while (i < len) : (i += 4) {
         const id = readInt(u32, data, i);
-        try db.deleteReference(ctx.db, ctx.node.?, ctx.fieldSchema.?, id);
+        try db.deleteReference(
+            ctx.db,
+            ctx.node.?,
+            ctx.fieldSchema.?,
+            id,
+        );
     }
+}
+
+pub fn putReferences(ctx: *ModifyCtx, data: []u8) !void {
+    const u32ids = std.mem.bytesAsSlice(u32, data[1..]);
+    try db.putReferences(
+        ctx.db,
+        @alignCast(u32ids),
+        ctx.node.?,
+        ctx.fieldSchema.?,
+        ctx.typeEntry.?,
+    );
 }

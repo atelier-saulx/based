@@ -58,7 +58,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const batch = try napi.get([]u8, env, args[0]);
     const size = try napi.get(u32, env, args[1]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
-
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 

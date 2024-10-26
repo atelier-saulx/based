@@ -27,6 +27,9 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             } else if (op == 3) {
                 // update
                 try references.updateReferences(ctx, data);
+            } else if (op == 4) {
+                // put
+                try references.putReferences(ctx, data);
             }
 
             return data.len;
