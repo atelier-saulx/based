@@ -8,7 +8,7 @@
 #include "jemalloc.h"
 #include "selva/node_id_set.h"
 
-static ssize_t bsearch_id_arr(node_id_t *a, size_t n, node_id_t x)
+static ssize_t bsearch_id_arr(const node_id_t *a, size_t n, node_id_t x)
 {
     ssize_t i = 0;
     ssize_t j = n - 1;
@@ -44,7 +44,7 @@ void node_id_set_destroy(struct node_id_set *set)
     node_id_set_clear(set);
 }
 
-bool node_id_set_has(struct node_id_set *set, node_id_t id)
+bool node_id_set_has(const struct node_id_set *set, node_id_t id)
 {
     if (set->len == 0) {
         return false;
