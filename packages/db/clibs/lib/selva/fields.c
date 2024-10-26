@@ -17,6 +17,7 @@
 #include "db_panic.h"
 #include "db.h"
 #include "idz.h"
+#include "selva/node_id_set.h"
 #include "selva/fields.h"
 
 #if 0
@@ -305,7 +306,12 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
                 .dst = dst,
             };
 
-            return 0;
+            size_t id_set_len = refs.nr_refs - 1;
+            if (!node_id_set_add(&refs.index, &id_set_len, dst->node_id)) {
+                db_panic("node_id already inserted into refs: %u:%u\n", dst->type, dst->node_id);
+            }
+
+            goto out;
         }
 
         /*
@@ -314,8 +320,8 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
         remove_refs_offset(&refs);
     }
 
-    index = (index == -1) ? refs.nr_refs : index;
-    const size_t new_len = (index > refs.nr_refs) ? index + 1 : refs.nr_refs + 1;
+    index = (index == -1) ? refs.nr_refs : (index > refs.nr_refs) ? refs.nr_refs : index;
+    const size_t new_len = refs.nr_refs + 1;
     const size_t new_size = new_len * sizeof(*refs.refs);
 
     if (!refs.refs || selva_sallocx(refs.refs, 0) < new_size) {
@@ -339,8 +345,13 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
         .dst = dst,
     };
 
-    node_id_set_add(&refs.index, dst->node_id);
+    size_t id_set_len = new_len - 1;
+    if (!node_id_set_add(&refs.index, &id_set_len, dst->node_id)) {
+        db_panic("node_id already inserted into refs: %u:%u\n", dst->type, dst->node_id);
+    }
+    assert(id_set_len == new_len);
 
+out:
     if (ref_out) {
         *ref_out = &refs.refs[index];
     }
@@ -403,6 +414,7 @@ static struct SelvaNode *del_single_ref(struct SelvaDb *db, const struct EdgeFie
 static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs, size_t i)
 {
     struct SelvaNodeReference *ref;
+    size_t id_set_len = refs->nr_refs;
 
     if (!refs->refs) {
         return;
@@ -410,7 +422,9 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
 
     ref = &refs->refs[i];
     reference_meta_destroy(db, efc, ref);
-    node_id_set_remove(&refs->index, ref->dst->node_id);
+    if (!node_id_set_remove(&refs->index, &id_set_len, ref->dst->node_id)) {
+        db_panic("node_id not found in refs: %u:%u\n", ref->dst->type, ref->dst->node_id);
+    }
     ref = NULL;
 
     if (i < refs->nr_refs - 1) {
@@ -436,6 +450,8 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
         /* TODO realloc on some condition */
     }
     refs->nr_refs--;
+
+    assert(id_set_len == refs->nr_refs);
 }
 
 static const struct SelvaFieldSchema *get_edge_dst_fs(
@@ -614,8 +630,6 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     refs = nfo2p(fields, nfo);
     assert(((uintptr_t)refs & 7) == 0);
 
-    node_id_set_clear(&refs->index); /* fasty */
-
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
 
@@ -630,6 +644,9 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
         remove_reference(db, node, fs, dst_node_id, i);
     }
 
+    selva_free(refs->index);
+    refs->index = NULL;
+
     return refs;
 }
 
@@ -640,6 +657,7 @@ static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const 
     if (refs) {
         selva_free(refs->refs - refs->offset);
     }
+    /* ref->index is already freed. */
 }
 
 static void remove_weak_references(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
@@ -1021,7 +1039,7 @@ static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaField
 
         memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
 
-        return node_id_set_has(&refs.index, dst_id) ? SELVA_EEXIST : 0;
+        return node_id_set_has(refs.index, refs.nr_refs, dst_id) ? SELVA_EEXIST : 0;
     } else {
         return 0;
     }
@@ -1179,7 +1197,7 @@ size_t selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFiel
     }
 
     refs.refs = selva_realloc(refs.refs, nr_refs_min * sizeof(*refs.refs));
-    node_id_set_prealloc(&refs.index, nr_refs_min);
+    refs.index = selva_realloc(refs.index, nr_refs_min * sizeof(refs.index[0]));
     memcpy(vp, &refs, sizeof(refs));
 
 out:
