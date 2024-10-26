@@ -87,42 +87,6 @@ function simpleRefs(
   return added
 }
 
-export function putReferences(
-  t: PropDef,
-  ctx: BasedDb['modifyCtx'],
-  modifyOp: ModifyOp,
-  value: any[],
-  schema: SchemaTypeDef,
-  res: ModifyState,
-  op: 0 | 1, // overwrite or add
-) {
-  const refLen = 4 * value.length
-  const potentialLen = refLen + 1 + 5 + ctx.len + 11
-  if (potentialLen > ctx.max) {
-    flushBuffer(ctx.db)
-  }
-  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
-  ctx.buf[ctx.len++] = modifyOp
-  const sizepos = ctx.len
-  ctx.len += 4 // reserve for size
-  const start = ctx.len
-  ctx.buf[ctx.len++] = 3 // put
-  // ceil it to nearest 4 for u32 alignment
-  ctx.len = (ctx.len + 3) & ~3
-  for (const ref of value) {
-    if (typeof ref === 'number') {
-      append32(ctx, ref)
-    } else if (ref instanceof ModifyState) {
-      if (ref.error) {
-        res.error = ref.error
-        return
-      }
-      append32(ctx, ref.tmpId)
-    }
-  }
-  write32(ctx, ctx.len - start, sizepos)
-}
-
 export function overWriteSimpleReferences(
   t: PropDef,
   ctx: BasedDb['modifyCtx'],
@@ -132,21 +96,113 @@ export function overWriteSimpleReferences(
   res: ModifyState,
   op: 0 | 1, // overwrite or add
 ) {
-  // putReferences(t, ctx, modifyOp, value, schema, res, op)
-  const refLen = 9 * value.length
-  const potentialLen = refLen + 1 + 5 + ctx.len + 11 + 4
-  if (potentialLen > ctx.max) {
+  let i = 0
+
+  // const refLen = 4 * value.length
+  // const potentialLen = refLen + 1 + 5 + ctx.len + 11
+  // if (potentialLen > ctx.max) {
+  //   flushBuffer(ctx.db)
+  // }
+  // setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+  // ctx.buf[ctx.len++] = modifyOp
+  // const sizepos = ctx.len
+  // ctx.len += 4 // reserve for size
+  // const start = ctx.len
+  // ctx.buf[ctx.len++] = 3 // put
+  // // ceil it to nearest 4 for u32 alignment
+  // ctx.len = (ctx.len + 3) & ~3
+
+  // for (; i < value.length; i++) {
+  //   const ref = value[i]
+  //   if (typeof ref === 'number') {
+  //     append32(ctx, ref)
+  //   } else if (ref instanceof ModifyState) {
+  //     if (ref.error) {
+  //       res.error = ref.error
+  //       return
+  //     }
+  //     append32(ctx, ref.tmpId)
+  //   } else {
+  //     break
+  //   }
+  // }
+
+  // write32(ctx, ctx.len - start, sizepos)
+
+  // if (i === value.length) {
+  //   return
+  // }
+
+  // // there is more stuff that we need to write
+
+  // if (i < 2) {
+  //   // put operation has no use, go back
+  //   i = 0
+  //   ctx.len = sizepos - 1
+  // }
+
+  const remaining = value.length - i
+  const refLen2 = 9 * remaining
+  const potentialLen2 = refLen2 + 1 + 5 + ctx.len + 11 + 4
+  if (potentialLen2 > ctx.max) {
     flushBuffer(ctx.db)
   }
   setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
-  const sizepos = ctx.len
+  const sizepos2 = ctx.len
   ctx.len += 4 // reserve for size
+  const start2 = ctx.len
   ctx.buf[ctx.len++] = op // ref op
-  append32(ctx, value.length) // ref length
-  const size = simpleRefs(t, ctx, value, res)
-  ctx.len += size
-  write32(ctx, size + 1 + 4, sizepos)
+  append32(ctx, remaining) // ref length
+
+  for (; i < value.length; i++) {
+    const ref = value[i]
+    let id: number
+    let index: number
+
+    if (ref > 0) {
+      id = ref
+    } else if (typeof ref === 'object') {
+      if (ref === null) {
+        modifyError(res, t, value)
+        return
+      }
+      if (ref instanceof ModifyState) {
+        if (ref.error) {
+          res.error = ref.error
+          return
+        }
+        id = ref.tmpId
+      } else if (ref.id instanceof ModifyState) {
+        if (ref.id.error) {
+          res.error = ref.id.error
+          return
+        }
+        id = ref.id.tmpId
+        index = ref.$index
+      } else if (ref.id > 0) {
+        id = ref.id
+        index = ref.$index
+      } else {
+        modifyError(res, t, value)
+        return
+      }
+    }
+
+    if (index === undefined) {
+      ctx.buf[ctx.len++] = 0
+      append32(ctx, id)
+    } else if (index >= 0) {
+      ctx.buf[ctx.len++] = 3 // TODO more operations???!!!
+      append32(ctx, id)
+      append32(ctx, index)
+    } else {
+      modifyError(res, t, value)
+      return
+    }
+  }
+
+  write32(ctx, ctx.len - start2, sizepos2)
 }
 
 export function deleteRefs(
