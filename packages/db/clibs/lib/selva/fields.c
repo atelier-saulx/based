@@ -1255,6 +1255,7 @@ int selva_fields_references_insert_tail_wupsert(
     if (!fs_dst) {
         return SELVA_EINTYPE;
     }
+    
 
     selva_fields_prealloc_refs(node, fs, nr_ids);
 
@@ -1277,6 +1278,7 @@ int selva_fields_references_insert_tail_wupsert(
             write_ref_2way(node, fs, -1, dst, fs_dst);
         }
     }
+
 
     return 0;
 }

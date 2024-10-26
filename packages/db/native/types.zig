@@ -46,3 +46,27 @@ pub fn Size(p: Prop) u8 {
         },
     }
 }
+
+pub const RefOp = enum(u8) {
+    OVERWRITE = 0,
+    ADD = 1,
+    DELETE = 2,
+    PUT = 4,
+    _,
+};
+
+pub const ModOp = enum(u8) {
+    SWITCH_FIELD = 0,
+    DELETE_NODE = 10,
+    CREATE_OR_GET = 9,
+    SWITCH_NODE = 1,
+    SWITCH_TYPE = 2,
+    CREATE_PROP = 3,
+    UPDATE_PARTIAL = 5,
+    UPDATE_PROP = 6,
+    ADD_EMPTY_SORT = 7,
+    DELETE_PROP_ONLY = 8,
+    DELETE_PROP_ONLY_REAL = 11,
+    DELETE_PROP = 4,
+    _,
+};

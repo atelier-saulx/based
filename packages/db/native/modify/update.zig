@@ -10,35 +10,39 @@ const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
+    std.debug.print("REFOP {d} \n", .{data[4]});
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
-            const op = data[0];
-
-            if (op == 0) {
+            switch (@as(types.RefOp, @enumFromInt(data[4]))) {
                 // overwrite
-                db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-                try references.updateReferences(ctx, data);
-            } else if (op == 1) {
+                types.RefOp.OVERWRITE => {
+                    db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+                    return references.updateReferences(ctx, data);
+                },
                 // add
-                try references.updateReferences(ctx, data);
-            } else if (op == 2) {
+                types.RefOp.ADD => {
+                    return references.updateReferences(ctx, data);
+                },
                 // delete
-                try references.deleteReferences(ctx, data);
-            } else if (op == 3) {
-                // update
-                try references.updateReferences(ctx, data);
-            } else if (op == 4) {
+                types.RefOp.DELETE => {
+                    return references.deleteReferences(ctx, data);
+                },
                 // put
-                try references.putReferences(ctx, data);
+                types.RefOp.PUT => {
+                    return references.putReferences(ctx, data);
+                },
+                else => {
+                    const len = readInt(u32, data, 0);
+                    return len;
+                },
             }
-
-            return data.len;
         },
         types.Prop.REFERENCE => {
-            try reference.updateReference(ctx, data);
-            return data.len;
+            return reference.updateReference(ctx, data);
         },
         else => {
+            const len = readInt(u32, data, 0);
+            const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
                 if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
                     const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
@@ -47,53 +51,56 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         const start = key.*;
                         const sortIndex = (try getSortIndex(ctx, start)).?;
                         try sort.deleteField(ctx.id, currentData, sortIndex);
-                        try sort.writeField(ctx.id, data, sortIndex);
+                        try sort.writeField(ctx.id, slice, sortIndex);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
                 const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
                 try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
-                try sort.writeField(ctx.id, data, ctx.currentSortIndex.?);
+                try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
             }
 
             if (ctx.fieldType == types.Prop.ALIAS) {
-                try db.setAlias(ctx.id, ctx.field, data, ctx.typeEntry.?);
-                return data.len;
+                try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
+            } else {
+                try db.writeField(ctx.db, slice, ctx.node.?, ctx.fieldSchema.?);
             }
 
-            try db.writeField(ctx.db, data, ctx.node.?, ctx.fieldSchema.?);
-            return data.len;
+            return len;
         },
     }
 }
 
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
+    const len = readInt(u32, data, 0);
+    const slice = data[4 .. len + 4];
     var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+
     if (currentData.len != 0) {
         var j: usize = 0;
         const hasSortIndex: bool = (ctx.field == 0 and sort.hasMainSortIndexes(ctx.db, ctx.typeId));
-        while (j < data.len) {
-            const operation = data[j..];
+        while (j < len) {
+            const operation = slice[j..];
             const start = readInt(u16, operation, 0);
-            const len = readInt(u16, operation, 2);
+            const l = readInt(u16, operation, 2);
             if (ctx.field == 0) {
                 if (hasSortIndex and ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.contains(start)) {
                     const sortIndex = try getSortIndex(ctx, start);
                     try sort.deleteField(ctx.id, currentData, sortIndex.?);
-                    try sort.writeField(ctx.id, operation[4 .. len + 4], sortIndex.?);
+                    try sort.writeField(ctx.id, operation[4 .. l + 4], sortIndex.?);
                 }
-                @memcpy(currentData[start .. start + len], operation[4 .. 4 + len]);
+                @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else if (ctx.currentSortIndex != null) {
                 try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
                 try sort.writeField(ctx.id, currentData, ctx.currentSortIndex.?);
-                @memcpy(currentData[start .. start + len], operation[4 .. 4 + len]);
+                @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             } else {
-                @memcpy(currentData[start .. start + len], operation[4 .. 4 + len]);
+                @memcpy(currentData[start .. start + l], operation[4 .. 4 + l]);
             }
-            j += 4 + len;
+            j += 4 + l;
         }
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
-    return data.len;
+    return len;
 }

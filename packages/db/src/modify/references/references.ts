@@ -71,8 +71,6 @@ export function writeReferences(
     let op
     if (key === 'add') {
       op = 1
-    } else if (key === 'update') {
-      op = 3
     } else {
       modifyError(res, t, value)
       return

@@ -15,7 +15,7 @@ export function overWriteEdgeReferences(
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
-  op: 0 | 1 | 2,
+  op: 0 | 1,
 ) {
   ctx.buf[ctx.len] = modifyOp
   let refLen = 0

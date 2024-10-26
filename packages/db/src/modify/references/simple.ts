@@ -87,6 +87,42 @@ function simpleRefs(
   return added
 }
 
+export function putReferences(
+  t: PropDef,
+  ctx: BasedDb['modifyCtx'],
+  modifyOp: ModifyOp,
+  value: any[],
+  schema: SchemaTypeDef,
+  res: ModifyState,
+  op: 0 | 1, // overwrite or add
+) {
+  const refLen = 4 * value.length
+  const potentialLen = refLen + 1 + 5 + ctx.len + 11
+  if (potentialLen > ctx.max) {
+    flushBuffer(ctx.db)
+  }
+  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+  ctx.buf[ctx.len++] = modifyOp
+  const sizepos = ctx.len
+  ctx.len += 4 // reserve for size
+  const start = ctx.len
+  ctx.buf[ctx.len++] = 3 // put
+  // ceil it to nearest 4 for u32 alignment
+  ctx.len = (ctx.len + 3) & ~3
+  for (const ref of value) {
+    if (typeof ref === 'number') {
+      append32(ctx, ref)
+    } else if (ref instanceof ModifyState) {
+      if (ref.error) {
+        res.error = ref.error
+        return
+      }
+      append32(ctx, ref.tmpId)
+    }
+  }
+  write32(ctx, ctx.len - start, sizepos)
+}
+
 export function overWriteSimpleReferences(
   t: PropDef,
   ctx: BasedDb['modifyCtx'],
@@ -94,8 +130,9 @@ export function overWriteSimpleReferences(
   value: any[],
   schema: SchemaTypeDef,
   res: ModifyState,
-  op: 0 | 1 | 2,
+  op: 0 | 1, // overwrite or add
 ) {
+  // putReferences(t, ctx, modifyOp, value, schema, res, op)
   const refLen = 9 * value.length
   const potentialLen = refLen + 1 + 5 + ctx.len + 11 + 4
   if (potentialLen > ctx.max) {
