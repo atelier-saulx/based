@@ -132,7 +132,8 @@ const updateFile = (file) => {
         '\n' +
         file.prefix +
         file.current.join(',') +
-        file.affix,
+        file.affix +
+        '\n',
     )
   })
 }

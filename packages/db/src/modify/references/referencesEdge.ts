@@ -4,6 +4,7 @@ import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { ModifyOp } from '../types.js'
+import { append32, write32 } from '../utils.js'
 import { calculateEdgesSize, writeEdges } from './edge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
@@ -38,16 +39,18 @@ export function overWriteEdgeReferences(
     return
   }
 
-  if (refLen + 10 + ctx.len + 11 > ctx.max) {
+  if (refLen + 10 + ctx.len + 11 + 4 > ctx.max) {
     flushBuffer(ctx.db)
   }
 
   setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
-  ctx.buf[ctx.len] = modifyOp
-  const sizeIndex = ctx.len + 1
-  ctx.buf[sizeIndex + 4] = op
-  ctx.len += 6
 
+  ctx.buf[ctx.len++] = modifyOp
+  const sizepos = ctx.len
+  ctx.len += 4 // reserve for size
+  ctx.buf[ctx.len++] = op // ref op
+  append32(ctx, value.length) // ref length
+  const start = ctx.len
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]
     if (typeof ref !== 'number') {
@@ -63,20 +66,28 @@ export function overWriteEdgeReferences(
       }
     }
     if (typeof ref === 'object') {
-      ctx.buf[ctx.len] = 1
-      ctx.buf.writeUint32LE(ref.id, ctx.len + 1)
-      const edgeDataSizeIndex = ctx.len + 5
-      ctx.len += 9
+      ctx.buf[ctx.len++] = 1
+      append32(ctx, ref.id)
+      const sizepos = ctx.len
+      ctx.len += 4 // reserve for size
+
+      // ctx.buf.writeUint32LE(ref.id, ctx.len + 1)
+      // const edgeDataSizeIndex = ctx.len + 5
+      // ctx.len += 9
+      const start = ctx.len
       if (writeEdges(t, ref, ctx, res)) {
         return
       }
-      ctx.buf.writeUint32LE(ctx.len - edgeDataSizeIndex - 4, edgeDataSizeIndex)
+      write32(ctx, ctx.len - start, sizepos)
+      // ctx.buf.writeUint32LE(ctx.len - edgeDataSizeIndex - 4, edgeDataSizeIndex)
     } else {
-      ctx.buf[ctx.len] = 0
-      ctx.buf.writeUint32LE(ref, ctx.len + 1)
-      ctx.len += 5
+      ctx.buf[ctx.len++] = 0
+      append32(ctx, ref)
+      // ctx.buf.writeUint32LE(ref, ctx.len + 1)
     }
   }
 
-  ctx.buf.writeUint32LE(ctx.len - (sizeIndex + 4), sizeIndex)
+  write32(ctx, ctx.len - start + 4, sizepos)
+
+  // ctx.buf.writeUint32LE(ctx.len - (sizeIndex + 4), sizeIndex)
 }

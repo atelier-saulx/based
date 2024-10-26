@@ -5,7 +5,7 @@ import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { ModifyOp } from '../types.js'
 import { overWriteEdgeReferences } from './referencesEdge.js'
-import { overWriteSimpleReferences } from './simple.js'
+import { deleteRefs, overWriteSimpleReferences } from './simple.js'
 
 // export
 export type RefModifyOpts = {
@@ -58,11 +58,19 @@ export function writeReferences(
 
   for (const key in value) {
     const val = value[key]
+    if (!Array.isArray(val)) {
+      modifyError(res, t, value)
+      return
+    }
+
+    if (key === 'delete') {
+      deleteRefs(t, ctx, modifyOp, val, schema, res)
+      continue
+    }
+
     let op
     if (key === 'add') {
       op = 1
-    } else if (key === 'delete') {
-      op = 2
     } else if (key === 'update') {
       op = 3
     } else {
@@ -71,7 +79,7 @@ export function writeReferences(
     }
 
     if (t.edges) {
-      overWriteEdgeReferences(t, ctx, modifyOp, value, schema, res, op)
+      overWriteEdgeReferences(t, ctx, modifyOp, val, schema, res, op)
     } else {
       overWriteSimpleReferences(t, ctx, modifyOp, val, schema, res, op)
     }

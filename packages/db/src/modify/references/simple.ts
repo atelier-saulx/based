@@ -4,6 +4,7 @@ import { PropDef, PropDefEdge, SchemaTypeDef } from '../../schema/types.js'
 import { modifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { ModifyOp } from '../types.js'
+import { append32, write32 } from '../utils.js'
 
 export function simpleRefsPacked(
   t: PropDefEdge,
@@ -38,7 +39,7 @@ export function simpleRefsPacked(
   }
 }
 
-export function simpleRefs(
+function simpleRefs(
   t: PropDef | PropDefEdge,
   ctx: BasedDb['modifyCtx'],
   value: any[],
@@ -69,7 +70,6 @@ export function simpleRefs(
           buf.writeUint32LE(id, len + added + 1)
           buf.writeInt32LE($index, len + added + 5)
           added += 9
-          console.log('Hell yeah', { $index })
           continue
         }
       } else {
@@ -97,16 +97,47 @@ export function overWriteSimpleReferences(
   op: 0 | 1 | 2,
 ) {
   const refLen = 9 * value.length
-  const potentialLen = refLen + 1 + 5 + ctx.len + 11
+  const potentialLen = refLen + 1 + 5 + ctx.len + 11 + 4
   if (potentialLen > ctx.max) {
     flushBuffer(ctx.db)
   }
   setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
-  const len = ctx.len
-  ctx.len += 6
-  const added = simpleRefs(t, ctx, value, res)
-  ctx.buf[len] = modifyOp
-  ctx.buf.writeUint32LE(added + 1, len + 1)
-  ctx.buf[len + 5] = op
-  ctx.len += added
+  ctx.buf[ctx.len++] = modifyOp
+  const sizepos = ctx.len
+  ctx.len += 4 // reserve for size
+  ctx.buf[ctx.len++] = op // ref op
+  append32(ctx, value.length) // ref length
+  const size = simpleRefs(t, ctx, value, res)
+  ctx.len += size
+  write32(ctx, size + 1 + 4, sizepos)
+}
+
+export function deleteRefs(
+  t: PropDef,
+  ctx: BasedDb['modifyCtx'],
+  modifyOp: ModifyOp,
+  value: any[],
+  schema: SchemaTypeDef,
+  res: ModifyState,
+) {
+  const refLen = 4 * value.length
+  const potentialLen = refLen + 1 + 5 + ctx.len + 11 + 4
+  if (potentialLen > ctx.max) {
+    flushBuffer(ctx.db)
+  }
+  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+  ctx.buf[ctx.len++] = modifyOp
+  append32(ctx, refLen + 1)
+  ctx.buf[ctx.len++] = 2 // ref op
+  for (const ref of value) {
+    if (typeof ref === 'number') {
+      append32(ctx, ref)
+    } else if (ref instanceof ModifyState) {
+      if (ref.error) {
+        res.error = ref.error
+        return
+      }
+      append32(ctx, ref.tmpId)
+    }
+  }
 }

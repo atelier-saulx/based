@@ -10,33 +10,33 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 const edge = @import("./edges.zig");
 
-fn prealloc_refs(ctx: *ModifyCtx, data: []u8) void {
-    const len = data.len;
-    var i: usize = 1;
-    var nr_refs: usize = 0;
+// fn prealloc_refs(ctx: *ModifyCtx, data: []u8) void {
+//     const len = data.len;
+//     var i: usize = 1;
+//     var nr_refs: usize = 0;
 
-    while (i < len) : (i += 5) {
-        const op = data[i];
-        const hasEdgeData = op == 1 or op == 2;
-        const hasIndex = op == 2 or op == 3;
+//     while (i < len) : (i += 5) {
+//         const op = data[i];
+//         const hasEdgeData = op == 1 or op == 2;
+//         const hasIndex = op == 2 or op == 3;
 
-        if (hasEdgeData) {
-            const totalEdgesLen = readInt(u32, data, i + 5);
-            const edges = data[i + 9 .. i + totalEdgesLen + 9];
+//         if (hasEdgeData) {
+//             const totalEdgesLen = readInt(u32, data, i + 5);
+//             const edges = data[i + 9 .. i + totalEdgesLen + 9];
 
-            i += edges.len;
-        }
-        if (hasIndex) {
-            i += 4;
-        }
+//             i += edges.len;
+//         }
+//         if (hasIndex) {
+//             i += 4;
+//         }
 
-        nr_refs += 1;
-    }
+//         nr_refs += 1;
+//     }
 
-    if (nr_refs > 0) {
-        selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, nr_refs);
-    }
-}
+//     if (nr_refs > 0) {
+//         selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, nr_refs);
+//     }
+// }
 
 // 0 overwrite, 1 add, 2 delete, 3 update
 
@@ -44,9 +44,11 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const len = data.len;
-    var i: usize = 1;
+    const refsLen: usize = readInt(u32, data, 1);
+    var i: usize = 5;
 
-    prealloc_refs(ctx, data);
+    selva.selva_fields_prealloc_refs(ctx.node.?, ctx.fieldSchema.?, refsLen);
+    // prealloc_refs(ctx, data);
 
     // TODO if !edges use batch operation
     // set this whole thing
@@ -92,9 +94,9 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !void {
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !void {
     const len = data.len;
     var i: usize = 1;
-    while (i < len) : (i += 5) {
-        // TODO check with olli if this also clean up edges
-        const id = readInt(u32, data, i + 1);
+
+    while (i < len) : (i += 4) {
+        const id = readInt(u32, data, i);
         try db.deleteReference(ctx.db, ctx.node.?, ctx.fieldSchema.?, id);
     }
 }
