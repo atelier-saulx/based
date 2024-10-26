@@ -51,7 +51,8 @@ pub const RefOp = enum(u8) {
     OVERWRITE = 0,
     ADD = 1,
     DELETE = 2,
-    PUT = 4,
+    PUT_OVERWRITE = 3,
+    PUT_ADD = 4,
     _,
 };
 

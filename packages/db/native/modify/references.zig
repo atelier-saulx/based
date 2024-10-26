@@ -86,7 +86,6 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const address = @intFromPtr(data.ptr);
     const offset = (4 - (address + 1)) & 3;
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
-
     try db.putReferences(
         ctx.db,
         @alignCast(u32ids),
@@ -95,5 +94,5 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
         refTypeEntry,
     );
 
-    return len;
+    return len + offset;
 }

@@ -98,48 +98,44 @@ export function overWriteSimpleReferences(
 ) {
   let i = 0
 
-  // const refLen = 4 * value.length
-  // const potentialLen = refLen + 1 + 5 + ctx.len + 11
-  // if (potentialLen > ctx.max) {
-  //   flushBuffer(ctx.db)
-  // }
-  // setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
-  // ctx.buf[ctx.len++] = modifyOp
-  // const sizepos = ctx.len
-  // ctx.len += 4 // reserve for size
-  // const start = ctx.len
-  // ctx.buf[ctx.len++] = 3 // put
-  // // ceil it to nearest 4 for u32 alignment
-  // ctx.len = (ctx.len + 3) & ~3
+  const refLen = 4 * value.length
+  const potentialLen = refLen + 1 + 5 + ctx.len + 11
+  if (potentialLen > ctx.max) {
+    flushBuffer(ctx.db)
+  }
+  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+  const initpos = ctx.len
+  ctx.buf[ctx.len++] = modifyOp
+  append32(ctx, refLen + 1)
+  ctx.buf[ctx.len++] = op === 0 ? 3 : 4 // put overwrite or put add
+  // ceil it to nearest 4 for u32 alignment
+  ctx.len = (ctx.len + 3) & ~3
+  for (; i < value.length; i++) {
+    const ref = value[i]
+    if (typeof ref === 'number') {
+      append32(ctx, ref)
+    } else if (ref instanceof ModifyState) {
+      if (ref.error) {
+        res.error = ref.error
+        return
+      }
+      append32(ctx, ref.tmpId)
+    } else {
+      break
+    }
+  }
 
-  // for (; i < value.length; i++) {
-  //   const ref = value[i]
-  //   if (typeof ref === 'number') {
-  //     append32(ctx, ref)
-  //   } else if (ref instanceof ModifyState) {
-  //     if (ref.error) {
-  //       res.error = ref.error
-  //       return
-  //     }
-  //     append32(ctx, ref.tmpId)
-  //   } else {
-  //     break
-  //   }
-  // }
+  if (i === value.length) {
+    return
+  }
 
-  // write32(ctx, ctx.len - start, sizepos)
+  // there is more stuff that we need to write
 
-  // if (i === value.length) {
-  //   return
-  // }
-
-  // // there is more stuff that we need to write
-
-  // if (i < 2) {
-  //   // put operation has no use, go back
-  //   i = 0
-  //   ctx.len = sizepos - 1
-  // }
+  if (i < 2) {
+    // put operation has no use, go back
+    i = 0
+    ctx.len = initpos
+  }
 
   const remaining = value.length - i
   const refLen2 = 9 * remaining
@@ -160,9 +156,7 @@ export function overWriteSimpleReferences(
     let id: number
     let index: number
 
-    if (ref > 0) {
-      id = ref
-    } else if (typeof ref === 'object') {
+    if (typeof ref === 'object') {
       if (ref === null) {
         modifyError(res, t, value)
         return
@@ -187,6 +181,8 @@ export function overWriteSimpleReferences(
         modifyError(res, t, value)
         return
       }
+    } else if (ref > 0) {
+      id = ref
     }
 
     if (index === undefined) {

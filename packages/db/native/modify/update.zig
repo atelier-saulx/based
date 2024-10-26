@@ -10,7 +10,6 @@ const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 
 pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
-    std.debug.print("REFOP {d} \n", .{data[4]});
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {
@@ -28,7 +27,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     return references.deleteReferences(ctx, data);
                 },
                 // put
-                types.RefOp.PUT => {
+                types.RefOp.PUT_OVERWRITE => {
+                    db.clearReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+                    return references.putReferences(ctx, data);
+                },
+                // put
+                types.RefOp.PUT_ADD => {
                     return references.putReferences(ctx, data);
                 },
                 else => {

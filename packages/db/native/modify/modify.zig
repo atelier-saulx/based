@@ -26,33 +26,6 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     };
 }
 
-// inline fn readData(fieldType: types.Prop, operation: []u8, i: usize) []u8 {
-//     if (fieldType == types.Prop.REFERENCE) {
-//         if (operation[0] == 1) {
-//             return operation[0 .. 5 + readInt(u32, operation, 5)];
-//         } else {
-//             return operation[0..5];
-//         }
-//     }
-
-//     if (fieldType == types.Prop.REFERENCES) {
-//         const refOp = operation[4];
-//         if (refOp == 3 or refOp == 4) {
-//             const d = (i + 2) & 3;
-//             if (d != 0) {
-//                 // align it!!
-//                 const offset = 4 - d;
-//                 const slice = operation[4 + offset .. readInt(u32, operation, 0) + 4];
-//                 slice[0] = refOp;
-//                 std.debug.print("OK {any}", .{slice});
-//                 return slice;
-//             }
-//         }
-//     }
-
-//     return operation[4 .. readInt(u32, operation, 0) + 4];
-// }
-
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
