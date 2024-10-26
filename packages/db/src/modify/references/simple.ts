@@ -96,8 +96,6 @@ export function overWriteSimpleReferences(
   res: ModifyState,
   op: 0 | 1 | 2,
 ) {
-  // first try put references here...
-
   const refLen = 9 * value.length
   const potentialLen = refLen + 1 + 5 + ctx.len + 11 + 4
   if (potentialLen > ctx.max) {

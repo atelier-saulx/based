@@ -48,9 +48,9 @@ export function overWriteEdgeReferences(
   ctx.buf[ctx.len++] = modifyOp
   const sizepos = ctx.len
   ctx.len += 4 // reserve for size
+  const start = ctx.len
   ctx.buf[ctx.len++] = op // ref op
   append32(ctx, value.length) // ref length
-  const start = ctx.len
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]
     if (typeof ref !== 'number') {
@@ -87,7 +87,7 @@ export function overWriteEdgeReferences(
     }
   }
 
-  write32(ctx, ctx.len - start + 4, sizepos)
+  write32(ctx, ctx.len - start, sizepos)
 
   // ctx.buf.writeUint32LE(ctx.len - (sizeIndex + 4), sizeIndex)
 }
