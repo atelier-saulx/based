@@ -122,9 +122,9 @@ pub fn filter(
             // struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
             var value: []u8 = undefined;
             if (fieldSchema.type == 14) {
-                const x = selva.selva_fields_get_references(node, field);
-                const arr: [*]u8 = @ptrCast(@alignCast(x.*.index.arr));
-                value = arr[0 .. x.*.index.len * 4];
+                const refs = db.getReferences(node, field).?;
+                const arr: [*]u8 = @ptrCast(@alignCast(refs.*.index));
+                value = arr[0 .. refs.nr_refs * 4];
             } else {
                 value = db.getField(typeEntry, 0, node, fieldSchema);
             }
