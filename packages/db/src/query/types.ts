@@ -39,6 +39,7 @@ export type QueryDefFilter = {
   fromRef?: PropDef
   schema?: SchemaTypeDef
   edges?: Map<number, Buffer[]>
+  or?: QueryDefFilter
 }
 
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }

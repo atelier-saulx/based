@@ -13,49 +13,49 @@ const getField = db.getField;
 const idToShard = db.idToShard;
 
 // -------------------------------------------
-// meta
-// 0 = conditions
-// 1 = or
-// 252 = edge
-// 254 = reference
-// -------------------------------------------
 // or
-// 1, next, next
+// [meta = 253] [next 4]
 // -------------------------------------------
 // edge
-// 252, edgeField
+// [meta = 252] [edgeField]
 // -------------------------------------------
 // ref
-// 254, field
+// [meta = 254] [field] [typeId 2]
 // -------------------------------------------
 // conditions normal
-// 0, field, [size 2], [start 2], op, value...
+// field, [size 2]
+// [or = 0] [size 2] [start 2], [op], value[size]
 // -------------------------------------------
 // conditions or fixed
-// 1, [repeat 2], field, [size 2], [start 2], op, value...
+// field, [size 2]
+// [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
 // -------------------------------------------
 // conditions or variable
-// 2, [repeat 2], field, [size 4], [start 2], op, [size 2], value.., [size 2], value..
+// field, [size 2]
+// [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 // operations shared
 // 1 = equality
 // 2 = has (simd)
-// 3 = checksum equality
+// 3 = not equal
 // 4 = ends with
 // 5 = starts with
 // -------------------------------------------
 // operations numbers
 // 6 = larger then
 // 7 = smaller then
-// 8 = range
-// 9 = exclude range
+// 8 = larger then inclusive
+// 9 = smaller then inclusive
+// 10 = range
+// 11 = exclude range
 // -------------------------------------------
 // operations strings
-// 10 = equality to lower case
-// 11 = has to lower case (simd)
-// 12 = starts with to lower case
-// 13 = ends with to lower case
+// 12 = equality to lower case
+// 13 = has to lower case (simd)
+// 14 = starts with to lower case
+// 15 = ends with to lower case
 // -------------------------------------------
+// if 2 things to check in main that are next to each other make it
 
 pub fn filter(
     ctx: *db.DbCtx,
@@ -66,15 +66,12 @@ pub fn filter(
     // comptime isEdge
 ) bool {
     var fieldIndex: usize = 0;
-    var main: ?[]u8 = undefined;
-
+    // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
 
     // stop at next OR then its correct
     while (fieldIndex < conditions.len) {
         const field = conditions[fieldIndex];
-        const operation = conditions[fieldIndex + 1 ..];
-        const querySize: u16 = readInt(u16, operation, 0);
         if (field == 252) {
             if (ref != null) {
                 return false;
@@ -96,8 +93,8 @@ pub fn filter(
             return false;
             // }
         } else if (field == 254) {
-            const refField: u8 = operation[2];
-            const refTypePrefix = readInt(u16, operation, 3);
+            const refField: u8 = conditions[fieldIndex + 1];
+            const refTypePrefix = readInt(u16, conditions, fieldIndex + 3);
             const refNode = db.getReference(node, refField);
             if (refNode == null) {
                 return false;
@@ -105,41 +102,40 @@ pub fn filter(
             const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
                 return false;
             };
-            const refConditions: []u8 = operation[5 .. 1 + querySize];
-            if (!filter(ctx, refNode.?, refTypeEntry, refConditions, null)) {
+
+            std.debug.print("flap {any} \n", .{refTypeEntry});
+            // const refConditions: []u8 = conditions[5 + fieldIndex .. 1 + querySize];
+            // if (!filter(ctx, refNode.?, refTypeEntry, refConditions, null)) {
+            //     return false;
+            // }
+            return false;
+        } else {
+            const querySize: u16 = readInt(u16, conditions, fieldIndex + 1);
+
+            const query = conditions[fieldIndex + 3 .. querySize + fieldIndex + 3];
+
+            const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                return false;
+            };
+            // get edge
+
+            // struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field);
+            var value: []u8 = undefined;
+            if (fieldSchema.type == 14) {
+                const x = selva.selva_fields_get_references(node, field);
+                const arr: [*]u8 = @ptrCast(@alignCast(x.*.index.arr));
+                value = arr[0 .. x.*.index.len * 4];
+            } else {
+                value = db.getField(typeEntry, 0, node, fieldSchema);
+            }
+            if (value.len == 0) {
                 return false;
             }
-        } else {
-            const query = operation[2 .. 2 + querySize];
-            if (field == 0) {
-                if (main == null) {
-                    const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-                        return false;
-                    };
-                    // get edge
-                    main = db.getField(typeEntry, 0, node, fieldSchema);
-                    if (main.?.len == 0) {
-                        return false;
-                    }
-                }
-                if (!runCondition(main.?, query)) {
-                    return false;
-                }
-            } else {
-                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-                    return false;
-                };
-                // get edge
-                const value = db.getField(typeEntry, 0, node, fieldSchema);
-                if (value.len == 0) {
-                    return false;
-                }
-                if (!runCondition(value, query)) {
-                    return false;
-                }
+            if (!runCondition(query, value)) {
+                return false;
             }
+            fieldIndex += querySize + 3;
         }
-        fieldIndex += querySize + 3;
     }
     return true;
 }

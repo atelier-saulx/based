@@ -7,165 +7,108 @@ import {
   ENUM,
   STRING,
   UINT32,
+  REVERSE_SIZE_MAP,
 } from '../../schema/types.js'
 import { QueryDefFilter } from '../types.js'
+import { Operator, operationToByte } from './operators.js'
 
-export type Operation =
-  | '='
-  | 'has'
-  | '<'
-  | '>'
-  | '!='
-  | 'like'
-  | '>='
-  | '<='
-  | 'exists'
-  | '!exists'
-
-export const operationToByte = (
-  op: Operation,
-  field: PropDef | PropDefEdge,
-) => {
-  if (op === '=') {
-    if (field.separate) {
-      if (field.typeIndex === UINT32) {
-        return 9
-      }
-      if (field.typeIndex === BOOLEAN || field.typeIndex === ENUM) {
-        return 8
-      }
-      return 2
-    }
-    if (field.typeIndex === BOOLEAN || field.typeIndex === ENUM) {
-      return 5
-    }
-    return 1
-  }
-  // 2 is non fixed length check
-  if (op === '>') {
-    return 3
-  }
-
-  if (op === '<') {
-    return 4
-  }
-
-  if (op === 'has') {
-    return 7
-  }
-
-  return 0
-}
+// -------------------------------------------
+// conditions normal
+// field, [size 2]
+// [or = 0] [size 2] [start 2], [op], value[size]
+// -------------------------------------------
+// conditions or fixed
+// field, [size 2]
+// [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
+// -------------------------------------------
+// conditions or variable
+// field, [size 2]
+// [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
+// -------------------------------------------
 
 export const primitiveFilter = (
-  field: PropDef | PropDefEdge,
-  op: Operation,
+  prop: PropDef | PropDefEdge,
+  operator: Operator,
   value: any,
   conditions: QueryDefFilter,
 ) => {
-  const fieldIndexChar = field.prop
-  var size = 0
+  const fieldIndexChar = prop.prop
   let buf: Buffer
 
-  if (field.separate === true) {
-    if (field.typeIndex !== REFERENCES) {
-      if (op === '=') {
-        if (field.typeIndex === UINT32) {
-          buf = Buffer.allocUnsafe(5)
-          buf[0] = operationToByte(op, field)
-          buf.writeInt32LE(value, 1)
-        } else if (field.typeIndex === ENUM) {
-          // undefined
-          const index = field.reverseEnum[value]
-          if (index != undefined) {
-            // single byte equality
-            buf = Buffer.allocUnsafe(2)
-            buf[0] = operationToByte(op, field)
-            buf[1] = index + 1
-          } else {
-            throw new Error('incorrect val for enum!')
-          }
-        } else {
-          const matches = Buffer.from(value)
-          buf = Buffer.allocUnsafe(3 + matches.byteLength)
-          buf[0] = operationToByte(op, field)
-          buf.writeInt16LE(matches.byteLength, 1)
-          buf.set(matches, 3)
-        }
-      } else if (op === 'has') {
-        // TODO MAKE HAS
+  let or = 0
+  const op = operationToByte(operator)
+  const start = prop.start ?? 0
+  let size = 0
+
+  const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
+
+  console.log('dd', REVERSE_SIZE_MAP[prop.typeIndex])
+
+  if (REVERSE_SIZE_MAP[prop.typeIndex] === 8) {
+    if (Array.isArray(value)) {
+      // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
+      or = 1
+      const len = value.length
+      const size = len * 8
+      buf = Buffer.allocUnsafe(6 + size + 2)
+      buf[0] = or
+      buf.writeUInt16LE(8, 1)
+      buf.writeUInt16LE(start, 3)
+      buf[5] = op
+      buf.writeUInt16LE(len, 6)
+      for (let i = 0; i < len; i++) {
+        buf.writeDoubleLE(value[i], 8 + i * 8)
       }
-    } else if (field.typeIndex === REFERENCES) {
-      const matches = value
-      const len = matches.length
-      buf = Buffer.allocUnsafe(3 + len * 4)
-      buf.writeInt16LE(len * 4, 1)
-      if (op === '=') {
-        buf[0] = operationToByte(op, field)
-        for (let i = 0; i < len; i++) {
-          buf.writeInt32LE(matches[i], i * 4 + 3)
-        }
-      } else if (op === 'has') {
-        buf[0] = operationToByte(op, field)
-        for (let i = 0; i < len; i++) {
-          buf.writeInt32LE(matches[i], i * 4 + 3)
-        }
-      }
+    } else {
+      // [or = 0] [size 2] [start 2], [op], value[size]
+      buf = Buffer.allocUnsafe(14)
+      buf[0] = or
+      buf.writeUInt16LE(8, 1)
+      buf.writeUInt16LE(start, 3)
+      buf[5] = op
+      buf.writeDoubleLE(value, 6)
     }
-  } else {
-    if (field.typeIndex === BOOLEAN) {
-      if (op === '=') {
-        // single byte equality
-        buf = Buffer.allocUnsafe(4)
-        buf[0] = operationToByte(op, field)
-        buf.writeInt16LE(field.start, 1)
-        buf[3] = value === true ? 1 : 0
-      } else {
+  } else if (
+    REVERSE_SIZE_MAP[prop.typeIndex] === 4 ||
+    prop.typeIndex === REFERENCES
+  ) {
+    if (Array.isArray(value)) {
+      // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
+      or = prop.typeIndex === REFERENCES ? 3 : 1
+      const len = value.length
+      const size = len * 4
+      buf = Buffer.allocUnsafe(6 + size + 2)
+      buf[0] = or
+      buf.writeUInt16LE(4, 1)
+      buf.writeUInt16LE(start, 3)
+      buf[5] = op
+      buf.writeUInt16LE(len, 6)
+      if (prop.typeIndex === REFERENCES) {
+        value = new Uint32Array(value)
+        value.sort()
       }
-    } else if (field.typeIndex === ENUM) {
-      if (op === '=') {
-        const index = field.reverseEnum[value]
-        if (index != undefined) {
-          // single byte equality
-          buf = Buffer.allocUnsafe(4)
-          buf[0] = operationToByte(op, field)
-          buf.writeInt16LE(field.start, 1)
-          buf[3] = index + 1
-        } else {
-          throw new Error('incorrect val for enum!')
-        }
-      } else {
+      for (let i = 0; i < len; i++) {
+        buf.writeInt32LE(value[i], 8 + i * 4)
       }
-    } else if (field.typeIndex === STRING) {
-      if (op === '=') {
-        const matches = Buffer.from(value)
-        buf = Buffer.allocUnsafe(5 + matches.byteLength)
-        buf[0] = operationToByte(op, field)
-        buf.writeInt16LE(matches.byteLength, 1)
-        buf.writeInt16LE(field.start, 3)
-        buf.set(matches, 5)
-      } else if (op === 'has') {
-        // TODO MAKE HAS
-      }
-    } else if (field.typeIndex === UINT32) {
-      if (op === '>' || op === '<' || op === '=') {
-        buf = Buffer.allocUnsafe(9)
-        buf[0] = operationToByte(op, field)
-        buf.writeInt16LE(4, 1)
-        buf.writeInt16LE(field.start, 3)
-        buf.writeInt32LE(value, 5)
-      }
+    } else {
+      // [or = 0] [size 2] [start 2], [op], value[size]
+      buf = Buffer.allocUnsafe(10)
+      buf[0] = or
+      buf.writeUInt16LE(4, 1)
+      buf.writeUInt16LE(start, 3)
+      buf[5] = op
+      buf.writeInt32LE(value, 6)
     }
   }
-
-  const bufferMap = field.__isEdge ? conditions.edges : conditions.conditions
+  // ADD OR if array for value
 
   let arr = bufferMap.get(fieldIndexChar)
   if (!arr) {
-    size += 3
+    size += 3 // [field] [size 2]
     arr = []
     bufferMap.set(fieldIndexChar, arr)
   }
+
   size += buf.byteLength
   arr.push(buf)
   return size

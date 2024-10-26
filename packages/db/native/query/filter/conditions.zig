@@ -1,181 +1,65 @@
 const std = @import("std");
+const readInt = @import("../../utils.zig").readInt;
+const batch = @import("./batch.zig");
+const db = @import("../../db//db.zig");
 
-pub fn runConditions(v: []u8, q: []u8) bool {
-    var j: usize = 0;
-    outside: while (j < q.len) {
-        const operation = q[j];
+pub fn runConditions(q: []u8, v: []u8) bool {
+    var i: u16 = 0;
+    while (i < q.len) {
+        const mod = q[i];
+        const valueSize = readInt(u16, q, i + 1);
+        const start = readInt(u16, q, i + 3);
+        const op = q[i + 5];
 
-        switch (operation) {
-            // head equality
-            1 => {
-                const filter_size: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 1 ..][0..2],
-                    .little,
-                );
-                const index: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 3 ..][0..2],
-                    .little,
-                );
-                const hit = std.mem.eql(u8, q[j + 5 .. j + 5 + filter_size], v[index .. index + filter_size]);
-                if (!hit) {
+        if (mod == 2) {
+            // AND SIMD
+        } else if (mod == 1 or mod == 3) {
+            // OR Fixed length
+            const repeat = readInt(u16, q, i + 6);
+            if (op == 1) {
+                const value = v[start .. start + valueSize];
+                const query = q[i + 8 .. i + valueSize * repeat + 8];
+                if (!batch.equalsOr(valueSize, value, query)) {
                     return false;
                 }
-                j += filter_size + 5;
-                continue :outside;
-            },
-            // seperate field equality
-            2 => {
-                const filter_size: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 1 ..][0..2],
-                    .little,
-                );
-                if (v.len != filter_size) {
+            } else if (op == 2) {
+                // ref has
+                const query = q[i + 8 .. i + valueSize * repeat + 8];
+                const value = v;
+                // check size again..
+                // if it bigger can use comparison fn to find needle
+                if (!batch.simdReferencesHas(query, value)) {
                     return false;
                 }
-                const hit = std.mem.eql(u8, q[j + 3 .. j + 3 + filter_size], v[0..filter_size]);
-                if (!hit) {
-                    return false;
-                }
-                j += filter_size + 3;
-                continue :outside;
-            },
-            3 => {
-                // >, greater than
-                const filter_size: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 1 ..][0..2],
-                    .little,
-                );
-                const index: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 3 ..][0..2],
-                    .little,
-                );
-
-                switch (filter_size) {
-                    4 => {
-                        const query = std.mem.readInt(i32, q[j + 5 ..][0..4], .little);
-                        const value = std.mem.readInt(i32, v[index..][0..4], .little);
-                        if (value > query) {
-                            j += filter_size + 5;
-                            continue :outside;
-                        }
+            }
+            i += 8 + valueSize * repeat;
+        } else {
+            // single
+            if (op == 1) {
+                const query = q[i + 6 .. i + valueSize + 6];
+                const value = v[start .. start + valueSize];
+                // mostly fast for many non matching
+                var j: u8 = 0;
+                while (j < query.len) : (j += 1) {
+                    if (value[j] != query[j]) {
                         return false;
-                    },
-                    8 => {
-                        const query = std.mem.readInt(i64, q[j + 5 ..][0..8], .little);
-                        const value = std.mem.readInt(i64, v[index..][0..8], .little);
-                        if (value > query) {
-                            j += filter_size + 5;
-                            continue :outside;
-                        }
-                        return false;
-                    },
-                    else => {
-                        std.log.err(
-                            "Unexpected filter size \"{}\" for operation \"{}\", ignoring filter.\n",
-                            .{ filter_size, operation },
-                        );
-                        return false;
-                    },
-                }
-            },
-            4 => {
-                // <, less than
-                const filter_size: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 1 ..][0..2],
-                    .little,
-                );
-                const index: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 3 ..][0..2],
-                    .little,
-                );
-
-                switch (filter_size) {
-                    4 => {
-                        const query = std.mem.readInt(i32, q[j + 5 ..][0..4], .little);
-                        const value = std.mem.readInt(i32, v[index..][0..4], .little);
-                        if (value < query) {
-                            j += filter_size + 5;
-                            continue :outside;
-                        }
-                        return false;
-                    },
-                    8 => {
-                        const query = std.mem.readInt(i64, q[j + 5 ..][0..8], .little);
-                        const value = std.mem.readInt(i64, v[index..][0..8], .little);
-                        if (value < query) {
-                            j += filter_size + 5;
-                            continue :outside;
-                        }
-                        return false;
-                    },
-                    else => {
-                        std.log.err(
-                            "Unexpected filter size \"{}\" for operation \"{}\", ignoring filter.\n",
-                            .{ filter_size, operation },
-                        );
-                        return false;
-                    },
-                }
-            },
-            // single byte check
-            5 => {
-                const index = std.mem.readInt(
-                    u16,
-                    q[j + 1 ..][0..2],
-                    .little,
-                );
-                if (q[j + 3] != v[index]) {
-                    return false;
-                }
-                j += 4;
-                continue :outside;
-            },
-            // seperate field has check
-            7 => {
-                const filter_size: u16 = std.mem.readInt(
-                    u16,
-                    q[j + 1 ..][0..2],
-                    .little,
-                );
-                var i: u16 = 0;
-                while (i < v.len) : (i += 4) {
-                    var p: usize = j + 3;
-                    // replace with simd
-                    while (p < filter_size * 4 + j + 3) : (p += 4) {
-                        if (v[i] != q[p] or v[i + 1] != q[p + 1] or v[i + 2] != q[p + 2] or v[i + 3] != q[p + 3]) {
-                            continue;
-                        }
-                        j += filter_size * 4 + 3;
-                        continue :outside;
                     }
                 }
-                return false;
-            },
-            8 => {
-                if (q[j + 1] != v[0]) {
+            } else if (op == 2) {
+                const query = q[i + 6 .. i + valueSize + 6];
+                const value = v;
+                if (start > 0) {
+                    std.log.err("Start + has not supported in filters", .{});
                     return false;
                 }
-                j += 2;
-                continue :outside;
-            },
-            9 => {
-                if (!std.mem.eql(u8, q[j + 1 .. j + 5], v)) {
+
+                std.debug.print("scan {any} amount of items \n", .{value.len});
+                // if start do different
+                if (!batch.equalsOr(valueSize, query, value)) {
                     return false;
                 }
-                j += 5;
-                continue :outside;
-            },
-            else => {
-                std.log.err("\nIncorrectly encoded condition op:{d} (operation not handled)", .{operation});
-                return false;
-            },
+            }
+            i += 6 + valueSize;
         }
     }
     return true;
