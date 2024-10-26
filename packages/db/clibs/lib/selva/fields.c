@@ -1268,13 +1268,98 @@ static int tail_insert_references(struct SelvaDb *db, const struct SelvaFieldSch
     return 0;
 }
 
+static void selva_fields_references_insert_tail_wupsert_empty_src_field(
+        struct SelvaDb *db,
+        struct SelvaTypeEntry *te_dst,
+        struct SelvaNode *restrict src,
+        const struct SelvaFieldSchema *fs_src,
+        const struct SelvaFieldSchema *fs_dst,
+        const node_id_t ids[],
+        size_t nr_ids,
+        void (*fn)(struct SelvaDb *db, struct SelvaNode *restrict src, struct SelvaNode *restrict dst, const struct SelvaFieldSchema *fs_src, const struct SelvaFieldSchema *fs_dst))
+{
+    for (size_t i = 0; i < nr_ids; i++) {
+        node_id_t dst_id = ids[i];
+        struct SelvaNode *dst;
+
+        dst = selva_upsert_node(te_dst, dst_id);
+        if (!dst) {
+            continue;
+        }
+
+        fn(db, src, dst, fs_src, fs_dst);
+    }
+}
+
+static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
+        struct SelvaDb *db,
+        struct SelvaTypeEntry *te_dst,
+        struct SelvaNode *restrict src,
+        const struct SelvaFieldSchema *fs_src,
+        const struct SelvaFieldSchema *fs_dst,
+        const node_id_t ids[],
+        size_t nr_ids,
+        void (*fn)(struct SelvaDb *db, struct SelvaNode *restrict src, struct SelvaNode *restrict dst, const struct SelvaFieldSchema *fs_src, const struct SelvaFieldSchema *fs_dst))
+{
+    const struct SelvaFields *fields = &src->fields;
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[fs_src->field];
+    typeof_field(struct SelvaNodeReferences, nr_refs) *index_len = (typeof(index_len))((char *)nfo2p(fields, nfo) + offsetof(struct SelvaNodeReferences, nr_refs));
+    typeof_field(struct SelvaNodeReferences, index) *index = (typeof(index))((char *)nfo2p(fields, nfo) + offsetof(struct SelvaNodeReferences, index));
+    ssize_t index_lower_bound = node_id_set_bsearch(*index, *index_len, ids[0]);
+
+    if (index_lower_bound == 0) {
+        index_lower_bound = 0;
+    }
+
+    for (size_t i = 0; i < nr_ids; i++) {
+        node_id_t dst_id = ids[i];
+        struct SelvaNode *dst;
+
+        ssize_t k = node_id_set_bsearch(*index + index_lower_bound, *index_len - index_lower_bound, dst_id);
+        if (k > 0) {
+            index_lower_bound = k;
+            continue; /* ignore */
+        }
+
+        dst = selva_upsert_node(te_dst, dst_id);
+        if (!dst) {
+            continue;
+        }
+
+        fn(db, src, dst, fs_src, fs_dst);
+    }
+}
+
+static void selva_fields_references_insert_tail_wupsert_insert_refs(
+        struct SelvaDb *,
+        struct SelvaNode *restrict src,
+        struct SelvaNode *restrict dst,
+        const struct SelvaFieldSchema *fs_src,
+        const struct SelvaFieldSchema *fs_dst)
+{
+    write_ref_2way(src, fs_src, -1, dst, fs_dst);
+}
+
+static void selva_fields_references_insert_tail_wupsert_insert_ref(
+        struct SelvaDb *db,
+        struct SelvaNode *restrict src,
+        struct SelvaNode *restrict dst,
+        const struct SelvaFieldSchema *fs_src,
+        const struct SelvaFieldSchema *fs_dst)
+{
+    /* fs_dst->type == SELVA_FIELD_TYPE_REFERENCE so needs to be removed. */
+    remove_reference(db, dst, fs_dst, 0, -1);
+    write_ref_2way(src, fs_src, -1, dst, fs_dst);
+}
+
 int selva_fields_references_insert_tail_wupsert(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         struct SelvaTypeEntry *te_dst,
         const node_id_t ids[],
-        size_t nr_ids) {
+        size_t nr_ids)
+{
     const struct SelvaFieldSchema *fs_dst;
     node_type_t type_dst = te_dst->type;
 
@@ -1294,75 +1379,17 @@ int selva_fields_references_insert_tail_wupsert(
     
 
     const size_t old_nr_refs = selva_fields_prealloc_refs(node, fs, nr_ids);
-
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
-        if (1 || old_nr_refs == 0) { /* Field is empty. */
-            for (size_t i = 0; i < nr_ids; i++) {
-                node_id_t dst_id = ids[i];
-                struct SelvaNode *dst = selva_upsert_node(te_dst, dst_id);
-                int err;
-
-                if (!dst) {
-                    continue;
-                }
-
-                err = check_ref_eexists_fast(node, dst, fs, fs_dst);
-                if (err) {
-                    continue; /* ignore. */
-                }
-
-                write_ref_2way(node, fs, -1, dst, fs_dst);
-            }
+        if (old_nr_refs == 0) { /* field is empty. */
+            selva_fields_references_insert_tail_wupsert_empty_src_field(db, te_dst, node, fs, fs_dst, ids, nr_ids, selva_fields_references_insert_tail_wupsert_insert_refs);
         } else { /* field is non-empty. */
-#if 0
-            ssize_t index_lower_bound;
-
-            index_lower_bound = node_id_set_bsearch(refs.index.arr, old_nr_refs, dsts[0]);
-
-            for (size_t i = 0; i < nr_dsts; i++) {
-                node_id_t dst_id = ids[i];
-                struct SelvaNode *dst = selva_upsert_node(te_dst, dst_id);
-                int err;
-
-                if (!dst) {
-                    continue;
-                }
-            }
-#endif
+            selva_fields_references_insert_tail_wupsert_nonempty_src_field(db, te_dst, node, fs, fs_dst, ids, nr_ids, selva_fields_references_insert_tail_wupsert_insert_refs);
         }
     } else { /* fs_dst->type == SELVA_FIELD_TYPE_REFERENCE */
         if (old_nr_refs == 0) {
-            for (size_t i = 0; i < nr_ids; i++) {
-                node_id_t dst_id = ids[i];
-                struct SelvaNode *dst = selva_upsert_node(te_dst, dst_id);
-
-                if (!dst) {
-                    continue;
-                }
-
-                /* fs_dst->type == SELVA_FIELD_TYPE_REFERENCE so needs to be removed. */
-                remove_reference(db, dst, fs_dst, 0, -1);
-                write_ref_2way(node, fs, -1, dst, fs_dst);
-            }
+            selva_fields_references_insert_tail_wupsert_empty_src_field(db, te_dst, node, fs, fs_dst, ids, nr_ids, selva_fields_references_insert_tail_wupsert_insert_ref);
         } else {
-            for (size_t i = 0; i < nr_ids; i++) {
-                node_id_t dst_id = ids[i];
-                struct SelvaNode *dst = selva_upsert_node(te_dst, dst_id);
-                int err;
-
-                if (!dst) {
-                    continue;
-                }
-
-                err = check_ref_eexists_fast(node, dst, fs, fs_dst);
-                if (err) {
-                    continue; /* ignore. */
-                }
-
-                /* fs_dst->type == SELVA_FIELD_TYPE_REFERENCE so needs to be removed. */
-                remove_reference(db, dst, fs_dst, 0, -1);
-                write_ref_2way(node, fs, -1, dst, fs_dst);
-            }
+            selva_fields_references_insert_tail_wupsert_nonempty_src_field(db, te_dst, node, fs, fs_dst, ids, nr_ids, selva_fields_references_insert_tail_wupsert_insert_ref);
         }
     }
 
