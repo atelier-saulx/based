@@ -1228,6 +1228,7 @@ void selva_fields_prealloc_refs(struct SelvaNode *node, const struct SelvaFieldS
     }
 
     refs.refs = selva_realloc(refs.refs, nr_refs_min * sizeof(*refs.refs));
+    node_id_set_prealloc(&refs.index, nr_refs_min);
     memcpy(vp, &refs, sizeof(refs));
 }
 

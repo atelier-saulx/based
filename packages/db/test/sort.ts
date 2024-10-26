@@ -408,6 +408,8 @@ await test('sort - from start (1.5M items)', async (t) => {
 
   await db.start({ clean: true })
 
+  // db.blockSize = 1e5
+
   db.putSchema({
     types: {
       user: {

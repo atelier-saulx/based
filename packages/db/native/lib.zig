@@ -37,7 +37,7 @@ pub fn registerFunction(
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
-    std.debug.print("register napi fn \n", .{});
+    std.debug.print("register napi fn SIMD OPERATIONS (u32): {any} \n", .{std.simd.suggestVectorLength(u32)});
 
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
