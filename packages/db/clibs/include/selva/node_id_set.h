@@ -14,6 +14,7 @@ struct node_id_set {
 static_assert(sizeof(((struct node_id_set *)0)->len) == sizeof(node_id_t));
 
 void node_id_set_init(struct node_id_set *set);
+void node_id_set_prealloc(struct node_id_set *set, size_t new_len);
 void node_id_set_destroy(struct node_id_set *set);
 bool node_id_set_has(struct node_id_set *set, node_id_t id);
 bool node_id_set_add(struct node_id_set *set, node_id_t id);
