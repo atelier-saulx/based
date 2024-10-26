@@ -76,15 +76,19 @@ await test('filter', async (t) => {
 
   const d = Date.now()
   let lastId = 0
-  for (let i = 0; i < 10e6; i++) {
+  const m: number[] = []
+  for (let i = 0; i < 1e6; i++) {
     lastId = db.create('machine', {
-      env,
       status: status[Math.floor(Math.random() * status.length)],
       requestsServed: i,
       lastPing: i + 1,
     }).tmpId
+    m.push(lastId)
   }
-  console.log('5M', db.drain(), 'ms')
+  db.update('env', env, {
+    machines: m,
+  })
+  console.log('10M', db.drain(), 'ms')
 
   // const result = db.query('org').include('*', 'envs.machines.*', 'env.*').get()
   // console.log(result)
