@@ -345,11 +345,9 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
         .dst = dst,
     };
 
-    size_t id_set_len = new_len - 1;
-    if (!node_id_set_add(&refs.index, &id_set_len, dst->node_id)) {
-        db_panic("node_id already inserted into refs: %u:%u\n", dst->type, dst->node_id);
-    }
-    assert(id_set_len == new_len);
+#if 0
+    assert(node_id_set_has(refs.index, refs.nr_refs, dst->node_id));
+#endif
 
 out:
     if (ref_out) {
@@ -360,6 +358,9 @@ out:
     return 0;
 }
 
+/*
+ * add_to_refs_index() must be called before this function.
+ */
 static void write_ref_2way(
         struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, ssize_t index,
         struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
@@ -1019,47 +1020,44 @@ int selva_fields_get_text(
     return SELVA_ENOENT;
 }
 
-static int check_ref_eexists(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaNode *dst)
+static bool add_to_refs_index_(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema * restrict fs,
+        node_id_t dst)
 {
-    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+    struct SelvaFieldInfo *nfo;
+    bool res = true;
 
-    if (!dst) {
-        return SELVA_EINVAL;
-    }
-
-    if (nfo->type == SELVA_FIELD_TYPE_REFERENCE) {
-        struct SelvaNodeReference ref;
-
-        memcpy(&ref, nfo2p(fields, nfo), sizeof(ref));
-
-        return (ref.dst == dst) ? SELVA_EEXIST : 0;
-    } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
+    nfo = ensure_field(node, &node->fields, fs);
+    if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
+        void *p = nfo2p(&node->fields, nfo);
         struct SelvaNodeReferences refs;
-        node_id_t dst_id = dst->node_id;
+        size_t nr_refs;
 
-        memcpy(&refs, nfo2p(fields, nfo), sizeof(refs));
-
-        return node_id_set_has(refs.index, refs.nr_refs, dst_id) ? SELVA_EEXIST : 0;
-    } else {
-        return 0;
+        memcpy(&refs, p, sizeof(refs));
+        nr_refs = refs.nr_refs;
+        res = node_id_set_add(&refs.index, &nr_refs, dst);
+        if (res) {
+            assert(nr_refs > refs.nr_refs);
+            memcpy(p, &refs, sizeof(refs));
+        }
     }
+
+    return res;
 }
 
-static int check_ref_eexists_fast(
+static bool add_to_refs_index(
         struct SelvaNode * restrict src,
         struct SelvaNode * restrict dst,
         const struct SelvaFieldSchema * restrict fs_src,
         const struct SelvaFieldSchema * restrict fs_dst)
 {
-    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+    bool res = false;
 
-    /*
-     * It's cheaper/faster to check from a reference field rather
-     * than a references field.
-     */
-    return (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE)
-        ? check_ref_eexists(&dst->fields, fs_dst, src)
-        : check_ref_eexists(&src->fields, fs_src, dst);
+    res |= add_to_refs_index_(src, fs_src, dst->node_id);
+    res |= add_to_refs_index_(dst, fs_dst, src->node_id);
+
+    return res;
 }
 
 int selva_fields_references_insert(
@@ -1086,10 +1084,9 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-     err = check_ref_eexists_fast(node, dst, fs, fs_dst);
-     if (err) {
-         return err;
-     }
+    if (!add_to_refs_index(node, dst, fs, fs_dst)) {
+        return SELVA_EEXIST;
+    }
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         remove_reference(db, dst, fs_dst, 0, -1);
@@ -1141,13 +1138,8 @@ int selva_fields_reference_set(
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
 #endif
 
-    /*
-     * Fail if ref already set.
-     * Only one way check is enough.
-     */
-    err = check_ref_eexists(&src->fields, fs_src, dst);
-    if (err) {
-        return err;
+    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES && !add_to_refs_index(src, dst, fs_src, fs_dst)) {
+        return SELVA_EEXIST;
     }
 
     /*
@@ -1232,14 +1224,12 @@ static int tail_insert_references(struct SelvaDb *db, const struct SelvaFieldSch
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
         for (size_t i = 0; i < nr_dsts; i++) {
             struct SelvaNode *dst = dsts[i];
-            int err;
 
             if (dst->type != type_dst) {
                 continue; /* ignore. */
             }
 
-            err = check_ref_eexists_fast(src, dst, fs_src, fs_dst);
-            if (err) {
+            if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
                 continue; /* ignore. */
             }
 
@@ -1248,14 +1238,12 @@ static int tail_insert_references(struct SelvaDb *db, const struct SelvaFieldSch
     } else { /* fs_dst->type == SELVA_FIELD_TYPE_REFERENCE */
         for (size_t i = 0; i < nr_dsts; i++) {
             struct SelvaNode *dst = dsts[i];
-            int err;
 
             if (dst->type != type_dst) {
                 continue; /* ignore. */
             }
 
-            err = check_ref_eexists_fast(src, dst, fs_src, fs_dst);
-            if (err) {
+            if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
                 continue; /* ignore. */
             }
 
@@ -1287,6 +1275,10 @@ static void selva_fields_references_insert_tail_wupsert_empty_src_field(
             continue;
         }
 
+        if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
+            continue; /* ignore. */
+        }
+
         fn(db, src, dst, fs_src, fs_dst);
     }
 }
@@ -1307,7 +1299,7 @@ static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
     typeof_field(struct SelvaNodeReferences, index) *index = (typeof(index))((char *)nfo2p(fields, nfo) + offsetof(struct SelvaNodeReferences, index));
     ssize_t index_lower_bound = node_id_set_bsearch(*index, *index_len, ids[0]);
 
-    if (index_lower_bound == 0) {
+    if (index_lower_bound < 0) {
         index_lower_bound = 0;
     }
 
@@ -1324,6 +1316,10 @@ static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
         dst = selva_upsert_node(te_dst, dst_id);
         if (!dst) {
             continue;
+        }
+
+        if (!add_to_refs_index(src, dst, fs_src, fs_dst)) {
+            db_panic("Can't happen, right");
         }
 
         fn(db, src, dst, fs_src, fs_dst);
