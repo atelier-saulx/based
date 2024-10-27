@@ -69,15 +69,18 @@ export function overWriteEdgeReferences(
       ctx.buf[ctx.len++] = 1
       appendU32(ctx, ref.id)
       const sizepos = ctx.len
-      ctx.len += 4 // reserve for size
 
+      ctx.len += 4 // reserve for size
+      const start = ctx.len
       // ctx.buf.writeUint32LE(ref.id, ctx.len + 1)
       // const edgeDataSizeIndex = ctx.len + 5
       // ctx.len += 9
-      const start = ctx.len
+
+      console.log('write edges!', start)
       if (writeEdges(t, ref, ctx, res)) {
         return
       }
+      console.log('write edges end!', ctx.len - start)
       writeU32(ctx, ctx.len - start, sizepos)
       // ctx.buf.writeUint32LE(ctx.len - edgeDataSizeIndex - 4, edgeDataSizeIndex)
     } else {

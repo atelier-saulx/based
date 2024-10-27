@@ -8,43 +8,77 @@ import {
   alignU32,
   appendU32,
   appendU8,
-  reserveSizeU32,
-  commitReservedSizeU32,
+  reserveU32,
+  writeU32,
 } from '../utils.js'
 
-export function simpleRefsPacked(
-  t: PropDefEdge,
+const updateRemainingReferences = (
+  t: PropDef,
   ctx: BasedDb['modifyCtx'],
+  modifyOp: ModifyOp,
   value: any[],
+  schema: SchemaTypeDef,
   res: ModifyState,
-) {
-  for (let i = 0; i < value.length; i++) {
-    let ref = value[i]
-    let id: number
-    let $index: number
+  op: 0 | 1,
+  i: number,
+) => {
+  const remaining = value.length - i
 
-    if (typeof ref !== 'number') {
+  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
+  appendU8(ctx, modifyOp)
+
+  const sizepos = reserveU32(ctx)
+
+  appendU8(ctx, i === 0 ? op : 1) // if it just did a PUT, it should ADD not overwrite the remaining
+  appendU32(ctx, remaining) // ref length
+
+  for (; i < value.length; i++) {
+    const ref = value[i]
+    let id: number
+    let index: number
+
+    if (typeof ref === 'object') {
       if (ref instanceof ModifyState) {
         if (ref.error) {
           res.error = ref.error
           return
         }
         id = ref.tmpId
-      } else if (typeof ref === 'object' && 'id' in ref) {
-        id = ref.id
-        if ('$index' in ref) {
-          $index = ref.$index
+      } else if (ref.id instanceof ModifyState) {
+        if (ref.id.error) {
+          res.error = ref.id.error
+          return
         }
+        id = ref.id.tmpId
+        index = ref.$index
+      } else if (ref.id > 0) {
+        id = ref.id
+        index = ref.$index
       } else {
         modifyError(res, t, value)
         return
       }
-    } else {
+    } else if (ref > 0) {
       id = ref
+    } else {
+      modifyError(res, t, value)
+      return
     }
 
-    ctx.buf.writeUint32LE(id, i * 4 + ctx.len)
+    if (index === undefined) {
+      appendU8(ctx, 0)
+      appendU32(ctx, id)
+    } else if (index >= 0) {
+      appendU8(ctx, 3)
+      appendU32(ctx, id)
+      appendU32(ctx, index)
+    } else {
+      modifyError(res, t, value)
+      return
+    }
   }
+
+  writeU32(ctx, ctx.len - sizepos - 4, sizepos)
 }
 
 export function overWriteSimpleReferences(
@@ -56,16 +90,12 @@ export function overWriteSimpleReferences(
   res: ModifyState,
   op: 0 | 1, // overwrite or add
 ) {
-  let i = 0
-
-  const refLen = 4 * value.length
-  const potentialLen = refLen + 1 + 5 + ctx.len + 11
+  const refLen = 9 * value.length
+  const potentialLen = refLen + 1 + 5 + ctx.len + 11 + 4
   if (potentialLen > ctx.max) {
     flushBuffer(ctx.db)
   }
-
   setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
-
   const initpos = ctx.len
 
   appendU8(ctx, modifyOp)
@@ -73,6 +103,7 @@ export function overWriteSimpleReferences(
   appendU8(ctx, op === 0 ? 3 : 4)
   alignU32(ctx)
 
+  let i = 0
   for (; i < value.length; i++) {
     const ref = value[i]
     if (typeof ref === 'number') {
@@ -97,68 +128,7 @@ export function overWriteSimpleReferences(
     ctx.len = initpos
   }
 
-  const remaining = value.length - i
-  const refLen2 = 9 * remaining
-  const potentialLen2 = refLen2 + 1 + 5 + ctx.len + 11 + 4
-
-  if (potentialLen2 > ctx.max) {
-    flushBuffer(ctx.db)
-  }
-
-  setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
-  appendU8(ctx, modifyOp)
-  reserveSizeU32(ctx)
-  appendU8(ctx, op)
-  appendU32(ctx, remaining) // ref length
-
-  for (; i < value.length; i++) {
-    const ref = value[i]
-    let id: number
-    let index: number
-
-    if (typeof ref === 'object') {
-      if (ref === null) {
-        modifyError(res, t, value)
-        return
-      }
-      if (ref instanceof ModifyState) {
-        if (ref.error) {
-          res.error = ref.error
-          return
-        }
-        id = ref.tmpId
-      } else if (ref.id instanceof ModifyState) {
-        if (ref.id.error) {
-          res.error = ref.id.error
-          return
-        }
-        id = ref.id.tmpId
-        index = ref.$index
-      } else if (ref.id > 0) {
-        id = ref.id
-        index = ref.$index
-      } else {
-        modifyError(res, t, value)
-        return
-      }
-    } else if (ref > 0) {
-      id = ref
-    }
-
-    if (index === undefined) {
-      appendU8(ctx, 0)
-      appendU32(ctx, id)
-    } else if (index >= 0) {
-      appendU8(ctx, 3)
-      appendU32(ctx, id)
-      appendU32(ctx, index)
-    } else {
-      modifyError(res, t, value)
-      return
-    }
-  }
-
-  commitReservedSizeU32(ctx)
+  updateRemainingReferences(t, ctx, modifyOp, value, schema, res, op, i)
 }
 
 export function deleteRefs(

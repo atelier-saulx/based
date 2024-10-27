@@ -49,6 +49,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         if (hasEdgeData) {
             const totalEdgesLen = readInt(u32, data, i + 5);
             const edges = data[i + 9 .. i + totalEdgesLen + 9];
+            std.debug.print("yeshh {d} - {any} \n", .{ totalEdgesLen, edges });
             try edge.writeEdges(ctx, ref, edges);
             i += edges.len + 4;
         }
