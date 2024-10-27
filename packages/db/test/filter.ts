@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { equal } from './shared/assert.js'
 
 await test('filter', async (t) => {
   const db = new BasedDb({
@@ -46,7 +46,7 @@ await test('filter', async (t) => {
       },
       machine: {
         props: {
-          lastPing: 'timestamp',
+          lastPing: 'number',
           requestsServed: 'uint32',
           env: {
             ref: 'env',
@@ -54,6 +54,7 @@ await test('filter', async (t) => {
           },
           isLive: 'boolean',
           status,
+          scheduled: 'timestamp',
         },
       },
     },
@@ -69,57 +70,41 @@ await test('filter', async (t) => {
     org,
   })
 
-  const env2 = await db.create('env', {
+  await db.create('env', {
     name: 'Mydev env',
     org,
   })
 
+  const now = Date.now()
   let lastId = 0
   const m: number[] = []
-  for (let i = 0; i < 10e6; i++) {
+  for (let i = 0; i < 1e5; i++) {
     lastId = db.create('machine', {
-      // env,
-      // status: status[Math.floor(Math.random() * status.length)],
-      // requestsServed: i,
-      // lastPing: i + 1,
+      env,
+      status: status[Math.floor(Math.random() * status.length)],
+      requestsServed: i,
+      lastPing: i + 1,
+      isLive: !!(i % 2),
+      scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
     }).tmpId
-
-    // if (Math.random() > 0.5) {
-    //   db.remove('machine', lastId)
-    // }
-
     if (i % 2) {
       m.push(lastId)
     }
   }
+
   db.update('env', env, {
     machines: m,
   })
-  console.log(lastId, db.drain(), 'ms')
 
-  const result = db.query('org').include('*', 'envs.machines.id', 'env.*').get()
-  console.log(result.toObject()[0].envs[0].machines.map((v) => v.id))
+  db.drain()
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
-
-  // const machines = db
-  //   .query('machine')
-  //   .include('*')
-  //   .filter('lastPing', '=', x)
-  //   .get()
-
-  // console.log(machines)
-
-  // console.log(lastId)
-
-  var measure = 0
-  var mi = 0
-  var lastId1 = lastId - 1
-
-  const xx = lastId - 1
-  const bla = [xx, lastId + 100, lastId + 10, lastId + 1000]
-
-  const amount = 100
+  equal(
+    db.query('machine').include('*').filter('lastPing', '=', x).get().toObject()
+      .length,
+    x.length,
+    'OR timestamp',
+  )
 
   const make = () => {
     const x = ~~(Math.random() * lastId)
@@ -129,72 +114,67 @@ await test('filter', async (t) => {
     return x
   }
 
-  for (let i = 0; i < amount; i++) {
-    // var g = 0
-    const rand = ~~(Math.random() * lastId)
-    const derp = [
-      make(),
-      make(),
-      make(),
-      make(),
-      make(),
-      make(),
-      make(),
-      make(),
-      make(),
-      rand,
-    ]
-    // const derp2 = [make(), make(), make(), make()]
-    // const derp3 = [make(), make()]
+  const amount = 1000
 
-    // console.log(derp)
+  var measure = 0
+  var mi = 0
+  for (let i = 0; i < amount; i++) {
+    const rand = ~~(Math.random() * lastId)
+    const derp = [make(), make(), make(), rand]
     const envs = db
       .query('env')
       .include('*')
-      // .include('machines')
-      // .filter('machines', 'has', rand)
-      // .filter('machines', 'has', 25)
-      // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
       .filter('machines', 'has', derp)
       .get()
 
-    // const envs2 = db
-    //   .query('env')
-    //   .include('*')
-    //   // .include('machines')
-    //   // .filter('machines', 'has', rand)
-    //   // .filter('machines', 'has', 25)
-    //   // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
-    //   .filter('machines', 'has', derp2)
-    //   .get()
-
-    // const envs3 = db
-    //   .query('env')
-    //   .include('*')
-    //   // .include('machines')
-    //   // .filter('machines', 'has', rand)
-    //   // .filter('machines', 'has', 25)
-    //   // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
-    //   .filter('machines', 'has', derp3)
-
-    //   // .filter('machines', 'has', [
-    //   //   // 0 or - completely blows it up
-    //   //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   //   // ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   //   lastId,
-    //   // ])
-
-    //   // .filter('lastPing', '=', [1000, 2, 3, 4])
-    //   .get()
-
-    // console.log(envs.toObject())
     mi += envs.toObject().length
     measure += envs.execTime
   }
 
-  // 0.15 0.18
+  equal(
+    mi / amount > 0.4 && mi / amount < 0.6,
+    true,
+    'multi ref OR filter up at 0.5 results',
+  )
+  equal(measure / amount < 0.05, true, 'multi ref OR filter lower then 0.1ms')
 
-  console.log(measure / amount, 'ms', mi / amount)
+  measure = 0
+  mi = 0
+  for (let i = 0; i < amount; i++) {
+    const rand = ~~(Math.random() * lastId)
+    const envs = db
+      .query('env')
+      .include('*')
+      .filter('machines', 'has', rand)
+      .get()
+
+    mi += envs.toObject().length
+    measure += envs.execTime
+  }
+  equal(
+    mi / amount > 0.4 && mi / amount < 0.6,
+    true,
+    'multi ref filter up at 0.5 results',
+  )
+  equal(measure / amount < 0.05, true, 'multi ref filter lower then 0.1ms')
+
+  console.log(
+    db
+      .query('machine')
+      .include('*')
+      .filter('lastPing', '>', 'now')
+      .get()
+      .inspect(20),
+  )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('lastPing', '>', 'now')
+  //     .get()
+  //     .toObject().length,
+  //   x.length,
+  //   'larger then now timestamp',
+  // )
 })
