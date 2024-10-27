@@ -136,18 +136,18 @@ await test('filter', async (t) => {
       make(),
       make(),
       make(),
-      // make(),
-      // make(),
-      // make(),
-      // make(),
-      // make(),
-      // make(),
+      make(),
+      make(),
+      make(),
+      make(),
+      make(),
+      make(),
       rand,
     ]
     // const derp2 = [make(), make(), make(), make()]
     // const derp3 = [make(), make()]
 
-    console.log(derp)
+    // console.log(derp)
     const envs = db
       .query('env')
       .include('*')

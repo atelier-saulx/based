@@ -24,7 +24,7 @@ pub fn runConditions(q: []u8, v: []u8) bool {
                 }
             } else if (op == 2 and mod == 3) {
                 const query = q[i + 8 .. i + valueSize * repeat + 8];
-                if (!batch.referencesHas(repeat, query, v)) {
+                if (!batch.simdReferencesHas(query, v)) {
                     return false;
                 }
             }
