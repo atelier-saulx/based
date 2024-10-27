@@ -85,9 +85,11 @@ await test('filter', async (t) => {
     }).tmpId
     m.push(lastId)
   }
+
   db.update('env', env, {
     machines: m,
   })
+
   console.log('10M', db.drain(), 'ms')
 
   // const result = db.query('org').include('*', 'envs.machines.*', 'env.*').get()
