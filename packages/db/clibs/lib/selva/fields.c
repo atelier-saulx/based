@@ -447,7 +447,14 @@ static void del_multi_ref(struct SelvaDb *db, const struct EdgeFieldConstraint *
                     &refs->refs[i + 1],
                     (refs->nr_refs - i - 1) * sizeof(struct SelvaNodeReference));
         }
-        /* TODO realloc on some condition */
+
+        /*
+         * Realloc if we have a lot of extra space.
+         */
+        if (selva_sallocx(refs->refs - refs->offset, 0) / sizeof(refs->refs[0]) >= refs->nr_refs + 131072) {
+            remove_refs_offset(refs);
+            refs->refs = selva_realloc(refs->refs, refs->nr_refs);
+        }
     }
     refs->nr_refs--;
 
