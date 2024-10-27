@@ -21,7 +21,7 @@ void print_ready(
     double t;
     const char *t_unit;
 
-    va_start(args, fmt);
+    va_start(args, format);
 
     timespec_sub(&ts_diff, ts_end, ts_start);
     t = timespec2ms(&ts_diff);
