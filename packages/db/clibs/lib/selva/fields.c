@@ -570,7 +570,6 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 return;
             }
 
-
             ssize_t i = fast_linear_search_references(refs.refs, refs.nr_refs, src);
             if (i >= 0) {
                 del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
