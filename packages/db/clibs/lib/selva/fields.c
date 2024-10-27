@@ -14,9 +14,10 @@
 #include "xxhash.h"
 #include "selva_error.h"
 #include "selva_hash128.h"
-#include "db_panic.h"
 #include "db.h"
+#include "db_panic.h"
 #include "idz.h"
+#include "selva/fast_linear_search.h"
 #include "selva/node_id_set.h"
 #include "selva/fields.h"
 
@@ -505,14 +506,15 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             dst = refs.refs[idx].dst;
             del_multi_ref(db, &fs_src->edge_constraint, &refs, idx);
         } else {
-            for (size_t i = 0; i < refs.nr_refs; i++) {
-                struct SelvaNode *tmp = refs.refs[i].dst;
+            struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
+            assert(dst_type);
+            struct SelvaNode *orig_dst_node = selva_find_node(dst_type, orig_dst);
+            assert(orig_dst_node);
 
-                if (tmp && tmp->node_id == orig_dst) {
-                    del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
-                    dst = tmp;
-                    break;
-                }
+            ssize_t i = fast_linear_search_references(refs.refs, refs.nr_refs, orig_dst_node);
+            if (i >= 0) {
+                dst = refs.refs[i].dst;
+                del_multi_ref(db, &fs_src->edge_constraint, &refs, i);
             }
         }
 
@@ -568,26 +570,10 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
                 return;
             }
 
-            for (size_t i = 0, j = refs.nr_refs - 1; i < refs.nr_refs; i++, j--) {
-                struct SelvaNode *tmp;
 
-                tmp = refs.refs[i].dst;
-                if (tmp == src) {
-#if 0
-                    fprintf(stderr, "found %u by i at %zu\n", src->node_id, i);
-#endif
-                    del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
-                    break;
-                }
-
-                tmp = refs.refs[j].dst;
-                if (tmp == src) {
-#if 0
-                    fprintf(stderr, "found %u by j at %zu\n", src->node_id, j);
-#endif
-                    del_multi_ref(db, &fs_dst->edge_constraint, &refs, j);
-                    break;
-                }
+            ssize_t i = fast_linear_search_references(refs.refs, refs.nr_refs, src);
+            if (i >= 0) {
+                del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
             }
             memcpy(nfo2p(fields_dst, nfo_dst), &refs, sizeof(refs));
         }

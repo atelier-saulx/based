@@ -22,6 +22,7 @@ OBJ := \
 	alias.o \
 	db.o \
 	db_panic.o \
+	fast_linear_search.o \
 	fields.o \
 	filter.o \
 	find.o \
