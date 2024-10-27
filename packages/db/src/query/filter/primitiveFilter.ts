@@ -79,13 +79,9 @@ export const primitiveFilter = (
       buf.writeUInt16LE(len, 6)
       if (prop.typeIndex === REFERENCES) {
         value = new Uint32Array(value)
-        console.info(value)
         value.sort()
       }
-      // make type writer
       for (let i = 0; i < len; i++) {
-        // make a write fn for fixed len
-        // if INT32 make a
         buf.writeUInt32LE(value[i], 8 + i * 4)
       }
     } else {
@@ -95,8 +91,6 @@ export const primitiveFilter = (
       buf.writeUInt16LE(4, 1)
       buf.writeUInt16LE(start, 3)
       buf[5] = op
-      // make a write fn for fixed len
-      // if INT32
       buf.writeUInt32LE(value, 6)
     }
   }

@@ -47,17 +47,21 @@ pub fn runConditions(q: []u8, v: []u8) bool {
                 }
             } else if (op == 2) {
                 const query = q[i + 6 .. i + valueSize + 6];
-                const value = v;
                 if (start > 0) {
                     std.log.err("Start + has not supported in filters", .{});
                     return false;
                 }
 
-                std.debug.print("scan {any} amount of items \n", .{value.len});
+                // std.debug.print("scan {any} amount of items \n", .{value.len});
                 // if start do different
-                if (!batch.equalsOr(valueSize, query, value)) {
+
+                if (!batch.simdReferencesHasSingle(readInt(u32, query, 0), v)) {
                     return false;
                 }
+
+                // if (!batch.equalsOr(valueSize, query, v)) {
+                //     return false;
+                // }
             }
             i += 6 + valueSize;
         }

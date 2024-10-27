@@ -74,26 +74,27 @@ await test('filter', async (t) => {
     org,
   })
 
-  const d = Date.now()
   let lastId = 0
   const m: number[] = []
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 10e6; i++) {
     lastId = db.create('machine', {
-      env,
+      // env,
       status: status[Math.floor(Math.random() * status.length)],
       requestsServed: i,
       lastPing: i + 1,
     }).tmpId
 
-    if (Math.random() > 0.5) {
-      db.remove('machine', lastId)
-    }
+    // if (Math.random() > 0.5) {
+    //   db.remove('machine', lastId)
+    // }
 
-    m.push(lastId)
+    if (i % 2) {
+      m.push(lastId)
+    }
   }
-  // db.update('env', env, {
-  //   machines: m,
-  // })
+  db.update('env', env, {
+    machines: m,
+  })
   console.log(lastId, db.drain(), 'ms')
 
   // const result = db.query('org').include('*', 'envs.machines.*', 'env.*').get()
@@ -115,21 +116,48 @@ await test('filter', async (t) => {
   var mi = 0
   var lastId1 = lastId - 1
 
-  const xx = 3
+  const xx = lastId - 1
   const bla = [xx, lastId + 100, lastId + 10, lastId + 1000]
 
-  const amount = 1
+  const amount = 100
+
   for (let i = 0; i < amount; i++) {
+    // var g = 0
+    // const derp = [
+    //   // 0 or - completely blows it up
+    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    // ]
+
     const envs = db
       .query('env')
       .include('*')
-      .include('machines')
+      // .include('machines')
       // .filter('machines', 'has', lastId)
-      .filter('machines', 'has', bla)
+      // .filter('machines', 'has', 25)
+      // .filter('machines', 'has', ~~(Math.random() * lastId))
+      .filter('machines', 'has', [
+        ~~(Math.random() * lastId),
+        ~~(Math.random() * lastId),
+        ~~(Math.random() * lastId),
+        ~~(Math.random() * lastId),
+      ])
+
+      // .filter('machines', 'has', [
+      //   // 0 or - completely blows it up
+      //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+      //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+      //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+      //   // ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+      //   lastId,
+      // ])
+
       // .filter('lastPing', '=', [1000, 2, 3, 4])
       .get()
 
-    console.log(envs.toObject())
+    // console.log(envs.toObject())
     mi += envs.toObject().length
     measure += envs.execTime
   }
