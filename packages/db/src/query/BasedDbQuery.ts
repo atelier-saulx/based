@@ -113,11 +113,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       includeFields(this.def, ['*'])
     }
     const b = defToBuffer(this.db, this.def)
-    const d = Date.now()
+    const d = performance.now()
     const result = this.db.native.getQueryBuf(
       Buffer.concat(b),
       this.db.dbCtxExternal,
     )
-    return new BasedQueryResponse(this.def, result, Date.now() - d)
+    return new BasedQueryResponse(this.def, result, performance.now() - d)
   }
 }

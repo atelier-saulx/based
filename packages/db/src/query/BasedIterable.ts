@@ -261,7 +261,7 @@ export class BasedQueryResponse {
     this.end = end
   }
 
-  [inspect.custom]() {
+  [inspect.custom](depth: number) {
     const hasId = 'id' in this.def.target
     const target = hasId
       ? // @ts-ignore
@@ -270,7 +270,14 @@ export class BasedQueryResponse {
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
-    const dataStr = inspectData(this, this.def, 0, true, hasId ? 5 : 2, hasId)
+    const dataStr = inspectData(
+      this,
+      this.def,
+      0,
+      true,
+      hasId && depth == 2 ? 5 : depth,
+      hasId,
+    )
     str += '\n'
     str += dataStr
     return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
@@ -307,6 +314,10 @@ export class BasedQueryResponse {
       i += l
       yield item
     }
+  }
+
+  inspect(depth: number) {
+    console.log(this[inspect.custom](depth))
   }
 
   forEach(fn: (item: any, key: number) => void) {

@@ -21,6 +21,7 @@
 #include "../db_panic.h"
 #include "../selva_hash128.h"
 #include "../io.h"
+#include "../print_ready.h"
 #include "io_struct.h"
 
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
@@ -337,7 +338,7 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
+__used static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
 {
     static const char map[] = "0123456789abcdef";
     char *p = s;
@@ -348,40 +349,6 @@ static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELV
     }
 
     return s;
-}
-
-__used static void print_ready(
-        char *msg,
-        struct timespec * restrict ts_start,
-        struct timespec * restrict ts_end,
-        selva_hash128_t *range_hash,
-        struct selva_io *io)
-{
-    struct timespec ts_diff;
-    double t;
-    const char *t_unit;
-
-    timespec_sub(&ts_diff, ts_end, ts_start);
-    t = timespec2ms(&ts_diff);
-
-    if (t < 1e3) {
-        t_unit = "ms";
-    } else if (t < 60e3) {
-        t /= 1e3;
-        t_unit = "s";
-    } else if (t < 3.6e6) {
-        t /= 60e3;
-        t_unit = "min";
-    } else {
-        t /= 3.6e6;
-        t_unit = "h";
-    }
-
-    fprintf(stderr, "%s ready in %.2f %s hash: %.*s range_hash: %.*s\n",
-            msg,
-            t, t_unit,
-            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io->computed_hash),
-            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash));
 }
 
 int selva_dump_save_common(struct SelvaDb *db, const char *filename)
@@ -470,7 +437,9 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     ts_monotime(&ts_end);
 #if 0
-    print_ready("save", &ts_start, &ts_end, range_hash_out, &io);
+    print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
+            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
+            2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
 #endif
 
     return 0;

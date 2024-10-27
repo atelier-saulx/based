@@ -1,16 +1,16 @@
 import { buffer } from 'stream/consumers'
 import {
+  CREATED,
   PropDef,
   PropDefEdge,
   REFERENCES,
-  BOOLEAN,
-  ENUM,
-  STRING,
-  UINT32,
   REVERSE_SIZE_MAP,
+  TIMESTAMP,
+  UPDATED,
 } from '../../schema/types.js'
 import { QueryDefFilter } from '../types.js'
 import { Operator, operationToByte } from './operators.js'
+import { parseFilterValue } from './parseFilterValue.js'
 
 // -------------------------------------------
 // conditions normal
@@ -41,8 +41,10 @@ export const primitiveFilter = (
   let size = 0
 
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
-
-  console.log('dd', REVERSE_SIZE_MAP[prop.typeIndex])
+  const isArray = Array.isArray(value)
+  if (isArray && value.length === 1) {
+    value = value[0]
+  }
 
   if (REVERSE_SIZE_MAP[prop.typeIndex] === 8) {
     if (Array.isArray(value)) {
@@ -57,7 +59,7 @@ export const primitiveFilter = (
       buf[5] = op
       buf.writeUInt16LE(len, 6)
       for (let i = 0; i < len; i++) {
-        buf.writeDoubleLE(value[i], 8 + i * 8)
+        buf.writeDoubleLE(parseFilterValue(prop, value[i]), 8 + i * 8)
       }
     } else {
       // [or = 0] [size 2] [start 2], [op], value[size]
@@ -66,7 +68,7 @@ export const primitiveFilter = (
       buf.writeUInt16LE(8, 1)
       buf.writeUInt16LE(start, 3)
       buf[5] = op
-      buf.writeDoubleLE(value, 6)
+      buf.writeDoubleLE(parseFilterValue(prop, value), 6)
     }
   } else if (
     REVERSE_SIZE_MAP[prop.typeIndex] === 4 ||
@@ -84,11 +86,15 @@ export const primitiveFilter = (
       buf[5] = op
       buf.writeUInt16LE(len, 6)
       if (prop.typeIndex === REFERENCES) {
-        value = new Uint32Array(value)
+        value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
         value.sort()
-      }
-      for (let i = 0; i < len; i++) {
-        buf.writeInt32LE(value[i], 8 + i * 4)
+        for (let i = 0; i < len; i++) {
+          buf.writeUInt32LE(value[i], 8 + i * 4)
+        }
+      } else {
+        for (let i = 0; i < len; i++) {
+          buf.writeUInt32LE(parseFilterValue(prop, value[i]), 8 + i * 4)
+        }
       }
     } else {
       // [or = 0] [size 2] [start 2], [op], value[size]
@@ -97,11 +103,11 @@ export const primitiveFilter = (
       buf.writeUInt16LE(4, 1)
       buf.writeUInt16LE(start, 3)
       buf[5] = op
-      buf.writeInt32LE(value, 6)
+      buf.writeUInt32LE(parseFilterValue(prop, value), 6)
     }
   }
-  // ADD OR if array for value
 
+  // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)
   if (!arr) {
     size += 3 // [field] [size 2]
