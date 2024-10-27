@@ -22,6 +22,7 @@ OBJ := \
 	alias.o \
 	db.o \
 	db_panic.o \
+	fast_linear_search.o \
 	fields.o \
 	filter.o \
 	find.o \
@@ -30,9 +31,10 @@ OBJ := \
 	io/io.o \
 	io/sdb.o \
 	langs.o \
+	node_id_set.o \
+	print_ready.o \
 	ref_save_map.o \
 	schema.o \
-	node_id_set.o \
 	sort.o \
 	traverse.o \
 	types.o \
