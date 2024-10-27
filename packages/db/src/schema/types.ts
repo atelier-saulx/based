@@ -194,6 +194,14 @@ for (const k in TYPE_INDEX_MAP) {
   reverseMap[TYPE_INDEX_MAP[k]] = k
 }
 
+export let REVERSE_SIZE_MAP: Record<TypeIndex, number>
+
+// @ts-ignore
+REVERSE_SIZE_MAP = {}
+for (const k in SIZE_MAP) {
+  REVERSE_SIZE_MAP[TYPE_INDEX_MAP[k]] = SIZE_MAP[k]
+}
+
 export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
   reverseMap
 

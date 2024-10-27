@@ -6,7 +6,7 @@ import {
   QueryTarget,
   includeFields,
   filter,
-  Operation,
+  Operator,
   sort,
   defToBuffer,
   getAll,
@@ -39,7 +39,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  filter(field: string, operator?: Operation | boolean, value?: any): T {
+  filter(field: string, operator?: Operator | boolean, value?: any): T {
     if (operator === undefined) {
       operator = '='
       value = true

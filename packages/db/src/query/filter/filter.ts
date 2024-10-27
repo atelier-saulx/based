@@ -6,14 +6,15 @@ import {
   PropDef,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
-import { primitiveFilter, Operation } from './primitiveFilter.js'
+import { primitiveFilter } from './primitiveFilter.js'
+import { Operator } from './operators.js'
 
-export { Operation }
+export { Operator }
 
 const referencesFilter = (
   db: BasedDb,
   fieldStr: string,
-  operator: Operation,
+  operator: Operator,
   value: any,
   schema: SchemaTypeDef,
   conditions: QueryDef['filter'],
@@ -74,7 +75,7 @@ const referencesFilter = (
 export const filterRaw = (
   db: BasedDb,
   fieldStr: string,
-  operator: Operation,
+  operator: Operator,
   value: any,
   schema: SchemaTypeDef,
   conditions: QueryDefFilter,
@@ -99,7 +100,7 @@ export const filter = (
   db: BasedDb,
   def: QueryDef,
   fieldStr: string,
-  operator: Operation,
+  operator: Operator,
   value: any,
 ) => {
   def.filter.size += filterRaw(
