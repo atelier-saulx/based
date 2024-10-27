@@ -77,18 +77,24 @@ await test('filter', async (t) => {
   const d = Date.now()
   let lastId = 0
   const m: number[] = []
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 10000; i++) {
     lastId = db.create('machine', {
+      env,
       status: status[Math.floor(Math.random() * status.length)],
       requestsServed: i,
       lastPing: i + 1,
     }).tmpId
+
+    if (Math.random() > 0.5) {
+      db.remove('machine', lastId)
+    }
+
     m.push(lastId)
   }
-  db.update('env', env, {
-    machines: m,
-  })
-  console.log('10M', db.drain(), 'ms')
+  // db.update('env', env, {
+  //   machines: m,
+  // })
+  console.log(lastId, db.drain(), 'ms')
 
   // const result = db.query('org').include('*', 'envs.machines.*', 'env.*').get()
   // console.log(result)
@@ -105,12 +111,28 @@ await test('filter', async (t) => {
 
   // console.log(lastId)
 
-  const envs = db
-    .query('env')
-    .include('*')
-    .filter('machines', 'has', [10e6 + 1, lastId, 10e6 + 10, lastId - 100])
-    // .filter('lastPing', '=', [1000, 2, 3, 4])
-    .get()
+  var measure = 0
+  var mi = 0
+  var lastId1 = lastId - 1
 
-  console.log(envs)
+  const xx = 3
+  const bla = [xx, lastId + 100, lastId + 10, lastId + 1000]
+
+  const amount = 1
+  for (let i = 0; i < amount; i++) {
+    const envs = db
+      .query('env')
+      .include('*')
+      .include('machines')
+      // .filter('machines', 'has', lastId)
+      .filter('machines', 'has', bla)
+      // .filter('lastPing', '=', [1000, 2, 3, 4])
+      .get()
+
+    console.log(envs.toObject())
+    mi += envs.toObject().length
+    measure += envs.execTime
+  }
+
+  console.log(measure / amount, 'ms', mi / amount)
 })

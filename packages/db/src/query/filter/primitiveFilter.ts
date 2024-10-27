@@ -3,10 +3,6 @@ import {
   PropDef,
   PropDefEdge,
   REFERENCES,
-  BOOLEAN,
-  ENUM,
-  STRING,
-  UINT32,
   REVERSE_SIZE_MAP,
 } from '../../schema/types.js'
 import { QueryDefFilter } from '../types.js'
@@ -41,8 +37,6 @@ export const primitiveFilter = (
   let size = 0
 
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
-
-  console.log('dd', REVERSE_SIZE_MAP[prop.typeIndex])
 
   if (REVERSE_SIZE_MAP[prop.typeIndex] === 8) {
     if (Array.isArray(value)) {
@@ -85,10 +79,14 @@ export const primitiveFilter = (
       buf.writeUInt16LE(len, 6)
       if (prop.typeIndex === REFERENCES) {
         value = new Uint32Array(value)
+        console.info(value)
         value.sort()
       }
+      // make type writer
       for (let i = 0; i < len; i++) {
-        buf.writeInt32LE(value[i], 8 + i * 4)
+        // make a write fn for fixed len
+        // if INT32 make a
+        buf.writeUInt32LE(value[i], 8 + i * 4)
       }
     } else {
       // [or = 0] [size 2] [start 2], [op], value[size]
@@ -97,7 +95,9 @@ export const primitiveFilter = (
       buf.writeUInt16LE(4, 1)
       buf.writeUInt16LE(start, 3)
       buf[5] = op
-      buf.writeInt32LE(value, 6)
+      // make a write fn for fixed len
+      // if INT32
+      buf.writeUInt32LE(value, 6)
     }
   }
   // ADD OR if array for value

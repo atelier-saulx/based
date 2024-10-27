@@ -2,9 +2,6 @@ const std = @import("std");
 const simd = std.simd;
 const readInt = @import("../../utils.zig").readInt;
 
-// TODO
-// check if splat is a better option
-// then cuntElements with value
 pub fn simdEqualsOr(
     T: type,
     value: []u8,
@@ -41,11 +38,14 @@ pub fn simdEqualsOr(
     return false;
 }
 
+// specific binary search
+
+// check for piv binary search
 pub fn simdReferencesHas(
     value: []u8,
     values: []u8,
 ) bool {
-    var i: u16 = 0;
+    var i: usize = 0;
     const vectorLen = std.simd.suggestVectorLength(u32).?;
     // const bytes = 4;
     const l = values.len / 4;
@@ -57,7 +57,31 @@ pub fn simdReferencesHas(
     // if larger need to make more
     const target: @Vector(vectorLen, u32) = intsValue2[0..vectorLen].*;
 
-    // std.debug.print("BLA {any} \n", .{target});
+    // first find where smallest is
+    // then scan from there
+
+    const lowest = intsValue2[0];
+
+    var right: usize = l - 1;
+    var left: usize = 0;
+
+    while (left <= right) {
+        const middle: usize = @divTrunc(left + right, 2);
+
+        const mid = ints[middle];
+
+        if (mid == lowest) {
+            return true;
+        } else if (lowest < mid) {
+            right = middle - 1;
+        } else {
+            left = middle + 1;
+        }
+    }
+
+    i = right;
+    std.debug.print("BLA {d} {d} {d} \n", .{ lowest, i, left });
+
     while (i <= l) : (i += 1) {
         if (simd.countElementsWithValue(target, ints[i]) != 0) {
             return true;

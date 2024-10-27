@@ -88,7 +88,6 @@ export const filterToBuffer = (conditions: QueryDefFilter) => {
   } else {
     result = Buffer.alloc(0)
   }
-
-  console.log('FILTER BUF', new Uint8Array(result))
+  // console.log('FILTER BUF', new Uint8Array(result))
   return result
 }
