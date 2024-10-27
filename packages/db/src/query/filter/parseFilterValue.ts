@@ -20,6 +20,22 @@ import {
 // [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
+const timeToNumber = (ex: string): number => {
+  if (ex === 's') {
+    return 1000
+  }
+  if (ex === 'm') {
+    return 1000 * 60
+  }
+  if (ex === 'h') {
+    return 1000 * 60 * 60
+  }
+  if (ex === 'd') {
+    return 1000 * 60 * 60 * 24
+  }
+  return 1
+}
+
 export const parseFilterValue = (
   prop: PropDef | PropDefEdge,
   value: any,
@@ -32,22 +48,43 @@ export const parseFilterValue = (
     if (value instanceof Date) {
       return value.valueOf()
     }
-
     if (typeof value === 'string') {
-      // var val = 0
-
-      // const y = 'now+12s'.replace(/([+-])/g, ' $1 ')
-
-      // const arr = y.split(/[ +]/)
-      // // const z
-      // console.log(arr)
-
       if (value === 'now') {
         return Date.now()
       }
-      // parse now
+      const y = value.replace(/([+-])/g, ' $1 ')
+      const arr = y.split(/ +/)
+      let newValue = 0
+      let now: number
+      let op = 1
+      for (const seg of arr) {
+        if (seg === '-') {
+          op = -1
+        } else if (seg === '+') {
+          op = 1
+        } else {
+          var v = 0
+          if (seg === 'now') {
+            if (!now) {
+              now = Date.now()
+            }
+            v = now
+          } else if (/[smhd]$/.test(seg)) {
+            const ex = seg[seg.length - 1]
+            const number = parseInt(seg, 10)
+            v = number * timeToNumber(ex)
+          } else {
+            v = new Date(seg).valueOf()
+          }
+          if (op === -1) {
+            newValue -= v
+          } else {
+            newValue += v
+          }
+        }
+      }
+      return newValue
     }
-    // derp
   }
   return value
 }
