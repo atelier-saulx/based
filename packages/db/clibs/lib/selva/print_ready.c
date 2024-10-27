@@ -26,7 +26,13 @@ void print_ready(
     timespec_sub(&ts_diff, ts_end, ts_start);
     t = timespec2ms(&ts_diff);
 
-    if (t < 1e3) {
+    if (t < 0.001) {
+        t *= 1e6;
+        t_unit = "ns";
+    } else if (t < 1) {
+        t *= 1e3;
+        t_unit = "us";
+    } else if (t < 1e3) {
         t_unit = "ms";
     } else if (t < 60e3) {
         t /= 1e3;
