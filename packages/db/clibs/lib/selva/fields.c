@@ -1376,7 +1376,6 @@ int selva_fields_references_insert_tail_wupsert(
     if (!fs_dst) {
         return SELVA_EINTYPE;
     }
-    
 
     const size_t old_nr_refs = selva_fields_prealloc_refs(node, fs, nr_ids);
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
@@ -1392,7 +1391,6 @@ int selva_fields_references_insert_tail_wupsert(
             selva_fields_references_insert_tail_wupsert_nonempty_src_field(db, te_dst, node, fs, fs_dst, ids, nr_ids, selva_fields_references_insert_tail_wupsert_insert_ref);
         }
     }
-
 
     return 0;
 }

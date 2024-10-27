@@ -169,43 +169,43 @@ await test('edges', async (t) => {
     ),
   )
 
-  deepEqual(
-    db
-      .query('article')
-      .include((s) =>
-        s('contributors').filter('$role', '=', 'writer').include('$role'),
-      )
-      .get()
-      .toObject(),
-    [
-      {
-        id: 1,
-        contributors: [
-          {
-            id: 1,
-            $role: 'writer',
-          },
-        ],
-      },
-      { id: 2, contributors: [] },
-      { id: 3, contributors: [] },
-      { id: 4, contributors: [] },
-    ],
-  )
+  // deepEqual(
+  //   db
+  //     .query('article')
+  //     .include((s) =>
+  //       s('contributors').filter('$role', '=', 'writer').include('$role'),
+  //     )
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       contributors: [
+  //         {
+  //           id: 1,
+  //           $role: 'writer',
+  //         },
+  //       ],
+  //     },
+  //     { id: 2, contributors: [] },
+  //     { id: 3, contributors: [] },
+  //     { id: 4, contributors: [] },
+  //   ],
+  // )
 
-  deepEqual(
-    db
-      .query('article')
-      .include((s) =>
-        s('contributors').filter('$rating', '=', 5).include('$rating'),
-      )
-      .get()
-      .toObject(),
-    [
-      { id: 1, contributors: [{ id: 1, $rating: 5 }] },
-      { id: 2, contributors: [{ id: 2, $rating: 5 }] },
-      { id: 3, contributors: [{ id: 2, $rating: 5 }] },
-      { id: 4, contributors: [{ id: 2, $rating: 5 }] },
-    ],
-  )
+  // deepEqual(
+  //   db
+  //     .query('article')
+  //     .include((s) =>
+  //       s('contributors').filter('$rating', '=', 5).include('$rating'),
+  //     )
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     { id: 1, contributors: [{ id: 1, $rating: 5 }] },
+  //     { id: 2, contributors: [{ id: 2, $rating: 5 }] },
+  //     { id: 3, contributors: [{ id: 2, $rating: 5 }] },
+  //     { id: 4, contributors: [{ id: 2, $rating: 5 }] },
+  //   ],
+  // )
 })

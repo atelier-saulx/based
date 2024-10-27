@@ -84,8 +84,10 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     // TODO maybe pass index?
     const address = @intFromPtr(data.ptr);
-    const offset = (4 - (address + 1)) & 3;
+    const delta = (address + 1) & 3;
+    const offset = if (delta == 0) 0 else 4 - delta;
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
+
     try db.putReferences(
         ctx.db,
         @alignCast(u32ids),
