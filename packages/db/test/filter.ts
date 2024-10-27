@@ -76,12 +76,12 @@ await test('filter', async (t) => {
 
   let lastId = 0
   const m: number[] = []
-  for (let i = 0; i < 5e6; i++) {
+  for (let i = 0; i < 196608; i++) {
     lastId = db.create('machine', {
       // env,
-      status: status[Math.floor(Math.random() * status.length)],
-      requestsServed: i,
-      lastPing: i + 1,
+      // status: status[Math.floor(Math.random() * status.length)],
+      // requestsServed: i,
+      // lastPing: i + 1,
     }).tmpId
 
     // if (Math.random() > 0.5) {
@@ -119,19 +119,28 @@ await test('filter', async (t) => {
   const xx = lastId - 1
   const bla = [xx, lastId + 100, lastId + 10, lastId + 1000]
 
-  const amount = 10
+  const amount = 1
+
+  const make = () => {
+    const x = ~~(Math.random() * lastId)
+    if (x % 2 == 0) {
+      return make()
+    }
+    return x
+  }
 
   for (let i = 0; i < amount; i++) {
     // var g = 0
-    const derp = [1, 3, 5, 7, 9]
-
+    const rand = ~~(Math.random() * lastId)
+    const derp = [make(), make(), make(), rand]
+    console.log(derp)
     const envs = db
       .query('env')
       .include('*')
       // .include('machines')
-      // .filter('machines', 'has', lastId - 1)
+      // .filter('machines', 'has', rand)
       // .filter('machines', 'has', 25)
-      // .filter('machines', 'has', 2)
+      // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
       .filter('machines', 'has', derp)
 
       // .filter('machines', 'has', [

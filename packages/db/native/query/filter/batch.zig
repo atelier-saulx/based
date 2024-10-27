@@ -60,75 +60,30 @@ pub fn equalsOr(
 }
 
 // --------------------------------------------------------------------
-inline fn checkSimd(index: usize, values: []u32, value: u32, vectorLen: comptime_int) bool {
-    const rest = (index + vectorLen) - values.len;
-    if (rest == 1) {
-        return value == values[index];
-    }
-    var vec: @Vector(vectorLen, u32) = undefined;
-    if (rest < vectorLen) {
-        vec = values[index - rest ..][0..vectorLen].*;
-    } else {
-        vec = values[index..][0..vectorLen].*;
-    }
-    if (simd.countElementsWithValue(vec, value) != 0) {
-        return true;
-    }
-    return false;
-}
-
 // specific binary search
 pub fn simdReferencesHasSingle(
     value: u32,
     values: []u8,
 ) bool {
-    const vectorLen = std.simd.suggestVectorLength(u32).?;
     const l = values.len / 4;
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
-    const ints: []u32 = tmp[0..l];
-    var right: usize = l - 1;
-    var left: usize = 0;
-
-    while (left <= right) {
-        const middle: usize = @divTrunc(left + right, 2);
-        if (checkSimd(middle, ints, value, vectorLen)) {
-            return true;
-        } else if (middle <= 0 or right <= 0) {
-            return false;
-        } else if (value < ints[middle]) {
-            if (vectorLen > middle) {
-                right = 0;
-            } else {
-                right = middle - vectorLen;
-            }
-        } else {
-            if (middle + vectorLen > l - 1) {
-                left = l - 1;
-            } else {
-                left = middle + vectorLen;
-            }
-        }
-    }
-    return false;
+    return selva.node_id_set_bsearch(tmp, l, value) != -1;
 }
 
 inline fn checkMultiValue(vectorLen: comptime_int, target: @Vector(vectorLen, u32), value: u32, intsValue2: []u32) bool {
     if (simd.countElementsWithValue(target, value) != 0) {
-        // std.debug.print("FOUND\n", .{});
         return true;
     }
     var i: usize = vectorLen;
-    while (i < intsValue2.len and i - vectorLen <= vectorLen) : (i += vectorLen) {
+    while (i < intsValue2.len and i % vectorLen == 0) : (i += vectorLen) {
         const t: @Vector(vectorLen, u32) = intsValue2[i..][0..vectorLen].*;
         if (simd.countElementsWithValue(t, value) != 0) {
-            // std.debug.print("FOUND 2\n", .{});
             return true;
         }
     }
     if (intsValue2.len - (i) > 0) {
         while (i < intsValue2.len) : (i += 1) {
             if (value == intsValue2[i]) {
-                // std.debug.pr/int("FOUND 3\n", .{});
                 return true;
             }
         }
@@ -142,15 +97,16 @@ pub fn simdReferencesHas(
     value: []u8,
     values: []u8,
 ) bool {
-    // var i: usize = 0;
     const l = values.len / 4;
     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
+
     const ints: []u32 = tmp[0..l];
-    // ----------------------------
+    // // ----------------------------
     const tmp3: [*]u32 = @alignCast(@ptrCast(value.ptr));
     const intsValue2: []u32 = tmp3[0 .. value.len / 4];
-    // ----------------------------
+    // // ----------------------------
     const target: @Vector(vectorLen, u32) = intsValue2[0..vectorLen].*;
+
     const largeTarget = intsValue2.len > vectorLen;
     var right: usize = l - 1;
     var left: usize = 0;
@@ -158,7 +114,6 @@ pub fn simdReferencesHas(
 
     const low = intsValue2[0];
     const hi = intsValue2[intsValue2.len];
-
     while (left <= right) {
         const mid = left + (right - left) / 2;
         const midValue = ints[mid];
@@ -188,7 +143,6 @@ pub fn simdReferencesHas(
             }
         }
     }
-
     return false;
 }
 

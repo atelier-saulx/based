@@ -24,6 +24,8 @@ pub usingnamespace @cImport({
     @cInclude("selva/sort.h");
 
     @cInclude("selva/fast_linear_search.h");
+
+    @cInclude("selva/node_id_set.h");
 });
 
 const selvaError = @cImport({
