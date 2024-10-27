@@ -558,16 +558,34 @@ static void remove_reference(struct SelvaDb *db, struct SelvaNode *src, const st
             assert(removed == src);
         } else if (nfo_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences refs;
-            struct SelvaNode *tmp;
 
 #if 0
             assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 #endif
             memcpy(&refs, nfo2p(fields_dst, nfo_dst), sizeof(refs));
-            for (size_t i = 0; i < refs.nr_refs; i++) {
+
+            if (!node_id_set_has(refs.index, refs.nr_refs, src->node_id)) {
+                return;
+            }
+
+            for (size_t i = 0, j = refs.nr_refs - 1; i < refs.nr_refs; i++, j--) {
+                struct SelvaNode *tmp;
+
                 tmp = refs.refs[i].dst;
                 if (tmp == src) {
+#if 0
+                    fprintf(stderr, "found %u by i at %zu\n", src->node_id, i);
+#endif
                     del_multi_ref(db, &fs_dst->edge_constraint, &refs, i);
+                    break;
+                }
+
+                tmp = refs.refs[j].dst;
+                if (tmp == src) {
+#if 0
+                    fprintf(stderr, "found %u by j at %zu\n", src->node_id, j);
+#endif
+                    del_multi_ref(db, &fs_dst->edge_constraint, &refs, j);
                     break;
                 }
             }
@@ -1283,6 +1301,9 @@ static void selva_fields_references_insert_tail_wupsert_insert_refs(
         const struct SelvaFieldSchema *fs_src,
         const struct SelvaFieldSchema *fs_dst)
 {
+#if 0
+    assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+#endif
     write_ref_2way(src, fs_src, -1, dst, fs_dst);
 }
 
@@ -1294,6 +1315,9 @@ static void selva_fields_references_insert_tail_wupsert_insert_ref(
         const struct SelvaFieldSchema *fs_dst)
 {
     /* fs_dst->type == SELVA_FIELD_TYPE_REFERENCE so needs to be removed. */
+#if 0
+    assert (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
+#endif
     remove_reference(db, dst, fs_dst, 0, -1);
     write_ref_2way(src, fs_src, -1, dst, fs_dst);
 }
