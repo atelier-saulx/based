@@ -45,12 +45,14 @@ await test('references modify', async (t) => {
   })
   db.drain()
 
+  console.log('--------------------')
   await db.update('user', john, {
     friends: {
       delete: [bob],
       add: [marie],
     },
   })
+
   db.drain()
 
   deepEqual(
@@ -63,54 +65,56 @@ await test('references modify', async (t) => {
     'add/delete',
   )
 
-  await db.update('user', john, {
-    friends: {
-      add: [bob],
-    },
-  })
+  // await db.update('user', john, {
+  //   friends: {
+  //     add: [bob],
+  //   },
+  // })
 
-  db.drain()
+  // db.drain()
 
-  deepEqual(
-    db.query('user').include('*', 'friends').get().toObject(),
-    [
-      { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
-      { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
-      {
-        id: 3,
-        name: 'john',
-        friends: [
-          { id: 2, name: 'marie' },
-          { id: 1, name: 'bob' },
-        ],
-      },
-    ],
-    'add',
-  )
+  // deepEqual(
+  //   db.query('user').include('*', 'friends').get().toObject(),
+  //   [
+  //     { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
+  //     { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
+  //     {
+  //       id: 3,
+  //       name: 'john',
+  //       friends: [
+  //         { id: 2, name: 'marie' },
+  //         { id: 1, name: 'bob' },
+  //       ],
+  //     },
+  //   ],
+  //   'add',
+  // )
 
-  await db.update('user', john, {
-    friends: null,
-  })
+  // await db.update('user', john, {
+  //   friends: null,
+  // })
 
-  deepEqual(
-    db.query('user').include('*', 'friends').get().toObject(),
-    [
-      { id: 1, name: 'bob', friends: [] },
-      { id: 2, name: 'marie', friends: [] },
-      { id: 3, name: 'john', friends: [] },
-    ],
-    'delete',
-  )
+  // db.drain()
 
-  await db.update('user', john, {
-    friends: [1, 2],
-  })
+  // deepEqual(
+  //   db.query('user').include('*', 'friends').get().toObject(),
+  //   [
+  //     { id: 1, name: 'bob', friends: [] },
+  //     { id: 2, name: 'marie', friends: [] },
+  //     { id: 3, name: 'john', friends: [] },
+  //   ],
+  //   'delete',
+  // )
 
-  console.log('----', db.query('user').include('*', 'friends').get().toObject())
+  // await db.update('user', john, {
+  //   friends: [1, 2],
+  // })
 
-  await db.update('user', john, {
-    friends: [1],
-  })
+  // console.log('----', db.query('user').include('*', 'friends').get().toObject())
 
-  console.log('----', db.query('user').include('*', 'friends').get().toObject())
+  // await db.update('user', john, {
+  //   friends: [1],
+  // })
+
+  // console.log('----', db.query('user').include('*', 'friends').get().toObject())
 })

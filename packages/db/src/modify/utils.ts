@@ -3,15 +3,17 @@ import {
   BOOLEAN,
   ENUM,
   INT16,
-  INT8,
+  INT32,
   NUMBER,
   PropDef,
   PropDefEdge,
   STRING,
   TIMESTAMP,
   UINT16,
-  UINT8,
+  UINT32,
 } from '../schema/types.js'
+import { ModifyError } from './ModifyRes.js'
+import { ModifyErr, RANGE_ERR } from './types.js'
 
 export const appendU8 = (ctx: ModCtx, u32: number) => {
   ctx.buf[ctx.len++] = u32
@@ -21,11 +23,21 @@ export const alignU32 = (ctx: ModCtx) => {
   ctx.len = (ctx.len + 3) & ~3
 }
 
+export const appendU16 = (ctx: ModCtx, u16: number) => {
+  ctx.buf[ctx.len++] = u16
+  ctx.buf[ctx.len++] = u16 >>>= 8
+}
+
 export const appendU32 = (ctx: ModCtx, u32: number) => {
   ctx.buf[ctx.len++] = u32
   ctx.buf[ctx.len++] = u32 >>>= 8
   ctx.buf[ctx.len++] = u32 >>>= 8
   ctx.buf[ctx.len++] = u32 >>>= 8
+}
+
+export const writeU16 = (ctx: ModCtx, u16: number, pos: number) => {
+  ctx.buf[pos++] = u16
+  ctx.buf[pos++] = u16 >>>= 8
 }
 
 export const writeU32 = (ctx: ModCtx, u32: number, pos: number) => {
@@ -35,80 +47,117 @@ export const writeU32 = (ctx: ModCtx, u32: number, pos: number) => {
   ctx.buf[pos++] = u32 >>>= 8
 }
 
+export const reserveU16 = (ctx: ModCtx) => {
+  const len = ctx.len
+  ctx.len = len + 2
+  return len
+}
+
 export const reserveU32 = (ctx: ModCtx) => {
   const len = ctx.len
   ctx.len = len + 4
   return len
 }
 
-export const appendUtf8WithSize = (ctx: ModCtx, str: string) => {
-  const size = ctx.buf.write(str, ctx.len + 4, 'utf8')
-  appendU32(ctx, size)
-  ctx.len += size
+export const appendUtf8 = (ctx: ModCtx, str: string) => {
+  ctx.len += ctx.buf.write(str, ctx.len, 'utf8')
 }
 
-export const appendBufWithSize = (ctx: ModCtx, buf: Buffer) => {
-  const size = buf.byteLength
-  appendU32(ctx, size)
+export const appendBuf = (ctx: ModCtx, buf: Buffer) => {
   ctx.buf.set(buf, ctx.len)
-  ctx.len += size
+  ctx.len += buf.byteLength
+}
+
+export const appendZeros = (ctx: ModCtx, n: number) => {
+  const end = ctx.len + n
+  ctx.buf.fill(0, ctx.len, end)
+  ctx.len = end
+}
+
+export const writeFixedValue = (
+  ctx: ModCtx,
+  val: any,
+  def: PropDef | PropDefEdge,
+  pos: number,
+): ModifyErr => {
+  const len = ctx.len
+  ctx.len = pos
+  const res = appendFixedValue(ctx, val, def)
+  ctx.len = len
+  return res
 }
 
 export const appendFixedValue = (
   ctx: ModCtx,
   val: any,
   def: PropDef | PropDefEdge,
-): true | void => {
+): ModifyErr => {
   const type = def.typeIndex
   if (type === STRING) {
     if (typeof val !== 'string') {
       if (val !== null) {
-        return true
+        return new ModifyError(def, val)
       }
       val = ''
     }
-    const size = ctx.buf.write(val, ctx.len + 1, 'utf8')
+    const size = Buffer.byteLength(val, 'utf8')
     if (size + 1 > def.len) {
-      return true
+      return new ModifyError(def, val)
     }
-    ctx.buf[ctx.len++] = size
-    ctx.len += size
+    if (ctx.len + size + 1 > ctx.max) {
+      return RANGE_ERR
+    }
+    appendU8(ctx, size)
+    appendUtf8(ctx, val)
   } else if (type === BOOLEAN) {
+    if (ctx.len === ctx.max) {
+      return RANGE_ERR
+    }
     if (val === null) {
-      ctx.buf[ctx.len++] = 0
+      appendU8(ctx, 0)
     } else if (typeof val === 'boolean') {
-      ctx.buf[ctx.len++] = val ? 1 : 0
+      appendU8(ctx, val ? 1 : 0)
     } else {
-      return true
+      return new ModifyError(def, val)
     }
   } else if (type === ENUM) {
+    if (ctx.len === ctx.max) {
+      return RANGE_ERR
+    }
     if (val === null) {
-      ctx.buf[ctx.len++] = 1
+      appendU8(ctx, 1)
     } else if (val in def.reverseEnum) {
-      ctx.buf[ctx.len++] = def.reverseEnum[val] + 1
+      appendU8(ctx, def.reverseEnum[val] + 1)
     } else {
-      return true
+      return new ModifyError(def, val)
     }
   } else {
     if (typeof val !== 'number') {
       if (val !== null) {
-        return true
+        return new ModifyError(def, val)
       }
       val = 0
     }
     if (type === TIMESTAMP || type === NUMBER) {
+      if (ctx.len + 8 > ctx.max) {
+        return RANGE_ERR
+      }
       ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
+    } else if (type === UINT32 || type === INT32) {
+      if (ctx.len + 4 > ctx.max) {
+        return RANGE_ERR
+      }
+      appendU32(ctx, val)
+    } else if (type === INT16 || type === UINT16) {
+      if (ctx.len + 2 > ctx.max) {
+        return RANGE_ERR
+      }
+      appendU16(ctx, val)
     } else {
-      ctx.buf[ctx.len++] = val
-      if (type === INT8 || type === UINT8) {
-        return
+      if (ctx.len === ctx.max) {
+        return RANGE_ERR
       }
-      ctx.buf[ctx.len++] = val >>>= 8
-      if (type === INT16 || type === UINT16) {
-        return
-      }
-      ctx.buf[ctx.len++] = val >>>= 8
-      ctx.buf[ctx.len++] = val >>>= 8
+      appendU8(ctx, val)
     }
   }
 }

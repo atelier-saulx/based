@@ -16,7 +16,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const node = try db.upsertNode(id, refTypeEntry);
-
+    // std.debug.print("update ref: {d}\n", .{id});
     if (hasEdges) {
         const totalEdgesLen = readInt(u32, data, 5);
         const len = 5 + totalEdgesLen;

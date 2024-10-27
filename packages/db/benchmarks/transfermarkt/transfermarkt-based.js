@@ -55,4 +55,6 @@ if (map) {
   const drainTime = db.drain()
   insertPerf()
   perf('insert drain', drainTime / 1e3)
+
+  // console.log(db.query('club').get().toObject())
 }

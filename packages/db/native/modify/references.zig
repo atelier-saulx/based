@@ -47,9 +47,10 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         );
 
         if (hasEdgeData) {
-            const totalEdgesLen = readInt(u32, data, i + 5);
-            const edges = data[i + 9 .. i + totalEdgesLen + 9];
-            std.debug.print("yeshh {d} - {any} \n", .{ totalEdgesLen, edges });
+            const sizepos = if (hasIndex) i + 9 else i + 5;
+            const edgelen = readInt(u32, data, sizepos);
+            const edgepos = sizepos + 4;
+            const edges = data[edgepos .. edgepos + edgelen];
             try edge.writeEdges(ctx, ref, edges);
             i += edges.len + 4;
         }
@@ -66,6 +67,7 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = readInt(u32, data, 0);
     var i: usize = 1;
 
+    // std.debug.print("del refs: {d}\n", .{len});
     while (i < len) : (i += 4) {
         const id = readInt(u32, data, i + 4);
         try db.deleteReference(
@@ -81,6 +83,7 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = readInt(u32, data, 0);
+    // std.debug.print("put refs len: {d}\n", .{len});
     const refTypeId = db.getTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     // TODO maybe pass index?
@@ -89,6 +92,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const offset = if (delta == 0) 0 else 4 - delta;
     const u32ids = std.mem.bytesAsSlice(u32, data[5 + offset .. len + 5 + offset]);
 
+    // std.debug.print("put refs: {any}\n", .{u32ids});
     try db.putReferences(
         ctx.db,
         @alignCast(u32ids),

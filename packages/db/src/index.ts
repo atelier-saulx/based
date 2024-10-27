@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
-import { create, update, remove } from './modify/modify.js'
+import { create, update } from './modify/index.js'
+import { remove } from './modify/remove.js'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
@@ -8,8 +9,7 @@ import {
   createSchemaTypeDef,
   schemaToSelvaBuffer,
 } from './schema/schema.js'
-import { wait } from '@saulx/utils'
-import { hashObjectIgnoreKeyOrder, hash, stringHash } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
 import { flushBuffer } from './operations.js'
@@ -21,7 +21,7 @@ import { genId } from './schema/utils.js'
 import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
 
 export * from './schema/typeDef.js'
-export * from './modify/modify.js'
+export * from './modify/index.js'
 
 const SCHEMA_FILE = 'schema.json'
 const COMMON_SDB_FILE = 'common.sdb'

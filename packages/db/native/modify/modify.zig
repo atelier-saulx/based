@@ -57,6 +57,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
 
+        // std.debug.print("- op: {d}, fieldType: {any}, field: {d}\n", .{ op, ctx.fieldType, ctx.field });
+
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
                 // SWITCH FIELD
@@ -104,6 +106,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i += try deleteFieldOnly(&ctx) + 1;
             },
             types.ModOp.DELETE_PROP_ONLY_REAL => {
+                // std.debug.print("delete field: {d}\n", .{ctx.field});
                 i += try deleteFieldOnlyReal(&ctx) + 1;
             },
             types.ModOp.DELETE_PROP => {

@@ -1,6 +1,7 @@
 import { BasedDb } from '../index.js'
 import { SchemaTypeDef } from '../schema/types.js'
 import { CREATE, ModifyOp } from './types.js'
+import { appendU32, appendU8 } from './utils.js'
 
 export const setCursor = (
   ctx: BasedDb['modifyCtx'],
@@ -17,11 +18,10 @@ export const setCursor = (
   const prefix1 = schema.idUint8[1]
 
   if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
-    // switch type
-    ctx.buf[ctx.len] = 2
-    ctx.buf[ctx.len + 1] = prefix0
-    ctx.buf[ctx.len + 2] = prefix1
-    ctx.len += 3
+    appendU8(ctx, 2)
+    appendU8(ctx, prefix0)
+    appendU8(ctx, prefix1)
+
     ctx.prefix0 = prefix0
     ctx.prefix1 = prefix1
     ctx.field = -1
@@ -30,21 +30,17 @@ export const setCursor = (
   }
 
   if (!ignoreField && ctx.field !== field) {
-    // switch field
-    ctx.buf[ctx.len] = 0
-    // make field 2 bytes
-    ctx.buf[ctx.len + 1] = field // 1 byte (max size 255 - 1)
-    ctx.len += 2
+    appendU8(ctx, 0)
+    appendU8(ctx, field)
     ctx.field = field
   }
 
   if (ctx.id !== id) {
-    // switch node
-    ctx.hasStringField = -1
-    ctx.buf[ctx.len] = modifyOp === CREATE ? 9 : 1
-    ctx.buf.writeUInt32LE(id, ctx.len + 1)
-    ctx.len += 5
+    appendU8(ctx, modifyOp === CREATE ? 9 : 1)
+    appendU32(ctx, id)
+
     ctx.id = id
     ctx.lastMain = -1
+    ctx.hasStringField = -1
   }
 }
