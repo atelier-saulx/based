@@ -4,6 +4,9 @@ import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
 import oldFs from 'node:fs'
+import { deflate } from 'node:zlib'
+import util from 'util'
+const deflap = util.promisify(deflate)
 
 import { italy } from './examples.js'
 // import * as q from '../../src/query/query.js'
@@ -79,7 +82,7 @@ for (let i = 0; i < 10e6; i++) {
   if (b === 10e3) {
     await fs.appendFile(
       dbFolder + '/file.txt',
-      Buffer.from(JSON.stringify(bla), 'utf-8'),
+      await deflap(Buffer.from(JSON.stringify(bla), 'utf-8')),
     )
     b = 0
     bla = []
