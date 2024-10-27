@@ -323,7 +323,7 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
     const size_t new_len = refs.nr_refs + 1;
     const size_t new_size = new_len * sizeof(*refs.refs);
 
-    if (!refs.refs || selva_sallocx(refs.refs, 0) < new_size) {
+    if (!refs.refs || selva_sallocx(refs.refs - refs.offset, 0) < new_size) {
         refs.refs = selva_realloc(refs.refs, new_size);
     }
     if ((size_t)index + 1 < new_len) {
