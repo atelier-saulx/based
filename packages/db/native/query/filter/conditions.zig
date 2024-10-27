@@ -23,12 +23,8 @@ pub fn runConditions(q: []u8, v: []u8) bool {
                     return false;
                 }
             } else if (op == 2) {
-                // ref has
                 const query = q[i + 8 .. i + valueSize * repeat + 8];
-                const value = v;
-                // check size again..
-                // if it bigger can use comparison fn to find needle
-                if (!batch.simdReferencesHas(query, value)) {
+                if (!batch.referencesHas(repeat, query, v)) {
                     return false;
                 }
             }
@@ -51,17 +47,9 @@ pub fn runConditions(q: []u8, v: []u8) bool {
                     std.log.err("Start + has not supported in filters", .{});
                     return false;
                 }
-
-                // std.debug.print("scan {any} amount of items \n", .{value.len});
-                // if start do different
-
                 if (!batch.simdReferencesHasSingle(readInt(u32, query, 0), v)) {
                     return false;
                 }
-
-                // if (!batch.equalsOr(valueSize, query, v)) {
-                //     return false;
-                // }
             }
             i += 6 + valueSize;
         }

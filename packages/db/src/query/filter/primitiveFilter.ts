@@ -37,6 +37,10 @@ export const primitiveFilter = (
   let size = 0
 
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
+  const isArray = Array.isArray(value)
+  if (isArray && value.length === 1) {
+    value = value[0]
+  }
 
   if (REVERSE_SIZE_MAP[prop.typeIndex] === 8) {
     if (Array.isArray(value)) {
@@ -94,8 +98,8 @@ export const primitiveFilter = (
       buf.writeUInt32LE(value, 6)
     }
   }
-  // ADD OR if array for value
 
+  // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)
   if (!arr) {
     size += 3 // [field] [size 2]

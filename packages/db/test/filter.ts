@@ -76,7 +76,7 @@ await test('filter', async (t) => {
 
   let lastId = 0
   const m: number[] = []
-  for (let i = 0; i < 10e6; i++) {
+  for (let i = 0; i < 5e6; i++) {
     lastId = db.create('machine', {
       // env,
       status: status[Math.floor(Math.random() * status.length)],
@@ -97,18 +97,18 @@ await test('filter', async (t) => {
   })
   console.log(lastId, db.drain(), 'ms')
 
-  // const result = db.query('org').include('*', 'envs.machines.*', 'env.*').get()
-  // console.log(result)
+  const result = db.query('org').include('*', 'envs.machines.id', 'env.*').get()
+  console.log(result.toObject()[0].envs[0].machines.map((v) => v.id))
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
 
-  const machines = db
-    .query('machine')
-    .include('*')
-    .filter('lastPing', '=', x)
-    .get()
+  // const machines = db
+  //   .query('machine')
+  //   .include('*')
+  //   .filter('lastPing', '=', x)
+  //   .get()
 
-  console.log(machines)
+  // console.log(machines)
 
   // console.log(lastId)
 
@@ -119,31 +119,20 @@ await test('filter', async (t) => {
   const xx = lastId - 1
   const bla = [xx, lastId + 100, lastId + 10, lastId + 1000]
 
-  const amount = 100
+  const amount = 10
 
   for (let i = 0; i < amount; i++) {
     // var g = 0
-    // const derp = [
-    //   // 0 or - completely blows it up
-    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-    // ]
+    const derp = [1, 3, 5, 7, 9]
 
     const envs = db
       .query('env')
       .include('*')
       // .include('machines')
-      // .filter('machines', 'has', lastId)
+      // .filter('machines', 'has', lastId - 1)
       // .filter('machines', 'has', 25)
-      // .filter('machines', 'has', ~~(Math.random() * lastId))
-      .filter('machines', 'has', [
-        ~~(Math.random() * lastId),
-        ~~(Math.random() * lastId),
-        ~~(Math.random() * lastId),
-        ~~(Math.random() * lastId),
-      ])
+      // .filter('machines', 'has', 2)
+      .filter('machines', 'has', derp)
 
       // .filter('machines', 'has', [
       //   // 0 or - completely blows it up
