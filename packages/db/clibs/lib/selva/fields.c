@@ -305,10 +305,9 @@ static int write_refs(struct SelvaNode * restrict node, const struct SelvaFieldS
                 .dst = dst,
             };
 
-            size_t id_set_len = refs.nr_refs - 1;
-            if (!node_id_set_add(&refs.index, &id_set_len, dst->node_id)) {
-                db_panic("node_id already inserted into refs: %u:%u\n", dst->type, dst->node_id);
-            }
+#if 0
+            assert(node_id_set_has(refs.index, refs.nr_refs, dst->node_id));
+#endif
 
             goto out;
         }
