@@ -2119,8 +2119,9 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
-            /* FIXME Hash alias? */
-            fprintf(stderr, "Alias not hashed at field: %d\n", field);
+            /*
+             * NOP Aliases are hashed in the node hash in db.c.
+             */
             break;
         }
     }
