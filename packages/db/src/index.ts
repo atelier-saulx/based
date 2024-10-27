@@ -274,7 +274,7 @@ export class BasedDb {
   async save() {
     let err: number
     const ts = Date.now()
-    const mt = createMerkleTree(() => createHash('sha256'))
+    const mt = createMerkleTree(() => createHash('sha1'))
 
     err = this.native.saveCommon(
       join(this.fileSystemPath, COMMON_SDB_FILE),
@@ -328,7 +328,7 @@ export class BasedDb {
     mt.visitLeafNodes((leaf) =>
       dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
     )
-    const data = { ts, hash: mt.getRoot().hash.toString('hex'), dumps }
+    const data = { ts, blockSize: this.blockSize, hash: mt.getRoot().hash.toString('hex'), dumps }
     fs.appendFile(
       join(this.fileSystemPath, 'writelog.json'),
       JSON.stringify(data),
