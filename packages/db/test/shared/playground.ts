@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
 import fs from 'node:fs/promises'
+import oldFs from 'node:fs'
+
 import { italy } from './examples.js'
 // import * as q from '../../src/query/query.js'
 
@@ -57,3 +59,31 @@ const makeDb = async (path: string) => {
 }
 
 await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])
+
+const f = await fs.writeFile(dbFolder + '/file.txt', '')
+
+const d = Date.now()
+let bla = []
+
+const file = oldFs.openSync(dbFolder + '/file.txt', null)
+let b = 0
+for (let i = 0; i < 10e6; i++) {
+  bla.push({
+    name: 'bla',
+    user: 'snur@gmail.com',
+    derp: 'derp derp',
+    i,
+  })
+
+  b++
+  if (b === 10e3) {
+    await fs.appendFile(
+      dbFolder + '/file.txt',
+      Buffer.from(JSON.stringify(bla), 'utf-8'),
+    )
+    b = 0
+    bla = []
+  }
+}
+
+console.log('DONE', Date.now() - d, 'ms')
