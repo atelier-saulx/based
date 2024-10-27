@@ -76,7 +76,7 @@ await test('filter', async (t) => {
 
   let lastId = 0
   const m: number[] = []
-  for (let i = 0; i < 196608; i++) {
+  for (let i = 0; i < 10e6; i++) {
     lastId = db.create('machine', {
       // env,
       // status: status[Math.floor(Math.random() * status.length)],
@@ -119,7 +119,7 @@ await test('filter', async (t) => {
   const xx = lastId - 1
   const bla = [xx, lastId + 100, lastId + 10, lastId + 1000]
 
-  const amount = 1
+  const amount = 100
 
   const make = () => {
     const x = ~~(Math.random() * lastId)
@@ -132,7 +132,21 @@ await test('filter', async (t) => {
   for (let i = 0; i < amount; i++) {
     // var g = 0
     const rand = ~~(Math.random() * lastId)
-    const derp = [make(), make(), make(), rand]
+    const derp = [
+      make(),
+      make(),
+      make(),
+      // make(),
+      // make(),
+      // make(),
+      // make(),
+      // make(),
+      // make(),
+      rand,
+    ]
+    // const derp2 = [make(), make(), make(), make()]
+    // const derp3 = [make(), make()]
+
     console.log(derp)
     const envs = db
       .query('env')
@@ -142,23 +156,45 @@ await test('filter', async (t) => {
       // .filter('machines', 'has', 25)
       // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
       .filter('machines', 'has', derp)
-
-      // .filter('machines', 'has', [
-      //   // 0 or - completely blows it up
-      //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-      //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-      //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-      //   // ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
-      //   lastId,
-      // ])
-
-      // .filter('lastPing', '=', [1000, 2, 3, 4])
       .get()
+
+    // const envs2 = db
+    //   .query('env')
+    //   .include('*')
+    //   // .include('machines')
+    //   // .filter('machines', 'has', rand)
+    //   // .filter('machines', 'has', 25)
+    //   // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
+    //   .filter('machines', 'has', derp2)
+    //   .get()
+
+    // const envs3 = db
+    //   .query('env')
+    //   .include('*')
+    //   // .include('machines')
+    //   // .filter('machines', 'has', rand)
+    //   // .filter('machines', 'has', 25)
+    //   // .filter('machines', 'has', ~~(Math.random() * lastId) % 2)
+    //   .filter('machines', 'has', derp3)
+
+    //   // .filter('machines', 'has', [
+    //   //   // 0 or - completely blows it up
+    //   //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   //   ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   //   // ~~(Math.random() * lastId) - ~~(Math.random() * lastId) + 1,
+    //   //   lastId,
+    //   // ])
+
+    //   // .filter('lastPing', '=', [1000, 2, 3, 4])
+    //   .get()
 
     // console.log(envs.toObject())
     mi += envs.toObject().length
     measure += envs.execTime
   }
+
+  // 0.15 0.18
 
   console.log(measure / amount, 'ms', mi / amount)
 })

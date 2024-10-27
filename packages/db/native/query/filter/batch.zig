@@ -112,8 +112,17 @@ pub fn simdReferencesHas(
     var left: usize = 0;
     var max = l;
 
+    // var i: usize = 0;
+    // while (i < intsValue2.len) : (i += 1) {
+    //     std.debug.print("flap {d} \n", .{intsValue2[i]});
+    //     if (selva.node_id_set_bsearch(tmp, l, intsValue2[i]) != -1) {
+    //         return true;
+    //     }
+    // }
+
     const low = intsValue2[0];
-    const hi = intsValue2[intsValue2.len];
+    const hi = intsValue2[intsValue2.len - 1];
+
     while (left <= right) {
         const mid = left + (right - left) / 2;
         const midValue = ints[mid];
@@ -143,6 +152,7 @@ pub fn simdReferencesHas(
             }
         }
     }
+
     return false;
 }
 
@@ -152,7 +162,9 @@ pub fn referencesHas(repeat: u32, query: []u8, v: []u8) bool {
         vectorLen = 8; // tmp
     }
     if (repeat < vectorLen) {
-        if (repeat == 2) {
+        if (repeat == 1) {
+            return simdReferencesHasSingle(readInt(u32, query, 0), v);
+        } else if (repeat == 2) {
             if (!simdReferencesHas(2, query, v)) {
                 return false;
             }

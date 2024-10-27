@@ -22,7 +22,7 @@ pub fn runConditions(q: []u8, v: []u8) bool {
                 if (!batch.equalsOr(valueSize, value, query)) {
                     return false;
                 }
-            } else if (op == 2) {
+            } else if (op == 2 and mod == 3) {
                 const query = q[i + 8 .. i + valueSize * repeat + 8];
                 if (!batch.referencesHas(repeat, query, v)) {
                     return false;
