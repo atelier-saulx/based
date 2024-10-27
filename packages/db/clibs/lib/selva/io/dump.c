@@ -338,7 +338,7 @@ static void save_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
+__used static char *hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
 {
     static const char map[] = "0123456789abcdef";
     char *p = s;
