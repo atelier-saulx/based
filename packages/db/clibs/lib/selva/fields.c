@@ -614,9 +614,17 @@ static void remove_weak_reference(struct SelvaFields *fields, const struct Selva
                             &refs.refs[i + 1],
                             (refs.nr_refs - i - 1) * sizeof(struct SelvaNodeWeakReference));
                 }
-                /* TODO realloc on some condition */
 
                 refs.nr_refs--;
+
+                /*
+                 * Realloc if we have a lot of extra space.
+                 */
+                if (selva_sallocx(refs.refs - refs.offset, 0) / sizeof(refs.refs[0]) >= refs.nr_refs + 131072) {
+                    remove_weak_refs_offset(&refs);
+                    refs.refs = selva_realloc(refs.refs, refs.nr_refs);
+                }
+
                 memcpy(vp, &refs, sizeof(refs));
                 break;
             }
