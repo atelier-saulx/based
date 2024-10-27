@@ -1,6 +1,7 @@
 const std = @import("std");
 const simd = std.simd;
 const readInt = @import("../../utils.zig").readInt;
+const selva = @import("../../selva.zig");
 
 pub fn simdEqualsOr(
     T: type,

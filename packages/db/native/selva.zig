@@ -22,6 +22,8 @@ pub usingnamespace @cImport({
     @cInclude("util/crc32c.h");
 
     @cInclude("selva/sort.h");
+
+    @cInclude("selva/fast_linear_search.h");
 });
 
 const selvaError = @cImport({
