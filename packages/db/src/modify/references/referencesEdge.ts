@@ -4,7 +4,7 @@ import { PropDef, SchemaTypeDef } from '../../schema/types.js'
 import { ModifyState, modifyError } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { ModifyOp } from '../types.js'
-import { append32, write32 } from '../utils.js'
+import { appendU32, writeU32 } from '../utils.js'
 import { calculateEdgesSize, writeEdges } from './edge.js'
 import { overWriteSimpleReferences } from './simple.js'
 
@@ -50,7 +50,7 @@ export function overWriteEdgeReferences(
   ctx.len += 4 // reserve for size
   const start = ctx.len
   ctx.buf[ctx.len++] = op // ref op
-  append32(ctx, value.length) // ref length
+  appendU32(ctx, value.length) // ref length
   for (let i = 0; i < value.length; i++) {
     let ref = value[i]
     if (typeof ref !== 'number') {
@@ -67,7 +67,7 @@ export function overWriteEdgeReferences(
     }
     if (typeof ref === 'object') {
       ctx.buf[ctx.len++] = 1
-      append32(ctx, ref.id)
+      appendU32(ctx, ref.id)
       const sizepos = ctx.len
       ctx.len += 4 // reserve for size
 
@@ -78,16 +78,16 @@ export function overWriteEdgeReferences(
       if (writeEdges(t, ref, ctx, res)) {
         return
       }
-      write32(ctx, ctx.len - start, sizepos)
+      writeU32(ctx, ctx.len - start, sizepos)
       // ctx.buf.writeUint32LE(ctx.len - edgeDataSizeIndex - 4, edgeDataSizeIndex)
     } else {
       ctx.buf[ctx.len++] = 0
-      append32(ctx, ref)
+      appendU32(ctx, ref)
       // ctx.buf.writeUint32LE(ref, ctx.len + 1)
     }
   }
 
-  write32(ctx, ctx.len - start, sizepos)
+  writeU32(ctx, ctx.len - start, sizepos)
 
   // ctx.buf.writeUint32LE(ctx.len - (sizeIndex + 4), sizeIndex)
 }

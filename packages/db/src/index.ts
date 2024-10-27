@@ -28,25 +28,27 @@ const COMMON_SDB_FILE = 'common.sdb'
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
+export type ModCtx = {
+  max: number
+  buf: Buffer
+  hasStringField: number
+  len: number
+  field: number
+  prefix0: number
+  prefix1: number
+  id: number
+  lastMain: number
+  mergeMain: (PropDef | any)[] | null
+  mergeMainSize: number
+  ctx: { offset?: number }
+  queue: Map<number, (id: number) => void>
+  db: BasedDb
+}
+
 export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
-  modifyCtx: {
-    max: number
-    buf: Buffer
-    hasStringField: number
-    len: number
-    field: number
-    prefix0: number
-    prefix1: number
-    id: number
-    lastMain: number
-    mergeMain: (PropDef | any)[] | null
-    mergeMainSize: number
-    ctx: { offset?: number }
-    queue: Map<number, (id: number) => void>
-    db: BasedDb
-  }
+  modifyCtx: ModCtx
   blockSize = 10000
 
   id: number
