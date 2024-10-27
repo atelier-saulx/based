@@ -357,6 +357,8 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
 {
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
+    assert(node_id != 0);
+
     node->node_id = node_id;
     node->type = type->type;
     node->node_hash = 0;
