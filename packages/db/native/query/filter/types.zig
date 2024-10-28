@@ -16,10 +16,12 @@ pub const Operator = enum(u8) {
     endsWithNormalize = 15,
     pub fn isNumerical(self: Operator) bool {
         return switch (self) {
-            Operator.startsWith,
+            Operator.smallerThen,
             Operator.largerThen,
             Operator.largerThenInclusive,
             Operator.smallerThenInclusive,
+            Operator.range,
+            Operator.rangeExclude,
             => true,
             else => false,
         };

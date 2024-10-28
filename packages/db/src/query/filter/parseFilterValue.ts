@@ -57,6 +57,8 @@ export const parseFilterValue = (
       let newValue = 0
       let now: number
       let op = 1
+
+      console.log({ arr })
       for (const seg of arr) {
         if (seg === '-') {
           op = -1

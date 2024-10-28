@@ -318,6 +318,7 @@ export class BasedQueryResponse {
 
   inspect(depth: number) {
     console.log(this[inspect.custom](depth))
+    return this
   }
 
   forEach(fn: (item: any, key: number) => void) {

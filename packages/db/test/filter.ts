@@ -167,4 +167,34 @@ await test('filter', async (t) => {
       .toObject().length,
     1,
   )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('scheduled', '<', 'now - 694d - 10h - 15m')
+      .get()
+      .toObject().length,
+    1,
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('requestsServed', '<', 1)
+      .get()
+      .toObject().length,
+    1,
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('requestsServed', '<=', 1)
+      .get()
+      .toObject().length,
+    2,
+  )
 })

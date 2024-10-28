@@ -42,4 +42,5 @@ pub const IncludeOp = enum(u8) {
     edge = 252,
     references = 254,
     reference = 255,
+    _,
 };

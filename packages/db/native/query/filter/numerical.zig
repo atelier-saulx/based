@@ -12,15 +12,15 @@ inline fn operate(
     const q = readInt(T, query, 0);
     const v = readInt(T, value, 0);
 
-    // std.debug.print("q: {d}, v: {d} \n", .{ q, v });
+    // std.debug.print("q: {d}, v: {d} op: {any} \n", .{ q, v, op });
 
     return switch (op) {
         Op.largerThen => v > q,
         Op.smallerThen => v < q,
-        Op.largerThenInclusive => v <= q,
-        Op.smallerThenInclusive => v >= q,
-        Op.range => v >= q and v <= q,
-        Op.rangeExclude => v <= q and v >= q,
+        Op.largerThenInclusive => v >= q,
+        Op.smallerThenInclusive => v <= q,
+        // Op.range => v >= q and v <= q,
+        // Op.rangeExclude => v <= q and v >= q,
         else => false,
     };
 }
