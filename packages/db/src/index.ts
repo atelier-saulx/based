@@ -24,9 +24,23 @@ export * from './schema/typeDef.js'
 export * from './modify/modify.js'
 
 const SCHEMA_FILE = 'schema.json'
+const WRITELOG_FILE = 'writelog.json'
 const COMMON_SDB_FILE = 'common.sdb'
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
+
+type Writelog = {
+  ts: number
+  types: { [t: number]: { lastId: number; blockSize: number } }
+  hash: string
+  commonDump: string
+  rangeDumps: {
+    file: string
+    hash: string
+    start: number
+    end: number
+  }[]
+}
 
 export type ModCtx = {
   max: number
@@ -123,26 +137,32 @@ export class BasedDb {
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
-    const dumps = (await fs.readdir(this.fileSystemPath)).filter(
-      (fname: string) => fname.endsWith('.sdb') && fname != COMMON_SDB_FILE,
-    )
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
     db.loadCommon(
       join(this.fileSystemPath, COMMON_SDB_FILE),
       this.dbCtxExternal,
     )
-    dumps.forEach((fname) => {
-      const err = db.loadRange(
-        join(this.fileSystemPath, fname),
-        this.dbCtxExternal,
-      )
-      if (err) {
-        console.log(`Failed to load a range. file: "${fname}": ${err}`)
-      }
-    })
 
+    // TODO Read blockSize per type
+    let writelog: Writelog = null
     try {
+      writelog = JSON.parse(
+        (
+          await fs.readFile(join(this.fileSystemPath, WRITELOG_FILE))
+        ).toString(),
+      )
+      writelog.rangeDumps.forEach((dump) => {
+        const fname = dump.file
+        const err = db.loadRange(
+          join(this.fileSystemPath, fname),
+          this.dbCtxExternal,
+        )
+        if (err) {
+          console.log(`Failed to load a range. file: "${fname}": ${err}`)
+        }
+      })
+
       const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
       if (schema) {
         // Prop need to not call setting in selva
@@ -156,8 +176,9 @@ export class BasedDb {
         def.id,
         this.dbCtxExternal,
       )
+
       def.total = total
-      def.lastId = lastId
+      def.lastId = writelog ? writelog.types[def.id].lastId : lastId
     }
 
     return []
@@ -318,27 +339,25 @@ export class BasedDb {
       }
     }
 
-    const dumps: {
-      file: string
-      hash?: string
-      start?: number
-      end?: number
-    }[] = [
-      {
-        file: COMMON_SDB_FILE,
-      },
-    ]
+    const types: Writelog['types'] = {}
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      types[def.id] = { lastId: def.lastId, blockSize: this.blockSize }
+    }
+
+    const dumps: Writelog['rangeDumps'] = []
     mt.visitLeafNodes((leaf) =>
       dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
     )
-    const data = {
+    const data: Writelog = {
       ts,
-      blockSize: this.blockSize,
+      types,
       hash: mt.getRoot().hash.toString('hex'),
-      dumps,
+      commonDump: COMMON_SDB_FILE,
+      rangeDumps: dumps,
     }
     fs.appendFile(
-      join(this.fileSystemPath, 'writelog.json'),
+      join(this.fileSystemPath, WRITELOG_FILE),
       JSON.stringify(data),
       { flag: 'w', flush: true },
     )
