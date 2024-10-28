@@ -10,6 +10,7 @@ const deflap = util.promisify(deflate)
 import { italy } from './examples.js'
 
 import { pipeline } from 'node:stream/promises'
+import { hash } from '@saulx/hash'
 
 var prev: { start: number; chunk: string }[] = []
 
@@ -53,18 +54,29 @@ const makeDb = async (path: string) => {
   db.putSchema({
     types: {
       bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
+      user: {
+        props: {
+          uid: 'alias',
+          firstName: 'string',
+          lastName: 'string',
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'author',
+            },
+          },
+        },
+      },
       article: {
         props: {
           headline: 'string',
           abstract: 'string',
           body: 'string',
-          author: {
-            props: {
-              firstName: 'string',
-              lastName: 'string',
-            },
-          },
           publishDate: 'timestamp',
+          author: {
+            ref: 'user',
+            prop: 'articles',
+          },
         },
       },
     },
@@ -76,6 +88,8 @@ const makeDb = async (path: string) => {
   })
 
   var flap: string
+
+  const users = new Map()
 
   const handleChunk = (chunk: string, x) => {
     if (flap) {
@@ -93,8 +107,25 @@ const makeDb = async (path: string) => {
             d = d.slice(0, -1)
           }
           const x = JSON.parse(d)
-          const { id, ...r } = x
+          const { id, author, ...r } = x
           // exclude in create is nice
+          // const id = db.upsert('user', {
+          const userId = hash(
+            author.firstName.toLowerCase() +
+              ':' +
+              author.lastName.toLowerCase(),
+          )
+          if (!users.has(userId)) {
+            users.set(
+              userId,
+              db.create('user', {
+                uid: String(userId),
+                firstName: author.firstName,
+                lastName: author.lastName,
+              }).tmpId,
+            )
+          }
+          r.author = users.get(userId)
           db.create('article', r)
         } catch (err) {
           // console.log('derp', indexes[i], indexes[i + 1] - 1)
@@ -126,7 +157,22 @@ const makeDb = async (path: string) => {
 
   console.log('DRAIN BOI', Date.now() - d, 'ms', db.drain(), 'ms')
 
-  console.log(db.query('article').range(0, 1e6).get())
+  db.query('article')
+    .range(0, 1e6)
+    .filter('publishDate', '>', '01/01/2024')
+    .sort('publishDate', 'desc')
+    .get()
+    .inspect(2)
+
+  db.query('article')
+    .range(0, 100)
+    .filter('publishDate', '>', '01/01/2024')
+    // .filter('author.firstName', '=', 'Elena Sánchez')
+    .sort('publishDate', 'desc')
+    .include('author', '*')
+    .get()
+    // .debug()
+    .inspect(2)
 
   await db.stop(true)
 }

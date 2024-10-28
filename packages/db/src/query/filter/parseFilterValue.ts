@@ -33,6 +33,9 @@ const timeToNumber = (ex: string): number => {
   if (ex === 'd') {
     return 1000 * 60 * 60 * 24
   }
+  if (ex === 'y') {
+    return 365 * 1000 * 60 * 60 * 24
+  }
   return 1
 }
 
@@ -75,7 +78,7 @@ export const parseFilterValue = (
             const ex = seg[seg.length - 1]
             const number = parseInt(seg, 10)
             v = number * timeToNumber(ex)
-          } else {
+          } else if (seg) {
             v = new Date(seg).valueOf()
           }
           if (op === -1) {
@@ -83,6 +86,7 @@ export const parseFilterValue = (
           } else {
             newValue += v
           }
+          console.log({ newValue })
         }
       }
       return newValue

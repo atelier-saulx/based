@@ -96,12 +96,12 @@ const inspectObject = (
         )
       } else if (def.typeIndex === 13) {
         if (!v.id) {
-          str += 'null'
+          str += 'null\n,'
         } else {
           str += inspectObject(
             v,
             q.references.get(def.prop),
-            key,
+            '',
             level + 2,
             false,
             false,
@@ -109,7 +109,6 @@ const inspectObject = (
             depth,
           )
         }
-        str += ',\n'
       } else if (def.typeIndex === BINARY) {
         if (v === undefined) {
           return ''
@@ -156,7 +155,9 @@ const inspectObject = (
         str += v
         // }
       }
-      str += ',\n'
+      if (def?.typeIndex !== 13) {
+        str += ',\n'
+      }
     } else {
       str += ',\n'
     }
@@ -317,7 +318,7 @@ export class BasedQueryResponse {
     }
   }
 
-  inspect(depth: number) {
+  inspect(depth: number = 2) {
     console.log(this[inspect.custom](depth))
     return this
   }
