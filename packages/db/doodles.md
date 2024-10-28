@@ -8,7 +8,8 @@ create()
 drain()
 
 const drain = (db) => {
-  const handler = selectHandler(ctx)
+  const handler = selectHandler(db)
+  const ctx = db.ctx
 
   handler.modify(ctx)
 
@@ -21,17 +22,70 @@ const drain = (db) => {
     // continue
     ctx.start = ctx.end
     ctx.pos = ctx.end
-    ctx.end = nextPos(db)
+    ctx.end = nextPos(db, ctx.start)
   }
 
   // clear the rest of the ctx
   // make sure to set new queue
 }
 
+const selectHandler = (db) => {
+  const types = db.ctx.types
+  let free
+  let chillest
+
+  for (const type of types) {
+    for (const worker of db.workers) {
+      if (worker.processing) {
+        if (worker.processing.has(type)) {
+          return worker
+        }
+        if (free) {
+          continue
+        }
+        if (!chillest || chillest.remaining() > worker.remaining()) {
+          chillest = worker
+        }
+      } else {
+        free = worker
+      }
+    }
+  }
+
+  return free || chillest
+}
+
+const smallestPos = (db) => {
+  let smallestPos = 0
+  for (const worker of db.workers) {
+    if (worker.processing) {
+      const pos = worker.pos()
+      if (!smallesPos || pos < smallestPos) {
+        smallestPos = pos
+      }
+    }
+  }
+  return smallestPos
+}
+
+const nextPos = (db, from) => {
+  let nextPos = db.maxModifySize
+  for (const worker of db.workers) {
+    if (worker.processing) {
+      const pos = worker.pos()
+      if (pos > from && pos < nextPos) {
+        nextPos = pos
+      }
+    }
+  }
+  return nextPos
+}
+
 class DbWorker {
   async modify(ctx) {
-    const { start, end, queue } = ctx
+    const { start, end, queue, types } = ctx
 
+    this.processing = types
     this.modifyState[0] = start
     this.modifyState[1] = end
     this.modifyState[2] = 1 // start
@@ -46,10 +100,16 @@ class DbWorker {
     if (ctx.end === start) {
       ctx.end = end
     }
+
+    this.processing = null
   }
 
-  get pos() {
+  pos() {
     return this.modifyState[0]
+  }
+
+  remaining() {
+    return this.modifyState[1] - this.modifyState[0]
   }
 }
 ```
