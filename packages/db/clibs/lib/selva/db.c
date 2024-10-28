@@ -651,24 +651,29 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
     }
 }
 
-void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
+static void selva_node_hash_update_internal(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
 {
-    selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash128_t res;
 
-    selva_hash_reset(hash_state);
-    selva_fields_hash_update(hash_state, &type->ns.fields_schema, &node->fields);
-    hash_aliases(hash_state, type, node->node_id);
-    res = selva_hash_digest(hash_state);
-    selva_hash_free_state(hash_state);
+    selva_hash_reset(tmp_hash_state);
+    selva_fields_hash_update(tmp_hash_state, &type->ns.fields_schema, &node->fields);
+    hash_aliases(tmp_hash_state, type, node->node_id);
+    res = selva_hash_digest(tmp_hash_state);
 
     node->node_hash = res;
 }
 
-void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *hash_state)
+void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
+{
+    selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_node_hash_update_internal(type, node, hash_state);
+    selva_hash_free_state(hash_state);
+}
+
+void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state, selva_hash_state_t *hash_state)
 {
     if (node->node_hash == 0) {
-        selva_node_hash_update(type, node);
+        selva_node_hash_update_internal(type, node, tmp_hash_state);
     }
 
     selva_hash_update(hash_state, &node->node_hash, sizeof(node->node_hash));
@@ -688,23 +693,27 @@ selva_hash128_t selva_node_hash_get(struct SelvaNode *node)
 selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end)
 {
     selva_hash_state_t *hash_state = selva_hash_create_state();
-    selva_hash128_t res;
+    selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
+    selva_hash128_t res = 0;
 
     selva_hash_reset(hash_state);
 
     struct SelvaNode *node = selva_nfind_node(type, start);
     if (!node || node->node_id > end) {
-        return 0;
+        goto out;
     }
 
     do {
-        selva_node_hash_update2(type, node, hash_state);
+        selva_node_hash_update2(type, node, tmp_hash_state, hash_state);
 
         node = selva_next_node(type, node);
     } while (node && node->node_id <= end);
 
     res = selva_hash_digest(hash_state);
+
+out:
     selva_hash_free_state(hash_state);
+    selva_hash_free_state(tmp_hash_state);
 
     return res;
 }

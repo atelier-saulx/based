@@ -416,12 +416,13 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
     selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
 
     selva_hash_reset(hash_state);
 
     if (nr_nodes > 0) {
         do {
-            selva_node_hash_update2(te, node, hash_state);
+            selva_node_hash_update2(te, node, tmp_hash_state, hash_state);
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
 
@@ -431,6 +432,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     *range_hash_out = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
+    selva_hash_free_state(tmp_hash_state);
 
     write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
     selva_io_end(&io, NULL);

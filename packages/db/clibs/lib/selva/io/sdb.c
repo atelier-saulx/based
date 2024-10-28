@@ -54,6 +54,7 @@
  */
 
 #define SDB_VERSION 1
+#define SDB_COMPRESSION_LEVEL 3
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
 
@@ -77,25 +78,23 @@ static const char magic_end[]   = { 'D', 'N', 'E', 'A', 'V', 'L', 'E', 'S' };
 
 static inline void sdb_hash_init(struct selva_io *io)
 {
-    io->hash_state = selva_hash_create_state();
-    selva_hash_reset(io->hash_state);
+    io->checksum_state = 0;
 }
 
 static inline void sdb_hash_deinit(struct selva_io *io)
 {
-    selva_hash_free_state(io->hash_state);
+    io->checksum_state = 0;
 }
 
-static inline void sdb_hash_update(struct selva_io *io, void const *in, size_t len)
+static inline void sdb_hash_update(struct selva_io *io, void const *, size_t len)
 {
-    selva_hash_update(io->hash_state, in, len);
+    io->checksum_state += len;
 }
 
 static inline void sdb_hash_finalize(struct selva_io *io)
 {
-    selva_hash128_t result = selva_hash_digest(io->hash_state);
-    memcpy(io->computed_hash, &result, sizeof(result));
-    static_assert(sizeof(io->computed_hash) == sizeof(result));
+    static_assert(sizeof(io->computed_hash) == sizeof(io->checksum_state));
+    memcpy(io->computed_hash, &io->checksum_state, sizeof(io->computed_hash));
 }
 
 /**
@@ -459,7 +458,7 @@ void sdb_init(struct selva_io *io)
         io->compressor = libdeflate_alloc_compressor_ex(6, &deflate_opts);
         io->decompressor = libdeflate_alloc_decompressor(&deflate_opts);
 #endif
-        io->compressor = libdeflate_alloc_compressor(6);
+        io->compressor = libdeflate_alloc_compressor(SDB_COMPRESSION_LEVEL);
         io->decompressor = libdeflate_alloc_decompressor();
 
         const size_t compressed_buf_size = libdeflate_compress_bound(ZBLOCK_BUF_SIZE);
