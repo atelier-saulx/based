@@ -6,6 +6,9 @@ import { ModifyState, modifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import { write } from '../string.js'
 
+// allow setting buffer in modify create for strings
+// add compression handling for main buffer
+// add compression handling for edge fields
 export function writeString(
   value: string | null,
   ctx: BasedDb['modifyCtx'],

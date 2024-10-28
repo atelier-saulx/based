@@ -7,8 +7,25 @@ import oldFs from 'node:fs'
 import { deflate } from 'node:zlib'
 import util from 'util'
 const deflap = util.promisify(deflate)
-
 import { italy } from './examples.js'
+
+import { pipeline } from 'node:stream/promises'
+
+var prev: { start: number; chunk: string }[] = []
+
+const indexOfSubstrings = function* (str, searchValue) {
+  let i = 0
+  while (true) {
+    const r = str.indexOf(searchValue, i)
+    if (r !== -1) {
+      yield r
+      i = r + 1
+    } else return
+  }
+}
+
+// const derp = JSON.parse(bigfFile)
+
 // import * as q from '../../src/query/query.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -36,6 +53,20 @@ const makeDb = async (path: string) => {
   db.putSchema({
     types: {
       bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
+      article: {
+        props: {
+          headline: 'string',
+          abstract: 'string',
+          body: 'string',
+          author: {
+            props: {
+              firstName: 'string',
+              lastName: 'string',
+            },
+          },
+          publishDate: 'timestamp',
+        },
+      },
     },
   })
 
@@ -43,6 +74,47 @@ const makeDb = async (path: string) => {
     name: 'DERP ',
     x: 1,
   })
+
+  var flap: string
+
+  const handleChunk = (chunk: string, x) => {
+    if (flap) {
+      chunk = flap + chunk
+      flap = ''
+    }
+
+    const indexes = [...indexOfSubstrings(chunk, '{"id":')]
+
+    for (let i = 0; i < indexes.length; i += 2) {
+      if (!indexes[i + 1]) {
+        flap = chunk.slice(indexes[i], -1)
+      } else {
+        try {
+          var d = chunk.slice(indexes[i], indexes[i + 1] - 1)
+          if (d[d.length - 1] == ']') {
+            d = d.slice(0, -1)
+          }
+          const x = JSON.parse(d)
+          const { id, ...r } = x
+          // exclude in create is nice
+          db.create('article', r)
+        } catch (err) {
+          console.log('derp', indexes[i], indexes[i + 1] - 1)
+        }
+      }
+    }
+  }
+
+  // @ts-ignore
+  await pipeline(
+    oldFs.createReadStream('/Users/jimdebeer/Downloads/dump.json', 'utf-8'),
+    async function* (source, { signal }) {
+      source.setEncoding('utf-8') // Work with strings rather than `Buffer`s.
+      for await (const chunk of source) {
+        yield await handleChunk(chunk, { signal })
+      }
+    },
+  )
 
   console.log(db.query('bla').sort('x').get())
 
@@ -53,15 +125,10 @@ const makeDb = async (path: string) => {
   console.log('CLOSE', Date.now(), path)
 
   var d = Date.now()
-  for (let i = 0; i < 1000; i++) {
-    db.create('bla', {
-      name: italy,
-      // flap: Buffer.from(italy, 'utf-8'),
-    })
-  }
+
   console.log('DRAIN BOI', Date.now() - d, 'ms', db.drain(), 'ms')
 
-  console.log(db.query('bla').get())
+  console.log(db.query('article').range(0, 1e6).get())
 
   await db.stop(true)
 }
