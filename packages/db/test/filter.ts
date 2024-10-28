@@ -160,9 +160,8 @@ await test('filter', async (t) => {
 
   db.query('machine')
     .include('*')
-    .filter('scheduled', '>', 'now-60s')
+    .filter('scheduled', '>', 'now - 60s + 10h')
     .filter('scheduled', '<', 'now + 60m')
-
     .get()
     .inspect(1)
 

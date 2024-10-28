@@ -23,7 +23,6 @@ pub fn simdEqualsOr(
             }
         }
     }
-
     while (i < ints.len) : (i += 1) {
         const id2 = ints[i];
         if (id2 == valueExpanded) {
