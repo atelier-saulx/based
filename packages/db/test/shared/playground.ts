@@ -69,6 +69,8 @@ const makeDb = async (path: string) => {
       },
       article: {
         props: {
+          views: 'uint32',
+          lastView: 'timestamp',
           headline: 'string',
           abstract: 'string',
           body: 'string',

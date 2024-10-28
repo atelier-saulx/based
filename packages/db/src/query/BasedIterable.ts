@@ -147,7 +147,11 @@ const inspectObject = (
           str += `"${v}"`
         }
       } else if (def.typeIndex === 1) {
-        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+        if (v === 0) {
+          str += `0 ${picocolors.italic(picocolors.dim('No date'))}`
+        } else {
+          str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+        }
       } else {
         // if (typeof v === 'number') {
         //   str += picocolors.blue(v)
