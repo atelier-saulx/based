@@ -82,9 +82,7 @@ const makeDb = async (path: string) => {
       chunk = flap + chunk
       flap = ''
     }
-
     const indexes = [...indexOfSubstrings(chunk, '{"id":')]
-
     for (let i = 0; i < indexes.length; i += 2) {
       if (!indexes[i + 1]) {
         flap = chunk.slice(indexes[i], -1)
@@ -99,7 +97,7 @@ const makeDb = async (path: string) => {
           // exclude in create is nice
           db.create('article', r)
         } catch (err) {
-          console.log('derp', indexes[i], indexes[i + 1] - 1)
+          // console.log('derp', indexes[i], indexes[i + 1] - 1)
         }
       }
     }
