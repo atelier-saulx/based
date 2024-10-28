@@ -1,12 +1,8 @@
-import { buffer } from 'stream/consumers'
 import {
-  CREATED,
   PropDef,
   PropDefEdge,
   REFERENCES,
   REVERSE_SIZE_MAP,
-  TIMESTAMP,
-  UPDATED,
 } from '../../schema/types.js'
 import { QueryDefFilter } from '../types.js'
 import { Operator, operationToByte } from './operators.js'

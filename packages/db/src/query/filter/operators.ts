@@ -7,8 +7,8 @@ export type Operator =
   | 'like'
   | '>='
   | '<='
-  | 'exists'
-  | '!exists'
+  | '..'
+  | '!..'
 
 // -------------------------------------------
 // operations shared
@@ -57,6 +57,14 @@ export const operationToByte = (op: Operator) => {
 
   if (op === '<=') {
     return 9
+  }
+
+  if (op === '..') {
+    return 10
+  }
+
+  if (op === '!..') {
+    return 11
   }
 
   return 0
