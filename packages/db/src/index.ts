@@ -19,6 +19,7 @@ import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 import { createTree as createMerkleTree } from '../src/csmt/index.js'
+import { DbWorker, workers } from './workers/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/index.js'
@@ -45,6 +46,8 @@ export type ModCtx = {
   ctx: { offset?: number }
   queue: Map<number, (id: number) => void>
   db: BasedDb
+  state: Uint32Array
+  types: Set<number>
 }
 
 export class BasedDb {
@@ -68,6 +71,8 @@ export class BasedDb {
 
   fileSystemPath: string
 
+  workers: DbWorker[]
+
   constructor({
     path,
     maxModifySize,
@@ -80,12 +85,16 @@ export class BasedDb {
       this.maxModifySize = maxModifySize
     }
     const max = this.maxModifySize
+    const sab = new SharedArrayBuffer(max)
+    const sab2 = new SharedArrayBuffer(4)
+    const state = new Uint32Array(sab2)
+
     this.modifyCtx = {
       max,
       hasStringField: -1,
       mergeMainSize: 0,
       mergeMain: null,
-      buf: Buffer.allocUnsafe(max),
+      buf: Buffer.from(sab),
       len: 0,
       field: -1,
       prefix0: 0,
@@ -95,6 +104,8 @@ export class BasedDb {
       ctx: {},
       queue: new Map(),
       db: this,
+      types: new Set(),
+      state,
     }
 
     this.fileSystemPath = path
@@ -128,10 +139,12 @@ export class BasedDb {
     )
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
+
     db.loadCommon(
       join(this.fileSystemPath, COMMON_SDB_FILE),
       this.dbCtxExternal,
     )
+
     dumps.forEach((fname) => {
       const err = db.loadRange(
         join(this.fileSystemPath, fname),
@@ -149,6 +162,7 @@ export class BasedDb {
         this.putSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
+
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
 
@@ -159,6 +173,8 @@ export class BasedDb {
       def.total = total
       def.lastId = lastId
     }
+
+    this.workers = workers(this, 2)
 
     return []
   }

@@ -1,15 +1,76 @@
 import { BasedDb } from './index.js'
 
+let j = 0
+
 export const flushBuffer = (db: BasedDb) => {
   const ctx = db.modifyCtx
   if (ctx.len) {
     const queue = ctx.queue
     const d = Date.now()
     const offset = 0
-    // TODO put actual offset here
+    let start = 0
+
+    console.log(ctx.types)
+    // // TODO put actual offset here
+    // console.log(
+    //   '----- start drain',
+    //   ctx.types.map((type) => {
+    //     type.modifyIndex = null
+    //     return type.type
+    //   }),
+    // )
 
     try {
-      db.native.modify(ctx.buf.subarray(0, ctx.len), db.dbCtxExternal)
+      // const worker = db.workers[0]
+      // const end = ctx.len
+
+      // worker.modify(ctx.buf.subarray(start, ctx.len))
+      // worker.start = start
+      // worker.end = end
+
+      // if (ctx.len >= ctx.max) {
+      //   // restart
+      //   ctx.len = 0
+      // }
+
+      //   // TODO make this way smarter!!!
+      //   if (db.workers.length) {
+      //     for (let i = 0; i < ctx.types.length; i++) {
+      //       const type = ctx.types[i]
+      //       const next = ctx.types[i + 1]
+      //       const typeStart = type.modifyIndex
+      //       const typeEnd = next ? next.modifyIndex : ctx.len
+
+      //       // @ts-ignore
+      //       if (type.worker) {
+      //         console.log('existing worker:', { typeStart, typeEnd })
+      //         // @ts-ignore
+      //         type.worker.modify(ctx.buf.subarray(typeStart, typeEnd))
+      //         start = typeEnd
+      //       } else if (typeStart !== typeEnd) {
+      //         console.log('new worker:', type.type, { typeStart, typeEnd })
+      //         const worker = db.workers[j++ % db.workers.length]
+      //         // @ts-ignore
+      //         type.worker = worker
+      //         worker.modify(ctx.buf.subarray(typeStart, typeEnd))
+      //         start = typeEnd
+      //       }
+
+      //       type.modifyIndex = null
+      //     }
+      //   }
+
+      // if (start === ctx.len) {
+      //   console.info('hmmm ok everything is on worker now...')
+      // } else {
+      //
+      // }
+
+      db.native.modify(
+        ctx.buf.subarray(0, ctx.len),
+        db.dbCtxExternal,
+        ctx.state,
+      )
       // or it sends it to the actual db
     } catch (err) {
       console.error(err)
@@ -27,9 +88,10 @@ export const flushBuffer = (db: BasedDb) => {
     ctx.hasStringField = -1
     ctx.ctx.offset = offset
     ctx.ctx = {}
+    ctx.types.clear()
 
     const time = Date.now() - d
-
+    console.log({ time })
     db.writeTime += time
     db.isDraining = false
 

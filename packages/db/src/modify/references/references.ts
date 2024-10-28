@@ -41,6 +41,8 @@ export function writeReferences(
     return new ModifyError(def, value)
   }
 
+  ctx.types.add(def.inverseTypeId)
+
   if (value === null) {
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
