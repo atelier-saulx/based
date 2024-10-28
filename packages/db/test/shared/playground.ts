@@ -176,6 +176,13 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
+  db.query('user')
+    .range(0, 1e6)
+    // .filter('author.firstName', '=', 'Elena Sánchez')
+    .get()
+    // .debug()
+    .inspect(200)
+
   await db.stop(true)
 }
 
