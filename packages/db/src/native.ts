@@ -58,6 +58,16 @@ export default {
     return db.getTypeInfo(typeId, defCtx)
   },
 
+  getNodeRangeHash: (
+    typeId: number,
+    start: number,
+    end: number,
+    bufOut: Buffer,
+    defCtx: any,
+  ) => {
+    return db.getNodeRangeHash(typeId, start, end, bufOut, defCtx)
+  },
+
   compress: (buf: Buffer, offset: number, stringSize: number) => {
     return db.compress(buf, offset, stringSize)
   },
