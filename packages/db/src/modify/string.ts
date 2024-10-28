@@ -4,6 +4,7 @@ import { SchemaTypeDef, PropDef } from '../schema/types.js'
 import { CREATE, UPDATE, ModifyOp } from './types.js'
 import { ModifyState, modifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
+import { write } from '../string.js'
 
 export function writeString(
   value: string | null,
@@ -39,7 +40,7 @@ export function writeString(
     setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
-    const size = ctx.buf.write(value, ctx.len, 'utf8')
+    const size = write(ctx.buf, value, ctx.len, ctx.db.noCompression)
     ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
     ctx.len += size
   }

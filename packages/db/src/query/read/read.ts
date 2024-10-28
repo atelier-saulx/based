@@ -19,6 +19,7 @@ import {
   UINT8,
 } from '../../schema/types.js'
 import { QueryDef } from '../types.js'
+import { read } from '../../string.js'
 
 export type Item = {
   id: number
@@ -161,7 +162,6 @@ export const readAllFields = (
       const prop = result[i]
       const edgeDef = q.edges.reverseProps[prop]
       const t = edgeDef.typeIndex
-
       if (t === BINARY) {
         i++
         const size = result.readUint32LE(i)
@@ -177,7 +177,9 @@ export const readAllFields = (
         }
         i += size + 4
       } else if (t === REFERENCE) {
+        // handle later
       } else if (t === REFERENCES) {
+        // handle later
       } else {
         i++
         readMainValue(edgeDef, result, i, item)
@@ -237,7 +239,7 @@ export const readAllFields = (
         if (size === 0) {
           addField(prop, '', item)
         } else {
-          addField(prop, result.toString('utf8', i + 4, size + i + 4), item)
+          addField(prop, read(result, i + 4, size), item)
         }
         i += size + 4
       }
@@ -276,61 +278,13 @@ export const resultToObject = (
   return items
 }
 
-// // use
-// const nextItem = (
-//   q: QueryDef,
-//   result: Buffer,
-//   offset: number,
-//   end: number,
-// ): number => {
-//   let i = offset
-//   while (i < end) {
-//     const index = result[i]
-//     i++
-//     if (index === 255) {
-//       return i - offset
-//     }
-//     if (index === 252) {
-//       // con
-//     } else if (index === 254) {
-//       const size = result.readUint32LE(i)
-//       i += 5 + size
-//     } else if (index === 253) {
-//       const size = result.readUint32LE(i)
-//       i += size + 9
-//     } else if (index === 0) {
-//       if (q.include.main.len === q.schema.mainLen) {
-//         i += q.schema.mainLen
-//       } else {
-//         // console.log(q.include.main.len)
-//         i += q.include.main.len
-//       }
-//     } else {
-//       const prop = q.schema.reverseProps[index]
-//       if (prop.typeIndex === 11) {
-//         const size = result.readUint32LE(i)
-//         i += size + 4
-//       } else if (prop.typeIndex === 20) {
-//         const size = result.readUint32LE(i)
-//         i += size + 4
-//       }
-//     }
-//   }
-//   return i - offset
-// }
-
 // add generator
 export function* toObjectRange(q: QueryDef, result: Buffer) {
   let cnt = 0
   const items = []
   let i = 5
   const len = result.readUint32LE(0)
-
   while (i < len) {
-    // if (cnt >= offset) {
-    //   i += 4
-    //   i += nextItem(q, result, i, result.byteLength)
-    // } else {
     let id = result.readUInt32LE(i)
     i += 4
     const item: Item = {
@@ -340,7 +294,6 @@ export function* toObjectRange(q: QueryDef, result: Buffer) {
     const l = readAllFields(q, result, i, result.byteLength, item, id)
     i += l
     items.push(item)
-    // }
   }
   return items
 }

@@ -284,7 +284,8 @@ export class BasedQueryResponse {
   }
 
   debug() {
-    return debug(this.result, this.offset, this.end)
+    debug(this.result, this.offset, this.end)
+    return this
   }
 
   node(index: number = 0): any {

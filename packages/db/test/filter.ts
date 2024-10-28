@@ -46,6 +46,7 @@ await test('filter', async (t) => {
       },
       machine: {
         props: {
+          derp: 'int16',
           lastPing: 'number',
           requestsServed: 'uint32',
           env: {
@@ -84,6 +85,7 @@ await test('filter', async (t) => {
       status: status[Math.floor(Math.random() * status.length)],
       requestsServed: i,
       lastPing: i + 1,
+      derp: -i, //~~(Math.random() * 255) - ~~(Math.random() * 255),
       isLive: !!(i % 2),
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
     }).tmpId
@@ -103,8 +105,9 @@ await test('filter', async (t) => {
     db.query('machine').include('*').filter('lastPing', '=', x).get().toObject()
       .length,
     x.length,
-    'OR timestamp',
+    'OR number',
   )
+  console.log('----------------------')
 
   const make = () => {
     const x = ~~(Math.random() * lastId)
@@ -172,7 +175,17 @@ await test('filter', async (t) => {
     db
       .query('machine')
       .include('*')
-      .filter('scheduled', '<', 'now - 694d - 10h - 15m')
+      .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
+      .get()
+      .toObject().length,
+    1,
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('scheduled', '<', '24/10/2024') // Date,
       .get()
       .toObject().length,
     1,
@@ -194,6 +207,17 @@ await test('filter', async (t) => {
       .include('*')
       .filter('requestsServed', '<=', 1)
       .get()
+      .toObject().length,
+    2,
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('derp', '<=', 200)
+      .get()
+      .inspect(5)
       .toObject().length,
     2,
   )

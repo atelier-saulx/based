@@ -22,6 +22,59 @@ import { parseFilterValue } from './parseFilterValue.js'
 // [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
+const write = (buf: Buffer, value: any, size: number, offset: number) => {
+  if (size === 8) {
+    buf.writeDoubleLE(value, offset)
+  } else if (size === 4) {
+    buf.writeUInt32LE(value, offset)
+  } else if (size === 2) {
+    buf.writeUInt16LE(value, offset)
+  } else if (size === 1) {
+    buf[offset] = value
+  }
+}
+
+const createFixedFilterBuffer = (
+  prop: PropDef | PropDefEdge,
+  size: number,
+  op: number,
+  value: any,
+  references: boolean,
+) => {
+  let buf: Buffer
+  const start = prop.start
+  if (Array.isArray(value)) {
+    // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
+    const len = value.length
+    buf = Buffer.allocUnsafe(8 + len * size)
+    buf[0] = references ? 3 : 1
+    buf.writeUInt16LE(size, 1)
+    buf.writeUInt16LE(start, 3)
+    buf[5] = op
+    buf.writeUInt16LE(len, 6)
+    if (references) {
+      value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
+      value.sort()
+      for (let i = 0; i < len; i++) {
+        buf.writeUInt32LE(value[i], 8 + i * size)
+      }
+    } else {
+      for (let i = 0; i < len; i++) {
+        write(buf, parseFilterValue(prop, value[i]), size, 8 + i * size)
+      }
+    }
+  } else {
+    // [or = 0] [size 2] [start 2], [op], value[size]
+    buf = Buffer.allocUnsafe(6 + size)
+    buf[0] = 0
+    buf.writeUInt16LE(size, 1)
+    buf.writeUInt16LE(start, 3)
+    buf[5] = op
+    write(buf, parseFilterValue(prop, value), size, 6)
+  }
+  return buf
+}
+
 export const primitiveFilter = (
   prop: PropDef | PropDefEdge,
   operator: Operator,
@@ -42,65 +95,14 @@ export const primitiveFilter = (
     value = value[0]
   }
 
-  if (REVERSE_SIZE_MAP[prop.typeIndex] === 8) {
-    if (Array.isArray(value)) {
-      // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
-      or = 1
-      const len = value.length
-      const size = len * 8
-      buf = Buffer.allocUnsafe(6 + size + 2)
-      buf[0] = or
-      buf.writeUInt16LE(8, 1)
-      buf.writeUInt16LE(start, 3)
-      buf[5] = op
-      buf.writeUInt16LE(len, 6)
-      for (let i = 0; i < len; i++) {
-        buf.writeDoubleLE(parseFilterValue(prop, value[i]), 8 + i * 8)
-      }
-    } else {
-      // [or = 0] [size 2] [start 2], [op], value[size]
-      buf = Buffer.allocUnsafe(14)
-      buf[0] = or
-      buf.writeUInt16LE(8, 1)
-      buf.writeUInt16LE(start, 3)
-      buf[5] = op
-      buf.writeDoubleLE(parseFilterValue(prop, value), 6)
-    }
-  } else if (
-    REVERSE_SIZE_MAP[prop.typeIndex] === 4 ||
-    prop.typeIndex === REFERENCES
-  ) {
-    if (Array.isArray(value)) {
-      // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
-      or = prop.typeIndex === REFERENCES ? 3 : 1
-      const len = value.length
-      const size = len * 4
-      buf = Buffer.allocUnsafe(6 + size + 2)
-      buf[0] = or
-      buf.writeUInt16LE(4, 1)
-      buf.writeUInt16LE(start, 3)
-      buf[5] = op
-      buf.writeUInt16LE(len, 6)
-      if (prop.typeIndex === REFERENCES) {
-        value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
-        value.sort()
-        for (let i = 0; i < len; i++) {
-          buf.writeUInt32LE(value[i], 8 + i * 4)
-        }
-      } else {
-        for (let i = 0; i < len; i++) {
-          buf.writeUInt32LE(parseFilterValue(prop, value[i]), 8 + i * 4)
-        }
-      }
-    } else {
-      // [or = 0] [size 2] [start 2], [op], value[size]
-      buf = Buffer.allocUnsafe(10)
-      buf[0] = or
-      buf.writeUInt16LE(4, 1)
-      buf.writeUInt16LE(start, 3)
-      buf[5] = op
-      buf.writeUInt32LE(parseFilterValue(prop, value), 6)
-    }
+  const propSize = REVERSE_SIZE_MAP[prop.typeIndex]
+
+  if (prop.typeIndex === REFERENCES) {
+    buf = createFixedFilterBuffer(prop, 4, op, value, true)
+  } else if (propSize) {
+    buf = createFixedFilterBuffer(prop, propSize, op, value, false)
+  } else {
+    // ----
   }
 
   // ADD OR if array for value

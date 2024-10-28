@@ -66,13 +66,17 @@ export class BasedDb {
 
   fileSystemPath: string
 
+  noCompression: boolean
+
   constructor({
     path,
     maxModifySize,
+    noCompression,
   }: {
     path: string
     maxModifySize?: number
     fresh?: boolean
+    noCompression?: boolean
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
@@ -94,7 +98,7 @@ export class BasedDb {
       queue: new Map(),
       db: this,
     }
-
+    this.noCompression = noCompression || false
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
@@ -110,7 +114,6 @@ export class BasedDb {
     }[]
   > {
     this.id = stringHash(this.fileSystemPath) >>> 0
-
     if (opts.clean) {
       try {
         await fs.rm(this.fileSystemPath, { recursive: true })
@@ -328,7 +331,12 @@ export class BasedDb {
     mt.visitLeafNodes((leaf) =>
       dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
     )
-    const data = { ts, blockSize: this.blockSize, hash: mt.getRoot().hash.toString('hex'), dumps }
+    const data = {
+      ts,
+      blockSize: this.blockSize,
+      hash: mt.getRoot().hash.toString('hex'),
+      dumps,
+    }
     fs.appendFile(
       join(this.fileSystemPath, 'writelog.json'),
       JSON.stringify(data),

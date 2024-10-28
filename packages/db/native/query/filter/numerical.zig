@@ -31,12 +31,16 @@ pub inline fn compare(
     query: []u8,
     value: []u8,
 ) bool {
+    // MOD for negative check info OR OP
+    // maybe op is better scince its only for these operations
     if (size == 4) {
         return operate(u32, op, query, value);
     } else if (size == 8) {
         return operate(u64, op, query, value);
     } else if (size == 1) {
         return operate(u8, op, query, value);
+    } else if (size == 2) {
+        return operate(u16, op, query, value);
     }
     return false;
 }
