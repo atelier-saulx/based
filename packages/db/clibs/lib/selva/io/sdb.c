@@ -86,7 +86,7 @@ static inline void sdb_hash_deinit(struct selva_io *io)
     io->checksum_state = 0;
 }
 
-static inline void sdb_hash_update(struct selva_io *io, void const *in, size_t len)
+static inline void sdb_hash_update(struct selva_io *io, void const *, size_t len)
 {
     io->checksum_state += len;
 }
