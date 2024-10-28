@@ -4,7 +4,7 @@ const t = @import("../../types.zig");
 pub fn addIdOnly(ctx: *QueryCtx, id: u32) !usize {
     try ctx.results.append(.{
         .id = id,
-        .field = 255,
+        .field = 255, // id result enum
         .val = null,
         .refSize = null,
         .includeMain = &.{},

@@ -1,3 +1,6 @@
+// TODO: lower case this is the zig way
+// https://zig.guide/language-basics/enums/
+
 pub const Prop = enum(u8) {
     NULL = 0,
     TIMESTAMP = 1,

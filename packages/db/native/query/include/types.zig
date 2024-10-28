@@ -37,3 +37,9 @@ pub inline fn RefResult(
     // else do later
     return null;
 }
+
+pub const IncludeOp = enum(u8) {
+    edge = 252,
+    references = 254,
+    reference = 255,
+};
