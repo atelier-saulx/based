@@ -35,7 +35,7 @@ type Writelog = {
   hash: string
   commonDump: string
   rangeDumps: {
-   [t: number]: {
+    [t: number]: {
       // TODO add type
       file: string
       hash: string
@@ -63,8 +63,12 @@ export type ModCtx = {
 }
 
 const createCsmtHashFun = () => createHash('sha1')
-const makeCsmtKey = (typeId: number, start: number) => typeId * 4294967296 + start
-const destructureCsmtKey = (key: number) => [(key / 4294967296) | 0, (key >>> 1) + (key >>> 31)]
+const makeCsmtKey = (typeId: number, start: number) =>
+  typeId * 4294967296 + start
+const destructureCsmtKey = (key: number) => [
+  (key / 4294967296) | 0,
+  (key >>> 1) + (key >>> 31),
+]
 
 export class BasedDb {
   isDraining: boolean = false
@@ -199,7 +203,13 @@ export class BasedDb {
       for (let start = 1; start <= lastId; start += step) {
         const end = start + step - 1
         const hash = Buffer.allocUnsafe(16)
-        this.native.getNodeRangeHash(def.id, start, end, hash, this.dbCtxExternal)
+        this.native.getNodeRangeHash(
+          def.id,
+          start,
+          end,
+          hash,
+          this.dbCtxExternal,
+        )
 
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
 
@@ -212,7 +222,9 @@ export class BasedDb {
       const origHash = Buffer.from(writelog.hash, 'hex')
       if (origHash.compare(mt.getRoot()?.hash) != 0) {
         const hashAfterLoad = mt.getRoot()?.hash.toString('hex')
-        console.error(`WARN: CSMT hash mismatch: ${writelog.hash} != ${hashAfterLoad}`)
+        console.error(
+          `WARN: CSMT hash mismatch: ${writelog.hash} != ${hashAfterLoad}`,
+        )
       }
     }
 
