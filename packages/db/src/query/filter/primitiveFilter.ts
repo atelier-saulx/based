@@ -4,8 +4,9 @@ import {
   REFERENCES,
   REVERSE_SIZE_MAP,
 } from '../../schema/types.js'
+import { propIsSigned } from '../../schema/utils.js'
 import { QueryDefFilter } from '../types.js'
-import { Operator, operationToByte } from './operators.js'
+import { Operator, isNumerical, operationToByte } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 
 // -------------------------------------------
@@ -34,6 +35,18 @@ const write = (buf: Buffer, value: any, size: number, offset: number) => {
   }
 }
 
+// Modes
+// default = 0,
+// orFixed = 1,
+// orVar = 2,
+// orReferences = 3,
+const switchMode = (mode: number, refs: boolean) => {
+  if (mode == 1 && refs) {
+    return 3
+  }
+  return mode
+}
+
 const createFixedFilterBuffer = (
   prop: PropDef | PropDefEdge,
   size: number,
@@ -47,7 +60,7 @@ const createFixedFilterBuffer = (
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
     buf = Buffer.allocUnsafe(8 + len * size)
-    buf[0] = references ? 3 : 1
+    buf[0] = switchMode(1, references)
     buf.writeUInt16LE(size, 1)
     buf.writeUInt16LE(start, 3)
     buf[5] = op
@@ -66,7 +79,7 @@ const createFixedFilterBuffer = (
   } else {
     // [or = 0] [size 2] [start 2], [op], value[size]
     buf = Buffer.allocUnsafe(6 + size)
-    buf[0] = 0
+    buf[0] = switchMode(0, references)
     buf.writeUInt16LE(size, 1)
     buf.writeUInt16LE(start, 3)
     buf[5] = op

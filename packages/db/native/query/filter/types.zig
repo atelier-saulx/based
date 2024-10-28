@@ -28,7 +28,7 @@ pub const Operator = enum(u8) {
     }
 };
 
-pub const Mod = enum(u8) {
+pub const Mode = enum(u8) {
     default = 0,
     orFixed = 1,
     orVar = 2,

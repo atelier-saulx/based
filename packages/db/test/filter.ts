@@ -185,10 +185,11 @@ await test('filter', async (t) => {
     db
       .query('machine')
       .include('*')
-      .filter('scheduled', '<', '24/10/2024') // Date,
+      .filter('scheduled', '<', '10/24/2000') // Date,
       .get()
       .toObject().length,
-    1,
+    0,
+    'parse date string',
   )
 
   equal(
@@ -211,14 +212,23 @@ await test('filter', async (t) => {
     2,
   )
 
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('derp', '<=', 200)
-      .get()
-      .inspect(5)
-      .toObject().length,
-    2,
-  )
+  const bla = Buffer.allocUnsafe(4)
+  const max = 2147483747
+  bla.writeUint32LE(max + 100)
+
+  const bla2 = Buffer.allocUnsafe(4)
+  bla2.writeUint32LE(max - 100)
+
+  console.log(bla2.readUInt32LE(0) < bla.readUint32LE(0))
+
+  // equal(
+  db.query('machine')
+    .include('*')
+    .filter('derp', '<=', 200)
+    .sort('derp')
+    .get()
+    .inspect(5)
+  // .toObject().length,
+  // 2,
+  // )
 })

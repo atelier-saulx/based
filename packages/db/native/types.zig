@@ -28,6 +28,12 @@ pub const Prop = enum(u8) {
     ALIASES = 19,
     BINARY = 25,
     ID = 26,
+    pub fn isSigned(self: Prop) bool {
+        return switch (self) {
+            Prop.INT16, Prop.INT32, Prop.INT64 => true,
+            else => false,
+        };
+    }
 };
 
 pub fn Size(p: Prop) u8 {

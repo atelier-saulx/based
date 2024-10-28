@@ -132,7 +132,7 @@ pub fn filter(
             if (value.len == 0) {
                 return false;
             }
-            if (!runCondition(query, value)) {
+            if (!runCondition(fieldSchema, query, value)) {
                 return false;
             }
             fieldIndex += querySize + 3;

@@ -1,7 +1,10 @@
 const readInt = @import("../../utils.zig").readInt;
 const t = @import("./types.zig");
 const Op = t.Operator;
+const Mode = t.Mode;
 const std = @import("std");
+const db = @import("../../db/db.zig");
+const Prop = @import("../../types.zig").Prop;
 
 inline fn operate(
     T: type,
@@ -30,17 +33,36 @@ pub inline fn compare(
     op: Op,
     query: []u8,
     value: []u8,
+    fieldSchema: db.FieldSchema,
 ) bool {
     // MOD for negative check info OR OP
     // maybe op is better scince its only for these operations
+    const isSigned = Prop.isSigned(@enumFromInt(fieldSchema.type));
     if (size == 4) {
-        return operate(u32, op, query, value);
+        if (isSigned) {
+            return operate(i32, op, query, value);
+        } else {
+            return operate(u32, op, query, value);
+        }
     } else if (size == 8) {
-        return operate(u64, op, query, value);
+        if (isSigned) {
+            // maybe f?
+            return operate(i64, op, query, value);
+        } else {
+            return operate(u64, op, query, value);
+        }
     } else if (size == 1) {
-        return operate(u8, op, query, value);
+        if (isSigned) {
+            return operate(i8, op, query, value);
+        } else {
+            return operate(u8, op, query, value);
+        }
     } else if (size == 2) {
-        return operate(u16, op, query, value);
+        if (isSigned) {
+            return operate(i16, op, query, value);
+        } else {
+            return operate(u16, op, query, value);
+        }
     }
     return false;
 }
