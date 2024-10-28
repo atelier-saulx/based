@@ -34,7 +34,7 @@ const timeToNumber = (ex: string): number => {
     return 1000 * 60 * 60 * 24
   }
   if (ex === 'y') {
-    return 365 * 1000 * 60 * 60 * 24
+    return 31556952000
   }
   return 1
 }
@@ -74,7 +74,7 @@ export const parseFilterValue = (
               now = Date.now()
             }
             v = now
-          } else if (/[smhd]$/.test(seg)) {
+          } else if (/[smhdy]$/.test(seg)) {
             const ex = seg[seg.length - 1]
             const number = parseInt(seg, 10)
             v = number * timeToNumber(ex)
