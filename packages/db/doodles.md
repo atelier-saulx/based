@@ -1,52 +1,76 @@
-new things
+# workers
 
 ```ts
-const create = [1..10]
-const update = [11...20]
+create()
 
-let i = create.length
-let j = 0
+// next tick
 
-while(i--) {
-  const createId = create[j]
-  for (; j < update.length; j++) {
-    const updateId = update[j]
-    if (createId === updateId) {
-      // found it
-      break
+drain()
+
+const drain = (db) => {
+  const handler = selectHandler(ctx)
+
+  handler.modify(ctx)
+
+  if (ctx.pos - ctx.start > ctx.end - ctx.pos) {
+    // start from beginning, until start of this run
+    ctx.start = 0
+    ctx.pos = 0
+    ctx.end = smallestPos(db)
+  } else {
+    // continue
+    ctx.start = ctx.end
+    ctx.pos = ctx.end
+    ctx.end = nextPos(db)
+  }
+
+  // clear the rest of the ctx
+  // make sure to set new queue
+}
+
+class DbWorker {
+  async modify(ctx) {
+    const { start, end, queue } = ctx
+
+    this.modifyState[0] = start
+    this.modifyState[1] = end
+    this.modifyState[2] = 1 // start
+
+    Atomics.notify(this.modifyState, 2, 1)
+    await Atomics.waitAsync(this.modifyState, 2, 0)
+
+    for (const [tmpId, resolve] of queue) {
+      resolve(tmpId)
     }
 
-    if (updateId > createId) {
-      // insert it
-    } else {
-      // keep going
+    if (ctx.end === start) {
+      ctx.end = end
     }
+  }
+
+  get pos() {
+    return this.modifyState[0]
   }
 }
 ```
 
-existing things
+worker
 
 ```ts
-const create = [1, 3, 6, 70]
-const update = [2, 3, 4, 90]
+const { modifyBuffer, modifyState } = workerData
+const buffer = Buffer.from(modifyBuffer)
 
-let i = create.length
-let j = 0
+const modify = () => {
+  Atomics.wait(modifyState, 2, 1)
+  const start = modifyState[0]
+  const end = modifyState[0]
+  const slice = buffer.subarray(start, end)
 
-for (; j < update.length; j++) {
-  const updateId = update[j] // 2, 3, 4, 90
-  while (i--) {
-    const createId = create[i] // 70, 6, 3, 1, 0
-    if (createdId > updateId) {
-      continue
-    }
-    if (createdId === updateId) {
-      break
-    }
-
-    insert(updateId, i)
-    break
-  }
+  native.modify(slice, dbCtx, modifyState)
+  modifyState[2] = 0 // done
+  Atomics.notify(modifyState, 2, 1)
+  modify()
 }
+
+modify()
 ```

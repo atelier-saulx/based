@@ -51,7 +51,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     };
 
     var offset: u32 = 0;
-
+    std.debug.print("BATCH LEN: {d}", .{batch.len});
     while (i < batch.len) {
         // delete
         const op: types.ModOp = @enumFromInt(batch[i]);

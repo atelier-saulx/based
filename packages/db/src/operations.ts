@@ -10,7 +10,7 @@ export const flushBuffer = (db: BasedDb) => {
     const offset = 0
     let start = 0
 
-    console.log(ctx.types)
+    console.log(ctx.len, ctx.types)
     // // TODO put actual offset here
     // console.log(
     //   '----- start drain',
