@@ -34,7 +34,7 @@ export default {
     start: number,
     end: number,
     dbCtx: any,
-    hashOut: Buffer
+    hashOut: Buffer,
   ): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
     return db.saveRange(buf, typeCode, start, end, dbCtx, hashOut)
@@ -56,5 +56,13 @@ export default {
 
   getTypeInfo: (typeId: number, defCtx: any) => {
     return db.getTypeInfo(typeId, defCtx)
+  },
+
+  compress: (buf: Buffer, offset: number, stringSize: number) => {
+    return db.compress(buf, offset, stringSize)
+  },
+
+  decompress: (input: Buffer, output: Buffer, offset: number, len: number) => {
+    return db.decompress(input, output, offset, len)
   },
 }

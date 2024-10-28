@@ -8,6 +8,7 @@ const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
 const db = @import("./db/db.zig");
+const string = @import("./string.zig");
 
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
@@ -51,5 +52,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
+
+    registerFunction(env, exports, "compress", string.compress) catch return null;
+    registerFunction(env, exports, "decompress", string.decompress) catch return null;
+
     return exports;
 }

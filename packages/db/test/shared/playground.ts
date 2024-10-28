@@ -26,6 +26,7 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
+    // noCompression: true,
   })
 
   await db.start()
@@ -51,42 +52,46 @@ const makeDb = async (path: string) => {
 
   console.log('CLOSE', Date.now(), path)
 
-  await db.create('bla', {
-    name: italy,
-    flap: Buffer.from(italy, 'utf-8'),
-  })
+  var d = Date.now()
+  for (let i = 0; i < 1000; i++) {
+    db.create('bla', {
+      name: italy,
+      // flap: Buffer.from(italy, 'utf-8'),
+    })
+  }
+  console.log('DRAIN BOI', Date.now() - d, 'ms', db.drain(), 'ms')
 
   console.log(db.query('bla').get())
 
   await db.stop(true)
 }
 
-await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])
+makeDb(dbFolder + '/1')
 
-const f = await fs.writeFile(dbFolder + '/file.txt', '')
+// await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])
 
-const d = Date.now()
-let bla = []
+// const f = await fs.writeFile(dbFolder + '/file.txt', '')
 
-const file = oldFs.openSync(dbFolder + '/file.txt', null)
-let b = 0
-for (let i = 0; i < 10e6; i++) {
-  bla.push({
-    name: 'bla',
-    user: 'snur@gmail.com',
-    derp: 'derp derp',
-    i,
-  })
+// const d = Date.now()
+// let bla = []
+// const file = oldFs.openSync(dbFolder + '/file.txt', null)
+// let b = 0
+// for (let i = 0; i < 10e6; i++) {
+//   bla.push({
+//     name: 'bla',
+//     user: 'snur@gmail.com',
+//     derp: 'derp derp',
+//     i,
+//   })
+//   b++
+//   if (b === 10e3) {
+//     await fs.appendFile(
+//       dbFolder + '/file.txt',
+//       await deflap(Buffer.from(JSON.stringify(bla), 'utf-8')),
+//     )
+//     b = 0
+//     bla = []
+//   }
+// }
 
-  b++
-  if (b === 10e3) {
-    await fs.appendFile(
-      dbFolder + '/file.txt',
-      await deflap(Buffer.from(JSON.stringify(bla), 'utf-8')),
-    )
-    b = 0
-    bla = []
-  }
-}
-
-console.log('DONE', Date.now() - d, 'ms')
+// console.log('DONE', Date.now() - d, 'ms')

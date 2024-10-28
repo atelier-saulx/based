@@ -126,16 +126,20 @@ pub fn getArgs(comptime totalArgs: comptime_int, env: c.napi_env, info: c.napi_c
     return argv;
 }
 
-pub fn getString(comptime name: []const u8, env: c.napi_env, value: c.napi_value) ![]u8 {
+pub fn getString(env: c.napi_env, value: c.napi_value) ![]u8 {
     var size: usize = undefined;
     if (c.napi_get_value_string_utf8(env, value, null, 0, @ptrCast(&size)) != c.napi_ok) {
-        jsThrow(env, "Cannot get size for: " ++ name);
+        jsThrow(env, "Cannot get size for string");
         return errors.Napi.CannotGetString;
     }
+
     var buffer: [*]u8 = undefined;
+
+    // wtf utf16...
     if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size, null) != c.napi_ok) {
-        jsThrow(env, "Cannot get fixed length string for variable: " ++ name);
+        jsThrow(env, "Cannot get fixed length string for variable");
         return errors.Napi.CannotGetString;
     }
+
     return buffer[0..size];
 }

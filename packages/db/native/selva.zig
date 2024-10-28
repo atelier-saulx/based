@@ -26,6 +26,8 @@ pub usingnamespace @cImport({
     @cInclude("selva/fast_linear_search.h");
 
     @cInclude("selva/node_id_set.h");
+
+    @cInclude("libdeflate.h");
 });
 
 const selvaError = @cImport({
