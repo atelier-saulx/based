@@ -35,11 +35,14 @@ type Writelog = {
   hash: string
   commonDump: string
   rangeDumps: {
-    file: string
-    hash: string
-    start: number
-    end: number
-  }[]
+    [t: number]: {
+      // TODO add type
+      file: string
+      hash: string
+      start: number
+      end: number
+    }[]
+  }
 }
 
 export type ModCtx = {
@@ -58,6 +61,14 @@ export type ModCtx = {
   queue: Map<number, (id: number) => void>
   db: BasedDb
 }
+
+const createCsmtHashFun = () => createHash('sha1')
+const makeCsmtKey = (typeId: number, start: number) =>
+  typeId * 4294967296 + start
+const destructureCsmtKey = (key: number) => [
+  (key / 4294967296) | 0,
+  (key >>> 1) + (key >>> 31),
+]
 
 export class BasedDb {
   isDraining: boolean = false
@@ -139,10 +150,6 @@ export class BasedDb {
     } catch (err) {}
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
-    db.loadCommon(
-      join(this.fileSystemPath, COMMON_SDB_FILE),
-      this.dbCtxExternal,
-    )
 
     // TODO Read blockSize per type
     let writelog: Writelog = null
@@ -152,16 +159,27 @@ export class BasedDb {
           await fs.readFile(join(this.fileSystemPath, WRITELOG_FILE))
         ).toString(),
       )
-      writelog.rangeDumps.forEach((dump) => {
-        const fname = dump.file
-        const err = db.loadRange(
-          join(this.fileSystemPath, fname),
-          this.dbCtxExternal,
-        )
-        if (err) {
-          console.log(`Failed to load a range. file: "${fname}": ${err}`)
+
+      // Load the common dump
+      db.loadCommon(
+        join(this.fileSystemPath, writelog.commonDump),
+        this.dbCtxExternal,
+      )
+
+      // Load all range dumps
+      for (const typeId in writelog.rangeDumps) {
+        const dumps = writelog.rangeDumps[typeId]
+        for (const dump of dumps) {
+          const fname = dump.file
+          const err = db.loadRange(
+            join(this.fileSystemPath, fname),
+            this.dbCtxExternal,
+          )
+          if (err) {
+            console.log(`Failed to load a range. file: "${fname}": ${err}`)
+          }
         }
-      })
+      }
 
       const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
       if (schema) {
@@ -170,6 +188,7 @@ export class BasedDb {
       }
     } catch (err) {}
 
+    const mt = createMerkleTree(createCsmtHashFun)
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
       const [total, lastId] = this.native.getTypeInfo(
@@ -179,6 +198,34 @@ export class BasedDb {
 
       def.total = total
       def.lastId = writelog ? writelog.types[def.id].lastId : lastId
+
+      const step = writelog.types[def.id].blockSize
+      for (let start = 1; start <= lastId; start += step) {
+        const end = start + step - 1
+        const hash = Buffer.allocUnsafe(16)
+        this.native.getNodeRangeHash(
+          def.id,
+          start,
+          end,
+          hash,
+          this.dbCtxExternal,
+        )
+
+        //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
+
+        const mtKey = makeCsmtKey(def.id, start)
+        mt.insert(mtKey, hash, { file: '', start, end })
+      }
+    }
+
+    if (writelog?.hash) {
+      const origHash = Buffer.from(writelog.hash, 'hex')
+      if (origHash.compare(mt.getRoot()?.hash) != 0) {
+        const hashAfterLoad = mt.getRoot()?.hash.toString('hex')
+        console.error(
+          `WARN: CSMT hash mismatch: ${writelog.hash} != ${hashAfterLoad}`,
+        )
+      }
     }
 
     return []
@@ -298,7 +345,7 @@ export class BasedDb {
   async save() {
     let err: number
     const ts = Date.now()
-    const mt = createMerkleTree(() => createHash('sha1'))
+    const mt = createMerkleTree(createCsmtHashFun)
 
     err = this.native.saveCommon(
       join(this.fileSystemPath, COMMON_SDB_FILE),
@@ -334,7 +381,9 @@ export class BasedDb {
           continue
         }
 
-        const mtKey = def.id * 4294967296 + start
+        //console.log(`save range ${def.id}:${start}-${end} hash:`, hash)
+
+        const mtKey = makeCsmtKey(def.id, start)
         mt.insert(mtKey, hash, { file, start, end })
       }
     }
@@ -345,10 +394,16 @@ export class BasedDb {
       types[def.id] = { lastId: def.lastId, blockSize: this.blockSize }
     }
 
-    const dumps: Writelog['rangeDumps'] = []
-    mt.visitLeafNodes((leaf) =>
-      dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
-    )
+    const dumps: Writelog['rangeDumps'] = {}
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      dumps[def.id] = []
+    }
+    mt.visitLeafNodes((leaf) => {
+      const [typeId] = destructureCsmtKey(leaf.key)
+      dumps[typeId].push({ ...leaf.data, hash: leaf.hash.toString('hex') })
+    })
+
     const data: Writelog = {
       ts,
       types,
