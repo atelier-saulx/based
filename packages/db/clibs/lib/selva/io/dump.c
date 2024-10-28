@@ -25,14 +25,13 @@
 #include "io_struct.h"
 
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
+#define PRINT_SAVE_TIME 0
 
 /*
  * Pick 32-bit primes for these.
  */
-#define DUMP_MAGIC_SCHEMA       3360690301
-#define DUMP_MAGIC_TYPES        3550908863
-#define DUMP_MAGIC_TYPE_BEGIN   2460238717
-#define DUMP_MAGIC_TYPE_END     4229893463
+#define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
+#define DUMP_MAGIC_TYPES        3550908863 /* [range].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -153,10 +152,12 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
 
 static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFields *fields)
 {
+    const size_t nr_fields = fields->nr_fields;
+
     write_dump_magic(io, DUMP_MAGIC_FIELDS);
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
 
-    for (field_t field = 0; field < fields->nr_fields; field++) {
+    for (field_t field = 0; field < nr_fields; field++) {
         struct SelvaFieldsAny any;
 
         any = selva_fields_get2(fields, field);
@@ -169,7 +170,9 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             struct SelvaNode *node = containerof(fields, struct SelvaNode, fields);
             const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
 
+#if 0
             assert(fs->type == any.type);
+#endif
 
             if (fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
                 /* This saves it as a NULL and the loader will skip it. */
@@ -392,33 +395,31 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
 
 int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out)
 {
+#if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
+#endif
     struct selva_io io;
     int err;
 
+#if PRINT_SAVE_TIME
     ts_monotime(&ts_start);
+#endif
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
 
-    const sdb_nr_types_t nr_types = 1;
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
-    io.sdb_write(&nr_types, sizeof(nr_types), 1, &io); /* only one type in this dump. */
-
-    write_dump_magic(&io, DUMP_MAGIC_TYPE_BEGIN);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
 
     struct SelvaNode *node;
     const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
-
-    io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
-
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
 
     selva_hash_reset(hash_state);
+    io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
     if (nr_nodes > 0) {
         do {
@@ -434,11 +435,10 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
 
-    write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
     selva_io_end(&io, NULL);
 
+#if PRINT_SAVE_TIME
     ts_monotime(&ts_end);
-#if 0
     print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
@@ -920,65 +920,20 @@ static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void load_types(struct selva_io *io, struct SelvaDb *db)
 {
-    sdb_nr_types_t nr_types;
-    SVector *types = &db->type_list;
-    struct SVectorIterator it;
-    struct SelvaTypeEntry *te;
-
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
         db_panic("Ivalid types magic");
     }
-    io->sdb_read(&nr_types, sizeof(nr_types), 1, io);
 
-    if (nr_types == SVector_Size(types)) {
-        /*
-         * All types in a single dump.
-         */
-        SVector_ForeachBegin(&it, types);
-        while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-            node_type_t type;
+    node_type_t type;
+    io->sdb_read(&type, sizeof(type), 1, io);
 
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
-                db_panic("Invalid nodes magic for type %d", te->type);
-            }
-
-            io->sdb_read(&type, sizeof(type), 1, io);
-            if (type != te->type) {
-                db_panic("Incorrect type found: %d != %d", type, te->type);
-            }
-
-            load_nodes(io, db, te);
-
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
-                db_panic("Invalid entry magic for type %d", te->type);
-            }
-        }
-    } else {
-        /*
-         * Load only the types found in this file.
-         */
-        for (sdb_nr_types_t i = 0; i < nr_types; i++) {
-            node_type_t type;
-            struct SelvaTypeEntry *te;
-
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
-                db_panic("Invalid nodes magic for type");
-            }
-
-            io->sdb_read(&type, sizeof(type), 1, io);
-
-            te = selva_get_type_by_index(db, type);
-            if (!te) {
-                db_panic("Type not found: %d", type);
-            }
-
-            load_nodes(io, db, te);
-
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
-                db_panic("Invalid entry magic for type %d", te->type);
-            }
-        }
+    struct SelvaTypeEntry *te;
+    te = selva_get_type_by_index(db, type);
+    if (!te) {
+        db_panic("Type not found: %d", type);
     }
+
+    load_nodes(io, db, te);
 }
 
 
