@@ -272,7 +272,7 @@ int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, u
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
         set_string_crc(s, str, len, crc, flags);
     } else if (flags & SELVA_STRING_MUTABLE) {
-        const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+        const size_t trail = !!(flags & SELVA_STRING_CRC) * sizeof(uint32_t);
 
         s->p = selva_malloc(len + 1 + trail);
         set_string_crc(s, str, len, crc, flags);
@@ -285,7 +285,7 @@ int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, u
 
 struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
 {
-    const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+    const size_t trail = !!(flags & SELVA_STRING_CRC) * sizeof(uint32_t);
     const size_t alloc_len = len + trail;
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
@@ -753,7 +753,14 @@ void selva_string_freeze(struct selva_string *s)
 
 int selva_string_verify_crc(const struct selva_string *s)
 {
-    return verify_parity(s) && get_buf(s)[s->len] == '\0' && (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s);
+    if (!verify_parity(s) || get_buf(s)[s->len] != '\0') {
+        return 0;
+    }
+    if (s->flags & (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) {
+        return 1; /* We don't check compressed strings because the CRC is for the uncompressed string. */
+    }
+
+    return (s->flags & SELVA_STRING_CRC) && get_crc(s) == calc_crc(s);
 }
 
 uint32_t selva_string_get_crc(const struct selva_string *s)
