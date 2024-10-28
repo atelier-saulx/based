@@ -6,6 +6,14 @@ export default {
     // pstart,
   },
 
+  externalFromInt(address: BigInt): any {
+    return db.externalFromInt(address)
+  },
+
+  intFromExternal(external: any): BigInt {
+    return db.intFromExternal(external)
+  },
+
   modify: (buffer: Buffer, len: number, dbCtx: any): any => {
     return db.modify(buffer, len, dbCtx)
   },
@@ -34,7 +42,7 @@ export default {
     start: number,
     end: number,
     dbCtx: any,
-    hashOut: Buffer
+    hashOut: Buffer,
   ): number => {
     const buf = Buffer.concat([Buffer.from(path), Buffer.from([0])])
     return db.saveRange(buf, typeCode, start, end, dbCtx, hashOut)

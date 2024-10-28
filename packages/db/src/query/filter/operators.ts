@@ -23,6 +23,7 @@ export type Operator =
 // 7 = smaller then
 // 8 = larger then inclusive
 // 9 = smaller then inclusive
+
 // 10 = range
 // 11 = exclude range
 // -------------------------------------------
@@ -48,6 +49,14 @@ export const operationToByte = (op: Operator) => {
 
   if (op === '<') {
     return 7
+  }
+
+  if (op === '>=') {
+    return 8
+  }
+
+  if (op === '<=') {
+    return 9
   }
 
   return 0

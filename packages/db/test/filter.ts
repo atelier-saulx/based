@@ -158,14 +158,13 @@ await test('filter', async (t) => {
   )
   equal(measure / amount < 0.05, true, 'multi ref filter lower then 0.1ms')
 
-  console.log(
-    db
-      .query('machine')
-      .include('*')
-      .filter('lastPing', '>', 'now')
-      .get()
-      .inspect(20),
-  )
+  db.query('machine')
+    .include('*')
+    .filter('scheduled', '>', 'now-60s')
+    .filter('scheduled', '<', 'now + 60m')
+
+    .get()
+    .inspect(1)
 
   // equal(
   //   db

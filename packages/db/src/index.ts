@@ -18,10 +18,12 @@ import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
-import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
+import { createTree as createMerkleTree } from '../src/csmt/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/index.js'
+export const native = db
+export { BasedQueryResponse } from './query/BasedIterable.js'
 
 const SCHEMA_FILE = 'schema.json'
 const COMMON_SDB_FILE = 'common.sdb'
@@ -109,6 +111,7 @@ export class BasedDb {
       lastId: number
     }[]
   > {
+    console.log('start')
     this.id = stringHash(this.fileSystemPath) >>> 0
 
     if (opts.clean) {
@@ -146,9 +149,9 @@ export class BasedDb {
         this.putSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
-
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
+
       const [total, lastId] = this.native.getTypeInfo(
         def.id,
         this.dbCtxExternal,
@@ -328,7 +331,12 @@ export class BasedDb {
     mt.visitLeafNodes((leaf) =>
       dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
     )
-    const data = { ts, blockSize: this.blockSize, hash: mt.getRoot().hash.toString('hex'), dumps }
+    const data = {
+      ts,
+      blockSize: this.blockSize,
+      hash: mt.getRoot().hash.toString('hex'),
+      dumps,
+    }
     fs.appendFile(
       join(this.fileSystemPath, 'writelog.json'),
       JSON.stringify(data),
