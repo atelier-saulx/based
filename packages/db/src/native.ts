@@ -14,8 +14,8 @@ export default {
     return db.intFromExternal(external)
   },
 
-  modify: (buffer: Buffer, len: number, dbCtx: any): any => {
-    return db.modify(buffer, len, dbCtx)
+  modify: (buffer: Buffer, dbCtx: any): any => {
+    return db.modify(buffer, dbCtx)
   },
 
   getQueryBuf: (q: Buffer, dbCtx: any): Buffer | null => {
