@@ -77,25 +77,23 @@ static const char magic_end[]   = { 'D', 'N', 'E', 'A', 'V', 'L', 'E', 'S' };
 
 static inline void sdb_hash_init(struct selva_io *io)
 {
-    io->hash_state = selva_hash_create_state();
-    selva_hash_reset(io->hash_state);
+    io->checksum_state = 0;
 }
 
 static inline void sdb_hash_deinit(struct selva_io *io)
 {
-    selva_hash_free_state(io->hash_state);
+    io->checksum_state = 0;
 }
 
 static inline void sdb_hash_update(struct selva_io *io, void const *in, size_t len)
 {
-    selva_hash_update(io->hash_state, in, len);
+    io->checksum_state += len;
 }
 
 static inline void sdb_hash_finalize(struct selva_io *io)
 {
-    selva_hash128_t result = selva_hash_digest(io->hash_state);
-    memcpy(io->computed_hash, &result, sizeof(result));
-    static_assert(sizeof(io->computed_hash) == sizeof(result));
+    static_assert(sizeof(io->computed_hash) == sizeof(io->checksum_state));
+    memcpy(io->computed_hash, &io->checksum_state, sizeof(io->computed_hash));
 }
 
 /**
