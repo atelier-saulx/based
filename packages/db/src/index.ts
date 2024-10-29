@@ -1,4 +1,4 @@
-import { create, update, remove } from './modify/index.js'
+import { createHash } from 'crypto'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
@@ -7,6 +7,7 @@ import {
   createSchemaTypeDef,
   schemaToSelvaBuffer,
 } from './schema/schema.js'
+import { wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder, hash, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
@@ -16,7 +17,8 @@ import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
-import { createTree as createMerkleTree } from '../src/csmt/index.js'
+import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
+import { create, remove, update } from './modify/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
