@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { languages } from './src/i18n/index.js'
+import { languages } from '../src/i18n/index.js'
 
 const capitalizeWords = (str?: string, fallback?: string) => {
   const target = str || fallback || ''
