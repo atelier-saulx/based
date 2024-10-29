@@ -23,21 +23,17 @@ await test('boolean', async (t) => {
     },
   })
 
-  console.log(db.create('user', {}))
+  db.create('user', {})
 
-  console.log(
-    db.create('user', {
-      isNice: true,
-    }),
-  )
+  db.create('user', {
+    isNice: true,
+  })
 
-  console.log(
-    db.create('user', {
-      isNice: false,
-    }),
-  )
+  db.create('user', {
+    isNice: false,
+  })
 
-  db.drain() // will become async
+  db.drain()
 
   deepEqual(db.query('user').get().toObject(), [
     { id: 1, isNice: false },

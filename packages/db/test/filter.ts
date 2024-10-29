@@ -31,6 +31,7 @@ await test('filter', async (t) => {
       },
       env: {
         props: {
+          standby: 'boolean',
           status: 'uint8',
           name: 'string',
           org: {
@@ -295,17 +296,20 @@ await test('filter', async (t) => {
   const ids = await Promise.all([
     db.create('machine', {
       temperature: 20,
-      env: { id: derpEnv, $rating: 0.5 },
+      env: derpEnv,
+      // env: { id: derpEnv, $rating: 0.5 },
       lastPing: 1,
     }),
     db.create('machine', {
       temperature: 2,
-      env: { id: derpEnv, $rating: 0.75 },
+      env: derpEnv,
+      // env: { id: derpEnv, $rating: 0.75 },
       lastPing: 2,
     }),
     db.create('machine', {
       temperature: 3,
-      env: { id: derpEnv, $rating: 1 },
+      env: derpEnv,
+      // env: { id: derpEnv, $rating: 1 },
       lastPing: 3,
     }),
   ])
@@ -317,6 +321,7 @@ await test('filter', async (t) => {
         id: 3,
         name: 'derp env',
         status: 5,
+        standby: false,
       },
     ],
     'Filter by references length',
@@ -329,6 +334,7 @@ await test('filter', async (t) => {
         id: 3,
         name: 'derp env',
         status: 5,
+        standby: false,
       },
     ],
     'Filter by references equals',
@@ -339,11 +345,8 @@ await test('filter', async (t) => {
       .query('machine')
       .include('env', '*')
       .filter('env.status', '=', 5)
-      // .range(0, 1)
-      //  'env.$rating' broken...
       .get()
       .inspect(3)
-      // .debug()
       .toObject(),
     [
       {
@@ -355,7 +358,7 @@ await test('filter', async (t) => {
         isLive: false,
         status: undefined,
         scheduled: 0,
-        env: { id: 3, status: 5, name: 'derp env' },
+        env: { id: 3, status: 5, name: 'derp env', standby: false },
       },
       {
         id: 100002,
@@ -366,7 +369,7 @@ await test('filter', async (t) => {
         isLive: false,
         status: undefined,
         scheduled: 0,
-        env: { id: 3, status: 5, name: 'derp env' },
+        env: { id: 3, status: 5, name: 'derp env', standby: false },
       },
       {
         id: 100003,
@@ -377,7 +380,7 @@ await test('filter', async (t) => {
         isLive: false,
         status: undefined,
         scheduled: 0,
-        env: { id: 3, status: 5, name: 'derp env' },
+        env: { id: 3, status: 5, name: 'derp env', standby: false },
       },
     ],
   )
@@ -401,4 +404,14 @@ await test('filter', async (t) => {
       },
     ],
   )
+
+  deepEqual(db.query('env').filter('standby').get().inspect(5).toObject(), [])
+
+  await db.update('env', derpEnv, {
+    standby: true,
+  })
+
+  deepEqual(db.query('env').filter('standby').get().inspect(5).toObject(), [
+    { id: 3, standby: true, status: 5, name: 'derp env' },
+  ])
 })

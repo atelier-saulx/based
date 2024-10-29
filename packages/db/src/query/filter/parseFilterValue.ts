@@ -5,6 +5,7 @@ import {
   CREATED,
   UPDATED,
   ENUM,
+  BOOLEAN,
 } from '../../schema/types.js'
 
 // -------------------------------------------
@@ -44,7 +45,9 @@ export const parseFilterValue = (
   prop: PropDef | PropDefEdge,
   value: any,
 ): number => {
-  if (prop.typeIndex === ENUM) {
+  if (prop.typeIndex === BOOLEAN) {
+    return value ? 1 : 0
+  } else if (prop.typeIndex === ENUM) {
     return prop.reverseEnum[value] + 1
   } else if (
     prop.typeIndex === TIMESTAMP ||
