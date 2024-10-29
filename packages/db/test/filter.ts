@@ -333,14 +333,49 @@ await test('filter', async (t) => {
     'Filter by references equals',
   )
 
-  console.log('BLA')
-  // references
-  db.query('machine')
-    .include('env', '*')
-    .filter('env.status', '=', 5)
-    .get()
-    .inspect(5)
-    .toObject()
+  deepEqual(
+    db
+      .query('machine')
+      .include('env', '*')
+      .filter('env.status', '=', 5)
+      .get()
+      .toObject(),
+    [
+      {
+        id: 100001,
+        derp: 0,
+        lastPing: 1,
+        temperature: 20,
+        requestsServed: 0,
+        isLive: false,
+        status: undefined,
+        scheduled: 0,
+        env: { id: 3, status: 5, name: 'derp env' },
+      },
+      {
+        id: 100002,
+        derp: 0,
+        lastPing: 2,
+        temperature: 2,
+        requestsServed: 0,
+        isLive: false,
+        status: undefined,
+        scheduled: 0,
+        env: { id: 3, status: 5, name: 'derp env' },
+      },
+      {
+        id: 100003,
+        derp: 0,
+        lastPing: 3,
+        temperature: 3,
+        requestsServed: 0,
+        isLive: false,
+        status: undefined,
+        scheduled: 0,
+        env: { id: 3, status: 5, name: 'derp env' },
+      },
+    ],
+  )
 
   // db.query('env').filter('machines.$length', '=', 0).get().inspect(5).toObject()
 })
