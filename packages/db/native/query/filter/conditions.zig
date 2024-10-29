@@ -7,6 +7,7 @@ const t = @import("./types.zig");
 const Mode = t.Mode;
 const Op = t.Operator;
 const Prop = @import("../../types.zig").Prop;
+const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 
 pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
     var i: u16 = 0;
@@ -16,11 +17,34 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
         const start = readInt(u16, q, i + 3);
         const op: Op = @enumFromInt(q[i + 5]);
         const prop: Prop = @enumFromInt(q[i + 6]);
-
-        // References does not need to be passed anymore
-        // Pass fieldType in the filter
-
-        if (mode == Mode.orFixed) {
+        if (prop == Prop.REFERENCE) {
+            // [or = 1]  [repeat 2] [op] [ti] [parsed] [typeId 2]
+            const repeat = start;
+            if (op == Op.equal) {
+                const refType = q[7];
+                if (refType == 2) {
+                    return false;
+                } else if (refType == 0) {
+                    if (!fillReferenceFilter(ctx, q[i + 7 .. i + 10 + repeat * 8])) {
+                        return false;
+                    }
+                }
+                var j: u8 = 0;
+                const query = q[i + 10 .. i + repeat * 8 + 10];
+                if (repeat > 1) {
+                    if (!batch.equalsOr(8, v, query)) {
+                        return false;
+                    }
+                } else {
+                    while (j < query.len) : (j += 1) {
+                        if (v[j] != query[j]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            i += 10 + valueSize;
+        } else if (mode == Mode.orFixed) {
             const repeat = readInt(u16, q, i + 7);
             const query = q[i + 9 .. i + valueSize * repeat + 9];
             if (op == Op.equal) {
@@ -34,39 +58,6 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
                 }
             }
             i += 9 + valueSize * repeat;
-        } else if (mode == Mode.default and prop == Prop.REFERENCE) {
-            const query = q[i + 7 .. i + valueSize + 7];
-            const refType = query[0];
-            if (refType == 2) {
-                return false;
-            } else if (refType == 0) {
-                const id = readInt(u32, query, query.len - 4);
-                // ctx
-                const schemaType = readInt(u16, query, query.len - 6);
-                std.debug.print("INIT GET REF FILTER id: {d} type: {any}  \n", .{
-                    id,
-                    schemaType,
-                });
-                const typeEntry = db.getType(ctx, schemaType) catch {
-                    return false;
-                };
-                const ref = db.getNode(id, typeEntry);
-                if (ref) |r| {
-                    query[0] = 1;
-                    const arr: [*]u8 = @ptrCast(@alignCast(r));
-                    @memcpy(query[1..query.len], arr);
-                } else {
-                    query[0] = 2;
-                    return false;
-                }
-            }
-            var j: u8 = 0;
-            while (j < 8) : (j += 1) {
-                if (v[j] != query[j + 1]) {
-                    return false;
-                }
-            }
-            i += 7 + valueSize;
         } else if (mode == Mode.default) {
             const query = q[i + 7 .. i + valueSize + 7];
             if (op == Op.equal) {

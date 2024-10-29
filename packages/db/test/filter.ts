@@ -249,18 +249,53 @@ await test('filter', async (t) => {
     'Negative temperature (check value)',
   )
 
-  // equal(
-  db.query('machine')
-    .include('*')
-    .filter('env', '=', emptyEnv)
-    // .sort('lastPing')
-    .range(0, 10)
-    .get()
-    .inspect(1)
-  // .toObject()[0],
-  //   {},
-  //   'Filter by reference',
-  // )
+  equal(
+    db
+      .query('machine')
+      .include('id')
+      .filter('env', '=', env)
+      .range(0, 10)
+      .get()
+      .inspect(1)
+      .toObject(),
+    [
+      { id: 2 },
+      { id: 4 },
+      { id: 6 },
+      { id: 8 },
+      { id: 10 },
+      { id: 12 },
+      { id: 14 },
+      { id: 16 },
+      { id: 18 },
+      { id: 20 },
+    ],
+    'Filter by reference',
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('id')
+      .filter('env', '=', [emptyEnv, env])
+      .range(0, 10)
+      .get()
+      .inspect(1)
+      .toObject(),
+    [
+      { id: 2 },
+      { id: 4 },
+      { id: 6 },
+      { id: 8 },
+      { id: 10 },
+      { id: 12 },
+      { id: 14 },
+      { id: 16 },
+      { id: 18 },
+      { id: 20 },
+    ],
+    'Filter by reference (multiple)',
+  )
 
   // reference
 })
