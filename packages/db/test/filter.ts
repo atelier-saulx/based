@@ -256,7 +256,6 @@ await test('filter', async (t) => {
       .filter('env', '=', env)
       .range(0, 10)
       .get()
-      .inspect(1)
       .toObject(),
     [
       { id: 2 },
@@ -281,7 +280,6 @@ await test('filter', async (t) => {
       .filter('env', '=', [emptyEnv, env])
       .range(0, 10)
       .get()
-      .inspect(1)
       .toObject(),
     [{ id: 100000 }],
     'Filter by reference (multiple)',
@@ -310,7 +308,7 @@ await test('filter', async (t) => {
   ])
 
   deepEqual(
-    db.query('env').filter('machines', '<', 10).get().inspect(5).toObject(),
+    db.query('env').filter('machines', '<', 10).get().toObject(),
     [
       {
         id: 3,
