@@ -650,6 +650,10 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
     }
 }
 
+/**
+ * Update node hash by using a temp hash state allocated earlier.
+ * @param tmp_hash_state is only used for computation and it's reset before use.
+ */
 static void selva_node_hash_update_internal(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
 {
     selva_hash128_t res;
