@@ -48,6 +48,7 @@ await test('filter', async (t) => {
         props: {
           derp: 'int32',
           lastPing: 'number',
+          temperature: 'number',
           requestsServed: 'uint32',
           env: {
             ref: 'env',
@@ -86,6 +87,7 @@ await test('filter', async (t) => {
       requestsServed: i,
       lastPing: i + 1,
       derp: -i,
+      temperature: Math.random() * 40 - Math.random() * 40,
       isLive: !!(i % 2),
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
     }).tmpId
@@ -218,9 +220,32 @@ await test('filter', async (t) => {
       .filter('derp', '<=', 0)
       .filter('derp', '>', -5)
       .get()
-      .inspect(10)
       .toObject().length,
     5,
     'Negative range',
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('temperature', '<=', 0)
+      .filter('temperature', '>', -0.1)
+      .get()
+      .toObject().length < 500,
+    true,
+    'Negative temperature (result amount)',
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('temperature', '<=', 0)
+      .filter('temperature', '>', -0.1)
+      .get()
+      .toObject()[0].temperature < 0,
+    true,
+    'Negative temperature (check value)',
   )
 })
