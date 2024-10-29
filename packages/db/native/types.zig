@@ -30,7 +30,13 @@ pub const Prop = enum(u8) {
     ID = 26,
     pub fn isSigned(self: Prop) bool {
         return switch (self) {
-            Prop.INT16, Prop.INT32, Prop.INT64 => true,
+            Prop.INT16,
+            Prop.INT32,
+            Prop.INT64,
+            Prop.TIMESTAMP,
+            Prop.CREATED,
+            Prop.UPDATED,
+            => true,
             else => false,
         };
     }
