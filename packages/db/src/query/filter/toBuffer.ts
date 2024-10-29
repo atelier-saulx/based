@@ -44,7 +44,6 @@ export const fillConditionsBuffer = (
   })
 
   if (conditions.references) {
-    // 5
     for (const [refField, refConditions] of conditions.references) {
       result[lastWritten] = 254
       lastWritten++
@@ -56,19 +55,12 @@ export const fillConditionsBuffer = (
       lastWritten++
       const sizeIndex = lastWritten
       lastWritten += 2
-      // result[lastWritten + 3] = refField
-      // lastWritten += 4
-      // result[lastWritten] = refConditions.schema.idUint8[0]
-      // lastWritten += 1
-      // result[lastWritten] = refConditions.schema.idUint8[1]
-      // lastWritten += 1
       const size = fillConditionsBuffer(result, refConditions, lastWritten)
-      console.log({ size, lastWritten })
       result.writeUint16LE(size, sizeIndex)
-      // 6
       lastWritten += size
     }
   }
+
   // if (conditions.edges) {
   //   conditions.edges.forEach((v, k) => {
   //     result[lastWritten] = 252
