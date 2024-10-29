@@ -1,5 +1,4 @@
-import { join as pathJoin } from 'node:path'
-import { copyFile, mkdir, readdir } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
@@ -35,13 +34,13 @@ await test('save simple range', async (t) => {
   const slen = 80
   const xn_len = italy.length / slen
   for (let i = 1; i <= N; i++) {
-    let xn1 = ((i * slen) / slen | 0) % xn_len
+    let xn1 = (((i * slen) / slen) | 0) % xn_len
     let xn2 = (xn1 + 1) % xn_len
 
     if (xn1 > xn2) {
-      xn1 ^= xn2;
-      xn2 ^= xn1;
-      xn1 ^= xn2;
+      xn1 ^= xn2
+      xn2 ^= xn1
+      xn1 ^= xn2
     }
 
     db.create('user', {
@@ -65,20 +64,12 @@ await test('save simple range', async (t) => {
     age: 1337,
   })
   db.drain()
-  deepEqual(
-    db
-      .query('user')
-      .include('age')
-      .range(0, 1)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
+  deepEqual(db.query('user').include('age').range(0, 1).get().toObject(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
 
   const save2_start = performance.now()
   await db.stop()
@@ -86,13 +77,12 @@ await test('save simple range', async (t) => {
   console.error('save2 rdy', save2_end - save2_start)
   const secondHash = db.merkleTree.getRoot().hash
 
-  equal((save2_end - save2_start) < (save1_end - save1_start), true)
+  equal(save2_end - save2_start < save1_end - save1_start, true)
   equal(!firstHash.compare(secondHash), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 4)
-  deepEqual(ls,
-  [
+  deepEqual(ls, [
     '65281_100001_200000.sdb',
     '65281_1_100000.sdb',
     '65281_200001_300000.sdb',
@@ -100,7 +90,7 @@ await test('save simple range', async (t) => {
     'common.sdb',
     'data.mdb',
     'schema.json',
-    'writelog.json'
+    'writelog.json',
   ])
 
   const load_start = performance.now()
@@ -115,32 +105,19 @@ await test('save simple range', async (t) => {
   const load_end = performance.now()
   console.log('load rdy', load_end - load_start)
 
-  deepEqual(
-    newDb
-      .query('user')
-      .include('name')
-      .range(0, 2)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr flop 1',
-      },
-      {
-        id: 2,
-        name: 'mr flop 2',
-      },
-    ],
-  )
+  deepEqual(newDb.query('user').include('name').range(0, 2).get().toObject(), [
+    {
+      id: 1,
+      name: 'mr flop 1',
+    },
+    {
+      id: 2,
+      name: 'mr flop 2',
+    },
+  ])
 
   deepEqual(
-    newDb
-      .query('user')
-      .include('name')
-      .range(200_000, 2)
-      .get()
-      .toObject(),
+    newDb.query('user').include('name').range(200_000, 2).get().toObject(),
     [
       {
         id: 200001,

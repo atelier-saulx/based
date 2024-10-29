@@ -43,7 +43,7 @@ export function writeString(
       appendU8(ctx, DELETE)
     }
   } else {
-    const size = Buffer.byteLength(value, 'utf8')
+    let size = Buffer.byteLength(value, 'utf8')
     if (ctx.len + 11 + 4 + size > ctx.max) {
       return RANGE_ERR
     }
@@ -52,10 +52,10 @@ export function writeString(
       ctx.hasStringField++
     }
     setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
-
-    appendU8(ctx, modifyOp)
-    const sizepos = reserveU32(ctx)
-    const newsize = appendUtf8(ctx, value)
-    writeU32(ctx, newsize, sizepos)
+    ctx.buf[ctx.len] = modifyOp
+    ctx.len += 5
+    size = write(ctx.buf, value, ctx.len, ctx.db.noCompression)
+    ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
+    ctx.len += size
   }
 }
