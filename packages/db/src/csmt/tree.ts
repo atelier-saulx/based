@@ -201,6 +201,14 @@ export function createTree(createHash: () => any): Csmt {
     }
   }
 
+  function search(node: TreeNode, k: TreeKey): TreeNode | null {
+    if (!node || (k === node.key && !node.left && !node.right)) return node
+    const { left, right } = node
+    if (left && k <= left.key) return search(left, k)
+    if (right && k <= right.key) return search(right, k)
+    return null
+  }
+
   return {
     getRoot: () => root,
     insert: (k: TreeKey, h: Buffer, data: any = null) => {
@@ -209,18 +217,18 @@ export function createTree(createHash: () => any): Csmt {
       }
 
       const newLeaf = createLeaf(k, h, data)
-
       root = root ? insert(root, newLeaf) : newLeaf
     },
     delete: (k: TreeKey) => {
-      if (!root) {
-        throw new Error('The tree is empty')
+      if (root) {
+        try {
+          root = deleteNode(root, k)
+        } catch (err) {}
       }
-
-      root = deleteNode(root, k)
     },
     diff,
     membershipProof: (k: TreeKey): Proof => membershipProof(root, k),
     visitLeafNodes: (cb: (leaf: TreeNode) => void) => _visitLeafNodes(root, cb),
+    search: (k: TreeKey) => search(root, k),
   }
 }

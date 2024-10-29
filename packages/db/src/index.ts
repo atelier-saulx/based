@@ -32,7 +32,7 @@ const block_sdb_file = (typeId: number, start: number, end: number) =>
 type Writelog = {
   ts: number
   types: { [t: number]: { lastId: number; blockSize: number } }
-  hash: string
+  hash?: string
   commonDump: string
   rangeDumps: {
     [t: number]: {
@@ -62,19 +62,37 @@ export type ModCtx = {
   db: BasedDb
 }
 
+type CsmtNodeRange = {
+  file: string
+  typeId: number
+  start: number
+  end: number
+}
+
 const createCsmtHashFun = db.createHash
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
 const destructureCsmtKey = (key: number) => [
   (key / 4294967296) | 0,
-  (key >>> 1) + (key >>> 31),
+  (key >>> 31) * 2147483648 + (key & 0x7fffffff),
 ]
+const makeCsmtKeyFromNodeId = (
+  typeId: number,
+  blockSize: number,
+  nodeId: number,
+) => {
+  const tmp = nodeId - +!(nodeId % blockSize)
+  return typeId * 4294967296 + ((tmp / blockSize) | 0) * blockSize + 1
+}
 
 export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: ModCtx
-  blockSize = 10000
+
+  blockSize = 100_000
+  merkleTree = createMerkleTree(createCsmtHashFun)
+  dirtyRanges = new Set<number>()
 
   id: number
 
@@ -151,7 +169,6 @@ export class BasedDb {
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
 
-    // TODO Read blockSize per type
     let writelog: Writelog = null
     try {
       writelog = JSON.parse(
@@ -188,7 +205,6 @@ export class BasedDb {
       }
     } catch (err) {}
 
-    const mt = createMerkleTree(createCsmtHashFun)
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
       const [total, lastId] = this.native.getTypeInfo(
@@ -198,6 +214,9 @@ export class BasedDb {
 
       def.total = total
       def.lastId = writelog ? writelog.types[def.id].lastId : lastId
+
+      // TODO This should be stored per type
+      this.blockSize = writelog.types[def.id].blockSize
 
       const step = writelog.types[def.id].blockSize
       for (let start = 1; start <= lastId; start += step) {
@@ -214,16 +233,16 @@ export class BasedDb {
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
 
         const mtKey = makeCsmtKey(def.id, start)
-        mt.insert(mtKey, hash, { file: '', start, end })
+        this.merkleTree.insert(mtKey, hash, { file: '', start, end })
       }
     }
 
     if (writelog?.hash) {
-      const origHash = Buffer.from(writelog.hash, 'hex')
-      if (origHash.compare(mt.getRoot()?.hash) != 0) {
-        const hashAfterLoad = mt.getRoot()?.hash.toString('hex')
+      const oldHash = Buffer.from(writelog.hash, 'hex')
+      const newHash = this.merkleTree.getRoot()?.hash
+      if (oldHash.compare(newHash) != 0) {
         console.error(
-          `WARN: CSMT hash mismatch: ${writelog.hash} != ${hashAfterLoad}`,
+          `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
         )
       }
     }
@@ -288,6 +307,10 @@ export class BasedDb {
     // TODO fix
   }
 
+  markNodeDirty(typeId: number, nodeId: number): void {
+    this.dirtyRanges.add(makeCsmtKeyFromNodeId(typeId, this.blockSize, nodeId))
+  }
+
   create(type: string, value: any): ModifyRes {
     return create(this, type, value)
   }
@@ -345,7 +368,6 @@ export class BasedDb {
   async save() {
     let err: number
     const ts = Date.now()
-    const mt = createMerkleTree(createCsmtHashFun)
 
     err = this.native.saveCommon(
       join(this.fileSystemPath, COMMON_SDB_FILE),
@@ -355,38 +377,31 @@ export class BasedDb {
       console.error(`Save common failed: ${err}`)
     }
 
-    for (const key in this.schemaTypesParsed) {
-      const def = this.schemaTypesParsed[key]
-      const [_total, lastId] = this.native.getTypeInfo(
-        def.id,
+    for (const mtKey of this.dirtyRanges) {
+      const [typeId, start] = destructureCsmtKey(mtKey)
+      const end = start + this.blockSize - 1
+      const file = block_sdb_file(typeId, start, end)
+      const path = join(this.fileSystemPath, file)
+      const hash = Buffer.allocUnsafe(16)
+      err = this.native.saveRange(
+        path,
+        typeId,
+        start,
+        end,
         this.dbCtxExternal,
+        hash,
       )
-      const step = this.blockSize
-
-      for (let start = 1; start <= lastId; start += step) {
-        const end = start + step - 1
-        const file = block_sdb_file(def.id, start, end)
-        const path = join(this.fileSystemPath, file)
-        const hash = Buffer.allocUnsafe(16)
-        err = this.native.saveRange(
-          path,
-          def.id,
-          start,
-          end,
-          this.dbCtxExternal,
-          hash,
-        )
-        if (err) {
-          console.error(`Save ${def.id}:${start}-${end} failed: ${err}`)
-          continue
-        }
-
-        //console.log(`save range ${def.id}:${start}-${end} hash:`, hash)
-
-        const mtKey = makeCsmtKey(def.id, start)
-        mt.insert(mtKey, hash, { file, start, end })
+      if (err) {
+        console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
+        return // TODO What to do with the merkle tree in this situation?
       }
+
+      // console.log(`save range ${typeId}:${start}-${end} hash:`, hash)
+
+      this.merkleTree.delete(mtKey)
+      this.merkleTree.insert(mtKey, hash, { file, start, end })
     }
+    this.dirtyRanges.clear()
 
     const types: Writelog['types'] = {}
     for (const key in this.schemaTypesParsed) {
@@ -399,17 +414,21 @@ export class BasedDb {
       const def = this.schemaTypesParsed[key]
       dumps[def.id] = []
     }
-    mt.visitLeafNodes((leaf) => {
+    this.merkleTree.visitLeafNodes((leaf) => {
       const [typeId] = destructureCsmtKey(leaf.key)
-      dumps[typeId].push({ ...leaf.data, hash: leaf.hash.toString('hex') })
+      const data: CsmtNodeRange = leaf.data
+      dumps[typeId].push({ ...data, hash: leaf.hash.toString('hex') })
     })
 
     const data: Writelog = {
       ts,
       types,
-      hash: mt.getRoot().hash.toString('hex'),
       commonDump: COMMON_SDB_FILE,
       rangeDumps: dumps,
+    }
+    const mtRoot = this.merkleTree.getRoot()
+    if (mtRoot) {
+      data.hash = mtRoot.hash.toString('hex')
     }
     fs.appendFile(
       join(this.fileSystemPath, WRITELOG_FILE),

@@ -54,10 +54,41 @@ await test('save simple range', async (t) => {
 
   const res = db.drain()
   console.error('created all nodes', res)
-  const save_start = performance.now()
+
+  const save1_start = performance.now()
+  await db.save()
+  const save1_end = performance.now()
+  console.error('save1 rdy', save1_end - save1_start)
+  const firstHash = db.merkleTree.getRoot().hash
+
+  db.update('user', 1, {
+    age: 10,
+  })
+  db.drain()
+  deepEqual(
+    db
+      .query('user')
+      .include('age')
+      .range(0, 1)
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        age: 10,
+      },
+    ],
+  )
+
+  const save2_start = performance.now()
   await db.stop()
-  const save_end = performance.now()
-  console.error('save rdy', save_end - save_start)
+  const save2_end = performance.now()
+  console.error('save2 rdy', save2_end - save2_start)
+  const secondHash = db.merkleTree.getRoot().hash
+
+  equal((save2_end - save2_start) < (save1_end - save1_start), true)
+  console.log(firstHash, secondHash)
+  equal(!firstHash.compare(secondHash), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 4)

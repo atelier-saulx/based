@@ -28,6 +28,7 @@ const _addModify = (
   tree: SchemaTypeDef['tree'],
   overwrite: boolean,
 ) => {
+  ctx.db.markNodeDirty(schema.id, res.tmpId)
   for (const key in obj) {
     const propDef = tree[key]
     if (propDef === undefined) {

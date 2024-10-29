@@ -16,6 +16,7 @@ function writeRef(
   modifyOp: ModifyOp,
   hasEdges: boolean,
 ) {
+  ctx.db.markNodeDirty(t.inverseTypeId, id)
   setCursor(ctx, schema, t.prop, res.tmpId, modifyOp)
   ctx.buf[ctx.len] = modifyOp
   ctx.buf[ctx.len + 1] = hasEdges ? 1 : 0
