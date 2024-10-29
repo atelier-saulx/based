@@ -316,7 +316,20 @@ export default {
             },
           ],
         },
-        overview: {},
+        overview: {
+          description:
+            'Check the status from your infra, live connections, machines and services.',
+          options: [
+            {
+              parameter: '--monitor',
+              description: 'To display the overview in an interactive UI.',
+            },
+            {
+              parameter: '--stream',
+              description: 'To display the overview in real time.',
+            },
+          ],
+        },
       },
     },
     deploy: {

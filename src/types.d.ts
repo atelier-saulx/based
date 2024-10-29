@@ -109,6 +109,14 @@ declare global {
           separator?: boolean,
         ) => Promise<any>
       }
+
+      type Terminal = {
+        title: string,
+        header: string = '',
+        lines?: {
+          sort?: 'asc' | 'desc',
+        },
+      }
     }
 
     namespace Commands {
@@ -228,6 +236,10 @@ declare global {
       }
 
       type RenderData = (data: AdminLogsData[] | EnvLogsData[]) => void
+    }
+
+    namespace Infra {
+      type Overview = {}
     }
 
     type ConfigBase = BasedFunctionConfig & {

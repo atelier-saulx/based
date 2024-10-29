@@ -1,4 +1,4 @@
-import { AppContext, getTerminal } from '../../shared/index.js'
+import { AppContext } from '../../shared/index.js'
 import {
   filterLogs,
   formatLogs,
@@ -10,8 +10,7 @@ export const visualizer = async (
   context: AppContext,
   filters: Based.Logs.Filter,
 ) => {
-  const { basedClient, envHubBasedCloud, adminHubBasedCloud } =
-    await context.getBasedClients()
+  const { destroy } = await context.getBasedClients()
   const { cluster, org, env, project } = await context.getProgram()
 
   const templateLabels = (name: string, value: string) =>
@@ -85,22 +84,23 @@ export const visualizer = async (
   let renderData: Based.Logs.RenderData
 
   if (filters.monitor) {
-    const { kill, addMessage } = getTerminal(
-      context.get('appName'),
-      `${context.get('appTitle')}\n` +
+    const { kill, addLine } = context.getTerminal({
+      title: context.get('appName'),
+      header:
+        `${context.get('appTitle')}\n` +
         `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}\n` +
         `Active Filters: [${filterLabels.join(' | ')}]`,
-      filters.sort,
-    )
+      lines: {
+        sort: filters.sort,
+      },
+    })
 
     kill(() => {
-      basedClient.destroy()
-      envHubBasedCloud.destroy()
-      adminHubBasedCloud.destroy()
+      destroy()
       process.exit(0)
     })
 
-    renderData = (data) => addMessage(formatLogs(filterLogs(data, filters)))
+    renderData = (data) => addLine(formatLogs(filterLogs(data, filters)))
   } else {
     renderData = (data) => {
       const filteredData = formatLogs(filterLogs(data, filters))

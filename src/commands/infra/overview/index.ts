@@ -3,25 +3,41 @@ import { AppContext } from '../../../shared/index.js'
 
 export const overview =
   (program: Command) =>
-  async ({}) => {
+  async ({ stream }) => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
-    const { destroy } = await context.getBasedClients()
+    // const { destroy } = await context.getBasedClients()
 
     try {
-      await getOverview({ context })
+      await getOverview(context, stream)
 
-      destroy()
+      //   destroy()
       return
     } catch (error) {
       throw new Error(error)
     }
   }
 
-export const getOverview = async ({ context }) => {
-  const { basedClient } = await context.getBasedClients()
+export const getOverview = async (context: AppContext, stream = true) => {
+  const { basedClient, destroy } = await context.getBasedClients()
+  const { cluster, org, project, env } = context.get('basedProject')
 
-  const { data } = basedClient.call('based:connections')
+  const headerTemplate = (connections: number = 0) => {
+    return (
+      `${context.get('appTitle')}\n` +
+      `Viewing Infra from: [<b><cyan>${cluster}/${org}/${project}/${env}</cyan></b>] ${stream ? '<b><red>LIVE</red></b>' : ''}\n` +
+      `Active Connections: <b>${connections}</b>`
+    )
+  }
 
-  console.log('data', data)
+  const { kill, header } = context.getTerminal(context.get('appName'))
+
+  await basedClient.query('based:connections').subscribe((connections) => {
+    header(headerTemplate(connections))
+  })
+
+  kill(() => {
+    destroy()
+    process.exit(0)
+  })
 }

@@ -57,9 +57,11 @@ export function contextCommandMaker(
     Object.keys(subCommands).forEach((subCommandName) => {
       const subCommandData = subCommands[subCommandName]
       const { description, options } = subCommandData
-      const subCommand = parentCmd
-        .command(subCommandName)
-        .description(description)
+      const subCommand = parentCmd.command(subCommandName)
+
+      if (description) {
+        subCommand.description(description)
+      }
 
       addOptions(options, subCommand)
 

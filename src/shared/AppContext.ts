@@ -7,6 +7,7 @@ import {
   contextInput,
   contextPrint,
   contextCommandMaker,
+  contextGetTerminal,
 } from '../helpers/index.js'
 import { i18n } from '@based/i18n'
 import { languages } from '../i18n/index.js'
@@ -36,6 +37,7 @@ export class AppContext {
   public getGlobalOptions = contextGlobalOptions
   public getProgram = contextProgram
   public getBasedClients = contextBasedClients
+  public getTerminal = contextGetTerminal
   public parse = contextParse
   public input = contextInput(this)
   public print = contextPrint(this.state)
