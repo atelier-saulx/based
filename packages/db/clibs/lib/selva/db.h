@@ -12,7 +12,7 @@
 #include "util/svector.h"
 #include "util/trx.h"
 #include "selva/types.h"
-#include "selva_hash128.h"
+#include "selva/selva_hash128.h"
 #include "ref_save_map.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);

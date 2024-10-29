@@ -68,6 +68,23 @@ export default {
     return db.getNodeRangeHash(typeId, start, end, bufOut, defCtx)
   },
 
+  createHash: () => {
+    const state = db.hashCreate()
+    const hash = {
+      update: (buf: Buffer) => {
+        db.hashUpdate(state, buf)
+        return hash
+      },
+      digest: (encoding?: BufferEncoding): Buffer | string => {
+        const buf = Buffer.allocUnsafe(16)
+        db.hashDigest(state, buf)
+        return encoding ? buf.toString(encoding) : buf
+      },
+    }
+
+    return hash
+  },
+
   compress: (buf: Buffer, offset: number, stringSize: number) => {
     return db.compress(buf, offset, stringSize)
   },
