@@ -33,3 +33,9 @@ pub const Mode = enum(u8) {
     orFixed = 1,
     orVar = 2,
 };
+
+pub const Meta = enum(u8) {
+    edge = 252,
+    reference = 254,
+    _,
+};

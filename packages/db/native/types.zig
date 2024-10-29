@@ -44,7 +44,13 @@ pub const Prop = enum(u8) {
 
 pub fn Size(p: Prop) u8 {
     switch (p) {
-        Prop.TIMESTAMP, Prop.CREATED, Prop.UPDATED, Prop.NUMBER => {
+        Prop.TIMESTAMP,
+        Prop.CREATED,
+        Prop.UPDATED,
+        Prop.NUMBER,
+        Prop.UINT64,
+        Prop.INT64,
+        => {
             return 8;
         },
         Prop.INT8, Prop.UINT8, Prop.BOOLEAN, Prop.ENUM => {

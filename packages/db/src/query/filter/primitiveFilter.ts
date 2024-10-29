@@ -2,6 +2,7 @@ import {
   NUMBER,
   PropDef,
   PropDefEdge,
+  REFERENCE,
   REFERENCES,
   REVERSE_SIZE_MAP,
   TypeIndex,
@@ -62,9 +63,12 @@ const createFixedFilterBuffer = (
   op: number,
   value: any,
   references: boolean,
+  def?: Buffer,
 ) => {
   let buf: Buffer
   const start = prop.start
+  const defSize = def ? def.byteLength : 0
+
   if (Array.isArray(value)) {
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
@@ -75,6 +79,7 @@ const createFixedFilterBuffer = (
     buf[5] = op
     buf[6] = prop.typeIndex
     buf.writeUInt16LE(len, 7)
+
     if (references) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
@@ -83,7 +88,16 @@ const createFixedFilterBuffer = (
       }
     } else {
       for (let i = 0; i < len; i++) {
-        write(prop, buf, parseFilterValue(prop, value[i]), size, 9 + i * size)
+        if (def) {
+          buf.set(def, 9 + i * size)
+        }
+        write(
+          prop,
+          buf,
+          parseFilterValue(prop, value[i]),
+          size - defSize,
+          9 + i * size + defSize,
+        )
       }
     }
   } else {
@@ -94,7 +108,10 @@ const createFixedFilterBuffer = (
     buf.writeUInt16LE(start, 3)
     buf[5] = op
     buf[6] = prop.typeIndex
-    write(prop, buf, parseFilterValue(prop, value), size, 7)
+    if (def) {
+      buf.set(def, 7)
+    }
+    write(prop, buf, parseFilterValue(prop, value), size - defSize, 7 + defSize)
   }
   return buf
 }
@@ -107,10 +124,7 @@ export const primitiveFilter = (
 ) => {
   const fieldIndexChar = prop.prop
   let buf: Buffer
-
-  let or = 0
   const op = operationToByte(operator)
-  const start = prop.start ?? 0
   let size = 0
 
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
@@ -121,7 +135,18 @@ export const primitiveFilter = (
 
   const propSize = REVERSE_SIZE_MAP[prop.typeIndex]
 
-  if (prop.typeIndex === REFERENCES) {
+  if (prop.typeIndex === REFERENCE) {
+    const ref = Buffer.alloc(7)
+    ref.writeUint16LE(prop.inverseTypeId, 5)
+    buf = createFixedFilterBuffer(
+      prop,
+      ref.byteLength + 4,
+      op,
+      value,
+      false,
+      ref,
+    )
+  } else if (prop.typeIndex === REFERENCES) {
     buf = createFixedFilterBuffer(prop, 4, op, value, true)
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)

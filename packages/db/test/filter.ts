@@ -72,7 +72,7 @@ await test('filter', async (t) => {
     org,
   })
 
-  await db.create('env', {
+  const emptyEnv = await db.create('env', {
     name: 'Mydev env',
     org,
   })
@@ -248,4 +248,19 @@ await test('filter', async (t) => {
     true,
     'Negative temperature (check value)',
   )
+
+  // equal(
+  db.query('machine')
+    .include('*')
+    .filter('env', '=', emptyEnv)
+    // .sort('lastPing')
+    .range(0, 10)
+    .get()
+    .inspect(1)
+  // .toObject()[0],
+  //   {},
+  //   'Filter by reference',
+  // )
+
+  // reference
 })

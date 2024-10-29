@@ -8,7 +8,7 @@ const Mode = t.Mode;
 const Op = t.Operator;
 const Prop = @import("../../types.zig").Prop;
 
-pub fn runConditions(q: []u8, v: []u8) bool {
+pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
     var i: u16 = 0;
     while (i < q.len) {
         const mode: Mode = @enumFromInt(q[i]);
@@ -34,6 +34,39 @@ pub fn runConditions(q: []u8, v: []u8) bool {
                 }
             }
             i += 9 + valueSize * repeat;
+        } else if (mode == Mode.default and prop == Prop.REFERENCE) {
+            const query = q[i + 7 .. i + valueSize + 7];
+            const refType = query[0];
+            if (refType == 2) {
+                return false;
+            } else if (refType == 0) {
+                const id = readInt(u32, query, query.len - 4);
+                // ctx
+                const schemaType = readInt(u16, query, query.len - 6);
+                std.debug.print("INIT GET REF FILTER id: {d} type: {any}  \n", .{
+                    id,
+                    schemaType,
+                });
+                const typeEntry = db.getType(ctx, schemaType) catch {
+                    return false;
+                };
+                const ref = db.getNode(id, typeEntry);
+                if (ref) |r| {
+                    query[0] = 1;
+                    const arr: [*]u8 = @ptrCast(@alignCast(r));
+                    @memcpy(query[1..query.len], arr);
+                } else {
+                    query[0] = 2;
+                    return false;
+                }
+            }
+            var j: u8 = 0;
+            while (j < 8) : (j += 1) {
+                if (v[j] != query[j + 1]) {
+                    return false;
+                }
+            }
+            i += 7 + valueSize;
         } else if (mode == Mode.default) {
             const query = q[i + 7 .. i + valueSize + 7];
             if (op == Op.equal) {
