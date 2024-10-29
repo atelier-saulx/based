@@ -1,6 +1,4 @@
-import { createHash } from 'crypto'
-import { create, update } from './modify/index.js'
-import { remove } from './modify/remove.js'
+import { create, update, remove } from './modify/index.js'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
@@ -9,7 +7,7 @@ import {
   createSchemaTypeDef,
   schemaToSelvaBuffer,
 } from './schema/schema.js'
-import { hashObjectIgnoreKeyOrder, stringHash } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, hash, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
 import { flushBuffer } from './operations.js'
@@ -21,14 +19,29 @@ import { genId } from './schema/utils.js'
 import { createTree as createMerkleTree } from '../src/csmt/index.js'
 
 export * from './schema/typeDef.js'
-export * from './modify/index.js'
-export const native = db
-export { BasedQueryResponse } from './query/BasedIterable.js'
+export * from './modify/modify.js'
 
 const SCHEMA_FILE = 'schema.json'
+const WRITELOG_FILE = 'writelog.json'
 const COMMON_SDB_FILE = 'common.sdb'
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
+
+type Writelog = {
+  ts: number
+  types: { [t: number]: { lastId: number; blockSize: number } }
+  hash?: string
+  commonDump: string
+  rangeDumps: {
+    [t: number]: {
+      // TODO add type
+      file: string
+      hash: string
+      start: number
+      end: number
+    }[]
+  }
+}
 
 export type ModCtx = {
   max: number
@@ -47,11 +60,37 @@ export type ModCtx = {
   db: BasedDb
 }
 
+type CsmtNodeRange = {
+  file: string
+  typeId: number
+  start: number
+  end: number
+}
+
+const createCsmtHashFun = db.createHash
+const makeCsmtKey = (typeId: number, start: number) =>
+  typeId * 4294967296 + start
+const destructureCsmtKey = (key: number) => [
+  (key / 4294967296) | 0,
+  (key >>> 31) * 2147483648 + (key & 0x7fffffff),
+]
+const makeCsmtKeyFromNodeId = (
+  typeId: number,
+  blockSize: number,
+  nodeId: number,
+) => {
+  const tmp = nodeId - +!(nodeId % blockSize)
+  return typeId * 4294967296 + ((tmp / blockSize) | 0) * blockSize + 1
+}
+
 export class BasedDb {
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: ModCtx
-  blockSize = 10000
+
+  blockSize = 100_000
+  merkleTree = createMerkleTree(createCsmtHashFun)
+  dirtyRanges = new Set<number>()
 
   id: number
 
@@ -68,13 +107,17 @@ export class BasedDb {
 
   fileSystemPath: string
 
+  noCompression: boolean
+
   constructor({
     path,
     maxModifySize,
+    noCompression,
   }: {
     path: string
     maxModifySize?: number
     fresh?: boolean
+    noCompression?: boolean
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
@@ -96,7 +139,7 @@ export class BasedDb {
       queue: new Map(),
       db: this,
     }
-
+    this.noCompression = noCompression || false
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
@@ -111,9 +154,7 @@ export class BasedDb {
       lastId: number
     }[]
   > {
-    console.log('start')
     this.id = stringHash(this.fileSystemPath) >>> 0
-
     if (opts.clean) {
       try {
         await fs.rm(this.fileSystemPath, { recursive: true })
@@ -123,41 +164,85 @@ export class BasedDb {
     try {
       await fs.mkdir(this.fileSystemPath, { recursive: true })
     } catch (err) {}
-    const dumps = (await fs.readdir(this.fileSystemPath)).filter(
-      (fname: string) => fname.endsWith('.sdb') && fname != COMMON_SDB_FILE,
-    )
 
     this.dbCtxExternal = db.start(this.fileSystemPath, false, this.id)
-    db.loadCommon(
-      join(this.fileSystemPath, COMMON_SDB_FILE),
-      this.dbCtxExternal,
-    )
-    dumps.forEach((fname) => {
-      const err = db.loadRange(
-        join(this.fileSystemPath, fname),
+
+    let writelog: Writelog = null
+    try {
+      writelog = JSON.parse(
+        (
+          await fs.readFile(join(this.fileSystemPath, WRITELOG_FILE))
+        ).toString(),
+      )
+
+      // Load the common dump
+      db.loadCommon(
+        join(this.fileSystemPath, writelog.commonDump),
         this.dbCtxExternal,
       )
-      if (err) {
-        console.log(`Failed to load a range. file: "${fname}": ${err}`)
-      }
-    })
 
-    try {
+      // Load all range dumps
+      for (const typeId in writelog.rangeDumps) {
+        const dumps = writelog.rangeDumps[typeId]
+        for (const dump of dumps) {
+          const fname = dump.file
+          const err = db.loadRange(
+            join(this.fileSystemPath, fname),
+            this.dbCtxExternal,
+          )
+          if (err) {
+            console.log(`Failed to load a range. file: "${fname}": ${err}`)
+          }
+        }
+      }
+
       const schema = await fs.readFile(join(this.fileSystemPath, SCHEMA_FILE))
       if (schema) {
         // Prop need to not call setting in selva
         this.putSchema(JSON.parse(schema.toString()), true)
       }
     } catch (err) {}
+
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-
       const [total, lastId] = this.native.getTypeInfo(
         def.id,
         this.dbCtxExternal,
       )
+
       def.total = total
-      def.lastId = lastId
+      def.lastId = writelog ? writelog.types[def.id].lastId : lastId
+
+      // TODO This should be stored per type
+      this.blockSize = writelog.types[def.id].blockSize
+
+      const step = writelog.types[def.id].blockSize
+      for (let start = 1; start <= lastId; start += step) {
+        const end = start + step - 1
+        const hash = Buffer.allocUnsafe(16)
+        this.native.getNodeRangeHash(
+          def.id,
+          start,
+          end,
+          hash,
+          this.dbCtxExternal,
+        )
+
+        //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
+
+        const mtKey = makeCsmtKey(def.id, start)
+        this.merkleTree.insert(mtKey, hash, { file: '', start, end })
+      }
+    }
+
+    if (writelog?.hash) {
+      const oldHash = Buffer.from(writelog.hash, 'hex')
+      const newHash = this.merkleTree.getRoot()?.hash
+      if (oldHash.compare(newHash) != 0) {
+        console.error(
+          `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
+        )
+      }
     }
 
     return []
@@ -220,6 +305,10 @@ export class BasedDb {
     // TODO fix
   }
 
+  markNodeDirty(typeId: number, nodeId: number): void {
+    this.dirtyRanges.add(makeCsmtKeyFromNodeId(typeId, this.blockSize, nodeId))
+  }
+
   create(type: string, value: any): ModifyRes {
     return create(this, type, value)
   }
@@ -277,7 +366,6 @@ export class BasedDb {
   async save() {
     let err: number
     const ts = Date.now()
-    const mt = createMerkleTree(() => createHash('sha1'))
 
     err = this.native.saveCommon(
       join(this.fileSystemPath, COMMON_SDB_FILE),
@@ -287,58 +375,61 @@ export class BasedDb {
       console.error(`Save common failed: ${err}`)
     }
 
+    for (const mtKey of this.dirtyRanges) {
+      const [typeId, start] = destructureCsmtKey(mtKey)
+      const end = start + this.blockSize - 1
+      const file = block_sdb_file(typeId, start, end)
+      const path = join(this.fileSystemPath, file)
+      const hash = Buffer.allocUnsafe(16)
+      err = this.native.saveRange(
+        path,
+        typeId,
+        start,
+        end,
+        this.dbCtxExternal,
+        hash,
+      )
+      if (err) {
+        console.error(`Save ${typeId}:${start}-${end} failed: ${err}`)
+        return // TODO What to do with the merkle tree in this situation?
+      }
+
+      // console.log(`save range ${typeId}:${start}-${end} hash:`, hash)
+
+      this.merkleTree.delete(mtKey)
+      this.merkleTree.insert(mtKey, hash, { file, start, end })
+    }
+    this.dirtyRanges.clear()
+
+    const types: Writelog['types'] = {}
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      const [_total, lastId] = this.native.getTypeInfo(
-        def.id,
-        this.dbCtxExternal,
-      )
-      const step = this.blockSize
-
-      for (let start = 1; start <= lastId; start += step) {
-        const end = start + step - 1
-        const file = block_sdb_file(def.id, start, end)
-        const path = join(this.fileSystemPath, file)
-        const hash = Buffer.allocUnsafe(16)
-        err = this.native.saveRange(
-          path,
-          def.id,
-          start,
-          end,
-          this.dbCtxExternal,
-          hash,
-        )
-        if (err) {
-          console.error(`Save ${def.id}:${start}-${end} failed: ${err}`)
-          continue
-        }
-
-        const mtKey = def.id * 4294967296 + start
-        mt.insert(mtKey, hash, { file, start, end })
-      }
+      types[def.id] = { lastId: def.lastId, blockSize: this.blockSize }
     }
 
-    const dumps: {
-      file: string
-      hash?: string
-      start?: number
-      end?: number
-    }[] = [
-      {
-        file: COMMON_SDB_FILE,
-      },
-    ]
-    mt.visitLeafNodes((leaf) =>
-      dumps.push({ ...leaf.data, hash: leaf.hash.toString('hex') }),
-    )
-    const data = {
+    const dumps: Writelog['rangeDumps'] = {}
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      dumps[def.id] = []
+    }
+    this.merkleTree.visitLeafNodes((leaf) => {
+      const [typeId] = destructureCsmtKey(leaf.key)
+      const data: CsmtNodeRange = leaf.data
+      dumps[typeId].push({ ...data, hash: leaf.hash.toString('hex') })
+    })
+
+    const data: Writelog = {
       ts,
-      blockSize: this.blockSize,
-      hash: mt.getRoot().hash.toString('hex'),
-      dumps,
+      types,
+      commonDump: COMMON_SDB_FILE,
+      rangeDumps: dumps,
+    }
+    const mtRoot = this.merkleTree.getRoot()
+    if (mtRoot) {
+      data.hash = mtRoot.hash.toString('hex')
     }
     fs.appendFile(
-      join(this.fileSystemPath, 'writelog.json'),
+      join(this.fileSystemPath, WRITELOG_FILE),
       JSON.stringify(data),
       { flag: 'w', flush: true },
     )

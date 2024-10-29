@@ -4,10 +4,6 @@ export type MainIncludes = { [start: string]: [number, PropDef] }
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
-// ADD ALL INFO HERE
-// FILTER
-// SORT
-
 enum QueryDefType {
   Edge = 1,
   Reference = 2,
@@ -46,19 +42,13 @@ export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
 
 export type QueryDefShared = {
   filter: QueryDefFilter
-
   sort: null | QueryDefSort
-
   reverseProps: any
-
   range: {
     offset: number
     limit: number
   }
-
   include: {
-    // nested fields
-    // if branch you immediatly make a queryDef
     stringFields: Set<string>
     props: Set<number>
     propsRead: { [propName: number]: number }
@@ -67,15 +57,8 @@ export type QueryDefShared = {
       len: number
     }
   }
-
   references: Map<number, QueryDef>
-
   edges?: QueryDef
-
-  // edges: Map<number, QueryDef>
-
-  // for reading do later
-  // tree: IncludeTreeArr
 }
 
 export type QueryDefEdges = {

@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "selva_error.h"
 #include "util/selva_string.h"
 #include "../db_panic.h"
@@ -63,6 +64,7 @@ static void init_io_string(struct selva_io *io, struct selva_string *s, enum sel
 int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags)
 {
     const char *mode = (flags & SELVA_IO_FLAGS_WRITE) ? "wb" : "rb";
+    struct stat stats;
     FILE *file;
 
     flags |= SELVA_IO_FLAGS_FILE_IO;
@@ -82,6 +84,14 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
              */
             return SELVA_EGENERAL;
         }
+    }
+
+    if (fstat(fileno(file), &stats) == -1) {
+        return SELVA_EGENERAL;
+    }
+
+    if (setvbuf(file, NULL, _IOFBF, stats.st_blksize) != 0) {
+        return SELVA_ENOBUFS;
     }
 
     if (flags & SELVA_IO_FLAGS_WRITE) {

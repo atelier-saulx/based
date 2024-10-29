@@ -10,8 +10,18 @@ import {
 } from './types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendU32, appendU8, appendUtf8 } from './utils.js'
+import {
+  appendU32,
+  appendU8,
+  appendUtf8,
+  reserveU32,
+  writeU32,
+} from './utils.js'
+import { write } from '../string.js'
 
+// allow setting buffer in modify create for strings
+// add compression handling for main buffer
+// add compression handling for edge fields
 export function writeString(
   value: string | null,
   ctx: BasedDb['modifyCtx'],
@@ -42,8 +52,10 @@ export function writeString(
       ctx.hasStringField++
     }
     setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+
     appendU8(ctx, modifyOp)
-    appendU32(ctx, size)
-    appendUtf8(ctx, value)
+    const sizepos = reserveU32(ctx)
+    const newsize = appendUtf8(ctx, value)
+    writeU32(ctx, newsize, sizepos)
   }
 }

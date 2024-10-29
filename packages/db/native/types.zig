@@ -1,3 +1,6 @@
+// TODO: lower case this is the zig way
+// https://zig.guide/language-basics/enums/
+
 pub const Prop = enum(u8) {
     NULL = 0,
     TIMESTAMP = 1,
@@ -25,11 +28,29 @@ pub const Prop = enum(u8) {
     ALIASES = 19,
     BINARY = 25,
     ID = 26,
+    pub fn isSigned(self: Prop) bool {
+        return switch (self) {
+            Prop.INT16,
+            Prop.INT32,
+            Prop.INT64,
+            Prop.TIMESTAMP,
+            Prop.CREATED,
+            Prop.UPDATED,
+            => true,
+            else => false,
+        };
+    }
 };
 
 pub fn Size(p: Prop) u8 {
     switch (p) {
-        Prop.TIMESTAMP, Prop.CREATED, Prop.UPDATED, Prop.NUMBER => {
+        Prop.TIMESTAMP,
+        Prop.CREATED,
+        Prop.UPDATED,
+        Prop.NUMBER,
+        Prop.UINT64,
+        Prop.INT64,
+        => {
             return 8;
         },
         Prop.INT8, Prop.UINT8, Prop.BOOLEAN, Prop.ENUM => {

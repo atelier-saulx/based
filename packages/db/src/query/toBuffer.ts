@@ -167,7 +167,7 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
 
   if (edges) {
     const metaEdgeBuffer = Buffer.allocUnsafe(3)
-    metaEdgeBuffer[0] = 253
+    metaEdgeBuffer[0] = 252
     metaEdgeBuffer.writeUint16LE(edgesSize, 1)
     result.push(metaEdgeBuffer, ...edges)
   }

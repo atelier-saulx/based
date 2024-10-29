@@ -160,15 +160,6 @@ await test('edges', async (t) => {
     })
   }
 
-  console.log(
-    '????',
-    JSON.stringify(
-      db.query('article').include('contributors.$role').get().toObject(),
-      null,
-      2,
-    ),
-  )
-
   // deepEqual(
   //   db
   //     .query('article')

@@ -95,13 +95,13 @@ const inspectObject = (
           depth,
         )
       } else if (def.typeIndex === 13) {
-        if (!v.id) {
-          str += 'null'
+        if (!v || !v.id) {
+          str += 'null,\n'
         } else {
           str += inspectObject(
             v,
             q.references.get(def.prop),
-            key,
+            '',
             level + 2,
             false,
             false,
@@ -109,7 +109,6 @@ const inspectObject = (
             depth,
           )
         }
-        str += ',\n'
       } else if (def.typeIndex === BINARY) {
         if (v === undefined) {
           return ''
@@ -148,7 +147,11 @@ const inspectObject = (
           str += `"${v}"`
         }
       } else if (def.typeIndex === 1) {
-        str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+        if (v === 0) {
+          str += `0 ${picocolors.italic(picocolors.dim('No date'))}`
+        } else {
+          str += `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+        }
       } else {
         // if (typeof v === 'number') {
         //   str += picocolors.blue(v)
@@ -156,7 +159,9 @@ const inspectObject = (
         str += v
         // }
       }
-      str += ',\n'
+      if (def?.typeIndex !== 13) {
+        str += ',\n'
+      }
     } else {
       str += ',\n'
     }
@@ -284,7 +289,8 @@ export class BasedQueryResponse {
   }
 
   debug() {
-    return debug(this.result, this.offset, this.end)
+    debug(this.result, this.offset, this.end)
+    return this
   }
 
   node(index: number = 0): any {
@@ -316,8 +322,9 @@ export class BasedQueryResponse {
     }
   }
 
-  inspect(depth: number) {
+  inspect(depth: number = 2) {
     console.log(this[inspect.custom](depth))
+    return this
   }
 
   forEach(fn: (item: any, key: number) => void) {

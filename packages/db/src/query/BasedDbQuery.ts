@@ -47,7 +47,23 @@ export class QueryBranch<T> {
       value = operator
       operator = '='
     }
-    filter(this.db, this.def, field, operator, value)
+
+    if (operator == '!..') {
+      if (!Array.isArray(value)) {
+        throw new Error('Invalid filter')
+      }
+      filter(this.db, this.def, field, '>', value[1])
+      // OR
+      // filter(this.db, this.def, field, '<', value[0])
+    } else if (operator === '..') {
+      if (!Array.isArray(value)) {
+        throw new Error('Invalid filter')
+      }
+      filter(this.db, this.def, field, '>', value[0])
+      filter(this.db, this.def, field, '<', value[1])
+    } else {
+      filter(this.db, this.def, field, operator, value)
+    }
     // @ts-ignore
     return this
   }

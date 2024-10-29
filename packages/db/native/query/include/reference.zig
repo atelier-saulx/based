@@ -39,7 +39,7 @@ pub fn getSingleRefFields(
         .val = null,
         .refSize = 0,
         .includeMain = null,
-        .refType = 254,
+        .refType = 254, // from result
         .totalRefs = null,
         .isEdge = t.Prop.NULL,
     }) catch return 0;

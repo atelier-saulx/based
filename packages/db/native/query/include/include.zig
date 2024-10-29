@@ -8,6 +8,7 @@ const getRefsFields = @import("./references/references.zig").getRefsFields;
 const std = @import("std");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
+const IncludeOp = types.IncludeOp;
 
 pub fn getFields(
     node: db.Node,
@@ -26,13 +27,12 @@ pub fn getFields(
     var edgeType: t.Prop = t.Prop.NULL;
 
     includeField: while (includeIterator < include.len) {
-        const field: u8 = include[includeIterator];
+        const op: IncludeOp = @enumFromInt(include[includeIterator]);
         includeIterator += 1;
 
         const operation = include[includeIterator..];
 
-        // EDGE (todo rename to 252)
-        if (field == 253) {
+        if (op == IncludeOp.edge) {
             const edgeSize = readInt(u16, operation, 0);
             const edges = operation[2 .. 2 + edgeSize];
             if (!idIsSet) {
@@ -47,8 +47,7 @@ pub fn getFields(
             continue :includeField;
         }
 
-        // MULTI REF
-        if (field == 254) {
+        if (op == IncludeOp.references) {
             const refSize = readInt(u16, operation, 0);
             const multiRefs = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
@@ -70,8 +69,7 @@ pub fn getFields(
             continue :includeField;
         }
 
-        // SINGLE REF
-        if (field == 255) {
+        if (op == IncludeOp.reference) {
             const refSize = readInt(u16, operation, 0);
             const singleRef = operation[2 .. 2 + refSize];
             includeIterator += refSize + 2;
@@ -92,6 +90,8 @@ pub fn getFields(
             );
             continue :includeField;
         }
+
+        const field: u8 = @intFromEnum(op);
 
         // MAIN
         if (field == 0) {

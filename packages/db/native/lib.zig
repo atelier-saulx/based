@@ -8,8 +8,8 @@ const modify = @import("./modify/modify.zig").modify;
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
 const db = @import("./db/db.zig");
+const string = @import("./string.zig");
 const napi = @import("./napi.zig");
-
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
 
@@ -85,6 +85,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "loadCommon", dump.loadCommon) catch return null;
     registerFunction(env, exports, "loadRange", dump.loadRange) catch return null;
     registerFunction(env, exports, "getTypeInfo", info.ofType) catch return null;
+    registerFunction(env, exports, "getNodeRangeHash", info.nodeRangeHash) catch return null;
 
     registerFunction(env, exports, "updateSchema", schema.updateSchema) catch return null;
 
@@ -93,5 +94,13 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
+    registerFunction(env, exports, "hashCreate", string.hashCreate) catch return null;
+    registerFunction(env, exports, "hashReset", string.hashReset) catch return null;
+    registerFunction(env, exports, "hashUpdate", string.hashUpdate) catch return null;
+    registerFunction(env, exports, "hashDigest", string.hashDigest) catch return null;
+
+    registerFunction(env, exports, "compress", string.compress) catch return null;
+    registerFunction(env, exports, "decompress", string.decompress) catch return null;
+
     return exports;
 }

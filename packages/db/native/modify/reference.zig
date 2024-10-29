@@ -24,10 +24,9 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
         const ref = db.getSingleReference(node, ctx.field);
         if (ref == null) {
-            std.log.err("Cannot find select ref to {d} \n", .{id});
+            std.log.err("EDGE MOD / Cannot find select ref to {d} \n", .{id});
             return len;
         }
-
         const edges = data[9..len];
         try edge.writeEdges(ctx, ref.?, edges);
         return len;

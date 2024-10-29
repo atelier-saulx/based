@@ -19,6 +19,7 @@ function writeRef(
   if (ctx.len + 16 > ctx.max) {
     return RANGE_ERR
   }
+  ctx.db.markNodeDirty(def.inverseTypeId, id)
   setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
   appendU8(ctx, modifyOp)
   appendU8(ctx, hasEdges ? 1 : 0)

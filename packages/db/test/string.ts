@@ -244,6 +244,7 @@ await test('Big string', async (t) => {
       },
     },
   })
+
   const file = db.create('file', {
     contents: euobserver,
   })

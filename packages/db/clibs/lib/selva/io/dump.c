@@ -16,23 +16,22 @@
 #include "util/sigstr.h"
 #include "util/timestamp.h"
 #include "selva/fields.h"
+#include "selva/selva_hash128.h"
 #include "selva_error.h"
 #include "../db.h"
 #include "../db_panic.h"
-#include "../selva_hash128.h"
 #include "../io.h"
 #include "../print_ready.h"
 #include "io_struct.h"
 
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
+#define PRINT_SAVE_TIME 0
 
 /*
  * Pick 32-bit primes for these.
  */
-#define DUMP_MAGIC_SCHEMA       3360690301
-#define DUMP_MAGIC_TYPES        3550908863
-#define DUMP_MAGIC_TYPE_BEGIN   2460238717
-#define DUMP_MAGIC_TYPE_END     4229893463
+#define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
+#define DUMP_MAGIC_TYPES        3550908863 /* [range].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -55,6 +54,21 @@ typedef uint32_t sdb_nr_nodes_t;
 typedef uint32_t sdb_nr_fields_t;
 typedef uint64_t sdb_nr_aliases_t;
 typedef uint32_t sdb_arr_len_t; /*!< Used for most arrays, string or object. */
+
+#define SDB_STRING_META_FLAGS_MASK (SELVA_STRING_CRC | SELVA_STRING_COMPRESS)
+
+struct sdb_string_meta {
+    uint32_t crc;
+    sdb_arr_len_t len;
+    enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
+} __packed;
+
+struct sdb_text_meta {
+    uint32_t crc;
+    sdb_arr_len_t len;
+    enum selva_lang_code lang;
+    enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
+};
 
 static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFields *fields);
 
@@ -81,16 +95,18 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
 {
     size_t len;
     const char *str = selva_string_to_str(string, &len);
-    uint32_t crc = selva_string_get_crc(string);
-    sdb_arr_len_t sdb_len = len;
+    struct sdb_string_meta meta = {
+        .flags = selva_string_get_flags(string) & SDB_STRING_META_FLAGS_MASK,
+        .crc = selva_string_get_crc(string),
+        .len = len,
+    };
 
     if (!selva_string_verify_crc(string)) {
-        db_panic("%p Invalid CRC: %u", string, (unsigned)crc);
+        db_panic("%p Invalid CRC: %u", string, (unsigned)meta.crc);
     }
 
-    io->sdb_write(&sdb_len, sizeof(sdb_len), 1, io);
-    io->sdb_write(str, sizeof(char), sdb_len, io);
-    io->sdb_write(&crc, sizeof(crc), 1, io);
+    io->sdb_write(&meta, sizeof(meta), 1, io);
+    io->sdb_write(str, sizeof(char), meta.len, io);
 }
 
 static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
@@ -103,19 +119,19 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
         struct selva_string *tl = &text->tl[i];
         size_t len;
         const char *str = selva_string_to_str(tl, &len);
-        uint32_t crc = selva_string_get_crc(tl);
-        enum selva_lang_code lang = tl->lang;
-
-        static_assert(sizeof(uint64_t) == sizeof(size_t));
+        struct sdb_text_meta meta = {
+            .flags = selva_string_get_flags(tl) & SDB_STRING_META_FLAGS_MASK,
+            .crc = selva_string_get_crc(tl),
+            .len = len,
+            .lang = tl->lang,
+        };
 
         if (!selva_string_verify_crc(tl)) {
-            db_panic("%p Invalid CRC: %u", tl, (unsigned)crc);
+            db_panic("%p Invalid CRC: %u", tl, (unsigned)meta.crc);
         }
 
-        io->sdb_write(&lang, sizeof(enum selva_lang_code), 1, io);
-        io->sdb_write(&len, sizeof(len), 1, io);
+        io->sdb_write(&meta, sizeof(meta), 1, io);
         io->sdb_write(str, sizeof(char), len, io);
-        io->sdb_write(&crc, sizeof(crc), 1, io);
     }
 }
 
@@ -153,10 +169,12 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
 
 static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFields *fields)
 {
+    const size_t nr_fields = fields->nr_fields;
+
     write_dump_magic(io, DUMP_MAGIC_FIELDS);
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
 
-    for (field_t field = 0; field < fields->nr_fields; field++) {
+    for (field_t field = 0; field < nr_fields; field++) {
         struct SelvaFieldsAny any;
 
         any = selva_fields_get2(fields, field);
@@ -169,7 +187,9 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             struct SelvaNode *node = containerof(fields, struct SelvaNode, fields);
             const struct SelvaFieldSchema *fs = selva_get_fs_by_node(db, node, field);
 
+#if 0
             assert(fs->type == any.type);
+#endif
 
             if (fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
                 /* This saves it as a NULL and the loader will skip it. */
@@ -392,36 +412,35 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
 
 int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out)
 {
+#if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
+#endif
     struct selva_io io;
     int err;
 
+#if PRINT_SAVE_TIME
     ts_monotime(&ts_start);
+#endif
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
 
-    const sdb_nr_types_t nr_types = 1;
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
-    io.sdb_write(&nr_types, sizeof(nr_types), 1, &io); /* only one type in this dump. */
-
-    write_dump_magic(&io, DUMP_MAGIC_TYPE_BEGIN);
     io.sdb_write(&te->type, sizeof(te->type), 1, &io);
 
     struct SelvaNode *node;
     const sdb_nr_nodes_t nr_nodes = get_node_range(te, start, end, &node);
-
-    io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
-
     selva_hash_state_t *hash_state = selva_hash_create_state();
+    selva_hash_state_t *tmp_hash_state = selva_hash_create_state();
 
     selva_hash_reset(hash_state);
+    io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
     if (nr_nodes > 0) {
         do {
-            selva_node_hash_update2(te, node, hash_state);
+            selva_node_hash_update2(te, node, tmp_hash_state, hash_state);
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
 
@@ -431,12 +450,12 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     *range_hash_out = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
+    selva_hash_free_state(tmp_hash_state);
 
-    write_dump_magic(&io, DUMP_MAGIC_TYPE_END);
     selva_io_end(&io, NULL);
 
+#if PRINT_SAVE_TIME
     ts_monotime(&ts_end);
-#if 0
     print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
             2 * SELVA_IO_HASH_SIZE, hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
@@ -476,37 +495,31 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
     }
 }
 
-static int load_string(struct selva_io *io, struct selva_string *s, size_t len)
+static int load_string(struct selva_io *io, struct selva_string *s, const struct sdb_string_meta *meta)
 {
-    uint32_t crc;
-
-    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), len, io) != len * sizeof(char)) {
+    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), meta->len, io) != meta->len * sizeof(char)) {
         selva_string_free(s);
         return SELVA_EIO;
     }
 
-    if (io->sdb_read(&crc, sizeof(crc), 1, io) != 1) {
-        selva_string_free(s);
-        return SELVA_EIO;
-    }
+    selva_string_set_crc(s, meta->crc);
 
-    selva_string_set_crc(s, crc);
     return 0;
 }
 
 static int load_field_string(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    sdb_arr_len_t len;
+    struct sdb_string_meta meta;
     struct selva_string *s;
     int err;
 
-    io->sdb_read(&len, sizeof(len), 1, io);
-    err = selva_fields_get_mutable_string(node, fs, len, &s);
+    io->sdb_read(&meta, sizeof(meta), 1, io);
+    err = selva_fields_get_mutable_string(node, fs, meta.len, &s);
     if (err) {
         return err;
     }
 
-    return load_string(io, s, len);
+    return load_string(io, s, &meta);
 }
 
 static int load_reference_meta_field_string(
@@ -516,17 +529,17 @@ static int load_reference_meta_field_string(
         const struct EdgeFieldConstraint *efc,
         field_t field)
 {
-    sdb_arr_len_t len;
+    struct sdb_string_meta meta;
     struct selva_string *s;
     int err;
 
-    io->sdb_read(&len, sizeof(len), 1, io);
-    err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, len, &s);
+    io->sdb_read(&meta, sizeof(meta), 1, io);
+    err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, meta.len, &s);
     if (err) {
         return err;
     }
 
-    return load_string(io, s, len);
+    return load_string(io, s, &meta);
 }
 
 static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
@@ -536,17 +549,13 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
     io->sdb_read(&len, sizeof(len), 1, io);
 
     for (uint8_t i = 0; i < len; i++) {
-        enum selva_lang_code lang;
-        size_t len = 0;
+        struct sdb_text_meta meta;
         char *str;
-        uint32_t crc;
 
-        io->sdb_read(&lang, sizeof(lang), 1, io);
-        io->sdb_read(&len, sizeof(len), 1, io);
-        str = selva_malloc(len); /* TODO Optimize */
-        io->sdb_read(str, sizeof(char), len, io);
-        io->sdb_read(&crc, sizeof(crc), 1, io);
-        selva_fields_set_text_crc(db, node, fs, lang, str, len, crc);
+        io->sdb_read(&meta, sizeof(meta), 1, io);
+        str = selva_malloc(meta.len); /* TODO Optimize */
+        io->sdb_read(str, sizeof(char), meta.len, io);
+        selva_fields_set_text_crc(db, node, fs, meta.lang, str, meta.len, meta.crc);
         selva_free(str);
     }
 
@@ -918,65 +927,20 @@ static void load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaType
 
 static void load_types(struct selva_io *io, struct SelvaDb *db)
 {
-    sdb_nr_types_t nr_types;
-    SVector *types = &db->type_list;
-    struct SVectorIterator it;
-    struct SelvaTypeEntry *te;
-
     if (!read_dump_magic(io, DUMP_MAGIC_TYPES)) {
         db_panic("Ivalid types magic");
     }
-    io->sdb_read(&nr_types, sizeof(nr_types), 1, io);
 
-    if (nr_types == SVector_Size(types)) {
-        /*
-         * All types in a single dump.
-         */
-        SVector_ForeachBegin(&it, types);
-        while ((te = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
-            node_type_t type;
+    node_type_t type;
+    io->sdb_read(&type, sizeof(type), 1, io);
 
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
-                db_panic("Invalid nodes magic for type %d", te->type);
-            }
-
-            io->sdb_read(&type, sizeof(type), 1, io);
-            if (type != te->type) {
-                db_panic("Incorrect type found: %d != %d", type, te->type);
-            }
-
-            load_nodes(io, db, te);
-
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
-                db_panic("Invalid entry magic for type %d", te->type);
-            }
-        }
-    } else {
-        /*
-         * Load only the types found in this file.
-         */
-        for (sdb_nr_types_t i = 0; i < nr_types; i++) {
-            node_type_t type;
-            struct SelvaTypeEntry *te;
-
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_BEGIN)) {
-                db_panic("Invalid nodes magic for type");
-            }
-
-            io->sdb_read(&type, sizeof(type), 1, io);
-
-            te = selva_get_type_by_index(db, type);
-            if (!te) {
-                db_panic("Type not found: %d", type);
-            }
-
-            load_nodes(io, db, te);
-
-            if (!read_dump_magic(io, DUMP_MAGIC_TYPE_END)) {
-                db_panic("Invalid entry magic for type %d", te->type);
-            }
-        }
+    struct SelvaTypeEntry *te;
+    te = selva_get_type_by_index(db, type);
+    if (!te) {
+        db_panic("Type not found: %d", type);
     }
+
+    load_nodes(io, db, te);
 }
 
 

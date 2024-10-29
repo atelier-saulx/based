@@ -11,9 +11,8 @@
 #include "util/ptag.h"
 #include "util/selva_lang.h"
 #include "util/selva_string.h"
-#include "xxhash.h"
+#include "selva/selva_hash128.h"
 #include "selva_error.h"
-#include "selva_hash128.h"
 #include "db.h"
 #include "db_panic.h"
 #include "idz.h"
@@ -2068,7 +2067,7 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
         switch (nfo->type) {
         case SELVA_FIELD_TYPE_NULL:
             /* Also NULL must cause a change in the hash. */
-            selva_hash_update(hash_state, 0, 1);
+            selva_hash_update(hash_state, &(char){ '\0' }, sizeof(char));
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_CREATED:

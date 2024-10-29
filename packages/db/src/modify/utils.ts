@@ -12,6 +12,7 @@ import {
   UINT16,
   UINT32,
 } from '../schema/types.js'
+import { write } from '../string.js'
 import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
 
@@ -60,7 +61,9 @@ export const reserveU32 = (ctx: ModCtx) => {
 }
 
 export const appendUtf8 = (ctx: ModCtx, str: string) => {
-  ctx.len += ctx.buf.write(str, ctx.len, 'utf8')
+  const size = write(ctx.buf, str, ctx.len, ctx.db.noCompression)
+  ctx.len += size
+  return size
 }
 
 export const appendBuf = (ctx: ModCtx, buf: Buffer) => {
