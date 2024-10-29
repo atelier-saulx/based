@@ -62,7 +62,7 @@ export type ModCtx = {
   db: BasedDb
 }
 
-const createCsmtHashFun = () => createHash('sha1')
+const createCsmtHashFun = db.createHash
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
 const destructureCsmtKey = (key: number) => [
