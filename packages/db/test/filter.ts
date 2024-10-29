@@ -13,7 +13,7 @@ await test('filter', async (t) => {
     return db.destroy()
   })
 
-  const status = ['error', 'danger', 'ok']
+  const status = ['error', 'danger', 'ok', '🦄']
 
   db.putSchema({
     types: {
@@ -54,6 +54,7 @@ await test('filter', async (t) => {
           env: {
             ref: 'env',
             prop: 'machines',
+            $rating: 'number',
           },
           isLive: 'boolean',
           status,
@@ -84,7 +85,7 @@ await test('filter', async (t) => {
   for (let i = 0; i < 1e5; i++) {
     lastId = db.create('machine', {
       env,
-      status: status[Math.floor(Math.random() * status.length)],
+      status: status[Math.floor(Math.random() * (status.length - 1))],
       requestsServed: i,
       lastPing: i + 1,
       derp: -i,
@@ -294,17 +295,17 @@ await test('filter', async (t) => {
   const ids = await Promise.all([
     db.create('machine', {
       temperature: 20,
-      env: derpEnv,
+      env: { id: derpEnv, $rating: 0.5 },
       lastPing: 1,
     }),
     db.create('machine', {
       temperature: 2,
-      env: derpEnv,
+      env: { id: derpEnv, $rating: 0.75 },
       lastPing: 2,
     }),
     db.create('machine', {
       temperature: 3,
-      env: derpEnv,
+      env: { id: derpEnv, $rating: 1 },
       lastPing: 3,
     }),
   ])
@@ -338,7 +339,11 @@ await test('filter', async (t) => {
       .query('machine')
       .include('env', '*')
       .filter('env.status', '=', 5)
+      // .range(0, 1)
+      //  'env.$rating' broken...
       .get()
+      .inspect(3)
+      // .debug()
       .toObject(),
     [
       {
@@ -377,5 +382,23 @@ await test('filter', async (t) => {
     ],
   )
 
-  // db.query('env').filter('machines.$length', '=', 0).get().inspect(5).toObject()
+  const unicornMachine = await db.create('machine', {
+    status: '🦄',
+  })
+
+  deepEqual(
+    db
+      .query('machine')
+      .filter('status', '=', '🦄')
+      .include('status')
+      .get()
+      .inspect(5)
+      .toObject(),
+    [
+      {
+        id: unicornMachine,
+        status: '🦄',
+      },
+    ],
+  )
 })
