@@ -39,10 +39,7 @@ export const fillConditionsBuffer = (
       conditionSize += condition.byteLength
       result.set(condition, lastWritten)
       lastWritten += condition.byteLength
-
-      console.log({ conditionSize, condition: new Uint8Array(condition) })
     }
-
     result.writeInt16LE(conditionSize, sizeIndex)
   })
 
