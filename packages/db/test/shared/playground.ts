@@ -1,4 +1,5 @@
 import { wait } from '@saulx/utils'
+import { homedir } from 'os'
 import { fileURLToPath } from 'url'
 import { BasedDb } from '../../src/index.js'
 import { join, dirname, resolve } from 'path'
@@ -8,6 +9,11 @@ import { deflate } from 'node:zlib'
 import util from 'util'
 const deflap = util.promisify(deflate)
 import { italy } from './examples.js'
+import crypto from 'crypto'
+
+function randU32() {
+    return crypto.randomBytes(4).readUInt32LE(0);
+}
 
 import { pipeline } from 'node:stream/promises'
 import { hash } from '@saulx/hash'
@@ -44,10 +50,10 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
-    // noCompression: true,
+    //noCompression: true,
   })
 
-  await db.start()
+  await db.start({ clean: true })
 
   console.log('\nJS GO DO BUT', Date.now(), path)
 
@@ -138,7 +144,7 @@ const makeDb = async (path: string) => {
 
   // @ts-ignore
   await pipeline(
-    oldFs.createReadStream('/Users/jimdebeer/Downloads/dump.json', 'utf-8'),
+    oldFs.createReadStream(join(homedir(), 'Downloads/dump.json'), 'utf-8'),
     async function* (source, { signal }) {
       source.setEncoding('utf-8') // Work with strings rather than `Buffer`s.
       for await (const chunk of source) {
@@ -183,7 +189,54 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(200)
 
-  await db.stop(true)
+  const start = performance.now()
+  await db.stop(false)
+  const end = performance.now()
+  console.log('save took: ', end - start)
+}
+
+const makeDb1 = async (path: string) => {
+  const db = new BasedDb({
+    path,
+    // noCompression: true,
+  })
+
+  await db.start({ clean: true })
+
+  console.log('\nJS GO DO BUT', Date.now(), path)
+
+  db.putSchema({
+    types: {
+      financeBoi: {
+        props: {
+          x1: { type: 'uint32' },
+          x2: { type: 'uint32' },
+          x3: { type: 'uint32' },
+          x4: { type: 'uint32' },
+          x5: { type: 'uint32' },
+          x6: { type: 'uint32' },
+        }
+      },
+    }
+  })
+
+  for (let i = 0; i < 5_000_000; i++) {
+    db.create('financeBoi', {
+      x1: randU32(),
+      x2: randU32(),
+      x3: randU32(),
+      x4: randU32(),
+      x5: randU32(),
+      x6: randU32(),
+    })
+  }
+  const res = db.drain()
+  console.error('created all nodes', res)
+
+  const start = performance.now()
+  await db.stop(false)
+  const end = performance.now()
+  console.log('save took: ', end - start)
 }
 
 makeDb(dbFolder + '/1')
