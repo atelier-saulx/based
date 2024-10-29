@@ -27,9 +27,15 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 SELVA_EXPORT
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len) __attribute__((nonnull));
 
+/**
+ * Save the common/shared data of the database.
+ */
 SELVA_EXPORT
 int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
 
+/**
+ * Save a range of nodes from te.
+ */
 SELVA_EXPORT
 int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, node_id_t end, selva_hash128_t *range_hash_out) __attribute__((nonnull));
 
