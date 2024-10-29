@@ -65,6 +65,7 @@ const createFixedFilterBuffer = (
 ) => {
   let buf: Buffer
   const start = prop.start
+
   if (Array.isArray(value)) {
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
@@ -96,6 +97,7 @@ const createFixedFilterBuffer = (
     buf[6] = prop.typeIndex
     write(prop, buf, parseFilterValue(prop, value), size, 7)
   }
+
   return buf
 }
 

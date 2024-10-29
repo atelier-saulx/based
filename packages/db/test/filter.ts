@@ -346,7 +346,6 @@ await test('filter', async (t) => {
       .include('env', '*')
       .filter('env.status', '=', 5)
       .get()
-      .inspect(3)
       .toObject(),
     [
       {
@@ -395,7 +394,6 @@ await test('filter', async (t) => {
       .filter('status', '=', '🦄')
       .include('status')
       .get()
-      .inspect(5)
       .toObject(),
     [
       {
@@ -405,13 +403,26 @@ await test('filter', async (t) => {
     ],
   )
 
-  deepEqual(db.query('env').filter('standby').get().inspect(5).toObject(), [])
+  deepEqual(db.query('env').filter('standby').get().toObject(), [])
 
   await db.update('env', derpEnv, {
     standby: true,
   })
 
-  deepEqual(db.query('env').filter('standby').get().inspect(5).toObject(), [
+  deepEqual(db.query('env').filter('standby').get().toObject(), [
     { id: 3, standby: true, status: 5, name: 'derp env' },
   ])
+
+  const rangeResult = db
+    .query('machine')
+    .include('*')
+    .filter('temperature', '..', [-0.1, 0])
+    .get()
+
+  equal(rangeResult.length < 1000, true, 'range excludes ')
+  equal(
+    rangeResult.node().temperature < 0 && rangeResult.node().temperature > -0.1,
+    true,
+    'range',
+  )
 })

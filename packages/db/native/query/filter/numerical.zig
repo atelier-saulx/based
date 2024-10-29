@@ -23,8 +23,6 @@ inline fn operateSwitch(T: type, op: Op, q: T, v: T) bool {
         Op.smallerThen => v < q,
         Op.largerThenInclusive => v >= q,
         Op.smallerThenInclusive => v <= q,
-        // Op.range => v >= q and v <= q,
-        // Op.rangeExclude => v <= q and v >= q,
         else => false,
     };
 }

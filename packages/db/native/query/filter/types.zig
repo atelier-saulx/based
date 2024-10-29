@@ -8,8 +8,6 @@ pub const Operator = enum(u8) {
     smallerThen = 7,
     largerThenInclusive = 8,
     smallerThenInclusive = 9,
-    range = 10,
-    rangeExclude = 11,
     equalNormalize = 12,
     hasNormalize = 13,
     startsWithNormalize = 14,
@@ -20,8 +18,6 @@ pub const Operator = enum(u8) {
             Operator.largerThen,
             Operator.largerThenInclusive,
             Operator.smallerThenInclusive,
-            Operator.range,
-            Operator.rangeExclude,
             => true,
             else => false,
         };
