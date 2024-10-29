@@ -95,8 +95,8 @@ const inspectObject = (
           depth,
         )
       } else if (def.typeIndex === 13) {
-        if (!v.id) {
-          str += 'null\n,'
+        if (!v || !v.id) {
+          str += 'null,\n'
         } else {
           str += inspectObject(
             v,

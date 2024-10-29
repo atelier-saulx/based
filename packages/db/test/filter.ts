@@ -31,6 +31,7 @@ await test('filter', async (t) => {
       },
       env: {
         props: {
+          status: 'uint8',
           name: 'string',
           org: {
             ref: 'org',
@@ -287,6 +288,7 @@ await test('filter', async (t) => {
 
   const derpEnv = await db.create('env', {
     name: 'derp env',
+    status: 5,
   })
 
   const ids = await Promise.all([
@@ -313,6 +315,7 @@ await test('filter', async (t) => {
       {
         id: 3,
         name: 'derp env',
+        status: 5,
       },
     ],
     'Filter by references length',
@@ -324,8 +327,20 @@ await test('filter', async (t) => {
       {
         id: 3,
         name: 'derp env',
+        status: 5,
       },
     ],
     'Filter by references equals',
   )
+
+  console.log('flap!')
+  // references
+  db.query('machine')
+    .include('env')
+    // .filter('env.status', '=', 5)
+    .get()
+    .inspect(5)
+    .toObject()
+
+  // db.query('env').filter('machines.$length', '=', 0).get().inspect(5).toObject()
 })
