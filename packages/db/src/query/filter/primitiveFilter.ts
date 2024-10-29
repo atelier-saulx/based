@@ -56,7 +56,6 @@ const write = (
 // default = 0,
 // orFixed = 1,
 // orVar = 2,
-
 const createFixedFilterBuffer = (
   prop: PropDef | PropDefEdge,
   size: number,
@@ -155,7 +154,7 @@ export const primitiveFilter = (
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)
   } else {
-    // ----
+    // ---- STRING
   }
 
   // ADD OR if array for value

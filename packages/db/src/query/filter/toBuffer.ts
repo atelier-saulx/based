@@ -8,7 +8,7 @@ import { QueryDefFilter } from '../types.js'
 // [meta = 252] [edgeField]
 // -------------------------------------------
 // ref
-// [meta = 254] [field] [typeId 2]
+// [meta = 254] [field] [typeId 2] [size 2]
 // -------------------------------------------
 // conditions normal
 // field, [size 2]
@@ -39,26 +39,39 @@ export const fillConditionsBuffer = (
       conditionSize += condition.byteLength
       result.set(condition, lastWritten)
       lastWritten += condition.byteLength
+
+      console.log({ conditionSize, condition: new Uint8Array(condition) })
     }
+
     result.writeInt16LE(conditionSize, sizeIndex)
   })
 
-  // if (conditions.references) {
-  //   for (const [refField, refConditions] of conditions.references) {
-  //     result[lastWritten] = 254
-
-  //     const sizeIndex = lastWritten + 1
-  //     result[lastWritten + 3] = refField
-  //     lastWritten += 4
-  //     result[lastWritten] = refConditions.schema.idUint8[0]
-  //     lastWritten += 1
-  //     result[lastWritten] = refConditions.schema.idUint8[1]
-  //     lastWritten += 1
-  //     const size = fillConditionsBuffer(result, refConditions, lastWritten)
-  //     result.writeUint16LE(size + 4, sizeIndex)
-  //     lastWritten += size
-  //   }
-  // }
+  if (conditions.references) {
+    // 5
+    for (const [refField, refConditions] of conditions.references) {
+      result[lastWritten] = 254
+      lastWritten++
+      result[lastWritten] = refField
+      lastWritten++
+      result[lastWritten] = refConditions.schema.idUint8[0]
+      lastWritten++
+      result[lastWritten] = refConditions.schema.idUint8[1]
+      lastWritten++
+      const sizeIndex = lastWritten
+      lastWritten += 2
+      // result[lastWritten + 3] = refField
+      // lastWritten += 4
+      // result[lastWritten] = refConditions.schema.idUint8[0]
+      // lastWritten += 1
+      // result[lastWritten] = refConditions.schema.idUint8[1]
+      // lastWritten += 1
+      const size = fillConditionsBuffer(result, refConditions, lastWritten)
+      console.log({ size, lastWritten })
+      result.writeUint16LE(size, sizeIndex)
+      // 6
+      lastWritten += size
+    }
+  }
   // if (conditions.edges) {
   //   conditions.edges.forEach((v, k) => {
   //     result[lastWritten] = 252

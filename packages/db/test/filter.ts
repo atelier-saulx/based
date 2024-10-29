@@ -333,11 +333,11 @@ await test('filter', async (t) => {
     'Filter by references equals',
   )
 
-  console.log('flap!')
+  console.log('BLA')
   // references
   db.query('machine')
-    .include('env')
-    // .filter('env.status', '=', 5)
+    .include('env', '*')
+    .filter('env.status', '=', 5)
     .get()
     .inspect(5)
     .toObject()

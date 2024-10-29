@@ -22,7 +22,7 @@ const idToShard = db.idToShard;
 // [meta = 252] [edgeField]
 // -------------------------------------------
 // ref
-// [meta = 254] [field] [typeId 2]
+// [meta = 254] [field] [typeId 2] [size 2]
 // -------------------------------------------
 // conditions normal
 // field, [size 2]
@@ -74,21 +74,20 @@ pub fn filter(
             // }
         } else if (meta == Meta.reference) {
             const refField: u8 = conditions[fieldIndex + 1];
-            const refTypePrefix = readInt(u16, conditions, fieldIndex + 3);
+            const refTypePrefix = readInt(u16, conditions, fieldIndex + 2);
             const refNode = db.getReference(node, refField);
+            const size = readInt(u16, conditions, fieldIndex + 4);
             if (refNode == null) {
                 return false;
             }
             const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
                 return false;
             };
-
-            std.debug.print("flap {any} \n", .{refTypeEntry});
-            // const refConditions: []u8 = conditions[5 + fieldIndex .. 1 + querySize];
-            // if (!filter(ctx, refNode.?, refTypeEntry, refConditions, null)) {
-            //     return false;
-            // }
-            return false;
+            const refConditions: []u8 = conditions[6 .. 6 + size];
+            if (!filter(ctx, refNode.?, refTypeEntry, refConditions, null)) {
+                return false;
+            }
+            fieldIndex += size + 6;
         } else {
             const field: u8 = @intFromEnum(meta);
             const querySize: u16 = readInt(u16, conditions, fieldIndex + 1);
@@ -96,7 +95,6 @@ pub fn filter(
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return false;
             };
-
             const prop: Prop = @enumFromInt(fieldSchema.type);
             var value: []u8 = undefined;
             if (prop == Prop.REFERENCE) {
