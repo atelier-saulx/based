@@ -53,6 +53,7 @@ enum selva_string_flags {
  * Currently the compression used is raw DEFLATE.
  */
 struct selva_string_compressed_hdr {
+    /* TODO uint8_t type header here. */
     /**
      * Uncompressed size of the string.
      */
