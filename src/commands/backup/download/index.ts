@@ -56,7 +56,7 @@ export const getDownload = async ({
   })
 
   if (isExternalPath) {
-    context.print.info(`<b>Selected path:</b> <cyan>${path}</cyan>`)
+    context.print.info(context.i18n('alias.isExternalPath', path))
   }
 
   const getPath = async () =>

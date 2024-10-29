@@ -1,10 +1,10 @@
 import en from './en.js'
 
-const languages: Based.i18n.Translations<'en'> = {
+const languages = {
   default: 'en',
   languages: {
     en,
   },
-}
+} as const
 
 export { languages }

@@ -49,24 +49,30 @@ export function contextCommandMaker(
 
   addOptions(options, cmd)
 
-  const addSubCommands = (parentCmd: Command, subCommands?: any[]) => {
-    if (!subCommands || !subCommands.length) return
+  const addSubCommands = (
+    parentCmd: Command,
+    subCommands?: Record<string, any>,
+  ) => {
+    if (!subCommands || !Array.isArray(subCommands)) return
 
-    subCommands.forEach((subCommandData: any) => {
-      const { name, description, options } = subCommandData
-      const subCommand = parentCmd.command(name).description(description)
+    Object.keys(subCommands).forEach((subCommandName) => {
+      const subCommandData = subCommands[subCommandName]
+      const { description, options } = subCommandData
+      const subCommand = parentCmd
+        .command(subCommandName)
+        .description(description)
 
       addOptions(options, subCommand)
 
-      if (subCommandsList && subCommandsList[name]) {
-        subCommand.action(subCommandsList[name](subCommand))
+      if (subCommandsList && subCommandsList[subCommandName]) {
+        subCommand.action(subCommandsList[subCommandName](subCommand))
       }
 
       addSubCommands(subCommand, subCommandData.subCommands)
     })
   }
 
-  if (subCommands && subCommands.length) {
+  if (subCommands) {
     addSubCommands(cmd, subCommands)
   }
 

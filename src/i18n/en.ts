@@ -73,13 +73,11 @@ export default {
       name: 'backups',
       usage: '[command]',
       description: 'Backup and restore your databases.',
-      subCommands: [
-        {
-          name: 'make',
+      subCommands: {
+        make: {
           description: 'Backup current environment state.',
         },
-        {
-          name: 'list',
+        list: {
           description: 'List available backups.',
           options: [
             {
@@ -94,8 +92,7 @@ export default {
             },
           ],
         },
-        {
-          name: 'download',
+        download: {
           description: 'Download previous backups.',
           options: [
             {
@@ -117,9 +114,13 @@ export default {
                 "The path to save the file. This option takes precedence over the '--date' option.",
             },
           ],
+          methods: {
+            getDownload: {
+              isExternalPath: '<b>Selected path:</b> <cyan>${path}</cyan>',
+            },
+          },
         },
-        {
-          name: 'restore',
+        restore: {
           description:
             'Upload a backup file or restore a previous version as the current one.',
           options: [
@@ -139,8 +140,7 @@ export default {
             },
           ],
         },
-        {
-          name: 'flush',
+        flush: {
           description: 'Flush the current database.',
           options: [
             {
@@ -154,16 +154,15 @@ export default {
             },
           ],
         },
-      ],
+      },
     },
     logs: {
       name: 'logs',
       usage: '[command]',
       description:
         'Visualize the logs stream about your functions or the cloud infrastructure.',
-      subCommands: [
-        {
-          name: 'filter',
+      subCommands: {
+        filter: {
           description: 'List and filter your logs.',
           options: [
             {
@@ -230,11 +229,10 @@ export default {
             },
           ],
         },
-        {
-          name: 'clear',
+        clear: {
           description: 'Clear the logs.',
         },
-      ],
+      },
     },
     test: {
       name: 'test',
@@ -275,9 +273,8 @@ export default {
       name: 'infra',
       description: 'Manage your services running, create and destroy machines.',
       usage: '[command]',
-      subCommands: [
-        {
-          name: 'init',
+      subCommands: {
+        init: {
           description:
             'To create a very basic infra file in your repo to be used as your infra.',
           options: [
@@ -316,7 +313,7 @@ export default {
             },
           ],
         },
-      ],
+      },
     },
     deploy: {
       name: 'deploy',
@@ -350,8 +347,12 @@ export default {
   errors: {
     401: 'It seems you are not logged in. One possible reason could be an expired or invalid token. Please log in again to continue.',
     408: 'Connection <b>timeout</b> while trying to reach the cloud. Please check your network connection and try again.',
-    404: "Fatal error while trying to establish a <b>connection to the cloud</b>. Check your '<b>${file}</b>' file or <b>arguments</b> and try again.",
-    499: "Could not connect. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.",
+    404: 'Fatal error while trying to establish a <b>connection to the cloud</b>. Check your <b>${file}</b> file or <b>arguments</b> and try again.',
+    499: 'Could not connect. Check your <b>${file}</b> file or <b>your arguments</b> and try again.',
+  },
+  alias: {
+    isExternalPath:
+      '@commands.backups.subCommands.download.methods.getDownload.isExternalPath',
   },
   context: {
     configurationFileNotFound:

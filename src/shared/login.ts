@@ -108,8 +108,12 @@ export const login = async ({
     } catch (error) {
       users = users.filter((user) => user !== lastUser)
 
-      if (!isNaN(error)) {
-        context.print.warning(context.i18n(`errors.${error}`), true)
+      if (!isNaN(error) && typeof error === 'string') {
+        const errorMsg = `errors.${error}` as Based.i18n.NestedKeys<
+          typeof context.i18n
+        >
+
+        context.print.warning(context.i18n(errorMsg), true)
       } else {
         context.print.warning(error)
       }

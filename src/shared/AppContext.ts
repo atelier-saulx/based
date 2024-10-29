@@ -9,6 +9,7 @@ import {
   contextCommandMaker,
 } from '../helpers/index.js'
 import { i18n } from '@based/i18n'
+import { languages } from '../i18n/index.js'
 
 export class AppContext {
   private static instance: AppContext
@@ -30,10 +31,18 @@ export class AppContext {
     'silent',
   ]
   public program: Command
+  public i18n: ReturnType<typeof i18n<typeof languages>>
+  public commandMaker = contextCommandMaker
+  public getGlobalOptions = contextGlobalOptions
+  public getProgram = contextProgram
+  public getBasedClients = contextBasedClients
+  public parse = contextParse
+  public input = contextInput(this)
+  public print = contextPrint(this.state)
 
   private constructor(
     program?: Command,
-    internationalization?: Based.i18n.TranslationsModel,
+    internationalization?: Based.i18n.Translations<Record<string, any>>,
   ) {
     if (!program && !this.program) {
       throw new Error('Program must be provided.')
@@ -47,13 +56,13 @@ export class AppContext {
       this.set('languages', internationalization.languages)
       this.set('language', defaultLanguage)
 
-      this.i18n = i18n(internationalization.languages[defaultLanguage])
+      this.i18n = i18n(internationalization)
     }
   }
 
   public static getInstance(
     program?: Command,
-    languages?: Based.i18n.TranslationsModel,
+    languages?: Based.i18n.Translations<Record<string, any>>,
   ): AppContext {
     if (!AppContext.instance) {
       AppContext.instance = new AppContext(program, languages)
@@ -87,13 +96,4 @@ export class AppContext {
   public get(key: string) {
     return this.state[key]
   }
-
-  public i18n: Based.i18n.Translate
-  public commandMaker = contextCommandMaker
-  public getGlobalOptions = contextGlobalOptions
-  public getProgram = contextProgram
-  public getBasedClients = contextBasedClients
-  public parse = contextParse
-  public input = contextInput(this)
-  public print = contextPrint(this.state)
 }
