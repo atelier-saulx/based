@@ -277,23 +277,13 @@ await test('filter', async (t) => {
     db
       .query('machine')
       .include('id')
+      .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
       .filter('env', '=', [emptyEnv, env])
       .range(0, 10)
       .get()
       .inspect(1)
       .toObject(),
-    [
-      { id: 2 },
-      { id: 4 },
-      { id: 6 },
-      { id: 8 },
-      { id: 10 },
-      { id: 12 },
-      { id: 14 },
-      { id: 16 },
-      { id: 18 },
-      { id: 20 },
-    ],
+    [{ id: 100000 }],
     'Filter by reference (multiple)',
   )
 })

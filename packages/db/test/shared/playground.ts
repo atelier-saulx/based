@@ -12,7 +12,7 @@ import { italy } from './examples.js'
 import crypto from 'crypto'
 
 function randU32() {
-    return crypto.randomBytes(4).readUInt32LE(0);
+  return crypto.randomBytes(4).readUInt32LE(0)
 }
 
 import { pipeline } from 'node:stream/promises'
@@ -175,19 +175,27 @@ const makeDb = async (path: string) => {
   db.query('article')
     .range(0, 100)
     .filter('publishDate', '>', '01/01/2024')
-    // .filter('author.firstName', '=', 'Elena Sánchez')
     .sort('publishDate', 'desc')
     .include('author', '*')
     .get()
     // .debug()
     .inspect(2)
 
-  db.query('user')
-    .range(0, 1e6)
-    // .filter('author.firstName', '=', 'Elena Sánchez')
+  // .debug()
+
+  // STRINGS
+  // console.log(
+  //   db.query('user').filter('firstName', '=', 'Elena Sánchez').get().node().id,
+  // )
+
+  db.query('article')
+    .range(0, 100)
+    .filter('author', '=', 25)
+    .sort('publishDate', 'desc')
+    .include('author', '*')
     .get()
     // .debug()
-    .inspect(200)
+    .inspect(2)
 
   const start = performance.now()
   await db.stop(false)
@@ -215,9 +223,9 @@ const makeDb1 = async (path: string) => {
           x4: { type: 'uint32' },
           x5: { type: 'uint32' },
           x6: { type: 'uint32' },
-        }
+        },
       },
-    }
+    },
   })
 
   for (let i = 0; i < 5_000_000; i++) {
