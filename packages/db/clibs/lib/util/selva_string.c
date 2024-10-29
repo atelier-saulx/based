@@ -944,8 +944,11 @@ ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, s
 
 __constructor static void init_compressor(void)
 {
-    /* TODO How to configure compression level? */
-    compressor = libdeflate_alloc_compressor(6);
+    /*
+     * TODO How to configure compression level?
+     * This is now the same as in native/string.zig, hopefully...
+     */
+    compressor = libdeflate_alloc_compressor(3);
     if (!compressor) {
         abort();
     }
