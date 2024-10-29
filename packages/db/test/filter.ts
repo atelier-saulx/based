@@ -296,6 +296,4 @@ await test('filter', async (t) => {
     ],
     'Filter by reference (multiple)',
   )
-
-  // reference
 })
