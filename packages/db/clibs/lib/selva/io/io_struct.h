@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#include "xxhash.h"
 
 struct libdeflate_compressor;
 struct libdeflate_decompressor;

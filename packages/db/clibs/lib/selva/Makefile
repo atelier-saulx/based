@@ -35,6 +35,7 @@ OBJ := \
 	print_ready.o \
 	ref_save_map.o \
 	schema.o \
+	selva_hash128.o \
 	sort.o \
 	traverse.o \
 	types.o \

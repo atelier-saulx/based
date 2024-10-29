@@ -54,6 +54,11 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
 
+    registerFunction(env, exports, "hashCreate", string.hashCreate) catch return null;
+    registerFunction(env, exports, "hashReset", string.hashReset) catch return null;
+    registerFunction(env, exports, "hashUpdate", string.hashUpdate) catch return null;
+    registerFunction(env, exports, "hashDigest", string.hashDigest) catch return null;
+
     registerFunction(env, exports, "compress", string.compress) catch return null;
     registerFunction(env, exports, "decompress", string.decompress) catch return null;
 

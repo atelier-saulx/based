@@ -9,11 +9,10 @@
 #include "jemalloc.h"
 #include "util/align.h"
 #include "util/ida.h"
-#include "xxhash.h"
 #include "selva/fields.h"
+#include "selva/selva_hash128.h"
 #include "queue.h"
 #include "selva_error.h"
-#include "selva_hash128.h"
 #include "schema.h"
 #include "db_panic.h"
 #include "db.h"
@@ -651,6 +650,10 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
     }
 }
 
+/**
+ * Update node hash by using a temp hash state allocated earlier.
+ * @param tmp_hash_state is only used for computation and it's reset before use.
+ */
 static void selva_node_hash_update_internal(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
 {
     selva_hash128_t res;
