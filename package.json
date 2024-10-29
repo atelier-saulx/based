@@ -11,7 +11,7 @@
     "dist"
   ],
   "scripts": {
-    "docs": "node readme.ts",
+    "docs": "ts-node --esm readme.ts",
     "dev": "node bin/cmd.js",
     "build": "tsc -b",
     "watch": "tsc -b --watch",

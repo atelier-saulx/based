@@ -17,6 +17,8 @@ export default {
   },
   commands: {
     globalOptions: {
+      longDescription:
+        "The CLI has some global options that can be used from any command. These options, when used on the command line, have precedence over any other option related to your project. For example, after configuring your 'based.(json|ts|js)' file to use the project `'my-first-project'`, and you use the option `--project my-second-project` on the command line, that option will be used instead. Therefore, if you want to configure your project for CI/CD, you can pass all the parameters you need on the command line.",
       options: [
         {
           parameter: '--display <level>',
@@ -62,6 +64,7 @@ export default {
     auth: {
       name: 'auth',
       description: 'Authorize your user in the Based Cloud.',
+      example: 'npx @based/cli auth',
       options: [
         {
           parameter: '--email <email>',
@@ -73,6 +76,7 @@ export default {
       name: 'backups',
       usage: '[command]',
       description: 'Backup and restore your databases.',
+      example: 'npx @based/cli backup [sub-command][options]',
       subCommands: {
         make: {
           description: 'Backup current environment state.',
@@ -161,6 +165,7 @@ export default {
       usage: '[command]',
       description:
         'Visualize the logs stream about your functions or the cloud infrastructure.',
+      example: 'npx @based/cli logs [sub-command][options]',
       subCommands: {
         filter: {
           description: 'List and filter your logs.',
@@ -237,6 +242,7 @@ export default {
     test: {
       name: 'test',
       description: "Run your application's tests using your environment data.",
+      example: 'npx @based/cli test [options]',
       options: [
         {
           parameter: '-co, --command <command>',
@@ -273,6 +279,7 @@ export default {
       name: 'infra',
       description: 'Manage your services running, create and destroy machines.',
       usage: '[command]',
+      example: 'npx @based/cli infra [sub-command][options]',
       subCommands: {
         init: {
           description:
@@ -318,6 +325,7 @@ export default {
     deploy: {
       name: 'deploy',
       description: 'Push your app to Based Cloud super fast as hell.',
+      example: 'npx @based/cli deploy [options]',
       options: [
         {
           parameter: '-w, --watch',
@@ -332,6 +340,7 @@ export default {
     dev: {
       name: 'dev',
       description: 'Develop your app running the Based Cloud locally.',
+      example: 'npx @based/cli dev [options]',
       options: [
         {
           parameter: '--port <port>',

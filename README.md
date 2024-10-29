@@ -50,191 +50,166 @@ they are all optional.
 However, if you provide any of the authentication parameters in a project that has the `based.json` file,
 the information passed as a parameter will take precedence over the file.
 
-## Global Options
+## Commands
 
-The CLI has some global options that can be used from any command.
-These options, when used on the command line, have precedence over any other option related to your project.
-For example, after configuring your 'based.(json|ts|js)' file to use the project `'my-first-project'`,
-and you use the option `--project my-second-project` on the command line, that option will be used instead.
-Therefore, if you want to configure your project for CI/CD, you can pass
-all the parameters you need on the command line.
+### Global Options
 
-| Option                      | Description                                                                                                                  |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `--display <level>`         | Sets the logging level for the CLI output (default: "verbose")(available levels: verbose/info/success/warning/error/silent). |
-| `-y`, `--yes`               | You can use this to skip all the prompts and use a predefined preset in some commands.                                       |
-| `-c`, `--cluster <cluster>` | Define the cluster to use (default: "production").                                                                           |
-| `-o`, `--org <org>`         | Specify the organization.                                                                                                    |
-| `-p`, `--project <project>` | Specify the project name.                                                                                                    |
-| `-e`, `--env <env>`         | Specify witch environment (can be a name or "#branch" if you want to deploy by branch).                                      |
-| `--api-key <api-key>`       | API Key generated on Based.io for Service Account.                                                                           |
+The CLI has some global options that can be used from any command. These options, when used on the command line, have precedence over any other option related to your project. For example, after configuring your 'based.(json|ts|js)' file to use the project `'my-first-project'`, and you use the option `--project my-second-project` on the command line, that option will be used instead. Therefore, if you want to configure your project for CI/CD, you can pass all the parameters you need on the command line.
 
-## Basic commands
+| Option | Description |
+|--------|-------------|
+| `--display <level>` | Sets the logging level for the CLI output (available levels: verbose | info | success | warning | error | silent). |
+| `-y, --yes` | You can use this to skip all the prompts and use a predefined preset in some commands. |
+| `-c, --cluster <cluster>` | Define the cluster to use. |
+| `-o, --org <org>` | Specify the organization. |
+| `-p, --project <project>` | Specify the project name. |
+| `-e, --env <env>` | Specify which environment (can be a name or "#branch" if you want to deploy by branch). |
+| `--api-key <api-key>` | API Key generated on Based.io for Service Account. |
+| `--file <file>` | If you want to use a specific Based configuration file. All other project options take precedence over this option. |
 
-### auth
+### Auth
 
 Authorize your user in the Based Cloud.
 
 _Example:_ `npx @based/cli auth`
 
-| Option            | Description                    | Required |
-| ----------------- | ------------------------------ | -------- |
-| `--email <email>` | To speed up the login process. | No       |
+| Option | Description |
+|--------|-------------|
+| `--email <email>` | To speed up the login process. |
 
-### init [not-ready]
+### Backups
 
-_Example:_ `npx @based/cli init [options]`
-
-| Option          | Description                                                     | Required |
-| --------------- | --------------------------------------------------------------- | -------- |
-| `--path <path>` | Specify the path where the boilerplate app should be installed. | Yes      |
-| `--debug`       | Show debug information if available.                            | No       |
-| `[globals]`     | You can use any global option                                   | No       |
-
-### dev
-
-_Example:_ `npx @based/cli dev [options]`
-
-| Option                            | Description                                 | Required |
-| --------------------------------- | ------------------------------------------- | -------- |
-| `--port <port>`                   | To set manually the Based Dev Server port.  | No       |
-| `-f`, `--function <functions...>` | The function names to be served (variadic). | No       |
-| `[globals]`                       | You can use any global option               | No       |
-
-### deploy
-
-_Example:_ `npx @based/cli deploy [options]`
-
-| Option                            | Description                                   | Required |
-| --------------------------------- | --------------------------------------------- | -------- |
-| `-f`, `--function <functions...>` | The function names to be deployed (variadic). | No       |
-| `--schema`                        | Deploy schemas (default: false).              | No       |
-| `-w`, `--watch`                   | Watch for changes (default: false).           | No       |
-| `--force`                         | Force deploy unchanged (default: false).      | No       |
-| `[globals]`                       | You can use any global option                 | No       |
-
-### logs
-
-_Example:_ `npx @based/cli logs [sub-command][options]`
-
-#### filter
-
-| Option                               | Description                                                                                                                                       | Required |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `--stream`                           | To display the logs em real time. <br/>This option takes precedence over "limit" and "sort" options.                                              | No       |
-| `--collapsed`                        | To display the content of the logs collapsed.                                                                                                     | No       |
-| `--app`                              | To display the content only about your app and your functions.                                                                                    | No       |
-| `--infra`                            | To display the content only about the infrastructure of your environment.                                                                         | No       |
-| `--level <level>`                    | Filter by level (default: all)(available levels: all/info/error).                                                                                 | No       |
-| `-l`, `--limit <limit>`              | Limit the number of displayed logs (all: 0, max: 1000). <br/>The limit has no effect when logs are being displayed as a live stream in real-time. | No       |
-| `-s`, `--sort <sort>`                | Sort the order of the backups asc/desc.                                                                                                           | No       |
-| `--start-date <dd/mm/yyyyThh:mm:ss>` | Filter by date.                                                                                                                                   | No       |
-| `--end-date <dd/mm/yyyyThh:mm:ss>`   | Filter by date.                                                                                                                                   | No       |
-| `-cs`, `--checksum <cheksum>`        | Filter by checksum.                                                                                                                               | No       |
-| `-f`, `--function <functions...>`    | Filter by function (variadic).                                                                                                                    | No       |
-| `--service <services...>`            | Filter by service name (variadic).                                                                                                                | No       |
-| `[globals]`                          | You can use any global option                                                                                                                     | No       |
-
-#### clean
-
-| Option      | Description                   | Required |
-| ----------- | ----------------------------- | -------- |
-| `[globals]` | You can use any global option | No       |
-
-### backups
+Backup and restore your databases.
 
 _Example:_ `npx @based/cli backup [sub-command][options]`
 
-#### make
+#### Make
 
-| Option      | Description                   | Required |
-| ----------- | ----------------------------- | -------- |
-| `[globals]` | You can use any global option | No       |
+Backup current environment state.
 
-#### list
+#### List
 
-| Option                  | Description                                                  | Required |
-| ----------------------- | ------------------------------------------------------------ | -------- |
-| `-l`, `--limit <limit>` | Limit the number of displayed backups (default: 10)(all: 0). | No       |
-| `-s`, `--sort <sort>`   | Sort the order of the backups ASC/DESC (default: ASC).       | No       |
-| `[globals]`             | You can use any global option                                | No       |
+List available backups.
 
-#### download
+| Option | Description |
+|--------|-------------|
+| `-l, --limit <limit>` | Limit the number of displayed backups (all: 0). |
+| `-s, --sort <sort>` | Sort the order of the backups asc/desc. |
 
-| Option          | Description                                    | Required |
-| --------------- | ---------------------------------------------- | -------- |
-| `--db <db>`     | DB instance name.                              | No       |
-| `--file <file>` | The '.rdb' backup file to download.            | No       |
-| `--path <path>` | Specify the path where the file will be saved. | No       |
-| `[globals]`     | You can use any global option                  | No       |
+#### Download
 
-#### restore
+Download previous backups.
 
-| Option          | Description                       | Required |
-| --------------- | --------------------------------- | -------- |
-| `--db <db>`     | DB instance name.                 | No       |
-| `--file <file>` | The '.rdb' backup file to upload. | No       |
-| `[globals]`     | You can use any global option     | No       |
+| Option | Description |
+|--------|-------------|
+| `--db <db>` | DB instance name. |
+| `--file <file>` | The '.rdb' backup file to be downloaded. This option takes precedence over the '--date' option. |
+| `-d, --date <dd/mm/yyyy>` | Select a date to get the latest available backup. |
+| `--path <path>` | The path to save the file. This option takes precedence over the '--date' option. |
 
-#### flush
+#### Restore
 
-| Option      | Description                   | Required |
-| ----------- | ----------------------------- | -------- |
-| `--db <db>` | DB instance name.             | No       |
-| `[globals]` | You can use any global option | No       |
+Upload a backup file or restore a previous version as the current one.
 
-### call [not-ready]
+| Option | Description |
+|--------|-------------|
+| `--db <db>` | DB instance name. |
+| `--file <file>` | The '.rdb' backup file to be used. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option takes precedence over the '--date' option. |
+| `-d, --date <dd/mm/yyyy>` | Select a date to restore the latest available backup. |
 
-_Example:_ `npx @based/cli call [options]`
+#### Flush
 
-| Option                             | Description                     | Required |
-| ---------------------------------- | ------------------------------- | -------- |
-| `-f`, `--function <function name>` | The function name to be called. | Yes      |
-| `[globals]`                        | You can use any global option   | No       |
+Flush the current database.
 
-### edit [not-ready]
+| Option | Description |
+|--------|-------------|
+| `--db <db>` | DB instance name. |
+| `--force` | Flush without confirmation. Warning! This action cannot be undone. |
 
-_Example:_ `npx @based/cli edit [options]`
+### Logs
 
-| Option                    | Description                   | Required |
-| ------------------------- | ----------------------------- | -------- |
-| `--id <id>`               | ID.                           | No       |
-| `--db <db>`               | DB instance name.             | No       |
-| `--language <language>`   | Language.                     | No       |
-| `-e`, `--editor <editor>` | Editor (default: "nvim").     | No       |
-| `[globals]`               | You can use any global option | No       |
+Visualize the logs stream about your functions or the cloud infrastructure.
 
-### secrets [not-ready]
+_Example:_ `npx @based/cli logs [sub-command][options]`
 
-_Example:_ `npx @based/cli secrets [sub-command][options]`
+#### Filter
 
-#### set
+List and filter your logs.
 
-| Option                  | Description                   | Required |
-| ----------------------- | ----------------------------- | -------- |
-| `-k`, `--key <key>`     | Key.                          | No       |
-| `-v`, `--value <value>` | Value.                        | No       |
-| `[globals]`             | You can use any global option | No       |
+| Option | Description |
+|--------|-------------|
+| `--monitor` | To display the logs in an interactive UI. |
+| `--stream` | To display the logs in real time. This option takes precedence over "limit", "before", "after", and "sort" options. |
+| `--collapsed` | To display the content of the logs collapsed. |
+| `--app` | To display the content only about your app and your functions. |
+| `--infra` | To display the content only about the infrastructure of your environment. |
+| `--level <level>` | Filter by level (available levels: all | info | error). |
+| `-l, --limit <limit>` | Limit the number of displayed logs (all: 0, max: 1000)(Limit has no effect when logs are being displayed as a live stream in real-time). |
+| `-s, --sort <sort>` | Sort the order of the logs asc/desc (Sorting has no effect when logs are being displayed as a live stream in real-time). |
+| `-sD, --start-date <dd/mm/yyyy-hh:mm:ss>` | The start date and time for filtering logs. |
+| `-eD, --end-date <dd/mm/yyyy-hh:mm:ss>` | The end date and time for filtering logs. |
+| `-cs, --checksum <cheksum>` | Filter by checksum. |
+| `-f, --function <functions...>` | Filter by function. |
+| `-m, --machine <machines...>` | Filter by machine ID. |
 
-#### get
+#### Clear
 
-| Option              | Description                   | Required |
-| ------------------- | ----------------------------- | -------- |
-| `-k`, `--key <key>` | Key.                          | No       |
-| `[globals]`         | You can use any global option | No       |
+Clear the logs.
 
-### query [not-ready]
+### Test
 
-_Example:_ `npx @based/cli query [options]`
+Run your application's tests using your environment data.
 
-| Option                    | Description                         | Required |
-| ------------------------- | ----------------------------------- | -------- |
-| `--id <id>`               | Query ID.                           | Yes      |
-| `--db <db>`               | DB instance name.                   | No       |
-| `-n`, `--name <name>`     | Name.                               | No       |
-| `-w`, `--watch`           | Watch for changes (default: false). | No       |
-| `-t`, `--type <type>`     | Type.                               | No       |
-| `--language <language>`   | Language.                           | No       |
-| `-f`, `--fields <fields>` | Fields.                             | No       |
-| `-l`, `--limit <limit>`   | Limit.                              | No       |
-| `[globals]`               | You can use any global option       | No       |
+_Example:_ `npx @based/cli test [options]`
+
+| Option | Description |
+|--------|-------------|
+| `-co, --command <command>` | To run a specific command in your 'package.json'. |
+| `-nb, --no-backup` | To not make a new backup before running the tests. |
+| `-nr, --no-restore` | To not restore the backup after running the tests. |
+| `--db <db>` | The DB instance name to be used to create/restore your backups. |
+| `--file <file>` | Use an '.rdb' backup file to restore your data to the current version before running the tests. You can specify a file path or a file name from a backup previously uploaded to the cloud. This option also sets '--no-backup' to 'false'. This option takes precedence over the '--date' option. |
+| `--date <dd/mm/yyyy>` | You can provide a date to use the most recent backup created on that date. |
+
+### Infra
+
+Manage your services running, create and destroy machines.
+
+_Example:_ `npx @based/cli infra [sub-command][options]`
+
+#### Init
+
+To create a very basic infra file in your repo to be used as your infra.
+
+| Option | Description |
+|--------|-------------|
+| `--path <path>` | The path to save the file. |
+| `-n, --name <name>` | The name of your machine. |
+| `-d, --description <description>` | Give a description to your machine. |
+| `-do, --domains <domains...>` | Your domains to be assigned to the machine. |
+| `-m, --machine <machine>` | The size of your machine. |
+| `--min <min>` | The minimum number of machines that will run your app. |
+| `--max <max>` | The maximum number of machines that you want to scale your app. |
+
+### Deploy
+
+Push your app to Based Cloud super fast as hell.
+
+_Example:_ `npx @based/cli deploy [options]`
+
+| Option | Description |
+|--------|-------------|
+| `-w, --watch` | watch mode |
+| `-f, --functions <functions...>` | function names to deploy (variadic) |
+
+### Dev
+
+Develop your app running the Based Cloud locally.
+
+_Example:_ `npx @based/cli dev [options]`
+
+| Option | Description |
+|--------|-------------|
+| `--port <port>` | To set manually the Based Dev Server port. |
+| `-f, --function <functions...>` | The function names to be served (variadic). |
+
