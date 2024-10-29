@@ -14,7 +14,6 @@ export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
     prop.typeIndex === INT16 ||
     prop.typeIndex === INT32 ||
     prop.typeIndex === INT64 ||
-    prop.typeIndex === NUMBER ||
     prop.typeIndex === INT8
   ) {
     return true

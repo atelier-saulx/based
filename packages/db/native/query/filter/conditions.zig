@@ -6,31 +6,36 @@ const num = @import("./numerical.zig");
 const t = @import("./types.zig");
 const Mode = t.Mode;
 const Op = t.Operator;
+const Prop = @import("../../types.zig").Prop;
 
-pub fn runConditions(fieldSchema: db.FieldSchema, q: []u8, v: []u8) bool {
+pub fn runConditions(q: []u8, v: []u8) bool {
     var i: u16 = 0;
     while (i < q.len) {
         const mode: Mode = @enumFromInt(q[i]);
         const valueSize = readInt(u16, q, i + 1);
         const start = readInt(u16, q, i + 3);
         const op: Op = @enumFromInt(q[i + 5]);
+        const prop: Prop = @enumFromInt(q[i + 6]);
 
-        if (mode == Mode.orFixed or mode == Mode.orReferences) {
-            const repeat = readInt(u16, q, i + 6);
-            const query = q[i + 8 .. i + valueSize * repeat + 8];
+        // References does not need to be passed anymore
+        // Pass fieldType in the filter
+
+        if (mode == Mode.orFixed) {
+            const repeat = readInt(u16, q, i + 7);
+            const query = q[i + 9 .. i + valueSize * repeat + 9];
             if (op == Op.equal) {
                 const value = v[start .. start + valueSize];
                 if (!batch.equalsOr(valueSize, value, query)) {
                     return false;
                 }
-            } else if (op == Op.has and mode == Mode.orReferences) {
+            } else if (op == Op.has and prop == Prop.REFERENCES) {
                 if (!batch.simdReferencesHas(query, v)) {
                     return false;
                 }
             }
-            i += 8 + valueSize * repeat;
+            i += 9 + valueSize * repeat;
         } else if (mode == Mode.default) {
-            const query = q[i + 6 .. i + valueSize + 6];
+            const query = q[i + 7 .. i + valueSize + 7];
             if (op == Op.equal) {
                 const value = v[start .. start + valueSize];
                 // Fast for non matching cases
@@ -50,11 +55,11 @@ pub fn runConditions(fieldSchema: db.FieldSchema, q: []u8, v: []u8) bool {
                 }
             } else if (Op.isNumerical(op)) {
                 const value = v[start .. start + valueSize];
-                if (!num.compare(valueSize, op, query, value, fieldSchema)) {
+                if (!num.compare(valueSize, op, query, value, prop)) {
                     return false;
                 }
             }
-            i += 6 + valueSize;
+            i += 7 + valueSize;
         }
     }
     return true;

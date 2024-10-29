@@ -24,38 +24,16 @@ const idToShard = db.idToShard;
 // -------------------------------------------
 // conditions normal
 // field, [size 2]
-// [or = 0] [size 2] [start 2], [op], value[size]
+// [or = 0] [size 2] [start 2], [op] [typeIndex], value[size]
 // -------------------------------------------
 // conditions or fixed
 // field, [size 2]
-// [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
+// [or = 1] [size 2] [start 2] [op] [typeIndex], [repeat 2], value[size] value[size] value[size]
 // -------------------------------------------
 // conditions or variable
 // field, [size 2]
-// [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
+// [or = 2] [size 2] [start 2], [op] [typeIndex], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
-// operations shared
-// 1 = equality
-// 2 = has (simd)
-// 3 = not equal
-// 4 = ends with
-// 5 = starts with
-// -------------------------------------------
-// operations numbers
-// 6 = larger then
-// 7 = smaller then
-// 8 = larger then inclusive
-// 9 = smaller then inclusive
-// 10 = range
-// 11 = exclude range
-// -------------------------------------------
-// operations strings
-// 12 = equality to lower case
-// 13 = has to lower case (simd)
-// 14 = starts with to lower case
-// 15 = ends with to lower case
-// -------------------------------------------
-// if 2 things to check in main that are next to each other make it
 
 pub fn filter(
     ctx: *db.DbCtx,
@@ -132,7 +110,7 @@ pub fn filter(
             if (value.len == 0) {
                 return false;
             }
-            if (!runCondition(fieldSchema, query, value)) {
+            if (!runCondition(query, value)) {
                 return false;
             }
             fieldIndex += querySize + 3;

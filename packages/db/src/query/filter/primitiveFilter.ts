@@ -1,8 +1,10 @@
 import {
+  NUMBER,
   PropDef,
   PropDefEdge,
   REFERENCES,
   REVERSE_SIZE_MAP,
+  TypeIndex,
 } from '../../schema/types.js'
 import { propIsSigned } from '../../schema/utils.js'
 import { QueryDefFilter } from '../types.js'
@@ -23,9 +25,23 @@ import { parseFilterValue } from './parseFilterValue.js'
 // [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
-const write = (buf: Buffer, value: any, size: number, offset: number) => {
+const write = (
+  prop: PropDef | PropDefEdge,
+  buf: Buffer,
+  value: any,
+  size: number,
+  offset: number,
+) => {
   if (size === 8) {
     buf.writeDoubleLE(value, offset)
+  } else if (propIsSigned(prop)) {
+    if (size === 4) {
+      buf.writeInt32LE(value, offset)
+    } else if (size === 2) {
+      buf.writeInt16LE(value, offset)
+    } else if (size === 1) {
+      buf[offset] = value
+    }
   } else if (size === 4) {
     buf.writeUInt32LE(value, offset)
   } else if (size === 2) {
@@ -39,13 +55,6 @@ const write = (buf: Buffer, value: any, size: number, offset: number) => {
 // default = 0,
 // orFixed = 1,
 // orVar = 2,
-// orReferences = 3,
-const switchMode = (mode: number, refs: boolean) => {
-  if (mode == 1 && refs) {
-    return 3
-  }
-  return mode
-}
 
 const createFixedFilterBuffer = (
   prop: PropDef | PropDefEdge,
@@ -59,31 +68,33 @@ const createFixedFilterBuffer = (
   if (Array.isArray(value)) {
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
-    buf = Buffer.allocUnsafe(8 + len * size)
-    buf[0] = switchMode(1, references)
+    buf = Buffer.allocUnsafe(9 + len * size)
+    buf[0] = 1
     buf.writeUInt16LE(size, 1)
     buf.writeUInt16LE(start, 3)
     buf[5] = op
-    buf.writeUInt16LE(len, 6)
+    buf[6] = prop.typeIndex
+    buf.writeUInt16LE(len, 7)
     if (references) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
       for (let i = 0; i < len; i++) {
-        buf.writeUInt32LE(value[i], 8 + i * size)
+        buf.writeUInt32LE(value[i], 9 + i * size)
       }
     } else {
       for (let i = 0; i < len; i++) {
-        write(buf, parseFilterValue(prop, value[i]), size, 8 + i * size)
+        write(prop, buf, parseFilterValue(prop, value[i]), size, 9 + i * size)
       }
     }
   } else {
     // [or = 0] [size 2] [start 2], [op], value[size]
-    buf = Buffer.allocUnsafe(6 + size)
-    buf[0] = switchMode(0, references)
+    buf = Buffer.allocUnsafe(7 + size)
+    buf[0] = 0
     buf.writeUInt16LE(size, 1)
     buf.writeUInt16LE(start, 3)
     buf[5] = op
-    write(buf, parseFilterValue(prop, value), size, 6)
+    buf[6] = prop.typeIndex
+    write(prop, buf, parseFilterValue(prop, value), size, 7)
   }
   return buf
 }

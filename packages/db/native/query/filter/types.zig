@@ -32,5 +32,4 @@ pub const Mode = enum(u8) {
     default = 0,
     orFixed = 1,
     orVar = 2,
-    orReferences = 3,
 };

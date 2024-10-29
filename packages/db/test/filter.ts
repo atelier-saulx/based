@@ -46,7 +46,7 @@ await test('filter', async (t) => {
       },
       machine: {
         props: {
-          derp: 'int16',
+          derp: 'int32',
           lastPing: 'number',
           requestsServed: 'uint32',
           env: {
@@ -85,7 +85,7 @@ await test('filter', async (t) => {
       status: status[Math.floor(Math.random() * status.length)],
       requestsServed: i,
       lastPing: i + 1,
-      derp: -i, //~~(Math.random() * 255) - ~~(Math.random() * 255),
+      derp: -i,
       isLive: !!(i % 2),
       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
     }).tmpId
@@ -107,7 +107,6 @@ await test('filter', async (t) => {
     x.length,
     'OR number',
   )
-  console.log('----------------------')
 
   const make = () => {
     const x = ~~(Math.random() * lastId)
@@ -212,23 +211,16 @@ await test('filter', async (t) => {
     2,
   )
 
-  const bla = Buffer.allocUnsafe(4)
-  const max = 2147483747
-  bla.writeUint32LE(max + 100)
-
-  const bla2 = Buffer.allocUnsafe(4)
-  bla2.writeUint32LE(max - 100)
-
-  console.log(bla2.readUInt32LE(0) < bla.readUint32LE(0))
-
-  // equal(
-  db.query('machine')
-    .include('*')
-    .filter('derp', '<=', 200)
-    .sort('derp')
-    .get()
-    .inspect(5)
-  // .toObject().length,
-  // 2,
-  // )
+  equal(
+    db
+      .query('machine')
+      .include('*')
+      .filter('derp', '<=', 0)
+      .filter('derp', '>', -5)
+      .get()
+      .inspect(10)
+      .toObject().length,
+    5,
+    'Negative range',
+  )
 })

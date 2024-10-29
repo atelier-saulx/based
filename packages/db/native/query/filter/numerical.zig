@@ -33,11 +33,12 @@ pub inline fn compare(
     op: Op,
     query: []u8,
     value: []u8,
-    fieldSchema: db.FieldSchema,
+    prop: Prop,
 ) bool {
-    // MOD for negative check info OR OP
+    // MODE all this is stored in microbuffers...
     // maybe op is better scince its only for these operations
-    const isSigned = Prop.isSigned(@enumFromInt(fieldSchema.type));
+    const isSigned = Prop.isSigned(prop);
+
     if (size == 4) {
         if (isSigned) {
             return operate(i32, op, query, value);
@@ -45,8 +46,9 @@ pub inline fn compare(
             return operate(u32, op, query, value);
         }
     } else if (size == 8) {
-        if (isSigned) {
-            // maybe f?
+        if (prop == Prop.NUMBER) {
+            return operate(f64, op, query, value);
+        } else if (isSigned) {
             return operate(i64, op, query, value);
         } else {
             return operate(u64, op, query, value);
