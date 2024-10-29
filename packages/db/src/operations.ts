@@ -1,112 +1,287 @@
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import { BasedDb } from './index.js'
+import { PropDef } from './schema/types.js'
+import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
+// this is just so ts builds it
+import './worker.js'
 
-let j = 0
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
-export const flushBuffer = (db: BasedDb) => {
-  const ctx = db.modifyCtx
-  if (ctx.len) {
-    const queue = ctx.queue
-    const d = Date.now()
-    const offset = 0
-    let start = 0
+let workerId = 0
+export class DbWorker {
+  constructor(db: BasedDb) {
+    const address = db.native.intFromExternal(db.dbCtxExternal)
+    const { port1, port2 } = new MessageChannel()
 
-    console.log(ctx.len, ctx.types)
-    // // TODO put actual offset here
-    // console.log(
-    //   '----- start drain',
-    //   ctx.types.map((type) => {
-    //     type.modifyIndex = null
-    //     return type.type
-    //   }),
-    // )
+    new Worker(join(__dirname, 'worker.js'), {
+      workerData: {
+        atomics: this.atomics,
+        address,
+        channel: port2,
+      },
+      transferList: [port2],
+    })
 
-    try {
-      // const worker = db.workers[0]
-      // const end = ctx.len
+    this.channel = port1
+  }
 
-      // worker.modify(ctx.buf.subarray(start, ctx.len))
-      // worker.start = start
-      // worker.end = end
+  atomics = new Int32Array(new SharedArrayBuffer(4))
+  id = workerId++
+  channel: MessagePort
+  ctx: ModifyCtx
+  remaining = 0
+  types: Record<number, number> = {}
+}
 
-      // if (ctx.len >= ctx.max) {
-      //   // restart
-      //   ctx.len = 0
-      // }
+export const startWorker = (db): Promise<DbWorker> => {
+  const dbWorker = new DbWorker(db)
+  return new Promise((resolve) =>
+    dbWorker.channel.once('message', () => {
+      resolve(dbWorker)
+    }),
+  )
+}
 
-      //   // TODO make this way smarter!!!
-      //   if (db.workers.length) {
-      //     for (let i = 0; i < ctx.types.length; i++) {
-      //       const type = ctx.types[i]
-      //       const next = ctx.types[i + 1]
-      //       const typeStart = type.modifyIndex
-      //       const typeEnd = next ? next.modifyIndex : ctx.len
+export class ModifyCtx {
+  constructor(db: BasedDb, offset = 0, size = ~~(db.maxModifySize / 2)) {
+    this.offset = offset
+    this.len = offset
+    this.size = size
+    this.max = offset + size - 8
+    this.db = db
 
-      //       // @ts-ignore
-      //       if (type.worker) {
-      //         console.log('existing worker:', { typeStart, typeEnd })
-      //         // @ts-ignore
-      //         type.worker.modify(ctx.buf.subarray(typeStart, typeEnd))
-      //         start = typeEnd
-      //       } else if (typeStart !== typeEnd) {
-      //         console.log('new worker:', type.type, { typeStart, typeEnd })
-      //         const worker = db.workers[j++ % db.workers.length]
-      //         // @ts-ignore
-      //         type.worker = worker
-      //         worker.modify(ctx.buf.subarray(typeStart, typeEnd))
-      //         start = typeEnd
-      //       }
+    console.log({ offset, size, max: offset + size - 8 })
 
-      //       type.modifyIndex = null
-      //     }
-      //   }
-
-      // if (start === ctx.len) {
-      //   console.info('hmmm ok everything is on worker now...')
-      // } else {
-      //
-      // }
-
-      db.native.modify(
-        ctx.buf.subarray(0, ctx.len),
-        db.dbCtxExternal,
-        ctx.state,
-      )
-      // or it sends it to the actual db
-    } catch (err) {
-      console.error(err)
+    if (db.modifyCtx) {
+      this.buf = db.modifyCtx.buf
+    } else {
+      this.buf = Buffer.from(new SharedArrayBuffer(db.maxModifySize))
+      db.modifyCtx = this
     }
+  }
 
-    // add errors and reset them here
-    ctx.len = 0
-    ctx.prefix0 = 0
-    ctx.prefix1 = 0
-    ctx.field = -1
-    ctx.id = -1
-    ctx.lastMain = -1
-    ctx.mergeMain = null
-    ctx.mergeMainSize = 0
-    ctx.hasStringField = -1
-    ctx.ctx.offset = offset
-    ctx.ctx = {}
-    ctx.types.clear()
+  // default values
+  id = -1
+  lastMain = -1
+  hasStringField = -1
+  queue = new Map<(payload: any) => void, any>()
+  types = new Set<number>()
+  ctx: { offset?: number } = {} // maybe make this different?
 
-    const time = Date.now() - d
-    console.log({ time })
-    db.writeTime += time
-    db.isDraining = false
+  detached: boolean
+  payload: Buffer
+  queued: boolean
 
-    if (queue.size) {
-      for (const [tmpId, resolve] of queue) {
-        resolve(tmpId + offset)
+  offset: number
+  len: number
+
+  max: number
+  size: number
+  state: Int32Array
+  buf: Buffer
+
+  field: number
+  prefix0: number
+  prefix1: number
+
+  mergeMain: (PropDef | any)[] | null
+  mergeMainSize: number
+
+  db: BasedDb
+}
+
+const findWorkersForTypes = (db: BasedDb, ctx: ModifyCtx) => {
+  const workersForTypes: DbWorker[] = []
+  let leastRemaining = Infinity
+  let chillestWorker: DbWorker
+
+  for (const worker of db.workers) {
+    if (worker.remaining < leastRemaining) {
+      leastRemaining = worker.remaining
+      chillestWorker = worker
+    }
+    for (const type of ctx.types) {
+      if (type in worker.types) {
+        workersForTypes.push(worker)
+        break
       }
-      queue.clear()
+    }
+  }
+
+  return workersForTypes.length ? workersForTypes : [chillestWorker]
+}
+
+const detachFromSharedBuffer = (ctx: ModifyCtx) => {
+  ctx.payload = Buffer.from(ctx.payload)
+  ctx.state = new Int32Array(new SharedArrayBuffer(8))
+  ctx.detached = true
+}
+
+const writeToWorker = async (worker: DbWorker, ctx: ModifyCtx) => {
+  ctx.queued = true
+
+  worker.ctx = ctx
+  worker.remaining += ctx.size
+
+  for (const type of ctx.types) {
+    worker.types[type] ??= 0
+    worker.types[type]++
+  }
+
+  console.log(
+    'write to worker',
+    worker.id,
+    ctx.db.workers
+      .map(({ ctx: { offset, size, max, detached } = {}, id }) => ({
+        id,
+        detached,
+        offset,
+        size,
+        max,
+      }))
+      .filter(({ size }) => size),
+  )
+
+  if (ctx.detached) {
+    worker.channel.postMessage(
+      [0, ctx.payload, ctx.state],
+      [ctx.payload.buffer],
+    )
+  } else {
+    worker.channel.postMessage([0, ctx.payload, ctx.state])
+  }
+
+  worker.atomics[0] = 1
+  Atomics.notify(worker.atomics, 0, 1)
+
+  await Atomics.waitAsync(ctx.state, 1, 0).value
+
+  worker.remaining -= ctx.size
+  for (const type of ctx.types) {
+    if (--worker.types[type] === 0) {
+      delete worker.types[type]
+    }
+  }
+
+  if (ctx.queue.size) {
+    for (const [resolve, payload] of ctx.queue) {
+      resolve(payload)
+    }
+  }
+}
+
+const filterCompleted = ({ state }: ModifyCtx) => {
+  const status = state?.[1]
+  return status !== 1
+}
+
+const writeCtx = async (db: BasedDb, ctx: ModifyCtx) => {
+  // update ctx
+  // ctx.size =
+  ctx.payload = ctx.buf.subarray(ctx.offset, ctx.len)
+  ctx.state = new Int32Array(ctx.buf.buffer, (ctx.len + 3) & ~3, 2)
+  ctx.size = (ctx.len - ctx.offset + 8 + 3) & ~3 // has to be aligned
+  ctx.state.fill(0)
+
+  // remove things that are done
+  db.writing = db.writing.filter(filterCompleted)
+  // current ctx goes to writing
+  db.writing.push(ctx)
+  db.writing.sort((a, b) => a.offset - b.offset)
+  // find best location for next context
+  let maxGap = 0
+  let prevEnd
+  let offset
+
+  const minSize = 10000
+  while (maxGap < minSize) {
+    prevEnd = 0
+    offset = 0
+
+    for (const ctx of db.writing) {
+      if (ctx.detached) {
+        continue
+      }
+      const currentStart = ctx.offset + ctx.state[0]
+      const currentEnd = ctx.offset + ctx.size
+      if (currentStart > prevEnd) {
+        const gap = currentStart - prevEnd
+        if (gap > maxGap) {
+          maxGap = gap
+          offset = prevEnd
+        }
+      }
+      prevEnd = currentEnd
     }
 
-    return time
+    // Check for gap after the last occupied region
+    if (prevEnd < db.maxModifySize) {
+      const gap = db.maxModifySize - prevEnd
+      if (gap > maxGap) {
+        maxGap = gap
+        offset = prevEnd
+      }
+    }
+
+    if (maxGap < minSize) {
+      // clear some space
+      for (const region of db.writing) {
+        if (!region.queued && !region.detached) {
+          detachFromSharedBuffer(region)
+          break
+        }
+      }
+    }
+  }
+
+  db.modifyCtx = new ModifyCtx(
+    db,
+    offset,
+    Math.min(maxGap, ~~(db.maxModifySize / 2)),
+  )
+
+  let workers = findWorkersForTypes(db, ctx)
+
+  while (workers.length > 1) {
+    await new Promise((resolve) => {
+      for (const worker of workers) {
+        worker.ctx.queue.set(resolve, 0)
+      }
+    })
+    workers = findWorkersForTypes(db, ctx)
+  }
+
+  return writeToWorker(workers[0], ctx)
+}
+
+export const flushBuffer = (db: BasedDb, cb?: any) => {
+  const ctx = db.modifyCtx
+
+  if (ctx.types.size) {
+    writeCtx(db, ctx)
   }
 
   db.isDraining = false
-  return 0
+
+  if (cb) {
+    let cnt = db.writing.length
+    if (cnt === 0) {
+      ctx.queued = true
+      cb(0)
+    } else {
+      const d = Date.now()
+      const fn = () => {
+        if (--cnt === 0) {
+          cb(Date.now() - d)
+        }
+      }
+      for (const ctx of db.writing) {
+        ctx.queue.set(fn, 0)
+      }
+    }
+  }
 }
 
 export const startDrain = (db: BasedDb) => {

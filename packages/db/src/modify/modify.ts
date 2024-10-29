@@ -1,4 +1,4 @@
-import { BasedDb, ModCtx } from '../index.js'
+import { BasedDb, ModifyCtx } from '../index.js'
 import {
   SchemaTypeDef,
   isPropDef,
@@ -17,7 +17,7 @@ import { writeBinary } from './binary.js'
 import { writeMain } from './main.js'
 
 function _modify(
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,
@@ -59,7 +59,7 @@ function _modify(
 }
 
 export function modify(
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,

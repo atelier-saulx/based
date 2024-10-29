@@ -4,7 +4,7 @@ import { remove } from './modify/remove.js'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
-  PropDef,
+  // PropDef,
   SchemaTypeDef,
   createSchemaTypeDef,
   schemaToSelvaBuffer,
@@ -12,14 +12,13 @@ import {
 import { hashObjectIgnoreKeyOrder, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
-import { flushBuffer } from './operations.js'
+import { DbWorker, ModifyCtx, flushBuffer, startWorker } from './operations.js'
 import { destroy } from './destroy.js'
 import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 import { createTree as createMerkleTree } from '../src/csmt/index.js'
-import { DbWorker, workers } from './workers/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/index.js'
@@ -31,29 +30,13 @@ const COMMON_SDB_FILE = 'common.sdb'
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
-export type ModCtx = {
-  max: number
-  buf: Buffer
-  hasStringField: number
-  len: number
-  field: number
-  prefix0: number
-  prefix1: number
-  id: number
-  lastMain: number
-  mergeMain: (PropDef | any)[] | null
-  mergeMainSize: number
-  ctx: { offset?: number }
-  queue: Map<number, (id: number) => void>
-  db: BasedDb
-  state: Uint32Array
-  types: Set<number>
-}
+export { ModifyCtx } // TODO move this somewhere
 
 export class BasedDb {
+  writing: ModifyCtx[] = []
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
-  modifyCtx: ModCtx
+  modifyCtx: ModifyCtx
   blockSize = 10000
 
   id: number
@@ -84,30 +67,7 @@ export class BasedDb {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
     }
-    const max = this.maxModifySize
-    const sab = new SharedArrayBuffer(max)
-    const sab2 = new SharedArrayBuffer(4)
-    const state = new Uint32Array(sab2)
-
-    this.modifyCtx = {
-      max,
-      hasStringField: -1,
-      mergeMainSize: 0,
-      mergeMain: null,
-      buf: Buffer.from(sab),
-      len: 0,
-      field: -1,
-      prefix0: 0,
-      prefix1: 0,
-      id: -1,
-      lastMain: -1,
-      ctx: {},
-      queue: new Map(),
-      db: this,
-      types: new Set(),
-      state,
-    }
-
+    this.modifyCtx = new ModifyCtx(this)
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
@@ -174,7 +134,11 @@ export class BasedDb {
       def.lastId = lastId
     }
 
-    this.workers = workers(this, 2)
+    this.workers = await Promise.all(
+      Array.from({ length: 4 }).map(() => {
+        return startWorker(this)
+      }),
+    )
 
     return []
   }
@@ -283,11 +247,10 @@ export class BasedDb {
     return new BasedDbQuery(this, type, id as number | number[])
   }
 
-  drain() {
-    flushBuffer(this)
-    const t = this.writeTime
-    this.writeTime = 0
-    return t
+  async drain() {
+    return new Promise((resolve) => {
+      flushBuffer(this, resolve)
+    })
   }
 
   async save() {

@@ -51,7 +51,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     };
 
     var offset: u32 = 0;
-    std.debug.print("BATCH LEN: {d}", .{batch.len});
+    // std.debug.print("- zig batch: {d}\n", .{batch.len});
     while (i < batch.len) {
         // delete
         const op: types.ModOp = @enumFromInt(batch[i]);
@@ -122,7 +122,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i += try updatePartialField(&ctx, operation) + offset;
             },
             else => {
-                std.log.err("Something went wrong, incorrect modify operation\n", .{});
+                std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });
                 break;
             },
         }

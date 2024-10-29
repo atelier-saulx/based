@@ -47,8 +47,8 @@ await setTimeout(500)
 let j = 1
 
 while (j--) {
-  let i = 100
-  let k = 100
+  let i = 10
+  let k = 10
   while (i--) {
     db.create('article', {
       body: 'nice body 00dlsjfhlksjgflksdjgflksjglks gjlks ' + i,

@@ -1,4 +1,4 @@
-import { BasedDb, ModCtx } from '../index.js'
+import { BasedDb, ModifyCtx } from '../index.js'
 import { SchemaTypeDef } from '../schema/schema.js'
 import { startDrain, flushBuffer } from '../operations.js'
 import { setCursor } from './setCursor.js'
@@ -10,7 +10,7 @@ import { appendU8, reserveU16, writeU16 } from './utils.js'
 type Payload = Record<string, any>
 
 const appendCreate = (
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
   res: ModifyState,
@@ -58,6 +58,7 @@ const appendCreate = (
   def.total++
 }
 
+// let cnt = 100
 export const create = (db: BasedDb, type: string, obj: Payload): ModifyRes => {
   const def = db.schemaTypesParsed[type]
   const id = def.lastId + 1
@@ -70,11 +71,28 @@ export const create = (db: BasedDb, type: string, obj: Payload): ModifyRes => {
     ctx.prefix0 = null // force a new cursor
     ctx.len = pos
     if (err === RANGE_ERR) {
-      if (pos > 0) {
-        flushBuffer(db)
-        return create(db, type, obj)
-      }
-      throw Error(`Payload exceeds maximum payload size (${ctx.max}b)`)
+      flushBuffer(db)
+      return create(db, type, obj)
+
+      // const { min, len, max } = ctx
+      // console.log('create - range error', { min, len, max }, db.workers)
+      // if (cnt-- === 0) {
+      //   process.exit()
+      // }
+      // return flushBuffer(db).then(() => create(db, type, obj))
+
+      // @ts-ignore
+      // return new Promise((resolve) => {
+      //   process.nextTick(() => {
+      //     flushBuffer(db)
+      //     resolve(create(db, type, obj))
+      //   })
+      // })
+      // if (pos > 0) {
+      // flushBuffer(db)
+      // return create(db, type, obj)
+      // }
+      // throw Error(`Payload exceeds maximum payload size (${ctx.max}b)`)
     } else {
       res.error = err
     }
