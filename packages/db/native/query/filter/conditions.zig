@@ -92,8 +92,7 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
                     return false;
                 }
             } else if (Op.isNumerical(op)) {
-                const value = v[start .. start + valueSize];
-                if (!num.compare(valueSize, op, query, value, prop)) {
+                if (!num.compare(valueSize, start, op, query, v, prop)) {
                     return false;
                 }
             }

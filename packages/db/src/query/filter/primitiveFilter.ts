@@ -158,8 +158,6 @@ export const primitiveFilter = (
     // ----
   }
 
-  console.log(new Uint8Array(buf))
-
   // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)
   if (!arr) {

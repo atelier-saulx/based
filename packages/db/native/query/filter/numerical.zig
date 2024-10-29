@@ -31,9 +31,10 @@ inline fn operateSwitch(T: type, op: Op, q: T, v: T) bool {
 
 pub inline fn compare(
     size: u16,
+    start: u16,
     op: Op,
     query: []u8,
-    value: []u8,
+    v: []u8,
     prop: Prop,
 ) bool {
     // MODE all this is stored in microbuffers...
@@ -41,9 +42,10 @@ pub inline fn compare(
     const isSigned = Prop.isSigned(prop);
 
     if (prop == Prop.REFERENCES) {
-        return operateSwitch(u32, op, readInt(u32, query, 0), @truncate(value.len / 4));
+        return operateSwitch(u32, op, readInt(u32, query, 0), @truncate(v.len / 4));
     }
 
+    const value = v[start .. start + size];
     if (size == 4) {
         if (isSigned) {
             return operate(i32, op, query, value);
