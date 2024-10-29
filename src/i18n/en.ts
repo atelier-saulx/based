@@ -2,6 +2,7 @@ import { dateOnly, externalDateAndTime } from '../shared/dateAndTimeFormats.js'
 
 export default {
   appName: 'Based CLI',
+  appCommand: 'based',
   version: {
     parameter: '-v, --version',
   },
@@ -62,7 +63,6 @@ export default {
       ],
     },
     auth: {
-      name: 'auth',
       description: 'Authorize your user in the Based Cloud.',
       example: 'npx @based/cli auth',
       options: [
@@ -73,7 +73,6 @@ export default {
       ],
     },
     backups: {
-      name: 'backups',
       usage: '[command]',
       description: 'Backup and restore your databases.',
       example: 'npx @based/cli backup [sub-command][options]',
@@ -161,7 +160,6 @@ export default {
       },
     },
     logs: {
-      name: 'logs',
       usage: '[command]',
       description:
         'Visualize the logs stream about your functions or the cloud infrastructure.',
@@ -240,7 +238,6 @@ export default {
       },
     },
     test: {
-      name: 'test',
       description: "Run your application's tests using your environment data.",
       example: 'npx @based/cli test [options]',
       options: [
@@ -276,7 +273,6 @@ export default {
       ],
     },
     infra: {
-      name: 'infra',
       description: 'Manage your services running, create and destroy machines.',
       usage: '[command]',
       example: 'npx @based/cli infra [sub-command][options]',
@@ -320,10 +316,10 @@ export default {
             },
           ],
         },
+        overview: {},
       },
     },
     deploy: {
-      name: 'deploy',
       description: 'Push your app to Based Cloud super fast as hell.',
       example: 'npx @based/cli deploy [options]',
       options: [
@@ -338,7 +334,6 @@ export default {
       ],
     },
     dev: {
-      name: 'dev',
       description: 'Develop your app running the Based Cloud locally.',
       example: 'npx @based/cli dev [options]',
       options: [

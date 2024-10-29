@@ -34,11 +34,10 @@ export function contextCommandMaker(
   }
 
   const commandKey = `commands.${command}`
-  const { name, description, options, usage, subCommands } =
-    this.i18n(commandKey)
+  const { description, options, usage, subCommands } = this.i18n(commandKey)
 
-  if (name) {
-    const fullCommand = `${name} ${usage ?? ''}`.trim()
+  if (command !== 'globalOptions') {
+    const fullCommand = `${command} ${usage ?? ''}`.trim()
 
     cmd = cmd.command(fullCommand)
   }
@@ -53,7 +52,7 @@ export function contextCommandMaker(
     parentCmd: Command,
     subCommands?: Record<string, any>,
   ) => {
-    if (!subCommands || !Array.isArray(subCommands)) return
+    if (!subCommands) return
 
     Object.keys(subCommands).forEach((subCommandName) => {
       const subCommandData = subCommands[subCommandName]
@@ -64,7 +63,11 @@ export function contextCommandMaker(
 
       addOptions(options, subCommand)
 
-      if (subCommandsList && subCommandsList[subCommandName]) {
+      if (
+        subCommandsList &&
+        subCommandsList[subCommandName] &&
+        subCommand.action
+      ) {
         subCommand.action(subCommandsList[subCommandName](subCommand))
       }
 

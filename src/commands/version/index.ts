@@ -11,12 +11,13 @@ export const version = async (program: Command): Promise<void> => {
   )
 
   const appName = context.i18n('appName')
+  const appCommand = context.i18n('appCommand')
   const appTitle = `<b>${appName}</b> <dim>${version}</dim>`
 
   context.set('appName', appName)
   context.set('appVersion', version)
   context.set('appTitle', appTitle)
-  context.print.info(appTitle)
+  context.print.info(appName)
 
-  program.version(version, context.i18n('version.parameter'))
+  program.name(appCommand).version(version, context.i18n('version.parameter'))
 }
