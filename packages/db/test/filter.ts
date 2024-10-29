@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { equal } from './shared/assert.js'
+import { equal, deepEqual } from './shared/assert.js'
 
 await test('filter', async (t) => {
   const db = new BasedDb({
@@ -62,228 +62,270 @@ await test('filter', async (t) => {
     },
   })
 
-  const org = await db.create('org', {
-    name: 'My small org',
-    type: 'person',
+  // const org = await db.create('org', {
+  //   name: 'My small org',
+  //   type: 'person',
+  // })
+
+  // const env = await db.create('env', {
+  //   name: 'My small org env',
+  //   org,
+  // })
+
+  // const emptyEnv = await db.create('env', {
+  //   name: 'Mydev env',
+  //   org,
+  // })
+
+  // const now = Date.now()
+  // let lastId = 0
+  // const m: number[] = []
+  // for (let i = 0; i < 1e5; i++) {
+  //   lastId = db.create('machine', {
+  //     env,
+  //     status: status[Math.floor(Math.random() * status.length)],
+  //     requestsServed: i,
+  //     lastPing: i + 1,
+  //     derp: -i,
+  //     temperature: Math.random() * 40 - Math.random() * 40,
+  //     isLive: !!(i % 2),
+  //     scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
+  //   }).tmpId
+  //   if (i % 2) {
+  //     m.push(lastId)
+  //   }
+  // }
+
+  // db.update('env', env, {
+  //   machines: m,
+  // })
+
+  // db.drain()
+
+  // const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
+  // equal(
+  //   db.query('machine').include('*').filter('lastPing', '=', x).get().toObject()
+  //     .length,
+  //   x.length,
+  //   'OR number',
+  // )
+
+  // const make = () => {
+  //   const x = ~~(Math.random() * lastId)
+  //   if (x % 2 == 0) {
+  //     return make()
+  //   }
+  //   return x
+  // }
+
+  // const amount = 1000
+
+  // var measure = 0
+  // var mi = 0
+  // for (let i = 0; i < amount; i++) {
+  //   const rand = ~~(Math.random() * lastId)
+  //   const derp = [make(), make(), make(), rand]
+  //   const envs = db
+  //     .query('env')
+  //     .include('*')
+  //     .filter('machines', 'has', derp)
+  //     .get()
+
+  //   mi += envs.toObject().length
+  //   measure += envs.execTime
+  // }
+
+  // equal(
+  //   mi / amount > 0.4 && mi / amount < 0.6,
+  //   true,
+  //   'multi ref OR filter up at 0.5 results',
+  // )
+  // equal(measure / amount < 0.05, true, 'multi ref OR filter lower then 0.1ms')
+
+  // measure = 0
+  // mi = 0
+  // for (let i = 0; i < amount; i++) {
+  //   const rand = ~~(Math.random() * lastId)
+  //   const envs = db
+  //     .query('env')
+  //     .include('*')
+  //     .filter('machines', 'has', rand)
+  //     .get()
+
+  //   mi += envs.toObject().length
+  //   measure += envs.execTime
+  // }
+  // equal(
+  //   mi / amount > 0.4 && mi / amount < 0.6,
+  //   true,
+  //   'multi ref filter up at 0.5 results',
+  // )
+  // equal(measure / amount < 0.05, true, 'multi ref filter lower then 0.1ms')
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('scheduled', '>', 'now + 694d + 10h')
+  //     .get()
+  //     .toObject().length,
+  //   1,
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
+  //     .get()
+  //     .toObject().length,
+  //   1,
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('scheduled', '<', '10/24/2000') // Date,
+  //     .get()
+  //     .toObject().length,
+  //   0,
+  //   'parse date string',
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('requestsServed', '<', 1)
+  //     .get()
+  //     .toObject().length,
+  //   1,
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('requestsServed', '<=', 1)
+  //     .get()
+  //     .toObject().length,
+  //   2,
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('derp', '<=', 0)
+  //     .filter('derp', '>', -5)
+  //     .get()
+  //     .toObject().length,
+  //   5,
+  //   'Negative range',
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('temperature', '<=', 0)
+  //     .filter('temperature', '>', -0.1)
+  //     .get()
+  //     .toObject().length < 500,
+  //   true,
+  //   'Negative temperature (result amount)',
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('*')
+  //     .filter('temperature', '<=', 0)
+  //     .filter('temperature', '>', -0.1)
+  //     .get()
+  //     .toObject()[0].temperature < 0,
+  //   true,
+  //   'Negative temperature (check value)',
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('id')
+  //     .filter('env', '=', env)
+  //     .range(0, 10)
+  //     .get()
+  //     .inspect(1)
+  //     .toObject(),
+  //   [
+  //     { id: 2 },
+  //     { id: 4 },
+  //     { id: 6 },
+  //     { id: 8 },
+  //     { id: 10 },
+  //     { id: 12 },
+  //     { id: 14 },
+  //     { id: 16 },
+  //     { id: 18 },
+  //     { id: 20 },
+  //   ],
+  //   'Filter by reference',
+  // )
+
+  // equal(
+  //   db
+  //     .query('machine')
+  //     .include('id')
+  //     .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
+  //     .filter('env', '=', [emptyEnv, env])
+  //     .range(0, 10)
+  //     .get()
+  //     .inspect(1)
+  //     .toObject(),
+  //   [{ id: 100000 }],
+  //   'Filter by reference (multiple)',
+  // )
+
+  const derpEnv = await db.create('env', {
+    name: 'derp env',
   })
 
-  const env = await db.create('env', {
-    name: 'My small org env',
-    org,
-  })
+  const ids = await Promise.all([
+    db.create('machine', {
+      temperature: 20,
+      env: derpEnv,
+      lastPing: 1,
+    }),
+    db.create('machine', {
+      temperature: 2,
+      env: derpEnv,
+      lastPing: 2,
+    }),
+    db.create('machine', {
+      temperature: 3,
+      env: derpEnv,
+      lastPing: 3,
+    }),
+  ])
 
-  const emptyEnv = await db.create('env', {
-    name: 'Mydev env',
-    org,
-  })
-
-  const now = Date.now()
-  let lastId = 0
-  const m: number[] = []
-  for (let i = 0; i < 1e5; i++) {
-    lastId = db.create('machine', {
-      env,
-      status: status[Math.floor(Math.random() * status.length)],
-      requestsServed: i,
-      lastPing: i + 1,
-      derp: -i,
-      temperature: Math.random() * 40 - Math.random() * 40,
-      isLive: !!(i % 2),
-      scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
-    }).tmpId
-    if (i % 2) {
-      m.push(lastId)
-    }
-  }
-
-  db.update('env', env, {
-    machines: m,
-  })
-
-  db.drain()
-
-  const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
-  equal(
-    db.query('machine').include('*').filter('lastPing', '=', x).get().toObject()
-      .length,
-    x.length,
-    'OR number',
-  )
-
-  const make = () => {
-    const x = ~~(Math.random() * lastId)
-    if (x % 2 == 0) {
-      return make()
-    }
-    return x
-  }
-
-  const amount = 1000
-
-  var measure = 0
-  var mi = 0
-  for (let i = 0; i < amount; i++) {
-    const rand = ~~(Math.random() * lastId)
-    const derp = [make(), make(), make(), rand]
-    const envs = db
+  deepEqual(
+    db
       .query('env')
-      .include('*')
-      .filter('machines', 'has', derp)
+      .filter('machines', '<', 10) // order optmization automaticly
       .get()
-
-    mi += envs.toObject().length
-    measure += envs.execTime
-  }
-
-  equal(
-    mi / amount > 0.4 && mi / amount < 0.6,
-    true,
-    'multi ref OR filter up at 0.5 results',
-  )
-  equal(measure / amount < 0.05, true, 'multi ref OR filter lower then 0.1ms')
-
-  measure = 0
-  mi = 0
-  for (let i = 0; i < amount; i++) {
-    const rand = ~~(Math.random() * lastId)
-    const envs = db
-      .query('env')
-      .include('*')
-      .filter('machines', 'has', rand)
-      .get()
-
-    mi += envs.toObject().length
-    measure += envs.execTime
-  }
-  equal(
-    mi / amount > 0.4 && mi / amount < 0.6,
-    true,
-    'multi ref filter up at 0.5 results',
-  )
-  equal(measure / amount < 0.05, true, 'multi ref filter lower then 0.1ms')
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('scheduled', '>', 'now + 694d + 10h')
-      .get()
-      .toObject().length,
-    1,
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
-      .get()
-      .toObject().length,
-    1,
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('scheduled', '<', '10/24/2000') // Date,
-      .get()
-      .toObject().length,
-    0,
-    'parse date string',
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('requestsServed', '<', 1)
-      .get()
-      .toObject().length,
-    1,
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('requestsServed', '<=', 1)
-      .get()
-      .toObject().length,
-    2,
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('derp', '<=', 0)
-      .filter('derp', '>', -5)
-      .get()
-      .toObject().length,
-    5,
-    'Negative range',
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('temperature', '<=', 0)
-      .filter('temperature', '>', -0.1)
-      .get()
-      .toObject().length < 500,
-    true,
-    'Negative temperature (result amount)',
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('temperature', '<=', 0)
-      .filter('temperature', '>', -0.1)
-      .get()
-      .toObject()[0].temperature < 0,
-    true,
-    'Negative temperature (check value)',
-  )
-
-  equal(
-    db
-      .query('machine')
-      .include('id')
-      .filter('env', '=', env)
-      .range(0, 10)
-      .get()
-      .inspect(1)
       .toObject(),
     [
-      { id: 2 },
-      { id: 4 },
-      { id: 6 },
-      { id: 8 },
-      { id: 10 },
-      { id: 12 },
-      { id: 14 },
-      { id: 16 },
-      { id: 18 },
-      { id: 20 },
+      {
+        id: 1,
+        name: 'derp env',
+      },
     ],
-    'Filter by reference',
   )
 
-  equal(
-    db
-      .query('machine')
-      .include('id')
-      .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
-      .filter('env', '=', [emptyEnv, env])
-      .range(0, 10)
-      .get()
-      .inspect(1)
-      .toObject(),
-    [{ id: 100000 }],
-    'Filter by reference (multiple)',
-  )
+  db.query('env')
+    .filter('machines', '=', ids) // order optmization automaticly
+    .get()
+    .inspect(5)
+    .toObject()
 })

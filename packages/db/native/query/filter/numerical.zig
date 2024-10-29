@@ -14,9 +14,10 @@ inline fn operate(
 ) bool {
     const q = readInt(T, query, 0);
     const v = readInt(T, value, 0);
+    return operateSwitch(T, op, q, v);
+}
 
-    // std.debug.print("q: {d}, v: {d} op: {any} \n", .{ q, v, op });
-
+inline fn operateSwitch(T: type, op: Op, q: T, v: T) bool {
     return switch (op) {
         Op.largerThen => v > q,
         Op.smallerThen => v < q,
@@ -38,6 +39,10 @@ pub inline fn compare(
     // MODE all this is stored in microbuffers...
     // maybe op is better scince its only for these operations
     const isSigned = Prop.isSigned(prop);
+
+    if (prop == Prop.REFERENCES) {
+        return operateSwitch(u32, op, readInt(u32, query, 0), @truncate(value.len / 4));
+    }
 
     if (size == 4) {
         if (isSigned) {

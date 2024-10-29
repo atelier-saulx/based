@@ -62,7 +62,7 @@ const createFixedFilterBuffer = (
   size: number,
   op: number,
   value: any,
-  references: boolean,
+  sort: boolean,
 ) => {
   let buf: Buffer
   const start = prop.start
@@ -70,13 +70,13 @@ const createFixedFilterBuffer = (
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
     buf = Buffer.allocUnsafe(9 + len * size)
-    buf[0] = 1
+    buf[0] = prop.typeIndex === REFERENCES && op === 1 ? 3 : 1
     buf.writeUInt16LE(size, 1)
     buf.writeUInt16LE(start, 3)
     buf[5] = op
     buf[6] = prop.typeIndex
     buf.writeUInt16LE(len, 7)
-    if (references) {
+    if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
       for (let i = 0; i < len; i++) {
@@ -148,12 +148,17 @@ export const primitiveFilter = (
   if (prop.typeIndex === REFERENCE) {
     buf = createReferenceFilter(prop, op, value)
   } else if (prop.typeIndex === REFERENCES) {
-    buf = createFixedFilterBuffer(prop, 4, op, value, true)
+    if (op === 1 && !isArray) {
+      value = [value]
+    }
+    buf = createFixedFilterBuffer(prop, 4, op, value, !isNumerical(op))
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)
   } else {
     // ----
   }
+
+  console.log(new Uint8Array(buf))
 
   // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)

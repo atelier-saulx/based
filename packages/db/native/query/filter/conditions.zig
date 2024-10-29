@@ -58,11 +58,25 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
                 }
             }
             i += 9 + valueSize * repeat;
+        } else if (mode == Mode.andFixed) {
+            const repeat = readInt(u16, q, i + 7);
+            const query = q[i + 9 .. i + valueSize * repeat + 9];
+            if (op == Op.equal) {
+                if (v.len / valueSize != repeat) {
+                    return false;
+                }
+                var j: u8 = 0;
+                while (j < query.len) : (j += 1) {
+                    if (v[j] != query[j]) {
+                        return false;
+                    }
+                }
+            }
+            i += 9 + valueSize * repeat;
         } else if (mode == Mode.default) {
             const query = q[i + 7 .. i + valueSize + 7];
             if (op == Op.equal) {
                 const value = v[start .. start + valueSize];
-                // Fast for non matching cases
                 var j: u8 = 0;
                 while (j < query.len) : (j += 1) {
                     if (value[j] != query[j]) {

@@ -96,6 +96,7 @@ pub fn filter(
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return false;
             };
+
             const prop: Prop = @enumFromInt(fieldSchema.type);
             var value: []u8 = undefined;
             if (prop == Prop.REFERENCE) {
