@@ -11,6 +11,7 @@
     "dist"
   ],
   "scripts": {
+    "docs": "node readme.ts",
     "dev": "node bin/cmd.js",
     "build": "tsc -b",
     "watch": "tsc -b --watch",
@@ -38,15 +39,15 @@
     "@types/node": "^22.7.4",
     "@types/serve-handler": "^6.1.4",
     "@types/ws": "^8.5.12",
-    "c8": "^9.1.0",
     "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.2",
     "vitest": "^2.1.1"
   },
   "dependencies": {
     "@based/bundle": "../bundle",
     "@based/client": "^6.10.1",
-    "@based/i18n": "^0.1.5",
+    "@based/i18n": "^0.2.0",
     "@based/server": "^9.1.0",
     "@farjs/blessed": "^0.3.2",
     "@inquirer/prompts": "^6.0.1",

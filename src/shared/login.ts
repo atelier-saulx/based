@@ -109,6 +109,7 @@ export const login = async ({
       users = users.filter((user) => user !== lastUser)
 
       if (!isNaN(error) && typeof error === 'string') {
+        // TODO Fix the type in the i18n to handle dynamic strings
         const errorMsg = `errors.${error}` as Based.i18n.NestedKeys<
           typeof context.i18n
         >

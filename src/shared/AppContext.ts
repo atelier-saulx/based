@@ -40,10 +40,7 @@ export class AppContext {
   public input = contextInput(this)
   public print = contextPrint(this.state)
 
-  private constructor(
-    program?: Command,
-    internationalization?: Based.i18n.Translations<Record<string, any>>,
-  ) {
+  private constructor(program?: Command, internationalization?: any) {
     if (!program && !this.program) {
       throw new Error('Program must be provided.')
     } else if (program && !this.program) {
@@ -60,10 +57,7 @@ export class AppContext {
     }
   }
 
-  public static getInstance(
-    program?: Command,
-    languages?: Based.i18n.Translations<Record<string, any>>,
-  ): AppContext {
+  public static getInstance(program?: Command, languages?: any): AppContext {
     if (!AppContext.instance) {
       AppContext.instance = new AppContext(program, languages)
     }
