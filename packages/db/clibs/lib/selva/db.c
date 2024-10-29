@@ -675,10 +675,7 @@ void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
 
 void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state, selva_hash_state_t *hash_state)
 {
-    if (node->node_hash == 0) {
-        selva_node_hash_update_internal(type, node, tmp_hash_state);
-    }
-
+    selva_node_hash_update_internal(type, node, tmp_hash_state);
     selva_hash_update(hash_state, &node->node_hash, sizeof(node->node_hash));
 }
 

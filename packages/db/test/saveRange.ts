@@ -62,7 +62,7 @@ await test('save simple range', async (t) => {
   const firstHash = db.merkleTree.getRoot().hash
 
   db.update('user', 1, {
-    age: 10,
+    age: 1337,
   })
   db.drain()
   deepEqual(
@@ -75,7 +75,7 @@ await test('save simple range', async (t) => {
     [
       {
         id: 1,
-        age: 10,
+        age: 1337,
       },
     ],
   )
@@ -87,7 +87,6 @@ await test('save simple range', async (t) => {
   const secondHash = db.merkleTree.getRoot().hash
 
   equal((save2_end - save2_start) < (save1_end - save1_start), true)
-  console.log(firstHash, secondHash)
   equal(!firstHash.compare(secondHash), false)
 
   const ls = await readdir(t.tmp)
