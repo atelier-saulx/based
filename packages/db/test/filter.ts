@@ -413,16 +413,40 @@ await test('filter', async (t) => {
     { id: 3, standby: true, status: 5, name: 'derp env' },
   ])
 
-  const rangeResult = db
+  let rangeResult = db
     .query('machine')
     .include('*')
     .filter('temperature', '..', [-0.1, 0])
     .get()
-
-  equal(rangeResult.length < 1000, true, 'range excludes ')
+  equal(rangeResult.length < 900, true, 'range excludes ')
   equal(
     rangeResult.node().temperature < 0 && rangeResult.node().temperature > -0.1,
     true,
     'range',
   )
+
+  rangeResult = db
+    .query('machine')
+    .include('*')
+    .filter('temperature', '!..', [-0.1, 0])
+    .get()
+
+  let hasLarge = false
+  let hasSmall = false
+  for (const item of rangeResult) {
+    if (item.temperature < -0.1) {
+      hasSmall = true
+    }
+    if (item.temperature > -0) {
+      hasLarge = true
+    }
+    if (item.temperature > -0.1 && item.temperature < 0) {
+      throw new Error('Incorrect exclusive range (temp > -0.1 && temp < 0)')
+    }
+  }
+  if (!hasSmall || !hasLarge) {
+    throw new Error(
+      `Incorrect exclusive range large: ${hasLarge} small: ${hasSmall}`,
+    )
+  }
 })
