@@ -296,20 +296,20 @@ await test('filter', async (t) => {
   const ids = await Promise.all([
     db.create('machine', {
       temperature: 20,
-      env: derpEnv,
-      // env: { id: derpEnv, $rating: 0.5 },
+      // env: derpEnv,
+      env: { id: derpEnv, $rating: 0.5 },
       lastPing: 1,
     }),
     db.create('machine', {
       temperature: 2,
-      env: derpEnv,
-      // env: { id: derpEnv, $rating: 0.75 },
+      // env: derpEnv,
+      env: { id: derpEnv, $rating: 0.75 },
       lastPing: 2,
     }),
     db.create('machine', {
       temperature: 3,
-      env: derpEnv,
-      // env: { id: derpEnv, $rating: 1 },
+      // env: derpEnv,
+      env: { id: derpEnv, $rating: 1 },
       lastPing: 3,
     }),
   ])

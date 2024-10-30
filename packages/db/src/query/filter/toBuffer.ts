@@ -40,7 +40,7 @@ const writeConditions = (
     result.set(condition, lastWritten)
     lastWritten += condition.byteLength
   }
-  result.writeInt16LE(conditionSize, sizeIndex)
+  result.writeUint16LE(conditionSize, sizeIndex)
   return lastWritten - offset
 }
 
@@ -60,7 +60,7 @@ export const fillConditionsBuffer = (
       lastWritten++
       result[lastWritten] = refField
       lastWritten++
-      result.writeInt16LE(refConditions.schema.id, lastWritten)
+      result.writeUint16LE(refConditions.schema.id, lastWritten)
       lastWritten += 2
       const sizeIndex = lastWritten
       lastWritten += 2
@@ -78,7 +78,7 @@ export const fillConditionsBuffer = (
       lastWritten += 2
       const size = writeConditions(result, k, lastWritten, v)
       lastWritten += size
-      result.writeInt16LE(size, sizeIndex)
+      result.writeUint16LE(size, sizeIndex)
     })
   }
 
@@ -93,6 +93,5 @@ export const filterToBuffer = (conditions: QueryDefFilter) => {
   } else {
     result = Buffer.alloc(0)
   }
-  console.log('FILTER BUF', new Uint8Array(result))
   return result
 }

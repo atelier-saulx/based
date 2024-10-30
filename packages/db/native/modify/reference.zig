@@ -17,21 +17,22 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const node = try db.upsertNode(id, refTypeEntry);
 
+    // TODO: return the ref
+    try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
+
     if (hasEdges) {
         const totalEdgesLen = readInt(u32, data, 5);
         const len = 5 + totalEdgesLen;
         // TODO: replace with an insert type thing
-        try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
-        const ref = db.getSingleReference(node, ctx.field);
-        if (ref == null) {
-            std.log.err("EDGE MOD / Cannot find select ref to {d} \n", .{id});
-            return len;
+        const ref = db.getSingleReference(ctx.node.?, ctx.field);
+        if (ref) |r| {
+            const edges = data[9..len];
+            try edge.writeEdges(ctx, r, edges);
+        } else {
+            std.log.err("EDGE MODIFY / Cannot find select ref to {d} \n", .{id});
         }
-        const edges = data[9..len];
-        try edge.writeEdges(ctx, ref.?, edges);
         return len;
     }
 
-    try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
     return 5;
 }

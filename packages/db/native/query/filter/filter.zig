@@ -70,8 +70,19 @@ pub fn filter(
         } else if (meta == Meta.reference) {
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = readInt(u16, conditions, i + 2);
-            const refNode = db.getReference(node, refField);
             const size = readInt(u16, conditions, i + 4);
+
+            const selvaRef = db.getSingleReference(node, refField);
+            const refNode: ?db.Node = selvaRef.?.*.dst;
+
+            // const originalType = db.get
+
+            // std.debug.print("bla {any} \n", .{typeEntry});
+
+            // const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
+
+            // const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+
             if (refNode == null) {
                 return false;
             }
@@ -84,6 +95,10 @@ pub fn filter(
                 refTypeEntry,
                 conditions[i + 6 .. i + 6 + size],
                 null,
+                // .{
+                //     .reference = @ptrCast(selvaRef.?),
+                //     .edgeConstaint = edgeConstrain,
+                // },
                 false,
             )) {
                 return false;
@@ -126,7 +141,6 @@ pub fn filter(
                     value = db.getField(typeEntry, 0, node, fieldSchema);
                 }
             }
-
             if (value.len == 0 or !runCondition(ctx, query, value)) {
                 return false;
             }

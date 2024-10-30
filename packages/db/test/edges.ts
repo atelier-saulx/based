@@ -1,9 +1,8 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { defToBuffer } from '../src/query/toBuffer.js'
 
-await test('edges', async (t) => {
+await test('multiple references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -199,4 +198,56 @@ await test('edges', async (t) => {
   //     { id: 4, contributors: [{ id: 2, $rating: 5 }] },
   //   ],
   // )
+})
+
+await test('single reference', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          derp: 'uint8',
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'author',
+            },
+          },
+        },
+      },
+      article: {
+        props: {
+          name: 'string',
+          author: {
+            type: 'reference',
+            ref: 'user',
+            prop: 'articles',
+            $role: ['writer', 'editor', 'boss'],
+            $on: 'boolean',
+          },
+        },
+      },
+    },
+  })
+
+  const mrDrol = await db.create('user', {
+    name: 'Mr drol',
+  })
+
+  await db.create('article', {
+    name: 'This is a nice article',
+    author: { id: mrDrol, $role: 'boss' },
+  })
+
+  db.query('article').include('author.$role', '*')
+
+  t.after(() => {
+    return db.destroy()
+  })
 })
