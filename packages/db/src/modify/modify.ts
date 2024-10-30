@@ -25,7 +25,7 @@ function _modify(
   tree: SchemaTypeDef['tree'],
   overwrite: boolean,
 ): ModifyErr {
-  ctx.db.markNodeDirty(schema.id, res.tmpId)
+  ctx.db.markNodeDirty(schema, res.tmpId)
   for (const key in obj) {
     const def = tree[key]
     if (def === undefined) {

@@ -53,6 +53,7 @@ type CsmtNodeRange = {
   end: number
 }
 
+const DEFAULT_BLOCK_SIZE = 100_000
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
 const destructureCsmtKey = (key: number) => [
@@ -74,7 +75,6 @@ export class BasedDb {
   maxModifySize: number = 100 * 1e3 * 1e3
   modifyCtx: ModifyCtx
 
-  blockSize = 100_000
   private dirtyRanges = new Set<number>()
   private csmtHashFun = db.createHash()
   private createCsmtHashFun = () => {
@@ -191,12 +191,10 @@ export class BasedDb {
       )
 
       def.total = total
-      def.lastId = writelog ? writelog.types[def.id].lastId : lastId
+      def.lastId = writelog?.types[def.id].lastId || lastId
+      def.blockSize = writelog?.types[def.id].blockSize || DEFAULT_BLOCK_SIZE
 
-      // TODO This should be stored per type
-      this.blockSize = writelog.types[def.id].blockSize
-
-      const step = writelog.types[def.id].blockSize
+      const step = def.blockSize
       for (let start = 1; start <= lastId; start += step) {
         const end = start + step - 1
         const hash = Buffer.allocUnsafe(16)
@@ -247,6 +245,7 @@ export class BasedDb {
           type.id = genId(this)
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
+        def.blockSize = DEFAULT_BLOCK_SIZE // TODO This should come from somewhere else
         this.schemaTypesParsed[field] = def
       }
     }
@@ -290,8 +289,8 @@ export class BasedDb {
     // TODO fix
   }
 
-  markNodeDirty(typeId: number, nodeId: number): void {
-    this.dirtyRanges.add(makeCsmtKeyFromNodeId(typeId, this.blockSize, nodeId))
+  markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
+    this.dirtyRanges.add(makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId))
   }
 
   create(type: string, value: any): ModifyRes {
@@ -365,9 +364,17 @@ export class BasedDb {
       console.error(`Save common failed: ${err}`)
     }
 
+    // TODO Make this nicely somewhere else
+    const typeIdMap = {}
+    for (const typeName in this.schemaTypesParsed) {
+      const type = this.schemaTypesParsed[typeName]
+      const typeId = type.id
+      typeIdMap[typeId] = type
+    }
+
     for (const mtKey of this.dirtyRanges) {
       const [typeId, start] = destructureCsmtKey(mtKey)
-      const end = start + this.blockSize - 1
+      const end = start + typeIdMap[typeId].blockSize - 1
       const file = block_sdb_file(typeId, start, end)
       const path = join(this.fileSystemPath, file)
       const hash = Buffer.allocUnsafe(16)
@@ -394,7 +401,7 @@ export class BasedDb {
     const types: Writelog['types'] = {}
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      types[def.id] = { lastId: def.lastId, blockSize: this.blockSize }
+      types[def.id] = { lastId: def.lastId, blockSize: def.blockSize }
     }
 
     const dumps: Writelog['rangeDumps'] = {}

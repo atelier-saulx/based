@@ -8,7 +8,6 @@ await test('save simple range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-  db.blockSize = 100_000
 
   await db.start({ clean: true })
   t.after(() => {
@@ -106,7 +105,6 @@ await test('save simple range', async (t) => {
   const newDb = new BasedDb({
     path: t.tmp,
   })
-  db.blockSize = 100_000
   await newDb.start()
   t.after(() => {
     return newDb.destroy()
