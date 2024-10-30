@@ -80,6 +80,9 @@ export default {
         db.hashDigest(state, buf)
         return encoding ? buf.toString(encoding) : buf
       },
+      reset: () => {
+        db.hashReset(state)
+      },
     }
 
     return hash
