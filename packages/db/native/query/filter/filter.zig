@@ -19,7 +19,7 @@ const idToShard = db.idToShard;
 // [meta = 253] [next 4]
 // -------------------------------------------
 // edge
-// [meta = 252] [edgeField]
+// [meta = 252] [size 2]
 // -------------------------------------------
 // ref
 // [meta = 254] [field] [typeId 2] [size 2]
@@ -43,82 +43,108 @@ pub fn filter(
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
     ref: ?types.RefStruct,
-    // comptime isEdge
+    comptime isEdge: bool,
 ) bool {
-    var fieldIndex: usize = 0;
+    var i: usize = 0;
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
-
-    // stop at next OR then its correct
-    while (fieldIndex < conditions.len) {
-        const meta: Meta = @enumFromInt(conditions[fieldIndex]);
+    while (i < conditions.len) {
+        const meta: Meta = @enumFromInt(conditions[i]);
         if (meta == Meta.edge) {
             if (ref != null) {
+                const size = readInt(u16, conditions, i + 1);
+                if (!filter(
+                    ctx,
+                    node,
+                    typeEntry,
+                    conditions[i + 3 .. i + 3 + size],
+                    ref,
+                    true,
+                )) {
+                    return false;
+                }
+                i += size + 3;
+            } else {
                 return false;
             }
-            //     const edgeField: u8 = operation[2];
-            //     const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, edgeField) catch null;
-            //     if (edgeFieldSchema == null) {
-            //         return false;
-            //     }
-            //     const value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
-            //     if (value.len == 0) {
-            //         return false;
-            //     }
-            //     if (!runCondition(value, operation[3 .. 3 + querySize])) {
-            //         return false;
-            //     }
-            //     fieldIndex += querySize + 3;
-            // } else {
-            return false;
-            // }
         } else if (meta == Meta.reference) {
-            const refField: u8 = conditions[fieldIndex + 1];
-            const refTypePrefix = readInt(u16, conditions, fieldIndex + 2);
-            const refNode = db.getReference(node, refField);
-            const size = readInt(u16, conditions, fieldIndex + 4);
+            const refField: u8 = conditions[i + 1];
+            const refTypePrefix = readInt(u16, conditions, i + 2);
+            const size = readInt(u16, conditions, i + 4);
+
+            const selvaRef = db.getSingleReference(node, refField);
+            const refNode: ?db.Node = selvaRef.?.*.dst;
+
+            // const originalType = db.get
+
+            // std.debug.print("bla {any} \n", .{typeEntry});
+
+            // const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
+
+            // const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+
             if (refNode == null) {
                 return false;
             }
             const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
                 return false;
             };
-            const refConditions: []u8 = conditions[6 .. 6 + size];
-            if (!filter(ctx, refNode.?, refTypeEntry, refConditions, null)) {
+            if (!filter(
+                ctx,
+                refNode.?,
+                refTypeEntry,
+                conditions[i + 6 .. i + 6 + size],
+                null,
+                // .{
+                //     .reference = @ptrCast(selvaRef.?),
+                //     .edgeConstaint = edgeConstrain,
+                // },
+                false,
+            )) {
                 return false;
             }
-            fieldIndex += size + 6;
+            i += size + 6;
         } else {
             const field: u8 = @intFromEnum(meta);
-            const querySize: u16 = readInt(u16, conditions, fieldIndex + 1);
-            const query = conditions[fieldIndex + 3 .. querySize + fieldIndex + 3];
-            const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-                return false;
-            };
-            const prop: Prop = @enumFromInt(fieldSchema.type);
+            const querySize: u16 = readInt(u16, conditions, i + 1);
+            const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
-            if (prop == Prop.REFERENCE) {
-                const checkRef = db.getReference(node, field);
-                if (checkRef) |r| {
-                    value = @as([*]u8, @ptrCast(r))[0..8];
-                } else {
+            if (isEdge) {
+                const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, field) catch null;
+                if (edgeFieldSchema == null) {
                     return false;
                 }
-            } else if (prop == Prop.REFERENCES) {
-                const refs = db.getReferences(node, field);
-                if (refs) |r| {
-                    const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
-                    value = arr[0 .. r.nr_refs * 4];
-                } else {
-                    return false;
-                }
+                value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
             } else {
-                value = db.getField(typeEntry, 0, node, fieldSchema);
+                const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                    return false;
+                };
+                const prop: Prop = @enumFromInt(fieldSchema.type);
+                if (prop == Prop.REFERENCE) {
+                    // if edge different
+                    const checkRef = db.getReference(node, field);
+                    if (checkRef) |r| {
+                        value = @as([*]u8, @ptrCast(r))[0..8];
+                    } else {
+                        return false;
+                    }
+                } else if (prop == Prop.REFERENCES) {
+                    // if edge different
+                    const refs = db.getReferences(node, field);
+                    if (refs) |r| {
+                        const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
+                        value = arr[0 .. r.nr_refs * 4];
+                    } else {
+                        return false;
+                    }
+                } else {
+                    value = db.getField(typeEntry, 0, node, fieldSchema);
+                }
             }
             if (value.len == 0 or !runCondition(ctx, query, value)) {
                 return false;
             }
-            fieldIndex += querySize + 3;
+            i += querySize + 3;
         }
     }
     return true;

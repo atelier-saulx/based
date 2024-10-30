@@ -36,6 +36,7 @@ pub fn defaultReferences(
             typeEntry,
             filterArr,
             refStruct,
+            false,
         )) {
             continue :checkItem;
         }

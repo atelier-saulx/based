@@ -296,20 +296,20 @@ await test('filter', async (t) => {
   const ids = await Promise.all([
     db.create('machine', {
       temperature: 20,
-      env: derpEnv,
-      // env: { id: derpEnv, $rating: 0.5 },
+      // env: derpEnv,
+      env: { id: derpEnv, $rating: 0.5 },
       lastPing: 1,
     }),
     db.create('machine', {
       temperature: 2,
-      env: derpEnv,
-      // env: { id: derpEnv, $rating: 0.75 },
+      // env: derpEnv,
+      env: { id: derpEnv, $rating: 0.75 },
       lastPing: 2,
     }),
     db.create('machine', {
       temperature: 3,
-      env: derpEnv,
-      // env: { id: derpEnv, $rating: 1 },
+      // env: derpEnv,
+      env: { id: derpEnv, $rating: 1 },
       lastPing: 3,
     }),
   ])
@@ -450,3 +450,60 @@ await test('filter', async (t) => {
     )
   }
 })
+
+// await test('filter - sort-indexes', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
+
+//   await db.start({ clean: true })
+
+//   t.after(() => {
+//     return db.destroy()
+//   })
+
+//   const status = ['error', 'danger', 'ok', '🦄']
+
+//   db.putSchema({
+//     types: {
+//       machine: {
+//         props: {
+//           derp: 'int32',
+//           lastPing: 'number',
+//           temperature: 'number',
+//           requestsServed: 'uint32',
+//           isLive: 'boolean',
+//           status,
+//           scheduled: 'timestamp',
+//         },
+//       },
+//     },
+//   })
+
+//   const now = Date.now()
+//   for (let i = 0; i < 1e6; i++) {
+//     db.create('machine', {
+//       status: status[Math.floor(Math.random() * (status.length - 1))],
+//       requestsServed: i,
+//       lastPing: i + 1,
+//       derp: -i,
+//       temperature: Math.random() * 40 - Math.random() * 40,
+//       isLive: !!(i % 2),
+//       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
+//     }).tmpId
+//   }
+//   db.drain()
+
+//   db.query('machine').sort('scheduled', 'desc').get().inspect(2)
+
+//   db.query('machine').sort('scheduled', 'desc').get().inspect(2)
+
+//   // larger then
+//   // find in index if it exsit especialy if you do both
+//   //
+//   db.query('machine')
+//     .filter('scheduled', '>', 'now + 20y')
+//     // .sort('scheduled')
+//     .get()
+//     .inspect(2)
+// })
