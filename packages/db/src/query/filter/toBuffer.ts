@@ -1,3 +1,4 @@
+import { debug } from '../debug.js'
 import { QueryDefFilter } from '../types.js'
 
 // -------------------------------------------
@@ -113,5 +114,8 @@ export const filterToBuffer = (conditions: QueryDefFilter) => {
   } else {
     result = Buffer.alloc(0)
   }
+
+  debug(result)
+
   return result
 }

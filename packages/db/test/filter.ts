@@ -573,5 +573,21 @@ await test('or', async (t) => {
     ],
   )
 
+  console.log('-------DERP------')
+  // deepEqual(
+  db.query('machine')
+    .include('id', 'lastPing')
+    .filter('scheduled', '>', '01/01/2100')
+    .or((f) => {
+      console.log('fuck my shit')
+      f.filter('lastPing', '>', 1e6 - 2)
+    })
+    .range(0, 30)
+    .get()
+    .inspect(2)
+    .toObject()
+  // [],
+  // )
+
   // next
 })

@@ -9,6 +9,7 @@ import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
 import { Filter } from './types.js'
+import { FilterBranch } from './FilterBranch.js'
 
 export { Operator, Filter }
 
@@ -16,7 +17,7 @@ const referencesFilter = (
   db: BasedDb,
   filter: Filter,
   schema: SchemaTypeDef,
-  conditions: QueryDef['filter'],
+  conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
   const [fieldStr, operator, value] = filter
@@ -68,11 +69,9 @@ const referencesFilter = (
       return size
     }
   }
-
   console.error(
     `Querty: field "${fieldStr}" does not exist on type ${schema.type}`,
   )
-
   return size
 }
 
@@ -90,22 +89,33 @@ export const filterRaw = (
   return primitiveFilter(field, filter, conditions)
 }
 
-export const filter = (db: BasedDb, def: QueryDef, filter: Filter) => {
-  def.filter.size += filterRaw(db, filter, def.schema, def.filter, def)
+export const filter = (
+  db: BasedDb,
+  def: QueryDef,
+  filter: Filter,
+  conditions: QueryDefFilter,
+) => {
+  conditions.size += filterRaw(db, filter, def.schema, conditions, def)
 }
 
-export const filterOr = (db: BasedDb, def: QueryDef, filter: Filter[]) => {
-  if (!def.filter.or) {
-    def.filter.size += 7 // [0] [next 4]
-    def.filter.or = {
+export const filterOr = (
+  db: BasedDb,
+  def: QueryDef,
+  filter: Filter[],
+  conditions: QueryDefFilter,
+) => {
+  if (!conditions.or) {
+    conditions.size += 7 // [0] [next 4]
+    conditions.or = {
       size: 0,
       conditions: new Map(),
     }
   }
   for (const f of filter) {
-    def.filter.or.size += filterRaw(db, f, def.schema, def.filter.or, def)
+    conditions.or.size += filterRaw(db, f, def.schema, conditions.or, def)
   }
-  def.filter.size += def.filter.or.size
+  conditions.size += conditions.or.size
+  return conditions.or
 }
 
 export const convertFilter = (
