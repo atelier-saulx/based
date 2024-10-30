@@ -6,8 +6,16 @@ export default {
     // pstart,
   },
 
-  modify: (buffer: Buffer, len: number, dbCtx: any): any => {
-    return db.modify(buffer, len, dbCtx)
+  externalFromInt(address: BigInt): any {
+    return db.externalFromInt(address)
+  },
+
+  intFromExternal(external: any): BigInt {
+    return db.intFromExternal(external)
+  },
+
+  modify: (buffer: Buffer, dbCtx: any, state: Int32Array): any => {
+    db.modify(buffer, dbCtx, state)
   },
 
   getQueryBuf: (q: Buffer, dbCtx: any): Buffer | null => {

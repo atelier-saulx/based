@@ -58,14 +58,14 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
     }
 
     if (T == u64) {
-        if (c.napi_get_value_bigiint_uint64(env, value, @ptrCast(&res)) != c.napi_ok) {
+        if (c.napi_get_value_bigint_uint64(env, value, @ptrCast(&res)) != c.napi_ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == i64) {
-        if (c.napi_get_value_bigiint_int64(env, value, @ptrCast(&res)) != c.napi_ok) {
+        if (c.napi_get_value_bigint_int64(env, value, @ptrCast(&res)) != c.napi_ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;

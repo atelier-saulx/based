@@ -35,7 +35,7 @@ const parseVal = (val) => {
   return val
 }
 
-class ModifyError {
+export class ModifyError {
   constructor(prop: PropDef | PropDefEdge | SchemaPropTree, val: any) {
     this.#prop = prop
     this.#val = val
@@ -75,7 +75,7 @@ export class ModifyState {
       } else if ('offset' in this.#ctx) {
         resolve(this.tmpId + this.#ctx.offset)
       } else {
-        this.#buf.queue.set(this.tmpId, resolve)
+        this.#buf.queue.set(resolve, this.tmpId)
       }
     }).then(resolve, reject)
   }
@@ -87,13 +87,4 @@ export class ModifyState {
     }
     return this
   }
-}
-
-export const modifyError = (
-  res: ModifyState,
-  prop: PropDef | PropDefEdge | SchemaPropTree,
-  val: any,
-) => {
-  res.error = new ModifyError(prop, val)
-  console.info(res.error.toString())
 }
