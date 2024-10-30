@@ -7,8 +7,8 @@ export type Operator =
   | 'like'
   | '>='
   | '<='
-  | 'exists'
-  | '!exists'
+  | '..'
+  | '!..'
 
 // -------------------------------------------
 // operations shared
@@ -23,9 +23,9 @@ export type Operator =
 // 7 = smaller then
 // 8 = larger then inclusive
 // 9 = smaller then inclusive
-
 // 10 = range
 // 11 = exclude range
+
 // -------------------------------------------
 // operations strings
 // 12 = equality to lower case
@@ -59,5 +59,20 @@ export const operationToByte = (op: Operator) => {
     return 9
   }
 
+  if (op === '..') {
+    return 10
+  }
+
+  if (op === '!..') {
+    return 11
+  }
+
   return 0
+}
+
+export const isNumerical = (op: number): boolean => {
+  if (op === 6 || op === 7 || op === 8 || op === 9 || op === 10 || op === 11) {
+    return true
+  }
+  return false
 }

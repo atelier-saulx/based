@@ -5,6 +5,12 @@ const native_endian = builtin.cpu.arch.endian();
 const isLittle = true; //native_endian == .little;
 
 pub inline fn readInt(comptime T: type, buffer: []u8, offset: usize) T {
+    if (T == f64) {
+        const value: T = @bitCast(buffer[offset..8].*);
+        return value;
+    } else if (T == u8) {
+        return buffer[offset];
+    }
     const value: T = @bitCast(buffer[offset..][0..@divExact(@typeInfo(T).Int.bits, 8)].*);
     return if (isLittle) value else @byteSwap(value);
 }

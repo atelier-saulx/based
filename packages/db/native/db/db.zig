@@ -135,14 +135,10 @@ pub fn getReference(node: Node, field: u8) ?Node {
 
 pub fn getSingleReference(node: Node, field: u8) ?*selva.SelvaNodeReference {
     const result = selva.selva_fields_get_reference(node, field);
-    if (result == null) {
-        return null;
-    }
     return result;
 }
 
 pub fn getReferences(node: Node, field: u8) ?*selva.SelvaNodeReferences {
-    // make this return []SelvaNode or iterator over references
     return selva.selva_fields_get_references(node, field);
 }
 
@@ -169,14 +165,16 @@ pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema)
     ));
 }
 
-pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !void {
-    try errors.selva(selva.selva_fields_set(
+pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
+    var ref: *selva.SelvaNodeReference = undefined;
+    try errors.selva(selva.selva_fields_reference_set(
         ctx.selva,
         target,
         fieldSchema,
         value,
-        8, // TODO use system bullshit
+        @ptrCast(&ref),
     ));
+    return ref;
 }
 
 pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: FieldSchema) !void {
@@ -187,7 +185,7 @@ pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: Fi
         target,
         fieldSchema,
         @ptrCast(value.ptr),
-        value.len * 8, // TODO use system bullshit
+        value.len * 8, // ptr len
     ));
 }
 
@@ -267,12 +265,6 @@ pub fn getEdgeProp(
         return &.{};
     }
 }
-
-// TODO add in db...
-// const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
-//     ref.?.edgeConstaint.*.fields_schema,
-//     field - 1,
-// );
 
 pub fn getEdgeFieldSchema(edgeConstaint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
     const edgeFieldSchema = selva.get_fs_by_fields_schema_field(
@@ -383,6 +375,10 @@ pub fn getNextNode(typeEntry: Type, node: Node) ?Node {
 
 pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
+}
+
+pub fn getNodeRangeHash(typeEntry: Type, start: u32, end: u32) selva.SelvaHash128 {
+    return selva.selva_node_hash_range(typeEntry, start, end);
 }
 
 pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {

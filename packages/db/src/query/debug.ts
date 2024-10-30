@@ -62,25 +62,30 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   return loggableObject
 }
 
-export const debug = (x: any, start: number = 0, end: number = 0) => {
+export const debug = (
+  x: any,
+  start: number = 0,
+  end: number = 0,
+  label?: string,
+) => {
   if (x === null || typeof x !== 'object') {
     console.log(x)
     return
   }
 
   if (Array.isArray(x) && x[0] instanceof Buffer) {
-    debug(Buffer.concat(x))
+    debug(Buffer.concat(x), start, end, label)
   } else if (x instanceof Buffer) {
-    console.log('')
+    console.log(label || '')
     if (!end) {
       end = x.byteLength
     }
 
-    let len = Math.max(4, String(x.byteLength).length + 1)
+    let len = Math.max(4, String(end - start).length + 1)
 
     const w = Math.floor(process.stdout.columns / len) || 20
     const a = [...new Uint8Array(x.slice(start, end))]
-    for (let i = 0; i < Math.ceil(x.byteLength / w); i++) {
+    for (let i = 0; i < Math.ceil((end - start) / w); i++) {
       console.log(
         picocolors.gray(
           a

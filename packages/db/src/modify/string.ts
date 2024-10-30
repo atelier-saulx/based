@@ -10,8 +10,18 @@ import {
 } from './types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendU32, appendU8, appendUtf8 } from './utils.js'
+import {
+  appendU32,
+  appendU8,
+  appendUtf8,
+  reserveU32,
+  writeU32,
+} from './utils.js'
+import { write } from '../string.js'
 
+// allow setting buffer in modify create for strings
+// add compression handling for main buffer
+// add compression handling for edge fields
 export function writeString(
   value: string | null,
   ctx: BasedDb['modifyCtx'],
@@ -33,7 +43,7 @@ export function writeString(
       appendU8(ctx, DELETE)
     }
   } else {
-    const size = Buffer.byteLength(value, 'utf8')
+    let size = Buffer.byteLength(value, 'utf8')
     if (ctx.len + 11 + 4 + size > ctx.max) {
       return RANGE_ERR
     }
@@ -42,8 +52,10 @@ export function writeString(
       ctx.hasStringField++
     }
     setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
-    appendU8(ctx, modifyOp)
-    appendU32(ctx, size)
-    appendUtf8(ctx, value)
+    ctx.buf[ctx.len] = modifyOp
+    ctx.len += 5
+    size = write(ctx.buf, value, ctx.len, ctx.db.noCompression)
+    ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
+    ctx.len += size
   }
 }

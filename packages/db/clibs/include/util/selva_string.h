@@ -17,12 +17,7 @@ struct selva_string;
 enum selva_string_flags {
     /**
      * CRC enabled.
-     * Note that the CRC is always calculated from the data that's stored
-     * in-mem and not the uncompressed string if SELVA_STRING_COMPRESS is
-     * used.
-     * If verifying that decompressed is the same as the original uncompressed
-     * data is deemed necessary then a separate verification step should be
-     * implemented outside of selva_string.
+     * For compressed string this is for the uncompressed string.
      */
     SELVA_STRING_CRC = 0x01,
     /**
@@ -58,6 +53,7 @@ enum selva_string_flags {
  * Currently the compression used is raw DEFLATE.
  */
 struct selva_string_compressed_hdr {
+    /* TODO uint8_t type header here. */
     /**
      * Uncompressed size of the string.
      */

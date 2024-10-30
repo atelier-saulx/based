@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
+import { equal } from './shared/assert.js'
 import { Csmt, createTree } from '../src/csmt/index.js'
 
 const shortHash = (buf: Buffer) => buf.toString('base64').substring(0, 5)
@@ -448,4 +449,20 @@ await test('proof: Show a proof that 1 is smaller than the smallest key in the t
   ]
 
   assert.deepEqual(proof, expectedProof)
+})
+
+await test('search', async (t) => {
+  const tree = createTree(() => createHash('sha256'))
+
+  tree.insert(2, Buffer.from('a'))
+  tree.insert(3, Buffer.from('b'))
+  tree.insert(4, Buffer.from('c'))
+  tree.insert(5, Buffer.from('d'))
+
+  equal(tree.search(1), null)
+  equal(tree.search(10), null)
+  equal(tree.search(2)?.key, 2)
+  equal(tree.search(3)?.key, 3)
+  equal(tree.search(4)?.key, 4)
+  equal(tree.search(5)?.key, 5)
 })

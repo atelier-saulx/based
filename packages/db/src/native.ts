@@ -65,4 +65,42 @@ export default {
   getTypeInfo: (typeId: number, defCtx: any) => {
     return db.getTypeInfo(typeId, defCtx)
   },
+
+  getNodeRangeHash: (
+    typeId: number,
+    start: number,
+    end: number,
+    bufOut: Buffer,
+    defCtx: any,
+  ) => {
+    return db.getNodeRangeHash(typeId, start, end, bufOut, defCtx)
+  },
+
+  createHash: () => {
+    const state = db.hashCreate()
+    const hash = {
+      update: (buf: Buffer) => {
+        db.hashUpdate(state, buf)
+        return hash
+      },
+      digest: (encoding?: BufferEncoding): Buffer | string => {
+        const buf = Buffer.allocUnsafe(16)
+        db.hashDigest(state, buf)
+        return encoding ? buf.toString(encoding) : buf
+      },
+      reset: () => {
+        db.hashReset(state)
+      },
+    }
+
+    return hash
+  },
+
+  compress: (buf: Buffer, offset: number, stringSize: number) => {
+    return db.compress(buf, offset, stringSize)
+  },
+
+  decompress: (input: Buffer, output: Buffer, offset: number, len: number) => {
+    return db.decompress(input, output, offset, len)
+  },
 }

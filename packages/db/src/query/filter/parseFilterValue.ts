@@ -4,6 +4,8 @@ import {
   TIMESTAMP,
   CREATED,
   UPDATED,
+  ENUM,
+  BOOLEAN,
 } from '../../schema/types.js'
 
 // -------------------------------------------
@@ -33,6 +35,9 @@ const timeToNumber = (ex: string): number => {
   if (ex === 'd') {
     return 1000 * 60 * 60 * 24
   }
+  if (ex === 'y') {
+    return 31556952000
+  }
   return 1
 }
 
@@ -40,7 +45,11 @@ export const parseFilterValue = (
   prop: PropDef | PropDefEdge,
   value: any,
 ): number => {
-  if (
+  if (prop.typeIndex === BOOLEAN) {
+    return value ? 1 : 0
+  } else if (prop.typeIndex === ENUM) {
+    return prop.reverseEnum[value] + 1
+  } else if (
     prop.typeIndex === TIMESTAMP ||
     prop.typeIndex === CREATED ||
     prop.typeIndex === UPDATED
@@ -69,11 +78,11 @@ export const parseFilterValue = (
               now = Date.now()
             }
             v = now
-          } else if (/[smhd]$/.test(seg)) {
+          } else if (/[smhdy]$/.test(seg)) {
             const ex = seg[seg.length - 1]
             const number = parseInt(seg, 10)
             v = number * timeToNumber(ex)
-          } else {
+          } else if (seg) {
             v = new Date(seg).valueOf()
           }
           if (op === -1) {

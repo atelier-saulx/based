@@ -1,4 +1,25 @@
 import { BasedDb } from '../index.js'
+import {
+  INT16,
+  INT32,
+  INT64,
+  NUMBER,
+  INT8,
+  PropDef,
+  PropDefEdge,
+} from './types.js'
+
+export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
+  if (
+    prop.typeIndex === INT16 ||
+    prop.typeIndex === INT32 ||
+    prop.typeIndex === INT64 ||
+    prop.typeIndex === INT8
+  ) {
+    return true
+  }
+  return false
+}
 
 export const genId = (db: BasedDb): number => {
   db.schema.lastId++

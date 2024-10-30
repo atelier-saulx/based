@@ -41,6 +41,6 @@ export const setCursor = (
 
     ctx.id = id
     ctx.lastMain = -1
-    ctx.hasStringField = -1
+    // ctx.hasStringField = -1
   }
 }

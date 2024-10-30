@@ -12,7 +12,7 @@
 #include "util/svector.h"
 #include "util/trx.h"
 #include "selva/types.h"
-#include "selva_hash128.h"
+#include "selva/selva_hash128.h"
 #include "ref_save_map.h"
 
 RB_HEAD(SelvaNodeIndex, SelvaNode);
@@ -176,6 +176,6 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
  */
 void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
 
-void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *hash_state);
+void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state, selva_hash_state_t *hash_state);
 
 #include "selva/db.h"

@@ -42,7 +42,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .id = undefined,
         .sortWriteTxn = null,
         .currentSortIndex = null,
-        .sortIndexes = sort.Indexes.init(allocator),
+        .sortIndexes = sort.Indexes.init(allocator), // only init this when you need it
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
