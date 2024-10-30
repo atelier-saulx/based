@@ -4,10 +4,13 @@ import {
   SchemaTypeDef,
   SchemaPropTree,
   PropDef,
+  REFERENCE,
+  REFERENCES,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
+import { debug } from '../debug.js'
 
 export { Operator }
 
@@ -23,13 +26,20 @@ const referencesFilter = (
   var size = 0
   const path = fieldStr.split('.')
   let t: PropDef | SchemaPropTree = schema.tree
+  let d = def
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
     t = t[p]
     if (!t) {
       if (p[0] === '$') {
-        if ('propDef' in def.target) {
-          const edgeDef = def.target.propDef.edges?.[p]
+        const edges = conditions.fromRef
+          ? conditions.fromRef.edges
+          : 'propDef' in def.target
+            ? def.target.propDef.edges?.[p]
+            : null
+
+        if (edges) {
+          const edgeDef = edges[p]
           if (edgeDef) {
             conditions.edges ??= new Map()
             size += 3 + primitiveFilter(edgeDef, operator, value, conditions)
@@ -52,6 +62,7 @@ const referencesFilter = (
         }
         conditions.references.set(t.prop, refConditions)
       }
+      // more nested
       size += filterRaw(
         db,
         path.slice(i + 1).join('.'),

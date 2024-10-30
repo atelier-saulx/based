@@ -18,13 +18,12 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const node = try db.upsertNode(id, refTypeEntry);
 
     // TODO: return the ref
-    try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
+    const ref = try db.writeReference(ctx.db, node, ctx.node.?, ctx.fieldSchema.?);
 
     if (hasEdges) {
         const totalEdgesLen = readInt(u32, data, 5);
         const len = 5 + totalEdgesLen;
         // TODO: replace with an insert type thing
-        const ref = db.getSingleReference(ctx.node.?, ctx.field);
         if (ref) |r| {
             const edges = data[9..len];
             try edge.writeEdges(ctx, r, edges);

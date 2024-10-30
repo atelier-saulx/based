@@ -71,18 +71,12 @@ pub fn filter(
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = readInt(u16, conditions, i + 2);
             const size = readInt(u16, conditions, i + 4);
-
             const selvaRef = db.getSingleReference(node, refField);
             const refNode: ?db.Node = selvaRef.?.*.dst;
-
-            // const originalType = db.get
-
-            // std.debug.print("bla {any} \n", .{typeEntry});
-
-            // const fieldSchema = db.getFieldSchema(refField, originalType) catch null;
-
-            // const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
-
+            const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
+                return false;
+            };
+            const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
                 return false;
             }
@@ -94,11 +88,10 @@ pub fn filter(
                 refNode.?,
                 refTypeEntry,
                 conditions[i + 6 .. i + 6 + size],
-                null,
-                // .{
-                //     .reference = @ptrCast(selvaRef.?),
-                //     .edgeConstaint = edgeConstrain,
-                // },
+                .{
+                    .reference = @ptrCast(selvaRef.?),
+                    .edgeConstaint = edgeConstrain,
+                },
                 false,
             )) {
                 return false;
