@@ -46,4 +46,6 @@ export interface Csmt {
   membershipProof: (k: TreeKey) => Proof
 
   visitLeafNodes: (cb: (leaf: TreeNode) => void) => void
+
+  search: (k: TreeKey) => TreeNode
 }

@@ -449,3 +449,19 @@ await test('proof: Show a proof that 1 is smaller than the smallest key in the t
 
   assert.deepEqual(proof, expectedProof)
 })
+
+await test('search', async (t) => {
+  const tree = createTree(() => createHash('sha256'))
+
+  tree.insert(2, Buffer.from('a'))
+  tree.insert(3, Buffer.from('b'))
+  tree.insert(4, Buffer.from('c'))
+  tree.insert(5, Buffer.from('d'))
+
+  console.log(tree.search(1))
+  console.log(tree.search(10))
+  console.log(tree.search(2))
+  console.log(tree.search(3))
+  console.log(tree.search(4))
+  console.log(tree.search(5))
+})
