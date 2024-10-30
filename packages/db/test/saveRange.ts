@@ -1,5 +1,4 @@
-import { join as pathJoin } from 'node:path'
-import { copyFile, mkdir, readdir } from 'node:fs/promises'
+import { readdir } from 'node:fs/promises'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
