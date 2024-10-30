@@ -13,10 +13,12 @@ const Meta = @import("./types.zig").Meta;
 
 const getField = db.getField;
 const idToShard = db.idToShard;
-
+// -------------------------------------------
+// and
+// [meta = 255] [size 2]
 // -------------------------------------------
 // or
-// [meta = 253] [next 4]
+// [meta = 253]  [size 2] [next 4]
 // -------------------------------------------
 // edge
 // [meta = 252] [size 2]
@@ -68,9 +70,26 @@ pub fn filter(
     // next OR
     while (i < conditions.len) {
         const meta: Meta = @enumFromInt(conditions[i]);
-        if (meta == Meta.orBranch) {
-            orJump = readInt(u32, conditions, i + 1);
-            i += 5;
+        if (meta == Meta.andBranch) {
+            const size = readInt(u16, conditions, i + 1);
+            // if (!filter(
+            //     ctx,
+            //     node,
+            //     typeEntry,
+            //     conditions[i + 3 .. i + 3 + size],
+            //     ref,
+            //     0,
+            //     true,
+            // )) {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // }
+            i += 3 + size;
+        } else if (meta == Meta.orBranch) {
+            const size = readInt(u16, conditions, i + 1);
+            orJump = readInt(u32, conditions, i + 3);
+            // orSize = readInt(u16, conditions, i + 1);
+            // need size we have to conitue
+            i += 7 + size;
         } else if (meta == Meta.edge) {
             if (ref != null) {
                 const size = readInt(u16, conditions, i + 1);

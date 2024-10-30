@@ -96,7 +96,7 @@ export const filter = (db: BasedDb, def: QueryDef, filter: Filter) => {
 
 export const filterOr = (db: BasedDb, def: QueryDef, filter: Filter[]) => {
   if (!def.filter.or) {
-    def.filter.size += 5 // [0] [next 4]
+    def.filter.size += 7 // [0] [next 4]
     def.filter.or = {
       size: 0,
       conditions: new Map(),

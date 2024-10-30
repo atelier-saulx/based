@@ -551,9 +551,6 @@ await test('or', async (t) => {
   }
   db.drain()
 
-  // larger then
-  // find in index if it exsit especialy if you do both
-  // try exhaustive sort if no index and filter?
   deepEqual(
     db
       .query('machine')
@@ -575,4 +572,6 @@ await test('or', async (t) => {
       },
     ],
   )
+
+  // next
 })
