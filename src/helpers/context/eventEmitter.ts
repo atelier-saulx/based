@@ -20,12 +20,12 @@ process.stdin.on('data', (buf) => {
     return process.stdin.pause()
   }
 
-  const mouseSequence = '\x1B[<'
-  const keyboardSequence = '\x1B['
+  const isMouse = seq.startsWith('\x1B[<')
+  const isKeyboard = seq.startsWith('\x1B[')
 
-  if (seq.startsWith(mouseSequence)) {
+  if (isMouse) {
     parseMouseEvent(buildEvent(seq))
-  } else if (seq.startsWith(keyboardSequence)) {
+  } else if (isKeyboard) {
     parseKeyEvent(seq)
   }
 })

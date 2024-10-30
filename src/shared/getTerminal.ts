@@ -4,6 +4,7 @@ import {
   InPageWidgetBuilder,
   ConsoleGuiOptions,
   KeyListenerArgs,
+  StyledElement,
 } from 'console-gui-tools'
 import { parseMessage } from './parseMessage.js'
 import { AppContext } from './AppContext.js'
@@ -12,11 +13,11 @@ export const getTerminal = ({
   title,
   header: headerContent = [],
   lines: linesConfig = {
-    sort: 'desc',
+    sort: 'asc',
   },
-}) => {
+}: Based.Context.Terminal): Based.Context.TerminalFunctions => {
   const context: AppContext = AppContext.getInstance()
-  // let autoScroll: boolean = true
+  let autoScroll: boolean = true
   let logPopup: boolean = false
 
   const GUI = new ConsoleManager({
@@ -27,7 +28,7 @@ export const getTerminal = ({
       fitHeight: true,
     },
     logLocation: 'popup',
-    logPageSize: 50,
+    logPageSize: 30,
     enableMouse: true,
   } as ConsoleGuiOptions)
 
@@ -51,8 +52,33 @@ export const getTerminal = ({
       boxed: false,
     },
   })
-  const containerLines = new InPageWidgetBuilder(GUI.Screen.height)
 
+  const scrollPercentage = (
+    scrollPosition: number,
+    containerSize: number,
+    containerHeight: number,
+  ) => {
+    if (containerHeight >= containerSize) {
+      return 100
+    }
+
+    const porcentagem =
+      (scrollPosition / (containerSize - containerHeight)) * 100
+
+    return Math.min(Math.max(porcentagem, 0), 100)
+  }
+
+  const isAsc = linesConfig.sort === 'asc'
+  const containerLines = new InPageWidgetBuilder(GUI.Screen.height)
+  const containerHeight = () => containerElement.absoluteValues.height
+  const containerContentSize = () => containerLines.content.length
+  const scrollPosition = () => containerLines.scrollIndex
+  const scrollPositionPercentage = () =>
+    scrollPercentage(
+      scrollPosition(),
+      containerContentSize(),
+      containerHeight(),
+    )
   const lineElement = '─'.repeat(process.stdout.columns)
 
   const addRow = (element: InPageWidgetBuilder, content: string) =>
@@ -60,10 +86,39 @@ export const getTerminal = ({
       text: parseMessage(content),
     })
 
+  const addContainerRow = (element: InPageWidgetBuilder, content: string) => {
+    const lastPosition = scrollPosition()
+
+    if (isAsc) {
+      addRow(element, content)
+    } else {
+      element.content.unshift([
+        { text: parseMessage(content) },
+      ] as StyledElement[])
+    }
+
+    const isToStopScrolling =
+      containerContentSize() > containerHeight() && !autoScroll
+
+    if (isToStopScrolling) {
+      const newPosition = isAsc
+        ? Math.min(lastPosition + 1, containerContentSize() - containerHeight())
+        : lastPosition
+
+      element.setScrollIndex(newPosition)
+    } else {
+      const newPosition = isAsc ? 0 : containerContentSize() - containerHeight()
+
+      element.setScrollIndex(newPosition)
+    }
+  }
+
   const kill: Based.Context.TerminalFunctions['kill'] = (fn: any) =>
     GUI.on('exit', fn)
   const render: Based.Context.TerminalFunctions['render'] = () => GUI.refresh()
-  const header = (content: string | string[]) => {
+  const header: Based.Context.TerminalFunctions['header'] = (
+    content: string | string[],
+  ) => {
     const isArray = Array.isArray(content)
 
     if (!content || (isArray && !content.length)) {
@@ -119,10 +174,10 @@ export const getTerminal = ({
       }
 
       for (const value of content) {
-        addRow(containerLines, value)
+        addContainerRow(containerLines, value)
       }
     } else {
-      addRow(containerLines, content)
+      addContainerRow(containerLines, content)
     }
 
     containerElement.setContent(containerLines)
@@ -133,10 +188,22 @@ export const getTerminal = ({
   context.event.on('directions', ({ name }: Based.Context.DirectionsEvent) => {
     switch (name) {
       case 'up':
-        console.log('PRA CIMA!!!!!!')
+        if (isAsc && scrollPositionPercentage() < 100) {
+          autoScroll = false
+        } else if (!isAsc && scrollPositionPercentage() === 100) {
+          autoScroll = true
+        }
+
+        containerLines.increaseScrollIndex()
         break
       case 'down':
-        console.log('PRA BAIXO!!!!!')
+        if (isAsc && scrollPositionPercentage() === 0) {
+          autoScroll = true
+        } else if (!isAsc && scrollPositionPercentage() < 100) {
+          autoScroll = false
+        }
+
+        containerLines.decreaseScrollIndex()
         break
 
       default:
@@ -152,13 +219,16 @@ export const getTerminal = ({
         } else {
           GUI.emit('exit')
         }
+
         break
       case 'q':
         GUI.emit('exit')
+
         break
       case 'l':
         if (logPopup) return
 
+        console.clear()
         logPopup = true
         GUI.showLogPopup()
         break
@@ -176,5 +246,6 @@ export const getTerminal = ({
     header,
     setTable,
     addLine,
+    autoScroll,
   }
 }

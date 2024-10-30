@@ -31,8 +31,12 @@ export const getOverview = async (context: AppContext, stream = true) => {
     ]
   }
 
-  const { kill, header, addLine } = getTerminal(context.get('appName'))
-  //   console.log('', headerTemplate, header, setTable)
+  const { kill, header, addLine } = getTerminal({
+    title: context.get('appName'),
+    lines: {
+      sort: 'asc',
+    },
+  })
 
   await basedClient.query('based:connections').subscribe((connections) => {
     header(headerTemplate(connections))

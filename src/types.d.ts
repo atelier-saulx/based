@@ -128,7 +128,7 @@ declare global {
 
       type Terminal = {
         title: string
-        header?: string
+        header?: string[]
         lines?: {
           sort?: 'asc' | 'desc'
         }
@@ -137,8 +137,8 @@ declare global {
       type TerminalFunctions = {
         render: () => void
         kill: (fn: any) => void
-        header: (content: string) => void
-        addLine: (msg: string | string[]) => void
+        header: (content: string[]) => void
+        addLine: (content: string | string[]) => void
         setTable?: () => void
         autoScroll?: boolean
       }

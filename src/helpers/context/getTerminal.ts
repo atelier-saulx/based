@@ -5,7 +5,7 @@ export const contextGetTerminal = ({
   title,
   header: headerContent = '',
   lines: linesConfig,
-}: Based.Context.Terminal): Based.Context.TerminalFunctions => {
+}) => {
   let autoScroll: boolean = true
 
   const screen = blessed.screen({
@@ -42,9 +42,7 @@ export const contextGetTerminal = ({
   const render: Based.Context.TerminalFunctions['render'] = () =>
     screen.render()
 
-  const header: Based.Context.TerminalFunctions['header'] = (
-    content: string,
-  ) => {
+  const header = (content: string) => {
     headerElement.setContent(
       parseMessage(content) + '\n' + '─'.repeat(process.stdout.columns),
     )
