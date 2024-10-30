@@ -13,10 +13,12 @@ const Meta = @import("./types.zig").Meta;
 
 const getField = db.getField;
 const idToShard = db.idToShard;
-
+// -------------------------------------------
+// and
+// [meta = 255] [size 2]
 // -------------------------------------------
 // or
-// [meta = 253] [next 4]
+// [meta = 253]  [size 2] [next 4]
 // -------------------------------------------
 // edge
 // [meta = 252] [size 2]
@@ -37,20 +39,58 @@ const idToShard = db.idToShard;
 // [or = 2] [size 2] [start 2], [op] [typeIndex], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
+inline fn fail(
+    ctx: *db.DbCtx,
+    node: *selva.SelvaNode,
+    typeEntry: *selva.SelvaTypeEntry,
+    conditions: []u8,
+    ref: ?types.RefStruct,
+    jump: u32,
+    comptime isEdge: bool,
+) bool {
+    if (jump > 0) {
+        return filter(ctx, node, typeEntry, conditions[jump..conditions.len], ref, 0, isEdge);
+    }
+    return false;
+}
+
 pub fn filter(
     ctx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
     ref: ?types.RefStruct,
+    jump: u32,
     comptime isEdge: bool,
 ) bool {
     var i: usize = 0;
+    var orJump: u32 = jump;
+
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
     while (i < conditions.len) {
         const meta: Meta = @enumFromInt(conditions[i]);
-        if (meta == Meta.edge) {
+        if (meta == Meta.andBranch) {
+            const size = readInt(u16, conditions, i + 1);
+            // if (!filter(
+            //     ctx,
+            //     node,
+            //     typeEntry,
+            //     conditions[i + 3 .. i + 3 + size],
+            //     ref,
+            //     0,
+            //     true,
+            // )) {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // }
+            i += 3 + size;
+        } else if (meta == Meta.orBranch) {
+            const size = readInt(u16, conditions, i + 1);
+            orJump = readInt(u32, conditions, i + 3);
+            // orSize = readInt(u16, conditions, i + 1);
+            // need size we have to conitue
+            i += 7 + size;
+        } else if (meta == Meta.edge) {
             if (ref != null) {
                 const size = readInt(u16, conditions, i + 1);
                 if (!filter(
@@ -59,13 +99,14 @@ pub fn filter(
                     typeEntry,
                     conditions[i + 3 .. i + 3 + size],
                     ref,
+                    0,
                     true,
                 )) {
-                    return false;
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
                 i += size + 3;
             } else {
-                return false;
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
         } else if (meta == Meta.reference) {
             const refField: u8 = conditions[i + 1];
@@ -74,14 +115,14 @@ pub fn filter(
             const selvaRef = db.getSingleReference(node, refField);
             const refNode: ?db.Node = selvaRef.?.*.dst;
             const fieldSchema = db.getFieldSchema(refField, typeEntry) catch {
-                return false;
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const edgeConstrain: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
-                return false;
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
             const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
-                return false;
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             if (!filter(
                 ctx,
@@ -92,9 +133,10 @@ pub fn filter(
                     .reference = @ptrCast(selvaRef.?),
                     .edgeConstaint = edgeConstrain,
                 },
+                0,
                 false,
             )) {
-                return false;
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += size + 6;
         } else {
@@ -105,12 +147,12 @@ pub fn filter(
             if (isEdge) {
                 const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, field) catch null;
                 if (edgeFieldSchema == null) {
-                    return false;
+                    return fail(ctx, node, typeEntry, conditions, ref, jump, isEdge);
                 }
                 value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
             } else {
                 const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-                    return false;
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const prop: Prop = @enumFromInt(fieldSchema.type);
                 if (prop == Prop.REFERENCE) {
@@ -119,7 +161,7 @@ pub fn filter(
                     if (checkRef) |r| {
                         value = @as([*]u8, @ptrCast(r))[0..8];
                     } else {
-                        return false;
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else if (prop == Prop.REFERENCES) {
                     // if edge different
@@ -128,14 +170,14 @@ pub fn filter(
                         const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
                         value = arr[0 .. r.nr_refs * 4];
                     } else {
-                        return false;
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else {
                     value = db.getField(typeEntry, 0, node, fieldSchema);
                 }
             }
             if (value.len == 0 or !runCondition(ctx, query, value)) {
-                return false;
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += querySize + 3;
         }

@@ -1,8 +1,11 @@
 import { QueryDefFilter } from '../types.js'
 
 // -------------------------------------------
+// and
+// [meta = 255] [size 2]
+// -------------------------------------------
 // or
-// [meta = 253] [next 4]
+// [meta = 253]  [size 2] [next 4]
 // -------------------------------------------
 // edge
 // [meta = 252] [size 2]
@@ -50,6 +53,16 @@ export const fillConditionsBuffer = (
   offset: number,
 ) => {
   let lastWritten = offset
+  let orJumpIndex = 0
+
+  if (conditions.or) {
+    result[lastWritten] = 253
+    lastWritten++
+    orJumpIndex = lastWritten
+    lastWritten += 2
+    lastWritten += 4
+  }
+
   conditions.conditions.forEach((v, k) => {
     lastWritten += writeConditions(result, k, lastWritten, v)
   })
@@ -80,6 +93,13 @@ export const fillConditionsBuffer = (
       lastWritten += size
       result.writeUint16LE(size, sizeIndex)
     })
+  }
+
+  if (conditions.or) {
+    const size = fillConditionsBuffer(result, conditions.or, lastWritten)
+    result.writeUint16LE(size, orJumpIndex)
+    result.writeUint32LE(lastWritten, orJumpIndex + 2)
+    lastWritten += size
   }
 
   return lastWritten - offset

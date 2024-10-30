@@ -10,6 +10,8 @@ import {
   sort,
   defToBuffer,
   getAll,
+  filterOr,
+  convertFilter,
 } from './query.js'
 
 import { BasedQueryResponse } from './BasedIterable.js'
@@ -39,33 +41,21 @@ export class QueryBranch<T> {
     return this
   }
 
-  // .or() - () => {}
-
   filter(field: string, operator?: Operator | boolean, value?: any): T {
-    if (operator === undefined) {
-      operator = '='
-      value = true
-    } else if (typeof operator === 'boolean') {
-      value = operator
-      operator = '='
-    }
-
-    if (operator == '!..') {
-      if (!Array.isArray(value)) {
-        throw new Error('Invalid filter')
-      }
-      filter(this.db, this.def, field, '>', value[1])
-      // OR
-      // filter(this.db, this.def, field, '<', value[0])
-    } else if (operator === '..') {
-      if (!Array.isArray(value)) {
-        throw new Error('Invalid filter')
-      }
-      filter(this.db, this.def, field, '>', value[0])
-      filter(this.db, this.def, field, '<', value[1])
+    const f = convertFilter(field, operator, value)
+    if (f.length == 1) {
+      filter(this.db, this.def, f[0])
     } else {
-      filter(this.db, this.def, field, operator, value)
+      filter(this.db, this.def, f[0])
+      filter(this.db, this.def, f[1])
     }
+    // @ts-ignore
+    return this
+  }
+
+  or(field: string, operator?: Operator | boolean, value?: any): T {
+    const f = convertFilter(field, operator, value)
+    filterOr(this.db, this.def, f)
     // @ts-ignore
     return this
   }

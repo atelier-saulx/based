@@ -11,4 +11,5 @@ export const destroy = async (db: BasedDb) => {
   } catch (err) {
     console.warn('Error removing dump folder', err.message)
   }
+  db.modifyCtx.db = null // Make sure we don't have a circular ref and leak mem
 }

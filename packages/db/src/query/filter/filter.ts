@@ -1,28 +1,25 @@
-import { QueryDef, QueryDefFilter, QueryDefShared } from '../types.js'
+import { QueryDef, QueryDefFilter } from '../types.js'
 import {
   isPropDef,
   SchemaTypeDef,
   SchemaPropTree,
   PropDef,
-  REFERENCE,
-  REFERENCES,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
-import { debug } from '../debug.js'
+import { Filter } from './types.js'
 
-export { Operator }
+export { Operator, Filter }
 
 const referencesFilter = (
   db: BasedDb,
-  fieldStr: string,
-  operator: Operator,
-  value: any,
+  filter: Filter,
   schema: SchemaTypeDef,
   conditions: QueryDef['filter'],
   def: QueryDef,
 ): number => {
+  const [fieldStr, operator, value] = filter
   var size = 0
   const path = fieldStr.split('.')
   let t: PropDef | SchemaPropTree = schema.tree
@@ -40,7 +37,7 @@ const referencesFilter = (
           const edgeDef = edges[p]
           if (edgeDef) {
             conditions.edges ??= new Map()
-            size += 3 + primitiveFilter(edgeDef, operator, value, conditions)
+            size += 3 + primitiveFilter(edgeDef, filter, conditions)
           }
         }
       }
@@ -63,9 +60,7 @@ const referencesFilter = (
       // more nested
       size += filterRaw(
         db,
-        path.slice(i + 1).join('.'),
-        operator,
-        value,
+        [path.slice(i + 1).join('.'), operator, value],
         refConditions.schema,
         refConditions,
         def, // incorrect...
@@ -83,42 +78,62 @@ const referencesFilter = (
 
 export const filterRaw = (
   db: BasedDb,
-  fieldStr: string,
-  operator: Operator,
-  value: any,
+  filter: Filter,
   schema: SchemaTypeDef,
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
-  let field = schema.props[fieldStr]
+  let field = schema.props[filter[0]]
   if (!field) {
-    return referencesFilter(
-      db,
-      fieldStr,
-      operator,
-      value,
-      schema,
-      conditions,
-      def,
-    )
+    return referencesFilter(db, filter, schema, conditions, def)
   }
-  return primitiveFilter(field, operator, value, conditions)
+  return primitiveFilter(field, filter, conditions)
 }
 
-export const filter = (
-  db: BasedDb,
-  def: QueryDef,
-  fieldStr: string,
-  operator: Operator,
-  value: any,
-) => {
-  def.filter.size += filterRaw(
-    db,
-    fieldStr,
-    operator,
-    value,
-    def.schema,
-    def.filter,
-    def,
-  )
+export const filter = (db: BasedDb, def: QueryDef, filter: Filter) => {
+  def.filter.size += filterRaw(db, filter, def.schema, def.filter, def)
+}
+
+export const filterOr = (db: BasedDb, def: QueryDef, filter: Filter[]) => {
+  if (!def.filter.or) {
+    def.filter.size += 7 // [0] [next 4]
+    def.filter.or = {
+      size: 0,
+      conditions: new Map(),
+    }
+  }
+  for (const f of filter) {
+    def.filter.or.size += filterRaw(db, f, def.schema, def.filter.or, def)
+  }
+  def.filter.size += def.filter.or.size
+}
+
+export const convertFilter = (
+  field: string,
+  operator?: Operator | boolean,
+  value?: any,
+): Filter[] => {
+  if (operator === undefined) {
+    operator = '='
+    value = true
+  } else if (typeof operator === 'boolean') {
+    value = operator
+    operator = '='
+  }
+  if (operator == '!..') {
+    if (!Array.isArray(value)) {
+      throw new Error('Invalid filter')
+    }
+    return [field, '>', value[1]]
+  } else if (operator === '..') {
+    if (!Array.isArray(value)) {
+      throw new Error('Invalid filter')
+    }
+    return [
+      [field, '>', value[0]],
+      [field, '<', value[1]],
+    ]
+  } else {
+    return [[field, operator, value]]
+  }
 }
