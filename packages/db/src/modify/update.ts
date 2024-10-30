@@ -5,7 +5,13 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { RANGE_ERR, UPDATE } from './types.js'
-import { appendFixedValue, appendU16, appendU32, appendU8 } from './utils.js'
+import {
+  appendFixedValue,
+  appendU16,
+  appendU32,
+  appendU8,
+  outOfRange,
+} from './utils.js'
 
 type Payload = Record<string, any>
 
@@ -27,7 +33,7 @@ const appendUpdate = (
       return err
     }
 
-    if (ctx.len + 10 + 5 + mergeMain.length * 4 > ctx.max) {
+    if (outOfRange(ctx, 15 + mergeMain.length * 4)) {
       return RANGE_ERR
     }
 

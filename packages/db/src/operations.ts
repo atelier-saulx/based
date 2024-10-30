@@ -137,20 +137,6 @@ const writeToWorker = async (worker: DbWorker, ctx: ModifyCtx) => {
     worker.types[type]++
   }
 
-  console.log(
-    'write to worker',
-    worker.id,
-    ctx.db.workers
-      .map(({ ctx: { offset, size, max, detached } = {}, id }) => ({
-        id,
-        detached,
-        offset,
-        size,
-        max,
-      }))
-      .filter(({ size }) => size),
-  )
-
   if (ctx.detached) {
     worker.channel.postMessage(
       [0, ctx.payload, ctx.state],
@@ -184,6 +170,8 @@ const filterCompleted = ({ state }: ModifyCtx) => {
   return status !== 1
 }
 
+const sortCtxs = (a, b) => a.offset - b.offset
+
 const writeCtx = async (db: BasedDb, ctx: ModifyCtx) => {
   // update ctx
   // ctx.size =
@@ -196,7 +184,7 @@ const writeCtx = async (db: BasedDb, ctx: ModifyCtx) => {
   db.writing = db.writing.filter(filterCompleted)
   // current ctx goes to writing
   db.writing.push(ctx)
-  db.writing.sort((a, b) => a.offset - b.offset)
+  db.writing.sort(sortCtxs)
   // find best location for next context
   let maxGap = 0
   let prevEnd

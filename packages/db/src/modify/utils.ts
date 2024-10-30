@@ -15,6 +15,10 @@ import {
 import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
 
+export const outOfRange = (ctx: ModifyCtx, size: number) => {
+  return ctx.len + size > ctx.max
+}
+
 export const appendU8 = (ctx: ModifyCtx, u32: number) => {
   ctx.buf[ctx.len++] = u32
 }
@@ -104,13 +108,13 @@ export const appendFixedValue = (
     if (size + 1 > def.len) {
       return new ModifyError(def, val)
     }
-    if (ctx.len + size + 1 > ctx.max) {
+    if (outOfRange(ctx, size + 1)) {
       return RANGE_ERR
     }
     appendU8(ctx, size)
     appendUtf8(ctx, val)
   } else if (type === BOOLEAN) {
-    if (ctx.len === ctx.max) {
+    if (outOfRange(ctx, 1)) {
       return RANGE_ERR
     }
     if (val === null) {
@@ -121,7 +125,7 @@ export const appendFixedValue = (
       return new ModifyError(def, val)
     }
   } else if (type === ENUM) {
-    if (ctx.len === ctx.max) {
+    if (outOfRange(ctx, 1)) {
       return RANGE_ERR
     }
     if (val === null) {
@@ -139,22 +143,22 @@ export const appendFixedValue = (
       val = 0
     }
     if (type === TIMESTAMP || type === NUMBER) {
-      if (ctx.len + 8 > ctx.max) {
+      if (outOfRange(ctx, 8)) {
         return RANGE_ERR
       }
       ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
     } else if (type === UINT32 || type === INT32) {
-      if (ctx.len + 4 > ctx.max) {
+      if (outOfRange(ctx, 4)) {
         return RANGE_ERR
       }
       appendU32(ctx, val)
     } else if (type === INT16 || type === UINT16) {
-      if (ctx.len + 2 > ctx.max) {
+      if (outOfRange(ctx, 2)) {
         return RANGE_ERR
       }
       appendU16(ctx, val)
     } else {
-      if (ctx.len === ctx.max) {
+      if (outOfRange(ctx, 1)) {
         return RANGE_ERR
       }
       appendU8(ctx, val)

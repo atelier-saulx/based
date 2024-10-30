@@ -2,7 +2,13 @@ import { BasedDb } from '../index.js'
 import { ModifyOp, MERGE_MAIN, ModifyErr, RANGE_ERR } from './types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendU32, appendU8, appendZeros, writeFixedValue } from './utils.js'
+import {
+  appendU32,
+  appendU8,
+  appendZeros,
+  outOfRange,
+  writeFixedValue,
+} from './utils.js'
 import { PropDef, SchemaTypeDef } from '../schema/types.js'
 
 export function writeMain(
@@ -15,7 +21,7 @@ export function writeMain(
   overwrite: boolean,
 ): ModifyErr {
   if (overwrite) {
-    if (ctx.len + 10 + 1 + 4 + schema.mainLen > ctx.max) {
+    if (outOfRange(ctx, 15 + schema.mainLen)) {
       return RANGE_ERR
     }
     setCursor(ctx, schema, def.prop, res.tmpId, modifyOp, true)

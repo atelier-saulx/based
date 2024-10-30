@@ -14,6 +14,7 @@ import {
   appendU32,
   appendU8,
   appendUtf8,
+  outOfRange,
   reserveU32,
   writeU32,
 } from './utils.js'
@@ -36,7 +37,7 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) {
+      if (outOfRange(ctx, 11)) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
@@ -44,7 +45,7 @@ export function writeString(
     }
   } else {
     let size = Buffer.byteLength(value, 'utf8')
-    if (ctx.len + 11 + 4 + size > ctx.max) {
+    if (outOfRange(ctx, 15 + size)) {
       return RANGE_ERR
     }
     if (modifyOp === CREATE) {

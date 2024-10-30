@@ -2,7 +2,7 @@ import { BasedDb } from '../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
 import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
-import { appendU8 } from './utils.js'
+import { appendU8, outOfRange } from './utils.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
@@ -10,14 +10,10 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const separate = schema.separate
 
   if (separate) {
-    const size = ctx.len + 12 + separate.length * 12
-    if (size > ctx.max) {
-      if (ctx.max > size) {
-        flushBuffer(db)
-        return remove(db, type, id)
-      } else {
-        throw Error('Not enough allocated space for removal')
-      }
+    const size = 12 + separate.length * 12
+    if (outOfRange(ctx, size)) {
+      flushBuffer(db)
+      return remove(db, type, id)
     }
     setCursor(ctx, schema, 0, id, UPDATE)
     appendU8(ctx, 4)
@@ -27,13 +23,9 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
     }
     appendU8(ctx, 10)
   } else {
-    if (ctx.len + 12 > ctx.max) {
-      if (ctx.max > 12) {
-        flushBuffer(db)
-        return remove(db, type, id)
-      } else {
-        throw Error('Not enough allocated space for removal')
-      }
+    if (outOfRange(ctx, 12)) {
+      flushBuffer(db)
+      return remove(db, type, id)
     }
     setCursor(ctx, schema, 0, id, UPDATE)
     appendU8(ctx, 4)
