@@ -26,7 +26,7 @@ pub fn queryId(
         return;
     }
 
-    if (!filter(ctx.db, node.?, typeEntry, conditions, null, false)) {
+    if (!filter(ctx.db, node.?, typeEntry, conditions, null, 0, false)) {
         return;
     }
 
@@ -61,7 +61,7 @@ pub fn queryIds(
         if (node == null) {
             continue :checkItem;
         }
-        if (!filter(ctx.db, node.?, typeEntry, conditions, null, false)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null, 0, false)) {
             continue :checkItem;
         }
         const size = try getFields(
@@ -107,7 +107,7 @@ pub fn query(
             break :checkItem;
         }
 
-        if (!filter(ctx.db, node.?, typeEntry, conditions, null, false)) {
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null, 0, false)) {
             continue :checkItem;
         }
 

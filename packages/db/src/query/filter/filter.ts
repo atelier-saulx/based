@@ -8,9 +8,9 @@ import {
 import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
-import { Filter, isFilter } from './types.js'
+import { Filter } from './types.js'
 
-export { Operator, Filter, isFilter }
+export { Operator, Filter }
 
 const referencesFilter = (
   db: BasedDb,
@@ -95,24 +95,24 @@ export const filter = (db: BasedDb, def: QueryDef, filter: Filter) => {
 }
 
 export const filterOr = (db: BasedDb, def: QueryDef, filter: Filter[]) => {
-  //   if (!this.def.filter.or) {
-  //     this.def.filter.or = {
-  //       size: number
-  // conditions: Map<number, Buffer[]>
-  // references?: Map<number, QueryDefFilter>
-  // fromRef?: PropDef
-  // schema?: SchemaTypeDef
-  // edges?: Map<number, Buffer[]>
-  // or?: QueryDefFilter
-  //     }
-  //   }
+  if (!def.filter.or) {
+    def.filter.size += 5 // [0] [next 4]
+    def.filter.or = {
+      size: 0,
+      conditions: new Map(),
+    }
+  }
+  for (const f of filter) {
+    def.filter.or.size += filterRaw(db, f, def.schema, def.filter.or, def)
+  }
+  def.filter.size += def.filter.or.size
 }
 
 export const convertFilter = (
   field: string,
   operator?: Operator | boolean,
   value?: any,
-): Filter | [...Filter, ...Filter] => {
+): Filter[] => {
   if (operator === undefined) {
     operator = '='
     value = true
@@ -129,8 +129,11 @@ export const convertFilter = (
     if (!Array.isArray(value)) {
       throw new Error('Invalid filter')
     }
-    return [field, '>', value[0], field, '<', value[1]]
+    return [
+      [field, '>', value[0]],
+      [field, '<', value[1]],
+    ]
   } else {
-    return [field, operator, value]
+    return [[field, operator, value]]
   }
 }

@@ -50,6 +50,15 @@ export const fillConditionsBuffer = (
   offset: number,
 ) => {
   let lastWritten = offset
+  let orJumpIndex = 0
+
+  if (conditions.or) {
+    result[lastWritten] = 253
+    lastWritten++
+    orJumpIndex = lastWritten
+    lastWritten += 4
+  }
+
   conditions.conditions.forEach((v, k) => {
     lastWritten += writeConditions(result, k, lastWritten, v)
   })
@@ -80,6 +89,12 @@ export const fillConditionsBuffer = (
       lastWritten += size
       result.writeUint16LE(size, sizeIndex)
     })
+  }
+
+  if (conditions.or) {
+    const size = fillConditionsBuffer(result, conditions.or, lastWritten)
+    result.writeUint16LE(lastWritten, orJumpIndex)
+    lastWritten += size
   }
 
   return lastWritten - offset

@@ -11,7 +11,6 @@ import {
   defToBuffer,
   getAll,
   filterOr,
-  isFilter,
   convertFilter,
 } from './query.js'
 
@@ -44,11 +43,11 @@ export class QueryBranch<T> {
 
   filter(field: string, operator?: Operator | boolean, value?: any): T {
     const f = convertFilter(field, operator, value)
-    if (isFilter(f)) {
-      filter(this.db, this.def, f)
+    if (f.length == 1) {
+      filter(this.db, this.def, f[0])
     } else {
-      filter(this.db, this.def, [f[0], f[1], f[2]])
-      filter(this.db, this.def, [f[3], f[4], f[5]])
+      filter(this.db, this.def, f[0])
+      filter(this.db, this.def, f[1])
     }
     // @ts-ignore
     return this
@@ -56,12 +55,7 @@ export class QueryBranch<T> {
 
   or(field: string, operator?: Operator | boolean, value?: any): T {
     const f = convertFilter(field, operator, value)
-    if (isFilter(f)) {
-      filterOr(this.db, this.def, f)
-    } else {
-      filterOr(this.db, this.def, [f[0], f[1], f[2]])
-      filterOr(this.db, this.def, [f[3], f[4], f[5]])
-    }
+    filterOr(this.db, this.def, f)
     // @ts-ignore
     return this
   }
