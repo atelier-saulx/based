@@ -28,7 +28,6 @@ struct SelvaNode {
     node_id_t node_id;
     node_type_t type;
     struct trx_label trx_label;
-    selva_hash128_t node_hash;
     RB_ENTRY(SelvaNode) _index_entry;
     struct SelvaFields {
 #define SELVA_FIELDS_DATA_ALIGN 8
@@ -175,7 +174,5 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
  * `new_alias` must be allocated with selva_jemalloc.
  */
 void selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
-
-void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state, selva_hash_state_t *hash_state);
 
 #include "selva/db.h"

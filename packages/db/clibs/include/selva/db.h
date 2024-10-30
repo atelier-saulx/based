@@ -8,6 +8,12 @@
 #include "selva/_export.h"
 #include "selva/types.h"
 
+/*
+ * TODO Don't like this one but it compiles.
+ * We should have something with selva_hash_state;
+ */
+struct XXH3_state_s;
+
 /**
  * Create a new DB instance.
  */
@@ -200,21 +206,14 @@ node_id_t selva_get_node_id(const struct SelvaNode *node) __attribute__((nonnull
 
 /**
  * Calculate the node hash.
+ * Update node hash by using a temp hash state allocated earlier.
+ * @param tmp_hash_state is only used for computation and it's reset before use.
  */
 SELVA_EXPORT
-void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
+selva_hash128_t selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node, struct XXH3_state_s *tmp_hash_state);
 
-/**
- * Clear the node hash.
- */
 SELVA_EXPORT
-void selva_node_hash_clear(struct SelvaNode *node) __attribute__((nonnull));
-
-/**
- * Get the current node_hash value.
- */
-SELVA_EXPORT
-selva_hash128_t selva_node_hash_get(struct SelvaNode *node) __attribute__((nonnull));
+selva_hash128_t selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 SELVA_EXPORT
 selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t start, node_id_t end) __attribute__((nonnull));

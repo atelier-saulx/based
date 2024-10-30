@@ -33,9 +33,6 @@ static int cb_memcmp(void * restrict ctx, uint8_t * restrict buf, size_t len)
     }
 }
 
-/*
- * First string deflated and second not
- */
 LIBDEFLATEEXPORT int
 libdeflate_memcmp(struct libdeflate_decompressor *decompressor, struct libdeflate_block_state *state, const char *in_buf, size_t in_len, const void *ptr2_buf, size_t ptr2_len)
 {
