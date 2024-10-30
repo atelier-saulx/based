@@ -15,7 +15,7 @@ export class DbWorker {
     const address = db.native.intFromExternal(db.dbCtxExternal)
     const { port1, port2 } = new MessageChannel()
 
-    new Worker(join(__dirname, 'worker.js'), {
+    this.worker = new Worker(join(__dirname, 'worker.js'), {
       workerData: {
         atomics: this.atomics,
         address,
@@ -33,15 +33,24 @@ export class DbWorker {
   ctx: ModifyCtx
   remaining = 0
   types: Record<number, number> = {}
+  worker: Worker
 }
 
-export const startWorker = (db): Promise<DbWorker> => {
+export const startWorker = (db): void => {
   const dbWorker = new DbWorker(db)
-  return new Promise((resolve) =>
-    dbWorker.channel.once('message', () => {
-      resolve(dbWorker)
-    }),
-  )
+  dbWorker.channel.once('message', (code) => {
+    if (code === 0) {
+      console.info('db worker ready')
+    } else {
+      console.error('Something went wrong with the worker', code)
+      dbWorker.worker.terminate()
+    }
+  })
+  dbWorker.worker.on('exit', (code) => {
+    console.log('worker exit with code:', code)
+    db.workers = db.workers.filter((worker) => worker !== dbWorker)
+  })
+  db.workers.push(dbWorker)
 }
 
 export class ModifyCtx {

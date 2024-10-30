@@ -99,7 +99,7 @@ export class BasedDb {
 
   fileSystemPath: string
 
-  workers: DbWorker[]
+  workers: DbWorker[] = []
   noCompression: boolean
   concurrency: number
   constructor({
@@ -225,11 +225,10 @@ export class BasedDb {
       }
     }
 
-    this.workers = await Promise.all(
-      Array.from({ length: this.concurrency }).map(() => {
-        return startWorker(this)
-      }),
-    )
+    let i = this.concurrency
+    while (i--) {
+      startWorker(this)
+    }
 
     return []
   }
@@ -343,7 +342,7 @@ export class BasedDb {
   }
 
   async drain() {
-    if (this.workers.length) {
+    if (!this.workers.length) {
       flushBuffer(this)
       const t = this.writeTime
       this.writeTime = 0
@@ -428,6 +427,11 @@ export class BasedDb {
 
   async stop(noSave?: boolean) {
     this.modifyCtx.len = 0
+    await Promise.all(
+      this.workers.map(({ worker }) => {
+        return worker.terminate()
+      }),
+    )
     if (!noSave) {
       await this.save()
     }
