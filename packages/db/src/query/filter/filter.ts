@@ -32,12 +32,10 @@ const referencesFilter = (
     t = t[p]
     if (!t) {
       if (p[0] === '$') {
-        const edges = conditions.fromRef
-          ? conditions.fromRef.edges
-          : 'propDef' in def.target
-            ? def.target.propDef.edges?.[p]
-            : null
-
+        let edges = conditions.fromRef && conditions.fromRef.edges
+        if (!edges && 'propDef' in def.target) {
+          edges = def.target.propDef.edges
+        }
         if (edges) {
           const edgeDef = edges[p]
           if (edgeDef) {
