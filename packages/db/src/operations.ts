@@ -52,8 +52,6 @@ export class ModifyCtx {
     this.max = offset + size - 8
     this.db = db
 
-    console.log({ offset, size, max: offset + size - 8 })
-
     if (db.modifyCtx) {
       this.buf = db.modifyCtx.buf
     } else {
@@ -264,13 +262,22 @@ export const flushBuffer = (db: BasedDb, cb?: any) => {
     if (db.workers.length) {
       writeCtx(db, ctx)
     } else {
-      db.native.modify(
-        ctx.buf.subarray(0, ctx.len),
-        db.dbCtxExternal,
-        (defaultState ??= new Int32Array(2)),
-      )
-      console.log({ defaultState })
+      try {
+        db.native.modify(
+          ctx.buf.subarray(0, ctx.len),
+          db.dbCtxExternal,
+          (defaultState ??= new Int32Array(2)),
+        )
+      } catch (e) {
+        console.error(e)
+      }
+
       db.modifyCtx = new ModifyCtx(db, 0, db.maxModifySize)
+      if (ctx.queue.size) {
+        for (const [resolve, payload] of ctx.queue) {
+          resolve(payload)
+        }
+      }
     }
   }
 

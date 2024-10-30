@@ -68,7 +68,9 @@ export function modify(
   tree: SchemaTypeDef['tree'],
   overwrite: boolean,
 ): ModifyErr {
-  ctx.types.add(schema.id)
   const err = _modify(ctx, res, obj, schema, mod, tree, overwrite)
+  if (!err) {
+    ctx.types.add(schema.id)
+  }
   return err
 }

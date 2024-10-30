@@ -70,7 +70,7 @@ export const update = (
     if (err === RANGE_ERR) {
       // const { min, len, max } = ctx
       flushBuffer(db)
-      update(db, type, id, obj, overwrite)
+      return update(db, type, id, obj, overwrite)
       // console.log('update - range error', { min, len, max }, db.workers)
       // if (cnt-- === 0) {
       //   process.exit()
