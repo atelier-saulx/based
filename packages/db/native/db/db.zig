@@ -166,7 +166,7 @@ pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema)
 }
 
 pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
-    var ref: ?*selva.SelvaNodeReference = null;
+    var ref: *selva.SelvaNodeReference = undefined;
     try errors.selva(selva.selva_fields_reference_set(
         ctx.selva,
         target,
