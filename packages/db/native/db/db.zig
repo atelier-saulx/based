@@ -165,23 +165,16 @@ pub fn writeField(ctx: *DbCtx, data: []u8, node: Node, fieldSchema: FieldSchema)
     ));
 }
 
-// int selva_fields_reference_set(
-//           struct SelvaDb *db,
-//           struct SelvaNode * restrict src,
-//           const struct SelvaFieldSchema *fs_src,
-//           struct SelvaNode * restrict dst,
-//           struct SelvaNodeReference **ref_out)
-
-pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !void {
-    // TODO return the ref on this
-
-    try errors.selva(selva.selva_fields_set(
+pub fn writeReference(ctx: *DbCtx, value: Node, target: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeReference {
+    var ref: ?*selva.SelvaNodeReference = null;
+    try errors.selva(selva.selva_fields_reference_set(
         ctx.selva,
         target,
         fieldSchema,
         value,
-        8, // ptr len
+        @ptrCast(&ref),
     ));
+    return ref;
 }
 
 pub fn writeReferences(ctx: *DbCtx, value: []Node, target: Node, fieldSchema: FieldSchema) !void {
