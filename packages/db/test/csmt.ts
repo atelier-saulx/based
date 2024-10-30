@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
+import { equal } from './shared/assert.js'
 import { Csmt, createTree } from '../src/csmt/index.js'
 
 const shortHash = (buf: Buffer) => buf.toString('base64').substring(0, 5)
@@ -458,10 +459,10 @@ await test('search', async (t) => {
   tree.insert(4, Buffer.from('c'))
   tree.insert(5, Buffer.from('d'))
 
-  console.log(tree.search(1))
-  console.log(tree.search(10))
-  console.log(tree.search(2))
-  console.log(tree.search(3))
-  console.log(tree.search(4))
-  console.log(tree.search(5))
+  equal(tree.search(1), null)
+  equal(tree.search(10), null)
+  equal(tree.search(2)?.key, 2)
+  equal(tree.search(3)?.key, 3)
+  equal(tree.search(4)?.key, 4)
+  equal(tree.search(5)?.key, 5)
 })
