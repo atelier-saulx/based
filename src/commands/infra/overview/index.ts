@@ -1,5 +1,6 @@
 import { Command } from 'commander'
 import { AppContext } from '../../../shared/index.js'
+import { getTerminal } from '../../../shared/getTerminal.js'
 
 export const overview =
   (program: Command) =>
@@ -23,18 +24,24 @@ export const getOverview = async (context: AppContext, stream = true) => {
   const { cluster, org, project, env } = context.get('basedProject')
 
   const headerTemplate = (connections: number = 0) => {
-    return (
-      `${context.get('appTitle')}\n` +
-      `Viewing Infra from: [<b><cyan>${cluster}/${org}/${project}/${env}</cyan></b>] ${stream ? '<b><red>LIVE</red></b>' : ''}\n` +
-      `Active Connections: <b>${connections}</b>`
-    )
+    return [
+      `${context.get('appTitle')}`,
+      `Viewing Infra from: [<b><cyan>${cluster}/${org}/${project}/${env}</cyan></b>] ${stream ? '<b><red>LIVE</red></b>' : ''}`,
+      `Active Connections: <b>${connections}</b>`,
+    ]
   }
 
-  const { kill, header } = context.getTerminal(context.get('appName'))
+  const { kill, header, addLine } = getTerminal(context.get('appName'))
+  //   console.log('', headerTemplate, header, setTable)
 
   await basedClient.query('based:connections').subscribe((connections) => {
     header(headerTemplate(connections))
   })
+
+  let counter = 0
+  setInterval(() => {
+    addLine(String(counter++))
+  }, 100)
 
   kill(() => {
     destroy()

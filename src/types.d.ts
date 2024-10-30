@@ -8,6 +8,22 @@ declare global {
     type BasedFile = 'based' | 'based.schema' | 'based.config' | 'based.infra'
 
     namespace Context {
+      type MouseEvent = {
+        button: number
+        state: string
+        x: number
+        y: number
+        motion: boolean
+        shift: boolean
+        meta: boolean
+        ctrl: boolean
+      }
+
+      type DirectionsEvent = {
+        name: 'up' | 'down' | 'left' | 'right'
+        from: 'mouse' | 'keyboard'
+      }
+
       type Project = {
         cluster?: string
         project?: string
@@ -111,11 +127,20 @@ declare global {
       }
 
       type Terminal = {
-        title: string,
-        header: string = '',
+        title: string
+        header?: string
         lines?: {
-          sort?: 'asc' | 'desc',
-        },
+          sort?: 'asc' | 'desc'
+        }
+      }
+
+      type TerminalFunctions = {
+        render: () => void
+        kill: (fn: any) => void
+        header: (content: string) => void
+        addLine: (msg: string | string[]) => void
+        setTable?: () => void
+        autoScroll?: boolean
       }
     }
 

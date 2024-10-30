@@ -1,11 +1,11 @@
-import blessed from '@farjs/blessed'
+import blessed from 'blessed'
 import { parseMessage } from '../../shared/parseMessage.js'
 
 export const contextGetTerminal = ({
   title,
-  header: headerContent,
+  header: headerContent = '',
   lines: linesConfig,
-}: Based.Context.Terminal) => {
+}: Based.Context.Terminal): Based.Context.TerminalFunctions => {
   let autoScroll: boolean = true
 
   const screen = blessed.screen({
@@ -37,22 +37,29 @@ export const contextGetTerminal = ({
     },
   })
 
-  const kill = (fn: any) => screen.key(['C-c'], fn)
-  const render = () => screen.render()
+  const kill: Based.Context.TerminalFunctions['kill'] = (fn: any) =>
+    screen.key(['C-c'], fn)
+  const render: Based.Context.TerminalFunctions['render'] = () =>
+    screen.render()
 
-  const header = (content: string) => {
+  const header: Based.Context.TerminalFunctions['header'] = (
+    content: string,
+  ) => {
     headerElement.setContent(
       parseMessage(content) + '\n' + '─'.repeat(process.stdout.columns),
     )
 
     headerElement.height = content?.split('\n').length + 1
     mainContainer.height = `100%-${headerElement.height}`
+
     render()
   }
 
   const lines: string[] = []
 
-  const addLine = (msg: string | string[]) => {
+  const addLine: Based.Context.TerminalFunctions['addLine'] = (
+    msg: string | string[],
+  ) => {
     if (!msg.length) {
       render()
       return
@@ -81,10 +88,6 @@ export const contextGetTerminal = ({
     render()
   }
 
-  // const setTable = (data) => {
-  // mainContainer.setData(lines.join('\n'))
-  // }
-
   screen.key(['escape', 'q', 'C-c'], function () {
     return process.exit(0)
   })
@@ -110,7 +113,10 @@ export const contextGetTerminal = ({
   })
 
   screen.append(headerElement)
-  screen.append(mainContainer)
+
+  if (lines) {
+    screen.append(mainContainer)
+  }
 
   header(headerContent)
 
