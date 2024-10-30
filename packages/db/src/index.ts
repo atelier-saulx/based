@@ -101,16 +101,18 @@ export class BasedDb {
 
   workers: DbWorker[]
   noCompression: boolean
-
+  concurrency: number
   constructor({
     path,
     maxModifySize,
     noCompression,
+    concurrency,
   }: {
     path: string
     maxModifySize?: number
     fresh?: boolean
     noCompression?: boolean
+    concurrency?: number
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
@@ -120,6 +122,7 @@ export class BasedDb {
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
+    this.concurrency = concurrency || 0
   }
 
   async start(opts: { clean?: boolean } = {}): Promise<
@@ -223,7 +226,7 @@ export class BasedDb {
     }
 
     this.workers = await Promise.all(
-      Array.from({ length: 4 }).map(() => {
+      Array.from({ length: this.concurrency }).map(() => {
         return startWorker(this)
       }),
     )

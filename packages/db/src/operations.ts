@@ -256,11 +256,22 @@ const writeCtx = async (db: BasedDb, ctx: ModifyCtx) => {
   return writeToWorker(workers[0], ctx)
 }
 
+let defaultState
 export const flushBuffer = (db: BasedDb, cb?: any) => {
   const ctx = db.modifyCtx
 
   if (ctx.types.size) {
-    writeCtx(db, ctx)
+    if (db.workers.length) {
+      writeCtx(db, ctx)
+    } else {
+      db.native.modify(
+        ctx.buf.subarray(0, ctx.len),
+        db.dbCtxExternal,
+        (defaultState ??= new Int32Array(2)),
+      )
+      console.log({ defaultState })
+      db.modifyCtx = new ModifyCtx(db, 0, db.maxModifySize)
+    }
   }
 
   db.isDraining = false
@@ -268,7 +279,6 @@ export const flushBuffer = (db: BasedDb, cb?: any) => {
   if (cb) {
     let cnt = db.writing.length
     if (cnt === 0) {
-      ctx.queued = true
       cb(0)
     } else {
       const d = Date.now()
