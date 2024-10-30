@@ -45,11 +45,13 @@ inline fn fail(
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
     ref: ?types.RefStruct,
-    jump: u32,
+    jump: ?[]u8,
     comptime isEdge: bool,
 ) bool {
-    if (jump > 0) {
-        return filter(ctx, node, typeEntry, conditions[jump..conditions.len], ref, 0, isEdge);
+    if (jump) |j| {
+        const start = readInt(u32, j, 2);
+        const size = readInt(u16, j, 0);
+        return filter(ctx, node, typeEntry, conditions[start .. size + start], ref, null, isEdge);
     }
     return false;
 }
@@ -60,11 +62,11 @@ pub fn filter(
     typeEntry: *selva.SelvaTypeEntry,
     conditions: []u8,
     ref: ?types.RefStruct,
-    jump: u32,
+    jump: ?[]u8,
     comptime isEdge: bool,
 ) bool {
     var i: usize = 0;
-    var orJump: u32 = jump;
+    var orJump: ?[]u8 = null;
 
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
@@ -86,9 +88,7 @@ pub fn filter(
             i += 3 + size;
         } else if (meta == Meta.orBranch) {
             const size = readInt(u16, conditions, i + 1);
-            orJump = readInt(u32, conditions, i + 3);
-            // orSize = readInt(u16, conditions, i + 1);
-            // need size we have to conitue
+            orJump = conditions[i + 1 .. i + 7];
             i += 7 + size;
         } else if (meta == Meta.edge) {
             if (ref != null) {
@@ -99,7 +99,7 @@ pub fn filter(
                     typeEntry,
                     conditions[i + 3 .. i + 3 + size],
                     ref,
-                    0,
+                    null,
                     true,
                 )) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -133,7 +133,7 @@ pub fn filter(
                     .reference = @ptrCast(selvaRef.?),
                     .edgeConstaint = edgeConstrain,
                 },
-                0,
+                null,
                 false,
             )) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
