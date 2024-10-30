@@ -16,6 +16,7 @@ import {
   appendU32,
   appendU8,
   appendUtf8,
+  outOfRange,
 } from '../utils.js'
 import { RefModify, RefModifyOpts } from './references.js'
 
@@ -96,7 +97,6 @@ export function writeEdges(
   t: PropDef,
   ref: RefModifyOpts,
   ctx: BasedDb['modifyCtx'],
-  res: ModifyState,
 ): ModifyErr {
   for (const key in t.edges) {
     if (key in ref) {
@@ -115,7 +115,7 @@ export function writeEdges(
             }
             size = buf.byteLength
           }
-          if (ctx.len + 6 + size > ctx.max) {
+          if (outOfRange(ctx, 6 + size)) {
             return RANGE_ERR
           }
           appendU8(ctx, edge.prop)
@@ -129,7 +129,7 @@ export function writeEdges(
             return new ModifyError(t, ref)
           }
           const size = Buffer.byteLength(value)
-          if (ctx.len + 6 + size > ctx.max) {
+          if (outOfRange(ctx, 6 + size)) {
             return RANGE_ERR
           }
           appendU8(ctx, edge.prop)
@@ -155,7 +155,7 @@ export function writeEdges(
           if (!Array.isArray(value)) {
             return new ModifyError(t, ref)
           }
-          if (ctx.len + 6 + value.length + 4 > ctx.max) {
+          if (outOfRange(ctx, 6 + value.length * 4)) {
             return RANGE_ERR
           }
           appendU8(ctx, edge.prop)
@@ -164,7 +164,7 @@ export function writeEdges(
           appendRefs(edge, ctx, value)
         }
       } else {
-        if (ctx.len + 2 > ctx.max) {
+        if (outOfRange(ctx, 2)) {
           return RANGE_ERR
         }
         appendU8(ctx, edge.prop)

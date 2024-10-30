@@ -5,7 +5,7 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
-import { appendU8, reserveU16, writeU16 } from './utils.js'
+import { appendU8, outOfRange, reserveU16, writeU16 } from './utils.js'
 
 type Payload = Record<string, any>
 
@@ -24,7 +24,7 @@ const appendCreate = (
   }
 
   if (ctx.len === len || def.mainLen === 0) {
-    if (ctx.len + 10 > ctx.max) {
+    if (outOfRange(ctx, 10)) {
       return RANGE_ERR
     }
     setCursor(ctx, def, 0, id, CREATE)
@@ -33,14 +33,14 @@ const appendCreate = (
   // if touched lets see perf impact here
   if (def.hasStringProp) {
     if (ctx.hasStringField !== def.stringPropsSize - 1) {
-      if (ctx.len + 3 > ctx.max) {
+      if (outOfRange(ctx, 3)) {
         return RANGE_ERR
       }
       appendU8(ctx, 7)
       const sizepos = reserveU16(ctx)
       for (const { prop } of def.stringPropsLoop) {
         if (def.stringPropsCurrent[prop] === 1) {
-          if (ctx.len === ctx.max) {
+          if (outOfRange(ctx, 1)) {
             return RANGE_ERR
           }
           appendU8(ctx, prop)

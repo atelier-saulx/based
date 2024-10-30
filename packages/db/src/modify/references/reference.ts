@@ -3,7 +3,13 @@ import { SchemaTypeDef, PropDef } from '../../schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
-import { appendU32, appendU8, reserveU32, writeU32 } from '../utils.js'
+import {
+  appendU32,
+  appendU8,
+  outOfRange,
+  reserveU32,
+  writeU32,
+} from '../utils.js'
 import { getEdgeSize, writeEdges } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
@@ -16,7 +22,7 @@ function writeRef(
   modifyOp: ModifyOp,
   hasEdges: boolean,
 ): ModifyErr {
-  if (ctx.len + 16 > ctx.max) {
+  if (outOfRange(ctx, 16)) {
     return RANGE_ERR
   }
   ctx.db.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
@@ -53,15 +59,14 @@ function singleReferencEdges(
     if (err) {
       return err
     }
-    if (ctx.len + 4 + edgesLen > ctx.max) {
+    if (outOfRange(ctx, 4 + edgesLen)) {
       return RANGE_ERR
     }
     const sizepos = reserveU32(ctx)
-    err = writeEdges(def, ref, ctx, res)
+    err = writeEdges(def, ref, ctx)
     if (err) {
       return err
     }
-
     writeU32(ctx, ctx.len - sizepos, sizepos)
   } else {
     return new ModifyError(def, ref)
@@ -78,7 +83,7 @@ export function writeReference(
 ): ModifyErr {
   ctx.types.add(def.inverseTypeId)
   if (value === null) {
-    if (ctx.len + 11 > ctx.max) {
+    if (outOfRange(ctx, 11)) {
       return RANGE_ERR
     }
     setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)

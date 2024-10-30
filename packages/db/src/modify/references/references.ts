@@ -7,6 +7,7 @@ import {
   alignU32,
   appendU32,
   appendU8,
+  outOfRange,
   reserveU32,
   writeU32,
 } from '../utils.js'
@@ -44,7 +45,7 @@ export function writeReferences(
   ctx.types.add(def.inverseTypeId)
 
   if (value === null) {
-    if (ctx.len + 11 > ctx.max) {
+    if (outOfRange(ctx, 11)) {
       return RANGE_ERR
     }
     setCursor(ctx, schema, def.prop, res.tmpId, mod)
@@ -83,10 +84,9 @@ function deleteRefs(
   res: ModifyState,
 ): ModifyErr {
   const size = 4 * refs.length
-  if (ctx.len + 10 + 1 + size > ctx.max) {
+  if (outOfRange(ctx, 10 + 1 + size)) {
     return RANGE_ERR
   }
-
   setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
   appendU8(ctx, modifyOp)
   appendU32(ctx, size + 1)
@@ -115,7 +115,7 @@ function updateRefs(
   res: ModifyState,
   op: 0 | 1,
 ): ModifyErr {
-  if (ctx.len + 19 + refs.length * 4 > ctx.max) {
+  if (outOfRange(ctx, 19 + refs.length * 4)) {
     return RANGE_ERR
   }
 
@@ -129,7 +129,7 @@ function updateRefs(
       if (nrOrErr === refs.length) {
         // reset
         ctx.len = initpos
-      } else if (ctx.len + 2 > ctx.max) {
+      } else if (outOfRange(ctx, 2)) {
         return RANGE_ERR
       } else {
         // continue
@@ -152,7 +152,7 @@ function appendRefs(
   op: 0 | 1,
   remaining: number,
 ): ModifyErr {
-  if (ctx.len + 10 > ctx.max) {
+  if (outOfRange(ctx, 10)) {
     return RANGE_ERR
   }
   const hasEdges = !!def.edges
@@ -193,13 +193,13 @@ function appendRefs(
 
     if (hasEdges) {
       if (index === undefined) {
-        if (ctx.len + 9 > ctx.max) {
+        if (outOfRange(ctx, 9)) {
           return RANGE_ERR
         }
         appendU8(ctx, 1)
         appendU32(ctx, id)
       } else {
-        if (ctx.len + 13 > ctx.max) {
+        if (outOfRange(ctx, 13)) {
           return RANGE_ERR
         }
         appendU8(ctx, 2)
@@ -207,19 +207,19 @@ function appendRefs(
         appendU32(ctx, index)
       }
       const sizepos = reserveU32(ctx)
-      const err = writeEdges(def, ref, ctx, res)
+      const err = writeEdges(def, ref, ctx)
       if (err) {
         return err
       }
       writeU32(ctx, ctx.len - sizepos - 4, sizepos)
     } else if (index === undefined) {
-      if (ctx.len + 5 > ctx.max) {
+      if (outOfRange(ctx, 5)) {
         return RANGE_ERR
       }
       appendU8(ctx, 0)
       appendU32(ctx, id)
     } else if (index >= 0) {
-      if (ctx.len + 9 > ctx.max) {
+      if (outOfRange(ctx, 9)) {
         return RANGE_ERR
       }
       appendU8(ctx, 3)

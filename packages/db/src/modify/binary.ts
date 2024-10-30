@@ -3,7 +3,7 @@ import { SchemaTypeDef, PropDef } from '../schema/types.js'
 import { UPDATE, ModifyOp, ModifyErr, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendBuf, appendU32, appendU8 } from './utils.js'
+import { appendBuf, appendU32, appendU8, outOfRange } from './utils.js'
 
 export function getBuffer(value): Buffer {
   if (value instanceof Buffer) {
@@ -34,14 +34,14 @@ export function writeBinary(
   }
   if (size === 0) {
     if (modifyOp === UPDATE) {
-      if (ctx.len + 11 > ctx.max) {
+      if (outOfRange(ctx, 11)) {
         return RANGE_ERR
       }
       setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
       appendU8(ctx, DELETE)
     }
   } else {
-    if (ctx.len + 15 + size > ctx.max) {
+    if (outOfRange(ctx, 15 + size)) {
       return RANGE_ERR
     }
     setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
