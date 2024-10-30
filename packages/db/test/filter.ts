@@ -551,18 +551,28 @@ await test('or', async (t) => {
   }
   db.drain()
 
-  // db.query('machine').sort('scheduled', 'desc').get().inspect(2)
-
-  // db.query('machine').sort('scheduled', 'desc').get()
-
   // larger then
   // find in index if it exsit especialy if you do both
   // try exhaustive sort if no index and filter?
-  db.query('machine')
-    .filter('scheduled', '>', '01/01/2100')
-    .or('lastPing', '>', 1e6 - 10)
-    // .sort('scheduled', 'desc')
-    .range(0, 30)
-    .get()
-    .inspect(2)
+  deepEqual(
+    db
+      .query('machine')
+      .include('id', 'lastPing')
+      .filter('scheduled', '>', '01/01/2100')
+      .or('lastPing', '>', 1e6 - 2)
+      .range(0, 30)
+      .get()
+      .inspect(2)
+      .toObject(),
+    [
+      {
+        id: 999999,
+        lastPing: 999999,
+      },
+      {
+        id: 1000000,
+        lastPing: 1000000,
+      },
+    ],
+  )
 })
