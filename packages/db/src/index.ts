@@ -343,6 +343,12 @@ export class BasedDb {
   }
 
   async drain() {
+    if (this.workers.length) {
+      flushBuffer(this)
+      const t = this.writeTime
+      this.writeTime = 0
+      return t
+    }
     return new Promise((resolve) => {
       flushBuffer(this, resolve)
     })

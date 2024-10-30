@@ -262,6 +262,7 @@ export const flushBuffer = (db: BasedDb, cb?: any) => {
     if (db.workers.length) {
       writeCtx(db, ctx)
     } else {
+      const d = Date.now()
       try {
         db.native.modify(
           ctx.buf.subarray(0, ctx.len),
@@ -271,7 +272,7 @@ export const flushBuffer = (db: BasedDb, cb?: any) => {
       } catch (e) {
         console.error(e)
       }
-
+      db.writeTime += Date.now() - d
       db.modifyCtx = new ModifyCtx(db, 0, db.maxModifySize)
       if (ctx.queue.size) {
         for (const [resolve, payload] of ctx.queue) {
