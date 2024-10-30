@@ -440,7 +440,10 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     if (nr_nodes > 0) {
         do {
-            selva_node_hash_update2(te, node, tmp_hash_state, hash_state);
+            selva_hash128_t node_hash;
+
+            node_hash = selva_node_hash_update(te, node, tmp_hash_state);
+            selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
             save_node(&io, db, node);
             save_aliases_node(&io, te, node->node_id);
 

@@ -650,11 +650,7 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
     }
 }
 
-/**
- * Update node hash by using a temp hash state allocated earlier.
- * @param tmp_hash_state is only used for computation and it's reset before use.
- */
-static void selva_node_hash_update_internal(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
+selva_hash128_t selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state)
 {
     selva_hash128_t res;
 
@@ -664,29 +660,15 @@ static void selva_node_hash_update_internal(struct SelvaTypeEntry *type, struct 
     res = selva_hash_digest(tmp_hash_state);
 
     node->node_hash = res;
+    return res;
 }
 
-void selva_node_hash_update(struct SelvaTypeEntry *type, struct SelvaNode *node)
+selva_hash128_t selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_hash_state_t *hash_state = selva_hash_create_state();
-    selva_node_hash_update_internal(type, node, hash_state);
+    selva_node_hash_update(type, node, hash_state);
     selva_hash_free_state(hash_state);
-}
 
-void selva_node_hash_update2(struct SelvaTypeEntry *type, struct SelvaNode *node, selva_hash_state_t *tmp_hash_state, selva_hash_state_t *hash_state)
-{
-    selva_node_hash_update_internal(type, node, tmp_hash_state);
-    selva_hash_update(hash_state, &node->node_hash, sizeof(node->node_hash));
-}
-
-
-void selva_node_hash_clear(struct SelvaNode *node)
-{
-    node->node_hash = 0;
-}
-
-selva_hash128_t selva_node_hash_get(struct SelvaNode *node)
-{
     return node->node_hash;
 }
 
@@ -704,7 +686,8 @@ selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t sta
     }
 
     do {
-        selva_node_hash_update2(type, node, tmp_hash_state, hash_state);
+        selva_hash128_t node_hash = selva_node_hash_update(type, node, tmp_hash_state);
+        selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
 
         node = selva_next_node(type, node);
     } while (node && node->node_id <= end);
