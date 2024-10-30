@@ -1,4 +1,4 @@
-import { BasedDb } from '../index.js'
+import { BasedDb, ModifyCtx } from '../index.js'
 import {
   SchemaTypeDef,
   isPropDef,
@@ -16,8 +16,8 @@ import { ModifyErr, ModifyOp } from './types.js'
 import { writeBinary } from './binary.js'
 import { writeMain } from './main.js'
 
-export function modify(
-  ctx: BasedDb['modifyCtx'],
+function _modify(
+  ctx: ModifyCtx,
   res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,
@@ -50,11 +50,27 @@ export function modify(
         err = writeMain(val, ctx, schema, def, res, mod, overwrite)
       }
     } else {
-      err = modify(ctx, res, obj[key], schema, mod, def, overwrite)
+      err = _modify(ctx, res, obj[key], schema, mod, def, overwrite)
     }
 
     if (err) {
       return err
     }
   }
+}
+
+export function modify(
+  ctx: ModifyCtx,
+  res: ModifyState,
+  obj: Record<string, any>,
+  schema: SchemaTypeDef,
+  mod: ModifyOp,
+  tree: SchemaTypeDef['tree'],
+  overwrite: boolean,
+): ModifyErr {
+  const err = _modify(ctx, res, obj, schema, mod, tree, overwrite)
+  if (!err) {
+    ctx.types.add(schema.id)
+  }
+  return err
 }

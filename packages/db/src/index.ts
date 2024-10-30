@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
-  PropDef,
+  // PropDef,
   SchemaTypeDef,
   createSchemaTypeDef,
   schemaToSelvaBuffer,
@@ -11,7 +11,7 @@ import { wait } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder, hash, stringHash } from '@saulx/hash'
 import db from './native.js'
 import { BasedDbQuery } from './query/BasedDbQuery.js'
-import { flushBuffer } from './operations.js'
+import { DbWorker, ModifyCtx, flushBuffer, startWorker } from './operations.js'
 import { destroy } from './destroy.js'
 import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
@@ -29,6 +29,7 @@ const COMMON_SDB_FILE = 'common.sdb'
 const block_sdb_file = (typeId: number, start: number, end: number) =>
   `${typeId}_${start}_${end}.sdb`
 
+export { ModifyCtx } // TODO move this somewhere
 type Writelog = {
   ts: number
   types: { [t: number]: { lastId: number; blockSize: number } }
@@ -43,23 +44,6 @@ type Writelog = {
       end: number
     }[]
   }
-}
-
-export type ModCtx = {
-  max: number
-  buf: Buffer
-  hasStringField: number
-  len: number
-  field: number
-  prefix0: number
-  prefix1: number
-  id: number
-  lastMain: number
-  mergeMain: (PropDef | any)[] | null
-  mergeMainSize: number
-  ctx: { offset?: number }
-  queue: Map<number, (id: number) => void>
-  db: BasedDb
 }
 
 type CsmtNodeRange = {
@@ -85,17 +69,18 @@ const makeCsmtKeyFromNodeId = (
 }
 
 export class BasedDb {
+  writing: ModifyCtx[] = []
   isDraining: boolean = false
   maxModifySize: number = 100 * 1e3 * 1e3
-  modifyCtx: ModCtx
+  modifyCtx: ModifyCtx
 
   blockSize = 100_000
   private dirtyRanges = new Set<number>()
   private csmtHashFun = db.createHash()
   private createCsmtHashFun = () => {
-      // We can just reuse it as long as we only have one tree.
-      this.csmtHashFun.reset()
-      return this.csmtHashFun
+    // We can just reuse it as long as we only have one tree.
+    this.csmtHashFun.reset()
+    return this.csmtHashFun
   }
   merkleTree = createMerkleTree(this.createCsmtHashFun)
 
@@ -114,42 +99,30 @@ export class BasedDb {
 
   fileSystemPath: string
 
+  workers: DbWorker[]
   noCompression: boolean
-
+  concurrency: number
   constructor({
     path,
     maxModifySize,
     noCompression,
+    concurrency,
   }: {
     path: string
     maxModifySize?: number
     fresh?: boolean
     noCompression?: boolean
+    concurrency?: number
   }) {
     if (maxModifySize) {
       this.maxModifySize = maxModifySize
     }
-    const max = this.maxModifySize
-    this.modifyCtx = {
-      max,
-      hasStringField: -1,
-      mergeMainSize: 0,
-      mergeMain: null,
-      buf: Buffer.allocUnsafe(max),
-      len: 0,
-      field: -1,
-      prefix0: 0,
-      prefix1: 0,
-      id: -1,
-      lastMain: -1,
-      ctx: {},
-      queue: new Map(),
-      db: this,
-    }
+    this.modifyCtx = new ModifyCtx(this)
     this.noCompression = noCompression || false
     this.fileSystemPath = path
     this.schemaTypesParsed = {}
     this.schema = { lastId: 0, types: {} }
+    this.concurrency = concurrency || 0
   }
 
   async start(opts: { clean?: boolean } = {}): Promise<
@@ -251,6 +224,12 @@ export class BasedDb {
         )
       }
     }
+
+    this.workers = await Promise.all(
+      Array.from({ length: this.concurrency }).map(() => {
+        return startWorker(this)
+      }),
+    )
 
     return []
   }
@@ -363,11 +342,16 @@ export class BasedDb {
     return new BasedDbQuery(this, type, id as number | number[])
   }
 
-  drain() {
-    flushBuffer(this)
-    const t = this.writeTime
-    this.writeTime = 0
-    return t
+  async drain() {
+    if (this.workers.length) {
+      flushBuffer(this)
+      const t = this.writeTime
+      this.writeTime = 0
+      return t
+    }
+    return new Promise((resolve) => {
+      flushBuffer(this, resolve)
+    })
   }
 
   async save() {

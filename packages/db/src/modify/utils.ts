@@ -1,4 +1,4 @@
-import { ModCtx } from '../index.js'
+import { ModifyCtx } from '../index.js'
 import {
   BOOLEAN,
   ENUM,
@@ -15,67 +15,67 @@ import {
 import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
 
-export const appendU8 = (ctx: ModCtx, u32: number) => {
+export const appendU8 = (ctx: ModifyCtx, u32: number) => {
   ctx.buf[ctx.len++] = u32
 }
 
-export const alignU32 = (ctx: ModCtx) => {
+export const alignU32 = (ctx: ModifyCtx) => {
   ctx.len = (ctx.len + 3) & ~3
 }
 
-export const appendU16 = (ctx: ModCtx, u16: number) => {
+export const appendU16 = (ctx: ModifyCtx, u16: number) => {
   ctx.buf[ctx.len++] = u16
   ctx.buf[ctx.len++] = u16 >>>= 8
 }
 
-export const appendU32 = (ctx: ModCtx, u32: number) => {
+export const appendU32 = (ctx: ModifyCtx, u32: number) => {
   ctx.buf[ctx.len++] = u32
   ctx.buf[ctx.len++] = u32 >>>= 8
   ctx.buf[ctx.len++] = u32 >>>= 8
   ctx.buf[ctx.len++] = u32 >>>= 8
 }
 
-export const writeU16 = (ctx: ModCtx, u16: number, pos: number) => {
+export const writeU16 = (ctx: ModifyCtx, u16: number, pos: number) => {
   ctx.buf[pos++] = u16
   ctx.buf[pos++] = u16 >>>= 8
 }
 
-export const writeU32 = (ctx: ModCtx, u32: number, pos: number) => {
+export const writeU32 = (ctx: ModifyCtx, u32: number, pos: number) => {
   ctx.buf[pos++] = u32
   ctx.buf[pos++] = u32 >>>= 8
   ctx.buf[pos++] = u32 >>>= 8
   ctx.buf[pos++] = u32 >>>= 8
 }
 
-export const reserveU16 = (ctx: ModCtx) => {
+export const reserveU16 = (ctx: ModifyCtx) => {
   const len = ctx.len
   ctx.len = len + 2
   return len
 }
 
-export const reserveU32 = (ctx: ModCtx) => {
+export const reserveU32 = (ctx: ModifyCtx) => {
   const len = ctx.len
   ctx.len = len + 4
   return len
 }
 
-export const appendUtf8 = (ctx: ModCtx, str: string) => {
+export const appendUtf8 = (ctx: ModifyCtx, str: string) => {
   ctx.len += ctx.buf.write(str, ctx.len, 'utf8')
 }
 
-export const appendBuf = (ctx: ModCtx, buf: Buffer) => {
+export const appendBuf = (ctx: ModifyCtx, buf: Buffer) => {
   ctx.buf.set(buf, ctx.len)
   ctx.len += buf.byteLength
 }
 
-export const appendZeros = (ctx: ModCtx, n: number) => {
+export const appendZeros = (ctx: ModifyCtx, n: number) => {
   const end = ctx.len + n
   ctx.buf.fill(0, ctx.len, end)
   ctx.len = end
 }
 
 export const writeFixedValue = (
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   val: any,
   def: PropDef | PropDefEdge,
   pos: number,
@@ -88,7 +88,7 @@ export const writeFixedValue = (
 }
 
 export const appendFixedValue = (
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   val: any,
   def: PropDef | PropDefEdge,
 ): ModifyErr => {

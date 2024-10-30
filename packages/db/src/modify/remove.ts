@@ -6,8 +6,8 @@ import { appendU8 } from './utils.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
-  const def = db.schemaTypesParsed[type]
-  const separate = def.separate
+  const schema = db.schemaTypesParsed[type]
+  const separate = schema.separate
 
   if (separate) {
     const size = ctx.len + 12 + separate.length * 12
@@ -19,10 +19,10 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
         throw Error('Not enough allocated space for removal')
       }
     }
-    setCursor(ctx, def, 0, id, UPDATE)
+    setCursor(ctx, schema, 0, id, UPDATE)
     appendU8(ctx, 4)
     for (const s of separate) {
-      setCursor(ctx, def, s.prop, id, UPDATE)
+      setCursor(ctx, schema, s.prop, id, UPDATE)
       appendU8(ctx, 4)
     }
     appendU8(ctx, 10)
@@ -35,10 +35,12 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
         throw Error('Not enough allocated space for removal')
       }
     }
-    setCursor(ctx, def, 0, id, UPDATE)
+    setCursor(ctx, schema, 0, id, UPDATE)
     appendU8(ctx, 4)
     appendU8(ctx, 10)
   }
+
+  ctx.types.add(schema.id)
 
   if (!db.isDraining) {
     startDrain(db)

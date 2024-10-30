@@ -56,7 +56,6 @@ fn _intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
 }
 
 fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_value {
-    std.debug.print("external ----?\n", .{});
     const args = try napi.getArgs(1, napi_env, inf);
     var address: u64 = undefined;
     var result: c.napi_value = undefined;

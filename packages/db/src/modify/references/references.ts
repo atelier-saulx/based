@@ -1,4 +1,4 @@
-import { ModCtx } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { PropDef, REFERENCES, SchemaTypeDef } from '../../schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
@@ -31,7 +31,7 @@ export type Refs =
 
 export function writeReferences(
   value: any,
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
   res: ModifyState,
@@ -40,6 +40,8 @@ export function writeReferences(
   if (typeof value !== 'object') {
     return new ModifyError(def, value)
   }
+
+  ctx.types.add(def.inverseTypeId)
 
   if (value === null) {
     if (ctx.len + 11 > ctx.max) {
@@ -74,7 +76,7 @@ export function writeReferences(
 
 function deleteRefs(
   def: PropDef,
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
   schema: SchemaTypeDef,
@@ -106,7 +108,7 @@ function deleteRefs(
 
 function updateRefs(
   def: PropDef,
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   mod: ModifyOp,
   refs: any[],
   schema: SchemaTypeDef,
@@ -143,7 +145,7 @@ function updateRefs(
 
 function appendRefs(
   def: PropDef,
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
   res: ModifyState,
@@ -232,7 +234,7 @@ function appendRefs(
 }
 
 function putRefs(
-  ctx: ModCtx,
+  ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
   res: ModifyState,

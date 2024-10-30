@@ -45,7 +45,7 @@ await test('basic', async (t) => {
     email: 'snurp@snurp.snurp.snurp',
   })
 
-  db.drain()
+  await db.drain()
 
   db.create('user', {
     name: 'mr nurp',
@@ -53,7 +53,7 @@ await test('basic', async (t) => {
     email: 'nurp@nurp.nurp.nurp',
   })
 
-  db.drain()
+  await db.drain()
 
   const mrZ = db.create('user', {
     name: 'mr z',
@@ -61,7 +61,7 @@ await test('basic', async (t) => {
     email: 'z@z.z',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db
@@ -133,7 +133,7 @@ await test('basic', async (t) => {
     email: 'x@x.x',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db.query('user').sort('email').include('email', 'age').get().toObject(),
@@ -163,7 +163,7 @@ await test('basic', async (t) => {
     email: 'dd@dd.dd',
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db.query('user').sort('email').include('email', 'age').get().toObject(),
@@ -186,7 +186,7 @@ await test('basic', async (t) => {
     true,
   )
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db.query('user').sort('age').include('email', 'age').get().toObject(),
@@ -204,7 +204,7 @@ await test('basic', async (t) => {
     age: 0,
   })
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db.query('user').sort('age').include('email', 'age').get().toObject(),
@@ -240,7 +240,7 @@ await test('basic', async (t) => {
       email: i + '@z.z',
     })
   }
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db.query('user', ids).include('name', 'age').sort('age').get().toObject(),
@@ -311,7 +311,7 @@ await test('basic', async (t) => {
 
   db.remove('user', mrX)
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db
@@ -343,7 +343,7 @@ await test('basic', async (t) => {
     age: 99,
   })
 
-  db.drain()
+  await db.drain()
 
   equal(
     db.query('user', ids2).include('name', 'age', 'email').get().length,
@@ -367,7 +367,7 @@ await test('basic', async (t) => {
 
   db.remove('user', mrBlurp)
 
-  db.drain()
+  await db.drain()
 
   equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
@@ -380,7 +380,7 @@ await test('basic', async (t) => {
     email: '',
   })
 
-  db.drain()
+  await db.drain()
 
   equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
@@ -391,7 +391,7 @@ await test('basic', async (t) => {
 
   db.remove('user', mrZ)
 
-  db.drain()
+  await db.drain()
 
   equal(
     db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
@@ -442,7 +442,7 @@ await test('sort - from start (1.5M items)', async (t) => {
     })
   }
 
-  db.drain()
+  await db.drain()
 
   deepEqual(
     db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
