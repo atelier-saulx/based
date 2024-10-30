@@ -1,6 +1,5 @@
 import { Command } from 'commander'
 import { AppContext } from '../../../shared/index.js'
-import { getTerminal } from '../../../shared/getTerminal.js'
 
 export const overview =
   (program: Command) =>
@@ -31,7 +30,7 @@ export const getOverview = async (context: AppContext, stream = true) => {
     ]
   }
 
-  const { kill, header, addLine } = getTerminal({
+  const { kill, header, addLine } = context.getTerminal({
     title: context.get('appName'),
     lines: {
       sort: 'asc',

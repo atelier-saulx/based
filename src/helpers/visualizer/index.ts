@@ -86,10 +86,11 @@ export const visualizer = async (
   if (filters.monitor) {
     const { kill, addLine } = context.getTerminal({
       title: context.get('appName'),
-      header:
-        `${context.get('appTitle')}\n` +
-        `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}\n` +
+      header: [
+        `${context.get('appTitle')}`,
+        `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}`,
         `Active Filters: [${filterLabels.join(' | ')}]`,
+      ],
       lines: {
         sort: filters.sort,
       },

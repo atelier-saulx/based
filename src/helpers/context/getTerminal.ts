@@ -1,129 +1,250 @@
-import blessed from 'blessed'
+import {
+  ConsoleManager,
+  Box,
+  InPageWidgetBuilder,
+  ConsoleGuiOptions,
+  KeyListenerArgs,
+  StyledElement,
+} from 'console-gui-tools'
 import { parseMessage } from '../../shared/parseMessage.js'
+import { AppContext } from '../../shared/AppContext.js'
 
 export const contextGetTerminal = ({
   title,
-  header: headerContent = '',
-  lines: linesConfig,
-}) => {
+  header: headerContent = [],
+  lines: linesConfig = {
+    sort: 'asc',
+  },
+}: Based.Context.Terminal): Based.Context.TerminalFunctions => {
+  const context: AppContext = AppContext.getInstance()
   let autoScroll: boolean = true
+  let logPopup: boolean = false
 
-  const screen = blessed.screen({
-    smartCSR: true,
-    fullUnicode: true,
+  const GUI = new ConsoleManager({
     title,
-  })
+    layoutOptions: {
+      boxed: false,
+      type: 'single',
+      fitHeight: true,
+    },
+    logLocation: 'popup',
+    logPageSize: 30,
+    enableMouse: true,
+  } as ConsoleGuiOptions)
 
-  const headerElement = blessed.box({
-    top: 0,
-    left: 0,
-    width: '100%',
-    align: 'left',
-    valign: 'top',
+  const headerElement = new Box({
+    id: 'header',
+    x: 0,
+    y: 0,
+    width: GUI.Screen.width,
     style: {
-      fg: 'white',
+      boxed: false,
     },
   })
 
-  const mainContainer = blessed.box({
-    bottom: 0,
-    left: 'center',
-    width: '100%',
-    scrollable: true,
-    alwaysScroll: true,
-    scrollbar: {
-      ch: ' ',
-      track: { bg: 'white' },
+  const containerElement = new Box({
+    id: 'container',
+    x: 0,
+    y: 0,
+    width: GUI.Screen.width,
+    height: GUI.Screen.height,
+    style: {
+      boxed: false,
     },
   })
 
-  const kill: Based.Context.TerminalFunctions['kill'] = (fn: any) =>
-    screen.key(['C-c'], fn)
-  const render: Based.Context.TerminalFunctions['render'] = () =>
-    screen.render()
+  const scrollPercentage = (
+    scrollPosition: number,
+    containerSize: number,
+    containerHeight: number,
+  ) => {
+    if (containerHeight >= containerSize) {
+      return 100
+    }
 
-  const header = (content: string) => {
-    headerElement.setContent(
-      parseMessage(content) + '\n' + '─'.repeat(process.stdout.columns),
-    )
+    const porcentagem =
+      (scrollPosition / (containerSize - containerHeight)) * 100
 
-    headerElement.height = content?.split('\n').length + 1
-    mainContainer.height = `100%-${headerElement.height}`
-
-    render()
+    return Math.min(Math.max(porcentagem, 0), 100)
   }
 
-  const lines: string[] = []
+  const isAsc = linesConfig.sort === 'asc'
+  const containerLines = new InPageWidgetBuilder(GUI.Screen.height)
+  const containerHeight = () => containerElement.absoluteValues.height
+  const containerContentSize = () => containerLines.content.length
+  const scrollPosition = () => containerLines.scrollIndex
+  const scrollPositionPercentage = () =>
+    scrollPercentage(
+      scrollPosition(),
+      containerContentSize(),
+      containerHeight(),
+    )
+  const lineElement = '─'.repeat(process.stdout.columns)
 
-  const addLine: Based.Context.TerminalFunctions['addLine'] = (
-    msg: string | string[],
+  const addRow = (element: InPageWidgetBuilder, content: string) =>
+    element.addRow({
+      text: parseMessage(content),
+    })
+
+  const addContainerRow = (element: InPageWidgetBuilder, content: string) => {
+    const lastPosition = scrollPosition()
+
+    if (isAsc) {
+      addRow(element, content)
+    } else {
+      element.content.unshift([
+        { text: parseMessage(content) },
+      ] as StyledElement[])
+    }
+
+    const isToStopScrolling =
+      containerContentSize() > containerHeight() && !autoScroll
+
+    if (isToStopScrolling) {
+      const newPosition = isAsc
+        ? Math.min(lastPosition + 1, containerContentSize() - containerHeight())
+        : lastPosition
+
+      element.setScrollIndex(newPosition)
+    } else {
+      const newPosition = isAsc ? 0 : containerContentSize() - containerHeight()
+
+      element.setScrollIndex(newPosition)
+    }
+  }
+
+  const kill: Based.Context.TerminalFunctions['kill'] = (fn: any) =>
+    GUI.on('exit', fn)
+  const render: Based.Context.TerminalFunctions['render'] = () => GUI.refresh()
+  const header: Based.Context.TerminalFunctions['header'] = (
+    content: string | string[],
   ) => {
-    if (!msg.length) {
+    const isArray = Array.isArray(content)
+
+    if (!content || (isArray && !content.length)) {
       render()
       return
     }
 
-    if (Array.isArray(msg)) {
-      if (linesConfig && linesConfig?.sort === 'asc') {
-        lines.unshift(...msg)
-      } else {
-        lines.push(...msg)
+    const height = isArray ? content.length + 1 : 1
+    const row = new InPageWidgetBuilder(height)
+
+    if (isArray) {
+      for (const value of content) {
+        addRow(row, value)
       }
     } else {
+      addRow(row, content)
+    }
+
+    addRow(row, lineElement)
+
+    headerElement.setContent(row)
+
+    headerElement.absoluteValues = {
+      x: 0,
+      y: 0,
+      width: GUI.Screen.width,
+      height,
+    }
+
+    containerElement.absoluteValues = {
+      x: 0,
+      y: headerElement.absoluteValues.height,
+      width: GUI.Screen.width,
+      height: GUI.Screen.height - height,
+    }
+
+    render()
+  }
+  const setTable: Based.Context.TerminalFunctions['setTable'] = () => {}
+  const addLine: Based.Context.TerminalFunctions['addLine'] = (
+    content: string | string[],
+  ) => {
+    const isArray = Array.isArray(content)
+
+    if (!content || (isArray && !content.length)) {
+      render()
+      return
+    }
+
+    if (isArray) {
       if (linesConfig && linesConfig?.sort === 'asc') {
-        lines.unshift(msg)
-      } else {
-        lines.push(msg)
+        content.reverse()
       }
+
+      for (const value of content) {
+        addContainerRow(containerLines, value)
+      }
+    } else {
+      addContainerRow(containerLines, content)
     }
 
-    mainContainer.setContent(lines.join('\n'))
-
-    if (autoScroll && linesConfig && linesConfig?.sort === 'desc') {
-      mainContainer.setScrollPerc(100)
-    }
+    containerElement.setContent(containerLines)
 
     render()
   }
 
-  screen.key(['escape', 'q', 'C-c'], function () {
-    return process.exit(0)
-  })
+  context.event.on('directions', ({ name }: Based.Context.DirectionsEvent) => {
+    switch (name) {
+      case 'up':
+        if (isAsc && scrollPositionPercentage() < 100) {
+          autoScroll = false
+        } else if (!isAsc && scrollPositionPercentage() === 100) {
+          autoScroll = true
+        }
 
-  screen.key(['up', 'down'], (_, key) => {
-    const scrollPosition: number = mainContainer.getScrollPerc()
+        containerLines.increaseScrollIndex()
+        break
+      case 'down':
+        if (isAsc && scrollPositionPercentage() === 0) {
+          autoScroll = true
+        } else if (!isAsc && scrollPositionPercentage() < 100) {
+          autoScroll = false
+        }
 
-    if (key.name === 'up') {
-      mainContainer.scroll(-1)
+        containerLines.decreaseScrollIndex()
+        break
 
-      if (scrollPosition > 0) {
-        autoScroll = false
-      }
-    } else if (key.name === 'down') {
-      mainContainer.scroll(1)
-
-      if (scrollPosition === 100) {
-        autoScroll = true
-      }
+      default:
+        break
     }
-
-    render()
   })
 
-  screen.append(headerElement)
+  process.stdin.on('keypress', (_, { name }: KeyListenerArgs) => {
+    switch (name) {
+      case 'escape':
+        if (logPopup) {
+          logPopup = false
+        } else {
+          GUI.emit('exit')
+        }
 
-  if (lines) {
-    screen.append(mainContainer)
-  }
+        break
+      case 'q':
+        GUI.emit('exit')
+
+        break
+      case 'l':
+        if (logPopup) return
+
+        console.clear()
+        logPopup = true
+        GUI.showLogPopup()
+        break
+      default:
+        break
+    }
+  })
 
   header(headerContent)
-
   render()
 
   return {
+    kill,
     render,
     header,
-    kill,
+    setTable,
     addLine,
     autoScroll,
   }
