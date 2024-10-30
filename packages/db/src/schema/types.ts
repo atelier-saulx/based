@@ -141,6 +141,7 @@ export type SchemaTypeDef = {
   total: number
   type: string
   lastId: number
+  blockSize: number
   mainLen: number
   buf: Buffer
   propNames: Buffer
