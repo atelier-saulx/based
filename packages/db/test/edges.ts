@@ -160,29 +160,29 @@ await test('edges', async (t) => {
     })
   }
 
-  // deepEqual(
-  //   db
-  //     .query('article')
-  //     .include((s) =>
-  //       s('contributors').filter('$role', '=', 'writer').include('$role'),
-  //     )
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       contributors: [
-  //         {
-  //           id: 1,
-  //           $role: 'writer',
-  //         },
-  //       ],
-  //     },
-  //     { id: 2, contributors: [] },
-  //     { id: 3, contributors: [] },
-  //     { id: 4, contributors: [] },
-  //   ],
-  // )
+  deepEqual(
+    db
+      .query('article')
+      .include((s) =>
+        s('contributors').filter('$role', '=', 'writer').include('$role'),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            id: 1,
+            $role: 'writer',
+          },
+        ],
+      },
+      { id: 2, contributors: [] },
+      { id: 3, contributors: [] },
+      { id: 4, contributors: [] },
+    ],
+  )
 
   // deepEqual(
   //   db

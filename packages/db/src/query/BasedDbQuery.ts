@@ -39,6 +39,8 @@ export class QueryBranch<T> {
     return this
   }
 
+  // .or() - () => {}
+
   filter(field: string, operator?: Operator | boolean, value?: any): T {
     if (operator === undefined) {
       operator = '='

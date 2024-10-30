@@ -32,7 +32,7 @@ const referencesFilter = (
           const edgeDef = def.target.propDef.edges?.[p]
           if (edgeDef) {
             conditions.edges ??= new Map()
-            size += 1 + primitiveFilter(edgeDef, operator, value, conditions)
+            size += 3 + primitiveFilter(edgeDef, operator, value, conditions)
           }
         }
       }
