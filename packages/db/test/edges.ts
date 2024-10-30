@@ -245,7 +245,40 @@ await test('single reference', async (t) => {
     author: { id: mrDrol, $role: 'boss' },
   })
 
-  db.query('article').include('author.$role', '*')
+  deepEqual(db.query('article').include('author.$role', '*').get().toObject(), [
+    {
+      id: 1,
+      name: 'This is a nice article',
+      author: {
+        id: 1,
+        $role: 'boss',
+      },
+    },
+  ])
+
+  await db.create('article', {
+    name: 'This is a nice article with mr drol as writer',
+    author: { id: mrDrol, $role: 'writer' },
+  })
+
+  deepEqual(
+    db
+      .query('article')
+      .include('author.$role', '*')
+      .filter('author.$role', '=', 'boss')
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        name: 'This is a nice article',
+        author: {
+          id: 1,
+          $role: 'boss',
+        },
+      },
+    ],
+  )
 
   t.after(() => {
     return db.destroy()

@@ -69,7 +69,6 @@ type CsmtNodeRange = {
   end: number
 }
 
-const createCsmtHashFun = db.createHash
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
 const destructureCsmtKey = (key: number) => [
@@ -91,8 +90,14 @@ export class BasedDb {
   modifyCtx: ModCtx
 
   blockSize = 100_000
-  merkleTree = createMerkleTree(createCsmtHashFun)
-  dirtyRanges = new Set<number>()
+  private dirtyRanges = new Set<number>()
+  private csmtHashFun = db.createHash()
+  private createCsmtHashFun = () => {
+      // We can just reuse it as long as we only have one tree.
+      this.csmtHashFun.reset()
+      return this.csmtHashFun
+  }
+  merkleTree = createMerkleTree(this.createCsmtHashFun)
 
   id: number
 
