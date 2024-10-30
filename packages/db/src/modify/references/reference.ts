@@ -62,7 +62,7 @@ function singleReferencEdges(
       return err
     }
 
-    writeU32(ctx, ctx.len - sizepos - 4, sizepos)
+    writeU32(ctx, ctx.len - sizepos, sizepos)
   } else {
     return new ModifyError(def, ref)
   }
