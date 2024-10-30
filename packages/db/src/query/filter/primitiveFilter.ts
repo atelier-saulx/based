@@ -11,6 +11,7 @@ import { propIsSigned } from '../../schema/utils.js'
 import { QueryDefFilter } from '../types.js'
 import { Operator, isNumerical, operationToByte } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
+import { Filter } from './types.js'
 
 // -------------------------------------------
 // conditions normal
@@ -129,10 +130,10 @@ const createReferenceFilter = (
 
 export const primitiveFilter = (
   prop: PropDef | PropDefEdge,
-  operator: Operator,
-  value: any,
+  filter: Filter,
   conditions: QueryDefFilter,
 ) => {
+  let [, operator, value] = filter
   const fieldIndexChar = prop.prop
   let buf: Buffer
   const op = operationToByte(operator)
