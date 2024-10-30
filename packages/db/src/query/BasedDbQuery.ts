@@ -138,4 +138,12 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     )
     return new BasedQueryResponse(this.def, result, performance.now() - d)
   }
+
+  toBuffer() {
+    if (!this.def.include.stringFields.size && !this.def.references.size) {
+      includeFields(this.def, ['*'])
+    }
+    const b = defToBuffer(this.db, this.def)
+    return Buffer.concat(b)
+  }
 }

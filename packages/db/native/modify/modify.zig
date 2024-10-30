@@ -29,8 +29,7 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
-    const size = try napi.get(u32, env, args[1]);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
 
     // TODO: only create allocator when nessecary in sIndex
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -54,10 +53,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
 
     var offset: u32 = 0;
 
-    while (i < size) {
+    while (i < batch.len) {
         // delete
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
+
+        // std.debug.print("- op: {d}, fieldType: {any}, field: {d}\n", .{ op, ctx.fieldType, ctx.field });
 
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
@@ -106,6 +107,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i += try deleteFieldOnly(&ctx) + 1;
             },
             types.ModOp.DELETE_PROP_ONLY_REAL => {
+                // std.debug.print("delete field: {d}\n", .{ctx.field});
                 i += try deleteFieldOnlyReal(&ctx) + 1;
             },
             types.ModOp.DELETE_PROP => {

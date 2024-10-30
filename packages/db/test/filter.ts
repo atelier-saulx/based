@@ -293,6 +293,8 @@ await test('filter', async (t) => {
     status: 5,
   })
 
+  console.log('-------------------------')
+
   const ids = await Promise.all([
     db.create('machine', {
       temperature: 20,
@@ -314,6 +316,8 @@ await test('filter', async (t) => {
     }),
   ])
 
+  console.log('-------------------------')
+
   deepEqual(
     db.query('env').filter('machines', '<', 10).get().toObject(),
     [
@@ -327,6 +331,8 @@ await test('filter', async (t) => {
     'Filter by references length',
   )
 
+  console.log('-------------------------2')
+
   deepEqual(
     db.query('env').filter('machines', '=', ids).get().toObject(),
     [
@@ -339,6 +345,8 @@ await test('filter', async (t) => {
     ],
     'Filter by references equals',
   )
+
+  console.log('-------------------------3')
 
   deepEqual(
     db
@@ -384,9 +392,13 @@ await test('filter', async (t) => {
     ],
   )
 
+  console.log('+++++++++++++++++')
+
   const unicornMachine = await db.create('machine', {
     status: '🦄',
   })
+
+  console.log('+++++++++++++++++')
 
   deepEqual(
     db

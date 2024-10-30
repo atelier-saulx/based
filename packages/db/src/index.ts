@@ -1,5 +1,4 @@
 import { createHash } from 'crypto'
-import { create, update, remove } from './modify/modify.js'
 import { ModifyRes } from './modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
@@ -19,6 +18,7 @@ import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
+import { create, remove, update } from './modify/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'

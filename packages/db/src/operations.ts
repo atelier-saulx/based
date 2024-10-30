@@ -9,7 +9,7 @@ export const flushBuffer = (db: BasedDb) => {
     // TODO put actual offset here
 
     try {
-      db.native.modify(ctx.buf, ctx.len, db.dbCtxExternal)
+      db.native.modify(ctx.buf.subarray(0, ctx.len), db.dbCtxExternal)
       // or it sends it to the actual db
     } catch (err) {
       console.error(err)

@@ -2,30 +2,36 @@ import { BasedDb } from '../../index.js'
 import {
   BINARY,
   PropDef,
+  PropDefEdge,
   REFERENCE,
   REFERENCES,
   STRING,
 } from '../../schema/types.js'
-import { modifyError, ModifyState } from '../ModifyRes.js'
-import { writeFixedLenValue } from '../fixedLen.js'
-import { appendU8 } from '../utils.js'
+import { getBuffer } from '../binary.js'
+import { ModifyError, ModifyState } from '../ModifyRes.js'
+import { ModifyErr, RANGE_ERR } from '../types.js'
+import {
+  appendBuf,
+  appendFixedValue,
+  appendU32,
+  appendU8,
+  appendUtf8,
+} from '../utils.js'
 import { RefModify, RefModifyOpts } from './references.js'
-import { simpleRefsPacked } from './simple.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
-  var size = 0
+  let size = 0
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
       const value = ref[key]
       if (edge.len === 0) {
         if (edge.typeIndex === STRING) {
-          const len = value.length
-          size += len + len + 4
+          size += Buffer.byteLength(value) + 4
         } else if (edge.typeIndex === REFERENCE) {
           size += 4
         } else if (edge.typeIndex === REFERENCES) {
-          size += value.length * 5 + 4
+          size += value.length * 4 + 4
         }
       } else {
         size += edge.len
@@ -35,28 +41,55 @@ export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   return size
 }
 
-export function calculateEdgesSize(
-  t: PropDef,
-  value: RefModify[],
-  res: ModifyState,
-): number {
-  let size = 0
+// export function calculateEdgesSize(
+//   t: PropDef,
+//   value: RefModify[],
+//   res: ModifyState,
+// ): number {
+//   let size = 0
+//   for (let i = 0; i < value.length; i++) {
+//     let ref = value[i]
+//     if (typeof ref !== 'number') {
+//       if (ref instanceof ModifyState) {
+//         ref = ref.tmpId
+//       } else if (typeof ref === 'object') {
+//         size += getEdgeSize(t, ref) + 6
+//       } else {
+//         return
+//         modifyError(res, t, value)
+//         return 0
+//       }
+//     } else {
+//       size += 6
+//     }
+//   }
+//   return size
+// }
+
+function appendRefs(
+  t: PropDefEdge,
+  ctx: BasedDb['modifyCtx'],
+  value: any[],
+): ModifyErr {
   for (let i = 0; i < value.length; i++) {
-    let ref = value[i]
-    if (typeof ref !== 'number') {
-      if (ref instanceof ModifyState) {
-        ref = ref.tmpId
-      } else if (typeof ref === 'object') {
-        size += getEdgeSize(t, ref) + 6
+    let id = value[i]
+    if (typeof id !== 'number') {
+      if (id instanceof ModifyState) {
+        if (id.error) {
+          return id.error
+        }
+        id = id.tmpId
       } else {
-        modifyError(res, t, value)
-        return 0
+        return new ModifyError(t, value)
       }
+    }
+
+    if (id > 0) {
+      appendU32(ctx, id)
     } else {
-      size += 6
+      return new ModifyError(t, value)
     }
   }
-  return size
 }
 
 export function writeEdges(
@@ -64,55 +97,83 @@ export function writeEdges(
   ref: RefModifyOpts,
   ctx: BasedDb['modifyCtx'],
   res: ModifyState,
-) {
+): ModifyErr {
   for (const key in t.edges) {
     if (key in ref) {
       const edge = t.edges[key]
       let value = ref[key]
-      // appendU8(ctx, edge.prop)
-      // appendU8(ctx, edge.typeIndex)
-      ctx.buf[ctx.len] = edge.prop
-      ctx.buf[ctx.len + 1] = edge.typeIndex
+
       if (edge.len === 0) {
         if (edge.typeIndex === BINARY) {
-          // appendU8(ctx, 11)
-          ctx.buf[ctx.len + 1] = 11
-          if (value && value.buffer instanceof ArrayBuffer) {
-            value = Buffer.from(value)
+          let size = 0
+          if (value === null) {
+            size = 0
+          } else {
+            const buf = getBuffer(value)
+            if (!buf) {
+              return new ModifyError(t, ref)
+            }
+            size = buf.byteLength
           }
-          const size = value.byteLength
-
-          ctx.buf.set(value, ctx.len + 6)
-          ctx.buf.writeUint32LE(size, ctx.len + 2)
-          ctx.len += size + 6
+          if (ctx.len + 6 + size > ctx.max) {
+            return RANGE_ERR
+          }
+          appendU8(ctx, edge.prop)
+          appendU8(ctx, STRING)
+          appendU32(ctx, size)
+          if (size) {
+            appendBuf(ctx, value)
+          }
         } else if (edge.typeIndex === STRING) {
-          const size = ctx.buf.write(value, ctx.len + 6, 'utf8')
-          ctx.buf.writeUint32LE(size, ctx.len + 2)
-          ctx.len += size + 6
+          if (typeof value !== 'string') {
+            return new ModifyError(t, ref)
+          }
+          const size = Buffer.byteLength(value)
+          if (ctx.len + 6 + size > ctx.max) {
+            return RANGE_ERR
+          }
+          appendU8(ctx, edge.prop)
+          appendU8(ctx, STRING)
+          appendU32(ctx, size)
+          appendUtf8(ctx, value)
         } else if (edge.typeIndex === REFERENCE) {
-          // TODO: value get id
           if (typeof value !== 'number') {
             if (value instanceof ModifyState) {
               value = value.tmpId
             } else {
-              modifyError(res, t, value)
-              return true
+              return new ModifyError(t, ref)
             }
           }
-          ctx.buf.writeUint32LE(value, ctx.len + 2)
-          ctx.len += 6
+          if (value > 0) {
+            appendU8(ctx, edge.prop)
+            appendU8(ctx, REFERENCE)
+            appendU32(ctx, value)
+          } else {
+            return new ModifyError(t, ref)
+          }
         } else if (edge.typeIndex === REFERENCES) {
-          const refLen = value.length * 4
-          ctx.buf.writeUint32LE(refLen, ctx.len + 2)
-          ctx.len += 6
-          simpleRefsPacked(edge, ctx, value, res)
-          ctx.len += refLen
+          if (!Array.isArray(value)) {
+            return new ModifyError(t, ref)
+          }
+          if (ctx.len + 6 + value.length + 4 > ctx.max) {
+            return RANGE_ERR
+          }
+          appendU8(ctx, edge.prop)
+          appendU8(ctx, REFERENCES)
+          appendU32(ctx, value.length * 4)
+          appendRefs(edge, ctx, value)
         }
       } else {
-        writeFixedLenValue(ctx, value, ctx.len + 2, edge, res)
-        ctx.len += edge.len + 2
+        if (ctx.len + 2 > ctx.max) {
+          return RANGE_ERR
+        }
+        appendU8(ctx, edge.prop)
+        appendU8(ctx, edge.typeIndex)
+        const err = appendFixedValue(ctx, value, edge)
+        if (err) {
+          return err
+        }
       }
     }
   }
-  return false
 }

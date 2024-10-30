@@ -9,7 +9,7 @@ const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
 const db = @import("./db/db.zig");
 const string = @import("./string.zig");
-
+const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
 
@@ -35,6 +35,44 @@ pub fn registerFunction(
     }
 }
 
+fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
+    return _externalFromInt(napi_env, inf) catch return null;
+}
+
+fn intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
+    return _intFromExternal(napi_env, inf) catch return null;
+}
+
+fn _intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(1, napi_env, inf);
+    const external = try napi.get(*db.DbCtx, napi_env, args[0]);
+    var result: c.napi_value = undefined;
+
+    if (c.napi_create_bigint_uint64(napi_env, @intFromPtr(external), &result) != c.napi_ok) {
+        return null;
+    }
+
+    return result;
+}
+
+fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_value {
+    std.debug.print("external ----?\n", .{});
+    const args = try napi.getArgs(1, napi_env, inf);
+    var address: u64 = undefined;
+    var result: c.napi_value = undefined;
+    var lossless: bool = undefined;
+
+    if (c.napi_get_value_bigint_uint64(napi_env, args[0], &address, &lossless) != c.napi_ok) {
+        return errors.Napi.CannotGetInt;
+    }
+
+    if (c.napi_create_external(napi_env, @ptrFromInt(@as(usize, address)), null, null, &result) != c.napi_ok) {
+        return null;
+    }
+
+    return result;
+}
+
 // TODO: global structs create on init here
 
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
@@ -54,6 +92,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
     registerFunction(env, exports, "modify", modify) catch return null;
 
+    registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
+    registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
     registerFunction(env, exports, "hashCreate", string.hashCreate) catch return null;
     registerFunction(env, exports, "hashReset", string.hashReset) catch return null;
     registerFunction(env, exports, "hashUpdate", string.hashUpdate) catch return null;
