@@ -200,7 +200,13 @@ export class BasedDb {
         const mtKey = makeCsmtKey(def.id, start)
         const file: string =
           writelog.rangeDumps[def.id].find((v) => v.start === start)?.file || ''
-        this.merkleTree.insert(mtKey, hash, { file, start, end })
+        const data: CsmtNodeRange = {
+          file,
+          typeId: def.id,
+          start,
+          end,
+        }
+        this.merkleTree.insert(mtKey, hash, data)
       })
     }
 
@@ -321,8 +327,13 @@ export class BasedDb {
         const oldLeaf = this.merkleTree.search(mtKey)
         if (oldLeaf && !oldLeaf.hash.equals(hash)) {
           this.merkleTree.delete(mtKey)
-          const file: string = '' // not saved yet
-          this.merkleTree.insert(mtKey, hash, { file, start, end })
+          const data: CsmtNodeRange = {
+            file: '', // not saved yet
+            typeId: def.id,
+            start,
+            end,
+          }
+          this.merkleTree.insert(mtKey, hash, data)
         }
       })
     }
@@ -428,8 +439,14 @@ export class BasedDb {
 
       // console.log(`save range ${typeId}:${start}-${end} hash:`, hash)
 
+      const data: CsmtNodeRange = {
+        file,
+        typeId,
+        start,
+        end,
+      }
       this.merkleTree.delete(mtKey)
-      this.merkleTree.insert(mtKey, hash, { file, start, end })
+      this.merkleTree.insert(mtKey, hash, data)
     }
     this.dirtyRanges.clear()
 
