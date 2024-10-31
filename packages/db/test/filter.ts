@@ -1,6 +1,8 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, compress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
+import { italy, sentence } from './shared/examples.js'
+import { debug } from '../src/query/debug.js'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -694,4 +696,63 @@ await test('small', async (t) => {
       .node(-1).id,
     20000,
   )
+})
+
+await test('string', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      article: {
+        props: {
+          type: ['opinion', 'politcis', 'gossip'],
+          code: { type: 'string', maxBytes: 2 },
+          name: { type: 'string' },
+          body: { type: 'string' }, // big compressed string...
+          stuff: 'binary',
+        },
+      },
+    },
+  })
+
+  const lower = 'a'.charCodeAt(0)
+  const high = 'z'.charCodeAt(0) - 1
+
+  // Pre make buffer for string and allow setting
+
+  const compressedItaly = compress(italy)
+
+  // debug(compressedSentence, 0, compressedSentence.byteLength, 'Compress')
+  const d = Date.now()
+  for (let i = 0; i < 1e5; i++) {
+    db.create('article', {
+      type: 'gossip',
+      code:
+        String.fromCharCode(~~(Math.random() * high) + lower) +
+        String.fromCharCode(~~(Math.random() * high) + lower),
+      name: 'Gossip #' + i,
+      body: compressedItaly,
+      stuff: Buffer.from('#' + i),
+    }).tmpId
+  }
+
+  console.log(Date.now() - d, 'ms', await db.drain(), 'ms')
+
+  // Create compressed string (exposed)
+  db.query('article').range(0, 10).get().inspect(2)
+
+  // If buffer it will be treated as parsed string
+  db.query('article')
+    .filter('stuff', '=', Buffer.from('#' + 2))
+    .range(0, 10)
+    .get()
+    .inspect(2)
 })

@@ -5,11 +5,10 @@ import {
   REFERENCE,
   REFERENCES,
   REVERSE_SIZE_MAP,
-  TypeIndex,
 } from '../../schema/types.js'
 import { propIsSigned } from '../../schema/utils.js'
 import { QueryDefFilter } from '../types.js'
-import { Operator, isNumerical, operationToByte } from './operators.js'
+import { isNumerical, operationToByte } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 import { Filter } from './types.js'
 
@@ -26,7 +25,6 @@ import { Filter } from './types.js'
 // field, [size 2]
 // [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
-
 const write = (
   prop: PropDef | PropDefEdge,
   buf: Buffer,
