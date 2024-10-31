@@ -24,11 +24,14 @@ function _modify(
   mod: ModifyOp,
   tree: SchemaTypeDef['tree'],
   overwrite: boolean,
+  unsafe: boolean,
 ): ModifyErr {
-  ctx.db.markNodeDirty(schema, res.tmpId)
   for (const key in obj) {
     const def = tree[key]
     if (def === undefined) {
+      if (unsafe) {
+        continue
+      }
       return new ModifyError(tree, key)
     }
 
@@ -50,7 +53,7 @@ function _modify(
         err = writeMain(val, ctx, schema, def, res, mod, overwrite)
       }
     } else {
-      err = _modify(ctx, res, obj[key], schema, mod, def, overwrite)
+      err = _modify(ctx, res, obj[key], schema, mod, def, overwrite, unsafe)
     }
 
     if (err) {
@@ -67,8 +70,10 @@ export function modify(
   mod: ModifyOp,
   tree: SchemaTypeDef['tree'],
   overwrite: boolean,
+  unsafe: boolean = false,
 ): ModifyErr {
-  const err = _modify(ctx, res, obj, schema, mod, tree, overwrite)
+  ctx.db.markNodeDirty(schema, res.tmpId)
+  const err = _modify(ctx, res, obj, schema, mod, tree, overwrite, unsafe)
   if (!err) {
     ctx.types.add(schema.id)
   }

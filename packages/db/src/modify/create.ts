@@ -14,10 +14,10 @@ const appendCreate = (
   def: SchemaTypeDef,
   obj: Payload,
   res: ModifyState,
+  unsafe: boolean,
 ): ModifyErr => {
-  const id = def.lastId + 1
   const len = ctx.len
-  const err = modify(ctx, res, obj, def, CREATE, def.tree, true)
+  const err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
 
   if (err) {
     return err
@@ -27,7 +27,7 @@ const appendCreate = (
     if (outOfRange(ctx, 10)) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, 0, id, CREATE)
+    setCursor(ctx, def, 0, res.tmpId, CREATE)
   }
 
   // if touched lets see perf impact here
@@ -53,26 +53,38 @@ const appendCreate = (
       def.stringProps.copy(def.stringPropsCurrent)
     }
   }
-
-  def.lastId = id
-  def.total++
 }
 
 // let cnt = 100
-export const create = (db: BasedDb, type: string, obj: Payload): ModifyRes => {
+export const create = (
+  db: BasedDb,
+  type: string,
+  obj: Payload,
+  unsafe?: boolean,
+): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const id = def.lastId + 1
+  let id
+  if ('id' in obj) {
+    if (unsafe) {
+      id = obj.id
+    } else {
+      throw Error('create with "id" is not allowed')
+    }
+  } else {
+    id = def.lastId + 1
+  }
+
   const res = new ModifyState(id, db)
   const ctx = db.modifyCtx
   const pos = ctx.len
-  const err = appendCreate(ctx, def, obj, res)
+  const err = appendCreate(ctx, def, obj, res, unsafe)
 
   if (err) {
     ctx.prefix0 = null // force a new cursor
     ctx.len = pos
     if (err === RANGE_ERR) {
       flushBuffer(db)
-      return create(db, type, obj)
+      return create(db, type, obj, unsafe)
 
       // const { min, len, max } = ctx
       // console.log('create - range error', { min, len, max }, db.workers)
@@ -98,6 +110,11 @@ export const create = (db: BasedDb, type: string, obj: Payload): ModifyRes => {
     }
   } else if (!db.isDraining) {
     startDrain(db)
+  }
+
+  if (id > def.lastId) {
+    def.lastId = id
+    def.total++
   }
 
   // @ts-ignore

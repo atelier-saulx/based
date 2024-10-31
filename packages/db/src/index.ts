@@ -248,8 +248,14 @@ export class BasedDb {
     }
   }
 
-  migrateSchema(schema: Schema) {
-    return migrate(this, schema)
+  migrateSchema(
+    schema: Schema,
+    transform?: (
+      type: string,
+      node: Record<string, any>,
+    ) => Record<string, any>,
+  ) {
+    return migrate(this, schema, transform)
 
     // pass two db descriptors to worker
     //
@@ -325,24 +331,29 @@ export class BasedDb {
       this.foreachBlock(def, lastId, (start, end, hash) => {
         const mtKey = makeCsmtKey(def.id, start)
         const oldLeaf = this.merkleTree.search(mtKey)
-        if (oldLeaf && !oldLeaf.hash.equals(hash)) {
+
+        if (oldLeaf) {
+          if (oldLeaf.hash.equals(hash)) {
+            return
+          }
           try {
             this.merkleTree.delete(mtKey)
           } catch (err) {}
-          const data: CsmtNodeRange = {
-            file: '', // not saved yet
-            typeId: def.id,
-            start,
-            end,
-          }
-          this.merkleTree.insert(mtKey, hash, data)
         }
+
+        const data: CsmtNodeRange = {
+          file: '', // not saved yet
+          typeId: def.id,
+          start,
+          end,
+        }
+        this.merkleTree.insert(mtKey, hash, data)
       })
     }
   }
 
-  create(type: string, value: any): ModifyRes {
-    return create(this, type, value)
+  create(type: string, value: any, unsafe?: boolean): ModifyRes {
+    return create(this, type, value, unsafe)
   }
 
   upsert(type: string, aliases: Record<string, string>, value: any) {
