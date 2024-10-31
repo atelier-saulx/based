@@ -85,7 +85,7 @@ await test('save simple range', async (t) => {
   const secondHash = db.merkleTree.getRoot().hash
 
   equal((save2_end - save2_start) < (save1_end - save1_start), true)
-  equal(!firstHash.compare(secondHash), false)
+  equal(firstHash.equals(secondHash), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 4)
@@ -111,6 +111,25 @@ await test('save simple range', async (t) => {
   })
   const load_end = performance.now()
   console.log('load rdy', load_end - load_start)
+  const thirdHash = db.merkleTree.getRoot().hash
+
+  console.log([firstHash, secondHash, thirdHash])
+  equal(secondHash.equals(thirdHash), true)
+
+  deepEqual(
+    newDb
+      .query('user')
+      .include('age')
+      .range(0, 1)
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        age: 1337,
+      },
+    ],
+  )
 
   deepEqual(
     newDb
