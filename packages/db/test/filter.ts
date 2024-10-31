@@ -579,7 +579,6 @@ await test('or', async (t) => {
     .include('id', 'lastPing')
     .filter('scheduled', '>', '01/01/2100')
     .or((f) => {
-      console.log('fuck my shit')
       f.filter('lastPing', '>', 1e6 - 2)
     })
     .range(0, 30)
