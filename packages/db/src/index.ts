@@ -84,7 +84,8 @@ export class BasedDb {
     this.csmtHashFun.reset()
     return this.csmtHashFun
   }
-  merkleTree = createMerkleTree(this.createCsmtHashFun)
+  merkleTree: ReturnType<typeof createMerkleTree>
+
   id: number
   dbCtxExternal: any
   schema: Schema & { lastId: number }
@@ -177,6 +178,11 @@ export class BasedDb {
       }
     } catch (err) {}
 
+    // The merkle tree should be empty at start.
+    if (!this.merkleTree || this.merkleTree.getRoot()) {
+      this.merkleTree = createMerkleTree(this.createCsmtHashFun)
+    }
+
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
       const [total, lastId] = this.native.getTypeInfo(
@@ -188,23 +194,14 @@ export class BasedDb {
       def.lastId = writelog?.types[def.id].lastId || lastId
       def.blockSize = writelog?.types[def.id].blockSize || DEFAULT_BLOCK_SIZE
 
-      const step = def.blockSize
-      for (let start = 1; start <= lastId; start += step) {
-        const end = start + step - 1
-        const hash = Buffer.allocUnsafe(16)
-        this.native.getNodeRangeHash(
-          def.id,
-          start,
-          end,
-          hash,
-          this.dbCtxExternal,
-        )
-
+      this.foreachBlock(def, lastId, (start, end, hash) => {
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
 
         const mtKey = makeCsmtKey(def.id, start)
-        this.merkleTree.insert(mtKey, hash, { file: '', start, end })
-      }
+        const file: string =
+          writelog.rangeDumps[def.id].find((v) => v.start === start)?.file || ''
+        this.merkleTree.insert(mtKey, hash, { file, start, end })
+      })
     }
 
     if (writelog?.hash) {
@@ -298,6 +295,37 @@ export class BasedDb {
     this.dirtyRanges.add(
       makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId),
     )
+  }
+
+  private foreachBlock(
+    def: SchemaTypeDef,
+    lastId: number,
+    cb: (start: number, end: number, hash: Buffer) => void,
+  ) {
+    const step = def.blockSize
+    for (let start = 1; start <= lastId; start += step) {
+      const end = start + step - 1
+      const hash = Buffer.allocUnsafe(16)
+      this.native.getNodeRangeHash(def.id, start, end, hash, this.dbCtxExternal)
+      cb(start, end, hash)
+    }
+  }
+
+  updateMerkleTree(): void {
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      const [, lastId] = this.native.getTypeInfo(def.id, this.dbCtxExternal)
+
+      this.foreachBlock(def, lastId, (start, end, hash) => {
+        const mtKey = makeCsmtKey(def.id, start)
+        const oldLeaf = this.merkleTree.search(mtKey)
+        if (oldLeaf && !oldLeaf.hash.equals(hash)) {
+          this.merkleTree.delete(mtKey)
+          const file: string = '' // not saved yet
+          this.merkleTree.insert(mtKey, hash, { file, start, end })
+        }
+      })
+    }
   }
 
   create(type: string, value: any): ModifyRes {
