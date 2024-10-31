@@ -213,7 +213,7 @@ export class BasedDb {
     if (writelog?.hash) {
       const oldHash = Buffer.from(writelog.hash, 'hex')
       const newHash = this.merkleTree.getRoot()?.hash
-      if (oldHash.compare(newHash) != 0) {
+      if (!oldHash.equals(newHash)) {
         console.error(
           `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
         )
@@ -275,7 +275,7 @@ export class BasedDb {
       fs.writeFile(
         join(this.fileSystemPath, SCHEMA_FILE),
         JSON.stringify(this.schema),
-      )
+      ).catch((err) => console.error(SCHEMA_FILE, err))
       let types = Object.keys(this.schemaTypesParsed)
       const s = schemaToSelvaBuffer(this.schemaTypesParsed)
       for (let i = 0; i < s.length; i++) {
@@ -326,7 +326,9 @@ export class BasedDb {
         const mtKey = makeCsmtKey(def.id, start)
         const oldLeaf = this.merkleTree.search(mtKey)
         if (oldLeaf && !oldLeaf.hash.equals(hash)) {
-          this.merkleTree.delete(mtKey)
+          try {
+            this.merkleTree.delete(mtKey)
+          } catch (err) {}
           const data: CsmtNodeRange = {
             file: '', // not saved yet
             typeId: def.id,
@@ -445,7 +447,9 @@ export class BasedDb {
         start,
         end,
       }
-      this.merkleTree.delete(mtKey)
+      try {
+        this.merkleTree.delete(mtKey)
+      } catch (err) {}
       this.merkleTree.insert(mtKey, hash, data)
     }
     this.dirtyRanges.clear()
@@ -477,10 +481,9 @@ export class BasedDb {
     if (mtRoot) {
       data.hash = mtRoot.hash.toString('hex')
     }
-    fs.appendFile(
+    await fs.writeFile(
       join(this.fileSystemPath, WRITELOG_FILE),
       JSON.stringify(data),
-      { flag: 'w', flush: true },
     )
   }
 
