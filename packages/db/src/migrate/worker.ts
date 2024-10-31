@@ -35,15 +35,25 @@ if (isMainThread) {
   let msg
   let offset = -1
   const transformFn = transform && eval(transform)
-
+  const start = Date.now()
+  let queryExecTime = 0
+  let queryTotalTime = 0
+  let createTime = 0
   while ((msg = receiveMessageOnPort(channel))) {
     const leafData: TreeNode['data'] = msg.message
     const typeStr = reverseTypeMap[leafData.typeId]
+    const qstart = Date.now()
     const nodes = fromDb
       .query(typeStr)
-      .range(leafData.start + offset, leafData.end + offset)
+      .range(leafData.start + offset, leafData.end - leafData.start)
       .get()
 
+    queryExecTime = nodes.execTime
+    queryTotalTime += Date.now() - qstart
+
+    // console.log(leafData.start + offset, '-', leafData.end + offset)
+
+    const cstart = Date.now()
     for (const node of nodes) {
       if (node.id > leafData.end) {
         offset += node.id - leafData.end
@@ -55,7 +65,20 @@ if (isMainThread) {
         true,
       )
     }
+
+    createTime += Date.now() - cstart
   }
 
-  process.nextTick(() => process.exit(0))
+  const totalTime = Date.now() - start
+  const drainTime = await toDb.drain()
+
+  console.log({
+    totalTime,
+    queryExecTime,
+    queryTotalTime,
+    drainTime,
+    createTime,
+  })
+
+  process.exit(0)
 }

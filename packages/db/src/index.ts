@@ -331,18 +331,23 @@ export class BasedDb {
       this.foreachBlock(def, lastId, (start, end, hash) => {
         const mtKey = makeCsmtKey(def.id, start)
         const oldLeaf = this.merkleTree.search(mtKey)
-        if (oldLeaf && !oldLeaf.hash.equals(hash)) {
+
+        if (oldLeaf) {
+          if (oldLeaf.hash.equals(hash)) {
+            return
+          }
           try {
             this.merkleTree.delete(mtKey)
           } catch (err) {}
-          const data: CsmtNodeRange = {
-            file: '', // not saved yet
-            typeId: def.id,
-            start,
-            end,
-          }
-          this.merkleTree.insert(mtKey, hash, data)
         }
+
+        const data: CsmtNodeRange = {
+          file: '', // not saved yet
+          typeId: def.id,
+          start,
+          end,
+        }
+        this.merkleTree.insert(mtKey, hash, data)
       })
     }
   }

@@ -24,16 +24,16 @@ await test('migration', async (t) => {
     },
   })
 
-  let i = 1_000_000
+  let i = 5_000_000
   while (i--) {
     db.create('user', {
       name: 'user ' + i,
     })
   }
 
-  await db.drain()
+  console.log(await db.drain())
 
-  console.log('BEFORE:', db.query('user').get().toObject())
+  // console.log('BEFORE:', db.query('user').get().toObject())
   // remove field
   await db.migrateSchema(
     {
@@ -53,5 +53,5 @@ await test('migration', async (t) => {
     },
   )
 
-  console.log('AFTER2:', db.query('user').get().toObject())
+  // console.log('AFTER2:', db.query('user').range(0, 1_000_000).get().toObject())
 })

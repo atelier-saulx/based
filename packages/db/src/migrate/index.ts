@@ -35,14 +35,16 @@ export const migrate = async (
     transferList: [port2],
   })
 
-  fromDb.save()
+  fromDb.updateMerkleTree()
   fromDb.merkleTree.visitLeafNodes((leaf) => {
+    // console.log(leaf.data)
     port1.postMessage(leaf.data)
   })
   // wake up the worker
   atomics[0] = 1
   Atomics.notify(atomics, 0)
 
+  worker.on('error', console.error)
   const exitCode = await new Promise((resolve) => {
     worker.on('exit', resolve)
   })
