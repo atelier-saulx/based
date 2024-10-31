@@ -9,6 +9,8 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const schema = db.schemaTypesParsed[type]
   const separate = schema.separate
 
+  ctx.db.markNodeDirty(schema, id)
+
   if (separate) {
     const size = 12 + separate.length * 12
     if (outOfRange(ctx, size)) {
