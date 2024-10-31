@@ -19,6 +19,8 @@ import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
 import { create, remove, update } from './modify/index.js'
+import { tmpdir } from 'os'
+import { migrate } from './migrate/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
@@ -83,22 +85,14 @@ export class BasedDb {
     return this.csmtHashFun
   }
   merkleTree = createMerkleTree(this.createCsmtHashFun)
-
   id: number
-
   dbCtxExternal: any
-
   schema: Schema & { lastId: number }
-
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
-
   // total write time until .drain is called manualy
   writeTime: number = 0
-
   native = db
-
   fileSystemPath: string
-
   workers: DbWorker[] = []
   noCompression: boolean
   concurrency: number
@@ -251,6 +245,16 @@ export class BasedDb {
     }
   }
 
+  migrateSchema(schema: Schema) {
+    return migrate(this, schema)
+
+    // pass two db descriptors to worker
+    //
+
+    // switch the handles? switch everything
+    // this.dbCtxExternal =
+  }
+
   putSchema(schema: Schema, fromStart: boolean = false): Schema {
     if (!fromStart) {
       parse(schema)
@@ -282,6 +286,7 @@ export class BasedDb {
         }
       }
     }
+
     return this.schema
   }
 
@@ -290,7 +295,9 @@ export class BasedDb {
   }
 
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    this.dirtyRanges.add(makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId))
+    this.dirtyRanges.add(
+      makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId),
+    )
   }
 
   create(type: string, value: any): ModifyRes {
