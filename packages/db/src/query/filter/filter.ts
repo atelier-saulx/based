@@ -8,8 +8,7 @@ import {
 import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './operators.js'
-import { Filter } from './types.js'
-import { FilterBranch } from './FilterBranch.js'
+import { Filter, FilterAst, IsFilter } from './types.js'
 
 export { Operator, Filter }
 
@@ -20,6 +19,7 @@ const referencesFilter = (
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
+  console.log({ filter })
   const [fieldStr, operator, value] = filter
   var size = 0
   const path = fieldStr.split('.')
@@ -92,16 +92,22 @@ export const filterRaw = (
 export const filter = (
   db: BasedDb,
   def: QueryDef,
-  filter: Filter,
+  filterAst: FilterAst,
   conditions: QueryDefFilter,
 ) => {
-  conditions.size += filterRaw(db, filter, def.schema, conditions, def)
+  for (const f of filterAst) {
+    if (IsFilter(f)) {
+      conditions.size += filterRaw(db, f, def.schema, conditions, def)
+    } else {
+      filterOr(db, def, f, conditions)
+    }
+  }
 }
 
 export const filterOr = (
   db: BasedDb,
   def: QueryDef,
-  filter: Filter[],
+  filterAst: FilterAst[],
   conditions: QueryDefFilter,
 ) => {
   if (!conditions.or) {
@@ -111,9 +117,7 @@ export const filterOr = (
       conditions: new Map(),
     }
   }
-  for (const f of filter) {
-    conditions.or.size += filterRaw(db, f, def.schema, conditions.or, def)
-  }
+  filter(db, def, filterAst, conditions.or)
   conditions.size += conditions.or.size
   return conditions.or
 }
@@ -122,7 +126,7 @@ export const convertFilter = (
   field: string,
   operator?: Operator | boolean,
   value?: any,
-): Filter[] => {
+): FilterAst => {
   if (operator === undefined) {
     operator = '='
     value = true
@@ -134,7 +138,7 @@ export const convertFilter = (
     if (!Array.isArray(value)) {
       throw new Error('Invalid filter')
     }
-    return [field, '>', value[1]]
+    return [[field, '>', value[1]], [[field, '<', value[0]]]]
   } else if (operator === '..') {
     if (!Array.isArray(value)) {
       throw new Error('Invalid filter')

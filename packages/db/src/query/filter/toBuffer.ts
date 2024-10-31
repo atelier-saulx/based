@@ -115,7 +115,5 @@ export const filterToBuffer = (conditions: QueryDefFilter) => {
     result = Buffer.alloc(0)
   }
 
-  debug(result)
-
   return result
 }

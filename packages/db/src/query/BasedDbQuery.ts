@@ -16,7 +16,7 @@ import {
 
 import { BasedQueryResponse } from './BasedIterable.js'
 import { createOrGetRefQueryDef } from './include/utils.js'
-import { FilterBranchFn } from './filter/types.js'
+import { FilterAst, FilterBranchFn, IsFilter } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 
 // partial class
@@ -45,9 +45,13 @@ export class QueryBranch<T> {
 
   filter(field: string, operator?: Operator | boolean, value?: any): T {
     const f = convertFilter(field, operator, value)
-    for (const seg of f) {
-      filter(this.db, this.def, seg, this.def.filter)
-    }
+    filter(this.db, this.def, f, this.def.filter)
+    // @ts-ignore
+    return this
+  }
+
+  filterBatch(f: FilterAst) {
+    filter(this.db, this.def, f, this.def.filter)
     // @ts-ignore
     return this
   }
@@ -65,7 +69,6 @@ export class QueryBranch<T> {
         filterOr(this.db, this.def, [], this.def.filter),
         this.def,
       )
-      console.log('DERP', f.filterBranch.size)
       field(f)
       this.def.filter.size += f.filterBranch.size
     } else {

@@ -415,10 +415,11 @@ await test('simple', async (t) => {
 
   let rangeResult = db
     .query('machine')
-    .include('*')
+    .include('temperature')
     .filter('temperature', '..', [-0.1, 0])
     .get()
-  equal(rangeResult.length < 900, true, 'range excludes ')
+
+  equal(rangeResult.length < 900, true, 'range less')
   equal(
     rangeResult.node().temperature < 0 && rangeResult.node().temperature > -0.1,
     true,
@@ -428,7 +429,10 @@ await test('simple', async (t) => {
   rangeResult = db
     .query('machine')
     .include('*')
-    .filter('temperature', '!..', [-0.1, 0])
+    .range(0, 10)
+    // .filter('temperature', '!..', [-0.1, 0])
+    .filter('temperature', '>', 0)
+    .or('temperature', '<', -0.1)
     .get()
 
   let hasLarge = false
@@ -437,7 +441,7 @@ await test('simple', async (t) => {
     if (item.temperature < -0.1) {
       hasSmall = true
     }
-    if (item.temperature > -0) {
+    if (item.temperature > 0) {
       hasLarge = true
     }
     if (item.temperature > -0.1 && item.temperature < 0) {
@@ -545,6 +549,7 @@ await test('or', async (t) => {
       .get()
       .toObject().length > 10,
     true,
+    'Branch or',
   )
 
   deepEqual(
@@ -570,5 +575,101 @@ await test('or', async (t) => {
       })
       .get()
       .toObject(),
+  )
+
+  const r = db
+    .query('machine')
+    .include('temperature')
+    .range(0, 5)
+    .filter('temperature', '>', 0)
+    .or('temperature', '<', -0.1)
+    .get()
+    .toObject()
+
+  equal(
+    r
+      .map((v, i) => {
+        return v.temperature > 0 ? true : false
+      })
+      .reduce((acc, a) => {
+        return a ? acc + 1 : acc
+      }, 0),
+    true,
+    'Correct spread of temperature',
+  )
+})
+
+await test('small', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      machine: {
+        props: {
+          temperature: 'uint8',
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 1e6; i++) {
+    db.create('machine', {
+      temperature: ~~(Math.random() * 200) + 1,
+    }).tmpId
+  }
+  db.drain()
+
+  const r = db
+    .query('machine')
+    .include('temperature')
+    .range(0, 1000)
+    .filter('temperature', '>', 150)
+    .or('temperature', '<', 50)
+    .get()
+    .toObject()
+
+  equal(
+    r
+      .map((v, i) => {
+        return v.temperature < 50
+      })
+      .reduce((acc, a) => {
+        return a ? acc + 1 : acc
+      }, 0) > 0,
+    true,
+  )
+
+  equal(
+    r
+      .map((v, i) => {
+        return v.temperature > 150
+      })
+      .reduce((acc, a) => {
+        return a ? acc + 1 : acc
+      }, 0) > 0,
+    true,
+  )
+
+  equal(
+    db
+      .query('machine')
+      .include('id', 'temperature')
+      .filter('temperature', '>', 201)
+      .or((f) => {
+        f.filter('temperature', '>', 202)
+        f.or('temperature', '<', 10)
+      })
+      .get()
+      .toObject().length > 10,
+    true,
+    'Branch or',
   )
 })

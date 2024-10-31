@@ -39,9 +39,7 @@ export class FilterBranch {
 
   filter(field: string, operator?: Operator | boolean, value?: any) {
     const f = convertFilter(field, operator, value)
-    for (const seg of f) {
-      filter(this.db, this.def, seg, this.filterBranch)
-    }
+    filter(this.db, this.def, f, this.filterBranch)
     return this
   }
 }

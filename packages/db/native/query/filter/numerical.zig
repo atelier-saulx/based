@@ -14,7 +14,8 @@ inline fn operate(
 ) bool {
     const q = readInt(T, query, 0);
     const v = readInt(T, value, 0);
-    return operateSwitch(T, op, q, v);
+    const result = operateSwitch(T, op, q, v);
+    return result;
 }
 
 inline fn operateSwitch(T: type, op: Op, q: T, v: T) bool {
@@ -42,7 +43,6 @@ pub inline fn compare(
     if (prop == Prop.REFERENCES) {
         return operateSwitch(u32, op, readInt(u32, query, 0), @truncate(v.len / 4));
     }
-
     const value = v[start .. start + size];
     if (size == 4) {
         if (isSigned) {

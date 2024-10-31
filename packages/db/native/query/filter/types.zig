@@ -35,6 +35,5 @@ pub const Meta = enum(u8) {
     edge = 252,
     orBranch = 253,
     reference = 254,
-    andBranch = 255,
     _,
 };

@@ -14,9 +14,6 @@ const Meta = @import("./types.zig").Meta;
 const getField = db.getField;
 const idToShard = db.idToShard;
 // -------------------------------------------
-// and
-// [meta = 255] [size 2]
-// -------------------------------------------
 // or
 // [meta = 253]  [size 2] [next 4]
 // -------------------------------------------
@@ -46,12 +43,22 @@ inline fn fail(
     conditions: []u8,
     ref: ?types.RefStruct,
     jump: ?[]u8,
+    // offset: usize,
     comptime isEdge: bool,
 ) bool {
     if (jump) |j| {
         const start = readInt(u32, j, 2);
         const size = readInt(u16, j, 0);
-        return filter(ctx, node, typeEntry, conditions[start .. size + start], ref, null, isEdge);
+        return filter(
+            ctx,
+            node,
+            typeEntry,
+            conditions[0 .. size + start],
+            ref,
+            null,
+            start,
+            isEdge,
+        );
     }
     return false;
 }
@@ -63,33 +70,21 @@ pub fn filter(
     conditions: []u8,
     ref: ?types.RefStruct,
     jump: ?[]u8,
+    offset: usize,
     comptime isEdge: bool,
 ) bool {
-    var i: usize = 0;
-    var orJump: ?[]u8 = null;
+    var i: usize = offset;
+    var orJump: ?[]u8 = jump;
+    var end: usize = conditions.len;
 
     // [or = 0] [size 2] [start 2], [op], value[size]
     // next OR
-    while (i < conditions.len) {
+    while (i < end) {
         const meta: Meta = @enumFromInt(conditions[i]);
-        if (meta == Meta.andBranch) {
-            const size = readInt(u16, conditions, i + 1);
-            // if (!filter(
-            //     ctx,
-            //     node,
-            //     typeEntry,
-            //     conditions[i + 3 .. i + 3 + size],
-            //     ref,
-            //     0,
-            //     true,
-            // )) {
-            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            // }
-            i += 3 + size;
-        } else if (meta == Meta.orBranch) {
-            const size = readInt(u16, conditions, i + 1);
+        if (meta == Meta.orBranch) {
             orJump = conditions[i + 1 .. i + 7];
-            i += 7 + size;
+            end = readInt(u32, conditions, i + 3);
+            i += 7;
         } else if (meta == Meta.edge) {
             if (ref != null) {
                 const size = readInt(u16, conditions, i + 1);
@@ -97,9 +92,10 @@ pub fn filter(
                     ctx,
                     node,
                     typeEntry,
-                    conditions[i + 3 .. i + 3 + size],
+                    conditions[0 .. i + 3 + size],
                     ref,
                     null,
+                    i + 3,
                     true,
                 )) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -128,12 +124,13 @@ pub fn filter(
                 ctx,
                 refNode.?,
                 refTypeEntry,
-                conditions[i + 6 .. i + 6 + size],
+                conditions[0 .. i + 6 + size],
                 .{
                     .reference = @ptrCast(selvaRef.?),
                     .edgeConstaint = edgeConstrain,
                 },
                 null,
+                i + 6,
                 false,
             )) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -147,7 +144,7 @@ pub fn filter(
             if (isEdge) {
                 const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, field) catch null;
                 if (edgeFieldSchema == null) {
-                    return fail(ctx, node, typeEntry, conditions, ref, jump, isEdge);
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
                 value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
             } else {
