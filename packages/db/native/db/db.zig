@@ -361,6 +361,11 @@ pub fn getNodeId(node: Node) u32 {
     return selva.selva_get_node_id(node);
 }
 
+pub fn getNodeIdArray(node: Node) [4]u8 {
+    const x: [4]u8 = @bitCast(selva.selva_get_node_id(node));
+    return x;
+}
+
 pub fn getFirstNode(typeEntry: Type) ?Node {
     return selva.selva_min_node(typeEntry);
 }

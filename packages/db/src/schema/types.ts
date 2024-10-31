@@ -211,7 +211,7 @@ export const ID_FIELD_DEF: PropDef = {
   separate: true,
   path: ['id'],
   start: 0,
-  prop: 0,
+  prop: 255,
   len: 4,
   __isPropDef: true,
 }

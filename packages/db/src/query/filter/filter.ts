@@ -4,6 +4,7 @@ import {
   SchemaTypeDef,
   SchemaPropTree,
   PropDef,
+  ID_FIELD_DEF,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
@@ -19,12 +20,10 @@ const referencesFilter = (
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
-  console.log({ filter })
   const [fieldStr, operator, value] = filter
   var size = 0
   const path = fieldStr.split('.')
   let t: PropDef | SchemaPropTree = schema.tree
-  let d = def
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
     t = t[p]
@@ -84,6 +83,10 @@ export const filterRaw = (
 ): number => {
   let field = schema.props[filter[0]]
   if (!field) {
+    if (filter[0] === 'id') {
+      field = ID_FIELD_DEF
+      return primitiveFilter(field, filter, conditions)
+    }
     return referencesFilter(db, filter, schema, conditions, def)
   }
   return primitiveFilter(field, filter, conditions)

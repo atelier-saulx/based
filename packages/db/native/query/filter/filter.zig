@@ -141,7 +141,9 @@ pub fn filter(
             const querySize: u16 = readInt(u16, conditions, i + 1);
             const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
-            if (isEdge) {
+            if (meta == Meta.id) {
+                value = @constCast(&db.getNodeIdArray(node));
+            } else if (isEdge) {
                 const edgeFieldSchema = db.getEdgeFieldSchema(ref.?.edgeConstaint, field) catch null;
                 if (edgeFieldSchema == null) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
