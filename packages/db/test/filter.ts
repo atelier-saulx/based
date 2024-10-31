@@ -573,20 +573,43 @@ await test('or', async (t) => {
     ],
   )
 
-  console.log('-------DERP------')
-  // deepEqual(
-  db.query('machine')
-    .include('id', 'lastPing')
-    .filter('scheduled', '>', '01/01/2100')
-    .or((f) => {
-      f.filter('lastPing', '>', 1e6 - 2)
-    })
-    .range(0, 30)
-    .get()
-    .inspect(2)
-    .toObject()
-  // [],
-  // )
+  deepEqual(
+    db
+      .query('machine')
+      .include('id', 'lastPing')
+      .filter('scheduled', '>', '01/01/2100')
+      .or((f) => {
+        f.filter('lastPing', '>', 1e6 - 2)
+      })
+      .range(0, 30)
+      .get()
+      .inspect(2)
+      .toObject(),
+    [
+      {
+        id: 999999,
+        lastPing: 999999,
+      },
+      {
+        id: 1000000,
+        lastPing: 1000000,
+      },
+    ],
+  )
 
-  // next
+  equal(
+    db
+      .query('machine')
+      .include('id', 'lastPing')
+      .filter('scheduled', '>', '01/01/2100')
+      .or((f) => {
+        f.filter('lastPing', '>', 1e6 - 2)
+        f.or('temperature', '<', -30)
+      })
+      .range(0, 30)
+      .get()
+      .inspect(2)
+      .toObject().length > 10,
+    true,
+  )
 })
