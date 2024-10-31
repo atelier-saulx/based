@@ -160,7 +160,7 @@ await test('delete a range', async (t) => {
     },
   })
 
-  const N = 101_000
+  const N = 100_001
   for (let i = 1; i <= N; i++) {
     db.create('user', {
       name: 'mr flop ' + i,
@@ -175,7 +175,7 @@ await test('delete a range', async (t) => {
   db.drain()
   db.updateMerkleTree()
   const first = fun()
-  db.remove('user', 101_000)
+  db.remove('user', 100_001)
   db.drain()
   db.updateMerkleTree()
   const second = fun()
@@ -191,6 +191,7 @@ await test('delete a range', async (t) => {
     false,
     'the second block hash a new hash of the deletion',
   )
+  equal(second.right.hash.equals(Buffer.alloc(16)), true)
 
   // TODO In the future the merkleTree should remain the same but the right block doesn't need an sdb
   //db.save()
