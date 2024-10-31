@@ -298,6 +298,9 @@ export class BasedQueryResponse {
     if ('id' in this.def.target) {
       return this.toObject()
     }
+    if (index < 0) {
+      index = this.length + index
+    }
     for (const x of this) {
       if (i === index) {
         return x

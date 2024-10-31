@@ -672,4 +672,26 @@ await test('small', async (t) => {
     true,
     'Branch or',
   )
+
+  for (let i = 0; i < 10000; i++) {
+    if (i % 2) {
+      db.remove('machine', 10000 + i)
+    }
+  }
+  db.drain()
+
+  deepEqual(db.query('machine').include('id').range(0, 3).get().node(-1), {
+    id: 3,
+  })
+
+  deepEqual(
+    db
+      .query('machine')
+      .include('temperature')
+      .filter('id', '<=', 20000)
+      .range(10000, 10000)
+      .get()
+      .node(-1).id,
+    20000,
+  )
 })
