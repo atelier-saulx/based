@@ -33,13 +33,13 @@ await test('save simple range', async (t) => {
   const slen = 80
   const xn_len = italy.length / slen
   for (let i = 1; i <= N; i++) {
-    let xn1 = ((i * slen) / slen | 0) % xn_len
+    let xn1 = (((i * slen) / slen) | 0) % xn_len
     let xn2 = (xn1 + 1) % xn_len
 
     if (xn1 > xn2) {
-      xn1 ^= xn2;
-      xn2 ^= xn1;
-      xn1 ^= xn2;
+      xn1 ^= xn2
+      xn2 ^= xn1
+      xn1 ^= xn2
     }
 
     db.create('user', {
@@ -63,20 +63,12 @@ await test('save simple range', async (t) => {
     age: 1337,
   })
   db.drain()
-  deepEqual(
-    db
-      .query('user')
-      .include('age')
-      .range(0, 1)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
+  deepEqual(db.query('user').include('age').range(0, 1).get().toObject(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
 
   const save2_start = performance.now()
   await db.stop()
@@ -84,13 +76,12 @@ await test('save simple range', async (t) => {
   console.error('save2 rdy', save2_end - save2_start)
   const secondHash = db.merkleTree.getRoot().hash
 
-  equal((save2_end - save2_start) < (save1_end - save1_start), true)
+  equal(save2_end - save2_start < save1_end - save1_start, true)
   equal(firstHash.equals(secondHash), false)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 4)
-  deepEqual(ls,
-  [
+  deepEqual(ls, [
     '65281_100001_200000.sdb',
     '65281_1_100000.sdb',
     '65281_200001_300000.sdb',
@@ -98,7 +89,7 @@ await test('save simple range', async (t) => {
     'common.sdb',
     'data.mdb',
     'schema.json',
-    'writelog.json'
+    'writelog.json',
   ])
 
   const load_start = performance.now()
@@ -116,47 +107,26 @@ await test('save simple range', async (t) => {
   console.log([firstHash, secondHash, thirdHash])
   equal(secondHash.equals(thirdHash), true)
 
-  deepEqual(
-    newDb
-      .query('user')
-      .include('age')
-      .range(0, 1)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
+  deepEqual(newDb.query('user').include('age').range(0, 1).get().toObject(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
+
+  deepEqual(newDb.query('user').include('name').range(0, 2).get().toObject(), [
+    {
+      id: 1,
+      name: 'mr flop 1',
+    },
+    {
+      id: 2,
+      name: 'mr flop 2',
+    },
+  ])
 
   deepEqual(
-    newDb
-      .query('user')
-      .include('name')
-      .range(0, 2)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr flop 1',
-      },
-      {
-        id: 2,
-        name: 'mr flop 2',
-      },
-    ],
-  )
-
-  deepEqual(
-    newDb
-      .query('user')
-      .include('name')
-      .range(200_000, 2)
-      .get()
-      .toObject(),
+    newDb.query('user').include('name').range(200_000, 2).get().toObject(),
     [
       {
         id: 200001,
@@ -168,4 +138,61 @@ await test('save simple range', async (t) => {
       },
     ],
   )
+})
+
+await test('delete a range', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const N = 101_000
+  for (let i = 1; i <= N; i++) {
+    db.create('user', {
+      name: 'mr flop ' + i,
+    })
+  }
+
+  const fun = () => {
+    const { hash, left, right } = db.merkleTree.getRoot()
+    return { hash, left, right }
+  }
+
+  db.drain()
+  db.updateMerkleTree()
+  const first = fun()
+  db.remove('user', 101_000)
+  db.drain()
+  db.updateMerkleTree()
+  const second = fun()
+
+  equal(first.hash.equals(second.hash), false, 'delete changes the root hash')
+  equal(
+    first.left.hash.equals(second.left.hash),
+    true,
+    "the first block hash wasn't change",
+  )
+  equal(
+    first.right.hash.equals(second.right.hash),
+    false,
+    'the second block hash a new hash of the deletion',
+  )
+
+  // TODO In the future the merkleTree should remain the same but the right block doesn't need an sdb
+  //db.save()
+  //console.log(db.merkleTree.getRoot())
 })
