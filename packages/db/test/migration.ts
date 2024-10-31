@@ -24,7 +24,7 @@ await test('migration', async (t) => {
     },
   })
 
-  let i = 1000000
+  let i = 1_000_000
   while (i--) {
     db.create('user', {
       name: 'user ' + i,
@@ -33,26 +33,25 @@ await test('migration', async (t) => {
 
   await db.drain()
 
-  // add field
-  await db.migrateSchema({
-    types: {
-      user: {
-        props: {
-          name: { type: 'string' },
-          email: { type: 'string' },
+  console.log('BEFORE:', db.query('user').get().toObject())
+  // remove field
+  await db.migrateSchema(
+    {
+      types: {
+        user: {
+          props: {
+            email: { type: 'string' },
+          },
         },
       },
     },
-  })
+    (type, node) => {
+      if (type === 'user') {
+        node.email = node.name.replace(/ /g, '-') + '@gmail.com'
+        return node
+      }
+    },
+  )
 
-  // // remove field
-  // db.migrateSchema({
-  //   types: {
-  //     user: {
-  //       props: {
-  //         email: { type: 'string' },
-  //       },
-  //     },
-  //   },
-  // })
+  console.log('AFTER2:', db.query('user').get().toObject())
 })
