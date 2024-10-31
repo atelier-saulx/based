@@ -451,63 +451,6 @@ await test('simple', async (t) => {
   }
 })
 
-// await test('filter - sort-indexes', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-
-//   await db.start({ clean: true })
-
-//   t.after(() => {
-//     return db.destroy()
-//   })
-
-//   const status = ['error', 'danger', 'ok', '🦄']
-
-//   db.putSchema({
-//     types: {
-//       machine: {
-//         props: {
-//           derp: 'int32',
-//           lastPing: 'number',
-//           temperature: 'number',
-//           requestsServed: 'uint32',
-//           isLive: 'boolean',
-//           status,
-//           scheduled: 'timestamp',
-//         },
-//       },
-//     },
-//   })
-
-//   const now = Date.now()
-//   for (let i = 0; i < 1e6; i++) {
-//     db.create('machine', {
-//       status: status[Math.floor(Math.random() * (status.length - 1))],
-//       requestsServed: i,
-//       lastPing: i + 1,
-//       derp: -i,
-//       temperature: Math.random() * 40 - Math.random() * 40,
-//       isLive: !!(i % 2),
-//       scheduled: now + (i % 3 ? -i * 6e5 : i * 6e5),
-//     }).tmpId
-//   }
-//   db.drain()
-
-//   db.query('machine').sort('scheduled', 'desc').get().inspect(2)
-
-//   db.query('machine').sort('scheduled', 'desc').get().inspect(2)
-
-//   // larger then
-//   // find in index if it exsit especialy if you do both
-//   //
-//   db.query('machine')
-//     .filter('scheduled', '>', 'now + 20y')
-//     // .sort('scheduled')
-//     .get()
-//     .inspect(2)
-// })
-
 await test('or', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -557,9 +500,7 @@ await test('or', async (t) => {
       .include('id', 'lastPing')
       .filter('scheduled', '>', '01/01/2100')
       .or('lastPing', '>', 1e6 - 2)
-      .range(0, 30)
       .get()
-      .inspect(2)
       .toObject(),
     [
       {
@@ -581,20 +522,15 @@ await test('or', async (t) => {
       .or((f) => {
         f.filter('lastPing', '>', 1e6 - 2)
       })
-      .range(0, 30)
       .get()
-      .inspect(2)
       .toObject(),
-    [
-      {
-        id: 999999,
-        lastPing: 999999,
-      },
-      {
-        id: 1000000,
-        lastPing: 1000000,
-      },
-    ],
+    db
+      .query('machine')
+      .include('id', 'lastPing')
+      .filter('scheduled', '>', '01/01/2100')
+      .or('lastPing', '>', 1e6 - 2)
+      .get()
+      .toObject(),
   )
 
   equal(
@@ -606,10 +542,33 @@ await test('or', async (t) => {
         f.filter('lastPing', '>', 1e6 - 2)
         f.or('temperature', '<', -30)
       })
-      .range(0, 30)
       .get()
-      .inspect(2)
       .toObject().length > 10,
     true,
+  )
+
+  deepEqual(
+    db
+      .query('machine')
+      .include('id', 'lastPing')
+      .filter('scheduled', '>', '01/01/2100')
+      .or((f) => {
+        f.filter('lastPing', '>', 1e6 - 2)
+        f.or((f) => {
+          f.filter('temperature', '<', -30)
+        })
+      })
+      .get()
+      .toObject(),
+    db
+      .query('machine')
+      .include('id', 'lastPing')
+      .filter('scheduled', '>', '01/01/2100')
+      .or((f) => {
+        f.filter('lastPing', '>', 1e6 - 2)
+        f.or('temperature', '<', -30)
+      })
+      .get()
+      .toObject(),
   )
 })

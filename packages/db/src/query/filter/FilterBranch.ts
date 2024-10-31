@@ -23,9 +23,13 @@ export class FilterBranch {
     value?: any,
   ): FilterBranch {
     if (typeof field === 'function') {
-      //   const f = createOrBranch(this.db, this.filterBranch, this.def)
-      //   field(f)
-      //   this.filterBranch.size += f.filterBranch.size
+      const f = new FilterBranch(
+        this.db,
+        filterOr(this.db, this.def, [], this.filterBranch),
+        this.def,
+      )
+      field(f)
+      this.def.filter.size += f.filterBranch.size
     } else {
       const f = convertFilter(field, operator, value)
       filterOr(this.db, this.def, f, this.filterBranch)
@@ -38,8 +42,6 @@ export class FilterBranch {
     for (const seg of f) {
       filter(this.db, this.def, seg, this.filterBranch)
     }
-    console.log('YO', this.filterBranch.size)
-    // @ts-ignore
     return this
   }
 }
