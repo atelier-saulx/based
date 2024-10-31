@@ -19,6 +19,8 @@ import { join } from 'node:path'
 import { genId } from './schema/utils.js'
 import { Csmt, createTree as createMerkleTree } from '../src/csmt/index.js'
 import { create, remove, update } from './modify/index.js'
+import { tmpdir } from 'os'
+import { migrate } from './migrate/index.js'
 
 export * from './schema/typeDef.js'
 export * from './modify/modify.js'
@@ -82,23 +84,16 @@ export class BasedDb {
     this.csmtHashFun.reset()
     return this.csmtHashFun
   }
-  merkleTree = createMerkleTree(this.createCsmtHashFun)
+  merkleTree: ReturnType<typeof createMerkleTree>
 
   id: number
-
   dbCtxExternal: any
-
   schema: Schema & { lastId: number }
-
   schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
-
   // total write time until .drain is called manualy
   writeTime: number = 0
-
   native = db
-
   fileSystemPath: string
-
   workers: DbWorker[] = []
   noCompression: boolean
   concurrency: number
@@ -183,6 +178,11 @@ export class BasedDb {
       }
     } catch (err) {}
 
+    // The merkle tree should be empty at start.
+    if (!this.merkleTree || this.merkleTree.getRoot()) {
+      this.merkleTree = createMerkleTree(this.createCsmtHashFun)
+    }
+
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
       const [total, lastId] = this.native.getTypeInfo(
@@ -194,29 +194,26 @@ export class BasedDb {
       def.lastId = writelog?.types[def.id].lastId || lastId
       def.blockSize = writelog?.types[def.id].blockSize || DEFAULT_BLOCK_SIZE
 
-      const step = def.blockSize
-      for (let start = 1; start <= lastId; start += step) {
-        const end = start + step - 1
-        const hash = Buffer.allocUnsafe(16)
-        this.native.getNodeRangeHash(
-          def.id,
-          start,
-          end,
-          hash,
-          this.dbCtxExternal,
-        )
-
+      this.foreachBlock(def, lastId, (start, end, hash) => {
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
 
         const mtKey = makeCsmtKey(def.id, start)
-        this.merkleTree.insert(mtKey, hash, { file: '', start, end })
-      }
+        const file: string =
+          writelog.rangeDumps[def.id].find((v) => v.start === start)?.file || ''
+        const data: CsmtNodeRange = {
+          file,
+          typeId: def.id,
+          start,
+          end,
+        }
+        this.merkleTree.insert(mtKey, hash, data)
+      })
     }
 
     if (writelog?.hash) {
       const oldHash = Buffer.from(writelog.hash, 'hex')
       const newHash = this.merkleTree.getRoot()?.hash
-      if (oldHash.compare(newHash) != 0) {
+      if (!oldHash.equals(newHash)) {
         console.error(
           `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
         )
@@ -251,6 +248,16 @@ export class BasedDb {
     }
   }
 
+  migrateSchema(schema: Schema) {
+    return migrate(this, schema)
+
+    // pass two db descriptors to worker
+    //
+
+    // switch the handles? switch everything
+    // this.dbCtxExternal =
+  }
+
   putSchema(schema: Schema, fromStart: boolean = false): Schema {
     if (!fromStart) {
       parse(schema)
@@ -268,7 +275,7 @@ export class BasedDb {
       fs.writeFile(
         join(this.fileSystemPath, SCHEMA_FILE),
         JSON.stringify(this.schema),
-      )
+      ).catch((err) => console.error(SCHEMA_FILE, err))
       let types = Object.keys(this.schemaTypesParsed)
       const s = schemaToSelvaBuffer(this.schemaTypesParsed)
       for (let i = 0; i < s.length; i++) {
@@ -282,6 +289,7 @@ export class BasedDb {
         }
       }
     }
+
     return this.schema
   }
 
@@ -290,7 +298,47 @@ export class BasedDb {
   }
 
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
-    this.dirtyRanges.add(makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId))
+    this.dirtyRanges.add(
+      makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId),
+    )
+  }
+
+  private foreachBlock(
+    def: SchemaTypeDef,
+    lastId: number,
+    cb: (start: number, end: number, hash: Buffer) => void,
+  ) {
+    const step = def.blockSize
+    for (let start = 1; start <= lastId; start += step) {
+      const end = start + step - 1
+      const hash = Buffer.allocUnsafe(16)
+      this.native.getNodeRangeHash(def.id, start, end, hash, this.dbCtxExternal)
+      cb(start, end, hash)
+    }
+  }
+
+  updateMerkleTree(): void {
+    for (const key in this.schemaTypesParsed) {
+      const def = this.schemaTypesParsed[key]
+      const [, lastId] = this.native.getTypeInfo(def.id, this.dbCtxExternal)
+
+      this.foreachBlock(def, lastId, (start, end, hash) => {
+        const mtKey = makeCsmtKey(def.id, start)
+        const oldLeaf = this.merkleTree.search(mtKey)
+        if (oldLeaf && !oldLeaf.hash.equals(hash)) {
+          try {
+            this.merkleTree.delete(mtKey)
+          } catch (err) {}
+          const data: CsmtNodeRange = {
+            file: '', // not saved yet
+            typeId: def.id,
+            start,
+            end,
+          }
+          this.merkleTree.insert(mtKey, hash, data)
+        }
+      })
+    }
   }
 
   create(type: string, value: any): ModifyRes {
@@ -393,8 +441,16 @@ export class BasedDb {
 
       // console.log(`save range ${typeId}:${start}-${end} hash:`, hash)
 
-      this.merkleTree.delete(mtKey)
-      this.merkleTree.insert(mtKey, hash, { file, start, end })
+      const data: CsmtNodeRange = {
+        file,
+        typeId,
+        start,
+        end,
+      }
+      try {
+        this.merkleTree.delete(mtKey)
+      } catch (err) {}
+      this.merkleTree.insert(mtKey, hash, data)
     }
     this.dirtyRanges.clear()
 
@@ -425,10 +481,9 @@ export class BasedDb {
     if (mtRoot) {
       data.hash = mtRoot.hash.toString('hex')
     }
-    fs.appendFile(
+    await fs.writeFile(
       join(this.fileSystemPath, WRITELOG_FILE),
       JSON.stringify(data),
-      { flag: 'w', flush: true },
     )
   }
 

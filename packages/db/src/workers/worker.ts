@@ -3,7 +3,7 @@ import {
   receiveMessageOnPort,
   workerData,
 } from 'node:worker_threads'
-import native from './native.js'
+import native from '../native.js'
 
 if (isMainThread) {
   console.warn('this is wrong, running worker.ts in mainthread')

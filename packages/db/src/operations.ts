@@ -4,7 +4,7 @@ import { BasedDb } from './index.js'
 import { PropDef } from './schema/types.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 // this is just so ts builds it
-import './worker.js'
+// import './workers/worker.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

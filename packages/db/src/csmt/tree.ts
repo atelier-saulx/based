@@ -221,9 +221,7 @@ export function createTree(createHash: () => any): Csmt {
     },
     delete: (k: TreeKey) => {
       if (root) {
-        try {
-          root = deleteNode(root, k)
-        } catch (err) {}
+        root = deleteNode(root, k)
       }
     },
     diff,
