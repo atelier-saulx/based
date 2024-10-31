@@ -192,7 +192,7 @@ export class BasedDb {
       def.lastId = writelog?.types[def.id].lastId || lastId
       def.blockSize = writelog?.types[def.id].blockSize || DEFAULT_BLOCK_SIZE
 
-      this.foreachBlock(def, lastId, (start, end, hash) => {
+      this.foreachBlock(def, (start, end, hash) => {
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
 
         const mtKey = makeCsmtKey(def.id, start)
@@ -309,11 +309,10 @@ export class BasedDb {
 
   private foreachBlock(
     def: SchemaTypeDef,
-    lastId: number,
     cb: (start: number, end: number, hash: Buffer) => void,
   ) {
     const step = def.blockSize
-    for (let start = 1; start <= lastId; start += step) {
+    for (let start = 1; start <= def.lastId; start += step) {
       const end = start + step - 1
       const hash = Buffer.allocUnsafe(16)
       this.native.getNodeRangeHash(def.id, start, end, hash, this.dbCtxExternal)
@@ -321,33 +320,46 @@ export class BasedDb {
     }
   }
 
-  updateMerkleTree(): void {
-    for (const key in this.schemaTypesParsed) {
-      const def = this.schemaTypesParsed[key]
-      const [, lastId] = this.native.getTypeInfo(def.id, this.dbCtxExternal)
-
-      this.foreachBlock(def, lastId, (start, end, hash) => {
-        const mtKey = makeCsmtKey(def.id, start)
-        const oldLeaf = this.merkleTree.search(mtKey)
-
-        if (oldLeaf) {
-          if (oldLeaf.hash.equals(hash)) {
-            return
-          }
-          try {
-            this.merkleTree.delete(mtKey)
-          } catch (err) {}
-        }
-
-        const data: CsmtNodeRange = {
-          file: '', // not saved yet
-          typeId: def.id,
-          start,
-          end,
-        }
-        this.merkleTree.insert(mtKey, hash, data)
-      })
+  private foreachDirtyBlock(
+    cb: (mtKey: number, typeId: number, start: number, end: number) => void,
+  ) {
+    const typeIdMap = {}
+    for (const typeName in this.schemaTypesParsed) {
+      const type = this.schemaTypesParsed[typeName]
+      const typeId = type.id
+      typeIdMap[typeId] = type
     }
+
+    for (const mtKey of this.dirtyRanges) {
+      const [typeId, start] = destructureCsmtKey(mtKey)
+      const end = start + typeIdMap[typeId].blockSize - 1
+      cb(mtKey, typeId, start, end)
+    }
+  }
+
+  updateMerkleTree(): void {
+    this.foreachDirtyBlock((mtKey, typeId, start, end) => {
+      const oldLeaf = this.merkleTree.search(mtKey)
+      const hash = Buffer.allocUnsafe(16)
+      this.native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
+
+      if (oldLeaf) {
+        if (oldLeaf.hash.equals(hash)) {
+          return
+        }
+        try {
+          this.merkleTree.delete(mtKey)
+        } catch (err) {}
+      }
+
+      const data: CsmtNodeRange = {
+        file: '', // not saved yet
+        typeId,
+        start,
+        end,
+      }
+      this.merkleTree.insert(mtKey, hash, data)
+    })
   }
 
   create(type: string, value: any, unsafe?: boolean): ModifyRes {
@@ -421,17 +433,7 @@ export class BasedDb {
       console.error(`Save common failed: ${err}`)
     }
 
-    // TODO Make this nicely somewhere else
-    const typeIdMap = {}
-    for (const typeName in this.schemaTypesParsed) {
-      const type = this.schemaTypesParsed[typeName]
-      const typeId = type.id
-      typeIdMap[typeId] = type
-    }
-
-    for (const mtKey of this.dirtyRanges) {
-      const [typeId, start] = destructureCsmtKey(mtKey)
-      const end = start + typeIdMap[typeId].blockSize - 1
+    this.foreachDirtyBlock((mtKey, typeId, start, end) => {
       const file = block_sdb_file(typeId, start, end)
       const path = join(this.fileSystemPath, file)
       const hash = Buffer.allocUnsafe(16)
@@ -460,7 +462,7 @@ export class BasedDb {
         this.merkleTree.delete(mtKey)
       } catch (err) {}
       this.merkleTree.insert(mtKey, hash, data)
-    }
+    })
     this.dirtyRanges.clear()
 
     const types: Writelog['types'] = {}
