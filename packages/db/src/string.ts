@@ -36,8 +36,8 @@ export const write = (
 let tmpCompressBlock: Buffer
 
 export const compress = (str: string): Buffer => {
-  if (!tmpCompressBlock || tmpCompressBlock.byteLength < str.length * 2) {
-    tmpCompressBlock = Buffer.allocUnsafe(str.length * 2)
+  if (!tmpCompressBlock || tmpCompressBlock.byteLength < str.length * 3) {
+    tmpCompressBlock = Buffer.allocUnsafe(str.length * 3)
   }
   const s = write(tmpCompressBlock, str, 0, false)
   const nBuffer = Buffer.allocUnsafe(s)
@@ -46,8 +46,7 @@ export const compress = (str: string): Buffer => {
 }
 
 export const decompress = (buf: Buffer): string => {
-  // read uncompressed
-  return 'derp'
+  return read(buf, 0, buf.byteLength)
 }
 
 export const read = (buf: Buffer, offset: number, len: number): string => {

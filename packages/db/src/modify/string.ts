@@ -39,7 +39,8 @@ export function writeString(
     }
   } else {
     let size = isBuffer ? value.byteLength : Buffer.byteLength(value, 'utf8')
-    if (outOfRange(ctx, 15 + size)) {
+    if (outOfRange(ctx, 15 + size + 5)) {
+      // 5 compression size
       return RANGE_ERR
     }
     if (modifyOp === CREATE) {

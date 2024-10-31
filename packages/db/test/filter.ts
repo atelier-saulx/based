@@ -1,4 +1,4 @@
-import { BasedDb, compress } from '../src/index.js'
+import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence } from './shared/examples.js'
@@ -727,8 +727,13 @@ await test('string', async (t) => {
   const high = 'z'.charCodeAt(0) - 1
 
   // Pre make buffer for string and allow setting
+  const compressedSentence = compress(sentence)
+
+  equal(decompress(compressedSentence), sentence, 'compress / decompress api')
 
   const compressedItaly = compress(italy)
+
+  equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
 
   // debug(compressedSentence, 0, compressedSentence.byteLength, 'Compress')
   const d = Date.now()
@@ -746,6 +751,7 @@ await test('string', async (t) => {
 
   console.log(Date.now() - d, 'ms', await db.drain(), 'ms')
 
+  // compressed string
   // Create compressed string (exposed)
   db.query('article').range(0, 10).get().inspect(2)
 
