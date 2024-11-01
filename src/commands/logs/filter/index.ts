@@ -68,7 +68,7 @@ export const filter =
     }
 
     if (!filters.sort || filters.stream) {
-      filters.sort = 'desc'
+      filters.sort = 'asc'
     }
 
     if (!skip) {

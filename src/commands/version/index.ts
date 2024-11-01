@@ -12,7 +12,7 @@ export const version = async (program: Command): Promise<void> => {
 
   const appName = context.i18n('appName')
   const appCommand = context.i18n('appCommand')
-  const appTitle = `<b>${appName}</b> <dim>${version}</dim>`
+  const appTitle = `<reset><b>${appName}</b> <dim>${version}</dim></reset>`
 
   context.set('appName', appName)
   context.set('appVersion', version)

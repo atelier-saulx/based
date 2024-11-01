@@ -1,10 +1,6 @@
-import { AppContext } from '../../shared/index.js'
-import {
-  filterLogs,
-  formatLogs,
-  subscribeLogs,
-  getLogs,
-} from '../logs/index.js'
+import { AppContext, colorize } from '../../shared/index.js'
+import { filterLogs, formatLogs, subscribeLogs, getLogs } from './index.js'
+import fs from 'fs'
 
 export const visualizer = async (
   context: AppContext,
@@ -84,14 +80,14 @@ export const visualizer = async (
   let renderData: Based.Logs.RenderData
 
   if (filters.monitor) {
-    const { kill, addLine } = context.getTerminal({
+    const { kill, addRow } = context.terminalKit({
       title: context.get('appName'),
-      header: [
+      header: colorize([
         `${context.get('appTitle')}`,
         `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}`,
         `Active Filters: [${filterLabels.join(' | ')}]`,
-      ],
-      lines: {
+      ]),
+      rows: {
         sort: filters.sort,
       },
     })
@@ -101,10 +97,18 @@ export const visualizer = async (
       process.exit(0)
     })
 
-    renderData = (data) => addLine(formatLogs(filterLogs(data, filters)))
+    renderData = (data) => addRow(formatLogs(filterLogs(data, filters)))
   } else {
     renderData = (data) => {
       const filteredData = formatLogs(filterLogs(data, filters))
+      const jsonData = JSON.stringify(filteredData, null, 2)
+      fs.writeFile('logs.json', jsonData, 'utf8', (err) => {
+        if (err) {
+          console.error('Erro ao salvar o arquivo:', err)
+          return
+        }
+        console.log(`Arquivo salvo com sucesso!`)
+      })
 
       for (const line of filteredData) {
         console.log(line)
@@ -124,13 +128,6 @@ export const visualizer = async (
         )
       }
     }
-  }
-
-  if (filters.monitor) {
-    context.print
-      .line()
-      .stop()
-      .success('Opening the <b>UI</b> to show the logs...', true)
   }
 
   try {
