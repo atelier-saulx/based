@@ -5,6 +5,8 @@ import {
   SchemaPropTree,
   PropDef,
   ID_FIELD_DEF,
+  BOOLEAN,
+  PropDefEdge,
 } from '../../schema/schema.js'
 import { BasedDb } from '../../index.js'
 import { primitiveFilter } from './primitiveFilter.js'
@@ -137,6 +139,7 @@ export const convertFilter = (
     value = operator
     operator = '='
   }
+
   if (operator == '!..') {
     if (!Array.isArray(value)) {
       throw new Error('Invalid filter')

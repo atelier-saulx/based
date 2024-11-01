@@ -1,6 +1,5 @@
 import {
   BINARY,
-  NUMBER,
   PropDef,
   PropDefEdge,
   REFERENCE,
@@ -13,7 +12,7 @@ import { QueryDefFilter } from '../types.js'
 import { isNumerical, operationToByte } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 import { Filter } from './types.js'
-import { compress, write } from '../../string.js'
+import { compress } from '../../string.js'
 
 // -------------------------------------------
 // conditions normal
@@ -82,18 +81,19 @@ const createFixedFilterBuffer = (
   if (Array.isArray(value)) {
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
-    buf = Buffer.allocUnsafe(9 + len * size)
-    buf[0] = prop.typeIndex === REFERENCES && op === 1 ? 3 : 1
-    buf.writeUInt16LE(size, 1)
-    buf.writeUInt16LE(start, 3)
-    buf[5] = op
-    buf[6] = prop.typeIndex
-    buf.writeUInt16LE(len, 7)
+    buf = Buffer.allocUnsafe(10 + len * size)
+    buf[0] = op === 3 ? 1 : 0
+    buf[1] = prop.typeIndex === REFERENCES && op === 1 ? 3 : 1
+    buf.writeUInt16LE(size, 2)
+    buf.writeUInt16LE(start, 4)
+    buf[6] = op
+    buf[7] = prop.typeIndex
+    buf.writeUInt16LE(len, 8)
     if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
       for (let i = 0; i < len; i++) {
-        buf.writeUInt32LE(value[i], 9 + i * size)
+        buf.writeUInt32LE(value[i], 10 + i * size)
       }
     } else {
       for (let i = 0; i < len; i++) {
@@ -102,19 +102,20 @@ const createFixedFilterBuffer = (
           buf,
           parseFilterValue(prop, value[i]),
           size,
-          9 + i * size,
+          10 + i * size,
         )
       }
     }
   } else {
     // [or = 0] [size 2] [start 2], [op], value[size]
-    buf = Buffer.allocUnsafe(7 + size)
-    buf[0] = 0
-    buf.writeUInt16LE(size, 1)
-    buf.writeUInt16LE(start, 3)
-    buf[5] = op
-    buf[6] = prop.typeIndex
-    writeFixed(prop, buf, parseFilterValue(prop, value), size, 7)
+    buf = Buffer.allocUnsafe(8 + size)
+    buf[0] = op === 3 ? 1 : 0
+    buf[1] = 0
+    buf.writeUInt16LE(size, 2)
+    buf.writeUInt16LE(start, 4)
+    buf[6] = op
+    buf[7] = prop.typeIndex
+    writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
   }
 
   return buf
@@ -126,22 +127,24 @@ const createReferenceFilter = (
   value: any,
 ) => {
   let buf: Buffer
+
   // [or = 1]  [repeat 2] [op] [ti] [parsed] [typeId 2], value[size] value[size] value[size]
   const len = Array.isArray(value) ? value.length : 1
-  buf = Buffer.allocUnsafe(10 + len * 8)
-  buf[0] = 0
-  buf.writeUInt16LE(8, 1)
-  buf.writeUInt16LE(len, 3)
-  buf[5] = op
-  buf[6] = prop.typeIndex
-  buf[7] = 0
-  buf.writeUInt16LE(prop.inverseTypeId, 8)
+  buf = Buffer.allocUnsafe(11 + len * 8)
+  buf[0] = op === 3 ? 1 : 0
+  buf[1] = 0
+  buf.writeUInt16LE(8, 2)
+  buf.writeUInt16LE(len, 4)
+  buf[6] = op
+  buf[7] = prop.typeIndex
+  buf[8] = 0
+  buf.writeUInt16LE(prop.inverseTypeId, 9)
   if (Array.isArray(value)) {
     for (let i = 0; i < len; i++) {
-      buf.writeUInt32LE(value[i], 10 + i * 8)
+      buf.writeUInt32LE(value[i], 11 + i * 8)
     }
   } else {
-    buf.writeUInt32LE(value, 10)
+    buf.writeUInt32LE(value, 11)
   }
   return buf
 }
@@ -176,19 +179,35 @@ export const primitiveFilter = (
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)
   } else {
     let val = value
-    if (prop.typeIndex === STRING) {
+    if (prop.typeIndex === STRING && typeof value === 'string') {
+      // dont need this
+      // If string > x dont do this
       val = compress(value)
     }
-    if (op === 1) {
+    // if val > certain amount will compare crc32 + len
+    // fixed
+
+    if (!(val instanceof Buffer)) {
+      throw new Error('Incorrect value for filter ' + prop.path)
+    }
+
+    if (op === 3 || op === 1) {
       if (prop.separate) {
-        // [or = 4] [size 4], [op] [typeIndex], value[size]
+        // if val.bytelen > 100
+        // make hash and compare that
+        // make a seperate operation for hash + len comparison
+        //  (only for VAR)
+
+        // [or = 4] [size 2], [0x0], [op] [typeIndex], value[size]
         const size = val.byteLength
-        buf = Buffer.allocUnsafe(7 + size)
-        buf[0] = 4 // var size
-        buf.writeUint32LE(size, 1)
-        buf[5] = op
-        buf[6] = prop.typeIndex
-        buf.set(val, 7)
+        buf = Buffer.allocUnsafe(8 + size)
+        buf[0] = op === 3 ? 1 : 0
+
+        buf[1] = 4 // var size
+        buf.writeUint16LE(size, 2)
+        buf[6] = op
+        buf[7] = prop.typeIndex
+        buf.set(val, 8)
         // SET copy in
       }
     }

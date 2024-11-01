@@ -68,7 +68,6 @@ export const appendUtf8 = (ctx: ModifyCtx, str: string) => {
 }
 
 export const appendBuf = (ctx: ModifyCtx, buf: Buffer) => {
-  console.log('DERP', new Uint8Array(buf))
   ctx.buf.set(buf, ctx.len)
   ctx.len += buf.byteLength
 }

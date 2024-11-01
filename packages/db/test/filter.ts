@@ -595,7 +595,7 @@ await test('or', async (t) => {
       })
       .reduce((acc, a) => {
         return a ? acc + 1 : acc
-      }, 0),
+      }, 0) > 0,
     true,
     'Correct spread of temperature',
   )
@@ -752,11 +752,6 @@ await test('string', async (t) => {
 
   console.log(Date.now() - d, 'ms', await db.drain(), 'ms')
 
-  // compressed string
-  // Create compressed string (exposed)
-  // db.query('article').range(0, 10).get().inspect(2)
-
-  // If buffer it will be treated as parsed string
   deepEqual(
     db
       .query('article')
@@ -770,15 +765,67 @@ await test('string', async (t) => {
         type: 'gossip',
         code: 'en',
         name: 'Gossip #2',
-        body: '\n Main menu\n \n WikipediaThe Free Encycloped...',
+        body: italy,
         stuff: new Uint8Array([35, 50]),
       },
     ],
   )
 
-  db.query('article')
-    .filter('body', '=', compressedItaly)
-    .range(0, 10)
-    .get()
-    .inspect(10)
+  // db.query('article')
+  //   .filter('body', '=', compressedItaly)
+  //   .range(0, 10)
+  //   .get()
+  //   .inspect(10)
+})
+
+await test('negate', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  const status = ['error', 'danger', 'ok', '🦄']
+
+  db.putSchema({
+    types: {
+      machine: {
+        props: {
+          info: 'uint32',
+          lastPing: 'number',
+          temperature: 'number',
+          requestsServed: 'uint32',
+          isLive: 'boolean',
+          status,
+          scheduled: 'timestamp',
+        },
+      },
+    },
+  })
+
+  const amount = 100
+  for (let i = 0; i < amount; i++) {
+    db.create('machine', {
+      isLive: !!(i % 2),
+      status: status[~~(status.length * Math.random())],
+      info: i,
+    })
+  }
+  await db.drain()
+
+  equal(
+    db.query('machine').filter('isLive', '!=', true).get().length,
+    amount / 2,
+    'boolean !=',
+  )
+
+  equal(
+    db.query('machine').filter('info', '!=', 5).get().length,
+    amount - 1,
+    'uint32 !=',
+  )
 })

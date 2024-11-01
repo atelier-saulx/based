@@ -1,7 +1,7 @@
 pub const Operator = enum(u8) {
     equal = 1,
     has = 2,
-    notEqual = 3,
+    // notEqual = 3,
     endsWith = 4,
     startsWith = 5,
     largerThen = 6,
@@ -22,6 +22,11 @@ pub const Operator = enum(u8) {
             else => false,
         };
     }
+};
+
+pub const Type = enum(u8) {
+    negate = 1,
+    default = 2,
 };
 
 pub const Mode = enum(u8) {

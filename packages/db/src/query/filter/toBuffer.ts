@@ -44,6 +44,7 @@ const writeConditions = (
     result.set(condition, lastWritten)
     lastWritten += condition.byteLength
   }
+  // make this u32
   result.writeUint16LE(conditionSize, sizeIndex)
   return lastWritten - offset
 }

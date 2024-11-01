@@ -43,6 +43,10 @@ export const operationToByte = (op: Operator) => {
     return 2
   }
 
+  if (op === '!=') {
+    return 3
+  }
+
   if (op === '>') {
     return 6
   }

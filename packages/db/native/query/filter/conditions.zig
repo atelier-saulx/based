@@ -6,25 +6,32 @@ const num = @import("./numerical.zig");
 const t = @import("./types.zig");
 const Mode = t.Mode;
 const Op = t.Operator;
+const Type = t.Type;
+
 const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 
 pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
     var i: usize = 0;
+    // const topLevelType: Type = @enumFromInt(q[i]);
+    // std.debug.print("T: {any} \n", .{topLevelType});
+
     while (i < q.len) {
+        i += 1;
+
         const mode: Mode = @enumFromInt(q[i]);
 
         if (mode == Mode.defaultVar) {
-            const valueSize = readInt(u32, q, i + 1);
+            const valueSize = readInt(u16, q, i + 1);
             const op: Op = @enumFromInt(q[i + 5]);
             const query = q[i + 7 .. i + valueSize + 7];
+
             if (op == Op.equal) {
                 // ADD NESTED OR
                 if (v.len != valueSize) {
                     return false;
                 }
                 var j: u32 = 0;
-                // IF LEN > x USE SIMD
                 while (j < query.len) : (j += 1) {
                     if (v[j] != query[j]) {
                         return false;
@@ -41,8 +48,9 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
             if (prop == Prop.REFERENCE) {
                 // [or = 1]  [repeat 2] [op] [ti] [parsed] [typeId 2]
                 const repeat = start;
+                // or op == Op.notEqual
                 if (op == Op.equal) {
-                    const refType = q[7];
+                    const refType = q[i + 7];
                     if (refType == 2) {
                         return false;
                     } else if (refType == 0) {
