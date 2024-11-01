@@ -22,8 +22,6 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
                 if (v.len != valueSize) {
                     return false;
                 }
-                std.debug.print("BLA {any} {any} \n", .{ query, v });
-
                 var j: u32 = 0;
                 while (j < query.len) : (j += 1) {
                     if (v[j] != query[j]) {
@@ -31,8 +29,6 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
                     }
                 }
             }
-            std.debug.print("DERP! {any} {any} \n", .{ query, v });
-
             i += 7 + valueSize;
         } else {
             const valueSize = readInt(u16, q, i + 1);
