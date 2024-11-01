@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { sentence } from './shared/examples.js'
 
 await test('multiple references', async (t) => {
   const db = new BasedDb({
@@ -230,6 +231,7 @@ await test('single reference', async (t) => {
             prop: 'articles',
             $role: ['writer', 'editor', 'boss'],
             $on: 'boolean',
+            $msg: 'string',
           },
         },
       },
@@ -279,6 +281,28 @@ await test('single reference', async (t) => {
       },
     ],
   )
+
+  await db.create('article', {
+    name: 'Power article',
+    author: { id: mrDrol, $msg: sentence },
+  })
+
+  deepEqual(db.query('article').include('author.$msg', '*').get().toObject(), [
+    { id: 1, name: 'This is a nice article', author: { id: 1 } },
+    {
+      id: 2,
+      name: 'This is a nice article with mr drol as writer',
+      author: { id: 1 },
+    },
+    {
+      id: 3,
+      name: 'Power article',
+      author: {
+        id: 1,
+        $msg: sentence,
+      },
+    },
+  ])
 
   t.after(() => {
     return db.destroy()

@@ -7,6 +7,7 @@ import {
   REFERENCES,
   STRING,
 } from '../../schema/types.js'
+import { write } from '../../string.js'
 import { getBuffer } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from '../types.js'
@@ -128,14 +129,15 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(t, ref)
           }
-          const size = Buffer.byteLength(value)
+          let size = Buffer.byteLength(value)
           if (outOfRange(ctx, 6 + size)) {
             return RANGE_ERR
           }
           appendU8(ctx, edge.prop)
           appendU8(ctx, STRING)
+          size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
           appendU32(ctx, size)
-          appendUtf8(ctx, value)
+          ctx.len += size
         } else if (edge.typeIndex === REFERENCE) {
           if (typeof value !== 'number') {
             if (value instanceof ModifyState) {

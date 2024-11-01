@@ -173,7 +173,8 @@ export const readAllFields = (
         if (size === 0) {
           addField(edgeDef, '', item)
         } else {
-          addField(edgeDef, result.toString('utf8', i + 4, size + i + 4), item)
+          // read
+          addField(edgeDef, read(result, i + 4, size), item)
         }
         i += size + 4
       } else if (t === REFERENCE) {

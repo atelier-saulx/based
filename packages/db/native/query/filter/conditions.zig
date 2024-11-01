@@ -19,16 +19,19 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
             const op: Op = @enumFromInt(q[i + 5]);
             const query = q[i + 7 .. i + valueSize + 7];
             if (op == Op.equal) {
+                // ADD NESTED OR
                 if (v.len != valueSize) {
                     return false;
                 }
                 var j: u32 = 0;
+                // IF LEN > x USE SIMD
                 while (j < query.len) : (j += 1) {
                     if (v[j] != query[j]) {
                         return false;
                     }
                 }
             }
+            // add HAS
             i += 7 + valueSize;
         } else {
             const valueSize = readInt(u16, q, i + 1);
