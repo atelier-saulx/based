@@ -23,9 +23,13 @@ const idToShard = db.idToShard;
 // ref
 // [meta = 254] [field] [typeId 2] [size 2]
 // -------------------------------------------
-// conditions normal
+// conditions normal fixed
 // field, [size 2]
 // [or = 0] [size 2] [start 2], [op] [typeIndex], value[size]
+// -------------------------------------------
+// conditions normal var
+// field, [size 4]
+// [or = 4] [size 4], [op] [typeIndex], value[size]
 // -------------------------------------------
 // conditions or fixed
 // field, [size 2]

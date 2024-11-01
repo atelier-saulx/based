@@ -29,6 +29,7 @@ pub const Mode = enum(u8) {
     orFixed = 1,
     orVar = 2,
     andFixed = 3,
+    defaultVar = 4,
 };
 
 pub const Meta = enum(u8) {

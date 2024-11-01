@@ -6,7 +6,9 @@ import {
   UPDATED,
   ENUM,
   BOOLEAN,
+  STRING,
 } from '../../schema/types.js'
+import { compress } from '../../string.js'
 
 // -------------------------------------------
 // conditions normal
@@ -44,7 +46,7 @@ const timeToNumber = (ex: string): number => {
 export const parseFilterValue = (
   prop: PropDef | PropDefEdge,
   value: any,
-): number => {
+): any => {
   if (prop.typeIndex === BOOLEAN) {
     return value ? 1 : 0
   } else if (prop.typeIndex === ENUM) {

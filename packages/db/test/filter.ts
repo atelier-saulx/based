@@ -724,7 +724,7 @@ await test('string', async (t) => {
   })
 
   const lower = 'a'.charCodeAt(0)
-  const high = 'z'.charCodeAt(0) - 1
+  const high = 'z'.charCodeAt(0)
 
   // Pre make buffer for string and allow setting
   const compressedSentence = compress(sentence)
@@ -735,30 +735,40 @@ await test('string', async (t) => {
 
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
 
-  // debug(compressedSentence, 0, compressedSentence.byteLength, 'Compress')
   const d = Date.now()
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 100; i++) {
+    if (i === 2) {
+      console.log(new Uint8Array(Buffer.from('#' + i)))
+    }
+
+    const str =
+      String.fromCharCode(~~(Math.random() * high - lower) + lower) +
+      String.fromCharCode(~~(Math.random() * high - lower) + lower)
+    // String.fromCharCode(~~(Math.random() * high) + lower)
+
+    console.log(str)
+
     db.create('article', {
       type: 'gossip',
-      code:
-        String.fromCharCode(~~(Math.random() * high) + lower) +
-        String.fromCharCode(~~(Math.random() * high) + lower),
-      name: 'Gossip #' + i,
+      code: str,
+      // code: 'en',
+
+      // name: 'Gossip #' + i,
       body: compressedItaly,
       stuff: Buffer.from('#' + i),
-    }).tmpId
+    })
   }
 
   console.log(Date.now() - d, 'ms', await db.drain(), 'ms')
 
   // compressed string
   // Create compressed string (exposed)
-  db.query('article').range(0, 10).get().inspect(2)
+  // db.query('article').range(0, 10).get().inspect(2)
 
   // If buffer it will be treated as parsed string
   db.query('article')
     .filter('stuff', '=', Buffer.from('#' + 2))
     .range(0, 10)
     .get()
-    .inspect(2)
+    .inspect(10)
 })

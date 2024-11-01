@@ -10,93 +10,116 @@ const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 
 pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
-    var i: u16 = 0;
+    var i: usize = 0;
     while (i < q.len) {
         const mode: Mode = @enumFromInt(q[i]);
-        const valueSize = readInt(u16, q, i + 1);
-        const start = readInt(u16, q, i + 3);
-        const op: Op = @enumFromInt(q[i + 5]);
-        const prop: Prop = @enumFromInt(q[i + 6]);
-        if (prop == Prop.REFERENCE) {
-            // [or = 1]  [repeat 2] [op] [ti] [parsed] [typeId 2]
-            const repeat = start;
+
+        if (mode == Mode.defaultVar) {
+            const valueSize = readInt(u32, q, i + 1);
+            const op: Op = @enumFromInt(q[i + 5]);
+            const query = q[i + 7 .. i + valueSize + 7];
             if (op == Op.equal) {
-                const refType = q[7];
-                if (refType == 2) {
-                    return false;
-                } else if (refType == 0) {
-                    if (!fillReferenceFilter(ctx, q[i + 7 .. i + 10 + repeat * 8])) {
-                        return false;
-                    }
-                }
-                var j: u8 = 0;
-                const query = q[i + 10 .. i + repeat * 8 + 10];
-                if (repeat > 1) {
-                    if (!batch.equalsOr(8, v, query)) {
-                        return false;
-                    }
-                } else {
-                    while (j < query.len) : (j += 1) {
-                        if (v[j] != query[j]) {
-                            return false;
-                        }
-                    }
-                }
-            }
-            i += 10 + valueSize;
-        } else if (mode == Mode.orFixed) {
-            const repeat = readInt(u16, q, i + 7);
-            const query = q[i + 9 .. i + valueSize * repeat + 9];
-            if (op == Op.equal) {
-                const value = v[start .. start + valueSize];
-                if (!batch.equalsOr(valueSize, value, query)) {
+                if (v.len != valueSize) {
                     return false;
                 }
-            } else if (op == Op.has and prop == Prop.REFERENCES) {
-                if (!batch.simdReferencesHas(query, v)) {
-                    return false;
-                }
-            }
-            i += 9 + valueSize * repeat;
-        } else if (mode == Mode.andFixed) {
-            const repeat = readInt(u16, q, i + 7);
-            const query = q[i + 9 .. i + valueSize * repeat + 9];
-            if (op == Op.equal) {
-                if (v.len / valueSize != repeat) {
-                    return false;
-                }
-                var j: u8 = 0;
+                std.debug.print("BLA {any} {any} \n", .{ query, v });
+
+                var j: u32 = 0;
                 while (j < query.len) : (j += 1) {
                     if (v[j] != query[j]) {
                         return false;
                     }
                 }
             }
-            i += 9 + valueSize * repeat;
-        } else if (mode == Mode.default) {
-            const query = q[i + 7 .. i + valueSize + 7];
-            if (op == Op.equal) {
-                const value = v[start .. start + valueSize];
-                var j: u8 = 0;
-                while (j < query.len) : (j += 1) {
-                    if (value[j] != query[j]) {
+            std.debug.print("DERP! {any} {any} \n", .{ query, v });
+
+            i += 7 + valueSize;
+        } else {
+            const valueSize = readInt(u16, q, i + 1);
+            const start = readInt(u16, q, i + 3);
+            const op: Op = @enumFromInt(q[i + 5]);
+            const prop: Prop = @enumFromInt(q[i + 6]);
+            if (prop == Prop.REFERENCE) {
+                // [or = 1]  [repeat 2] [op] [ti] [parsed] [typeId 2]
+                const repeat = start;
+                if (op == Op.equal) {
+                    const refType = q[7];
+                    if (refType == 2) {
+                        return false;
+                    } else if (refType == 0) {
+                        if (!fillReferenceFilter(ctx, q[i + 7 .. i + 10 + repeat * 8])) {
+                            return false;
+                        }
+                    }
+                    var j: u8 = 0;
+                    const query = q[i + 10 .. i + repeat * 8 + 10];
+                    if (repeat > 1) {
+                        if (!batch.equalsOr(8, v, query)) {
+                            return false;
+                        }
+                    } else {
+                        while (j < query.len) : (j += 1) {
+                            if (v[j] != query[j]) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                i += 10 + valueSize;
+            } else if (mode == Mode.orFixed) {
+                const repeat = readInt(u16, q, i + 7);
+                const query = q[i + 9 .. i + valueSize * repeat + 9];
+                if (op == Op.equal) {
+                    const value = v[start .. start + valueSize];
+                    if (!batch.equalsOr(valueSize, value, query)) {
+                        return false;
+                    }
+                } else if (op == Op.has and prop == Prop.REFERENCES) {
+                    if (!batch.simdReferencesHas(query, v)) {
                         return false;
                     }
                 }
-            } else if (op == Op.has) {
-                if (start > 0) {
-                    std.log.err("Start + has not supported in filters", .{});
-                    return false;
+                i += 9 + valueSize * repeat;
+            } else if (mode == Mode.andFixed) {
+                const repeat = readInt(u16, q, i + 7);
+                const query = q[i + 9 .. i + valueSize * repeat + 9];
+                if (op == Op.equal) {
+                    if (v.len / valueSize != repeat) {
+                        return false;
+                    }
+                    var j: u8 = 0;
+                    while (j < query.len) : (j += 1) {
+                        if (v[j] != query[j]) {
+                            return false;
+                        }
+                    }
                 }
-                if (!batch.simdReferencesHasSingle(readInt(u32, query, 0), v)) {
-                    return false;
+                i += 9 + valueSize * repeat;
+            } else if (mode == Mode.default) {
+                const query = q[i + 7 .. i + valueSize + 7];
+                if (op == Op.equal) {
+                    const value = v[start .. start + valueSize];
+                    var j: u8 = 0;
+                    while (j < query.len) : (j += 1) {
+                        if (value[j] != query[j]) {
+                            return false;
+                        }
+                    }
+                } else if (op == Op.has) {
+                    if (start > 0) {
+                        std.log.err("Start + has not supported in filters", .{});
+                        return false;
+                    }
+                    if (!batch.simdReferencesHasSingle(readInt(u32, query, 0), v)) {
+                        return false;
+                    }
+                } else if (Op.isNumerical(op)) {
+                    if (!num.compare(valueSize, start, op, query, v, prop)) {
+                        return false;
+                    }
                 }
-            } else if (Op.isNumerical(op)) {
-                if (!num.compare(valueSize, start, op, query, v, prop)) {
-                    return false;
-                }
+                i += 7 + valueSize;
             }
-            i += 7 + valueSize;
         }
     }
     return true;
