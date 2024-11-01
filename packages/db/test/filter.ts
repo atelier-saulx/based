@@ -740,20 +740,11 @@ await test('string', async (t) => {
     if (i === 2) {
       console.log(new Uint8Array(Buffer.from('#' + i)))
     }
-
-    const str =
-      String.fromCharCode(~~(Math.random() * high - lower) + lower) +
-      String.fromCharCode(~~(Math.random() * high - lower) + lower)
-    // String.fromCharCode(~~(Math.random() * high) + lower)
-
-    console.log(str)
-
+    const str = 'en'
     db.create('article', {
       type: 'gossip',
       code: str,
-      // code: 'en',
-
-      // name: 'Gossip #' + i,
+      name: 'Gossip #' + i,
       body: compressedItaly,
       stuff: Buffer.from('#' + i),
     })
@@ -766,8 +757,27 @@ await test('string', async (t) => {
   // db.query('article').range(0, 10).get().inspect(2)
 
   // If buffer it will be treated as parsed string
+  deepEqual(
+    db
+      .query('article')
+      .filter('stuff', '=', Buffer.from('#' + 2))
+      .range(0, 10)
+      .get()
+      .toObject(),
+    [
+      {
+        id: 3,
+        type: 'gossip',
+        code: 'en',
+        name: 'Gossip #2',
+        body: '\n Main menu\n \n WikipediaThe Free Encycloped...',
+        stuff: new Uint8Array([35, 50]),
+      },
+    ],
+  )
+
   db.query('article')
-    .filter('stuff', '=', Buffer.from('#' + 2))
+    .filter('body', '=', compressedItaly)
     .range(0, 10)
     .get()
     .inspect(10)
