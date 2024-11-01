@@ -126,21 +126,31 @@ declare global {
         ) => Promise<any>
       }
 
-      type Terminal = {
-        title: string
-        header?: string[]
-        lines?: {
-          sort?: 'asc' | 'desc'
+      namespace Terminal {
+        type Get = {
+          title: string
+          header?: string[]
+          rows?: {
+            sort?: 'asc' | 'desc'
+          }
+          scrollMode?: 'item' | 'index'
         }
-      }
 
-      type TerminalFunctions = {
-        render: () => void
-        kill: (fn: any) => void
-        header: (content: string[]) => void
-        addLine: (content: string | string[]) => void
-        setTable?: () => void
-        autoScroll?: boolean
+        type ContentRaw = string | string[]
+        type ContentPrepared = string[]
+
+        type ContentFunction = (
+          content: Based.Context.Terminal.ContentRaw,
+        ) => void
+
+        type ReturnedFunctions = {
+          render: () => void
+          kill: (fn: any) => void
+          header: TerminalContentFunction
+          addRow: TerminalContentFunction
+          setTable?: () => void
+          autoScroll?: boolean
+        }
       }
     }
 

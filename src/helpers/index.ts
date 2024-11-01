@@ -1,6 +1,6 @@
 export * from './globalOptions/index.js'
 export * from './backups/index.js'
 export * from './logs/index.js'
-export * from './visualizer/index.js'
+export * from './logs/visualizer.js'
 export * from './tests/index.js'
 export * from './context/index.js'

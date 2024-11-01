@@ -1,4 +1,4 @@
-import { parseMessage } from '../../shared/parseMessage.js'
+import { colorize } from '../../shared/colorize.js'
 import { spinner } from '../../shared/spinner.js'
 
 const iconDecider = (icon: boolean | string, defaultValue: string): string => {
@@ -20,7 +20,7 @@ export const contextPrint = (
       state.display === 'info' ||
       state.display === 'success'
     ) {
-      spinner.start(parseMessage(message))
+      spinner.start(colorize(message))
     }
 
     return contextPrint(state)
@@ -36,13 +36,13 @@ export const contextPrint = (
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'info') {
       if (!icon) {
-        console.info(parseMessage(message))
+        console.info(colorize(message))
         return contextPrint(state)
       }
 
       spinner.stopAndPersist({
         symbol: iconDecider(icon, state.emojis.info),
-        text: parseMessage(message),
+        text: colorize(message),
       })
     }
 
@@ -54,13 +54,13 @@ export const contextPrint = (
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'success') {
       if (!icon) {
-        console.info(parseMessage(message))
+        console.info(colorize(message))
         return contextPrint(state)
       }
 
       spinner.stopAndPersist({
         symbol: iconDecider(icon, state.emojis.success),
-        text: parseMessage(message),
+        text: colorize(message),
       })
     }
 
@@ -72,13 +72,13 @@ export const contextPrint = (
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'warning') {
       if (!icon) {
-        console.info(parseMessage(message))
+        console.info(colorize(message))
         return contextPrint(state)
       }
 
       spinner.stopAndPersist({
         symbol: iconDecider(icon, state.emojis.warning),
-        text: parseMessage(message),
+        text: colorize(message),
       })
     }
 
@@ -91,13 +91,13 @@ export const contextPrint = (
   ): void => {
     if (state.display === 'verbose' || state.display === 'error') {
       if (!icon) {
-        console.info(parseMessage(message))
+        console.info(colorize(message))
         process.exit(killCode)
       }
 
       spinner.stopAndPersist({
         symbol: iconDecider(icon, state.emojis.error),
-        text: parseMessage(message),
+        text: colorize(message),
       })
     }
 
@@ -119,7 +119,7 @@ export const contextPrint = (
       return contextPrint(state)
     }
 
-    console.info(parseMessage('<gray>─</gray>').repeat(width))
+    console.info(colorize('<gray>─</gray>').repeat(width))
 
     return contextPrint(state)
   },

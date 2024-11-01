@@ -3,7 +3,7 @@ import {
   AppContext,
   dateAndTime,
   dateOnly,
-  parseMessage,
+  colorize,
 } from '../../shared/index.js'
 import { isValid, parse } from 'date-fns'
 import { contextParse } from './parse.js'
@@ -26,7 +26,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       const value: string = await input({
-        message: parseMessage(message),
+        message: colorize(message),
         validate: (value) =>
           (skip && value.toLowerCase() === 's') ||
           (today && value.toLowerCase() === 't') ||
@@ -60,7 +60,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       const value = await input({
-        message: parseMessage(message),
+        message: colorize(message),
         validate: (value) =>
           (skip && value.toLowerCase() === 's') ||
           (now && value.toLowerCase() === 'n') ||
@@ -88,7 +88,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }
 
       const prompt = input({
-        message: parseMessage(message),
+        message: colorize(message),
         required: true,
         validate: (value) => (skip && value === 's') || !isNaN(Number(value)),
       })
@@ -102,7 +102,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
 
     email: async (message: string) =>
       input({
-        message: parseMessage(message),
+        message: colorize(message),
         required: true,
         validate: (email) => {
           const at: number = email.lastIndexOf('@')
@@ -117,7 +117,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       defaultValue: boolean = true,
     ) {
       return confirm({
-        message: parseMessage(message),
+        message: colorize(message),
         default: defaultValue,
       })
     },
@@ -130,7 +130,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       ) => boolean | string | Promise<string | boolean>,
     ) =>
       input({
-        message: parseMessage(message),
+        message: colorize(message),
         required: true,
         default: defaultValue,
         validate,
@@ -152,22 +152,22 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
         }
 
         return {
-          name: parseMessage(choice.name),
-          description: parseMessage(choice.description),
+          name: colorize(choice.name),
+          description: colorize(choice.description),
           value: choice.value,
         }
       })
 
       if (multiSelection) {
         return checkbox({
-          message: parseMessage(message) + ':',
+          message: colorize(message) + ':',
           choices,
           required: true,
         })
       }
 
       return select({
-        message: parseMessage(message) + ':',
+        message: colorize(message) + ':',
         choices,
       })
     },
