@@ -512,7 +512,13 @@ static int replace_str(struct selva_string *s, const char *str, size_t len)
         }
 
         memcpy(s->emb, str, len);
+#ifdef __STDC_LIB_EXT1__
         (void)memset_s(s->emb + len, s->len - len, 0, s->len - len);
+#else
+        if (len < s->len) {
+            memset(s->emb + len, 0, s->len - len);
+        }
+#endif
     } else if (flags & SELVA_STRING_MUTABLE) {
         const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
