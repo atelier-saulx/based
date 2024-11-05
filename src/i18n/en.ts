@@ -6,6 +6,8 @@ export default {
   version: {
     parameter: '-v, --version',
   },
+  currency: '$${value}',
+  monthlySubscription: 'month',
   help: {
     option: {
       parameter: '-h, --help',
@@ -286,8 +288,13 @@ export default {
               description: 'The path to save the file.',
             },
             {
+              parameter: '--format <format>',
+              description:
+                'The extension of file you prefer (available formats: ts | json | js).',
+            },
+            {
               parameter: '-n, --name <name>',
-              description: 'The name of your machine.',
+              description: 'Give a name to your machine.',
             },
             {
               parameter: '-d, --description <description>',
@@ -300,21 +307,54 @@ export default {
             {
               parameter: '-m, --machine <machine>',
               description: 'The size of your machine.',
-              default: 't3.micro',
             },
             {
               parameter: '--min <min>',
               description:
                 'The minimum number of machines that will run your app.',
-              default: '1',
             },
             {
               parameter: '--max <max>',
               description:
                 'The maximum number of machines that you want to scale your app.',
-              default: '1',
             },
           ],
+          methods: {
+            inputPath:
+              'Path to save the infra file: (If the file already exists it will be overwritten)',
+            warning:
+              '<b>Warning!</b> Only manipulate the infra information if you really know what you’re doing. <b>Those actions cannot be undone.</b>',
+            name: 'Give a name to your machine: <dim>(name has to be unique)</dim>',
+            description: 'Give a description to your machine:',
+            domains:
+              'The domains to be assigned to the machine: <dim>(separated by commas)</dim>',
+            machine: 'Select the size of your machine',
+            min: 'The minimum number of machines that will run your app:',
+            max: 'The maximum number of machines that you want to scale your app:',
+            cannotInit:
+              'It is not possible to create an infrastructure without the necessary information. Please try again.',
+            fileExtension: 'What file format would you like to use',
+            validations: {
+              machine: 'machine',
+              min: 'min',
+              max: 'max',
+              path: 'path',
+            },
+            summary: {
+              header: '<b>Infra summary:</b>',
+              name: '<b>Name:</b> <reset><cyan>${name}</cyan></reset>',
+              description:
+                '<b>Description:</b> <reset><cyan>${description}</cyan></reset>',
+              domains: '<b>Domains:</b> <reset><cyan>${domains}</cyan></reset>',
+              machine: '<b>Machine:</b> <reset><cyan>${machine}</cyan></reset>',
+              scale:
+                '<b>Scale:</b> [Min: <reset><cyan>${min}</cyan></reset> / Max: <reset><cyan>${max}</cyan></reset>]',
+              services:
+                '<b>Services included:</b> <reset><cyan>${services}</cyan></reset>',
+              saveIn:
+                '<b>Saving infra file in:</b> <reset><cyan>${path}</cyan></reset>',
+            },
+          },
         },
         overview: {
           description:
@@ -366,6 +406,7 @@ export default {
     408: 'Connection <b>timeout</b> while trying to reach the cloud. Please check your network connection and try again.',
     404: 'Fatal error while trying to establish a <b>connection to the cloud</b>. Check your <b>${file}</b> file or <b>arguments</b> and try again. ${error}',
     499: 'Could not connect. Check your <b>${file}</b> file or <b>your arguments</b> and try again.',
+    901: "The <b>${option}</b> provided is not valid: '<b>${value}</b>'. Check it and try again.",
   },
   alias: {
     isExternalPath:
@@ -386,6 +427,12 @@ export default {
     },
   },
   methods: {
+    extensions: {
+      ts: 'TypeScript (recommended)',
+      js: 'JavaScript',
+      json: 'JSON',
+    },
+    aborted: 'Operation aborted.',
     login: {
       otherUser: 'Other user',
       selectUser: 'Select user',

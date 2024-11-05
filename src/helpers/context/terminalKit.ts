@@ -4,7 +4,7 @@ const term = terminalKit.terminal
 export function contextTerminalKit({
   title,
   header: headerContent = [],
-  rows: { sort: sortOrder = 'desc' } = {},
+  rows: { sort: sortOrder = 'desc' },
   scrollMode = 'item',
 }: Based.Context.Terminal.Get): Based.Context.Terminal.ReturnedFunctions {
   let autoScroll = true

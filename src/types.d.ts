@@ -42,7 +42,8 @@ declare global {
       }
     }
 
-    type BasedFile = 'based' | 'based.schema' | 'based.config' | 'based.infra'
+    type File = 'based' | 'based.schema' | 'based.config' | 'based.infra'
+    type Extensions = 'js' | 'json' | 'ts'
 
     namespace Context {
       type MouseEvent = {
@@ -151,6 +152,7 @@ declare global {
         default: (
           message: string,
           defaultValue: string,
+          skip?: boolean,
           validate?: (
             value: string,
           ) => boolean | string | Promise<string | boolean>,
@@ -253,13 +255,14 @@ declare global {
 
     namespace Infra {
       type Init = {
-        name
-        description
-        domains
-        machine
-        min
-        max
-        path
+        name?: string
+        description?: string
+        domains?: string[]
+        machine?: string
+        min?: string | number
+        max?: string | number
+        path?: string
+        format?: Based.Extensions
       }
     }
 

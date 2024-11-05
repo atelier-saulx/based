@@ -17,9 +17,7 @@ export const filter =
     const logOptions: string[] = ['all', 'info', 'error']
 
     const errorMessage = (option: string, value: string | number) => {
-      throw new Error(
-        `The <b>${option}</b> provided is not valid: '<b>${value}</b>'. Check it and try again.`,
-      )
+      throw new Error(context.i18n('errors.901', option, value))
     }
 
     if (!filters.stream && filters.sort !== 'asc' && filters.sort !== 'desc') {

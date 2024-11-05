@@ -1,5 +1,6 @@
 // TODO
-// We could have an cloud function to retrieve all the available endpoints, this also could be integrated with feature flags
+// We could have an cloud function to retrieve all the available
+// endpoints, this also could be integrated with feature flags
 export const endpoints = {
   CONNECTIONS: {
     client: 'project',
@@ -84,6 +85,18 @@ export const endpoints = {
   LOGS_ENV: {
     client: 'env',
     endpoint: 'based:logs',
+    type: 'query',
+  },
+  INFRA_MACHINE_TEMPLATE: {
+    client: 'cluster',
+    endpoint: 'machine-templates',
+    type: 'query',
+  },
+  // TODO
+  // The return of this endpoint does not satisfy the requirements of the feature
+  INFRA_MACHINE_TYPES: {
+    client: 'cluster',
+    endpoint: 'machine-types',
     type: 'query',
   },
 } as const satisfies Based.API.Gateway.Endpoints<

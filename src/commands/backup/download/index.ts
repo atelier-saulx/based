@@ -39,8 +39,8 @@ export const getDownload = async ({
   file = '',
   path = '',
   date = '',
-  retry = 3,
 }: Based.Backups.Downloads): Promise<void> => {
+  let retry: number = 3
   let isValid: boolean = false
   const basedClient = await context.getBasedClient()
   const { skip } = context.getGlobalOptions()
@@ -93,7 +93,7 @@ export const getDownload = async ({
     .info(`<b>Download summary:</b>`)
     .info(`<b>Database:</b> <reset><cyan>${selectedDB}</cyan></reset>`)
     .info(`<b>Backup file:</b> <reset><cyan>${selectedFile}</cyan></reset>`)
-    .info(`<b>Saving to:</b> <reset><cyan>${path}</cyan></reset>`)
+    .info(`<b>Saving backup file in:</b> <reset><cyan>${path}</cyan></reset>`)
     .line()
 
   if (!skip) {
