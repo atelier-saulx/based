@@ -22,7 +22,7 @@ export const dev = async (program: Command) => {
   const cmd: Command = context.commandMaker('dev')
 
   cmd.action(async ({ functions, port }) => {
-    const { basedClient } = await context.getBasedClients()
+    const basedClient = await context.getBasedClient()
 
     const { BasedServer } = await import('@based/server')
     const ip: string = getMyIp()
@@ -280,7 +280,7 @@ export const dev = async (program: Command) => {
 
                 return `${html.substring(0, i)}${liveReloadScript(
                   lrPort,
-                )}${basedOptsScript(basedClient.opts)}${html.substring(i)}`
+                )}${basedOptsScript(basedClient.get('project').opts)}${html.substring(i)}`
               },
             }
           } else {

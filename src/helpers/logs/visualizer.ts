@@ -6,7 +6,7 @@ export const visualizer = async (
   context: AppContext,
   filters: Based.Logs.Filter,
 ) => {
-  const { destroy } = await context.getBasedClients()
+  const { destroy } = await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
 
   const templateLabels = (name: string, value: string) =>

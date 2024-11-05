@@ -1,9 +1,8 @@
 import { join } from 'node:path'
 import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
-import { getBasedClient } from './SharedBasedClient.js'
 import { BasedClient, BasedOpts } from '@based/client'
-import { AppContext } from './AppContext.js'
+import { getBasedClient, AppContext } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
@@ -31,6 +30,45 @@ const authenticateUser = async (
   return {
     ...(await hub.once('authstate-change')),
     email,
+  }
+}
+
+// TODO
+// This logic should be in the client, not here
+const buildClients = (
+  cluster: BasedClient,
+  env: BasedClient,
+  project: BasedClient,
+): Based.API.Client => {
+  const clients = {
+    cluster,
+    env,
+    project,
+  }
+
+  const call: Based.API.Client['call'] = (gatewayFunction, payload) => {
+    if (!gatewayFunction) {
+      return
+    }
+
+    const type: Based.API.Gateway.Endpoint['type'] = gatewayFunction.type
+    const client = gatewayFunction.client
+
+    return clients[client]?.[type](gatewayFunction.endpoint, payload) as any
+  }
+
+  const destroy: Based.API.Client['destroy'] = () => {
+    project.destroy()
+    env.destroy()
+    cluster.destroy()
+  }
+
+  const get: Based.API.Client['get'] = (client) => clients[client]
+
+  return {
+    call,
+    destroy,
+    get,
   }
 }
 
@@ -73,7 +111,7 @@ const hubConnection = async (
 export const login = async ({
   email,
   selectUser,
-}: Based.Auth.Login): Promise<Based.Auth.Clients> => {
+}: Based.Auth.Login): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
 
@@ -181,14 +219,5 @@ export const login = async ({
 
   context.print.success(context.i18n('methods.login.success', user.email), '👨‍🦱')
 
-  return {
-    basedClient: client,
-    adminHubBasedCloud: adminHub,
-    envHubBasedCloud: envHub,
-    destroy() {
-      client.destroy()
-      adminHub.destroy()
-      envHub.destroy()
-    },
-  }
+  return buildClients(adminHub, envHub, client)
 }

@@ -6,8 +6,7 @@ export const subscribeLogs = async (
   filters: Based.Logs.Filter,
   renderData: Based.Logs.RenderData,
 ) => {
-  const { envHubBasedCloud, adminHubBasedCloud } =
-    await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
   let adminLogsPrevious: Based.Logs.AdminLogsData[] = []
   let envLogsPrevious: Based.Logs.EnvLogsData[] = []
@@ -21,8 +20,8 @@ export const subscribeLogs = async (
   context.print.stop()
 
   if (isBoth || isOnlyInfra || isNone) {
-    adminHubBasedCloud
-      .query('logs', {
+    basedClient
+      .call(context.endpoints.LOGS_CLUSTER, {
         cluster,
         org,
         env,
@@ -42,8 +41,8 @@ export const subscribeLogs = async (
   }
 
   if (isBoth || isOnlyApp || isNone) {
-    envHubBasedCloud
-      .query('based:logs')
+    basedClient
+      .call(context.endpoints.LOGS_ENV)
       .subscribe(async (data: Based.Logs.EnvLogsData[]) => {
         if (!Array.isArray(data)) {
           throw new Error('Fatal error reading your logs. Try again.')

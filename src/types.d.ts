@@ -1,10 +1,47 @@
 import { BasedFunctionConfig } from '@based/functions'
 import { Separator } from '@inquirer/prompts'
 import { AuthState, BasedClient } from '@based/client'
+import { BasedQuery } from '@based/functions'
 import { AppContext } from './shared/index.js'
+import { cloudFunctions } from './shared/cloudFunctions'
 
 declare global {
   namespace Based {
+    namespace API {
+      type Client = {
+        call<T extends Based.API.Gateway.Endpoint>(
+          gatewayFunction: T,
+          payload?: any,
+        ): T extends { type: 'query' } ? BasedQuery<any> : Promise<any>
+
+        destroy: () => void
+        get: (client: Based.API.Gateway.Endpoint['client']) => BasedClient
+      }
+
+      namespace Gateway {
+        type EndpointBase = {
+          client: 'cluster' | 'env' | 'project'
+          endpoint: string
+        }
+
+        type QueryEndpoint = EndpointBase & {
+          type: 'query'
+        }
+
+        type CallEndpoint = EndpointBase & { type: 'call' }
+
+        type StreamEndpoint = EndpointBase & {
+          type: 'stream'
+        }
+
+        type Endpoint = QueryEndpoint | CallEndpoint | StreamEndpoint
+
+        type Endpoints<T extends Record<string, Endpoint>> = {
+          [K in keyof T]: Endpoint
+        }
+      }
+    }
+
     type BasedFile = 'based' | 'based.schema' | 'based.config' | 'based.infra'
 
     namespace Context {
@@ -181,13 +218,6 @@ declare global {
 
       type AuthenticatedUser = AuthState & {
         email: string
-      }
-
-      type Clients = {
-        basedClient: BasedClient
-        adminHubBasedCloud: BasedClient
-        envHubBasedCloud: BasedClient
-        destroy: () => void
       }
 
       type Login = {

@@ -5,8 +5,7 @@ export const getLogs = async (
   filters: Based.Logs.Filter,
   renderData: Based.Logs.RenderData,
 ) => {
-  const { envHubBasedCloud, adminHubBasedCloud } =
-    await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
   const finalData = []
   const isOnlyApp: boolean = filters.app && !filters.infra
@@ -18,8 +17,8 @@ export const getLogs = async (
 
   if (isBoth || isOnlyInfra || isNone) {
     finalData.push(
-      await adminHubBasedCloud
-        .query('logs', {
+      await basedClient
+        .call(context.endpoints.LOGS_CLUSTER, {
           cluster,
           org,
           env,
@@ -30,7 +29,7 @@ export const getLogs = async (
   }
 
   if (isBoth || isOnlyApp || isNone) {
-    finalData.push(await envHubBasedCloud.query('based:logs').get())
+    finalData.push(await basedClient.call(context.endpoints.LOGS_ENV).get())
   }
 
   renderData(finalData.flat())

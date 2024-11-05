@@ -12,7 +12,7 @@ export const filter =
   async (filters: Based.Logs.Filter): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
-    const { basedClient, destroy } = await context.getBasedClients()
+    const basedClient = await context.getBasedClient()
     const { skip } = context.getGlobalOptions()
     const logOptions: string[] = ['all', 'info', 'error']
 
@@ -96,7 +96,7 @@ export const filter =
 
         if (filterByFunction) {
           const { functions } = await basedClient
-            .query('db', {
+            .call(context.endpoints.LOGS_FILTER, {
               $db: 'config',
               functions: {
                 $all: true,
@@ -185,7 +185,7 @@ export const filter =
       await visualizer(context, filters)
 
       if (!filters.stream) {
-        destroy()
+        basedClient.destroy()
         return
       }
     } catch (error) {

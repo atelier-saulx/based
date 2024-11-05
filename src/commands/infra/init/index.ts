@@ -8,7 +8,7 @@ export const init =
   async ({ path }) => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
-    const { destroy } = await context.getBasedClients()
+    const { destroy } = await context.getBasedClient()
     const { skip } = context.getGlobalOptions()
 
     if (!skip) {

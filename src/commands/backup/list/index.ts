@@ -15,7 +15,7 @@ export const list =
     const context: AppContext = AppContext.getInstance(program)
     const { skip } = context.getGlobalOptions()
     const { cluster, org, env, project } = await context.getProgram()
-    const { destroy } = await context.getBasedClients()
+    const { destroy } = await context.getBasedClient()
 
     sort = sort.toLowerCase()
 
@@ -105,13 +105,13 @@ export const getList = async (
   sort = 'desc',
   verbose: boolean = false,
 ): Promise<BackupsSorted> => {
-  const { envHubBasedCloud } = await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
 
   if (verbose) {
     context.print.line().loading(`Searching for databases and backups...`)
   }
 
-  const { backups } = await envHubBasedCloud.call('based:backups-list')
+  const { backups } = await basedClient.call(context.endpoints.BACKUPS_LIST)
 
   if (!Object.keys(backups).length) {
     throw new Error(`There were no backups found.`)

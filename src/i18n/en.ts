@@ -364,7 +364,7 @@ export default {
   errors: {
     401: 'It seems you are not logged in. One possible reason could be an expired or invalid token. Please log in again to continue.',
     408: 'Connection <b>timeout</b> while trying to reach the cloud. Please check your network connection and try again.',
-    404: 'Fatal error while trying to establish a <b>connection to the cloud</b>. Check your <b>${file}</b> file or <b>arguments</b> and try again.',
+    404: 'Fatal error while trying to establish a <b>connection to the cloud</b>. Check your <b>${file}</b> file or <b>arguments</b> and try again. ${error}',
     499: 'Could not connect. Check your <b>${file}</b> file or <b>your arguments</b> and try again.',
   },
   alias: {

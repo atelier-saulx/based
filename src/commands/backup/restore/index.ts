@@ -19,7 +19,7 @@ export const restore =
   async ({ db, file, date }): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
-    const { destroy } = await context.getBasedClients()
+    const { destroy } = await context.getBasedClient()
 
     try {
       await setRestore({
@@ -44,11 +44,11 @@ export const setRestore = async ({
   date = '',
   verbose = false,
 }: Based.Backups.Restore) => {
-  const { basedClient } = await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
   const { skip } = context.getGlobalOptions()
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-  const defaultDBInfo = await basedClient.call('based:db-list')
+  const defaultDBInfo = await basedClient.call(context.endpoints.DB_LIST)
   const dbInfo = mountDBName(defaultDBInfo, db)
   const backups: BackupsSorted = await getList(context)
 
@@ -107,7 +107,7 @@ export const setRestore = async ({
     try {
       context.print.loading('Restoring your backup...')
 
-      await basedClient.call('based:backups-select', {
+      await basedClient.call(context.endpoints.BACKUPS_SELECT, {
         db: dbInfo,
         key: selectedFile,
       })
@@ -120,7 +120,7 @@ export const setRestore = async ({
     try {
       context.print.loading('Uploading file...')
 
-      const result = await basedClient.stream('based:backups-upload', {
+      const result = await basedClient.call(context.endpoints.BACKUPS_UPLOAD, {
         path: selectedFile,
         payload: {
           db: dbInfo,

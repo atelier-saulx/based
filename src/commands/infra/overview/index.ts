@@ -20,7 +20,7 @@ export const overview =
   }
 
 export const getOverview = async (context: AppContext, stream = true) => {
-  const { basedClient, destroy } = await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
   const { cluster, org, project, env } = context.get('basedProject')
 
   const headerTemplate = (connections: number = 0) => {
@@ -38,9 +38,11 @@ export const getOverview = async (context: AppContext, stream = true) => {
     },
   })
 
-  await basedClient.query('based:connections').subscribe((connections) => {
-    header(headerTemplate(connections))
-  })
+  await basedClient
+    .call(context.endpoints.CONNECTIONS)
+    .subscribe((connections) => {
+      header(headerTemplate(connections))
+    })
 
   // const rows = [
   // "\u001b[0m\u001b[90m31/10/2024-16:06:40:058\u001b[39m \u001b[1m\u001b[35m[infra]\u001b[39m\u001b[22m \u001b[1m\u001b[34m[info]\u001b[39m\u001b[22m \u001b[33m[service: \u001b[1mdb-sub-manager\u001b[22m]\u001b[39m \u001b[32m[machineID: \u001b[1mma241d7ff6\u001b[22m]\u001b[39m \u001b[34m[IP: \u001b[1m35.159.84.35\u001b[22m]\u001b[39m\nGet subscription took 332 ms\n{\n  '$language': 'en',\n  data: {\n    id: true,\n    headline: true,\n    abstract: true,\n    membership: true,\n    type: true,\n    articleFormat: true,\n    publishDate: true,\n    contributorsText: true,\n    author: { id: true, firstName: true, lastName: true },\n    img: { id: true, src: true, credit: true },\n    headerImageCaption: true,\n    section: {\n      id: true,\n      title: true,\n      type: true,\n      '$list': { '$find': { '$filter': [Object] } }\n    },\n    articleType: {\n      id: true,\n      title: true,\n      type: true,\n      '$list': { '$find': { '$filter': [Object] } }\n    },\n    '$list': {\n      '$sort': { '$field': 'publishDate', '$order': 'desc' },\n      '$limit': 100,\n      '$find': {\n        '$traverse': 'children',\n        '$filter': [ [Object], [Object], [Object], [Object] ]\n      }\n    }\n  },\n  '$includeMeta': true,\n  '$subscription': '8a01d8854942990b48efd6fd0d4df07fb5f080111018c50921e56234215a6c9f',\n  '$originDescriptors': {\n    default: {\n      host: '172.35.84.151',\n      port: 8000,\n      name: 'default',\n      type: 'origin',\n      index: 0\n    }\n  },\n  '$firstEval': true\n}\n\u001b[0m",
@@ -68,7 +70,7 @@ export const getOverview = async (context: AppContext, stream = true) => {
   }, 2e3)
 
   kill(() => {
-    destroy()
+    basedClient.destroy()
     process.exit(0)
   })
 }

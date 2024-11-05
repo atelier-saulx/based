@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import {
-  contextBasedClients,
+  contextBasedClient,
   contextGlobalOptions,
   contextParse,
   contextProgram,
@@ -9,6 +9,7 @@ import {
   contextCommandMaker,
   contextTerminalKit,
   eventEmitter,
+  endpoints,
 } from '../helpers/index.js'
 import { i18n } from '@based/i18n'
 import { languages } from '../i18n/index.js'
@@ -39,12 +40,13 @@ export class AppContext {
   public commandMaker = contextCommandMaker
   public getGlobalOptions = contextGlobalOptions
   public getProgram = contextProgram
-  public getBasedClients = contextBasedClients
+  public getBasedClient = contextBasedClient
   public terminalKit = contextTerminalKit
   public parse = contextParse
   public input = contextInput(this)
   public print = contextPrint(this.state)
   public event: EventEmitter = eventEmitter
+  public endpoints = endpoints
 
   private constructor(program?: Command, internationalization?: any) {
     if (!program && !this.program) {

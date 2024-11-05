@@ -4,7 +4,6 @@ import { parseFunctions, parseSchema, AppContext } from '../../shared/index.js'
 import { hash, hashCompact } from '@saulx/hash'
 import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
-import { BasedClient } from '@based/client'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
 import ts from 'typescript'
@@ -26,51 +25,60 @@ const findType = (node: ts.Node, typeName: string) => {
 }
 
 const queuedFileUpload = queued(
-  async (client: BasedClient, payload: any, destUrl: string) => {
+  async (
+    context: AppContext,
+    basedClient: Based.API.Client,
+    payload: any,
+    destUrl: string,
+  ) => {
     const { status } = await fetch(destUrl, { method: 'HEAD' })
     if (status === 200) {
       return { src: destUrl }
     }
-    return client.stream('db:file-upload', payload)
+    return basedClient.call(context.endpoints.DEPLOY_FILE_UPLOAD, payload)
   },
   { dedup: (_client, payload) => hash(payload), concurrency: 10 },
 )
 
 const queuedFnDeploy = queued(
   async (
-    basedClient: BasedClient,
+    context: AppContext,
+    basedClient: Based.API.Client,
     checksum: number,
     config: any,
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {
-    const { error, distId } = await basedClient.stream('based:set-function', {
-      contents: js.contents,
-      payload: {
-        checksum,
-        config,
+    const { error, distId } = await basedClient.call(
+      context.endpoints.DEPLOY_SET_FUNCTION,
+      {
+        contents: js.contents,
+        payload: {
+          checksum,
+          config,
+        },
       },
-    })
+    )
 
     if (error) {
       throw new Error(error)
     }
 
     if (distId) {
-      await basedClient
-        .stream('based:set-sourcemap', {
+      try {
+        await basedClient.call(context.endpoints.DEPLOY_SET_SOURCEMAP, {
           contents: sourcemap.contents,
           payload: {
             distId,
             checksum,
           },
         })
-        .catch((error) => {
-          console.error(
-            pc.red(`could not save sourcemap for: ${config.name}`),
-            error.message,
-          )
-        })
+      } catch (error) {
+        console.error(
+          pc.red(`could not save sourcemap for: ${config.name}`),
+          error.message,
+        )
+      }
     } else {
       console.error(pc.red('no dist id returned from set-function'))
     }
@@ -86,8 +94,8 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      const { basedClient, destroy } = await context.getBasedClients()
-      const { publicPath } = await basedClient.call('based:env-info')
+      const basedClient = await context.getBasedClient()
+      const { publicPath } = await basedClient.call(context.endpoints.ENV_INFO)
       const { nodeBundles, browserBundles, schema, favicons, configs } =
         await parseFunctions(context, functions, watch && update, publicPath)
 
@@ -97,7 +105,7 @@ export const deploy = async (program: Command) => {
       await update(null)
 
       if (!watch) {
-        destroy()
+        basedClient.destroy()
       }
 
       async function update(err) {
@@ -119,7 +127,10 @@ export const deploy = async (program: Command) => {
             spinner.start()
             const text = textFactory('deployed', 'schema', schemaPayload.length)
             spinner.start(text(0))
-            await basedClient.call('db:set-schema', schemaPayload)
+            await basedClient.call(
+              context.endpoints.DEPLOY_SET_SCHEMA,
+              schemaPayload,
+            )
             spinner.succeed(text())
           }
         }
@@ -164,6 +175,7 @@ export const deploy = async (program: Command) => {
               const id = `fi${hashCompact(fileName, 8)}`
               const destUrl = `${publicPath}/${fileName}`
               await queuedFileUpload(
+                context,
                 basedClient,
                 {
                   contents,
@@ -221,8 +233,9 @@ export const deploy = async (program: Command) => {
           const text = textFactory('deployed', 'function', deploys.length)
           // deploy functions
           let deploying = 0
-          let url = basedClient.connection?.ws.url
-            .replace('ws://', 'http://')
+          let url = basedClient
+            .get('project')
+            .connection?.ws.url.replace('ws://', 'http://')
             .replace('wss://', 'https://')
 
           url = url.substring(0, url.lastIndexOf('/'))
@@ -232,6 +245,7 @@ export const deploy = async (program: Command) => {
           const logs = await Promise.all(
             deploys.map(async ({ checksum, config, js, sourcemap }) => {
               await queuedFnDeploy(
+                context,
                 basedClient,
                 checksum,
                 config,

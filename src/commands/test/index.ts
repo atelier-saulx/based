@@ -10,7 +10,7 @@ export const test = async (program: Command): Promise<void> => {
   const cmd: Command = context.commandMaker('test')
 
   cmd.action(async ({ command, backup, restore, db, file, date }) => {
-    const { destroy } = await context.getBasedClients()
+    const { destroy } = await context.getBasedClient()
     const { skip } = context.getGlobalOptions()
     db = db !== '' ? db : 'default'
 

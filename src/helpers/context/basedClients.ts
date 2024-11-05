@@ -1,37 +1,22 @@
 import { login } from '../../shared/index.js'
 
-export async function contextBasedClients(): Promise<Based.Auth.Clients> {
-  let basedClients: Based.Auth.Clients = this.get('basedClients')
+export async function contextBasedClient(): Promise<Based.API.Client> {
+  let basedClient: Based.API.Client = this.get('basedClient')
   const { file } = await this.get('basedProject')
 
-  if (basedClients) {
-    return basedClients
+  if (basedClient) {
+    return basedClient
   }
 
-  if (!basedClients || !Object.keys(basedClients).length) {
-    basedClients = await login({})
-
-    if (
-      !basedClients.basedClient ||
-      !basedClients.adminHubBasedCloud ||
-      !basedClients.envHubBasedCloud
-    ) {
-      throw new Error(this.i18n('errors.404', file))
+  if (!basedClient || !Object.keys(basedClient).length) {
+    try {
+      basedClient = await login({})
+    } catch (error) {
+      throw new Error(this.i18n('errors.404', file, error))
     }
   }
 
-  const { basedClient, adminHubBasedCloud, envHubBasedCloud, destroy } =
-    basedClients
+  this.set('basedClient', basedClient)
 
-  basedClients = {
-    ...basedClients,
-    ...(basedClient !== undefined && { basedClient }),
-    ...(adminHubBasedCloud !== undefined && { adminHubBasedCloud }),
-    ...(envHubBasedCloud !== undefined && { envHubBasedCloud }),
-    ...(destroy !== undefined && { destroy }),
-  }
-
-  this.set('basedClients', basedClients)
-
-  return basedClients
+  return basedClient
 }

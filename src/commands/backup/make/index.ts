@@ -3,7 +3,7 @@ import { Command } from 'commander'
 
 export const make = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
-  const { destroy } = await context.getBasedClients()
+  const { destroy } = await context.getBasedClient()
 
   try {
     await setMake(context)
@@ -16,7 +16,7 @@ export const make = (program: Command) => async () => {
 }
 
 export const setMake = async (context: AppContext) => {
-  const { basedClient, adminHubBasedCloud } = await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
   const { org, env, project, file } = await context.getProgram()
   const { skip } = context.getGlobalOptions()
 
@@ -32,15 +32,20 @@ export const setMake = async (context: AppContext) => {
     }
   }
 
-  const { envId } = await basedClient.call('based:env-info').catch(() => {
+  let envId: number
+
+  try {
+    const envInfo = await basedClient.call(context.endpoints.ENV_INFO)
+    envId = envInfo.envId
+  } catch (error) {
     throw new Error(
       `Fatal error during <b>get your environment info</b>. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.`,
     )
-  })
+  }
 
   context.print.loading('Making a new backup...')
 
-  await adminHubBasedCloud.call('backup-env', {
+  await basedClient.call(context.endpoints.BACKUPS_ENV, {
     org,
     project,
     env,

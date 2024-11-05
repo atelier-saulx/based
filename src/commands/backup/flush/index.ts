@@ -12,7 +12,7 @@ export const flush =
   async ({ db, force }) => {
     const context: AppContext = AppContext.getInstance(program)
     const { cluster, org, env, project } = await context.getProgram()
-    const { destroy } = await context.getBasedClients()
+    const { destroy } = await context.getBasedClient()
 
     if (!force) {
       context.print.warning(
@@ -53,7 +53,7 @@ export const setFlush = async ({
   cluster,
   force,
 }: Based.Backups.Flush) => {
-  const { basedClient } = await context.getBasedClients()
+  const basedClient = await context.getBasedClient()
   const backups: BackupsSorted = await getList(context)
   let { selectedDB } = await backupsSelection({
     context,
@@ -64,7 +64,7 @@ export const setFlush = async ({
   })
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-  const defaultDBInfo = await basedClient.call('based:db-list')
+  const defaultDBInfo = await basedClient.call(context.endpoints.DB_LIST)
   const dbInfo = mountDBName(defaultDBInfo, selectedDB)
 
   context.print
@@ -91,7 +91,9 @@ export const setFlush = async ({
   try {
     context.print.loading('Flushing the current database...')
 
-    const result = await basedClient.call('based:db-flush', { db: dbInfo })
+    const result = await basedClient.call(context.endpoints.DB_FLUSH, {
+      db: dbInfo,
+    })
 
     if (!result.ok) {
       new Error(result)
