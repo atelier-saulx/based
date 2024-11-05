@@ -8,13 +8,14 @@ import {
   contextPrint,
   contextCommandMaker,
   contextTerminalKit,
-  eventEmitter,
   endpoints,
 } from '../helpers/index.js'
 import { i18n } from '@based/i18n'
 import { languages } from '../i18n/index.js'
-import '../helpers/context/eventEmitter.js'
-import EventEmitter from 'events'
+// TODO
+// We need an eventEmitter?
+// import EventEmitter from 'events'
+// import '../helpers/context/eventEmitter.js'
 
 export class AppContext {
   private static instance: AppContext
@@ -45,7 +46,7 @@ export class AppContext {
   public parse = contextParse
   public input = contextInput(this)
   public print = contextPrint(this.state)
-  public event: EventEmitter = eventEmitter
+  // public event: EventEmitter = eventEmitter
   public endpoints = endpoints
 
   private constructor(program?: Command, internationalization?: any) {

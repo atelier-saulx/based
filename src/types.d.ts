@@ -58,7 +58,7 @@ declare global {
 
       type DirectionsEvent = {
         name: 'up' | 'down' | 'left' | 'right'
-        from: 'mouse' | 'keyboard'
+        from: 'mouse' | 'keyboard' | 'wheel'
       }
 
       type Project = {
