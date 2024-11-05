@@ -43,13 +43,14 @@ export const getOverview = async (
     return colorize([
       `${context.get('appTitle')}`,
       `Viewing Infra for Environment: [${envLabels.join(' | ')}] ${stream ? '<b><red>LIVE</red></b>' : ''}`,
-      `Active Connections: <b>${connections}</b>`,
+      connections && `Active Connections: <b>${connections}</b>`,
     ])
   }
 
   if (monitor) {
-    const { kill, header, addRow } = context.terminalKit({
+    const { kill, header } = context.terminalKit({
       title: context.get('appName'),
+      header: headerTemplate(),
       rows: {
         sort: 'asc',
       },

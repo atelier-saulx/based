@@ -125,16 +125,29 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
     default: async (
       message: string,
       defaultValue: string = '',
-      validate?: (
-        value: string,
-      ) => boolean | string | Promise<string | boolean>,
-    ) =>
-      input({
+      skip: boolean = false,
+      validate: (value: string) => boolean | string | Promise<string | boolean>,
+    ) => {
+      if (skip) {
+        message = message + ' ' + context.i18n('context.input.skip')
+      }
+      return input({
         message: colorize(message),
         required: true,
         default: defaultValue,
-        validate,
-      }),
+        validate: (value) => {
+          if (!validate) {
+            return true
+          }
+
+          if (skip && value === 's') {
+            return true
+          }
+
+          return validate(value)
+        },
+      })
+    },
 
     select: async (
       message: string,
