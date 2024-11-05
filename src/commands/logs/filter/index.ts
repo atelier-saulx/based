@@ -186,8 +186,9 @@ export const filter =
 
       if (!filters.stream) {
         basedClient.destroy()
-        return
       }
+
+      return
     } catch (error) {
       throw new Error(error)
     }

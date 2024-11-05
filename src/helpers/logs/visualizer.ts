@@ -94,7 +94,6 @@ export const visualizer = async (
 
     kill(() => {
       destroy()
-      process.exit(0)
     })
 
     renderData = (data) => addRow(formatLogs(filterLogs(data, filters)))
