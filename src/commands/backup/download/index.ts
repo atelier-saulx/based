@@ -106,12 +106,14 @@ export const getDownload = async ({
 
   try {
     context.print.loading('Downloading file...')
+
     const response = await basedClient.call(
       context.endpoints.BACKUPS_DOWNLOAD,
       {
         key: selectedFile,
       },
     )
+
     context.print.stop()
 
     try {

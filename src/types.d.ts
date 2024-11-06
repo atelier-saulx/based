@@ -257,10 +257,18 @@ declare global {
       type Init = {
         name?: string
         description?: string
+        standby?: boolean
         domains?: string[]
         machine?: string
         min?: string | number
         max?: string | number
+        path?: string
+        format?: Based.Extensions
+      }
+
+      type Get = {
+        machine?: string
+        machines?: Based.Infra.Template['machineConfigs']
         path?: string
         format?: Based.Extensions
       }
@@ -279,19 +287,25 @@ declare global {
         | '@based/env-metrics-db'
 
       type Template = {
-        env: {
-          configName: Based.Infra.Init['name']
-          description: Based.Infra.Init['description']
-          domains: Based.Infra.Init['domains']
-          machine: Based.Infra.Init['machine']
-          min: Based.Infra.Init['min']
-          max: Based.Infra.Init['max']
-          services: {
-            [key: Based.Infra.Services]: {
-              distChecksum: string
-              instances: {
-                [key: string]: {
-                  port: number
+        autoStandby: boolean
+        suspended: boolean
+        machineConfigs: {
+          [key: string]: {
+            configName: Based.Infra.Init['name']
+            description: Based.Infra.Init['description']
+            domains: Based.Infra.Init['domains']
+            machine: Based.Infra.Init['machine']
+            min: Based.Infra.Init['min']
+            max: Based.Infra.Init['max']
+            services: {
+              [key: Based.Infra.Services]: {
+                distChecksum: string
+                instances: {
+                  [key: string]: {
+                    name?: string
+                    port: number
+                    disableAllSecurity: boolean
+                  }
                 }
               }
             }

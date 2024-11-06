@@ -5,6 +5,7 @@ import {
   isValidPath,
   saveAsFile,
 } from '../../../shared/index.js'
+import { join, resolve } from 'node:path'
 import { exportInfraTemplate } from '../../../helpers/index.js'
 
 export const init = (program: Command) => async (infra: Based.Infra.Init) => {
@@ -37,32 +38,21 @@ export const init = (program: Command) => async (infra: Based.Infra.Init) => {
 
   if (infra.machine && machineList.indexOf(infra.machine) < 0) {
     errorMessage(
-      context.i18n(
-        'commands.infra.subCommands.init.methods.validations.machine',
-      ),
+      context.i18n('commands.infra.validations.machine'),
       infra.machine,
     )
   }
 
   if (infra.min && isNaN(Number(infra.min))) {
-    errorMessage(
-      context.i18n('commands.infra.subCommands.init.methods.validations.min'),
-      infra.min,
-    )
+    errorMessage(context.i18n('commands.infra.validations.min'), infra.min)
   }
 
   if (infra.max && isNaN(Number(infra.max))) {
-    errorMessage(
-      context.i18n('commands.infra.subCommands.init.methods.validations.max'),
-      infra.max,
-    )
+    errorMessage(context.i18n('commands.infra.validations.max'), infra.max)
   }
 
   if (infra.path && !isValidPath(infra.path)) {
-    errorMessage(
-      context.i18n('commands.infra.subCommands.init.methods.validations.path'),
-      infra.path,
-    )
+    errorMessage(context.i18n('commands.infra.validations.path'), infra.path)
   }
 
   if (
@@ -71,10 +61,7 @@ export const init = (program: Command) => async (infra: Based.Infra.Init) => {
     infra.format !== 'json' &&
     infra.format !== 'ts'
   ) {
-    errorMessage(
-      context.i18n('commands.infra.subCommands.init.methods.validations.path'),
-      infra.path,
-    )
+    errorMessage(context.i18n('commands.infra.validations.path'), infra.path)
   }
 
   context.print.warning(
@@ -198,7 +185,6 @@ export const makeInfra = async (
   infra: Based.Infra.Init,
 ) => {
   const { skip } = context.getGlobalOptions()
-  // const basedClient = await context.getBasedClient()
 
   if (
     !infra.name ||
@@ -220,11 +206,14 @@ export const makeInfra = async (
         false,
         isValidPath,
       )
-
-      if (!infra.path.includes(infraFileName)) {
-        infra.path = infra.path + infraFileName + '.' + infra.format
-      }
     }
+  }
+
+  const fileName = infraFileName + '.' + infra.format
+  const fullPath = resolve(join(infra.path, fileName))
+
+  if (!infra.path.includes(fileName)) {
+    infra.path = fullPath
   }
 
   const infraTemplate: Based.Infra.Template = exportInfraTemplate(infra)
@@ -268,7 +257,7 @@ export const makeInfra = async (
     .info(
       context.i18n(
         'commands.infra.subCommands.init.methods.summary.services',
-        Object.keys(infraTemplate.env.services).length,
+        Object.keys(infraTemplate.machineConfigs.env.services).length,
       ),
     )
     .info(
@@ -288,8 +277,12 @@ export const makeInfra = async (
   }
 
   try {
+    context.print.loading(context.i18n('methods.savingFile'))
+
     await saveAsFile(infraTemplate, infra.path, infra.format)
   } catch (error) {
-    throw new Error(error)
+    new Error(context.i18n('errors.902', error))
   }
+
+  context.print.success(context.i18n('methods.savedFile', infra.path), true)
 }

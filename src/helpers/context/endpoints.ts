@@ -99,6 +99,11 @@ export const endpoints = {
     endpoint: 'machine-types',
     type: 'query',
   },
+  INFRA_GET: {
+    client: 'cluster',
+    endpoint: 'env',
+    type: 'query',
+  },
 } as const satisfies Based.API.Gateway.Endpoints<
   Record<string, Based.API.Gateway.Endpoint>
 >

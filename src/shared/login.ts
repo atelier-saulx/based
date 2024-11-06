@@ -34,7 +34,7 @@ const authenticateUser = async (
 }
 
 // TODO
-// This logic should be in the client, not here
+// Move this logic to the client
 const buildClients = (
   cluster: BasedClient,
   env: BasedClient,
@@ -61,6 +61,8 @@ const buildClients = (
     project.destroy()
     env.destroy()
     cluster.destroy()
+
+    process.exit(0)
   }
 
   const get: Based.API.Client['get'] = (client) => clients[client]

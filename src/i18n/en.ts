@@ -278,19 +278,21 @@ export default {
       description: 'Manage your services running, create and destroy machines.',
       usage: '[command]',
       example: 'npx @based/cli infra [sub-command][options]',
+      validations: {
+        machine: 'machine',
+        min: 'min',
+        max: 'max',
+        path: 'path',
+      },
       subCommands: {
         init: {
           description:
             'To create a very basic infra file in your repo to be used as your infra.',
           options: [
             {
-              parameter: '--path <path>',
-              description: 'The path to save the file.',
-            },
-            {
-              parameter: '--format <format>',
-              description:
-                'The extension of file you prefer (available formats: ts | json | js).',
+              parameter: '-s, --standby',
+              description: 'Set the standby mode of your machines.',
+              default: true,
             },
             {
               parameter: '-n, --name <name>',
@@ -318,6 +320,15 @@ export default {
               description:
                 'The maximum number of machines that you want to scale your app.',
             },
+            {
+              parameter: '--path <path>',
+              description: 'The path to save the file.',
+            },
+            {
+              parameter: '--format <format>',
+              description:
+                'The extension of file you prefer (available formats: ts | json | js).',
+            },
           ],
           methods: {
             inputPath:
@@ -334,12 +345,6 @@ export default {
             cannotInit:
               'It is not possible to create an infrastructure without the necessary information. Please try again.',
             fileExtension: 'What file format would you like to use',
-            validations: {
-              machine: 'machine',
-              min: 'min',
-              max: 'max',
-              path: 'path',
-            },
             summary: {
               header: '<b>Infra summary:</b>',
               name: '<b>Name:</b> <reset><cyan>${name}</cyan></reset>',
@@ -351,6 +356,40 @@ export default {
                 '<b>Scale:</b> [Min: <reset><cyan>${min}</cyan></reset> / Max: <reset><cyan>${max}</cyan></reset>]',
               services:
                 '<b>Services included:</b> <reset><cyan>${services}</cyan></reset>',
+              saveIn:
+                '<b>Saving infra file in:</b> <reset><cyan>${path}</cyan></reset>',
+            },
+          },
+        },
+        get: {
+          description: 'To download your infra file in your repo.',
+          options: [
+            {
+              parameter: '-m, --machine <machine>',
+              description:
+                'If you want to filter and get only a specific machine.',
+            },
+            {
+              parameter: '--path <path>',
+              description: 'The path to save the file.',
+            },
+            {
+              parameter: '--format <format>',
+              description:
+                'The extension of file you prefer (available formats: ts | json | js).',
+            },
+          ],
+          methods: {
+            inputPath: '@commands.infra.subCommands.init.methods.inputPath',
+            cannotInit: '@commands.infra.subCommands.init.methods.cannotInit',
+            fileExtension:
+              '@commands.infra.subCommands.init.methods.fileExtension',
+            summary: {
+              header: '<b>Infra summary:</b>',
+              saving_one:
+                '<b>Saving data from:</b> <reset><cyan>${number} machine</cyan></reset>\n<b>Machine:</b> <reset><cyan>${name}</cyan></reset>',
+              saving_many:
+                '<b>Saving data from:</b> <reset><cyan>${number} machines</cyan></reset>\n<b>Machines:</b> <reset><cyan>${name}</cyan></reset>',
               saveIn:
                 '<b>Saving infra file in:</b> <reset><cyan>${path}</cyan></reset>',
             },
@@ -407,6 +446,7 @@ export default {
     404: 'Fatal error while trying to establish a <b>connection to the cloud</b>. Check your <b>${file}</b> file or <b>arguments</b> and try again. ${error}',
     499: 'Could not connect. Check your <b>${file}</b> file or <b>your arguments</b> and try again.',
     901: "The <b>${option}</b> provided is not valid: '<b>${value}</b>'. Check it and try again.",
+    902: 'Was not possible to save the file: ${error}',
   },
   alias: {
     isExternalPath:
@@ -427,6 +467,8 @@ export default {
     },
   },
   methods: {
+    savingFile: 'Saving file...',
+    savedFile: 'Saved file in: <reset><cyan>${path}</cyan></reset>',
     extensions: {
       ts: 'TypeScript (recommended)',
       js: 'JavaScript',
