@@ -264,6 +264,40 @@ declare global {
         path?: string
         format?: Based.Extensions
       }
+
+      type TemplateInfo = Omit<Based.Infra.Init, 'path' | 'format'>
+
+      type Services =
+        | '@based/env-hub-discovery'
+        | '@based/env-registry'
+        | '@based/env-config-db'
+        | '@based/env-db'
+        | '@based/env-db-registry'
+        | '@based/env-db-sub-manager'
+        | '@based/env-events-hub'
+        | '@based/env-jobs'
+        | '@based/env-metrics-db'
+
+      type Template = {
+        env: {
+          configName: Based.Infra.Init['name']
+          description: Based.Infra.Init['description']
+          domains: Based.Infra.Init['domains']
+          machine: Based.Infra.Init['machine']
+          min: Based.Infra.Init['min']
+          max: Based.Infra.Init['max']
+          services: {
+            [key: Based.Infra.Services]: {
+              distChecksum: string
+              instances: {
+                [key: string]: {
+                  port: number
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
     namespace Logs {

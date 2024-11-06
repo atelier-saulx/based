@@ -5,6 +5,7 @@ import {
   isValidPath,
   saveAsFile,
 } from '../../../shared/index.js'
+import { exportInfraTemplate } from '../../../helpers/index.js'
 
 export const init = (program: Command) => async (infra: Based.Infra.Init) => {
   const context: AppContext = AppContext.getInstance(program)
@@ -226,90 +227,7 @@ export const makeInfra = async (
     }
   }
 
-  const infraTemplate = {
-    env: {
-      configName: infra.name.trim(),
-      description: infra.description.trim(),
-      domains: infra.domains,
-      machine: infra.machine,
-      min: infra.min,
-      max: infra.max,
-      services: {
-        '@based/env-hub-discovery': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 80,
-            },
-          },
-        },
-        '@based/env-registry': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4000,
-            },
-          },
-        },
-        '@based/env-config-db': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4001,
-            },
-          },
-        },
-        '@based/env-db': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4002,
-            },
-          },
-        },
-        '@based/env-db-registry': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4003,
-            },
-          },
-        },
-        '@based/env-db-sub-manager': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4004,
-            },
-          },
-        },
-        '@based/env-events-hub': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4005,
-            },
-          },
-        },
-        '@based/env-jobs': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4006,
-            },
-          },
-        },
-        '@based/env-metrics-db': {
-          distChecksum: '',
-          instances: {
-            '0': {
-              port: 4007,
-            },
-          },
-        },
-      },
-    },
-  }
+  const infraTemplate: Based.Infra.Template = exportInfraTemplate(infra)
 
   context.print
     .line()
