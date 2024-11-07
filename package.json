@@ -30,7 +30,8 @@
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
     "testSubs": "cd packages/subs && npm run test",
-    "clean": "turbo run clean && rimraf node_modules"
+    "clean": "turbo run clean && rimraf node_modules",
+    "knip": "knip"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -38,10 +39,11 @@
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.0",
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.9.0",
+    "knip": "^5.36.3",
     "prettier": "^3.2.5",
     "rimraf": "^3.0.2",
     "turbo": "1.6.3",
-    "typescript": "^5.4.5"
+    "typescript": "^5.6.3"
   }
 }

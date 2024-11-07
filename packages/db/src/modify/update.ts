@@ -95,5 +95,3 @@ export const update = (
   // @ts-ignore
   return res
 }
-
-export { ModifyRes }

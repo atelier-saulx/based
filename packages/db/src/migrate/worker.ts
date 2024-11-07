@@ -9,7 +9,7 @@ import { BasedDb } from '../index.js'
 import { TreeNode } from '../csmt/types.js'
 
 if (isMainThread) {
-  console.warn('this is wrong, running worker.ts in mainthread')
+  console.warn('running worker.ts in mainthread')
 } else {
   const { from, to, fromSchema, toSchema, channel, atomics, transform } =
     workerData

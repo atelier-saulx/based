@@ -6,7 +6,7 @@ import {
 import native from '../native.js'
 
 if (isMainThread) {
-  console.warn('this is wrong, running worker.ts in mainthread')
+  console.warn('running worker.ts in mainthread')
 } else {
   const { address, channel, atomics } = workerData
   const dbCtx = native.externalFromInt(address)
