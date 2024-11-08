@@ -1,28 +1,28 @@
-import { input, confirm, Separator, checkbox, select } from '@inquirer/prompts'
+import { Separator, checkbox, confirm, input, select } from '@inquirer/prompts'
+import { isValid, parse } from 'date-fns'
 import {
-  AppContext,
+  type AppContext,
+  colorize,
   dateAndTime,
   dateOnly,
-  colorize,
 } from '../../shared/index.js'
-import { isValid, parse } from 'date-fns'
 import { contextParse } from './parse.js'
 
 export function contextInput(context: AppContext): Based.Context.InputHandler {
   return {
-    date: async function (
+    date: async (
       message: string,
       skip: boolean = true,
       today: boolean = true,
       format: string = dateOnly,
-    ) {
-      message = message + ` <b>(${format.toUpperCase()})</b>`
+    ) => {
+      message = `${message} <b>(${format.toUpperCase()})</b>`
 
       if (skip) {
-        message = message + ' ' + context.i18n('context.input.skip')
+        message = `${message} ${context.i18n('context.input.skip')}`
       }
       if (today) {
-        message = message + ' ' + context.i18n('context.input.today')
+        message = `${message} ${context.i18n('context.input.today')}`
       }
 
       const value: string = await input({
@@ -44,19 +44,19 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       return contextParse.date(value)
     },
 
-    dateTime: async function (
+    dateTime: async (
       message: string,
       skip: boolean = true,
       now: boolean = true,
       format: string = dateAndTime,
-    ) {
-      message = message + ` <b>(${format.toUpperCase()})</b>`
+    ) => {
+      message = `${message} <b>(${format.toUpperCase()})</b>`
 
       if (skip) {
-        message = message + ' ' + context.i18n('context.input.skip')
+        message = `${message} ${context.i18n('context.input.skip')}`
       }
       if (now) {
-        message = message + ' ' + context.i18n('context.input.now')
+        message = `${message} ${context.i18n('context.input.now')}`
       }
 
       const value = await input({
@@ -82,15 +82,16 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       return contextParse.date(value, dateAndTime, dateAndTime)
     },
 
-    number: async function (message: string, skip: boolean = true) {
+    number: async (message: string, skip: boolean = true) => {
       if (skip) {
-        message = message + ' ' + context.i18n('context.input.skip')
+        message = `${message} ${context.i18n('context.input.skip')}`
       }
 
       const prompt = input({
         message: colorize(message),
         required: true,
-        validate: (value) => (skip && value === 's') || !isNaN(Number(value)),
+        validate: (value) =>
+          (skip && value === 's') || !Number.isNaN(Number(value)),
       })
 
       if ((await prompt) === 's') {
@@ -112,24 +113,25 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
         },
       }),
 
-    confirm: async function (
+    confirm: async (
       message: string = context.i18n('context.input.continue'),
       defaultValue: boolean = true,
-    ) {
-      return confirm({
+    ) =>
+      confirm({
         message: colorize(message),
         default: defaultValue,
-      })
-    },
+      }),
 
     default: async (
       message: string,
       defaultValue: string = '',
       skip: boolean = false,
-      validate: (value: string) => boolean | string | Promise<string | boolean>,
+      validate?: (
+        value: string,
+      ) => boolean | string | Promise<string | boolean>,
     ) => {
       if (skip) {
-        message = message + ' ' + context.i18n('context.input.skip')
+        message = `${message} ${context.i18n('context.input.skip')}`
       }
       return input({
         message: colorize(message),
@@ -173,14 +175,14 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
 
       if (multiSelection) {
         return checkbox({
-          message: colorize(message) + ':',
+          message: `${colorize(message)}:`,
           choices,
           required: true,
         })
       }
 
       return select({
-        message: colorize(message) + ':',
+        message: `${colorize(message)}:`,
         choices,
       })
     },

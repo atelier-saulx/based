@@ -6,8 +6,17 @@ const capitalizeWords = (str?: string, fallback?: string) => {
   return target.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
 }
 
+type Command = {
+  name?: string
+  longDescription?: string
+  description?: string
+  example?: string
+  parameter?: string
+  options?: Command[]
+}
+
 const generateCommandMarkdown = (
-  commandObj: any,
+  commandObj: Command,
   commandKey: string,
   isSubCommand = false,
 ) => {

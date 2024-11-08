@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": []
+    "ignore": ["test", "dist", "node_modules"]
   },
   "formatter": {
     "enabled": true,
@@ -21,6 +21,7 @@
     "rules": {
       "recommended": true,
       "style": {
+        "noParameterAssign": "off",
         "noInferrableTypes": "off"
       }
     }

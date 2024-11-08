@@ -12,13 +12,13 @@ export function contextTerminalKit({
   let navigationIndex = 0
   const itemIndexMap = new Map<number, { start: number; lines: number }>()
   let headerLines: string[] = []
-  let contentLines: string[] = []
+  const contentLines: string[] = []
 
   term.clear()
   term.grabInput({ mouse: 'motion', safe: true })
 
   if (title) {
-    term('\x1b]0;' + title + '\x07')
+    term(`\x1b]0;${title}\x07`)
   }
 
   const prepareContent = (
@@ -26,7 +26,9 @@ export function contextTerminalKit({
   ): string[][] => {
     if (Array.isArray(content)) {
       return content.map((line) => line.split('\n'))
-    } else if (typeof content === 'string') {
+    }
+
+    if (typeof content === 'string') {
       return [content.split('\n')]
     }
 
@@ -109,7 +111,7 @@ export function contextTerminalKit({
     const groupedLines = prepareContent(content)
     const contentHeight = term.height - headerLines.length - 1
 
-    groupedLines.forEach((lines) => {
+    for (const lines of groupedLines) {
       const newIndex = itemIndexMap.size
       const startPosition = sortOrder === 'asc' ? contentLines.length : 0
 
@@ -120,7 +122,7 @@ export function contextTerminalKit({
       } else {
         contentLines.unshift(...lines)
 
-        for (let [key, value] of itemIndexMap) {
+        for (const [key, value] of itemIndexMap) {
           if (key !== newIndex) {
             itemIndexMap.set(key, {
               start: value.start + lines.length,
@@ -133,7 +135,7 @@ export function contextTerminalKit({
       if (lines.length > contentHeight) {
         scrollPosition = startPosition
       }
-    })
+    }
 
     if (autoScroll) {
       navigationIndex = itemIndexMap.size - 1
@@ -191,7 +193,7 @@ export function contextTerminalKit({
     renderScrollbar()
   }
 
-  term.on('mouse', function (name: string, data: any) {
+  term.on('mouse', (name: string, data) => {
     const contentHeight = term.height - headerLines.length
     if (data.y > headerLines.length && data.y <= term.height) {
       if (name === 'MOUSE_WHEEL_UP') {
@@ -215,7 +217,7 @@ export function contextTerminalKit({
     }
   })
 
-  term.on('key', function (name: string) {
+  term.on('key', (name: string) => {
     if (scrollMode === 'item') {
       if (name === 'UP') {
         navigateItems('up')

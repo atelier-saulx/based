@@ -1,4 +1,4 @@
-import EventEmitter from 'events'
+import EventEmitter from 'node:events'
 
 export const eventEmitter = new EventEmitter()
 
@@ -24,7 +24,7 @@ process.stdin.on('data', (buf) => {
 
 const buildEvent = (sequence: string): Based.Context.MouseEvent => {
   const [btn, x, y] = sequence.slice(3, -1).split(';').map(Number)
-  let event: Based.Context.MouseEvent = {} as Based.Context.MouseEvent
+  const event: Based.Context.MouseEvent = {} as Based.Context.MouseEvent
 
   event.button = btn & 0b11000011
   event.state = sequence.at(-1) === 'M' ? 'pressed' : 'released'

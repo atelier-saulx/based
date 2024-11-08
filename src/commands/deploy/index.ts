@@ -28,7 +28,7 @@ const queuedFileUpload = queued(
   async (
     context: AppContext,
     basedClient: Based.API.Client,
-    payload: any,
+    payload,
     destUrl: string,
   ) => {
     const { status } = await fetch(destUrl, { method: 'HEAD' })
@@ -45,7 +45,7 @@ const _queuedFnDeploy = queued(
     context: AppContext,
     basedClient: Based.API.Client,
     checksum: number,
-    config: any,
+    config,
     js: OutputFile,
     sourcemap: OutputFile,
   ) => {

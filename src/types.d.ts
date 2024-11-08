@@ -11,8 +11,8 @@ declare global {
       type Client = {
         call<T extends Based.API.Gateway.Endpoint>(
           gatewayFunction: T,
-          payload?: any,
-        ): T extends { type: 'query' } ? BasedQuery<any> : Promise<any>
+          payload?: unknown,
+        ): T extends { type: 'query' } ? BasedQuery : Promise
 
         destroy: () => void
         get: (client: Based.API.Gateway.Endpoint['client']) => BasedClient
@@ -82,7 +82,6 @@ declare global {
           }
 
       type State = {
-        [key: string]: any
         display: 'verbose' | 'info' | 'success' | 'warning' | 'error' | 'silent'
         emojis: {
           warning: string
@@ -123,7 +122,7 @@ declare global {
         | {
             name?: string
             description?: string
-            value: any
+            value: string | null | unknown
           }
         | Separator
 
@@ -162,7 +161,7 @@ declare global {
           choices: Based.Context.SelectInputItems[],
           multiSelection?: boolean,
           separator?: boolean,
-        ) => Promise<any>
+        ) => Promise
       }
 
       namespace Terminal {
@@ -184,7 +183,7 @@ declare global {
 
         type ReturnedFunctions = {
           render: () => void
-          kill: (fn: any) => void
+          kill: (fn: function) => void
           header: TerminalContentFunction
           addRow: TerminalContentFunction
           setTable?: () => void

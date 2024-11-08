@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import { AppContext } from '../../shared/index.js'
 
 export const globalOptions = async (program: Command): Promise<void> => {

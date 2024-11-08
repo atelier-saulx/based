@@ -4,7 +4,9 @@ import { spinner } from '../../shared/spinner.js'
 const iconDecider = (icon: boolean | string, defaultValue: string): string => {
   if (icon === true) {
     return defaultValue
-  } else if (icon !== '' && icon !== false) {
+  }
+
+  if (icon !== '' && icon !== false) {
     return icon
   }
 

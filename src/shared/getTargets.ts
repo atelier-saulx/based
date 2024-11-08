@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
-import parser from 'gitignore-parser'
 import { findUp } from 'find-up'
+import parser from 'gitignore-parser'
 import { isConfigFile, isSchemaFile } from './pathAndFiles.js'
 
 export const getTargets = async () => {

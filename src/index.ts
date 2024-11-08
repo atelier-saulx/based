@@ -1,17 +1,17 @@
 import { Command } from 'commander'
 import {
   auth,
-  logs,
+  backup,
   deploy,
   dev,
-  backup,
-  version,
-  test,
   infra,
+  logs,
+  test,
+  version,
 } from './commands/index.js'
 import { globalOptions } from './helpers/index.js'
-import { AppContext } from './shared/index.js'
 import { languages } from './i18n/index.js'
+import { AppContext } from './shared/index.js'
 
 export const init = async () => {
   const program: Command = new Command()

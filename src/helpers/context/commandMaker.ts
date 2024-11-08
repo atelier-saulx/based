@@ -1,6 +1,6 @@
-import { Command } from 'commander'
+import type { Command } from 'commander'
 
-const processOption = (option: any) => {
+const processOption = (option) => {
   const args: string[] = [option.parameter, option.description]
   const method: string = option.required ? 'requiredOption' : 'option'
 
@@ -11,13 +11,13 @@ const processOption = (option: any) => {
   return { method, args }
 }
 
-const addOptions = (options: any[], cmd: Command) => {
-  if (options && options.length) {
-    options.forEach((option: any) => {
+const addOptions = (options, cmd: Command) => {
+  if (options?.length) {
+    for (const option of options) {
       const { method, args } = processOption(option)
 
       cmd[method](...args)
-    })
+    }
   }
 }
 
@@ -48,13 +48,10 @@ export function contextCommandMaker(
 
   addOptions(options, cmd)
 
-  const addSubCommands = (
-    parentCmd: Command,
-    subCommands?: Record<string, any>,
-  ) => {
+  const addSubCommands = (parentCmd: Command, subCommands?) => {
     if (!subCommands) return
 
-    Object.keys(subCommands).forEach((subCommandName) => {
+    for (const subCommandName of Object.keys(subCommands)) {
       const subCommandData = subCommands[subCommandName]
       const { description, options } = subCommandData
       const subCommand = parentCmd.command(subCommandName)
@@ -65,16 +62,12 @@ export function contextCommandMaker(
 
       addOptions(options, subCommand)
 
-      if (
-        subCommandsList &&
-        subCommandsList[subCommandName] &&
-        subCommand.action
-      ) {
+      if (subCommandsList?.[subCommandName] && subCommand.action) {
         subCommand.action(subCommandsList[subCommandName](subCommand))
       }
 
       addSubCommands(subCommand, subCommandData.subCommands)
-    })
+    }
   }
 
   if (subCommands) {

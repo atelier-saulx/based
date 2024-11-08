@@ -54,7 +54,10 @@ const buildClients = (
     const type: Based.API.Gateway.Endpoint['type'] = gatewayFunction.type
     const client = gatewayFunction.client
 
-    return clients[client]?.[type](gatewayFunction.endpoint, payload) as any
+    return clients[client]?.[type](
+      gatewayFunction.endpoint,
+      payload,
+    ) as undefined
   }
 
   const destroy: Based.API.Client['destroy'] = () => {

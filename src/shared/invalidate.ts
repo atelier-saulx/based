@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
-import ts from 'typescript'
 import pc from 'picocolors'
+import ts from 'typescript'
 import { rel } from './index.js'
 
 const warned = new Set()
