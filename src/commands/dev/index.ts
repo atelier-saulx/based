@@ -1,19 +1,19 @@
-import { WebSocket, WebSocketServer } from 'ws'
-import { buffer } from 'node:stream/consumers'
-import {
-  getMyIp,
-  parseFunctions,
-  invalidate,
-  spinner,
-  AppContext,
-} from '../../shared/index.js'
-import { OutputFile } from '@based/bundle'
+import { join } from 'node:path'
 import { Readable } from 'node:stream'
-import { Command } from 'commander'
+import { buffer } from 'node:stream/consumers'
+import type { OutputFile } from '@based/bundle'
 import { hash } from '@saulx/hash'
+import type { Command } from 'commander'
 import getPort from 'get-port'
-import { join } from 'path'
 import pc from 'picocolors'
+import { WebSocket, WebSocketServer } from 'ws'
+import {
+  AppContext,
+  getMyIp,
+  invalidate,
+  parseFunctions,
+  spinner,
+} from '../../shared/index.js'
 // import handler from 'serve-handler'
 // import http from 'http'
 
@@ -140,7 +140,7 @@ export const dev = async (program: Command) => {
         reloadClients = true
         hadError = true
       } else {
-        let fnUpdates: {} = {}
+        let fnUpdates = {}
         hadError = false
 
         for (const { index, config, app, favicon } of configs) {
@@ -303,11 +303,11 @@ export const dev = async (program: Command) => {
       }
 
       if (reloadClients) {
-        clients.forEach((client) => {
+        for (const client of clients) {
           if (client.readyState === WebSocket.OPEN) {
             client.send('')
           }
-        })
+        }
       }
     }
   })

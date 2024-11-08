@@ -1,88 +1,90 @@
-import { Command } from 'commander'
+import { join, resolve } from 'node:path'
+import type { Command } from 'commander'
+import { getMachines } from '../../../helpers/index.js'
 import { AppContext } from '../../../shared/AppContext.js'
 import {
   infraFileName,
   isValidPath,
   saveAsFile,
 } from '../../../shared/pathAndFiles.js'
-import { join, resolve } from 'node:path'
-import { getMachines } from '../../../helpers/index.js'
 
-export const get = (program: Command) => async (infra: Based.Infra.Get) => {
-  const context: AppContext = AppContext.getInstance(program)
-  await context.getProgram()
-  const basedClient = await context.getBasedClient()
-  const { skip } = context.getGlobalOptions()
+export const get =
+  (program: Command) => async (args: Based.Infra.Get.Command) => {
+    const context: AppContext = AppContext.getInstance(program)
+    await context.getProgram()
+    const basedClient = await context.getBasedClient()
+    const { skip } = context.getGlobalOptions()
 
-  const errorMessage = (option: string, value: string | number) => {
-    throw new Error(context.i18n('errors.901', option, value))
-  }
-
-  infra.machines = await getMachines()
-
-  if (infra.machine && !infra.machines[infra.machine]) {
-    errorMessage(
-      context.i18n('commands.infra.validations.machine'),
-      infra.machine,
-    )
-  } else if (infra.machine && infra.machines[infra.machine]) {
-    infra.machines = {
-      [infra.machine]: infra.machines[infra.machine],
+    const errorMessage = (option: string, value: string | number) => {
+      throw new Error(context.i18n('errors.901', option, value))
     }
-  }
 
-  if (infra.path && !isValidPath(infra.path)) {
-    errorMessage(context.i18n('commands.infra.validations.path'), infra.path)
-  }
+    args.machines = await getMachines()
 
-  if (
-    infra.format &&
-    infra.format !== 'js' &&
-    infra.format !== 'json' &&
-    infra.format !== 'ts'
-  ) {
-    errorMessage(context.i18n('commands.infra.validations.path'), infra.path)
-  }
-
-  if (!skip) {
-    if (!infra.format) {
-      const choices = [
-        {
-          name: context.i18n('methods.extensions.ts'),
-          value: 'ts',
-        },
-        {
-          name: context.i18n('methods.extensions.json'),
-          value: 'json',
-        },
-        {
-          name: context.i18n('methods.extensions.js'),
-          value: 'js',
-        },
-      ]
-
-      infra.format = await context.input.select(
-        context.i18n('commands.infra.subCommands.get.methods.fileExtension'),
-        choices,
+    if (args.machine && !args.machines[args.machine]) {
+      errorMessage(
+        context.i18n('commands.infra.validations.machine'),
+        args.machine,
       )
+    } else if (args.machine && args.machines[args.machine]) {
+      args.machines = {
+        [args.machine]: args.machines[args.machine],
+      }
     }
-  } else {
-    if (!infra.format) {
-      infra.format = 'ts'
+
+    if (args.path && !isValidPath(args.path)) {
+      errorMessage(context.i18n('commands.infra.validations.path'), args.path)
+    }
+
+    if (
+      args.format &&
+      args.format !== 'js' &&
+      args.format !== 'json' &&
+      args.format !== 'ts'
+    ) {
+      errorMessage(context.i18n('commands.infra.validations.path'), args.path)
+    }
+
+    if (!skip) {
+      if (!args.format) {
+        const choices = [
+          {
+            name: context.i18n('methods.extensions.ts'),
+            value: 'ts',
+          },
+          {
+            name: context.i18n('methods.extensions.json'),
+            value: 'json',
+          },
+          {
+            name: context.i18n('methods.extensions.js'),
+            value: 'js',
+          },
+        ]
+
+        args.format = await context.input.select(
+          context.i18n('commands.infra.subCommands.get.methods.fileExtension'),
+          choices,
+        )
+      }
+    } else {
+      if (!args.format) {
+        args.format = 'ts'
+      }
+    }
+
+    try {
+      await saveInfra({ context, infra: args })
+
+      basedClient.destroy()
+      return
+    } catch (error) {
+      throw new Error(error)
     }
   }
 
-  try {
-    await getInfra(context, infra)
-
-    basedClient.destroy()
-    return
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
-export const getInfra = async (context: AppContext, infra: Based.Infra.Get) => {
+export const saveInfra = async (args: Based.Infra.Get.Save) => {
+  const { context, infra } = args
   const { skip } = context.getGlobalOptions()
   const machinesKeys = Object.keys(infra.machines)
 
@@ -107,7 +109,7 @@ export const getInfra = async (context: AppContext, infra: Based.Infra.Get) => {
     }
   }
 
-  const fileName = infraFileName + '.' + infra.format
+  const fileName = `${infraFileName}.${infra.format}`
   const fullPath = resolve(join(infra.path, fileName))
 
   if (!infra.path.includes(fileName)) {

@@ -81,6 +81,12 @@ export default {
       subCommands: {
         make: {
           description: 'Backup current environment state.',
+          methods: {
+            confirmation:
+              'Would you like to make a backup for <b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>?',
+            success: 'Backup created successfully!',
+            making: 'Making a new backup...',
+          },
         },
         list: {
           description: 'List available backups.',
@@ -96,6 +102,20 @@ export default {
               default: 'desc',
             },
           ],
+          methods: {
+            downloadConfirmation:
+              'Would you like to download any of this backups?',
+            restoreConfirmation:
+              'Would you like to restore one of these backups and make it the current version of the database?',
+            flushConfirmation:
+              'Would you like to flush the current database? (This action cannot be undone)',
+            searching: 'Searching for databases and backups...',
+            noBackups: 'There were no backups found.',
+          },
+          validations: {
+            sort: 'sort',
+            limit: 'limit',
+          },
         },
         download: {
           description: 'Download previous backups.',
@@ -120,8 +140,16 @@ export default {
             },
           ],
           methods: {
+            getPath:
+              'Path to save the backup to: (If the file already exists it will be overwritten)',
             getDownload: {
               isExternalPath: '<b>Selected path:</b> <cyan>${path}</cyan>',
+            },
+            summary: {
+              header: '<b>Download summary:</b>',
+              database: '<b>Database:</b> <reset><cyan>${db}</cyan></reset>',
+              file: '<b>Backup file:</b> <reset><cyan>${file}</cyan></reset>',
+              path: '<b>Saving backup file in:</b> <reset><cyan>${path}</cyan></reset>',
             },
           },
         },
@@ -144,6 +172,15 @@ export default {
                 'Select a date to restore the latest available backup.',
             },
           ],
+          methods: {
+            restoring: 'Restoring your backup...',
+            success: 'Backup <cyan>${file}</cyan> restored successfully!',
+            summary: {
+              header: '<b>Restore summary:</b>',
+              database: '<b>Database:</b> <cyan>${db}</cyan>',
+              file: '<b>File to be restored:</b> <cyan>${file}</cyan>',
+            },
+          },
         },
         flush: {
           description: 'Flush the current database.',
@@ -158,6 +195,19 @@ export default {
                 'Flush without confirmation. Warning! This action cannot be undone.',
             },
           ],
+          methods: {
+            success: 'Current database flushed successfully!',
+            flushing: 'Flushing the current database...',
+            summary: {
+              header: '<b>Flush summary:</b>',
+              projectInfo:
+                '<b>Cluster:</b> <cyan>${cluster}</cyan> | <b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>',
+              config: '<b>Config:</b> <cyan>${dbInfo}</cyan>',
+              service: '<b>Service:</b> <cyan>@based/env-db</cyan>',
+              database: '<b>Database:</b> <cyan>${db}</cyan>',
+              instance: '<b>Instance:</b> <cyan>${instance}</cyan>',
+            },
+          },
         },
       },
     },
@@ -233,9 +283,12 @@ export default {
               description: 'Filter by machine ID.',
             },
           ],
+          methods: {},
         },
         clear: {
           description: 'Clear the logs.',
+          cleaning: 'Cleaning your logs...',
+          success: 'Logs cleaned successfully!',
         },
       },
     },
@@ -448,6 +501,13 @@ export default {
     901: "The <b>${option}</b> provided is not valid: '<b>${value}</b>'. Check it and try again.",
     902: 'Was not possible to save the file: ${error}',
     903: 'Was not possible to get your machines from the cloud: ${error}',
+    904: 'The specified path is invalid or does not exist. Please provide a valid path.',
+    905: 'Error geting your file: ${error}',
+    906: 'Error flushing the current database: ${error}',
+    907: 'Error making your backup: ${error}',
+    908: 'Error restoring your file: ${error}',
+    909: 'Error uploading your file: ${error}',
+    910: 'Error cleaning your logs: ${error}',
   },
   alias: {
     isExternalPath:
@@ -469,7 +529,11 @@ export default {
   },
   methods: {
     savingFile: 'Saving file...',
+    uploadingFile: 'Uploading file...',
+    downloading: 'Downloading file...',
     savedFile: 'Saved file in: <reset><cyan>${path}</cyan></reset>',
+    warning:
+      "<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>",
     extensions: {
       ts: 'TypeScript (recommended)',
       js: 'JavaScript',

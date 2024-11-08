@@ -6,22 +6,12 @@
   "main": "dist/index.js",
   "private": false,
   "bin": "bin/cmd.js",
-  "files": [
-    "bin",
-    "dist"
-  ],
+  "files": ["bin", "dist"],
   "scripts": {
     "docs": "ts-node --esm ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
     "build": "tsc -b",
-    "watch": "tsc -b --watch",
-    "test": "c8 ava --verbose"
-  },
-  "ava": {
-    "files": [
-      "./test/**/*.js",
-      "!./test/examples/**/*"
-    ]
+    "watch": "tsc -b --watch"
   },
   "prettier": "@saulx/prettier-config",
   "keywords": [],

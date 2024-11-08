@@ -1,11 +1,11 @@
+import type { Command } from 'commander'
+import { isAfter, isBefore, isValid, parse } from 'date-fns'
+import { visualizer } from '../../../helpers/index.js'
 import {
   AppContext,
   dateAndTime,
   externalDateAndTime,
 } from '../../../shared/index.js'
-import { isValid, parse, isBefore, isAfter } from 'date-fns'
-import { visualizer } from '../../../helpers/index.js'
-import { Command } from 'commander'
 
 export const filter =
   (program: Command) =>
@@ -49,8 +49,8 @@ export const filter =
     }
 
     if (filters.checksum) {
-      filters.checksum = parseInt(filters.checksum.toString())
-      if (isNaN(filters.checksum)) {
+      filters.checksum = Number.parseInt(filters.checksum.toString())
+      if (Number.isNaN(filters.checksum)) {
         errorMessage('checksum', filters.checksum)
       }
     }
@@ -59,7 +59,10 @@ export const filter =
       errorMessage('log level', filters.level)
     }
 
-    if ((!filters.stream && !filters.limit) || isNaN(Number(filters.limit))) {
+    if (
+      (!filters.stream && !filters.limit) ||
+      Number.isNaN(Number(filters.limit))
+    ) {
       filters.limit = 100
     } else if (!filters.stream && filters.limit && filters.limit > 1000) {
       filters.limit = 1000
@@ -74,22 +77,22 @@ export const filter =
 
       if (!filters.endDate && !filters.startDate && !filters.stream) {
         const filterByDate: boolean = await context.input.confirm(
-          `Would you like to filter the logs by date and time?`,
+          'Would you like to filter the logs by date and time?',
         )
 
         if (filterByDate) {
           filters.startDate = await context.input.dateTime(
-            `Please enter the start date and time for filtering logs:`,
+            'Please enter the start date and time for filtering logs:',
           )
           filters.endDate = await context.input.dateTime(
-            `Please enter the end date and time for filtering logs:`,
+            'Please enter the end date and time for filtering logs:',
           )
         }
       }
 
       if (!filters.function || !filters.function.length) {
         const filterByFunction: boolean = await context.input.confirm(
-          `Do you want to filter by function?`,
+          'Do you want to filter by function?',
         )
 
         if (filterByFunction) {
@@ -122,7 +125,7 @@ export const filter =
             .sort((a, b) => (a.name > b.name ? 1 : -1))
 
           filters.function = await context.input.select(
-            `Please select the functions: <dim>(A-Z)</dim>`,
+            'Please select the functions: <dim>(A-Z)</dim>',
             functionsItems,
             true,
           )
@@ -164,7 +167,7 @@ export const filter =
       filters.startDate?.date &&
       filters.endDate?.date
     ) {
-      let message: string = `Start date: ${filters.startDate.value} | End date: ${filters.endDate.value}`
+      const message: string = `Start date: ${filters.startDate.value} | End date: ${filters.endDate.value}`
 
       if (isBefore(filters.endDate.date, filters.startDate.date)) {
         errorMessage(

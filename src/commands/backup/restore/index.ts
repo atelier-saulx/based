@@ -1,22 +1,18 @@
+import { resolve } from 'node:path'
+import type { Command } from 'commander'
+import { pathExists } from 'fs-extra'
+import { backupsSelection, mountDBName } from '../../../helpers/index.js'
 import {
-  replaceTilde,
   AppContext,
   isFileFromCloud,
+  replaceTilde,
 } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 
-import { pathExists } from 'fs-extra'
-import { resolve } from 'node:path'
-import {
-  backupsSelection,
-  BackupsSorted,
-  mountDBName,
-} from '../../../helpers/index.js'
-import { Command } from 'commander'
-
 export const restore =
   (program: Command) =>
-  async ({ db, file, date }): Promise<void> => {
+  async (args: Based.Backups.Restore.Command): Promise<void> => {
+    const { db, file, date } = args
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const { destroy } = await context.getBasedClient()
@@ -37,22 +33,18 @@ export const restore =
     }
   }
 
-export const setRestore = async ({
-  context,
-  db = '',
-  file = '',
-  date = '',
-  verbose = false,
-}: Based.Backups.Restore) => {
+export const setRestore = async (args: Based.Backups.Restore.Set) => {
+  const { context, db = '', file = '', date = '', verbose = false } = args
   const basedClient = await context.getBasedClient()
   const { skip } = context.getGlobalOptions()
+
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call(context.endpoints.DB_LIST)
   const dbInfo = mountDBName(defaultDBInfo, db)
-  const backups: BackupsSorted = await getList(context)
+  const backups: Based.Backups.Sorted = await getList({ context })
 
-  let { selectedFile, selectedDB } = await backupsSelection({
+  const { selectedFile, selectedDB } = await backupsSelection({
     context,
     backups,
     db: dbInfo.name,
@@ -85,12 +77,24 @@ export const setRestore = async ({
   if (verbose) {
     context.print
       .line()
-      .info(`<b>Restore summary:</b>`)
+      .info(
+        context.i18n(
+          'commands.backups.subCommands.restore.methods.summary.header',
+        ),
+      )
       // TODO Fix the value coming from 'db'
       // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
-      .info(`<b>Database:</b> <cyan>${selectedDB}</cyan>`)
       .info(
-        `<b>File to be restored:</b> <cyan>${isExternalFile ? resolve(replaceTilde(selectedFile)) : selectedFile}</cyan>`,
+        context.i18n(
+          'commands.backups.subCommands.restore.methods.summary.database',
+          selectedDB,
+        ),
+      )
+      .info(
+        context.i18n(
+          'commands.backups.subCommands.restore.methods.summary.file',
+          isExternalFile ? resolve(replaceTilde(selectedFile)) : selectedFile,
+        ),
       )
       .line()
   }
@@ -100,25 +104,27 @@ export const setRestore = async ({
       const doIt: boolean = await context.input.confirm()
 
       if (!doIt) {
-        throw new Error('Restoration cancelled.')
+        throw new Error(context.i18n('methods.aborted'))
       }
     }
 
     try {
-      context.print.loading('Restoring your backup...')
+      context.print.loading(
+        context.i18n('commands.backups.subCommands.restore.methods.restoring'),
+      )
 
       await basedClient.call(context.endpoints.BACKUPS_SELECT, {
         db: dbInfo,
         key: selectedFile,
       })
-    } catch (error) {
-      throw new Error(`Error restoring your file: '${error}'`)
+    } catch (error: unknown) {
+      throw new Error(context.i18n('errors.908', error))
     }
   }
 
   if (isExternalFile) {
     try {
-      context.print.loading('Uploading file...')
+      context.print.loading(context.i18n('methods.uploadingFile'))
 
       const result = await basedClient.call(context.endpoints.BACKUPS_UPLOAD, {
         path: selectedFile,
@@ -130,12 +136,18 @@ export const setRestore = async ({
       if (!result.ok) {
         throw new Error(result)
       }
-    } catch (error) {
-      throw new Error(`Error uploading your file: '${error}'`)
+    } catch (error: unknown) {
+      throw new Error(context.i18n('errors.909', error))
     }
   }
 
   context.print
     .stop()
-    .success(`Backup <cyan>${selectedFile}</cyan> restored successfully!`, true)
+    .success(
+      context.i18n(
+        'commands.backups.subCommands.restore.methods.success',
+        selectedFile,
+      ),
+      true,
+    )
 }

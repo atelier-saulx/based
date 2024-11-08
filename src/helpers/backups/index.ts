@@ -7,37 +7,21 @@ import {
   parseISO,
 } from 'date-fns'
 import {
-  isCurrentDump,
-  AppContext,
+  type AppContext,
   dateAndTime,
-  isFileFromCloud,
   dateOnly,
+  isCurrentDump,
+  isFileFromCloud,
 } from '../../shared/index.js'
-
-type BackupInfo = {
-  key: string
-  lastModified: string
-  size: number
-}
-
-type BackupsSelection = {
-  [key: string]: BackupInfo[]
-}
 
 type BackupSelectionArgs = {
   context: AppContext
-  backups: BackupsSorted
+  backups: Based.Backups.Sorted
   db?: string
   file?: string
   date?: string
   showCurrent?: boolean
   sort?: string
-}
-
-export type BackupsSorted = {
-  databases: number
-  backups: number
-  sorted: BackupsSelection
 }
 
 type BackupSelectionReturn = {
@@ -50,13 +34,13 @@ const getSortingText = (sort: string): string =>
 
 export const backupsSummary = (
   context: AppContext,
-  values: BackupsSorted,
+  values: Based.Backups.Sorted,
   limit: number,
   sort: string,
   verbose: boolean,
 ): void => {
   if (!values.databases || !values.backups) {
-    throw new Error(`No backups found.`)
+    throw new Error('No backups found.')
   }
 
   if (verbose) {
@@ -90,7 +74,7 @@ const dbSelection = async ({
     const choices: Based.Context.SelectInputItems[] = Object.keys(
       backups.sorted,
     )
-      .sort((x, y) => (x == 'default' ? -1 : y == 'default' ? 1 : 0))
+      .sort((x, y) => (x === 'default' ? -1 : y === 'default' ? 1 : 0))
       .map((key) => ({ name: key, value: key }))
 
     db = await context.input.select('Choose database:', choices)
@@ -109,11 +93,11 @@ const dbSelection = async ({
   return db
 }
 
-const isBackupExists = (backups: BackupInfo[], selectedFile: string) =>
+const isBackupExists = (backups: Based.Backups.Info[], selectedFile: string) =>
   isFileFromCloud(selectedFile) &&
   backups.findIndex((file) => file.key === selectedFile)
 
-const findLatestBackup = (backups: BackupInfo[], date: string) => {
+const findLatestBackup = (backups: Based.Backups.Info[], date: string) => {
   let now = new Date()
 
   if (date) {
@@ -137,7 +121,7 @@ const findLatestBackup = (backups: BackupInfo[], date: string) => {
   return closestBackup.key
 }
 
-const removeTheCurrent = (backups: BackupInfo[]) =>
+const removeTheCurrent = (backups: Based.Backups.Info[]) =>
   backups.filter(({ key }) => !isCurrentDump(key))
 
 const fileSelection = async ({
@@ -150,7 +134,7 @@ const fileSelection = async ({
   showCurrent = true,
   verbose = false,
 }): Promise<string> => {
-  let sortedBackups: BackupInfo[] = backups.sorted[db]
+  let sortedBackups: Based.Backups.Info[] = backups.sorted[db]
 
   if (file) {
     if (isBackupExists(sortedBackups, file) > -1) {
@@ -206,7 +190,9 @@ export const mountDBName = (db: any, name: string) => {
 
   if (db.length === 1) {
     return { ...db[0], name: 'default' }
-  } else if (db.length > 1) {
+  }
+
+  if (db.length > 1) {
     return db.filter((elm) => elm.name === name)
   }
 
@@ -242,11 +228,11 @@ export const backupsSelection = async ({
 }
 
 export const backupsSorting = (
-  backups: BackupsSelection,
+  backups: Based.Backups.Selection,
   limit: number,
   sort: string,
-): BackupsSorted => {
-  const result: BackupsSorted = {
+): Based.Backups.Sorted => {
+  const result: Based.Backups.Sorted = {
     databases: 0,
     backups: 0,
     sorted: {},
@@ -266,11 +252,13 @@ export const backupsSorting = (
 
       if (sort === 'asc') {
         return dateA - dateB
-      } else if (sort === 'desc') {
-        return dateB - dateA
-      } else {
-        return 0
       }
+
+      if (sort === 'desc') {
+        return dateB - dateA
+      }
+
+      return 0
     })
 
     if (limit !== 0) {

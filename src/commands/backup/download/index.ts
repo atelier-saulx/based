@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { Command } from 'commander'
-import { type BackupsSorted, backupsSelection } from '../../../helpers/index.js'
+import { backupsSelection } from '../../../helpers/index.js'
 import {
   AppContext,
   isValidPath,
@@ -11,8 +11,8 @@ import {
 import { getList } from '../list/index.js'
 
 export const download =
-  (program: Command) =>
-  async ({ db, file, path, date }) => {
+  (program: Command) => async (args: Based.Backups.Download.Command) => {
+    const { db, file, date, path } = args
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const { destroy } = await context.getBasedClient()
@@ -33,20 +33,17 @@ export const download =
     }
   }
 
-export const getDownload = async ({
-  context,
-  db = '',
-  file = '',
-  path = '',
-  date = '',
-}: Based.Backups.Downloads): Promise<void> => {
+export const getDownload = async (
+  args: Based.Backups.Download.Get,
+): Promise<void> => {
+  let { context, db, file, date, path } = args
   let retry: number = 3
   let isValid: boolean = false
   const basedClient = await context.getBasedClient()
   const { skip } = context.getGlobalOptions()
   const isExternalPath: boolean = path !== undefined && path !== ''
 
-  const backups: BackupsSorted = await getList(context)
+  const backups: Based.Backups.Sorted = await getList({ context })
   const { selectedFile, selectedDB } = await backupsSelection({
     context,
     backups,
@@ -61,7 +58,7 @@ export const getDownload = async ({
 
   const getPath = async () =>
     await context.input.default(
-      'Path to save the backup to: (If the file already exists it will be overwritten)',
+      context.i18n('commands.backups.subCommands.download.methods.getPath'),
       './',
     )
 
@@ -77,35 +74,51 @@ export const getDownload = async ({
 
     if (!isValid) {
       if (!retry) {
-        throw new Error('The specified path is invalid or does not exist.')
+        throw new Error(context.i18n('errors.904'))
       }
 
-      context.print.info(
-        'The specified path is invalid or does not exist. Please provide a valid path.',
-        true,
-      )
+      context.print.info(context.i18n('errors.904'), true)
       path = ''
     }
   } while (!isValid && retry > 0)
 
   context.print
     .line()
-    .info('<b>Download summary:</b>')
-    .info(`<b>Database:</b> <reset><cyan>${selectedDB}</cyan></reset>`)
-    .info(`<b>Backup file:</b> <reset><cyan>${selectedFile}</cyan></reset>`)
-    .info(`<b>Saving backup file in:</b> <reset><cyan>${path}</cyan></reset>`)
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.download.methods.summary.header',
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.download.methods.summary.database',
+        selectedDB,
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.download.methods.summary.file',
+        selectedFile,
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.download.methods.summary.path',
+        path,
+      ),
+    )
     .line()
 
   if (!skip) {
     const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      throw new Error('Download cancelled.')
+      throw new Error(context.i18n('methods.aborted'))
     }
   }
 
   try {
-    context.print.loading('Downloading file...')
+    context.print.loading(context.i18n('methods.downloading'))
 
     const response = await basedClient.call(
       context.endpoints.BACKUPS_DOWNLOAD,
@@ -117,21 +130,18 @@ export const getDownload = async ({
     context.print.stop()
 
     try {
-      context.print.loading('Saving file...')
+      context.print.loading(context.i18n('methods.savingFile'))
 
       const buffer: Buffer = Buffer.from(response.data)
       await writeFile(replaceTilde(path), buffer)
 
       context.print.stop()
     } catch (error) {
-      throw new Error(`Was not possible to save the file: ${error}`)
+      throw new Error(context.i18n('errors.902', path))
     }
   } catch (error) {
-    throw new Error(`Error downloading your file: ${error}`)
+    throw new Error(context.i18n('errors.905'))
   }
 
-  context.print.success(
-    `Saved backup in: <reset><cyan>${path}</cyan></reset>`,
-    true,
-  )
+  context.print.success(context.i18n('methods.savedFile', path), true)
 }

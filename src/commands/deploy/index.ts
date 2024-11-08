@@ -1,11 +1,11 @@
-import { Command } from 'commander'
-import { OutputFile } from '@based/bundle'
-import { parseFunctions, parseSchema, AppContext } from '../../shared/index.js'
+import type { OutputFile } from '@based/bundle'
 import { hash, hashCompact } from '@saulx/hash'
-import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
+import type { Command } from 'commander'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
+import { AppContext, parseFunctions, parseSchema } from '../../shared/index.js'
+import { spinner } from '../../shared/spinner.js'
 // import ts from 'typescript'
 
 // const findType = (node: ts.Node, typeName: string) => {

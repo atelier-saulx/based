@@ -1,5 +1,5 @@
+import type { Command } from 'commander'
 import { AppContext } from '../../../shared/index.js'
-import { Command } from 'commander'
 
 export const make = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
@@ -11,7 +11,7 @@ export const make = (program: Command) => async () => {
     destroy()
     return
   } catch (error) {
-    throw new Error(`Error making your backup: '${error}'`)
+    throw new Error(context.i18n('errors.907', error))
   }
 }
 
@@ -24,7 +24,7 @@ export const setMake = async (context: AppContext) => {
 
   if (!skip) {
     const doIt: boolean = await context.input.confirm(
-      `Would you like to make a backup for the env <reset><cyan>${org}/${project}/${env}</cyan></reset>?`,
+      context.i18n('commands.backups.subCommands.make.methods.confirmation'),
     )
 
     if (!doIt) {
@@ -38,12 +38,12 @@ export const setMake = async (context: AppContext) => {
     const envInfo = await basedClient.call(context.endpoints.ENV_INFO)
     envId = envInfo.envId
   } catch {
-    throw new Error(
-      `Fatal error during <b>get your environment info</b>. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.`,
-    )
+    throw new Error(context.i18n('errors.404', file))
   }
 
-  context.print.loading('Making a new backup...')
+  context.print.loading(
+    context.i18n('commands.backups.subCommands.make.methods.making'),
+  )
 
   await basedClient.call(context.endpoints.BACKUPS_ENV, {
     org,
@@ -52,5 +52,10 @@ export const setMake = async (context: AppContext) => {
     envId,
   })
 
-  context.print.stop().success(`Backup created successfully!`, true)
+  context.print
+    .stop()
+    .success(
+      context.i18n('commands.backups.subCommands.make.methods.success'),
+      true,
+    )
 }

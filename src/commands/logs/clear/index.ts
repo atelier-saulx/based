@@ -1,29 +1,31 @@
+import type { Command } from 'commander'
 import { AppContext } from '../../../shared/index.js'
-import { Command } from 'commander'
 
 export const clear = (program: Command) => async () => {
   const context: AppContext = AppContext.getInstance(program)
   const basedClient = await context.getBasedClient()
 
-  context.print.info(
-    `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
-  )
+  context.print.info(context.i18n('methods.warning'))
 
   const doIt: boolean = await context.input.confirm()
 
   if (!doIt) {
-    throw new Error('Operation cancelled.')
+    throw new Error(context.i18n('methods.aborted'))
   }
 
   try {
-    context.print.loading('Cleaning your logs...')
+    context.print.loading(
+      context.i18n('commands.logs.subCommands.clear.cleaning'),
+    )
     await basedClient.call(context.endpoints.LOGS_DELETE)
 
-    context.print.success(`Logs cleaned successfully!`)
+    context.print.success(
+      context.i18n('commands.logs.subCommands.clear.success'),
+    )
 
     basedClient.destroy()
     return
   } catch (error) {
-    throw new Error(`Error cleaning your logs: '${error}'`)
+    throw new Error(context.i18n('errors.910'))
   }
 }

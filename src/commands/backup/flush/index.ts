@@ -1,28 +1,22 @@
-import { Command } from 'commander'
-import {
-  BackupsSorted,
-  backupsSelection,
-  mountDBName,
-} from '../../../helpers/index.js'
+import type { Command } from 'commander'
+import { backupsSelection, mountDBName } from '../../../helpers/index.js'
 import { AppContext } from '../../../shared/index.js'
 import { getList } from '../list/index.js'
 
 export const flush =
-  (program: Command) =>
-  async ({ db, force }) => {
+  (program: Command) => async (args: Based.Backups.Flush.Command) => {
+    const { db, force } = args
     const context: AppContext = AppContext.getInstance(program)
     const { cluster, org, env, project } = await context.getProgram()
     const { destroy } = await context.getBasedClient()
 
     if (!force) {
-      context.print.warning(
-        `<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>`,
-      )
+      context.print.warning(context.i18n('methods.warning'))
 
       const doIt: boolean = await context.input.confirm()
 
       if (!doIt) {
-        throw new Error('Operation cancelled.')
+        throw new Error(context.i18n('methods.aborted'))
       }
     }
 
@@ -44,17 +38,10 @@ export const flush =
     }
   }
 
-export const setFlush = async ({
-  context,
-  db,
-  org,
-  project,
-  env,
-  cluster,
-  force,
-}: Based.Backups.Flush) => {
+export const setFlush = async (args: Based.Backups.Flush.Set) => {
+  const { context, db, org, project, env, cluster, force } = args
   const basedClient = await context.getBasedClient()
-  const backups: BackupsSorted = await getList(context)
+  const backups: Based.Backups.Sorted = await getList({ context })
   const { selectedDB } = await backupsSelection({
     context,
     backups,
@@ -62,6 +49,7 @@ export const setFlush = async ({
     file: '',
     showCurrent: false,
   })
+
   // TODO This function need to be refactored to remove this technical debit non related with the CLI
   // https://linear.app/1ce/issue/BASED-284/refactoring-baseddb-list-cloud-function
   const defaultDBInfo = await basedClient.call(context.endpoints.DB_LIST)
@@ -69,27 +57,55 @@ export const setFlush = async ({
 
   context.print
     .line()
-    .info('<b>Flush summary:</b>')
-    .info(`<b>Cluster:</b> <cyan>${cluster}</cyan>`)
     .info(
-      `<b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>`,
+      context.i18n('commands.backups.subCommands.flush.methods.summary.header'),
     )
-    .info(`<b>Config:</b> <cyan>${dbInfo.configName}</cyan>`)
-    .info('<b>Service:</b> <cyan>@based/env-db</cyan>')
-    .info(`<b>Database:</b> <cyan>${dbInfo.name}</cyan>`)
-    .info(`<b>Instance:</b> <cyan>${dbInfo.instance}</cyan>`)
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.flush.methods.summary.projectInfo',
+        cluster,
+        org,
+        project,
+        env,
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.flush.methods.summary.config',
+        dbInfo.configName,
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.flush.methods.summary.service',
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.flush.methods.summary.database',
+        dbInfo.name,
+      ),
+    )
+    .info(
+      context.i18n(
+        'commands.backups.subCommands.flush.methods.summary.instance',
+        dbInfo.instance,
+      ),
+    )
     .line()
 
   if (!force) {
     const doIt: boolean = await context.input.confirm()
 
     if (!doIt) {
-      throw new Error('Operation cancelled.')
+      throw new Error(context.i18n('methods.aborted'))
     }
   }
 
   try {
-    context.print.loading('Flushing the current database...')
+    context.print.loading(
+      context.i18n('commands.backups.subCommands.flush.methods.flushing'),
+    )
 
     const result = await basedClient.call(context.endpoints.DB_FLUSH, {
       db: dbInfo,
@@ -99,8 +115,13 @@ export const setFlush = async ({
       throw new Error(result)
     }
   } catch (error) {
-    throw new Error(`Error flushing the current database: '${error}'`)
+    throw new Error(context.i18n('errors.906', error))
   }
 
-  context.print.stop().success('Current database flushed successfully!', true)
+  context.print
+    .stop()
+    .success(
+      context.i18n('commands.backups.subCommands.flush.methods.success'),
+      true,
+    )
 }

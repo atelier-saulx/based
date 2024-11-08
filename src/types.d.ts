@@ -1,9 +1,9 @@
-import { BasedFunctionConfig } from '@based/functions'
-import { Separator } from '@inquirer/prompts'
-import { AuthState, BasedClient } from '@based/client'
-import { BasedQuery } from '@based/functions'
-import { AppContext } from './shared/index.js'
+import type { AuthState, BasedClient } from '@based/client'
+import type { BasedFunctionConfig } from '@based/functions'
+import type { BasedQuery } from '@based/functions'
+import type { Separator } from '@inquirer/prompts'
 import { cloudFunctions } from './shared/cloudFunctions'
+import type { AppContext } from './shared/index.js'
 
 declare global {
   namespace Based {
@@ -159,7 +159,7 @@ declare global {
         ) => Promise<string>
         select: (
           message: string,
-          choices: SelectInputItems[],
+          choices: Based.Context.SelectInputItems[],
           multiSelection?: boolean,
           separator?: boolean,
         ) => Promise<any>
@@ -206,11 +206,15 @@ declare global {
 
       type SubCommandsList = Record<
         string,
-        (program: Command) => (...args: any[]) => Promise<void> | void
+        (program: Command) => (...args: unknown[]) => Promise<void> | void
       >
     }
 
     namespace Auth {
+      type Command = {
+        email?: string
+      }
+
       type User = {
         email: string
         userId?: string
@@ -229,48 +233,116 @@ declare global {
     }
 
     namespace Backups {
-      type Downloads = {
-        context: AppContext
-        db?: string
-        file?: string
-        date?: string
-        path?: string
-        retry?: number
+      type Sorted = {
+        databases: number
+        backups: number
+        sorted: Based.Backups.Selection
       }
 
-      type Flush = Context.Project & {
-        context: AppContext
-        db?: string
-        force: boolean
+      type Info = {
+        key: string
+        lastModified: string
+        size: number
       }
 
-      type Restore = {
-        context: AppContext
-        db?: string
-        file?: string
-        date?: string
-        verbose: boolean
+      type Selection = {
+        [key: string]: Based.Backups.Info[]
+      }
+
+      namespace Download {
+        type Command = {
+          db?: string
+          file?: string
+          path?: string
+          date?: string
+        }
+
+        type Get = {
+          context: AppContext
+          db?: string
+          file?: string
+          date?: string
+          path?: string
+          retry?: number
+        }
+      }
+
+      namespace Flush {
+        type Command = {
+          db?: string
+          force?: boolean
+        }
+
+        type Set = Omit<Context.Project, 'apiKey' | 'file'> & {
+          context: AppContext
+          db?: string
+          force: boolean
+        }
+      }
+
+      namespace List {
+        type Command = {
+          limit: number
+          sort: string
+        }
+
+        type Get = {
+          context: AppContext
+          limit?: number
+          sort?: string
+          verbose?: boolean
+        }
+      }
+
+      namespace Restore {
+        type Command = {
+          db?: string
+          file?: string
+          date?: string
+        }
+
+        type Set = {
+          context: AppContext
+          db?: string
+          file?: string
+          date?: string
+          verbose: boolean
+        }
       }
     }
 
     namespace Infra {
-      type Init = {
-        name?: string
-        description?: string
-        standby?: boolean
-        domains?: string[]
-        machine?: string
-        min?: string | number
-        max?: string | number
-        path?: string
-        format?: Based.Extensions
+      namespace Init {
+        type Command = {
+          name?: string
+          description?: string
+          standby?: boolean
+          domains?: string[]
+          machine?: string
+          min?: string | number
+          max?: string | number
+          path?: string
+          format?: Based.Extensions
+        }
+
+        type Make = {
+          context: AppContext
+          infra: Based.Infra.Init.Command
+        }
       }
 
-      type Get = {
-        machine?: string
-        machines?: Based.Infra.Template['machineConfigs']
-        path?: string
-        format?: Based.Extensions
+      namespace Get {
+        type Command = {
+          machine?: string
+          machines?: Based.Infra.Template['machineConfigs']
+          path?: string
+          format?: Based.Extensions
+        }
+
+        type Save = {
+          context: AppContext
+          infra: Based.Infra.Get.Command
+        }
       }
 
       type TemplateInfo = Omit<Based.Infra.Init, 'path' | 'format'>
@@ -354,9 +426,7 @@ declare global {
       type RenderData = (data: AdminLogsData[] | EnvLogsData[]) => void
     }
 
-    namespace Infra {
-      type Overview = {}
-    }
+    namespace Infra {}
 
     type ConfigBase = BasedFunctionConfig & {
       appParams?: {
@@ -378,4 +448,5 @@ declare global {
   }
 }
 
+// biome-ignore lint/complexity/noUselessEmptyExport: This is required. This file need to be recognized as a module.
 export {}

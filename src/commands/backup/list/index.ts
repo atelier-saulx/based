@@ -1,17 +1,13 @@
+import type { Command } from 'commander'
+import { backupsSorting, backupsSummary } from '../../../helpers/index.js'
 import { AppContext } from '../../../shared/index.js'
 import { getDownload } from '../download/index.js'
-import { setRestore } from '../restore/index.js'
 import { setFlush } from '../flush/index.js'
-import {
-  BackupsSorted,
-  backupsSorting,
-  backupsSummary,
-} from '../../../helpers/index.js'
-import { Command } from 'commander'
+import { setRestore } from '../restore/index.js'
 
 export const list =
-  (program: Command) =>
-  async ({ limit = 10, sort = 'desc' }) => {
+  (program: Command) => async (args: Based.Backups.List.Command) => {
+    let { limit = 10, sort = 'desc' } = args
     const context: AppContext = AppContext.getInstance(program)
     const { skip } = context.getGlobalOptions()
     const { cluster, org, env, project } = await context.getProgram()
@@ -19,26 +15,34 @@ export const list =
 
     sort = sort.toLowerCase()
 
+    const errorMessage = (option: string, value: string | number) => {
+      throw new Error(context.i18n('errors.901', option, value))
+    }
+
     if (sort && sort !== 'desc' && sort !== 'asc') {
-      throw new Error(
-        `The <b>sorting</b> option is not valid: '<b><cyan>${sort}</cyan></b>'. Check it and try again.`,
+      errorMessage(
+        context.i18n('commands.backups.subCommands.list.validations.sort'),
+        sort,
       )
     }
 
-    if (isNaN(parseInt(limit.toString()))) {
-      throw new Error(
-        `The <b>limit</b> option is not valid: '<b><cyan>${limit}</cyan></b>'. Check it and try again.`,
+    if (Number.isNaN(Number.parseInt(limit.toString()))) {
+      errorMessage(
+        context.i18n('commands.backups.subCommands.list.validations.limit'),
+        sort,
       )
     }
 
     limit = Number(limit)
 
-    await getList(context, limit, sort, true)
+    await getList({ context, limit, sort, verbose: true })
 
     if (!skip) {
       context.print.line()
       const downloadBackup = await context.input.confirm(
-        `Would you like to download any of this backups?`,
+        context.i18n(
+          'commands.backups.subCommands.list.methods.downloadConfirmation',
+        ),
       )
 
       if (downloadBackup) {
@@ -55,7 +59,9 @@ export const list =
       }
 
       const restoreBackup: boolean = await context.input.confirm(
-        `Would you like to restore one of these backups and make it the current version of the database?`,
+        context.i18n(
+          'commands.backups.subCommands.list.methods.restoreConfirmation',
+        ),
       )
 
       if (restoreBackup) {
@@ -73,7 +79,9 @@ export const list =
       }
 
       const deleteBackup: boolean = await context.input.confirm(
-        `Would you like to flush the current database? (This action cannot be undone)`,
+        context.i18n(
+          'commands.backups.subCommands.list.methods.flushConfirmation',
+        ),
       )
 
       if (deleteBackup) {
@@ -100,26 +108,34 @@ export const list =
   }
 
 export const getList = async (
-  context: AppContext,
-  limit: number = 10,
-  sort = 'desc',
-  verbose: boolean = false,
-): Promise<BackupsSorted> => {
+  args: Based.Backups.List.Get,
+): Promise<Based.Backups.Sorted> => {
+  const { context, limit = 10, sort = 'desc', verbose = false } = args
   const basedClient = await context.getBasedClient()
 
   if (verbose) {
-    context.print.line().loading(`Searching for databases and backups...`)
+    context.print
+      .line()
+      .loading(
+        context.i18n('commands.backups.subCommands.list.methods.searching'),
+      )
   }
 
   const { backups } = await basedClient.call(context.endpoints.BACKUPS_LIST)
 
   if (!Object.keys(backups).length) {
-    throw new Error(`There were no backups found.`)
-  } else {
-    context.print.stop()
+    throw new Error(
+      context.i18n('commands.backups.subCommands.list.methods.noBackups'),
+    )
   }
 
-  const backupsSorted: BackupsSorted = backupsSorting(backups, limit, sort)
+  context.print.stop()
+
+  const backupsSorted: Based.Backups.Sorted = backupsSorting(
+    backups,
+    limit,
+    sort,
+  )
 
   backupsSummary(context, backupsSorted, limit, sort, verbose)
 
