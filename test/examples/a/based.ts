@@ -1,14 +1,14 @@
-export default {
-  org: 'saulx',
-  project: 'eu-observer',
-  env: 'production',
-}
-
 // export default {
 //   org: 'saulx',
-//   project: 'based-ui',
+//   project: 'eu-observer',
 //   env: 'production',
 // }
+
+export default {
+  org: 'saulx',
+  project: 'based-ui',
+  env: 'production',
+}
 
 // export default {
 //   org: 'github-actions',

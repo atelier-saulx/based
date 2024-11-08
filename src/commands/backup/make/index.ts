@@ -37,7 +37,7 @@ export const setMake = async (context: AppContext) => {
   try {
     const envInfo = await basedClient.call(context.endpoints.ENV_INFO)
     envId = envInfo.envId
-  } catch (error) {
+  } catch {
     throw new Error(
       `Fatal error during <b>get your environment info</b>. Check your '<b>${file}</b>' file or <b>your arguments</b> and try again.`,
     )

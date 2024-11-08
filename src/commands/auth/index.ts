@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import type { Command } from 'commander'
 import { AppContext, login } from '../../shared/index.js'
 
 export const auth = async (program: Command): Promise<void> => {

@@ -13,7 +13,7 @@ import { globalOptions } from './helpers/index.js'
 import { AppContext } from './shared/index.js'
 import { languages } from './i18n/index.js'
 
-export const init = async (extract?: boolean) => {
+export const init = async () => {
   const program: Command = new Command()
   const context: AppContext = AppContext.getInstance(program, languages)
 
@@ -29,11 +29,6 @@ export const init = async (extract?: boolean) => {
       test(program),
       infra(program),
     ])
-
-    if (extract) {
-      program.parse(process.argv)
-      return program
-    }
 
     await program.parseAsync(process.argv)
   } catch (e) {

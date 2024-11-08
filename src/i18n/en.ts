@@ -447,6 +447,7 @@ export default {
     499: 'Could not connect. Check your <b>${file}</b> file or <b>your arguments</b> and try again.',
     901: "The <b>${option}</b> provided is not valid: '<b>${value}</b>'. Check it and try again.",
     902: 'Was not possible to save the file: ${error}',
+    903: 'Was not possible to get your machines from the cloud: ${error}',
   },
   alias: {
     isExternalPath:
@@ -491,7 +492,7 @@ export default {
     authenticateUser: {
       loading:
         'Please check your inbox at <b>${email}</b>, your login code is: <b>${code}</b>.',
-      sucess: "<b>Email verified. Welcome, let's rock!</b> 🔥",
+      success: "<b>Email verified. Welcome, let's rock!</b> 🔥",
     },
   },
-}
+} as const

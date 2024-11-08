@@ -1,11 +1,11 @@
-import { AppContext } from '../../../shared/index.js'
-import { getList } from '../list/index.js'
+import { Command } from 'commander'
 import {
-  backupsSelection,
   BackupsSorted,
+  backupsSelection,
   mountDBName,
 } from '../../../helpers/index.js'
-import { Command } from 'commander'
+import { AppContext } from '../../../shared/index.js'
+import { getList } from '../list/index.js'
 
 export const flush =
   (program: Command) =>
@@ -55,7 +55,7 @@ export const setFlush = async ({
 }: Based.Backups.Flush) => {
   const basedClient = await context.getBasedClient()
   const backups: BackupsSorted = await getList(context)
-  let { selectedDB } = await backupsSelection({
+  const { selectedDB } = await backupsSelection({
     context,
     backups,
     db,
@@ -69,13 +69,13 @@ export const setFlush = async ({
 
   context.print
     .line()
-    .info(`<b>Flush summary:</b>`)
+    .info('<b>Flush summary:</b>')
     .info(`<b>Cluster:</b> <cyan>${cluster}</cyan>`)
     .info(
       `<b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>`,
     )
     .info(`<b>Config:</b> <cyan>${dbInfo.configName}</cyan>`)
-    .info(`<b>Service:</b> <cyan>@based/env-db</cyan>`)
+    .info('<b>Service:</b> <cyan>@based/env-db</cyan>')
     .info(`<b>Database:</b> <cyan>${dbInfo.name}</cyan>`)
     .info(`<b>Instance:</b> <cyan>${dbInfo.instance}</cyan>`)
     .line()
@@ -96,11 +96,11 @@ export const setFlush = async ({
     })
 
     if (!result.ok) {
-      new Error(result)
+      throw new Error(result)
     }
   } catch (error) {
-    new Error(`Error flushing the current database: '${error}'`)
+    throw new Error(`Error flushing the current database: '${error}'`)
   }
 
-  context.print.stop().success(`Current database flushed successfully!`, true)
+  context.print.stop().success('Current database flushed successfully!', true)
 }

@@ -25,7 +25,7 @@ const authenticateUser = async (
     code,
   })
 
-  context.print.stop().success(context.i18n('methods.authenticateUser.sucess'))
+  context.print.stop().success(context.i18n('methods.authenticateUser.success'))
 
   return {
     ...(await hub.once('authstate-change')),

@@ -281,7 +281,7 @@ export const makeInfra = async (
 
     await saveAsFile(infraTemplate, infra.path, infra.format)
   } catch (error) {
-    new Error(context.i18n('errors.902', error))
+    throw new Error(context.i18n('errors.902', error))
   }
 
   context.print.success(context.i18n('methods.savedFile', infra.path), true)

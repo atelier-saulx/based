@@ -6,27 +6,19 @@ import {
   saveAsFile,
 } from '../../../shared/pathAndFiles.js'
 import { join, resolve } from 'node:path'
+import { getMachines } from '../../../helpers/index.js'
 
 export const get = (program: Command) => async (infra: Based.Infra.Get) => {
   const context: AppContext = AppContext.getInstance(program)
   await context.getProgram()
   const basedClient = await context.getBasedClient()
-  const { org, project, env } = context.get('basedProject')
   const { skip } = context.getGlobalOptions()
 
   const errorMessage = (option: string, value: string | number) => {
     throw new Error(context.i18n('errors.901', option, value))
   }
 
-  const infraData = await basedClient
-    .call(context.endpoints.INFRA_GET, {
-      org,
-      project,
-      env,
-    })
-    .get()
-
-  infra.machines = infraData?.config?.machineConfigs
+  infra.machines = await getMachines()
 
   if (infra.machine && !infra.machines[infra.machine]) {
     errorMessage(
@@ -127,7 +119,7 @@ export const getInfra = async (context: AppContext, infra: Based.Infra.Get) => {
     .info(context.i18n('commands.infra.subCommands.get.methods.summary.header'))
     .info(
       context.i18n(
-        'commands.infra.subCommands.get.methods.summary.saving',
+        'commands.infra.subCommands.get.methods.summary',
         machinesKeys.length,
         machinesKeys.join(' | '),
       ),
@@ -153,7 +145,7 @@ export const getInfra = async (context: AppContext, infra: Based.Infra.Get) => {
 
     await saveAsFile(infra.machines, infra.path, infra.format)
   } catch (error) {
-    new Error(context.i18n('errors.902', error))
+    throw new Error(context.i18n('errors.902', error))
   }
 
   context.print

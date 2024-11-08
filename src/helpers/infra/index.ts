@@ -1,3 +1,5 @@
+import { AppContext } from '../../shared/AppContext.js'
+
 export const exportInfraTemplate = ({
   name,
   description,
@@ -94,3 +96,23 @@ export const exportInfraTemplate = ({
     },
   },
 })
+
+export const getMachines = async () => {
+  const context: AppContext = AppContext.getInstance()
+  const basedClient = await context.getBasedClient()
+  const { org, project, env } = context.get('basedProject')
+
+  try {
+    const infraData = await basedClient
+      .call(context.endpoints.INFRA_GET, {
+        org,
+        project,
+        env,
+      })
+      .get()
+
+    return infraData?.config?.machineConfigs
+  } catch (error) {
+    throw new Error(context.i18n('errors.903', error))
+  }
+}

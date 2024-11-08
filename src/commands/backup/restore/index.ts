@@ -128,7 +128,7 @@ export const setRestore = async ({
       })
 
       if (!result.ok) {
-        new Error(result)
+        throw new Error(result)
       }
     } catch (error) {
       throw new Error(`Error uploading your file: '${error}'`)

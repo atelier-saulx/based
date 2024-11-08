@@ -1,14 +1,14 @@
+import { writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+import type { Command } from 'commander'
+import { type BackupsSorted, backupsSelection } from '../../../helpers/index.js'
 import {
+  AppContext,
   isValidPath,
   replaceTilde,
   sanitizeFileName,
-  AppContext,
 } from '../../../shared/index.js'
-import { join, resolve } from 'node:path'
-import { writeFile } from 'fs/promises'
 import { getList } from '../list/index.js'
-import { backupsSelection, BackupsSorted } from '../../../helpers/index.js'
-import { Command } from 'commander'
 
 export const download =
   (program: Command) =>
@@ -47,7 +47,7 @@ export const getDownload = async ({
   const isExternalPath: boolean = path !== undefined && path !== ''
 
   const backups: BackupsSorted = await getList(context)
-  let { selectedFile, selectedDB } = await backupsSelection({
+  const { selectedFile, selectedDB } = await backupsSelection({
     context,
     backups,
     db,
@@ -90,7 +90,7 @@ export const getDownload = async ({
 
   context.print
     .line()
-    .info(`<b>Download summary:</b>`)
+    .info('<b>Download summary:</b>')
     .info(`<b>Database:</b> <reset><cyan>${selectedDB}</cyan></reset>`)
     .info(`<b>Backup file:</b> <reset><cyan>${selectedFile}</cyan></reset>`)
     .info(`<b>Saving backup file in:</b> <reset><cyan>${path}</cyan></reset>`)
@@ -124,7 +124,7 @@ export const getDownload = async ({
 
       context.print.stop()
     } catch (error) {
-      new Error(`Was not possible to save the file: ${error}`)
+      throw new Error(`Was not possible to save the file: ${error}`)
     }
   } catch (error) {
     throw new Error(`Error downloading your file: ${error}`)

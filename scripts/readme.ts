@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import { languages } from '../src/i18n/index.js'
 
 const capitalizeWords = (str?: string, fallback?: string) => {
@@ -25,17 +25,21 @@ const generateCommandMarkdown = (
 
   if (commandObj.options && commandObj.options.length > 0) {
     markdown += '| Option | Description |\n|--------|-------------|\n'
-    commandObj.options.forEach((option: any) => {
+    for (const option of commandObj.options) {
       const optionDescription = option.longDescription || option.description
       markdown += `| \`${option.parameter}\` | ${optionDescription} |\n`
-    })
+    }
+
     markdown += '\n'
   }
 
   return markdown
 }
 
-const addCommands = (inputString: string, commands: any) => {
+const addCommands = (
+  inputString: string,
+  commands: typeof languages.languages.en,
+) => {
   const commandsMarker = '## Commands'
   const [beforeCommands] = inputString.includes(commandsMarker)
     ? inputString.split(commandsMarker)
@@ -73,7 +77,7 @@ const saveFile = (file: string, content: string) => {
   })
 }
 
-const buildReadme = (base: any) => {
+const buildReadme = (base: typeof languages) => {
   const { languages, default: defaultLanguageKey } = base
 
   for (const languageKey in languages) {

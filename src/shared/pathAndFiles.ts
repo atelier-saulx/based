@@ -23,7 +23,7 @@ export const isCurrentDump = (key: string) => /\/current-dump.rdb$/.test(key)
 export const isValidPath = (path: string): boolean => {
   try {
     return fs.existsSync(path) && fs.lstatSync(path).isDirectory()
-  } catch (err) {
+  } catch {
     return false
   }
 }

@@ -6,23 +6,23 @@ import { spinner } from '../../shared/spinner.js'
 import { queued } from '@saulx/utils'
 import mimeTypes from 'mime-types'
 import pc from 'picocolors'
-import ts from 'typescript'
+// import ts from 'typescript'
 
-const findType = (node: ts.Node, typeName: string) => {
-  // @ts-ignore
-  if (node.type?.typeName?.escapedText === typeName) {
-    return true
-  }
+// const findType = (node: ts.Node, typeName: string) => {
+//   // @ts-ignore
+//   if (node.type?.typeName?.escapedText === typeName) {
+//     return true
+//   }
 
-  let found
-  ts.forEachChild(node, (node) => {
-    if (!found) {
-      found = findType(node, typeName)
-    }
-  })
+//   let found
+//   ts.forEachChild(node, (node) => {
+//     if (!found) {
+//       found = findType(node, typeName)
+//     }
+//   })
 
-  return found
-}
+//   return found
+// }
 
 const queuedFileUpload = queued(
   async (
@@ -40,7 +40,7 @@ const queuedFileUpload = queued(
   { dedup: (_client, payload) => hash(payload), concurrency: 10 },
 )
 
-const queuedFnDeploy = queued(
+const _queuedFnDeploy = queued(
   async (
     context: AppContext,
     basedClient: Based.API.Client,
@@ -244,7 +244,7 @@ export const deploy = async (program: Command) => {
 
           const logs = await Promise.all(
             deploys.map(async ({ checksum, config, js, sourcemap }) => {
-              await queuedFnDeploy(
+              await _queuedFnDeploy(
                 context,
                 basedClient,
                 checksum,
