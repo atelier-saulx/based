@@ -1,17 +1,17 @@
-import { join } from 'node:path'
-import { bundle, BundleResult } from '@based/bundle'
-import { readJSON } from 'fs-extra/esm'
 import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
+import { type BundleResult, bundle } from '@based/bundle'
 import fg from 'fast-glob'
+import { readJSON } from 'fs-extra/esm'
 import {
-  rel,
+  type AppContext,
   abs,
-  invalidate,
   buildFunctions,
-  parseSchema,
   getTargets,
+  invalidate,
   isIndexFile,
-  AppContext,
+  parseSchema,
+  rel,
 } from './index.js'
 
 const { glob } = fg
@@ -31,7 +31,7 @@ export const parseFunctions = async (
   onChange: (err: Error | null, res: BundleResult) => void,
   publicPath: string,
 ): Promise<ParseFunctionsResult> => {
-  let { targets, schema } = await getTargets()
+  const { targets, schema } = await getTargets()
 
   const configPaths = targets.map(([dir, file]) => join(dir, file))
 

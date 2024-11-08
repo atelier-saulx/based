@@ -1,8 +1,8 @@
-import { Command } from 'commander'
-import { AppContext } from '../../shared/index.js'
-import { readJSON } from 'fs-extra/esm'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { Command } from 'commander'
+import { readJSON } from 'fs-extra/esm'
+import { AppContext } from '../../shared/index.js'
 
 export const version = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)

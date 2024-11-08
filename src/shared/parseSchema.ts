@@ -1,4 +1,4 @@
-import { BundleResult } from '@based/bundle'
+import type { BundleResult } from '@based/bundle'
 
 export const parseSchema = (bundleResult: BundleResult, schema: string) => {
   const compiledSchema = bundleResult.require(schema)

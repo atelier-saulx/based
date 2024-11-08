@@ -1,8 +1,8 @@
-import { join } from 'node:path'
-import { readJSON, outputJSON } from 'fs-extra/esm'
 import { homedir } from 'node:os'
-import { BasedClient, BasedOpts } from '@based/client'
-import { getBasedClient, AppContext } from './index.js'
+import { join } from 'node:path'
+import type { BasedClient, BasedOpts } from '@based/client'
+import { outputJSON, readJSON } from 'fs-extra/esm'
+import { AppContext, getBasedClient } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
@@ -148,7 +148,7 @@ export const login = async ({
     } catch (error) {
       users = users.filter((user) => user !== lastUser)
 
-      if (!isNaN(error) && typeof error === 'string') {
+      if (!Number.isNaN(error) && typeof error === 'string') {
         // TODO Fix the type in the i18n to handle dynamic strings
         const errorMsg = `errors.${error}` as Based.i18n.NestedKeys<
           typeof context.i18n
@@ -219,7 +219,10 @@ export const login = async ({
     type: 'based',
   })
 
-  context.print.success(context.i18n('methods.login.success', user.email), '👨‍🦱')
+  context.print.success(
+    context.i18n('methods.login.success', user.email),
+    '👨‍🦱',
+  )
 
   return buildClients(adminHub, envHub, client)
 }

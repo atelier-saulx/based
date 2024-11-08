@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
-import { isAbsolute, join, relative } from 'node:path'
-import { homedir } from 'node:os'
 import { writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
+import { isAbsolute, join, relative } from 'node:path'
 
 export const mainFileName: Based.File = 'based'
 export const schemaFileName: Based.File = `${mainFileName}.schema`
@@ -29,7 +29,7 @@ export const isValidPath = (path: string): boolean => {
 }
 
 export const isFileFromCloud = (key: string) =>
-  !!(key && key.startsWith('env-db/') && key.endsWith('.rdb'))
+  !!(key?.startsWith('env-db/') && key.endsWith('.rdb'))
 
 export const cwd = process.cwd()
 
@@ -44,10 +44,7 @@ export const sanitizeFileName = (fileName: string) =>
 export const replaceTilde = (path: string) =>
   path.replace(/^~(?=$|\/|\\)/, homedir())
 
-export const formatAsObject = (
-  obj: Record<string, any>,
-  indentLevel = 1,
-): string => {
+export const formatAsObject = (obj: object, indentLevel = 1): string => {
   const indent = '  '.repeat(indentLevel) // Define o nível de indentação para o nível atual
   const entries = Object.entries(obj).map(([key, value]) => {
     const formattedKey = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/.test(key)
@@ -56,18 +53,20 @@ export const formatAsObject = (
 
     if (typeof value === 'string') {
       return `${indent}${formattedKey}: '${value}'`
-    } else if (typeof value === 'number' || typeof value === 'boolean') {
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
       return `${indent}${formattedKey}: ${value}`
-    } else if (Array.isArray(value)) {
+    }
+    if (Array.isArray(value)) {
       const arrayValues = value.map((val) =>
         typeof val === 'string' ? `'${val}'` : val,
       )
       return `${indent}${formattedKey}: [${arrayValues.join(', ')}]`
-    } else if (typeof value === 'object' && value !== null) {
-      return `${indent}${formattedKey}: ${formatAsObject(value, indentLevel + 1)}` // Recursão para objetos aninhados
-    } else {
-      return `${indent}${formattedKey}: ${JSON.stringify(value)}`
     }
+    if (typeof value === 'object' && value !== null) {
+      return `${indent}${formattedKey}: ${formatAsObject(value, indentLevel + 1)}` // Recursão para objetos aninhados
+    }
+    return `${indent}${formattedKey}: ${JSON.stringify(value)}`
   })
 
   const openBraceIndent = '  '.repeat(indentLevel - 1)
@@ -75,7 +74,7 @@ export const formatAsObject = (
 }
 
 export const saveAsFile = async (
-  obj: Record<string, any>,
+  obj: Record<string, unknown>,
   filePath: string,
   format: Based.Extensions,
 ): Promise<boolean> => {

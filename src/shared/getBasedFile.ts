@@ -1,6 +1,6 @@
+import { bundle } from '@based/bundle'
 import { findUp } from 'find-up'
 import { readJSON } from 'fs-extra/esm'
-import { bundle } from '@based/bundle'
 
 export const getBasedFile = async (
   files: string[],
@@ -29,7 +29,7 @@ export const getBasedFile = async (
     Object.assign(basedProject, basedFileContent)
 
     return basedProject
-  } else {
-    return null
   }
+
+  return null
 }

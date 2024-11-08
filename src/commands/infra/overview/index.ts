@@ -2,14 +2,14 @@ import type { Command } from 'commander'
 import { AppContext, colorize } from '../../../shared/index.js'
 
 export const overview =
-  (program: Command) =>
-  async ({ stream, monitor }) => {
+  (program: Command) => async (args: Based.Infra.Overview.Command) => {
+    const { stream, monitor } = args
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const { destroy } = await context.getBasedClient()
 
     try {
-      await getOverview(context, stream, monitor)
+      await getOverview({ context, stream, monitor })
 
       if (!stream) {
         destroy()
@@ -21,11 +21,8 @@ export const overview =
     }
   }
 
-export const getOverview = async (
-  context: AppContext,
-  stream = true,
-  monitor = true,
-) => {
+export const getOverview = async (args: Based.Infra.Overview.Get) => {
+  const { context, stream = true, monitor = true } = args
   const basedClient = await context.getBasedClient()
   const { cluster, org, project, env } = context.get('basedProject')
 

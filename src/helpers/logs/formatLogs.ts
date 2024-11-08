@@ -1,5 +1,5 @@
 import { format, isAfter, isBefore, isWithinInterval, toDate } from 'date-fns'
-import { logViewerDateAndTime, colorize } from '../../shared/index.js'
+import { colorize, logViewerDateAndTime } from '../../shared/index.js'
 
 const thresholdMessageLength: number = 4
 
@@ -33,36 +33,36 @@ const templateMessage = (
 
 const isToBeFiltered = (
   log: Based.Logs.EnvLogsData & Based.Logs.AdminLogsData,
-  filters: Based.Logs.Filter,
+  args: Based.Logs.Filter.Command,
 ) => {
   const isMessageInvalid = !log.msg || log.msg.length < thresholdMessageLength
-  const isLogLevelNotInfo = filters.level === 'info' && log.lvl === 'error'
-  const isLogLevelNotError = filters.level === 'error' && log.lvl === 'info'
+  const isLogLevelNotInfo = args.level === 'info' && log.lvl === 'error'
+  const isLogLevelNotError = args.level === 'error' && log.lvl === 'info'
   const isFunctionNotIncluded =
-    Array.isArray(filters.function) && !filters.function.includes(log.fn)
+    Array.isArray(args.function) && !args.function.includes(log.fn)
   const isServiceNotIncluded =
-    Array.isArray(filters.service) && !filters.service.includes(log.srvc)
-  const isChecksumInvalid = filters.checksum && log.cs !== filters.checksum
-  const isMachineIDInvalid = filters.machine && log.mid !== filters.machine
+    Array.isArray(args.service) && !args.service.includes(log.srvc)
+  const isChecksumInvalid = args.checksum && log.cs !== args.checksum
+  const isMachineIDInvalid = args.machine && log.mid !== args.machine
   const isDateNotWithinInterval =
-    typeof filters.startDate !== 'string' &&
-    typeof filters.endDate !== 'string' &&
-    filters.startDate?.timestamp &&
-    filters.endDate?.timestamp &&
+    typeof args.startDate !== 'string' &&
+    typeof args.endDate !== 'string' &&
+    args.startDate?.timestamp &&
+    args.endDate?.timestamp &&
     !isWithinInterval(toDate(log.ts), {
-      start: filters.startDate?.timestamp,
-      end: filters.endDate?.timestamp,
+      start: args.startDate?.timestamp,
+      end: args.endDate?.timestamp,
     })
   const isCannotBeBefore =
-    typeof filters.startDate !== 'string' &&
-    !filters.endDate &&
-    filters.startDate?.timestamp &&
-    isBefore(log.ts, filters.startDate?.timestamp)
+    typeof args.startDate !== 'string' &&
+    !args.endDate &&
+    args.startDate?.timestamp &&
+    isBefore(log.ts, args.startDate?.timestamp)
   const isCannotBeAfter =
-    !filters.startDate &&
-    typeof filters.endDate !== 'string' &&
-    filters.endDate?.timestamp &&
-    isAfter(log.ts, filters.endDate?.timestamp)
+    !args.startDate &&
+    typeof args.endDate !== 'string' &&
+    args.endDate?.timestamp &&
+    isAfter(log.ts, args.endDate?.timestamp)
 
   return (
     isMessageInvalid ||
@@ -80,23 +80,25 @@ const isToBeFiltered = (
 
 export const filterLogs = (
   data: Based.Logs.EnvLogsData[] | Based.Logs.AdminLogsData[],
-  filters: Based.Logs.Filter,
+  args: Based.Logs.Filter.Command,
 ) => {
   if (!data?.length) {
     return []
   }
 
-  if (!filters.stream) {
-    data = data.slice(0, filters.limit)
+  let logs = data
+
+  if (!args.stream) {
+    logs = data.slice(0, args.limit)
   }
 
   const sliceMessage: number = process.stdout.columns - 5
 
-  return data
-    .map((log: any) => {
-      const isCollapsed = filters.collapsed && log.msg.length > sliceMessage
+  return logs
+    .map((log) => {
+      const isCollapsed = args.collapsed && log.msg.length > sliceMessage
 
-      if (isToBeFiltered(log, filters)) {
+      if (isToBeFiltered(log, args)) {
         return false
       }
 
@@ -116,7 +118,7 @@ export const filterLogs = (
       }
 
       if (isCollapsed) {
-        log.msg = log.msg?.slice(0, sliceMessage) + '...'
+        log.msg = `${log.msg?.slice(0, sliceMessage)}...`
       }
 
       return log
@@ -125,18 +127,20 @@ export const filterLogs = (
     .sort((a, b) => {
       const dateA: number = a.ts
       const dateB: number = b.ts
-      const isDesc = filters.sort === 'desc'
-      const isAsc = filters.sort === 'asc'
-      const isMonitor = filters.monitor
+      const isDesc = args.sort === 'desc'
+      const isAsc = args.sort === 'asc'
+      const isMonitor = args.monitor
 
       if (isMonitor) {
         return dateA - dateB
-      } else {
-        if (isAsc) {
-          return dateB - dateA
-        } else if (isDesc) {
-          return dateA - dateB
-        }
+      }
+
+      if (isAsc) {
+        return dateB - dateA
+      }
+
+      if (isDesc) {
+        return dateA - dateB
       }
 
       return 0
@@ -160,18 +164,18 @@ export const formatLogs = (
       ]
 
       return templateMessage(ts, labels, msg)
-    } else {
-      const { lvl, ts, srvc, mid, url, msg } = log as Based.Logs.AdminLogsData
-
-      labels = [
-        '<b><magenta>[infra]</magenta></b>',
-        `<b>${logLevelColor(lvl)}</b>`,
-        `<yellow>[service: <b>${srvc}</b>]</yellow>`,
-        `<green>[machineID: <b>${mid}</b>]</green>`,
-        `<blue>[IP: <b>${url}</b>]</blue>`,
-      ]
-
-      return templateMessage(ts, labels, msg)
     }
+
+    const { lvl, ts, srvc, mid, url, msg } = log as Based.Logs.AdminLogsData
+
+    labels = [
+      '<b><magenta>[infra]</magenta></b>',
+      `<b>${logLevelColor(lvl)}</b>`,
+      `<yellow>[service: <b>${srvc}</b>]</yellow>`,
+      `<green>[machineID: <b>${mid}</b>]</green>`,
+      `<blue>[IP: <b>${url}</b>]</blue>`,
+    ]
+
+    return templateMessage(ts, labels, msg)
   })
 }

@@ -283,7 +283,26 @@ export default {
               description: 'Filter by machine ID.',
             },
           ],
-          methods: {},
+          validations: {
+            sort: 'sort',
+            startDate: 'start date',
+            endDate: 'end date',
+            checksum: 'checksum',
+            logLevel: 'log level',
+            interval: 'date interval',
+          },
+          methods: {
+            filterByDate: 'Would you like to filter the logs by date and time?',
+            startDate:
+              'Please enter the start date and time for filtering logs:',
+            endDate: 'Please enter the end date and time for filtering logs:',
+            function: 'Do you want to filter by function?',
+            functions: 'Please select the functions: <dim>(A-Z)</dim>',
+            startAndEndDates: 'Start date: ${startDate} | End date: ${endDate}',
+            endDateWrong:
+              'The end date cannot be before the start date. ${message}',
+            startDateWrong: 'The start date cannot be after now. ${message}',
+          },
         },
         clear: {
           description: 'Clear the logs.',
@@ -508,6 +527,7 @@ export default {
     908: 'Error restoring your file: ${error}',
     909: 'Error uploading your file: ${error}',
     910: 'Error cleaning your logs: ${error}',
+    911: "Error running your tests, was not possible to find the command: <b>'${command}'</b> in your <b>'package.json'</b>",
   },
   alias: {
     isExternalPath:

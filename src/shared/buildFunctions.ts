@@ -1,4 +1,4 @@
-import { bundle, BundleResult } from '@based/bundle'
+import { type BundleResult, bundle } from '@based/bundle'
 
 type BuildFunctionsArgs = {
   publicPath: string

@@ -1,16 +1,16 @@
-import { AppContext } from '../../shared/index.js'
+import type { AppContext } from '../../shared/index.js'
 
 export const getLogs = async (
   context: AppContext,
-  filters: Based.Logs.Filter,
+  args: Based.Logs.Filter.Command,
   renderData: Based.Logs.RenderData,
 ) => {
   const basedClient = await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
   const finalData = []
-  const isOnlyApp: boolean = filters.app && !filters.infra
-  const isOnlyInfra: boolean = !filters.app && filters.infra
-  const isBoth: boolean = filters.app && filters.infra
+  const isOnlyApp: boolean = args.app && !args.infra
+  const isOnlyInfra: boolean = !args.app && args.infra
+  const isBoth: boolean = args.app && args.infra
   const isNone: boolean = !isBoth
 
   context.print.stop()

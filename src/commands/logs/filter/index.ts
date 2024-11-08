@@ -9,7 +9,7 @@ import {
 
 export const filter =
   (program: Command) =>
-  async (filters: Based.Logs.Filter): Promise<void> => {
+  async (args: Based.Logs.Filter.Command): Promise<void> => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
     const basedClient = await context.getBasedClient()
@@ -20,79 +20,93 @@ export const filter =
       throw new Error(context.i18n('errors.901', option, value))
     }
 
-    if (!filters.stream && filters.sort !== 'asc' && filters.sort !== 'desc') {
-      errorMessage('sort', filters.sort)
+    if (!args.stream && args.sort !== 'asc' && args.sort !== 'desc') {
+      errorMessage(
+        context.i18n('commands.logs.subCommands.filter.validations.sort'),
+        args.sort,
+      )
     }
 
-    if (filters.startDate && typeof filters.startDate === 'string') {
-      if (!isValid(parse(filters.startDate, externalDateAndTime, new Date()))) {
-        errorMessage('start date', filters.startDate)
+    if (args.startDate && typeof args.startDate === 'string') {
+      if (!isValid(parse(args.startDate, externalDateAndTime, new Date()))) {
+        errorMessage(
+          context.i18n(
+            'commands.logs.subCommands.filter.validations.startDate',
+          ),
+          args.startDate,
+        )
       } else {
-        filters.startDate = context.parse.date(
-          filters.startDate,
+        args.startDate = context.parse.date(
+          args.startDate,
           externalDateAndTime,
           dateAndTime,
         )
       }
     }
 
-    if (filters.endDate && typeof filters.endDate === 'string') {
-      if (!isValid(parse(filters.endDate, externalDateAndTime, new Date()))) {
-        errorMessage('end date', filters.endDate)
+    if (args.endDate && typeof args.endDate === 'string') {
+      if (!isValid(parse(args.endDate, externalDateAndTime, new Date()))) {
+        errorMessage(
+          context.i18n('commands.logs.subCommands.filter.validations.endDate'),
+          args.endDate,
+        )
       } else {
-        filters.endDate = context.parse.date(
-          filters.endDate,
+        args.endDate = context.parse.date(
+          args.endDate,
           externalDateAndTime,
           dateAndTime,
         )
       }
     }
 
-    if (filters.checksum) {
-      filters.checksum = Number.parseInt(filters.checksum.toString())
-      if (Number.isNaN(filters.checksum)) {
-        errorMessage('checksum', filters.checksum)
+    if (args.checksum) {
+      args.checksum = Number.parseInt(args.checksum.toString())
+      if (Number.isNaN(args.checksum)) {
+        errorMessage(
+          context.i18n('commands.logs.subCommands.filter.validations.checksum'),
+          args.checksum,
+        )
       }
     }
 
-    if (filters.level && !logOptions.includes(filters.level)) {
-      errorMessage('log level', filters.level)
+    if (args.level && !logOptions.includes(args.level)) {
+      errorMessage(
+        context.i18n('commands.logs.subCommands.filter.validations.logLevel'),
+        args.level,
+      )
     }
 
-    if (
-      (!filters.stream && !filters.limit) ||
-      Number.isNaN(Number(filters.limit))
-    ) {
-      filters.limit = 100
-    } else if (!filters.stream && filters.limit && filters.limit > 1000) {
-      filters.limit = 1000
+    if ((!args.stream && !args.limit) || Number.isNaN(Number(args.limit))) {
+      args.limit = 100
+    } else if (!args.stream && args.limit && args.limit > 1000) {
+      args.limit = 1000
     }
 
-    if (!filters.sort || filters.stream) {
-      filters.sort = 'asc'
+    if (!args.sort || args.stream) {
+      args.sort = 'asc'
     }
 
     if (!skip) {
       context.print.line()
 
-      if (!filters.endDate && !filters.startDate && !filters.stream) {
+      if (!args.endDate && !args.startDate && !args.stream) {
         const filterByDate: boolean = await context.input.confirm(
-          'Would you like to filter the logs by date and time?',
+          context.i18n('commands.logs.subCommands.filter.methods.filterByDate'),
         )
 
         if (filterByDate) {
-          filters.startDate = await context.input.dateTime(
-            'Please enter the start date and time for filtering logs:',
+          args.startDate = await context.input.dateTime(
+            context.i18n('commands.logs.subCommands.filter.methods.startDate'),
           )
-          filters.endDate = await context.input.dateTime(
-            'Please enter the end date and time for filtering logs:',
+          args.endDate = await context.input.dateTime(
+            context.i18n('commands.logs.subCommands.filter.methods.endDate'),
           )
         }
       }
 
-      if (!filters.function || !filters.function.length) {
+      if (!args.function || !args.function.length) {
         const filterByFunction: boolean = await context.input.confirm(
-          'Do you want to filter by function?',
+          context.i18n('commands.logs.subCommands.filter.methods.function'),
         )
 
         if (filterByFunction) {
@@ -124,8 +138,8 @@ export const filter =
             .map(({ name }) => ({ value: name, name }))
             .sort((a, b) => (a.name > b.name ? 1 : -1))
 
-          filters.function = await context.input.select(
-            'Please select the functions: <dim>(A-Z)</dim>',
+          args.function = await context.input.select(
+            context.i18n('commands.logs.subCommands.filter.methods.functions'),
             functionsItems,
             true,
           )
@@ -162,30 +176,40 @@ export const filter =
     }
 
     if (
-      typeof filters.startDate !== 'string' &&
-      typeof filters.endDate !== 'string' &&
-      filters.startDate?.date &&
-      filters.endDate?.date
+      typeof args.startDate !== 'string' &&
+      typeof args.endDate !== 'string' &&
+      args.startDate?.date &&
+      args.endDate?.date
     ) {
-      const message: string = `Start date: ${filters.startDate.value} | End date: ${filters.endDate.value}`
+      const message: string = context.i18n(
+        'commands.logs.subCommands.filter.methods.startAndEndDates',
+        args.startDate.value,
+        args.endDate.value,
+      )
 
-      if (isBefore(filters.endDate.date, filters.startDate.date)) {
+      if (isBefore(args.endDate.date, args.startDate.date)) {
         errorMessage(
-          'date interval',
-          `The end date cannot be before the start date. ${message}`,
+          context.i18n('commands.logs.subCommands.filter.validations.interval'),
+          context.i18n(
+            'commands.logs.subCommands.filter.methods.endDateWrong',
+            message,
+          ),
         )
-      } else if (isAfter(filters.startDate.date, new Date())) {
+      } else if (isAfter(args.startDate.date, new Date())) {
         errorMessage(
-          'date interval',
-          `The start date cannot be after now. ${message}`,
+          context.i18n('commands.logs.subCommands.filter.validations.interval'),
+          context.i18n(
+            'commands.logs.subCommands.filter.methods.startDateWrong',
+            message,
+          ),
         )
       }
     }
 
     try {
-      await visualizer(context, filters)
+      await visualizer(context, args)
 
-      if (!filters.stream) {
+      if (!args.stream) {
         basedClient.destroy()
       }
 

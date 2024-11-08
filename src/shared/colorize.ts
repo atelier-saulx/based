@@ -22,7 +22,7 @@ export function colorize(content: string | string[]): string | string[] {
     gray: pc.gray,
     grey: pc.gray,
     dim: pc.dim,
-    reset: (text: string) => '\u001b[0m' + text,
+    reset: (text: string) => `\u001b[0m${text}`,
   }
 
   const tagRegex = /<(\w+?)>(.*?)<\/\1>/gs
@@ -33,15 +33,15 @@ export function colorize(content: string | string[]): string | string[] {
 
       if (transform) {
         return transform(processTags(content))
-      } else {
-        return content
       }
+
+      return content
     })
   }
 
   if (Array.isArray(content)) {
     return content.map(processTags) as string[] // Processa cada elemento do array
-  } else {
-    return processTags(content) as string // Processa uma string individual
   }
+
+  return processTags(content) as string // Processa uma string individual
 }

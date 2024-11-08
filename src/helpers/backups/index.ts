@@ -183,7 +183,7 @@ const fileSelection = async ({
   return file
 }
 
-export const mountDBName = (db: any, name: string) => {
+export const mountDBName = (db: unknown, name: string) => {
   if (!Array.isArray(db)) {
     return null
   }

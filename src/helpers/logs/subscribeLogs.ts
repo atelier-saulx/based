@@ -1,9 +1,9 @@
 import diff from 'arr-diff'
-import { AppContext } from '../../shared/index.js'
+import type { AppContext } from '../../shared/index.js'
 
 export const subscribeLogs = async (
   context: AppContext,
-  filters: Based.Logs.Filter,
+  args: Based.Logs.Filter.Command,
   renderData: Based.Logs.RenderData,
 ) => {
   const basedClient = await context.getBasedClient()
@@ -12,9 +12,9 @@ export const subscribeLogs = async (
   let envLogsPrevious: Based.Logs.EnvLogsData[] = []
   let finalAdminData = []
   let finalEnvData = []
-  const isOnlyApp: boolean = filters.app && !filters.infra
-  const isOnlyInfra: boolean = !filters.app && filters.infra
-  const isBoth: boolean = filters.app && filters.infra
+  const isOnlyApp: boolean = args.app && !args.infra
+  const isOnlyInfra: boolean = !args.app && args.infra
+  const isBoth: boolean = args.app && args.infra
   const isNone: boolean = !isBoth
 
   context.print.stop()

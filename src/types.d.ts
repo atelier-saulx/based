@@ -345,6 +345,19 @@ declare global {
         }
       }
 
+      namespace Overview {
+        type Command = {
+          stream?: boolean
+          monitor?: boolean
+        }
+
+        type Get = {
+          context: AppContext
+          stream: boolean
+          monitor: boolean
+        }
+      }
+
       type TemplateInfo = Omit<Based.Infra.Init, 'path' | 'format'>
 
       type Services =
@@ -387,21 +400,23 @@ declare global {
     }
 
     namespace Logs {
-      type Filter = {
-        monitor?: boolean
-        stream?: boolean
-        collapsed?: boolean
-        app?: boolean
-        infra?: boolean
-        level?: 'all' | 'info' | 'error'
-        limit?: number
-        sort?: 'asc' | 'desc'
-        startDate?: Context.DateTimeResult | string | null
-        endDate?: Context.DateTimeResult | string | null
-        checksum?: number
-        function?: string | string[]
-        service?: string | string[]
-        machine?: string | string[]
+      namespace Filter {
+        type Command = {
+          monitor?: boolean
+          stream?: boolean
+          collapsed?: boolean
+          app?: boolean
+          infra?: boolean
+          level?: 'all' | 'info' | 'error'
+          limit?: number
+          sort?: 'asc' | 'desc'
+          startDate?: Context.DateTimeResult | string | null
+          endDate?: Context.DateTimeResult | string | null
+          checksum?: number
+          function?: string | string[]
+          service?: string | string[]
+          machine?: string | string[]
+        }
       }
 
       type EnvLogsData = {
@@ -426,7 +441,16 @@ declare global {
       type RenderData = (data: AdminLogsData[] | EnvLogsData[]) => void
     }
 
-    namespace Infra {}
+    namespace Tests {
+      type Command = {
+        command?: string
+        backup?: boolean
+        restore?: boolean
+        db?: string
+        file?: string
+        date?: string
+      }
+    }
 
     type ConfigBase = BasedFunctionConfig & {
       appParams?: {

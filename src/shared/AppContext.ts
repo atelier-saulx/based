@@ -1,17 +1,17 @@
-import { Command } from 'commander'
+import { i18n } from '@based/i18n'
+import type { Command } from 'commander'
 import {
   contextBasedClient,
-  contextGlobalOptions,
-  contextParse,
-  contextProgram,
-  contextInput,
-  contextPrint,
   contextCommandMaker,
+  contextGlobalOptions,
+  contextInput,
+  contextParse,
+  contextPrint,
+  contextProgram,
   contextTerminalKit,
   endpoints,
 } from '../helpers/index.js'
-import { i18n } from '@based/i18n'
-import { languages } from '../i18n/index.js'
+import type { languages } from '../i18n/index.js'
 // TODO
 // We need an eventEmitter?
 // import EventEmitter from 'events'
@@ -49,10 +49,15 @@ export class AppContext {
   // public event: EventEmitter = eventEmitter
   public endpoints = endpoints
 
-  private constructor(program?: Command, internationalization?: any) {
+  private constructor(
+    program?: Command,
+    internationalization?: typeof languages,
+  ) {
     if (!program && !this.program) {
       throw new Error('Program must be provided.')
-    } else if (program && !this.program) {
+    }
+
+    if (program && !this.program) {
       this.program = program
     }
 
@@ -66,27 +71,27 @@ export class AppContext {
     }
   }
 
-  public static getInstance(program?: Command, languages?: any): AppContext {
+  public static getInstance(
+    program?: Command,
+    i18n?: typeof languages,
+  ): AppContext {
     if (!AppContext.instance) {
-      AppContext.instance = new AppContext(program, languages)
+      AppContext.instance = new AppContext(program, i18n)
     }
 
     return AppContext.instance
   }
 
-  public set(key: string, value: any) {
-    if (key === 'display' && !this.logLevels.includes(value)) {
-      value = 'verbose'
-    }
-
+  public set(key: string, value: unknown) {
     this.state[key] = value
   }
 
-  public put(key: string, value: any) {
+  public put(key: string, value: unknown) {
     if (Array.isArray(this.state[key])) {
       this.state[key] = [...this.state[key], value]
     } else if (
       typeof this.state[key] === 'object' &&
+      typeof value === 'object' &&
       this.state[key] !== null
     ) {
       this.state[key] = {

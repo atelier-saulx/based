@@ -1,7 +1,7 @@
-import { AuthState, BasedClient, BasedOpts } from '@based/client'
-import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
 import { clearTimeout } from 'node:timers'
-import { AppContext } from './AppContext.js'
+import { type AuthState, BasedClient, type BasedOpts } from '@based/client'
+import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
+import type { AppContext } from './AppContext.js'
 
 const store: Record<
   string,

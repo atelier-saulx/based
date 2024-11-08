@@ -1,10 +1,9 @@
-import { AppContext, colorize } from '../../shared/index.js'
-import { filterLogs, formatLogs, subscribeLogs, getLogs } from './index.js'
-import fs from 'fs'
+import { type AppContext, colorize } from '../../shared/index.js'
+import { filterLogs, formatLogs, getLogs, subscribeLogs } from './index.js'
 
 export const visualizer = async (
   context: AppContext,
-  filters: Based.Logs.Filter,
+  args: Based.Logs.Filter.Command,
 ) => {
   const { destroy } = await context.getBasedClient()
   const { cluster, org, env, project } = await context.getProgram()
@@ -21,74 +20,70 @@ export const visualizer = async (
   ]
 
   const isLogsFrom =
-    !filters.app && !filters.infra
+    !args.app && !args.infra
       ? 'app + infra'
-      : !filters.app && filters.infra
+      : !args.app && args.infra
         ? 'infra'
         : 'app'
   filterLabels.push(templateLabels('logs from', isLogsFrom))
 
-  if (filters.collapsed) {
-    filterLabels.push(templateLabels('collapsed', String(filters.collapsed)))
+  if (args.collapsed) {
+    filterLabels.push(templateLabels('collapsed', String(args.collapsed)))
   }
 
-  if (filters.level) {
-    filterLabels.push(templateLabels('level', filters.level))
+  if (args.level) {
+    filterLabels.push(templateLabels('level', args.level))
   }
 
-  if (filters.startDate && typeof filters.startDate !== 'string') {
-    filterLabels.push(templateLabels('start date', filters.startDate.value))
+  if (args.startDate && typeof args.startDate !== 'string') {
+    filterLabels.push(templateLabels('start date', args.startDate.value))
   }
 
-  if (filters.endDate && typeof filters.endDate !== 'string') {
-    filterLabels.push(templateLabels('end date', filters.endDate.value))
+  if (args.endDate && typeof args.endDate !== 'string') {
+    filterLabels.push(templateLabels('end date', args.endDate.value))
   }
 
-  if (filters.function) {
+  if (args.function) {
     filterLabels.push(
       templateLabels(
         'function',
-        Array.isArray(filters.function)
-          ? filters.function.join(', ')
-          : filters.function,
+        Array.isArray(args.function) ? args.function.join(', ') : args.function,
       ),
     )
   }
 
-  if (filters.service) {
+  if (args.service) {
     filterLabels.push(
       templateLabels(
         'service',
-        Array.isArray(filters.service)
-          ? filters.service.join(', ')
-          : filters.service,
+        Array.isArray(args.service) ? args.service.join(', ') : args.service,
       ),
     )
   }
 
-  if (filters.checksum) {
-    filterLabels.push(templateLabels('checksum', String(filters.checksum)))
+  if (args.checksum) {
+    filterLabels.push(templateLabels('checksum', String(args.checksum)))
   }
 
-  if (!filters.stream) {
+  if (!args.stream) {
     filterLabels.push(
-      templateLabels('limit', String(filters.limit)),
-      templateLabels('sorting', String(filters.sort)),
+      templateLabels('limit', String(args.limit)),
+      templateLabels('sorting', String(args.sort)),
     )
   }
 
   let renderData: Based.Logs.RenderData
 
-  if (filters.monitor) {
+  if (args.monitor) {
     const { kill, addRow } = context.terminalKit({
       title: context.get('appName'),
       header: colorize([
         `${context.get('appTitle')}`,
-        `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${filters.stream ? '<b><red>LIVE</red></b>' : ''}`,
+        `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${args.stream ? '<b><red>LIVE</red></b>' : ''}`,
         `Active Filters: [${filterLabels.join(' | ')}]`,
       ]),
       rows: {
-        sort: filters.sort,
+        sort: args.sort,
       },
     })
 
@@ -96,24 +91,16 @@ export const visualizer = async (
       destroy()
     })
 
-    renderData = (data) => addRow(formatLogs(filterLogs(data, filters)))
+    renderData = (data) => addRow(formatLogs(filterLogs(data, args)))
   } else {
     renderData = (data) => {
-      const filteredData = formatLogs(filterLogs(data, filters))
-      const jsonData = JSON.stringify(filteredData, null, 2)
-      fs.writeFile('logs.json', jsonData, 'utf8', (err) => {
-        if (err) {
-          console.error('Erro ao salvar o arquivo:', err)
-          return
-        }
-        console.log(`Arquivo salvo com sucesso!`)
-      })
+      const filteredData = formatLogs(filterLogs(data, args))
 
       for (const line of filteredData) {
         console.log(line)
       }
 
-      if (filteredData.length && !filters.stream) {
+      if (filteredData.length && !args.stream) {
         context.print.separator()
       }
 
@@ -121,7 +108,7 @@ export const visualizer = async (
         context.print.line()
       }
 
-      if (!filters.stream) {
+      if (!args.stream) {
         context.print.info(
           `Displaying <b>${filteredData.length}</b> logs <b>filtered</b> by the parameters: [${filterLabels.join(' | ')}]`,
         )
@@ -130,10 +117,10 @@ export const visualizer = async (
   }
 
   try {
-    if (filters.stream) {
-      await subscribeLogs(context, filters, renderData)
+    if (args.stream) {
+      await subscribeLogs(context, args, renderData)
     } else {
-      await getLogs(context, filters, renderData)
+      await getLogs(context, args, renderData)
     }
   } catch (error) {
     throw new Error(error)
