@@ -1,12 +1,12 @@
 import { join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import { getMachines } from '../../../helpers/index.js'
-import { AppContext } from '../../../shared/AppContext.js'
 import {
+  AppContext,
   infraFileName,
   isValidPath,
   saveAsFile,
-} from '../../../shared/pathAndFiles.js'
+} from '../../../shared/index.js'
 
 export const get =
   (program: Command) => async (args: Based.Infra.Get.Command) => {

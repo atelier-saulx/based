@@ -31,7 +31,7 @@ export const init = async () => {
     ])
 
     await program.parseAsync(process.argv)
-  } catch (e) {
-    context.print.fail(`<reset><red>${e.message}</red></reset>`)
+  } catch (error) {
+    context.print.fail(`<reset><red>${error.message}</red></reset>`)
   }
 }
