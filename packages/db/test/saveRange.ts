@@ -28,7 +28,6 @@ await test('save simple range', async (t) => {
     },
   })
 
-  //const N = 10_000_000
   const N = 400_000
   const slen = 80
   const xn_len = italy.length / slen
@@ -50,7 +49,7 @@ await test('save simple range', async (t) => {
     })
   }
 
-  const res = db.drain()
+  const res = await db.drain()
   console.error('created all nodes', res)
 
   const save1_start = performance.now()
@@ -62,7 +61,7 @@ await test('save simple range', async (t) => {
   db.update('user', 1, {
     age: 1337,
   })
-  db.drain()
+  await db.drain()
   deepEqual(db.query('user').include('age').range(0, 1).get().toObject(), [
     {
       id: 1,
@@ -104,7 +103,8 @@ await test('save simple range', async (t) => {
   console.log('load rdy', load_end - load_start)
   const thirdHash = db.merkleTree.getRoot().hash
 
-  console.log([firstHash, secondHash, thirdHash])
+  //console.log([firstHash, secondHash, thirdHash])
+  equal(firstHash.equals(secondHash), false)
   equal(secondHash.equals(thirdHash), true)
 
   deepEqual(newDb.query('user').include('age').range(0, 1).get().toObject(), [
@@ -172,11 +172,11 @@ await test('delete a range', async (t) => {
     return { hash, left, right }
   }
 
-  db.drain()
+  await db.drain()
   db.updateMerkleTree()
   const first = fun()
   db.remove('user', 100_001)
-  db.drain()
+  await db.drain()
   db.updateMerkleTree()
   const second = fun()
 
