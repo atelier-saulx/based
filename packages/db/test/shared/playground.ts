@@ -163,7 +163,7 @@ const makeDb = async (path: string) => {
 
   var d = Date.now()
 
-  console.log('DRAIN BOI', Date.now() - d, 'ms', db.drain(), 'ms')
+  console.log('DRAIN BOI', Date.now() - d, 'ms', await db.drain(), 'ms')
 
   db.query('article')
     .range(0, 1e6)
@@ -189,8 +189,8 @@ const makeDb = async (path: string) => {
   // )
 
   db.query('article')
-    .range(0, 100)
-    .filter('author', '=', 25)
+    .range(0, 1e6)
+    // .filter('author', '=', 25)
     .sort('publishDate', 'desc')
     .include('author', '*')
     .get()
@@ -228,17 +228,17 @@ const makeDb1 = async (path: string) => {
     },
   })
 
-  for (let i = 0; i < 5_000_000; i++) {
+  for (let i = 0; i < 50_000_000; i++) {
     db.create('financeBoi', {
-      x1: randU32(),
-      x2: randU32(),
-      x3: randU32(),
-      x4: randU32(),
-      x5: randU32(),
-      x6: randU32(),
+      x1: i,
+      x2: i,
+      x3: i,
+      x4: i,
+      x5: i,
+      x6: i,
     })
   }
-  const res = db.drain()
+  const res = await db.drain()
   console.error('created all nodes', res)
 
   const start = performance.now()
@@ -247,7 +247,9 @@ const makeDb1 = async (path: string) => {
   console.log('save took: ', end - start)
 }
 
-makeDb(dbFolder + '/1')
+// await makeDb(dbFolder + '/1')
+
+await makeDb1(dbFolder + '/2')
 
 // await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])
 

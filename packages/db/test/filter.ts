@@ -793,8 +793,14 @@ await test('negate', async (t) => {
 
   db.putSchema({
     types: {
+      derp: {
+        props: {
+          machines: { items: { ref: 'machine', prop: 'derp' } },
+        },
+      },
       machine: {
         props: {
+          derp: { items: { ref: 'derp', prop: 'machines' } },
           info: 'uint32',
           lastPing: 'number',
           temperature: 'number',
@@ -808,11 +814,15 @@ await test('negate', async (t) => {
   })
 
   const amount = 100
+
+  const derp = db.create('derp', {})
+
   for (let i = 0; i < amount; i++) {
-    db.create('machine', {
+    const x = db.create('machine', {
       isLive: !!(i % 2),
       status: status[~~(status.length * Math.random())],
       info: i,
+      derp: i % 2 ? [derp] : null,
     })
   }
   await db.drain()
@@ -827,5 +837,11 @@ await test('negate', async (t) => {
     db.query('machine').filter('info', '!=', 5).get().length,
     amount - 1,
     'uint32 !=',
+  )
+
+  equal(
+    db.query('machine').filter('derp', '!has', derp).get().length,
+    amount / 2,
+    '!has derp',
   )
 })

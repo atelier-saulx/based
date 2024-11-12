@@ -87,14 +87,17 @@ export const isNumerical = (op: number): boolean => {
 }
 
 export const stripNegation = (op: number): number => {
-  if (op === 3 || op === 16) {
+  if (op === 16) {
+    return 2
+  }
+  if (op === 3) {
     return 1
   }
   return op
 }
 
 export const negateType = (op: number): number => {
-  if (op === 3 || op === 16) {
+  if (op === 3) {
     return 1
   }
   return 2
