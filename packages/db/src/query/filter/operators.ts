@@ -80,3 +80,10 @@ export const isNumerical = (op: number): boolean => {
   }
   return false
 }
+
+export const stripNegation = (op: number): number => {
+  if (op === 3) {
+    return 1
+  }
+  return op
+}

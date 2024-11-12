@@ -3,7 +3,6 @@ const std = @import("std");
 pub const Operator = enum(u8) {
     equal = 1,
     has = 2,
-    // notEqual = 3,
     endsWith = 4,
     startsWith = 5,
     largerThen = 6,

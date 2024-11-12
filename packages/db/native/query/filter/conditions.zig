@@ -4,9 +4,8 @@ const Mode = t.Mode;
 const Op = t.Operator;
 const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
-const Prop = @import("../../types.zig").Prop;
-const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const c = @import("./condition.zig");
+const std = @import("std");
 
 inline fn condition(
     mode: Mode,
@@ -20,7 +19,6 @@ inline fn condition(
         Mode.defaultVar => c.defaultVar(q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
         Mode.orFixed => c.orFixed(q, v, i),
-        // Mode.orVar => ,
         Mode.reference => c.reference(ctx, q, v, i),
         else => .{ 0, false },
     };
@@ -28,17 +26,19 @@ inline fn condition(
 
 pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
     var i: usize = 0;
-    // const topLevelType: Type = @enumFromInt(q[i]);
-    // std.debug.print("T: {any} \n", .{topLevelType});
-
     while (i < q.len) {
+        const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
-        const r = condition(mode, ctx, q, v, i);
-        if (r[1] == false) {
+        const result = condition(mode, ctx, q, v, i);
+        if (topLevelType == Type.negate) {
+            if (result[1] == true) {
+                return false;
+            }
+        } else if (result[1] == false) {
             return false;
         }
-        i += r[0];
+        i += result[0];
     }
     return true;
 }

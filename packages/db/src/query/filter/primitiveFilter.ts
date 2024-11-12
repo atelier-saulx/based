@@ -9,7 +9,7 @@ import {
 } from '../../schema/types.js'
 import { propIsSigned } from '../../schema/utils.js'
 import { QueryDefFilter } from '../types.js'
-import { isNumerical, operationToByte } from './operators.js'
+import { isNumerical, operationToByte, stripNegation } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 import { Filter } from './types.js'
 import { compress } from '../../string.js'
@@ -86,7 +86,7 @@ const createFixedFilterBuffer = (
     buf[1] = prop.typeIndex === REFERENCES && op === 1 ? 3 : 1
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
-    buf[6] = op
+    buf[6] = stripNegation(op)
     buf[7] = prop.typeIndex
     buf.writeUInt16LE(len, 8)
     if (sort) {
@@ -113,7 +113,7 @@ const createFixedFilterBuffer = (
     buf[1] = 0
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
-    buf[6] = op
+    buf[6] = stripNegation(op)
     buf[7] = prop.typeIndex
     writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
   }
@@ -133,7 +133,7 @@ const createReferenceFilter = (
   buf[1] = 5
   buf.writeUInt16LE(8, 2)
   buf.writeUInt16LE(len, 4)
-  buf[6] = op
+  buf[6] = stripNegation(op)
   buf[7] = prop.typeIndex
   buf[8] = 0
   buf.writeUInt16LE(prop.inverseTypeId, 9)
@@ -203,11 +203,12 @@ export const primitiveFilter = (
 
         buf[1] = 4 // var size
         buf.writeUint16LE(size, 2)
-        buf[6] = op
+        buf[6] = stripNegation(op)
         buf[7] = prop.typeIndex
         buf.set(val, 8)
         // SET copy in
       }
+      // else do something
     }
   }
 
