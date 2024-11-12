@@ -240,7 +240,7 @@ static struct SelvaTypeBlock *get_block(struct SelvaTypeBlocks *blocks, node_id_
 
 int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *schema_buf, size_t schema_len)
 {
-    struct schema_fields_count count;
+    struct schema_info nfo;
     const size_t te_ns_max_size = (sizeof(struct SelvaTypeEntry) - offsetof(struct SelvaTypeEntry, ns) - sizeof(struct SelvaTypeEntry){0}.ns);
     int err;
 
@@ -248,38 +248,40 @@ int selva_db_schema_create(struct SelvaDb *db, node_type_t type, const char *sch
         return SELVA_EEXIST;
     }
 
-    err = schemabuf_count_fields(&count, schema_buf, schema_len);
+    err = schemabuf_get_info(&nfo, schema_buf, schema_len);
     if (err) {
         return err;
     }
 
-    if (count.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
+    if (nfo.block_capacity == 0) {
+        return SELVA_EINVAL;
+    }
+
+    if (nfo.nr_fields * sizeof(struct SelvaFieldSchema) > te_ns_max_size) {
         /* schema too large. */
         return SELVA_ENOBUFS;
     }
 
     struct SelvaTypeEntry *te = selva_aligned_alloc(alignof(*te), sizeof(*te));
-    memset(te, 0, sizeof(*te) - te_ns_max_size + count.nr_fields * sizeof(struct SelvaFieldSchema));
-
-    const size_t block_capacity = 100000; /* TODO Change */
+    memset(te, 0, sizeof(*te) - te_ns_max_size + nfo.nr_fields * sizeof(struct SelvaFieldSchema));
 
     te->type = type;
     te->schema_buf = schema_buf;
     te->schema_len = schema_len;
-    err = schemabuf_parse_ns(db, &te->ns, &count, schema_buf, schema_len);
+    err = schemabuf_parse_ns(db, &te->ns, schema_buf, schema_len);
     if (err) {
         selva_free(te);
         return err;
     }
 
-    te->blocks = alloc_blocks(block_capacity);
+    te->blocks = alloc_blocks(nfo.block_capacity);
     for (size_t i = 0; i < te->blocks->len; i++) {
         RB_INIT(&te->blocks->blocks[i].nodes);
     }
 
     selva_init_aliases(te);
 
-    const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, count.nr_fields);
+    const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
     mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
 
 #if 0

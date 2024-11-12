@@ -32,7 +32,7 @@ const block_sdb_file = (typeId: number, start: number, end: number) =>
 export { ModifyCtx } // TODO move this somewhere
 type Writelog = {
   ts: number
-  types: { [t: number]: { lastId: number; blockSize: number } }
+  types: { [t: number]: { lastId: number; blockCapacity: number } }
   hash?: string
   commonDump: string
   rangeDumps: {
@@ -53,7 +53,7 @@ type CsmtNodeRange = {
   end: number
 }
 
-const DEFAULT_BLOCK_SIZE = 100_000
+const DEFAULT_BLOCK_CAPACITY = 100_000
 const makeCsmtKey = (typeId: number, start: number) =>
   typeId * 4294967296 + start
 const destructureCsmtKey = (key: number) => [
@@ -62,11 +62,11 @@ const destructureCsmtKey = (key: number) => [
 ]
 const makeCsmtKeyFromNodeId = (
   typeId: number,
-  blockSize: number,
+  blockCapacity: number,
   nodeId: number,
 ) => {
-  const tmp = nodeId - +!(nodeId % blockSize)
-  return typeId * 4294967296 + ((tmp / blockSize) | 0) * blockSize + 1
+  const tmp = nodeId - +!(nodeId % blockCapacity)
+  return typeId * 4294967296 + ((tmp / blockCapacity) | 0) * blockCapacity + 1
 }
 
 export class BasedDb {
@@ -190,7 +190,7 @@ export class BasedDb {
 
       def.total = total
       def.lastId = writelog?.types[def.id].lastId || lastId
-      def.blockSize = writelog?.types[def.id].blockSize || DEFAULT_BLOCK_SIZE
+      def.blockCapacity = writelog?.types[def.id].blockCapacity || DEFAULT_BLOCK_CAPACITY
 
       this.foreachBlock(def, (start, end, hash) => {
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
@@ -240,7 +240,7 @@ export class BasedDb {
           type.id = genId(this)
         }
         const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
-        def.blockSize = DEFAULT_BLOCK_SIZE // TODO This should come from somewhere else
+        def.blockCapacity = DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
         this.schemaTypesParsed[field] = def
       }
     }
@@ -303,7 +303,7 @@ export class BasedDb {
 
   markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
     this.dirtyRanges.add(
-      makeCsmtKeyFromNodeId(schema.id, schema.blockSize, nodeId),
+      makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId),
     )
   }
 
@@ -311,7 +311,7 @@ export class BasedDb {
     def: SchemaTypeDef,
     cb: (start: number, end: number, hash: Buffer) => void,
   ) {
-    const step = def.blockSize
+    const step = def.blockCapacity
     for (let start = 1; start <= def.lastId; start += step) {
       const end = start + step - 1
       const hash = Buffer.allocUnsafe(16)
@@ -332,7 +332,7 @@ export class BasedDb {
 
     for (const mtKey of this.dirtyRanges) {
       const [typeId, start] = destructureCsmtKey(mtKey)
-      const end = start + typeIdMap[typeId].blockSize - 1
+      const end = start + typeIdMap[typeId].blockCapacity - 1
       cb(mtKey, typeId, start, end)
     }
   }
@@ -468,7 +468,7 @@ export class BasedDb {
     const types: Writelog['types'] = {}
     for (const key in this.schemaTypesParsed) {
       const def = this.schemaTypesParsed[key]
-      types[def.id] = { lastId: def.lastId, blockSize: def.blockSize }
+      types[def.id] = { lastId: def.lastId, blockCapacity: def.blockCapacity }
     }
 
     const dumps: Writelog['rangeDumps'] = {}
