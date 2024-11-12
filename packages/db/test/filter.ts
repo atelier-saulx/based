@@ -582,7 +582,7 @@ await test('or', async (t) => {
   const r = db
     .query('machine')
     .include('temperature')
-    .range(0, 5)
+    .range(0, 15)
     .filter('temperature', '>', 0)
     .or('temperature', '<', -0.1)
     .get()

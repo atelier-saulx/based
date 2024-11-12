@@ -127,12 +127,10 @@ const createReferenceFilter = (
   value: any,
 ) => {
   let buf: Buffer
-
-  // [or = 1]  [repeat 2] [op] [ti] [parsed] [typeId 2], value[size] value[size] value[size]
   const len = Array.isArray(value) ? value.length : 1
   buf = Buffer.allocUnsafe(11 + len * 8)
   buf[0] = op === 3 ? 1 : 0
-  buf[1] = 0
+  buf[1] = 5
   buf.writeUInt16LE(8, 2)
   buf.writeUInt16LE(len, 4)
   buf[6] = op

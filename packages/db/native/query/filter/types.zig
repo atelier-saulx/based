@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const Operator = enum(u8) {
     equal = 1,
     has = 2,
@@ -35,6 +37,7 @@ pub const Mode = enum(u8) {
     orVar = 2,
     andFixed = 3,
     defaultVar = 4,
+    reference = 5,
 };
 
 pub const Meta = enum(u8) {
@@ -44,3 +47,5 @@ pub const Meta = enum(u8) {
     id = 255,
     _,
 };
+
+pub const ConditionsResult = std.meta.Tuple(&.{ usize, bool });
