@@ -337,12 +337,8 @@ pub fn getTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     return result;
 }
 
-pub fn deleteNode(ctx: *DbCtx, node: Node, typeEntry: Type) !void {
-    selva.selva_del_node(
-        ctx.selva,
-        typeEntry,
-        node,
-    );
+pub fn deleteNode(ctx: *DbCtx, typeEntry: Type, node: Node) !void {
+    selva.selva_del_node(ctx.selva, typeEntry, node);
 }
 
 pub fn upsertNode(id: u32, typeEntry: Type) !Node {
