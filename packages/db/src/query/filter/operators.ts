@@ -1,6 +1,7 @@
 export type Operator =
   | '='
   | 'has'
+  | '!has'
   | '<'
   | '>'
   | '!='
@@ -47,6 +48,10 @@ export const operationToByte = (op: Operator) => {
     return 3
   }
 
+  if (op === '!has') {
+    return 16
+  }
+
   if (op === '>') {
     return 6
   }
@@ -82,8 +87,15 @@ export const isNumerical = (op: number): boolean => {
 }
 
 export const stripNegation = (op: number): number => {
-  if (op === 3) {
+  if (op === 3 || op === 16) {
     return 1
   }
   return op
+}
+
+export const negateType = (op: number): number => {
+  if (op === 3 || op === 16) {
+    return 1
+  }
+  return 2
 }

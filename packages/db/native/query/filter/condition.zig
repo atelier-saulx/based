@@ -38,7 +38,7 @@ pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsRe
     const valueSize = readInt(u16, q, i + 1);
     const repeat = readInt(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
-    const next = 10 + valueSize;
+    const next = 10 + valueSize * repeat;
     if (op == Op.equal) {
         const refType = q[i + 7];
         if (refType == 2) {

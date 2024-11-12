@@ -9,7 +9,12 @@ import {
 } from '../../schema/types.js'
 import { propIsSigned } from '../../schema/utils.js'
 import { QueryDefFilter } from '../types.js'
-import { isNumerical, operationToByte, stripNegation } from './operators.js'
+import {
+  isNumerical,
+  operationToByte,
+  stripNegation,
+  negateType,
+} from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 import { Filter } from './types.js'
 import { compress } from '../../string.js'
@@ -82,7 +87,7 @@ const createFixedFilterBuffer = (
     // [or = 1] [size 2] [start 2] [op], [repeat 2], value[size] value[size] value[size]
     const len = value.length
     buf = Buffer.allocUnsafe(10 + len * size)
-    buf[0] = op === 3 ? 1 : 0
+    buf[0] = negateType(op)
     buf[1] = prop.typeIndex === REFERENCES && op === 1 ? 3 : 1
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
@@ -109,7 +114,7 @@ const createFixedFilterBuffer = (
   } else {
     // [or = 0] [size 2] [start 2], [op], value[size]
     buf = Buffer.allocUnsafe(8 + size)
-    buf[0] = op === 3 ? 1 : 0
+    buf[0] = negateType(op)
     buf[1] = 0
     buf.writeUInt16LE(size, 2)
     buf.writeUInt16LE(start, 4)
@@ -129,7 +134,7 @@ const createReferenceFilter = (
   let buf: Buffer
   const len = Array.isArray(value) ? value.length : 1
   buf = Buffer.allocUnsafe(11 + len * 8)
-  buf[0] = op === 3 ? 1 : 0
+  buf[0] = negateType(op)
   buf[1] = 5
   buf.writeUInt16LE(8, 2)
   buf.writeUInt16LE(len, 4)
@@ -199,8 +204,7 @@ export const primitiveFilter = (
         // [or = 4] [size 2], [0x0], [op] [typeIndex], value[size]
         const size = val.byteLength
         buf = Buffer.allocUnsafe(8 + size)
-        buf[0] = op === 3 ? 1 : 0
-
+        buf[0] = negateType(op)
         buf[1] = 4 // var size
         buf.writeUint16LE(size, 2)
         buf[6] = stripNegation(op)
@@ -208,7 +212,7 @@ export const primitiveFilter = (
         buf.set(val, 8)
         // SET copy in
       }
-      // else do something
+      // else do
     }
   }
 

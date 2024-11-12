@@ -30,6 +30,7 @@ pub fn runConditions(ctx: *db.DbCtx, q: []u8, v: []u8) bool {
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
+
         const result = condition(mode, ctx, q, v, i);
         if (topLevelType == Type.negate) {
             if (result[1] == true) {
