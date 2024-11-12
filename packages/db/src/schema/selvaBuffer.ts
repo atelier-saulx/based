@@ -51,7 +51,7 @@ const propDefBuffer = (
         eschema = props
           .map((prop) => propDefBuffer(schema, prop as PropDef, true))
           .flat(1)
-        eschema.unshift(sepPropCount(props), 0)
+        eschema.unshift(...[0, 0, 0, 0], sepPropCount(props), 0)
         buf.writeUint32LE(eschema.length, 4)
       }
     }
@@ -62,6 +62,12 @@ const propDefBuffer = (
   } else {
     return [type]
   }
+}
+
+function makeBlockCapacityBuffer(blockCapacity: number): Buffer {
+  const buf = Buffer.allocUnsafe(4)
+  buf.writeInt32LE(blockCapacity)
+  return buf
 }
 
 // todo rewrite
@@ -80,6 +86,7 @@ export function schemaToSelvaBuffer(schema: { [key: string]: SchemaTypeDef }) {
     }
     rest.sort((a, b) => a.prop - b.prop)
     return Buffer.from([
+      ...makeBlockCapacityBuffer(t.blockCapacity).values(),
       1 + sepPropCount(props),
       1 + refFields,
       ...propDefBuffer(schema, {

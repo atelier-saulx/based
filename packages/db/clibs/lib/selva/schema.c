@@ -18,6 +18,11 @@
 #include "db.h"
 #include "schema.h"
 
+#define SCHEMA_MIN_SIZE             6
+#define SCHEMA_OFF_BLOCK_CAPACITY   0
+#define SCHEMA_OFF_NR_FIELDS        4
+#define SCHEMA_OFF_NR_FIXED_FIELDS  5
+
 struct schemabuf_parser_ctx {
     struct ref_save_map *ref_save_map;
     struct SelvaTypeEntry *te;
@@ -413,16 +418,23 @@ static struct schemabuf_parser {
     },
 };
 
-int schemabuf_count_fields(struct schema_fields_count *count, const char *buf, size_t len)
+int schemabuf_get_info(struct schema_info *nfo, const char *buf, size_t len)
 {
-    if (len < 2) {
+    uint32_t block_capacity;
+
+    if (len < SCHEMA_MIN_SIZE) {
         return SELVA_EINVAL;
     }
 
-    count->nr_fields = buf[0];
-    count->nr_fixed_fields = buf[1];
+    memcpy(&block_capacity, buf + SCHEMA_OFF_BLOCK_CAPACITY, sizeof(block_capacity));
 
-    if (count->nr_fixed_fields > count->nr_fields) {
+    *nfo = (struct schema_info){
+        .block_capacity = block_capacity,
+        .nr_fields = buf[SCHEMA_OFF_NR_FIELDS],
+        .nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS],
+    };
+
+    if (nfo->nr_fixed_fields > nfo->nr_fields) {
         return SELVA_EINVAL;
     }
 
@@ -496,14 +508,14 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
 
 static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const char *buf, size_t len)
 {
-    struct schema_fields_count count;
+    struct schema_info nfo;
     int err;
 
-    err = schemabuf_count_fields(&count, buf, len);
-    if (!err && count.nr_fields > 0) {
+    err = schemabuf_get_info(&nfo, buf, len); /* Currently `block_capacity` has no meaning here. */
+    if (!err && nfo.nr_fields > 0) {
         struct SelvaFieldsSchema *schema;
 
-        schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, count.nr_fields));
+        schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, nfo.nr_fields));
         efc->fields_schema = schema;
 
         /*
@@ -513,9 +525,9 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
          * TODO Should we fail on unsupported types?
          */
 
-        schema->nr_fields = count.nr_fields;
-        schema->nr_fixed_fields = count.nr_fixed_fields;
-        err = parse2(ctx, schema, buf + 2, len - 2);
+        schema->nr_fields = nfo.nr_fields;
+        schema->nr_fixed_fields = nfo.nr_fixed_fields;
+        err = parse2(ctx, schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
     }
 
     return err;
@@ -526,7 +538,7 @@ static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstrain
  * @param[out] ns
  * @param[out] type
  */
-int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, struct schema_fields_count *count, const char *buf, size_t len)
+int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const char *buf, size_t len)
 {
     struct SelvaFieldsSchema *fields_schema = &ns->fields_schema;
     struct schemabuf_parser_ctx ctx = {
@@ -535,18 +547,18 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, struct sc
         .alias_index = 0,
     };
 
-    if (len < 2) {
+    if (len < SCHEMA_MIN_SIZE) {
         return SELVA_EINVAL;
     }
 
     /* We just assume that fields_schema is allocated properly. */
 
-    fields_schema->nr_fields = count->nr_fields;
-    fields_schema->nr_fixed_fields = count->nr_fixed_fields;
+    fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
+    fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
     ns->created_field = SELVA_FIELDS_RESERVED;
     ns->updated_field = SELVA_FIELDS_RESERVED;
 
-    return parse2(&ctx, fields_schema, buf + 2, len - 2);
+    return parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
 }
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
