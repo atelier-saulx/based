@@ -5,12 +5,11 @@ import { getList, setMake, setRestore } from '../backup/index.js'
 
 export const test = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
-  await context.getProgram()
-
   const cmd: Command = context.commandMaker('test')
 
   cmd.action(async (args: Based.Tests.Command) => {
     let { command, backup, restore, db, file, date } = args
+    await context.getProgram()
     const { destroy } = await context.getBasedClient()
     const { skip } = context.getGlobalOptions()
     db = db !== '' ? db : 'default'

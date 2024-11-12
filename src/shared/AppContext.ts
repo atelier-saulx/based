@@ -3,6 +3,7 @@ import type { Command } from 'commander'
 import {
   contextBasedClient,
   contextCommandMaker,
+  contextForm,
   contextGlobalOptions,
   contextInput,
   contextParse,
@@ -45,6 +46,7 @@ export class AppContext {
   public terminalKit = contextTerminalKit
   public parse = contextParse
   public input = contextInput(this)
+  public form = contextForm(this)
   public print = contextPrint(this.state)
   // public event: EventEmitter = eventEmitter
   public endpoints = endpoints

@@ -6,6 +6,7 @@ import {
   dev,
   infra,
   logs,
+  projectInit,
   test,
   version,
 } from './commands/index.js'
@@ -28,6 +29,7 @@ export const init = async () => {
       logs(program),
       test(program),
       infra(program),
+      projectInit(program),
     ])
 
     await program.parseAsync(process.argv)

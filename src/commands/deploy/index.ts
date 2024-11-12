@@ -75,7 +75,8 @@ const _queuedFnDeploy = queued(
         })
       } catch (error) {
         console.error(
-          pc.red(`could not save sourcemap for: ${config.name}`),
+          // pc.red(`could not save sourcemap for: ${config.name}`),
+          pc.red(`could not save sourcemap for: ${config}`),
           error.message,
         )
       }

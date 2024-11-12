@@ -2,7 +2,7 @@ import { login } from '../../shared/index.js'
 
 export async function contextBasedClient(): Promise<Based.API.Client> {
   let basedClient: Based.API.Client = this.get('basedClient')
-  const { file } = await this.get('basedProject')
+  const basedProject: Based.Context.Project = await this.get('basedProject')
 
   if (basedClient) {
     return basedClient
@@ -10,9 +10,20 @@ export async function contextBasedClient(): Promise<Based.API.Client> {
 
   if (!basedClient || !Object.keys(basedClient).length) {
     try {
-      basedClient = await login({})
+      if (
+        basedProject?.apiKey ||
+        (basedProject?.org && basedProject?.project && basedProject?.env)
+      ) {
+        basedClient = await login({})
+      }
     } catch (error) {
-      throw new Error(this.i18n('errors.404', file, error))
+      throw new Error(
+        this.i18n(
+          'errors.404',
+          basedProject?.file ?? this.i18n('appCommand'),
+          error,
+        ),
+      )
     }
   }
 

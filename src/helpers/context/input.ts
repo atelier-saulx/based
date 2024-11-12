@@ -133,6 +133,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       if (skip) {
         message = `${message} ${context.i18n('context.input.skip')}`
       }
+
       return input({
         message: colorize(message),
         required: true,
@@ -157,7 +158,11 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       multiSelection: boolean = false,
       separator: boolean = true,
     ) => {
-      if (choices.length > 5 && separator) {
+      if (!choices || !choices.length) {
+        return
+      }
+
+      if (choices && choices.length > 5 && separator) {
         choices.push(new Separator())
       }
 

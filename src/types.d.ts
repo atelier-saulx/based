@@ -2,7 +2,6 @@ import type { AuthState, BasedClient } from '@based/client'
 import type { BasedFunctionConfig } from '@based/functions'
 import type { BasedQuery } from '@based/functions'
 import type { Separator } from '@inquirer/prompts'
-import { cloudFunctions } from './shared/cloudFunctions'
 import type { AppContext } from './shared/index.js'
 
 declare global {
@@ -42,8 +41,24 @@ declare global {
       }
     }
 
-    type File = 'based' | 'based.schema' | 'based.config' | 'based.infra'
-    type Extensions = 'js' | 'json' | 'ts'
+    enum FileExtensions {
+      JS = 'js',
+      JSON = 'json',
+      TS = 'ts',
+    }
+
+    enum File {
+      SCHEMA = 'based.schema',
+      CONFIG = 'based.config',
+      INFRA = 'based.infra',
+    }
+
+    enum InstallableTools {
+      TYPESCRIPT = 'typescript',
+      VITEST = 'vitest',
+      BIOME = 'biome',
+      REACT = 'react',
+    }
 
     namespace Context {
       type MouseEvent = {
@@ -202,6 +217,7 @@ declare global {
         | 'infra'
         | 'deploy'
         | 'dev'
+        | 'init'
 
       type SubCommandsList = Record<
         string,
@@ -228,6 +244,23 @@ declare global {
       type Login = {
         email?: string
         selectUser?: boolean
+      }
+    }
+
+    namespace Init {
+      type Command = Based.Context.Project & {
+        name?: string
+        description?: string
+        path?: string
+        format?: Based.Extensions
+        tools?: Based.InstallableTools[]
+        queries?: string[]
+        functions?: string[]
+      }
+
+      type Make = {
+        context: AppContext
+        project: Based.Init.Command
       }
     }
 

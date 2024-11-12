@@ -12,7 +12,7 @@ export const getBasedFile = async (
   const basedFile = await findUp(files)
   let basedFileContent: Based.Context.Project = {}
   const basedProject: Based.Context.Project = {}
-  const file: string = basedFile.split('/').at(-1)
+  const file: string = basedFile?.split('/').at(-1)
 
   if (basedFile) {
     if (basedFile.endsWith('.json')) {

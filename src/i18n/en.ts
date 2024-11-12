@@ -1,4 +1,5 @@
 import { dateOnly, externalDateAndTime } from '../shared/dateAndTimeFormats.js'
+import { fileExtensions, installableTools } from '../shared/index.js'
 
 export default {
   appName: 'Based CLI',
@@ -74,6 +75,94 @@ export default {
         },
       ],
     },
+    init: {
+      descripion: 'The start point to create your Based project.',
+      example: 'npx @based/cli init [options]',
+      validations: {
+        name: 'name',
+        path: 'path',
+        format: 'format',
+        tools: 'tools',
+        queries: 'queries',
+        functions: 'functions',
+      },
+      options: [
+        {
+          parameter: '-n, --name <name>',
+          description: 'Give a name to your project.',
+        },
+        {
+          parameter: '-d, --description <description>',
+          description: 'Give a description to your machine.',
+        },
+        {
+          parameter: '--path <path>',
+          description: 'The path to save the file.',
+        },
+        {
+          parameter: '--format <format>',
+          description: `The extension of file you prefer (available formats: ${Object.values(fileExtensions).join(', ')}).`,
+        },
+        {
+          parameter: '-t, --tools <tools...>',
+          description: `Choose the tools you want to be added to your project (available tools:  ${Object.values(installableTools).join(', ')}).`,
+        },
+        {
+          parameter: '--queries <queries...>',
+          description: 'You can pre-create your Based Query Functions.',
+        },
+        {
+          parameter: '-f, --functions <functions...>',
+          description: 'You can pre-create your Based Cloud Functions.',
+        },
+      ],
+      methods: {
+        name: "Give a name to your project <dim>(this will also be used in your 'package.json')</dim>:",
+        description: 'What is the best way to describe your project?',
+        fileExtension:
+          'What extension do you want to be used to your project file?',
+        path: 'Path to save the project file: <dim>(If the file already exists it will be overwritten)</dim>',
+        cannotInit:
+          'It is not possible to create a project without the necessary information. Please try again.',
+        queries:
+          'Do you want to create a query function? You can name as many as you want; just separate them with commas',
+        functions:
+          'Do you want to create a cloud function? You can name as many as you want; just separate them with commas',
+        cluster: 'Which cluster do you want to connect to?',
+        org: {
+          select: 'Which organization is this project',
+          input: 'What is the name of your organization?',
+        },
+        project: {
+          select:
+            'Which project in your Based account do you want to use for this project',
+          input: 'What is the name of this project in the cloud?',
+        },
+        env: {
+          select: 'Which environment will your project run in',
+          input:
+            "What is the name of the environment? <dim>(this env will be created if it doesn't exists in your account).</dim>",
+        },
+        apiKey:
+          'Do you have any API Key that you want to use for this project?',
+        tools: 'Select the tools you want to be instaled in your project',
+        summary: {
+          header: '<b>Project summary:</b>',
+          name: '<b>Name:</b> <reset><cyan>${name}</cyan></reset>',
+          description:
+            '<b>Description:</b> <reset><cyan>${description}</cyan></reset>',
+          cloud:
+            '<b>Cloud information:</b> [<b>Cluster:</b> <cyan>${cluster}</cyan> | <b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>]',
+          apiKey: '<b>API Key:</b> <reset><cyan>${apiKey}</cyan></reset>',
+          functions:
+            '<b>Functions to be created:</b> <reset><cyan>${queries}</cyan></reset>',
+          tools:
+            '<b>Tools to be added:</b> <reset><cyan>${tools}</cyan></reset>',
+          saveIn:
+            '<b>Saving the project file in:</b> <reset><cyan>${path}</cyan></reset>',
+        },
+      },
+    },
     backups: {
       usage: '[command]',
       description: 'Backup and restore your databases.',
@@ -141,7 +230,7 @@ export default {
           ],
           methods: {
             getPath:
-              'Path to save the backup to: (If the file already exists it will be overwritten)',
+              'Path to save the backup to: <dim>(If the file already exists it will be overwritten)</dim>',
             getDownload: {
               isExternalPath: '<b>Selected path:</b> <cyan>${path}</cyan>',
             },
@@ -355,6 +444,7 @@ export default {
         min: 'min',
         max: 'max',
         path: 'path',
+        format: 'format',
       },
       subCommands: {
         init: {
@@ -398,13 +488,12 @@ export default {
             },
             {
               parameter: '--format <format>',
-              description:
-                'The extension of file you prefer (available formats: ts | json | js).',
+              description: `The extension of file you prefer (available formats: ${Object.values(fileExtensions).join(', ')}).`,
             },
           ],
           methods: {
             inputPath:
-              'Path to save the infra file: (If the file already exists it will be overwritten)',
+              'Path to save the infra file: <dim>(If the file already exists it will be overwritten)</dim>',
             warning:
               '<b>Warning!</b> Only manipulate the infra information if you really know what you’re doing. <b>Those actions cannot be undone.</b>',
             name: 'Give a name to your machine: <dim>(name has to be unique)</dim>',
@@ -447,8 +536,7 @@ export default {
             },
             {
               parameter: '--format <format>',
-              description:
-                'The extension of file you prefer (available formats: ts | json | js).',
+              description: `The extension of file you prefer (available formats: ${Object.values(fileExtensions).join(', ')}).`,
             },
           ],
           methods: {
@@ -540,7 +628,9 @@ export default {
     org: '<dim>Org:</dim> <b>${org}</b>',
     project: '<dim>Project:</dim> <b>${project}</b>',
     env: '<dim>Env:</dim> <b>${env}</b>',
+    apiKey: '<dim>API Key:</dim> <b>${apiKey}</b>',
     input: {
+      enterToSkip: '<dim>(ENTER to skip)</dim>',
       skip: '<dim>(S to skip)</dim>',
       today: '<dim>(T for today)</dim>',
       now: '<dim>(N for now)</dim>',
@@ -554,10 +644,20 @@ export default {
     savedFile: 'Saved file in: <reset><cyan>${path}</cyan></reset>',
     warning:
       "<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>",
+    tools: {
+      typescript: {
+        label: 'TypeScript',
+        value: 'typescript',
+        hint: 'Recommended',
+      },
+      vitest: { label: 'Vitest (Test runner)', value: 'vitest' },
+      biome: { label: 'BiomeJS (Linter & Formatting code)', value: 'biome' },
+      react: { label: 'React (UI)', value: 'react' },
+    },
     extensions: {
-      ts: 'TypeScript (recommended)',
-      js: 'JavaScript',
-      json: 'JSON',
+      ts: { label: 'TypeScript', value: 'ts', hint: 'Recommended' },
+      js: { label: 'JavaScript', value: 'js' },
+      json: { label: 'JSON', value: 'json' },
     },
     aborted: 'Operation aborted.',
     login: {

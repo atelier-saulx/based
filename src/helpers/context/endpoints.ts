@@ -104,6 +104,11 @@ export const endpoints = {
     endpoint: 'env',
     type: 'query',
   },
+  USER_CLOUD_INFO: {
+    client: 'cluster',
+    endpoint: 'user-envs',
+    type: 'query',
+  },
 } as const satisfies Based.API.Gateway.Endpoints<
   Record<string, Based.API.Gateway.Endpoint>
 >
