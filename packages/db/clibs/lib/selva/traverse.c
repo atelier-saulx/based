@@ -191,19 +191,24 @@ int selva_traverse_field_bfs(
 
 int selva_traverse_type(struct SelvaDb *db, struct SelvaTypeEntry *te, SelvaTraversalNodeCallback node_cb, void *node_arg)
 {
-    struct SelvaNodeIndex *nodes = &te->nodes;
-    struct SelvaNode *node;
-    struct SelvaNode *tmp;
+    struct SelvaTypeBlocks *blocks = te->blocks;
+    const size_t blocks_len = blocks->len;
 
-    RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
-        static const struct SelvaTraversalMetadata meta = {
-            .edge_data = NULL,
-            .depth = 0,
-        };
-        int res = node_cb(db, &meta, node, node_arg);
+    for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
+        struct SelvaNodeIndex *nodes = &blocks->blocks[block_i].nodes;
+        struct SelvaNode *node;
+        struct SelvaNode *tmp;
 
-        if (res < 0) {
-            return res;
+        RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
+            static const struct SelvaTraversalMetadata meta = {
+                .edge_data = NULL,
+                .depth = 0,
+            };
+            int res = node_cb(db, &meta, node, node_arg);
+
+            if (res < 0) {
+                return res;
+            }
         }
     }
 
