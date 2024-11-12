@@ -70,12 +70,23 @@ struct SelvaAlias {
     char name[];
 };
 
+struct SelvaTypeBlock {
+    struct SelvaNodeIndex nodes; /*!< Index of nodes in this block. */
+};
+
 /**
  * Entry for each node type supported by the schema.
  */
 struct SelvaTypeEntry {
     node_type_t type;
-    struct SelvaNodeIndex nodes; /*!< Index of nodes by this type. */
+    /**
+     * Node blocks in this type.
+     */
+    struct SelvaTypeBlocks {
+        block_id_t block_capacity;
+        block_id_t len;
+        struct SelvaTypeBlock blocks[] __counted_by(len);
+    } *blocks;
     struct SelvaAliases {
         field_t field; /*!< Alias field. */
         bool single; /*!< Only allow a single alias per node + field. */
