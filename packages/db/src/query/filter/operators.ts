@@ -35,7 +35,7 @@ export type Operator =
 // 15 = ends with to lower case
 // -------------------------------------------
 
-export const operationToByte = (op: Operator) => {
+export const operationToByte = (op: Operator): number => {
   if (op === '=') {
     return 1
   }

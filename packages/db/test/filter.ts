@@ -601,7 +601,7 @@ await test('or', async (t) => {
   )
 })
 
-await test('small', async (t) => {
+await test('or numerical', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -698,7 +698,7 @@ await test('small', async (t) => {
   )
 })
 
-await test('string', async (t) => {
+await test('variable size (string/binary)', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -718,6 +718,7 @@ await test('string', async (t) => {
           name: { type: 'string' },
           body: { type: 'string' }, // big compressed string...
           stuff: 'binary',
+          derp: 'binary',
         },
       },
     },
@@ -747,6 +748,7 @@ await test('string', async (t) => {
       name: 'Gossip #' + i,
       body: compressedItaly,
       stuff: Buffer.from('#' + i),
+      derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
 
@@ -767,10 +769,22 @@ await test('string', async (t) => {
         name: 'Gossip #2',
         body: italy,
         stuff: new Uint8Array([35, 50]),
+        derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
       },
     ],
   )
 
+  const len = db
+    .query('article')
+    .filter('stuff', 'has', new Uint8Array([55]))
+    .range(0, 100)
+    .get().length
+
+  equal(len > 1 && len < 100, true, 'has binary (single')
+
+  // FIX WITH CRC32 + len (original crc32)
+  // add orignal crc32 as last argument after making compression
+  // small check if 0, crc check, 1
   // db.query('article')
   //   .filter('body', '=', compressedItaly)
   //   .range(0, 10)

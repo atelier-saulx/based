@@ -14,7 +14,8 @@ const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
     const op: Op = @enumFromInt(q[i + 5]);
-    const query = q[i + 7 .. i + valueSize + 7];
+    const next = i + 7 + valueSize;
+    const query = q[i + 7 .. next];
     var pass = true;
     if (op == Op.equal) {
         // ADD NESTED OR
@@ -29,9 +30,31 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
                 }
             }
         }
+    } else if (op == Op.has) {
+        // add repeat also
+        // if (!batch.equalsOr(valueSize, value, query)) {
+        // return .{ next, false };
+        // }
+        // std.debug.print("DERP \n", .{});
+        // has to check per byte... optmize this with simd
+        var j: u32 = 0;
+        outer: while (j < v.len) : (j += 1) {
+            var derp: u32 = 0;
+            while (derp < query.len) : (derp += 1) {
+                std.debug.print("D? v:{d} q:{d} derp:{d} \n", .{ v[j], query[derp], derp });
+                if (v[j] != query[derp]) {
+                    pass = false;
+                    continue :outer;
+                }
+            }
+            if (derp == query.len) {
+                pass = true;
+                break :outer;
+            }
+        }
     }
     // add HAS
-    return .{ i + 7 + valueSize, pass };
+    return .{ next, pass };
 }
 
 pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {

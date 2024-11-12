@@ -182,11 +182,15 @@ export const primitiveFilter = (
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)
   } else {
     let val = value
-    if (prop.typeIndex === STRING && typeof value === 'string') {
+
+    if (val instanceof Uint8Array) {
+      val = Buffer.from(val)
+    } else if (prop.typeIndex === STRING && typeof value === 'string') {
       // dont need this
-      // If string > x dont do this
       val = compress(value)
     }
+    // If string > x dont do this then we jusrt check crc32
+
     // if val > certain amount will compare crc32 + len
     // fixed
 
@@ -194,25 +198,29 @@ export const primitiveFilter = (
       throw new Error('Incorrect value for filter ' + prop.path)
     }
 
-    if (op === 3 || op === 1) {
+    // --------------------
+
+    if (op === 3 || op === 1 || op === 2 || op === 16) {
       if (prop.separate) {
         // if val.bytelen > 100
         // make hash and compare that
         // make a seperate operation for hash + len comparison
         //  (only for VAR)
-
+        // maybe just do crc32 so we dont need to increase size everywhere...
         // [or = 4] [size 2], [0x0], [op] [typeIndex], value[size]
         const size = val.byteLength
         buf = Buffer.allocUnsafe(8 + size)
         buf[0] = negateType(op)
         buf[1] = 4 // var size
-        buf.writeUint16LE(size, 2)
+        buf.writeUint32LE(size, 2)
         buf[6] = stripNegation(op)
         buf[7] = prop.typeIndex
         buf.set(val, 8)
         // SET copy in
       }
       // else do
+    } else {
+      console.log('SNURP', op)
     }
   }
 
