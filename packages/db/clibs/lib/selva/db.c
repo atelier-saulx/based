@@ -827,22 +827,3 @@ out:
 
     return res;
 }
-
-void selva_archive_type(struct SelvaTypeEntry *type)
-{
-    struct mempool *mempool = &type->nodepool;
-
-    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
-        mempool_pageout(mempool, slab);
-    } MEMPOOL_FOREACH_CHUNK_END();
-}
-
-void selva_prefetch_type(struct SelvaTypeEntry *type)
-{
-    struct mempool *mempool = &type->nodepool;
-
-    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
-        mempool_pagein(mempool, slab);
-    } MEMPOOL_FOREACH_CHUNK_END();
-}
-

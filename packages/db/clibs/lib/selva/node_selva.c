@@ -420,60 +420,6 @@ static napi_value node_db_update_batch(napi_env env, napi_callback_info info)
     return r;
 }
 
-// node_db_archive(db, type, buf): number
-static napi_value node_db_archive(napi_env env, napi_callback_info info)
-{
-    int err;
-    size_t argc = 2;
-    napi_value argv[2];
-
-    err = get_args(env, info, &argc, argv, false);
-    if (err) {
-        return res2napi(env, err);
-    }
-
-    struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type = selva_napi_get_node_type(env, argv[1]);
-
-    struct SelvaTypeEntry *te;
-
-    te = selva_get_type_by_index(db, type);
-    if (!te) {
-        return res2napi(env, SELVA_EINTYPE);
-    }
-
-    selva_archive_type(te);
-
-    return res2napi(env, 0);
-}
-
-// node_db_prefetch(db, type, buf): number
-static napi_value node_db_prefetch(napi_env env, napi_callback_info info)
-{
-    int err;
-    size_t argc = 2;
-    napi_value argv[2];
-
-    err = get_args(env, info, &argc, argv, false);
-    if (err) {
-        return res2napi(env, err);
-    }
-
-    struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type = selva_napi_get_node_type(env, argv[1]);
-
-    struct SelvaTypeEntry *te;
-
-    te = selva_get_type_by_index(db, type);
-    if (!te) {
-        return res2napi(env, SELVA_EINTYPE);
-    }
-
-    selva_prefetch_type(te);
-
-    return res2napi(env, 0);
-}
-
 // node_db_exists(db, type, node_id): boolean
 static napi_value node_db_exists(napi_env env, napi_callback_info info)
 {
@@ -972,8 +918,6 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_schema_create", node_db_schema_create),
       DECLARE_NAPI_METHOD("db_update", node_db_update),
       DECLARE_NAPI_METHOD("db_update_batch", node_db_update_batch),
-      DECLARE_NAPI_METHOD("db_archive", node_db_archive),
-      DECLARE_NAPI_METHOD("db_prefetch", node_db_prefetch),
       DECLARE_NAPI_METHOD("db_exists", node_db_exists),
       DECLARE_NAPI_METHOD("db_del_node", node_db_del_node),
       DECLARE_NAPI_METHOD("db_set_field", node_db_set_field),
