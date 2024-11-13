@@ -2,7 +2,7 @@ import { dateOnly, externalDateAndTime } from '../shared/dateAndTimeFormats.js'
 import { fileExtensions, installableTools } from '../shared/index.js'
 
 export default {
-  appName: 'Based CLI',
+  appName: 'Based.io CLI',
   appCommand: 'based',
   version: {
     parameter: '-v, --version',
@@ -93,11 +93,11 @@ export default {
         },
         {
           parameter: '-d, --description <description>',
-          description: 'Give a description to your machine.',
+          description: 'Give a description to your project.',
         },
         {
           parameter: '--path <path>',
-          description: 'The path to save the file.',
+          description: 'The path to save the Based Project File.',
         },
         {
           parameter: '--format <format>',
@@ -117,31 +117,41 @@ export default {
         },
       ],
       methods: {
-        name: "Give a name to your project <dim>(this will also be used in your 'package.json')</dim>:",
-        description: 'What is the best way to describe your project?',
-        fileExtension:
-          'What extension do you want to be used to your project file?',
+        name: "Give a name to your project: <dim>(this will also be used in your 'package.json')</dim>",
+        description: 'What is the best way to describe it?',
+        format: 'Which extension would you like to use for your project file?',
         path: 'Path to save the project file: <dim>(If the file already exists it will be overwritten)</dim>',
         cannotInit:
           'It is not possible to create a project without the necessary information. Please try again.',
         queries:
-          'Do you want to create a query function? You can name as many as you want; just separate them with commas',
+          'Do you want to create a query function? <dim>(You can name as many as you want; just separate them with commas)</dim>',
         functions:
-          'Do you want to create a cloud function? You can name as many as you want; just separate them with commas',
+          'Do you want to create a cloud function? <dim>(You can name as many as you want; just separate them with commas)</dim>',
         cluster: 'Which cluster do you want to connect to?',
         org: {
-          select: 'Which organization is this project',
+          select: 'Which organization owns this project?',
           input: 'What is the name of your organization?',
+          error: 'The organization ${org} was not found in your account.',
+          new: {
+            label: 'Add a new organization to your account',
+            value: 'new',
+          },
         },
         project: {
-          select:
-            'Which project in your Based account do you want to use for this project',
-          input: 'What is the name of this project in the cloud?',
+          select: 'Which project in <b>${org}</b> do you want to use?',
+          input:
+            'What is the name of the project that will be included in the organization ${org}?',
+          error:
+            "The project ${org} you're looking for was not found in your account.",
+          new: { label: 'Create a new project', value: 'new' },
         },
         env: {
-          select: 'Which environment will your project run in',
+          select:
+            'Which environment in <b>${project}</b> will your project run in?',
           input:
-            "What is the name of the environment? <dim>(this env will be created if it doesn't exists in your account).</dim>",
+            "What is the name of the environment in ${project}? <dim>(this env will be created if it doesn't exists in your account).</dim>",
+          error: "The env ${org} doesn't exist.",
+          new: { label: 'Deploy a new environment', value: 'new' },
         },
         apiKey:
           'Do you have any API Key that you want to use for this project?',
@@ -634,6 +644,7 @@ export default {
       skip: '<dim>(S to skip)</dim>',
       today: '<dim>(T for today)</dim>',
       now: '<dim>(N for now)</dim>',
+      empty: 'This value cannot be empty.',
       continue: 'Continue?',
     },
   },
@@ -654,7 +665,7 @@ export default {
       biome: { label: 'BiomeJS (Linter & Formatting code)', value: 'biome' },
       react: { label: 'React (UI)', value: 'react' },
     },
-    extensions: {
+    format: {
       ts: { label: 'TypeScript', value: 'ts', hint: 'Recommended' },
       js: { label: 'JavaScript', value: 'js' },
       json: { label: 'JSON', value: 'json' },

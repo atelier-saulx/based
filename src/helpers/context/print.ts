@@ -1,5 +1,7 @@
+import { spinner as clack, intro, log } from '@clack/prompts'
 import { colorize } from '../../shared/colorize.js'
-import { spinner } from '../../shared/spinner.js'
+
+const spinner = clack()
 
 const iconDecider = (icon: boolean | string, defaultValue: string): string => {
   if (icon === true) {
@@ -16,6 +18,11 @@ const iconDecider = (icon: boolean | string, defaultValue: string): string => {
 export const contextPrint = (
   state: Based.Context.State,
 ): Based.Context.MessageHandler => ({
+  intro: (message: string): Based.Context.MessageHandler => {
+    intro(colorize(message))
+
+    return contextPrint(state)
+  },
   loading: (message: string): Based.Context.MessageHandler => {
     if (
       state.display === 'verbose' ||
@@ -37,15 +44,9 @@ export const contextPrint = (
     icon: boolean | string = false,
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'info') {
-      if (!icon) {
-        console.info(colorize(message))
-        return contextPrint(state)
-      }
+      icon = icon ? `${iconDecider(icon, state.emojis.info)} ` : ''
 
-      spinner.stopAndPersist({
-        symbol: iconDecider(icon, state.emojis.info),
-        text: colorize(message),
-      })
+      log.info(`${icon}${colorize(message)}`)
     }
 
     return contextPrint(state)
@@ -55,15 +56,9 @@ export const contextPrint = (
     icon: boolean | string = false,
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'success') {
-      if (!icon) {
-        console.info(colorize(message))
-        return contextPrint(state)
-      }
+      icon = icon ? `${iconDecider(icon, state.emojis.success)} ` : ''
 
-      spinner.stopAndPersist({
-        symbol: iconDecider(icon, state.emojis.success),
-        text: colorize(message),
-      })
+      spinner.stop(`${icon}${colorize(message)}`)
     }
 
     return contextPrint(state)
@@ -73,15 +68,9 @@ export const contextPrint = (
     icon: boolean | string = false,
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'warning') {
-      if (!icon) {
-        console.info(colorize(message))
-        return contextPrint(state)
-      }
+      icon = icon ? `${iconDecider(icon, state.emojis.warning)} ` : ''
 
-      spinner.stopAndPersist({
-        symbol: iconDecider(icon, state.emojis.warning),
-        text: colorize(message),
-      })
+      spinner.message(`${icon}${colorize(message)}`)
     }
 
     return contextPrint(state)
@@ -92,15 +81,9 @@ export const contextPrint = (
     killCode: number = 1,
   ): void => {
     if (state.display === 'verbose' || state.display === 'error') {
-      if (!icon) {
-        console.info(colorize(message))
-        process.exit(killCode)
-      }
+      icon = icon ? `${iconDecider(icon, state.emojis.error)} ` : ''
 
-      spinner.stopAndPersist({
-        symbol: iconDecider(icon, state.emojis.error),
-        text: colorize(message),
-      })
+      spinner.stop(`${icon}${colorize(message)}`)
     }
 
     process.exit(killCode)
@@ -121,7 +104,7 @@ export const contextPrint = (
       return contextPrint(state)
     }
 
-    console.info(colorize('<gray>─</gray>').repeat(width))
+    console.info(colorize(`<gray>${'-'.repeat(width)}</gray>`))
 
     return contextPrint(state)
   },

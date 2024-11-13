@@ -6,7 +6,7 @@ import { AppContext, getBasedClient } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 60e3
+const connectionTimeout = 1e3
 
 const authenticateUser = async (
   email: string,
@@ -82,7 +82,6 @@ const hubConnection = async (
   opts: BasedOpts,
 ): Promise<BasedClient> => {
   const { file } = await context.get('basedProject')
-  const errorMessage = context.i18n('errors.404', file)
   const [emoji, target] =
     opts.org === 'saulx' && opts.project === 'based-cloud'
       ? ['📡', context.i18n('methods.hubConnection.cloud')]
@@ -90,24 +89,25 @@ const hubConnection = async (
         ? ['🌎', context.i18n('methods.hubConnection.environmentManager')]
         : ['🪐', context.i18n('methods.hubConnection.environment')]
 
-  context.print.loading(
-    context.i18n('methods.hubConnection.connecting', target),
-  )
-
   const hubClient: BasedClient = getBasedClient(context, opts)
+
   if (!Object.keys(hubClient).length) {
-    throw new Error(errorMessage)
+    throw new Error(context.i18n('errors.404', file))
   }
 
   const timeout = setTimeout(() => {
-    context.print.stop().fail(context.i18n('errors.408'), true)
+    context.print.fail(context.i18n('errors.408'), true)
   }, connectionTimeout)
 
-  await hubClient.once('connect')
+  try {
+    await hubClient.once('connect')
+  } catch (error) {
+    throw new Error(context.i18n('errors.404', file, error))
+  }
 
-  context.print
-    .stop()
-    .success(context.i18n('methods.hubConnection.connected', emoji, target))
+  context.print.success(
+    context.i18n('methods.hubConnection.connected', emoji, target),
+  )
   clearTimeout(timeout)
 
   return hubClient
@@ -119,6 +119,13 @@ export const login = async ({
 }: Based.Auth.Login): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
+
+  context.print.loading(
+    context.i18n(
+      'methods.hubConnection.connecting',
+      context.i18n('methods.hubConnection.cloud'),
+    ),
+  )
 
   const adminHub: BasedClient = await hubConnection(context, {
     org: 'saulx',

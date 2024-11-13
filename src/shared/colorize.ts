@@ -1,5 +1,26 @@
 import pc from 'picocolors'
 
+const formatter =
+  (open, close, replace = open) =>
+  (input) => {
+    const string = `${input}`
+    const index = string.indexOf(close, open.length)
+    return ~index
+      ? open + replaceClose(string, close, replace, index) + close
+      : open + string + close
+  }
+
+const replaceClose = (string, close, replace, index) => {
+  let result = ''
+  let cursor = 0
+  do {
+    result += string.substring(cursor, index) + replace
+    cursor = index + close.length
+    index = string.indexOf(close, cursor)
+  } while (~index)
+  return result + string.substring(cursor)
+}
+
 export function colorize(content: string): string
 export function colorize(content: string[]): string[]
 export function colorize(content: string | string[]): string | string[] {
@@ -7,21 +28,15 @@ export function colorize(content: string | string[]): string | string[] {
     return ''
   }
 
+  const { isColorSupported, createColors, ...pico } = pc
+
   const tagFunctions: { [key: string]: (text: string) => string } = {
+    ...pico,
     b: pc.bold,
-    bold: pc.bold,
     i: pc.italic,
-    italic: pc.italic,
-    red: pc.red,
-    yellow: pc.yellow,
-    white: pc.white,
-    green: pc.green,
-    blue: pc.blue,
-    magenta: pc.magenta,
-    cyan: pc.cyan,
-    gray: pc.gray,
     grey: pc.gray,
-    dim: pc.dim,
+    primary: formatter('\x1b[38;2;75;65;255m', '\x1b[39m'),
+    bgPrimary: formatter('\x1b[48;2;75;65;255m', '\x1b[49m'),
     reset: (text: string) => `\u001b[0m${text}`,
   }
 

@@ -3,17 +3,25 @@ import { writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, join, relative } from 'node:path'
 
-export const mainFileName: Based.File = 'based'
-export const schemaFileName: Based.File = `${mainFileName}.schema`
-export const configFileName: Based.File = `${mainFileName}.config`
-export const infraFileName: Based.File = `${mainFileName}.infra`
+export const fileExtensions = ['ts', 'js', 'json']
+export const installableTools = ['typescript', 'vitest', 'biome', 'react']
 
 const isBasedFile = (file: string, type: Based.File) =>
-  file === `${type}.js` || file === `${type}.json` || file === `${type}.ts`
+  file.includes(type) && isFormatValid(file)
 
-export const isSchemaFile = (file: string) => isBasedFile(file, schemaFileName)
-export const isConfigFile = (file: string) => isBasedFile(file, configFileName)
-export const isInfraFile = (file: string) => isBasedFile(file, infraFileName)
+export const isFormatValid = (file: string) => {
+  const extension: Based.FileExtensions = file
+    ?.split('.')
+    .at(-1) as Based.FileExtensions
+
+  return fileExtensions.includes(extension)
+}
+
+export const isSchemaFile = (file: string) =>
+  isBasedFile(file, Based.File.SCHEMA)
+export const isConfigFile = (file: string) =>
+  isBasedFile(file, Based.File.CONFIG)
+export const isInfraFile = (file: string) => isBasedFile(file, Based.File.INFRA)
 
 export const isIndexFile = (file: string) =>
   file === 'index.ts' || file === 'index.js'
@@ -76,7 +84,7 @@ export const formatAsObject = (obj: object, indentLevel = 1): string => {
 export const saveAsFile = async (
   obj: Record<string, unknown>,
   filePath: string,
-  format: Based.Extensions,
+  format: Based.FileExtensions,
 ): Promise<boolean> => {
   let content: string
 
@@ -84,12 +92,15 @@ export const saveAsFile = async (
     case 'ts':
       content = `export default ${formatAsObject(obj)};\n`
       break
+
     case 'js':
       content = `module.exports = ${formatAsObject(obj)};\n`
       break
+
     case 'json':
       content = JSON.stringify(obj, null, 2)
       break
+
     default:
       throw new Error(`Unsupported format: ${format}`)
   }
