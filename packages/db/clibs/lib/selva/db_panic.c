@@ -13,7 +13,7 @@ void db_panic_fn(const char * restrict where, const char * restrict func, const 
 {
     va_list args;
 
-    va_start(args, fmt);
+    va_start(args);
     fprintf(stderr, "%s:%s: ", where, func);
     vfprintf(stderr, fmt, args);
     if (fmt[strlen(fmt) - 1] != '\n') {

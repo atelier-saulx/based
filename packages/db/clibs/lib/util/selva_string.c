@@ -323,7 +323,7 @@ struct selva_string *selva_string_createf(const char *fmt, ...)
     int res;
     struct selva_string *s;
 
-    va_start(args, fmt);
+    va_start(args);
     res = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
@@ -336,7 +336,7 @@ struct selva_string *selva_string_createf(const char *fmt, ...)
         return NULL;
     }
 
-    va_start(args, fmt);
+    va_start(args);
     (void)vsnprintf(get_buf(s), s->len + 1, fmt, args);
     va_end(args);
 

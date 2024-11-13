@@ -361,7 +361,7 @@ int selva_proto_scanf(struct finalizer * restrict fin, const void * restrict buf
     }
 
     fmt--;
-    va_start(args, fmt);
+    va_start(args);
     while (*(++fmt) != '\0') {
         struct placeholder_state ps;
 
