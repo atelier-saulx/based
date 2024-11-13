@@ -20,7 +20,6 @@ OBJ := \
 	cstrings.o \
 	ctime.o \
 	eztrie.o \
-	fd_to_str.o \
 	finalizer.o \
 	hll.o \
 	ida.o \
