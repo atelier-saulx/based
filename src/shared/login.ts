@@ -6,7 +6,7 @@ import { AppContext, getBasedClient } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 1e3
+const connectionTimeout = 60e3
 
 const authenticateUser = async (
   email: string,
