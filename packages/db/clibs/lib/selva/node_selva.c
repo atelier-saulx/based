@@ -219,7 +219,7 @@ static int get_args(napi_env env, napi_callback_info cbinfo, size_t *argc, napi_
     const size_t rargc = *argc;
     napi_status status;
 
-    status = napi_get_cb_info(env, cbinfo, argc, argv, NULL, NULL);
+    status = napi_get_cb_info(env, cbinfo, argc, argv, nullptr, nullptr);
     if (status != napi_ok) {
         return SELVA_EINVAL;
     }
@@ -315,7 +315,7 @@ static napi_value node_load(napi_env env, napi_callback_info info)
     err = io_dump_load(filename, &db);
     if (err) {
         (void)napi_throw_error(env, selva_strerror(err), "Failed to load the db");
-        return NULL;
+        return nullptr;
     }
 
     return db2npointer(env, db);
@@ -711,7 +711,7 @@ static int node_cb_js_trampoline(struct SelvaDb *, const struct SelvaTraversalMe
     }
 
     if (status != napi_ok) {
-        const char *code = NULL;
+        const char *code = nullptr;
 
         status = napi_throw_error(ctx->env, code, "Traverse callback failed");
         assert(status == napi_ok);
@@ -722,7 +722,7 @@ static int node_cb_js_trampoline(struct SelvaDb *, const struct SelvaTraversalMe
 
     status = napi_typeof(ctx->env, result, &result_type);
     if (status != napi_ok) {
-        const char *code = NULL;
+        const char *code = nullptr;
 
         status = napi_throw_error(ctx->env, code, "Failed the read the return value");
         assert(status == napi_ok);
@@ -739,7 +739,7 @@ static int node_cb_js_trampoline(struct SelvaDb *, const struct SelvaTraversalMe
     } else if (result_type == napi_null || result_type == napi_undefined) {
         return -1;
     } else {
-        const char *code = NULL;
+        const char *code = nullptr;
 
         /* TODO throw type error? */
         status = napi_throw_error(ctx->env, code, "Invalid return value type");
@@ -849,13 +849,13 @@ static const uint8_t *get_filter(napi_env env, napi_value value, size_t *len_out
     }
 
     *len_out = 0;
-    return NULL;
+    return nullptr;
 }
 
 static const struct FindFields *get_find_fields(napi_env env, napi_value value)
 {
     napi_status status;
-    struct FindFields *fields = NULL;
+    struct FindFields *fields = nullptr;
 
     if (!selva_napi_is_null(env, value)) {
         void *buf;
@@ -865,7 +865,7 @@ static const struct FindFields *get_find_fields(napi_env env, napi_value value)
         assert(status == napi_ok);
 
         if ((len - 1) % 3 != 0) {
-            return NULL;
+            return nullptr;
         }
 
         if (buf && len > 0 && len >= *((uint8_t *)buf) * sizeof(typeof(fields->data[0]))) {
@@ -920,7 +920,7 @@ static napi_value node_find(napi_env env, napi_callback_info info)
     }
     memcpy(&limits, limits_buf, sizeof(limits));
 
-    void *result_buf = NULL;
+    void *result_buf = nullptr;
     size_t result_len = 0;
     if (argc == 8) {
         status = napi_get_buffer_info(env, argv[7], &result_buf, &result_len);

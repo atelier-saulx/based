@@ -20,7 +20,7 @@ int update(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *no
         const struct SelvaFieldSchema *fs;
         const void *value = buf + i + sizeof(struct Update);
         size_t value_len;
-        __selva_autofree void *value_arr = NULL;
+        __selva_autofree void *value_arr = nullptr;
         int err = 0;
 
         memcpy(&ud, buf + i, sizeof(struct Update));

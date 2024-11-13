@@ -145,7 +145,7 @@ static void save_ref(struct selva_io *io, struct SelvaNodeReference *ref)
         /*
          * We don't pass the db here to prevent any attempt to access node schema.
          */
-        save_fields(io, NULL, ref->meta);
+        save_fields(io, nullptr, ref->meta);
     }
 }
 
@@ -386,7 +386,7 @@ int selva_dump_save_common(struct SelvaDb *db, const char *filename)
      */
     save_schema(&io, db);
 
-    selva_io_end(&io, NULL);
+    selva_io_end(&io, nullptr);
     return 0;
 }
 
@@ -455,7 +455,7 @@ int selva_dump_save_range(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
 
-    selva_io_end(&io, NULL);
+    selva_io_end(&io, nullptr);
 
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_end);
@@ -500,7 +500,7 @@ static void load_schema(struct selva_io *io, struct SelvaDb *db)
 
 static int load_string(struct selva_io *io, struct selva_string *s, const struct sdb_string_meta *meta)
 {
-    if (io->sdb_read(selva_string_to_mstr(s, NULL), sizeof(char), meta->len, io) != meta->len * sizeof(char)) {
+    if (io->sdb_read(selva_string_to_mstr(s, nullptr), sizeof(char), meta->len, io) != meta->len * sizeof(char)) {
         selva_string_free(s);
         return SELVA_EIO;
     }
@@ -958,7 +958,7 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename)
     }
 
     load_schema(&io, db);
-    selva_io_end(&io, NULL);
+    selva_io_end(&io, nullptr);
 
     return 0;
 }
@@ -974,7 +974,7 @@ int selva_dump_load_range(struct SelvaDb *db, const char *filename)
     }
 
     load_types(&io, db);
-    selva_io_end(&io, NULL);
+    selva_io_end(&io, nullptr);
 
     return 0;
 }

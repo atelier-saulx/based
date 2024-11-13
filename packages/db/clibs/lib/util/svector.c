@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 SAULX
+ * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -55,7 +55,7 @@ void SVector_Init(SVector *vec, size_t initial_len, int (*compar)(const void **a
         .vec_last = 0,
         .vec_arr_len = initial_len,
         .vec_arr_shift_index = 0,
-        .vec_arr = NULL,
+        .vec_arr = nullptr,
     };
 
     if (initial_len > (size_t)0) {
@@ -96,7 +96,7 @@ static void *rbtree_insert(SVector *vec, void *p) {
         return res->p;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static struct SVector_rbnode *rbtree_find(const SVector * restrict vec, void *key) {
@@ -141,7 +141,7 @@ SVector *SVector_Concat(SVector *dest, const SVector *src) {
     void *el;
 
     if (mode != SVECTOR_MODE_ARRAY && mode != SVECTOR_MODE_RBTREE) {
-        return NULL;
+        return nullptr;
     }
 
     SVector_ForeachBegin(&it, src);
@@ -164,7 +164,7 @@ SVector *SVector_Clone(SVector *dest, const SVector *src, int (*compar)(const vo
     assert(src->vec_arr_shift_index == 0);
 
     if (mode != SVECTOR_MODE_ARRAY && mode != SVECTOR_MODE_RBTREE) {
-        return NULL;
+        return nullptr;
     }
 
     SVector_Init(dest, SVector_Size(src), compar);
@@ -282,7 +282,7 @@ static void *SVector_InsertFast(SVector *vec, void *el) {
 
         assert(vec->vec_last <= vec->vec_arr_len);
 
-        return NULL;
+        return nullptr;
     } else if (vec->vec_mode == SVECTOR_MODE_RBTREE) {
         void *res;
 
@@ -294,7 +294,7 @@ static void *SVector_InsertFast(SVector *vec, void *el) {
         return res;
     } else {
         /* Uninitialized SVector. */
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -316,7 +316,7 @@ void *SVector_Insert(SVector *vec, void *el) {
         vec_arr = vec->vec_arr;
         vec_arr[i] = el;
 
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -355,7 +355,7 @@ ssize_t SVector_SearchIndex(const SVector * restrict vec, void *key) {
         size_t i = 0;
 
         for (n = RB_MIN(SVector_rbtree, (struct SVector_rbtree *)&vec->vec_rbhead);
-             n != NULL;
+             n != nullptr;
              n = RB_NEXT(SVector_rbtree, &vec->vec_rbhead, n)) {
             if (vec->vec_compar((const void **)&n->p, (const void **)&key) == 0) {
                 return i;
@@ -379,22 +379,22 @@ void *SVector_Search(const SVector * restrict vec, void *key) {
     if (vec_mode == SVECTOR_MODE_ARRAY) {
         /* The array might be unset in case of lazy alloc was requested. */
         if (unlikely(!vec->vec_arr)) {
-            return NULL;
+            return nullptr;
         }
 
         void **pp = bsearch(&key, vec->vec_arr + vec->vec_arr_shift_index,
                             vec->vec_last - vec->vec_arr_shift_index,
                             sizeof(void *), VEC_COMPAR(vec->vec_compar));
 
-        return !pp ? NULL : *pp;
+        return !pp ? nullptr : *pp;
     } else if (vec_mode == SVECTOR_MODE_RBTREE) {
         struct SVector_rbnode *res;
 
         res = rbtree_find(vec, key);
 
-        return !res ? NULL : res->p;
+        return !res ? nullptr : res->p;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -407,7 +407,7 @@ void *SVector_GetIndex(const SVector * restrict vec, size_t index) {
         const size_t i = vec->vec_arr_shift_index + index;
 
         if (i >= vec->vec_last) {
-            return NULL;
+            return nullptr;
         }
 
         return vec->vec_arr[speculation_safe_value(i)];
@@ -415,22 +415,22 @@ void *SVector_GetIndex(const SVector * restrict vec, size_t index) {
         size_t i = 0;
 
         for (struct SVector_rbnode *n = RB_MIN(SVector_rbtree, (struct SVector_rbtree *)&vec->vec_rbhead);
-             n != NULL;
+             n != nullptr;
              n = RB_NEXT(SVector_rbtree, &vec->vec_rbhead, n)) {
             if (i++ == index) {
                 return n;
             }
         }
 
-        return NULL;
+        return nullptr;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
 void *SVector_RemoveIndex(SVector * restrict vec, size_t index) {
     const enum SVectorMode vec_mode = vec->vec_mode;
-    void *p = NULL;
+    void *p = nullptr;
 
     assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
 
@@ -450,7 +450,7 @@ void *SVector_RemoveIndex(SVector * restrict vec, size_t index) {
 
         if (i < vec->vec_last) {
             for (n = RB_MIN(SVector_rbtree, (struct SVector_rbtree *)&vec->vec_rbhead);
-                 n != NULL;
+                 n != nullptr;
                  n = RB_NEXT(SVector_rbtree, &vec->vec_rbhead, n)) {
                 if (i++ == index) {
                     p = n->p;
@@ -512,14 +512,14 @@ void *SVector_Remove(SVector * restrict vec, void *key) {
     if (vec_mode == SVECTOR_MODE_ARRAY) {
         /* Support lazy alloc. */
         if (unlikely(!vec->vec_arr)) {
-            return NULL;
+            return nullptr;
         }
 
         void **pp = bsearch(&key, vec->vec_arr + vec->vec_arr_shift_index,
                             vec->vec_last - vec->vec_arr_shift_index,
                             sizeof(void *), VEC_COMPAR(vec->vec_compar));
         if (!pp) {
-            return NULL;
+            return nullptr;
         }
 
         void *el = *pp;
@@ -537,7 +537,7 @@ void *SVector_Remove(SVector * restrict vec, void *key) {
         void *p;
 
         if (!n) {
-            return NULL;
+            return nullptr;
         }
 
         p = n->p;
@@ -547,19 +547,19 @@ void *SVector_Remove(SVector * restrict vec, void *key) {
 
         return p;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
 void *SVector_Pop(SVector * restrict vec) {
     const enum SVectorMode vec_mode = vec->vec_mode;
-    void *last = NULL;
+    void *last = nullptr;
 
     assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
 
     if (vec_mode == SVECTOR_MODE_ARRAY) {
         if (vec->vec_last == vec->vec_arr_shift_index) {
-            return NULL;
+            return nullptr;
         }
 
         assert(vec->vec_last <= vec->vec_arr_len);
@@ -568,7 +568,7 @@ void *SVector_Pop(SVector * restrict vec) {
         struct SVector_rbnode *n = RB_MAX(SVector_rbtree, &vec->vec_rbhead);
 
         if (!n) {
-            return NULL;
+            return nullptr;
         }
 
         last = n->p;
@@ -582,13 +582,13 @@ void *SVector_Pop(SVector * restrict vec) {
 
 void *SVector_Shift(SVector * restrict vec) {
     const enum SVectorMode vec_mode = vec->vec_mode;
-    void *first = NULL;
+    void *first = nullptr;
 
     assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
 
     if (vec_mode == SVECTOR_MODE_ARRAY) {
         if (vec->vec_last == vec->vec_arr_shift_index) {
-            return NULL;
+            return nullptr;
         }
         assert(vec->vec_last <= vec->vec_arr_len);
         assert(vec->vec_arr_shift_index <= vec->vec_last);
@@ -602,7 +602,7 @@ void *SVector_Shift(SVector * restrict vec) {
         struct SVector_rbnode *n = RB_MIN(SVector_rbtree, &vec->vec_rbhead);
 
         if (!n) {
-            return NULL;
+            return nullptr;
         }
 
         first = n->p;
@@ -616,13 +616,13 @@ void *SVector_Shift(SVector * restrict vec) {
 
 void *SVector_Peek(SVector * restrict vec) {
     const enum SVectorMode vec_mode = vec->vec_mode;
-    void *first = NULL;
+    void *first = nullptr;
 
     assert(vec_mode == SVECTOR_MODE_ARRAY || vec_mode == SVECTOR_MODE_RBTREE);
 
     if (vec_mode == SVECTOR_MODE_ARRAY) {
         if (vec->vec_last == vec->vec_arr_shift_index) {
-            return NULL;
+            return nullptr;
         }
         assert(vec->vec_last <= vec->vec_arr_len);
         assert(vec->vec_arr_shift_index <= vec->vec_last);
@@ -632,7 +632,7 @@ void *SVector_Peek(SVector * restrict vec) {
         struct SVector_rbnode *n = RB_MIN(SVector_rbtree, &vec->vec_rbhead);
 
         if (!n) {
-            return NULL;
+            return nullptr;
         }
 
         first = n->p;
@@ -662,12 +662,12 @@ void SVector_Clear(SVector * restrict vec) {
         vec->vec_mode = SVECTOR_MODE_ARRAY;
         /* Some defensive programming */
         vec->vec_arr_len = 0;
-        vec->vec_arr = NULL;
+        vec->vec_arr = nullptr;
     }
 }
 
 static void *SVector_EmptyForeach(struct SVectorIterator *it __unused) {
-    return NULL;
+    return nullptr;
 }
 
 static __hot void *SVector_ArrayForeach(struct SVectorIterator *it) {
@@ -678,14 +678,14 @@ static __hot void *SVector_ArrayForeach(struct SVectorIterator *it) {
         return *p;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static __hot void *SVector_RbTreeForeach(struct SVectorIterator *it) {
     struct SVector_rbnode *cur = it->rbtree.next;
 
     if (!cur) {
-        return NULL;
+        return nullptr;
     }
 
     it->rbtree.next = RB_NEXT(SVector_rbtree, it->rbtree.head, cur);

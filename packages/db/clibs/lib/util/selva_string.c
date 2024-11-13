@@ -290,7 +290,7 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
         test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
-        return NULL; /* Invalid flags */
+        return nullptr; /* Invalid flags */
     }
 
     return (flags & SELVA_STRING_MUTABLE)
@@ -304,7 +304,7 @@ struct selva_string *selva_string_create_crc(const char *str, size_t len, enum s
 
     if ((flags & (INVALID_FLAGS_MASK | SELVA_STRING_STATIC)) ||
         test_mutually_exclusive_flags(flags, SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE)) {
-        return NULL; /* Invalid flags */
+        return nullptr; /* Invalid flags */
     }
 
     /*
@@ -324,16 +324,16 @@ struct selva_string *selva_string_createf(const char *fmt, ...)
     struct selva_string *s;
 
     va_start(args);
-    res = vsnprintf(NULL, 0, fmt, args);
+    res = vsnprintf(nullptr, 0, fmt, args);
     va_end(args);
 
     if (res < 0) {
-        return NULL;
+        return nullptr;
     }
 
-    s = selva_string_create(NULL, res, 0);
+    s = selva_string_create(nullptr, res, 0);
     if (!s) {
-        return NULL;
+        return nullptr;
     }
 
     va_start(args);
@@ -349,9 +349,9 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
     struct selva_string *s;
 
     flags &= suppported_flags;
-    s = selva_string_create(NULL, size, flags);
+    s = selva_string_create(nullptr, size, flags);
     if (!s) {
-        return NULL;
+        return nullptr;
     }
 
     s->len = fread(get_buf(s), 1, size, fp);
@@ -370,7 +370,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
 
     if ((flags & (SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_STATIC)) ||
         (flags & INVALID_FLAGS_MASK)) {
-        return NULL; /* Invalid flags */
+        return nullptr; /* Invalid flags */
     }
 
     s = alloc_immutable(sizeof(struct selva_string_compressed_hdr) + in_len + trail);
@@ -640,7 +640,7 @@ const char *selva_string_to_str(const struct selva_string *s, size_t *len)
         if (len) {
             *len = 0;
         }
-        return NULL;
+        return nullptr;
     }
 
     if (len) {
@@ -657,7 +657,7 @@ char *selva_string_to_mstr(struct selva_string *s, size_t *len)
         if (len) {
             *len = 0;
         }
-        return NULL;
+        return nullptr;
     }
 
     if (len) {
@@ -673,7 +673,7 @@ int selva_string_to_ll(const struct selva_string *s, long long *ll)
     int e;
 
     errno = 0;
-    *ll = strtoll(str, NULL, 10);
+    *ll = strtoll(str, nullptr, 10);
     e = errno;
     if (e == ERANGE) {
         return SELVA_ERANGE;
@@ -690,7 +690,7 @@ int selva_string_to_ull(const struct selva_string *s, unsigned long long *ull)
     int e;
 
     errno = 0;
-    *ull = strtoull(str, NULL, 10);
+    *ull = strtoull(str, nullptr, 10);
     e = errno;
     if (e == ERANGE) {
         return SELVA_ERANGE;
@@ -707,7 +707,7 @@ int selva_string_to_float(const struct selva_string *s, float *f)
     int e;
 
     errno = 0;
-    *f = strtof(str, NULL);
+    *f = strtof(str, nullptr);
     e = errno;
     if (e == ERANGE) {
         return SELVA_ERANGE;
@@ -724,7 +724,7 @@ int selva_string_to_double(const struct selva_string *s, double *d)
     int e;
 
     errno = 0;
-    *d = strtod(str, NULL);
+    *d = strtod(str, nullptr);
     e = errno;
     if (e == ERANGE) {
         return SELVA_ERANGE;
@@ -741,7 +741,7 @@ int selva_string_to_ldouble(const struct selva_string *s, long double *ld)
     int e;
 
     errno = 0;
-    *ld = strtold(str, NULL);
+    *ld = strtold(str, nullptr);
     e = errno;
     if (e == ERANGE) {
         return SELVA_ERANGE;
@@ -798,8 +798,8 @@ static int selva_string_cmp_unz(const struct selva_string *a, const struct selva
 static int selva_string_cmp_shortz(const struct selva_string *a, const struct selva_string *b)
 {
     bool must_free_a, must_free_b;
-    char *a_str = get_comparable_buf(a, NULL, &must_free_a);
-    char *b_str = get_comparable_buf(b, NULL, &must_free_b);
+    char *a_str = get_comparable_buf(a, nullptr, &must_free_a);
+    char *b_str = get_comparable_buf(b, nullptr, &must_free_b);
     int res;
 
     res = strcmp(a_str, b_str);
@@ -907,7 +907,7 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     }
 
     bool must_free;
-    char *str = get_comparable_buf(s, NULL, &must_free);
+    char *str = get_comparable_buf(s, nullptr, &must_free);
     int res = !memcmp(str + len - lensuffix, suffix, lensuffix);
 
     if (must_free) {
@@ -934,7 +934,7 @@ ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, s
         libdeflate_block_state_deinit(&state);
     } else {
         bool must_free;
-        char *str = get_comparable_buf(s, NULL, &must_free);
+        char *str = get_comparable_buf(s, nullptr, &must_free);
         char *pos;
 
         pos = memmem(str, len, sub_str, sub_len);
@@ -970,9 +970,9 @@ __constructor static void init_compressor(void)
 __destructor static void deinit_compressor(void)
 {
     libdeflate_free_compressor(compressor);
-    compressor = NULL;
+    compressor = nullptr;
 
     libdeflate_free_decompressor(decompressor);
-    decompressor = NULL;
+    decompressor = nullptr;
 }
 #endif
