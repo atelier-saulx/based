@@ -3,7 +3,7 @@ import type { Command } from 'commander'
 import { exportInfraTemplate } from '../../../helpers/index.js'
 import {
   AppContext,
-  infraFileName,
+  isFormatValid,
   isValidPath,
   saveAsFile,
 } from '../../../shared/index.js'
@@ -16,7 +16,7 @@ type MachineList = {
   memory?: string
 }
 
-export const init =
+export const infraInit =
   (program: Command) => async (args: Based.Infra.Init.Command) => {
     const context: AppContext = AppContext.getInstance(program)
     await context.getProgram()
@@ -64,13 +64,8 @@ export const init =
       errorMessage(context.i18n('commands.infra.validations.path'), args.path)
     }
 
-    if (
-      args.format &&
-      args.format !== 'js' &&
-      args.format !== 'json' &&
-      args.format !== 'ts'
-    ) {
-      errorMessage(context.i18n('commands.infra.validations.path'), args.path)
+    if (args.format && !isFormatValid(args.format)) {
+      errorMessage(context.i18n('commands.infra.validations.format'), args.path)
     }
 
     context.print.warning(
@@ -159,16 +154,16 @@ export const init =
       if (!args.format) {
         const choices = [
           {
-            name: context.i18n('methods.extensions.ts'),
-            value: 'ts',
+            name: context.i18n('methods.format.ts.label'),
+            value: context.i18n('methods.format.ts.value'),
           },
           {
-            name: context.i18n('methods.extensions.json'),
-            value: 'json',
+            name: context.i18n('methods.format.json.label'),
+            value: context.i18n('methods.format.json.value'),
           },
           {
-            name: context.i18n('methods.extensions.js'),
-            value: 'js',
+            name: context.i18n('methods.format.js.label'),
+            value: context.i18n('methods.format.js.value'),
           },
         ]
 
@@ -193,18 +188,6 @@ export const makeInfra = async (args: Based.Infra.Init.Make) => {
   const { context, infra } = args
   const { skip } = context.getGlobalOptions()
 
-  if (
-    !infra.name ||
-    !infra.machine ||
-    !infra.min ||
-    !infra.max ||
-    !infra.format
-  ) {
-    context.print.fail(
-      context.i18n('commands.infra.subCommands.init.methods.cannotInit'),
-    )
-  }
-
   if (!skip) {
     if (!infra.path) {
       infra.path = await context.input.default(
@@ -216,7 +199,20 @@ export const makeInfra = async (args: Based.Infra.Init.Make) => {
     }
   }
 
-  const fileName = `${infraFileName}.${infra.format}`
+  if (
+    !infra.name ||
+    !infra.machine ||
+    !infra.min ||
+    !infra.max ||
+    !infra.format ||
+    !infra.path
+  ) {
+    context.print.fail(
+      context.i18n('commands.infra.subCommands.init.methods.cannotInit'),
+    )
+  }
+
+  const fileName = `${Based.File.INFRA}.${infra.format}`
   const fullPath = resolve(join(infra.path, fileName))
 
   if (!infra.path.includes(fileName)) {

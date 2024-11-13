@@ -14,6 +14,23 @@ export const projectInit = async (program: Command): Promise<void> => {
   const cmd: Command = context.commandMaker('init')
 
   cmd.action(async (args: Based.Init.Command) => {
+    const { cluster: clusterProject, apiKey: apiKeyProject } =
+      await context.getProgram()
+    const { skip } = context.getGlobalOptions()
+    const basedClient = await context.getBasedClient()
+
+    if (skip) {
+      args = {
+        name: '',
+        description: '',
+        path: './',
+        format: 'ts',
+        tools: [],
+        queries: [],
+        functions: [],
+      }
+    }
+
     const errorMessage = (option: string, value: string | number) =>
       context.i18n('errors.901', option, value ?? '')
 
@@ -23,6 +40,19 @@ export const projectInit = async (program: Command): Promise<void> => {
     const isToolsValid = <T extends string>(tools: T[]): boolean =>
       tools.every((tool) => context.i18n('methods.tools')[tool])
 
+    const isValidFunctionName = (value: string): boolean => {
+      const functionNameRegex = /^[A-Za-z_$][A-Za-z0-9_$]*$/
+      return functionNameRegex.test(value)
+    }
+
+    const isValueInTheObject =
+      (options: { label: string; value: string }[]) =>
+      (value: string): boolean =>
+        options.findIndex((option) => option.value === value) > -1
+
+    const isFunctionsValid = <T extends string>(value: T): boolean =>
+      value.split(',').every((element) => isValidFunctionName(element))
+
     const typedChoices = (
       choices: object,
     ): {
@@ -31,10 +61,131 @@ export const projectInit = async (program: Command): Promise<void> => {
       hint?: string
     }[] => Object.values(choices)
 
+    let userData = await basedClient
+      ?.call(context.endpoints.USER_CLOUD_INFO, {
+        userId: basedClient.get('cluster').authState?.userId,
+      })
+      .get()
+
+    const parseData = (data): Record<string, Record<string, string[]>> => {
+      const result: Record<string, Record<string, string[]>> = {}
+      for (const item of data) {
+        for (const env of item.envs) {
+          if (!result[env.org]) {
+            result[env.org] = {}
+          }
+          if (!result[env.org][env.project]) {
+            result[env.org][env.project] = []
+          }
+          if (!result[env.org][env.project].includes(env.env)) {
+            result[env.org][env.project].push(env.env)
+          }
+        }
+      }
+      return result
+    }
+
+    const buildOptions = (data): { label: string; value: string }[] =>
+      data.map((value: string) => ({ label: value, value }))
+
+    userData = parseData(userData)
+    const hasUserData = Object.keys(userData).length > 0
+    let org: () => Promise<string>
+    let project: (org: string) => Promise<string>
+    let env: (org: string, project: string) => Promise<string>
+
+    if (hasUserData) {
+      org = () => {
+        const options = buildOptions(Object.keys(userData))
+        options.push(context.i18n('commands.init.methods.org.new'))
+        const initialValue = options.length === 1 ? options[0].value : args.org
+
+        return context.form.select({
+          message: context.i18n('commands.init.methods.org.select'),
+          initialValue,
+          options,
+          required: true,
+          errorMessage: context.i18n(
+            'commands.init.methods.org.error',
+            args.org,
+          ) as string,
+          validation: isValueInTheObject(options),
+        })
+      }
+
+      project = (org) => {
+        const options = buildOptions(Object.keys(userData[org]))
+        options.push(context.i18n('commands.init.methods.project.new'))
+        const initialValue =
+          options.length === 1 ? options[0].value : args.project
+
+        return context.form.select({
+          message: context.i18n('commands.init.methods.project.select', org),
+          initialValue,
+          options,
+          required: true,
+          errorMessage: context.i18n(
+            'commands.init.methods.project.error',
+            args.project,
+          ) as string,
+          validation: isValueInTheObject(options),
+        })
+      }
+
+      env = (org, project) => {
+        const options = buildOptions(userData[org][project])
+        options.push(context.i18n('commands.init.methods.env.new'))
+        const initialValue = options.length === 1 ? options[0].value : args.env
+
+        return context.form.select({
+          message: context.i18n('commands.init.methods.env.select', project),
+          initialValue,
+          options,
+          required: true,
+          errorMessage: context.i18n(
+            'commands.init.methods.env.error',
+            args.env,
+          ) as string,
+          validation: isValueInTheObject(options),
+        })
+      }
+    } else {
+      org = () =>
+        context.form.text({
+          message: context.i18n('commands.init.methods.org.input'),
+          initialValue: args.org,
+          errorMessage: context.i18n('context.input.empty'),
+          required: true,
+          skip: false,
+          validation: isNotEmpty,
+        })
+
+      project = (org) =>
+        context.form.text({
+          message: context.i18n('commands.init.methods.project.input', org),
+          initialValue: args.project,
+          errorMessage: context.i18n('context.input.empty'),
+          skip: false,
+          required: true,
+          validation: isNotEmpty,
+        })
+
+      env = (_, project) =>
+        context.form.text({
+          message: context.i18n('commands.init.methods.org.input', project),
+          initialValue: args.org,
+          errorMessage: context.i18n('context.input.empty'),
+          skip: false,
+          required: true,
+          validation: isNotEmpty,
+        })
+    }
+
     const name = () =>
       context.form.text({
         message: context.i18n('commands.init.methods.name'),
         initialValue: args.name,
+        required: !skip,
         errorMessage: (error) =>
           errorMessage(
             context.i18n('commands.init.validations.name'),
@@ -43,19 +194,57 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isNotEmpty,
       })
 
+    const cluster = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.cluster'),
+        initialValue: clusterProject ?? '',
+        errorMessage: context.i18n('context.input.empty'),
+        skip: true,
+        required: !skip,
+        validation: isNotEmpty,
+      })
+
+    const apiKey = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.apiKey'),
+        initialValue: apiKeyProject ?? '',
+        errorMessage: context.i18n('context.input.empty'),
+        skip: true,
+        required: !skip,
+        validation: isNotEmpty,
+      })
+
+    const description = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.description'),
+        initialValue: args.description,
+        errorMessage: context.i18n('context.input.empty'),
+        skip: true,
+        required: !skip,
+        validation: isNotEmpty,
+      })
+
     const format = () =>
       context.form.select({
-        message: context.i18n('commands.init.methods.fileExtension'),
-        options: typedChoices(context.i18n('methods.extensions')),
+        message: context.i18n('commands.init.methods.format'),
+        initialValue: args.format,
+        options: typedChoices(context.i18n('methods.format')),
+        required: true,
+        errorMessage: errorMessage(
+          context.i18n('commands.init.validations.format'),
+          args.format ?? '',
+        ),
+        validation: isFormatValid,
       })
 
     const tools = () =>
       context.form.multiSelect({
-        message: context.i18n('commands.init.methods.fileExtension'),
-        initialValues: String(args.tools).split(','),
+        message: context.i18n('commands.init.methods.tools'),
+        initialValues: args.tools?.toString().split(','),
+        required: !skip,
         errorMessage: errorMessage(
           context.i18n('commands.init.validations.tools'),
-          String(args.tools),
+          args.tools?.toString(),
         ),
         skip: true,
         validation: isToolsValid,
@@ -66,6 +255,7 @@ export const projectInit = async (program: Command): Promise<void> => {
       context.form.text({
         message: context.i18n('commands.init.methods.path'),
         initialValue: args.path,
+        required: !skip,
         placeholder: './',
         errorMessage: (error) =>
           errorMessage(
@@ -75,196 +265,56 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isValidPath,
       })
 
+    const queries = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.queries'),
+        initialValue: args.queries?.toString(),
+        required: !skip,
+        skip: true,
+        errorMessage: (error) =>
+          errorMessage(
+            context.i18n('commands.init.validations.queries'),
+            error ?? args.queries?.toString(),
+          ),
+        validation: isFunctionsValid,
+      })
+
+    const functions = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.functions'),
+        initialValue: args.functions?.toString(),
+        required: !skip,
+        skip: true,
+        errorMessage: (error) =>
+          errorMessage(
+            context.i18n('commands.init.validations.functions'),
+            error ?? args.functions?.toString(),
+          ),
+        validation: isFunctionsValid,
+      })
+
     const form = await context.form.group({
-      tools,
+      header: context.i18n('commands.init.descripion'),
       name,
-      path,
+      description,
+      apiKey,
+      cluster,
+      org,
+      project: ({ results: { org } }) => project(org),
+      env: ({ results: { org, project } }) => env(org, project),
+      functions,
+      queries,
+      tools,
       format,
+      path,
     })
 
     console.log('form', form)
 
-    // console.log('form', form)
-    // const { skip } = context.getGlobalOptions()
-    // const { cluster, apiKey } = await context.getProgram()
-    // const basedClient = await context.getBasedClient()
-    // const isNotEmpty = (value: string): boolean =>
-    //   value !== '' && value !== undefined
-
-    // const isValidFunctionName = (value: string): boolean => {
-    //   const functionNameRegex = /^[A-Za-z_$][A-Za-z0-9_$]*$/
-    //   return functionNameRegex.test(value)
-    // }
-    // const isFunctionsValid = <T extends string>(value: T[]): boolean =>
-    //   value.every((element) => isValidFunctionName(element))
-    // const errorMessage = (option: string, value: string | number) => {
-    //   throw new Error(context.i18n('errors.901', option, value))
-    // }
-    // if (args.tools && !isToolsValid(args.tools)) {
-    //   errorMessage(
-    //     context.i18n('commands.init.validations.tools'),
-    //     args.tools.join(', '),
-    //   )
-    // }
-    // if (args.queries && !isFunctionsValid(args.queries)) {
-    //   errorMessage(
-    //     context.i18n('commands.init.validations.queries'),
-    //     args.queries.join(', '),
-    //   )
-    // }
-    // if (args.functions && !isFunctionsValid(args.functions)) {
-    //   errorMessage(
-    //     context.i18n('commands.init.validations.functions'),
-    //     args.functions.join(', '),
-    //   )
-    // }
-    // if (!skip) {
-    //   let userData = await basedClient
-    //     ?.call(context.endpoints.USER_CLOUD_INFO, {
-    //       userId: basedClient.get('cluster').authState?.userId,
-    //     })
-    //     .get()
-    //   const parseData = (data): Record<string, Record<string, string[]>> => {
-    //     const result: Record<string, Record<string, string[]>> = {}
-    //     for (const item of data) {
-    //       for (const env of item.envs) {
-    //         if (!result[env.org]) {
-    //           result[env.org] = {}
-    //         }
-    //         if (!result[env.org][env.project]) {
-    //           result[env.org][env.project] = []
-    //         }
-    //         if (!result[env.org][env.project].includes(env.env)) {
-    //           result[env.org][env.project].push(env.env)
-    //         }
-    //       }
-    //     }
-    //     return result
-    //   }
-    //   const buildChoices = (data): { value: string; name: string }[] =>
-    //     data.map((value) => ({ name: value, value }))
-    //   userData = parseData(userData)
-    //   const hasUserData = Object.keys(userData).length > 0
-    //   if (!args.name) {
-    //     args.name = await context.input.default(
-    //       context.i18n('commands.init.methods.name'),
-    //       '',
-    //       false,
-    //       isNotEmpty,
-    //     )
-    //   }
-    //   if (!args.description) {
-    //     args.description = await context.input.default(
-    //       context.i18n('commands.init.methods.description'),
-    //       '',
-    //       true,
-    //       isNotEmpty,
-    //     )
-    //   }
-    //   if (!args.cluster) {
-    //     args.cluster = await context.input.default(
-    //       context.i18n('commands.init.methods.cluster'),
-    //       cluster ?? '',
-    //       true,
-    //       isNotEmpty,
-    //     )
-    //   }
-    //   if (!args.org) {
-    //     if (hasUserData) {
-    //       args.org = await context.input.select(
-    //         context.i18n('commands.init.methods.org.select'),
-    //         buildChoices(Object.keys(userData)),
-    //       )
-    //     } else {
-    //       args.org = await context.input.default(
-    //         context.i18n('commands.init.methods.org.input'),
-    //         '',
-    //         false,
-    //         isNotEmpty,
-    //       )
-    //     }
-    //   }
-    //   if (!args.project) {
-    //     if (hasUserData) {
-    //       args.project = await context.input.select(
-    //         context.i18n('commands.init.methods.project.select'),
-    //         buildChoices(Object.keys(userData[args.org])),
-    //       )
-    //     } else {
-    //       args.project = await context.input.default(
-    //         context.i18n('commands.init.methods.project.input'),
-    //         '',
-    //         false,
-    //         isNotEmpty,
-    //       )
-    //     }
-    //   }
-    //   if (!args.env) {
-    //     if (hasUserData) {
-    //       args.env = await context.input.select(
-    //         context.i18n('commands.init.methods.env.select'),
-    //         buildChoices(userData[args.org][args.project]),
-    //       )
-    //     } else {
-    //       args.env = await context.input.default(
-    //         context.i18n('commands.init.methods.env.input'),
-    //         '',
-    //         false,
-    //         isNotEmpty,
-    //       )
-    //     }
-    //   }
-    //   if (!args.apiKey) {
-    //     args.apiKey = await context.input.default(
-    //       context.i18n('commands.init.methods.apiKey'),
-    //       apiKey ?? '',
-    //       true,
-    //       isNotEmpty,
-    //     )
-    //   }
-    //   if (!args.queries || !args.queries.length) {
-    //     args.queries = (
-    //       await context.input.default(
-    //         context.i18n('commands.init.methods.queries'),
-    //         '',
-    //         true,
-    //         (value) => isFunctionsValid(value.split(',')),
-    //       )
-    //     )?.split(',')
-    //   }
-    //   if (!args.functions || !args.functions.length) {
-    //     args.functions = (
-    //       await context.input.default(
-    //         context.i18n('commands.init.methods.functions'),
-    //         '',
-    //         true,
-    //         (value) => isFunctionsValid(value.split(',')),
-    //       )
-    //     )?.split(',')
-    //   }
-    //   if (!args.tools) {
-    //     const choices: Based.Context.SelectInputItems[] = Object.values(
-    //       context.i18n('methods.tools'),
-    //     ) as unknown as Based.Context.SelectInputItems[]
-    //     args.tools = await context.input.select(
-    //       context.i18n('commands.init.methods.tools'),
-    //       choices,
-    //       true,
-    //     )
-    //   }
-    //   if (!args.format) {
-    //     const choices: Based.Context.SelectInputItems[] = Object.values(
-    //       context.i18n('methods.extensions'),
-    //     ) as unknown as Based.Context.SelectInputItems[]
-    //     args.format = await context.input.select(
-    //       context.i18n('commands.init.methods.fileExtension'),
-    //       choices,
-    //     )
-    //   }
+    basedClient.destroy()
     // }
     // try {
     //   // await makeProject({ context, project: args })
-    //   // basedClient.destroy()
     // } catch (error) {
     //   throw new Error(error)
     // }

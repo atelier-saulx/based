@@ -87,11 +87,11 @@ declare global {
       }
 
       type GlobalOptions<T extends 'yes' | 'skip'> = T extends 'yes'
-        ? {
+        ? Based.Context.Project & {
             display?: State['display']
             yes?: boolean
           }
-        : {
+        : Based.Context.Project & {
             display?: State['display']
             skip?: boolean
           }
@@ -119,6 +119,7 @@ declare global {
       }
 
       interface MessageHandler {
+        intro: (message: string) => this
         loading: (message: string, timeout?: number) => this
         stop: () => this
         info: (message: string, icon?: boolean | string) => this

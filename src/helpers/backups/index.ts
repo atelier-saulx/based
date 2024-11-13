@@ -95,7 +95,7 @@ const dbSelection = async ({
 
 const isBackupExists = (backups: Based.Backups.Info[], selectedFile: string) =>
   isFileFromCloud(selectedFile) &&
-  backups.findIndex((file) => file.key === selectedFile)
+  backups.findIndex((file) => file.key === selectedFile) > -1
 
 const findLatestBackup = (backups: Based.Backups.Info[], date: string) => {
   let now = new Date()
@@ -137,7 +137,7 @@ const fileSelection = async ({
   let sortedBackups: Based.Backups.Info[] = backups.sorted[db]
 
   if (file) {
-    if (isBackupExists(sortedBackups, file) > -1) {
+    if (isBackupExists(sortedBackups, file)) {
       if (verbose) {
         context.print.info(
           `<b>Selected file:</b> <reset><cyan>${file}</cyan></reset>`,

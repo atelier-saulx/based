@@ -1,4 +1,13 @@
-import { group, log, multiselect, select, text } from '@clack/prompts'
+import {
+  type PromptGroup,
+  cancel,
+  group,
+  intro,
+  log,
+  multiselect,
+  select,
+  text,
+} from '@clack/prompts'
 import { type AppContext, colorize } from '../../shared/index.js'
 
 type Validate = (value: string | string[]) => boolean
@@ -21,15 +30,17 @@ type Validation =
 
 type Field = Validation & {
   message: string
-  placeholder?: string
+  required?: boolean
 }
 
 type TextField = Field & {
+  placeholder?: string
   initialValue?: string
   skip?: boolean
 }
 
 type SelectField = Field & {
+  initialValue?: string
   options: FieldOption[]
 }
 
@@ -39,19 +50,63 @@ type MultiSelectField = SelectField & {
 }
 
 type FormMaker = {
-  group?: typeof group
+  group?: <T extends Record<string, unknown>>(
+    fields: T & {
+      header?: string
+      cancelMessage?: string
+    },
+  ) => ReturnType<typeof group>
   text?: (field: TextField) => Promise<string>
-  select?: typeof select
+  select?: (field: SelectField) => Promise<string>
   multiSelect?: (field: MultiSelectField) => Promise<unknown[]>
+}
+
+const initialValidation = (
+  value: string | string[],
+  required: boolean,
+  validation: (value: string | string[]) => boolean,
+  errorMessage: string | ((value: string) => string),
+): boolean => {
+  if (value?.length && !validation(value)) {
+    if (required) {
+      if (typeof errorMessage === 'string') {
+        log.error(colorize(errorMessage))
+      } else {
+        if (typeof value === 'string') {
+          log.error(colorize(errorMessage(value)))
+        } else {
+          log.error(colorize(errorMessage(value.join(','))))
+        }
+      }
+    }
+
+    return false
+  }
+
+  if (value?.length && validation(value)) {
+    return true
+  }
 }
 
 export function contextForm(context: AppContext): FormMaker {
   return {
     group: async (fields) => {
-      return group(fields, {
-        onCancel: () => process.exit(0),
+      const { header, cancelMessage, ...rest } = fields
+
+      if (header) {
+        console.log('')
+        intro(colorize(header))
+      }
+
+      return group(rest as PromptGroup<unknown>, {
+        onCancel: () => {
+          cancel(cancelMessage ?? context.i18n('methods.aborted'))
+
+          process.exit(0)
+        },
       })
     },
+
     text: async ({
       initialValue,
       message,
@@ -59,13 +114,14 @@ export function contextForm(context: AppContext): FormMaker {
       errorMessage,
       skip,
       placeholder,
+      required,
     }) => {
-      if (initialValue && !validation(initialValue)) {
-        if (typeof errorMessage === 'string') {
-          log.error(colorize(errorMessage))
-        } else {
-          log.error(colorize(errorMessage(initialValue)))
-        }
+      if (initialValidation(initialValue, required, validation, errorMessage)) {
+        return initialValue
+      }
+
+      if (!required) {
+        return ''
       }
 
       if (skip) {
@@ -75,6 +131,7 @@ export function contextForm(context: AppContext): FormMaker {
       return (await text({
         message: colorize(message),
         placeholder,
+        initialValue,
         validate: (value) => {
           if (skip && value.toLowerCase() === 's') {
             return
@@ -90,7 +147,29 @@ export function contextForm(context: AppContext): FormMaker {
         },
       })) as string
     },
-    select,
+
+    select: async ({
+      message,
+      options,
+      initialValue,
+      validation,
+      errorMessage,
+      required,
+    }) => {
+      if (initialValidation(initialValue, required, validation, errorMessage)) {
+        return initialValue
+      }
+
+      if (!required) {
+        return ''
+      }
+
+      return (await select({
+        message: colorize(message),
+        options,
+      })) as string
+    },
+
     multiSelect: async ({
       message,
       options,
@@ -98,14 +177,16 @@ export function contextForm(context: AppContext): FormMaker {
       skip,
       validation,
       errorMessage,
+      required,
     }) => {
-      console.log('initialValues', initialValues)
-      if (initialValues && !validation(initialValues)) {
-        if (typeof errorMessage === 'string') {
-          log.error(colorize(errorMessage))
-        } else {
-          log.error(colorize(errorMessage(initialValues.join(','))))
-        }
+      if (
+        initialValidation(initialValues, required, validation, errorMessage)
+      ) {
+        return initialValues
+      }
+
+      if (!required) {
+        return []
       }
 
       if (skip) {
@@ -116,7 +197,7 @@ export function contextForm(context: AppContext): FormMaker {
         message: colorize(message),
         options,
         initialValues,
-        required: skip,
+        required: !skip,
       })) as unknown[]
     },
   }
