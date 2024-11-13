@@ -31,26 +31,9 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             }
         }
     } else if (op == Op.has) {
-        // add repeat also
-        // if (!batch.equalsOr(valueSize, value, query)) {
-        // return .{ next, false };
-        // }
-        // std.debug.print("DERP \n", .{});
-        // has to check per byte... optmize this with simd
-        var j: u32 = 0;
-        outer: while (j < v.len) : (j += 1) {
-            var derp: u32 = 0;
-            while (derp < query.len) : (derp += 1) {
-                std.debug.print("D? v:{d} q:{d} derp:{d} \n", .{ v[j], query[derp], derp });
-                if (v[j] != query[derp]) {
-                    pass = false;
-                    continue :outer;
-                }
-            }
-            if (derp == query.len) {
-                pass = true;
-                break :outer;
-            }
+        // not great but its ok
+        if (!batch.equalsOr(1, query, v)) {
+            return .{ next, false };
         }
     }
     // add HAS

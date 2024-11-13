@@ -782,6 +782,24 @@ await test('variable size (string/binary)', async (t) => {
 
   equal(len > 1 && len < 100, true, 'has binary (single')
 
+  const largeDerp = new Uint8Array(1e7)
+  for (let i = 0; i < 1e7; i++) {
+    largeDerp[i] = ~~(Math.random() * 255)
+  }
+
+  const smurpArticle = await db.create('article', {
+    type: 'gossip',
+    code: 'xa',
+    name: 'Smurp',
+    body: 'Derp derp',
+    derp: largeDerp,
+  })
+
+  db.query('article', smurpArticle)
+    .filter('derp', 'has', new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    .get()
+    .inspect(10)
+
   // FIX WITH CRC32 + len (original crc32)
   // add orignal crc32 as last argument after making compression
   // small check if 0, crc check, 1
