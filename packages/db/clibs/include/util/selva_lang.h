@@ -78,6 +78,8 @@ size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t
  */
 int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
 
+const char *selva_mbsstrstr(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
+
 /**
  * Constructs a value of type wctrans_t that describes a LC_CTYPE category of wide character mapping.
  * - "" none
