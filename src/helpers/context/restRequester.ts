@@ -1,3 +1,4 @@
+import { createWriteStream, unlink } from 'node:fs'
 import https from 'node:https'
 import type { AppContext } from '../../shared/index.js'
 
@@ -5,21 +6,23 @@ export function contextRestRequester(context: AppContext) {
   return {
     get: <T>(url: string): Promise<T> => {
       return new Promise((resolve, reject) => {
-        const req = https.get(url, (res) => {
+        const requester = https.get(url, (response) => {
           let data = ''
 
           if (
-            res.statusCode &&
-            (res.statusCode < 200 || res.statusCode >= 300)
+            response.statusCode &&
+            (response.statusCode < 200 || response.statusCode >= 300)
           ) {
-            return reject(new Error(context.i18n('errors.912', res.statusCode)))
+            return reject(
+              new Error(context.i18n('errors.912', response.statusCode)),
+            )
           }
 
-          res.on('data', (chunk) => {
+          response.on('data', (chunk) => {
             data += chunk
           })
 
-          res.on('end', () => {
+          response.on('end', () => {
             try {
               resolve(JSON.parse(data))
             } catch (err) {
@@ -28,11 +31,49 @@ export function contextRestRequester(context: AppContext) {
           })
         })
 
-        req.on('error', (err) => {
+        requester.on('error', (err) => {
           reject(new Error(context.i18n('errors.913', err.message)))
         })
 
-        req.end()
+        requester.end()
+      })
+    },
+
+    download: (url: string, destination: string): Promise<boolean> => {
+      return new Promise((resolve, reject) => {
+        const fileStream = createWriteStream(destination)
+
+        const requester = https.get(url, (response) => {
+          if (
+            response.statusCode &&
+            (response.statusCode < 200 || response.statusCode >= 300)
+          ) {
+            fileStream.close()
+            return reject(
+              new Error(context.i18n('errors.912', response.statusCode)),
+            )
+          }
+
+          response.pipe(fileStream)
+
+          fileStream.on('finish', () => {
+            fileStream.close(() => resolve(true))
+          })
+
+          fileStream.on('error', (err) => {
+            unlink(destination, () =>
+              reject(new Error(context.i18n('errors.914', err.message))),
+            )
+          })
+        })
+
+        requester.on('error', (err) => {
+          unlink(destination, () =>
+            reject(new Error(context.i18n('errors.913', err.message))),
+          )
+        })
+
+        requester.end()
       })
     },
   }
