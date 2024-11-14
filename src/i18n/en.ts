@@ -117,6 +117,7 @@ export default {
         },
       ],
       methods: {
+        letsCreate: "<b>Let's create your project!</b>",
         name: "Give a name to your project: <dim>(this will also be used in your 'package.json')</dim>",
         description: 'What is the best way to describe it?',
         format: 'Which extension would you like to use for your project file?',
@@ -681,7 +682,7 @@ export default {
       environmentManager: 'the environment manager',
       environment: 'the environment',
       connecting: 'Connecting to ${target}...',
-      connected: '${emoji} Connected to ${target}.',
+      connected: 'Connected to ${target}.',
     },
     authenticateUser: {
       loading:

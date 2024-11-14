@@ -1,8 +1,10 @@
+import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { bundle } from '@based/bundle'
 import { findUp } from 'find-up'
 import { readJSON } from 'fs-extra/esm'
 
-export const getBasedFile = async (
+export const getFile = async (
   files: string[],
 ): Promise<Based.Context.Project | null> => {
   if (!files || !files.length) {
@@ -32,4 +34,15 @@ export const getBasedFile = async (
   }
 
   return null
+}
+
+export const getFileByPath = async <T>(filePath: string): Promise<T> => {
+  try {
+    const fullPath = resolve(filePath)
+    const data = await readFile(fullPath, 'utf-8')
+
+    return JSON.parse(data)
+  } catch (err) {
+    throw new Error(`Error reading JSON file: ${err.message}`)
+  }
 }

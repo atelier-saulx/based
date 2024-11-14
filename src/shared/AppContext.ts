@@ -10,6 +10,7 @@ import {
   contextPrint,
   contextProgram,
   contextRestRequester,
+  contextSpinner,
   contextTerminalKit,
   endpoints,
 } from '../helpers/index.js'
@@ -21,16 +22,6 @@ import type { languages } from '../i18n/index.js'
 
 export class AppContext {
   private static instance: AppContext
-  private state: Based.Context.State = {
-    display: 'verbose',
-    emojis: {
-      info: '<primary>●</primary>',
-      success: '<green>♥</green>',
-      warning: '<yellow>⚠️</yellow>',
-      error: '<red>‼️</red>',
-      pipe: '<gray>│</gray>',
-    },
-  }
   private logLevels: string[] = [
     'verbose',
     'info',
@@ -39,6 +30,16 @@ export class AppContext {
     'error',
     'silent',
   ]
+  public state: Based.Context.State = {
+    display: 'verbose',
+    emojis: {
+      info: '<primary>●</primary>',
+      success: '<green>♥</green>',
+      warning: '<yellow>▲</yellow>',
+      error: '<red>‼️</red>',
+      pipe: '<gray>│</gray>',
+    },
+  }
   public program: Command
   public i18n: ReturnType<typeof i18n<typeof languages>>
   public commandMaker = contextCommandMaker
@@ -50,7 +51,8 @@ export class AppContext {
   public parse = contextParse
   public input = contextInput(this)
   public form = contextForm(this)
-  public print = contextPrint(this.state)
+  public print = contextPrint(this)
+  public spinner = contextSpinner(this)
   // public event: EventEmitter = eventEmitter
   public endpoints = endpoints
 

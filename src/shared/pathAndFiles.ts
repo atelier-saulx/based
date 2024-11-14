@@ -5,6 +5,9 @@ import { isAbsolute, join, relative } from 'node:path'
 
 export const fileExtensions = ['ts', 'js', 'json']
 export const installableTools = ['typescript', 'vitest', 'biome', 'react']
+export const BASED_FILE = 'based'
+export const BASED_FILE_BOILERPLATE = `${BASED_FILE}_boilerplate.zip`
+export const BASED_FILE_BOILERPLATE_ZIPENTRY = './based-boilerplate-main/'
 
 export const clearPackageDependencies = (pkg: Record<string, unknown>) => {
   const removeFromResults = ['@based/client']
@@ -57,11 +60,11 @@ export const replaceTilde = (path: string) =>
   path.replace(/^~(?=$|\/|\\)/, homedir())
 
 export const formatAsObject = (obj: object, indentLevel = 1): string => {
-  const indent = '  '.repeat(indentLevel) // Define o nível de indentação para o nível atual
+  const indent = '  '.repeat(indentLevel)
   const entries = Object.entries(obj).map(([key, value]) => {
     const formattedKey = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/.test(key)
       ? key
-      : `'${key}'` // Verifica se a chave precisa de aspas
+      : `'${key}'`
 
     if (typeof value === 'string') {
       return `${indent}${formattedKey}: '${value}'`
@@ -76,7 +79,7 @@ export const formatAsObject = (obj: object, indentLevel = 1): string => {
       return `${indent}${formattedKey}: [${arrayValues.join(', ')}]`
     }
     if (typeof value === 'object' && value !== null) {
-      return `${indent}${formattedKey}: ${formatAsObject(value, indentLevel + 1)}` // Recursão para objetos aninhados
+      return `${indent}${formattedKey}: ${formatAsObject(value, indentLevel + 1)}`
     }
     return `${indent}${formattedKey}: ${JSON.stringify(value)}`
   })
