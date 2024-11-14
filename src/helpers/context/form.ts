@@ -61,13 +61,15 @@ type FormMaker = {
   multiSelect?: (field: MultiSelectField) => Promise<unknown[]>
 }
 
+type FormResult = { results: { [key: string]: string } }
+
 const initialValidation = (
   value: string | string[],
   required: boolean,
   validation: (value: string | string[]) => boolean,
   errorMessage: string | ((value: string) => string),
 ): boolean => {
-  if (value?.length && !validation(value)) {
+  if (value?.length && validation && !validation(value)) {
     if (required) {
       if (typeof errorMessage === 'string') {
         log.error(colorize(errorMessage))
@@ -83,7 +85,7 @@ const initialValidation = (
     return false
   }
 
-  if (value?.length && validation(value)) {
+  if (value?.length && validation && validation(value)) {
     return true
   }
 }
@@ -133,11 +135,11 @@ export function contextForm(context: AppContext): FormMaker {
         placeholder,
         initialValue,
         validate: (value) => {
-          if (skip && value.toLowerCase() === 's') {
+          if (skip && value?.toLowerCase() === 's') {
             return
           }
 
-          if (!validation(value)) {
+          if (value && !validation(value)) {
             if (typeof errorMessage === 'string') {
               return colorize(errorMessage)
             }

@@ -9,6 +9,7 @@ import {
   contextParse,
   contextPrint,
   contextProgram,
+  contextRestRequester,
   contextTerminalKit,
   endpoints,
 } from '../helpers/index.js'
@@ -44,6 +45,7 @@ export class AppContext {
   public getProgram = contextProgram
   public getBasedClient = contextBasedClient
   public terminalKit = contextTerminalKit
+  public requester = contextRestRequester(this)
   public parse = contextParse
   public input = contextInput(this)
   public form = contextForm(this)
