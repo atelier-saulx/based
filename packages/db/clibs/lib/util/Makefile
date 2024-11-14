@@ -37,7 +37,6 @@ OBJ := \
 	sigstr.o \
 	strntol.o \
 	svector.o \
-	tcp.o \
 	timestamp.o \
 	trx.o
 
