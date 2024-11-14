@@ -1,17 +1,32 @@
 import { join, resolve } from 'node:path'
-import { group, log, multiselect, select, text } from '@clack/prompts'
+import {
+  confirm,
+  group,
+  intro,
+  log,
+  multiselect,
+  select,
+  spinner,
+  text,
+} from '@clack/prompts'
 import type { Command } from 'commander'
 import {
   AppContext,
+  clearPackageDependencies,
   colorize,
   isFormatValid,
   isValidPath,
   saveAsFile,
+  summaryMaker,
 } from '../../shared/index.js'
 
 export const projectInit = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
   const cmd: Command = context.commandMaker('init')
+  const boilerplate = {
+    packageJSON:
+      'https://raw.githubusercontent.com/atelier-saulx/based-boilerplate/refs/heads/main/package.json',
+  }
 
   cmd.action(async (args: Based.Init.Command) => {
     const { cluster: clusterProject, apiKey: apiKeyProject } =
@@ -91,6 +106,19 @@ export const projectInit = async (program: Command): Promise<void> => {
     userData = parseData(userData)
     const hasUserData = Object.keys(userData).length > 0
 
+    const buildToolsOptions = (tools: string[]) => {
+      return tools.map((tool) => ({
+        value: tool,
+        label: tool,
+      }))
+    }
+
+    const getTools = buildToolsOptions(
+      clearPackageDependencies(
+        await context.requester.get(boilerplate.packageJSON),
+      ),
+    )
+
     const newOrg = () =>
       context.form.text({
         message: context.i18n('commands.init.methods.org.input'),
@@ -162,7 +190,7 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isValueInTheObject(options),
       })
 
-      if (org === 'newItem') {
+      if (org === '<new_org>') {
         return newOrg()
       }
 
@@ -205,7 +233,7 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isValueInTheObject(options),
       })
 
-      if (project === 'newItem') {
+      if (project === '<new_project>') {
         return newProject(results)
       }
 
@@ -241,7 +269,7 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isValueInTheObject(options),
       })
 
-      if (env === 'newItem') {
+      if (env === '<new_env>') {
         return newEnv(results)
       }
 
@@ -313,9 +341,9 @@ export const projectInit = async (program: Command): Promise<void> => {
           context.i18n('commands.init.validations.tools'),
           args.tools?.toString(),
         ) as string,
-        skip: true,
+        skip: false,
         validation: isToolsValid,
-        options: typedChoices(context.i18n('methods.tools')),
+        options: getTools,
       })
 
     const path = () =>
@@ -323,6 +351,7 @@ export const projectInit = async (program: Command): Promise<void> => {
         message: context.i18n('commands.init.methods.path'),
         initialValue: args.path,
         required: !skip,
+        skip: false,
         placeholder: './',
         errorMessage: (error) =>
           errorMessage(
@@ -332,8 +361,8 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isValidPath,
       })
 
-    const queries = () =>
-      context.form.text({
+    const queries = async () => {
+      const queries = await context.form.text({
         message: context.i18n('commands.init.methods.queries'),
         initialValue: args.queries?.toString(),
         required: !skip,
@@ -346,8 +375,11 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isFunctionsValid,
       })
 
-    const functions = () =>
-      context.form.text({
+      return queries.split(',')
+    }
+
+    const functions = async () => {
+      const functions = await context.form.text({
         message: context.i18n('commands.init.methods.functions'),
         initialValue: args.functions?.toString(),
         required: !skip,
@@ -360,8 +392,12 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isFunctionsValid,
       })
 
+      return functions.split(',')
+    }
+
     const form = await context.form.group({
       header: context.i18n('commands.init.descripion'),
+      footer: 'merda',
       cluster,
       ...(hasUserData && {
         org: orgs,
@@ -383,40 +419,25 @@ export const projectInit = async (program: Command): Promise<void> => {
       path,
     })
 
-    console.log('form', form)
+    try {
+      await makeProject({ context, project: form })
 
-    basedClient.destroy()
-    // }
-    // try {
-    //   // await makeProject({ context, project: args })
-    // } catch (error) {
-    //   throw new Error(error)
-    // }
+      basedClient.destroy()
+    } catch (error) {
+      throw new Error(error)
+    }
   })
 }
 
 export const makeProject = async (args: Based.Init.Make) => {
   const { context, project } = args
-  const { skip } = context.getGlobalOptions()
-
-  if (!skip) {
-    if (!project.path) {
-      project.path = await context.input.default(
-        context.i18n('commands.init.methods.path'),
-        './',
-        false,
-        isValidPath,
-      )
-    }
-  }
 
   if (
-    !project.name ||
-    !project.format ||
     !project.cluster ||
     !project.org ||
     !project.project ||
     !project.env ||
+    !project.format ||
     !project.path
   ) {
     context.print.fail(context.i18n('commands.init.methods.cannotInit'))
@@ -429,55 +450,31 @@ export const makeProject = async (args: Based.Init.Make) => {
     project.path = fullPath
   }
 
-  context.print
-    .line()
-    .info(context.i18n('commands.init.methods.summary.header'))
-    .info(context.i18n('commands.init.methods.summary.name', project.name))
-    .info(
-      context.i18n(
-        'commands.init.methods.summary.description',
-        project.description ?? 'N/A',
-      ),
-    )
-    .info(
-      context.i18n(
-        'commands.init.methods.summary.cloud',
-        project.cluster,
-        project.org,
-        project.project,
-        project.env,
-      ),
-    )
-
-  if (project.queries.length || project.functions.length) {
-    context.print.info(
-      context.i18n(
-        'commands.init.methods.summary.functions',
-        `${project.queries?.join(', ')}, ${project.functions?.join(', ')}`,
-      ),
-    )
-  }
-
-  if (project.tools.length) {
-    context.print.info(
-      context.i18n(
-        'commands.init.methods.summary.tools',
-        project.tools?.join(', '),
-      ),
-    )
-  }
-
-  context.print
-    .info(context.i18n('commands.init.methods.summary.saveIn', project.path))
-    .line()
-
-  if (!skip) {
-    const doIt: boolean = await context.input.confirm()
-
-    if (!doIt) {
-      throw new Error(context.i18n('methods.aborted'))
-    }
-  }
+  await summaryMaker(context, [
+    context.i18n('commands.init.methods.summary.header'),
+    context.i18n('commands.init.methods.summary.name', project.name),
+    context.i18n(
+      'commands.init.methods.summary.description',
+      project.description ?? 'N/A',
+    ),
+    context.i18n(
+      'commands.init.methods.summary.cloud',
+      project.cluster,
+      project.org,
+      project.project,
+      project.env,
+    ),
+    context.i18n('commands.init.methods.summary.apiKey', project.apiKey),
+    context.i18n(
+      'commands.init.methods.summary.functions',
+      `${project.queries?.join(', ')}, ${project.functions?.join(', ')}`,
+    ),
+    context.i18n(
+      'commands.init.methods.summary.tools',
+      project.tools?.join(', '),
+    ),
+    context.i18n('commands.init.methods.summary.saveIn', project.path),
+  ])
 
   const basedProjectTemplate = {
     ...(project.cluster !== undefined && { cluster: project.cluster }),

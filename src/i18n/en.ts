@@ -134,7 +134,7 @@ export default {
           error: 'The organization ${org} was not found in your account.',
           new: {
             label: 'Add a new organization to your account',
-            value: 'newItem',
+            value: '<new_org>',
           },
         },
         project: {
@@ -143,7 +143,7 @@ export default {
             'What is the name of the project that will be included in the organization <b>${org}</b>?',
           error:
             "The project <b>${org}</b> you're looking for was not found in your account.",
-          new: { label: 'Create a new project', value: 'newItem' },
+          new: { label: 'Create a new project', value: '<new_project>' },
         },
         env: {
           select:
@@ -151,25 +151,21 @@ export default {
           input:
             "What is the name of the environment in <b>${project}</b>? <dim>(this env will be created if it doesn't exists in your account).</dim>",
           error: "The env <b>${env}</b> doesn't exist.",
-          new: { label: 'Deploy a new environment', value: 'newItem' },
+          new: { label: 'Deploy a new environment', value: '<new_env>' },
         },
         apiKey:
           'Do you have any API Key that you want to use for this project?',
-        tools: 'Select the tools you want to be instaled in your project',
+        tools: 'Select the tools you want to be instaled in your project:',
         summary: {
           header: '<b>Project summary:</b>',
-          name: '<b>Name:</b> <reset><cyan>${name}</cyan></reset>',
-          description:
-            '<b>Description:</b> <reset><cyan>${description}</cyan></reset>',
+          name: 'Name: <reset>${name}</reset>',
+          description: 'Description: <reset>${description}</reset>',
           cloud:
-            '<b>Cloud information:</b> [<b>Cluster:</b> <cyan>${cluster}</cyan> | <b>Org:</b> <cyan>${org}</cyan> | <b>Project:</b> <cyan>${project}</cyan> | <b>Env:</b> <cyan>${env}</cyan>]',
-          apiKey: '<b>API Key:</b> <reset><cyan>${apiKey}</cyan></reset>',
-          functions:
-            '<b>Functions to be created:</b> <reset><cyan>${queries}</cyan></reset>',
-          tools:
-            '<b>Tools to be added:</b> <reset><cyan>${tools}</cyan></reset>',
-          saveIn:
-            '<b>Saving the project file in:</b> <reset><cyan>${path}</cyan></reset>',
+            '<reset>Cloud information: [Cluster: <b>${cluster}</b> | Org: <b>${org}</b> | Project: <b>${project}</b> | Env: <b>${env}</b>]</reset>',
+          apiKey: 'API Key: <reset>${apiKey}</reset>',
+          functions: 'Functions to be created: <reset>${queries}</reset>',
+          tools: 'Tools to be added: <reset>${tools}</reset>',
+          saveIn: 'Saving the project file in: <reset><b>${path}</b></reset>',
         },
       },
     },
@@ -655,7 +651,7 @@ export default {
     savingFile: 'Saving file...',
     uploadingFile: 'Uploading file...',
     downloading: 'Downloading file...',
-    savedFile: 'Saved file in: <reset><cyan>${path}</cyan></reset>',
+    savedFile: 'Saved file in: <reset><b>${path}</b></reset>',
     warning:
       "<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>",
     tools: {

@@ -1,4 +1,5 @@
-import { Separator, checkbox, confirm, input, select } from '@inquirer/prompts'
+import { confirm } from '@clack/prompts'
+import { Separator, checkbox, input, select } from '@inquirer/prompts'
 import { isValid, parse } from 'date-fns'
 import {
   type AppContext,
@@ -115,12 +116,12 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
 
     confirm: async (
       message: string = context.i18n('context.input.continue'),
-      defaultValue: boolean = true,
+      initialValue: boolean = true,
     ) =>
       confirm({
-        message: colorize(message),
-        default: defaultValue,
-      }),
+        message: colorize(`\r⏱  ${message}`),
+        initialValue,
+      }) as Promise<boolean>,
 
     default: async (
       message: string,

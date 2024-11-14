@@ -24,10 +24,11 @@ export class AppContext {
   private state: Based.Context.State = {
     display: 'verbose',
     emojis: {
-      info: '💬',
-      success: '✨',
-      warning: '⚠️',
-      error: '🚨',
+      info: '<primary>●</primary>',
+      success: '<green>♥</green>',
+      warning: '<yellow>⚠️</yellow>',
+      error: '<red>‼️</red>',
+      pipe: '<gray>│</gray>',
     },
   }
   private logLevels: string[] = [

@@ -39,14 +39,26 @@ export const contextPrint = (
 
     return contextPrint(state)
   },
+  step: (
+    message: string,
+    icon: boolean | string = false,
+  ): Based.Context.MessageHandler => {
+    if (state.display === 'verbose' || state.display === 'info') {
+      icon = icon ? `${iconDecider(icon, state.emojis.info)}  ` : ''
+
+      log.info(colorize(`\r${icon}${message}`))
+    }
+
+    return contextPrint(state)
+  },
   info: (
     message: string,
     icon: boolean | string = false,
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'info') {
-      icon = icon ? `${iconDecider(icon, state.emojis.info)} ` : ''
+      icon = icon ? `${iconDecider(icon, state.emojis.info)}  ` : ''
 
-      log.info(`${icon}${colorize(message)}`)
+      console.info(colorize(`${icon}${message}`))
     }
 
     return contextPrint(state)
@@ -56,9 +68,9 @@ export const contextPrint = (
     icon: boolean | string = false,
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'success') {
-      icon = icon ? `${iconDecider(icon, state.emojis.success)} ` : ''
+      icon = icon ? `${iconDecider(icon, state.emojis.success)}  ` : ''
 
-      spinner.stop(`${icon}${colorize(message)}`)
+      spinner.stop(colorize(`\r${icon}${message}`))
     }
 
     return contextPrint(state)
@@ -68,9 +80,9 @@ export const contextPrint = (
     icon: boolean | string = false,
   ): Based.Context.MessageHandler => {
     if (state.display === 'verbose' || state.display === 'warning') {
-      icon = icon ? `${iconDecider(icon, state.emojis.warning)} ` : ''
+      icon = icon ? `${iconDecider(icon, state.emojis.warning)}  ` : ''
 
-      spinner.message(`${icon}${colorize(message)}`)
+      console.info(colorize(`${icon}${message}`))
     }
 
     return contextPrint(state)
@@ -83,7 +95,7 @@ export const contextPrint = (
     if (state.display === 'verbose' || state.display === 'error') {
       icon = icon ? `${iconDecider(icon, state.emojis.error)} ` : ''
 
-      spinner.stop(`${icon}${colorize(message)}`)
+      log.error(`${icon}${colorize(message)}`)
     }
 
     process.exit(killCode)

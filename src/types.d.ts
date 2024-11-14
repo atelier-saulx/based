@@ -41,25 +41,6 @@ declare global {
       }
     }
 
-    enum FileExtensions {
-      JS = 'js',
-      JSON = 'json',
-      TS = 'ts',
-    }
-
-    enum File {
-      SCHEMA = 'based.schema',
-      CONFIG = 'based.config',
-      INFRA = 'based.infra',
-    }
-
-    enum InstallableTools {
-      TYPESCRIPT = 'typescript',
-      VITEST = 'vitest',
-      BIOME = 'biome',
-      REACT = 'react',
-    }
-
     namespace Context {
       type MouseEvent = {
         button: number
@@ -103,6 +84,7 @@ declare global {
           success: string
           error: string
           info: string
+          pipe: string
         }
       }
 
@@ -122,6 +104,7 @@ declare global {
         intro: (message: string) => this
         loading: (message: string, timeout?: number) => this
         stop: () => this
+        step: (message: string, icon?: boolean | string) => this
         info: (message: string, icon?: boolean | string) => this
         success: (message?: string, icon?: boolean | string) => this
         warning: (message: string, icon?: boolean | string) => this
@@ -369,7 +352,7 @@ declare global {
           machine?: string
           machines?: Based.Infra.Template['machineConfigs']
           path?: string
-          format?: Based.Extensions
+          format?: string
         }
 
         type Save = {

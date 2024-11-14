@@ -5,6 +5,7 @@ import {
   intro,
   log,
   multiselect,
+  outro,
   select,
   text,
 } from '@clack/prompts'
@@ -53,6 +54,7 @@ type FormMaker = {
   group?: <T extends Record<string, unknown>>(
     fields: T & {
       header?: string
+      footer?: string
       cancelMessage?: string
     },
   ) => ReturnType<typeof group>
@@ -93,20 +95,26 @@ const initialValidation = (
 export function contextForm(context: AppContext): FormMaker {
   return {
     group: async (fields) => {
-      const { header, cancelMessage, ...rest } = fields
+      const { header, footer, cancelMessage, ...rest } = fields
 
       if (header) {
         console.log('')
         intro(colorize(header))
       }
 
-      return group(rest as PromptGroup<unknown>, {
+      const result = await group(rest as PromptGroup<unknown>, {
         onCancel: () => {
           cancel(cancelMessage ?? context.i18n('methods.aborted'))
 
           process.exit(0)
         },
       })
+
+      if (footer) {
+        outro(colorize(footer))
+      }
+
+      return result
     },
 
     text: async ({
@@ -130,16 +138,16 @@ export function contextForm(context: AppContext): FormMaker {
         message = `${message} ${context.i18n('context.input.skip')}`
       }
 
-      return (await text({
+      const result: string = (await text({
         message: colorize(message),
         placeholder,
         initialValue,
         validate: (value) => {
-          if (skip && value?.toLowerCase() === 's') {
+          if (skip && value && value.toLowerCase() === 's') {
             return
           }
 
-          if (value && !validation(value)) {
+          if (!validation(value)) {
             if (typeof errorMessage === 'string') {
               return colorize(errorMessage)
             }
@@ -148,6 +156,12 @@ export function contextForm(context: AppContext): FormMaker {
           }
         },
       })) as string
+
+      if (!result || (skip && result && result.toLowerCase() === 's')) {
+        return ''
+      }
+
+      return result
     },
 
     select: async ({

@@ -6,22 +6,26 @@ import { isAbsolute, join, relative } from 'node:path'
 export const fileExtensions = ['ts', 'js', 'json']
 export const installableTools = ['typescript', 'vitest', 'biome', 'react']
 
-const isBasedFile = (file: string, type: Based.File) =>
+export const clearPackageDependencies = (pkg: Record<string, unknown>) => {
+  const removeFromResults = ['@based/client']
+
+  return Object.keys(pkg?.dependencies).filter(
+    (item) => !removeFromResults.includes(item),
+  )
+}
+
+const isBasedFile = (file: string, type: string) =>
   file.includes(type) && isFormatValid(file)
 
 export const isFormatValid = (file: string) => {
-  const extension: Based.FileExtensions = file
-    ?.split('.')
-    .at(-1) as Based.FileExtensions
+  const extension: string = file?.split('.').at(-1)
 
   return fileExtensions.includes(extension)
 }
 
-export const isSchemaFile = (file: string) =>
-  isBasedFile(file, Based.File.SCHEMA)
-export const isConfigFile = (file: string) =>
-  isBasedFile(file, Based.File.CONFIG)
-export const isInfraFile = (file: string) => isBasedFile(file, Based.File.INFRA)
+export const isSchemaFile = (file: string) => isBasedFile(file, 'based.schema')
+export const isConfigFile = (file: string) => isBasedFile(file, 'based.config')
+export const isInfraFile = (file: string) => isBasedFile(file, 'based.infra')
 
 export const isIndexFile = (file: string) =>
   file === 'index.ts' || file === 'index.js'
@@ -84,7 +88,7 @@ export const formatAsObject = (obj: object, indentLevel = 1): string => {
 export const saveAsFile = async (
   obj: Record<string, unknown>,
   filePath: string,
-  format: Based.FileExtensions,
+  format: string,
 ): Promise<boolean> => {
   let content: string
 

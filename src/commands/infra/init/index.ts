@@ -212,7 +212,7 @@ export const makeInfra = async (args: Based.Infra.Init.Make) => {
     )
   }
 
-  const fileName = `${Based.File.INFRA}.${infra.format}`
+  const fileName = `based.infra.${infra.format}`
   const fullPath = resolve(join(infra.path, fileName))
 
   if (!infra.path.includes(fileName)) {

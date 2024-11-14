@@ -35,10 +35,17 @@ export async function contextProgram(): Promise<Based.Context.Project> {
 
   if (Object.keys(basedProject).length > 1) {
     this.print
-      .info(this.i18n('context.file', basedProject.file))
-      .info(this.i18n('context.org', basedProject.org))
-      .info(this.i18n('context.project', basedProject.project))
-      .info(this.i18n('context.env', basedProject.env))
+      .info('', this.state.emojis.pipe)
+      .info(
+        this.i18n('context.file', basedProject.file),
+        this.state.emojis.pipe,
+      )
+      .info(this.i18n('context.org', basedProject.org), this.state.emojis.pipe)
+      .info(
+        this.i18n('context.project', basedProject.project),
+        this.state.emojis.pipe,
+      )
+      .info(this.i18n('context.env', basedProject.env), this.state.emojis.pipe)
 
     if (basedProject.apiKey) {
       this.print.info(
