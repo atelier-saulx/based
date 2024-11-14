@@ -119,7 +119,7 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       initialValue: boolean = true,
     ) =>
       confirm({
-        message: colorize(`\r⏱  ${message}`),
+        message: colorize(`\r<yellow>⬢</yellow>  ${message}`),
         initialValue,
       }) as Promise<boolean>,
 

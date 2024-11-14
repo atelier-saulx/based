@@ -1,7 +1,6 @@
-import { spinner as clack, intro, log } from '@clack/prompts'
+import { intro } from '@clack/prompts'
+import type { AppContext } from '../../shared/AppContext.js'
 import { colorize } from '../../shared/colorize.js'
-
-const spinner = clack()
 
 const iconDecider = (icon: boolean | string, defaultValue: string): string => {
   if (icon === true) {
@@ -15,109 +14,80 @@ const iconDecider = (icon: boolean | string, defaultValue: string): string => {
   return ''
 }
 
-export const contextPrint = (
-  state: Based.Context.State,
-): Based.Context.MessageHandler => ({
-  intro: (message: string): Based.Context.MessageHandler => {
+const logBase =
+  (level: keyof Based.Context.State['emojis'], context: AppContext) =>
+  (message: string, icon: boolean | string = false) => {
+    if (
+      context.state.display === 'verbose' ||
+      context.state.display === level
+    ) {
+      if (icon === true) {
+        icon = context.state.emojis[level]
+      } else if (icon === false) {
+        icon = ''
+      }
+
+      if (icon !== '') {
+        icon = `${icon}  `
+      }
+
+      message = `\r${colorize(`${icon}${message}`)}`
+
+      if (context.spinner.isActive) {
+        context.spinner.stop(message)
+      } else {
+        console.info(message)
+      }
+    }
+
+    return contextPrint(context)
+  }
+
+export const contextPrint = (context: AppContext): Based.Context.Print => ({
+  intro: (message: string): Based.Context.Print => {
+    if (!message) {
+      return contextPrint(context)
+    }
+
     intro(colorize(message))
 
-    return contextPrint(state)
+    return contextPrint(context)
   },
-  loading: (message: string): Based.Context.MessageHandler => {
-    if (
-      state.display === 'verbose' ||
-      state.display === 'info' ||
-      state.display === 'success'
-    ) {
-      spinner.start(colorize(message))
-    }
-
-    return contextPrint(state)
-  },
-  stop: (): Based.Context.MessageHandler => {
-    spinner.stop()
-
-    return contextPrint(state)
-  },
-  step: (
-    message: string,
-    icon: boolean | string = false,
-  ): Based.Context.MessageHandler => {
-    if (state.display === 'verbose' || state.display === 'info') {
-      icon = icon ? `${iconDecider(icon, state.emojis.info)}  ` : ''
-
-      log.info(colorize(`\r${icon}${message}`))
-    }
-
-    return contextPrint(state)
-  },
-  info: (
-    message: string,
-    icon: boolean | string = false,
-  ): Based.Context.MessageHandler => {
-    if (state.display === 'verbose' || state.display === 'info') {
-      icon = icon ? `${iconDecider(icon, state.emojis.info)}  ` : ''
-
-      console.info(colorize(`${icon}${message}`))
-    }
-
-    return contextPrint(state)
-  },
-  success: (
-    message?: string,
-    icon: boolean | string = false,
-  ): Based.Context.MessageHandler => {
-    if (state.display === 'verbose' || state.display === 'success') {
-      icon = icon ? `${iconDecider(icon, state.emojis.success)}  ` : ''
-
-      spinner.stop(colorize(`\r${icon}${message}`))
-    }
-
-    return contextPrint(state)
-  },
-  warning: (
-    message: string,
-    icon: boolean | string = false,
-  ): Based.Context.MessageHandler => {
-    if (state.display === 'verbose' || state.display === 'warning') {
-      icon = icon ? `${iconDecider(icon, state.emojis.warning)}  ` : ''
-
-      console.info(colorize(`${icon}${message}`))
-    }
-
-    return contextPrint(state)
-  },
+  step: logBase('info', context),
+  pipe: (message?: string): Based.Context.Print =>
+    logBase('info', context)(message ?? '', context.state.emojis.pipe),
+  info: logBase('info', context),
+  success: logBase('success', context),
+  warning: logBase('warning', context),
   fail: (
     message: string,
     icon: boolean | string = false,
     killCode: number = 1,
   ): void => {
-    if (state.display === 'verbose' || state.display === 'error') {
-      icon = icon ? `${iconDecider(icon, state.emojis.error)} ` : ''
-
-      log.error(`${icon}${colorize(message)}`)
+    if (!message) {
+      process.exit(killCode ?? 0)
     }
 
-    process.exit(killCode)
+    logBase('error', context)(message, icon)
+
+    process.exit(killCode ?? 0)
   },
-  line: (): Based.Context.MessageHandler => {
-    if (state.display === 'silent') {
-      return contextPrint(state)
+  line: (): Based.Context.Print => {
+    if (context.state.display === 'silent') {
+      return contextPrint(context)
     }
 
     console.info('')
 
-    return contextPrint(state)
+    return contextPrint(context)
   },
-  separator: (
-    width: number = process.stdout.columns,
-  ): Based.Context.MessageHandler => {
-    if (state.display === 'silent') {
-      return contextPrint(state)
+  separator: (width: number = process.stdout.columns): Based.Context.Print => {
+    if (context.state.display === 'silent') {
+      return contextPrint(context)
     }
 
     console.info(colorize(`<gray>${'-'.repeat(width)}</gray>`))
 
-    return contextPrint(state)
+    return contextPrint(context)
   },
 })

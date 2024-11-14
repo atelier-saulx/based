@@ -104,7 +104,7 @@ export function contextForm(context: AppContext): FormMaker {
 
       const result = await group(rest as PromptGroup<unknown>, {
         onCancel: () => {
-          cancel(cancelMessage ?? context.i18n('methods.aborted'))
+          cancel(`\r●  ${cancelMessage ?? context.i18n('methods.aborted')}`)
 
           process.exit(0)
         },
