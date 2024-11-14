@@ -287,6 +287,9 @@ PU_TEST(test_mbsstrstr)
         res = call_mbsstrstr("Kakka on babylonialaisessa ja akkadilaisessa mytologiassa esiintyvä alempiin jumaliin kuuluva lähettiläsjumala.", "ALEMPI", trans, loc);
         pu_assert_equal("", res, 69);
 
+        res = call_mbsstrstr("The word “aaaloha” is a Hawaiian term that holds deep cultural and spiritual significance.", "aaloha", trans, loc);
+        pu_assert_equal("", res, 13);
+
         freelocale(loc);
         loc = NULL;
     }
