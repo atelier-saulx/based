@@ -1,21 +1,19 @@
+import { readFile } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import {
-  confirm,
-  group,
-  intro,
-  log,
-  multiselect,
-  select,
-  spinner,
-  text,
-} from '@clack/prompts'
+import AdmZip from 'adm-zip'
 import type { Command } from 'commander'
 import {
   AppContext,
+  BASED_FILE,
+  BASED_FILE_BOILERPLATE,
+  BASED_FILE_BOILERPLATE_ZIPENTRY,
   clearPackageDependencies,
-  colorize,
+  getFileByPath,
   isFormatValid,
   isValidPath,
+  replaceTilde,
   saveAsFile,
   summaryMaker,
 } from '../../shared/index.js'
@@ -23,10 +21,6 @@ import {
 export const projectInit = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
   const cmd: Command = context.commandMaker('init')
-  const boilerplate = {
-    packageJSON:
-      'https://raw.githubusercontent.com/atelier-saulx/based-boilerplate/refs/heads/main/package.json',
-  }
 
   cmd.action(async (args: Based.Init.Command) => {
     const { cluster: clusterProject, apiKey: apiKeyProject } =
@@ -51,9 +45,6 @@ export const projectInit = async (program: Command): Promise<void> => {
 
     const isNotEmpty = (value: string): boolean =>
       value !== '' && value !== undefined
-
-    const isToolsValid = <T extends string>(tools: T[]): boolean =>
-      tools.every((tool) => context.i18n('methods.tools')[tool])
 
     const isValidFunctionName = (value: string): boolean => {
       const functionNameRegex = /^[A-Za-z_$][A-Za-z0-9_$]*$/
@@ -113,11 +104,14 @@ export const projectInit = async (program: Command): Promise<void> => {
       }))
     }
 
-    const getTools = buildToolsOptions(
-      clearPackageDependencies(
-        await context.requester.get(boilerplate.packageJSON),
+    const packages = clearPackageDependencies(
+      await context.requester.get(
+        context.endpoints.BOILERPLATE_PACKAGE.endpoint,
       ),
     )
+    const getTools = buildToolsOptions(packages)
+    const isToolsValid = <T extends string>(tools: T[]): boolean =>
+      tools.every((tool) => packages.includes(tool))
 
     const newOrg = () =>
       context.form.text({
@@ -397,7 +391,8 @@ export const projectInit = async (program: Command): Promise<void> => {
 
     const form = await context.form.group({
       header: context.i18n('commands.init.descripion'),
-      footer: 'merda',
+      footer: context.i18n('commands.init.methods.letsCreate'),
+      tools,
       cluster,
       ...(hasUserData && {
         org: orgs,
@@ -412,7 +407,6 @@ export const projectInit = async (program: Command): Promise<void> => {
       apiKey,
       name,
       description,
-      tools,
       functions,
       queries,
       format,
@@ -443,14 +437,16 @@ export const makeProject = async (args: Based.Init.Make) => {
     context.print.fail(context.i18n('commands.init.methods.cannotInit'))
   }
 
-  const fileName = `based.${project.format}`
-  const fullPath = resolve(join(project.path, fileName))
+  const tempPath = join(tmpdir(), BASED_FILE_BOILERPLATE)
+  const projectFileName = `${BASED_FILE}.${project.format}`
+  const fullPath = resolve(replaceTilde(project.path))
+  const projectPath = resolve(join(project.path, projectFileName))
 
-  if (!project.path.includes(fileName)) {
-    project.path = fullPath
+  if (!project.path.includes(projectFileName)) {
+    project.path = projectPath
   }
 
-  await summaryMaker(context, [
+  const doIt = await summaryMaker(context, [
     context.i18n('commands.init.methods.summary.header'),
     context.i18n('commands.init.methods.summary.name', project.name),
     context.i18n(
@@ -476,18 +472,69 @@ export const makeProject = async (args: Based.Init.Make) => {
     context.i18n('commands.init.methods.summary.saveIn', project.path),
   ])
 
-  const basedProjectTemplate = {
-    ...(project.cluster !== undefined && { cluster: project.cluster }),
-    ...(project.org !== undefined && { org: project.org }),
-    ...(project.project !== undefined && { project: project.project }),
-    ...(project.env !== undefined && { env: project.env }),
-    ...(project.apiKey !== undefined && { apiKey: project.apiKey }),
-  }
-
   try {
-    context.print.loading(context.i18n('methods.savingFile'))
+    if (doIt) {
+      const boilerplate = await context.requester.download(
+        context.endpoints.BOILERPLATE_ZIP.endpoint,
+        tempPath,
+      )
 
-    await saveAsFile(basedProjectTemplate, project.path, project.format)
+      if (boilerplate) {
+        const zip = new AdmZip(tempPath)
+        zip.extractEntryTo(BASED_FILE_BOILERPLATE_ZIPENTRY, fullPath, false)
+
+        let pkg: {
+          name: string
+          version: string
+          description: string
+          scripts: {
+            zip?: string
+          }
+        }
+
+        console.log('fullPath', fullPath)
+
+        try {
+          pkg = await getFileByPath<typeof pkg>(`${fullPath}/package.json`)
+
+          pkg.name = project.name
+          pkg.description = project.description
+          pkg.version = '0.1.0'
+
+          const { scripts } = pkg
+          const { zip, ...rest } = scripts
+          pkg.scripts = rest
+
+          try {
+            await writeFile(
+              `${fullPath}/package.json`,
+              JSON.stringify(pkg, null, 2),
+              'utf8',
+            )
+          } catch (error) {
+            throw new Error(
+              'Could not update package.json in boilerplate folder.',
+            )
+          }
+        } catch (error) {
+          throw new Error(
+            'Could not load package.json from boilerplate folder.',
+          )
+        }
+      }
+
+      const basedProjectTemplate = {
+        ...(project.cluster !== undefined && { cluster: project.cluster }),
+        ...(project.org !== undefined && { org: project.org }),
+        ...(project.project !== undefined && { project: project.project }),
+        ...(project.env !== undefined && { env: project.env }),
+        ...(project.apiKey !== undefined && { apiKey: project.apiKey }),
+      }
+
+      context.spinner.start(context.i18n('methods.savingFile'))
+
+      await saveAsFile(basedProjectTemplate, project.path, project.format)
+    }
   } catch (error) {
     throw new Error(context.i18n('errors.902', error))
   }
