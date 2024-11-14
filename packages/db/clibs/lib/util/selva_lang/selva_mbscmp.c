@@ -4,32 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include <wchar.h>
-#include <wctype.h>
-#include <locale.h>
-#if defined(__APPLE__)
-#include <xlocale.h>
-#endif
 #include "util/selva_lang.h"
-
-static size_t readsym(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t *ps, wctrans_t trans, locale_t loc)
-{
-    wchar_t tmp;
-    size_t nbytes;
-
-#if defined(__APPLE__)
-    nbytes = mbrtowc_l(&tmp, mbs_str, mbs_len, ps, loc);
-#else
-    nbytes = mbrtowc(&tmp, mbs_str, mbs_len, ps);
-#endif
-    if (nbytes == 0 || nbytes == (size_t)-1 || nbytes == (size_t)-2) {
-        /* End or Error */
-        return 0;
-    }
-
-    *wc = towctrans_l(tmp, trans, loc);
-    return nbytes;
-}
 
 int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc)
 {
@@ -45,8 +20,8 @@ int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, si
     while (true) {
         wchar_t wc1 = 0;
         wchar_t wc2 = 0;
-        const size_t nbytes1 = readsym(&wc1, s1, left1, &ps1, trans, loc);
-        const size_t nbytes2 = readsym(&wc2, s2, left2, &ps2, trans, loc);
+        const size_t nbytes1 = selva_mbstowc(&wc1, s1, left1, &ps1, trans, loc);
+        const size_t nbytes2 = selva_mbstowc(&wc2, s2, left2, &ps2, trans, loc);
 
         if (!wc1 && !wc2) {
             return 0;

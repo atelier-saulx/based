@@ -10,6 +10,7 @@
 #include <xlocale.h>
 #endif
 #include <locale.h>
+#include <wchar.h>
 #include <wctype.h>
 #include "cdefs.h"
 #include "selva_lang_code.h"
@@ -57,6 +58,13 @@ locale_t selva_lang_getlocale2(struct selva_langs *langs, enum selva_lang_code l
  * - "tojkata" when lang is "jp"
  */
 char *selva_mbstrans(locale_t loc, const char *src, size_t len, wctrans_t trans);
+
+/**
+ * Read a symbol from a multibyte string.
+ * @param wc symbol read from mbs_str.
+ * @returns bytes consumed from mbs_str.
+ */
+size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t *ps, wctrans_t trans, locale_t loc);
 
 /**
  * Compare two multibyte strings by transforming each character.
