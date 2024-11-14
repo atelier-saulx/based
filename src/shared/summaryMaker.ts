@@ -4,10 +4,8 @@ import { type AppContext, colorize } from './index.js'
 export const summaryMaker = async (context: AppContext, summary: string[]) => {
   const { skip } = context.getGlobalOptions()
   if (!summary || !Array.isArray(summary) || !summary.length) {
-    return
+    return false
   }
-
-  context.print.line()
 
   for (const [index, element] of summary.entries()) {
     if (!index) {
@@ -24,4 +22,6 @@ export const summaryMaker = async (context: AppContext, summary: string[]) => {
       throw context.i18n('methods.aborted')
     }
   }
+
+  return true
 }

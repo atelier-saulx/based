@@ -31,13 +31,13 @@ export const runTests = async ({
       .separator()
     const { stdout, stderr } = await execAsync(`npm run ${command}`)
 
-    context.print.stop().info('<b><green>Tests that passed:</green></b>', '🎉')
+    context.print.info('<b><green>Tests that passed:</green></b>', '🎉')
     console.log(stdout.trim())
 
     context.print.separator()
 
     if (stderr) {
-      context.print.stop().info('<b><red>Tests that failed:</red></b>', '😭')
+      context.print.info('<b><red>Tests that failed:</red></b>', '😭')
       console.error(stderr.trim())
     }
   } catch (error) {

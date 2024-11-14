@@ -103,7 +103,7 @@ export const setFlush = async (args: Based.Backups.Flush.Set) => {
   }
 
   try {
-    context.print.loading(
+    context.spinner.start(
       context.i18n('commands.backups.subCommands.flush.methods.flushing'),
     )
 
@@ -118,10 +118,8 @@ export const setFlush = async (args: Based.Backups.Flush.Set) => {
     throw new Error(context.i18n('errors.906', error))
   }
 
-  context.print
-    .stop()
-    .success(
-      context.i18n('commands.backups.subCommands.flush.methods.success'),
-      true,
-    )
+  context.print.success(
+    context.i18n('commands.backups.subCommands.flush.methods.success'),
+    true,
+  )
 }

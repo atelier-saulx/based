@@ -32,6 +32,9 @@ export const init = async () => {
       projectInit(program),
     ])
 
+    const appName = context.get('appName')
+    context.print.intro(`<bgPrimary><b> ${appName} </b></bgPrimary>`).pipe()
+
     await program.parseAsync(process.argv)
   } catch (error) {
     context.print.fail(`<reset><red>${error.message}</red></reset>`)

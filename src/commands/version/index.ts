@@ -17,7 +17,6 @@ export const version = async (program: Command): Promise<void> => {
   context.set('appName', appName)
   context.set('appVersion', version)
   context.set('appTitle', appTitle)
-  context.print.intro(`<bgPrimary><b> ${appName} </b></bgPrimary>`)
 
   program.name(appCommand).version(version, context.i18n('version.parameter'))
 }

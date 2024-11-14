@@ -280,7 +280,7 @@ export const makeInfra = async (args: Based.Infra.Init.Make) => {
   }
 
   try {
-    context.print.loading(context.i18n('methods.savingFile'))
+    context.spinner.start(context.i18n('methods.savingFile'))
 
     await saveAsFile(infraTemplate, infra.path, infra.format)
   } catch (error) {

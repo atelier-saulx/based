@@ -19,7 +19,7 @@ declare global {
 
       namespace Gateway {
         type EndpointBase = {
-          client: 'cluster' | 'env' | 'project'
+          client: 'cluster' | 'env' | 'project' | 'local'
           endpoint: string
         }
 
@@ -33,7 +33,15 @@ declare global {
           type: 'stream'
         }
 
-        type Endpoint = QueryEndpoint | CallEndpoint | StreamEndpoint
+        type RestEndpoint = EndpointBase & {
+          type: 'rest'
+        }
+
+        type Endpoint =
+          | QueryEndpoint
+          | CallEndpoint
+          | StreamEndpoint
+          | RestEndpoint
 
         type Endpoints<T extends Record<string, Endpoint>> = {
           [K in keyof T]: Endpoint
@@ -100,20 +108,27 @@ declare global {
         }
       }
 
-      interface MessageHandler {
+      interface Spinner {
+        start: (message?: string, timeout?: number) => this
+        stop: (message?: string) => this
+        isActive: boolean
+      }
+
+      type PrintMethodBase = (message: string, icon?: boolean | string) => this
+
+      interface Print {
         intro: (message: string) => this
-        loading: (message: string, timeout?: number) => this
-        stop: () => this
-        step: (message: string, icon?: boolean | string) => this
-        info: (message: string, icon?: boolean | string) => this
-        success: (message?: string, icon?: boolean | string) => this
-        warning: (message: string, icon?: boolean | string) => this
+        step: PrintMethodBase
+        info: PrintMethodBase
+        success: PrintMethodBase
+        warning: PrintMethodBase
         fail: (
           message: string,
           icon?: boolean | string,
           killCode?: number,
         ) => void
         line: () => this
+        pipe: (message?: string) => this
         separator: (width?: number) => this
       }
 

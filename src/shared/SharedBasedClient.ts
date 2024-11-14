@@ -23,9 +23,7 @@ class SharedBasedClient extends BasedClient {
     const timeout = setTimeout(() => {
       const { file } = this.context.get('basedProject')
 
-      this.context.print
-        .stop()
-        .fail(this.context.i18n('errors.499', file), true)
+      this.context.spinner.stop(this.context.i18n('errors.499', file))
     }, 5e3)
 
     let authState: AuthState

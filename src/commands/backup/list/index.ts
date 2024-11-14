@@ -114,11 +114,9 @@ export const getList = async (
   const basedClient = await context.getBasedClient()
 
   if (verbose) {
-    context.print
-      .line()
-      .loading(
-        context.i18n('commands.backups.subCommands.list.methods.searching'),
-      )
+    context.spinner.start(
+      context.i18n('commands.backups.subCommands.list.methods.searching'),
+    )
   }
 
   const { backups } = await basedClient.call(context.endpoints.BACKUPS_LIST)
@@ -129,7 +127,7 @@ export const getList = async (
     )
   }
 
-  context.print.stop()
+  context.spinner.stop()
 
   const backupsSorted: Based.Backups.Sorted = backupsSorting(
     backups,

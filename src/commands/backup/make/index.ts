@@ -41,7 +41,7 @@ export const setMake = async (context: AppContext) => {
     throw new Error(context.i18n('errors.404', file))
   }
 
-  context.print.loading(
+  context.spinner.start(
     context.i18n('commands.backups.subCommands.make.methods.making'),
   )
 
@@ -52,10 +52,8 @@ export const setMake = async (context: AppContext) => {
     envId,
   })
 
-  context.print
-    .stop()
-    .success(
-      context.i18n('commands.backups.subCommands.make.methods.success'),
-      true,
-    )
+  context.print.success(
+    context.i18n('commands.backups.subCommands.make.methods.success'),
+    true,
+  )
 }

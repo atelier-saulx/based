@@ -109,7 +109,7 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
     }
 
     try {
-      context.print.loading(
+      context.spinner.start(
         context.i18n('commands.backups.subCommands.restore.methods.restoring'),
       )
 
@@ -124,7 +124,7 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
 
   if (isExternalFile) {
     try {
-      context.print.loading(context.i18n('methods.uploadingFile'))
+      context.spinner.start(context.i18n('methods.uploadingFile'))
 
       const result = await basedClient.call(context.endpoints.BACKUPS_UPLOAD, {
         path: selectedFile,
@@ -141,13 +141,11 @@ export const setRestore = async (args: Based.Backups.Restore.Set) => {
     }
   }
 
-  context.print
-    .stop()
-    .success(
-      context.i18n(
-        'commands.backups.subCommands.restore.methods.success',
-        selectedFile,
-      ),
-      true,
-    )
+  context.print.success(
+    context.i18n(
+      'commands.backups.subCommands.restore.methods.success',
+      selectedFile,
+    ),
+    true,
+  )
 }

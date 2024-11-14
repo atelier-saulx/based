@@ -13,8 +13,6 @@ export const getLogs = async (
   const isBoth: boolean = args.app && args.infra
   const isNone: boolean = !isBoth
 
-  context.print.stop()
-
   if (isBoth || isOnlyInfra || isNone) {
     finalData.push(
       await basedClient

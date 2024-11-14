@@ -14,7 +14,7 @@ export const clear = (program: Command) => async () => {
   }
 
   try {
-    context.print.loading(
+    context.spinner.start(
       context.i18n('commands.logs.subCommands.clear.cleaning'),
     )
     await basedClient.call(context.endpoints.LOGS_DELETE)

@@ -109,6 +109,18 @@ export const endpoints = {
     endpoint: 'user-envs',
     type: 'query',
   },
+  BOILERPLATE_PACKAGE: {
+    client: 'local',
+    endpoint:
+      'https://raw.githubusercontent.com/atelier-saulx/based-boilerplate/refs/heads/main/package.json',
+    type: 'rest',
+  },
+  BOILERPLATE_ZIP: {
+    client: 'local',
+    endpoint:
+      'https://codeload.github.com/atelier-saulx/based-boilerplate/zip/refs/heads/main',
+    type: 'rest',
+  },
 } as const satisfies Based.API.Gateway.Endpoints<
   Record<string, Based.API.Gateway.Endpoint>
 >

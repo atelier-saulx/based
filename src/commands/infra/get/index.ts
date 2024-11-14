@@ -138,14 +138,12 @@ export const saveInfra = async (args: Based.Infra.Get.Save) => {
   }
 
   try {
-    context.print.stop().loading(context.i18n('methods.savingFile'))
+    context.spinner.start(context.i18n('methods.savingFile'))
 
     await saveAsFile(infra.machines, infra.path, infra.format)
   } catch (error) {
     throw new Error(context.i18n('errors.902', error))
   }
 
-  context.print
-    .stop()
-    .success(context.i18n('methods.savedFile', infra.path), true)
+  context.print.success(context.i18n('methods.savedFile', infra.path), true)
 }

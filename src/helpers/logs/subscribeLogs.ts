@@ -17,8 +17,6 @@ export const subscribeLogs = async (
   const isBoth: boolean = args.app && args.infra
   const isNone: boolean = !isBoth
 
-  context.print.stop()
-
   if (isBoth || isOnlyInfra || isNone) {
     basedClient
       .call(context.endpoints.LOGS_CLUSTER, {

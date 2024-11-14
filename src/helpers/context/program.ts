@@ -1,4 +1,4 @@
-import { getBasedFile } from '../../shared/getBasedFile.js'
+import { getFile } from '../../shared/getFile.js'
 
 export async function contextProgram(): Promise<Based.Context.Project> {
   let basedProject: Based.Context.Project = this.get('basedProject')
@@ -12,12 +12,12 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     this.program.opts() as Based.Context.Project
 
   if (!basedProject) {
-    basedFile = await getBasedFile(
+    basedFile = await getFile(
       file ? [file] : ['based.ts', 'based.json', 'based.js'],
     )
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
-      this.print.warning(this.i18n('context.configurationFileNotFound'))
+      this.print.warning(this.i18n('context.configurationFileNotFound'), true)
     }
   }
 
@@ -35,7 +35,6 @@ export async function contextProgram(): Promise<Based.Context.Project> {
 
   if (Object.keys(basedProject).length > 1) {
     this.print
-      .info('', this.state.emojis.pipe)
       .info(
         this.i18n('context.file', basedProject.file),
         this.state.emojis.pipe,
@@ -50,8 +49,11 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     if (basedProject.apiKey) {
       this.print.info(
         this.i18n('context.apiKey', `${basedProject.apiKey.slice(0, 7)}...`),
+        this.state.emojis.pipe,
       )
     }
+
+    this.print.pipe()
   }
 
   return basedProject

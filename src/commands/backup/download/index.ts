@@ -118,7 +118,7 @@ export const getDownload = async (
   }
 
   try {
-    context.print.loading(context.i18n('methods.downloading'))
+    context.spinner.start(context.i18n('methods.downloading'))
 
     const response = await basedClient.call(
       context.endpoints.BACKUPS_DOWNLOAD,
@@ -127,15 +127,15 @@ export const getDownload = async (
       },
     )
 
-    context.print.stop()
+    context.spinner.stop()
 
     try {
-      context.print.loading(context.i18n('methods.savingFile'))
+      context.spinner.start(context.i18n('methods.savingFile'))
 
       const buffer: Buffer = Buffer.from(response.data)
       await writeFile(replaceTilde(path), buffer)
 
-      context.print.stop()
+      context.spinner.stop()
     } catch (error) {
       throw new Error(context.i18n('errors.902', path))
     }

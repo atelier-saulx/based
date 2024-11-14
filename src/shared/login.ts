@@ -6,7 +6,7 @@ import { AppContext, getBasedClient } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 60e3
+const connectionTimeout = 1e3
 
 const authenticateUser = async (
   email: string,
@@ -15,7 +15,7 @@ const authenticateUser = async (
   context: AppContext,
 ): Promise<Based.Auth.AuthenticatedUser> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
-  context.print.loading(
+  context.spinner.start(
     context.i18n('methods.authenticateUser.loading', email, code),
   )
 
@@ -25,7 +25,7 @@ const authenticateUser = async (
     code,
   })
 
-  context.print.stop().success(context.i18n('methods.authenticateUser.success'))
+  context.print.success(context.i18n('methods.authenticateUser.success'))
 
   return {
     ...(await hub.once('authstate-change')),
@@ -82,12 +82,12 @@ const hubConnection = async (
   opts: BasedOpts,
 ): Promise<BasedClient> => {
   const { file } = await context.get('basedProject')
-  const [emoji, target] =
+  const [_, target] =
     opts.org === 'saulx' && opts.project === 'based-cloud'
-      ? ['📡', context.i18n('methods.hubConnection.cloud')]
+      ? ['', context.i18n('methods.hubConnection.cloud')]
       : opts.optionalKey
-        ? ['🌎', context.i18n('methods.hubConnection.environmentManager')]
-        : ['🪐', context.i18n('methods.hubConnection.environment')]
+        ? ['', context.i18n('methods.hubConnection.environmentManager')]
+        : ['', context.i18n('methods.hubConnection.environment')]
 
   const hubClient: BasedClient = getBasedClient(context, opts)
 
@@ -105,8 +105,9 @@ const hubConnection = async (
     throw new Error(context.i18n('errors.404', file, error))
   }
 
-  context.print.success(
-    context.i18n('methods.hubConnection.connected', emoji, target),
+  context.print.info(
+    context.i18n('methods.hubConnection.connected', target),
+    true,
   )
   clearTimeout(timeout)
 
@@ -120,12 +121,12 @@ export const login = async ({
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
 
-  context.print.loading(
-    context.i18n(
-      'methods.hubConnection.connecting',
-      context.i18n('methods.hubConnection.cloud'),
-    ),
-  )
+  // context.print.loading(
+  //   context.i18n(
+  //     'methods.hubConnection.connecting',
+  //     context.i18n('methods.hubConnection.cloud'),
+  //   ),
+  // )
 
   const adminHub: BasedClient = await hubConnection(context, {
     org: 'saulx',
@@ -229,10 +230,7 @@ export const login = async ({
     type: 'based',
   })
 
-  context.print.success(
-    context.i18n('methods.login.success', user.email),
-    '👨‍🦱',
-  )
+  context.print.success(context.i18n('methods.login.success', user.email), true)
 
   return buildClients(adminHub, envHub, client)
 }
