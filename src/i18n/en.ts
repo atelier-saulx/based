@@ -134,24 +134,24 @@ export default {
           error: 'The organization ${org} was not found in your account.',
           new: {
             label: 'Add a new organization to your account',
-            value: 'new',
+            value: 'newItem',
           },
         },
         project: {
           select: 'Which project in <b>${org}</b> do you want to use?',
           input:
-            'What is the name of the project that will be included in the organization ${org}?',
+            'What is the name of the project that will be included in the organization <b>${org}</b>?',
           error:
-            "The project ${org} you're looking for was not found in your account.",
-          new: { label: 'Create a new project', value: 'new' },
+            "The project <b>${org}</b> you're looking for was not found in your account.",
+          new: { label: 'Create a new project', value: 'newItem' },
         },
         env: {
           select:
             'Which environment in <b>${project}</b> will your project run in?',
           input:
-            "What is the name of the environment in ${project}? <dim>(this env will be created if it doesn't exists in your account).</dim>",
-          error: "The env ${org} doesn't exist.",
-          new: { label: 'Deploy a new environment', value: 'new' },
+            "What is the name of the environment in <b>${project}</b>? <dim>(this env will be created if it doesn't exists in your account).</dim>",
+          error: "The env <b>${env}</b> doesn't exist.",
+          new: { label: 'Deploy a new environment', value: 'newItem' },
         },
         apiKey:
           'Do you have any API Key that you want to use for this project?',
@@ -626,6 +626,9 @@ export default {
     909: 'Error uploading your file: ${error}',
     910: 'Error cleaning your logs: ${error}',
     911: "Error running your tests, was not possible to find the command: <b>'${command}'</b> in your <b>'package.json'</b>",
+    912: 'Request failed with status code ${code}.',
+    913: 'Request error: ${error}',
+    914: 'Error parsing the response of the request: ${error}',
   },
   alias: {
     isExternalPath:
