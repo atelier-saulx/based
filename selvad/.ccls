@@ -1,9 +1,0 @@
--std=gnu2x
--Wall
--Wextra
--g
--lc
--lm
--I
-./include
--include ./include/cdefs.h
