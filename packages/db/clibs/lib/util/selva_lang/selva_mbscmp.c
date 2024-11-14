@@ -31,7 +31,7 @@ int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, si
             return diff;
         }
 
-        s1 += nbytes2;
+        s1 += nbytes1;
         left1 -= nbytes1;
         s2 += nbytes2;
         left2 -= nbytes2;
