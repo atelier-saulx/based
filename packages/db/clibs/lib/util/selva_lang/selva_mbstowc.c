@@ -10,6 +10,10 @@ size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t
     wchar_t tmp;
     size_t nbytes;
 
+    if (mbs_len == 0) {
+        return 0;
+    }
+
 #if defined(__APPLE__)
     nbytes = mbrtowc_l(&tmp, mbs_str, mbs_len, ps, loc);
 #else
