@@ -32,6 +32,7 @@ pub fn simdEqualsOr(
     return false;
 }
 
+// make the query multiple (faster)
 pub fn hasQueryValue(value: []u8, query: []u8) bool {
     const vectorLen = std.simd.suggestVectorLength(u8).?;
     var i: usize = 0;

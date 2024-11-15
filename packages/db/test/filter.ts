@@ -816,15 +816,18 @@ await test('variable size (string/binary)', async (t) => {
     q[i] = i
   }
   q[250] = 255
-  console.log('DERP DERP FLAP')
 
   db.query('article')
-    .filter('derp', 'has', Buffer.from('Italy'))
+    .filter('derp', 'has', Buffer.from('vitorio'))
     .include('id')
     .get()
     .inspect(1)
 
-  console.log('2 DERP DERP FLAP')
+  db.query('article')
+    .filter('derp', 'has', Buffer.from('xx'))
+    .include('id')
+    .get()
+    .inspect(1)
 
   db.query('article').filter('derp', 'has', q).include('id').get().inspect(1)
 
