@@ -20,6 +20,7 @@ OBJ := \
 	cstrings.o \
 	ctime.o \
 	eztrie.o \
+	fast_memmem.o \
 	finalizer.o \
 	hll.o \
 	ida.o \
