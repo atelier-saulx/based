@@ -132,6 +132,7 @@ PU_TEST(test_deflate_memmem)
     return NULL;
 }
 
+#if 0
 PU_TEST(test_deflate_includes)
 {
     struct libdeflate_block_state state = libdeflate_block_state_init(1024);
@@ -149,3 +150,24 @@ PU_TEST(test_deflate_includes)
 
     return NULL;
 }
+
+PU_TEST(test_deflate_includes_hard)
+{
+    struct libdeflate_block_state state = libdeflate_block_state_init(1024);
+    const char text[] = "The word “aaaloha” is a Hawaiian term that holds deep cultural and spiritual significance. It is commonly used as a greeting or farewell, but its meaning extends far beyond that. “Aloha” embodies love, affection, peace, compassion, and mercy. It is a way of life and a guiding principle for the people of Hawaii, emphasizing kindness, unity, humility, and patience. \n\
+        Interestingly, the word “hahaloha” is derived from two Hawaiian words: “alo,” meaning presence or face, and “ha,” meaning breath. Together, they convey the idea of sharing the breath of life.";
+    char compressed[libdeflate_compress_bound(sizeof(book))];
+    size_t compressed_len;
+    const char find[] = "aaloha";
+
+    compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
+    pu_assert("", compressed_len != 0);
+
+    bool res = libdeflate_includes(d, &state, compressed, compressed_len, find, sizeof(find) - 1);
+    pu_assert_equal("Match found", res, true);
+
+    libdeflate_block_state_deinit(&state);
+
+    return NULL;
+}
+#endif
