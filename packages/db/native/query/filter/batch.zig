@@ -32,13 +32,11 @@ pub fn simdEqualsOr(
     return false;
 }
 
-// make the query multiple (faster)
 pub fn hasQueryValue(value: []u8, query: []u8) bool {
     const vectorLen = std.simd.suggestVectorLength(u8).?;
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
-
     if (l < vectorLen) {
         while (i < l) : (i += 1) {
             if (value[i] == query[0]) {
@@ -58,11 +56,9 @@ pub fn hasQueryValue(value: []u8, query: []u8) bool {
         }
         return false;
     }
-
     const queryVector: @Vector(vectorLen, u8) = @splat(query[0]);
     const indexes = std.simd.iota(u8, vectorLen);
     const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
-
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
