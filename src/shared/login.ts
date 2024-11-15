@@ -6,7 +6,7 @@ import { AppContext, getBasedClient } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 1e3
+const connectionTimeout = 60e3
 
 const authenticateUser = async (
   email: string,
@@ -84,9 +84,9 @@ const hubConnection = async (
   const { file } = await context.get('basedProject')
   const [_, target] =
     opts.org === 'saulx' && opts.project === 'based-cloud'
-      ? ['', context.i18n('methods.hubConnection.cloud')]
+      ? ['', context.i18n('methods.hubConnection.cluster')]
       : opts.optionalKey
-        ? ['', context.i18n('methods.hubConnection.environmentManager')]
+        ? ['', context.i18n('methods.hubConnection.project')]
         : ['', context.i18n('methods.hubConnection.environment')]
 
   const hubClient: BasedClient = getBasedClient(context, opts)
@@ -230,7 +230,10 @@ export const login = async ({
     type: 'based',
   })
 
-  context.print.success(context.i18n('methods.login.success', user.email), true)
+  context.print.success(
+    context.i18n('methods.login.success', user.email),
+    '<primary>♥</primary>',
+  )
 
   return buildClients(adminHub, envHub, client)
 }

@@ -37,6 +37,8 @@ export function colorize(content: string | string[]): string | string[] {
     grey: pc.gray,
     primary: formatter('\x1b[38;2;75;65;255m', '\x1b[39m'),
     bgPrimary: formatter('\x1b[48;2;75;65;255m', '\x1b[49m'),
+    seconday: formatter('\x1b[38;2;255;31;133m', '\x1b[39m'),
+    bgSeconday: formatter('\x1b[48;2;255;31;133m', '\x1b[49m'),
     reset: (text: string) => `\u001b[0m${text}`,
   }
 
@@ -55,8 +57,8 @@ export function colorize(content: string | string[]): string | string[] {
   }
 
   if (Array.isArray(content)) {
-    return content.map(processTags) as string[] // Processa cada elemento do array
+    return content.map(processTags) as string[]
   }
 
-  return processTags(content) as string // Processa uma string individual
+  return processTags(content) as string
 }

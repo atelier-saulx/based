@@ -392,7 +392,6 @@ export const projectInit = async (program: Command): Promise<void> => {
     const form = await context.form.group({
       header: context.i18n('commands.init.descripion'),
       footer: context.i18n('commands.init.methods.letsCreate'),
-      tools,
       cluster,
       ...(hasUserData && {
         org: orgs,
@@ -409,6 +408,7 @@ export const projectInit = async (program: Command): Promise<void> => {
       description,
       functions,
       queries,
+      tools,
       format,
       path,
     })
@@ -492,8 +492,6 @@ export const makeProject = async (args: Based.Init.Make) => {
           }
         }
 
-        console.log('fullPath', fullPath)
-
         try {
           pkg = await getFileByPath<typeof pkg>(`${fullPath}/package.json`)
 
@@ -506,11 +504,7 @@ export const makeProject = async (args: Based.Init.Make) => {
           pkg.scripts = rest
 
           try {
-            await writeFile(
-              `${fullPath}/package.json`,
-              JSON.stringify(pkg, null, 2),
-              'utf8',
-            )
+            await saveAsFile(pkg, `${fullPath}/package.json`, 'json')
           } catch (error) {
             throw new Error(
               'Could not update package.json in boilerplate folder.',

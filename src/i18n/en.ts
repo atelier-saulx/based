@@ -678,9 +678,9 @@ export default {
       success: 'User: <b>${email}</b> logged in successfully!',
     },
     hubConnection: {
-      cloud: 'Based Cloud',
-      environmentManager: 'the environment manager',
-      environment: 'the environment',
+      cluster: 'Based Cluster',
+      environment: 'the Environment',
+      project: 'the Project',
       connecting: 'Connecting to ${target}...',
       connected: 'Connected to ${target}.',
     },

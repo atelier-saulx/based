@@ -31,7 +31,7 @@ const logBase =
         icon = `${icon}  `
       }
 
-      message = `\r${colorize(`${icon}${message}`)}`
+      message = `\r${colorize(`<reset>${icon}${message}</reset>`)}`
 
       if (context.spinner.isActive) {
         context.spinner.stop(message)

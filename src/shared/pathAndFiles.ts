@@ -91,7 +91,7 @@ export const formatAsObject = (obj: object, indentLevel = 1): string => {
 export const saveAsFile = async (
   obj: Record<string, unknown>,
   filePath: string,
-  format: string,
+  format: 'ts' | 'json' | 'js',
 ): Promise<boolean> => {
   let content: string
 

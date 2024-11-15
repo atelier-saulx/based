@@ -367,7 +367,7 @@ declare global {
           machine?: string
           machines?: Based.Infra.Template['machineConfigs']
           path?: string
-          format?: string
+          format?: 'ts' | 'json' | 'js'
         }
 
         type Save = {
