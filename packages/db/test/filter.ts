@@ -819,11 +819,19 @@ await test('variable size (string/binary)', async (t) => {
     .get()
     .inspect(10)
 
+  console.log('2 DERP DERP FLAP')
+
+  db.query('article', smurpArticle)
+    .filter('derp', 'has', q)
+    // .include('id')
+    .get()
+    .inspect(10)
+
   // FIX WITH CRC32 + len (original crc32)
   // add orignal crc32 as last argument after making compression
   // small check if 0, crc check, 1
   // db.query('article')
-  //   .filter('body', '=', compressedItaly)
+  //   .filter('derp', 'has', new Uint8Array([30, 100, 21, 50]))
   //   .range(0, 10)
   //   .get()
   //   .inspect(10)

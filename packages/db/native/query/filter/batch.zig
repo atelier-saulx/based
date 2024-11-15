@@ -58,9 +58,19 @@ pub fn hasQueryValue(value: []u8, query: []u8) bool {
         }
         return false;
     }
+
+    if (query.len > 30) {
+        if (selva.fast_memmem(value.ptr, value.len, query.ptr, query.len) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     const queryVector: @Vector(vectorLen, u8) = @splat(query[0]);
     const indexes = std.simd.iota(u8, vectorLen);
     const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
+
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
