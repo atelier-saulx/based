@@ -32,7 +32,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         }
     } else if (op == Op.has) {
         // not great but its ok
-        if (!batch.equalsOr(1, query, v)) {
+        if (!batch.hasQueryValue(v, query)) {
             return .{ next, false };
         }
     }

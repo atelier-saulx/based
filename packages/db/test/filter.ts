@@ -776,15 +776,22 @@ await test('variable size (string/binary)', async (t) => {
 
   const len = db
     .query('article')
-    .filter('stuff', 'has', new Uint8Array([55]))
+    .filter('stuff', 'has', new Uint8Array([55, 57]))
     .range(0, 100)
-    .get().length
+    .get()
+    .inspect(1).length
 
-  equal(len > 1 && len < 100, true, 'has binary (single')
+  equal(len, 1, 'has binary (single')
 
-  const largeDerp = new Uint8Array(1e7)
-  for (let i = 0; i < 1e7; i++) {
-    largeDerp[i] = ~~(Math.random() * 255)
+  const size = 1e7 + 2
+  const largeDerp = new Uint8Array(size)
+  let bytes = 0
+  for (let i = 0; i < size; i++) {
+    largeDerp[i] = bytes
+    bytes++
+    if (bytes > 253) {
+      bytes = 0
+    }
   }
 
   const smurpArticle = await db.create('article', {
@@ -795,8 +802,20 @@ await test('variable size (string/binary)', async (t) => {
     derp: largeDerp,
   })
 
+  /*
+  selva and call uint32_t crc32c(uint32_t crc, void const *buf, size_t len)
+  */
+
+  const q = new Uint8Array(251)
+  for (let i = 0; i < 250; i++) {
+    q[i] = i
+  }
+  q[250] = 255
+  console.log('DERP DERP FLAP')
+
   db.query('article', smurpArticle)
-    .filter('derp', 'has', new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    .filter('derp', 'has', new Uint8Array([30, 100, 21, 50]))
+    // .include('id')
     .get()
     .inspect(10)
 
@@ -850,7 +869,7 @@ await test('negate', async (t) => {
   const derp = db.create('derp', {})
 
   for (let i = 0; i < amount; i++) {
-    const x = db.create('machine', {
+    db.create('machine', {
       isLive: !!(i % 2),
       status: status[~~(status.length * Math.random())],
       info: i,
