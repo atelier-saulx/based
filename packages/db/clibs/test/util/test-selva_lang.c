@@ -290,6 +290,9 @@ PU_TEST(test_mbsstrstr)
         res = call_mbsstrstr("The word “aaaloha” is a Hawaiian term that holds deep cultural and spiritual significance.", "aaloha", trans, loc);
         pu_assert_equal("", res, 13);
 
+        res = call_mbsstrstr("abba abbo", "abbo", trans, loc);
+        pu_assert_equal("", res, 5);
+
         freelocale(loc);
         loc = NULL;
     }

@@ -17,6 +17,9 @@
 
 #define SELVA_LANG_NAME_MAX 4ul
 
+struct libdeflate_decompressor;
+struct libdeflate_block_state;
+
 struct selva_lang {
     enum selva_lang_code code;
     __nonstring char name[SELVA_LANG_NAME_MAX];
@@ -79,6 +82,13 @@ size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t
 int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
 
 const char *selva_mbsstrstr(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
+
+bool selva_deflate_mbsstrstr(
+        struct libdeflate_decompressor *decompressor,
+        struct libdeflate_block_state *state,
+        const char *in_buf, size_t in_len,
+        const void *needle_buf, size_t needle_len,
+        wctrans_t trans, locale_t loc);
 
 /**
  * Constructs a value of type wctrans_t that describes a LC_CTYPE category of wide character mapping.
