@@ -98,7 +98,7 @@ bool node_id_set_remove(node_id_t **set_p, size_t *len, node_id_t id)
 
     if (old_len == 1) {
         selva_free(*set_p);
-        *set_p = NULL;
+        *set_p = nullptr;
         *len = 0;
     } else {
         node_id_t *el = &arr[idx];

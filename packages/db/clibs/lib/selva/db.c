@@ -184,7 +184,7 @@ static void del_all_types(struct SelvaDb *db)
     struct SVectorIterator it;
     struct SelvaTypeEntry *type;
 
-    SVector_Clone(&types_copy, &db->type_list, NULL);
+    SVector_Clone(&types_copy, &db->type_list, nullptr);
     SVector_ForeachBegin(&it, &types_copy);
     while ((type = vecptr2SelvaTypeEntry(SVector_Foreach(&it)))) {
         del_type(db, type);
@@ -332,7 +332,7 @@ const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te
 const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
 {
     if (field >= fields_schema->nr_fields) {
-        return NULL;
+        return nullptr;
     }
 
     return &fields_schema->field_schemas[field];
@@ -349,7 +349,7 @@ const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct S
 
     type = selva_get_type_by_node(db, node);
     if (!type) {
-        return NULL;
+        return nullptr;
     }
 
     return selva_get_fs_by_ns_field(&type->ns, field);
@@ -359,7 +359,7 @@ const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const struct S
 {
     return (fs->type == SELVA_FIELD_TYPE_REFERENCE || fs->type == SELVA_FIELD_TYPE_REFERENCES)
         ? &fs->edge_constraint
-        : NULL;
+        : nullptr;
 }
 
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
@@ -469,7 +469,7 @@ static struct SelvaNode *selva_min_node_from(struct SelvaTypeEntry *type, block_
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type)
@@ -494,7 +494,7 @@ static struct SelvaNode *selva_max_node_from(struct SelvaTypeEntry *type, block_
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
@@ -517,7 +517,7 @@ struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode 
     } else if (i - 1 < i) {
         return selva_max_node_from(type, i - 1);
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -533,7 +533,7 @@ struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode 
     } else if (i + 1 < blocks->len) {
         return selva_min_node_from(type, i + 1);
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -592,7 +592,7 @@ static void selva_cursors_remove(struct SelvaTypeEntry *type, struct SelvaTypeCu
 {
     struct SelvaTypeCursors *old_cursors = cursor->cursors;
 
-    cursor->cursors = NULL;
+    cursor->cursors = nullptr;
     TAILQ_REMOVE(&old_cursors->head, cursor, _entry_by_node_id);
     maybe_destroy_cursors(type, old_cursors);
 }
@@ -698,7 +698,7 @@ struct SelvaNode *selva_cursor_get(struct SelvaTypeEntry *type, cursor_id_t id)
     struct SelvaTypeCursor *cursor;
 
     cursor = RB_FIND(SelvaTypeCursorById, &type->cursors.by_cursor_id, &find);
-    return cursor ? cursor->ptr : NULL;
+    return cursor ? cursor->ptr : nullptr;
 }
 
 int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct SelvaNode *node)
@@ -827,22 +827,3 @@ out:
 
     return res;
 }
-
-void selva_archive_type(struct SelvaTypeEntry *type)
-{
-    struct mempool *mempool = &type->nodepool;
-
-    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
-        mempool_pageout(mempool, slab);
-    } MEMPOOL_FOREACH_CHUNK_END();
-}
-
-void selva_prefetch_type(struct SelvaTypeEntry *type)
-{
-    struct mempool *mempool = &type->nodepool;
-
-    MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
-        mempool_pagein(mempool, slab);
-    } MEMPOOL_FOREACH_CHUNK_END();
-}
-

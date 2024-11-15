@@ -187,6 +187,13 @@ static int call_mbscmp(const char *s1, const char *s2, wctrans_t trans, locale_t
     return selva_mbscmp(s1, strlen(s1), s2, strlen(s2), trans, loc);
 }
 
+static int call_mbsstrstr(const char *s1, const char *s2, wctrans_t trans, locale_t loc)
+{
+    const char *res = selva_mbsstrstr(s1, strlen(s1), s2, strlen(s2), trans, loc);
+
+    return res ? res - s1 : -1;
+}
+
 PU_TEST(test_mbscmp)
 {
     setlocale(LC_CTYPE, "fi_FI.utf8");
@@ -251,6 +258,40 @@ PU_TEST(test_mbscmp)
         res = call_mbscmp("ß", "ẞ", trans, loc);
         pu_assert_equal("if this fails then your locale is probably pre-2017", res, 0);
 #endif
+
+        freelocale(loc);
+        loc = NULL;
+    }
+
+    return NULL;
+}
+
+PU_TEST(test_mbsstrstr)
+{
+    setlocale(LC_CTYPE, "fi_FI.utf8");
+    setlocale(LC_CTYPE, "fi_FI.UTF-8");
+    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", NULL });
+    if (loc) {
+        wctrans_t trans = wctrans_l("tolower", loc);
+        int res;
+
+        res = call_mbsstrstr("Linux Lanux", "Lanu", trans, loc);
+        pu_assert_equal("", res, 6);
+
+        res = call_mbsstrstr("abcdef", "xyz", trans, loc);
+        pu_assert_equal("", res, -1);
+
+        res = call_mbsstrstr("Miroslav Ladislav Vitouš (s. 6. joulukuuta 1947 Prahassa) on tšekkoslovakialainen jazzbasisti. Hän aloitti viulunsoiton kuusivuotiaana, pianonsoiton 10-vuotiaana sekä kontrabassonsoiton neljätoistavuotiaana.", "tšekkoslovakialainen", trans, loc);
+        pu_assert_equal("", res, 62);
+
+        res = call_mbsstrstr("Kakka on babylonialaisessa ja akkadilaisessa mytologiassa esiintyvä alempiin jumaliin kuuluva lähettiläsjumala.", "ALEMPI", trans, loc);
+        pu_assert_equal("", res, 69);
+
+        res = call_mbsstrstr("The word “aaaloha” is a Hawaiian term that holds deep cultural and spiritual significance.", "aaloha", trans, loc);
+        pu_assert_equal("", res, 13);
+
+        res = call_mbsstrstr("abba abbo", "abbo", trans, loc);
+        pu_assert_equal("", res, 5);
 
         freelocale(loc);
         loc = NULL;

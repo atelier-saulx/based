@@ -226,7 +226,7 @@ static int file_zsdb_readin(struct selva_io *io)
     /* Just to be sure that there is never any garbage left. */
     memset(zbuf->compressed_buf + in_nbytes, 0, zbuf->compressed_buf_size - in_nbytes);
 
-    res = libdeflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
+    res = libdeflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, nullptr);
     if (res) {
         return SELVA_EINVAL;
     }
@@ -257,7 +257,7 @@ static int string_zsdb_readin(struct selva_io *io)
     /* Just to be sure that there is never any garbage left. */
     memset(zbuf->compressed_buf + in_nbytes, 0, zbuf->compressed_buf_size - in_nbytes);
 
-    res = libdeflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
+    res = libdeflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, nullptr);
     if (res) {
         return SELVA_EINVAL;
     }

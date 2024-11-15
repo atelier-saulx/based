@@ -20,7 +20,7 @@ OBJ := \
 	cstrings.o \
 	ctime.o \
 	eztrie.o \
-	fd_to_str.o \
+	fast_memmem.o \
 	finalizer.o \
 	hll.o \
 	ida.o \
@@ -30,20 +30,17 @@ OBJ := \
 	queue_r.o \
 	selva_cpu.o \
 	selva_error.o \
+	selva_lang/selva_deflate_mbsstrstr.o \
 	selva_lang/selva_lang.o \
 	selva_lang/selva_mbscmp.o \
+	selva_lang/selva_mbsstrstr.o \
+	selva_lang/selva_mbstowc.o \
 	selva_lang/selva_mbstrans.o \
-	selva_proto.o \
-	selva_proto_buf.o \
-	selva_proto_builder.o \
-	selva_proto_print.o \
-	selva_proto_scanf.o \
 	selva_rusage.o \
 	selva_string.o \
 	sigstr.o \
 	strntol.o \
 	svector.o \
-	tcp.o \
 	timestamp.o \
 	trx.o
 

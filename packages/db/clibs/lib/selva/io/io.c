@@ -90,7 +90,7 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
         return SELVA_EGENERAL;
     }
 
-    if (setvbuf(file, NULL, _IOFBF, stats.st_blksize) != 0) {
+    if (setvbuf(file, nullptr, _IOFBF, stats.st_blksize) != 0) {
         return SELVA_ENOBUFS;
     }
 
@@ -106,11 +106,11 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
 
 struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_io_flags flags)
 {
-    struct selva_string *s = selva_string_create(NULL, 0, SELVA_STRING_MUTABLE);
+    struct selva_string *s = selva_string_create(nullptr, 0, SELVA_STRING_MUTABLE);
 
     flags |= SELVA_IO_FLAGS_STRING_IO | SELVA_IO_FLAGS_WRITE;
     if (!valid_flags(flags)) {
-        return NULL;
+        return nullptr;
     }
 
     init_io_string(io, s, flags);
@@ -135,7 +135,7 @@ static void selva_io_close(struct selva_io *io)
     if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
         fclose(io->file_io.file);
         selva_string_free(io->file_io.filename);
-        io->file_io.filename = NULL;
+        io->file_io.filename = nullptr;
     }
 }
 

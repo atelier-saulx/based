@@ -34,7 +34,6 @@
     "@based/server": "^8.0.0",
     "@saulx/hash": "^3.0.0",
     "@saulx/utils": "^4.3.2",
-    "data-record": "^2.0.0",
     "picocolors": "^1.0.1",
     "snappy": "^7.2.2"
   },

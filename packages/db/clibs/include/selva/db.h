@@ -223,18 +223,6 @@ selva_hash128_t selva_node_hash_range(struct SelvaTypeEntry *type, node_id_t sta
  */
 
 /**
- * Give a hint to page out a node type.
- */
-SELVA_EXPORT
-void selva_archive_type(struct SelvaTypeEntry *type);
-
-/**
- * Give a hint to page in a node type.
- */
-SELVA_EXPORT
-void selva_prefetch_type(struct SelvaTypeEntry *type);
-
-/**
  * Get the number of aliases under given type.
  */
 SELVA_EXPORT

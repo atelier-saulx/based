@@ -45,8 +45,8 @@ static int child_callback_stub(
     \
     SVECTOR_AUTOFREE(_bfs_q); \
     SVECTOR_AUTOFREE(_bfs_sq); \
-    SVector_Init(&_bfs_q,  BFS_SVEC_INIT_SIZE, NULL); \
-    SVector_Init(&_bfs_sq, BFS_SVEC_INIT_SIZE, NULL); \
+    SVector_Init(&_bfs_q,  BFS_SVEC_INIT_SIZE, nullptr); \
+    SVector_Init(&_bfs_sq, BFS_SVEC_INIT_SIZE, nullptr); \
     struct { \
         long long cur_depth; /*!< Current depth. */ \
         long long count; /*!< Elements left to next depth increment. */ \
@@ -59,7 +59,7 @@ static int child_callback_stub(
     \
     Trx_Visit(&trx_cur, &(head)->trx_label); \
     SVector_Insert(&_bfs_q, (head)); \
-    SVector_Insert(&_bfs_sq, NULL); \
+    SVector_Insert(&_bfs_sq, nullptr); \
     if (head_cb((hierarchy), &(const struct SelvaTraversalMetadata){ .depth = _bfs_depth.cur_depth }, (head), (cb)->head_arg) < 0) { Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; } \
     while (SVector_Size(&_bfs_q) > 0) { \
         struct SelvaNode *node = SVector_Shift(&_bfs_q); \
@@ -115,7 +115,7 @@ static struct SelvaNode *weak_ref2node(struct SelvaDb *db, struct SelvaNode *src
     src_fs = selva_get_fs_by_node(db, src, src_field);
     dst_te = selva_get_type_by_index(db, src_fs->edge_constraint.dst_node_type);
     if (!dst_te) {
-        return NULL;
+        return nullptr;
     }
 
     return selva_find_node(dst_te, weak_ref->dst_id);
@@ -163,7 +163,7 @@ int selva_traverse_field_bfs(
             } else if (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) {
                 struct SelvaNode *dst_node = weak_ref2node(db, node, field, &any.weak_reference);
                 if (dst_node) {
-                    struct SelvaFields *edge_data = NULL;
+                    struct SelvaFields *edge_data = nullptr;
 
                     BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                 }
@@ -174,7 +174,7 @@ int selva_traverse_field_bfs(
                 for (size_t i = 0; i < nr_refs; i++) {
                     struct SelvaNode *dst_node = weak_ref2node(db, node, field, &any.weak_references.refs[i]);
                     if (dst_node) {
-                        struct SelvaFields *edge_data = NULL;
+                        struct SelvaFields *edge_data = nullptr;
 
                         BFS_VISIT_ADJACENT(db, cb, edge_data, dst_node);
                     }
@@ -201,7 +201,7 @@ int selva_traverse_type(struct SelvaDb *db, struct SelvaTypeEntry *te, SelvaTrav
 
         RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
             static const struct SelvaTraversalMetadata meta = {
-                .edge_data = NULL,
+                .edge_data = nullptr,
                 .depth = 0,
             };
             int res = node_cb(db, &meta, node, node_arg);
