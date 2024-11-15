@@ -11,7 +11,7 @@ import {
 } from '@clack/prompts'
 import { type AppContext, colorize } from '../../shared/index.js'
 
-type Validate = (value: string | string[]) => boolean
+type Validate = (value: string | string[]) => string | undefined
 
 type FieldOption = {
   value: string
@@ -21,12 +21,10 @@ type FieldOption = {
 
 type Validation =
   | {
-      errorMessage?: undefined
       validation?: undefined
     }
   | {
-      errorMessage: string | ((error: string) => string)
-      validation: Validate
+      validation: Validate[]
     }
 
 type Field = Validation & {
@@ -36,18 +34,19 @@ type Field = Validation & {
 
 type TextField = Field & {
   placeholder?: string
-  initialValue?: string
+  input?: string
   skip?: boolean
 }
 
 type SelectField = Field & {
-  initialValue?: string
+  input?: string
   options: FieldOption[]
 }
 
-type MultiSelectField = SelectField & {
-  initialValues: string[]
+type MultiSelectField = Field & {
+  input: string[]
   skip?: boolean
+  options: FieldOption[]
 }
 
 type FormMaker = {
@@ -63,32 +62,41 @@ type FormMaker = {
   multiSelect?: (field: MultiSelectField) => Promise<unknown[]>
 }
 
-type FormResult = { results: { [key: string]: string } }
+type Validator = (
+  input: string | string[],
+  validation: Validate[],
+  skip: boolean,
+) => string | undefined
 
-const initialValidation = (
-  value: string | string[],
-  required: boolean,
-  validation: (value: string | string[]) => boolean,
-  errorMessage: string | ((value: string) => string),
-): boolean => {
-  if (value?.length && validation && !validation(value)) {
-    if (required) {
-      if (typeof errorMessage === 'string') {
-        log.error(colorize(errorMessage))
-      } else {
-        if (typeof value === 'string') {
-          log.error(colorize(errorMessage(value)))
-        } else {
-          log.error(colorize(errorMessage(value.join(','))))
-        }
-      }
-    }
+export type FormResult = { results: { [key: string]: string } }
 
-    return false
+const validator: Validator = (input, validation, skip) => {
+  if (skip && typeof input === 'string' && input.toLowerCase() === 's') {
+    return
   }
 
-  if (value?.length && validation && validation(value)) {
-    return true
+  const result: string[] = []
+
+  if (validation) {
+    for (const validate of validation) {
+      const validation = validate(input)
+
+      if (validation) {
+        result.push(validation)
+      }
+    }
+  }
+
+  if (!result.length) {
+    return
+  }
+
+  if (result.length === 1) {
+    return result.toString()
+  }
+
+  if (result.length > 1) {
+    return result.join(' | ')
   }
 }
 
@@ -118,19 +126,27 @@ export function contextForm(context: AppContext): FormMaker {
     },
 
     text: async ({
-      initialValue,
+      input,
       message,
       validation,
-      errorMessage,
       skip,
       placeholder,
       required,
     }) => {
-      if (initialValidation(initialValue, required, validation, errorMessage)) {
-        return initialValue
+      if (input) {
+        const validationResult = validator(input, validation, skip)
+        const isValid = typeof validationResult === 'undefined'
+
+        if (isValid) {
+          return input
+        }
+
+        if (!isValid && required) {
+          log.error(colorize(validationResult))
+        }
       }
 
-      if (!required) {
+      if (!input && !required) {
         return ''
       }
 
@@ -138,23 +154,11 @@ export function contextForm(context: AppContext): FormMaker {
         message = `${message} ${context.i18n('context.input.skip')}`
       }
 
-      const result: string = (await text({
+      const result = (await text({
         message: colorize(message),
         placeholder,
-        initialValue,
-        validate: (value) => {
-          if (skip && value && value.toLowerCase() === 's') {
-            return
-          }
-
-          if (!validation(value)) {
-            if (typeof errorMessage === 'string') {
-              return colorize(errorMessage)
-            }
-
-            return colorize(errorMessage(value))
-          }
-        },
+        initialValue: input,
+        validate: (input) => colorize(validator(input, validation, skip)),
       })) as string
 
       if (!result || (skip && result && result.toLowerCase() === 's')) {
@@ -164,19 +168,20 @@ export function contextForm(context: AppContext): FormMaker {
       return result
     },
 
-    select: async ({
-      message,
-      options,
-      initialValue,
-      validation,
-      errorMessage,
-      required,
-    }) => {
-      if (initialValidation(initialValue, required, validation, errorMessage)) {
-        return initialValue
+    select: async ({ message, options, input, validation, required }) => {
+      if (input) {
+        const validationResult = validator(input, validation, false)
+
+        if (typeof validationResult === 'undefined') {
+          return input
+        }
+
+        if (typeof validationResult === 'string') {
+          log.error(colorize(validationResult))
+        }
       }
 
-      if (!required) {
+      if (!input && !required) {
         return ''
       }
 
@@ -189,19 +194,24 @@ export function contextForm(context: AppContext): FormMaker {
     multiSelect: async ({
       message,
       options,
-      initialValues,
+      input,
       skip,
       validation,
-      errorMessage,
       required,
     }) => {
-      if (
-        initialValidation(initialValues, required, validation, errorMessage)
-      ) {
-        return initialValues
+      if (input) {
+        const validationResult = validator(input, validation, false)
+
+        if (typeof validationResult === 'undefined') {
+          return input
+        }
+
+        if (typeof validationResult === 'string') {
+          log.error(colorize(validationResult))
+        }
       }
 
-      if (!required) {
+      if (!input && !required) {
         return []
       }
 
@@ -212,7 +222,7 @@ export function contextForm(context: AppContext): FormMaker {
       return (await multiselect({
         message: colorize(message),
         options,
-        initialValues,
+        initialValues: input,
         required: !skip,
       })) as unknown[]
     },

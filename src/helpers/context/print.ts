@@ -2,18 +2,6 @@ import { intro } from '@clack/prompts'
 import type { AppContext } from '../../shared/AppContext.js'
 import { colorize } from '../../shared/colorize.js'
 
-const iconDecider = (icon: boolean | string, defaultValue: string): string => {
-  if (icon === true) {
-    return defaultValue
-  }
-
-  if (icon !== '' && icon !== false) {
-    return icon
-  }
-
-  return ''
-}
-
 const logBase =
   (level: keyof Based.Context.State['emojis'], context: AppContext) =>
   (message: string, icon: boolean | string = false) => {
@@ -34,7 +22,7 @@ const logBase =
       message = `\r${colorize(`${icon}${message}`)}`
 
       if (context.spinner.isActive) {
-        context.spinner.stop(message)
+        context.spinner.stop(`\x1b[F${message}`)
       } else {
         console.info(message)
       }

@@ -131,8 +131,11 @@ export default {
         cluster: 'Which cluster do you want to connect to?',
         org: {
           select: 'Which organization owns this project?',
-          input: 'What is the name of your organization?',
-          error: 'The organization ${org} was not found in your account.',
+          input: 'What is the name of your new organization?',
+          notFound:
+            'The organization <b>${org}</b> was not found in your account.',
+          found:
+            'The organization <b>${org}</b> already exists in your account.',
           new: {
             label: 'Add a new organization to your account',
             value: '<new_org>',
@@ -142,8 +145,10 @@ export default {
           select: 'Which project in <b>${org}</b> do you want to use?',
           input:
             'What is the name of the project that will be included in the organization <b>${org}</b>?',
-          error:
+          notFound:
             "The project <b>${org}</b> you're looking for was not found in your account.",
+          found:
+            'The project <b>${project}</b> already exists in your account.',
           new: { label: 'Create a new project', value: '<new_project>' },
         },
         env: {
@@ -151,7 +156,9 @@ export default {
             'Which environment in <b>${project}</b> will your project run in?',
           input:
             "What is the name of the environment in <b>${project}</b>? <dim>(this env will be created if it doesn't exists in your account).</dim>",
-          error: "The env <b>${env}</b> doesn't exist.",
+          notFound: "The env <b>${env}</b> doesn't exist.",
+          found:
+            'The environment <b>${env}</b> already exists in your account.',
           new: [
             { label: 'Deploy a new environment', value: '<new_env>' },
             { label: 'Deploy by branch', value: '#branch' },

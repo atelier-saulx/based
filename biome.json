@@ -20,6 +20,11 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "warn",
+        "noUnusedImports": "warn"
+      },
       "style": {
         "noParameterAssign": "off",
         "noInferrableTypes": "off"

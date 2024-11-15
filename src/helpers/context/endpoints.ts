@@ -109,6 +109,11 @@ export const endpoints = {
     endpoint: 'user-envs',
     type: 'query',
   },
+  CREATE_ORG: {
+    client: 'cluster',
+    endpoint: 'create-org',
+    type: 'call',
+  },
   BOILERPLATE_PACKAGE: {
     client: 'local',
     endpoint:

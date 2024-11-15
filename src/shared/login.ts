@@ -6,7 +6,7 @@ import { AppContext, getBasedClient } from './index.js'
 
 const persistPath: string = join(homedir(), '.based/cli')
 const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 60e3
+const connectionTimeout = 1e3
 
 const authenticateUser = async (
   email: string,
@@ -100,6 +100,10 @@ const hubConnection = async (
   }, connectionTimeout)
 
   try {
+    context.spinner.start(
+      context.i18n('methods.hubConnection.connecting', target),
+    )
+
     await hubClient.once('connect')
   } catch (error) {
     throw new Error(context.i18n('errors.404', file, error))
@@ -109,6 +113,7 @@ const hubConnection = async (
     context.i18n('methods.hubConnection.connected', target),
     true,
   )
+
   clearTimeout(timeout)
 
   return hubClient
