@@ -161,7 +161,12 @@ declare global {
         ) => Promise<DateTimeResult | null>
         number: (message: string, skip?: boolean) => Promise<string | null>
         email: (message: string) => Promise<string>
-        confirm: (message?: string, defaultValue?: boolean) => Promise<boolean>
+        confirm: (
+          message?: string,
+          positive?: string,
+          negative?: string,
+          initialValue?: boolean,
+        ) => Promise<boolean>
         default: (
           message: string,
           defaultValue: string,

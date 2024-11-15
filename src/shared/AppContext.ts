@@ -36,7 +36,7 @@ export class AppContext {
       info: '<primary>●</primary>',
       success: '<green>♥</green>',
       warning: '<yellow>▲</yellow>',
-      error: '<red>‼️</red>',
+      error: '<red>■</red>',
       pipe: '<gray>│</gray>',
     },
   }

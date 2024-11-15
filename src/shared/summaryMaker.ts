@@ -10,6 +10,8 @@ export const summaryMaker = async (context: AppContext, summary: string[]) => {
   for (const [index, element] of summary.entries()) {
     if (!index) {
       intro(colorize(element))
+      context.print.pipe()
+
       continue
     }
     context.print.info(element, true)

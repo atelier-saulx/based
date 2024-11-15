@@ -113,8 +113,121 @@ export const projectInit = async (program: Command): Promise<void> => {
     const isToolsValid = <T extends string>(tools: T[]): boolean =>
       tools.every((tool) => packages.includes(tool))
 
-    const newOrg = () =>
+    const cluster = () =>
       context.form.text({
+        message: context.i18n('commands.init.methods.cluster'),
+        initialValue: clusterProject ?? '',
+        errorMessage: context.i18n('context.input.empty') as string,
+        skip: true,
+        required: !skip,
+        validation: isNotEmpty,
+      })
+
+    const orgs = async () => {
+      const newOption = context.i18n('commands.init.methods.org.new')
+      const options = [...buildOptions(Object.keys(userData)), newOption]
+      const initialValue = options.length === 1 ? options[0].value : args.org
+
+      const org = await context.form.select({
+        message: context.i18n('commands.init.methods.org.select'),
+        initialValue,
+        options,
+        required: true,
+        errorMessage: context.i18n(
+          'commands.init.methods.org.error',
+          initialValue,
+        ) as string,
+        validation: isValueInTheObject(options),
+      })
+
+      if (org === newOption.value) {
+        return newOrg()
+      }
+
+      return org
+    }
+
+    const projects = async (results: {
+      results: { [key: string]: string }
+    }) => {
+      if (!results) {
+        return ''
+      }
+
+      const {
+        results: { org },
+      } = results
+
+      if (!org) {
+        return ''
+      }
+
+      if (!userData?.[org]) {
+        return newProject(results)
+      }
+
+      const newOption = context.i18n('commands.init.methods.project.new')
+      const options = [...buildOptions(Object.keys(userData[org])), newOption]
+      const initialValue =
+        options.length === 1 ? options[0].value : args.project
+
+      const project = await context.form.select({
+        message: context.i18n('commands.init.methods.project.select', org),
+        initialValue,
+        options,
+        required: true,
+        errorMessage: context.i18n(
+          'commands.init.methods.project.error',
+          initialValue,
+        ) as string,
+        validation: isValueInTheObject(options),
+      })
+
+      if (project === newOption.value) {
+        return newProject(results)
+      }
+
+      return project
+    }
+
+    const envs = async (results: { results: { [key: string]: string } }) => {
+      if (!results) {
+        return ''
+      }
+
+      const {
+        results: { org, project },
+      } = results
+
+      if (!userData?.[org]?.[project]) {
+        return newEnv(results)
+      }
+
+      const newOptions = context.i18n('commands.init.methods.env.new')
+      const options = [...buildOptions(userData[org][project]), ...newOptions]
+      const initialValue = options.length === 1 ? options[0].value : args.env
+
+      const env = await context.form.select({
+        message: context.i18n('commands.init.methods.env.select', project),
+        initialValue,
+        options,
+        required: true,
+        errorMessage: context.i18n(
+          'commands.init.methods.env.error',
+          initialValue,
+        ) as string,
+        validation: isValueInTheObject(options),
+      })
+
+      if (env === newOptions[0].value) {
+        return newEnv(results)
+      }
+
+      return env
+    }
+
+    const newOrg = () => {
+      const result = context.form.text({
         message: context.i18n('commands.init.methods.org.input'),
         initialValue: args.org,
         errorMessage: context.i18n('context.input.empty') as string,
@@ -122,6 +235,9 @@ export const projectInit = async (program: Command): Promise<void> => {
         skip: false,
         validation: isNotEmpty,
       })
+
+      return `new::${result}`
+    }
 
     const newProject = (results: {
       results: { [key: string]: string }
@@ -165,110 +281,15 @@ export const projectInit = async (program: Command): Promise<void> => {
       })
     }
 
-    const orgs = async () => {
-      const options = [
-        ...buildOptions(Object.keys(userData)),
-        context.i18n('commands.init.methods.org.new'),
-      ]
-      const initialValue = options.length === 1 ? options[0].value : args.org
-
-      const org = await context.form.select({
-        message: context.i18n('commands.init.methods.org.select'),
-        initialValue,
-        options,
-        required: true,
-        errorMessage: context.i18n(
-          'commands.init.methods.org.error',
-          initialValue,
-        ) as string,
-        validation: isValueInTheObject(options),
+    const apiKey = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.apiKey'),
+        initialValue: apiKeyProject ?? '',
+        errorMessage: context.i18n('context.input.empty') as string,
+        skip: true,
+        required: !skip,
+        validation: isNotEmpty,
       })
-
-      if (org === '<new_org>') {
-        return newOrg()
-      }
-
-      return org
-    }
-
-    const projects = async (results: {
-      results: { [key: string]: string }
-    }) => {
-      if (!results) {
-        return ''
-      }
-
-      const {
-        results: { org },
-      } = results
-
-      if (!org) {
-        return ''
-      }
-
-      if (!userData?.[org]) {
-        return newProject(results)
-      }
-
-      const options = buildOptions(Object.keys(userData[org]))
-      options.push(context.i18n('commands.init.methods.project.new'))
-      const initialValue =
-        options.length === 1 ? options[0].value : args.project
-
-      const project = await context.form.select({
-        message: context.i18n('commands.init.methods.project.select', org),
-        initialValue,
-        options,
-        required: true,
-        errorMessage: context.i18n(
-          'commands.init.methods.project.error',
-          initialValue,
-        ) as string,
-        validation: isValueInTheObject(options),
-      })
-
-      if (project === '<new_project>') {
-        return newProject(results)
-      }
-
-      return project
-    }
-
-    const envs = async (results: { results: { [key: string]: string } }) => {
-      if (!results) {
-        return ''
-      }
-
-      const {
-        results: { org, project },
-      } = results
-
-      if (!userData?.[org]?.[project]) {
-        return newEnv(results)
-      }
-
-      const options = buildOptions(userData[org][project])
-      options.push(context.i18n('commands.init.methods.env.new'))
-      const initialValue = options.length === 1 ? options[0].value : args.env
-
-      const env = await context.form.select({
-        message: context.i18n('commands.init.methods.env.select', project),
-        initialValue,
-        options,
-        required: true,
-        errorMessage: context.i18n(
-          'commands.init.methods.env.error',
-          initialValue,
-        ) as string,
-        validation: isValueInTheObject(options),
-      })
-
-      if (env === '<new_env>') {
-        return newEnv(results)
-      }
-
-      return env
-    }
 
     const name = () =>
       context.form.text({
@@ -283,26 +304,6 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isNotEmpty,
       })
 
-    const cluster = () =>
-      context.form.text({
-        message: context.i18n('commands.init.methods.cluster'),
-        initialValue: clusterProject ?? '',
-        errorMessage: context.i18n('context.input.empty') as string,
-        skip: true,
-        required: !skip,
-        validation: isNotEmpty,
-      })
-
-    const apiKey = () =>
-      context.form.text({
-        message: context.i18n('commands.init.methods.apiKey'),
-        initialValue: apiKeyProject ?? '',
-        errorMessage: context.i18n('context.input.empty') as string,
-        skip: true,
-        required: !skip,
-        validation: isNotEmpty,
-      })
-
     const description = () =>
       context.form.text({
         message: context.i18n('commands.init.methods.description'),
@@ -313,47 +314,22 @@ export const projectInit = async (program: Command): Promise<void> => {
         validation: isNotEmpty,
       })
 
-    const format = () =>
-      context.form.select({
-        message: context.i18n('commands.init.methods.format'),
-        initialValue: args.format,
-        options: typedChoices(context.i18n('methods.format')),
-        required: true,
-        errorMessage: errorMessage(
-          context.i18n('commands.init.validations.format'),
-          args.format ?? '',
-        ) as string,
-        validation: isFormatValid,
-      })
-
-    const tools = () =>
-      context.form.multiSelect({
-        message: context.i18n('commands.init.methods.tools'),
-        initialValues: args.tools?.toString().split(','),
+    const functions = async () => {
+      const functions = await context.form.text({
+        message: context.i18n('commands.init.methods.functions'),
+        initialValue: args.functions?.toString(),
         required: !skip,
-        errorMessage: errorMessage(
-          context.i18n('commands.init.validations.tools'),
-          args.tools?.toString(),
-        ) as string,
-        skip: false,
-        validation: isToolsValid,
-        options: getTools,
-      })
-
-    const path = () =>
-      context.form.text({
-        message: context.i18n('commands.init.methods.path'),
-        initialValue: args.path,
-        required: !skip,
-        skip: false,
-        placeholder: './',
+        skip: true,
         errorMessage: (error) =>
           errorMessage(
-            context.i18n('commands.init.validations.path'),
-            error ?? args.path,
+            context.i18n('commands.init.validations.functions'),
+            error ?? args.functions?.toString(),
           ) as string,
-        validation: isValidPath,
+        validation: isFunctionsValid,
       })
+
+      return functions.split(',')
+    }
 
     const queries = async () => {
       const queries = await context.form.text({
@@ -372,22 +348,47 @@ export const projectInit = async (program: Command): Promise<void> => {
       return queries.split(',')
     }
 
-    const functions = async () => {
-      const functions = await context.form.text({
-        message: context.i18n('commands.init.methods.functions'),
-        initialValue: args.functions?.toString(),
+    const tools = () =>
+      context.form.multiSelect({
+        message: context.i18n('commands.init.methods.tools'),
+        initialValues: args.tools?.toString().split(','),
         required: !skip,
-        skip: true,
-        errorMessage: (error) =>
-          errorMessage(
-            context.i18n('commands.init.validations.functions'),
-            error ?? args.functions?.toString(),
-          ) as string,
-        validation: isFunctionsValid,
+        errorMessage: errorMessage(
+          context.i18n('commands.init.validations.tools'),
+          args.tools?.toString(),
+        ) as string,
+        skip: false,
+        validation: isToolsValid,
+        options: getTools,
       })
 
-      return functions.split(',')
-    }
+    const format = () =>
+      context.form.select({
+        message: context.i18n('commands.init.methods.format'),
+        initialValue: args.format,
+        options: typedChoices(context.i18n('methods.format')),
+        required: true,
+        errorMessage: errorMessage(
+          context.i18n('commands.init.validations.format'),
+          args.format ?? '',
+        ) as string,
+        validation: isFormatValid,
+      })
+
+    const path = () =>
+      context.form.text({
+        message: context.i18n('commands.init.methods.path'),
+        initialValue: args.path,
+        required: !skip,
+        skip: false,
+        placeholder: './',
+        errorMessage: (error) =>
+          errorMessage(
+            context.i18n('commands.init.validations.path'),
+            error ?? args.path,
+          ) as string,
+        validation: isValidPath,
+      })
 
     const form = await context.form.group({
       header: context.i18n('commands.init.descripion'),

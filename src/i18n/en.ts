@@ -152,7 +152,10 @@ export default {
           input:
             "What is the name of the environment in <b>${project}</b>? <dim>(this env will be created if it doesn't exists in your account).</dim>",
           error: "The env <b>${env}</b> doesn't exist.",
-          new: { label: 'Deploy a new environment', value: '<new_env>' },
+          new: [
+            { label: 'Deploy a new environment', value: '<new_env>' },
+            { label: 'Deploy by branch', value: '#branch' },
+          ],
         },
         apiKey:
           'Do you have any API Key that you want to use for this project?',
@@ -646,6 +649,8 @@ export default {
       now: '<dim>(N for now)</dim>',
       empty: 'This value cannot be empty.',
       continue: 'Continue?',
+      positive: 'Yes',
+      negative: 'No',
     },
   },
   methods: {

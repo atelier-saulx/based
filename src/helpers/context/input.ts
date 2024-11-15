@@ -115,13 +115,24 @@ export function contextInput(context: AppContext): Based.Context.InputHandler {
       }),
 
     confirm: async (
-      message: string = context.i18n('context.input.continue'),
-      initialValue: boolean = true,
-    ) =>
-      confirm({
+      message = context.i18n('context.input.continue'),
+      positive = context.i18n('context.input.positive'),
+      negative = context.i18n('context.input.negative'),
+      initialValue = true,
+    ) => {
+      const result = await confirm({
         message: colorize(`\r<yellow>⬢</yellow>  ${message}`),
+        active: positive,
+        inactive: negative,
         initialValue,
-      }) as Promise<boolean>,
+      })
+
+      if (result !== true) {
+        return false
+      }
+
+      return true
+    },
 
     default: async (
       message: string,
