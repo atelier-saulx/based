@@ -2,7 +2,6 @@ import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence } from './shared/examples.js'
-import { debug } from '../src/query/debug.js'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
