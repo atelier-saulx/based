@@ -39,7 +39,7 @@ static int cb_includes(void * restrict ctx, uint8_t * restrict buf, size_t len)
         left -= nbytes;
         size_t new_match_len = min(left, c->needle_len);
 
-        if (!selva_mbscmp(s, new_match_len, c->needle_buf, c->needle_len, c->trans, c->loc)) {
+        if (!selva_mbscmp(s, new_match_len, c->needle_buf, new_match_len, c->trans, c->loc)) {
             c->match_len = new_match_len;
             c->match_size = left;
             memmove(c->match_buf, s, left);

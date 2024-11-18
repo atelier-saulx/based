@@ -9,23 +9,39 @@
 #include <string.h>
 #include <punit.h>
 #include "libdeflate.h"
-#include "libdeflate_strings.h"
+#include "util/selva_lang.h"
 
 static struct libdeflate_compressor *c;
 static struct libdeflate_decompressor *d;
+static locale_t loc;
 
-#include "book.h"
+#include "../deflate/book.h"
 
 void setup(void)
 {
     c = libdeflate_alloc_compressor(9);
     d = libdeflate_alloc_decompressor();
+
+#if __linux__
+    /*
+     * This might not be the name of the locale in your system tho.
+     * Indeed, the selva locale would be en_US.UTF-8 but it's really hard to
+     * read it here.
+     */
+    setlocale(LC_CTYPE, "en_US.utf8");
+    setlocale(LC_CTYPE, "en_US.UTF-8");
+#endif
 }
 
 void teardown(void)
 {
     libdeflate_free_compressor(c);
     libdeflate_free_decompressor(d);
+
+    if (loc) {
+        freelocale(loc);
+    }
+    /* Haha, not gonna reset the locale for you. */
 }
 
 struct full_decompress_ctx {
@@ -73,59 +89,42 @@ static char *full_decompress(struct libdeflate_decompressor *d, const char *in_b
     return NULL;
 }
 
-PU_TEST(test_deflate_stream)
+PU_TEST(test_deflate_mbsstrstr)
 {
-    char compressed[libdeflate_compress_bound(sizeof(book))];
-    size_t compressed_len;
-    char output[sizeof(book)];
-
-    compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
-    full_decompress(d, compressed, compressed_len, output, sizeof(output));
-
-    //pu_assert_str_equal("strings equal", book, output);
-    int res = memcmp(output, book, sizeof(book));
-    pu_assert_equal("", res, 0);
-
-    return NULL;
-}
-
-PU_TEST(test_deflate_memcmp)
-{
+    wctrans_t trans;
     struct libdeflate_block_state state = libdeflate_block_state_init(1024);
     char compressed[libdeflate_compress_bound(sizeof(book))];
     size_t compressed_len;
+    const char find[] = "Everything material soon disappears in the substance of the whole";
 
+    trans = wctrans_l("tolower", loc);
     compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
-#if 0
-    printf("book_len: %zu comp_len: %zu\n", sizeof(book), compressed_len);
-#endif
     pu_assert("", compressed_len != 0);
 
-    int res = libdeflate_memcmp(d, &state, compressed, compressed_len, book, sizeof(book));
-    pu_assert_equal("Strings equal", res, 0);
+    bool res = selva_deflate_mbsstrstr(d, &state, compressed, compressed_len, find, sizeof(find) - 1, trans, loc);
+    pu_assert_equal("Match found", res, true);
 
     libdeflate_block_state_deinit(&state);
 
     return NULL;
 }
 
-PU_TEST(test_deflate_memmem)
+PU_TEST(test_deflate_mbsstrstr_hard)
 {
+    wctrans_t trans;
     struct libdeflate_block_state state = libdeflate_block_state_init(1024);
-    char input[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
-        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris "
-        "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in "
-        "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
-        "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
-        "culpa qui officia deserunt mollit anim id est laborum.";
-    char compressed[libdeflate_compress_bound(sizeof(input))];
+    const char text[] = "The word “aaaloha” is a Hawaiian term that holds deep cultural and spiritual significance. It is commonly used as a greeting or farewell, but its meaning extends far beyond that. “Aloha” embodies love, affection, peace, compassion, and mercy. It is a way of life and a guiding principle for the people of Hawaii, emphasizing kindness, unity, humility, and patience. \n\
+        Interestingly, the word “hahaloha” is derived from two Hawaiian words: “alo,” meaning presence or face, and “ha,” meaning breath. Together, they convey the idea of sharing the breath of life.";
+    char compressed[libdeflate_compress_bound(sizeof(text))];
     size_t compressed_len;
+    const char find[] = "aaloha";
 
-    compressed_len = libdeflate_compress(c, input, sizeof(input), compressed, libdeflate_compress_bound(sizeof(input)));
+    trans = wctrans_l("tolower", loc);
+    compressed_len = libdeflate_compress(c, text, sizeof(text), compressed, libdeflate_compress_bound(sizeof(text)));
+    pu_assert("", compressed_len != 0);
 
-    int64_t res = libdeflate_memmem(d, &state, compressed, compressed_len, "ipsum", 5);
-    pu_assert_equal("", res, 6);
+    bool res = selva_deflate_mbsstrstr(d, &state, compressed, compressed_len, find, sizeof(find) - 1, trans, loc);
+    pu_assert_equal("Match found", res, true);
 
     libdeflate_block_state_deinit(&state);
 

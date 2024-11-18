@@ -16,7 +16,7 @@ void setup(void)
 #if __linux__
     /*
      * This might not be the name of the locale in your system tho.
-     * Indeed, the selva locale would be en_US.UTF-8 but it's really hard  to
+     * Indeed, the selva locale would be en_US.UTF-8 but it's really hard to
      * read it here.
      */
     setlocale(LC_CTYPE, "en_US.utf8");
