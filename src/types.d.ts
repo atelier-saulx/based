@@ -257,7 +257,7 @@ declare global {
         description?: string
         path?: string
         format?: Based.Extensions
-        tools?: Based.InstallableTools[]
+        dependencies?: srtring[]
         queries?: string[]
         functions?: string[]
       }

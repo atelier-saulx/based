@@ -60,6 +60,7 @@ type FormMaker = {
   text?: (field: TextField) => Promise<string>
   select?: (field: SelectField) => Promise<string>
   multiSelect?: (field: MultiSelectField) => Promise<unknown[]>
+  collider: Collider
 }
 
 type Validator = (
@@ -67,6 +68,11 @@ type Validator = (
   validation: Validate[],
   skip: boolean,
 ) => string | undefined
+
+type Collider = (
+  validation: (value: string | string[]) => boolean | Promise<boolean>,
+  output: string | ((error: string) => string),
+) => (value: string) => string | undefined
 
 export type FormResult = { results: { [key: string]: string } }
 
@@ -100,8 +106,23 @@ const validator: Validator = (input, validation, skip) => {
   }
 }
 
+const collider: Collider = (validation, output) => (value) => {
+  const isValid = validation(value)
+
+  if (!isValid) {
+    if (typeof output === 'string') {
+      return output
+    }
+
+    return output(value)
+  }
+
+  return
+}
+
 export function contextForm(context: AppContext): FormMaker {
   return {
+    collider,
     group: async (fields) => {
       const { header, footer, cancelMessage, ...rest } = fields
 

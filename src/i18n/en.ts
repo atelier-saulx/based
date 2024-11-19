@@ -82,7 +82,7 @@ export default {
         name: 'name',
         path: 'path',
         format: 'format',
-        tools: 'tools',
+        dependencies: 'dependencies',
         queries: 'queries',
         functions: 'functions',
       },
@@ -104,8 +104,8 @@ export default {
           description: `The extension of file you prefer (available formats: ${Object.values(fileExtensions).join(', ')}).`,
         },
         {
-          parameter: '-t, --tools <tools...>',
-          description: `Choose the tools you want to be added to your project (available tools:  ${Object.values(installableTools).join(', ')}).`,
+          parameter: '-dp, --dependencies <packages...>',
+          description: `Choose the dependencies you want to be added to your project (available tools:  ${Object.values(installableTools).join(', ')}).`,
         },
         {
           parameter: '--queries <queries...>',
@@ -160,13 +160,14 @@ export default {
           found:
             'The environment <b>${env}</b> already exists in your account.',
           new: [
-            { label: 'Deploy a new environment', value: '<new_env>' },
-            { label: 'Deploy by branch', value: '#branch' },
+            // { label: 'Deploy a new environment', value: '<new_env>' },
+            { label: '#branch', value: '#branch', hint: 'Recommended' },
           ],
         },
         apiKey:
           'Do you have any API Key that you want to use for this project?',
-        tools: 'Select the tools you want to be instaled in your project:',
+        dependencies:
+          'Select the dependencies you want to be instaled in your project:',
         summary: {
           header: '<b>Project summary:</b>',
           name: 'Name: <reset>${name}</reset>',
@@ -175,7 +176,8 @@ export default {
             '<reset>Cloud information: [Cluster: <b>${cluster}</b> | Org: <b>${org}</b> | Project: <b>${project}</b> | Env: <b>${env}</b>]</reset>',
           apiKey: 'API Key: <reset>${apiKey}</reset>',
           functions: 'Functions to be created: <reset>${queries}</reset>',
-          tools: 'Tools to be added: <reset>${tools}</reset>',
+          dependencies:
+            'Dependencies to be added: <reset>${dependencies}</reset>',
           saveIn: 'Saving the project file in: <reset><b>${path}</b></reset>',
         },
       },
