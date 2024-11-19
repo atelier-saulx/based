@@ -917,37 +917,6 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     return res;
 }
 
-ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
-{
-    size_t len = selva_string_getz_ulen(s);
-    ssize_t i;
-
-    if (s->flags & SELVA_STRING_COMPRESS && len > DEFLATE_STRINGS_THRESHOLD_SIZE) {
-        struct libdeflate_block_state state = libdeflate_block_state_init(DEFLATE_STRINGS_THRESHOLD_SIZE);
-        size_t compressed_len;
-        size_t uncompressed_len;
-        const char *compressed;
-
-        compressed = get_compressed_data(s, &compressed_len, &uncompressed_len);
-        i = libdeflate_memmem(decompressor, &state, compressed, compressed_len, sub_str, sub_len);
-
-        libdeflate_block_state_deinit(&state);
-    } else {
-        bool must_free;
-        char *str = get_comparable_buf(s, nullptr, &must_free);
-        char *pos;
-
-        pos = memmem(str, len, sub_str, sub_len);
-        i = pos ? (ssize_t)(pos - str) : -1;
-
-        if (must_free) {
-            selva_free(str);
-        }
-    }
-
-    return i;
-}
-
 __constructor static void init_compressor(void)
 {
     /*

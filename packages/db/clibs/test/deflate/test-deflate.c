@@ -108,26 +108,3 @@ PU_TEST(test_deflate_memcmp)
 
     return NULL;
 }
-
-PU_TEST(test_deflate_memmem)
-{
-    struct libdeflate_block_state state = libdeflate_block_state_init(1024);
-    char input[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
-        "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris "
-        "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in "
-        "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
-        "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
-        "culpa qui officia deserunt mollit anim id est laborum.";
-    char compressed[libdeflate_compress_bound(sizeof(input))];
-    size_t compressed_len;
-
-    compressed_len = libdeflate_compress(c, input, sizeof(input), compressed, libdeflate_compress_bound(sizeof(input)));
-
-    int64_t res = libdeflate_memmem(d, &state, compressed, compressed_len, "ipsum", 5);
-    pu_assert_equal("", res, 6);
-
-    libdeflate_block_state_deinit(&state);
-
-    return NULL;
-}
