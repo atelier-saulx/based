@@ -89,13 +89,52 @@ static char *full_decompress(struct libdeflate_decompressor *d, const char *in_b
     return NULL;
 }
 
+PU_TEST(test_deflate_mbscmp)
+{
+    wctrans_t trans;
+    struct libdeflate_block_state state = libdeflate_block_state_init(1024);
+    char compressed[libdeflate_compress_bound(sizeof(book))];
+    size_t compressed_len;
+
+    trans = wctrans_l("tolower", loc);
+    compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
+    pu_assert("", compressed_len != 0);
+
+    bool res = selva_deflate_mbscmp(d, &state, compressed, compressed_len, book, sizeof(book) - 1, trans, loc);
+    pu_assert_equal("Match found", res, true);
+
+    libdeflate_block_state_deinit(&state);
+
+    return NULL;
+}
+
+PU_TEST(test_deflate_mbscmp_fail)
+{
+    wctrans_t trans;
+    struct libdeflate_block_state state = libdeflate_block_state_init(1024);
+    char compressed[libdeflate_compress_bound(sizeof(book))];
+    size_t compressed_len;
+    const char find[] = "EVERYTHING MATERIAL SOON DISAPPEARS IN THE SUBSTANCE OF THE WHOLE";
+
+    trans = wctrans_l("tolower", loc);
+    compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
+    pu_assert("", compressed_len != 0);
+
+    bool res = selva_deflate_mbscmp(d, &state, compressed, compressed_len, find, sizeof(find) - 1, trans, loc);
+    pu_assert_equal("Match found", res, true);
+
+    libdeflate_block_state_deinit(&state);
+
+    return NULL;
+}
+
 PU_TEST(test_deflate_mbsstrstr)
 {
     wctrans_t trans;
     struct libdeflate_block_state state = libdeflate_block_state_init(1024);
     char compressed[libdeflate_compress_bound(sizeof(book))];
     size_t compressed_len;
-    const char find[] = "Everything material soon disappears in the substance of the whole";
+    const char find[] = "Everything material soon DISAPPEARS in the substance of the whole";
 
     trans = wctrans_l("tolower", loc);
     compressed_len = libdeflate_compress(c, book, sizeof(book), compressed, libdeflate_compress_bound(sizeof(book)));
