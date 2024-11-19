@@ -10,7 +10,7 @@
 #include "libdeflate.h"
 #include "util/selva_lang.h"
 
-struct includes_ctx {
+struct mbsstrstr_ctx {
     wctrans_t trans;
     locale_t loc;
     mbstate_t ps;
@@ -21,9 +21,9 @@ struct includes_ctx {
     size_t needle_len;
 };
 
-static int cb_includes(void * restrict ctx, uint8_t * restrict buf, size_t len)
+static int cb_mbsstrstr(void * restrict ctx, uint8_t * restrict buf, size_t len)
 {
-    struct includes_ctx *c = (struct includes_ctx *)ctx;
+    struct mbsstrstr_ctx *c = (struct mbsstrstr_ctx *)ctx;
 
     if (selva_sallocx(c->match_buf, 0) < c->match_size + len) {
         c->match_buf = selva_realloc(c->match_buf, c->match_size + len);
@@ -70,7 +70,7 @@ bool selva_deflate_mbsstrstr(
         return 0;
     }
 
-    struct includes_ctx ctx = {
+    struct mbsstrstr_ctx ctx = {
         .trans = trans,
         .loc = loc,
         .match_buf = selva_malloc(needle_len),
@@ -80,7 +80,7 @@ bool selva_deflate_mbsstrstr(
 
     do {
         result = 0;
-        res = libdeflate_decompress_stream(decompressor, state, in_buf, in_len, cb_includes, &ctx, &result);
+        res = libdeflate_decompress_stream(decompressor, state, in_buf, in_len, cb_mbsstrstr, &ctx, &result);
     } while (res == LIBDEFLATE_INSUFFICIENT_SPACE && libdeflate_block_state_growbuf(state));
 
     selva_free(ctx.match_buf);
