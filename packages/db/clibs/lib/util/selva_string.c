@@ -762,7 +762,7 @@ int selva_string_verify_crc(const struct selva_string *s)
     if (!verify_parity(s) || get_buf(s)[s->len] != '\0') {
         return 0;
     }
-    if (s->flags & (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) {
+    if ((s->flags & (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) == (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) {
         return 1; /* We don't check compressed strings because the CRC is for the uncompressed string. */
     }
 
