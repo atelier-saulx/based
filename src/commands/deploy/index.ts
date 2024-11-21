@@ -349,12 +349,13 @@ export const parseFunctions = async (
         sourcemap: true,
         platform: 'browser',
         bundle: true,
-        plugins: [
-          staticPath &&
+        ...(staticPath && {
+          plugins: [
             replaceBasedConfigPlugin({
               url: staticPath,
             }),
-        ],
+          ],
+        }),
         define: {
           global: 'window',
           'process.env.NODE_ENV': '"production"',
@@ -386,7 +387,7 @@ export const deploy = async (program: Command) => {
         .get('project')
         .call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
-        await parseFunctions(functions, watch && update, publicPath, publicPath)
+        await parseFunctions(functions, watch && update, publicPath, '')
 
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()
