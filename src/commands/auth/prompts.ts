@@ -1,6 +1,6 @@
 import type { BasedClient } from '@based/client'
 import { authByEmail, authByState } from '../../helpers/auth/index.js'
-import { type AppContext, getEnv } from '../../shared/index.js'
+import { type AppContext, getBranch } from '../../shared/index.js'
 import { isEmailValid, isValueInOptions } from '../../shared/validations.js'
 
 export const newUserText =
@@ -60,7 +60,6 @@ export const userSelect =
       return newUserText(context, basedClient)()
     }
 
-    console.log('select')
     const authorized = (await authByState(
       context,
       basedClient,
@@ -82,7 +81,7 @@ export const orgSelect =
       // newOrgOptions,
     ]
 
-    input = options.length === 1 ? options[0].value : input
+    input = !input && options.length === 1 ? options[0].value : input
 
     const org = await context.form.select({
       message: context.i18n('prompts.auth.org'),
@@ -130,7 +129,15 @@ export const projectSelect =
     //   return newProject(results)
     // }
 
-    input = options.length === 1 ? options[0].value : input
+    input = !input && options.length === 1 ? options[0].value : input
+
+    if (options.length === 1) {
+      context.print
+        .pipe()
+        .info(`You only have one project for the org <b>${org}</b>.`, true)
+        .info(`Project selected: <b>${input}</b>.`, true)
+        .pipe()
+    }
 
     const project = await context.form.select({
       message: context.i18n('commands.init.methods.project.select', org),
@@ -169,10 +176,26 @@ export const envSelect =
     // return newEnv(results)
     // }
 
-    const newEnvOptions = context.i18n('commands.init.methods.env.new')
-    const options = [...newEnvOptions, ...context.form.normalizeOptions(envs)]
+    const branch = await getBranch()
 
-    input = options.length === 1 ? options[0].value : input
+    const newEnvOptions = context.i18n('commands.init.methods.env.new')
+    const options = [
+      ...newEnvOptions,
+      ...context.form.normalizeOptions(envs.filter((env) => env !== branch)),
+    ]
+
+    input = !input && options.length === 1 ? options[0].value : input
+
+    if (options.length === 1) {
+      context.print
+        .pipe()
+        .info(
+          `You only have one env for project <b>${project}</b>, and it has the same name as your branch <b>${branch}</b>.`,
+          true,
+        )
+        .info(`Deploying by #branch: <b>${branch}</b>.`, true)
+        .pipe()
+    }
 
     const env = await context.form.select({
       message: context.i18n('commands.init.methods.env.select', project),
@@ -187,7 +210,7 @@ export const envSelect =
     })
 
     if (env === newEnvOptions[0].value) {
-      return await getEnv()
+      return branch
     }
 
     return env

@@ -6,18 +6,16 @@ export const authByState = async (
   basedClient: BasedClient,
   state: Based.Auth.AuthenticatedUser,
 ): Promise<Based.Auth.AuthenticatedUser | false> => {
-  // context.spinner.start(
-  //   context.i18n('commands.auth.methods.authByState', state.email),
-  // )
+  context.spinner.start(
+    context.i18n('commands.auth.methods.authByState', state.email),
+  )
 
   try {
     await basedClient.setAuthState(state)
 
-    context.spinner.stop()
-
-    // context.print
-    //   .line()
-    //   .success(context.i18n('commands.auth.methods.success'), true)
+    context.print
+      .line()
+      .success(context.i18n('commands.auth.methods.welcomeBack'), true)
   } catch ({ error }) {
     context.print.line().info(`<red>${error}</red>`, context.state.emojis.error)
 
@@ -41,9 +39,9 @@ export const authByEmail = async (
 ): Promise<Based.Auth.AuthenticatedUser | false> => {
   const code: string = (~~(Math.random() * 1e6)).toString(16)
 
-  // context.spinner.start(
-  //   context.i18n('commands.auth.methods.authByEmail', email, code),
-  // )
+  context.spinner.start(
+    context.i18n('commands.auth.methods.authByEmail', email, code),
+  )
 
   try {
     await basedClient.call('login', {
@@ -52,11 +50,9 @@ export const authByEmail = async (
       code,
     })
 
-    context.spinner.stop()
-
-    // context.print
-    //   .line()
-    //   .success(context.i18n('commands.auth.methods.success'), true)
+    context.print
+      .line()
+      .success(context.i18n('commands.auth.methods.success'), true)
   } catch (error) {
     context.print
       .line()
@@ -74,11 +70,22 @@ export const authByEmail = async (
     ts: Date.now(),
   }
 
-  console.log('auth', state)
-
   await basedClient.setAuthState(state)
 
   return state
+}
+
+export const destroyLastSession = (
+  users: Based.Auth.AuthenticatedUser[],
+  authorizedUser: Based.Auth.AuthenticatedUser,
+): Based.Auth.AuthenticatedUser[] => {
+  return users.map((localUser) => {
+    if (localUser.email === authorizedUser.email) {
+      authorizedUser.ts = undefined
+    }
+
+    return localUser
+  })
 }
 
 export const updateLocalUsers = (
@@ -94,5 +101,8 @@ export const updateLocalUsers = (
 export const getLastSession = (
   users: Based.Auth.AuthenticatedUser[],
 ): Based.Auth.AuthenticatedUser | false => {
-  return users.sort((a, b) => b?.ts - a?.ts)[0] || false
+  return (
+    users.filter(({ ts }) => Boolean(ts)).sort((a, b) => b?.ts - a?.ts)[0] ||
+    false
+  )
 }

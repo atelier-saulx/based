@@ -17,6 +17,7 @@ import {
   summaryMaker,
 } from '../../shared/index.js'
 import { isNotEmpty } from '../../shared/validations.js'
+import { devServer } from '../dev/index.js'
 
 export const projectInit = async (program: Command): Promise<void> => {
   const context: AppContext = AppContext.getInstance(program)
@@ -257,6 +258,16 @@ export const projectInit = async (program: Command): Promise<void> => {
         context,
         project: { ...form, cluster, org, project, env },
       })
+
+      const dev = await confirm({
+        message: 'Do you want to start the dev server now?',
+      })
+
+      if (dev) {
+        return devServer({
+          functions: undefined,
+        })
+      }
 
       basedClient.destroy()
     } catch (error) {

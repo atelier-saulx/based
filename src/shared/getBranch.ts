@@ -1,6 +1,6 @@
 let env: string = undefined
 
-export const getEnv = async (): Promise<string> => {
+export const getBranch = async (): Promise<string> => {
   if (env === undefined) {
     env = global.ENV
     if (!env && typeof process === 'object') {
