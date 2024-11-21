@@ -16,6 +16,7 @@ pub usingnamespace @cImport({
     @cInclude("util/crc32c.h");
     @cInclude("util/fast_memmem.h");
 
+    @cInclude("selva/worker_ctx.h");
     @cInclude("selva/db.h");
     @cInclude("selva/fast_linear_search.h");
     @cInclude("selva/fields.h");

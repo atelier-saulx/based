@@ -34,6 +34,11 @@ pub const DbCtx = struct {
 
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
 
+pub fn workerCtxInit() void {
+    // TODO Return external and add deinit call
+    selva.worker_ctx_init();
+}
+
 pub fn createDbCtx(id: u32) !*DbCtx {
     // If you want any var to persist out of the stack you have to do this (including an allocator)
     var arena = try globalAllocator.create(std.heap.ArenaAllocator);

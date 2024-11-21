@@ -39,7 +39,8 @@ OBJ := \
 	sort.o \
 	traverse.o \
 	types.o \
-	update.o
+	update.o \
+	worker_ctx.o
 
 ifeq ($(NAPI),1)
 	OBJ += node_selva.o

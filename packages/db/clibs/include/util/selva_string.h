@@ -93,6 +93,9 @@ struct selva_string {
     }
 #endif
 
+void selva_string_init_tls(void);
+void selva_string_deinit_tls(void);
+
 /**
  * Initialize a statically allocated selva_string.
  * Note that the string buffer doesn't need to be statically allocated, just the struct.

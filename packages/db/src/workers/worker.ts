@@ -11,6 +11,8 @@ if (isMainThread) {
   const { address, channel, atomics } = workerData
   const dbCtx = native.externalFromInt(address)
 
+  native.workerCtxInit();
+
   channel.postMessage(0) // tell parent we are ready
 
   const next = () => {

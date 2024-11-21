@@ -2,6 +2,10 @@
 import db from '../../nativebla.cjs'
 
 export default {
+  workerCtxInit: (): void => {
+    return db.workerCtxInit();
+  },
+
   markMerkleBlock: (buf: Buffer): any => {
     // pstart,
   },

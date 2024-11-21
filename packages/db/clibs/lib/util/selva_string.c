@@ -4,6 +4,7 @@
  */
 #define _GNU_SOURCE
 #define __STDC_WANT_LIB_EXT1__ 1
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -39,8 +40,8 @@
               (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
               (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
-static struct libdeflate_compressor *compressor;
-static struct libdeflate_decompressor *decompressor;
+static __thread struct libdeflate_compressor *compressor;
+static __thread struct libdeflate_decompressor *decompressor;
 
 /**
  * Test that only one or none of excl flags are set in flags.
@@ -917,8 +918,10 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     return res;
 }
 
-__constructor static void init_compressor(void)
+__constructor void selva_string_init_tls(void)
 {
+    assert(!compressor && !decompressor);
+
     /*
      * TODO How to configure compression level?
      * This is now the same as in native/string.zig, hopefully...
@@ -934,9 +937,7 @@ __constructor static void init_compressor(void)
     }
 }
 
-/* FIXME freeing the compressor crashes the io child process at exit. */
-#if 0
-__destructor static void deinit_compressor(void)
+__destructor void selva_string_deinit_tls(void)
 {
     libdeflate_free_compressor(compressor);
     compressor = nullptr;
@@ -944,4 +945,3 @@ __destructor static void deinit_compressor(void)
     libdeflate_free_decompressor(decompressor);
     decompressor = nullptr;
 }
-#endif
