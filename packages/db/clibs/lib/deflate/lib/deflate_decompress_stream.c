@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "jemalloc.h"
 #include "lib_common.h"
 #include "deflate_constants.h"
 #include "libdeflate.h"
@@ -50,14 +51,14 @@ static inline uint8_t *alloc_buf(size_t data_buf_size)
 #if 0
     size_t code_buf_size = 2 * def.cur_block_size;
 
-    return libdeflate_malloc(data_buf_size + code_buf_size);
+    return selva_malloc(data_buf_size + code_buf_size);
 #endif
-    return libdeflate_malloc(data_buf_size);
+    return selva_malloc(data_buf_size);
 }
 
 static inline void free_buf(uint8_t *buf)
 {
-    libdeflate_free(buf);
+    selva_free(buf);
 }
 
 LIBDEFLATEEXPORT struct libdeflate_block_state
@@ -98,11 +99,9 @@ libdeflate_block_state_growbuf(struct libdeflate_block_state *state)
         return false;
     }
 
-    libdeflate_free(state->data_buf);
-
     state->cur_block_size = new_block_size;
     state->data_buf_size = new_data_buf_size(new_block_size);
-    state->data_buf = libdeflate_malloc(state->data_buf_size);
+    state->data_buf = selva_realloc(state->data_buf, state->data_buf_size);
     return true;
 }
 

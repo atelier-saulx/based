@@ -25,6 +25,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "jemalloc.h"
 #include "deflate_compress.h"
 #include "deflate_constants.h"
 
@@ -3892,7 +3893,7 @@ libdeflate_alloc_compressor(int compression_level)
             size += sizeof(c->p.f);
     }
 
-    c = libdeflate_aligned_malloc(MATCHFINDER_MEM_ALIGNMENT, size);
+    c= selva_aligned_alloc(MATCHFINDER_MEM_ALIGNMENT, size);
     if (!c)
         return NULL;
 
@@ -4044,7 +4045,7 @@ libdeflate_compress(struct libdeflate_compressor *c,
 LIBDEFLATEEXPORT void
 libdeflate_free_compressor(struct libdeflate_compressor *c)
 {
-    libdeflate_aligned_free(c);
+    selva_free(c);
 }
 
 unsigned int

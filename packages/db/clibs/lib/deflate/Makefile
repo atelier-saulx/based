@@ -23,8 +23,7 @@ OBJ := \
 	lib/deflate_compress.o \
 	lib/deflate_decompress.o \
 	lib/deflate_decompress_stream.o \
-	lib/strings.o \
-	lib/utils.o
+	lib/strings.o
 
 ifeq ($(uname_M),arm64)
 	OBJ += lib/arm/cpu_features.o
@@ -33,6 +32,7 @@ ifeq ($(uname_M),x86_64)
 	OBJ += lib/x86/cpu_features.o
 endif
 
+LDFLAGS += -ljemalloc_selva
 ifeq ($(uname_S),Linux)
 	LDFLAGS += -shared -fPIC -z relro -z now
 endif

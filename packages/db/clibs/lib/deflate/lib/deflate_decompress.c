@@ -46,6 +46,7 @@
  *   instructions enabled and is used automatically at runtime when supported.
  */
 
+#include "jemalloc.h"
 #include "lib_common.h"
 #include "deflate_constants.h"
 
@@ -1184,7 +1185,7 @@ libdeflate_alloc_decompressor(void)
      *
      * But for simplicity, we currently just zero the whole decompressor.
      */
-    struct libdeflate_decompressor *d = libdeflate_malloc(sizeof(*d));
+    struct libdeflate_decompressor *d = selva_malloc(sizeof(*d));
 
     if (d == NULL)
         return NULL;
@@ -1195,5 +1196,5 @@ libdeflate_alloc_decompressor(void)
 LIBDEFLATEEXPORT void
 libdeflate_free_decompressor(struct libdeflate_decompressor *d)
 {
-    libdeflate_free(d);
+    selva_free(d);
 }

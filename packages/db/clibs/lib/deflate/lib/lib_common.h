@@ -13,13 +13,6 @@
 #define BUILDING_LIBDEFLATE
 
 #include "common_defs.h"
-
-extern void *(*libdeflate_malloc)(size_t);
-extern void (*libdeflate_free)(void *);
-
-void *libdeflate_aligned_malloc(size_t alignment, size_t size);
-void libdeflate_aligned_free(void *ptr);
-
 #include <string.h>
 #include <assert.h>
 

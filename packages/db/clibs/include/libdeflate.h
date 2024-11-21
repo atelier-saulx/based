@@ -307,21 +307,4 @@ libdeflate_decompress_stream(
 LIBDEFLATEEXPORT void
 libdeflate_free_decompressor(struct libdeflate_decompressor *decompressor);
 
-/* ========================================================================== */
-/*                           Custom memory allocator                          */
-/* ========================================================================== */
-
-/**
- * Install a custom memory allocator which libdeflate will use for all memory
- * allocations.
- * 'malloc_func' is a function that must behave like malloc(), and
- * 'free_func' is a function that must behave like free().
- *
- * There must not be any libdeflate_compressor or libdeflate_decompressor
- * structures in existence when calling this function.
- */
-LIBDEFLATEEXPORT void
-libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
-				void (*free_func)(void *));
-
 #endif /* LIBDEFLATE_H */
