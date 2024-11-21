@@ -84,7 +84,7 @@ export const parseFunctions = async (
         ? '<cyan>public</cyan>'
         : '<red>private</red>'
       const type = config.type || 'function'
-      const name = config.name
+      const name = config.name || ''
       const file = rel(path)
       context.print.info(
         `⚒️ <magenta>${type}</magenta> ${name} <i>${access}</i> <dim>${file}</dim>`,
@@ -109,7 +109,7 @@ export const parseFunctions = async (
   const files: Record<string, string> = {}
   const invalids = await Promise.all(
     configs.map(async (configStore) => {
-      const { config, path, index, dir } = configStore
+      const { config, path, index, dir, favicon } = configStore
       const existingPath = paths[config.name]
       if (existingPath) {
         context.print.warning(`Found multiple configs for "${config.name}"`)
@@ -136,8 +136,8 @@ export const parseFunctions = async (
         configStore.app = abs(config.main, dir)
         browserEntryPoints.push(configStore.app)
 
-        if (config.favicon) {
-          configStore.favicon = abs(config.favicon, dir)
+        if (favicon) {
+          configStore.favicon = abs(favicon, dir)
           browserEntryPoints.push(configStore.favicon)
           favicons.add(rel(configStore.favicon))
         }
