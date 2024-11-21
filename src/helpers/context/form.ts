@@ -2,13 +2,14 @@ import {
   type PromptGroup,
   cancel,
   group,
-  intro,
+  isCancel,
   log,
   multiselect,
   outro,
   select,
   text,
 } from '@clack/prompts'
+import { LINE_START } from '../../shared/constants.js'
 import { type AppContext, colorize } from '../../shared/index.js'
 
 type Validate = (value: string | string[]) => string | undefined
@@ -56,9 +57,14 @@ type FormMaker = {
       footer?: string
       cancelMessage?: string
     },
-  ) => ReturnType<typeof group>
+  ) => Promise<Record<string, object>>
   text?: (field: TextField) => Promise<string>
-  select?: (field: SelectField) => Promise<string>
+  normalizeOptions: (
+    values: unknown[],
+    nameKey?: string,
+    valueKey?: string | 'object',
+  ) => FieldOption[]
+  select?: <T>(field: SelectField) => Promise<string | T>
   multiSelect?: (field: MultiSelectField) => Promise<unknown[]>
   collider: Collider
 }
@@ -120,6 +126,12 @@ const collider: Collider = (validation, output) => (value) => {
   return
 }
 
+const errorMessage = (content: string) => {
+  cancel(`${LINE_START}●  ${content}`)
+
+  process.exit(0)
+}
+
 export function contextForm(context: AppContext): FormMaker {
   return {
     collider,
@@ -127,23 +139,19 @@ export function contextForm(context: AppContext): FormMaker {
       const { header, footer, cancelMessage, ...rest } = fields
 
       if (header) {
-        console.log('')
-        intro(colorize(header))
+        context.print.info(`●  ${colorize(header)}`)
       }
 
       const result = await group(rest as PromptGroup<unknown>, {
-        onCancel: () => {
-          cancel(`\r●  ${cancelMessage ?? context.i18n('methods.aborted')}`)
-
-          process.exit(0)
-        },
+        onCancel: () =>
+          errorMessage(cancelMessage ?? context.i18n('methods.aborted')),
       })
 
       if (footer) {
         outro(colorize(footer))
       }
 
-      return result
+      return result as Promise<Record<string, object>>
     },
 
     text: async ({
@@ -182,11 +190,38 @@ export function contextForm(context: AppContext): FormMaker {
         validate: (input) => colorize(validator(input, validation, skip)),
       })) as string
 
+      if (isCancel(result)) {
+        return errorMessage(context.i18n('methods.aborted'))
+      }
+
       if (!result || (skip && result && result.toLowerCase() === 's')) {
         return ''
       }
 
       return result
+    },
+
+    normalizeOptions: (values, labelKey = '', valueKey = '') => {
+      return values.map((value) => {
+        if (typeof value === 'string') {
+          return {
+            label: value,
+            value,
+          }
+        }
+
+        if (!labelKey || !valueKey) {
+          return {
+            label: '<empty>',
+            value: '<empty>',
+          }
+        }
+
+        return {
+          label: value[labelKey],
+          value: valueKey === 'object' ? value : value[valueKey],
+        }
+      })
     },
 
     select: async ({ message, options, input, validation, required }) => {
@@ -206,10 +241,16 @@ export function contextForm(context: AppContext): FormMaker {
         return ''
       }
 
-      return (await select({
+      const result = (await select({
         message: colorize(message),
         options,
       })) as string
+
+      if (isCancel(result)) {
+        return errorMessage(context.i18n('methods.aborted'))
+      }
+
+      return result
     },
 
     multiSelect: async ({
@@ -223,7 +264,7 @@ export function contextForm(context: AppContext): FormMaker {
       if (input) {
         const validationResult = validator(input, validation, false)
 
-        if (typeof validationResult === 'undefined') {
+        if (typeof validationResult === 'undefined' && !required) {
           return input
         }
 
@@ -240,12 +281,18 @@ export function contextForm(context: AppContext): FormMaker {
         message = `${message} ${context.i18n('context.input.enterToSkip')}`
       }
 
-      return (await multiselect({
+      const result = (await multiselect({
         message: colorize(message),
         options,
         initialValues: input,
         required: !skip,
       })) as unknown[]
+
+      if (isCancel(result)) {
+        return errorMessage(context.i18n('methods.aborted'))
+      }
+
+      return result
     },
   }
 }

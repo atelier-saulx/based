@@ -14,7 +14,7 @@ import { globalOptions } from './helpers/index.js'
 import { languages } from './i18n/index.js'
 import { AppContext } from './shared/index.js'
 
-export const init = async () => {
+export const cli = async () => {
   const program: Command = new Command()
   const context: AppContext = AppContext.getInstance(program, languages)
 

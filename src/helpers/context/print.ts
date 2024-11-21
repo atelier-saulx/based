@@ -1,6 +1,7 @@
 import { intro } from '@clack/prompts'
 import type { AppContext } from '../../shared/AppContext.js'
 import { colorize } from '../../shared/colorize.js'
+import { LINE_NEW, LINE_START, LINE_UP } from '../../shared/constants.js'
 
 const logBase =
   (level: keyof Based.Context.State['emojis'], context: AppContext) =>
@@ -19,10 +20,10 @@ const logBase =
         icon = `${icon}  `
       }
 
-      message = `\r${colorize(`${icon}${message}`)}`
+      message = `${LINE_START}${colorize(`${icon}${message}`)}`
 
       if (context.spinner.isActive) {
-        context.spinner.stop(`\x1b[F${message}`)
+        context.spinner.stop(`${LINE_UP}${LINE_START}${message}`)
       } else {
         console.info(message)
       }
@@ -65,7 +66,15 @@ export const contextPrint = (context: AppContext): Based.Context.Print => ({
       return contextPrint(context)
     }
 
-    console.info('')
+    if (context.spinner.isActive) {
+      context.spinner.stop(
+        `${LINE_START}${LINE_UP}${context.state.emojis.pipe}`,
+      )
+
+      return contextPrint(context)
+    }
+
+    console.info(`${LINE_START}${LINE_UP}${LINE_NEW}`)
 
     return contextPrint(context)
   },

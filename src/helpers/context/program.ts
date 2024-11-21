@@ -17,7 +17,9 @@ export async function contextProgram(): Promise<Based.Context.Project> {
     )
 
     if (!basedFile || !Object.keys(basedFile)?.length) {
-      this.print.warning(this.i18n('context.configurationFileNotFound'), true)
+      this.print
+        .warning(this.i18n('context.configurationFileNotFound'), true)
+        .pipe()
     }
   }
 

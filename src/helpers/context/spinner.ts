@@ -1,5 +1,5 @@
 import { spinner as clack } from '@clack/prompts'
-import type { AppContext } from '../../shared/index.js'
+import { type AppContext, colorize } from '../../shared/index.js'
 
 const spinner = clack()
 
@@ -12,7 +12,7 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
         context.spinner.isActive = false
       }
 
-      spinner.start(message)
+      spinner.start(colorize(message))
       context.spinner.isActive = true
 
       return contextSpinner(context)
@@ -22,7 +22,7 @@ export function contextSpinner(context: AppContext): Based.Context.Spinner {
         return contextSpinner(context)
       }
 
-      spinner.stop(message)
+      spinner.stop(colorize(message))
       context.spinner.isActive = false
 
       return contextSpinner(context)

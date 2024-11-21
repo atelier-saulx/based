@@ -234,15 +234,9 @@ declare global {
         email?: string
       }
 
-      type User = {
-        email: string
-        userId?: string
-        token?: string
-        ts?: number
-      }
-
       type AuthenticatedUser = AuthState & {
         email: string
+        ts: number
       }
 
       type Login = {
@@ -258,6 +252,7 @@ declare global {
         path?: string
         format?: Based.Extensions
         dependencies?: srtring[]
+        devDependencies?: srtring[]
         queries?: string[]
         functions?: string[]
       }
@@ -407,6 +402,22 @@ declare global {
         | '@based/env-jobs'
         | '@based/env-metrics-db'
 
+      type UserEnvs = {
+        id: string
+        name: string
+        envs: {
+          org: string
+          project: string
+          env: string
+        }[]
+      }
+
+      type ParsedUserEnvs = {
+        org?: {
+          project: string[]
+        }
+      }
+
       type Template = {
         autoStandby: boolean
         suspended: boolean
@@ -489,6 +500,8 @@ declare global {
     }
 
     type ConfigBase = BasedFunctionConfig & {
+      type: 'authorize' & BasedFunctionConfig['type']
+      main: string
       appParams?: {
         js?: string
         css?: string

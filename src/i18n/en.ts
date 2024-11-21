@@ -19,6 +19,11 @@ export default {
       description: 'Display the help related to the command.',
     },
   },
+  prompts: {
+    auth: {
+      org: 'Chose the organization you want to connect:',
+    },
+  },
   commands: {
     globalOptions: {
       longDescription:
@@ -74,6 +79,20 @@ export default {
           description: 'To speed up the login process.',
         },
       ],
+      methods: {
+        selectUser: 'Some users were found, which one would you like to use?',
+        email: 'Enter your email address:',
+        emailNotValid: 'This is not a valid email. Try again.',
+        newUser: {
+          value: '<new_user>',
+          label: "It's not me.",
+        },
+        authByEmail:
+          'Please check your inbox at <b>${email}</b>, your login code is: <b>${code}</b>...',
+        authByState: 'Authorizing your email <b>${email}</b>...',
+        success: "<b>Email verified. Welcome, let's rock!</b> 🔥",
+        error: 'Was not possible to autenticate your user. ${error}',
+      },
     },
     init: {
       descripion: 'The start point to create your Based project.',
@@ -168,6 +187,8 @@ export default {
           'Do you have any API Key that you want to use for this project?',
         dependencies:
           'Select the dependencies you want to be instaled in your project:',
+        devDependencies:
+          'Select the development dependencies you want to be instaled in your project:',
         summary: {
           header: '<b>Project summary:</b>',
           name: 'Name: <reset>${name}</reset>',
@@ -620,7 +641,8 @@ export default {
     },
   },
   errors: {
-    401: 'It seems you are not logged in. One possible reason could be an expired or invalid token. Please log in again to continue.',
+    401: 'Was not possible to autenticate you. Please check your email and try again. ${error}',
+    402: "Was not possible to autenticate you because your <b>token is expired</b>. Let's try it again!",
     408: 'Connection <b>timeout</b> while trying to reach the cloud. Please check your network connection and try again.',
     404: 'Fatal error while trying to establish a <b>connection to the cloud</b>. Check your <b>${file}</b> file or <b>arguments</b> and try again. ${error}',
     499: 'Could not connect. Check your <b>${file}</b> file or <b>your arguments</b> and try again.',
@@ -638,6 +660,9 @@ export default {
     912: 'Request failed with status code ${code}.',
     913: 'Request error: ${error}',
     914: 'Error parsing the response of the request: ${error}',
+    915: 'Source ZIP file not found.',
+    916: 'Entry point not found in the ZIP file.',
+    917: 'Fatal error: ${error}',
   },
   alias: {
     isExternalPath:
@@ -645,7 +670,7 @@ export default {
   },
   context: {
     configurationFileNotFound:
-      'No <b>Based</b> configuration file found or is empty. <b>It is recommended to create one.</b>',
+      'No <b>Based</b> configuration file found or it is empty. <b>Consider creating one.</b>',
     file: '<dim>Project file:</dim> <b>${file}</b>',
     org: '<dim>Org:</dim> <b>${org}</b>',
     project: '<dim>Project:</dim> <b>${project}</b>',
@@ -667,6 +692,8 @@ export default {
     uploadingFile: 'Uploading file...',
     downloading: 'Downloading file...',
     savedFile: 'Saved file in: <reset><b>${path}</b></reset>',
+    projectCreation: 'Creating your project',
+    projectCreated: 'Project created at: ${path}',
     warning:
       "<b>Warning! This action cannot be undone. Proceed only if you know what you're doing.</b>",
     tools: {
