@@ -1,29 +1,38 @@
 import { clearTimeout } from 'node:timers'
 import { type AuthState, BasedClient, type BasedOpts } from '@based/client'
 import { hashObjectIgnoreKeyOrderNest } from '@saulx/hash'
-import type { AppContext } from './AppContext.js'
+import { AppContext } from './AppContext.js'
 
-const store: Record<
-  string,
-  {
-    users: number
-    client: SharedBasedClient
-  }
-> = {}
+export class SharedBasedClient extends BasedClient {
+  private static instance: Record<
+    string,
+    { users: number; client: SharedBasedClient }
+  >
 
-class SharedBasedClient extends BasedClient {
-  private context: AppContext
+  public static getInstance(opts: BasedOpts): SharedBasedClient {
+    const key = String(hashObjectIgnoreKeyOrderNest(opts))
 
-  public constructor(context: AppContext, opts?: BasedOpts) {
-    super(opts)
-    this.context = context
+    if (!SharedBasedClient.instance?.[key]) {
+      SharedBasedClient.instance = {
+        ...SharedBasedClient.instance,
+        [key]: {
+          users: 0,
+          client: new SharedBasedClient(opts),
+        },
+      }
+
+      SharedBasedClient.instance[key].users++
+    }
+
+    return SharedBasedClient.instance?.[key].client
   }
 
   override async setAuthState(args: AuthState) {
+    const context: AppContext = AppContext.getInstance()
     const timeout = setTimeout(() => {
-      const { file } = this.context.get('basedProject')
+      const { file } = context.get('basedProject')
 
-      this.context.spinner.stop(this.context.i18n('errors.499', file))
+      context.spinner.stop(context.i18n('errors.499', file))
     }, 5e3)
 
     let authState: AuthState
@@ -37,34 +46,29 @@ class SharedBasedClient extends BasedClient {
     } catch (error) {
       clearTimeout(timeout)
 
-      throw String(error).includes('token expired') ? 401 : error
+      return Promise.reject({
+        token: '',
+        userId: '',
+        refreshToken: '',
+        error: String(error).includes('token expired')
+          ? context.i18n('errors.402')
+          : error,
+        persistent: false,
+        type: '',
+      })
     }
   }
 
   override async destroy() {
     const key = String(hashObjectIgnoreKeyOrderNest(this.opts))
-    if (key in store) {
-      store[key].users--
 
-      if (store[key].users === 0) {
-        delete store[key]
+    if (key in SharedBasedClient.instance) {
+      SharedBasedClient.instance[key].users--
+
+      if (SharedBasedClient.instance[key].users === 0) {
+        delete SharedBasedClient.instance[key]
         return super.destroy()
       }
     }
   }
-}
-
-export const getBasedClient = (
-  context: AppContext,
-  opts: BasedOpts,
-): BasedClient => {
-  const key = String(hashObjectIgnoreKeyOrderNest(opts))
-  store[key] ??= {
-    users: 0,
-    client: new SharedBasedClient(context, opts),
-  }
-
-  store[key].users++
-
-  return store[key].client
 }

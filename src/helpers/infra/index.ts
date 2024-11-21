@@ -116,3 +116,25 @@ export const getMachines = async () => {
     throw new Error(context.i18n('errors.903', error))
   }
 }
+
+export const parseOrgsData = (
+  data: Based.Infra.UserEnvs[],
+): Based.Infra.ParsedUserEnvs => {
+  const result: Based.Infra.ParsedUserEnvs = {}
+
+  for (const item of data) {
+    for (const env of item.envs) {
+      if (!result[env.org]) {
+        result[env.org] = {}
+      }
+      if (!result[env.org][env.project]) {
+        result[env.org][env.project] = []
+      }
+      if (!result[env.org][env.project].includes(env.env)) {
+        result[env.org][env.project].push(env.env)
+      }
+    }
+  }
+
+  return result
+}

@@ -1,37 +1,24 @@
-import { homedir } from 'node:os'
-import { join } from 'node:path'
 import type { BasedClient, BasedOpts } from '@based/client'
-import { outputJSON, readJSON } from 'fs-extra/esm'
-import { AppContext, getBasedClient } from './index.js'
-
-const persistPath: string = join(homedir(), '.based/cli')
-const authPath: string = join(persistPath, 'Auth.json')
-const connectionTimeout = 1e3
-
-const authenticateUser = async (
-  email: string,
-  hub: BasedClient,
-  cluster: string,
-  context: AppContext,
-): Promise<Based.Auth.AuthenticatedUser> => {
-  const code: string = (~~(Math.random() * 1e6)).toString(16)
-  context.spinner.start(
-    context.i18n('methods.authenticateUser.loading', email, code),
-  )
-
-  await hub.call('login', {
-    email,
-    skipEmailForTesting: cluster === 'local',
-    code,
-  })
-
-  context.print.success(context.i18n('methods.authenticateUser.success'))
-
-  return {
-    ...(await hub.once('authstate-change')),
-    email,
-  }
-}
+import {
+  envSelect,
+  orgSelect,
+  projectSelect,
+  userSelect,
+} from '../commands/auth/prompts.js'
+import { clusterText } from '../commands/infra/init/prompts.js'
+import {
+  authByState,
+  getLastSession,
+  updateLocalUsers,
+} from '../helpers/auth/index.js'
+import { parseOrgsData } from '../helpers/infra/index.js'
+import { CONNECTION_TIMEOUT, LOCAL_AUTH_INFO } from './constants.js'
+import {
+  AppContext,
+  SharedBasedClient,
+  getFileByPath,
+  saveAsFile,
+} from './index.js'
 
 // TODO
 // Move this logic to the client
@@ -77,34 +64,38 @@ const buildClients = (
   }
 }
 
-const hubConnection = async (
+export const connectToHub = async (
   context: AppContext,
   opts: BasedOpts,
 ): Promise<BasedClient> => {
   const { file } = await context.get('basedProject')
-  const [_, target] =
+  const target =
     opts.org === 'saulx' && opts.project === 'based-cloud'
-      ? ['', context.i18n('methods.hubConnection.cluster')]
+      ? context.i18n('methods.hubConnection.cluster')
       : opts.optionalKey
-        ? ['', context.i18n('methods.hubConnection.project')]
-        : ['', context.i18n('methods.hubConnection.environment')]
+        ? context.i18n('methods.hubConnection.project')
+        : context.i18n('methods.hubConnection.environment')
 
-  const hubClient: BasedClient = getBasedClient(context, opts)
+  const basedClient: BasedClient = SharedBasedClient.getInstance(opts)
 
-  if (!Object.keys(hubClient).length) {
+  if (!basedClient) {
     throw new Error(context.i18n('errors.404', file))
+  }
+
+  if (basedClient.connected) {
+    return basedClient
   }
 
   const timeout = setTimeout(() => {
     context.print.fail(context.i18n('errors.408'), true)
-  }, connectionTimeout)
+  }, CONNECTION_TIMEOUT)
 
   try {
     context.spinner.start(
       context.i18n('methods.hubConnection.connecting', target),
     )
 
-    await hubClient.once('connect')
+    await basedClient.once('connect')
   } catch (error) {
     throw new Error(context.i18n('errors.404', file, error))
   }
@@ -116,24 +107,17 @@ const hubConnection = async (
 
   clearTimeout(timeout)
 
-  return hubClient
+  return basedClient
 }
 
-export const login = async ({
-  email,
-  selectUser,
-}: Based.Auth.Login): Promise<Based.API.Client> => {
+export const newLogin = async (email?: string): Promise<Based.API.Client> => {
   const context: AppContext = AppContext.getInstance()
   const { cluster, org, env, project } = await context.getProgram()
 
-  // context.print.loading(
-  //   context.i18n(
-  //     'methods.hubConnection.connecting',
-  //     context.i18n('methods.hubConnection.cloud'),
-  //   ),
-  // )
+  const users: Based.Auth.AuthenticatedUser[] =
+    await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
 
-  const adminHub: BasedClient = await hubConnection(context, {
+  const basedClientAdmin: BasedClient = await connectToHub(context, {
     org: 'saulx',
     env: 'platform',
     project: 'based-cloud',
@@ -141,104 +125,94 @@ export const login = async ({
     cluster,
   })
 
-  let users: Based.Auth.User[] = await readJSON(authPath).catch(() => [])
-  let user: Based.Auth.User
+  let lastSession = getLastSession(users)
+  let authenticatedUser: Based.Auth.AuthenticatedUser
 
-  if (email) {
-    user = await authenticateUser(email, adminHub, cluster, context)
+  if (lastSession) {
+    lastSession = await authByState(context, basedClientAdmin, lastSession)
 
-    users = users.filter(({ email }) => email !== user.email)
-    users.push(user)
-  }
-
-  if (users.length && !email) {
-    const lastUser: Based.Auth.User = users.sort((a, b) => b?.ts - a?.ts)[0]
-
-    try {
-      await adminHub.setAuthState({
-        ...lastUser,
-        type: 'based',
-      })
-
-      user = lastUser
-    } catch (error) {
-      users = users.filter((user) => user !== lastUser)
-
-      if (!Number.isNaN(error) && typeof error === 'string') {
-        // TODO Fix the type in the i18n to handle dynamic strings
-        const errorMsg = `errors.${error}` as Based.i18n.NestedKeys<
-          typeof context.i18n
-        >
-
-        context.print.warning(context.i18n(errorMsg), true)
-      } else {
-        context.print.warning(error)
-      }
-    }
-
-    if (selectUser) {
-      const choices: Based.Context.SelectInputItems[] = users.map((user) => ({
-        name: user.email,
-        value: user,
-      }))
-      choices.push({
-        name: context.i18n('methods.login.otherUser'),
-        value: null,
-      })
-
-      user = await context.input.select(
-        context.i18n('methods.login.selectUser'),
-        choices,
-        false,
-        false,
-      )
+    if (lastSession) {
+      authenticatedUser = lastSession
     }
   }
 
-  if ((!user && !email) || !users || !users.length) {
-    const email: string = await context.input.email(
-      context.i18n('methods.login.email'),
-    )
+  if (!authenticatedUser) {
+    const form = await context.form.group({
+      user: userSelect(context, basedClientAdmin, users, email),
+    })
 
-    user = await authenticateUser(email, adminHub, cluster, context)
-
-    users = users.filter(({ email }) => email !== user.email)
-    users.push(user)
+    authenticatedUser = form.user as Based.Auth.AuthenticatedUser
   }
 
-  user.ts = Date.now()
-  await outputJSON(authPath, users)
+  await saveAsFile(
+    updateLocalUsers(users, authenticatedUser),
+    LOCAL_AUTH_INFO,
+    'json',
+  )
 
-  const client: BasedClient = await hubConnection(context, {
-    cluster,
-    org,
-    env,
-    project,
+  let parsedUserEnvs: Based.Infra.ParsedUserEnvs
+
+  if (!cluster || !org || !project || !env) {
+    const userCloudInfo: Based.Infra.UserEnvs[] = await basedClientAdmin
+      .query(context.endpoints.USER_CLOUD_INFO.endpoint, {
+        userId: basedClientAdmin.authState?.userId,
+      })
+      .get()
+
+    parsedUserEnvs = parseOrgsData(userCloudInfo)
+  }
+
+  const form = await context.form.group({
+    cluster: clusterText(context, false, cluster),
+    ...(!org && { org: orgSelect(context, Object.keys(parsedUserEnvs), org) }),
+    ...(!project && {
+      project: (results) =>
+        projectSelect(
+          context,
+          Object.keys(parsedUserEnvs[results.results.org]),
+          project,
+        )(results),
+    }),
+    ...(!env && {
+      env: (results) =>
+        envSelect(
+          context,
+          parsedUserEnvs[results.results.org][results.results.project],
+          env,
+        )(results),
+    }),
   })
 
-  await client.setAuthState({
-    ...adminHub.authState,
-    type: 'based',
-  })
+  const basedProject = {
+    ...form,
+    ...(cluster && { cluster }),
+    ...(org && { org }),
+    ...(project && { project }),
+    ...(env && { env }),
+  }
 
-  const envHub: BasedClient = await hubConnection(context, {
-    cluster,
-    org,
-    env,
-    project,
+  const basedClientEnv: BasedClient = await connectToHub(context, {
+    ...basedProject,
     key: 'cms',
     optionalKey: true,
   })
 
-  await envHub.setAuthState({
-    ...adminHub.authState,
-    type: 'based',
-  })
+  await basedClientEnv.setAuthState(authenticatedUser)
 
-  context.print.success(
-    context.i18n('methods.login.success', user.email),
-    '<primary>♥</primary>',
+  const basedClientProject: BasedClient = await connectToHub(
+    context,
+    basedProject,
   )
 
-  return buildClients(adminHub, envHub, client)
+  await basedClientProject.setAuthState(authenticatedUser)
+
+  const clients = buildClients(
+    basedClientAdmin,
+    basedClientEnv,
+    basedClientProject,
+  )
+
+  context.set('basedProject', basedProject)
+
+  return clients
 }

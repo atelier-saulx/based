@@ -7,15 +7,7 @@ export const fileExtensions = ['ts', 'js', 'json']
 export const installableTools = ['typescript', 'vitest', 'biome', 'react']
 export const BASED_FILE = 'based'
 export const BASED_FILE_BOILERPLATE = `${BASED_FILE}_boilerplate.zip`
-export const BASED_FILE_BOILERPLATE_ZIPENTRY = './based-boilerplate-main/'
-
-export const clearPackageDependencies = (pkg: Record<string, unknown>) => {
-  const removeFromResults = ['@based/client']
-
-  return Object.keys(pkg?.dependencies).filter(
-    (item) => !removeFromResults.includes(item),
-  )
-}
+export const BASED_FILE_BOILERPLATE_ZIPENTRY = `${BASED_FILE}-boilerplate-main/`
 
 const isBasedFile = (file: string, type: string) =>
   file.includes(type) && isFormatValid(file)
@@ -89,7 +81,7 @@ export const formatAsObject = (obj: object, indentLevel = 1): string => {
 }
 
 export const saveAsFile = async (
-  obj: Record<string, unknown>,
+  obj: Record<string, unknown> | unknown[],
   filePath: string,
   format: 'ts' | 'json' | 'js',
 ): Promise<boolean> => {
