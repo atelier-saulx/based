@@ -1,3 +1,5 @@
+export * from './prompts.js'
+
 import { join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import { exportInfraTemplate } from '../../../helpers/index.js'
