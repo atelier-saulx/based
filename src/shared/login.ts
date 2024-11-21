@@ -1,4 +1,5 @@
 import type { BasedClient, BasedOpts } from '@based/client'
+import { confirm } from '@clack/prompts'
 import {
   envSelect,
   orgSelect,
@@ -8,6 +9,7 @@ import {
 import { clusterText } from '../commands/infra/init/prompts.js'
 import {
   authByState,
+  destroyLastSession,
   getLastSession,
   updateLocalUsers,
 } from '../helpers/auth/index.js'
@@ -215,4 +217,39 @@ export const newLogin = async (email?: string): Promise<Based.API.Client> => {
   context.set('basedProject', basedProject)
 
   return clients
+}
+
+export const logout = async () => {
+  const context: AppContext = AppContext.getInstance()
+  const users: Based.Auth.AuthenticatedUser[] =
+    await getFileByPath<Based.Auth.AuthenticatedUser[]>(LOCAL_AUTH_INFO)
+
+  const lastSession = getLastSession(users)
+
+  if (lastSession) {
+    context.print.info(
+      `The user <b>${lastSession.email}</b> is currently connected.`,
+      true,
+    )
+
+    const logout = await confirm({
+      message: 'Do you want to disconnect the account?',
+    })
+
+    if (logout) {
+      const autenticatedUsers = destroyLastSession(users, lastSession)
+
+      await saveAsFile(autenticatedUsers, LOCAL_AUTH_INFO, 'json')
+
+      context.print.success(context.i18n('methods.logout.success'), true)
+    } else {
+      context.print.fail(context.i18n('methods.aborted'))
+    }
+  }
+
+  if (!lastSession) {
+    context.print.fail(
+      "I couldn't find any user to disconnect. Please log in first to start using <b>Based</b>.",
+    )
+  }
 }

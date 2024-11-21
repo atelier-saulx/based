@@ -214,6 +214,7 @@ declare global {
     namespace Commands {
       type Names =
         | 'auth'
+        | 'disconnect'
         | 'globalOptions'
         | 'backups'
         | 'logs'

@@ -70,6 +70,11 @@ export default {
         },
       ],
     },
+    disconnect: {
+      description: 'Disconnect your user locally.',
+      example: 'npx @based/cli disconnect',
+      options: [],
+    },
     auth: {
       description: 'Authorize your user in the Based Cloud.',
       example: 'npx @based/cli auth',
@@ -91,6 +96,7 @@ export default {
           'Please check your inbox at <b>${email}</b>, your login code is: <b>${code}</b>...',
         authByState: 'Authorizing your email <b>${email}</b>...',
         success: "<b>Email verified. Welcome, let's rock!</b> 🔥",
+        welcomeBack: "<b>Welcome back! Let's rock!</b> 🔥",
         error: 'Was not possible to autenticate your user. ${error}',
       },
     },
@@ -717,6 +723,9 @@ export default {
       selectUser: 'Select user',
       email: 'Enter your email address:',
       success: 'User: <b>${email}</b> logged in successfully!',
+    },
+    logout: {
+      success: 'You are now disconnected. See you soon!',
     },
     hubConnection: {
       cluster: 'Based Cluster',
