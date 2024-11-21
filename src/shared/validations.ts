@@ -1,3 +1,5 @@
+import type { AppContext } from './AppContext.js'
+
 export const isNotEmpty = (value: string): boolean =>
   value !== '' && value !== undefined
 
@@ -20,3 +22,15 @@ export const isValueNotInOptions =
 
 export const isFunctionsValid = <T extends string>(value: T): boolean =>
   value.split(',').every((element) => isValidFunctionName(element))
+
+export const isEmailValid = (value: string): boolean => {
+  const at: number = value.lastIndexOf('@')
+  const dot: number = value.lastIndexOf('.')
+
+  return at > 0 && at < dot - 1 && dot < value.length - 2
+}
+
+export const validationMessage =
+  (errorMessage: AppContext['i18n'], option: string) =>
+  (value: string | number) =>
+    errorMessage('errors.901', option, value ?? '')
