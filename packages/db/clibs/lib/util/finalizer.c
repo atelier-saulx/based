@@ -8,17 +8,8 @@
 #include "jemalloc.h"
 #include "util/finalizer.h"
 
-struct finalizer_item pool[1000];
-struct finalizer_stack free_list;
-
-__constructor static void init_finalizer_free_list(void)
-{
-    SLIST_INIT(&free_list);
-
-    for (size_t i = 0; i < num_elem(pool); i++) {
-        SLIST_INSERT_HEAD(&free_list, &pool[i], entries);
-    }
-}
+/* TODO These are never freed */
+static __thread struct finalizer_stack free_list = SLIST_HEAD_INITIALIZER(free_list);
 
 void finalizer_init(struct finalizer *fin)
 {
