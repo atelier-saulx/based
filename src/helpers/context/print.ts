@@ -1,4 +1,4 @@
-import { intro } from '@clack/prompts'
+import { intro, outro } from '@clack/prompts'
 import type { AppContext } from '../../shared/AppContext.js'
 import { colorize } from '../../shared/colorize.js'
 import { LINE_NEW, LINE_START, LINE_UP } from '../../shared/constants.js'
@@ -42,6 +42,15 @@ export const contextPrint = (context: AppContext): Based.Context.Print => ({
 
     return contextPrint(context)
   },
+  outro: (message: string): Based.Context.Print => {
+    if (!message) {
+      return contextPrint(context)
+    }
+
+    outro(colorize(message))
+
+    return contextPrint(context)
+  },
   step: logBase('info', context),
   pipe: (message?: string): Based.Context.Print =>
     logBase('info', context)(message ?? '', context.state.emojis.pipe),
@@ -53,11 +62,9 @@ export const contextPrint = (context: AppContext): Based.Context.Print => ({
     icon: boolean | string = false,
     killCode: number = 1,
   ): void => {
-    if (!message) {
-      process.exit(killCode ?? 0)
+    if (message) {
+      logBase('error', context)(message, icon)
     }
-
-    logBase('error', context)(message, icon)
 
     process.exit(killCode ?? 0)
   },
@@ -74,7 +81,7 @@ export const contextPrint = (context: AppContext): Based.Context.Print => ({
       return contextPrint(context)
     }
 
-    console.info(`${LINE_START}${LINE_UP}${LINE_NEW}`)
+    console.info(`${LINE_START}${LINE_UP}${LINE_NEW} `)
 
     return contextPrint(context)
   },

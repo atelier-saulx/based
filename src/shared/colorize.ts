@@ -37,8 +37,8 @@ export function colorize(content: string | string[]): string | string[] {
     grey: pc.gray,
     primary: formatter('\x1b[38;2;75;65;255m', '\x1b[39m'),
     bgPrimary: formatter('\x1b[48;2;75;65;255m', '\x1b[49m'),
-    seconday: formatter('\x1b[38;2;255;31;133m', '\x1b[39m'),
-    bgSeconday: formatter('\x1b[48;2;255;31;133m', '\x1b[49m'),
+    secondary: formatter('\x1b[38;2;255;31;133m', '\x1b[39m'),
+    bgSecondary: formatter('\x1b[48;2;255;31;133m', '\x1b[49m'),
     reset: (text: string) => `\u001b[0m${text}`,
   }
 

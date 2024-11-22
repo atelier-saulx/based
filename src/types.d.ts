@@ -111,6 +111,7 @@ declare global {
       interface Spinner {
         start: (message?: string, timeout?: number) => this
         stop: (message?: string) => this
+        text: (message?: string) => this
         isActive: boolean
       }
 
@@ -118,6 +119,7 @@ declare global {
 
       interface Print {
         intro: (message: string) => this
+        outro: (message: string) => this
         step: PrintMethodBase
         info: PrintMethodBase
         success: PrintMethodBase
