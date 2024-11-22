@@ -22,7 +22,7 @@ await test('save simple range', async (t) => {
           name: { type: 'string' },
           email: { type: 'string' },
           age: { type: 'uint32' },
-          manifesto: { type: 'string' },
+          story: { type: 'string' },
         },
       },
     },
@@ -45,17 +45,17 @@ await test('save simple range', async (t) => {
       age: i,
       name: 'mr flop ' + i,
       email: 'abuse@disaster.co.uk',
-      manifesto: italy.substring(xn1 * slen, xn2 * slen),
+      story: italy.substring(xn1 * slen, xn2 * slen),
     })
   }
 
   const res = await db.drain()
-  console.error('created all nodes', res)
+  console.error('created all nodes', res, 'ms')
 
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  console.error('save1 rdy', save1_end - save1_start)
+  console.error('save1 rdy', save1_end - save1_start, 'ms')
   const firstHash = db.merkleTree.getRoot().hash
 
   db.update('user', 1, {
@@ -72,7 +72,7 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.stop()
   const save2_end = performance.now()
-  console.error('save2 rdy', save2_end - save2_start)
+  console.error('save2 rdy', save2_end - save2_start, 'ms')
   const secondHash = db.merkleTree.getRoot().hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
@@ -100,7 +100,7 @@ await test('save simple range', async (t) => {
     return newDb.destroy()
   })
   const load_end = performance.now()
-  console.log('load rdy', load_end - load_start)
+  console.log('load rdy', load_end - load_start, 'ms')
   const thirdHash = db.merkleTree.getRoot().hash
 
   //console.log([firstHash, secondHash, thirdHash])
