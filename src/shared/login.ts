@@ -216,6 +216,13 @@ export const newLogin = async (email?: string): Promise<Based.API.Client> => {
 
   context.set('basedProject', basedProject)
 
+  if (lastSession) {
+    context.print
+      .pipe()
+      .success(context.i18n('commands.auth.methods.welcomeBack'), true)
+      .line()
+  }
+
   return clients
 }
 

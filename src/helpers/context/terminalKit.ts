@@ -15,6 +15,7 @@ export function contextTerminalKit({
   const contentLines: string[] = []
 
   term.clear()
+  term.eraseDisplayAbove()
   term.grabInput({ mouse: 'motion', safe: true })
 
   if (title) {
@@ -248,6 +249,10 @@ export function contextTerminalKit({
   }
 
   addHeaderRows(headerContent)
+
+  for (let index = 0; index <= term.height; index++) {
+    console.log()
+  }
 
   return {
     kill,

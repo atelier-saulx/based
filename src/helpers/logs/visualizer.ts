@@ -75,10 +75,13 @@ export const visualizer = async (
   let renderData: Based.Logs.RenderData
 
   if (args.monitor) {
+    const appName = context.get('appName')
+    const versionNo = context.get('appVersion')
+
     const { kill, addRow } = context.terminalKit({
-      title: context.get('appName'),
+      title: appName,
       header: colorize([
-        `${context.get('appTitle')}`,
+        `<bgPrimary><b> ${appName} </b></bgPrimary> <dim>${versionNo}</dim>`,
         `Viewing Logs for Environment: [${envLabels.join(' | ')}] ${args.stream ? '<b><red>LIVE</red></b>' : ''}`,
         `Active Filters: [${filterLabels.join(' | ')}]`,
       ]),
