@@ -325,7 +325,7 @@ export const makeProject = async (args: Based.Init.Make) => {
       //   )),
       context.i18n(
         'commands.init.methods.summary.dependencies',
-        project.dependencies?.join(', '),
+        [...project.dependencies, ...project.devDependencies]?.join(', '),
       ),
       context.i18n('commands.init.methods.summary.saveIn', project.path),
     ].filter(Boolean),
@@ -414,7 +414,7 @@ export const makeProject = async (args: Based.Init.Make) => {
 
       await saveAsFile(basedProjectTemplate, project.path, project.format)
 
-      context.spinner.stop('Project created!')
+      context.spinner.stop('<green>♥</green>  Project created!')
 
       const npm = await confirm({
         message: 'Do you want to install your dependencies now?',
