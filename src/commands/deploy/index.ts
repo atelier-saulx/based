@@ -43,6 +43,7 @@ const types = {
 
 const warned = new Set()
 export const invalidate = async (
+  context: AppContext,
   fileName: string,
   config: Config,
 ): Promise<boolean> => {
@@ -80,16 +81,16 @@ export const invalidate = async (
   if (hasType) {
     warned.delete(fileName)
   } else if (!warned.has(fileName)) {
-    console.warn(
-      `${pc.yellow(
-        `⚠️  missing type "${typeName}" in function "${config.name}" of type "${config.type}"`,
-      )} ${pc.dim(rel(fileName))}`,
+    context.print.warning(
+      `<red>missing type "${typeName}" in function "${config.name}" of type "${config.type}"</red> <dim>${rel(fileName)}</dim>`,
+      true,
     )
+
     warned.add(fileName)
   }
 
   if (!hasExport) {
-    console.error(pc.red(`nothing exported in: ${fileName}`))
+    context.print.warning(`<red>nothing exported in: ${fileName}</red>`, true)
     return true
   }
 }
@@ -101,6 +102,7 @@ const queuedFileUpload = queued(
     if (status === 200) {
       return { src: destUrl }
     }
+
     return client.stream('db:file-upload', payload)
   },
   { dedup: (_client, payload) => hash(payload), concurrency: 10 },
@@ -108,6 +110,7 @@ const queuedFileUpload = queued(
 
 const queuedFnDeploy = queued(
   async (
+    context: AppContext,
     client: BasedClient,
     checksum: number,
     config: Config,
@@ -136,13 +139,16 @@ const queuedFnDeploy = queued(
           },
         })
         .catch((error) => {
-          console.error(
-            pc.red(`could not save sourcemap for: ${config.name}`),
-            error.message,
+          context.print.warning(
+            `<red>could not save sourcemap for: ${config.name} ${error.message}</red>`,
+            true,
           )
         })
     } else {
-      console.error(pc.red('no dist id returned from set-function'))
+      context.print.warning(
+        '<red>no dist id returned from set-function</red>',
+        true,
+      )
     }
 
     return { distId }
@@ -169,6 +175,7 @@ type ConfigStore = {
 }
 
 export const parseFunctions = async (
+  context: AppContext,
   functions: string[],
   onChange,
   publicPath: string,
@@ -180,6 +187,8 @@ export const parseFunctions = async (
   if (!functions) {
     schema = null
   }
+
+  context.print.intro('<b>Preparing your functions...</b>').pipe()
 
   // bundle the configs and schema (if necessary)
   const configBundles = await bundle({
@@ -206,27 +215,45 @@ export const parseFunctions = async (
 
   if (!configs.length) {
     const err = `No ${functions ? 'matching ' : ''}function configs found`
-    console.info(pc.yellow(err))
+    context.print.warning(`<yellow>${err}</yellow>`, true)
     throw new Error(err)
   }
 
   // handle schema
   if (schema) {
     const schemaPayload = parseSchema(configBundles, schema)
-    console.info(
-      `${pc.blue('schema')} ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} ${pc.dim(rel(schema))}`,
+    context.print.info(
+      `<blueBright><b>[schema]</b></blueBright> ${schemaPayload.map(({ db = 'default' }) => db).join(', ')} <dim>${rel(schema)}</dim>`,
+      '<blueBright>◆</blueBright>',
     )
   }
+
+  const functionsNameWidth = configs.reduce((acc, item) => {
+    const name: string =
+      item.config.type === ('authorize' as Config['type'])
+        ? 'authorize'
+        : item.config.name
+
+    return name.length > acc ? name.length : acc
+  }, 0)
 
   // log matching configs and find function indexes
   await Promise.all(
     configs.map(async (item) => {
       const { config, path } = item
-      const access = config.public ? `${pc.cyan('public')} ` : ''
-      const type = pc.magenta(config.type || 'function')
-      const name = config.name
-      const file = pc.dim(rel(path))
-      console.info(`${type} ${name} ${access}${file}`)
+      const access = config.public
+        ? `<secondary>${'public'.padEnd(7)}</secondary>`
+        : `<secondary>${'private'.padEnd(7)}</secondary>`
+      const type = config.type || 'function'
+      const name =
+        config.type === ('authorize' as Config['type'])
+          ? 'authorize'
+          : config.name
+      const file = rel(path)
+      context.print.info(
+        `<secondary>${type.padEnd(9)}</secondary> <dim>|</dim> <b>${name.padEnd(functionsNameWidth)}</b> <dim>|</dim> ${access} <dim>${file}</dim>`,
+        '<secondary>◆</secondary>',
+      )
 
       const files = await readdir(item.dir)
       for (const file of files) {
@@ -237,6 +264,8 @@ export const parseFunctions = async (
       }
     }),
   )
+
+  context.print.outro('<b>Functions ready!</b>')
 
   // validate and create bundle entryPoints
   const paths: Record<string, string> = {}
@@ -249,24 +278,30 @@ export const parseFunctions = async (
       const { config, path, index, dir } = configStore
       const existingPath = paths[config.name]
       if (existingPath) {
-        console.info(pc.red(`found multiple configs for "${config.name}"`))
+        context.print.warning(
+          `<red>found multiple configs for "${config.name}"</red>`,
+          true,
+        )
+
         return true
       }
       paths[config.name] = path
       if (!index) {
-        console.info(
-          pc.red(`could not find index.ts or index.js for "${config.name}"`),
+        context.print.warning(
+          `</red>could not find index.ts or index.js for "${config.name}"</red>`,
+          true,
         )
+
         return true
       }
 
       if (config.type === 'app') {
         if (!config.main) {
-          console.info(
-            pc.red(
-              `no "main" field defined for "${config.name}" of type "app"`,
-            ),
+          context.print.warning(
+            `<red>no "main" field defined for "${config.name}" of type "app"</red>`,
+            true,
           )
+
           return true
         }
 
@@ -287,20 +322,20 @@ export const parseFunctions = async (
         const outsideRootFile = matched.find((file) => file.startsWith('../'))
 
         if (outsideRootFile) {
-          console.info(
-            pc.red(
-              `invalid "fields" defined for "${config.name}" - ${outsideRootFile} is not in ${dir}`,
-            ),
+          context.print.warning(
+            `<red>invalid "fields" defined for "${config.name}" - ${outsideRootFile} is not in ${dir}</red>`,
+            true,
           )
+
           return true
         }
 
         if (!matched.length) {
-          console.info(
-            pc.red(
-              `invalid "fields" defined for "${config.name}" - no files matched`,
-            ),
+          context.print.info(
+            `<red>invalid "fields" defined for "${config.name}" - no files matched</red>`,
+            true,
           )
+
           return true
         }
 
@@ -311,14 +346,14 @@ export const parseFunctions = async (
 
       nodeEntryPoints.push(index)
 
-      return invalidate(index, config)
+      return invalidate(context, index, config)
     }),
   )
 
   const cancelled = invalids.find(Boolean)
 
   if (cancelled) {
-    throw new Error('❌ deploy cancelled')
+    throw context.print.fail(context.i18n('methods.aborted'), true)
   }
 
   const replaceBasedConfigPlugin = (newConfig) => ({
@@ -333,37 +368,52 @@ export const parseFunctions = async (
     },
   })
 
+  const introFunctions = onChange
+    ? context.print.intro('<b>Bundling your functions...</b>').pipe()
+    : context.print.info('<b><blue>◉</blue>  Bundling your functions...</b>')
+
+  const introAssets = onChange
+    ? context.print
+        .intro('<b>Bundling your assets and dependencies...</b>')
+        .pipe()
+    : context.print.info(
+        '<b><blue>◉</blue>  Bundling your assets and dependencies...</b>',
+      )
+
   // build the functions
-  const [nodeBundles, browserBundles] = await Promise.all([
-    bundle(
-      {
-        entryPoints: nodeEntryPoints,
-        sourcemap: 'external',
-      },
-      onChange,
-    ),
-    bundle(
-      {
-        publicPath,
-        entryPoints: browserEntryPoints,
-        sourcemap: true,
-        platform: 'browser',
-        bundle: true,
-        ...(staticPath && {
-          plugins: [
-            replaceBasedConfigPlugin({
-              url: staticPath,
-            }),
-          ],
-        }),
-        define: {
-          global: 'window',
-          'process.env.NODE_ENV': '"production"',
+  const [_logFunctions, nodeBundles, _logAssets, browserBundles] =
+    await Promise.all([
+      introFunctions,
+      await bundle(
+        {
+          entryPoints: nodeEntryPoints,
+          sourcemap: 'external',
         },
-      },
-      onChange,
-    ),
-  ])
+        onChange,
+      ),
+      introAssets,
+      await bundle(
+        {
+          publicPath,
+          entryPoints: browserEntryPoints,
+          sourcemap: true,
+          platform: 'browser',
+          bundle: true,
+          ...(staticPath && {
+            plugins: [
+              replaceBasedConfigPlugin({
+                url: staticPath,
+              }),
+            ],
+          }),
+          define: {
+            global: 'window',
+            'process.env.NODE_ENV': '"production"',
+          },
+        },
+        onChange,
+      ),
+    ])
 
   return { schema, configs, favicons, nodeBundles, browserBundles, files }
 }
@@ -379,7 +429,9 @@ export const deploy = async (program: Command) => {
 
   cmd.action(
     async ({ functions, watch }: { functions: string[]; watch: boolean }) => {
-      process.on('SIGINT', () => process.exit(0))
+      process.on('SIGINT', () => {
+        context.print.pipe().fail(context.i18n('methods.aborted'))
+      })
       const context: AppContext = AppContext.getInstance(program)
       await context.getProgram()
       const basedClient = await context.getBasedClient()
@@ -387,7 +439,13 @@ export const deploy = async (program: Command) => {
         .get('project')
         .call('based:env-info')
       const { nodeBundles, browserBundles, schema, favicons, configs } =
-        await parseFunctions(functions, watch && update, publicPath, '')
+        await parseFunctions(
+          context,
+          functions,
+          watch && update,
+          publicPath,
+          '',
+        )
 
       const assetsMap: Record<string, string> = {}
       let previous = new Set<string | number>()
@@ -399,7 +457,7 @@ export const deploy = async (program: Command) => {
 
       async function update(err) {
         if (err) {
-          console.error(err)
+          context.print.warning(`<red>${err}</red>`, true)
           return
         }
 
@@ -413,13 +471,15 @@ export const deploy = async (program: Command) => {
           deployed.add(hashed)
 
           if (!previous.has(hashed)) {
-            context.spinner.start()
             const text = textFactory('deployed', 'schema', schemaPayload.length)
+
             context.spinner.start(text(0))
+
             await basedClient
               .get('project')
               .call('db:set-schema', schemaPayload)
-            context.print.success(text())
+
+            context.print.success(text(), true)
           }
         }
 
@@ -453,10 +513,11 @@ export const deploy = async (program: Command) => {
           })
 
         if (uploads.length) {
-          const text = textFactory('uploaded', 'asset', uploads.length)
+          const text = textFactory('Uploaded', 'asset', uploads.length)
           let uploading = 0
 
           context.spinner.start(text(0))
+          context.print.line()
 
           await Promise.all(
             uploads.map(async ({ path, contents, ext, fileName }) => {
@@ -472,13 +533,15 @@ export const deploy = async (program: Command) => {
                 },
                 destUrl,
               )
-              context.print.info(text(++uploading))
+
+              context.spinner.text(text(++uploading))
+
               assetsMap[path] = destUrl
               assetsMap[fileName] = destUrl
             }),
           )
 
-          context.print.success(text())
+          context.print.success(text(), true)
         }
 
         // deploys
@@ -517,7 +580,7 @@ export const deploy = async (program: Command) => {
           .filter(({ checksum }) => !previous.has(checksum))
 
         if (deploys.length) {
-          const text = textFactory('deployed', 'function', deploys.length)
+          const text = textFactory('Deployed', 'function', deploys.length)
           // deploy functions
           let deploying = 0
           let url = basedClient
@@ -532,38 +595,51 @@ export const deploy = async (program: Command) => {
           const logs = await Promise.all(
             deploys.map(async ({ checksum, config, js, sourcemap }) => {
               await queuedFnDeploy(
+                context,
                 basedClient.get('project'),
                 checksum,
                 config,
                 js,
                 sourcemap,
               )
-              context.print.info(text(++deploying))
+
+              context.spinner.text(text(++deploying))
+
               const { path = `/${config.name}`, public: isPublic } = config
+
               if (isPublic) {
-                return `🚀 ${pc.dim(url)}${path}`
+                return `<dim>${url}</dim>${path}`
               }
             }),
           )
 
-          context.print.success(text())
+          context.print
+            .success(text(), true)
+            .line()
+            .intro(`Your application is now ${pc.bold('LIVE')} at these URLs:`)
+            .pipe()
 
           for (const log of logs) {
             if (log) {
-              console.info(log)
+              context.print.info(log, true)
             }
           }
+
+          context.print.outro('<b>The deployment is complete.</b>')
         }
 
         previous = deployed
       }
+      process.exit(0)
     },
   )
 }
 
 function textFactory(prefix: string, suffix: string, total: number) {
   return (amount?: number) => {
-    return `${prefix} ${amount === undefined ? total : `${amount}/${total}`} ${suffix}${total === 1 ? '' : 's'}`
+    return pc.bold(
+      `${prefix} ${amount === undefined ? total : `${amount}/${total}`} ${suffix}${total === 1 ? '' : 's'}.`,
+    )
   }
 }
 

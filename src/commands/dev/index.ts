@@ -6,7 +6,6 @@ import type { OutputFile } from '@based/bundle'
 import { hash } from '@saulx/hash'
 import type { Command } from 'commander'
 import getPort from 'get-port'
-import pc from 'picocolors'
 import { WebSocket, WebSocketServer } from 'ws'
 import { AppContext } from '../../shared/index.js'
 import { invalidate, parseFunctions } from '../deploy/index.js'
@@ -80,7 +79,9 @@ const basedOptsScript = (opts) => {
 }
 
 export const devServer = async ({ functions }) => {
-  process.on('SIGINT', () => process.exit(0))
+  process.on('SIGINT', () => {
+    context.print.pipe().fail(context.i18n('methods.aborted'), true)
+  })
   const context: AppContext = AppContext.getInstance()
   await context.getProgram()
   const basedClient = await context.getBasedClient()
@@ -95,7 +96,19 @@ export const devServer = async ({ functions }) => {
   const devServerWSPath = `ws://${ip}:${devPort}`
   const publicPath = `http://${ip}:${filePort}`
   // const staticPath = `http://${ip}:${staticPort}`
+  context.print.info(
+    `<primary><b>Based Dev Server:</b></primary> http://localhost:${devPort} | <dim>http://${ip}:${devPort}</dim>`,
+    '<primary>▶</primary>',
+  )
+  context.print
+    .info(
+      `<primary><b>Based Bundle Server:</b></primary> http://localhost:${filePort} | <dim>http://${ip}:${filePort}</dim>`,
+      '<primary>▶</primary>',
+    )
+    .line()
+
   const { nodeBundles, browserBundles, configs } = await parseFunctions(
+    context,
     functions,
     update,
     publicPath,
@@ -164,13 +177,6 @@ export const devServer = async ({ functions }) => {
   //     destination: files[i],
   //   })
   // }
-
-  console.info(
-    `🚀 dev server: http://localhost:${devPort} ${pc.dim(`http://${ip}:${devPort}`)}`,
-  )
-  console.info(
-    `📦 bundle server: http://localhost:${filePort} ${pc.dim(`http://${ip}:${filePort}`)} `,
-  )
 
   // http
   //   .createServer((request, response) => {
@@ -257,7 +263,7 @@ export const devServer = async ({ functions }) => {
 
         checksums[config.name] = checksum
 
-        if (await invalidate(index, config)) {
+        if (await invalidate(context, index, config)) {
           // ts validation
           server.functions.add({
             [config.name]: {
@@ -334,8 +340,9 @@ export const devServer = async ({ functions }) => {
               }
 
               if (i === -1) {
-                console.warn(
-                  '⚠️ invalid html, skip livereload tag and based opts tag',
+                context.print.warning(
+                  '<yellow>invalid html, skip livereload tag and based opts tag</yellow>',
+                  true,
                 )
                 return html
               }
