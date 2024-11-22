@@ -368,22 +368,26 @@ export const parseFunctions = async (
     },
   })
 
-  const introFunctions = onChange
-    ? context.print.intro('<b>Bundling your functions...</b>').pipe()
-    : context.print.info('<b><blue>◉</blue>  Bundling your functions...</b>')
+  const introFunctions = async () =>
+    onChange
+      ? await context.print.intro('<b>Bundling your functions...</b>').pipe()
+      : await context.print.info(
+          '<b><blue>◉</blue>  Bundling your functions...</b>',
+        )
 
-  const introAssets = onChange
-    ? context.print
-        .intro('<b>Bundling your assets and dependencies...</b>')
-        .pipe()
-    : context.print.info(
-        '<b><blue>◉</blue>  Bundling your assets and dependencies...</b>',
-      )
+  const introAssets = async () =>
+    onChange
+      ? await context.print
+          .intro('<b>Bundling your assets and dependencies...</b>')
+          .pipe()
+      : await context.print.info(
+          '<b><blue>◉</blue>  Bundling your assets and dependencies...</b>',
+        )
 
   // build the functions
   const [_logFunctions, nodeBundles, _logAssets, browserBundles] =
     await Promise.all([
-      introFunctions,
+      await introFunctions(),
       await bundle(
         {
           entryPoints: nodeEntryPoints,
@@ -391,7 +395,7 @@ export const parseFunctions = async (
         },
         onChange,
       ),
-      introAssets,
+      await introAssets(),
       await bundle(
         {
           publicPath,
