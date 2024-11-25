@@ -763,39 +763,39 @@ generic_loop:
         } while (dst < out_next);
     }
 
+    enum libdeflate_result rc;
 block_done:
     /* Finished decoding a block */
 
-    if (is_final_block)
+    if (is_final_block) {
         _DEF_bitstream_byte_align();
-
-    switch (stop_type){
-        case LIBDEFLATE_STOP_BY_FINAL_BLOCK:{
-            if (!is_final_block)
-                goto next_block;
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK:{
-            // stop, not next block
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT:{
+        rc = LIBDEFLATE_SUCCESS;
+    } else {
+        switch (stop_type) {
+        case LIBDEFLATE_STOP_BY_FINAL_BLOCK:
+            goto next_block;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK:
+            break;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT:
             if (in_next - ((((u8)bitsleft) >> 3) - overread_count) < in_end)
                 goto next_block;
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT:{
+            break;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT:
             if (out_next < out_end)
                 goto next_block;
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN:{
+            break;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN:
             if ((out_next < out_end) | ((bitsleft & 7) != 0))
                 goto next_block;
-        } break;
-    }
+            break;
+        }
 
-    if (!is_final_block) {
         _DEF_bitstream_byte_restore();
         //backup for next block
         d->bitsleft_back = bitsleft & 7;
         d->bitbuf_back = bitbuf & ((1 << (bitsleft & 7)) - 1);
+
+        rc = LIBDEFLATE_MORE;
     }
 
     /* Optionally return the actual number of bytes consumed. */
@@ -808,9 +808,9 @@ block_done:
         *actual_out_nbytes_ret = out_next - (((u8 *)out) + in_dict_nbytes);
     } else {
         if (out_next != out_end)
-            return LIBDEFLATE_SHORT_OUTPUT;
+            rc = LIBDEFLATE_SHORT_OUTPUT;
     }
-    return (is_final_block) ? LIBDEFLATE_SUCCESS : LIBDEFLATE_MORE;
+    return rc;
 }
 
 #undef FUNCNAME
