@@ -403,10 +403,8 @@ next_block:
         out_next += len;
 
         goto block_done;
-    } else {
+    } else if (block_type == DEFLATE_BLOCKTYPE_STATIC_HUFFMAN) {
         unsigned i;
-
-        SAFETY_CHECK(block_type == DEFLATE_BLOCKTYPE_STATIC_HUFFMAN);
 
         /*
          * Static Huffman block: build the decode tables for the static
@@ -443,6 +441,8 @@ next_block:
 
         num_litlen_syms = 288;
         num_offset_syms = 32;
+    } else {
+        return LIBDEFLATE_BAD_DATA;
     }
 
     /* Decompressing a Huffman block (either dynamic or static) */
