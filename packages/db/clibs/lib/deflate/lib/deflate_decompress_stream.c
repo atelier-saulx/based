@@ -132,15 +132,14 @@ static inline enum libdeflate_result decompress_block_wstate(
         struct libdeflate_decompressor *decompressor,
         struct libdeflate_block_state *state,
         const void *in_part, size_t in_part_nbytes_bound,
-        size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-        bool *is_final_block_ret)
+        size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret)
 {
     size_t dict_size = dict_size_avail(state->out_cur + (state->data_cur - K_DICT_SIZE));
 
     return libdeflate_decompress_block(decompressor, in_part, in_part_nbytes_bound,
             state->data_buf + state->data_cur - dict_size, dict_size, state->data_buf_size - state->data_cur,
             actual_in_nbytes_ret, actual_out_nbytes_ret,
-            LIBDEFLATE_STOP_BY_ANY_BLOCK, is_final_block_ret);
+            LIBDEFLATE_STOP_BY_ANY_BLOCK);
 }
 
 /**
@@ -156,27 +155,26 @@ libdeflate_decompress_stream(
         int *result)
 {
 	size_t in_cur = 0;
-    bool final_block = false;
+    enum libdeflate_result dres;
 
     libdeflate_block_state_reset(state);
     libdeflate_decompress_block_reset(decompressor);
 	do {
 	    size_t actual_in_nbytes_ret;
 		size_t actual_out_nbytes_ret;
-        enum libdeflate_result dres;
 
         dres = decompress_block_wstate(
                 decompressor, state,
                 in_buf + in_cur, in_len - in_cur,
-                &actual_in_nbytes_ret, &actual_out_nbytes_ret, &final_block);
-        if (dres != LIBDEFLATE_SUCCESS) {
+                &actual_in_nbytes_ret, &actual_out_nbytes_ret);
+        if (dres != LIBDEFLATE_MORE && dres != LIBDEFLATE_SUCCESS) {
             return dres;
         }
 
 		in_cur += actual_in_nbytes_ret;
 		state->data_cur += actual_out_nbytes_ret;
 
-		if (final_block || libdeflate_block_state_is_out_block_ready(state)) {
+		if (dres == LIBDEFLATE_SUCCESS || libdeflate_block_state_is_out_block_ready(state)) {
             int res;
 
             res = cb(ctx, state->data_buf + K_DICT_SIZE, state->data_cur - K_DICT_SIZE);
@@ -187,7 +185,7 @@ libdeflate_decompress_stream(
 
             libdeflate_block_state_next(state);
 		}
-	} while (!final_block);
+	} while (dres == LIBDEFLATE_MORE);
 
-    return LIBDEFLATE_SUCCESS;
+    return dres;
 }

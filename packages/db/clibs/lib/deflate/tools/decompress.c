@@ -44,10 +44,14 @@ static void fn(struct libdeflate_decompressor *d, const char *in_buf, size_t in_
 		ret = libdeflate_decompress_block(d, in_buf + in_cur, in_len - in_cur,
 				data_buf + data_cur - dict_size, dict_size, data_buf_size - data_cur,
 				&actual_in_nbytes_ret, &actual_out_nbytes_ret,
-				LIBDEFLATE_STOP_BY_ANY_BLOCK, &final_block);
-        if (ret != LIBDEFLATE_SUCCESS) {
+				LIBDEFLATE_STOP_BY_ANY_BLOCK);
+        if (ret == LIBDEFLATE_MORE) {
+            final_block = false;
+        } else if (ret != LIBDEFLATE_SUCCESS) {
             fprintf(stderr, "Failed: %d\n", ret);
             exit(1);
+        } else {
+            final_block = true;
         }
 
 		in_cur += actual_in_nbytes_ret;
