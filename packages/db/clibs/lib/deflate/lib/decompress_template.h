@@ -277,7 +277,6 @@ next_block:
         do {
             unsigned presym;
             u8 rep_val;
-            unsigned rep_count;
 
             if ((u8)bitsleft < DEFLATE_MAX_PRE_CODEWORD_LEN + 7)
                 REFILL_BITS();
@@ -301,7 +300,7 @@ next_block:
                 continue;
             }
 
-            /* Run-length encoded codeword lengths */
+            /* Run-length encoded (RLE) codeword lengths */
 
             /*
              * Note: we don't need to immediately verify that the
@@ -325,9 +324,10 @@ next_block:
             if (presym == 16) {
                 /* Repeat the previous length 3 - 6 times. */
                 SAFETY_CHECK(i != 0);
-                rep_val = d->u.l.lens[i - 1];
                 STATIC_ASSERT(3 + BITMASK(2) == 6);
-                rep_count = 3 + (bitbuf & BITMASK(2));
+                unsigned rep_count = 3 + (bitbuf & BITMASK(2));
+
+                rep_val = d->u.l.lens[i - 1];
                 bitbuf >>= 2;
                 bitsleft -= 2;
                 d->u.l.lens[i + 0] = rep_val;
@@ -340,7 +340,8 @@ next_block:
             } else if (presym == 17) {
                 /* Repeat zero 3 - 10 times. */
                 STATIC_ASSERT(3 + BITMASK(3) == 10);
-                rep_count = 3 + (bitbuf & BITMASK(3));
+                unsigned rep_count = 3 + (bitbuf & BITMASK(3));
+
                 bitbuf >>= 3;
                 bitsleft -= 3;
                 d->u.l.lens[i + 0] = 0;
@@ -357,7 +358,8 @@ next_block:
             } else {
                 /* Repeat zero 11 - 138 times. */
                 STATIC_ASSERT(11 + BITMASK(7) == 138);
-                rep_count = 11 + (bitbuf & BITMASK(7));
+                unsigned rep_count = 11 + (bitbuf & BITMASK(7));
+
                 bitbuf >>= 7;
                 bitsleft -= 7;
                 memset(&d->u.l.lens[i], 0,
