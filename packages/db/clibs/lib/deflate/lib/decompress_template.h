@@ -217,11 +217,9 @@ FUNCNAME(struct libdeflate_decompressor * restrict d,
 
     _decompress_block_init(d);
 
+    STATIC_ASSERT(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
 next_block:
     /* Starting to read the next block */
-    ;
-
-    STATIC_ASSERT(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
     REFILL_BITS();
 
     /* BFINAL: 1 bit */
