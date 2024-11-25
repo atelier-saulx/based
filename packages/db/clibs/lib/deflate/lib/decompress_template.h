@@ -60,6 +60,111 @@
         bitsleft = 0; } while(0)
 #endif
 
+/**
+ * Copy the match.
+ *
+ * On most CPUs the fastest method is a word-at-a-time copy,
+ * unconditionally copying about 5 words since this is enough
+ * for most matches without being too much.
+ *
+ * The normal word-at-a-time copy works for offset >= WORDBYTES,
+ * which is most cases.  The case of offset == 1 is also common
+ * and is worth optimizing for, since it is just RLE encoding of
+ * the previous byte, which is the result of compressing long
+ * runs of the same byte.
+ *
+ * Writing past the match 'length' is allowed here, since it's
+ * been ensured there is enough output space left for a slight
+ * overrun.  FASTLOOP_MAX_BYTES_WRITTEN needs to be updated if
+ * the maximum possible overrun here is changed.
+ */
+static void fast_copy_match(u8 * restrict dst, const u8 * restrict src, size_t len, u32 offset)
+{
+    const u8 *stop = dst + len;
+
+    if (UNALIGNED_ACCESS_IS_FAST && offset >= WORDBYTES) {
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        while (dst < stop) {
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+        }
+    } else if (UNALIGNED_ACCESS_IS_FAST && offset == 1) {
+        machine_word_t v;
+
+        /*
+         * This part tends to get auto-vectorized, so keep it
+         * copying a multiple of 16 bytes at a time.
+         */
+        v = (machine_word_t)0x0101010101010101 * src[0];
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        while (dst < stop) {
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+        }
+    } else if (UNALIGNED_ACCESS_IS_FAST) {
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += offset;
+        dst += offset;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += offset;
+        dst += offset;
+        do {
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += offset;
+            dst += offset;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += offset;
+            dst += offset;
+        } while (dst < stop);
+    } else {
+        *dst++ = *src++;
+        *dst++ = *src++;
+        do {
+            *dst++ = *src++;
+        } while (dst < stop);
+    }
+}
+
 static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME(struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
@@ -263,7 +368,6 @@ next_block:
 
         /* Unnecessary, but check this for consistency with zlib. */
         SAFETY_CHECK(i == num_litlen_syms + num_offset_syms);
-
     } else if (block_type == DEFLATE_BLOCKTYPE_UNCOMPRESSED) {
         u16 len, nlen;
 
@@ -587,103 +691,7 @@ have_decode_tables:
         entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
         REFILL_BITS_IN_FASTLOOP();
 
-        /*
-         * Copy the match.  On most CPUs the fastest method is a
-         * word-at-a-time copy, unconditionally copying about 5 words
-         * since this is enough for most matches without being too much.
-         *
-         * The normal word-at-a-time copy works for offset >= WORDBYTES,
-         * which is most cases.  The case of offset == 1 is also common
-         * and is worth optimizing for, since it is just RLE encoding of
-         * the previous byte, which is the result of compressing long
-         * runs of the same byte.
-         *
-         * Writing past the match 'length' is allowed here, since it's
-         * been ensured there is enough output space left for a slight
-         * overrun.  FASTLOOP_MAX_BYTES_WRITTEN needs to be updated if
-         * the maximum possible overrun here is changed.
-         */
-        if (UNALIGNED_ACCESS_IS_FAST && offset >= WORDBYTES) {
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            while (dst < out_next) {
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-            }
-        } else if (UNALIGNED_ACCESS_IS_FAST && offset == 1) {
-            machine_word_t v;
-
-            /*
-             * This part tends to get auto-vectorized, so keep it
-             * copying a multiple of 16 bytes at a time.
-             */
-            v = (machine_word_t)0x0101010101010101 * src[0];
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            while (dst < out_next) {
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-            }
-        } else if (UNALIGNED_ACCESS_IS_FAST) {
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += offset;
-            dst += offset;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += offset;
-            dst += offset;
-            do {
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += offset;
-                dst += offset;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += offset;
-                dst += offset;
-            } while (dst < out_next);
-        } else {
-            *dst++ = *src++;
-            *dst++ = *src++;
-            do {
-                *dst++ = *src++;
-            } while (dst < out_next);
-        }
+        fast_copy_match(dst, src, length, offset);
     } while (in_next < in_fastloop_end && out_next < out_fastloop_end);
 
     /*

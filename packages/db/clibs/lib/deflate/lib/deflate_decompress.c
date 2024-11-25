@@ -1085,8 +1085,8 @@ typedef enum libdeflate_result (*decompress_func_t)
     (struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
-     size_t *actual_in_nbytes_ret,size_t *actual_out_nbytes_ret,
-     enum libdeflate_decompress_stop_by stop_type,int* is_final_block_ret);
+     size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
+     enum libdeflate_decompress_stop_by stop_type, int *is_final_block_ret);
 
 #define FUNCNAME deflate_decompress_default
 #undef ATTRIBUTES
