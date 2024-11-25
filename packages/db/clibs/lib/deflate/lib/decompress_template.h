@@ -60,6 +60,31 @@
         bitsleft = 0; } while(0)
 #endif
 
+static void huffman_build_static_decode_tables(struct libdeflate_decompressor * restrict d)
+{
+    unsigned i;
+
+    STATIC_ASSERT(DEFLATE_NUM_LITLEN_SYMS == 288);
+    STATIC_ASSERT(DEFLATE_NUM_OFFSET_SYMS == 32);
+
+    d->static_codes_loaded = true;
+
+    for (i = 0; i < 144; i++)
+        d->u.l.lens[i] = 8;
+    for (; i < 256; i++)
+        d->u.l.lens[i] = 9;
+    for (; i < 280; i++)
+        d->u.l.lens[i] = 7;
+    for (; i < 288; i++)
+        d->u.l.lens[i] = 8;
+
+    for (; i < 288 + 32; i++)
+        d->u.l.lens[i] = 5;
+
+    build_offset_decode_table(d, DEFLATE_NUM_LITLEN_SYMS, DEFLATE_NUM_OFFSET_SYMS);
+    build_litlen_decode_table(d, DEFLATE_NUM_LITLEN_SYMS, DEFLATE_NUM_OFFSET_SYMS);
+}
+
 /**
  * Copy the match.
  *
@@ -187,8 +212,6 @@ FUNCNAME(struct libdeflate_decompressor * restrict d,
 
     bool is_final_block;
     unsigned block_type;
-    unsigned num_litlen_syms;
-    unsigned num_offset_syms;
     bitbuf_t litlen_tablemask;
     u32 entry;
 
@@ -208,14 +231,13 @@ next_block:
     block_type = (bitbuf >> 1) & BITMASK(2);
 
     if (block_type == DEFLATE_BLOCKTYPE_DYNAMIC_HUFFMAN) {
-
-        /* Dynamic Huffman block */
-
         /* The order in which precode lengths are stored */
         static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
             16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
         };
 
+        unsigned num_litlen_syms;
+        unsigned num_offset_syms;
         unsigned num_explicit_precode_lens;
         unsigned i;
 
@@ -368,8 +390,12 @@ next_block:
             }
         } while (i < num_litlen_syms + num_offset_syms);
 
-        /* Unnecessary, but check this for consistency with zlib. */
         SAFETY_CHECK(i == num_litlen_syms + num_offset_syms);
+        if (!(i == num_litlen_syms + num_offset_syms &&
+              build_offset_decode_table(d, num_litlen_syms, num_offset_syms) &&
+              build_litlen_decode_table(d, num_litlen_syms, num_offset_syms))) {
+            return LIBDEFLATE_BAD_DATA;
+        }
     } else if (block_type == DEFLATE_BLOCKTYPE_UNCOMPRESSED) {
         u16 len, nlen;
 
@@ -406,8 +432,6 @@ next_block:
 
         goto block_done;
     } else if (block_type == DEFLATE_BLOCKTYPE_STATIC_HUFFMAN) {
-        unsigned i;
-
         /*
          * Static Huffman block: build the decode tables for the static
          * codes.  Skip doing so if the tables are already set up from
@@ -421,37 +445,14 @@ next_block:
         bitbuf >>= 3; /* for BTYPE and BFINAL */
         bitsleft -= 3;
 
-        if (d->static_codes_loaded)
-            goto have_decode_tables;
-
-        d->static_codes_loaded = true;
-
-        STATIC_ASSERT(DEFLATE_NUM_LITLEN_SYMS == 288);
-        STATIC_ASSERT(DEFLATE_NUM_OFFSET_SYMS == 32);
-
-        for (i = 0; i < 144; i++)
-            d->u.l.lens[i] = 8;
-        for (; i < 256; i++)
-            d->u.l.lens[i] = 9;
-        for (; i < 280; i++)
-            d->u.l.lens[i] = 7;
-        for (; i < 288; i++)
-            d->u.l.lens[i] = 8;
-
-        for (; i < 288 + 32; i++)
-            d->u.l.lens[i] = 5;
-
-        num_litlen_syms = 288;
-        num_offset_syms = 32;
+        if (!d->static_codes_loaded) {
+            huffman_build_static_decode_tables(d);
+        }
     } else {
         return LIBDEFLATE_BAD_DATA;
     }
 
     /* Decompressing a Huffman block (either dynamic or static) */
-
-    SAFETY_CHECK(build_offset_decode_table(d, num_litlen_syms, num_offset_syms));
-    SAFETY_CHECK(build_litlen_decode_table(d, num_litlen_syms, num_offset_syms));
-have_decode_tables:
     litlen_tablemask = BITMASK(d->litlen_tablebits);
 
     /*
