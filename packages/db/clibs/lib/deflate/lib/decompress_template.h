@@ -190,6 +190,22 @@ static void fast_copy_match(u8 * restrict dst, const u8 * restrict src, size_t l
     }
 }
 
+/**
+ * Copy min 3 bytes.
+ */
+static void generic_copy(u8 *dst, const u8 *src, size_t len)
+{
+    const u8 *stop = dst + len;
+
+    static_assert(DEFLATE_MIN_MATCH_LEN == 3);
+
+    *dst++ = *src++;
+    *dst++ = *src++;
+    do {
+        *dst++ = *src++;
+    } while (dst < stop);
+}
+
 static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME(struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
@@ -450,7 +466,9 @@ next_block:
         return LIBDEFLATE_BAD_DATA;
     }
 
-    /* Decompressing a Huffman block (either dynamic or static) */
+    /*
+     * Decompressing a Huffman block (either dynamic or static)
+     */
     litlen_tablemask = BITMASK(d->litlen_tablebits);
 
     /*
@@ -467,8 +485,6 @@ next_block:
     entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
     do {
         u32 length, offset, lit;
-        const u8 *src;
-        u8 *dst;
 
         /*
          * Consume the bits for the litlen decode table entry.  Save the
@@ -668,9 +684,6 @@ next_block:
 
         /* Validate the match offset; needed even in the fastloop. */
         SAFETY_CHECK(offset <= out_next - (const u8 *)out);
-        src = out_next - offset;
-        dst = out_next;
-        out_next += length;
 
         /*
          * Before starting to issue the instructions to copy the match,
@@ -691,7 +704,8 @@ next_block:
         entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
         REFILL_BITS_IN_FASTLOOP();
 
-        fast_copy_match(dst, src, length, offset);
+        fast_copy_match(out_next, out_next - offset, length, offset);
+        out_next += length;
     } while (in_next < in_fastloop_end && out_next < out_fastloop_end);
 
     /*
@@ -704,8 +718,6 @@ next_block:
 generic_loop:
     for (;;) {
         u32 length, offset;
-        const u8 *src;
-        u8 *dst;
 
         REFILL_BITS();
         entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
@@ -752,16 +764,8 @@ generic_loop:
         bitsleft -= entry;
 
         SAFETY_CHECK(offset <= out_next - (const u8 *)out);
-        src = out_next - offset;
-        dst = out_next;
+        generic_copy(out_next, out_next - offset, length);
         out_next += length;
-
-        static_assert(DEFLATE_MIN_MATCH_LEN == 3);
-        *dst++ = *src++;
-        *dst++ = *src++;
-        do {
-            *dst++ = *src++;
-        } while (dst < out_next);
     }
 
     enum libdeflate_result rc;
