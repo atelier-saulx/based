@@ -832,12 +832,16 @@ await test('variable size (string/binary)', async (t) => {
   // add orignal crc32 as last argument after making compression
   // small check if 0, crc check, 1
 
-  db.query('article')
-    .filter('derp', '=', largeDerp)
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(2)
+  equal(
+    db
+      .query('article')
+      .filter('derp', '=', largeDerp)
+      .include('id')
+      .range(0, 1e3)
+      .get()
+      .inspect(2).length,
+    1e3,
+  )
 })
 
 await test('negate', async (t) => {
