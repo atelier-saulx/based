@@ -32,7 +32,7 @@ Use `format` to specify in which format the value has to represented and modifie
 }
 ```
 
-### Current display options
+### Display options
 
 #### Timestamp
 
@@ -73,7 +73,7 @@ Use `format` to specify in which format the value has to represented and modifie
 'capitalize',
 ```
 
-### Current format options
+### Format options
 
 #### String
 
