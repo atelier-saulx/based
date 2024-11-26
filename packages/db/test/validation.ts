@@ -29,7 +29,7 @@ await test('update', async (t) => {
     },
   })
 
-  const good = db.create('user', {
+  const good = await db.create('user', {
     name: 'youzi',
   })
 
@@ -52,29 +52,11 @@ await test('update', async (t) => {
     rating: 'not a number',
   })
 
-  const a = await db
-    .create('user', {
-      name: 'jame-z',
-      friend: good,
-      connections: [good],
-    })
-    .then((res) => {
-      console.log({ res })
-      return 'ballz'
-    })
-    .then((ballz) => {
-      console.log({ ballz })
-      return 'random thing'
-    })
-    .catch((e) => {
-      console.log({ e })
-    })
-    .then((ballz) => {
-      console.log({ ballz })
-      return 'random thing2'
-    })
-
-  console.log({ a })
+  const a = await db.create('user', {
+    name: 'jame-z',
+    friend: good,
+    connections: [good],
+  })
 
   db.create('user', {
     name: 'nope',
@@ -95,13 +77,13 @@ await test('update', async (t) => {
       id: 1,
       name: 'youzi',
       friend: {
-        id: 2,
+        id: 6,
         rating: 0,
         name: 'jame-z',
       },
     },
     {
-      id: 2,
+      id: 6,
       name: 'jame-z',
       friend: {
         id: 1,
