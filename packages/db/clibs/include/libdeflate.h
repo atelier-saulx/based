@@ -52,6 +52,9 @@ struct libdeflate_compressor;
 LIBDEFLATEEXPORT struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level);
 
+LIBDEFLATEEXPORT struct libdeflate_compressor *
+libdeflate_alloc_compressor2(int compression_level, const void *shared_dict_buf, size_t shared_dict_len);
+
 /**
  * libdeflate_compress() performs raw DEFLATE compression on a buffer of
  * data.  The function attempts to compress 'in_nbytes' bytes of data located at
