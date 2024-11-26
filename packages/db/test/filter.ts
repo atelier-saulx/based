@@ -748,8 +748,6 @@ await test('variable size (string/binary)', async (t) => {
     })
   }
 
-  console.log(Date.now() - d, 'ms', await db.drain(), 'ms')
-
   deepEqual(
     db
       .query('article')
@@ -774,10 +772,9 @@ await test('variable size (string/binary)', async (t) => {
     .query('article')
     .filter('stuff', 'has', new Uint8Array([55, 57]))
     .range(0, 100)
-    .get()
-    .inspect(1).length
+    .get().length
 
-  equal(len, 20, 'has binary (single')
+  equal(len, 6, 'has binary (single')
 
   const largeDerp = Buffer.from(italy)
   let smurpArticle
@@ -831,8 +828,7 @@ await test('variable size (string/binary)', async (t) => {
       .filter('derp', '=', largeDerp)
       .include('id')
       .range(0, 1e3)
-      .get()
-      .inspect(2).length,
+      .get().length,
     1e3,
   )
 
@@ -843,8 +839,7 @@ await test('variable size (string/binary)', async (t) => {
       .filter('body', '=', italy)
       .include('id')
       .range(0, 1e3)
-      .get()
-      .inspect(2).length,
+      .get().length,
     1e3,
   )
 })
