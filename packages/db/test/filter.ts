@@ -842,6 +842,12 @@ await test('variable size (string/binary)', async (t) => {
       .get().length,
     1e3,
   )
+
+  // add or
+
+  // add negate
+
+  // add OR has
 })
 
 await test('negate', async (t) => {
