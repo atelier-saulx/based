@@ -1,5 +1,5 @@
 # uWebSockets.js precompiled binaries
-Automatically built from source by GitHub Actions.
+Automatically built from source by GitHub Actions. The file "source_commit" contains the corresponding Git commit (SHA-1) that was built. As such you can validate the binaries by diffing against your own build of said commit (using the same compiler).
 
 ## Clarification of license
 

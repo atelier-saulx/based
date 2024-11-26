@@ -49,7 +49,7 @@ export default (
       maxPayloadLength: 1024 * 1024 * 30, // 30 mb max payload
       idleTimeout: 100,
       maxBackpressure: wsOptions.maxBackpressureSize,
-      closeOnBackpressureLimit: wsOptions.maxBackpressureSize,
+      closeOnBackpressureLimit: Boolean(wsOptions.maxBackpressureSize),
       // No compression handled in the protocol
       // compression: uws.SHARED_COMPRESSOR,
       upgrade: server.auth?.authorizeConnection
