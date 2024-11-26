@@ -266,7 +266,7 @@ do {                                    \
  */
 #define REFILL_BITS_IN_FASTLOOP()                   \
 do {                                    \
-    STATIC_ASSERT(UNALIGNED_ACCESS_IS_FAST ||           \
+    static_assert(UNALIGNED_ACCESS_IS_FAST ||           \
               FASTLOOP_PRELOADABLE_NBITS == CONSUMABLE_NBITS);  \
     if (UNALIGNED_ACCESS_IS_FAST) {                 \
         REFILL_BITS_BRANCHLESS();               \
@@ -779,8 +779,8 @@ build_decode_table(u32 decode_table[],
      */
 
     /* Ensure that 'codespace_used' cannot overflow. */
-    STATIC_ASSERT(sizeof(codespace_used) == 4);
-    STATIC_ASSERT(UINT32_MAX / (1U << (DEFLATE_MAX_CODEWORD_LEN - 1)) >=
+    static_assert(sizeof(codespace_used) == 4);
+    static_assert(UINT32_MAX / (1U << (DEFLATE_MAX_CODEWORD_LEN - 1)) >=
               DEFLATE_MAX_NUM_SYMS);
 
     offsets[0] = 0;
@@ -1020,9 +1020,9 @@ static bool
 build_precode_decode_table(struct libdeflate_decompressor *d)
 {
     /* When you change TABLEBITS, you must change ENOUGH, and vice versa! */
-    STATIC_ASSERT(PRECODE_TABLEBITS == 7 && PRECODE_ENOUGH == 128);
+    static_assert(PRECODE_TABLEBITS == 7 && PRECODE_ENOUGH == 128);
 
-    STATIC_ASSERT(ARRAY_LEN(precode_decode_results) ==
+    static_assert(ARRAY_LEN(precode_decode_results) ==
               DEFLATE_NUM_PRECODE_SYMS);
 
     return build_decode_table(d->u.l.precode_decode_table,
@@ -1041,9 +1041,9 @@ build_litlen_decode_table(struct libdeflate_decompressor *d,
               unsigned num_litlen_syms, unsigned num_offset_syms __unused)
 {
     /* When you change TABLEBITS, you must change ENOUGH, and vice versa! */
-    STATIC_ASSERT(LITLEN_TABLEBITS == 11 && LITLEN_ENOUGH == 2342);
+    static_assert(LITLEN_TABLEBITS == 11 && LITLEN_ENOUGH == 2342);
 
-    STATIC_ASSERT(ARRAY_LEN(litlen_decode_results) ==
+    static_assert(ARRAY_LEN(litlen_decode_results) ==
               DEFLATE_NUM_LITLEN_SYMS);
 
     return build_decode_table(d->u.litlen_decode_table,
@@ -1062,9 +1062,9 @@ build_offset_decode_table(struct libdeflate_decompressor *d,
               unsigned num_litlen_syms, unsigned num_offset_syms)
 {
     /* When you change TABLEBITS, you must change ENOUGH, and vice versa! */
-    STATIC_ASSERT(OFFSET_TABLEBITS == 8 && OFFSET_ENOUGH == 402);
+    static_assert(OFFSET_TABLEBITS == 8 && OFFSET_ENOUGH == 402);
 
-    STATIC_ASSERT(ARRAY_LEN(offset_decode_results) ==
+    static_assert(ARRAY_LEN(offset_decode_results) ==
               DEFLATE_NUM_OFFSET_SYMS);
 
     return build_decode_table(d->offset_decode_table,

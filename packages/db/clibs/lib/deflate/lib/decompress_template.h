@@ -64,8 +64,8 @@ static void huffman_build_static_decode_tables(struct libdeflate_decompressor * 
 {
     unsigned i;
 
-    STATIC_ASSERT(DEFLATE_NUM_LITLEN_SYMS == 288);
-    STATIC_ASSERT(DEFLATE_NUM_OFFSET_SYMS == 32);
+    static_assert(DEFLATE_NUM_LITLEN_SYMS == 288);
+    static_assert(DEFLATE_NUM_OFFSET_SYMS == 32);
 
     d->static_codes_loaded = true;
 
@@ -217,7 +217,7 @@ FUNCNAME(struct libdeflate_decompressor * restrict d,
 
     _decompress_block_init(d);
 
-    STATIC_ASSERT(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
+    static_assert(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
 next_block:
     /* Starting to read the next block */
     REFILL_BITS();
@@ -241,13 +241,13 @@ next_block:
 
         /* Read the codeword length counts. */
 
-        STATIC_ASSERT(DEFLATE_NUM_LITLEN_SYMS == 257 + BITMASK(5));
+        static_assert(DEFLATE_NUM_LITLEN_SYMS == 257 + BITMASK(5));
         num_litlen_syms = 257 + ((bitbuf >> 3) & BITMASK(5));
 
-        STATIC_ASSERT(DEFLATE_NUM_OFFSET_SYMS == 1 + BITMASK(5));
+        static_assert(DEFLATE_NUM_OFFSET_SYMS == 1 + BITMASK(5));
         num_offset_syms = 1 + ((bitbuf >> 8) & BITMASK(5));
 
-        STATIC_ASSERT(DEFLATE_NUM_PRECODE_SYMS == 4 + BITMASK(4));
+        static_assert(DEFLATE_NUM_PRECODE_SYMS == 4 + BITMASK(4));
         num_explicit_precode_lens = 4 + ((bitbuf >> 13) & BITMASK(4));
 
         d->static_codes_loaded = false;
@@ -259,7 +259,7 @@ next_block:
          * maximum number of precode lens, so to minimize branches we
          * merge one len with the previous fields.
          */
-        STATIC_ASSERT(DEFLATE_MAX_PRE_CODEWORD_LEN == (1 << 3) - 1);
+        static_assert(DEFLATE_MAX_PRE_CODEWORD_LEN == (1 << 3) - 1);
         if (CAN_CONSUME(3 * (DEFLATE_NUM_PRECODE_SYMS - 1))) {
             d->u.precode_lens[deflate_precode_lens_permutation[0]] =
                 (bitbuf >> 17) & BITMASK(3);
@@ -305,7 +305,7 @@ next_block:
              * The code below assumes that the precode decode table
              * doesn't have any subtables.
              */
-            STATIC_ASSERT(PRECODE_TABLEBITS == DEFLATE_MAX_PRE_CODEWORD_LEN);
+            static_assert(PRECODE_TABLEBITS == DEFLATE_MAX_PRE_CODEWORD_LEN);
 
             /* Decode the next precode symbol. */
             entry = d->u.l.precode_decode_table[
@@ -339,12 +339,12 @@ next_block:
              * 16', and 'presym == 17'.  For typical data this is
              * ordered from most frequent to least frequent case.
              */
-            STATIC_ASSERT(DEFLATE_MAX_LENS_OVERRUN == 138 - 1);
+            static_assert(DEFLATE_MAX_LENS_OVERRUN == 138 - 1);
 
             if (presym == 16) {
                 /* Repeat the previous length 3 - 6 times. */
                 SAFETY_CHECK(i != 0);
-                STATIC_ASSERT(3 + BITMASK(2) == 6);
+                static_assert(3 + BITMASK(2) == 6);
                 unsigned rep_count = 3 + (bitbuf & BITMASK(2));
 
                 rep_val = d->u.l.lens[i - 1];
@@ -359,7 +359,7 @@ next_block:
                 i += rep_count;
             } else if (presym == 17) {
                 /* Repeat zero 3 - 10 times. */
-                STATIC_ASSERT(3 + BITMASK(3) == 10);
+                static_assert(3 + BITMASK(3) == 10);
                 unsigned rep_count = 3 + (bitbuf & BITMASK(3));
 
                 bitbuf >>= 3;
@@ -377,7 +377,7 @@ next_block:
                 i += rep_count;
             } else {
                 /* Repeat zero 11 - 138 times. */
-                STATIC_ASSERT(11 + BITMASK(7) == 138);
+                static_assert(11 + BITMASK(7) == 138);
                 unsigned rep_count = 11 + (bitbuf & BITMASK(7));
 
                 bitbuf >>= 7;
@@ -544,7 +544,7 @@ next_block:
                  * bits remaining to do the table preload
                  * independently of the refill.
                  */
-                STATIC_ASSERT(CAN_CONSUME_AND_THEN_PRELOAD(
+                static_assert(CAN_CONSUME_AND_THEN_PRELOAD(
                         LITLEN_TABLEBITS, LITLEN_TABLEBITS));
                 lit = entry >> 16;
                 entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
@@ -620,7 +620,7 @@ next_block:
          * remaining to preload the offset decode table entry, but a
          * refill might be needed before consuming it.
          */
-        STATIC_ASSERT(CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXFASTBITS,
+        static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXFASTBITS,
                                OFFSET_TABLEBITS));
         entry = d->offset_decode_table[bitbuf & BITMASK(OFFSET_TABLEBITS)];
         if (CAN_CONSUME_AND_THEN_PRELOAD(OFFSET_MAXBITS,
@@ -653,11 +653,11 @@ next_block:
                     EXTRACT_VARBITS(bitbuf, (entry >> 8) & 0x3F)];
                 REFILL_BITS_IN_FASTLOOP();
                 /* No further refill needed before extra bits */
-                STATIC_ASSERT(CAN_CONSUME(
+                static_assert(CAN_CONSUME(
                     OFFSET_MAXBITS - OFFSET_TABLEBITS));
             } else {
                 /* No refill needed before extra bits */
-                STATIC_ASSERT(CAN_CONSUME(OFFSET_MAXFASTBITS));
+                static_assert(CAN_CONSUME(OFFSET_MAXFASTBITS));
             }
         }
         saved_bitbuf = bitbuf;
@@ -756,7 +756,7 @@ generic_loop:
         dst = out_next;
         out_next += length;
 
-        STATIC_ASSERT(DEFLATE_MIN_MATCH_LEN == 3);
+        static_assert(DEFLATE_MIN_MATCH_LEN == 3);
         *dst++ = *src++;
         *dst++ = *src++;
         do {
