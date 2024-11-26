@@ -30,6 +30,9 @@ pub const DbCtx = struct {
     mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
     readOnly: bool,
     selva: ?*selva.SelvaDb,
+    // add decompressor
+    // add compressor here
+    // preallocated decompressor block thingy buffer
 };
 
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);

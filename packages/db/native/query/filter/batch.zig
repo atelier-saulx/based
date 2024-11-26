@@ -35,7 +35,10 @@ pub fn simdEqualsOr(
 // make the hasQueryValueORalgo
 
 // make the query multiple (faster)
+// have block decompression here
+// buffer in the instance of db for dec
 pub fn hasQueryValueOr(value: []u8, query: []u8) bool {
+    // put block deocmpression here
     // query packed
     const vectorLen = std.simd.suggestVectorLength(u8).?;
     var i: usize = 0;
@@ -65,6 +68,7 @@ pub fn hasQueryValueOr(value: []u8, query: []u8) bool {
     const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
+        // do some math
         const matches = h == queryVector;
         if (@reduce(.Or, matches)) {
             if (l > 1) {
