@@ -16,10 +16,9 @@ import {
   appendFixedValue,
   appendU32,
   appendU8,
-  appendUtf8,
   outOfRange,
 } from '../utils.js'
-import { RefModify, RefModifyOpts } from './references.js'
+import { RefModifyOpts } from './references.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   let size = 0
@@ -42,31 +41,6 @@ export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
   }
   return size
 }
-
-// export function calculateEdgesSize(
-//   t: PropDef,
-//   value: RefModify[],
-//   res: ModifyState,
-// ): number {
-//   let size = 0
-//   for (let i = 0; i < value.length; i++) {
-//     let ref = value[i]
-//     if (typeof ref !== 'number') {
-//       if (ref instanceof ModifyState) {
-//         ref = ref.tmpId
-//       } else if (typeof ref === 'object') {
-//         size += getEdgeSize(t, ref) + 6
-//       } else {
-//         return
-//         modifyError(res, t, value)
-//         return 0
-//       }
-//     } else {
-//       size += 6
-//     }
-//   }
-//   return size
-// }
 
 function appendRefs(
   t: PropDefEdge,

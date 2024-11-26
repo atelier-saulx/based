@@ -56,7 +56,6 @@ const appendUpdate = (
   }
 }
 
-// let cnt = 100
 export const update = (
   db: BasedDb,
   type: string,
@@ -74,17 +73,8 @@ export const update = (
     ctx.prefix0 = null // force a new cursor
     ctx.len = pos
     if (err === RANGE_ERR) {
-      // const { min, len, max } = ctx
       flushBuffer(db)
       return update(db, type, id, obj, overwrite)
-      // console.log('update - range error', { min, len, max }, db.workers)
-      // if (cnt-- === 0) {
-      //   process.exit()
-      // }
-      // return flushBuffer(db, () => update(db, type, id, obj, overwrite))
-
-      // }
-      // throw Error(`Payload exceeds maximum payload size (${ctx.max}b)`)
     } else {
       res.error = err
     }
