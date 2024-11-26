@@ -22,7 +22,7 @@ export function writeBinary(
   res: ModifyState,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  let size
+  let size: number
   if (value === null) {
     size = 0
   } else {

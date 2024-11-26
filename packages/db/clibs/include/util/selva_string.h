@@ -93,6 +93,9 @@ struct selva_string {
     }
 #endif
 
+void selva_string_init_tls(void);
+void selva_string_deinit_tls(void);
+
 /**
  * Initialize a statically allocated selva_string.
  * Note that the string buffer doesn't need to be statically allocated, just the struct.
@@ -366,13 +369,6 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
  */
 int selva_string_endswith(const struct selva_string *s, const char *suffix)
     __attribute__((access(read_only, 1), access(read_only, 2)));
-
-/**
- * Find a substring sub_str in s.
- * This function works correctly with compressed strings.
- */
-ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
-    __attribute__((access(read_only, 1), access(read_only, 2, 3)));
 
 #define TO_STR_1(_var) \
     size_t _var##_len; \

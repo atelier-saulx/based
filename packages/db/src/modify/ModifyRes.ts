@@ -28,6 +28,7 @@ const walk = (val) => {
   }
   return val
 }
+
 const parseVal = (val) => {
   if (typeof val === 'object' && val !== null) {
     return JSON.stringify(walk(val)).replace(MAGIC_REG, '')

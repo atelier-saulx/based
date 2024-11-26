@@ -444,20 +444,7 @@ void sdb_init(struct selva_io *io)
      * whether the SDB will be compressed.
      */
     if (io->flags & (SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED)) {
-#if 0
-        struct libdeflate_options deflate_opts = {
-            .sizeof_options = sizeof(deflate_opts),
-            .malloc_func = selva_malloc,
-            .free_func = selva_free,
-        };
-#endif
-
         /* NOTE decomp needs the compressor to determine the worst case buf size. */
-        /* TODO Coming in the upcoming version */
-#if 0
-        io->compressor = libdeflate_alloc_compressor_ex(6, &deflate_opts);
-        io->decompressor = libdeflate_alloc_decompressor(&deflate_opts);
-#endif
         io->compressor = libdeflate_alloc_compressor(SDB_COMPRESSION_LEVEL);
         io->decompressor = libdeflate_alloc_decompressor();
 

@@ -122,7 +122,7 @@ function updateRefs(
   setCursor(ctx, schema, def.prop, res.tmpId, mod)
 
   const initpos = ctx.len
-  const nrOrErr = putRefs(ctx, mod, refs, res, op)
+  const nrOrErr = putRefs(ctx, mod, refs, op)
 
   if (nrOrErr) {
     if (typeof nrOrErr === 'number') {
@@ -237,7 +237,6 @@ function putRefs(
   ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
-  res: ModifyState,
   op: 0 | 1, // overwrite or add
 ): number | ModifyError {
   appendU8(ctx, modifyOp)

@@ -46,6 +46,7 @@
  *   instructions enabled and is used automatically at runtime when supported.
  */
 
+#include "jemalloc.h"
 #include "lib_common.h"
 #include "deflate_constants.h"
 
@@ -1084,8 +1085,8 @@ typedef enum libdeflate_result (*decompress_func_t)
     (struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
-     size_t *actual_in_nbytes_ret,size_t *actual_out_nbytes_ret,
-     enum libdeflate_decompress_stop_by stop_type,int* is_final_block_ret);
+     size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
+     enum libdeflate_decompress_stop_by stop_type, int *is_final_block_ret);
 
 #define FUNCNAME deflate_decompress_default
 #undef ATTRIBUTES
@@ -1121,11 +1122,11 @@ libdeflate_decompress_block(struct libdeflate_decompressor *d,
                  const void *in_part, size_t in_part_nbytes_bound,
                  void *out_block_with_in_dict, size_t in_dict_nbytes, size_t out_block_nbytes,
                  size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-                 enum libdeflate_decompress_stop_by stop_type, bool *is_final_block_ret)
+                 enum libdeflate_decompress_stop_by stop_type)
 {
     return decompress_impl(d, in_part, in_part_nbytes_bound,
                            out_block_with_in_dict, in_dict_nbytes, out_block_nbytes,
-                           actual_in_nbytes_ret, actual_out_nbytes_ret, stop_type, is_final_block_ret);
+                           actual_in_nbytes_ret, actual_out_nbytes_ret, stop_type);
 }
 
 LIBDEFLATEEXPORT void
@@ -1151,7 +1152,7 @@ libdeflate_decompress_ex(struct libdeflate_decompressor *d,
     _decompress_block_init(d);
     return decompress_impl(d, in, in_nbytes, out, 0, out_nbytes_avail,
                            actual_in_nbytes_ret, actual_out_nbytes_ret,
-                           LIBDEFLATE_STOP_BY_FINAL_BLOCK, NULL);
+                           LIBDEFLATE_STOP_BY_FINAL_BLOCK);
 }
 
 LIBDEFLATEEXPORT enum libdeflate_result
@@ -1163,7 +1164,7 @@ libdeflate_decompress(struct libdeflate_decompressor *d,
     _decompress_block_init(d);
     return decompress_impl(d, in, in_nbytes, out, 0, out_nbytes_avail,
                            NULL, actual_out_nbytes_ret,
-                           LIBDEFLATE_STOP_BY_FINAL_BLOCK, NULL);
+                           LIBDEFLATE_STOP_BY_FINAL_BLOCK);
 }
 
 LIBDEFLATEEXPORT struct libdeflate_decompressor *
@@ -1184,7 +1185,7 @@ libdeflate_alloc_decompressor(void)
      *
      * But for simplicity, we currently just zero the whole decompressor.
      */
-    struct libdeflate_decompressor *d = libdeflate_malloc(sizeof(*d));
+    struct libdeflate_decompressor *d = selva_malloc(sizeof(*d));
 
     if (d == NULL)
         return NULL;
@@ -1195,5 +1196,5 @@ libdeflate_alloc_decompressor(void)
 LIBDEFLATEEXPORT void
 libdeflate_free_decompressor(struct libdeflate_decompressor *d)
 {
-    libdeflate_free(d);
+    selva_free(d);
 }

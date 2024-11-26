@@ -127,28 +127,33 @@ libdeflate_alloc_decompressor(void);
  * Result of a call to libdeflate_decompress().
  */
 enum libdeflate_result {
-	/**
+    /**
      * Decompression was successful.
      */
-	LIBDEFLATE_SUCCESS = 0,
+    LIBDEFLATE_SUCCESS = 0,
 
-	/**
+    /**
      * Decompressed failed because the compressed data was invalid, corrupt,
-	 * or otherwise unsupported.
+     * or otherwise unsupported.
      */
-	LIBDEFLATE_BAD_DATA = 1,
+    LIBDEFLATE_BAD_DATA = 1,
 
-	/**
+    /**
      * A NULL 'actual_out_nbytes_ret' was provided, but the data would have
-	 * decompressed to fewer than 'out_nbytes_avail' bytes.
+     * decompressed to fewer than 'out_nbytes_avail' bytes.
      */
-	LIBDEFLATE_SHORT_OUTPUT = 2,
+    LIBDEFLATE_SHORT_OUTPUT = 2,
 
-	/**
+    /**
      * The data would have decompressed to more than 'out_nbytes_avail'
-	 * bytes.
+     * bytes.
      */
-	LIBDEFLATE_INSUFFICIENT_SPACE = 3,
+    LIBDEFLATE_INSUFFICIENT_SPACE = 3,
+    /**
+     * More blocks availbled for decompression.
+     * Only returned by libdeflate_decompress_block().
+     */
+    LIBDEFLATE_MORE = 4,
 };
 
 /**
@@ -238,7 +243,7 @@ libdeflate_decompress_block(struct libdeflate_decompressor *decompressor,
                  const void *in_part, size_t in_part_nbytes_bound,
                  void *out_block_with_in_dict, size_t in_dict_nbytes, size_t out_block_nbytes,
                  size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-                 enum libdeflate_decompress_stop_by stop_type, bool *is_final_block_ret);
+                 enum libdeflate_decompress_stop_by stop_type);
 
 /**
  * Clear the block decompressor save state.
@@ -306,22 +311,5 @@ libdeflate_decompress_stream(
  */
 LIBDEFLATEEXPORT void
 libdeflate_free_decompressor(struct libdeflate_decompressor *decompressor);
-
-/* ========================================================================== */
-/*                           Custom memory allocator                          */
-/* ========================================================================== */
-
-/**
- * Install a custom memory allocator which libdeflate will use for all memory
- * allocations.
- * 'malloc_func' is a function that must behave like malloc(), and
- * 'free_func' is a function that must behave like free().
- *
- * There must not be any libdeflate_compressor or libdeflate_decompressor
- * structures in existence when calling this function.
- */
-LIBDEFLATEEXPORT void
-libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
-				void (*free_func)(void *));
 
 #endif /* LIBDEFLATE_H */

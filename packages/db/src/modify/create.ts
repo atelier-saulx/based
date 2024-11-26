@@ -63,7 +63,7 @@ export const create = (
   unsafe?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  let id
+  let id: number
   if ('id' in obj) {
     if (unsafe) {
       id = obj.id
@@ -85,26 +85,6 @@ export const create = (
     if (err === RANGE_ERR) {
       flushBuffer(db)
       return create(db, type, obj, unsafe)
-
-      // const { min, len, max } = ctx
-      // console.log('create - range error', { min, len, max }, db.workers)
-      // if (cnt-- === 0) {
-      //   process.exit()
-      // }
-      // return flushBuffer(db).then(() => create(db, type, obj))
-
-      // @ts-ignore
-      // return new Promise((resolve) => {
-      //   process.nextTick(() => {
-      //     flushBuffer(db)
-      //     resolve(create(db, type, obj))
-      //   })
-      // })
-      // if (pos > 0) {
-      // flushBuffer(db)
-      // return create(db, type, obj)
-      // }
-      // throw Error(`Payload exceeds maximum payload size (${ctx.max}b)`)
     } else {
       res.error = err
     }

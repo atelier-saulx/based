@@ -60,12 +60,142 @@
         bitsleft = 0; } while(0)
 #endif
 
+static void huffman_build_static_decode_tables(struct libdeflate_decompressor * restrict d)
+{
+    unsigned i;
+
+    STATIC_ASSERT(DEFLATE_NUM_LITLEN_SYMS == 288);
+    STATIC_ASSERT(DEFLATE_NUM_OFFSET_SYMS == 32);
+
+    d->static_codes_loaded = true;
+
+    for (i = 0; i < 144; i++)
+        d->u.l.lens[i] = 8;
+    for (; i < 256; i++)
+        d->u.l.lens[i] = 9;
+    for (; i < 280; i++)
+        d->u.l.lens[i] = 7;
+    for (; i < 288; i++)
+        d->u.l.lens[i] = 8;
+
+    for (; i < 288 + 32; i++)
+        d->u.l.lens[i] = 5;
+
+    build_offset_decode_table(d, DEFLATE_NUM_LITLEN_SYMS, DEFLATE_NUM_OFFSET_SYMS);
+    build_litlen_decode_table(d, DEFLATE_NUM_LITLEN_SYMS, DEFLATE_NUM_OFFSET_SYMS);
+}
+
+/**
+ * Copy the match.
+ *
+ * On most CPUs the fastest method is a word-at-a-time copy,
+ * unconditionally copying about 5 words since this is enough
+ * for most matches without being too much.
+ *
+ * The normal word-at-a-time copy works for offset >= WORDBYTES,
+ * which is most cases.  The case of offset == 1 is also common
+ * and is worth optimizing for, since it is just RLE encoding of
+ * the previous byte, which is the result of compressing long
+ * runs of the same byte.
+ *
+ * Writing past the match 'length' is allowed here, since it's
+ * been ensured there is enough output space left for a slight
+ * overrun.  FASTLOOP_MAX_BYTES_WRITTEN needs to be updated if
+ * the maximum possible overrun here is changed.
+ */
+static void fast_copy_match(u8 * restrict dst, const u8 * restrict src, size_t len, u32 offset)
+{
+    const u8 *stop = dst + len;
+
+    if (UNALIGNED_ACCESS_IS_FAST && offset >= WORDBYTES) {
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        while (dst < stop) {
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+        }
+    } else if (UNALIGNED_ACCESS_IS_FAST && offset == 1) {
+        machine_word_t v;
+
+        /*
+         * This part tends to get auto-vectorized, so keep it
+         * copying a multiple of 16 bytes at a time.
+         */
+        v = (machine_word_t)0x0101010101010101 * src[0];
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        while (dst < stop) {
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+        }
+    } else if (UNALIGNED_ACCESS_IS_FAST) {
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += offset;
+        dst += offset;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += offset;
+        dst += offset;
+        do {
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += offset;
+            dst += offset;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += offset;
+            dst += offset;
+        } while (dst < stop);
+    } else {
+        *dst++ = *src++;
+        *dst++ = *src++;
+        do {
+            *dst++ = *src++;
+        } while (dst < stop);
+    }
+}
+
 static ATTRIBUTES MAYBE_UNUSED enum libdeflate_result
 FUNCNAME(struct libdeflate_decompressor * restrict d,
      const void * restrict in, size_t in_nbytes,
      void * restrict out, size_t in_dict_nbytes, size_t out_nbytes_avail,
      size_t *actual_in_nbytes_ret, size_t *actual_out_nbytes_ret,
-     enum libdeflate_decompress_stop_by stop_type, bool *is_final_block_ret)
+     enum libdeflate_decompress_stop_by stop_type)
 {
     u8 *out_next = ((u8 *)out) + in_dict_nbytes;
     u8 * const out_end = out_next + out_nbytes_avail;
@@ -82,18 +212,14 @@ FUNCNAME(struct libdeflate_decompressor * restrict d,
 
     bool is_final_block;
     unsigned block_type;
-    unsigned num_litlen_syms;
-    unsigned num_offset_syms;
     bitbuf_t litlen_tablemask;
     u32 entry;
 
     _decompress_block_init(d);
 
+    STATIC_ASSERT(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
 next_block:
     /* Starting to read the next block */
-    ;
-
-    STATIC_ASSERT(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
     REFILL_BITS();
 
     /* BFINAL: 1 bit */
@@ -103,14 +229,13 @@ next_block:
     block_type = (bitbuf >> 1) & BITMASK(2);
 
     if (block_type == DEFLATE_BLOCKTYPE_DYNAMIC_HUFFMAN) {
-
-        /* Dynamic Huffman block */
-
         /* The order in which precode lengths are stored */
         static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
             16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
         };
 
+        unsigned num_litlen_syms;
+        unsigned num_offset_syms;
         unsigned num_explicit_precode_lens;
         unsigned i;
 
@@ -172,7 +297,6 @@ next_block:
         do {
             unsigned presym;
             u8 rep_val;
-            unsigned rep_count;
 
             if ((u8)bitsleft < DEFLATE_MAX_PRE_CODEWORD_LEN + 7)
                 REFILL_BITS();
@@ -196,7 +320,7 @@ next_block:
                 continue;
             }
 
-            /* Run-length encoded codeword lengths */
+            /* Run-length encoded (RLE) codeword lengths */
 
             /*
              * Note: we don't need to immediately verify that the
@@ -220,9 +344,10 @@ next_block:
             if (presym == 16) {
                 /* Repeat the previous length 3 - 6 times. */
                 SAFETY_CHECK(i != 0);
-                rep_val = d->u.l.lens[i - 1];
                 STATIC_ASSERT(3 + BITMASK(2) == 6);
-                rep_count = 3 + (bitbuf & BITMASK(2));
+                unsigned rep_count = 3 + (bitbuf & BITMASK(2));
+
+                rep_val = d->u.l.lens[i - 1];
                 bitbuf >>= 2;
                 bitsleft -= 2;
                 d->u.l.lens[i + 0] = rep_val;
@@ -235,7 +360,8 @@ next_block:
             } else if (presym == 17) {
                 /* Repeat zero 3 - 10 times. */
                 STATIC_ASSERT(3 + BITMASK(3) == 10);
-                rep_count = 3 + (bitbuf & BITMASK(3));
+                unsigned rep_count = 3 + (bitbuf & BITMASK(3));
+
                 bitbuf >>= 3;
                 bitsleft -= 3;
                 d->u.l.lens[i + 0] = 0;
@@ -252,7 +378,8 @@ next_block:
             } else {
                 /* Repeat zero 11 - 138 times. */
                 STATIC_ASSERT(11 + BITMASK(7) == 138);
-                rep_count = 11 + (bitbuf & BITMASK(7));
+                unsigned rep_count = 11 + (bitbuf & BITMASK(7));
+
                 bitbuf >>= 7;
                 bitsleft -= 7;
                 memset(&d->u.l.lens[i], 0,
@@ -261,9 +388,12 @@ next_block:
             }
         } while (i < num_litlen_syms + num_offset_syms);
 
-        /* Unnecessary, but check this for consistency with zlib. */
         SAFETY_CHECK(i == num_litlen_syms + num_offset_syms);
-
+        if (!(i == num_litlen_syms + num_offset_syms &&
+              build_offset_decode_table(d, num_litlen_syms, num_offset_syms) &&
+              build_litlen_decode_table(d, num_litlen_syms, num_offset_syms))) {
+            return LIBDEFLATE_BAD_DATA;
+        }
     } else if (block_type == DEFLATE_BLOCKTYPE_UNCOMPRESSED) {
         u16 len, nlen;
 
@@ -299,12 +429,7 @@ next_block:
         out_next += len;
 
         goto block_done;
-
-    } else {
-        unsigned i;
-
-        SAFETY_CHECK(block_type == DEFLATE_BLOCKTYPE_STATIC_HUFFMAN);
-
+    } else if (block_type == DEFLATE_BLOCKTYPE_STATIC_HUFFMAN) {
         /*
          * Static Huffman block: build the decode tables for the static
          * codes.  Skip doing so if the tables are already set up from
@@ -318,35 +443,14 @@ next_block:
         bitbuf >>= 3; /* for BTYPE and BFINAL */
         bitsleft -= 3;
 
-        if (d->static_codes_loaded)
-            goto have_decode_tables;
-
-        d->static_codes_loaded = true;
-
-        STATIC_ASSERT(DEFLATE_NUM_LITLEN_SYMS == 288);
-        STATIC_ASSERT(DEFLATE_NUM_OFFSET_SYMS == 32);
-
-        for (i = 0; i < 144; i++)
-            d->u.l.lens[i] = 8;
-        for (; i < 256; i++)
-            d->u.l.lens[i] = 9;
-        for (; i < 280; i++)
-            d->u.l.lens[i] = 7;
-        for (; i < 288; i++)
-            d->u.l.lens[i] = 8;
-
-        for (; i < 288 + 32; i++)
-            d->u.l.lens[i] = 5;
-
-        num_litlen_syms = 288;
-        num_offset_syms = 32;
+        if (!d->static_codes_loaded) {
+            huffman_build_static_decode_tables(d);
+        }
+    } else {
+        return LIBDEFLATE_BAD_DATA;
     }
 
     /* Decompressing a Huffman block (either dynamic or static) */
-
-    SAFETY_CHECK(build_offset_decode_table(d, num_litlen_syms, num_offset_syms));
-    SAFETY_CHECK(build_litlen_decode_table(d, num_litlen_syms, num_offset_syms));
-have_decode_tables:
     litlen_tablemask = BITMASK(d->litlen_tablebits);
 
     /*
@@ -587,103 +691,7 @@ have_decode_tables:
         entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
         REFILL_BITS_IN_FASTLOOP();
 
-        /*
-         * Copy the match.  On most CPUs the fastest method is a
-         * word-at-a-time copy, unconditionally copying about 5 words
-         * since this is enough for most matches without being too much.
-         *
-         * The normal word-at-a-time copy works for offset >= WORDBYTES,
-         * which is most cases.  The case of offset == 1 is also common
-         * and is worth optimizing for, since it is just RLE encoding of
-         * the previous byte, which is the result of compressing long
-         * runs of the same byte.
-         *
-         * Writing past the match 'length' is allowed here, since it's
-         * been ensured there is enough output space left for a slight
-         * overrun.  FASTLOOP_MAX_BYTES_WRITTEN needs to be updated if
-         * the maximum possible overrun here is changed.
-         */
-        if (UNALIGNED_ACCESS_IS_FAST && offset >= WORDBYTES) {
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += WORDBYTES;
-            dst += WORDBYTES;
-            while (dst < out_next) {
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += WORDBYTES;
-                dst += WORDBYTES;
-            }
-        } else if (UNALIGNED_ACCESS_IS_FAST && offset == 1) {
-            machine_word_t v;
-
-            /*
-             * This part tends to get auto-vectorized, so keep it
-             * copying a multiple of 16 bytes at a time.
-             */
-            v = (machine_word_t)0x0101010101010101 * src[0];
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            store_word_unaligned(v, dst);
-            dst += WORDBYTES;
-            while (dst < out_next) {
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-                store_word_unaligned(v, dst);
-                dst += WORDBYTES;
-            }
-        } else if (UNALIGNED_ACCESS_IS_FAST) {
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += offset;
-            dst += offset;
-            store_word_unaligned(load_word_unaligned(src), dst);
-            src += offset;
-            dst += offset;
-            do {
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += offset;
-                dst += offset;
-                store_word_unaligned(load_word_unaligned(src), dst);
-                src += offset;
-                dst += offset;
-            } while (dst < out_next);
-        } else {
-            *dst++ = *src++;
-            *dst++ = *src++;
-            do {
-                *dst++ = *src++;
-            } while (dst < out_next);
-        }
+        fast_copy_match(dst, src, length, offset);
     } while (in_next < in_fastloop_end && out_next < out_fastloop_end);
 
     /*
@@ -756,43 +764,39 @@ generic_loop:
         } while (dst < out_next);
     }
 
+    enum libdeflate_result rc;
 block_done:
     /* Finished decoding a block */
 
-    if (is_final_block)
+    if (is_final_block) {
         _DEF_bitstream_byte_align();
-
-    switch (stop_type){
-        case LIBDEFLATE_STOP_BY_FINAL_BLOCK:{
-            if (!is_final_block)
-                goto next_block;
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK:{
-            // stop, not next block
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT:{
+        rc = LIBDEFLATE_SUCCESS;
+    } else {
+        switch (stop_type) {
+        case LIBDEFLATE_STOP_BY_FINAL_BLOCK:
+            goto next_block;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK:
+            break;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT:
             if (in_next - ((((u8)bitsleft) >> 3) - overread_count) < in_end)
                 goto next_block;
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT:{
+            break;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT:
             if (out_next < out_end)
                 goto next_block;
-        } break;
-        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN:{
+            break;
+        case LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN:
             if ((out_next < out_end) | ((bitsleft & 7) != 0))
                 goto next_block;
-        } break;
-    }
+            break;
+        }
 
-    /* That was the last block. */
-
-    if (is_final_block_ret)
-        *is_final_block_ret = is_final_block;
-    if (!is_final_block) {
         _DEF_bitstream_byte_restore();
         //backup for next block
         d->bitsleft_back = bitsleft & 7;
         d->bitbuf_back = bitbuf & ((1 << (bitsleft & 7)) - 1);
+
+        rc = LIBDEFLATE_MORE;
     }
 
     /* Optionally return the actual number of bytes consumed. */
@@ -805,9 +809,9 @@ block_done:
         *actual_out_nbytes_ret = out_next - (((u8 *)out) + in_dict_nbytes);
     } else {
         if (out_next != out_end)
-            return LIBDEFLATE_SHORT_OUTPUT;
+            rc = LIBDEFLATE_SHORT_OUTPUT;
     }
-    return LIBDEFLATE_SUCCESS;
+    return rc;
 }
 
 #undef FUNCNAME

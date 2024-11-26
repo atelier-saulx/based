@@ -15,7 +15,7 @@ export class DbWorker {
     const address = db.native.intFromExternal(db.dbCtxExternal)
     const { port1, port2 } = new MessageChannel()
 
-    this.worker = new Worker(join(__dirname, 'worker.js'), {
+    this.worker = new Worker(join(__dirname, 'workers/worker.js'), {
       workerData: {
         atomics: this.atomics,
         address,

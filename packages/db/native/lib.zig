@@ -35,6 +35,11 @@ pub fn registerFunction(
     }
 }
 
+fn workerCtxInit(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    db.workerCtxInit();
+    return null;
+}
+
 fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
     return _externalFromInt(napi_env, inf) catch return null;
 }
@@ -77,6 +82,7 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     std.debug.print("register napi fn SIMD OPERATIONS (u32): {any} \n", .{std.simd.suggestVectorLength(u32)});
 
+    registerFunction(env, exports, "workerCtxInit", workerCtxInit) catch return null;
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
     registerFunction(env, exports, "saveCommon", dump.saveCommon) catch return null;

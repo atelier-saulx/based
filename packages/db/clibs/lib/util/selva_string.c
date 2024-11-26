@@ -4,6 +4,7 @@
  */
 #define _GNU_SOURCE
 #define __STDC_WANT_LIB_EXT1__ 1
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -39,8 +40,8 @@
               (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
               (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
-static struct libdeflate_compressor *compressor;
-static struct libdeflate_decompressor *decompressor;
+static __thread struct libdeflate_compressor *compressor;
+static __thread struct libdeflate_decompressor *decompressor;
 
 /**
  * Test that only one or none of excl flags are set in flags.
@@ -762,7 +763,7 @@ int selva_string_verify_crc(const struct selva_string *s)
     if (!verify_parity(s) || get_buf(s)[s->len] != '\0') {
         return 0;
     }
-    if (s->flags & (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) {
+    if ((s->flags & (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) == (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) {
         return 1; /* We don't check compressed strings because the CRC is for the uncompressed string. */
     }
 
@@ -917,39 +918,10 @@ int selva_string_endswith(const struct selva_string *s, const char *suffix)
     return res;
 }
 
-ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
+__constructor void selva_string_init_tls(void)
 {
-    size_t len = selva_string_getz_ulen(s);
-    ssize_t i;
+    assert(!compressor && !decompressor);
 
-    if (s->flags & SELVA_STRING_COMPRESS && len > DEFLATE_STRINGS_THRESHOLD_SIZE) {
-        struct libdeflate_block_state state = libdeflate_block_state_init(DEFLATE_STRINGS_THRESHOLD_SIZE);
-        size_t compressed_len;
-        size_t uncompressed_len;
-        const char *compressed;
-
-        compressed = get_compressed_data(s, &compressed_len, &uncompressed_len);
-        i = libdeflate_memmem(decompressor, &state, compressed, compressed_len, sub_str, sub_len);
-
-        libdeflate_block_state_deinit(&state);
-    } else {
-        bool must_free;
-        char *str = get_comparable_buf(s, nullptr, &must_free);
-        char *pos;
-
-        pos = memmem(str, len, sub_str, sub_len);
-        i = pos ? (ssize_t)(pos - str) : -1;
-
-        if (must_free) {
-            selva_free(str);
-        }
-    }
-
-    return i;
-}
-
-__constructor static void init_compressor(void)
-{
     /*
      * TODO How to configure compression level?
      * This is now the same as in native/string.zig, hopefully...
@@ -965,9 +937,7 @@ __constructor static void init_compressor(void)
     }
 }
 
-/* FIXME freeing the compressor crashes the io child process at exit. */
-#if 0
-__destructor static void deinit_compressor(void)
+__destructor void selva_string_deinit_tls(void)
 {
     libdeflate_free_compressor(compressor);
     compressor = nullptr;
@@ -975,4 +945,3 @@ __destructor static void deinit_compressor(void)
     libdeflate_free_decompressor(decompressor);
     decompressor = nullptr;
 }
-#endif
