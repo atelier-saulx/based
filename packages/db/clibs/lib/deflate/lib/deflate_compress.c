@@ -2537,7 +2537,7 @@ deflate_compress_greedy(struct libdeflate_compressor * restrict c,
     const u8 *in_cur_base = in_next;
     unsigned max_len = DEFLATE_MAX_MATCH_LEN;
     unsigned nice_len = MIN(c->nice_match_length, max_len);
-    u32 next_hashes[2] = {0, 0};
+    u32 next_hashes[2] = {};
 
     hc_matchfinder_init(&c->p.g.hc_mf);
 
@@ -2613,7 +2613,7 @@ deflate_compress_lazy_generic(struct libdeflate_compressor * restrict c,
     const u8 *in_cur_base = in_next;
     unsigned max_len = DEFLATE_MAX_MATCH_LEN;
     unsigned nice_len = MIN(c->nice_match_length, max_len);
-    u32 next_hashes[2] = {0, 0};
+    u32 next_hashes[2] = {};
 
     hc_matchfinder_init(&c->p.g.hc_mf);
 
@@ -3605,7 +3605,7 @@ deflate_compress_near_optimal(struct libdeflate_compressor * restrict c,
     unsigned max_len = DEFLATE_MAX_MATCH_LEN;
     unsigned nice_len = MIN(c->nice_match_length, max_len);
     struct lz_match *cache_ptr = c->p.n.match_cache;
-    u32 next_hashes[2] = {0, 0};
+    u32 next_hashes[2] = {};
     bool prev_block_used_only_literals = false;
 
     bt_matchfinder_init(&c->p.n.bt_mf);
