@@ -3,7 +3,7 @@ import db from '../../nativebla.cjs'
 
 export default {
   workerCtxInit: (): void => {
-    return db.workerCtxInit();
+    return db.workerCtxInit()
   },
 
   markMerkleBlock: (buf: Buffer): any => {
@@ -106,5 +106,9 @@ export default {
 
   decompress: (input: Buffer, output: Buffer, offset: number, len: number) => {
     return db.decompress(input, output, offset, len)
+  },
+
+  crc32: (buf: Buffer) => {
+    return db.crc32(buf)
   },
 }

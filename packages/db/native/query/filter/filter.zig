@@ -179,7 +179,8 @@ pub fn filter(
                     value = db.getField(typeEntry, 0, node, fieldSchema);
                 }
             }
-            if (value.len == 0 or !runCondition(ctx, query, value)) {
+            // Fix runCondition
+            if (value.len == 0 or !runCondition(ctx, node, query, value)) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += querySize + 3;

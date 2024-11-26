@@ -17,7 +17,7 @@ import {
 } from './operators.js'
 import { parseFilterValue } from './parseFilterValue.js'
 import { Filter } from './types.js'
-import { compress } from '../../string.js'
+import { compress, crc32 } from '../../string.js'
 
 // -------------------------------------------
 // conditions normal
@@ -38,8 +38,9 @@ const writeFixed = (
   value: any,
   size: number,
   offset: number,
+  op: number,
 ) => {
-  if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
+  if ((prop.typeIndex === BINARY || prop.typeIndex === STRING) && op !== 17) {
     if (typeof value === 'string') {
       const size = buf.write(value, offset + 1, 'utf8')
       buf[offset] = size
@@ -108,6 +109,7 @@ const createFixedFilterBuffer = (
           parseFilterValue(prop, value[i]),
           size,
           10 + i * size,
+          op,
         )
       }
     }
@@ -120,7 +122,7 @@ const createFixedFilterBuffer = (
     buf.writeUInt16LE(start, 4)
     buf[6] = stripNegation(op)
     buf[7] = prop.typeIndex
-    writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
+    writeFixed(prop, buf, parseFilterValue(prop, value), size, 8, op)
   }
 
   return buf
@@ -203,19 +205,36 @@ export const primitiveFilter = (
     if (op === 3 || op === 1 || op === 2 || op === 16) {
       if (prop.separate) {
         // if val.bytelen > 100
-        // make hash and compare that
-        // make a seperate operation for hash + len comparison
-        //  (only for VAR)
-        // maybe just do crc32 so we dont need to increase size everywhere...
-        // [or = 4] [size 2], [0x0], [op] [typeIndex], value[size]
-        const size = val.byteLength
-        buf = Buffer.allocUnsafe(8 + size)
-        buf[0] = negateType(op)
-        buf[1] = 4 // var size
-        buf.writeUint32LE(size, 2)
-        buf[6] = stripNegation(op)
-        buf[7] = prop.typeIndex
-        buf.set(val, 8)
+
+        if (op === 1 && val.byteLength > 100) {
+          // ADD ARRAY SUPPORT!
+          buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)
+
+          // [or = 0] [size 2] [start 2], [op], value[size]
+          buf = Buffer.allocUnsafe(16)
+          buf[0] = negateType(op)
+          buf[1] = 0
+          buf.writeUInt16LE(8, 2)
+          buf.writeUInt16LE(0, 4)
+          buf[6] = 17
+          buf[7] = prop.typeIndex
+          writeFixed(prop, buf, crc32(val), 4, 8, 17)
+          writeFixed(prop, buf, val.byteLength, 4, 12, 17)
+        } else {
+          // make hash and compare that
+          // make a seperate operation for hash + len comparison
+          //  (only for VAR)
+          // maybe just do crc32 so we dont need to increase size everywhere...
+          // [or = 4] [size 2], [0x0], [op] [typeIndex], value[size]
+          const size = val.byteLength
+          buf = Buffer.allocUnsafe(8 + size)
+          buf[0] = negateType(op)
+          buf[1] = 4 // var size
+          buf.writeUint32LE(size, 2)
+          buf[6] = stripNegation(op)
+          buf[7] = prop.typeIndex
+          buf.set(val, 8)
+        }
         // SET copy in
       }
       // else do

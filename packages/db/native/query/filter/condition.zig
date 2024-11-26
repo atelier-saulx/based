@@ -10,6 +10,7 @@ const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
 const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
+const selva = @import("../../selva.zig");
 
 pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
@@ -92,7 +93,7 @@ pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
     return .{ next, true };
 }
 
-pub inline fn default(q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn default(q: []u8, v: []u8, i: usize, _: *selva.SelvaNode) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
     const start = readInt(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
@@ -117,6 +118,16 @@ pub inline fn default(q: []u8, v: []u8, i: usize) ConditionsResult {
         }
     } else if (Op.isNumerical(op)) {
         if (!num.compare(valueSize, start, op, query, v, prop)) {
+            return .{ next, false };
+        }
+    } else if (op == Op.equalCrc32) {
+        const origLen = readInt(u32, query, 4);
+        if (origLen != v.len) {
+            return .{ next, false };
+        }
+        const crc32 = selva.crc32c(0, v.ptr, v.len);
+        const qCrc32 = readInt(u32, query, 0);
+        if (crc32 != qCrc32) {
             return .{ next, false };
         }
     }

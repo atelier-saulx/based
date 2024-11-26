@@ -47,7 +47,16 @@ pub fn hashDigest(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.na
     return null;
 }
 
-// compressor has to be per ctx else multi core unsafe
+pub fn crc32(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    const args = napi.getArgs(1, env, info) catch return null;
+    const buf = napi.get([]u8, env, args[0]) catch return null;
+    const value: u32 = selva.crc32c(0, buf.ptr, buf.len);
+    var v: c.napi_value = undefined;
+    _ = c.napi_create_uint32(env, value, &v);
+    return v;
+}
+
+// TODO: compressor has to be per ctx else multi core unsafe
 pub fn compress(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     if (compressor == null) {
         compressor = selva.libdeflate_alloc_compressor(3);
