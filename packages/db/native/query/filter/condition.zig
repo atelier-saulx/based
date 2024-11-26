@@ -136,11 +136,10 @@ pub inline fn default(
         if (fieldSchema == null) {
             crc32 = selva.crc32c(0, v.ptr, v.len);
         } else {
-            crc32 = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
+            _ = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
         }
 
         const qCrc32 = readInt(u32, query, 0);
-        std.debug.print("DERP {d} {d} {any} {any} \n", .{ crc32, qCrc32, fieldSchema, node });
 
         if (crc32 != qCrc32) {
             return .{ next, false };
