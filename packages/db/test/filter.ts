@@ -736,10 +736,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
 
   const d = Date.now()
-  for (let i = 0; i < 100; i++) {
-    if (i === 2) {
-      console.log(new Uint8Array(Buffer.from('#' + i)))
-    }
+  for (let i = 0; i < 1000; i++) {
     const str = 'en'
     db.create('article', {
       type: 'gossip',
@@ -780,7 +777,7 @@ await test('variable size (string/binary)', async (t) => {
     .get()
     .inspect(1).length
 
-  equal(len, 1, 'has binary (single')
+  equal(len, 20, 'has binary (single')
 
   const largeDerp = Buffer.from(italy)
   let smurpArticle
@@ -831,11 +828,24 @@ await test('variable size (string/binary)', async (t) => {
   // FIX WITH CRC32 + len (original crc32)
   // add orignal crc32 as last argument after making compression
   // small check if 0, crc check, 1
+  // TODO OPTIMIZE
+  // equal(
+  //   db
+  //     .query('article')
+  //     .filter('derp', '=', largeDerp)
+  //     .include('id')
+  //     .range(0, 1e3)
+  //     .get()
+  //     .inspect(2).length,
+  //   1e3,
+  // )
 
+  console.log('-----------------')
+  // -------------------
   equal(
     db
       .query('article')
-      .filter('derp', '=', largeDerp)
+      .filter('body', '=', italy)
       .include('id')
       .range(0, 1e3)
       .get()

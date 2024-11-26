@@ -12,12 +12,13 @@ inline fn condition(
     mode: Mode,
     ctx: *db.DbCtx,
     node: *selva.SelvaNode,
+    fieldSchema: ?db.FieldSchema,
     q: []u8,
     v: []u8,
     i: usize,
 ) ConditionsResult {
     return switch (mode) {
-        Mode.default => c.default(q, v, i, node),
+        Mode.default => c.default(q, v, i, node, fieldSchema),
         Mode.defaultVar => c.defaultVar(q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
         Mode.orFixed => c.orFixed(q, v, i),
@@ -26,14 +27,20 @@ inline fn condition(
     };
 }
 
-pub inline fn runConditions(ctx: *db.DbCtx, node: *selva.SelvaNode, q: []u8, v: []u8) bool {
+pub inline fn runConditions(
+    ctx: *db.DbCtx,
+    node: *selva.SelvaNode,
+    fieldSchema: ?db.FieldSchema,
+    q: []u8,
+    v: []u8,
+) bool {
     var i: usize = 0;
     while (i < q.len) {
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
 
-        const result = condition(mode, ctx, node, q, v, i);
+        const result = condition(mode, ctx, node, fieldSchema, q, v, i);
         if (topLevelType == Type.negate) {
             if (result[1] == true) {
                 return false;

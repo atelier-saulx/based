@@ -93,7 +93,13 @@ pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
     return .{ next, true };
 }
 
-pub inline fn default(q: []u8, v: []u8, i: usize, _: *selva.SelvaNode) ConditionsResult {
+pub inline fn default(
+    q: []u8,
+    v: []u8,
+    i: usize,
+    node: *selva.SelvaNode,
+    fieldSchema: ?db.FieldSchema,
+) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
     const start = readInt(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
@@ -125,8 +131,17 @@ pub inline fn default(q: []u8, v: []u8, i: usize, _: *selva.SelvaNode) Condition
         if (origLen != v.len) {
             return .{ next, false };
         }
-        const crc32 = selva.crc32c(0, v.ptr, v.len);
+
+        var crc32: u32 = undefined;
+        if (fieldSchema == null) {
+            crc32 = selva.crc32c(0, v.ptr, v.len);
+        } else {
+            crc32 = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
+        }
+
         const qCrc32 = readInt(u32, query, 0);
+        std.debug.print("DERP {d} {d} {any} {any} \n", .{ crc32, qCrc32, fieldSchema, node });
+
         if (crc32 != qCrc32) {
             return .{ next, false };
         }
