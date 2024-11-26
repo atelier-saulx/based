@@ -825,22 +825,17 @@ await test('variable size (string/binary)', async (t) => {
     0,
   )
 
-  // FIX WITH CRC32 + len (original crc32)
-  // add orignal crc32 as last argument after making compression
-  // small check if 0, crc check, 1
-  // TODO OPTIMIZE
-  // equal(
-  //   db
-  //     .query('article')
-  //     .filter('derp', '=', largeDerp)
-  //     .include('id')
-  //     .range(0, 1e3)
-  //     .get()
-  //     .inspect(2).length,
-  //   1e3,
-  // )
+  equal(
+    db
+      .query('article')
+      .filter('derp', '=', largeDerp)
+      .include('id')
+      .range(0, 1e3)
+      .get()
+      .inspect(2).length,
+    1e3,
+  )
 
-  console.log('-----------------')
   // -------------------
   equal(
     db
