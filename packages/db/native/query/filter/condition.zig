@@ -97,7 +97,8 @@ pub inline fn default(
     q: []u8,
     v: []u8,
     i: usize,
-    node: *selva.SelvaNode,
+    comptime isEdge: bool,
+    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
     fieldSchema: ?db.FieldSchema,
 ) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
@@ -133,10 +134,15 @@ pub inline fn default(
         }
 
         var crc32: u32 = undefined;
+        // if isEdge
         if (fieldSchema == null) {
             crc32 = selva.crc32c(0, v.ptr, v.len);
         } else {
-            _ = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
+            if (isEdge) {
+                _ = selva.selva_fields_get_string_crc2(node.meta, fieldSchema, &crc32);
+            } else {
+                _ = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
+            }
         }
 
         const qCrc32 = readInt(u32, query, 0);
