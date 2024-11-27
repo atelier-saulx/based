@@ -1,6 +1,6 @@
 import { deepEqual as uDeepEqual } from '@saulx/utils'
 import util from 'node:util'
-import { BasedQueryResponse } from '../../src/query/BasedIterable.js'
+import { BasedQueryResponse } from '../../src/client/query/BasedIterable.js'
 
 export const deepEqual = (a, b, msg?: string) => {
   if (!uDeepEqual(a, b)) {

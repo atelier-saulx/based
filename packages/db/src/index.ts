@@ -1,26 +1,31 @@
-import { ModifyRes } from './modify/ModifyRes.js'
+import { ModifyRes } from './client/modify/ModifyRes.js'
 import { parse, Schema } from '@based/schema'
 import {
   SchemaTypeDef,
   createSchemaTypeDef,
   schemaToSelvaBuffer,
-} from './schema/schema.js'
+} from './server/schema/schema.js'
 import { hashObjectIgnoreKeyOrder, stringHash } from '@saulx/hash'
 import db from './native.js'
-import { BasedDbQuery } from './query/BasedDbQuery.js'
-import { DbWorker, ModifyCtx, flushBuffer, startWorker } from './operations.js'
-import { destroy } from './destroy.js'
+import { BasedDbQuery } from './client/query/BasedDbQuery.js'
+import {
+  DbWorker,
+  ModifyCtx,
+  flushBuffer,
+  startWorker,
+} from './client/operations.js'
+import { destroy } from './server/destroy.js'
 import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import { join } from 'node:path'
-import { genId } from './schema/utils.js'
-import { createTree as createMerkleTree } from '../src/csmt/index.js'
-import { create, remove, update } from './modify/index.js'
-import { migrate } from './migrate/index.js'
-import { compress, decompress } from './string.js'
+import { genId } from './server/schema/utils.js'
+import { createTree as createMerkleTree } from './server/csmt/index.js'
+import { create, remove, update } from './client/modify/index.js'
+import { migrate } from './server/migrate/index.js'
+import { compress, decompress } from './client/string.js'
 
-export * from './schema/typeDef.js'
-export * from './modify/modify.js'
+export * from './server/schema/typeDef.js'
+export * from './client/modify/modify.js'
 export { compress, decompress }
 
 const SCHEMA_FILE = 'schema.json'
@@ -190,7 +195,8 @@ export class BasedDb {
 
       def.total = total
       def.lastId = writelog?.types[def.id].lastId || lastId
-      def.blockCapacity = writelog?.types[def.id].blockCapacity || DEFAULT_BLOCK_CAPACITY
+      def.blockCapacity =
+        writelog?.types[def.id].blockCapacity || DEFAULT_BLOCK_CAPACITY
 
       this.foreachBlock(def, (start, end, hash) => {
         //console.log(`load range ${def.id}:${start}-${end} hash:`, hash)
