@@ -945,5 +945,11 @@ await test('main has (string/binary)', async (t) => {
     derp: new Uint8Array([1, 2, 3, 4]),
   })
 
-  db.query('article').get().inspect(10)
+  deepEqual(db.query('article').get().toObject(), [
+    {
+      id: 1,
+      stuff: 'derp!',
+      derp: new Uint8Array([1, 2, 3, 4]),
+    },
+  ])
 })
