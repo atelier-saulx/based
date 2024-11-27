@@ -19,10 +19,6 @@ import { createOrGetRefQueryDef } from './include/utils.js'
 import { FilterAst, FilterBranchFn, IsFilter } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 
-// partial class
-// range, include, filter, sort, traverse* later
-// include will support branching (rest not yet)
-
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
 
