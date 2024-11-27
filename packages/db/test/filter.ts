@@ -736,10 +736,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
 
   const d = Date.now()
-  for (let i = 0; i < 100; i++) {
-    if (i === 2) {
-      console.log(new Uint8Array(Buffer.from('#' + i)))
-    }
+  for (let i = 0; i < 1000; i++) {
     const str = 'en'
     db.create('article', {
       type: 'gossip',
@@ -750,8 +747,6 @@ await test('variable size (string/binary)', async (t) => {
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
-
-  console.log(Date.now() - d, 'ms', await db.drain(), 'ms')
 
   deepEqual(
     db
@@ -777,21 +772,9 @@ await test('variable size (string/binary)', async (t) => {
     .query('article')
     .filter('stuff', 'has', new Uint8Array([55, 57]))
     .range(0, 100)
-    .get()
-    .inspect(1).length
+    .get().length
 
-  equal(len, 1, 'has binary (single')
-
-  // const size = 1e7 + 2
-  // const largeDerp = new Uint8Array(size)
-  // let bytes = 0
-  // for (let i = 0; i < size; i++) {
-  //   largeDerp[i] = bytes
-  //   bytes++
-  //   if (bytes > 253) {
-  //     bytes = 0
-  //   }
-  // }
+  equal(len, 6, 'has binary (single')
 
   const largeDerp = Buffer.from(italy)
   let smurpArticle
@@ -816,28 +799,55 @@ await test('variable size (string/binary)', async (t) => {
   }
   q[250] = 255
 
-  db.query('article')
-    .filter('derp', 'has', Buffer.from('vitorio'))
-    .include('id')
-    .get()
-    .inspect(1)
+  equal(
+    db
+      .query('article')
+      .filter('derp', 'has', Buffer.from('vitorio'))
+      .include('id')
+      .get().length,
+    0,
+  )
 
-  db.query('article')
-    .filter('derp', 'has', Buffer.from('xx'))
-    .include('id')
-    .get()
-    .inspect(1)
+  equal(
+    db
+      .query('article')
+      .filter('derp', 'has', Buffer.from('xx'))
+      .include('id')
+      .get().length,
+    0,
+  )
 
-  db.query('article').filter('derp', 'has', q).include('id').get().inspect(1)
+  equal(
+    db.query('article').filter('derp', 'has', q).include('id').get().length,
+    0,
+  )
 
-  // FIX WITH CRC32 + len (original crc32)
-  // add orignal crc32 as last argument after making compression
-  // small check if 0, crc check, 1
-  // db.query('article')
-  //   .filter('derp', 'has', new Uint8Array([30, 100, 21, 50]))
-  //   .range(0, 10)
-  //   .get()
-  //   .inspect(10)
+  equal(
+    db
+      .query('article')
+      .filter('derp', '=', largeDerp)
+      .include('id')
+      .range(0, 1e3)
+      .get().length,
+    1e3,
+  )
+
+  // -------------------
+  equal(
+    db
+      .query('article')
+      .filter('body', '=', italy)
+      .include('id')
+      .range(0, 1e3)
+      .get().length,
+    1e3,
+  )
+
+  // add or
+
+  // add negate
+
+  // add OR has
 })
 
 await test('negate', async (t) => {
