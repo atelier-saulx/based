@@ -2,16 +2,7 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug, resultToObject, Item, readAllFields } from './query.js'
-<<<<<<< HEAD:packages/db/src/query/BasedIterable.ts
 import { size, time, inspectData } from './display.js'
-=======
-import {
-  BINARY,
-  PropDef,
-  PropDefEdge,
-  STRING,
-} from '../../server/schema/types.js'
->>>>>>> 8c5b93a6c2a4154203534691f47f841bdddbe271:packages/db/src/client/query/BasedIterable.ts
 
 export { time, size, inspectData }
 
