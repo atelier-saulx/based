@@ -11,14 +11,15 @@ const selva = @import("../../selva.zig");
 inline fn condition(
     mode: Mode,
     ctx: *db.DbCtx,
-    node: *selva.SelvaNode,
+    comptime isEdge: bool,
+    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
     fieldSchema: ?db.FieldSchema,
     q: []u8,
     v: []u8,
     i: usize,
 ) ConditionsResult {
     return switch (mode) {
-        Mode.default => c.default(q, v, i, node, fieldSchema),
+        Mode.default => c.default(q, v, i, isEdge, node, fieldSchema),
         Mode.defaultVar => c.defaultVar(q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
         Mode.orFixed => c.orFixed(q, v, i),
@@ -29,7 +30,8 @@ inline fn condition(
 
 pub inline fn runConditions(
     ctx: *db.DbCtx,
-    node: *selva.SelvaNode,
+    comptime isEdge: bool,
+    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
     fieldSchema: ?db.FieldSchema,
     q: []u8,
     v: []u8,
@@ -39,8 +41,7 @@ pub inline fn runConditions(
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
-
-        const result = condition(mode, ctx, node, fieldSchema, q, v, i);
+        const result = condition(mode, ctx, isEdge, node, fieldSchema, q, v, i);
         if (topLevelType == Type.negate) {
             if (result[1] == true) {
                 return false;
