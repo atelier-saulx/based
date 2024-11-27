@@ -2,25 +2,22 @@ import { strict as assert } from 'node:assert'
 import { createHash } from 'crypto'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
-import { Csmt, createTree } from '../src/csmt/index.js'
+import { Csmt, createTree } from '../src/server/csmt/index.js'
 
 const shortHash = (buf: Buffer) => buf.toString('base64').substring(0, 5)
 function genNodeHash(lHash: Buffer, rHash: Buffer) {
-	return createHash('sha256')
-		.update(lHash)
-		.update(rHash)
-		.digest()
+  return createHash('sha256').update(lHash).update(rHash).digest()
 }
 
 await test('insert: A basic tree is formed correctly', async (t) => {
   const tree = createTree(() => createHash('sha256'))
 
-	tree.insert(1, Buffer.from('a'))
-	tree.insert(2, Buffer.from('b'))
-	tree.insert(3, Buffer.from('c'))
-	tree.insert(4, Buffer.from('d'))
+  tree.insert(1, Buffer.from('a'))
+  tree.insert(2, Buffer.from('b'))
+  tree.insert(3, Buffer.from('c'))
+  tree.insert(4, Buffer.from('d'))
 
-	const root = tree.getRoot()
+  const root = tree.getRoot()
   assert.ok(root)
   assert.ok(root.hash instanceof Buffer)
   assert.equal(shortHash(root.hash), 'jq/kE')
@@ -32,31 +29,31 @@ await test('insert: A basic tree is formed correctly', async (t) => {
 
   assert.ok(root.left.left)
   assert.equal(shortHash(root.left.left.hash), 'YQ==')
-	assert.equal(root.left.left.key, 1)
-	assert.ok(!root.left.left.left)
-	assert.ok(!root.left.left.right)
+  assert.equal(root.left.left.key, 1)
+  assert.ok(!root.left.left.left)
+  assert.ok(!root.left.left.right)
 
-	assert.ok(root.left.right)
-	assert.equal(shortHash(root.left.right.hash), 'Hgu9b')
-	assert.equal(root.left.right.key, 3)
+  assert.ok(root.left.right)
+  assert.equal(shortHash(root.left.right.hash), 'Hgu9b')
+  assert.equal(root.left.right.key, 3)
 
-	assert.ok(root.left.right.left)
-	assert.equal(shortHash(root.left.right.left.hash), 'Yg==')
-	assert.equal(root.left.right.left.key, 2)
-	assert.ok(!root.left.right.left.left)
-	assert.ok(!root.left.right.left.right)
+  assert.ok(root.left.right.left)
+  assert.equal(shortHash(root.left.right.left.hash), 'Yg==')
+  assert.equal(root.left.right.left.key, 2)
+  assert.ok(!root.left.right.left.left)
+  assert.ok(!root.left.right.left.right)
 
-	assert.ok(root.left.right.right)
-	assert.equal(shortHash(root.left.right.right.hash), 'Yw==')
-	assert.equal(root.left.right.right.key, 3)
-	assert.ok(!root.left.right.right.left)
-	assert.ok(!root.left.right.right.right)
+  assert.ok(root.left.right.right)
+  assert.equal(shortHash(root.left.right.right.hash), 'Yw==')
+  assert.equal(root.left.right.right.key, 3)
+  assert.ok(!root.left.right.right.left)
+  assert.ok(!root.left.right.right.right)
 
-	assert.ok(root.right)
-	assert.equal(shortHash(root.right.hash), 'ZA==')
-	assert.equal(root.right.key, 4)
-	assert.ok(!root.right.left)
-	assert.ok(!root.right.right)
+  assert.ok(root.right)
+  assert.equal(shortHash(root.right.hash), 'ZA==')
+  assert.equal(root.right.key, 4)
+  assert.ok(!root.right.left)
+  assert.ok(!root.right.right)
 })
 
 await test('insert: The root hash is recomputed on every insert', async (t) => {
@@ -331,10 +328,15 @@ await test('proof: Prove that 3 is a member of the tree', async (t) => {
   tree.insert(5, Buffer.from('d'))
 
   const proof = tree.membershipProof(3)
-  const rightHash = Buffer.from('XmV/9hWNPiptI+KlI5F6IwWs7pQjNl4mhpXEt7iRn0w=', 'base64')
+  const rightHash = Buffer.from(
+    'XmV/9hWNPiptI+KlI5F6IwWs7pQjNl4mhpXEt7iRn0w=',
+    'base64',
+  )
 
   assert.equal(proof.length, 3)
-  proof.forEach((el: typeof proof[0]) => assert.equal(Array.isArray(el) && el.length, 2))
+  proof.forEach((el: (typeof proof)[0]) =>
+    assert.equal(Array.isArray(el) && el.length, 2),
+  )
   assert.deepEqual(proof[0], [Buffer.from('c'), 3])
   assert.deepEqual(proof[1], [Buffer.from('a'), 'L'])
   assert.deepEqual(proof[2], [rightHash, 'R'])
@@ -359,7 +361,9 @@ await test('proof: Prove that 5 is a member of the tree (boundary)', async (t) =
   const leftHash = genNodeHash(Buffer.from('a'), Buffer.from('c'))
 
   assert.equal(proof.length, 3)
-  proof.forEach((el: typeof proof[0]) => assert.equal(Array.isArray(el) && el.length, 2))
+  proof.forEach((el: (typeof proof)[0]) =>
+    assert.equal(Array.isArray(el) && el.length, 2),
+  )
   assert.deepEqual(proof[0], [Buffer.from('d'), 5])
   assert.deepEqual(proof[1], [Buffer.from('b'), 'L'])
   assert.deepEqual(proof[2], [leftHash, 'L'])
@@ -384,7 +388,7 @@ await test('proof: Show a proof that 6 is greater than the greatest key in the t
 
   assert.equal(proof.length, 4)
 
-  const [ d, c, ab, miss ] = proof
+  const [d, c, ab, miss] = proof
 
   assert.equal(Array.isArray(d) && d.length, 2)
   assert.deepEqual(d[0], Buffer.from('d'))
@@ -413,7 +417,7 @@ await test('proof: Show a proof that 10 is greater than the greatest key in the 
 
   assert.equal(proof.length, 4)
 
-  const [ d, c, ab, miss ] = proof
+  const [d, c, ab, miss] = proof
 
   assert.equal(Array.isArray(d) && d.length, 2)
   assert.deepEqual(d[0], Buffer.from('d'))
@@ -443,9 +447,9 @@ await test('proof: Show a proof that 1 is smaller than the smallest key in the t
   assert.equal(proof.length, 4)
   const expectedProof = [
     null,
-    [ Buffer.from('a'), 2 ],
-    [ Buffer.from('b'), 'R' ],
-    [ genNodeHash(Buffer.from('c'), Buffer.from('d')), 'R' ]
+    [Buffer.from('a'), 2],
+    [Buffer.from('b'), 'R'],
+    [genNodeHash(Buffer.from('c'), Buffer.from('d')), 'R'],
   ]
 
   assert.deepEqual(proof, expectedProof)
