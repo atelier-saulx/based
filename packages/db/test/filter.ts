@@ -917,3 +917,33 @@ await test('negate', async (t) => {
     '!has derp',
   )
 })
+
+await test('main has (string/binary)', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      article: {
+        props: {
+          stuff: { type: 'string', maxBytes: 60 },
+          derp: { type: 'binary', maxBytes: 60 },
+        },
+      },
+    },
+  })
+
+  await db.create('article', {
+    stuff: 'derp!',
+    derp: new Uint8Array([1, 2, 3, 4]),
+  })
+
+  db.query('article').get().inspect(10)
+})
