@@ -1,6 +1,7 @@
 /*
  * ht_matchfinder.h - Lempel-Ziv matchfinding with a hash table
  *
+ * Copyright (c) 2024 SAULX
  * Copyright 2022 Eric Biggers
  *
  * Permission is hereby granted, free of charge, to any person
@@ -48,7 +49,7 @@
 #include "matchfinder_common.h"
 
 #define HT_MATCHFINDER_HASH_ORDER   15
-#define HT_MATCHFINDER_BUCKET_SIZE  2
+#define HT_MATCHFINDER_BUCKET_SIZE  4
 
 #define HT_MATCHFINDER_MIN_MATCH_LEN    4
 /* Minimum value of max_len for ht_matchfinder_longest_match() */
