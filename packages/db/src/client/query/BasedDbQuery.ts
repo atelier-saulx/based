@@ -18,14 +18,10 @@ import { BasedQueryResponse } from './BasedIterable.js'
 import { createOrGetRefQueryDef } from './include/utils.js'
 import { FilterAst, FilterBranchFn, IsFilter } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
-<<<<<<< HEAD:packages/db/src/query/BasedDbQuery.ts
-=======
-import { ID_FIELD_DEF } from '../../server/schema/types.js'
 
 // partial class
 // range, include, filter, sort, traverse* later
 // include will support branching (rest not yet)
->>>>>>> 8c5b93a6c2a4154203534691f47f841bdddbe271:packages/db/src/client/query/BasedDbQuery.ts
 
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
