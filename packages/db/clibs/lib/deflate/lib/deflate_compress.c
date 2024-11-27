@@ -1731,8 +1731,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
     bitbuf_t bitbuf = os->bitbuf;
     unsigned bitcount = os->bitcount;
     u8 *out_next = os->next;
-    u8 * const out_fast_end =
-        os->end - MIN(WORDBYTES - 1, os->end - out_next);
+    u8 * const out_fast_end = os->end - MIN(WORDBYTES - 1, os->end - out_next);
     /*
      * The cost for each block type, in bits.  Start with the cost of the
      * block header which is 3 bits.
@@ -1900,8 +1899,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             FLUSH_BITS();
             i = 1; /* num_explicit_lens >= 4 */
             do {
-                precode_sym =
-                    deflate_precode_lens_permutation[i];
+                precode_sym = deflate_precode_lens_permutation[i];
                 ADD_BITS(c->o.precode.lens[precode_sym], 3);
             } while (++i < num_explicit_lens);
             FLUSH_BITS();
@@ -1909,8 +1907,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             FLUSH_BITS();
             i = 0;
             do {
-                precode_sym =
-                    deflate_precode_lens_permutation[i];
+                precode_sym = deflate_precode_lens_permutation[i];
                 ADD_BITS(c->o.precode.lens[precode_sym], 3);
                 FLUSH_BITS();
             } while (++i < num_explicit_lens);
@@ -1939,14 +1936,12 @@ deflate_flush_block(struct libdeflate_compressor *c,
 #if SUPPORT_NEAR_OPTIMAL_PARSING
     if (sequences == NULL) {
         /* Output the literals and matches from the minimum-cost path */
-        struct deflate_optimum_node *cur_node =
-            &c->p.n.optimum_nodes[0];
-        struct deflate_optimum_node * const end_node =
-            &c->p.n.optimum_nodes[block_length];
+        struct deflate_optimum_node *cur_node = &c->p.n.optimum_nodes[0];
+        struct deflate_optimum_node * const end_node = &c->p.n.optimum_nodes[block_length];
+
         do {
             unsigned length = cur_node->item & OPTIMUM_LEN_MASK;
-            unsigned offset = cur_node->item >>
-                      OPTIMUM_OFFSET_SHIFT;
+            unsigned offset = cur_node->item >> OPTIMUM_OFFSET_SHIFT;
             if (length == 1) {
                 /* Literal */
                 ADD_BITS(codes->codewords.litlen[offset],
@@ -1966,41 +1961,32 @@ deflate_flush_block(struct libdeflate_compressor *c,
         const struct deflate_sequence *seq;
 
         for (seq = sequences; ; seq++) {
-            u32 litrunlen = seq->litrunlen_and_length &
-                    SEQ_LITRUNLEN_MASK;
-            unsigned length = seq->litrunlen_and_length >>
-                      SEQ_LENGTH_SHIFT;
+            u32 litrunlen = seq->litrunlen_and_length & SEQ_LITRUNLEN_MASK;
+            unsigned length = seq->litrunlen_and_length >> SEQ_LENGTH_SHIFT;
             unsigned lit;
 
             /* Output a run of literals. */
             if (CAN_BUFFER(4 * MAX_LITLEN_CODEWORD_LEN)) {
                 for (; litrunlen >= 4; litrunlen -= 4) {
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     FLUSH_BITS();
                 }
                 if (litrunlen-- != 0) {
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     if (litrunlen-- != 0) {
                         lit = *in_next++;
-                        ADD_BITS(codes->codewords.litlen[lit],
-                             codes->lens.litlen[lit]);
+                        ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                         if (litrunlen-- != 0) {
                             lit = *in_next++;
-                            ADD_BITS(codes->codewords.litlen[lit],
-                                 codes->lens.litlen[lit]);
+                            ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                         }
                     }
                     FLUSH_BITS();
@@ -2008,8 +1994,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             } else {
                 while (litrunlen--) {
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     FLUSH_BITS();
                 }
             }
@@ -2020,8 +2005,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             }
 
             /* Output a match. */
-            WRITE_MATCH(c, codes, length, seq->offset,
-                    seq->offset_slot);
+            WRITE_MATCH(c, codes, length, seq->offset, seq->offset_slot);
             in_next += length;
         }
     }
@@ -2054,8 +2038,7 @@ deflate_finish_block(struct libdeflate_compressor *c,
 {
     c->freqs.litlen[DEFLATE_END_OF_BLOCK]++;
     deflate_make_huffman_codes(&c->freqs, &c->codes);
-    deflate_flush_block(c, os, block_begin, block_length, sequences,
-                is_final_block);
+    deflate_flush_block(c, os, block_begin, block_length, sequences, is_final_block);
 }
 
 /******************************************************************************/
