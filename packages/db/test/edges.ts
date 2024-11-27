@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { sentence } from './shared/examples.js'
+import { italy, sentence } from './shared/examples.js'
 
 await test('multiple references', async (t) => {
   const db = new BasedDb({
@@ -59,6 +59,7 @@ await test('multiple references', async (t) => {
               // },
               $file: 'binary',
               $lang: 'string',
+              $bigString: 'string',
               $role: { enum: ['writer', 'editor'] },
               $rating: 'uint32',
               $on: 'boolean',
@@ -101,12 +102,30 @@ await test('multiple references', async (t) => {
     ],
   })
 
+  const flurp = await db.create('article', {
+    name: 'Italy',
+    contributors: [
+      {
+        id: mrSnurp,
+        $bigString: italy,
+      },
+    ],
+  })
+
   deepEqual(
-    db.query('article').include('contributors.$role').get().toObject(),
+    db
+      .query('article')
+      .include('contributors.$role', 'contributors.$bigString')
+      .get()
+      .toObject(),
     [
       {
         id: 1,
         contributors: [{ id: 1, $role: 'writer' }],
+      },
+      {
+        id: 2,
+        contributors: [{ id: 1, $bigString: italy }],
       },
     ],
   )
@@ -118,6 +137,10 @@ await test('multiple references', async (t) => {
         id: 1,
         contributors: [{ id: 1, $rating: 5 }],
       },
+      {
+        id: 2,
+        contributors: [{ id: 1 }],
+      },
     ],
   )
 
@@ -128,6 +151,10 @@ await test('multiple references', async (t) => {
         id: 1,
         contributors: [{ id: 1, $lang: 'en' }],
       },
+      {
+        id: 2,
+        contributors: [{ id: 1 }],
+      },
     ],
   )
 
@@ -135,6 +162,10 @@ await test('multiple references', async (t) => {
     {
       id: 1,
       contributors: [{ id: 1, $on: true }],
+    },
+    {
+      id: 2,
+      contributors: [{ id: 1 }],
     },
   ])
 
@@ -144,6 +175,10 @@ await test('multiple references', async (t) => {
       {
         id: 1,
         contributors: [{ id: 1, $file: new Uint8Array([1, 2, 3, 4]) }],
+      },
+      {
+        id: 2,
+        contributors: [{ id: 1 }],
       },
     ],
   )
@@ -181,24 +216,32 @@ await test('multiple references', async (t) => {
       { id: 2, contributors: [] },
       { id: 3, contributors: [] },
       { id: 4, contributors: [] },
+      { id: 5, contributors: [] },
     ],
   )
 
-  // deepEqual(
-  //   db
-  //     .query('article')
-  //     .include((s) =>
-  //       s('contributors').filter('$rating', '=', 5).include('$rating'),
-  //     )
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     { id: 1, contributors: [{ id: 1, $rating: 5 }] },
-  //     { id: 2, contributors: [{ id: 2, $rating: 5 }] },
-  //     { id: 3, contributors: [{ id: 2, $rating: 5 }] },
-  //     { id: 4, contributors: [{ id: 2, $rating: 5 }] },
-  //   ],
-  // )
+  deepEqual(
+    db
+      .query('article')
+      .include((s) =>
+        s('contributors')
+          .filter('$bigString', '=', italy)
+          .include('$bigString'),
+      )
+      .get()
+      .inspect(10)
+      .toObject(),
+    [
+      {
+        id: 1,
+        contributors: [],
+      },
+      { id: 2, contributors: [{ id: 1, $bigString: italy }] },
+      { id: 3, contributors: [] },
+      { id: 4, contributors: [] },
+      { id: 5, contributors: [] },
+    ],
+  )
 })
 
 await test('single reference', async (t) => {
