@@ -142,19 +142,21 @@ PU_TEST(test_deflate_perf_shared_dict)
     size_t compressed_len = libdeflate_compress_bound(len);
     char *compressed_buf = malloc(libdeflate_compress_bound(len));
     size_t zres;
-    struct timespec start;
-    struct timespec end;
+    struct timespec start, end, c1_time, c2_time;
 
     ts_monotime(&start);
     zres = libdeflate_compress(c1, book, len, compressed_buf, compressed_len);
     ts_monotime(&end);
+    timespec_sub(&c1_time, &end, &start);
     print_ready("compress", &start, &end, "cratio: (%zu / %zu) = %f", len, zres, (double)len / (double)zres);
 
     /* TODO There is something weird because the zres is not always the same. */
     ts_monotime(&start);
     zres = libdeflate_compress(c2, book, len, compressed_buf, compressed_len);
     ts_monotime(&end);
+    timespec_sub(&c2_time, &end, &start);
     print_ready("compress shared dict", &start, &end, "cratio: (%zu / %zu) = %f", len, zres, (double)len / (double)zres);
+    pu_assert_equal("shared dict is faster", timespec_cmp(&c1_time, &c2_time, >), true);
 
     /* TODO Support decompressing this */
 #if 0
