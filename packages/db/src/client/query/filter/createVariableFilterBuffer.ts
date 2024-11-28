@@ -24,6 +24,8 @@ export const createVariableFilterBuffer = (
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16) {
     if (prop.separate) {
+      console.log('NOT MAIN DOPE!')
+
       if (op === 1 && val.byteLength > 25) {
         buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)
         buf = Buffer.allocUnsafe(16)
@@ -46,6 +48,8 @@ export const createVariableFilterBuffer = (
         buf.set(val, 8)
       }
     } else {
+      console.log('MAIN DOPE!')
+
       const size = val.byteLength
       buf = Buffer.allocUnsafe(10 + size)
       buf[0] = negateType(op)

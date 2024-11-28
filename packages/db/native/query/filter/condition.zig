@@ -20,11 +20,11 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const query = q[i + 7 .. next];
     const prop: Prop = @enumFromInt(q[7]);
     // START fo main stuff
-    // add type indexi n query
+
+    std.debug.print("DERP\n", .{});
 
     var pass = true;
     if (op == Op.equal) {
-        // ADD NESTED OR
         if (v.len != valueSize) {
             pass = false;
         } else {

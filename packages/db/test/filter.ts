@@ -958,14 +958,17 @@ await test('main has (string/binary)', async (t) => {
     types: {
       article: {
         props: {
-          stuff: { type: 'string', maxBytes: 60 },
-          derp: { type: 'binary', maxBytes: 60 },
+          stuff: { type: 'string', maxBytes: 30 },
+
+          derp: { type: 'binary', maxBytes: 30 },
         },
       },
     },
   })
 
-  const stuff = 'derp! derp derp derp derp derp DERP!'
+  console.log('snurf', db.schemaTypesParsed.article.main)
+
+  const stuff = 'derp! derp derp'
   await db.create('article', {
     stuff,
     derp: new Uint8Array([1, 2, 3, 4]),
