@@ -1,6 +1,7 @@
 const std = @import("std");
 const readInt = @import("../../utils.zig").readInt;
 const batch = @import("./batch.zig");
+const has = @import("./has.zig");
 const db = @import("../../db//db.zig");
 const num = @import("./numerical.zig");
 const t = @import("./types.zig");
@@ -17,6 +18,10 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const op: Op = @enumFromInt(q[i + 5]);
     const next = i + 7 + valueSize;
     const query = q[i + 7 .. next];
+    const prop: Prop = @enumFromInt(q[7]);
+    // START fo main stuff
+    // add type indexi n query
+
     var pass = true;
     if (op == Op.equal) {
         // ADD NESTED OR
@@ -32,12 +37,18 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             }
         }
     } else if (op == Op.has) {
-        // PUT HERE
-        if (!batch.hasQueryValue(v, query)) {
+        if (prop == Prop.STRING) {
+            if (v[0] == 1) {
+                if (!has.compressed(v, query)) {
+                    return .{ next, false };
+                }
+            } else if (!has.default(v[1..v.len], query)) {
+                return .{ next, false };
+            }
+        } else if (!has.default(v, query)) {
             return .{ next, false };
         }
     }
-    // add HAS
     return .{ next, pass };
 }
 
@@ -129,6 +140,18 @@ pub inline fn default(
         }
     } else if (op == Op.equalCrc32) {
         const origLen = readInt(u32, query, 4);
+        var valueLen: usize = undefined;
+
+        if (prop == Prop.STRING and v[1] == 1) {
+            valueLen = readInt(u32, v, 1);
+        } else {
+            valueLen = v.len;
+        }
+
+        if (origLen != valueLen) {
+            return .{ next, false };
+        }
+
         if (origLen != v.len) {
             return .{ next, false };
         }

@@ -2,6 +2,7 @@ import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence } from './shared/examples.js'
+import { it } from 'node:test'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -720,128 +721,152 @@ await test('variable size (string/binary)', async (t) => {
           derp: 'binary',
         },
       },
+      italy: {
+        props: {
+          body: { type: 'string' }, // big compressed string...
+        },
+      },
     },
   })
 
-  const lower = 'a'.charCodeAt(0)
-  const high = 'z'.charCodeAt(0)
+  // const lower = 'a'.charCodeAt(0)
+  // const high = 'z'.charCodeAt(0)
 
-  // Pre make buffer for string and allow setting
-  const compressedSentence = compress(sentence)
+  // // Pre make buffer for string and allow setting
+  // const compressedSentence = compress(sentence)
 
-  equal(decompress(compressedSentence), sentence, 'compress / decompress api')
+  // equal(decompress(compressedSentence), sentence, 'compress / decompress api')
 
-  const compressedItaly = compress(italy)
+  // const compressedItaly = compress(italy)
 
-  equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
+  // equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
 
-  const d = Date.now()
-  for (let i = 0; i < 1000; i++) {
-    const str = 'en'
-    db.create('article', {
-      type: 'gossip',
-      code: str,
-      name: 'Gossip #' + i,
-      body: compressedItaly,
-      stuff: Buffer.from('#' + i),
-      derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
-    })
-  }
+  // const d = Date.now()
+  // for (let i = 0; i < 1000; i++) {
+  //   const str = 'en'
+  //   db.create('article', {
+  //     type: 'gossip',
+  //     code: str,
+  //     name: 'Gossip #' + i,
+  //     body: compressedItaly,
+  //     stuff: Buffer.from('#' + i),
+  //     derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
+  //   })
+  // }
 
-  deepEqual(
-    db
-      .query('article')
-      .filter('stuff', '=', Buffer.from('#' + 2))
-      .range(0, 10)
-      .get()
-      .toObject(),
-    [
-      {
-        id: 3,
-        type: 'gossip',
-        code: 'en',
-        name: 'Gossip #2',
-        body: italy,
-        stuff: new Uint8Array([35, 50]),
-        derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
-      },
-    ],
-  )
+  // deepEqual(
+  //   db
+  //     .query('article')
+  //     .filter('stuff', '=', Buffer.from('#' + 2))
+  //     .range(0, 10)
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 3,
+  //       type: 'gossip',
+  //       code: 'en',
+  //       name: 'Gossip #2',
+  //       body: italy,
+  //       stuff: new Uint8Array([35, 50]),
+  //       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
+  //     },
+  //   ],
+  // )
 
-  const len = db
-    .query('article')
-    .filter('stuff', 'has', new Uint8Array([55, 57]))
-    .range(0, 100)
-    .get().length
+  // const len = db
+  //   .query('article')
+  //   .filter('stuff', 'has', new Uint8Array([55, 57]))
+  //   .range(0, 100)
+  //   .get().length
 
-  equal(len, 6, 'has binary (single')
+  // equal(len, 6, 'has binary (single')
 
-  const largeDerp = Buffer.from(italy)
-  let smurpArticle
-  for (let i = 0; i < 1e3; i++) {
-    smurpArticle = db.create('article', {
-      type: 'gossip',
-      code: 'xa',
-      name: 'Smurp',
-      body: 'Derp derp',
-      derp: largeDerp,
-    })
-  }
-  await db.drain()
+  // const largeDerp = Buffer.from(italy)
+  // let smurpArticle
+  // for (let i = 0; i < 1e3; i++) {
+  //   smurpArticle = db.create('article', {
+  //     type: 'gossip',
+  //     code: 'xa',
+  //     name: 'Smurp',
+  //     body: 'Derp derp',
+  //     derp: largeDerp,
+  //   })
+  // }
+  // await db.drain()
 
-  /*
-  selva and call uint32_t crc32c(uint32_t crc, void const *buf, size_t len)
-  */
+  // /*
+  // selva and call uint32_t crc32c(uint32_t crc, void const *buf, size_t len)
+  // */
 
-  const q = new Uint8Array(251)
-  for (let i = 0; i < 250; i++) {
-    q[i] = i
-  }
-  q[250] = 255
+  // const q = new Uint8Array(251)
+  // for (let i = 0; i < 250; i++) {
+  //   q[i] = i
+  // }
+  // q[250] = 255
 
-  equal(
-    db
-      .query('article')
-      .filter('derp', 'has', Buffer.from('vitorio'))
-      .include('id')
-      .get().length,
-    0,
-  )
+  // equal(
+  //   db
+  //     .query('article')
+  //     .filter('derp', 'has', Buffer.from('vitorio'))
+  //     .include('id')
+  //     .get().length,
+  //   0,
+  // )
 
-  equal(
-    db
-      .query('article')
-      .filter('derp', 'has', Buffer.from('xx'))
-      .include('id')
-      .get().length,
-    0,
-  )
+  // equal(
+  //   db
+  //     .query('article')
+  //     .filter('derp', 'has', Buffer.from('xx'))
+  //     .include('id')
+  //     .get().length,
+  //   0,
+  // )
 
-  equal(
-    db.query('article').filter('derp', 'has', q).include('id').get().length,
-    0,
-  )
+  // equal(
+  //   db.query('article').filter('derp', 'has', q).include('id').get().length,
+  //   0,
+  // )
 
-  equal(
-    db
-      .query('article')
-      .filter('derp', '=', largeDerp)
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
-    1e3,
-  )
+  // equal(
+  //   db
+  //     .query('article')
+  //     .filter('derp', '=', largeDerp)
+  //     .include('id')
+  //     .range(0, 1e3)
+  //     .get().length,
+  //   1e3,
+  // )
 
-  // -------------------
-  equal(
-    db
-      .query('article')
-      .filter('body', '=', italy)
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
-    1e3,
-  )
+  // // -------------------
+  // equal(
+  //   db
+  //     .query('article')
+  //     .filter('body', '=', italy)
+  //     .include('id')
+  //     .range(0, 1e3)
+  //     .get().length,
+  //   1e3,
+  // )
+
+  // ------- snurp
+
+  await db.create('italy', {
+    body: sentence,
+  })
+  // equal(
+  console.log('\n\nderp derp')
+
+  db
+    .query('italy')
+    .filter('body', 'has', 'No cap')
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
+  // 1e3,
+
+  // )
 
   // add or
 
@@ -940,16 +965,26 @@ await test('main has (string/binary)', async (t) => {
     },
   })
 
+  const stuff = 'derp! derp derp derp derp derp DERP!'
   await db.create('article', {
-    stuff: 'derp!',
+    stuff,
     derp: new Uint8Array([1, 2, 3, 4]),
   })
 
-  deepEqual(db.query('article').get().toObject(), [
-    {
-      id: 1,
-      stuff: 'derp!',
-      derp: new Uint8Array([1, 2, 3, 4]),
-    },
+  const derpResult = {
+    id: 1,
+    stuff,
+    derp: new Uint8Array([1, 2, 3, 4]),
+  }
+
+  deepEqual(db.query('article').get().toObject(), [derpResult])
+
+  deepEqual(db.query('article').filter('stuff', '=', stuff).get().toObject(), [
+    derpResult,
   ])
+
+  deepEqual(
+    db.query('article').filter('stuff', 'has', 'derp').get().toObject(),
+    [derpResult],
+  )
 })

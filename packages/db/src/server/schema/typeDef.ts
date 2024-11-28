@@ -122,9 +122,9 @@ export const createSchemaTypeDef = (
       let len = SIZE_MAP[propType]
       if (isPropType('string', schemaProp) || isPropType('alias', schemaProp)) {
         if (typeof schemaProp === 'object') {
-          if (schemaProp.maxBytes < 60) {
+          if (schemaProp.maxBytes < 61) {
             len = schemaProp.maxBytes + 1
-          } else if (schemaProp.max < 30) {
+          } else if (schemaProp.max < 31) {
             len = schemaProp.max * 2 + 1
           } else {
             stringFields++
