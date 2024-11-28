@@ -81,7 +81,7 @@ __constructor void init(void)
     FILE *fp;
     long fsize;
 
-    fp = fopen("bible.txt", "r");
+    fp = fopen("../../../test/shared/bible.txt", "r");
     if (!fp) {
         abort();
     }
