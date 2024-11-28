@@ -2,10 +2,15 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <stddef.h>
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include "jemalloc.h"
 #include "selva_error.h"
-#include "langs.h"
+#include "selva/selva_lang.h"
 
 #define FALLBACK_LANG "en" /* TODO make configurable at runtime */
 
@@ -208,15 +213,160 @@
         .loc_name = #loc_lang, \
     },
 
-static void langs_log(const struct selva_lang *langs, int err);
+struct selva_lang {
+    enum selva_lang_code code;
+    __nonstring char name[SELVA_LANG_NAME_MAX];
+    const char loc_name[8];
+    locale_t locale;
+};
 
-struct selva_langs selva_langs = {
+static void langs_log(const struct selva_lang *lang, int err);
+
+static struct selva_langs {
+    size_t len;
+    locale_t fallback;
+    void (*err_cb)(const struct selva_lang *lang, int err);
+    struct selva_lang langs[] __counted_by(len);
+} selva_langs = {
     .len = FORALL_LANGS(COUNT_LANGS),
     .err_cb = langs_log,
     .langs = {
         FORALL_LANGS(LANG_ENTRY)
     },
 };
+
+static int lang_compare(const struct selva_lang *a, const struct selva_lang *b)
+{
+    return memcmp(a->name, b->name, SELVA_LANG_NAME_MAX);
+}
+
+static int wrap_lang_compare(const void *a, const void *b)
+{
+    return lang_compare(a, b);
+}
+
+static struct selva_lang *find_slang(const char *lang_str, size_t lang_len)
+{
+    struct selva_lang find;
+
+    memset(find.name, '\0', sizeof(find.name));
+    memcpy(find.name, lang_str, min(lang_len, sizeof(find.name)));
+
+    return (struct selva_lang *)bsearch(&find, selva_langs.langs, selva_langs.len, sizeof(struct selva_lang), wrap_lang_compare);
+}
+
+static int load_lang(struct selva_lang *lang)
+{
+    char locale_name[40];
+    locale_t loc;
+    int err;
+
+    assert(!lang->locale);
+
+    snprintf(locale_name, sizeof(locale_name), "%s.UTF-8", lang->loc_name);
+
+    loc = newlocale(LC_ALL_MASK, locale_name, 0);
+    if (!loc) {
+        if (errno == EINVAL) {
+            err = SELVA_EINVAL;
+        } else if (errno == ENOENT) {
+            err = SELVA_ENOENT;
+        } else if (errno == ENOMEM) {
+            err = SELVA_ENOMEM;
+        } else {
+            err = SELVA_EGENERAL;
+        }
+
+        return err;
+    }
+
+    lang->locale = loc;
+    return 0;
+}
+
+int selva_lang_set_fallback(const char *lang_str, size_t lang_len)
+{
+    struct selva_lang *slang = find_slang(lang_str, lang_len);
+
+    if (!slang) {
+        return SELVA_ENOENT;
+    }
+
+    if (!slang->locale) {
+        int err = load_lang(slang);
+        if (err) {
+            return err;
+        }
+    }
+
+    selva_langs.fallback = slang->locale;
+    return 0;
+}
+
+locale_t selva_lang_getlocale(const char *lang_str, size_t lang_len)
+{
+    struct selva_lang *slang = lang_len > 0 ? find_slang(lang_str, lang_len) : NULL;
+    if (slang) {
+        if (!slang->locale) {
+            int err = load_lang(slang);
+            if (err) {
+                selva_langs.err_cb(slang, err);
+                goto fallback;
+            }
+        }
+
+        return slang->locale;
+    } else {
+fallback:
+        assert(selva_langs.fallback);
+        return selva_langs.fallback;
+    }
+}
+
+locale_t selva_lang_getlocale2(enum selva_lang_code lang)
+{
+    if (lang < selva_langs.len && selva_langs.langs[lang].code == lang) {
+        struct selva_lang *slang = &selva_langs.langs[lang];
+
+        if (!slang->locale) {
+            int err = load_lang(slang);
+            if (err) {
+                selva_langs.err_cb(slang, err);
+                goto fallback;
+            }
+        }
+
+        return slang->locale;
+    } else {
+fallback:
+        assert(selva_langs.fallback);
+        return  selva_langs.fallback;
+    }
+}
+
+wctrans_t selva_lang_wctrans(locale_t loc, enum selva_langs_trans trans)
+{
+    const char *str;
+
+    switch (trans) {
+    case SELVA_LANGS_TRANS_TOUPPER:
+        str = "toupper";
+        break;
+    case SELVA_LANGS_TRANS_TOLOWER:
+        str = "tolower";
+        break;
+    case SELVA_LANGS_TRANS_TOJHIRA:
+        str = "tojhira";
+        break;
+    case SELVA_LANGS_TRANS_TOJKATA:
+        str = "tojkata";
+        break;
+    default:
+        str = ""; /* none */
+    }
+
+    return wctrans_l(str, loc);
+}
 
 static void langs_log(const struct selva_lang *lang, int err)
 {
@@ -227,7 +377,7 @@ static void langs_log(const struct selva_lang *lang, int err)
 
 __constructor static void load_langs(void)
 {
-    selva_langs_sort(&selva_langs);
+    qsort(selva_langs.langs, selva_langs.len, sizeof(struct selva_lang), wrap_lang_compare);
     /* TODO We should handle this error */
-    selva_lang_set_fallback(&selva_langs, FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
+    selva_lang_set_fallback(FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
 }

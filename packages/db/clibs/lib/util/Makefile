@@ -30,13 +30,6 @@ OBJ := \
 	queue_r.o \
 	selva_cpu.o \
 	selva_error.o \
-	selva_lang/selva_deflate_mbscmp.o \
-	selva_lang/selva_deflate_mbsstrstr.o \
-	selva_lang/selva_lang.o \
-	selva_lang/selva_mbscmp.o \
-	selva_lang/selva_mbsstrstr.o \
-	selva_lang/selva_mbstowc.o \
-	selva_lang/selva_mbstrans.o \
 	selva_rusage.o \
 	selva_string.o \
 	sigstr.o \

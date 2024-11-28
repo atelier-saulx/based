@@ -4,7 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc)
 {

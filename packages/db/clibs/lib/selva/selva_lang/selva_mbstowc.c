@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <string.h>
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t *ps, wctrans_t trans, locale_t loc)
 {

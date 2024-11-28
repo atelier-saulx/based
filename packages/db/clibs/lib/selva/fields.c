@@ -9,7 +9,7 @@
 #include "util/align.h"
 #include "util/array_field.h"
 #include "util/ptag.h"
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 #include "util/selva_string.h"
 #include "selva/selva_hash128.h"
 #include "selva_error.h"

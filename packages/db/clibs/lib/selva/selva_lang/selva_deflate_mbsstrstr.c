@@ -8,7 +8,7 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 struct mbsstrstr_ctx {
     wctrans_t trans;

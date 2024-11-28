@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef SELVA_LANG_H
-#define SELVA_LANG_H
 
 #if defined(__APPLE__) && __MACH__
 #include <xlocale.h>
@@ -13,6 +11,7 @@
 #include <wchar.h>
 #include <wctype.h>
 #include "cdefs.h"
+#include "selva/_export.h"
 #include "selva_lang_code.h"
 
 #define SELVA_LANG_NAME_MAX 4ul
@@ -20,26 +19,7 @@
 struct libdeflate_decompressor;
 struct libdeflate_block_state;
 
-struct selva_lang {
-    enum selva_lang_code code;
-    __nonstring char name[SELVA_LANG_NAME_MAX];
-    const char loc_name[8];
-    locale_t locale;
-};
-
-struct selva_langs {
-    size_t len;
-    locale_t fallback;
-    void (*err_cb)(const struct selva_lang *lang, int err);
-    struct selva_lang langs[] __counted_by(len);
-};
-
-/**
- * Sort a selva_langs struct so that it can be used with selva_lang_getlocale().
- */
-void selva_langs_sort(struct selva_langs *langs);
-
-int selva_lang_set_fallback(struct selva_langs *langs, const char *lang_str, size_t lang_len);
+int selva_lang_set_fallback(const char *lang_str, size_t lang_len);
 
 /**
  * Get locale for a lang string.
@@ -47,19 +27,27 @@ int selva_lang_set_fallback(struct selva_langs *langs, const char *lang_str, siz
  * @param lang_len is the length of lang_str excluding any possible nul-character(s).
  * @returns a POSIX locale.
  */
-locale_t selva_lang_getlocale(struct selva_langs *langs, const char *lang_str, size_t lang_len);
+SELVA_EXPORT
+locale_t selva_lang_getlocale(const char *lang_str, size_t lang_len);
 
-locale_t selva_lang_getlocale2(struct selva_langs *langs, enum selva_lang_code lang);
+SELVA_EXPORT
+locale_t selva_lang_getlocale2(enum selva_lang_code lang);
+
+enum selva_langs_trans {
+    SELVA_LANGS_TRANS_NONE = 0,
+    SELVA_LANGS_TRANS_TOUPPER,
+    SELVA_LANGS_TRANS_TOLOWER,
+    SELVA_LANGS_TRANS_TOJHIRA, /*!< When lang is jp */
+    SELVA_LANGS_TRANS_TOJKATA, /*!< When lang is jp */
+};
+
+SELVA_EXPORT
+wctrans_t selva_lang_wctrans(locale_t loc, enum selva_langs_trans trans);
 
 /**
  * Transform a multibyte string.
- * At least the following transforms are supported:
- * - "" none
- * - "toupper"
- * - "tolower"
- * - "tojhira" when lang is "jp"
- * - "tojkata" when lang is "jp"
  */
+SELVA_EXPORT
 char *selva_mbstrans(locale_t loc, const char *src, size_t len, wctrans_t trans);
 
 /**
@@ -67,20 +55,17 @@ char *selva_mbstrans(locale_t loc, const char *src, size_t len, wctrans_t trans)
  * @param wc symbol read from mbs_str.
  * @returns bytes consumed from mbs_str.
  */
+SELVA_EXPORT
 size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t *ps, wctrans_t trans, locale_t loc);
 
 /**
  * Compare two multibyte strings by transforming each character.
- * At least the following transforms are supported:
- * - "" none
- * - "toupper"
- * - "tolower"
- * - "tojhira" when lang is "jp"
- * - "tojkata" when lang is "jp"
  * Unicode normalization and flattening is not supported.
  */
+SELVA_EXPORT
 int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
 
+SELVA_EXPORT
 int selva_deflate_mbscmp(
         struct libdeflate_decompressor *decompressor,
         struct libdeflate_block_state *state,
@@ -88,8 +73,10 @@ int selva_deflate_mbscmp(
         const char *mbs2_str, size_t mbs2_len,
         wctrans_t trans, locale_t loc);
 
+SELVA_EXPORT
 const char *selva_mbsstrstr(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
 
+SELVA_EXPORT
 bool selva_deflate_mbsstrstr(
         struct libdeflate_decompressor *decompressor,
         struct libdeflate_block_state *state,
@@ -115,5 +102,3 @@ static inline wctrans_t selva_wctrans(const char *class_str, size_t class_len, l
 
     return wctrans_l(charclass, loc);
 }
-
-#endif /* SELVA_LANG_H */
