@@ -37,8 +37,8 @@ enum selva_langs_trans {
     SELVA_LANGS_TRANS_NONE = 0,
     SELVA_LANGS_TRANS_TOUPPER,
     SELVA_LANGS_TRANS_TOLOWER,
-    SELVA_LANGS_TRANS_TOJHIRA, /*!< When lang is jp */
-    SELVA_LANGS_TRANS_TOJKATA, /*!< When lang is jp */
+    SELVA_LANGS_TRANS_TOJHIRA, /*!< When lang is selva_lang_ja. */
+    SELVA_LANGS_TRANS_TOJKATA, /*!< When lang is selva_lang_ja. */
 };
 
 SELVA_EXPORT
