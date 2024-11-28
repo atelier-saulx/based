@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <string.h>
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 const char *selva_mbsstrstr(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc)
 {

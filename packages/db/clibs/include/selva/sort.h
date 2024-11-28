@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "selva/_export.h"
-#include "util/selva_lang_code.h"
+#include "selva_lang_code.h"
 
 /*
  * Usage

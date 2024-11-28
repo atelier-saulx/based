@@ -14,7 +14,7 @@
 #include <xlocale.h>
 #endif
 #include "jemalloc.h"
-#include "util/selva_lang.h"
+#include "selva/selva_lang.h"
 
 char *selva_mbstrans(locale_t loc, const char *s, size_t len, wctrans_t trans)
 {

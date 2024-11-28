@@ -18,6 +18,7 @@
 #include "selva/fields.h"
 #include "selva/selva_hash128.h"
 #include "selva_error.h"
+#include "selva_lang_code.h"
 #include "../db.h"
 #include "../db_panic.h"
 #include "../io.h"
