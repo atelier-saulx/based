@@ -2,7 +2,6 @@ import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence } from './shared/examples.js'
-import { it } from 'node:test'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -810,7 +809,9 @@ await test('variable size (string/binary)', async (t) => {
       .query('article')
       .filter('derp', 'has', Buffer.from('vitorio'))
       .include('id')
-      .get().length,
+
+      .get()
+      .inspect(10).length,
     0,
   )
 
@@ -848,16 +849,39 @@ await test('variable size (string/binary)', async (t) => {
       .get().length,
     1e3,
   )
+})
 
-  // ------- snurp
-
-  await db.create('italy', {
-    body: sentence,
+await test('compressed has', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
   })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          body: { type: 'string' }, // big compressed string...
+        },
+      },
+    },
+  })
+  const compressedItaly = compress(italy)
+
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('italy', {
+      body: compressedItaly,
+    })
+  }
 
   db
     .query('italy')
-    .filter('body', 'has', 'No cap')
+    .filter('body', 'has', 'derp derp derp')
     .include('id')
     .range(0, 1e3)
     .get()

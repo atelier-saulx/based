@@ -13,7 +13,7 @@ export const createVariableFilterBuffer = (
   buf: Buffer,
 ) => {
   let val = value
-  if (val instanceof Uint8Array || !prop.separate) {
+  if (val instanceof Uint8Array || !prop.separate || op !== 1) {
     val = Buffer.from(val)
   } else if (prop.typeIndex === STRING && typeof value === 'string') {
     val = compress(value)
