@@ -218,6 +218,13 @@ struct selva_lang {
     __nonstring char name[SELVA_LANG_NAME_MAX];
     const char loc_name[8];
     locale_t locale;
+    struct {
+        wctrans_t none;
+        wctrans_t toupper;
+        wctrans_t tolower;
+        wctrans_t tojhira;
+        wctrans_t tojkata;
+    } trans;
 };
 
 static void langs_log(const struct selva_lang *lang, int err);
@@ -281,6 +288,17 @@ static int load_lang(struct selva_lang *lang)
     }
 
     lang->locale = loc;
+    lang->trans.none = wctrans_l("", loc);
+    lang->trans.toupper = wctrans_l("toupper", loc);
+    lang->trans.tolower = wctrans_l("tolower", loc);
+    if (unlikely(lang->code == selva_lang_ja)) {
+        lang->trans.tojhira = wctrans_l("tojhira", loc);
+        lang->trans.tojkata = wctrans_l("tojkata", loc);
+    } else {
+        lang->trans.tojhira = wctrans_l("", loc);
+        lang->trans.tojkata = wctrans_l("", loc);
+    }
+
     return 0;
 }
 
@@ -323,49 +341,49 @@ fallback:
     }
 }
 
+static struct selva_lang *get_selva_lang(enum selva_lang_code lang)
+{
+    struct selva_lang *slang = &selva_langs.langs[lang];
+
+    if (!slang->locale) {
+        int err = load_lang(slang);
+        if (err) {
+            selva_langs.err_cb(slang, err);
+            return NULL;
+        }
+    }
+
+    return slang;
+}
+
 locale_t selva_lang_getlocale2(enum selva_lang_code lang)
 {
     if (lang < selva_langs.len && selva_langs.langs[lang].code == lang) {
-        struct selva_lang *slang = &selva_langs.langs[lang];
+        struct selva_lang *slang = get_selva_lang(lang);
 
-        if (!slang->locale) {
-            int err = load_lang(slang);
-            if (err) {
-                selva_langs.err_cb(slang, err);
-                goto fallback;
-            }
-        }
-
-        return slang->locale;
+        return slang ? slang->locale : selva_langs.fallback;
     } else {
-fallback:
         assert(selva_langs.fallback);
-        return  selva_langs.fallback;
+        return selva_langs.fallback;
     }
 }
 
-wctrans_t selva_lang_wctrans(locale_t loc, enum selva_langs_trans trans)
+wctrans_t selva_lang_wctrans(enum selva_lang_code lang, enum selva_langs_trans trans)
 {
-    const char *str;
+    struct selva_lang *slang = get_selva_lang(lang);
 
     switch (trans) {
     case SELVA_LANGS_TRANS_TOUPPER:
-        str = "toupper";
-        break;
+        return slang->trans.toupper;
     case SELVA_LANGS_TRANS_TOLOWER:
-        str = "tolower";
-        break;
+        return slang->trans.tolower;
     case SELVA_LANGS_TRANS_TOJHIRA:
-        str = "tojhira";
-        break;
+        return slang->trans.tojhira;
     case SELVA_LANGS_TRANS_TOJKATA:
-        str = "tojkata";
-        break;
+        return slang->trans.tojkata;
     default:
-        str = ""; /* none */
+        return slang->trans.none;
     }
-
-    return wctrans_l(str, loc);
 }
 
 static void langs_log(const struct selva_lang *lang, int err)

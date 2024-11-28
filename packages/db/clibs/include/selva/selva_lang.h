@@ -42,7 +42,7 @@ enum selva_langs_trans {
 };
 
 SELVA_EXPORT
-wctrans_t selva_lang_wctrans(locale_t loc, enum selva_langs_trans trans);
+wctrans_t selva_lang_wctrans(enum selva_lang_code lang, enum selva_langs_trans trans);
 
 /**
  * Transform a multibyte string.
