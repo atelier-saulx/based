@@ -2833,6 +2833,7 @@ deflate_compress_shared_dict(struct libdeflate_compressor * restrict c,
                   const u8 *in, size_t in_nbytes,
                   struct deflate_output_bitstream *os)
 {
+    const bool split_stats = c->compression_level > 1;
     const u8 *in_next = in;
     const u8 *in_end = in_next + in_nbytes;
     unsigned max_len = DEFLATE_MAX_MATCH_LEN;
@@ -2848,6 +2849,9 @@ deflate_compress_shared_dict(struct libdeflate_compressor * restrict c,
                 in_next, in_end, FAST_SOFT_MAX_BLOCK_LENGTH);
         struct deflate_sequence *seq = c->p.sd.sequences;
 
+        if (split_stats) {
+            init_block_split_stats(&c->split_stats);
+        }
         deflate_begin_sequences(c, seq);
 
         do {
@@ -2859,7 +2863,7 @@ deflate_compress_shared_dict(struct libdeflate_compressor * restrict c,
                 max_len = remaining;
                 if (max_len < SHARED_HT_MATCHFINDER_REQUIRED_NBYTES) {
                     do {
-                        deflate_choose_literal(c, *in_next++, false, seq);
+                        deflate_choose_literal(c, *in_next++, split_stats, seq);
                     } while (--max_len);
                     break;
                 }
@@ -2874,15 +2878,16 @@ deflate_compress_shared_dict(struct libdeflate_compressor * restrict c,
                     &offset);
             if (length) {
                 /* Match found */
-                deflate_choose_match(c, length, offset, false, &seq);
+                deflate_choose_match(c, length, offset, split_stats, &seq);
                 in_next += length;
             } else {
                 /* No match found */
-                deflate_choose_literal(c, *in_next++, false, seq);
+                deflate_choose_literal(c, *in_next++, split_stats, seq);
             }
 
             /* Check if it's time to output another block. */
-        } while (in_next < in_max_block_end && seq < &c->p.sd.sequences[FAST_SEQ_STORE_LENGTH]);
+        } while (in_next < in_max_block_end && seq < &c->p.sd.sequences[FAST_SEQ_STORE_LENGTH] &&
+                 (!split_stats || !should_end_block(&c->split_stats, in_block_begin, in_next, in_end)));
 
         deflate_finish_block(c, os, in_block_begin,
                      in_next - in_block_begin,
@@ -3960,7 +3965,7 @@ libdeflate_alloc_compressor2(int compression_level, const void *shared_dict)
      */
     c->max_passthrough_size = 55 - (compression_level * 4);
 
-    if (shared_dict) {
+    if (shared_dict && compression_level > 0) {
         c->p.sd.shared_dict = shared_dict;
         c->impl = deflate_compress_shared_dict;
         c->nice_match_length = 32;
