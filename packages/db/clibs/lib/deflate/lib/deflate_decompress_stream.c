@@ -47,12 +47,6 @@ static inline size_t new_data_buf_size(size_t cur_block_size)
 
 static inline uint8_t *alloc_buf(size_t data_buf_size)
 {
-    /* TODO Is this needed? */
-#if 0
-    size_t code_buf_size = 2 * def.cur_block_size;
-
-    return selva_malloc(data_buf_size + code_buf_size);
-#endif
     return selva_malloc(data_buf_size);
 }
 
