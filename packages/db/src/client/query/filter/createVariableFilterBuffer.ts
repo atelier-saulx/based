@@ -13,7 +13,7 @@ export const createVariableFilterBuffer = (
   buf: Buffer,
 ) => {
   let val = value
-  if (val instanceof Uint8Array) {
+  if (val instanceof Uint8Array || !prop.separate) {
     val = Buffer.from(val)
   } else if (prop.typeIndex === STRING && typeof value === 'string') {
     val = compress(value)
@@ -38,33 +38,37 @@ export const createVariableFilterBuffer = (
         writeFixed(prop, buf, crc32(val), 4, 8, 17)
         writeFixed(prop, buf, val.byteLength, 4, 12, 17)
       } else {
-        const size = val.byteLength
-        buf = Buffer.allocUnsafe(8 + size)
-        buf[0] = negateType(op)
-        buf[1] = 4
-        buf.writeUint32LE(size, 2)
-        buf[6] = stripNegation(op)
-        buf[7] = prop.typeIndex
-        buf.set(val, 8)
+        buf = writeVarFilter(val, buf, op, prop, 0, 0)
       }
     } else {
-      console.log('MAIN DOPE!')
-
-      const size = val.byteLength
-      buf = Buffer.allocUnsafe(10 + size)
-      buf[0] = negateType(op)
-      buf[1] = 4 // 4: var size
-      buf.writeUInt16LE(prop.start, 2)
-      buf.writeUint32LE(size, 4)
-      buf[8] = stripNegation(op)
-      buf[9] = prop.typeIndex
       if (val.byteLength > prop.len) {
         throw new Error('filter is larger then max value')
       }
-      buf.set(val, 10)
+      buf = writeVarFilter(val, buf, op, prop, prop.start, prop.len)
     }
   } else {
     console.log('SNURP', op)
   }
+  return buf
+}
+
+function writeVarFilter(
+  val: Buffer,
+  buf: Buffer,
+  op: number,
+  prop: PropDef | PropDefEdge,
+  start: number,
+  len: number,
+) {
+  const size = val.byteLength
+  buf = Buffer.allocUnsafe(12 + size)
+  buf[0] = negateType(op)
+  buf[1] = 4
+  buf.writeUInt16LE(start, 2)
+  buf.writeUint16LE(len, 4)
+  buf.writeUint32LE(size, 6)
+  buf[10] = stripNegation(op)
+  buf[11] = prop.typeIndex
+  buf.set(val, 12)
   return buf
 }

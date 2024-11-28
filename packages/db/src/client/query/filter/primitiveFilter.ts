@@ -22,7 +22,6 @@ export const primitiveFilter = (
   let buf: Buffer
   const op = operationToByte(operator)
   let size = 0
-
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
   const isArray = Array.isArray(value)
   if (isArray && value.length === 1) {

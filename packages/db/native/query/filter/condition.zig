@@ -14,41 +14,48 @@ const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 
 pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u16, q, i + 1);
-    const op: Op = @enumFromInt(q[i + 5]);
-    const next = i + 7 + valueSize;
-    const query = q[i + 7 .. next];
-    const prop: Prop = @enumFromInt(q[7]);
-    // START fo main stuff
-
-    std.debug.print("DERP\n", .{});
-
+    const valueSize = readInt(u32, q, i + 5);
+    const start = readInt(u16, q, i + 1);
+    const mainLen = readInt(u16, q, i + 3);
+    const op: Op = @enumFromInt(q[i + 9]);
+    const next = i + 11 + valueSize;
+    const prop: Prop = @enumFromInt(q[11]);
+    const query = q[i + 11 .. next];
+    var value: []u8 = undefined;
     var pass = true;
+
+    if (mainLen != 0) {
+        value = v[start + 1 .. v[start] + start + 1];
+    } else {
+        value = v;
+    }
+
     if (op == Op.equal) {
-        if (v.len != valueSize) {
+        if (value.len != valueSize) {
             pass = false;
         } else {
             var j: u32 = 0;
             while (j < query.len) : (j += 1) {
-                if (v[j] != query[j]) {
+                if (value[j] != query[j]) {
                     pass = false;
                     break;
                 }
             }
         }
     } else if (op == Op.has) {
-        if (prop == Prop.STRING) {
-            if (v[0] == 1) {
-                if (!has.compressed(v, query)) {
+        if (prop == Prop.STRING and mainLen == 0) {
+            if (value[0] == 1) {
+                if (!has.compressed(value, query)) {
                     return .{ next, false };
                 }
-            } else if (!has.default(v[1..v.len], query)) {
+            } else if (!has.default(value[1..value.len], query)) {
                 return .{ next, false };
             }
-        } else if (!has.default(v, query)) {
+        } else if (!has.default(value, query)) {
             return .{ next, false };
         }
     }
+
     return .{ next, pass };
 }
 
