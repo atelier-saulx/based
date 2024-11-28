@@ -169,7 +169,7 @@
 #define MATCHFINDER_WINDOW_ORDER    DEFLATE_WINDOW_ORDER
 #include "hc_matchfinder.h"
 #include "ht_matchfinder.h"
-#include "shared_hc_matchfinder.h"
+#include "shared_ht_matchfinder.h"
 #if SUPPORT_NEAR_OPTIMAL_PARSING
 #  include "bt_matchfinder.h"
 /*
@@ -517,12 +517,12 @@ struct libdeflate_compressor {
 
     union {
         struct {
-            const u8 *shared_dict_buf;
-            size_t shared_dict_len;
+            const u8 *shared_dict;
 
-            struct shared_hc_matchfinder shc_mf;
-            struct deflate_sequence sequences[SEQ_STORE_LENGTH + 1];
-        } sg;
+            struct shared_ht_matchfinder mf;
+            struct deflate_sequence sequences[FAST_SEQ_STORE_LENGTH + 1];
+        } sd; /* shared dict */
+
         /* Data for greedy or lazy parsing */
         struct {
             /* Hash chains matchfinder */
@@ -1731,8 +1731,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
     bitbuf_t bitbuf = os->bitbuf;
     unsigned bitcount = os->bitcount;
     u8 *out_next = os->next;
-    u8 * const out_fast_end =
-        os->end - MIN(WORDBYTES - 1, os->end - out_next);
+    u8 * const out_fast_end = os->end - MIN(WORDBYTES - 1, os->end - out_next);
     /*
      * The cost for each block type, in bits.  Start with the cost of the
      * block header which is 3 bits.
@@ -1900,8 +1899,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             FLUSH_BITS();
             i = 1; /* num_explicit_lens >= 4 */
             do {
-                precode_sym =
-                    deflate_precode_lens_permutation[i];
+                precode_sym = deflate_precode_lens_permutation[i];
                 ADD_BITS(c->o.precode.lens[precode_sym], 3);
             } while (++i < num_explicit_lens);
             FLUSH_BITS();
@@ -1909,8 +1907,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             FLUSH_BITS();
             i = 0;
             do {
-                precode_sym =
-                    deflate_precode_lens_permutation[i];
+                precode_sym = deflate_precode_lens_permutation[i];
                 ADD_BITS(c->o.precode.lens[precode_sym], 3);
                 FLUSH_BITS();
             } while (++i < num_explicit_lens);
@@ -1939,14 +1936,12 @@ deflate_flush_block(struct libdeflate_compressor *c,
 #if SUPPORT_NEAR_OPTIMAL_PARSING
     if (sequences == NULL) {
         /* Output the literals and matches from the minimum-cost path */
-        struct deflate_optimum_node *cur_node =
-            &c->p.n.optimum_nodes[0];
-        struct deflate_optimum_node * const end_node =
-            &c->p.n.optimum_nodes[block_length];
+        struct deflate_optimum_node *cur_node = &c->p.n.optimum_nodes[0];
+        struct deflate_optimum_node * const end_node = &c->p.n.optimum_nodes[block_length];
+
         do {
             unsigned length = cur_node->item & OPTIMUM_LEN_MASK;
-            unsigned offset = cur_node->item >>
-                      OPTIMUM_OFFSET_SHIFT;
+            unsigned offset = cur_node->item >> OPTIMUM_OFFSET_SHIFT;
             if (length == 1) {
                 /* Literal */
                 ADD_BITS(codes->codewords.litlen[offset],
@@ -1966,41 +1961,32 @@ deflate_flush_block(struct libdeflate_compressor *c,
         const struct deflate_sequence *seq;
 
         for (seq = sequences; ; seq++) {
-            u32 litrunlen = seq->litrunlen_and_length &
-                    SEQ_LITRUNLEN_MASK;
-            unsigned length = seq->litrunlen_and_length >>
-                      SEQ_LENGTH_SHIFT;
+            u32 litrunlen = seq->litrunlen_and_length & SEQ_LITRUNLEN_MASK;
+            unsigned length = seq->litrunlen_and_length >> SEQ_LENGTH_SHIFT;
             unsigned lit;
 
             /* Output a run of literals. */
             if (CAN_BUFFER(4 * MAX_LITLEN_CODEWORD_LEN)) {
                 for (; litrunlen >= 4; litrunlen -= 4) {
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     FLUSH_BITS();
                 }
                 if (litrunlen-- != 0) {
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     if (litrunlen-- != 0) {
                         lit = *in_next++;
-                        ADD_BITS(codes->codewords.litlen[lit],
-                             codes->lens.litlen[lit]);
+                        ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                         if (litrunlen-- != 0) {
                             lit = *in_next++;
-                            ADD_BITS(codes->codewords.litlen[lit],
-                                 codes->lens.litlen[lit]);
+                            ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                         }
                     }
                     FLUSH_BITS();
@@ -2008,8 +1994,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             } else {
                 while (litrunlen--) {
                     lit = *in_next++;
-                    ADD_BITS(codes->codewords.litlen[lit],
-                         codes->lens.litlen[lit]);
+                    ADD_BITS(codes->codewords.litlen[lit], codes->lens.litlen[lit]);
                     FLUSH_BITS();
                 }
             }
@@ -2020,8 +2005,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
             }
 
             /* Output a match. */
-            WRITE_MATCH(c, codes, length, seq->offset,
-                    seq->offset_slot);
+            WRITE_MATCH(c, codes, length, seq->offset, seq->offset_slot);
             in_next += length;
         }
     }
@@ -2054,8 +2038,7 @@ deflate_finish_block(struct libdeflate_compressor *c,
 {
     c->freqs.litlen[DEFLATE_END_OF_BLOCK]++;
     deflate_make_huffman_codes(&c->freqs, &c->codes);
-    deflate_flush_block(c, os, block_begin, block_length, sequences,
-                is_final_block);
+    deflate_flush_block(c, os, block_begin, block_length, sequences, is_final_block);
 }
 
 /******************************************************************************/
@@ -2846,165 +2829,69 @@ deflate_compress_lazy2(struct libdeflate_compressor * restrict c,
  * Based on deflate_compress_lazy_generic() but uses shared dictionary.
  */
 static void
-deflate_compress_lazy_shared_dict(struct libdeflate_compressor * restrict c,
+deflate_compress_shared_dict(struct libdeflate_compressor * restrict c,
                   const u8 *in, size_t in_nbytes,
                   struct deflate_output_bitstream *os)
 {
+    const bool split_stats = c->compression_level > 1;
     const u8 *in_next = in;
     const u8 *in_end = in_next + in_nbytes;
     unsigned max_len = DEFLATE_MAX_MATCH_LEN;
     unsigned nice_len = MIN(c->nice_match_length, max_len);
-    u32 next_hashes[2] = {};
 
-    shared_hc_matchfinder_init(&c->p.sg.shc_mf);
+    shared_ht_matchfinder_init(&c->p.sd.mf);
 
     do {
         /* Starting a new DEFLATE block */
 
         const u8 * const in_block_begin = in_next;
         const u8 * const in_max_block_end = choose_max_block_end(
-                in_next, in_end, SOFT_MAX_BLOCK_LENGTH);
-        const u8 *next_recalc_min_len =
-            in_next + MIN(in_end - in_next, 10000);
-        struct deflate_sequence *seq = c->p.g.sequences;
-        unsigned min_len;
+                in_next, in_end, FAST_SOFT_MAX_BLOCK_LENGTH);
+        struct deflate_sequence *seq = c->p.sd.sequences;
 
-        init_block_split_stats(&c->split_stats);
+        if (split_stats) {
+            init_block_split_stats(&c->split_stats);
+        }
         deflate_begin_sequences(c, seq);
-        min_len = calculate_min_match_len(in_next,
-                          in_max_block_end - in_next,
-                          c->max_search_depth);
+
         do {
-            unsigned cur_len;
-            unsigned cur_offset;
-            unsigned next_len;
-            unsigned next_offset;
+            size_t remaining = in_end - in_next;
+            u32 length;
+            u32 offset;
 
-            /*
-             * Recalculate the minimum match length if it hasn't
-             * been done recently.
-             */
-            if (in_next >= next_recalc_min_len) {
-                min_len = recalculate_min_match_len(
-                        &c->freqs,
-                        c->max_search_depth);
-                next_recalc_min_len +=
-                    MIN(in_end - next_recalc_min_len,
-                        in_next - in_block_begin);
+            if (unlikely(remaining < DEFLATE_MAX_MATCH_LEN)) {
+                max_len = remaining;
+                if (max_len < SHARED_HT_MATCHFINDER_REQUIRED_NBYTES) {
+                    do {
+                        deflate_choose_literal(c, *in_next++, split_stats, seq);
+                    } while (--max_len);
+                    break;
+                }
+                nice_len = MIN(nice_len, max_len);
             }
-
-            /* Find the longest match at the current position. */
-            adjust_max_and_nice_len(&max_len, &nice_len,
-                        in_end - in_next);
-            cur_len = shared_hc_matchfinder_longest_match(
-                        &c->p.sg.shc_mf,
-                        c->p.sg.shared_dict_buf,
-                        c->p.sg.shared_dict_len,
-                        in_next,
-                        min_len - 1,
-                        max_len,
-                        nice_len,
-                        c->max_search_depth,
-                        next_hashes,
-                        &cur_offset);
-            if (cur_len < min_len ||
-                (cur_len == DEFLATE_MIN_MATCH_LEN &&
-                 cur_offset > 8192)) {
-                /* No match found.  Choose a literal. */
-                deflate_choose_literal(c, *in_next++, true, seq);
-                continue;
+            length = shared_ht_matchfinder_longest_match(
+                    &c->p.sd.mf,
+                    c->p.sd.shared_dict,
+                    in_next,
+                    max_len,
+                    nice_len,
+                    &offset);
+            if (length) {
+                /* Match found */
+                deflate_choose_match(c, length, offset, split_stats, &seq);
+                in_next += length;
+            } else {
+                /* No match found */
+                deflate_choose_literal(c, *in_next++, split_stats, seq);
             }
-            in_next++;
-
-have_cur_match:
-            /*
-             * We have a match at the current position.
-             * If it's very long, choose it immediately.
-             */
-            if (cur_len >= nice_len) {
-                deflate_choose_match(c, cur_len, cur_offset,
-                             true, &seq);
-#if 0
-                hc_matchfinder_skip_bytes(&c->p.g.hc_mf,
-                              &in_cur_base,
-                              in_next,
-                              in_end,
-                              cur_len - 1,
-                              next_hashes);
-#endif
-                in_next += cur_len - 1;
-                continue;
-            }
-
-            /*
-             * Try to find a better match at the next position.
-             *
-             * Note: since we already have a match at the *current*
-             * position, we use only half the 'max_search_depth'
-             * when checking the *next* position.  This is a useful
-             * trade-off because it's more worthwhile to use a
-             * greater search depth on the initial match.
-             *
-             * Note: it's possible to structure the code such that
-             * there's only one call to longest_match(), which
-             * handles both the "find the initial match" and "try to
-             * find a better match" cases.  However, it is faster to
-             * have two call sites, with longest_match() inlined at
-             * each.
-             */
-#if 0
-            adjust_max_and_nice_len(&max_len, &nice_len,
-                        in_end - in_next);
-            next_len = hc_matchfinder_longest_match(
-                        &c->p.g.hc_mf,
-                        &in_cur_base,
-                        in_next++,
-                        cur_len - 1,
-                        max_len,
-                        nice_len,
-                        c->max_search_depth >> 1,
-                        next_hashes,
-                        &next_offset);
-            if (next_len >= cur_len &&
-                4 * (int)(next_len - cur_len) +
-                ((int)bsr32(cur_offset) -
-                 (int)bsr32(next_offset)) > 2) {
-                /*
-                 * Found a better match at the next position.
-                 * Output a literal.  Then the next match
-                 * becomes the current match.
-                 */
-                deflate_choose_literal(c, *(in_next - 2), true,
-                               seq);
-                cur_len = next_len;
-                cur_offset = next_offset;
-                goto have_cur_match;
-            }
-#endif
-
-            /*
-             * Output the current match.
-             */
-            deflate_choose_match(c, cur_len, cur_offset, true, &seq);
-#if 0
-            hc_matchfinder_skip_bytes(&c->p.g.hc_mf,
-                          &in_cur_base,
-                          in_next,
-                          in_end,
-                          cur_len - 2,
-                          next_hashes);
-#endif
-            in_next += cur_len - 2;
 
             /* Check if it's time to output another block. */
-        } while (in_next < in_max_block_end &&
-             seq < &c->p.g.sequences[SEQ_STORE_LENGTH] &&
-             !should_end_block(&c->split_stats,
-                       in_block_begin, in_next, in_end));
+        } while (in_next < in_max_block_end && seq < &c->p.sd.sequences[FAST_SEQ_STORE_LENGTH] &&
+                 (!split_stats || !should_end_block(&c->split_stats, in_block_begin, in_next, in_end)));
 
         deflate_finish_block(c, os, in_block_begin,
                      in_next - in_block_begin,
-                     c->p.g.sequences, in_next == in_end);
+                     c->p.sd.sequences, in_next == in_end);
     } while (in_next != in_end && !os->overflow);
 }
 
@@ -3700,8 +3587,7 @@ deflate_optimize_and_flush_block(struct libdeflate_compressor *c,
         deflate_find_min_cost_path(c, block_length, cache_ptr);
         deflate_set_costs_from_codes(c, &c->codes.lens);
     }
-    deflate_flush_block(c, os, block_begin, block_length, seq,
-                is_final_block);
+    deflate_flush_block(c, os, block_begin, block_length, seq, is_final_block);
 }
 
 static void
@@ -4045,7 +3931,7 @@ deflate_init_offset_slot_full(struct libdeflate_compressor *c)
 #endif /* SUPPORT_NEAR_OPTIMAL_PARSING */
 
 LIBDEFLATEEXPORT struct libdeflate_compressor *
-libdeflate_alloc_compressor2(int compression_level, const void *shared_dict_buf, size_t shared_dict_len)
+libdeflate_alloc_compressor2(int compression_level, const void *shared_dict)
 {
     struct libdeflate_compressor *c;
     size_t size = offsetof(struct libdeflate_compressor, p);
@@ -4079,98 +3965,98 @@ libdeflate_alloc_compressor2(int compression_level, const void *shared_dict_buf,
      */
     c->max_passthrough_size = 55 - (compression_level * 4);
 
-    switch (compression_level) {
-    case 0:
-        c->max_passthrough_size = SIZE_MAX;
-        c->impl = NULL; /* not used */
-        break;
-    case 1:
-        c->impl = deflate_compress_fastest;
-        /* max_search_depth is unused. */
+    if (shared_dict && compression_level > 0) {
+        c->p.sd.shared_dict = shared_dict;
+        c->impl = deflate_compress_shared_dict;
         c->nice_match_length = 32;
-        break;
-    case 2:
-        c->impl = deflate_compress_greedy;
-        c->max_search_depth = 6;
-        c->nice_match_length = 10;
-        break;
-    case 3:
-        c->impl = deflate_compress_greedy;
-        c->max_search_depth = 12;
-        c->nice_match_length = 14;
-        break;
-    case 4:
-        c->impl = deflate_compress_greedy;
-        c->max_search_depth = 16;
-        c->nice_match_length = 30;
-        break;
-    case 5:
-        c->impl = deflate_compress_lazy;
-        c->max_search_depth = 16;
-        c->nice_match_length = 30;
-        break;
-    case 6:
-        if (shared_dict_buf && shared_dict_len > 0) {
-            c->p.sg.shared_dict_buf = shared_dict_buf;
-            c->p.sg.shared_dict_len = shared_dict_len;
-            c->impl = deflate_compress_lazy_shared_dict;
-        } else {
+    } else {
+        switch (compression_level) {
+        case 0:
+            c->max_passthrough_size = SIZE_MAX;
+            c->impl = NULL; /* not used */
+            break;
+        case 1:
+            c->impl = deflate_compress_fastest;
+            /* max_search_depth is unused. */
+            c->nice_match_length = 32;
+            break;
+        case 2:
+            c->impl = deflate_compress_greedy;
+            c->max_search_depth = 6;
+            c->nice_match_length = 10;
+            break;
+        case 3:
+            c->impl = deflate_compress_greedy;
+            c->max_search_depth = 12;
+            c->nice_match_length = 14;
+            break;
+        case 4:
+            c->impl = deflate_compress_greedy;
+            c->max_search_depth = 16;
+            c->nice_match_length = 30;
+            break;
+        case 5:
             c->impl = deflate_compress_lazy;
-        }
-        c->max_search_depth = 35;
-        c->nice_match_length = 65;
-        break;
-    case 7:
-        c->impl = deflate_compress_lazy;
-        c->max_search_depth = 100;
-        c->nice_match_length = 130;
-        break;
-    case 8:
-        c->impl = deflate_compress_lazy2;
-        c->max_search_depth = 300;
-        c->nice_match_length = DEFLATE_MAX_MATCH_LEN;
-        break;
-    case 9:
+            c->max_search_depth = 16;
+            c->nice_match_length = 30;
+            break;
+        case 6:
+            c->impl = deflate_compress_lazy;
+            c->max_search_depth = 35;
+            c->nice_match_length = 65;
+            break;
+        case 7:
+            c->impl = deflate_compress_lazy;
+            c->max_search_depth = 100;
+            c->nice_match_length = 130;
+            break;
+        case 8:
+            c->impl = deflate_compress_lazy2;
+            c->max_search_depth = 300;
+            c->nice_match_length = DEFLATE_MAX_MATCH_LEN;
+            break;
+        case 9:
 #if !SUPPORT_NEAR_OPTIMAL_PARSING
-    default:
+        default:
 #endif
-        c->impl = deflate_compress_lazy2;
-        c->max_search_depth = 600;
-        c->nice_match_length = DEFLATE_MAX_MATCH_LEN;
-        break;
+            c->impl = deflate_compress_lazy2;
+            c->max_search_depth = 600;
+            c->nice_match_length = DEFLATE_MAX_MATCH_LEN;
+            break;
 #if SUPPORT_NEAR_OPTIMAL_PARSING
-    case 10:
-        c->impl = deflate_compress_near_optimal;
-        c->max_search_depth = 35;
-        c->nice_match_length = 75;
-        c->p.n.max_optim_passes = 2;
-        c->p.n.min_improvement_to_continue = 32;
-        c->p.n.min_bits_to_use_nonfinal_path = 32;
-        c->p.n.max_len_to_optimize_static_block = 0;
-        deflate_init_offset_slot_full(c);
-        break;
-    case 11:
-        c->impl = deflate_compress_near_optimal;
-        c->max_search_depth = 100;
-        c->nice_match_length = 150;
-        c->p.n.max_optim_passes = 4;
-        c->p.n.min_improvement_to_continue = 16;
-        c->p.n.min_bits_to_use_nonfinal_path = 16;
-        c->p.n.max_len_to_optimize_static_block = 1000;
-        deflate_init_offset_slot_full(c);
-        break;
-    case 12:
-    default:
-        c->impl = deflate_compress_near_optimal;
-        c->max_search_depth = 300;
-        c->nice_match_length = DEFLATE_MAX_MATCH_LEN;
-        c->p.n.max_optim_passes = 10;
-        c->p.n.min_improvement_to_continue = 1;
-        c->p.n.min_bits_to_use_nonfinal_path = 1;
-        c->p.n.max_len_to_optimize_static_block = 10000;
-        deflate_init_offset_slot_full(c);
-        break;
+        case 10:
+            c->impl = deflate_compress_near_optimal;
+            c->max_search_depth = 35;
+            c->nice_match_length = 75;
+            c->p.n.max_optim_passes = 2;
+            c->p.n.min_improvement_to_continue = 32;
+            c->p.n.min_bits_to_use_nonfinal_path = 32;
+            c->p.n.max_len_to_optimize_static_block = 0;
+            deflate_init_offset_slot_full(c);
+            break;
+        case 11:
+            c->impl = deflate_compress_near_optimal;
+            c->max_search_depth = 100;
+            c->nice_match_length = 150;
+            c->p.n.max_optim_passes = 4;
+            c->p.n.min_improvement_to_continue = 16;
+            c->p.n.min_bits_to_use_nonfinal_path = 16;
+            c->p.n.max_len_to_optimize_static_block = 1000;
+            deflate_init_offset_slot_full(c);
+            break;
+        case 12:
+        default:
+            c->impl = deflate_compress_near_optimal;
+            c->max_search_depth = 300;
+            c->nice_match_length = DEFLATE_MAX_MATCH_LEN;
+            c->p.n.max_optim_passes = 10;
+            c->p.n.min_improvement_to_continue = 1;
+            c->p.n.min_bits_to_use_nonfinal_path = 1;
+            c->p.n.max_len_to_optimize_static_block = 10000;
+            deflate_init_offset_slot_full(c);
+            break;
 #endif /* SUPPORT_NEAR_OPTIMAL_PARSING */
+        }
     }
 
     deflate_init_static_codes(c);
@@ -4181,7 +4067,7 @@ libdeflate_alloc_compressor2(int compression_level, const void *shared_dict_buf,
 LIBDEFLATEEXPORT struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level)
 {
-    return libdeflate_alloc_compressor2(compression_level, NULL, 0);
+    return libdeflate_alloc_compressor2(compression_level, NULL);
 }
 
 LIBDEFLATEEXPORT size_t
