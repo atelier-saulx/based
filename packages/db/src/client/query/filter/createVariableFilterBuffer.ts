@@ -24,8 +24,6 @@ export const createVariableFilterBuffer = (
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16) {
     if (prop.separate) {
-      console.log('NOT MAIN DOPE!')
-
       if (op === 1 && val.byteLength > 25) {
         buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)
         buf = Buffer.allocUnsafe(16)
@@ -47,7 +45,7 @@ export const createVariableFilterBuffer = (
       buf = writeVarFilter(val, buf, op, prop, prop.start, prop.len)
     }
   } else {
-    console.log('SNURP', op)
+    console.log('OP NOT SUPPORTED YET =>', op)
   }
   return buf
 }
