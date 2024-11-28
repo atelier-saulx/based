@@ -979,14 +979,18 @@ await test('main has (string/binary)', async (t) => {
     derp: new Uint8Array([1, 2, 3, 4]),
   }
 
-  // deepEqual(db.query('article').get().toObject(), [derpResult])
+  deepEqual(db.query('article').get().toObject(), [derpResult])
 
   deepEqual(db.query('article').filter('stuff', '=', stuff).get().toObject(), [
     derpResult,
   ])
 
-  // deepEqual(
-  //   db.query('article').filter('stuff', 'has', 'derp').get().toObject(),
-  //   [derpResult],
-  // )
+  deepEqual(
+    db
+      .query('article')
+      .filter('derp', 'has', new Uint8Array([4]))
+      .get()
+      .toObject(),
+    [derpResult],
+  )
 })

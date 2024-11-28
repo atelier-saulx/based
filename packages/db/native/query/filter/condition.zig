@@ -93,7 +93,7 @@ pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
     const repeat = readInt(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;
-    // can potentialy vectorize this
+    // Can potentialy vectorize this
     if (op == Op.equal) {
         if (v.len / valueSize != repeat) {
             return .{ next, false };
