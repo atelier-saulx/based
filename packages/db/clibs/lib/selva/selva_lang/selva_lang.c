@@ -213,6 +213,13 @@
         .loc_name = #loc_lang, \
     },
 
+struct selva_lang {
+    enum selva_lang_code code;
+    __nonstring char name[SELVA_LANG_NAME_MAX];
+    const char loc_name[8];
+    locale_t locale;
+};
+
 static void langs_log(const struct selva_lang *lang, int err);
 
 static struct selva_langs {
@@ -335,6 +342,30 @@ fallback:
         assert(selva_langs.fallback);
         return  selva_langs.fallback;
     }
+}
+
+wctrans_t selva_lang_wctrans(locale_t loc, enum selva_langs_trans trans)
+{
+    const char *str;
+
+    switch (trans) {
+    case SELVA_LANGS_TRANS_TOUPPER:
+        str = "toupper";
+        break;
+    case SELVA_LANGS_TRANS_TOLOWER:
+        str = "tolower";
+        break;
+    case SELVA_LANGS_TRANS_TOJHIRA:
+        str = "tojhira";
+        break;
+    case SELVA_LANGS_TRANS_TOJKATA:
+        str = "tojkata";
+        break;
+    default:
+        str = ""; /* none */
+    }
+
+    return wctrans_l(str, loc);
 }
 
 static void langs_log(const struct selva_lang *lang, int err)

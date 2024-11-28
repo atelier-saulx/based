@@ -19,13 +19,6 @@
 struct libdeflate_decompressor;
 struct libdeflate_block_state;
 
-struct selva_lang {
-    enum selva_lang_code code;
-    __nonstring char name[SELVA_LANG_NAME_MAX];
-    const char loc_name[8];
-    locale_t locale;
-};
-
 int selva_lang_set_fallback(const char *lang_str, size_t lang_len);
 
 /**
@@ -40,14 +33,19 @@ locale_t selva_lang_getlocale(const char *lang_str, size_t lang_len);
 SELVA_EXPORT
 locale_t selva_lang_getlocale2(enum selva_lang_code lang);
 
+enum selva_langs_trans {
+    SELVA_LANGS_TRANS_NONE = 0,
+    SELVA_LANGS_TRANS_TOUPPER,
+    SELVA_LANGS_TRANS_TOLOWER,
+    SELVA_LANGS_TRANS_TOJHIRA, /*!< When lang is jp */
+    SELVA_LANGS_TRANS_TOJKATA, /*!< When lang is jp */
+};
+
+SELVA_EXPORT
+wctrans_t selva_lang_wctrans(locale_t loc, enum selva_langs_trans trans);
+
 /**
  * Transform a multibyte string.
- * At least the following transforms are supported:
- * - "" none
- * - "toupper"
- * - "tolower"
- * - "tojhira" when lang is "jp"
- * - "tojkata" when lang is "jp"
  */
 SELVA_EXPORT
 char *selva_mbstrans(locale_t loc, const char *src, size_t len, wctrans_t trans);
@@ -62,12 +60,6 @@ size_t selva_mbstowc(wchar_t *wc, const char *mbs_str, size_t mbs_len, mbstate_t
 
 /**
  * Compare two multibyte strings by transforming each character.
- * At least the following transforms are supported:
- * - "" none
- * - "toupper"
- * - "tolower"
- * - "tojhira" when lang is "jp"
- * - "tojkata" when lang is "jp"
  * Unicode normalization and flattening is not supported.
  */
 SELVA_EXPORT
