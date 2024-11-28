@@ -23,13 +23,11 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const query = q[i + 11 .. next];
     var value: []u8 = undefined;
     var pass = true;
-
     if (mainLen != 0) {
         value = v[start + 1 .. v[start] + start + 1];
     } else {
         value = v;
     }
-
     if (op == Op.equal) {
         if (value.len != valueSize) {
             pass = false;
@@ -55,7 +53,6 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             return .{ next, false };
         }
     }
-
     return .{ next, pass };
 }
 
@@ -148,21 +145,14 @@ pub inline fn default(
     } else if (op == Op.equalCrc32) {
         const origLen = readInt(u32, query, 4);
         var valueLen: usize = undefined;
-
         if (prop == Prop.STRING and v[1] == 1) {
             valueLen = readInt(u32, v, 1);
         } else {
             valueLen = v.len;
         }
-
         if (origLen != valueLen) {
             return .{ next, false };
         }
-
-        if (origLen != v.len) {
-            return .{ next, false };
-        }
-
         var crc32: u32 = undefined;
         // if isEdge
         if (fieldSchema == null) {
@@ -174,9 +164,7 @@ pub inline fn default(
                 _ = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
             }
         }
-
         const qCrc32 = readInt(u32, query, 0);
-
         if (crc32 != qCrc32) {
             return .{ next, false };
         }
