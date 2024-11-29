@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-TEST_SRC += test-deflate.c
+TEST_SRC += test-deflate_stream.c
