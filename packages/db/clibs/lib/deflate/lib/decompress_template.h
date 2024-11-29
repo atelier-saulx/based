@@ -560,8 +560,7 @@ next_block:
                  * bits remaining to do the table preload
                  * independently of the refill.
                  */
-                static_assert(CAN_CONSUME_AND_THEN_PRELOAD(
-                        LITLEN_TABLEBITS, LITLEN_TABLEBITS));
+                static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LITLEN_TABLEBITS, LITLEN_TABLEBITS));
                 lit = entry >> 16;
                 entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
                 REFILL_BITS_IN_FASTLOOP();
@@ -636,8 +635,7 @@ next_block:
          * remaining to preload the offset decode table entry, but a
          * refill might be needed before consuming it.
          */
-        static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXFASTBITS,
-                               OFFSET_TABLEBITS));
+        static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXFASTBITS, OFFSET_TABLEBITS));
         entry = d->offset_decode_table[bitbuf & BITMASK(OFFSET_TABLEBITS)];
         if (CAN_CONSUME_AND_THEN_PRELOAD(OFFSET_MAXBITS,
                          LITLEN_TABLEBITS)) {
