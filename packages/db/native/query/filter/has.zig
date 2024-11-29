@@ -5,6 +5,7 @@ const selva = @import("../../selva.zig");
 
 // shared block here derp
 var decompressor: ?*selva.libdeflate_decompressor = null;
+var libdeflate_block_state: ?selva.libdeflate_block_state = null;
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
@@ -74,14 +75,9 @@ pub fn cbHasCompressed(noalias ctx: ?*anyopaque, noalias buf: [*c]u8, size: usiz
     return 0;
 }
 
-var libdeflate_block_state: ?selva.libdeflate_block_state = null;
-
 pub inline fn compressed(value: []u8, query: []u8) bool {
     if (decompressor == null) {
         decompressor = selva.libdeflate_alloc_decompressor();
-    }
-
-    if (libdeflate_block_state == null) {
         libdeflate_block_state = selva.libdeflate_block_state_init(1000 * 1024);
     }
     // you can just reuse the struct libdeflate_block_state already. Just pass it to the next decompress.
