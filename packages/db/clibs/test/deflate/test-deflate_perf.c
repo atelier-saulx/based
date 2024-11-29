@@ -122,6 +122,22 @@ PU_SKIP(test_deflate_perf)
     return NULL;
 }
 
+/**
+ * Read dictionary.
+ * The dictionary was made with the following Python3 program:
+ * ```
+ * import zstandard
+ * import sys
+ *
+ * ENCODING="UTF-8"
+ *
+ * training_data = sys.stdin.read()
+ * dictionary = zstandard.ZstdCompressionDict(training_data.encode(ENCODING), dict_type=zstandard.DICT_TYPE_RAWCONTENT)
+ * f = open("dict.bin", "wb")
+ * f.write(dictionary.as_bytes())
+ * f.close()
+ * ```
+ */
 static void read_dict(char *dict, const char *path)
 {
     FILE *fp = fopen(path, "rb");
