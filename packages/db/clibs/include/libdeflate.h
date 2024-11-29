@@ -152,6 +152,7 @@ enum libdeflate_result {
      * bytes.
      */
     LIBDEFLATE_INSUFFICIENT_SPACE = 3,
+
     /**
      * More blocks availbled for decompression.
      * Only returned by libdeflate_decompress_block().
