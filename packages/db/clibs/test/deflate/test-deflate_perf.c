@@ -150,6 +150,16 @@ PU_TEST(test_deflate_perf_shared_dict)
     timespec_sub(&c1_time, &end, &start);
     print_ready("compress", &start, &end, "cratio: (%zu / %zu) = %f", len, zres, (double)len / (double)zres);
 
+    char *output_buf = malloc(len);
+    size_t output_len;
+    ts_monotime(&start);
+    enum libdeflate_result res = libdeflate_decompress(d, compressed_buf, compressed_len, output_buf, len, &output_len);
+    ts_monotime(&end);
+    pu_assert_equal("", res, LIBDEFLATE_SUCCESS);
+    pu_assert_equal("", output_len, len);
+    print_ready("libdeflate_decompress", &start, &end, "");
+    free(output_buf);
+
     /* TODO There is something weird because the zres is not always the same. */
     ts_monotime(&start);
     zres = libdeflate_compress(c2, book, len, compressed_buf, compressed_len);
