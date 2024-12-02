@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -14,6 +16,7 @@
 #include "libdeflate.h"
 #include "util/ctime.h"
 #include "util/timestamp.h"
+#include "util.h"
 
 static void print_ready(
         char *restrict msg,
@@ -66,7 +69,7 @@ static struct libdeflate_decompressor *d;
 
 void setup(void)
 {
-    c = libdeflate_alloc_compressor(12);
+    c = libdeflate_alloc_compressor(1);
     d = libdeflate_alloc_decompressor();
 }
 
@@ -96,7 +99,31 @@ __constructor void init(void)
     book[fsize] = 0;
 }
 
-PU_SKIP(test_deflate_perf)
+#define NUM_ITERATIONS	1000
+
+static uint64_t
+do_test_libdeflate(const char *input_type, const uint8_t *in, size_t in_nbytes,
+		   uint8_t *out, size_t out_nbytes_avail)
+{
+	enum libdeflate_result res;
+	uint64_t t;
+	int i;
+
+	t = timer_ticks();
+	for (i = 0; i < NUM_ITERATIONS; i++) {
+		res = libdeflate_decompress(d, in, in_nbytes, out, out_nbytes_avail, NULL);
+		assert(res == LIBDEFLATE_SUCCESS);
+	}
+	t = timer_ticks() - t;
+
+	printf("[%s, libdeflate]: %"PRIu64" MB/s\n", input_type,
+	       timer_MB_per_s((uint64_t)in_nbytes * NUM_ITERATIONS, t));
+
+	libdeflate_free_decompressor(d);
+	return t;
+}
+
+PU_TEST(test_deflate_perf)
 {
     size_t len = strlen(book);
     size_t compressed_len = libdeflate_compress_bound(len);
@@ -111,13 +138,7 @@ PU_SKIP(test_deflate_perf)
     ts_monotime(&end);
     print_ready("libdeflate_compress", &start, &end, "cratio: %f", (double)len / (double)compressed_len);
 
-    ts_monotime(&start);
-    enum libdeflate_result res = libdeflate_decompress(d, compressed_buf, compressed_len, output_buf, len, &output_len);
-    ts_monotime(&end);
-
-    pu_assert_equal("", res, LIBDEFLATE_SUCCESS);
-    pu_assert_equal("", output_len, len);
-    print_ready("libdeflate_decompress", &start, &end, "");
+    do_test_libdeflate("libdeflate_decompress", compressed_buf, compressed_len, output_buf, len);
 
     return NULL;
 }
