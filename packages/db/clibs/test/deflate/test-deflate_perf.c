@@ -136,7 +136,7 @@ PU_TEST(test_deflate_perf)
     ts_monotime(&start);
     compressed_len = libdeflate_compress(c, book, len, compressed_buf, compressed_len);
     ts_monotime(&end);
-    print_ready("libdeflate_compress", &start, &end, "cratio: %f", (double)len / (double)compressed_len);
+    print_ready("libdeflate_compress", &start, &end, "cratio: (%zu / %zu) = %f", len, compressed_len, (double)len / (double)compressed_len);
 
     do_test_libdeflate("libdeflate_decompress", compressed_buf, compressed_len, output_buf, len);
 
