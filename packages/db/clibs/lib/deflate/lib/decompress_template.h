@@ -599,10 +599,8 @@ next_block:
              * entry; or to decode a match length that requires a
              * subtable, then preload the offset decode table entry.
              */
-            if (!CAN_CONSUME_AND_THEN_PRELOAD(DEFLATE_MAX_LITLEN_CODEWORD_LEN,
-                              LITLEN_TABLEBITS) ||
-                !CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXBITS,
-                              OFFSET_TABLEBITS))
+            if (!CAN_CONSUME_AND_THEN_PRELOAD(DEFLATE_MAX_LITLEN_CODEWORD_LEN, LITLEN_TABLEBITS) ||
+                !CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXBITS, OFFSET_TABLEBITS))
                 REFILL_BITS_IN_FASTLOOP();
             if (entry & HUFFDEC_LITERAL) {
                 /* Decode a literal that required a subtable. */
