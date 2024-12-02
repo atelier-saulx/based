@@ -16,6 +16,7 @@
 #include "libdeflate.h"
 #include "util/ctime.h"
 #include "util/timestamp.h"
+#include "zstd.h"
 #include "util.h"
 
 static void print_ready(
@@ -99,27 +100,26 @@ __constructor void init(void)
     book[fsize] = 0;
 }
 
-#define NUM_ITERATIONS	1000
+#define NUM_ITERATIONS	200
 
 static uint64_t
-do_test_libdeflate(const char *input_type, const uint8_t *in, size_t in_nbytes,
-		   uint8_t *out, size_t out_nbytes_avail)
+do_test_libdeflate(const uint8_t *in, size_t in_nbytes, uint8_t *out, size_t out_nbytes_avail)
 {
-	enum libdeflate_result res;
 	uint64_t t;
-	int i;
 
 	t = timer_ticks();
-	for (i = 0; i < NUM_ITERATIONS; i++) {
+	for (unsigned i = 0; i < NUM_ITERATIONS; i++) {
+	    enum libdeflate_result res;
+        size_t out_len;
+
 		res = libdeflate_decompress(d, in, in_nbytes, out, out_nbytes_avail, NULL);
 		assert(res == LIBDEFLATE_SUCCESS);
 	}
 	t = timer_ticks() - t;
 
-	printf("[%s, libdeflate]: %"PRIu64" MB/s\n", input_type,
-	       timer_MB_per_s((uint64_t)in_nbytes * NUM_ITERATIONS, t));
+	printf("[libdeflate_decompress]: %"PRIu64" MB/s\n",
+	       timer_MB_per_s((uint64_t)out_nbytes_avail * NUM_ITERATIONS, t));
 
-	libdeflate_free_decompressor(d);
 	return t;
 }
 
@@ -138,8 +138,11 @@ PU_TEST(test_deflate_perf)
     ts_monotime(&end);
     print_ready("libdeflate_compress", &start, &end, "cratio: (%zu / %zu) = %f", len, compressed_len, (double)len / (double)compressed_len);
 
-    do_test_libdeflate("libdeflate_decompress", compressed_buf, compressed_len, output_buf, len);
+    do_test_libdeflate(compressed_buf, compressed_len, output_buf, len);
+    pu_assert("in == out", !memcmp(book, output_buf, len));
 
+    free(output_buf);
+    free(compressed_buf);
     return NULL;
 }
 
@@ -217,6 +220,118 @@ PU_TEST(test_deflate_perf_shared_dict)
     print_ready("libdeflate_decompress", &start, &end, "");
     free(output_buf);
 #endif
+
+    return NULL;
+}
+
+static const char *do_test_libdeflate2(const uint8_t *in, size_t in_nbytes, int level)
+{
+    struct libdeflate_compressor *c = libdeflate_alloc_compressor(level);
+    const size_t compressed_size = libdeflate_compress_bound(in_nbytes);
+    size_t compressed_len;
+    char *compressed_buf = malloc(compressed_size);
+    char *output_buf = malloc(in_nbytes);
+	uint64_t t;
+
+	t = timer_ticks();
+	for (unsigned i = 0; i < NUM_ITERATIONS; i++) {
+        compressed_len = libdeflate_compress(c, in, in_nbytes, compressed_buf, compressed_size);
+	}
+	t = timer_ticks() - t;
+
+	printf("[libdeflate_compress  ]: level: %d\t%"PRIu64" MB/s cratio: (%zu / %zu) = %f\n",
+           level,
+	       timer_MB_per_s((uint64_t)in_nbytes * NUM_ITERATIONS, t),
+           in_nbytes, compressed_len,
+           (double)in_nbytes / (double)compressed_len);
+
+	t = timer_ticks();
+	for (unsigned i = 0; i < NUM_ITERATIONS; i++) {
+        size_t out_len;
+	    enum libdeflate_result res;
+
+		res = libdeflate_decompress(d, compressed_buf, compressed_len, output_buf, in_nbytes, &out_len);
+		assert(res == LIBDEFLATE_SUCCESS);
+        assert(out_len == in_nbytes);
+	}
+	t = timer_ticks() - t;
+
+	printf("[libdeflate_decompress]: %"PRIu64" MB/s\n",
+	       timer_MB_per_s((uint64_t)in_nbytes * NUM_ITERATIONS, t));
+    pu_assert("in == out", !memcmp(in, output_buf, in_nbytes));
+
+    free(output_buf);
+    free(compressed_buf);
+    libdeflate_free_compressor(c);
+	return NULL;
+}
+
+static const char *do_test_zstd(const uint8_t *in, size_t in_nbytes, int level)
+{
+    ZSTD_CCtx *cctx = ZSTD_createCCtx();
+    ZSTD_DCtx *dctx = ZSTD_createDCtx();
+    const size_t compressed_size = libdeflate_compress_bound(in_nbytes);
+    size_t compressed_len;
+    char *compressed_buf = malloc(compressed_size);
+    char *output_buf = malloc(in_nbytes);
+	uint64_t t;
+
+	t = timer_ticks();
+	for (unsigned i = 0; i < NUM_ITERATIONS; i++) {
+        compressed_len = ZSTD_compressCCtx(cctx, compressed_buf, compressed_size, in, in_nbytes, level);
+	}
+	t = timer_ticks() - t;
+
+	printf("[zstd_compress  ]: %d\t%"PRIu64" MB/s cratio: (%zu / %zu) = %f\n",
+           level,
+	       timer_MB_per_s((uint64_t)in_nbytes * NUM_ITERATIONS, t),
+           in_nbytes, compressed_len,
+           (double)in_nbytes / (double)compressed_len);
+
+	t = timer_ticks();
+	for (unsigned i = 0; i < NUM_ITERATIONS; i++) {
+        size_t out_len;
+
+        out_len = ZSTD_decompressDCtx(dctx, output_buf, in_nbytes, compressed_buf, compressed_len);
+        assert(out_len == in_nbytes);
+	}
+	t = timer_ticks() - t;
+
+	printf("[zstd_decompress]: %"PRIu64" MB/s\n",
+	       timer_MB_per_s((uint64_t)in_nbytes * NUM_ITERATIONS, t));
+    pu_assert("in == out", !memcmp(in, output_buf, in_nbytes));
+
+    free(output_buf);
+    free(compressed_buf);
+    ZSTD_freeCCtx(cctx);
+    ZSTD_freeDCtx(dctx);
+	return NULL;
+}
+
+PU_TEST(test_deflate_vs_zstd)
+{
+    size_t len = strlen(book);
+    const char *res;
+#if 0
+    int deflate_levels[] = { 1,  2, 3,  5, 7, 9, 10, 11, 12 };
+    int zstd_levels[] = {   -7, -3, -1, 0, 1, 3, 10, 15, 22 };
+#endif
+    int deflate_levels[] = { 1, 3, 6, };
+    int zstd_levels[] = {   -1, 0, 1, };
+
+    for (unsigned i = 0; i < num_elem(deflate_levels); i++) {
+        res = do_test_libdeflate2(book, len, deflate_levels[i]);
+        if (res) {
+            return res;
+        }
+    }
+
+    for (unsigned i = 0; i < num_elem(zstd_levels); i++) {
+        res = do_test_zstd(book, len, zstd_levels[i]);
+        if (res) {
+            return res;
+        }
+    }
 
     return NULL;
 }
