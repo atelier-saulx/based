@@ -132,8 +132,7 @@ do_test_libdeflate(const char *input_type, const uint8_t *in, size_t in_nbytes,
 
 	t = timer_ticks();
 	for (i = 0; i < NUM_ITERATIONS; i++) {
-		res = libdeflate_decompress(d, in, in_nbytes, out,
-						    out_nbytes_avail, NULL);
+		res = libdeflate_decompress(d, in, in_nbytes, out, out_nbytes_avail, NULL);
 		assert(res == LIBDEFLATE_BAD_DATA ||
 		       res == LIBDEFLATE_INSUFFICIENT_SPACE);
 	}
@@ -432,7 +431,7 @@ static const uint8_t orig_repro[3962] =
 	"\x20\x80\x28\x00\x00\x11\x00\x00\x01\x04\x00\x3f\x00\x00\x00\x00"
 	"\x28\xf7\xff\x00\xff\xff\xff\xff\x00\x00";
 
-PU_SKIP(slow_decompression)
+PU_TEST(slow_decompression)
 {
 	uint8_t in[4096];
 	uint8_t out[10000];
@@ -451,6 +450,7 @@ PU_SKIP(slow_decompression)
 	putchar('\n');
 	pu_assert("", t < tz);
 
+#if 0
 	/* dynamic huffman case */
 	generate_empty_dynamic_huffman_blocks(in, sizeof(in));
 	t = do_test_libdeflate("dynamic huffman", in, sizeof(in),
@@ -471,12 +471,7 @@ PU_SKIP(slow_decompression)
 	tz = do_test_zlib("original repro", orig_repro, sizeof(orig_repro),
 			  out, sizeof(out));
 	pu_assert("", t < tz);
+#endif
 
-    return NULL;
-}
-
-/* Just to fix the build error. */
-PU_TEST(none)
-{
     return NULL;
 }
