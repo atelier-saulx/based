@@ -59,6 +59,7 @@ pub fn crc32(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_va
 // TODO: compressor has to be per ctx else multi core unsafe
 pub fn compress(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     if (compressor == null) {
+        // lets try use lvl 1
         compressor = selva.libdeflate_alloc_compressor(3);
     }
     const args = napi.getArgs(3, env, info) catch {

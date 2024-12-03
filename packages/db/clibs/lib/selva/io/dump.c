@@ -18,6 +18,7 @@
 #include "selva/fields.h"
 #include "selva/selva_hash128.h"
 #include "selva_error.h"
+#include "selva_lang_code.h"
 #include "../db.h"
 #include "../db_panic.h"
 #include "../io.h"
@@ -101,7 +102,14 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
         .len = len,
     };
 
-    if (!selva_string_verify_crc(string)) {
+    /*
+     * FIXME This is a hack to detect if the CRC is for the string in mem.
+     * We know that the first byte indicates whether it's compressed. If the
+     * string is compressed then the CRC is for the uncompressed string.
+     * However, this is not the right way to do this. We should probably set
+     * the SELVA_STRING_COMPRESS flag somewhere long before we end up here.
+     */
+    if (str[0] == 0 && !selva_string_verify_crc(string)) {
         db_panic("%p Invalid CRC: %u", string, (unsigned)meta.crc);
     }
 

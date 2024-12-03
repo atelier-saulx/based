@@ -1,5 +1,6 @@
 import { ModifyCtx } from '../../index.js'
 import {
+  BINARY,
   BOOLEAN,
   ENUM,
   INT16,
@@ -12,6 +13,7 @@ import {
   UINT16,
   UINT32,
 } from '../../server/schema/types.js'
+import { getBuffer } from './binary.js'
 import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
 
@@ -97,7 +99,15 @@ export const appendFixedValue = (
   def: PropDef | PropDefEdge,
 ): ModifyErr => {
   const type = def.typeIndex
-  if (type === STRING) {
+  if (type === BINARY) {
+    const buf = getBuffer(val)
+    const size = buf.byteLength
+    if (outOfRange(ctx, size + 1)) {
+      return RANGE_ERR
+    }
+    appendU8(ctx, size)
+    appendBuf(ctx, val)
+  } else if (type === STRING) {
     if (typeof val !== 'string') {
       if (val !== null) {
         return new ModifyError(def, val)

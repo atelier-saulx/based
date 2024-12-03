@@ -11,9 +11,10 @@ export TARGET_CFLAGS
 
 # Ordered list of libraries
 LIBS := \
-		lib/deflate \
 		lib/jemalloc \
+		lib/deflate \
 		lib/nodeflate \
+		lib/zstd \
 		lib/xxHash \
 		lib/util \
 		lib/selva

@@ -27,6 +27,8 @@ pub usingnamespace @cImport({
     @cInclude("selva/selva_hash128.h");
 
     @cInclude("libdeflate.h");
+
+    @cInclude("selva/selva_lang.h");
 });
 
 const selvaError = @cImport({

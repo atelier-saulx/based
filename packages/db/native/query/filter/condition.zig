@@ -1,6 +1,7 @@
 const std = @import("std");
 const readInt = @import("../../utils.zig").readInt;
 const batch = @import("./batch.zig");
+const has = @import("./has.zig");
 const db = @import("../../db//db.zig");
 const num = @import("./numerical.zig");
 const t = @import("./types.zig");
@@ -13,31 +14,45 @@ const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 
 pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u16, q, i + 1);
-    const op: Op = @enumFromInt(q[i + 5]);
-    const next = i + 7 + valueSize;
-    const query = q[i + 7 .. next];
+    const valueSize = readInt(u32, q, i + 5);
+    const start = readInt(u16, q, i + 1);
+    const mainLen = readInt(u16, q, i + 3);
+    const op: Op = @enumFromInt(q[i + 9]);
+    const next = i + 11 + valueSize;
+    const prop: Prop = @enumFromInt(q[11]);
+    const query = q[i + 11 .. next];
+    var value: []u8 = undefined;
     var pass = true;
+    if (mainLen != 0) {
+        value = v[start + 1 .. v[start] + start + 1];
+    } else {
+        value = v;
+    }
     if (op == Op.equal) {
-        // ADD NESTED OR
-        if (v.len != valueSize) {
+        if (value.len != valueSize) {
             pass = false;
         } else {
             var j: u32 = 0;
             while (j < query.len) : (j += 1) {
-                if (v[j] != query[j]) {
+                if (value[j] != query[j]) {
                     pass = false;
                     break;
                 }
             }
         }
     } else if (op == Op.has) {
-        // PUT HERE
-        if (!batch.hasQueryValue(v, query)) {
+        if (prop == Prop.STRING and mainLen == 0) {
+            if (value[0] == 1) {
+                if (!has.compressed(value, query)) {
+                    return .{ next, false };
+                }
+            } else if (!has.default(value[1..value.len], query)) {
+                return .{ next, false };
+            }
+        } else if (!has.default(value, query)) {
             return .{ next, false };
         }
     }
-    // add HAS
     return .{ next, pass };
 }
 
@@ -78,7 +93,7 @@ pub inline fn andFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
     const repeat = readInt(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;
-    // can potentialy vectorize this
+    // Can potentialy vectorize this
     if (op == Op.equal) {
         if (v.len / valueSize != repeat) {
             return .{ next, false };
@@ -129,10 +144,15 @@ pub inline fn default(
         }
     } else if (op == Op.equalCrc32) {
         const origLen = readInt(u32, query, 4);
-        if (origLen != v.len) {
+        var valueLen: usize = undefined;
+        if (prop == Prop.STRING and v[1] == 1) {
+            valueLen = readInt(u32, v, 1);
+        } else {
+            valueLen = v.len;
+        }
+        if (origLen != valueLen) {
             return .{ next, false };
         }
-
         var crc32: u32 = undefined;
         // if isEdge
         if (fieldSchema == null) {
@@ -144,9 +164,7 @@ pub inline fn default(
                 _ = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
             }
         }
-
         const qCrc32 = readInt(u32, query, 0);
-
         if (crc32 != qCrc32) {
             return .{ next, false };
         }

@@ -45,7 +45,7 @@ function _modify(
         err = writeReference(val, ctx, schema, def, res, mod)
       } else if (type === REFERENCES) {
         err = writeReferences(val, ctx, schema, def, res, mod)
-      } else if (type === BINARY) {
+      } else if (type === BINARY && def.separate === true) {
         err = writeBinary(val, ctx, schema, def, res, mod)
       } else if (type === STRING && def.separate === true) {
         err = writeString(val, ctx, schema, def, res, mod)

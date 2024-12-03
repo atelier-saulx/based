@@ -6,8 +6,8 @@
 #include "jemalloc.h"
 #include "util/funmap.h"
 #include "util/svector.h"
+#include "selva/selva_lang.h"
 #include "selva/sort.h"
-#include "langs.h"
 
 struct SelvaSortCtx {
     struct SVector out;
@@ -195,7 +195,7 @@ static struct SelvaSortItem *create_item_text(enum selva_lang_code lang, const c
     struct SelvaSortItem *item;
 
     if (likely(len > 0)) {
-        locale_t locale = selva_lang_getlocale2(&selva_langs, lang);
+        locale_t locale = selva_lang_getlocale2(lang);
         size_t data_len = strxfrm_l(NULL, str, 0, locale);
 
         item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));

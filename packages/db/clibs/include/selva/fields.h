@@ -9,6 +9,7 @@
 #include "util/selva_string.h"
 #endif
 #include "selva/types.h"
+#include "selva_lang_code.h"
 
 /**
  * Reserved (N/A) field id.

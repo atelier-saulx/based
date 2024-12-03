@@ -720,6 +720,11 @@ await test('variable size (string/binary)', async (t) => {
           derp: 'binary',
         },
       },
+      italy: {
+        props: {
+          body: { type: 'string' }, // big compressed string...
+        },
+      },
     },
   })
 
@@ -804,7 +809,9 @@ await test('variable size (string/binary)', async (t) => {
       .query('article')
       .filter('derp', 'has', Buffer.from('vitorio'))
       .include('id')
-      .get().length,
+
+      .get()
+      .inspect(10).length,
     0,
   )
 
@@ -842,12 +849,43 @@ await test('variable size (string/binary)', async (t) => {
       .get().length,
     1e3,
   )
+})
 
-  // add or
+await test('compressed has', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
 
-  // add negate
+  await db.start({ clean: true })
 
-  // add OR has
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          body: { type: 'string' }, // big compressed string...
+        },
+      },
+    },
+  })
+  const compressedItaly = compress(italy)
+
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('italy', {
+      body: compressedItaly,
+    })
+  }
+
+  db
+    .query('italy')
+    .filter('body', 'has', 'derp derp derp')
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
 })
 
 await test('negate', async (t) => {
@@ -915,5 +953,55 @@ await test('negate', async (t) => {
     db.query('machine').filter('derp', '!has', derp).get().length,
     amount / 2,
     '!has derp',
+  )
+})
+
+await test('main has (string/binary)', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      article: {
+        props: {
+          derp: { type: 'binary', maxBytes: 30 },
+          stuff: { type: 'string', maxBytes: 30 },
+        },
+      },
+    },
+  })
+
+  const stuff = 'aaaa'
+  await db.create('article', {
+    stuff,
+    derp: new Uint8Array([1, 2, 3, 4]),
+  })
+
+  const derpResult = {
+    id: 1,
+    stuff,
+    derp: new Uint8Array([1, 2, 3, 4]),
+  }
+
+  deepEqual(db.query('article').get().toObject(), [derpResult])
+
+  deepEqual(db.query('article').filter('stuff', '=', stuff).get().toObject(), [
+    derpResult,
+  ])
+
+  deepEqual(
+    db
+      .query('article')
+      .filter('derp', 'has', new Uint8Array([4]))
+      .get()
+      .toObject(),
+    [derpResult],
   )
 })

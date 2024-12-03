@@ -6,7 +6,7 @@ CFLAGS += -fPIC -fvisibility=hidden \
 		  -iquote ../../include -I ../../../deps/node-v20.11.1/include/node -include ../../include/cdefs.h
 LDFLAGS += -shared -g \
 		   -L../../../build \
-		   -ljemalloc_selva -ldeflate -lutil -lxxhash
+		   -ljemalloc_selva -ldeflate -lutil -lxxhash -lzstd
 
 ifeq ($(uname_S),Linux)
 	LDFLAGS += -ldl -fPIC -rdynamic -Wl,-rpath,'$$ORIGIN'
@@ -30,12 +30,18 @@ OBJ := \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
-	langs.o \
 	node_id_set.o \
 	print_ready.o \
 	ref_save_map.o \
 	schema.o \
 	selva_hash128.o \
+	selva_lang/selva_deflate_mbscmp.o \
+	selva_lang/selva_deflate_mbsstrstr.o \
+	selva_lang/selva_lang.o \
+	selva_lang/selva_mbscmp.o \
+	selva_lang/selva_mbsstrstr.o \
+	selva_lang/selva_mbstowc.o \
+	selva_lang/selva_mbstrans.o \
 	sort.o \
 	traverse.o \
 	types.o \

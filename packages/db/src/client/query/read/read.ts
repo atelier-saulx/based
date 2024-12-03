@@ -90,6 +90,15 @@ const readMainValue = (
       addField(prop, '', item)
     }
   }
+
+  // 11: string
+  else if (prop.typeIndex === BINARY) {
+    addField(
+      prop,
+      new Uint8Array(result.buffer, index + 1, result[index]),
+      item,
+    )
+  }
   // 18: int8
   else if (prop.typeIndex === INT8) {
     addField(prop, result.readInt8(index), item)

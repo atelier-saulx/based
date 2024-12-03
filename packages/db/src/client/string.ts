@@ -15,6 +15,7 @@ export const write = (
   offset: number,
   noCompression: boolean,
 ): number => {
+  // 50 maybe if lvl 1
   if (value.length > 150 && !noCompression) {
     buf[offset] = 1
     const s = Buffer.byteLength(value, 'utf8')
@@ -30,7 +31,6 @@ export const write = (
       return size + 5
     }
   } else {
-    // Buffer.byteLength(value, 'utf8')
     buf[offset] = 0
     const size = 1 + buf.write(value, offset + 1, 'utf8')
     return size

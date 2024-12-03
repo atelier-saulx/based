@@ -231,7 +231,7 @@ FUNCNAME(struct libdeflate_decompressor * restrict d,
     bitbuf_t litlen_tablemask;
     u32 entry;
 
-    _decompress_block_init(d);
+    decompress_block_init(d);
 
     static_assert(CAN_CONSUME(1 + 2 + 5 + 5 + 4 + 3));
 next_block:
@@ -560,8 +560,7 @@ next_block:
                  * bits remaining to do the table preload
                  * independently of the refill.
                  */
-                static_assert(CAN_CONSUME_AND_THEN_PRELOAD(
-                        LITLEN_TABLEBITS, LITLEN_TABLEBITS));
+                static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LITLEN_TABLEBITS, LITLEN_TABLEBITS));
                 lit = entry >> 16;
                 entry = d->u.litlen_decode_table[bitbuf & litlen_tablemask];
                 REFILL_BITS_IN_FASTLOOP();
@@ -600,10 +599,8 @@ next_block:
              * entry; or to decode a match length that requires a
              * subtable, then preload the offset decode table entry.
              */
-            if (!CAN_CONSUME_AND_THEN_PRELOAD(DEFLATE_MAX_LITLEN_CODEWORD_LEN,
-                              LITLEN_TABLEBITS) ||
-                !CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXBITS,
-                              OFFSET_TABLEBITS))
+            if (!CAN_CONSUME_AND_THEN_PRELOAD(DEFLATE_MAX_LITLEN_CODEWORD_LEN, LITLEN_TABLEBITS) ||
+                !CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXBITS, OFFSET_TABLEBITS))
                 REFILL_BITS_IN_FASTLOOP();
             if (entry & HUFFDEC_LITERAL) {
                 /* Decode a literal that required a subtable. */
@@ -636,8 +633,7 @@ next_block:
          * remaining to preload the offset decode table entry, but a
          * refill might be needed before consuming it.
          */
-        static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXFASTBITS,
-                               OFFSET_TABLEBITS));
+        static_assert(CAN_CONSUME_AND_THEN_PRELOAD(LENGTH_MAXFASTBITS, OFFSET_TABLEBITS));
         entry = d->offset_decode_table[bitbuf & BITMASK(OFFSET_TABLEBITS)];
         if (CAN_CONSUME_AND_THEN_PRELOAD(OFFSET_MAXBITS,
                          LITLEN_TABLEBITS)) {

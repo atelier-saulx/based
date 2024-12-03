@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-#include "selva_lang.h"
+#include "selva_lang_code.h"
 
 struct finalizer;
 struct selva_string;

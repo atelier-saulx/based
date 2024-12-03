@@ -47,12 +47,6 @@ static inline size_t new_data_buf_size(size_t cur_block_size)
 
 static inline uint8_t *alloc_buf(size_t data_buf_size)
 {
-    /* TODO Is this needed? */
-#if 0
-    size_t code_buf_size = 2 * def.cur_block_size;
-
-    return selva_malloc(data_buf_size + code_buf_size);
-#endif
     return selva_malloc(data_buf_size);
 }
 
@@ -154,24 +148,26 @@ libdeflate_decompress_stream(
         int (*cb)(void * restrict ctx, uint8_t * restrict buf, size_t len), void *ctx,
         int *result)
 {
-	size_t in_cur = 0;
+    const char *in_cur = in_buf;
+    size_t in_left = in_len;
     enum libdeflate_result dres;
 
     libdeflate_block_state_reset(state);
     libdeflate_decompress_block_reset(decompressor);
-	do {
-	    size_t actual_in_nbytes_ret;
-		size_t actual_out_nbytes_ret;
+    do {
+        size_t actual_in_nbytes_ret;
+        size_t actual_out_nbytes_ret;
 
         dres = decompress_block_wstate(
                 decompressor, state,
-                in_buf + in_cur, in_len - in_cur,
+                in_cur, in_left,
                 &actual_in_nbytes_ret, &actual_out_nbytes_ret);
         if (dres != LIBDEFLATE_MORE && dres != LIBDEFLATE_SUCCESS) {
             return dres;
         }
 
 		in_cur += actual_in_nbytes_ret;
+        in_left -= actual_in_nbytes_ret;
 		state->data_cur += actual_out_nbytes_ret;
 
 		if (dres == LIBDEFLATE_SUCCESS || libdeflate_block_state_is_out_block_ready(state)) {
