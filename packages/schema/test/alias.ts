@@ -17,7 +17,7 @@ test('alias', () => {
     },
   })
 
-  // /*
+  /*
   const db: any = {}
   db.updateSchema({
     types: {

@@ -14,6 +14,10 @@ import {
   SchemaObjectOneWay,
   SchemaReferences,
   SchemaAlias,
+  stringFormats,
+  stringDisplays,
+  dateDisplays,
+  numberDisplays,
 } from '../types.js'
 import {
   expectBoolean,
@@ -37,6 +41,10 @@ import {
 } from './errors.js'
 import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
+let stringFormatsSet: Set<string>
+let stringDisplaysSet: Set<string>
+let numberDisplaysSet: Set<string>
+let dateDisplaysSet: Set<string>
 
 type PropsFns<PropType> = Record<
   string,
@@ -45,6 +53,9 @@ type PropsFns<PropType> = Record<
 const STUB = {}
 const shared: PropsFns<SchemaAnyProp> = {
   type() {},
+  role(val) {
+    expectString(val)
+  },
   required(val) {
     expectBoolean(val)
   },
@@ -162,6 +173,11 @@ p.enum = propParser<SchemaEnum>(
 )
 
 const numberOpts = {
+  display(val) {
+    expectString(val)
+    numberDisplaysSet ??= new Set(numberDisplays)
+    numberDisplaysSet.has(val)
+  },
   min(val) {
     expectNumber(val)
   },
@@ -211,75 +227,6 @@ p.object = propParser<SchemaObject | SchemaObjectOneWay>(
   {
     default(val) {
       console.warn('TODO object default value')
-    },
-  },
-)
-
-p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
-  {
-    ref(ref, _prop, { schema }) {
-      schema.types[ref].props
-    },
-    prop(propKey, prop, { schema, type, inQuery }) {
-      const propAllowed = type && !inQuery
-
-      if (propAllowed) {
-        expectString(propKey)
-
-        const propPath = propKey.split('.')
-        let targetProp: any = schema.types[prop.ref]
-        for (const key of propPath) {
-          targetProp = targetProp.props[key]
-        }
-        if ('items' in targetProp) {
-          targetProp = targetProp.items
-        }
-
-        if ('ref' in targetProp && 'prop' in targetProp) {
-          const inversePath = targetProp.prop.split('.')
-          let inverseProp: any = schema.types[targetProp.ref]
-          for (const key of inversePath) {
-            inverseProp = inverseProp.props[key]
-          }
-          if ('items' in inverseProp) {
-            inverseProp = inverseProp.items
-          }
-
-          if (deepEqual(prop, inverseProp)) {
-            return
-          }
-        }
-
-        throw Error(INVALID_VALUE)
-      }
-
-      if (propKey !== undefined) {
-        throw Error('ref prop not supported on root or edge p')
-      }
-    },
-  },
-  {
-    default(val) {
-      expectString(val)
-    },
-    edge(val, prop, ctx, key) {
-      const edgeAllowed = ctx.type && !ctx.inQuery
-      if (edgeAllowed) {
-        let t: any = ctx.schema.types[prop.ref].props[prop.prop]
-        t = t.items || t
-        if (t[key]) {
-          throw Error('Edge can not be defined on both props')
-        }
-
-        const edgePropType = getPropType(val)
-        const inType = ctx.type
-        ctx.type = null
-        p[edgePropType](val, ctx)
-        ctx.type = inType
-        return
-      }
-
-      throw Error('ref edge not supported on root or edge p')
     },
   },
 )
@@ -337,28 +284,38 @@ p.references = propParser<SchemaReferences>(
   },
 )
 
-p.binary = propParser<SchemaString>(
-  STUB,
-  {
-    default(val) {
-      return val instanceof ArrayBuffer
-    },
-    maxBytes(val) {
-      expectNumber(val)
-    },
+const binaryOpts = {
+  default(val) {
+    expectString(val)
   },
-  0,
-)
+  format(val) {
+    expectString(val)
+    stringFormatsSet ??= new Set(stringFormats)
+    stringFormatsSet.has(val)
+  },
+  display(val) {
+    expectString(val)
+    stringDisplaysSet ??= new Set(stringDisplays)
+    stringDisplaysSet.has(val)
+  },
+  mime(val) {
+    if (Array.isArray(val)) {
+      val.forEach(expectString)
+    } else {
+      expectString(val)
+    }
+  },
+  maxBytes(val) {
+    expectNumber(val)
+  },
+}
+
+p.binary = propParser<SchemaString>(STUB, binaryOpts, 0)
 
 p.string = propParser<SchemaString>(
   STUB,
   {
-    default(val) {
-      expectString(val)
-    },
-    maxBytes(val) {
-      expectNumber(val)
-    },
+    ...binaryOpts,
     min(val) {
       expectNumber(val)
     },
@@ -391,6 +348,11 @@ p.text = propParser<SchemaText>(
 p.timestamp = propParser<SchemaTimestamp>(
   STUB,
   {
+    display(val) {
+      expectString(val)
+      dateDisplaysSet ??= new Set(dateDisplays)
+      dateDisplaysSet.has(val)
+    },
     default(val) {
       if (typeof val !== 'number' && !(val instanceof Date)) {
         throw Error(EXPECTED_DATE)
@@ -403,6 +365,76 @@ p.timestamp = propParser<SchemaTimestamp>(
     },
   },
   0,
+)
+
+p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
+  {
+    ref(ref, _prop, { schema }) {
+      schema.types[ref].props
+    },
+    prop(propKey, prop, { schema, type, inQuery }) {
+      const propAllowed = type && !inQuery
+
+      if (propAllowed) {
+        expectString(propKey)
+
+        const propPath = propKey.split('.')
+        let targetProp: any = schema.types[prop.ref]
+        for (const key of propPath) {
+          targetProp = targetProp.props[key]
+        }
+        if ('items' in targetProp) {
+          targetProp = targetProp.items
+        }
+
+        if ('ref' in targetProp && 'prop' in targetProp) {
+          const inversePath = targetProp.prop.split('.')
+          let inverseProp: any = schema.types[targetProp.ref]
+          for (const key of inversePath) {
+            inverseProp = inverseProp.props[key]
+          }
+          if ('items' in inverseProp) {
+            inverseProp = inverseProp.items
+          }
+
+          if (prop === inverseProp) {
+            return
+          }
+        }
+
+        throw Error(INVALID_VALUE)
+      }
+
+      if (propKey !== undefined) {
+        throw Error('ref prop not supported on root or edge p')
+      }
+    },
+  },
+  {
+    mime: binaryOpts.mime,
+    default(val) {
+      expectString(val)
+    },
+    edge(val, prop, ctx, key) {
+      const edgeAllowed = ctx.type && !ctx.inQuery
+      if (edgeAllowed) {
+        let t: any = ctx.schema.types[prop.ref].props[prop.prop]
+        t = t.items || t
+        if (t[key]) {
+          throw Error('Edge can not be defined on both props')
+        }
+
+        const edgePropType = getPropType(val)
+        const inType = ctx.type
+        ctx.type = null
+        p[edgePropType](val, ctx)
+        ctx.type = inType
+        return
+      }
+
+      throw Error('ref edge not supported on root or edge p')
+    },
+  },
 )
 
 export default p

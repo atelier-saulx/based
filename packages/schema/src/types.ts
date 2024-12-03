@@ -2,7 +2,7 @@ import { getPropType } from './parse/utils.js'
 
 type Role = 'title' | 'source' | 'media' | string
 
-const numberDisplays = [
+export const numberDisplays = [
   'short',
   'human',
   'ratio',
@@ -12,8 +12,8 @@ const numberDisplays = [
   'pound',
   'meter',
 ] as const
-const stringDisplays = ['lowercase', 'uppercase', 'capitalize'] as const
-const dateDisplays = [
+export const stringDisplays = ['lowercase', 'uppercase', 'capitalize'] as const
+export const dateDisplays = [
   'date',
   'date-time',
   'date-time-text',
@@ -21,7 +21,7 @@ const dateDisplays = [
   'time',
   'time-precise',
 ] as const
-const stringFormats = [
+export const stringFormats = [
   'alpha',
   'alphaLocales',
   'alphanumeric',
