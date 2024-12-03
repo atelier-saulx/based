@@ -1,4 +1,121 @@
 import { getPropType } from './parse/utils.js'
+
+type Role = 'title' | 'source' | 'media' | string
+
+const numberDisplays = [
+  'short',
+  'human',
+  'ratio',
+  'bytes',
+  'euro',
+  'dollar',
+  'pound',
+  'meter',
+] as const
+const stringDisplays = ['lowercase', 'uppercase', 'capitalize'] as const
+const dateDisplays = [
+  'date',
+  'date-time',
+  'date-time-text',
+  'human',
+  'time',
+  'time-precise',
+] as const
+const stringFormats = [
+  'alpha',
+  'alphaLocales',
+  'alphanumeric',
+  'alphanumericLocales',
+  'ascii',
+  'base32',
+  'base58',
+  'base64',
+  'BIC',
+  'btcAddress',
+  'clike',
+  'code',
+  'creditCard',
+  'css',
+  'currency',
+  'dataURI',
+  'EAN',
+  'email',
+  'ethereumAddress',
+  'FQDN',
+  'hexadecimal',
+  'hexColor',
+  'HSL',
+  'html',
+  'IBAN',
+  'identityCard',
+  'IMEI',
+  'IP',
+  'IPRange',
+  'ISBN',
+  'ISIN',
+  'ISO31661Alpha2',
+  'ISO31661Alpha3',
+  'ISO4217',
+  'ISO6391',
+  'ISO8601',
+  'ISRC',
+  'ISSN',
+  'javascript',
+  'json',
+  'JWT',
+  'latLong',
+  'licensePlate',
+  'lowercase',
+  'luhnNumber',
+  'MACAddress',
+  'magnetURI',
+  'markdown',
+  'MD5',
+  'mimeType',
+  'mobilePhone',
+  'mobilePhoneLocales',
+  'octal',
+  'passportNumber',
+  'port',
+  'postalCode',
+  'postalCodeLocales',
+  'python',
+  'RFC3339',
+  'rgbColor',
+  'rust',
+  'semVer',
+  'slug',
+  'strongPassword',
+  'surrogatePair',
+  'taxID',
+  'typescript',
+  'uppercase',
+  'URL',
+  'UUID',
+  'VAT',
+] as const
+
+type DateDisplay = (typeof dateDisplays)[number]
+type NumberDisplay = (typeof numberDisplays)[number] | `round-${number}`
+type StringDisplay = (typeof stringDisplays)[number]
+type StringFormat = (typeof stringFormats)[number]
+
+type MimeString =
+  | 'text/html'
+  | 'text/plain'
+  | 'text/markdown'
+  | 'image/png'
+  | 'image/jpeg'
+  | 'video/mp4'
+  | 'video/quicktime'
+  | 'image/*'
+  | 'video/*'
+  | 'audio/*'
+  | '*/*'
+  | `${string}/${string}` // this is overriding the previous
+
+type Mime = MimeString | MimeString[]
+
 type Letter =
   | 'A'
   | 'B'
@@ -61,6 +178,7 @@ type Prop<V extends PropValues> = {
   description?: Record<string, string>
   path?: string
   query?: QueryFn
+  role?: Role
 } & V
 
 type EnumItem = string | number | boolean
@@ -95,6 +213,7 @@ export type SchemaNumber = Prop<{
   min?: number
   max?: number
   step?: number | 'any'
+  display?: NumberDisplay
 }>
 
 export type SchemaString = Prop<{
@@ -103,12 +222,18 @@ export type SchemaString = Prop<{
   maxBytes?: number
   max?: number
   min?: number
+  mime?: Mime
+  display?: StringDisplay
+  format?: StringFormat
 }>
 
 export type SchemaBinary = Prop<{
   type: 'binary'
   default?: ArrayBuffer
   maxBytes?: number
+  mime?: Mime
+  display?: StringDisplay
+  format?: StringFormat
 }>
 
 export type SchemaBoolean = Prop<{
@@ -120,12 +245,14 @@ export type SchemaTimestamp = Prop<{
   type: 'timestamp'
   default?: number | Date
   on?: 'create' | 'update'
+  display?: DateDisplay
 }>
 
 export type SchemaReferenceOneWay = Prop<{
   type?: 'reference'
   default?: string
   ref: string
+  mime?: Mime
 }>
 
 export type SchemaReference = Prop<{
@@ -133,6 +260,7 @@ export type SchemaReference = Prop<{
   default?: string
   ref: string
   prop: string
+  mime?: Mime
 }> &
   Record<`$${string}`, SchemaPropOneWay>
 

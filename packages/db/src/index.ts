@@ -13,7 +13,7 @@ import {
   ModifyCtx,
   flushBuffer,
   startWorker,
-} from './client/operations.js'
+} from './client/modify/operations.js'
 import { destroy } from './server/destroy.js'
 import { setTimeout } from 'node:timers/promises'
 import fs from 'node:fs/promises'

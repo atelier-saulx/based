@@ -1,11 +1,12 @@
 import { BasedDb, ModifyCtx } from '../../index.js'
 import { SchemaTypeDef } from '../../server/schema/schema.js'
-import { startDrain, flushBuffer } from '../operations.js'
+import { startDrain, flushBuffer } from './operations.js'
 import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
 import { appendU8, outOfRange, reserveU16, writeU16 } from './utils.js'
+import { BasedDbClient } from '../index.js'
 
 type Payload = Record<string, any>
 
@@ -57,7 +58,7 @@ const appendCreate = (
 
 // let cnt = 100
 export const create = (
-  db: BasedDb,
+  db: BasedDb | BasedDbClient,
   type: string,
   obj: Payload,
   unsafe?: boolean,

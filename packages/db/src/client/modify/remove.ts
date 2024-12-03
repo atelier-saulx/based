@@ -1,5 +1,5 @@
 import { BasedDb } from '../../index.js'
-import { flushBuffer, startDrain } from '../operations.js'
+import { flushBuffer, startDrain } from './operations.js'
 import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
 import { appendU8, outOfRange } from './utils.js'
