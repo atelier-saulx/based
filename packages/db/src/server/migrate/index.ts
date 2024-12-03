@@ -22,7 +22,7 @@ export const migrate = async (
   // TODO make a pool!
   const { port1, port2 } = new MessageChannel()
   const atomics = new Int32Array(new SharedArrayBuffer(4))
-  const worker = new Worker('./dist/src/migrate/worker.js', {
+  const worker = new Worker('./dist/src/server/migrate/worker.js', {
     workerData: {
       from: native.intFromExternal(fromCtx),
       to: native.intFromExternal(toCtx),

@@ -1,10 +1,10 @@
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { BasedDb } from '../../index.js'
-import { PropDef } from '../../server/schema/types.js'
+import { BasedDb } from '../index.js'
+import { PropDef } from '../server/schema/types.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 // this is just so ts builds it
-// import './workers/worker.js'
+import './workers/worker.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
