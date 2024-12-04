@@ -17,6 +17,7 @@
 #include "selva/selva_lang.h"
 #include "print_ready.h"
 #include "util/timestamp.h"
+#include "selva_error.h"
 #include "selva/strsearch.h"
 
 #define LEV_MAX (STRSEARCH_NEEDLE_MAX + 1)
@@ -169,21 +170,7 @@ cont:
     /* NOTREACHED */
 }
 
-static size_t make_wneedle(locale_t loc, wctrans_t trans, wchar_t wneedle[const LEV_MAX], const char *needle, size_t needle_len)
-{
-    mbstate_t ps;
-    size_t i = 0, j = 0;
-
-    memset(&ps, 0, sizeof(ps));
-    while (i < needle_len) {
-        i += selva_mbstowc(wneedle + j++, needle + i, needle_len - i, &ps, trans, loc);
-    }
-    wneedle[j] = '\0';
-
-    return j;
-}
-
-int strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *needle, size_t needle_len, int good)
+int strsearch_has_u8(const char *text, const char *needle, size_t needle_len, int good)
 {
     const char *sep = " \n";
     const char *word;
@@ -194,28 +181,53 @@ int strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *n
         return INT_MAX;
     }
 
-    if (!loc) {
-        for (word = strtok2(text, sep, &brkt);
-             word;
-             word = strtok2(NULL, sep, &brkt)) {
-            int32_t d2 = levenshtein_u8(word, strcspn(word, sep), needle, needle_len);
-            d = min(d, d2);
-            if (d <= (int32_t)good) {
-                break;
-            }
+    for (word = strtok2(text, sep, &brkt);
+            word;
+            word = strtok2(NULL, sep, &brkt)) {
+        int32_t d2 = levenshtein_u8(word, strcspn(word, sep), needle, needle_len);
+        d = min(d, d2);
+        if (d <= (int32_t)good) {
+            break;
         }
-    } else {
-        wchar_t wneedle[LEV_MAX];
-        size_t wneedle_len = make_wneedle(loc, trans, wneedle, needle, needle_len);
+    }
 
-        for (word = strtok2(text, sep, &brkt);
-             word;
-             word = strtok2(NULL, sep, &brkt)) {
-            int32_t d2 = levenshtein_mbs(loc, trans, word, strcspn(word, sep), wneedle, wneedle_len);
-            d = min(d, d2);
-            if (d <= (int32_t)good) {
-                break;
-            }
+    return d;
+}
+
+int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len)
+{
+    mbstate_t ps;
+    size_t i = 0, j = 0;
+
+    if (needle_len > LEV_MAX - 1) {
+        return SELVA_ENOBUFS;
+    }
+
+    memset(&ps, 0, sizeof(ps));
+    while (i < needle_len) {
+        i += selva_mbstowc(wneedle->buf + j++, needle + i, needle_len - i, &ps, trans, loc);
+    }
+    wneedle->buf[j] = '\0';
+    wneedle->len = j;
+
+    return 0;
+}
+
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, struct strsearch_wneedle *wneedle, int good)
+{
+    const char *sep = " \n";
+    const char *word;
+    const char *brkt;
+    int32_t d = INT_MAX;
+
+
+    for (word = strtok2(text, sep, &brkt);
+         word;
+         word = strtok2(NULL, sep, &brkt)) {
+        int32_t d2 = levenshtein_mbs(loc, trans, word, strcspn(word, sep), wneedle->buf, wneedle->len);
+        d = min(d, d2);
+        if (d <= (int32_t)good) {
+            break;
         }
     }
 
@@ -223,6 +235,7 @@ int strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *n
 }
 
 #if 0
+#define TEST_U8 0
 #include <stdio.h>
 __constructor static void test(void)
 {
@@ -247,11 +260,20 @@ __constructor static void test(void)
 
     static const char * const patterns[] = { "fod", "god", "G0d", "good", "GOD", "göd", "thuogh", "eegrergerg", "{{{{{{{{" };
     struct timespec ts_start, ts_end;
+
     ts_monotime(&ts_start);
     for (size_t i = 0; i < num_elem(patterns); i++) {
         const char *pattern = patterns[i];
+        size_t len = strlen(pattern);
+
         fprintf(stderr, "pattern: %s | ", pattern);
-        fprintf(stderr, "%d\n", strsearch_has(loc, trans, book, pattern, strlen(pattern), 1));
+#if TEST_U8==1
+        fprintf(stderr, "%d\n", strsearch_has_u8(book, pattern, len, 1));
+#else
+        struct strsearch_wneedle wneedle;
+        make_wneedle(&wneedle, loc, trans, pattern, len);
+        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, &wneedle, 1));
+#endif
     }
     ts_monotime(&ts_end);
     print_ready("search", &ts_start, &ts_end, "");
