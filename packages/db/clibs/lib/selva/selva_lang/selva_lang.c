@@ -221,7 +221,7 @@ struct selva_lang {
     struct {
         wctrans_t none;
         wctrans_t toupper;
-        wctrans_t tolower;
+        wctrans_t tolower; /* sutegana/youon support for ja. */
         wctrans_t tojhira;
         wctrans_t tojkata;
     } trans;
