@@ -43,6 +43,7 @@ OBJ := \
 	selva_lang/selva_mbstowc.o \
 	selva_lang/selva_mbstrans.o \
 	sort.o \
+	strsearch.o \
 	traverse.o \
 	types.o \
 	update.o \
