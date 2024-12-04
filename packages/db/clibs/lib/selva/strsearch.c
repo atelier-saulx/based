@@ -19,7 +19,7 @@
 #include "util/timestamp.h"
 #include "selva/strsearch.h"
 
-#define LEV_MAX 40
+#define LEV_MAX STRSEARCH_NEEDLE_MAX
 
 static int32_t min3(int32_t a, int32_t b, int32_t c)
 {
@@ -183,7 +183,7 @@ static size_t make_wneedle(locale_t loc, wctrans_t trans, wchar_t wneedle[const 
     return j;
 }
 
-bool strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *needle, size_t needle_len, int good, int bad)
+int strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *needle, size_t needle_len, int good)
 {
     const char *sep = " \n";
     const char *word;
@@ -219,7 +219,7 @@ bool strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *
         }
     }
 
-    return d < (int32_t)bad;
+    return d;
 }
 
 #if 0
@@ -251,7 +251,7 @@ __constructor static void test(void)
     for (size_t i = 0; i < num_elem(patterns); i++) {
         const char *pattern = patterns[i];
         fprintf(stderr, "pattern: %s | ", pattern);
-        fprintf(stderr, "%d\n", strsearch_has(loc, trans, book, pattern, strlen(pattern), 1, 3));
+        fprintf(stderr, "%d\n", strsearch_has(loc, trans, book, pattern, strlen(pattern), 1));
     }
     ts_monotime(&ts_end);
     print_ready("search", &ts_start, &ts_end, "");
