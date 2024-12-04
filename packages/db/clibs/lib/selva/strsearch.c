@@ -19,7 +19,7 @@
 #include "util/timestamp.h"
 #include "selva/strsearch.h"
 
-#define LEV_MAX STRSEARCH_NEEDLE_MAX
+#define LEV_MAX (STRSEARCH_NEEDLE_MAX + 1)
 
 static int32_t min3(int32_t a, int32_t b, int32_t c)
 {
