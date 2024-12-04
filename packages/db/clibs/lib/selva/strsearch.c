@@ -66,18 +66,15 @@ static int32_t levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restr
     int32_t v[2][LEV_MAX];
     int32_t *v0 = v[0];
     int32_t *v1 = v[1];
-    mbstate_t ps1, ps2;
+    mbstate_t ps;
 
-
+    memset(&ps, 0, sizeof(ps));
     for (size_t i = 0; i <= n; i++) v0[i] = i;
-
-    memset(&ps1, 0, sizeof(ps1));
     for (size_t i = 0; i < m;) {
         wchar_t wc1;
-        const size_t nbytes1 = selva_mbstowc(&wc1, s + i, m - i, &ps1, trans, loc);
+        const size_t nbytes1 = selva_mbstowc(&wc1, s + i, m - i, &ps, trans, loc);
 
         v1[0] = i + 1;
-        memset(&ps2, 0, sizeof(ps2));
 
         for (size_t j = 0; j < n; j++) {
             v1[j + 1] = min3(v0[j + 1] + 1, v1[j] + 1, v0[j] + (wc1 != t[j]));
