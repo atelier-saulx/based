@@ -16,6 +16,12 @@ export const createVariableFilterBuffer = (
   if (op === 19 && typeof val === 'string') {
     val = val.toLowerCase()
   }
+
+  var isOr = 4
+  if (Array.isArray(value)) {
+    isOr = 2
+  }
+
   if (val instanceof Uint8Array || !prop.separate || op !== 1) {
     val = Buffer.from(val)
   } else if (prop.typeIndex === STRING && typeof value === 'string') {
@@ -24,6 +30,9 @@ export const createVariableFilterBuffer = (
   if (!(val instanceof Buffer)) {
     throw new Error('Incorrect value for filter ' + prop.path)
   }
+
+  console.log('bla', value, val)
+
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
@@ -32,7 +41,7 @@ export const createVariableFilterBuffer = (
         buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)
         buf = Buffer.allocUnsafe(16)
         buf[0] = negateType(op)
-        buf[1] = 0 // 0: default
+        buf[1] = 0
         buf.writeUInt16LE(8, 2)
         buf.writeUInt16LE(0, 4)
         buf[6] = 17
@@ -40,13 +49,14 @@ export const createVariableFilterBuffer = (
         writeFixed(prop, buf, crc32(val), 4, 8, 17)
         writeFixed(prop, buf, val.byteLength, 4, 12, 17)
       } else {
-        buf = writeVarFilter(val, buf, op, prop, 0, 0)
+        buf = writeVarFilter(isOr, val, buf, op, prop, 0, 0)
       }
     } else {
       if (val.byteLength > prop.len) {
         throw new Error('filter is larger then max value')
       }
-      buf = writeVarFilter(val, buf, op, prop, prop.start, prop.len)
+      buf[1] = isOr
+      buf = writeVarFilter(isOr, val, buf, op, prop, prop.start, prop.len)
     }
   } else {
     console.log('OP NOT SUPPORTED YET =>', op)
@@ -55,6 +65,7 @@ export const createVariableFilterBuffer = (
 }
 
 function writeVarFilter(
+  isOr: number,
   val: Buffer,
   buf: Buffer,
   op: number,
@@ -65,7 +76,7 @@ function writeVarFilter(
   const size = val.byteLength
   buf = Buffer.allocUnsafe(12 + size)
   buf[0] = negateType(op)
-  buf[1] = 4
+  buf[1] = isOr
   buf.writeUInt16LE(start, 2)
   buf.writeUint16LE(len, 4)
   buf.writeUint32LE(size, 6)

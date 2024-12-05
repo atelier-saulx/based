@@ -14,6 +14,15 @@ const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 
+pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+    const valueSize = readInt(u32, q, i + 5);
+    const next = i + 11 + valueSize;
+
+    std.debug.print("OR!!! {d} \n", .{v.len});
+
+    return .{ next, false };
+}
+
 pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u32, q, i + 5);
     const start = readInt(u16, q, i + 1);
@@ -29,7 +38,6 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-
     if (op == Op.search) {
         if (value[0] == 1) {
             return .{ next, false };

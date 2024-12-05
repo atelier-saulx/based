@@ -189,21 +189,21 @@ await test('has uncompressed', async (t) => {
     })
   }
 
-  db
-    .query('italy')
-    .filter('f', true)
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  // db
+  //   .query('italy')
+  //   .filter('f', true)
+  //   .include('id')
+  //   .range(0, 1e3)
+  //   .get()
+  //   .inspect(10).length
 
-  db
-    .query('italy')
-    .filter('body', 'has', 'derp derp derp')
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  // db
+  //   .query('italy')
+  //   .filter('body', 'has', 'derp derp derp')
+  //   .include('id')
+  //   .range(0, 1e3)
+  //   .get()
+  //   .inspect(10).length
 
   db
     .query('italy')
@@ -363,4 +363,73 @@ await test('hasLoose compressed', async (t) => {
       .inspect(2).length,
     1e3,
   )
+})
+
+await test('compressed has', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          body: { type: 'string' }, // big compressed string...
+        },
+      },
+    },
+  })
+  const compressedItaly = compress(italy)
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('italy', {
+      body: compressedItaly,
+    })
+  }
+  db
+    .query('italy')
+    .filter('body', 'has', 'derp derp derp')
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
+})
+
+await test('has or uncompressed', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          f: 'boolean',
+          body: { type: 'string' },
+        },
+      },
+    },
+  })
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('italy', {
+      f: false,
+      body: 'aaa bbbb aaaaaa bbbbb aa bbbb',
+    })
+  }
+
+  db
+    .query('italy')
+    .filter('body', 'hasLoose', ['aaaa', 'bbbb'])
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
 })

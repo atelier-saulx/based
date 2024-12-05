@@ -21,10 +21,10 @@ inline fn condition(
     return switch (mode) {
         Mode.default => c.default(q, v, i, isEdge, node, fieldSchema),
         Mode.defaultVar => c.defaultVar(q, v, i),
+        Mode.orVar => c.orVar(q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
         Mode.orFixed => c.orFixed(q, v, i),
         Mode.reference => c.reference(ctx, q, v, i),
-        else => .{ 0, false },
     };
 }
 
