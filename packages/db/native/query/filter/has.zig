@@ -171,7 +171,6 @@ pub fn default(value: []u8, query: []u8) bool {
             if (j == ql) {
                 return true;
             }
-            return true;
         }
     }
     return false;
@@ -181,15 +180,8 @@ pub fn loose(value: []u8, query: []u8) bool {
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
-
     const q1 = query[0];
-    var q2: u8 = 0;
-    if (q1 > 97) {
-        q2 = q1 - 32;
-    } else if (q1 < 90) {
-        q2 = q1 + 32;
-    }
-
+    const q2 = q1 - 32;
     if (l < vectorLen) {
         while (i < l) : (i += 1) {
             if (value[i] == q1 or value[i] == q2) {
@@ -207,17 +199,15 @@ pub fn loose(value: []u8, query: []u8) bool {
                 }
             }
         }
+        return false;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
-    const queryVector2: @Vector(vectorLen, u8) = @splat(q2);
     const indexes = std.simd.iota(u8, vectorLen);
+    const capitals: @Vector(vectorLen, u8) = @splat(32);
     const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
-
-        // std.simd.
-
         if (@reduce(.Or, matches)) {
             if (l > 1) {
                 const result = @select(u8, matches, indexes, nulls);
@@ -227,7 +217,7 @@ pub fn loose(value: []u8, query: []u8) bool {
                 }
                 var j: usize = 1;
                 while (j < ql) : (j += 1) {
-                    if (value[index + j] != query[j]) {
+                    if (value[index + j] != query[j] and value[index + j] != query[j] - 32) {
                         break;
                     }
                 }
@@ -236,7 +226,7 @@ pub fn loose(value: []u8, query: []u8) bool {
                 }
             }
         }
-        const matches2 = h == queryVector2;
+        const matches2 = h - capitals == queryVector;
         if (@reduce(.Or, matches2)) {
             if (l > 1) {
                 const result = @select(u8, matches2, indexes, nulls);
@@ -246,7 +236,7 @@ pub fn loose(value: []u8, query: []u8) bool {
                 }
                 var j: usize = 1;
                 while (j < ql) : (j += 1) {
-                    if (value[index + j] != query[j]) {
+                    if (value[index + j] != query[j] and value[index + j] != query[j] - 32) {
                         break;
                     }
                 }
@@ -256,7 +246,6 @@ pub fn loose(value: []u8, query: []u8) bool {
             }
         }
     }
-
     while (i < l and ql <= l - i) : (i += 1) {
         const id2 = value[i];
         if (id2 == q1 or id2 == q2) {
@@ -265,16 +254,14 @@ pub fn loose(value: []u8, query: []u8) bool {
             }
             var j: usize = 1;
             while (j < ql) : (j += 1) {
-                if (value[i + j] != query[j]) {
+                if (value[i + j] != query[j] and value[i + j] != query[j] - 32) {
                     break;
                 }
             }
             if (j == ql) {
                 return true;
             }
-            return true;
         }
     }
-
     return false;
 }
