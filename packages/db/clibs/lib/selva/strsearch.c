@@ -214,7 +214,7 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
 
 int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, struct strsearch_wneedle *wneedle, int good)
 {
-    const char *sep = " ,.\n";
+    const char *sep = " ,.;\n";
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
