@@ -123,9 +123,8 @@ static int32_t levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restr
 static const char * strtok2(const char * s, const char * delim, const char ** lasts, size_t left)
 {
     const char * spanp;
-    uint32_t c;
-    uint32_t sc;
     const char * tok;
+    uint32_t c, sc;
 
     /* s may be NULL */
     if (left == 0 || (!s && !(s = *lasts))) {
@@ -137,7 +136,7 @@ static const char * strtok2(const char * s, const char * delim, const char ** la
      */
     left++;
 cont:
-    c = (uint32_t)(*s++);
+    c = *s++;
     if (--left == 0) {
         *lasts = NULL;
         return NULL;
@@ -153,8 +152,8 @@ cont:
      * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
      * Note that delim must have one NUL; we stop if we see that, too.
      */
-    for (;left > 0;) {
-        c = (uint32_t)(*s++);
+    while (left > 0) {
+        c = *s++;
         left--;
         spanp = delim;
         do {
