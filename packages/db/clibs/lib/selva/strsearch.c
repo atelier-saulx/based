@@ -30,7 +30,7 @@ static int32_t levenshtein_u8(const char * restrict s, size_t m, const char * re
 {
     if (m == 0) return n;
     if (n == 0) return m;
-    if (n > LEV_MAX - 1 || m > LEV_MAX - 1) {
+    if (/*n > LEV_MAX - 1 || */ m > LEV_MAX - 1) {
         return INT_MAX;
     }
 
@@ -199,8 +199,8 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
     }
 
     for (word = strtok2(text, sep, &brkt, text_len);
-            word;
-            word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
+         word;
+         word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
         size_t len = (brkt) ? brkt - word - 1 : strlen(word);
         int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
         d = min(d, d2);
@@ -218,7 +218,6 @@ int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t te
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
-
 
     for (word = strtok2(text, sep, &brkt, text_len);
          word;
