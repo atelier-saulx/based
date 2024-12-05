@@ -28,7 +28,44 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-    if (op == Op.has) {
+
+    // op == Op.equal HANDLE DIFFERENT
+
+    // search
+    if (op == Op.hasLoose) {
+        if (prop == Prop.STRING and mainLen == 0) {
+            if (value[0] == 1) {
+                var j: usize = 0;
+                while (j < query.len) {
+                    const size = readInt(u16, query, j);
+                    if (has.looseCompressed(value, query[j + 2 .. j + 2 + size])) {
+                        return .{ next, true };
+                    }
+                    j += size + 2;
+                }
+            } else {
+                var j: usize = 0;
+                while (j < query.len) {
+                    const size = readInt(u16, query, j);
+                    if (has.loose(value[1..value.len], query[j + 2 .. j + 2 + size])) {
+                        return .{ next, true };
+                    }
+                    j += size + 2;
+                }
+                return .{ next, false };
+            }
+        } else {
+            var j: usize = 0;
+            while (j < query.len) {
+                const size = readInt(u16, query, j);
+                if (has.loose(value, query[j + 2 .. j + 2 + size])) {
+                    return .{ next, true };
+                }
+                j += size + 2;
+            }
+            return .{ next, false };
+        }
+    } else if (op == Op.has) {
         if (prop == Prop.STRING and mainLen == 0) {
             if (value[0] == 1) {
                 var j: usize = 0;
