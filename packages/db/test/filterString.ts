@@ -360,7 +360,7 @@ await test('hasLoose compressed', async (t) => {
       .include('id', 'body')
       .range(0, 1e3)
       .get()
-      .inspect(10).length,
+      .inspect(2).length,
     1e3,
   )
 })
