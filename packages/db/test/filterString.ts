@@ -161,7 +161,7 @@ await test('compressed has', async (t) => {
     .inspect(10).length
 })
 
-await test('uncompressed has', async (t) => {
+await test('has uncompressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -186,6 +186,14 @@ await test('uncompressed has', async (t) => {
   db
     .query('italy')
     .filter('body', 'has', 'derp derp derp')
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
+
+  db
+    .query('italy')
+    .filter('body', 'hasLoose', 'derp derp derp')
     .include('id')
     .range(0, 1e3)
     .get()
@@ -267,7 +275,7 @@ await test('search', async (t) => {
     .inspect(10).length
 })
 
-await test('uncompressed hasLoose', async (t) => {
+await test('hasLoose uncompressed', async (t) => {
   console.log('derp')
   const db = new BasedDb({
     path: t.tmp,
