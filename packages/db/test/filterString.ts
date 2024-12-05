@@ -173,6 +173,7 @@ await test('has uncompressed', async (t) => {
     types: {
       italy: {
         props: {
+          f: 'boolean',
           body: { type: 'string', compression: 'none' }, // big compressed string...
         },
       },
@@ -180,9 +181,19 @@ await test('has uncompressed', async (t) => {
   })
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
+      f: false,
       body: italy,
     })
   }
+
+  db
+    .query('italy')
+    .filter('f', true)
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
+
   db
     .query('italy')
     .filter('body', 'has', 'derp derp derp')
