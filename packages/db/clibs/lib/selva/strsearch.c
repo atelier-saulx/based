@@ -120,7 +120,7 @@ static int32_t levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restr
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-static const char * strtok2(const char * s, const char * delim, const char ** lasts)
+static const char * strtok2(const char * s, const char * delim, const char ** lasts, size_t left)
 {
     const char * spanp;
     uint32_t c;
@@ -128,24 +128,24 @@ static const char * strtok2(const char * s, const char * delim, const char ** la
     const char * tok;
 
     /* s may be NULL */
-    if (!lasts || (!s && !(s = *lasts))) {
+    if (left == 0 || (!s && !(s = *lasts))) {
         return NULL;
     }
 
     /*
      * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
      */
+    left++;
 cont:
     c = (uint32_t)(*s++);
+    if (--left == 0) {
+        *lasts = NULL;
+        return NULL;
+    }
     for (spanp = delim; (sc = *spanp++) != 0;) {
         if (c == sc) {
             goto cont;
         }
-    }
-
-    if (c == 0) {       /* no non-delimiter characters */
-        *lasts = NULL;
-        return NULL;
     }
     tok = s - 1;
 
@@ -153,45 +153,20 @@ cont:
      * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
      * Note that delim must have one NUL; we stop if we see that, too.
      */
-    for (;;) {
+    for (;left > 0;) {
         c = (uint32_t)(*s++);
+        left--;
         spanp = delim;
         do {
             if ((sc = *spanp++) == c) {
-                if (c == 0) {
-                    s = NULL;
-                }
-                *lasts = s;
-                return (tok);
+                goto out;
             }
         } while (sc != 0);
     }
-    /* NOTREACHED */
-}
 
-int strsearch_has_u8(const char *text, const char *needle, size_t needle_len, int good)
-{
-    const char *sep = " \n";
-    const char *word;
-    const char *brkt;
-    int32_t d = INT_MAX;
-
-    if (needle_len > LEV_MAX - 1) {
-        return INT_MAX;
-    }
-
-    for (word = strtok2(text, sep, &brkt);
-            word;
-            word = strtok2(NULL, sep, &brkt)) {
-        size_t len = (brkt) ? brkt - word - 1 : strlen(word);
-        int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
-        d = min(d, d2);
-        if (d <= (int32_t)good) {
-            break;
-        }
-    }
-
-    return d;
+out:
+    *lasts = (left == 0) ? NULL : s;
+    return tok;
 }
 
 int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len)
@@ -213,7 +188,32 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
     return 0;
 }
 
-int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, struct strsearch_wneedle *wneedle, int good)
+int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good)
+{
+    const char *sep = " \n";
+    const char *word;
+    const char *brkt;
+    int32_t d = INT_MAX;
+
+    if (needle_len > LEV_MAX - 1) {
+        return INT_MAX;
+    }
+
+    for (word = strtok2(text, sep, &brkt, text_len);
+            word;
+            word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
+        size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+        int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
+        d = min(d, d2);
+        if (d <= (int32_t)good) {
+            break;
+        }
+    }
+
+    return d;
+}
+
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good)
 {
     const char *sep = " ,.;\n";
     const char *word;
@@ -221,9 +221,9 @@ int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, struct st
     int32_t d = INT_MAX;
 
 
-    for (word = strtok2(text, sep, &brkt);
+    for (word = strtok2(text, sep, &brkt, text_len);
          word;
-         word = strtok2(NULL, sep, &brkt)) {
+         word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
         size_t len = (brkt) ? brkt - word - 1 : strlen(word);
         int32_t d2 = levenshtein_mbs(loc, trans, word, len, wneedle->buf, wneedle->len);
         d = min(d, d2);
@@ -257,6 +257,7 @@ __constructor static void test(void)
     book[fsize] = 0;
 #if 0
     const char book[] = "Not a very long book really good tho";
+    fsize = strlen(book);
 #endif
 
     static const char * const patterns[] = { "fod", "god", "G0d", "good", "GOD", "göd", "thuogh", "eegrergerg", "{{{{{{{{" };
@@ -268,12 +269,12 @@ __constructor static void test(void)
         size_t len = strlen(pattern);
 
         fprintf(stderr, "pattern: %s | ", pattern);
-#if TEST_U8==1
-        fprintf(stderr, "%d\n", strsearch_has_u8(book, pattern, len, 1));
+#if TEST_U8 == 1
+        fprintf(stderr, "%d\n", strsearch_has_u8(book, fsize, pattern, len, 1));
 #else
         struct strsearch_wneedle wneedle;
         make_wneedle(&wneedle, loc, trans, pattern, len);
-        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, &wneedle, 1));
+        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, fsize, &wneedle, 1));
 #endif
     }
     ts_monotime(&ts_end);
