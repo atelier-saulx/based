@@ -125,6 +125,7 @@ export const createSchemaTypeDef = (
         isPropType('alias', schemaProp) ||
         isPropType('binary', schemaProp)
       ) {
+        // if ()
         if (typeof schemaProp === 'object') {
           if (schemaProp.maxBytes < 61) {
             len = schemaProp.maxBytes + 1
