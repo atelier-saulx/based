@@ -12,6 +12,7 @@ export class BasedQueryResponse {
   execTime: number
   offset: number
   end: number
+
   constructor(
     def: QueryDef,
     result: Buffer,
@@ -24,6 +25,10 @@ export class BasedQueryResponse {
     this.execTime = execTime
     this.offset = offset
     this.end = end
+  }
+
+  get size() {
+    return this.result.byteLength
   }
 
   [inspect.custom](depth: number) {

@@ -308,6 +308,9 @@ const binaryOpts = {
   maxBytes(val) {
     expectNumber(val)
   },
+  compression(val) {
+    return !(val === 'none' || val === 'deflate')
+  },
 }
 
 p.binary = propParser<SchemaString>(STUB, binaryOpts, 0)

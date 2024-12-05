@@ -281,3 +281,60 @@ await test('Big string', async (t) => {
     'Get multiple big strings',
   )
 })
+
+await test('Big string disable compression', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      file: {
+        props: {
+          contents: { type: 'string', compression: 'none' },
+        },
+      },
+    },
+  })
+
+  const file = db.create('file', {
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  equal(
+    db.query('file', file).get().node().contents,
+    euobserver,
+    'Get single id',
+  )
+
+  db.create('file', {
+    contents: euobserver,
+  })
+
+  db.drain()
+
+  equal(db.query('file').get().size > 1000 * 1e3, true)
+
+  deepEqual(
+    db.query('file').get().inspect().toObject(),
+    [
+      {
+        id: 1,
+        contents: euobserver,
+      },
+      {
+        id: 2,
+        contents: euobserver,
+      },
+    ],
+    'Get multiple big strings (uncompressed)',
+  )
+})

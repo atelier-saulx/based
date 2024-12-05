@@ -10,6 +10,9 @@ export type Operator =
   | '<='
   | '..'
   | '!..'
+  | 'search'
+  | '!search' // later...
+  | 'hasLoose'
 
 // -------------------------------------------
 // operations shared
@@ -33,6 +36,7 @@ export type Operator =
 // 13 = has to lower case (simd)
 // 14 = starts with to lower case
 // 15 = ends with to lower case
+// 18 = search
 // -------------------------------------------
 
 export const operationToByte = (op: Operator): number => {
@@ -74,6 +78,14 @@ export const operationToByte = (op: Operator): number => {
 
   if (op === '!..') {
     return 11
+  }
+
+  if (op === 'search') {
+    return 18
+  }
+
+  if (op === 'hasLoose') {
+    return 19
   }
 
   return 0

@@ -31,10 +31,6 @@ const indexOfSubstrings = function* (str, searchValue) {
   }
 }
 
-// const derp = JSON.parse(bigfFile)
-
-// import * as q from '../../src/query/query.js'
-
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const relativePath = '../../tmp'
 const dbFolder = resolve(join(__dirname, relativePath))
@@ -50,7 +46,7 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
-    //noCompression: true,
+    noCompression: true,
   })
 
   await db.start({ clean: true })
@@ -197,6 +193,29 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
+  const query = 'orban'
+  console.log('---- DERP UKRAINE', query)
+  db.query('article')
+    .range(0, 10)
+    // .filter('headline', 'has', 'Orbán')
+    .filter('headline', 'hasLoose', 'orban')
+
+    // .filter('body', 'has', query)
+    // .or((f) => {
+    //   f.filter('headline', 'has', 'Orban')
+    //   // f.filter('body', 'has', 'Orban')
+    // })
+    // .or((f) => {
+    //   f.filter('headline', 'has', 'Orbán')
+    //   // f.filter('body', 'has', 'Orban')
+    // })
+    .sort('publishDate', 'desc')
+    .include('headline', 'publishDate')
+    .get()
+    .inspect(2)
+
+  // .inspect(2)
+
   const start = performance.now()
   await db.stop(false)
   const end = performance.now()
@@ -247,9 +266,11 @@ const makeDb1 = async (path: string) => {
   console.log('save took: ', end - start)
 }
 
+await makeDb(dbFolder + '/1')
+
 // await makeDb(dbFolder + '/1')
 
-await makeDb1(dbFolder + '/2')
+// await makeDb1(dbFolder + '/2')
 
 // await Promise.all([makeDb(dbFolder + '/1'), makeDb(dbFolder + '/2')])
 

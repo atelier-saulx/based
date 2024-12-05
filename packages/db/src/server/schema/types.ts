@@ -109,6 +109,8 @@ export type PropDef = {
   len: number
   inverseTypeName?: string
   inversePropName?: string
+  // 0 == none , 1 == standard deflate
+  compression?: 0 | 1
   inverseTypeId?: number
   inversePropNumber?: number
   enum?: any[]

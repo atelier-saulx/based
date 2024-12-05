@@ -165,6 +165,14 @@ export const createSchemaTypeDef = (
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
         addEdges(prop, schemaProp)
+      } else if (
+        typeof schemaProp === 'object' &&
+        isPropType('string', schemaProp)
+      ) {
+        prop.compression =
+          'compression' in schemaProp && schemaProp.compression === 'none'
+            ? 0
+            : 1
       }
       result.props[propPath.join('.')] = prop
       if (isseparate) {
