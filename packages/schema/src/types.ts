@@ -225,6 +225,8 @@ export type SchemaString = Prop<{
   mime?: Mime
   display?: StringDisplay
   format?: StringFormat
+  // add level here as well
+  compression?: 'none' | 'deflate'
 }>
 
 export type SchemaBinary = Prop<{
