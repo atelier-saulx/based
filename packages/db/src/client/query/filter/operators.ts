@@ -12,6 +12,7 @@ export type Operator =
   | '!..'
   | 'search'
   | '!search' // later...
+  | 'hasLoose'
 
 // -------------------------------------------
 // operations shared
@@ -81,6 +82,10 @@ export const operationToByte = (op: Operator): number => {
 
   if (op === 'search') {
     return 18
+  }
+
+  if (op === 'hasLoose') {
+    return 19
   }
 
   return 0

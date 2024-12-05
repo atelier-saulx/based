@@ -22,7 +22,7 @@ export const createVariableFilterBuffer = (
     throw new Error('Incorrect value for filter ' + prop.path)
   }
   // --------------------
-  if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18) {
+  if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
       if (op === 1 && val.byteLength > 25) {
         buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)

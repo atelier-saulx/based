@@ -61,6 +61,18 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         } else if (!has.default(value, query)) {
             return .{ next, false };
         }
+    } else if (op == Op.hasLoose) {
+        if (prop == Prop.STRING and mainLen == 0) {
+            if (value[0] == 1) {
+                if (!has.compressed(value, query)) {
+                    return .{ next, false };
+                }
+            } else if (!has.loose(value[1..value.len], query)) {
+                return .{ next, false };
+            }
+        } else if (!has.loose(value, query)) {
+            return .{ next, false };
+        }
     }
     return .{ next, pass };
 }

@@ -19,6 +19,8 @@ pub const Operator = enum(u8) {
 
     search = 18,
 
+    hasLoose = 19,
+
     pub fn isNumerical(self: Operator) bool {
         return switch (self) {
             Operator.smallerThen,
