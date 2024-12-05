@@ -265,14 +265,16 @@ await test('search', async (t) => {
     })
   }
 
-  //
-  db
-    .query('italy')
-    .filter('body', 'search', 'vctorio')
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  equal(
+    db
+      .query('italy')
+      .filter('body', 'search', 'vitt')
+      .include('id')
+      .range(0, 1e3)
+      .get()
+      .inspect(10).length,
+    1e3,
+  )
 })
 
 await test('hasLoose uncompressed', async (t) => {
