@@ -17,9 +17,26 @@ const selva = @import("../../selva.zig");
 pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u32, q, i + 5);
     const next = i + 11 + valueSize;
+    const query = q[i + 11 .. next];
+    // const prop: Prop = @enumFromInt(q[11]);
+    const mainLen = readInt(u16, q, i + 3);
+    // const op: Op = @enumFromInt(q[i + 9]);
+    const start = readInt(u16, q, i + 1);
+    var value: []u8 = undefined;
+    if (mainLen != 0) {
+        value = v[start + 1 .. v[start] + start + 1];
+    } else {
+        value = v;
+    }
 
-    std.debug.print("OR!!! {d} \n", .{v.len});
-
+    var j: usize = 0;
+    while (j < query.len) {
+        const size = readInt(u16, query, j);
+        if (has.default(value[1..value.len], query[j + 2 .. j + 2 + size])) {
+            return .{ next, true };
+        }
+        j += size + 2;
+    }
     return .{ next, false };
 }
 
@@ -38,6 +55,8 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
+
+    // extract this
     if (op == Op.search) {
         if (value[0] == 1) {
             return .{ next, false };

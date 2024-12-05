@@ -167,6 +167,7 @@ pub inline fn default(value: []u8, query: []u8) bool {
     return false;
 }
 
+// ------------------------------------------------------------------------------
 // LOOSE
 pub inline fn restVectorMatch(
     matches: @Vector(vectorLen, bool),
@@ -262,13 +263,7 @@ pub inline fn loose(value: []u8, query: []u8) bool {
 }
 
 // COMPRESSED CHECK -----------------
-const CbCtxLoose = struct {
-    query: []u8,
-    currentQueryIndex: usize,
-    queryVector: @Vector(vectorLen, u8),
-};
-
-pub inline fn scanLooseCompressedPiece(ctx: *CbCtxLoose, value: []u8) bool {
+pub inline fn scanLooseCompressedPiece(ctx: *CbCtx, value: []u8) bool {
     const query = ctx.query;
     var i: usize = 0;
     const l = value.len;
@@ -314,9 +309,12 @@ pub inline fn scanLooseCompressedPiece(ctx: *CbCtxLoose, value: []u8) bool {
     }
     return false;
 }
+// ---------------------------------
 
+// uncompress
+// Make this into a function where you pass the function
 pub fn looseCbHasCompressed(noalias ctx: ?*anyopaque, noalias buf: [*c]u8, size: usize) callconv(.C) c_int {
-    const ctxDerp: *CbCtxLoose = @ptrCast(@alignCast(ctx.?));
+    const ctxDerp: *CbCtx = @ptrCast(@alignCast(ctx.?));
     const found = scanLooseCompressedPiece(ctxDerp, buf[0..size]);
     if (found) {
         return 1;
@@ -331,7 +329,7 @@ pub inline fn looseCompressed(value: []u8, query: []u8) bool {
     }
     var loop: bool = true;
     var hasMatch: c_int = 0;
-    var ctx: CbCtxLoose = .{
+    var ctx: CbCtx = .{
         .query = query,
         .queryVector = @splat(query[0]),
         .currentQueryIndex = 0,

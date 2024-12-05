@@ -397,7 +397,7 @@ await test('compressed has', async (t) => {
     .inspect(10).length
 })
 
-await test('has or uncompressed', async (t) => {
+await test('has OR uncompressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -413,21 +413,22 @@ await test('has or uncompressed', async (t) => {
       italy: {
         props: {
           f: 'boolean',
-          body: { type: 'string' },
+          body: { type: 'string', compression: 'none' },
         },
       },
     },
   })
+
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
-      body: 'aaa bbbb aaaaaa bbbbb aa bbbb',
+      body: italy, //'aaabbbaaa',
     })
   }
 
   db
     .query('italy')
-    .filter('body', 'hasLoose', ['aaaa', 'bbbb'])
+    .filter('body', 'has', ['aaa', 'bbb'])
     .include('id')
     .range(0, 1e3)
     .get()

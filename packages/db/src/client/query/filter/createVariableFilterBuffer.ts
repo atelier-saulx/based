@@ -6,22 +6,15 @@ import {
   writeFixed,
 } from './createFixedFilterBuffer.js'
 
-export const createVariableFilterBuffer = (
+const parseValue = (
   value: any,
   prop: PropDef | PropDefEdge,
   op: number,
-  buf: Buffer,
-) => {
+): Buffer => {
   let val = value
   if (op === 19 && typeof val === 'string') {
     val = val.toLowerCase()
   }
-
-  var isOr = 4
-  if (Array.isArray(value)) {
-    isOr = 2
-  }
-
   if (val instanceof Uint8Array || !prop.separate || op !== 1) {
     val = Buffer.from(val)
   } else if (prop.typeIndex === STRING && typeof value === 'string') {
@@ -30,8 +23,30 @@ export const createVariableFilterBuffer = (
   if (!(val instanceof Buffer)) {
     throw new Error('Incorrect value for filter ' + prop.path)
   }
+  return val
+}
 
-  console.log('bla', value, val)
+export const createVariableFilterBuffer = (
+  value: any,
+  prop: PropDef | PropDefEdge,
+  op: number,
+  buf: Buffer,
+) => {
+  var isOr = 4
+  let val: Buffer
+  if (Array.isArray(value)) {
+    isOr = 2
+    const x = []
+    for (const v of value) {
+      const a = parseValue(v, prop, op)
+      const size = Buffer.allocUnsafe(2)
+      size.writeUint16LE(a.byteLength)
+      x.push(size, a)
+    }
+    val = Buffer.concat(x)
+  } else {
+    val = parseValue(value, prop, op)
+  }
 
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
