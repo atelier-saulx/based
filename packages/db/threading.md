@@ -24,12 +24,11 @@ does both migrations and modifies
 
 ```ts
 
-```
-
 - [ ] create worker pool
 - [ ] split folders
-
 ```
+
+```ts
 native/
   ...
 src/
@@ -43,3 +42,19 @@ src/
   schema/
   ...
 ```
+
+```ts
+const thread1 = []
+const thread2 = []
+const thread3 = []
+const thread4 = []
+
+const thread = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4]
+
+const worker = () => {}
+```
+
+#TODO
+
+- receive a buffer A
+- loop through buffer
