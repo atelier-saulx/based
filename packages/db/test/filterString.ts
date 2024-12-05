@@ -96,9 +96,7 @@ await test('variable size (string/binary)', async (t) => {
       .query('article')
       .filter('derp', 'has', Buffer.from('vitorio'))
       .include('id')
-
-      .get()
-      .inspect(10).length,
+      .get().length,
     0,
   )
   equal(
@@ -156,13 +154,16 @@ await test('compressed has', async (t) => {
       body: compressedItaly,
     })
   }
-  db
-    .query('italy')
-    .filter('body', 'has', 'derp derp derp')
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+
+  equal(
+    db
+      .query('italy')
+      .filter('body', 'has', 'derp derp derp')
+      .include('id')
+      .range(0, 1e3)
+      .get().length,
+    0,
+  )
 })
 
 await test('has uncompressed', async (t) => {
@@ -190,32 +191,15 @@ await test('has uncompressed', async (t) => {
     })
   }
 
-  // db
-  //   .query('italy')
-  //   .filter('f', true)
-  //   .include('id')
-  //   .range(0, 1e3)
-  //   .get()
-  //   .inspect(10).length
-
   equal(
     db
       .query('italy')
       .filter('body', 'has', 'derp derp derp')
       .include('id')
       .range(0, 1e3)
-      .get()
-      .inspect(10).length,
+      .get().length,
     0,
   )
-
-  // db
-  //   .query('italy')
-  //   .filter('body', 'hasLoose', 'derp derp derp')
-  //   .include('id')
-  //   .range(0, 1e3)
-  //   .get()
-  //   .inspect(10).length
 })
 
 await test('main has (string/binary)', async (t) => {
@@ -433,7 +417,7 @@ await test('has OR uncompressed', async (t) => {
   equal(
     db
       .query('italy')
-      .filter('body', 'has', ['aaa', 'bbb'])
+      .filter('body', 'has', ['aaa', 'bbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
       .include('id')
       .range(0, 1e3)
       .get()
