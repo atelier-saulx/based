@@ -28,7 +28,6 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-
     if (op == Op.has) {
         if (prop == Prop.STRING and mainLen == 0) {
             if (value[0] == 1) {
@@ -63,7 +62,6 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             return .{ next, false };
         }
     }
-
     return .{ next, false };
 }
 
@@ -82,7 +80,6 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-
     // extract this and use in OR
     if (op == Op.search) {
         if (value[0] == 1) {
