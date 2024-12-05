@@ -13,6 +13,9 @@ export const createVariableFilterBuffer = (
   buf: Buffer,
 ) => {
   let val = value
+  if (op === 19 && typeof val === 'string') {
+    val = val.toLowerCase()
+  }
   if (val instanceof Uint8Array || !prop.separate || op !== 1) {
     val = Buffer.from(val)
   } else if (prop.typeIndex === STRING && typeof value === 'string') {
@@ -25,6 +28,7 @@ export const createVariableFilterBuffer = (
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
       if (op === 1 && val.byteLength > 25) {
+        // if len is > 25
         buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)
         buf = Buffer.allocUnsafe(16)
         buf[0] = negateType(op)
