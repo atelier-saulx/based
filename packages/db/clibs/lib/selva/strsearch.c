@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <arm_neon.h>
 #include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -124,12 +123,12 @@ static int32_t levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restr
 static const char * strtok2(const char * s, const char * delim, const char ** lasts)
 {
     const char * spanp;
-    int c;
-    int sc;
+    uint32_t c;
+    uint32_t sc;
     const char * tok;
 
     /* s may be NULL */
-    if (!(delim && lasts) || (s == NULL && (s = *lasts) == NULL)) {
+    if (!lasts || (!s && !(s = *lasts))) {
         return NULL;
     }
 
@@ -137,7 +136,7 @@ static const char * strtok2(const char * s, const char * delim, const char ** la
      * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
      */
 cont:
-    c = (int)(*s++);
+    c = (uint32_t)(*s++);
     for (spanp = delim; (sc = *spanp++) != 0;) {
         if (c == sc) {
             goto cont;
@@ -155,7 +154,7 @@ cont:
      * Note that delim must have one NUL; we stop if we see that, too.
      */
     for (;;) {
-        c = (int)(*s++);
+        c = (uint32_t)(*s++);
         spanp = delim;
         do {
             if ((sc = *spanp++) == c) {
@@ -215,7 +214,7 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
 
 int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, struct strsearch_wneedle *wneedle, int good)
 {
-    const char *sep = " \n";
+    const char *sep = " ,.\n";
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
