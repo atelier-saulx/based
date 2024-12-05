@@ -125,7 +125,6 @@ export const createSchemaTypeDef = (
         isPropType('alias', schemaProp) ||
         isPropType('binary', schemaProp)
       ) {
-        // if ()
         if (typeof schemaProp === 'object') {
           if (schemaProp.maxBytes < 61) {
             len = schemaProp.maxBytes + 1
@@ -166,6 +165,11 @@ export const createSchemaTypeDef = (
         prop.inversePropName = schemaProp.prop
         prop.inverseTypeName = schemaProp.ref
         addEdges(prop, schemaProp)
+      } else if (isPropType('string', schemaProp)) {
+        prop.compression =
+          'compression' in schemaProp && schemaProp.compression === 'none'
+            ? 0
+            : 1
       }
       result.props[propPath.join('.')] = prop
       if (isseparate) {
