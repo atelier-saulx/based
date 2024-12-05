@@ -27,21 +27,19 @@ pub inline fn scanCompressedPiece(ctx: *CbCtx, value: []u8) bool {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == ctx.queryVector;
         if (@reduce(.Or, matches)) {
-            if (l > 1) {
-                const result = @select(u8, matches, ctx.indexes, ctx.nulls);
-                const index = @reduce(.Min, result) + i;
-                if (index + ql - 1 > l) {
-                    return false;
+            const result = @select(u8, matches, ctx.indexes, ctx.nulls);
+            const index = @reduce(.Min, result) + i;
+            if (index + ql - 1 > l) {
+                return false;
+            }
+            var j: usize = 1;
+            while (j < ql) : (j += 1) {
+                if (value[index + j] != query[j]) {
+                    break;
                 }
-                var j: usize = 1;
-                while (j < ql) : (j += 1) {
-                    if (value[index + j] != query[j]) {
-                        break;
-                    }
-                }
-                if (j == ql) {
-                    return true;
-                }
+            }
+            if (j == ql) {
+                return true;
             }
         }
     }
@@ -60,7 +58,6 @@ pub inline fn scanCompressedPiece(ctx: *CbCtx, value: []u8) bool {
             if (j == ql) {
                 return true;
             }
-            return true;
         }
     }
     return false;
@@ -108,7 +105,7 @@ pub inline fn compressed(value: []u8, query: []u8) bool {
     return hasMatch == 1;
 }
 
-pub fn default(value: []u8, query: []u8) bool {
+pub inline fn default(value: []u8, query: []u8) bool {
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
@@ -199,7 +196,6 @@ pub inline fn loose(value: []u8, query: []u8) bool {
         }
         return false;
     }
-
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
     const indexes = std.simd.iota(u8, vectorLen);
     const capitals: @Vector(vectorLen, u8) = @splat(32);
