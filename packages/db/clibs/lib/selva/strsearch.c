@@ -58,8 +58,7 @@ static int32_t levenshtein_u8(const char * restrict s, size_t m, const char * re
 static int32_t levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restrict s, size_t m, const wchar_t * restrict t, size_t n)
 {
     if (m == 0) return n;
-    if (n == 0) return m;
-    if (n > LEV_MAX - 1 || m > LEV_MAX - 1) {
+    if (m > LEV_MAX - 1) {
         return INT_MAX;
     }
 
@@ -173,6 +172,9 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
     mbstate_t ps;
     size_t i = 0, j = 0;
 
+    if (needle_len == 0) {
+        return SELVA_EINVAL;
+    }
     if (needle_len > LEV_MAX - 1) {
         return SELVA_ENOBUFS;
     }
