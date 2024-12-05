@@ -183,7 +183,8 @@ int strsearch_has_u8(const char *text, const char *needle, size_t needle_len, in
     for (word = strtok2(text, sep, &brkt);
             word;
             word = strtok2(NULL, sep, &brkt)) {
-        int32_t d2 = levenshtein_u8(word, strcspn(word, sep), needle, needle_len);
+        size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+        int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
         d = min(d, d2);
         if (d <= (int32_t)good) {
             break;
@@ -223,7 +224,8 @@ int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, struct st
     for (word = strtok2(text, sep, &brkt);
          word;
          word = strtok2(NULL, sep, &brkt)) {
-        int32_t d2 = levenshtein_mbs(loc, trans, word, strcspn(word, sep), wneedle->buf, wneedle->len);
+        size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+        int32_t d2 = levenshtein_mbs(loc, trans, word, len, wneedle->buf, wneedle->len);
         d = min(d, d2);
         if (d <= (int32_t)good) {
             break;
