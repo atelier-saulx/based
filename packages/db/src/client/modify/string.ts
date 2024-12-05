@@ -53,7 +53,8 @@ export function writeString(
     if (isBuffer) {
       ctx.buf.set(value, ctx.len)
     } else {
-      size = write(ctx.buf, value, ctx.len, ctx.db.noCompression)
+      const isNoCompression = ctx.db.noCompression || t.compression === 0
+      size = write(ctx.buf, value, ctx.len, isNoCompression)
     }
     ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
     ctx.len += size

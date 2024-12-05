@@ -297,8 +297,7 @@ await test('Big string disable compression', async (t) => {
     types: {
       file: {
         props: {
-          name: { type: 'string', max: 20 },
-          contents: { type: 'string' },
+          contents: { type: 'string', compression: 'none' },
         },
       },
     },
@@ -317,26 +316,25 @@ await test('Big string disable compression', async (t) => {
   )
 
   db.create('file', {
-    name: 'file 2',
     contents: euobserver,
   })
 
   db.drain()
 
+  equal(db.query('file').get().size > 1000 * 1e3, true)
+
   deepEqual(
-    db.query('file').get().toObject(),
+    db.query('file').get().inspect().toObject(),
     [
       {
         id: 1,
-        name: '',
         contents: euobserver,
       },
       {
         id: 2,
-        name: 'file 2',
         contents: euobserver,
       },
     ],
-    'Get multiple big strings',
+    'Get multiple big strings (uncompressed)',
   )
 })
