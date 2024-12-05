@@ -87,7 +87,7 @@ export const print = (schema: Schema, path: string[]) => {
     const v = obj[key]
     const padding = '  '.repeat(lvl)
     const prefix = key === Object.keys(obj)[0] ? '' : `${padding}...\n`
-    if (lvl === depth) {
+    if (lvl === depth && lvl !== 0) {
       const err =
         key in obj
           ? `${key}: ${typeof v === 'object' && v !== null && !Array.isArray(v) ? `{..}` : JSON.stringify(v)}`
