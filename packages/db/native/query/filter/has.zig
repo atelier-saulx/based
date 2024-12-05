@@ -138,21 +138,19 @@ pub fn default(value: []u8, query: []u8) bool {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
         if (@reduce(.Or, matches)) {
-            if (l > 1) {
-                const result = @select(u8, matches, indexes, nulls);
-                const index = @reduce(.Min, result) + i;
-                if (index + ql - 1 > l) {
-                    return false;
+            const result = @select(u8, matches, indexes, nulls);
+            const index = @reduce(.Min, result) + i;
+            if (index + ql - 1 > l) {
+                return false;
+            }
+            var j: usize = 1;
+            while (j < ql) : (j += 1) {
+                if (value[index + j] != query[j]) {
+                    break;
                 }
-                var j: usize = 1;
-                while (j < ql) : (j += 1) {
-                    if (value[index + j] != query[j]) {
-                        break;
-                    }
-                }
-                if (j == ql) {
-                    return true;
-                }
+            }
+            if (j == ql) {
+                return true;
             }
         }
     }
