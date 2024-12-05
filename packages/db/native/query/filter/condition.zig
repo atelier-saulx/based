@@ -2,6 +2,7 @@ const std = @import("std");
 const readInt = @import("../../utils.zig").readInt;
 const batch = @import("./batch.zig");
 const has = @import("./has.zig");
+const search = @import("./search.zig");
 const db = @import("../../db//db.zig");
 const num = @import("./numerical.zig");
 const t = @import("./types.zig");
@@ -28,7 +29,15 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-    if (op == Op.equal) {
+
+    if (op == Op.search) {
+        if (value[0] == 1) {
+            return .{ next, false };
+        } else if (!search.default(value[1..value.len], query)) {
+            return .{ next, false };
+        }
+        // -------------------
+    } else if (op == Op.equal) {
         if (value.len != valueSize) {
             pass = false;
         } else {

@@ -202,3 +202,34 @@ await test('main has (string/binary)', async (t) => {
     [derpResult],
   )
 })
+
+await test('search', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => {
+    return db.destroy()
+  })
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          body: { type: 'string', compression: 'none' }, // big compressed string...
+        },
+      },
+    },
+  })
+  for (let i = 0; i < 1; i++) {
+    await db.create('italy', {
+      body: italy,
+    })
+  }
+  db
+    .query('italy')
+    .filter('body', 'search', 'derp derp derp')
+    .include('id')
+    .range(0, 1e3)
+    .get()
+    .inspect(10).length
+})
