@@ -209,7 +209,7 @@ pub inline fn loose(value: []u8, query: []u8) bool {
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
-        if (l > 1 and (@reduce(.Or, matches) or @reduce(.Or, h - capitals == queryVector))) {
+        if ((@reduce(.Or, matches) or @reduce(.Or, h - capitals == queryVector))) {
             const result = @select(u8, matches, indexes, nulls);
             const index = @reduce(.Min, result) + i;
             if (index + ql - 1 > l) {
