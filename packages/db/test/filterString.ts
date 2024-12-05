@@ -2,6 +2,7 @@ import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence } from './shared/examples.js'
+import { it } from 'node:test'
 
 const capitals =
   'AAAAAAAAAA AAAAAAAAAAA AAAAAAAAAAAAAAAAAAAA AAA A AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
@@ -189,29 +190,32 @@ await test('has uncompressed', async (t) => {
     })
   }
 
-  db
-    .query('italy')
-    .filter('f', true)
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  // db
+  //   .query('italy')
+  //   .filter('f', true)
+  //   .include('id')
+  //   .range(0, 1e3)
+  //   .get()
+  //   .inspect(10).length
 
-  db
-    .query('italy')
-    .filter('body', 'has', 'derp derp derp')
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  equal(
+    db
+      .query('italy')
+      .filter('body', 'has', 'derp derp derp')
+      .include('id')
+      .range(0, 1e3)
+      .get()
+      .inspect(10).length,
+    0,
+  )
 
-  db
-    .query('italy')
-    .filter('body', 'hasLoose', 'derp derp derp')
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  // db
+  //   .query('italy')
+  //   .filter('body', 'hasLoose', 'derp derp derp')
+  //   .include('id')
+  //   .range(0, 1e3)
+  //   .get()
+  //   .inspect(10).length
 })
 
 await test('main has (string/binary)', async (t) => {
@@ -422,15 +426,18 @@ await test('has OR uncompressed', async (t) => {
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
-      body: italy, //'aaabbbaaa',
+      body: i === 999 ? italy + ' aaabbbaaa' : italy,
     })
   }
 
-  db
-    .query('italy')
-    .filter('body', 'has', ['aaa', 'bbb'])
-    .include('id')
-    .range(0, 1e3)
-    .get()
-    .inspect(10).length
+  equal(
+    db
+      .query('italy')
+      .filter('body', 'has', ['aaa', 'bbb'])
+      .include('id')
+      .range(0, 1e3)
+      .get()
+      .inspect(10).length,
+    1,
+  )
 })

@@ -70,7 +70,6 @@ export const createVariableFilterBuffer = (
       if (val.byteLength > prop.len) {
         throw new Error('filter is larger then max value')
       }
-      buf[1] = isOr
       buf = writeVarFilter(isOr, val, buf, op, prop, prop.start, prop.len)
     }
   } else {

@@ -14,54 +14,21 @@ const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 
-pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u32, q, i + 5);
-    const next = i + 11 + valueSize;
-    const query = q[i + 11 .. next];
-    // const prop: Prop = @enumFromInt(q[11]);
-    const mainLen = readInt(u16, q, i + 3);
-    // const op: Op = @enumFromInt(q[i + 9]);
-    const start = readInt(u16, q, i + 1);
-    var value: []u8 = undefined;
-    if (mainLen != 0) {
-        value = v[start + 1 .. v[start] + start + 1];
-    } else {
-        value = v;
-    }
-
-    var j: usize = 0;
-    while (j < query.len) {
-        const size = readInt(u16, query, j);
-        if (has.default(value[1..value.len], query[j + 2 .. j + 2 + size])) {
-            return .{ next, true };
-        }
-        j += size + 2;
-    }
-    return .{ next, false };
-}
-
-pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
-    const valueSize = readInt(u32, q, i + 5);
-    const start = readInt(u16, q, i + 1);
-    const mainLen = readInt(u16, q, i + 3);
-    const op: Op = @enumFromInt(q[i + 9]);
-    const next = i + 11 + valueSize;
-    const prop: Prop = @enumFromInt(q[11]);
-    const query = q[i + 11 .. next];
-    var value: []u8 = undefined;
+inline fn varOp(
+    op: Op,
+    value: []u8,
+    query: []u8,
+    valueSize: u32,
+    prop: Prop,
+    mainLen: u16,
+) bool {
     var pass = true;
-    if (mainLen != 0) {
-        value = v[start + 1 .. v[start] + start + 1];
-    } else {
-        value = v;
-    }
-
-    // extract this
+    // extract this and use in OR
     if (op == Op.search) {
         if (value[0] == 1) {
-            return .{ next, false };
+            return false;
         } else if (!search.default(value[1..value.len], query)) {
-            return .{ next, false };
+            return false;
         }
         // -------------------
     } else if (op == Op.equal) {
@@ -80,28 +47,84 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         if (prop == Prop.STRING and mainLen == 0) {
             if (value[0] == 1) {
                 if (!has.compressed(value, query)) {
-                    return .{ next, false };
+                    return false;
                 }
             } else if (!has.default(value[1..value.len], query)) {
-                return .{ next, false };
+                return false;
             }
         } else if (!has.default(value, query)) {
-            return .{ next, false };
+            return false;
         }
     } else if (op == Op.hasLoose) {
         if (prop == Prop.STRING and mainLen == 0) {
             if (value[0] == 1) {
                 if (!has.looseCompressed(value, query)) {
-                    return .{ next, false };
+                    return false;
                 }
             } else if (!has.loose(value[1..value.len], query)) {
-                return .{ next, false };
+                return false;
             }
         } else if (!has.loose(value, query)) {
-            return .{ next, false };
+            return false;
         }
     }
-    return .{ next, pass };
+    return pass;
+}
+
+pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+    const valueSize = readInt(u32, q, i + 5);
+    const next = i + 11 + valueSize;
+    const query = q[i + 11 .. next];
+    const prop: Prop = @enumFromInt(q[11]);
+    const mainLen = readInt(u16, q, i + 3);
+    const op: Op = @enumFromInt(q[i + 9]);
+    const start = readInt(u16, q, i + 1);
+    var value: []u8 = undefined;
+    if (mainLen != 0) {
+        value = v[start + 1 .. v[start] + start + 1];
+    } else {
+        value = v;
+    }
+    var j: usize = 0;
+    while (j < query.len) {
+        const size = readInt(u16, query, j);
+        if (varOp(
+            op,
+            value,
+            query[j + 2 .. j + 2 + size],
+            size,
+            prop,
+            mainLen,
+        )) {
+            return .{ next, true };
+        }
+        j += size + 2;
+    }
+    return .{ next, false };
+}
+
+pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+    const valueSize = readInt(u32, q, i + 5);
+    const start = readInt(u16, q, i + 1);
+    const mainLen = readInt(u16, q, i + 3);
+    const op: Op = @enumFromInt(q[i + 9]);
+    const next = i + 11 + valueSize;
+    const prop: Prop = @enumFromInt(q[11]);
+    const query = q[i + 11 .. next];
+    var value: []u8 = undefined;
+    if (mainLen != 0) {
+        value = v[start + 1 .. v[start] + start + 1];
+    } else {
+        value = v;
+    }
+    return .{ next, varOp(
+        op,
+        value,
+        query,
+        valueSize,
+        prop,
+        mainLen,
+    ) };
 }
 
 pub inline fn reference(ctx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
