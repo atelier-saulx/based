@@ -215,6 +215,9 @@ pub fn loose(value: []u8, query: []u8) bool {
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
+
+        // std.simd.
+
         if (@reduce(.Or, matches)) {
             if (l > 1) {
                 const result = @select(u8, matches, indexes, nulls);
