@@ -382,17 +382,62 @@ await test('has OR uncompressed', async (t) => {
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
-      body: i === 999 ? italy + ' aaabbbaaa' : italy,
+      body: i === 999 ? italy + ' aaabbbbbbbbbaaa' : italy,
     })
   }
 
   equal(
     db
       .query('italy')
-      .filter('body', 'hasLoose', ['aaa', 'bbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+      .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
       .include('id')
       .range(0, 1e3)
-      .get().length,
+      .get()
+      .inspect().length,
+    1,
+  )
+})
+
+// -------- or later...
+await test('has OR compressed', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          f: 'boolean',
+          body: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const compressedItaly = compress(italy)
+
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('italy', {
+      f: false,
+      body: i === 999 ? italy + ' aaabbbbbbbbbaaa' : compressedItaly,
+    })
+  }
+
+  equal(
+    db
+      .query('italy')
+      .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+      .include('id')
+      .range(0, 1e3)
+      .get()
+      .inspect().length,
     1,
   )
 })

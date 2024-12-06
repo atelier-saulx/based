@@ -61,7 +61,6 @@ pub inline fn decompress(
             @ptrCast(&ctx),
             &hasMatch,
         );
-        std.debug.print("flap {any} \n", .{result});
         loop = result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.libdeflate_block_state_growbuf(&libdeflate_block_state.?);
     }
     return hasMatch == 1;
