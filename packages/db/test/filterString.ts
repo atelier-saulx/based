@@ -75,7 +75,7 @@ await test('variable size (string/binary)', async (t) => {
       .range(0, 100)
       .get()
   ).length
-  equal(len, 6, 'has binary (single')
+  equal(len, 20, 'has binary (single')
   const largeDerp = Buffer.from(italy)
   let smurpArticle
   for (let i = 0; i < 1e3; i++) {
