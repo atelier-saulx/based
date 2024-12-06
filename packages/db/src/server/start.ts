@@ -2,10 +2,16 @@ import { stringHash } from '@saulx/hash'
 import { DbServer } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { createTree } from './csmt/index.js'
 import { foreachBlock } from './tree.js'
+import { availableParallelism } from 'node:os'
+import { Worker, MessageChannel } from 'node:worker_threads'
+import './worker.js'
+import { fileURLToPath } from 'node:url'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 const SCHEMA_FILE = 'schema.json'
 const WRITELOG_FILE = 'writelog.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -114,6 +120,28 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
       console.error(
         `WARN: CSMT hash mismatch: ${writelog.hash} != ${newHash.toString('hex')}`,
       )
+    }
+  }
+
+  // start workers
+  let i = availableParallelism()
+  const workerPath = join(__dirname, 'worker.js')
+  const address = native.intFromExternal(this.dbCtxExternal)
+
+  this.workers = new Array(i)
+
+  while (i--) {
+    const { port1, port2 } = new MessageChannel()
+    const worker = new Worker(workerPath, {
+      workerData: {
+        channel: port2,
+        address,
+      },
+      transferList: [port2],
+    })
+    this.workers[i] = {
+      worker,
+      channel: port1,
     }
   }
 }

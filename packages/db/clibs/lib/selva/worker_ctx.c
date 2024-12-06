@@ -12,7 +12,6 @@ static __thread bool worker_initialized;
 void worker_ctx_init()
 {
     pthread_t x = pthread_self();
-    fprintf(stderr, "tls: %d\n", (int)x);
 
     selva_string_init_tls();
     worker_initialized = true;

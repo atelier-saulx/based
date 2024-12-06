@@ -15,9 +15,15 @@ import {
   makeCsmtKeyFromNodeId,
 } from './tree.js'
 import { save } from './save.js'
+import { Worker, MessagePort } from 'node:worker_threads'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
+
+type DbWorker = {
+  worker: Worker
+  channel: MessagePort
+}
 
 export class DbServer {
   modifyBuf: SharedArrayBuffer
@@ -30,7 +36,7 @@ export class DbServer {
 
   dirtyRanges = new Set<number>()
   csmtHashFun = native.createHash()
-
+  workers: DbWorker[] = []
   constructor({
     path,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -138,6 +144,7 @@ export class DbServer {
   }
 
   modify(buf: Buffer) {
+    // if queries in progress, queue it
     return native.modify(buf, this.dbCtxExternal)
   }
 
@@ -149,11 +156,14 @@ export class DbServer {
     if (!noSave) {
       await this.save()
     }
+    await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
+    this.workers = []
+
     native.stop(this.dbCtxExternal)
   }
 
   async destroy() {
-    await native.stop(true)
+    await this.stop(true)
     await rm(this.fileSystemPath, { recursive: true }).catch((err) =>
       console.warn('Error removing dump folder', err.message),
     )
