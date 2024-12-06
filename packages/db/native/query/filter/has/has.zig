@@ -5,10 +5,10 @@ const Op = t.Operator;
 const Prop = @import("../../../types.zig").Prop;
 const compressed = @import("../compressed.zig");
 const readInt = @import("../../../utils.zig").readInt;
+const decompress = compressed.decompress;
+const Compare = compressed.Compare;
 
-// pub const Compare = fn (value: []u8, query: []u8) callconv(.Inline) bool;
-
-inline fn orCompare(comptime isOr: bool, compare: compressed.Compare) type {
+inline fn orCompare(comptime isOr: bool, compare: Compare) type {
     if (isOr) {
         return struct {
             pub inline fn func(value: []u8, query: []u8) bool {
@@ -31,17 +31,18 @@ inline fn orCompare(comptime isOr: bool, compare: compressed.Compare) type {
     };
 }
 
-inline fn hasInner(comptime isOr: bool, compare: compressed.Compare, mainLen: u16, prop: Prop, value: []u8, query: []u8) bool {
+inline fn hasInner(
+    comptime isOr: bool,
+    compare: Compare,
+    mainLen: u16,
+    prop: Prop,
+    value: []u8,
+    query: []u8,
+) bool {
     if (prop == Prop.STRING and mainLen == 0) {
         if (value[0] == 1) {
-            if (isOr) {
-                if (!compressed.decompress(orCompare(isOr, compare).func, query, value)) {
-                    return false;
-                }
-            } else {
-                if (!compressed.decompress(orCompare(isOr, compare).func, query, value)) {
-                    return false;
-                }
+            if (!decompress(orCompare(isOr, compare).func, query, value)) {
+                return false;
             }
         } else if (!orCompare(isOr, compare).func(value[1..value.len], query)) {
             return false;
@@ -52,7 +53,14 @@ inline fn hasInner(comptime isOr: bool, compare: compressed.Compare, mainLen: u1
     return true;
 }
 
-pub inline fn has(comptime isOr: bool, op: Op, prop: Prop, value: []u8, query: []u8, mainLen: u16) bool {
+pub inline fn has(
+    comptime isOr: bool,
+    op: Op,
+    prop: Prop,
+    value: []u8,
+    query: []u8,
+    mainLen: u16,
+) bool {
     if (op == Op.has) {
         return hasInner(isOr, default, mainLen, prop, value, query);
     } else {
