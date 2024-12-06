@@ -19,6 +19,8 @@ typedef unsigned _BitInt(128) selva_hash128_t;
 typedef unsigned __int128 selva_hash128_t;
 #endif
 
+struct SelvaFieldsSchema;
+
 enum SelvaFieldType {
     SELVA_FIELD_TYPE_NULL = 0,
     SELVA_FIELD_TYPE_TIMESTAMP = 1,

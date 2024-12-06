@@ -563,6 +563,20 @@ int schemabuf_parse_ns(struct SelvaDb *db, struct SelvaNodeSchema *ns, const cha
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
 {
-    /* TODO Free fields_schemas in efcs */
+    const size_t nr_fields = schema->nr_fields;
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        struct SelvaFieldSchema *fs = &schema->field_schemas[i];
+
+        if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
+            fs->type == SELVA_FIELD_TYPE_REFERENCES) {
+            struct SelvaFieldsSchema *efc_schema = fs->edge_constraint.fields_schema;
+            if (efc_schema) {
+                schemabuf_deinit_fields_schema(efc_schema);
+                selva_free(efc_schema);
+                fs->edge_constraint.fields_schema = NULL;
+            }
+        }
+    }
     selva_free(schema->field_map_template.buf);
 }
