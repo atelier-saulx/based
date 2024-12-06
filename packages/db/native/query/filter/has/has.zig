@@ -11,7 +11,7 @@ const Compare = compressed.Compare;
 inline fn orCompare(comptime isOr: bool, compare: Compare) type {
     if (isOr) {
         return struct {
-            pub inline fn func(value: []u8, query: []u8) bool {
+            pub inline fn func(value: []const u8, query: []const u8) bool {
                 var j: usize = 0;
                 while (j < query.len) {
                     const size = readInt(u16, query, j);
@@ -25,7 +25,7 @@ inline fn orCompare(comptime isOr: bool, compare: Compare) type {
         };
     }
     return struct {
-        pub inline fn func(value: []u8, query: []u8) bool {
+        pub inline fn func(value: []const u8, query: []const u8) bool {
             return compare(value, query);
         }
     };
@@ -36,8 +36,8 @@ inline fn hasInner(
     compare: Compare,
     mainLen: u16,
     prop: Prop,
-    value: []u8,
-    query: []u8,
+    value: []const u8,
+    query: []const u8,
 ) bool {
     if (prop == Prop.STRING and mainLen == 0) {
         if (value[0] == 1) {
@@ -57,8 +57,8 @@ pub inline fn has(
     comptime isOr: bool,
     op: Op,
     prop: Prop,
-    value: []u8,
-    query: []u8,
+    value: []const u8,
+    query: []const u8,
     mainLen: u16,
 ) bool {
     if (op == Op.has) {

@@ -13,8 +13,8 @@ pub inline fn restVectorMatch(
     i: usize,
     ql: usize,
     l: usize,
-    value: []u8,
-    query: []u8,
+    value: []const u8,
+    query: []const u8,
 ) u8 {
     const result = @select(u8, matches, indexes, nulls);
     const index = @reduce(.Min, result) + i;
@@ -35,7 +35,7 @@ pub inline fn restVectorMatch(
     return 0;
 }
 
-pub inline fn loose(value: []u8, query: []u8) bool {
+pub inline fn loose(value: []const u8, query: []const u8) bool {
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;

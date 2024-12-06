@@ -4,7 +4,7 @@ const native_endian = builtin.cpu.arch.endian();
 // TODO opt for big endian
 const isLittle = true; //native_endian == .little;
 
-pub inline fn readInt(comptime T: type, buffer: []u8, offset: usize) T {
+pub inline fn readInt(comptime T: type, buffer: []const u8, offset: usize) T {
     if (T == f64) {
         const value: T = @bitCast(buffer[offset..8].*);
         return value;
