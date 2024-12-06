@@ -9,13 +9,11 @@ pub const Ctx = struct {
     currentQueryIndex: usize,
 };
 
-pub const Compare = fn (
-    comptime isOr: bool,
-    ctx: *Ctx,
-    value: []u8,
-) bool;
+// fn ([]u8, []u8) callconv(.Inline)
 
-fn comptimeCb(comptime compare: Compare, comptime isOr: bool) type {
+pub const Compare = fn (value: []u8, query: []u8) callconv(.Inline) bool;
+
+fn comptimeCb(comptime compare: Compare) type {
     return struct {
         pub fn func(noalias ctxC: ?*anyopaque, noalias buf: [*c]u8, size: usize) callconv(.C) c_int {
             const ctx: *Ctx = @ptrCast(@alignCast(ctxC.?));
@@ -25,11 +23,9 @@ fn comptimeCb(comptime compare: Compare, comptime isOr: bool) type {
             } else {
                 value = buf[ctx.currentQueryIndex - ctx.query.len .. ctx.currentQueryIndex + size];
             }
-            std.debug.print("BLOCK TIME {d} {any} \n", .{ size, value[0..100] });
             const found = compare(
-                isOr,
-                ctx,
                 value,
+                ctx.query,
             );
             if (found) {
                 return 1;
@@ -42,7 +38,6 @@ fn comptimeCb(comptime compare: Compare, comptime isOr: bool) type {
 
 pub inline fn decompress(
     comptime compare: Compare,
-    comptime isOr: bool,
     query: []u8,
     value: []u8,
 ) bool {
@@ -62,7 +57,7 @@ pub inline fn decompress(
             @ptrCast(&libdeflate_block_state.?),
             value[5..value.len].ptr,
             value.len - 5,
-            comptimeCb(compare, isOr).func,
+            comptimeCb(compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );
