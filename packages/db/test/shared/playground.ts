@@ -193,12 +193,15 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'orban'
+  const query = 'tariff'
   console.log('---- DERP UKRAINE', query)
   db.query('article')
     .range(0, 10)
     // .filter('headline', 'has', 'Orbán')
-    .filter('headline', 'hasLoose', 'orban')
+    .filter('headline', 'hasLoose', query)
+    // .or((f) => {
+    //   f.filter('body', 'hasLoose', query)
+    // })
 
     // .filter('body', 'has', query)
     // .or((f) => {

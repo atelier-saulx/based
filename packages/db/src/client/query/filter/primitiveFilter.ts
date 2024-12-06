@@ -27,9 +27,7 @@ export const primitiveFilter = (
   if (isArray && value.length === 1) {
     value = value[0]
   }
-
   const propSize = REVERSE_SIZE_MAP[prop.typeIndex]
-
   if (prop.typeIndex === REFERENCE) {
     buf = createReferenceFilter(prop, op, value)
   } else if (prop.typeIndex === REFERENCES) {
@@ -42,7 +40,6 @@ export const primitiveFilter = (
   } else {
     buf = createVariableFilterBuffer(value, prop, op, buf)
   }
-
   // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)
   if (!arr) {
@@ -50,7 +47,6 @@ export const primitiveFilter = (
     arr = []
     bufferMap.set(fieldIndexChar, arr)
   }
-
   size += buf.byteLength
   arr.push(buf)
   return size

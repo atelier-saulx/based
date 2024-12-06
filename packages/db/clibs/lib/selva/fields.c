@@ -929,7 +929,7 @@ int selva_fields_set_text(
     } else if (tf.tl) {
         /* Never fails in this case. */
         (void)selva_string_replace(tf.tl, str, len);
-        tf.tl->lang = lang; /* TODO Is this necessary? */
+        tf.tl->lang = lang;
     } else {
         int err;
 
@@ -973,7 +973,7 @@ int selva_fields_set_text_crc(
     } else if (tf.tl) {
         /* Never fails in this case. */
         (void)selva_string_replace_crc(tf.tl, str, len, crc);
-        tf.tl->lang = lang; /* TODO Is this necessary? */
+        tf.tl->lang = lang;
     } else {
         int err;
 

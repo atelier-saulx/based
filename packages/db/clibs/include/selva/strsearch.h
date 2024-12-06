@@ -21,7 +21,9 @@ struct strsearch_wneedle {
 /**
  * Make needle for strsearch_has_mbs().
  * wneedle is fully allocated by the called.
- * @returns 0 or SELVA_ENOBUFS.
+ * @returns 0 = ok;
+ *          SELVA_ENOBUFS = too long needle;
+ *          SELVA_EINVAL = needle_len was 0.
  */
 int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len);
 
