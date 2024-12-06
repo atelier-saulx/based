@@ -34,16 +34,16 @@ struct full_decompress_ctx {
     size_t out_len;
 };
 
-static int full_decompress_cb(void * restrict ctx, uint8_t * restrict buf, size_t len)
+static int full_decompress_cb(void * restrict ctx, const uint8_t * restrict buf, size_t dict_len, size_t data_len)
 {
     struct full_decompress_ctx *c = (struct full_decompress_ctx *)ctx;
 
-    if (c->out_i + len > c->out_len) {
+    if (c->out_i + data_len > c->out_len) {
         return -1;
     }
 
-    memmove(c->out_buf + c->out_i, buf, len);
-    c->out_i += len;
+    memmove(c->out_buf + c->out_i, buf + dict_len, data_len);
+    c->out_i += data_len;
 
     return 0;
 }
