@@ -56,7 +56,7 @@ await test('save simple range', async (t) => {
   await db.save()
   const save1_end = performance.now()
   console.error('save1 rdy', save1_end - save1_start, 'ms')
-  const firstHash = db.merkleTree.getRoot().hash
+  const firstHash = db.server.merkleTree.getRoot().hash
 
   db.update('user', 1, {
     age: 1337,
@@ -73,7 +73,7 @@ await test('save simple range', async (t) => {
   await db.stop()
   const save2_end = performance.now()
   console.error('save2 rdy', save2_end - save2_start, 'ms')
-  const secondHash = db.merkleTree.getRoot().hash
+  const secondHash = db.server.merkleTree.getRoot().hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
   equal(firstHash.equals(secondHash), false)
@@ -101,7 +101,7 @@ await test('save simple range', async (t) => {
   })
   const load_end = performance.now()
   console.log('load rdy', load_end - load_start, 'ms')
-  const thirdHash = db.merkleTree.getRoot().hash
+  const thirdHash = db.server.merkleTree.getRoot().hash
 
   //console.log([firstHash, secondHash, thirdHash])
   equal(firstHash.equals(secondHash), false)
@@ -168,16 +168,16 @@ await test('delete a range', async (t) => {
   }
 
   const fun = () => {
-    const { hash, left, right } = db.merkleTree.getRoot()
+    const { hash, left, right } = db.server.merkleTree.getRoot()
     return { hash, left, right }
   }
 
   await db.drain()
-  db.updateMerkleTree()
+  db.server.updateMerkleTree()
   const first = fun()
   db.remove('user', 100_001)
   await db.drain()
-  db.updateMerkleTree()
+  db.server.updateMerkleTree()
   const second = fun()
 
   equal(first.hash.equals(second.hash), false, 'delete changes the root hash')
@@ -195,5 +195,5 @@ await test('delete a range', async (t) => {
 
   // TODO In the future the merkleTree should remain the same but the right block doesn't need an sdb
   //db.save()
-  //console.log(db.merkleTree.getRoot())
+  //console.log(db.server.merkleTree.getRoot())
 })

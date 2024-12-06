@@ -16,7 +16,7 @@ import {
 
 import { BasedQueryResponse } from './BasedIterable.js'
 import { createOrGetRefQueryDef } from './include/utils.js'
-import { FilterAst, FilterBranchFn, IsFilter } from './filter/types.js'
+import { FilterAst, FilterBranchFn } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 
 // fix nested type...
@@ -137,10 +137,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
     const b = defToBuffer(this.db, this.def)
     const d = performance.now()
-    const result = this.db.native.getQueryBuf(
-      Buffer.concat(b),
-      this.db.dbCtxExternal,
-    )
+    const result = this.db.server.getQueryBuf(Buffer.concat(b))
     return new BasedQueryResponse(this.def, result, performance.now() - d)
   }
 
