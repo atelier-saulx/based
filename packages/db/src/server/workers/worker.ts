@@ -23,7 +23,7 @@ if (isMainThread) {
         const payload = msg.message[1]
         const state = msg.message[2]
         // native will update the state
-        native.modify(payload, dbCtx, state)
+        native.modify(payload, dbCtx)
         // it's done!
         state[1] = 1
         Atomics.notify(state, 1, 1)

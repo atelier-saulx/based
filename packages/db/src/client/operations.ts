@@ -3,55 +3,56 @@ import { fileURLToPath } from 'url'
 import { BasedDb } from '../index.js'
 import { PropDef } from '../server/schema/types.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
-// this is just so ts builds it
-import './workers/worker.js'
+// // this is just so ts builds it
+// import './workers/worker.js'
+// import native from '../native.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+// const __filename = fileURLToPath(import.meta.url)
+// const __dirname = dirname(__filename)
 
-let workerId = 0
-export class DbWorker {
-  constructor(db: BasedDb) {
-    const address = db.native.intFromExternal(db.dbCtxExternal)
-    const { port1, port2 } = new MessageChannel()
+// let workerId = 0
+// export class DbWorker {
+//   constructor(db: BasedDb) {
+//     const address = native.intFromExternal(db.server.dbCtxExternal)
+//     const { port1, port2 } = new MessageChannel()
 
-    this.worker = new Worker(join(__dirname, 'workers/worker.js'), {
-      workerData: {
-        atomics: this.atomics,
-        address,
-        channel: port2,
-      },
-      transferList: [port2],
-    })
+//     this.worker = new Worker(join(__dirname, 'workers/worker.js'), {
+//       workerData: {
+//         atomics: this.atomics,
+//         address,
+//         channel: port2,
+//       },
+//       transferList: [port2],
+//     })
 
-    this.channel = port1
-  }
+//     this.channel = port1
+//   }
 
-  atomics = new Int32Array(new SharedArrayBuffer(4))
-  id = workerId++
-  channel: MessagePort
-  ctx: ModifyCtx
-  remaining = 0
-  types: Record<number, number> = {}
-  worker: Worker
-}
+//   atomics = new Int32Array(new SharedArrayBuffer(4))
+//   id = workerId++
+//   channel: MessagePort
+//   ctx: ModifyCtx
+//   remaining = 0
+//   types: Record<number, number> = {}
+//   worker: Worker
+// }
 
-export const startWorker = (db): void => {
-  const dbWorker = new DbWorker(db)
-  dbWorker.channel.once('message', (code) => {
-    if (code === 0) {
-      console.info('db worker ready')
-    } else {
-      console.error('Something went wrong with the worker', code)
-      dbWorker.worker.terminate()
-    }
-  })
-  dbWorker.worker.on('exit', (code) => {
-    console.log('worker exit with code:', code)
-    db.workers = db.workers.filter((worker) => worker !== dbWorker)
-  })
-  db.workers.push(dbWorker)
-}
+// export const startWorker = (db): void => {
+//   const dbWorker = new DbWorker(db)
+//   dbWorker.channel.once('message', (code) => {
+//     if (code === 0) {
+//       console.info('db worker ready')
+//     } else {
+//       console.error('Something went wrong with the worker', code)
+//       dbWorker.worker.terminate()
+//     }
+//   })
+//   dbWorker.worker.on('exit', (code) => {
+//     console.log('worker exit with code:', code)
+//     db.workers = db.workers.filter((worker) => worker !== dbWorker)
+//   })
+//   db.workers.push(dbWorker)
+// }
 
 export class ModifyCtx {
   constructor(db: BasedDb, offset = 0, size = ~~(db.maxModifySize / 2)) {
@@ -99,203 +100,200 @@ export class ModifyCtx {
   db: BasedDb
 }
 
-const findWorkersForTypes = (db: BasedDb, ctx: ModifyCtx) => {
-  const workersForTypes: DbWorker[] = []
-  let leastRemaining = Infinity
-  let chillestWorker: DbWorker
+// const findWorkersForTypes = (db: BasedDb, ctx: ModifyCtx) => {
+//   const workersForTypes: DbWorker[] = []
+//   let leastRemaining = Infinity
+//   let chillestWorker: DbWorker
 
-  for (const worker of db.workers) {
-    if (worker.remaining < leastRemaining) {
-      leastRemaining = worker.remaining
-      chillestWorker = worker
-    }
-    for (const type of ctx.types) {
-      if (type in worker.types) {
-        workersForTypes.push(worker)
-        break
-      }
-    }
-  }
+//   for (const worker of db.workers) {
+//     if (worker.remaining < leastRemaining) {
+//       leastRemaining = worker.remaining
+//       chillestWorker = worker
+//     }
+//     for (const type of ctx.types) {
+//       if (type in worker.types) {
+//         workersForTypes.push(worker)
+//         break
+//       }
+//     }
+//   }
 
-  return workersForTypes.length ? workersForTypes : [chillestWorker]
-}
+//   return workersForTypes.length ? workersForTypes : [chillestWorker]
+// }
 
-const detachFromSharedBuffer = (ctx: ModifyCtx) => {
-  ctx.payload = Buffer.from(ctx.payload)
-  ctx.state = new Int32Array(new SharedArrayBuffer(8))
-  ctx.detached = true
-}
+// const detachFromSharedBuffer = (ctx: ModifyCtx) => {
+//   ctx.payload = Buffer.from(ctx.payload)
+//   ctx.state = new Int32Array(new SharedArrayBuffer(8))
+//   ctx.detached = true
+// }
 
-const writeToWorker = async (worker: DbWorker, ctx: ModifyCtx) => {
-  ctx.queued = true
+// const writeToWorker = async (worker: DbWorker, ctx: ModifyCtx) => {
+//   ctx.queued = true
 
-  worker.ctx = ctx
-  worker.remaining += ctx.size
+//   worker.ctx = ctx
+//   worker.remaining += ctx.size
 
-  for (const type of ctx.types) {
-    worker.types[type] ??= 0
-    worker.types[type]++
-  }
+//   for (const type of ctx.types) {
+//     worker.types[type] ??= 0
+//     worker.types[type]++
+//   }
 
-  if (ctx.detached) {
-    worker.channel.postMessage(
-      [0, ctx.payload, ctx.state],
-      [ctx.payload.buffer],
-    )
-  } else {
-    worker.channel.postMessage([0, ctx.payload, ctx.state])
-  }
+//   if (ctx.detached) {
+//     worker.channel.postMessage(
+//       [0, ctx.payload, ctx.state],
+//       [ctx.payload.buffer],
+//     )
+//   } else {
+//     worker.channel.postMessage([0, ctx.payload, ctx.state])
+//   }
 
-  worker.atomics[0] = 1
-  Atomics.notify(worker.atomics, 0, 1)
+//   worker.atomics[0] = 1
+//   Atomics.notify(worker.atomics, 0, 1)
 
-  await Atomics.waitAsync(ctx.state, 1, 0).value
+//   await Atomics.waitAsync(ctx.state, 1, 0).value
 
-  worker.remaining -= ctx.size
-  for (const type of ctx.types) {
-    if (--worker.types[type] === 0) {
-      delete worker.types[type]
-    }
-  }
+//   worker.remaining -= ctx.size
+//   for (const type of ctx.types) {
+//     if (--worker.types[type] === 0) {
+//       delete worker.types[type]
+//     }
+//   }
 
-  if (ctx.queue.size) {
-    for (const [resolve, payload] of ctx.queue) {
-      resolve(payload)
-    }
-  }
-}
+//   if (ctx.queue.size) {
+//     for (const [resolve, payload] of ctx.queue) {
+//       resolve(payload)
+//     }
+//   }
+// }
 
-const filterCompleted = ({ state }: ModifyCtx) => {
-  const status = state?.[1]
-  return status !== 1
-}
+// const filterCompleted = ({ state }: ModifyCtx) => {
+//   const status = state?.[1]
+//   return status !== 1
+// }
 
-const sortCtxs = (a, b) => a.offset - b.offset
+// const sortCtxs = (a, b) => a.offset - b.offset
 
-const writeCtx = async (db: BasedDb, ctx: ModifyCtx) => {
-  // update ctx
-  // ctx.size =
-  ctx.payload = ctx.buf.subarray(ctx.offset, ctx.len)
-  ctx.state = new Int32Array(ctx.buf.buffer, (ctx.len + 3) & ~3, 2)
-  ctx.size = (ctx.len - ctx.offset + 8 + 3) & ~3 // has to be aligned
-  ctx.state.fill(0)
+// const writeCtx = async (db: BasedDb, ctx: ModifyCtx) => {
+//   // update ctx
+//   // ctx.size =
+//   ctx.payload = ctx.buf.subarray(ctx.offset, ctx.len)
+//   ctx.state = new Int32Array(ctx.buf.buffer, (ctx.len + 3) & ~3, 2)
+//   ctx.size = (ctx.len - ctx.offset + 8 + 3) & ~3 // has to be aligned
+//   ctx.state.fill(0)
 
-  // remove things that are done
-  db.writing = db.writing.filter(filterCompleted)
-  // current ctx goes to writing
-  db.writing.push(ctx)
-  db.writing.sort(sortCtxs)
-  // find best location for next context
-  let maxGap = 0
-  let prevEnd
-  let offset
+//   // remove things that are done
+//   db.writing = db.writing.filter(filterCompleted)
+//   // current ctx goes to writing
+//   db.writing.push(ctx)
+//   db.writing.sort(sortCtxs)
+//   // find best location for next context
+//   let maxGap = 0
+//   let prevEnd
+//   let offset
 
-  const minSize = 10000
-  while (maxGap < minSize) {
-    prevEnd = 0
-    offset = 0
+//   const minSize = 10000
+//   while (maxGap < minSize) {
+//     prevEnd = 0
+//     offset = 0
 
-    for (const ctx of db.writing) {
-      if (ctx.detached) {
-        continue
-      }
-      const currentStart = ctx.offset + ctx.state[0]
-      const currentEnd = ctx.offset + ctx.size
-      if (currentStart > prevEnd) {
-        const gap = currentStart - prevEnd
-        if (gap > maxGap) {
-          maxGap = gap
-          offset = prevEnd
-        }
-      }
-      prevEnd = currentEnd
-    }
+//     for (const ctx of db.writing) {
+//       if (ctx.detached) {
+//         continue
+//       }
+//       const currentStart = ctx.offset + ctx.state[0]
+//       const currentEnd = ctx.offset + ctx.size
+//       if (currentStart > prevEnd) {
+//         const gap = currentStart - prevEnd
+//         if (gap > maxGap) {
+//           maxGap = gap
+//           offset = prevEnd
+//         }
+//       }
+//       prevEnd = currentEnd
+//     }
 
-    // Check for gap after the last occupied region
-    if (prevEnd < db.maxModifySize) {
-      const gap = db.maxModifySize - prevEnd
-      if (gap > maxGap) {
-        maxGap = gap
-        offset = prevEnd
-      }
-    }
+//     // Check for gap after the last occupied region
+//     if (prevEnd < db.maxModifySize) {
+//       const gap = db.maxModifySize - prevEnd
+//       if (gap > maxGap) {
+//         maxGap = gap
+//         offset = prevEnd
+//       }
+//     }
 
-    if (maxGap < minSize) {
-      // clear some space
-      for (const region of db.writing) {
-        if (!region.queued && !region.detached) {
-          detachFromSharedBuffer(region)
-          break
-        }
-      }
-    }
-  }
+//     if (maxGap < minSize) {
+//       // clear some space
+//       for (const region of db.writing) {
+//         if (!region.queued && !region.detached) {
+//           detachFromSharedBuffer(region)
+//           break
+//         }
+//       }
+//     }
+//   }
 
-  db.modifyCtx = new ModifyCtx(
-    db,
-    offset,
-    Math.min(maxGap, ~~(db.maxModifySize / 2)),
-  )
+//   db.modifyCtx = new ModifyCtx(
+//     db,
+//     offset,
+//     Math.min(maxGap, ~~(db.maxModifySize / 2)),
+//   )
 
-  let workers = findWorkersForTypes(db, ctx)
+//   let workers = findWorkersForTypes(db, ctx)
 
-  while (workers.length > 1) {
-    await new Promise((resolve) => {
-      for (const worker of workers) {
-        worker.ctx.queue.set(resolve, 0)
-      }
-    })
-    workers = findWorkersForTypes(db, ctx)
-  }
+//   while (workers.length > 1) {
+//     await new Promise((resolve) => {
+//       for (const worker of workers) {
+//         worker.ctx.queue.set(resolve, 0)
+//       }
+//     })
+//     workers = findWorkersForTypes(db, ctx)
+//   }
 
-  return writeToWorker(workers[0], ctx)
-}
+//   return writeToWorker(workers[0], ctx)
+// }
 
-let defaultState
 export const flushBuffer = (db: BasedDb, cb?: any) => {
   const ctx = db.modifyCtx
   if (ctx.types.size) {
-    if (db.workers.length) {
-      writeCtx(db, ctx)
-    } else {
-      const d = Date.now()
-      try {
-        db.native.modify(
-          ctx.buf.subarray(0, ctx.len),
-          db.dbCtxExternal,
-          (defaultState ??= new Int32Array(2)),
-        )
-      } catch (e) {
-        console.error(e)
-      }
-      db.writeTime += Date.now() - d
-      db.modifyCtx = new ModifyCtx(db, 0, db.maxModifySize)
-      if (ctx.queue.size) {
-        for (const [resolve, payload] of ctx.queue) {
-          resolve(payload)
-        }
+    // if (db.workers.length) {
+    //   writeCtx(db, ctx)
+    // } else {
+    const d = Date.now()
+    try {
+      db.server.modify(ctx.buf.subarray(0, ctx.len))
+      // modify(ctx.buf.subarray(0, ctx.len), db)
+      // native.modify(ctx.buf.subarray(0, ctx.len), db.dbCtxExternal)
+    } catch (e) {
+      console.error(e)
+    }
+    db.writeTime += Date.now() - d
+    db.modifyCtx = new ModifyCtx(db, 0, db.maxModifySize)
+    if (ctx.queue.size) {
+      for (const [resolve, payload] of ctx.queue) {
+        resolve(payload)
       }
     }
+    // }
   }
 
   db.isDraining = false
 
-  if (cb) {
-    let cnt = db.writing.length
-    if (cnt === 0) {
-      cb(0)
-    } else {
-      const d = Date.now()
-      const fn = () => {
-        if (--cnt === 0) {
-          cb(Date.now() - d)
-        }
-      }
-      for (const ctx of db.writing) {
-        ctx.queue.set(fn, 0)
-      }
-    }
-  }
+  //   if (cb) {
+  //     let cnt = db.writing.length
+  //     if (cnt === 0) {
+  //       cb(0)
+  //     } else {
+  //       const d = Date.now()
+  //       const fn = () => {
+  //         if (--cnt === 0) {
+  //           cb(Date.now() - d)
+  //         }
+  //       }
+  //       for (const ctx of db.writing) {
+  //         ctx.queue.set(fn, 0)
+  //       }
+  //     }
+  //   }
 }
 
 export const startDrain = (db: BasedDb) => {

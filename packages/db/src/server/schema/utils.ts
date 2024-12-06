@@ -1,4 +1,5 @@
 import { BasedDb } from '../../index.js'
+import { DbServer } from '../index.js'
 import {
   INT16,
   INT32,
@@ -21,7 +22,7 @@ export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
   return false
 }
 
-export const genId = (db: BasedDb): number => {
+export const genId = (db: DbServer): number => {
   db.schema.lastId++
 
   const buf = Buffer.allocUnsafe(2)

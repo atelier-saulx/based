@@ -1,0 +1,171 @@
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import native from '../native.js'
+import { rm, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { parse, Schema } from '@based/schema'
+import { SchemaTypeDef } from './schema/types.js'
+import { genId } from './schema/utils.js'
+import { createSchemaTypeDef } from './schema/typeDef.js'
+import { schemaToSelvaBuffer } from './schema/selvaBuffer.js'
+import { createTree } from './csmt/index.js'
+import { start } from './start.js'
+import {
+  CsmtNodeRange,
+  foreachDirtyBlock,
+  makeCsmtKeyFromNodeId,
+} from './tree.js'
+import { save } from './save.js'
+import { Worker, MessagePort } from 'node:worker_threads'
+
+const SCHEMA_FILE = 'schema.json'
+const DEFAULT_BLOCK_CAPACITY = 100_000
+
+type DbWorker = {
+  worker: Worker
+  channel: MessagePort
+}
+
+export class DbServer {
+  modifyBuf: SharedArrayBuffer
+  dbCtxExternal: any
+  schema: Schema & { lastId: number } = { lastId: 0, types: {} }
+  schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
+  fileSystemPath: string
+  maxModifySize: number
+  merkleTree: ReturnType<typeof createTree>
+
+  dirtyRanges = new Set<number>()
+  csmtHashFun = native.createHash()
+  workers: DbWorker[] = []
+  constructor({
+    path,
+    maxModifySize = 100 * 1e3 * 1e3,
+  }: {
+    path: string
+    maxModifySize?: number
+  }) {
+    this.maxModifySize = maxModifySize
+    this.fileSystemPath = path
+  }
+
+  start = start
+  save = save
+
+  createCsmtHashFun = () => {
+    // We can just reuse it as long as we only have one tree.
+    this.csmtHashFun.reset()
+    return this.csmtHashFun
+  }
+
+  updateMerkleTree(): void {
+    foreachDirtyBlock(this, (mtKey, typeId, start, end) => {
+      const oldLeaf = this.merkleTree.search(mtKey)
+      const hash = Buffer.allocUnsafe(16)
+      native.getNodeRangeHash(typeId, start, end, hash, this.dbCtxExternal)
+
+      if (oldLeaf) {
+        if (oldLeaf.hash.equals(hash)) {
+          return
+        }
+        try {
+          this.merkleTree.delete(mtKey)
+        } catch (err) {}
+      }
+
+      const data: CsmtNodeRange = {
+        file: '', // not saved yet
+        typeId,
+        start,
+        end,
+      }
+      this.merkleTree.insert(mtKey, hash, data)
+    })
+  }
+
+  markNodeDirty(schema: SchemaTypeDef, nodeId: number): void {
+    this.dirtyRanges.add(
+      makeCsmtKeyFromNodeId(schema.id, schema.blockCapacity, nodeId),
+    )
+  }
+
+  putSchema(schema: Schema, fromStart: boolean = false): Schema {
+    if (!fromStart) {
+      parse(schema)
+    }
+
+    const { lastId } = this.schema
+    this.schema = {
+      lastId,
+      ...schema,
+    }
+
+    this.updateTypeDefs()
+
+    if (!fromStart) {
+      writeFile(
+        join(this.fileSystemPath, SCHEMA_FILE),
+        JSON.stringify(this.schema),
+      ).catch((err) => console.error(SCHEMA_FILE, err))
+      let types = Object.keys(this.schemaTypesParsed)
+      const s = schemaToSelvaBuffer(this.schemaTypesParsed)
+      for (let i = 0; i < s.length; i++) {
+        //  TYPE SELVA user Uint8Array(6) [ 1, 17, 23, 0, 11, 0 ]
+        const type = this.schemaTypesParsed[types[i]]
+        // TODO should not crash!
+        try {
+          native.updateSchemaType(type.id, s[i], this.dbCtxExternal)
+        } catch (err) {
+          console.error('Cannot update schema on selva', type.type, err, s[i])
+        }
+      }
+    }
+
+    return this.schema
+  }
+
+  updateTypeDefs() {
+    for (const field in this.schema.types) {
+      const type = this.schema.types[field]
+      if (
+        this.schemaTypesParsed[field] &&
+        this.schemaTypesParsed[field].checksum ===
+          hashObjectIgnoreKeyOrder(type) // bit weird..
+      ) {
+        continue
+      } else {
+        if (!type.id) {
+          type.id = genId(this)
+        }
+        const def = createSchemaTypeDef(field, type, this.schemaTypesParsed)
+        def.blockCapacity = DEFAULT_BLOCK_CAPACITY // TODO This should come from somewhere else
+        this.schemaTypesParsed[field] = def
+      }
+    }
+  }
+
+  modify(buf: Buffer) {
+    // if queries in progress, queue it
+    return native.modify(buf, this.dbCtxExternal)
+  }
+
+  getQueryBuf(buf: Buffer) {
+    return native.getQueryBuf(buf, this.dbCtxExternal)
+  }
+
+  async stop(noSave?: boolean) {
+    if (!noSave) {
+      await this.save()
+    }
+    await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
+    this.workers = []
+
+    native.stop(this.dbCtxExternal)
+  }
+
+  async destroy() {
+    await this.stop(true)
+    await rm(this.fileSystemPath, { recursive: true }).catch((err) =>
+      console.warn('Error removing dump folder', err.message),
+    )
+  }
+}

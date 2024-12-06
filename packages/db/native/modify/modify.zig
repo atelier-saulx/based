@@ -30,7 +30,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
-    const state = try napi.get([]u32, env, args[2]);
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
@@ -126,8 +125,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 break;
             },
         }
-
-        state[0] = @intCast(i);
     }
 
     if (ctx.sortWriteTxn != null) {

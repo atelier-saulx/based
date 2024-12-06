@@ -17,8 +17,8 @@ export const migrate = async (
 
   await toDb.start({ clean: true })
   toDb.putSchema(toSchema)
-  const fromCtx = fromDb.dbCtxExternal
-  const toCtx = toDb.dbCtxExternal
+  const fromCtx = fromDb.server.dbCtxExternal
+  const toCtx = toDb.server.dbCtxExternal
   // TODO make a pool!
   const { port1, port2 } = new MessageChannel()
   const atomics = new Int32Array(new SharedArrayBuffer(4))
@@ -26,7 +26,7 @@ export const migrate = async (
     workerData: {
       from: native.intFromExternal(fromCtx),
       to: native.intFromExternal(toCtx),
-      fromSchema: fromDb.schema,
+      fromSchema: fromDb.server.schema,
       toSchema,
       channel: port2,
       atomics,
@@ -35,8 +35,8 @@ export const migrate = async (
     transferList: [port2],
   })
 
-  fromDb.updateMerkleTree()
-  fromDb.merkleTree.visitLeafNodes((leaf) => {
+  fromDb.server.updateMerkleTree()
+  fromDb.server.merkleTree.visitLeafNodes((leaf) => {
     // console.log(leaf.data)
     port1.postMessage(leaf.data)
   })
@@ -52,8 +52,8 @@ export const migrate = async (
   if (exitCode === 0) {
     // success
     fromDb.putSchema(toSchema, true)
-    fromDb.dbCtxExternal = toCtx
-    toDb.dbCtxExternal = fromCtx
+    fromDb.server.dbCtxExternal = toCtx
+    toDb.server.dbCtxExternal = fromCtx
   }
 
   await toDb.stop(true)
