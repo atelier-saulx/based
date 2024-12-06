@@ -275,7 +275,7 @@ await test('search', async (t) => {
   equal(
     db
       .query('italy')
-      .filter('body', 'like', 'Contemporry')
+      .filter('body', 'like', 'derp')
       .include('id')
       .range(0, 1e3)
       .get()
