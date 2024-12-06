@@ -1,8 +1,7 @@
 import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
-import { italy, sentence } from './shared/examples.js'
-import { it } from 'node:test'
+import { italy, sentence, bible } from './shared/examples.js'
 
 const capitals =
   'AAAAAAAAAA AAAAAAAAAAA AAAAAAAAAAAAAAAAAAAA AAA A AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
@@ -148,14 +147,16 @@ await test('has compressed', async (t) => {
       },
     },
   })
-  const compressedItaly = compress(italy)
+
+  const compressedItaly = compress(bible)
   for (let i = 0; i < 1; i++) {
     await db.create('italy', {
       body: compressedItaly,
     })
   }
 
-  const n = `DERP`
+  const n = `Therefore he called the name of that place Baalperazim. 
+And there they left their images, and David and his men burned them. `
 
   equal(
     db
@@ -197,10 +198,11 @@ await test('has uncompressed', async (t) => {
   equal(
     db
       .query('italy')
-      .filter('body', 'has', 'derp derp derp')
+      .filter('body', 'hasLoose', 'derp derp derp')
       .include('id')
       .range(0, 1e3)
-      .get().length,
+      .get()
+      .inspect().length,
     0,
   )
 })
@@ -273,10 +275,11 @@ await test('search', async (t) => {
   equal(
     db
       .query('italy')
-      .filter('body', 'search', 'vitt')
+      .filter('body', 'search', 'Contemporry')
       .include('id')
       .range(0, 1e3)
-      .get().length,
+      .get()
+      .inspect().length,
     1e3,
   )
 })

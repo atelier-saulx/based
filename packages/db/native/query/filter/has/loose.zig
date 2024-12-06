@@ -38,7 +38,6 @@ pub inline fn restVectorMatch(
 
 // ------------------------------------------------------------------------------
 // LOOSE
-
 pub inline fn loose(value: []u8, query: []u8) bool {
     var i: usize = 0;
     const l = value.len;
