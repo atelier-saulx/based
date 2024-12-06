@@ -146,7 +146,7 @@ export class BasedDb {
 
   async stop(noSave?: boolean) {
     this.modifyCtx.len = 0
-    await this.server.stop()
+    await this.server.stop(noSave)
     await setTimeout()
   }
 
