@@ -1,5 +1,5 @@
 const selva = @import("../../selva.zig");
-
+const std = @import("std");
 // shared block here derp
 var decompressor: ?*selva.libdeflate_decompressor = null;
 var libdeflate_block_state: ?selva.libdeflate_block_state = null;
@@ -7,6 +7,7 @@ var libdeflate_block_state: ?selva.libdeflate_block_state = null;
 pub const Ctx = struct {
     query: []u8,
     currentQueryIndex: usize,
+    prevBlockIndex: usize,
 };
 
 pub const Compare = fn (
@@ -18,15 +19,26 @@ pub const Compare = fn (
 fn comptimeCb(comptime compare: Compare, comptime isOr: bool) type {
     return struct {
         pub fn func(noalias ctxC: ?*anyopaque, noalias buf: [*c]u8, size: usize) callconv(.C) c_int {
-            const ctxP: *Ctx = @ptrCast(@alignCast(ctxC.?));
+            const ctx: *Ctx = @ptrCast(@alignCast(ctxC.?));
+            std.debug.print("derp size {d} \n", .{size});
+            const value = buf[ctx.prevBlockIndex .. ctx.prevBlockIndex + size];
+
+            if (ctx.prevBlockIndex > 30) {
+                std.debug.print("BLOCK {d} prev: {any} s: {any} \n", .{ value.len, buf[ctx.prevBlockIndex - 30 .. ctx.prevBlockIndex], value[0..30] });
+            } else {
+                std.debug.print("BLOCK {d} s: {any} \n", .{ value.len, value[0..30] });
+            }
+
             const found = compare(
                 isOr,
-                ctxP,
-                buf[0..size],
+                ctx,
+                value,
             );
+
             if (found) {
                 return 1;
             }
+            ctx.prevBlockIndex = ctx.prevBlockIndex + size;
             return 0;
         }
     };
@@ -41,11 +53,12 @@ pub inline fn decompress(
     var ctx: Ctx = .{
         .query = query,
         .currentQueryIndex = 0,
+        .prevBlockIndex = 0,
     };
     if (decompressor == null) {
         decompressor = selva.libdeflate_alloc_decompressor();
         // size...
-        libdeflate_block_state = selva.libdeflate_block_state_init(100);
+        libdeflate_block_state = selva.libdeflate_block_state_init(1000);
     }
     var loop: bool = true;
     var hasMatch: c_int = 0;

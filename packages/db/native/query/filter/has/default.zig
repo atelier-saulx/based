@@ -10,24 +10,26 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 
 // code with int 1 = false, 2 = true, 3 = continue
-pub fn defaultBlock(comptime _: bool, ctx: *compressedUtils.Ctx, value: []u8) bool {
+fn compare(comptime _: bool, ctx: *compressedUtils.Ctx, value: []u8) bool {
     const query = ctx.query;
     var i: usize = 0;
+    var j: usize = 1;
     const l = value.len;
     const ql = query.len;
     const queryVector: @Vector(vectorLen, u8) = @splat(query[0]);
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         const matches = h == queryVector;
+        j = 1;
         if (@reduce(.Or, matches)) {
             const result = @select(u8, matches, indexes, nulls);
             const index = @reduce(.Min, result) + i;
             if (index + ql - 1 > l) {
                 return false;
             }
-            var j: usize = 1;
             while (j < ql) : (j += 1) {
                 if (value[index + j] != query[j]) {
+                    j = 1;
                     break;
                 }
             }
@@ -38,13 +40,14 @@ pub fn defaultBlock(comptime _: bool, ctx: *compressedUtils.Ctx, value: []u8) bo
     }
     while (i < l and ql <= l - i) : (i += 1) {
         const id2 = value[i];
+        j = 1;
         if (id2 == query[0]) {
             if (i + ql - 1 > l) {
                 return false;
             }
-            var j: usize = 1;
             while (j < ql) : (j += 1) {
                 if (value[i + j] != query[j]) {
+                    j = 1;
                     break;
                 }
             }
@@ -53,12 +56,16 @@ pub fn defaultBlock(comptime _: bool, ctx: *compressedUtils.Ctx, value: []u8) bo
             }
         }
     }
+
+    if (j > 1) {
+        std.debug.print("have to do stuff with the previous block \n", .{});
+    }
     // --------------
     return false;
 }
 
 pub inline fn compressed(value: []u8, query: []u8) bool {
-    return compressedUtils.decompress(defaultBlock, false, query, value);
+    return compressedUtils.decompress(compare, false, query, value);
 }
 
 // -----------------------------
