@@ -44,15 +44,15 @@ await test('ids', async (t) => {
 
   db.drain()
 
-  isSorted(db.query('user', ids).sort('age').get(), 'age')
+  isSorted(await db.query('user', ids).sort('age').get(), 'age')
 
-  isSorted(db.query('user', ids).sort('name').get(), 'name')
+  isSorted(await db.query('user', ids).sort('name').get(), 'name')
 
-  isSorted(db.query('user', ids).sort('flap').get(), 'flap')
+  isSorted(await db.query('user', ids).sort('flap').get(), 'flap')
 
-  isSorted(db.query('user', ids).sort('blurf').get(), 'blurf')
+  isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
 
-  isSorted(db.query('user', ids).sort('bla').get(), 'bla')
+  isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
 })
 
 await test('references', async (t) => {
@@ -118,11 +118,12 @@ await test('references', async (t) => {
   )
 
   isSorted(
-    db
-      .query('article', id)
-      .include((s) => s('contributors').sort('flap'))
-      .get()
-      .node().contributors,
+    (
+      await db
+        .query('article', id)
+        .include((s) => s('contributors').sort('flap'))
+        .get()
+    ).node().contributors,
     'flap',
   )
 })

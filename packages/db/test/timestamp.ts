@@ -41,7 +41,7 @@ await test('number', async (t) => {
 
   db.drain() // will become async
 
-  const res = db.query('user').get().toObject()
+  // const res = db.query('user').get().toObject()
 
   // deepEqual(
   //   db.query('user').get().toObject(),

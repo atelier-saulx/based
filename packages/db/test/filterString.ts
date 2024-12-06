@@ -49,13 +49,17 @@ await test('variable size (string/binary)', async (t) => {
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
+
+  db.drain()
+
   deepEqual(
-    db
-      .query('article')
-      .filter('stuff', '=', Buffer.from('#' + 2))
-      .range(0, 10)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article')
+        .filter('stuff', '=', Buffer.from('#' + 2))
+        .range(0, 10)
+        .get()
+    ).toObject(),
     [
       {
         id: 3,
@@ -68,12 +72,13 @@ await test('variable size (string/binary)', async (t) => {
       },
     ],
   )
-  const len = db
+  const res = await db
     .query('article')
     .filter('stuff', 'has', new Uint8Array([55, 57]))
     .range(0, 100)
-    .get().length
-  equal(len, 6, 'has binary (single')
+    .get()
+  const len = res.length
+  equal(len, 20, 'has binary (single')
   const largeDerp = Buffer.from(italy)
   let smurpArticle
   for (let i = 0; i < 1e3; i++) {
@@ -92,41 +97,50 @@ await test('variable size (string/binary)', async (t) => {
   }
   q[250] = 255
   equal(
-    db
-      .query('article')
-      .filter('derp', 'has', Buffer.from('vitorio'))
-      .include('id')
-      .get().length,
+    (
+      await db
+        .query('article')
+        .filter('derp', 'has', Buffer.from('vitorio'))
+        .include('id')
+        .get()
+    ).length,
     0,
   )
   equal(
-    db
-      .query('article')
-      .filter('derp', 'has', Buffer.from('xx'))
-      .include('id')
-      .get().length,
+    (
+      await db
+        .query('article')
+        .filter('derp', 'has', Buffer.from('xx'))
+        .include('id')
+        .get()
+    ).length,
     0,
   )
   equal(
-    db.query('article').filter('derp', 'has', q).include('id').get().length,
+    (await db.query('article').filter('derp', 'has', q).include('id').get())
+      .length,
     0,
   )
   equal(
-    db
-      .query('article')
-      .filter('derp', '=', largeDerp)
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('article')
+        .filter('derp', '=', largeDerp)
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
     1e3,
   )
   equal(
-    db
-      .query('article')
-      .filter('body', '=', italy)
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('article')
+        .filter('body', '=', italy)
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
     1e3,
   )
 })
@@ -156,12 +170,14 @@ await test('compressed has', async (t) => {
   }
 
   equal(
-    db
-      .query('italy')
-      .filter('body', 'has', 'derp derp derp')
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('italy')
+        .filter('body', 'has', 'derp derp derp')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
     0,
   )
 })
@@ -192,12 +208,14 @@ await test('has uncompressed', async (t) => {
   }
 
   equal(
-    db
-      .query('italy')
-      .filter('body', 'has', 'derp derp derp')
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('italy')
+        .filter('body', 'has', 'derp derp derp')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
     0,
   )
 })
@@ -230,16 +248,18 @@ await test('main has (string/binary)', async (t) => {
     stuff,
     derp: new Uint8Array([1, 2, 3, 4]),
   }
-  deepEqual(db.query('article').get().toObject(), [derpResult])
-  deepEqual(db.query('article').filter('stuff', '=', stuff).get().toObject(), [
-    derpResult,
-  ])
+  deepEqual((await db.query('article').get()).toObject(), [derpResult])
   deepEqual(
-    db
-      .query('article')
-      .filter('derp', 'has', new Uint8Array([4]))
-      .get()
-      .toObject(),
+    (await db.query('article').filter('stuff', '=', stuff).get()).toObject(),
+    [derpResult],
+  )
+  deepEqual(
+    (
+      await db
+        .query('article')
+        .filter('derp', 'has', new Uint8Array([4]))
+        .get()
+    ).toObject(),
     [derpResult],
   )
 })
@@ -268,12 +288,14 @@ await test('search', async (t) => {
   }
 
   equal(
-    db
-      .query('italy')
-      .filter('body', 'search', 'vitt')
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('italy')
+        .filter('body', 'search', 'vitt')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
     1e3,
   )
 })
@@ -304,12 +326,14 @@ await test('hasLoose uncompressed', async (t) => {
   }
 
   equal(
-    db
-      .query('italy')
-      .filter('body', 'hasLoose', 'aaaaaa')
-      .include('id')
-      .range(0, 1e5)
-      .get().length,
+    (
+      await db
+        .query('italy')
+        .filter('body', 'hasLoose', 'aaaaaa')
+        .include('id')
+        .range(0, 1e5)
+        .get()
+    ).length,
     1e5,
   )
 })
@@ -340,12 +364,14 @@ await test('hasLoose compressed', async (t) => {
   }
 
   equal(
-    db
-      .query('italy')
-      .filter('body', 'hasLoose', 'aaaaa')
-      .include('id', 'body')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('italy')
+        .filter('body', 'hasLoose', 'aaaaa')
+        .include('id', 'body')
+        .range(0, 1e3)
+        .get()
+    ).length,
     1e3,
   )
 })
@@ -373,12 +399,14 @@ await test('compressed has', async (t) => {
       body: compressedItaly,
     })
   }
-  db
-    .query('italy')
-    .filter('body', 'has', 'derp derp derp')
-    .include('id')
-    .range(0, 1e3)
-    .get().length
+  ;(
+    await db
+      .query('italy')
+      .filter('body', 'has', 'derp derp derp')
+      .include('id')
+      .range(0, 1e3)
+      .get()
+  ).length
 })
 
 await test('has OR uncompressed', async (t) => {
@@ -411,12 +439,14 @@ await test('has OR uncompressed', async (t) => {
   }
 
   equal(
-    db
-      .query('italy')
-      .filter('body', 'hasLoose', ['aaa', 'bbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
-      .include('id')
-      .range(0, 1e3)
-      .get().length,
+    (
+      await db
+        .query('italy')
+        .filter('body', 'hasLoose', ['aaa', 'bbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).length,
     1,
   )
 })

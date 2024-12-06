@@ -35,21 +35,22 @@ await test('boolean', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').get().toObject(), [
+  deepEqual((await db.query('user').get()).toObject(), [
     { id: 1, isNice: false },
     { id: 2, isNice: true },
     { id: 3, isNice: false },
   ])
 
-  deepEqual(db.query('user').filter('isNice', '=', true).get().toObject(), [
+  deepEqual(
+    (await db.query('user').filter('isNice', '=', true).get()).toObject(),
+    [{ id: 2, isNice: true }],
+  )
+
+  deepEqual((await db.query('user').filter('isNice').get()).toObject(), [
     { id: 2, isNice: true },
   ])
 
-  deepEqual(db.query('user').filter('isNice').get().toObject(), [
-    { id: 2, isNice: true },
-  ])
-
-  deepEqual(db.query('user').filter('isNice', false).get().toObject(), [
+  deepEqual((await db.query('user').filter('isNice', false).get()).toObject(), [
     { id: 1, isNice: false },
     { id: 3, isNice: false },
   ])

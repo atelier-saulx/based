@@ -49,7 +49,7 @@ await test('simple', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').get().toObject(), [
+  deepEqual((await db.query('user').get()).toObject(), [
     {
       id: 1,
       name: '',
@@ -170,12 +170,13 @@ await test('string + refs', async (t) => {
   db.drain()
 
   deepEqual(
-    db
-      .query('simple')
-      .include('user.name', 'user.myBlup.name')
-      .range(0, 1)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('simple')
+        .include('user.name', 'user.myBlup.name')
+        .range(0, 1)
+        .get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -198,11 +199,9 @@ await test('string + refs', async (t) => {
   db.drain()
 
   deepEqual(
-    db
-      .query('simple')
-      .include('user.name', 'user.myBlup.name')
-      .get()
-      .toObject(),
+    (
+      await db.query('simple').include('user.name', 'user.myBlup.name').get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -252,7 +251,7 @@ await test('Big string', async (t) => {
   db.drain()
 
   equal(
-    db.query('file', file).get().node().contents,
+    (await db.query('file', file).get()).node().contents,
     euobserver,
     'Get single id',
   )
@@ -265,7 +264,7 @@ await test('Big string', async (t) => {
   db.drain()
 
   deepEqual(
-    db.query('file').get().toObject(),
+    (await db.query('file').get()).toObject(),
     [
       {
         id: 1,
@@ -310,7 +309,7 @@ await test('Big string disable compression', async (t) => {
   db.drain()
 
   equal(
-    db.query('file', file).get().node().contents,
+    (await db.query('file', file).get()).node().contents,
     euobserver,
     'Get single id',
   )
@@ -321,10 +320,10 @@ await test('Big string disable compression', async (t) => {
 
   db.drain()
 
-  equal(db.query('file').get().size > 1000 * 1e3, true)
+  equal((await db.query('file').get()).size > 1000 * 1e3, true)
 
   deepEqual(
-    db.query('file').get().inspect().toObject(),
+    (await db.query('file').get()).inspect().toObject(),
     [
       {
         id: 1,

@@ -13,8 +13,11 @@ if (isMainThread) {
 
   native.workerCtxInit()
 
+  const transferList = new Array(1)
   const handleMsg = (msg) => {
-    channel.postMessage(native.getQueryBuf(msg, dbCtx))
+    const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
+    transferList[0] = arrayBuf
+    channel.postMessage(arrayBuf, transferList)
   }
 
   channel.on('message', handleMsg)

@@ -72,24 +72,27 @@ await test('update', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').include('name', 'friend').get().toObject(), [
-    {
-      id: 1,
-      name: 'youzi',
-      friend: {
-        id: 6,
-        rating: 0,
-        name: 'jame-z',
-      },
-    },
-    {
-      id: 6,
-      name: 'jame-z',
-      friend: {
+  deepEqual(
+    (await db.query('user').include('name', 'friend').get()).toObject(),
+    [
+      {
         id: 1,
-        rating: 0,
         name: 'youzi',
+        friend: {
+          id: 6,
+          rating: 0,
+          name: 'jame-z',
+        },
       },
-    },
-  ])
+      {
+        id: 6,
+        name: 'jame-z',
+        friend: {
+          id: 1,
+          rating: 0,
+          name: 'youzi',
+        },
+      },
+    ],
+  )
 })

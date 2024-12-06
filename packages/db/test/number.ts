@@ -75,7 +75,7 @@ await test('number', async (t) => {
   db.drain() // will become async
 
   deepEqual(
-    db.query('user').get().toObject(),
+    (await db.query('user').get()).toObject(),
     payloads.map((payload, index) => {
       return {
         id: index + 1,
