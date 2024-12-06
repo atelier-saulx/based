@@ -17,7 +17,7 @@ pub const Operator = enum(u8) {
 
     equalCrc32 = 17,
 
-    search = 18,
+    like = 18,
 
     hasLoose = 19,
 

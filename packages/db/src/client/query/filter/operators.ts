@@ -10,8 +10,7 @@ export type Operator =
   | '<='
   | '..'
   | '!..'
-  | 'search'
-  | '!search' // later...
+  | 'like'
   | 'hasLoose'
 
 // -------------------------------------------
@@ -80,7 +79,7 @@ export const operationToByte = (op: Operator): number => {
     return 11
   }
 
-  if (op === 'search') {
+  if (op === 'like') {
     return 18
   }
 

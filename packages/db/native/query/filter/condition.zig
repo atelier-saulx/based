@@ -117,8 +117,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-    // rename to like
-    if (op == Op.search) {
+    if (op == Op.like) {
         if (value[0] == 1) {
             return .{ next, false };
         } else if (!search.default(value[1..value.len], query)) {
