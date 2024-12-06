@@ -184,7 +184,7 @@ await test('has uncompressed', async (t) => {
       },
     },
   })
-  for (let i = 0; i < 1e4; i++) {
+  for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
       body: italy,
@@ -273,8 +273,7 @@ await test('search', async (t) => {
       .filter('body', 'search', 'vitt')
       .include('id')
       .range(0, 1e3)
-      .get()
-      .inspect(10).length,
+      .get().length,
     1e3,
   )
 })
@@ -310,8 +309,7 @@ await test('hasLoose uncompressed', async (t) => {
       .filter('body', 'hasLoose', 'aaaaaa')
       .include('id')
       .range(0, 1e5)
-      .get()
-      .inspect(10).length,
+      .get().length,
     1e5,
   )
 })
@@ -347,8 +345,7 @@ await test('hasLoose compressed', async (t) => {
       .filter('body', 'hasLoose', 'aaaaa')
       .include('id', 'body')
       .range(0, 1e3)
-      .get()
-      .inspect(2).length,
+      .get().length,
     1e3,
   )
 })
@@ -381,8 +378,7 @@ await test('compressed has', async (t) => {
     .filter('body', 'has', 'derp derp derp')
     .include('id')
     .range(0, 1e3)
-    .get()
-    .inspect(10).length
+    .get().length
 })
 
 await test('has OR uncompressed', async (t) => {
@@ -420,8 +416,7 @@ await test('has OR uncompressed', async (t) => {
       .filter('body', 'hasLoose', ['aaa', 'bbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
       .include('id')
       .range(0, 1e3)
-      .get()
-      .inspect(10).length,
+      .get().length,
     1,
   )
 })

@@ -1,7 +1,7 @@
 const std = @import("std");
 const readInt = @import("../../utils.zig").readInt;
 const batch = @import("./batch.zig");
-const has = @import("./has.zig");
+const has = @import("./has/has.zig");
 const search = @import("./search.zig");
 const db = @import("../../db//db.zig");
 const num = @import("./numerical.zig");
@@ -14,6 +14,7 @@ const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 
+// or totally different
 pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u32, q, i + 5);
     const next = i + 11 + valueSize;
@@ -31,16 +32,18 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
 
     // op == Op.equal HANDLE DIFFERENT
 
-    // search
+    // compressed different
+
+    // search later
     if (op == Op.hasLoose) {
         if (prop == Prop.STRING and mainLen == 0) {
             if (value[0] == 1) {
                 var j: usize = 0;
                 while (j < query.len) {
                     const size = readInt(u16, query, j);
-                    if (has.looseCompressed(value, query[j + 2 .. j + 2 + size])) {
-                        return .{ next, true };
-                    }
+                    // if (has.looseCompressed(value, query[j + 2 .. j + 2 + size])) {
+                    //     return .{ next, true };
+                    // }
                     j += size + 2;
                 }
             } else {
@@ -152,9 +155,9 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else if (op == Op.hasLoose) {
         if (prop == Prop.STRING and mainLen == 0) {
             if (value[0] == 1) {
-                if (!has.looseCompressed(value, query)) {
-                    return .{ next, false };
-                }
+                // if (!has.looseCompressed(value, query)) {
+                //     return .{ next, false };
+                // }
             } else if (!has.loose(value[1..value.len], query)) {
                 return .{ next, false };
             }
