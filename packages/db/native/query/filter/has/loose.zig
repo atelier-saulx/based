@@ -8,8 +8,6 @@ const capitals: @Vector(vectorLen, u8) = @splat(32);
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 
-// ------------------------------------------------------------------------------
-// LOOSE
 pub inline fn restVectorMatch(
     matches: @Vector(vectorLen, bool),
     i: usize,

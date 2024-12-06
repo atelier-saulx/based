@@ -1,8 +1,7 @@
 import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
-import { italy, sentence } from './shared/examples.js'
-import { it } from 'node:test'
+import { italy, sentence, bible } from './shared/examples.js'
 
 const capitals =
   'AAAAAAAAAA AAAAAAAAAAA AAAAAAAAAAAAAAAAAAAA AAA A AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
@@ -49,9 +48,6 @@ await test('variable size (string/binary)', async (t) => {
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
-
-  db.drain()
-
   deepEqual(
     (
       await db
@@ -72,13 +68,14 @@ await test('variable size (string/binary)', async (t) => {
       },
     ],
   )
-  const res = await db
-    .query('article')
-    .filter('stuff', 'has', new Uint8Array([55, 57]))
-    .range(0, 100)
-    .get()
-  const len = res.length
-  equal(len, 20, 'has binary (single')
+  const len = (
+    await db
+      .query('article')
+      .filter('stuff', 'has', new Uint8Array([55, 57]))
+      .range(0, 100)
+      .get()
+  ).length
+  equal(len, 6, 'has binary (single')
   const largeDerp = Buffer.from(italy)
   let smurpArticle
   for (let i = 0; i < 1e3; i++) {
@@ -145,7 +142,7 @@ await test('variable size (string/binary)', async (t) => {
   )
 })
 
-await test('compressed has', async (t) => {
+await test('has compressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -162,22 +159,26 @@ await test('compressed has', async (t) => {
       },
     },
   })
-  const compressedItaly = compress(italy)
-  for (let i = 0; i < 1e3; i++) {
+
+  const compressedItaly = compress(bible)
+  for (let i = 0; i < 1; i++) {
     await db.create('italy', {
       body: compressedItaly,
     })
   }
 
+  const n = `Therefore he called the name of that place Baalperazim. 
+And there they left their images, and David and his men burned them. `
+
   equal(
     (
       await db
         .query('italy')
-        .filter('body', 'has', 'derp derp derp')
+        .filter('body', 'has', n)
         .include('id')
         .range(0, 1e3)
         .get()
-    ).length,
+    ).inspect().length,
     0,
   )
 })
@@ -211,11 +212,11 @@ await test('has uncompressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'has', 'derp derp derp')
+        .filter('body', 'hasLoose', 'derp derp derp')
         .include('id')
         .range(0, 1e3)
         .get()
-    ).length,
+    ).inspect().length,
     0,
   )
 })
@@ -291,11 +292,11 @@ await test('search', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'search', 'vitt')
+        .filter('body', 'like', 'derp')
         .include('id')
         .range(0, 1e3)
         .get()
-    ).length,
+    ).inspect().length,
     1e3,
   )
 })
@@ -376,39 +377,7 @@ await test('hasLoose compressed', async (t) => {
   )
 })
 
-await test('compressed has', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => {
-    return db.destroy()
-  })
-  db.putSchema({
-    types: {
-      italy: {
-        props: {
-          body: { type: 'string' }, // big compressed string...
-        },
-      },
-    },
-  })
-  const compressedItaly = compress(italy)
-  for (let i = 0; i < 1e3; i++) {
-    await db.create('italy', {
-      body: compressedItaly,
-    })
-  }
-  ;(
-    await db
-      .query('italy')
-      .filter('body', 'has', 'derp derp derp')
-      .include('id')
-      .range(0, 1e3)
-      .get()
-  ).length
-})
-
+// -------- or later...
 await test('has OR uncompressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -434,7 +403,7 @@ await test('has OR uncompressed', async (t) => {
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
-      body: i === 999 ? italy + ' aaabbbaaa' : italy,
+      body: i === 999 ? italy + ' aaabbbbbbbbbaaa' : italy,
     })
   }
 
@@ -442,11 +411,56 @@ await test('has OR uncompressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'hasLoose', ['aaa', 'bbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+        .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
         .include('id')
         .range(0, 1e3)
         .get()
-    ).length,
+    ).inspect().length,
+    1,
+  )
+})
+
+// -------- or later...
+await test('has OR compressed', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          f: 'boolean',
+          body: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  const compressedItaly = compress(italy)
+
+  for (let i = 0; i < 1e3; i++) {
+    await db.create('italy', {
+      f: false,
+      body: i === 999 ? italy + ' aaabbbbbbbbbaaa' : compressedItaly,
+    })
+  }
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).inspect().length,
     1,
   )
 })

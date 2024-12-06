@@ -30,77 +30,27 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         value = v;
     }
 
-    // op == Op.equal HANDLE DIFFERENT
-
-    // compressed different
-
-    // search later
-    if (op == Op.hasLoose) {
-        if (prop == Prop.STRING and mainLen == 0) {
-            if (value[0] == 1) {
-                var j: usize = 0;
-                while (j < query.len) {
-                    const size = readInt(u16, query, j);
-                    // if (has.looseCompressed(value, query[j + 2 .. j + 2 + size])) {
-                    //     return .{ next, true };
-                    // }
-                    j += size + 2;
-                }
-            } else {
-                var j: usize = 0;
-                while (j < query.len) {
-                    const size = readInt(u16, query, j);
-                    if (has.loose(value[1..value.len], query[j + 2 .. j + 2 + size])) {
-                        return .{ next, true };
-                    }
-                    j += size + 2;
-                }
-                return .{ next, false };
-            }
+    if (op == Op.like) {
+        // if (value[0] == 1) {
+        //     return .{ next, false };
+        // } else if (!search.default(value[1..value.len], query)) {
+        //     return .{ next, false };
+        // }
+        // -------------------
+    } else if (op == Op.equal) {
+        if (value.len != valueSize) {
+            // pass = false;
         } else {
-            var j: usize = 0;
-            while (j < query.len) {
-                const size = readInt(u16, query, j);
-                if (has.loose(value, query[j + 2 .. j + 2 + size])) {
-                    return .{ next, true };
+            var j: u32 = 0;
+            while (j < query.len) : (j += 1) {
+                if (value[j] != query[j]) {
+                    // pass = false;
+                    break;
                 }
-                j += size + 2;
             }
-            return .{ next, false };
         }
-    } else if (op == Op.has) {
-        if (prop == Prop.STRING and mainLen == 0) {
-            if (value[0] == 1) {
-                var j: usize = 0;
-                while (j < query.len) {
-                    const size = readInt(u16, query, j);
-                    if (has.compressed(value, query[j + 2 .. j + 2 + size])) {
-                        return .{ next, true };
-                    }
-                    j += size + 2;
-                }
-            } else {
-                var j: usize = 0;
-                while (j < query.len) {
-                    const size = readInt(u16, query, j);
-                    if (has.default(value[1..value.len], query[j + 2 .. j + 2 + size])) {
-                        return .{ next, true };
-                    }
-                    j += size + 2;
-                }
-                return .{ next, false };
-            }
-        } else {
-            var j: usize = 0;
-            while (j < query.len) {
-                const size = readInt(u16, query, j);
-                if (has.default(value, query[j + 2 .. j + 2 + size])) {
-                    return .{ next, true };
-                }
-                j += size + 2;
-            }
-            return .{ next, false };
-        }
+    } else if (has.has(true, op, prop, value, query, mainLen)) {
+        return .{ next, true };
     }
     return .{ next, false };
 }
@@ -120,8 +70,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
     } else {
         value = v;
     }
-    // extract this and use in OR
-    if (op == Op.search) {
+    if (op == Op.like) {
         if (value[0] == 1) {
             return .{ next, false };
         } else if (!search.default(value[1..value.len], query)) {
@@ -140,30 +89,8 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
                 }
             }
         }
-    } else if (op == Op.has) {
-        if (prop == Prop.STRING and mainLen == 0) {
-            if (value[0] == 1) {
-                if (!has.compressed(value, query)) {
-                    return .{ next, false };
-                }
-            } else if (!has.default(value[1..value.len], query)) {
-                return .{ next, false };
-            }
-        } else if (!has.default(value, query)) {
-            return .{ next, false };
-        }
-    } else if (op == Op.hasLoose) {
-        if (prop == Prop.STRING and mainLen == 0) {
-            if (value[0] == 1) {
-                // if (!has.looseCompressed(value, query)) {
-                //     return .{ next, false };
-                // }
-            } else if (!has.loose(value[1..value.len], query)) {
-                return .{ next, false };
-            }
-        } else if (!has.loose(value, query)) {
-            return .{ next, false };
-        }
+    } else if (!has.has(false, op, prop, value, query, mainLen)) {
+        pass = false;
     }
     return .{ next, pass };
 }
