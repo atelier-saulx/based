@@ -198,7 +198,7 @@ await test('has uncompressed', async (t) => {
   equal(
     db
       .query('italy')
-      .filter('body', 'hasLoose', 'derp derp derp')
+      .filter('body', 'hasLoose', 'derp derp')
       .include('id')
       .range(0, 1e3)
       .get()
@@ -275,7 +275,7 @@ await test('search', async (t) => {
   equal(
     db
       .query('italy')
-      .filter('body', 'like', 'derp')
+      .filter('body', 'like', 'contemporari')
       .include('id')
       .range(0, 1e3)
       .get()

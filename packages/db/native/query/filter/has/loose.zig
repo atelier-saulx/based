@@ -70,6 +70,7 @@ pub inline fn loose(value: []u8, query: []u8) bool {
                 return result == 2;
             }
         } else {
+            // fits within the cache line like this in stack
             matches = (h + capitals) == queryVector;
             if (@reduce(.Or, matches)) {
                 const result = restVectorMatch(matches, i, ql, l, value, query);
