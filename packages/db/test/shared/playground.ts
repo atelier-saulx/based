@@ -46,7 +46,7 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
-    noCompression: true,
+    // noCompression: true,
   })
 
   await db.start({ clean: true })
