@@ -67,7 +67,7 @@ pub fn search(
         }
 
         if (d < 3) {
-            // std.debug.print("D: {any} \n", .{query});
+            std.debug.print("D: {any} \n", .{});
 
             const x: u32 = @bitCast(d);
             return x;
