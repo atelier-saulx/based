@@ -13,6 +13,7 @@ pub fn default(value: []u8, query: []u8) c_int {
         @ptrCast(query.ptr),
         query.len,
         dist,
+        false,
     );
     // int strsearch_has(locale_t loc, wctrans_t trans, const char *text, const char *needle, size_t needle_len, int good);
 

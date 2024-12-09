@@ -17,7 +17,7 @@ pub fn search(
 ) u32 {
     const qSize = readInt(u16, searchBuf, 0);
     const offset = qSize + 2;
-    // const query = searchBuf[2..offset];
+    const query = searchBuf[2..offset];
     const sl = searchBuf.len;
     var j: usize = offset;
 
@@ -37,19 +37,22 @@ pub fn search(
 
         // * weight ?
 
-        // const d = selva.strsearch_has_u8(
-        //     @ptrCast(value.ptr),
-        //     value.len,
-        //     @ptrCast(query.ptr),
-        //     query.len,
-        //     0,
-        // );
+        const d = selva.strsearch_has_u8(
+            @ptrCast(value.ptr),
+            value.len,
+            @ptrCast(query.ptr),
+            query.len,
+            1,
+            true,
+        );
+
+        std.debug.print("FOUND {d}  {any} \n", .{ d, query });
 
         // minimum d
-        // if (d < 2) {
-        //     // std.debug.print("FOUND {d}  \n", .{d});
-        //     return 10;
-        // }
+        if (d < 1) {
+            // std.debug.print("FOUND {d}  \n", .{d});
+            return 10;
+        }
 
         j += 2;
     }

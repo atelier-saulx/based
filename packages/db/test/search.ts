@@ -61,7 +61,7 @@ await test('search', async (t) => {
     await db.create('italy', {
       body:
         italy +
-        ' aaaaaaaa aa dnqpwifhjwoi fwqopifqehoiqehvoiewr hweiorhweroibhwroibhibothriotbiohpveroihriobhwrtoibhrtiobhorwithbwoirhboi oeirghwrtoi bhworiehb',
+        ' aaaaa aaa aa dnqpwifhjwoi fwqopifqehoiqehvoiewr hweiorhweroibhwroibhibothriotbiohpveroihriobhwrtoibhrtiobhorwithbwoirhboi oeirghwrtoi bhworiehb',
     })
   }
 
