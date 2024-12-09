@@ -162,9 +162,12 @@ pub fn querySort(
             if (d > 1) {
                 continue :checkItem;
             }
-            std.debug.print("DISTANCE: {d} \n", .{d});
             if (d != 0) {
+                // if (movingLimit < limit * 4) {
                 movingLimit += 1;
+                // }
+            } else {
+                std.debug.print("DISTANCE: {d} \n", .{d});
             }
         }
 

@@ -218,7 +218,7 @@ const makeDb = async (path: string) => {
     //   f.filter('headline', 'has', 'Orbán')
     //   // f.filter('body', 'has', 'Orban')
     // })
-    .sort('publishDate', 'desc')
+    // .sort('publishDate', 'desc')
     .include('headline', 'publishDate')
     .filter('published', true)
     // .or((v) => {
