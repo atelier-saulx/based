@@ -25,10 +25,12 @@ const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
 const transferList = new Array(1)
+
 export class DbWorker {
-  constructor(address: BigInt) {
+  constructor(address: BigInt, db: DbServer) {
     const { port1, port2 } = new MessageChannel()
 
+    this.db = db
     this.channel = port1
     this.worker = new Worker(workerPath, {
       workerData: {
@@ -37,12 +39,15 @@ export class DbWorker {
       },
       transferList: [port2],
     })
+
     port1.on('message', (buf) => {
-      const resolve = this.resolvers.shift()
-      resolve(buf)
+      this.db.processing--
+      this.resolvers.shift()(buf)
+      this.db.drainQueues()
     })
   }
 
+  db: DbServer
   channel: MessagePort
   worker: Worker
   resolvers: any[] = []
@@ -52,6 +57,7 @@ export class DbWorker {
   }
 
   getQueryBuf(buf): Promise<Buffer> {
+    this.db.processing++
     transferList[0] = buf.buffer
     this.channel.postMessage(buf, transferList)
     return new Promise(this.callback)
@@ -71,6 +77,9 @@ export class DbServer {
   csmtHashFun = native.createHash()
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
+  processing = 0
+  modifyQueue: Buffer[] = []
+  queryQueue: Map<Function, Buffer> = new Map()
 
   constructor({
     path,
@@ -179,14 +188,40 @@ export class DbServer {
   }
 
   modify(buf: Buffer) {
-    // if queries in progress, queue it
-    return native.modify(buf, this.dbCtxExternal)
+    if (this.processing) {
+      this.modifyQueue.push(Buffer.from(buf))
+    } else {
+      native.modify(buf, this.dbCtxExternal)
+    }
   }
 
-  getQueryBuf(buf: Buffer) {
-    this.availableWorkerIndex =
-      (this.availableWorkerIndex + 1) % this.workers.length
-    return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
+  getQueryBuf(buf: Buffer): Promise<Uint8Array> {
+    if (this.modifyQueue.length) {
+      return new Promise((resolve) => {
+        this.queryQueue.set(resolve, buf)
+      })
+    } else {
+      this.availableWorkerIndex =
+        (this.availableWorkerIndex + 1) % this.workers.length
+      return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
+    }
+  }
+
+  drainQueues() {
+    if (this.processing === 0) {
+      if (this.modifyQueue.length) {
+        for (const buf of this.modifyQueue) {
+          native.modify(buf, this.dbCtxExternal)
+        }
+        this.modifyQueue = []
+      }
+      if (this.queryQueue.size) {
+        for (const [resolve, buf] of this.queryQueue) {
+          resolve(this.getQueryBuf(buf))
+        }
+        this.queryQueue.clear()
+      }
+    }
   }
 
   async stop(noSave?: boolean) {
