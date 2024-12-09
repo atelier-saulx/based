@@ -83,6 +83,9 @@ pub fn queryIds(
     }
 }
 
+var locale: ?selva.locale_t = null;
+var transform: ?selva.wctrans_t = null;
+
 pub fn query(
     ctx: *QueryCtx,
     offset: u32,
@@ -102,8 +105,25 @@ pub fn query(
     const hasSearch = searchBuf.len > 0;
 
     var sLen: u16 = undefined;
+    var sNeedle: selva.strsearch_wneedle = undefined;
+
     if (hasSearch) {
+        if (locale == null) {
+            locale = selva.selva_lang_getlocale2(selva.selva_lang_nl);
+            transform = selva.selva_lang_wctrans(
+                selva.selva_lang_nl,
+                selva.SELVA_LANGS_TRANS_TOLOWER,
+            );
+        }
         sLen = readInt(u16, searchBuf, 0);
+        const q = searchBuf[2 .. 2 + sLen];
+        _ = selva.strsearch_make_wneedle(
+            &sNeedle,
+            locale.?,
+            transform.?,
+            q.ptr,
+            q.len,
+        );
     }
 
     checkItem: while (ctx.totalResults < movingLimit) {
@@ -122,7 +142,7 @@ pub fn query(
         }
 
         if (hasSearch) {
-            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen);
+            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen, &sNeedle);
             if (d > 1) {
                 continue :checkItem;
             }

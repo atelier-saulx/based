@@ -20,15 +20,19 @@ var transform: ?selva.wctrans_t = null;
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
 const minDist = 1;
 
-fn levenshtein(value: []u8, i: usize, query: []u8) u8 {
+fn levenshtein(
+    value: []u8,
+    i: usize,
+    query: []u8,
+    queryNeedle: *selva.strsearch_wneedle,
+) u8 {
     const ql = query.len;
     return selva.strsearch_levenshtein_mbs(
         locale.?,
         transform.?,
         value[i .. i + ql].ptr,
         ql,
-        query.ptr,
-        ql,
+        queryNeedle,
     );
 }
 
@@ -38,6 +42,7 @@ fn resultMatcher(
     i: usize,
     value: []u8,
     query: []u8,
+    queryNeedle: *selva.strsearch_wneedle,
 ) u8 {
     var d: u8 = dx;
     const ql = query.len;
@@ -48,7 +53,7 @@ fn resultMatcher(
         return d;
     }
     if (index == 0 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
-        const nd = levenshtein(value, index, query);
+        const nd = levenshtein(value, index, query, queryNeedle);
         if (nd < minDist) {
             return nd;
         } else if (nd < d) {
@@ -60,7 +65,7 @@ fn resultMatcher(
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
                 if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
-                    const nd = levenshtein(value, p + i, query);
+                    const nd = levenshtein(value, p + i, query, queryNeedle);
                     if (nd < minDist) {
                         return nd;
                     } else if (nd < d) {
@@ -73,7 +78,11 @@ fn resultMatcher(
     return d;
 }
 
-pub inline fn strSearch(value: []u8, query: []u8) u8 {
+pub inline fn strSearch(
+    value: []u8,
+    query: []u8,
+    queryNeedle: *selva.strsearch_wneedle,
+) u8 {
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
@@ -86,7 +95,7 @@ pub inline fn strSearch(value: []u8, query: []u8) u8 {
                 if (i + ql - 1 > l) {
                     return d;
                 }
-                const nd = levenshtein(value, i + 1, query);
+                const nd = levenshtein(value, i + 1, query, queryNeedle);
                 if (nd < minDist) {
                     return nd;
                 } else if (nd < d) {
@@ -101,14 +110,14 @@ pub inline fn strSearch(value: []u8, query: []u8) u8 {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
         if (@reduce(.Or, matches)) {
-            d = resultMatcher(d, matches, i, value, query);
+            d = resultMatcher(d, matches, i, value, query, queryNeedle);
             if (d < minDist) {
                 return d;
             }
         } else {
             matches = (h + capitals) == queryVector;
             if (@reduce(.Or, matches)) {
-                d = resultMatcher(d, matches, i, value, query);
+                d = resultMatcher(d, matches, i, value, query, queryNeedle);
                 if (d < minDist) {
                     return d;
                 }
@@ -120,7 +129,7 @@ pub inline fn strSearch(value: []u8, query: []u8) u8 {
             if (i + ql - 1 > l) {
                 return d;
             }
-            const nd = levenshtein(value, i + 1, query);
+            const nd = levenshtein(value, i + 1, query, queryNeedle);
             if (nd < minDist) {
                 return nd;
             } else if (nd < d) {
@@ -137,6 +146,7 @@ pub fn search(
     typeEntry: *selva.SelvaTypeEntry,
     searchBuf: []u8,
     searchLen: u16,
+    queryNeedle: *selva.strsearch_wneedle,
     // ref: ?types.RefStruct,
     // comptime isEdge: bool,
 ) u32 {
@@ -166,7 +176,7 @@ pub fn search(
         if (isCompressed) {
             // ---- do later
         } else {
-            const score = strSearch(value, searchBuf[2 .. searchLen + 2]);
+            const score = strSearch(value, searchBuf[2 .. searchLen + 2], queryNeedle);
             if (score < 2) {
                 return score;
             } else if (score < bestScore) {

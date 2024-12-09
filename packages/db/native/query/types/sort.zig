@@ -123,6 +123,9 @@ pub fn querySort(
     // add prebacked needle cache thingy
 
     var sLen: u16 = undefined;
+
+    var sNeedle: selva.strsearch_wneedle = undefined;
+
     if (hasSearch) {
         sLen = readInt(u16, searchBuf, 0);
     }
@@ -158,7 +161,7 @@ pub fn querySort(
         }
 
         if (hasSearch) {
-            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen);
+            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen, &sNeedle);
             if (d > 1) {
                 continue :checkItem;
             }
