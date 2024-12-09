@@ -17,19 +17,19 @@ await test('concurrency', async (t) => {
     types: {
       user: {
         props: {
-          name: { type: 'string' },
-          flap: 'uint32',
-          email: { type: 'string', max: 15 },
-          age: 'uint32',
-          snurp: { type: 'string' },
-          burp: 'uint32',
-          location: {
-            props: {
-              label: { type: 'string' },
-              x: 'uint32',
-              y: 'uint32',
-            },
-          },
+          // name: { type: 'string' },
+          // flap: 'uint32',
+          // email: { type: 'string', max: 15 },
+          // age: 'uint32',
+          // snurp: { type: 'string' },
+          // burp: 'uint32',
+          // location: {
+          //   props: {
+          //     label: { type: 'string' },
+          //     x: 'uint32',
+          //     y: 'uint32',
+          //   },
+          // },
           friends: {
             items: {
               ref: 'user',
@@ -47,7 +47,7 @@ await test('concurrency', async (t) => {
   let queries = 0
   let refs = []
   let timer = setTimeout(() => {
-    db.destroy()
+    // db.destroy()
     timer = null
   }, 5e3)
 

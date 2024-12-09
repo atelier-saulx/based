@@ -1,4 +1,4 @@
-import { BasedDb } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import {
   CREATE,
@@ -17,7 +17,7 @@ import { write } from '../string.js'
 // add compression handling for edge fields
 export function writeString(
   value: string | null | Buffer,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
   parentId: number,
@@ -55,6 +55,11 @@ export function writeString(
       const isNoCompression = ctx.db.noCompression || t.compression === 0
       size = write(ctx.buf, value, ctx.len, isNoCompression)
     }
+    // let sizepos = ctx.len + 1 - 5
+    // ctx.buf[sizepos++] = size
+    // ctx.buf[sizepos++] = size >>>= 8
+    // ctx.buf[sizepos++] = size >>>= 8
+    // ctx.buf[sizepos] = size >>>= 8
     ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
     ctx.len += size
   }

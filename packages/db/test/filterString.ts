@@ -49,6 +49,8 @@ await test('variable size (string/binary)', async (t) => {
     })
   }
 
+  db.drain()
+
   deepEqual(
     (
       await db

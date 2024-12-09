@@ -240,7 +240,8 @@ await test('basic', async (t) => {
       email: i + '@z.z',
     })
   }
-  await db.drain()
+
+  db.drain()
 
   deepEqual(
     (

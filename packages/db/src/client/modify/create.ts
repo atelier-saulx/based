@@ -66,6 +66,7 @@ export const create = (
   unsafe?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
+
   let id: number
   if ('id' in obj) {
     if (unsafe) {
@@ -78,6 +79,7 @@ export const create = (
   }
 
   const ctx = db.modifyCtx
+  const res = new ModifyState(id, db)
   const pos = ctx.len
   const err = appendCreate(ctx, def, obj, id, unsafe)
 
@@ -90,7 +92,6 @@ export const create = (
       return create(db, type, obj, unsafe)
     }
 
-    const res = new ModifyState(id, db)
     res.error = err
     // @ts-ignore
     return res
@@ -106,5 +107,5 @@ export const create = (
   }
 
   // @ts-ignore
-  return new ModifyState(id, db)
+  return res
 }

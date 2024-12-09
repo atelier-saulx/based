@@ -67,6 +67,7 @@ export const update = (
   const ctx = db.modifyCtx
   const pos = ctx.len
   const err = appendUpdate(ctx, def, obj, id, overwrite)
+  const res = new ModifyState(id, db)
 
   if (err) {
     ctx.prefix0 = null // force a new cursor
@@ -77,7 +78,6 @@ export const update = (
       return update(db, type, id, obj, overwrite)
     }
 
-    const res = new ModifyState(id, db)
     res.error = err
     // @ts-ignore
     return res
@@ -88,5 +88,5 @@ export const update = (
   }
 
   // @ts-ignore
-  return new ModifyState(id, db)
+  return res
 }
