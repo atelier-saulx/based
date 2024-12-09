@@ -19,6 +19,7 @@
 #include "selva_error.h"
 #include "selva/strsearch.h"
 
+#define SEARCH_SEP " ,.;-\n"
 #define LEV_MAX (STRSEARCH_NEEDLE_MAX + 1)
 
 static int32_t min3(int32_t a, int32_t b, int32_t c)
@@ -191,7 +192,7 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
 
 int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match)
 {
-    const char *sep = " \n";
+    const char *sep = SEARCH_SEP;
     const char *word;
     const char *brkt;
     const char fch = strict_first_char_match && isalpha(needle[0]) ? tolower(needle[0]) : '\0';
@@ -222,7 +223,7 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
 
 int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match)
 {
-    const char *sep = " ,.;\n";
+    const char *sep = SEARCH_SEP;
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
