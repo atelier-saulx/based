@@ -31,6 +31,7 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         value = v;
     }
 
+    // ----- later...
     if (op == Op.like) {
         // if (value[0] == 1) {
         //     return .{ next, false };
@@ -39,19 +40,25 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         // }
         // -------------------
     } else if (op == Op.equal) {
-        // only for main this...
-        if (value.len != valueSize) {
-            // pass = false;
-        } else {
-            // needs double while
-            var j: u32 = 0;
-            while (j < query.len) : (j += 1) {
-                if (value[j] != query[j]) {
-                    // pass = false;
-                    break;
+        var j: usize = 0;
+        while (j < query.len) {
+            const size = readInt(u16, query, j);
+            const queryPartial = query[j + 2 .. j + 2 + size];
+            if (value.len == queryPartial.len) {
+                var p: usize = 0;
+                while (p < queryPartial.len) : (p += 1) {
+                    if (value[p] != queryPartial[p]) {
+                        // pass = false;
+                        break;
+                    }
+                }
+                if (p == queryPartial.len) {
+                    return .{ next, true };
                 }
             }
+            j += size + 2;
         }
+        return .{ next, false };
     } else if (has.has(true, op, prop, value, query, mainLen)) {
         return .{ next, true };
     }

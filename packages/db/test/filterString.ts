@@ -453,7 +453,6 @@ await test('has OR compressed', async (t) => {
       body: i === amount - 1 ? italy + ' aaabbbbbbbbbaaa' : compressedItaly,
     })
   }
-
   equal(
     (
       await db
@@ -508,5 +507,44 @@ await test('OR equal', async (t) => {
         .get()
     ).length,
     1e3,
+  )
+})
+
+await test('OR equal main', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => {
+    return db.destroy()
+  })
+
+  db.putSchema({
+    types: {
+      italy: {
+        props: {
+          body: { type: 'string', maxBytes: 5 },
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    await db.create('italy', {
+      body: i === 9 ? 'bb' : 'aa',
+    })
+  }
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', '=', ['xx', 'bb'])
+        .range(0, 1e3)
+        .get()
+    ).length,
+    1,
   )
 })

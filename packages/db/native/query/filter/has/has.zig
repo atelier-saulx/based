@@ -17,7 +17,7 @@ inline fn orCompare(comptime isOr: bool, compare: Compare) type {
                 var j: usize = 0;
                 while (j < query.len) {
                     const size = readInt(u16, query, j);
-                    if (compare(value, query[j + 2 .. j + size])) {
+                    if (compare(value, query[j + 2 .. j + 2 + size])) {
                         return true;
                     }
                     j += size + 2;
