@@ -7,14 +7,7 @@ import {
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
-import {
-  alignU32,
-  appendU32,
-  appendU8,
-  outOfRange,
-  reserveU32,
-  writeU32,
-} from '../utils.js'
+import { reserveU32 } from '../utils.js'
 import { writeEdges } from './edge.js'
 
 export type RefModifyOpts = {
@@ -46,11 +39,11 @@ export function writeReferences(
   }
 
   if (value === null) {
-    if (outOfRange(ctx, 11)) {
+    if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
     setCursor(ctx, def.prop, parentId, mod)
-    appendU8(ctx, DELETE)
+    ctx.buf[ctx.len++] = DELETE
     return
   }
 
@@ -83,23 +76,33 @@ function deleteRefs(
   refs: any[],
   parentId: number,
 ): ModifyErr {
-  const size = 4 * refs.length
-  if (outOfRange(ctx, 10 + 1 + size)) {
+  let size = 4 * refs.length + 1
+  if (ctx.len + 10 + size > ctx.max) {
     return RANGE_ERR
   }
   setCursor(ctx, def.prop, parentId, modifyOp)
-  appendU8(ctx, modifyOp)
-  appendU32(ctx, size + 1)
-  appendU8(ctx, 2)
+  ctx.buf[ctx.len++] = modifyOp
+  ctx.buf[ctx.len++] = size
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = 2
 
-  for (const ref of refs) {
+  for (let ref of refs) {
     if (typeof ref === 'number') {
-      appendU32(ctx, ref)
+      ctx.buf[ctx.len++] = ref
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
     } else if (ref instanceof ModifyState) {
       if (ref.error) {
         return ref.error
       }
-      appendU32(ctx, ref.tmpId)
+      ref = ref.tmpId
+      ctx.buf[ctx.len++] = ref
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
     } else {
       return new ModifyError(def, refs)
     }
@@ -114,7 +117,7 @@ function updateRefs(
   parentId: number,
   op: 0 | 1,
 ): ModifyErr {
-  if (outOfRange(ctx, 19 + refs.length * 4)) {
+  if (ctx.len + 19 + refs.length * 4 > ctx.max) {
     return RANGE_ERR
   }
 
@@ -128,12 +131,11 @@ function updateRefs(
       if (nrOrErr === refs.length) {
         // reset
         ctx.len = initpos
-      } else if (outOfRange(ctx, 2)) {
+      } else if (ctx.len + 2 > ctx.max) {
         return RANGE_ERR
       } else {
-        // continue
-        appendU8(ctx, 0)
-        appendU8(ctx, REFERENCES)
+        ctx.buf[ctx.len++] = 0
+        ctx.buf[ctx.len++] = REFERENCES
       }
 
       return appendRefs(def, ctx, mod, refs, op, nrOrErr)
@@ -150,15 +152,18 @@ function appendRefs(
   op: 0 | 1,
   remaining: number,
 ): ModifyErr {
-  if (outOfRange(ctx, 10)) {
+  if (ctx.len + 10 > ctx.max) {
     return RANGE_ERR
   }
   const hasEdges = !!def.edges
-  appendU8(ctx, modifyOp)
-  const sizepos = reserveU32(ctx)
+  ctx.buf[ctx.len++] = modifyOp
+  let totalpos = reserveU32(ctx)
   let i = refs.length - remaining
-  appendU8(ctx, i === 0 ? op : 1) // if it just did a PUT, it should ADD not overwrite the remaining
-  appendU32(ctx, remaining) // ref length
+  ctx.buf[ctx.len++] = i === 0 ? op : 1 // if it just did a PUT, it should ADD not overwrite the remaining
+  ctx.buf[ctx.len++] = remaining
+  ctx.buf[ctx.len++] = remaining >>>= 8
+  ctx.buf[ctx.len++] = remaining >>>= 8
+  ctx.buf[ctx.len++] = remaining >>>= 8
 
   for (; i < refs.length; i++) {
     const ref = refs[i]
@@ -191,44 +196,70 @@ function appendRefs(
 
     if (hasEdges) {
       if (index === undefined) {
-        if (outOfRange(ctx, 9)) {
+        if (ctx.len + 9 > ctx.max) {
           return RANGE_ERR
         }
-        appendU8(ctx, 1)
-        appendU32(ctx, id)
+        ctx.buf[ctx.len++] = 1
+        ctx.buf[ctx.len++] = id
+        ctx.buf[ctx.len++] = id >>>= 8
+        ctx.buf[ctx.len++] = id >>>= 8
+        ctx.buf[ctx.len++] = id >>>= 8
       } else {
-        if (outOfRange(ctx, 13)) {
+        if (ctx.len + 13 > ctx.max) {
           return RANGE_ERR
         }
-        appendU8(ctx, 2)
-        appendU32(ctx, id)
-        appendU32(ctx, index)
+        ctx.buf[ctx.len++] = 2
+        ctx.buf[ctx.len++] = id
+        ctx.buf[ctx.len++] = id >>>= 8
+        ctx.buf[ctx.len++] = id >>>= 8
+        ctx.buf[ctx.len++] = id >>>= 8
+        ctx.buf[ctx.len++] = index
+        ctx.buf[ctx.len++] = index >>>= 8
+        ctx.buf[ctx.len++] = index >>>= 8
+        ctx.buf[ctx.len++] = index >>>= 8
       }
-      const sizepos = reserveU32(ctx)
+      let sizepos = reserveU32(ctx)
       const err = writeEdges(def, ref, ctx)
       if (err) {
         return err
       }
-      writeU32(ctx, ctx.len - sizepos - 4, sizepos)
+      let size = ctx.len - sizepos - 4
+      ctx.buf[sizepos++] = size
+      ctx.buf[sizepos++] = size >>>= 8
+      ctx.buf[sizepos++] = size >>>= 8
+      ctx.buf[sizepos] = size >>>= 8
     } else if (index === undefined) {
-      if (outOfRange(ctx, 5)) {
+      if (ctx.len + 5 > ctx.max) {
         return RANGE_ERR
       }
-      appendU8(ctx, 0)
-      appendU32(ctx, id)
+      ctx.buf[ctx.len++] = 0
+      ctx.buf[ctx.len++] = id
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = id >>>= 8
     } else if (index >= 0) {
-      if (outOfRange(ctx, 9)) {
+      if (ctx.len + 9 > ctx.max) {
         return RANGE_ERR
       }
-      appendU8(ctx, 3)
-      appendU32(ctx, id)
-      appendU32(ctx, index)
+      ctx.buf[ctx.len++] = 3
+      ctx.buf[ctx.len++] = id
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = index
+      ctx.buf[ctx.len++] = index >>>= 8
+      ctx.buf[ctx.len++] = index >>>= 8
+      ctx.buf[ctx.len++] = index >>>= 8
     } else {
       return new ModifyError(def, refs)
     }
   }
 
-  writeU32(ctx, ctx.len - sizepos - 4, sizepos)
+  let size = ctx.len - totalpos - 4
+  ctx.buf[totalpos++] = size
+  ctx.buf[totalpos++] = size >>>= 8
+  ctx.buf[totalpos++] = size >>>= 8
+  ctx.buf[totalpos] = size >>>= 8
 }
 
 function putRefs(
@@ -237,21 +268,33 @@ function putRefs(
   refs: any[],
   op: 0 | 1, // overwrite or add
 ): number | ModifyError {
-  appendU8(ctx, modifyOp)
-  appendU32(ctx, refs.length * 4 + 1)
-  appendU8(ctx, op === 0 ? 3 : 4)
-  alignU32(ctx)
+  let size = refs.length * 4 + 1
+
+  ctx.buf[ctx.len++] = modifyOp
+  ctx.buf[ctx.len++] = size
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = size >>>= 8
+  ctx.buf[ctx.len++] = op === 0 ? 3 : 4
+  ctx.len = (ctx.len + 3) & ~3
 
   let i = 0
   for (; i < refs.length; i++) {
-    const ref = refs[i]
+    let ref = refs[i]
     if (typeof ref === 'number') {
-      appendU32(ctx, ref)
+      ctx.buf[ctx.len++] = ref
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
     } else if (ref instanceof ModifyState) {
       if (ref.error) {
         return ref.error
       }
-      appendU32(ctx, ref.tmpId)
+      ref = ref.tmpId
+      ctx.buf[ctx.len++] = ref
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
+      ctx.buf[ctx.len++] = ref >>>= 8
     } else {
       break
     }

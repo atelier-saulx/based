@@ -1,8 +1,7 @@
 import { BasedDb } from '../../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
-import { setCursor } from './setCursor.js'
+import { initCursor, setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
-import { appendU8, outOfRange } from './utils.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
   const ctx = db.modifyCtx
@@ -11,27 +10,31 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
 
   ctx.db.markNodeDirty(schema, id)
 
+  initCursor(ctx, schema)
+
   if (separate) {
     const size = 12 + separate.length * 12
-    if (outOfRange(ctx, size)) {
+    if (ctx.len + size > ctx.max) {
       flushBuffer(db)
       return remove(db, type, id)
     }
+
     setCursor(ctx, 0, id, UPDATE)
-    appendU8(ctx, 4)
+    ctx.buf[ctx.len++] = 4
+
     for (const s of separate) {
       setCursor(ctx, s.prop, id, UPDATE)
-      appendU8(ctx, 4)
+      ctx.buf[ctx.len++] = 4
     }
-    appendU8(ctx, 10)
+    ctx.buf[ctx.len++] = 10
   } else {
-    if (outOfRange(ctx, 12)) {
+    if (ctx.len + 12 > ctx.max) {
       flushBuffer(db)
       return remove(db, type, id)
     }
     setCursor(ctx, 0, id, UPDATE)
-    appendU8(ctx, 4)
-    appendU8(ctx, 10)
+    ctx.buf[ctx.len++] = 4
+    ctx.buf[ctx.len++] = 10
   }
 
   if (!db.isDraining) {

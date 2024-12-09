@@ -8,9 +8,8 @@ import {
   RANGE_ERR,
   DELETE,
 } from './types.js'
-import { ModifyError, ModifyState } from './ModifyRes.js'
+import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendU8, outOfRange } from './utils.js'
 import { write } from '../string.js'
 
 // allow setting buffer in modify create for strings
@@ -31,15 +30,15 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {
-      if (outOfRange(ctx, 11)) {
+      if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
       setCursor(ctx, t.prop, parentId, modifyOp)
-      appendU8(ctx, DELETE)
+      ctx.buf[ctx.len++] = DELETE
     }
   } else {
     let size = isBuffer ? value.byteLength : Buffer.byteLength(value, 'utf8')
-    if (outOfRange(ctx, 15 + size + 5)) {
+    if (ctx.len + 20 + size > ctx.max) {
       // 5 compression size
       return RANGE_ERR
     }

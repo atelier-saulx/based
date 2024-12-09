@@ -1,25 +1,42 @@
-import { BasedDb } from '../../index.js'
+import { BasedDb, ModifyCtx } from '../../index.js'
+import { SchemaTypeDef } from '../../server/schema/types.js'
 import { CREATE, ModifyOp } from './types.js'
-import { appendU32, appendU8 } from './utils.js'
 
 export const setCursor = (
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   field: number,
   id: number,
   modifyOp: ModifyOp,
   ignoreField?: boolean,
 ) => {
   if (!ignoreField && ctx.field !== field) {
-    appendU8(ctx, 0)
-    appendU8(ctx, field)
+    ctx.buf[ctx.len++] = 0
+    ctx.buf[ctx.len++] = field
     ctx.field = field
   }
 
   if (ctx.id !== id) {
-    appendU8(ctx, modifyOp === CREATE ? 9 : 1)
-    appendU32(ctx, id)
-
     ctx.id = id
+    ctx.lastMain = -1
+    ctx.buf[ctx.len++] = modifyOp === CREATE ? 9 : 1
+    ctx.buf[ctx.len++] = id
+    ctx.buf[ctx.len++] = id >>>= 8
+    ctx.buf[ctx.len++] = id >>>= 8
+    ctx.buf[ctx.len++] = id >>>= 8
+  }
+}
+
+export const initCursor = (ctx: ModifyCtx, schema: SchemaTypeDef) => {
+  const prefix0 = schema.idUint8[0]
+  const prefix1 = schema.idUint8[1]
+  if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
+    ctx.buf[ctx.len++] = 2
+    ctx.buf[ctx.len++] = prefix0
+    ctx.buf[ctx.len++] = prefix1
+    ctx.prefix0 = prefix0
+    ctx.prefix1 = prefix1
+    ctx.field = -1
+    ctx.id = -1
     ctx.lastMain = -1
   }
 }

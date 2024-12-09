@@ -3,13 +3,7 @@ import { PropDef } from '../../../server/schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
-import {
-  appendU32,
-  appendU8,
-  outOfRange,
-  reserveU32,
-  writeU32,
-} from '../utils.js'
+import { reserveU32 } from '../utils.js'
 import { getEdgeSize, writeEdges } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
@@ -21,14 +15,17 @@ function writeRef(
   modifyOp: ModifyOp,
   hasEdges: boolean,
 ): ModifyErr {
-  if (outOfRange(ctx, 16)) {
+  if (ctx.len + 16 > ctx.max) {
     return RANGE_ERR
   }
   ctx.db.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
   setCursor(ctx, def.prop, parentId, modifyOp)
-  appendU8(ctx, modifyOp)
-  appendU8(ctx, hasEdges ? 1 : 0)
-  appendU32(ctx, id)
+  ctx.buf[ctx.len++] = modifyOp
+  ctx.buf[ctx.len++] = hasEdges ? 1 : 0
+  ctx.buf[ctx.len++] = id
+  ctx.buf[ctx.len++] = id >>>= 8
+  ctx.buf[ctx.len++] = id >>>= 8
+  ctx.buf[ctx.len++] = id >>>= 8
 }
 
 function singleReferenceEdges(
@@ -57,15 +54,19 @@ function singleReferenceEdges(
     if (err) {
       return err
     }
-    if (outOfRange(ctx, 4 + edgesLen)) {
+    if (ctx.len + 4 + edgesLen > ctx.max) {
       return RANGE_ERR
     }
-    const sizepos = reserveU32(ctx)
+    let sizepos = reserveU32(ctx)
     err = writeEdges(def, ref, ctx)
     if (err) {
       return err
     }
-    writeU32(ctx, ctx.len - sizepos, sizepos)
+    let size = ctx.len - sizepos
+    ctx.buf[sizepos++] = size
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos] = size >>>= 8
   } else {
     return new ModifyError(def, ref)
   }
@@ -79,11 +80,11 @@ export function writeReference(
   modifyOp: ModifyOp,
 ): ModifyErr {
   if (value === null) {
-    if (outOfRange(ctx, 11)) {
+    if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
     setCursor(ctx, def.prop, parentId, modifyOp)
-    appendU8(ctx, DELETE)
+    ctx.buf[ctx.len++] = DELETE
   } else if (typeof value === 'number') {
     return writeRef(value, ctx, def, parentId, modifyOp, false)
   } else if (value instanceof ModifyState) {
