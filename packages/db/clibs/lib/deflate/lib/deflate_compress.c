@@ -2458,8 +2458,7 @@ deflate_compress_fastest(struct libdeflate_compressor * restrict c,
                 max_len = remaining;
                 if (max_len < HT_MATCHFINDER_REQUIRED_NBYTES) {
                     do {
-                        deflate_choose_literal(c,
-                            *in_next++, false, seq);
+                        deflate_choose_literal(c, *in_next++, false, seq);
                     } while (--max_len);
                     break;
                 }
@@ -2474,8 +2473,7 @@ deflate_compress_fastest(struct libdeflate_compressor * restrict c,
                                   &offset);
             if (length) {
                 /* Match found */
-                deflate_choose_match(c, length, offset, false,
-                             &seq);
+                deflate_choose_match(c, length, offset, false, &seq);
                 ht_matchfinder_skip_bytes(&c->p.f.ht_mf,
                               &in_cur_base,
                               in_next + 1,
@@ -2485,13 +2483,12 @@ deflate_compress_fastest(struct libdeflate_compressor * restrict c,
                 in_next += length;
             } else {
                 /* No match found */
-                deflate_choose_literal(c, *in_next++, false,
-                               seq);
+                deflate_choose_literal(c, *in_next++, false, seq);
             }
 
             /* Check if it's time to output another block. */
         } while (in_next < in_max_block_end &&
-             seq < &c->p.f.sequences[FAST_SEQ_STORE_LENGTH]);
+                 seq < &c->p.f.sequences[FAST_SEQ_STORE_LENGTH]);
 
         deflate_finish_block(c, os, in_block_begin,
                      in_next - in_block_begin,
@@ -2562,8 +2559,7 @@ deflate_compress_greedy(struct libdeflate_compressor * restrict c,
                 in_next += length;
             } else {
                 /* No match found */
-                deflate_choose_literal(c, *in_next++, true,
-                               seq);
+                deflate_choose_literal(c, *in_next++, true, seq);
             }
 
             /* Check if it's time to output another block. */
@@ -2644,8 +2640,7 @@ deflate_compress_lazy_generic(struct libdeflate_compressor * restrict c,
                 (cur_len == DEFLATE_MIN_MATCH_LEN &&
                  cur_offset > 8192)) {
                 /* No match found.  Choose a literal. */
-                deflate_choose_literal(c, *in_next++, true,
-                               seq);
+                deflate_choose_literal(c, *in_next++, true, seq);
                 continue;
             }
             in_next++;
@@ -2705,8 +2700,7 @@ have_cur_match:
                  * Output a literal.  Then the next match
                  * becomes the current match.
                  */
-                deflate_choose_literal(c, *(in_next - 2), true,
-                               seq);
+                deflate_choose_literal(c, *(in_next - 2), true, seq);
                 cur_len = next_len;
                 cur_offset = next_offset;
                 goto have_cur_match;
@@ -2734,10 +2728,8 @@ have_cur_match:
                      * There's a much better match two
                      * positions ahead, so use two literals.
                      */
-                    deflate_choose_literal(
-                        c, *(in_next - 3), true, seq);
-                    deflate_choose_literal(
-                        c, *(in_next - 2), true, seq);
+                    deflate_choose_literal(c, *(in_next - 3), true, seq);
+                    deflate_choose_literal(c, *(in_next - 2), true, seq);
                     cur_len = next_len;
                     cur_offset = next_offset;
                     goto have_cur_match;
