@@ -51,8 +51,6 @@ pub fn search(
             continue;
         }
 
-        // * weight ?
-
         const isCompressed = value[0] == 1;
 
         var d: c_int = undefined;
@@ -69,9 +67,11 @@ pub fn search(
                 2,
                 true,
             );
+
+            std.debug.print("flap {d} \n", .{d});
         }
 
-        if (d < 1) {
+        if (d < 2) {
             return 10;
         }
 
