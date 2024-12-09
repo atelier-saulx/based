@@ -11,7 +11,6 @@
 #include <string.h>
 #include "util/selva_string.h"
 #include "selva/fields.h"
-#include "selva/filter.h"
 #include "selva/find.h"
 #include "selva/traverse.h"
 #include "selva/types.h"
@@ -29,14 +28,6 @@ static napi_valuetype selva_napi_get_nvaluetype(napi_env env, napi_value value)
     assert(status == napi_ok);
 
     return type;
-}
-
-static bool selva_napi_is_null(napi_env env, napi_value value)
-{
-    napi_valuetype type = selva_napi_get_nvaluetype(env, value);
-
-    return type == napi_null ||
-           type == napi_undefined;
 }
 
 static bool selva_napi_is_function(napi_env env, napi_value value)
@@ -747,166 +738,6 @@ struct selva_find_cb {
     size_t nr_results; /*!< Number of results written to result_buf i.e. number of succesful calls to selva_find_cb(). */
 };
 
-static bool result_buf_fits(struct selva_find_cb *args, size_t len)
-{
-    return args->result_len + len < args->result_size;
-}
-
-static void cpy2res(struct selva_find_cb *args, const void *src, size_t n)
-{
-    /*
-     * This is not needed as long as the called makes this check.
-     */
-#if 0
-    assert(result_buf_fits(cb, n));
-#endif
-    memcpy(args->result_buf + args->result_len, src, n);
-    args->result_len += n;
-}
-
-static int selva_find_cb(struct SelvaDb *, const struct SelvaTraversalMetadata *, struct SelvaNode *node, void *arg)
-{
-    struct selva_find_cb *args = (struct selva_find_cb *)arg;
-
-    if (args->result_size > 0) {
-        if (!result_buf_fits(args, sizeof(node_id_t))) {
-            return SELVA_TRAVERSAL_ABORT;
-        }
-
-        cpy2res(args, &node->node_id, sizeof(node->node_id));
-        /* TODO Return fields */
-    }
-
-    args->nr_results++;
-    return 0;
-}
-
-static const uint8_t *get_filter(napi_env env, napi_value value, size_t *len_out)
-{
-    napi_status status;
-
-    if (!selva_napi_is_null(env, value)) {
-        void *buf;
-
-        status = napi_get_buffer_info(env, value, &buf, len_out);
-        assert(status == napi_ok);
-
-        return buf;
-    }
-
-    *len_out = 0;
-    return nullptr;
-}
-
-static const struct FindFields *get_find_fields(napi_env env, napi_value value)
-{
-    napi_status status;
-    struct FindFields *fields = nullptr;
-
-    if (!selva_napi_is_null(env, value)) {
-        void *buf;
-        size_t len;
-
-        status = napi_get_buffer_info(env, value, &buf, &len);
-        assert(status == napi_ok);
-
-        if ((len - 1) % 3 != 0) {
-            return nullptr;
-        }
-
-        if (buf && len > 0 && len >= *((uint8_t *)buf) * sizeof(typeof(fields->data[0]))) {
-            fields = buf;
-        }
-    }
-
-    return fields;
-}
-
-// node_find(db, type, node_id, fields, adj_filter | null, node_filter | null, limits, result): number
-static napi_value node_find(napi_env env, napi_callback_info info)
-{
-    int err;
-    size_t argc = 8;
-    napi_value argv[8];
-    napi_status status;
-
-    err = get_args(env, info, &argc, argv, true);
-    if (err) {
-        return res2napi(env, err);
-    } else if (argc < 7) {
-        return res2napi(env, SELVA_EINVAL);
-    }
-
-    struct SelvaDb *db = npointer2db(env, argv[0]);
-    node_type_t type = selva_napi_get_node_type(env, argv[1]);
-    node_id_t node_id = selva_napi_get_node_id(env, argv[2]);
-
-    const struct FindFields *fields = get_find_fields(env, argv[3]);
-    if (!fields) {
-        return res2napi(env, SELVA_EINVAL);
-    }
-
-    size_t adj_filter_len;
-    const uint8_t *adj_filter_buf = get_filter(env, argv[4], &adj_filter_len);
-
-    size_t node_filter_len;
-    const uint8_t *node_filter_buf = get_filter(env, argv[5], &node_filter_len);
-
-    struct {
-        int32_t skip;
-        int32_t offset;
-        int32_t limit;
-    } __packed limits;
-    void *limits_buf;
-    size_t limits_len;
-    status = napi_get_buffer_info(env, argv[6], &limits_buf, &limits_len);
-    assert(status == napi_ok);
-    if (limits_len != sizeof(limits)) {
-        return res2napi(env, SELVA_EINVAL);
-    }
-    memcpy(&limits, limits_buf, sizeof(limits));
-
-    void *result_buf = nullptr;
-    size_t result_len = 0;
-    if (argc == 8) {
-        status = napi_get_buffer_info(env, argv[7], &result_buf, &result_len);
-        assert(status == napi_ok);
-    }
-
-    struct SelvaTypeEntry *te;
-    te = selva_get_type_by_index(db, type);
-    if (!te) {
-        return res2napi(env, SELVA_EINTYPE);
-    }
-
-    struct SelvaNode *node;
-    node = selva_find_node(te, node_id);
-    if (!node) {
-        return res2napi(env, SELVA_ENOENT); /* TODO New error codes */
-    }
-
-    struct SelvaFindParam cb_wrap = {
-        .adjacent_filter = adj_filter_buf,
-        .adjacent_filter_len = adj_filter_len,
-        .node_filter = node_filter_buf,
-        .node_filter_len = node_filter_len,
-        .node_cb = selva_find_cb,
-        .node_arg = &(struct selva_find_cb){
-            .env = env,
-            .result_buf = result_buf,
-            .result_size = result_len,
-            .result_len = 0,
-        },
-        .fields = fields,
-        .skip = limits.skip,
-        .offset = limits.offset,
-        .limit = limits.limit,
-    };
-
-    err = selva_find(db, node, &cb_wrap);
-    return res2napi(env, err ?: (int)((struct selva_find_cb *)cb_wrap.node_arg)->nr_results);
-}
-
 #define DECLARE_NAPI_METHOD(name, func){ name, 0, func, 0, 0, 0, napi_default, 0 }
 
 static napi_value Init(napi_env env, napi_value exports) {
@@ -925,7 +756,6 @@ static napi_value Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("db_get_field_p", node_db_get_field_p),
       DECLARE_NAPI_METHOD("db_del_field", node_db_del_field),
       DECLARE_NAPI_METHOD("traverse_field_bfs", node_traverse_field_bfs),
-      DECLARE_NAPI_METHOD("find", node_find),
   };
   napi_status status;
 

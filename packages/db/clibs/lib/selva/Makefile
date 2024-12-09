@@ -24,7 +24,6 @@ OBJ := \
 	db_panic.o \
 	fast_linear_search.o \
 	fields.o \
-	filter.o \
 	find.o \
 	idz.o \
 	io/dump.o \

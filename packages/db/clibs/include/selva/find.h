@@ -12,9 +12,6 @@ struct SelvaFindParam {
     SelvaTraversalNodeCallback node_cb;
     void *node_arg;
 
-    const uint8_t *adjacent_filter;
-    size_t adjacent_filter_len;
-
     /**
      * Traverse field selector.
      */
@@ -25,9 +22,6 @@ struct SelvaFindParam {
             field_t field;
         } __packed data[];
     } __packed *fields;
-
-    const uint8_t *node_filter;
-    size_t node_filter_len;
 
     /**
      * Skip the first n nodes in the traversal.

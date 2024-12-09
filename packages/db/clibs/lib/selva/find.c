@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "selva/fields.h"
-#include "selva/filter.h"
 #include "selva/traverse.h"
 #include "selva_error.h"
 #include "db.h"
@@ -34,13 +33,16 @@ static int find_node_cb(struct SelvaDb *db, const struct SelvaTraversalMetadata 
     bool take = (state->skip > 0) ? !state->skip-- : true;
     int err;
 
+#if 0
     if (take && state->node_filter_len) {
+        /* FIXME eval filter */
         err = selva_filter_eval(node, state->node_filter, state->node_filter_len, &take);
         if (err) {
             /* TODO handle this error? */
             return SELVA_TRAVERSAL_ABORT;
         }
     }
+#endif
 
     take = take && ((state->offset > 0) ? !state->offset-- : true);
     if (take) {
@@ -62,7 +64,10 @@ static int adj_filter(struct SelvaDb *, const struct SelvaTraversalMetadata *, s
     int err;
 
     __builtin_prefetch(node, 0, 1);
+    /* FIXME eval filter */
+#if 0
     err = selva_filter_eval(node, state->adjacent_filter, state->adjacent_filter_len, &res);
+#endif
 
     return err ? SELVA_TRAVERSAL_STOP : res ? 0 : SELVA_TRAVERSAL_STOP;
 }
@@ -73,7 +78,10 @@ int selva_find(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFin
     struct SelvaTraversalParam cb_wrap = {
         .node_cb = find_node_cb,
         .node_arg = &state,
+        /* FIXME */
+#if 0
         .child_cb = param->adjacent_filter_len > 0 ? adj_filter : NULL,
+#endif
         .child_arg = &state,
     };
 
