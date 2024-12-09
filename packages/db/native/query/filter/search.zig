@@ -35,6 +35,8 @@ pub fn search(
             continue;
         }
 
+        // * weight ?
+
         // const d = selva.strsearch_has_u8(
         //     @ptrCast(value.ptr),
         //     value.len,
