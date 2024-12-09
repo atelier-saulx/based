@@ -182,6 +182,8 @@ out:
 
 int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_str, size_t needle_len, int good, bool strict_first_char_match)
 {
+    char fch;
+
     if (needle_len == 0) {
         return SELVA_EINVAL;
     }
@@ -189,9 +191,19 @@ int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_st
         return SELVA_ENOBUFS;
     }
 
+    if (strict_first_char_match) {
+        if (isalpha(needle_str[0])) {
+            fch = tolower(needle_str[0]);
+        } else {
+            fch = needle_str[0];
+        }
+    } else {
+        fch = '\0';
+    }
+
     *needle = (struct strsearch_needle){
         .good = good,
-        .fch = strict_first_char_match && isalpha(needle_str[0]) ? tolower(needle_str[0]) : '\0',
+        .fch = fch,
         .sep = select_separator(needle_str, needle_len),
         .buf = needle_str,
         .len = needle_len,
