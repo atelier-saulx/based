@@ -91,7 +91,6 @@ pub fn queryIds(
     selva.selva_sort_destroy(sortCtx);
 }
 
-// TODO also for references later
 pub fn querySort(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
@@ -101,6 +100,7 @@ pub fn querySort(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
+    _: []u8,
 ) !void {
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);

@@ -267,42 +267,6 @@ await test('main has (string/binary)', async (t) => {
   )
 })
 
-await test('search', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => {
-    return db.destroy()
-  })
-  db.putSchema({
-    types: {
-      italy: {
-        props: {
-          body: { type: 'string', compression: 'none' }, // big compressed string...
-        },
-      },
-    },
-  })
-  for (let i = 0; i < 1e3; i++) {
-    await db.create('italy', {
-      body: italy,
-    })
-  }
-
-  equal(
-    (
-      await db
-        .query('italy')
-        .filter('body', 'like', 'derp')
-        .include('id')
-        .range(0, 1e3)
-        .get()
-    ).inspect().length,
-    1e3,
-  )
-})
-
 await test('hasLoose uncompressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,

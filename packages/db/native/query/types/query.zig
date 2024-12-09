@@ -7,6 +7,8 @@ const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
+const search = @import("../filter/search.zig").search;
+
 const utils = @import("../../utils.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
@@ -88,6 +90,7 @@ pub fn query(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
+    searchBuf: []u8,
 ) !void {
     var correctedForOffset: u32 = offset;
 
@@ -95,6 +98,8 @@ pub fn query(
 
     var first = true;
     var node = db.getFirstNode(typeEntry);
+
+    const hasSearch = searchBuf.len > 0;
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -109,6 +114,12 @@ pub fn query(
 
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
+        }
+
+        if (hasSearch) {
+            if (search(ctx.db, node.?, typeEntry, searchBuf) < 10) {
+                continue :checkItem;
+            }
         }
 
         if (correctedForOffset != 0) {

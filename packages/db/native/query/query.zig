@@ -41,6 +41,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const queryType = q[0];
     const typeId: db.TypeId = readInt(u16, q, 1);
 
+    // todo change to enum
     // default query
     if (queryType == 2) {
         const offset = readInt(u32, q, 3);
@@ -49,14 +50,20 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterBuf = q[13 .. 13 + filterSize];
         const sortSize = readInt(u16, q, 13 + filterSize);
         const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
-        const include = q[15 + filterSize + sortSize .. q.len];
+
+        const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
+
+        const include = q[17 + filterSize + sortSize + searchSize .. q.len];
+
+        const search = q[17 .. 17 + searchSize];
+
         if (sortSize == 0) {
-            try Query.query(&ctx, offset, limit, typeId, filterBuf, include);
+            try Query.query(&ctx, offset, limit, typeId, filterBuf, include, search);
         } else if (sortBuf[0] == 0) {
             // later change fn signature
-            try QuerySort.querySort(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len]);
+            try QuerySort.querySort(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], search);
         } else {
-            try QuerySort.querySort(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len]);
+            try QuerySort.querySort(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], search);
         }
     } else if (queryType == 0) {
         const id = readInt(u32, q, 3);
