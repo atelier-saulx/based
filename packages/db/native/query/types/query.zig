@@ -117,7 +117,7 @@ pub fn query(
         }
 
         if (hasSearch) {
-            if (search(ctx.db, node.?, typeEntry, searchBuf) < 10) {
+            if (search(ctx.db, node.?, typeEntry, searchBuf) > 2) {
                 continue :checkItem;
             }
         }

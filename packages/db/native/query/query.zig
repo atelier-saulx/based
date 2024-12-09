@@ -53,9 +53,9 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
 
         const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
 
-        const include = q[17 + filterSize + sortSize + searchSize .. q.len];
+        const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
 
-        const search = q[17 .. 17 + searchSize];
+        const include = q[17 + filterSize + sortSize + searchSize .. q.len];
 
         if (sortSize == 0) {
             try Query.query(&ctx, offset, limit, typeId, filterBuf, include, search);

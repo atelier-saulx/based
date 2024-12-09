@@ -103,6 +103,7 @@ pub fn querySort(
     sortBuffer: []u8,
     searchBuf: []u8,
 ) !void {
+    // const movingLimit = limit;
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -150,9 +151,14 @@ pub fn querySort(
         }
 
         if (hasSearch) {
-            if (search(ctx.db, node.?, typeEntry, searchBuf) < 10) {
+            const d = search(ctx.db, node.?, typeEntry, searchBuf);
+            if (d > 0) {
                 continue :checkItem;
             }
+            std.debug.print("DISTANCE: {d} \n", .{d});
+            // if (d != 0) {
+            //     movingLimit += 1;
+            // }
         }
 
         if (correctedForOffset != 0) {
@@ -175,6 +181,8 @@ pub fn querySort(
             ctx.totalResults += 1;
         }
     }
+
+    std.debug.print("DONE? \n", .{});
 
     sort.resetTxn(readTxn);
 }

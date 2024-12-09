@@ -198,7 +198,7 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'tariff'
+  const query = 'pager'
   console.log('---- DERP UKRAINE', query)
   await db
     .query('article')
@@ -218,12 +218,15 @@ const makeDb = async (path: string) => {
     //   f.filter('headline', 'has', 'Orbán')
     //   // f.filter('body', 'has', 'Orban')
     // })
-    // .sort('publishDate', 'desc')
-    .include('headline', 'publishDate')
-    .search('orban', { headline: 2 })
+    .sort('publishDate', 'desc')
+    .include('headline', 'publishDate', 'abstract')
+    // .filter('headline', 'has', 'tinky winky')
+    // body: 1
+    .search(query, { headline: 3, abstract: 2 })
     .get()
     .then((v) => {
-      console.dir(v.toObject(), { depth: 10 })
+      v.inspect(10)
+      // console.dir(v.toObject(), { depth: 10 })
     })
 
   // .inspect(2)

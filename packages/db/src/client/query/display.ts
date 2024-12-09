@@ -51,7 +51,6 @@ const prettyPrintVal = (v: any, type: TypeIndex): string => {
   if (type === BINARY) {
     const nr = 12
     const isLarger = v.length > nr
-    // const arr = isLarger ? [...v.slice(0, nr)] : [...v]
     const x = [...v.slice(0, nr)].map((v) => {
       return `${v}`.padStart(3, '0') + ' '
     })
@@ -67,14 +66,14 @@ const prettyPrintVal = (v: any, type: TypeIndex): string => {
   }
 
   if (type === STRING) {
-    if (v.length > 40) {
+    if (v.length > 75) {
       const chars = picocolors.italic(
         picocolors.dim(
           `${~~((Buffer.byteLength(v, 'utf8') / 1e3) * 100) / 100}kb`,
         ),
       )
       v =
-        v.slice(0, 40).replace(/\n/g, '\\n ') +
+        v.slice(0, 75).replace(/\n/g, '\\n ') +
         picocolors.dim('...') +
         '" ' +
         chars

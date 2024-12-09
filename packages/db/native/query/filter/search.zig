@@ -48,6 +48,8 @@ pub fn search(
         const value = db.getField(typeEntry, 0, node, fieldSchema);
 
         if (value.len == 0) {
+            j += 2;
+
             continue;
         }
 
@@ -56,7 +58,7 @@ pub fn search(
         var d: c_int = undefined;
         if (isCompressed) {
             if (decompress(blockCompare, query, value, dbCtx)) {
-                return 10;
+                return 1;
             }
         } else {
             d = selva.strsearch_has_u8(
@@ -64,20 +66,18 @@ pub fn search(
                 value.len,
                 @ptrCast(query.ptr),
                 query.len,
-                3,
+                0,
                 true,
             );
         }
 
         if (d < 3) {
             const x: u32 = @bitCast(d);
-            std.debug.print("DISTANCE: {d} \n", .{x});
-
             return x;
         }
 
         j += 2;
     }
 
-    return 1;
+    return 10;
 }
