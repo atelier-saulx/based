@@ -131,7 +131,7 @@ pub fn query(
                 movingLimit += 1;
                 // }
             } else {
-                std.debug.print("DISTANCE: {d} \n", .{d});
+                // std.debug.print("DISTANCE: {d} \n", .{d});
             }
         }
 

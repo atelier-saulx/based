@@ -11,20 +11,77 @@ const decompress = compressed.decompress;
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
+const capitals: @Vector(vectorLen, u8) = @splat(32);
+
+const locale_t: selva.loc = selva.newlocale(selva.LC_ALL_MASK, "nl_NL", 0);
+const wctrans_t: selva.trans = selva.wctrans_l("tolower", selva.loc);
 
 // TODO: Make this as context!
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
 const minDist = 1;
 
-pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
+inline fn resultMatcher(
+    dx: u8,
+    matches: @Vector(vectorLen, bool),
+    i: usize,
+    value: []u8,
+    query: []u8,
+) u8 {
+    var d: u8 = dx;
+    const ql = query.len;
+    const l = value.len;
+
+    const result = @select(u8, matches, indexes, nulls);
+    const index = @reduce(.Min, result) + i;
+    if (index + ql - 1 > l) {
+        return d;
+    }
+    if (index == 0 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
+        const nd = selva.strsearch_levenshtein_u8(
+            value[index .. index + query.len].ptr,
+            query.len,
+            query.ptr,
+            query.len,
+        );
+        if (nd < minDist) {
+            return nd;
+        } else if (nd < d) {
+            d = nd;
+        }
+    }
+    if (@reduce(.Xor, matches) == false) {
+        var p: usize = index - i;
+        while (p < vectorLen) : (p += 1) {
+            if (matches[p]) {
+                if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
+                    const nd = selva.strsearch_levenshtein_u8(
+                        value[p + i .. p + i + query.len].ptr,
+                        query.len,
+                        query.ptr,
+                        query.len,
+                    );
+                    if (nd < minDist) {
+                        return nd;
+                    } else if (nd < d) {
+                        d = nd;
+                    }
+                }
+            }
+        }
+    }
+    return d;
+}
+
+pub inline fn strSearch(value: []u8, query: []u8) u8 {
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
     const q1 = query[0];
+    const q2 = query[0] - 32;
     var d: u8 = 255;
     if (l < vectorLen) {
         while (i < l - 1) : (i += 1) {
-            if (value[i + 1] == q1 and simd.countElementsWithValue(seperatorChars, value[i]) > 0) {
+            if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(seperatorChars, value[i]) > 0) {
                 if (i + ql - 1 > l) {
                     return d;
                 }
@@ -41,57 +98,33 @@ pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
                 }
             }
         }
+        return d;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
-        const matches = h == queryVector;
+        var matches = h == queryVector;
         if (@reduce(.Or, matches)) {
-            const result = @select(u8, matches, indexes, nulls);
-            const index = @reduce(.Min, result) + i;
-            if (index + ql - 1 > l) {
+            d = resultMatcher(d, matches, i, value, query);
+            if (d < minDist) {
                 return d;
             }
-            if (index == 0 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
-                const nd = selva.strsearch_levenshtein_u8(
-                    value[index .. index + query.len].ptr,
-                    query.len,
-                    query.ptr,
-                    query.len,
-                );
-                if (nd < minDist) {
-                    return nd;
-                } else if (nd < d) {
-                    d = nd;
-                }
-            }
-            if (@reduce(.Xor, matches) == false) {
-                var p: usize = index - i;
-                while (p < vectorLen) : (p += 1) {
-                    if (matches[p]) {
-                        if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
-                            const nd = selva.strsearch_levenshtein_u8(
-                                value[p + i .. p + i + query.len].ptr,
-                                query.len,
-                                query.ptr,
-                                query.len,
-                            );
-                            if (nd < minDist) {
-                                return nd;
-                            } else if (nd < d) {
-                                d = nd;
-                            }
-                        }
-                    }
+        } else {
+            matches = (h + capitals) == queryVector;
+            if (@reduce(.Or, matches)) {
+                d = resultMatcher(d, matches, i, value, query);
+                if (d < minDist) {
+                    return d;
                 }
             }
         }
     }
     while (i < l - 1) : (i += 1) {
-        if (value[i + 1] == q1 and simd.countElementsWithValue(seperatorChars, value[i]) > 0) {
+        if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(seperatorChars, value[i]) > 0) {
             if (i + ql - 1 > l) {
                 return d;
             }
+            //
             const nd = selva.strsearch_levenshtein_u8(
                 value[i + 1 .. i + 1 + query.len].ptr,
                 query.len,
