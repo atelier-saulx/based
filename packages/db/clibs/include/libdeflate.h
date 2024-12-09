@@ -297,6 +297,7 @@ typedef int (*libdeflate_decompress_stream_cb_t)(void * restrict ctx, const uint
 
 /**
  * Decompress deflated string in_buf block by block.
+ * Call libdeflate_block_state_init() before and libdeflate_block_state_deinit() after.
  * @param cb is a callback that will be called for each decompressed block.
  *           Decompression is interrupted if the callback returns a non-zero value.
  * @param result returns the non-zero return value of cb.
