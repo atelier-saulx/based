@@ -6,7 +6,7 @@ export type Search = {
 }
 
 export const search = (def: QueryDef, q: string, s?: Search) => {
-  const query = Buffer.from(q)
+  const query = Buffer.from(q.toLowerCase())
   def.search = {
     size: query.byteLength + 2,
     query,
