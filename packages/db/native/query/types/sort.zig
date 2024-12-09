@@ -119,6 +119,7 @@ pub fn querySort(
     var correctedForOffset: u32 = offset;
 
     const hasSearch = searchBuf.len > 0;
+    // add prebacked needle cache thingy
 
     checkItem: while (!end and ctx.totalResults < movingLimit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
