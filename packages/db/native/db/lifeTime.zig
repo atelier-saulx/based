@@ -66,7 +66,6 @@ fn startInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value
 
     try initSort(ctx);
 
-    // TODO: MAKE A UTIL
     var externalNapi: c.napi_value = undefined;
     _ = c.napi_create_external(napi_env, ctx, null, null, &externalNapi);
     return externalNapi;
