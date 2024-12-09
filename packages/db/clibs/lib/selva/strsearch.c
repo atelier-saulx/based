@@ -94,6 +94,9 @@ uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, 
     for (size_t i = 0; i < m;) {
         wchar_t wc1;
         const size_t nbytes1 = selva_mbstowc(&wc1, s + i, m - i, &ps, trans, loc);
+        if (nbytes1 == 0) {
+            return 255;
+        }
 
         v1[0] = i + 1;
 
