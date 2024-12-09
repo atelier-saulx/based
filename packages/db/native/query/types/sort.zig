@@ -13,6 +13,7 @@ const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
 const search = @import("../filter/search.zig").search;
+const readInt = @import("../../utils.zig").readInt;
 
 pub fn queryIds(
     comptime queryType: comptime_int,
@@ -121,6 +122,21 @@ pub fn querySort(
     const hasSearch = searchBuf.len > 0;
     // add prebacked needle cache thingy
 
+    var searchNeedle: selva.strsearch_needle = undefined;
+
+    if (hasSearch) {
+        const qSize = readInt(u16, searchBuf, 0);
+        const sOffset = qSize + 2;
+        const sQuery = searchBuf[2..sOffset];
+        _ = selva.strsearch_init_u8_ctx(
+            &searchNeedle,
+            sQuery.ptr,
+            sQuery.len,
+            0,
+            true,
+        );
+    }
+
     checkItem: while (!end and ctx.totalResults < movingLimit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -152,11 +168,11 @@ pub fn querySort(
         }
 
         if (hasSearch) {
-            const d = search(ctx.db, node.?, typeEntry, searchBuf);
+            const d = search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle);
             if (d > 1) {
                 continue :checkItem;
             }
-            std.debug.print("DISTANCE: {d} \n", .{d});
+            // std.debug.print("DISTANCE: {d} \n", .{d});
             if (d != 0) {
                 movingLimit += 1;
             }
