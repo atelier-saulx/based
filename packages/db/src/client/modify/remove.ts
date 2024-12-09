@@ -17,10 +17,10 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       flushBuffer(db)
       return remove(db, type, id)
     }
-    setCursor(ctx, schema, 0, id, UPDATE)
+    setCursor(ctx, 0, id, UPDATE)
     appendU8(ctx, 4)
     for (const s of separate) {
-      setCursor(ctx, schema, s.prop, id, UPDATE)
+      setCursor(ctx, s.prop, id, UPDATE)
       appendU8(ctx, 4)
     }
     appendU8(ctx, 10)
@@ -29,7 +29,7 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       flushBuffer(db)
       return remove(db, type, id)
     }
-    setCursor(ctx, schema, 0, id, UPDATE)
+    setCursor(ctx, 0, id, UPDATE)
     appendU8(ctx, 4)
     appendU8(ctx, 10)
   }

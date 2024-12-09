@@ -5,13 +5,7 @@ export class ModifyCtx {
   constructor(db: BasedDb) {
     this.max = db.maxModifySize
     this.db = db
-
-    if (db.modifyCtx) {
-      this.buf = db.modifyCtx.buf
-    } else {
-      this.buf = Buffer.allocUnsafe(db.maxModifySize)
-      db.modifyCtx = this
-    }
+    this.buf = Buffer.allocUnsafe(db.maxModifySize)
   }
 
   // default values
@@ -42,17 +36,24 @@ export const flushBuffer = (db: BasedDb) => {
 
   if (ctx.len) {
     const d = Date.now()
+
     try {
       db.server.modify(ctx.buf.subarray(0, ctx.len))
     } catch (e) {
       console.error(e)
     }
+
     db.writeTime += Date.now() - d
-    db.modifyCtx = new ModifyCtx(db)
+
+    ctx.len = 0
+    ctx.prefix0 = null
+    ctx.prefix1 = null
+
     if (ctx.queue.size) {
       for (const [resolve, payload] of ctx.queue) {
         resolve(payload)
       }
+      ctx.queue.clear()
     }
   }
 

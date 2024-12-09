@@ -19,10 +19,10 @@ const appendUpdate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
-  res: ModifyState,
+  parentId: number,
   overwrite?: boolean,
 ) => {
-  const err = modify(ctx, res, obj, def, UPDATE, def.tree, overwrite)
+  const err = modify(ctx, parentId, obj, def, UPDATE, def.tree, overwrite)
 
   if (ctx.mergeMain) {
     const { mergeMain, mergeMainSize } = ctx
@@ -37,7 +37,7 @@ const appendUpdate = (
       return RANGE_ERR
     }
 
-    setCursor(ctx, def, 0, res.tmpId, UPDATE)
+    setCursor(ctx, 0, parentId, UPDATE)
     appendU8(ctx, 5)
     appendU32(ctx, mergeMainSize)
 
@@ -64,24 +64,29 @@ export const update = (
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const res = new ModifyState(id, db)
   const ctx = db.modifyCtx
   const pos = ctx.len
-  const err = appendUpdate(ctx, def, obj, res, overwrite)
+  const err = appendUpdate(ctx, def, obj, id, overwrite)
 
   if (err) {
     ctx.prefix0 = null // force a new cursor
     ctx.len = pos
+
     if (err === RANGE_ERR) {
       flushBuffer(db)
       return update(db, type, id, obj, overwrite)
-    } else {
-      res.error = err
     }
-  } else if (!db.isDraining) {
+
+    const res = new ModifyState(id, db)
+    res.error = err
+    // @ts-ignore
+    return res
+  }
+
+  if (!db.isDraining) {
     startDrain(db)
   }
 
   // @ts-ignore
-  return res
+  return new ModifyState(id, db)
 }

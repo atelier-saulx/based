@@ -1,6 +1,6 @@
 import { BasedDb } from '../../index.js'
 import { ModifyOp, MERGE_MAIN, ModifyErr, RANGE_ERR } from './types.js'
-import { ModifyError, ModifyState } from './ModifyRes.js'
+import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
 import {
   appendU32,
@@ -14,23 +14,23 @@ import { PropDef, SchemaTypeDef } from '../../server/schema/types.js'
 export function writeMain(
   value: string | null,
   ctx: BasedDb['modifyCtx'],
-  schema: SchemaTypeDef,
+  mainLen: number,
   def: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
   overwrite: boolean,
 ): ModifyErr {
   if (overwrite) {
-    if (outOfRange(ctx, 15 + schema.mainLen)) {
+    if (outOfRange(ctx, 15 + mainLen)) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, res.tmpId, modifyOp, true)
+    setCursor(ctx, def.prop, parentId, modifyOp, true)
     if (ctx.lastMain === -1) {
-      setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
+      setCursor(ctx, def.prop, parentId, modifyOp)
       appendU8(ctx, overwrite ? modifyOp : MERGE_MAIN)
-      appendU32(ctx, schema.mainLen)
+      appendU32(ctx, mainLen)
       ctx.lastMain = ctx.len
-      appendZeros(ctx, schema.mainLen)
+      appendZeros(ctx, mainLen)
     }
     if (writeFixedValue(ctx, value, def, ctx.lastMain + def.start)) {
       return new ModifyError(def, value)

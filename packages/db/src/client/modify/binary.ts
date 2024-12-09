@@ -17,9 +17,8 @@ export function getBuffer(value): Buffer {
 export function writeBinary(
   value: any,
   ctx: BasedDb['modifyCtx'],
-  def: SchemaTypeDef,
   t: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   let size: number
@@ -37,14 +36,14 @@ export function writeBinary(
       if (outOfRange(ctx, 11)) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+      setCursor(ctx, t.prop, parentId, modifyOp)
       appendU8(ctx, DELETE)
     }
   } else {
     if (outOfRange(ctx, 15 + size)) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+    setCursor(ctx, t.prop, parentId, modifyOp)
     appendU8(ctx, modifyOp)
     appendU32(ctx, size)
     appendBuf(ctx, value)

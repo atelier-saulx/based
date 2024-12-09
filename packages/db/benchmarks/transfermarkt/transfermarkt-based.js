@@ -9,7 +9,8 @@ const map = await parseData()
 if (map) {
   const db = new BasedDb({
     path: tmpdir(),
-    maxModifySize: 5000,
+    // maxModifySize: 5000,
+    noCompression: true,
   })
 
   await db.start({ clean: true })

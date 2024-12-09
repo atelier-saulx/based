@@ -21,7 +21,7 @@ export function writeString(
   ctx: BasedDb['modifyCtx'],
   def: SchemaTypeDef,
   t: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   const isBuffer = value instanceof Buffer
@@ -34,7 +34,7 @@ export function writeString(
       if (outOfRange(ctx, 11)) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+      setCursor(ctx, t.prop, parentId, modifyOp)
       appendU8(ctx, DELETE)
     }
   } else {
@@ -47,7 +47,7 @@ export function writeString(
       def.stringPropsCurrent[t.prop] = 2
       ctx.hasStringField++
     }
-    setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+    setCursor(ctx, t.prop, parentId, modifyOp)
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
     if (isBuffer) {

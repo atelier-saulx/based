@@ -17,7 +17,6 @@ import {
 } from '../utils.js'
 import { writeEdges } from './edge.js'
 
-// export
 export type RefModifyOpts = {
   id?: number | ModifyState
   $index?: number
@@ -39,7 +38,7 @@ export function writeReferences(
   ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
-  res: ModifyState,
+  parentId: number,
   mod: ModifyOp,
 ): ModifyErr {
   if (typeof value !== 'object') {
@@ -50,24 +49,24 @@ export function writeReferences(
     if (outOfRange(ctx, 11)) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, res.tmpId, mod)
+    setCursor(ctx, def.prop, parentId, mod)
     appendU8(ctx, DELETE)
     return
   }
 
   if (Array.isArray(value)) {
-    return updateRefs(def, ctx, mod, value, schema, res, 0)
+    return updateRefs(def, ctx, mod, value, parentId, 0)
   }
 
   for (const key in value) {
     const val = value[key]
-    let err
+    let err: ModifyErr
     if (!Array.isArray(val)) {
       err = new ModifyError(def, value)
     } else if (key === 'delete') {
-      err = deleteRefs(def, ctx, mod, val, schema, res)
+      err = deleteRefs(def, ctx, mod, val, parentId)
     } else if (key === 'add') {
-      err = updateRefs(def, ctx, mod, val, schema, res, 1)
+      err = updateRefs(def, ctx, mod, val, parentId, 1)
     } else {
       err = new ModifyError(def, value)
     }
@@ -82,14 +81,13 @@ function deleteRefs(
   ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
-  schema: SchemaTypeDef,
-  res: ModifyState,
+  parentId: number,
 ): ModifyErr {
   const size = 4 * refs.length
   if (outOfRange(ctx, 10 + 1 + size)) {
     return RANGE_ERR
   }
-  setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
+  setCursor(ctx, def.prop, parentId, modifyOp)
   appendU8(ctx, modifyOp)
   appendU32(ctx, size + 1)
   appendU8(ctx, 2)
@@ -113,15 +111,14 @@ function updateRefs(
   ctx: ModifyCtx,
   mod: ModifyOp,
   refs: any[],
-  schema: SchemaTypeDef,
-  res: ModifyState,
+  parentId: number,
   op: 0 | 1,
 ): ModifyErr {
   if (outOfRange(ctx, 19 + refs.length * 4)) {
     return RANGE_ERR
   }
 
-  setCursor(ctx, schema, def.prop, res.tmpId, mod)
+  setCursor(ctx, def.prop, parentId, mod)
 
   const initpos = ctx.len
   const nrOrErr = putRefs(ctx, mod, refs, op)

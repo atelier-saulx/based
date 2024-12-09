@@ -14,11 +14,11 @@ const appendCreate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
-  res: ModifyState,
+  parentId: number,
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
-  const err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
+  const err = modify(ctx, parentId, obj, def, CREATE, def.tree, true, unsafe)
 
   if (err) {
     return err
@@ -28,7 +28,7 @@ const appendCreate = (
     if (outOfRange(ctx, 10)) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, 0, res.tmpId, CREATE)
+    setCursor(ctx, 0, parentId, CREATE)
   }
 
   // if touched lets see perf impact here
@@ -75,21 +75,26 @@ export const create = (
     id = def.lastId + 1
   }
 
-  const res = new ModifyState(id, db)
   const ctx = db.modifyCtx
   const pos = ctx.len
-  const err = appendCreate(ctx, def, obj, res, unsafe)
+  const err = appendCreate(ctx, def, obj, id, unsafe)
 
   if (err) {
     ctx.prefix0 = null // force a new cursor
     ctx.len = pos
+
     if (err === RANGE_ERR) {
       flushBuffer(db)
       return create(db, type, obj, unsafe)
-    } else {
-      res.error = err
     }
-  } else if (!db.isDraining) {
+
+    const res = new ModifyState(id, db)
+    res.error = err
+    // @ts-ignore
+    return res
+  }
+
+  if (!db.isDraining) {
     startDrain(db)
   }
 
@@ -99,5 +104,5 @@ export const create = (
   }
 
   // @ts-ignore
-  return res
+  return new ModifyState(id, db)
 }
