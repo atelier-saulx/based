@@ -122,10 +122,6 @@ static inline void libdeflate_block_state_next(struct libdeflate_block_state *st
     state->data_cur = K_DICT_SIZE;
 }
 
-/**
- *
- * Call libdeflate_block_state_init() before and libdeflate_block_state_deinit() after.
- */
 LIBDEFLATEEXPORT enum libdeflate_result
 libdeflate_decompress_stream(
         struct libdeflate_decompressor *decompressor,

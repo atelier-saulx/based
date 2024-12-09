@@ -130,6 +130,6 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
   this.workers = new Array(i)
 
   while (i--) {
-    this.workers[i] = new DbWorker(address)
+    this.workers[i] = new DbWorker(address, this)
   }
 }

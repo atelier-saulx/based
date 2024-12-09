@@ -15,9 +15,13 @@ if (isMainThread) {
 
   const transferList = new Array(1)
   const handleMsg = (msg) => {
-    const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
-    transferList[0] = arrayBuf
-    channel.postMessage(arrayBuf, transferList)
+    try {
+      const arrayBuf = native.getQueryBuf(msg, dbCtx).buffer
+      transferList[0] = arrayBuf
+      channel.postMessage(arrayBuf, transferList)
+    } catch (e) {
+      channel.postMessage(e)
+    }
   }
 
   channel.on('message', handleMsg)

@@ -27,7 +27,7 @@
  */
 
 #include "jemalloc.h"
-#include "deflate_compress.h"
+#include "lib_common.h"
 #include "deflate_constants.h"
 
 #include "libdeflate.h"
@@ -82,7 +82,7 @@
  * increasing/decreasing this parameter will increase/decrease per-compressor
  * memory usage linearly.
  */
-#define SOFT_MAX_BLOCK_LENGTH   300000
+#define SOFT_MAX_BLOCK_LENGTH 300000
 
 /*
  * For the greedy, lazy, and lazy2 compressors: this is the length of the
@@ -94,7 +94,7 @@
  * being ended normally before then.  Increasing/decreasing this value will
  * increase/decrease per-compressor memory usage linearly.
  */
-#define SEQ_STORE_LENGTH    50000
+#define SEQ_STORE_LENGTH 50000
 
 /*
  * For deflate_compress_fastest(): This is the soft maximum block length.
@@ -103,13 +103,13 @@
  * FAST_SEQ_STORE_LENGTH matches.  Therefore, this value should be lower than
  * the regular SOFT_MAX_BLOCK_LENGTH.
  */
-#define FAST_SOFT_MAX_BLOCK_LENGTH  65535
+#define FAST_SOFT_MAX_BLOCK_LENGTH 65535
 
 /*
  * For deflate_compress_fastest(): this is the length of the sequence store.
  * This is like SEQ_STORE_LENGTH, but this should be a lower value.
  */
-#define FAST_SEQ_STORE_LENGTH   8192
+#define FAST_SEQ_STORE_LENGTH 8192
 
 /*
  * These are the maximum codeword lengths, in bits, the compressor will use for
@@ -194,47 +194,32 @@
     MAX(SOFT_MAX_BLOCK_LENGTH + MIN_BLOCK_LENGTH - 1,   \
         SOFT_MAX_BLOCK_LENGTH + 1 + DEFLATE_MAX_MATCH_LEN)
 
-static forceinline void
-check_buildtime_parameters(void)
-{
-    /*
-     * Verify that MIN_BLOCK_LENGTH is being honored, as
-     * libdeflate_compress_bound() depends on it.
-     */
-    STATIC_ASSERT(SOFT_MAX_BLOCK_LENGTH >= MIN_BLOCK_LENGTH);
-    STATIC_ASSERT(FAST_SOFT_MAX_BLOCK_LENGTH >= MIN_BLOCK_LENGTH);
-    STATIC_ASSERT(SEQ_STORE_LENGTH * DEFLATE_MIN_MATCH_LEN >=
-              MIN_BLOCK_LENGTH);
-    STATIC_ASSERT(FAST_SEQ_STORE_LENGTH * HT_MATCHFINDER_MIN_MATCH_LEN >=
-              MIN_BLOCK_LENGTH);
+/*
+ * Verify that MIN_BLOCK_LENGTH is being honored, as
+ * libdeflate_compress_bound() depends on it.
+ */
+static_assert(SOFT_MAX_BLOCK_LENGTH >= MIN_BLOCK_LENGTH);
+static_assert(FAST_SOFT_MAX_BLOCK_LENGTH >= MIN_BLOCK_LENGTH);
+static_assert(SEQ_STORE_LENGTH * DEFLATE_MIN_MATCH_LEN >= MIN_BLOCK_LENGTH);
+static_assert(FAST_SEQ_STORE_LENGTH * HT_MATCHFINDER_MIN_MATCH_LEN >= MIN_BLOCK_LENGTH);
 #if SUPPORT_NEAR_OPTIMAL_PARSING
-    STATIC_ASSERT(MIN_BLOCK_LENGTH * MAX_MATCHES_PER_POS <=
-              MATCH_CACHE_LENGTH);
+static_assert(MIN_BLOCK_LENGTH * MAX_MATCHES_PER_POS <= MATCH_CACHE_LENGTH);
 #endif
 
-    /* The definition of MAX_BLOCK_LENGTH assumes this. */
-    STATIC_ASSERT(FAST_SOFT_MAX_BLOCK_LENGTH <= SOFT_MAX_BLOCK_LENGTH);
+/* The definition of MAX_BLOCK_LENGTH assumes this. */
+static_assert(FAST_SOFT_MAX_BLOCK_LENGTH <= SOFT_MAX_BLOCK_LENGTH);
 
-    /* Verify that the sequence stores aren't uselessly large. */
-    STATIC_ASSERT(SEQ_STORE_LENGTH * DEFLATE_MIN_MATCH_LEN <=
-              SOFT_MAX_BLOCK_LENGTH + MIN_BLOCK_LENGTH);
-    STATIC_ASSERT(FAST_SEQ_STORE_LENGTH * HT_MATCHFINDER_MIN_MATCH_LEN <=
-              FAST_SOFT_MAX_BLOCK_LENGTH + MIN_BLOCK_LENGTH);
+/* Verify that the sequence stores aren't uselessly large. */
+static_assert(SEQ_STORE_LENGTH * DEFLATE_MIN_MATCH_LEN <= SOFT_MAX_BLOCK_LENGTH + MIN_BLOCK_LENGTH);
+static_assert(FAST_SEQ_STORE_LENGTH * HT_MATCHFINDER_MIN_MATCH_LEN <= FAST_SOFT_MAX_BLOCK_LENGTH + MIN_BLOCK_LENGTH);
 
-    /* Verify that the maximum codeword lengths are valid. */
-    STATIC_ASSERT(
-        MAX_LITLEN_CODEWORD_LEN <= DEFLATE_MAX_LITLEN_CODEWORD_LEN);
-    STATIC_ASSERT(
-        MAX_OFFSET_CODEWORD_LEN <= DEFLATE_MAX_OFFSET_CODEWORD_LEN);
-    STATIC_ASSERT(
-        MAX_PRE_CODEWORD_LEN <= DEFLATE_MAX_PRE_CODEWORD_LEN);
-    STATIC_ASSERT(
-        (1U << MAX_LITLEN_CODEWORD_LEN) >= DEFLATE_NUM_LITLEN_SYMS);
-    STATIC_ASSERT(
-        (1U << MAX_OFFSET_CODEWORD_LEN) >= DEFLATE_NUM_OFFSET_SYMS);
-    STATIC_ASSERT(
-        (1U << MAX_PRE_CODEWORD_LEN) >= DEFLATE_NUM_PRECODE_SYMS);
-}
+/* Verify that the maximum codeword lengths are valid. */
+static_assert(MAX_LITLEN_CODEWORD_LEN <= DEFLATE_MAX_LITLEN_CODEWORD_LEN);
+static_assert(MAX_OFFSET_CODEWORD_LEN <= DEFLATE_MAX_OFFSET_CODEWORD_LEN);
+static_assert(MAX_PRE_CODEWORD_LEN <= DEFLATE_MAX_PRE_CODEWORD_LEN);
+static_assert((1U << MAX_LITLEN_CODEWORD_LEN) >= DEFLATE_NUM_LITLEN_SYMS);
+static_assert((1U << MAX_OFFSET_CODEWORD_LEN) >= DEFLATE_NUM_OFFSET_SYMS);
+static_assert((1U << MAX_PRE_CODEWORD_LEN) >= DEFLATE_NUM_PRECODE_SYMS);
 
 /******************************************************************************/
 
@@ -1152,7 +1137,7 @@ static const u8 bitreverse_tab[256] = {
 
 static forceinline u32 reverse_codeword(u32 codeword, u8 len)
 {
-    STATIC_ASSERT(DEFLATE_MAX_CODEWORD_LEN <= 16);
+    static_assert(DEFLATE_MAX_CODEWORD_LEN <= 16);
     codeword = ((u32)bitreverse_tab[codeword & 0xff] << 8) |
            bitreverse_tab[codeword >> 8];
     return codeword >> (16 - len);
@@ -1330,8 +1315,8 @@ deflate_make_huffman_code(unsigned num_syms, unsigned max_codeword_len,
     u32 *A = codewords;
     unsigned num_used_syms;
 
-    STATIC_ASSERT(DEFLATE_MAX_NUM_SYMS <= 1 << NUM_SYMBOL_BITS);
-    STATIC_ASSERT(MAX_BLOCK_LENGTH <= ((u32)1 << NUM_FREQ_BITS) - 1);
+    static_assert(DEFLATE_MAX_NUM_SYMS <= 1 << NUM_SYMBOL_BITS);
+    static_assert(MAX_BLOCK_LENGTH <= ((u32)1 << NUM_FREQ_BITS) - 1);
 
     /*
      * We begin by sorting the symbols primarily by frequency and
@@ -1597,7 +1582,7 @@ deflate_precompute_huffman_header(struct libdeflate_compressor *c)
      * then temporarily move the offset codeword lengths over so that the
      * literal/length and offset codeword lengths are contiguous.
      */
-    STATIC_ASSERT(offsetof(struct deflate_lens, offset) ==
+    static_assert(offsetof(struct deflate_lens, offset) ==
               DEFLATE_NUM_LITLEN_SYMS);
     if (c->o.precode.num_litlen_syms != DEFLATE_NUM_LITLEN_SYMS) {
         memmove((u8 *)&c->codes.lens + c->o.precode.num_litlen_syms,
@@ -1649,7 +1634,7 @@ deflate_compute_full_len_codewords(struct libdeflate_compressor *c,
 {
     unsigned len;
 
-    STATIC_ASSERT(MAX_LITLEN_CODEWORD_LEN +
+    static_assert(MAX_LITLEN_CODEWORD_LEN +
               DEFLATE_MAX_EXTRA_LENGTH_BITS <= 32);
 
     for (len = DEFLATE_MIN_MATCH_LEN; len <= DEFLATE_MAX_MATCH_LEN; len++) {
@@ -1675,7 +1660,7 @@ do {                                    \
     unsigned offset_slot__ = (offset_slot_);            \
                                     \
     /* Litlen symbol and extra length bits */           \
-    STATIC_ASSERT(CAN_BUFFER(MAX_LITLEN_CODEWORD_LEN +      \
+    static_assert(CAN_BUFFER(MAX_LITLEN_CODEWORD_LEN +      \
                  DEFLATE_MAX_EXTRA_LENGTH_BITS));   \
     ADD_BITS(c__->o.length.codewords[length__],         \
          c__->o.length.lens[length__]);             \
@@ -1846,7 +1831,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
              * Output BFINAL (1 bit) and BTYPE (2 bits), then align
              * to a byte boundary.
              */
-            STATIC_ASSERT(DEFLATE_BLOCKTYPE_UNCOMPRESSED == 0);
+            static_assert(DEFLATE_BLOCKTYPE_UNCOMPRESSED == 0);
             *out_next++ = (bfinal << bitcount) | bitbuf;
             if (bitcount > 5)
                 *out_next++ = 0;
@@ -1880,7 +1865,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
         /* Dynamic Huffman block */
 
         codes = &c->codes;
-        STATIC_ASSERT(CAN_BUFFER(1 + 2 + 5 + 5 + 4 + 3));
+        static_assert(CAN_BUFFER(1 + 2 + 5 + 5 + 4 + 3));
         ADD_BITS(is_final_block, 1);
         ADD_BITS(DEFLATE_BLOCKTYPE_DYNAMIC_HUFFMAN, 2);
         ADD_BITS(c->o.precode.num_litlen_syms - 257, 5);
@@ -1921,7 +1906,7 @@ deflate_flush_block(struct libdeflate_compressor *c,
         do {
             precode_item = c->o.precode.items[i];
             precode_sym = precode_item & 0x1F;
-            STATIC_ASSERT(CAN_BUFFER(MAX_PRE_CODEWORD_LEN + 7));
+            static_assert(CAN_BUFFER(MAX_PRE_CODEWORD_LEN + 7));
             ADD_BITS(c->o.precode.codewords[precode_sym],
                  c->o.precode.lens[precode_sym]);
             ADD_BITS(precode_item >> 5,
@@ -2227,7 +2212,7 @@ deflate_choose_literal(struct libdeflate_compressor *c, unsigned literal,
     if (gather_split_stats)
         observe_literal(&c->split_stats, literal);
 
-    STATIC_ASSERT(MAX_BLOCK_LENGTH <= SEQ_LITRUNLEN_MASK);
+    static_assert(MAX_BLOCK_LENGTH <= SEQ_LITRUNLEN_MASK);
     seq->litrunlen_and_length++;
 }
 
@@ -2297,8 +2282,8 @@ choose_min_match_len(unsigned num_used_literals, unsigned max_search_depth)
     };
     unsigned min_len;
 
-    STATIC_ASSERT(DEFLATE_MIN_MATCH_LEN <= 3);
-    STATIC_ASSERT(ARRAY_LEN(min_lens) <= DEFLATE_NUM_LITERALS + 1);
+    static_assert(DEFLATE_MIN_MATCH_LEN <= 3);
+    static_assert(ARRAY_LEN(min_lens) <= DEFLATE_NUM_LITERALS + 1);
 
     if (num_used_literals >= ARRAY_LEN(min_lens))
         return 3;
@@ -2473,8 +2458,7 @@ deflate_compress_fastest(struct libdeflate_compressor * restrict c,
                 max_len = remaining;
                 if (max_len < HT_MATCHFINDER_REQUIRED_NBYTES) {
                     do {
-                        deflate_choose_literal(c,
-                            *in_next++, false, seq);
+                        deflate_choose_literal(c, *in_next++, false, seq);
                     } while (--max_len);
                     break;
                 }
@@ -2489,8 +2473,7 @@ deflate_compress_fastest(struct libdeflate_compressor * restrict c,
                                   &offset);
             if (length) {
                 /* Match found */
-                deflate_choose_match(c, length, offset, false,
-                             &seq);
+                deflate_choose_match(c, length, offset, false, &seq);
                 ht_matchfinder_skip_bytes(&c->p.f.ht_mf,
                               &in_cur_base,
                               in_next + 1,
@@ -2500,13 +2483,12 @@ deflate_compress_fastest(struct libdeflate_compressor * restrict c,
                 in_next += length;
             } else {
                 /* No match found */
-                deflate_choose_literal(c, *in_next++, false,
-                               seq);
+                deflate_choose_literal(c, *in_next++, false, seq);
             }
 
             /* Check if it's time to output another block. */
         } while (in_next < in_max_block_end &&
-             seq < &c->p.f.sequences[FAST_SEQ_STORE_LENGTH]);
+                 seq < &c->p.f.sequences[FAST_SEQ_STORE_LENGTH]);
 
         deflate_finish_block(c, os, in_block_begin,
                      in_next - in_block_begin,
@@ -2577,8 +2559,7 @@ deflate_compress_greedy(struct libdeflate_compressor * restrict c,
                 in_next += length;
             } else {
                 /* No match found */
-                deflate_choose_literal(c, *in_next++, true,
-                               seq);
+                deflate_choose_literal(c, *in_next++, true, seq);
             }
 
             /* Check if it's time to output another block. */
@@ -2659,8 +2640,7 @@ deflate_compress_lazy_generic(struct libdeflate_compressor * restrict c,
                 (cur_len == DEFLATE_MIN_MATCH_LEN &&
                  cur_offset > 8192)) {
                 /* No match found.  Choose a literal. */
-                deflate_choose_literal(c, *in_next++, true,
-                               seq);
+                deflate_choose_literal(c, *in_next++, true, seq);
                 continue;
             }
             in_next++;
@@ -2720,8 +2700,7 @@ have_cur_match:
                  * Output a literal.  Then the next match
                  * becomes the current match.
                  */
-                deflate_choose_literal(c, *(in_next - 2), true,
-                               seq);
+                deflate_choose_literal(c, *(in_next - 2), true, seq);
                 cur_len = next_len;
                 cur_offset = next_offset;
                 goto have_cur_match;
@@ -2749,10 +2728,8 @@ have_cur_match:
                      * There's a much better match two
                      * positions ahead, so use two literals.
                      */
-                    deflate_choose_literal(
-                        c, *(in_next - 3), true, seq);
-                    deflate_choose_literal(
-                        c, *(in_next - 2), true, seq);
+                    deflate_choose_literal(c, *(in_next - 3), true, seq);
+                    deflate_choose_literal(c, *(in_next - 2), true, seq);
                     cur_len = next_len;
                     cur_offset = next_offset;
                     goto have_cur_match;
@@ -3215,7 +3192,7 @@ deflate_choose_default_litlen_costs(struct libdeflate_compressor *c,
     else
         i = 0; /* few matches */
 
-    STATIC_ASSERT(BIT_COST == 16);
+    static_assert(BIT_COST == 16);
     *lit_cost = default_litlen_costs[i].used_lits_to_lit_cost[
                             num_used_literals];
     *len_sym_cost = default_litlen_costs[i].len_sym_cost;
@@ -3936,8 +3913,6 @@ libdeflate_alloc_compressor2(int compression_level, const void *shared_dict)
     struct libdeflate_compressor *c;
     size_t size = offsetof(struct libdeflate_compressor, p);
 
-    check_buildtime_parameters();
-
     if (compression_level < 0 || compression_level > 12)
         return NULL;
 
@@ -4120,12 +4095,6 @@ libdeflate_free_compressor(struct libdeflate_compressor *c)
     selva_free(c);
 }
 
-unsigned int
-libdeflate_get_compression_level(struct libdeflate_compressor *c)
-{
-    return c->compression_level;
-}
-
 LIBDEFLATEEXPORT size_t
 libdeflate_compress_bound(size_t in_nbytes)
 {
@@ -4161,7 +4130,7 @@ libdeflate_compress_bound(size_t in_nbytes)
      * DIV_ROUND_UP(in_nbytes, MIN_BLOCK_LENGTH).  However, empty inputs
      * need 1 (empty) block, which gives the final expression below.
      */
-    STATIC_ASSERT(2 * MIN_BLOCK_LENGTH <= UINT16_MAX);
+    static_assert(2 * MIN_BLOCK_LENGTH <= UINT16_MAX);
     max_blocks = MAX(DIV_ROUND_UP(in_nbytes, MIN_BLOCK_LENGTH), 1);
 
     /*

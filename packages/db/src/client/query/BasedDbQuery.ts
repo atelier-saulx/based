@@ -137,9 +137,11 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
     const b = defToBuffer(this.db, this.def)
     const d = performance.now()
-    const result = Buffer.from(
-      await this.db.server.getQueryBuf(Buffer.concat(b)),
-    )
+    const res = await this.db.server.getQueryBuf(Buffer.concat(b))
+    if (res instanceof Error) {
+      throw res
+    }
+    const result = Buffer.from(res)
     return new BasedQueryResponse(this.def, result, performance.now() - d)
   }
 
