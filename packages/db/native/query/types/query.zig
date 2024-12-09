@@ -83,6 +83,9 @@ pub fn queryIds(
     }
 }
 
+var locale: ?selva.locale_t = null;
+var transform: ?selva.wctrans_t = null;
+
 pub fn query(
     ctx: *QueryCtx,
     offset: u32,
@@ -93,7 +96,7 @@ pub fn query(
     searchBuf: []u8,
 ) !void {
     var correctedForOffset: u32 = offset;
-
+    var movingLimit: u32 = limit;
     const typeEntry = try db.getType(ctx.db, typeId);
 
     var first = true;
@@ -101,22 +104,29 @@ pub fn query(
 
     const hasSearch = searchBuf.len > 0;
 
-    var searchNeedle: selva.strsearch_needle = undefined;
+    var sLen: u16 = undefined;
+    var sNeedle: selva.strsearch_wneedle = undefined;
 
     if (hasSearch) {
-        const qSize = readInt(u16, searchBuf, 0);
-        const sOffset = qSize + 2;
-        const sQuery = searchBuf[2..sOffset];
-        _ = selva.strsearch_init_u8_ctx(
-            &searchNeedle,
-            sQuery.ptr,
-            sQuery.len,
-            0,
-            true,
+        if (locale == null) {
+            locale = selva.selva_lang_getlocale2(selva.selva_lang_nl);
+            transform = selva.selva_lang_wctrans(
+                selva.selva_lang_nl,
+                selva.SELVA_LANGS_TRANS_TOLOWER,
+            );
+        }
+        sLen = readInt(u16, searchBuf, 0);
+        const q = searchBuf[2 .. 2 + sLen];
+        _ = selva.strsearch_make_wneedle(
+            &sNeedle,
+            locale.?,
+            transform.?,
+            q.ptr,
+            q.len,
         );
     }
 
-    checkItem: while (ctx.totalResults < limit) {
+    checkItem: while (ctx.totalResults < movingLimit) {
         if (first) {
             first = false;
         } else {
@@ -132,8 +142,16 @@ pub fn query(
         }
 
         if (hasSearch) {
-            if (search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle) > 2) {
+            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen, &sNeedle);
+            if (d > 1) {
                 continue :checkItem;
+            }
+            if (d != 0) {
+                // if (movingLimit < limit * 4) {
+                movingLimit += 1;
+                // }
+            } else {
+                // std.debug.print("DISTANCE: {d} \n", .{d});
             }
         }
 
