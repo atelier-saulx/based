@@ -34,8 +34,6 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
     appendU8(ctx, 10)
   }
 
-  ctx.types.add(schema.id)
-
   if (!db.isDraining) {
     startDrain(db)
   }

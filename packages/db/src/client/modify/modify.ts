@@ -73,9 +73,5 @@ export function modify(
   unsafe: boolean = false,
 ): ModifyErr {
   ctx.db.markNodeDirty(schema, res.tmpId)
-  const err = _modify(ctx, res, obj, schema, mod, tree, overwrite, unsafe)
-  if (!err) {
-    ctx.types.add(schema.id)
-  }
-  return err
+  return _modify(ctx, res, obj, schema, mod, tree, overwrite, unsafe)
 }
