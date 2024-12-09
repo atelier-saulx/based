@@ -34,7 +34,9 @@ pub fn search(
     // comptime isEdge: bool,
 ) u32 {
     const sl = searchBuf.len;
-    var j: usize = searchCtx.len;
+    var j: usize = searchCtx.len + 2;
+
+    // std.debug.print("----------S: {d} {d} \n", .{ j, sl });
 
     while (j < sl) {
         const field = searchBuf[j];
@@ -55,6 +57,8 @@ pub fn search(
 
         var d: c_int = undefined;
         if (isCompressed) {
+            // std.debug.print("D: {any} \n", .{d});
+
             // if (decompress(blockCompare, query, value, dbCtx)) {
             //     return 1;
             // }
@@ -64,10 +68,12 @@ pub fn search(
                 value.len,
                 searchCtx,
             );
+
+            // std.debug.print("????????D: {any} \n", .{d});
         }
 
         if (d < 3) {
-            std.debug.print("D: {any} \n", .{d});
+            // std.debug.print("D: {any} \n", .{d});
 
             const x: u32 = @bitCast(d);
             return x;

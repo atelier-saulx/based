@@ -107,13 +107,15 @@ pub fn query(
         const qSize = readInt(u16, searchBuf, 0);
         const sOffset = qSize + 2;
         const sQuery = searchBuf[2..sOffset];
-        _ = selva.strsearch_init_u8_ctx(
+        const err = selva.strsearch_init_u8_ctx(
             &searchNeedle,
             sQuery.ptr,
             sQuery.len,
             0,
             true,
         );
+
+        std.debug.print("NEEDLE CTX {any} \n", .{err});
     }
 
     checkItem: while (ctx.totalResults < limit) {
@@ -135,6 +137,7 @@ pub fn query(
             if (search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle) > 2) {
                 continue :checkItem;
             }
+            // std.debug.print("derpB \n", .{});
         }
 
         if (correctedForOffset != 0) {
