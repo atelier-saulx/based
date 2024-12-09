@@ -3,7 +3,6 @@ import { PropDef } from '../../server/schema/types.js'
 import { UPDATE, ModifyOp, ModifyErr, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendBuf } from './utils.js'
 
 export function getBuffer(value): Buffer {
   if (value instanceof Buffer) {
@@ -50,6 +49,7 @@ export function writeBinary(
     ctx.buf[ctx.len++] = size >>>= 8
     ctx.buf[ctx.len++] = size >>>= 8
     ctx.buf[ctx.len++] = size >>>= 8
-    appendBuf(ctx, value)
+    ctx.buf.set(value, ctx.len)
+    ctx.len += value.byteLength
   }
 }

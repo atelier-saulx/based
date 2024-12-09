@@ -7,7 +7,6 @@ import {
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
-import { reserveU32 } from '../utils.js'
 import { writeEdges } from './edge.js'
 
 export type RefModifyOpts = {
@@ -157,8 +156,9 @@ function appendRefs(
   }
   const hasEdges = !!def.edges
   ctx.buf[ctx.len++] = modifyOp
-  let totalpos = reserveU32(ctx)
   let i = refs.length - remaining
+  let totalpos = ctx.len
+  ctx.len += 4
   ctx.buf[ctx.len++] = i === 0 ? op : 1 // if it just did a PUT, it should ADD not overwrite the remaining
   ctx.buf[ctx.len++] = remaining
   ctx.buf[ctx.len++] = remaining >>>= 8
@@ -218,7 +218,8 @@ function appendRefs(
         ctx.buf[ctx.len++] = index >>>= 8
         ctx.buf[ctx.len++] = index >>>= 8
       }
-      let sizepos = reserveU32(ctx)
+      let sizepos = ctx.len
+      ctx.len += 4
       const err = writeEdges(def, ref, ctx)
       if (err) {
         return err

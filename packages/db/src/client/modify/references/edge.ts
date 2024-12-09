@@ -11,7 +11,7 @@ import { write } from '../../string.js'
 import { getBuffer } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from '../types.js'
-import { appendBuf, appendFixedValue } from '../utils.js'
+import { appendFixedValue } from '../utils.js'
 import { RefModifyOpts } from './references.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
@@ -100,7 +100,8 @@ export function writeEdges(
             ctx.buf[ctx.len++] = size >>>= 8
             ctx.buf[ctx.len++] = size >>>= 8
             ctx.buf[ctx.len++] = size >>>= 8
-            appendBuf(ctx, value)
+            ctx.buf.set(value, ctx.len)
+            ctx.len += value.byteLength
           } else {
             ctx.buf[ctx.len++] = 0
             ctx.buf[ctx.len++] = 0

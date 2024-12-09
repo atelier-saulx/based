@@ -3,7 +3,6 @@ import { PropDef } from '../../../server/schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
-import { reserveU32 } from '../utils.js'
 import { getEdgeSize, writeEdges } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
@@ -57,7 +56,8 @@ function singleReferenceEdges(
     if (ctx.len + 4 + edgesLen > ctx.max) {
       return RANGE_ERR
     }
-    let sizepos = reserveU32(ctx)
+    let sizepos = ctx.len
+    ctx.len += 4
     err = writeEdges(def, ref, ctx)
     if (err) {
       return err

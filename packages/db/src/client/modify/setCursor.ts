@@ -1,4 +1,4 @@
-import { BasedDb, ModifyCtx } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { SchemaTypeDef } from '../../server/schema/types.js'
 import { CREATE, ModifyOp } from './types.js'
 
