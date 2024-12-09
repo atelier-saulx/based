@@ -41,9 +41,8 @@ export class DbWorker {
     })
 
     port1.on('message', (buf) => {
-      this.db.processing--
       this.resolvers.shift()(buf)
-      this.db.drainQueues()
+      this.db.onQueryEnd()
     })
   }
 
@@ -57,7 +56,6 @@ export class DbWorker {
   }
 
   getQueryBuf(buf): Promise<Buffer> {
-    this.db.processing++
     transferList[0] = buf.buffer
     this.channel.postMessage(buf, transferList)
     return new Promise(this.callback)
@@ -77,7 +75,7 @@ export class DbServer {
   csmtHashFun = native.createHash()
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
-  processing = 0
+  processingQueries = 0
   modifyQueue: Buffer[] = []
   queryQueue: Map<Function, Buffer> = new Map()
 
@@ -188,7 +186,7 @@ export class DbServer {
   }
 
   modify(buf: Buffer) {
-    if (this.processing) {
+    if (this.processingQueries) {
       this.modifyQueue.push(Buffer.from(buf))
     } else {
       native.modify(buf, this.dbCtxExternal)
@@ -201,14 +199,16 @@ export class DbServer {
         this.queryQueue.set(resolve, buf)
       })
     } else {
+      this.processingQueries++
       this.availableWorkerIndex =
         (this.availableWorkerIndex + 1) % this.workers.length
       return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
     }
   }
 
-  drainQueues() {
-    if (this.processing === 0) {
+  onQueryEnd() {
+    this.processingQueries--
+    if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         for (const buf of this.modifyQueue) {
           native.modify(buf, this.dbCtxExternal)
