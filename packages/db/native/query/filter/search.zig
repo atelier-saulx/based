@@ -49,7 +49,7 @@ pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
             const result = @select(u8, matches, indexes, nulls);
             const index = @reduce(.Min, result) + i;
             if (index + ql - 1 > l) {
-                return false;
+                return d;
             }
             if (index == 0 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
                 const nd = selva.strsearch_levenshtein_u8(
@@ -112,12 +112,12 @@ pub fn search(
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     searchBuf: []u8,
-    searchCtx: *selva.strsearch_needle,
+    searchLen: u16,
     // ref: ?types.RefStruct,
     // comptime isEdge: bool,
 ) u32 {
     const sl = searchBuf.len;
-    var j: usize = searchCtx.len + 2;
+    var j: usize = searchLen + 2;
     var bestScore: u8 = 255;
     while (j < sl) {
         const field = searchBuf[j];
@@ -134,7 +134,7 @@ pub fn search(
         if (isCompressed) {
             // ---- do later
         } else {
-            const score = strSearch(value, searchBuf[2 .. searchCtx.len + 2]);
+            const score = strSearch(value, searchBuf[2 .. searchLen + 2]);
             if (score < 2) {
                 return score;
             } else if (score < bestScore) {

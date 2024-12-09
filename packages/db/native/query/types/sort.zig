@@ -122,19 +122,9 @@ pub fn querySort(
     const hasSearch = searchBuf.len > 0;
     // add prebacked needle cache thingy
 
-    var searchNeedle: selva.strsearch_needle = undefined;
-
+    var sLen: u16 = undefined;
     if (hasSearch) {
-        const qSize = readInt(u16, searchBuf, 0);
-        const sOffset = qSize + 2;
-        const sQuery = searchBuf[2..sOffset];
-        _ = selva.strsearch_init_u8_ctx(
-            &searchNeedle,
-            sQuery.ptr,
-            sQuery.len,
-            0,
-            true,
-        );
+        sLen = readInt(u16, searchBuf, 0);
     }
 
     checkItem: while (!end and ctx.totalResults < movingLimit) {
@@ -168,7 +158,7 @@ pub fn querySort(
         }
 
         if (hasSearch) {
-            const d = search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle);
+            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen);
             if (d > 1) {
                 continue :checkItem;
             }

@@ -101,19 +101,9 @@ pub fn query(
 
     const hasSearch = searchBuf.len > 0;
 
-    var searchNeedle: selva.strsearch_needle = undefined;
-
+    var sLen: u16 = undefined;
     if (hasSearch) {
-        const qSize = readInt(u16, searchBuf, 0);
-        const sOffset = qSize + 2;
-        const sQuery = searchBuf[2..sOffset];
-        _ = selva.strsearch_init_u8_ctx(
-            &searchNeedle,
-            sQuery.ptr,
-            sQuery.len,
-            0,
-            true,
-        );
+        sLen = readInt(u16, searchBuf, 0);
     }
 
     checkItem: while (ctx.totalResults < limit) {
@@ -132,7 +122,7 @@ pub fn query(
         }
 
         if (hasSearch) {
-            if (search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle) > 2) {
+            if (search(ctx.db, node.?, typeEntry, searchBuf, sLen) > 2) {
                 continue :checkItem;
             }
         }
