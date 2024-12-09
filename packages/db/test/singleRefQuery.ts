@@ -113,7 +113,10 @@ await test('single reference query', async (t) => {
 
   db.drain()
 
-  const result2 = db.query('simple').filter('user.myBlup.age', '=', 10).get()
+  const result2 = await db
+    .query('simple')
+    .filter('user.myBlup.age', '=', 10)
+    .get()
 
   deepEqual(result2.toObject(), [
     {
@@ -125,7 +128,7 @@ await test('single reference query', async (t) => {
     },
   ])
 
-  const result = db
+  const result = await db
     .query('simple')
     .filter('lilBlup.age', '=', 20)
     .filter('flap.power', '=', 10)

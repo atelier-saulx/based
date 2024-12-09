@@ -60,11 +60,16 @@ await test('range', async (t) => {
 
   db.drain()
 
-  const result = db.query('user').include('nr').range(1, 1).get()
+  const result = await db.query('user').include('nr').range(1, 1).get()
 
   deepEqual(result.toObject(), [{ id: 2, nr: 2 }])
 
-  const result2 = db.query('user').include('nr').sort('email').range(1, 1).get()
+  const result2 = await db
+    .query('user')
+    .include('nr')
+    .sort('email')
+    .range(1, 1)
+    .get()
 
   deepEqual(result2.toObject(), [{ id: 2, nr: 2 }])
 })

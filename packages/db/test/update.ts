@@ -68,7 +68,7 @@ await test('update', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('snurp').get().toObject(), [
+  deepEqual((await db.query('snurp').get()).toObject(), [
     {
       a: 1,
       b: 2,
@@ -113,7 +113,7 @@ await test('update', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('snurp').get().toObject(), [
+  deepEqual((await db.query('snurp').get()).toObject(), [
     {
       a: 1,
       b: 2,
@@ -142,7 +142,7 @@ await test('update', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('snurp', 2).get().toObject(), {
+  deepEqual((await db.query('snurp', 2).get()).toObject(), {
     a: 0,
     b: 0,
     c: 0,
@@ -156,7 +156,7 @@ await test('update', async (t) => {
   })
 
   // for individual queries combine them
-  deepEqual(db.query('snurp', [2, 1]).get().toObject(), [
+  deepEqual((await db.query('snurp', [2, 1]).get()).toObject(), [
     {
       a: 1,
       b: 2,
@@ -198,14 +198,16 @@ await test('update', async (t) => {
 
   db.drain()
 
-  equal(db.query('snurp', ids).get().length, 1e6)
+  equal((await db.query('snurp', ids).get()).length, 1e6)
 
-  equal(db.query('snurp', ids).range(0, 100).get().length, 100)
+  equal((await db.query('snurp', ids).range(0, 100).get()).length, 100)
 
-  equal(db.query('snurp', ids).range(10, 100).get().length, 100)
+  equal((await db.query('snurp', ids).range(10, 100).get()).length, 100)
 
   deepEqual(
-    db.query('snurp', ids).range(1e5, 2).sort('a', 'desc').get().toObject(),
+    (
+      await db.query('snurp', ids).range(1e5, 2).sort('a', 'desc').get()
+    ).toObject(),
     [
       {
         id: 900000,
@@ -230,19 +232,18 @@ await test('update', async (t) => {
     ],
   )
 
-  let total = 0
-  let len = 0
+  const promises = []
   for (var j = 0; j < 1; j++) {
-    let x = 0
     for (var i = 0; i < 1e5; i++) {
-      x += db.query('snurp', i).include('a').get().execTime
+      promises.push(db.query('snurp', i).include('a').get())
     }
-    total += x
-    len++
   }
 
+  const res = await Promise.all(promises)
+  const total = res.reduce((n, { execTime }) => n + execTime, 0)
+
   equal(
-    total / len < 1e3,
+    total / res.length < 1e3,
     true,
     'Is at least faster then 1 second for 100k separate updates and query',
   )

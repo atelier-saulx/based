@@ -1,5 +1,5 @@
 import { stringHash } from '@saulx/hash'
-import { DbServer } from './index.js'
+import { DbServer, DbWorker } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -125,23 +125,11 @@ export async function start(this: DbServer, { clean }: { clean?: boolean }) {
 
   // start workers
   let i = availableParallelism()
-  const workerPath = join(__dirname, 'worker.js')
   const address = native.intFromExternal(this.dbCtxExternal)
 
   this.workers = new Array(i)
 
   while (i--) {
-    const { port1, port2 } = new MessageChannel()
-    const worker = new Worker(workerPath, {
-      workerData: {
-        channel: port2,
-        address,
-      },
-      transferList: [port2],
-    })
-    this.workers[i] = {
-      worker,
-      channel: port1,
-    }
+    this.workers[i] = new DbWorker(address)
   }
 }

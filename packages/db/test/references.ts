@@ -65,30 +65,36 @@ await test('references', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('article').include('contributors.name').get().toObject(), [
-    {
-      id: strudelArticle.tmpId,
-      contributors: [{ id: mrSnurp.tmpId, name: 'Mr snurp' }],
-    },
-    {
-      id: piArticle.tmpId,
-      contributors: [
-        { id: mrSnurp.tmpId, name: 'Mr snurp' },
-        { id: flippie.tmpId, name: 'Flippie' },
-      ],
-    },
-  ])
+  deepEqual(
+    (await db.query('article').include('contributors.name').get()).toObject(),
+    [
+      {
+        id: strudelArticle.tmpId,
+        contributors: [{ id: mrSnurp.tmpId, name: 'Mr snurp' }],
+      },
+      {
+        id: piArticle.tmpId,
+        contributors: [
+          { id: mrSnurp.tmpId, name: 'Mr snurp' },
+          { id: flippie.tmpId, name: 'Flippie' },
+        ],
+      },
+    ],
+  )
 
-  deepEqual(db.query('user').include('articles.name').get().toObject(), [
-    {
-      id: 1,
-      articles: [
-        { id: 1, name: 'The wonders of Strudel' },
-        { id: 2, name: 'Apple Pie is a Lie' },
-      ],
-    },
-    { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
-  ])
+  deepEqual(
+    (await db.query('user').include('articles.name').get()).toObject(),
+    [
+      {
+        id: 1,
+        articles: [
+          { id: 1, name: 'The wonders of Strudel' },
+          { id: 2, name: 'Apple Pie is a Lie' },
+        ],
+      },
+      { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
+    ],
+  )
 })
 
 await test('one to many', async (t) => {
@@ -144,7 +150,7 @@ await test('one to many', async (t) => {
   }
   db.drain()
 
-  deepEqual(db.query('user').include('resources').get().toObject(), [
+  deepEqual((await db.query('user').include('resources').get()).toObject(), [
     {
       id: 1,
       resources: [
@@ -172,29 +178,32 @@ await test('one to many', async (t) => {
     },
   ])
 
-  deepEqual(db.query('user').include('resources.name').get().toObject(), [
-    {
-      id: 1,
-      resources: [
-        {
-          id: 1,
-          name: 'thing 0',
-        },
-        {
-          id: 2,
-          name: 'thing 1',
-        },
-        {
-          id: 3,
-          name: 'thing 2',
-        },
-        {
-          id: 4,
-          name: 'thing 3',
-        },
-      ],
-    },
-  ])
+  deepEqual(
+    (await db.query('user').include('resources.name').get()).toObject(),
+    [
+      {
+        id: 1,
+        resources: [
+          {
+            id: 1,
+            name: 'thing 0',
+          },
+          {
+            id: 2,
+            name: 'thing 1',
+          },
+          {
+            id: 3,
+            name: 'thing 2',
+          },
+          {
+            id: 4,
+            name: 'thing 3',
+          },
+        ],
+      },
+    ],
+  )
 })
 
 await test('update', async (t) => {
@@ -261,17 +270,20 @@ await test('update', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('article').include('contributors.name').get().toObject(), [
-    {
-      id: 1,
-      contributors: [
-        {
-          name: 'Flippie',
-          id: +flippie,
-        },
-      ],
-    },
-  ])
+  deepEqual(
+    (await db.query('article').include('contributors.name').get()).toObject(),
+    [
+      {
+        id: 1,
+        contributors: [
+          {
+            name: 'Flippie',
+            id: +flippie,
+          },
+        ],
+      },
+    ],
+  )
 })
 
 await test('filter', async (t) => {
@@ -343,11 +355,9 @@ await test('filter', async (t) => {
   db.drain()
 
   deepEqual(
-    db
-      .query('article', strudelArticle)
-      .include('contributors')
-      .get()
-      .toObject(),
+    (
+      await db.query('article', strudelArticle).include('contributors').get()
+    ).toObject(),
     {
       id: 1,
       contributors: [
@@ -361,13 +371,14 @@ await test('filter', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('article', strudelArticle)
-      .include((select) =>
-        select('contributors').include('name').filter('flap', '>', 25),
-      )
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article', strudelArticle)
+        .include((select) =>
+          select('contributors').include('name').filter('flap', '>', 25),
+        )
+        .get()
+    ).toObject(),
     {
       id: 1,
       contributors: [
@@ -379,16 +390,17 @@ await test('filter', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('article', strudelArticle)
-      .include((select) => {
-        select('contributors').include('flap')
-        select('contributors').include('name')
-        select('contributors').filter('flap', '>', 25)
-        select('contributors').filter('flap', '<', 35)
-      })
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article', strudelArticle)
+        .include((select) => {
+          select('contributors').include('flap')
+          select('contributors').include('name')
+          select('contributors').filter('flap', '>', 25)
+          select('contributors').filter('flap', '<', 35)
+        })
+        .get()
+    ).toObject(),
     {
       id: 1,
       contributors: [{ id: 3, name: 'Derpie', flap: 30 }],
@@ -397,17 +409,18 @@ await test('filter', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('article', strudelArticle)
-      .include((select) => {
-        select('contributors')
-          .include('name')
-          .include('flap')
-          .filter('flap', '>', 25)
-          .sort('flap', 'desc')
-      })
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article', strudelArticle)
+        .include((select) => {
+          select('contributors')
+            .include('name')
+            .include('flap')
+            .filter('flap', '>', 25)
+            .sort('flap', 'desc')
+        })
+        .get()
+    ).toObject(),
     {
       id: 1,
       contributors: [

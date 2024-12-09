@@ -1,7 +1,7 @@
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import native from '../native.js'
 import { rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { parse, Schema } from '@based/schema'
 import { SchemaTypeDef } from './schema/types.js'
 import { genId } from './schema/utils.js'
@@ -15,14 +15,47 @@ import {
   makeCsmtKeyFromNodeId,
 } from './tree.js'
 import { save } from './save.js'
-import { Worker, MessagePort } from 'node:worker_threads'
+import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
+import { fileURLToPath } from 'node:url'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const workerPath = join(__dirname, 'worker.js')
 
-type DbWorker = {
-  worker: Worker
+const transferList = new Array(1)
+export class DbWorker {
+  constructor(address: BigInt) {
+    const { port1, port2 } = new MessageChannel()
+
+    this.channel = port1
+    this.worker = new Worker(workerPath, {
+      workerData: {
+        channel: port2,
+        address,
+      },
+      transferList: [port2],
+    })
+    port1.on('message', (buf) => {
+      const resolve = this.resolvers.shift()
+      resolve(buf)
+    })
+  }
+
   channel: MessagePort
+  worker: Worker
+  resolvers: any[] = []
+
+  callback = (resolve) => {
+    this.resolvers.push(resolve)
+  }
+
+  getQueryBuf(buf): Promise<Buffer> {
+    transferList[0] = buf.buffer
+    this.channel.postMessage(buf, transferList)
+    return new Promise(this.callback)
+  }
 }
 
 export class DbServer {
@@ -37,6 +70,8 @@ export class DbServer {
   dirtyRanges = new Set<number>()
   csmtHashFun = native.createHash()
   workers: DbWorker[] = []
+  availableWorkerIndex: number = -1
+
   constructor({
     path,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -149,7 +184,9 @@ export class DbServer {
   }
 
   getQueryBuf(buf: Buffer) {
-    return native.getQueryBuf(buf, this.dbCtxExternal)
+    this.availableWorkerIndex =
+      (this.availableWorkerIndex + 1) % this.workers.length
+    return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
   }
 
   async stop(noSave?: boolean) {

@@ -54,7 +54,7 @@ await test('references modify', async (t) => {
   db.drain()
 
   deepEqual(
-    db.query('user').include('*', 'friends').get().toObject(),
+    (await db.query('user').include('*', 'friends').get()).toObject(),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -72,7 +72,7 @@ await test('references modify', async (t) => {
   db.drain()
 
   deepEqual(
-    db.query('user').include('*', 'friends').get().toObject(),
+    (await db.query('user').include('*', 'friends').get()).toObject(),
     [
       { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -93,7 +93,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    db.query('user').include('*', 'friends').get().toObject(),
+    (await db.query('user').include('*', 'friends').get()).toObject(),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [] },
@@ -106,11 +106,17 @@ await test('references modify', async (t) => {
     friends: [1, 2],
   })
 
-  console.log('----', db.query('user').include('*', 'friends').get().toObject())
+  console.log(
+    '----',
+    (await db.query('user').include('*', 'friends').get()).toObject(),
+  )
 
   await db.update('user', john, {
     friends: [1],
   })
 
-  console.log('----', db.query('user').include('*', 'friends').get().toObject())
+  console.log(
+    '----',
+    (await db.query('user').include('*', 'friends').get()).toObject(),
+  )
 })

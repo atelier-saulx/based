@@ -113,11 +113,12 @@ await test('multiple references', async (t) => {
   })
 
   deepEqual(
-    db
-      .query('article')
-      .include('contributors.$role', 'contributors.$bigString')
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article')
+        .include('contributors.$role', 'contributors.$bigString')
+        .get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -131,7 +132,9 @@ await test('multiple references', async (t) => {
   )
 
   deepEqual(
-    db.query('article').include('contributors.$rating').get().toObject(),
+    (
+      await db.query('article').include('contributors.$rating').get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -145,7 +148,7 @@ await test('multiple references', async (t) => {
   )
 
   deepEqual(
-    db.query('article').include('contributors.$lang').get().toObject(),
+    (await db.query('article').include('contributors.$lang').get()).toObject(),
     [
       {
         id: 1,
@@ -158,19 +161,22 @@ await test('multiple references', async (t) => {
     ],
   )
 
-  deepEqual(db.query('article').include('contributors.$on').get().toObject(), [
-    {
-      id: 1,
-      contributors: [{ id: 1, $on: true }],
-    },
-    {
-      id: 2,
-      contributors: [{ id: 1 }],
-    },
-  ])
+  deepEqual(
+    (await db.query('article').include('contributors.$on').get()).toObject(),
+    [
+      {
+        id: 1,
+        contributors: [{ id: 1, $on: true }],
+      },
+      {
+        id: 2,
+        contributors: [{ id: 1 }],
+      },
+    ],
+  )
 
   deepEqual(
-    db.query('article').include('contributors.$file').get().toObject(),
+    (await db.query('article').include('contributors.$file').get()).toObject(),
     [
       {
         id: 1,
@@ -196,13 +202,14 @@ await test('multiple references', async (t) => {
   }
 
   deepEqual(
-    db
-      .query('article')
-      .include((s) =>
-        s('contributors').filter('$role', '=', 'writer').include('$role'),
-      )
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article')
+        .include((s) =>
+          s('contributors').filter('$role', '=', 'writer').include('$role'),
+        )
+        .get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -221,14 +228,16 @@ await test('multiple references', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('article')
-      .include((s) =>
-        s('contributors')
-          .filter('$bigString', '=', italy)
-          .include('$bigString'),
-      )
-      .get()
+    (
+      await db
+        .query('article')
+        .include((s) =>
+          s('contributors')
+            .filter('$bigString', '=', italy)
+            .include('$bigString'),
+        )
+        .get()
+    )
       .inspect(10)
       .toObject(),
     [
@@ -290,16 +299,19 @@ await test('single reference', async (t) => {
     author: { id: mrDrol, $role: 'boss' },
   })
 
-  deepEqual(db.query('article').include('author.$role', '*').get().toObject(), [
-    {
-      id: 1,
-      name: 'This is a nice article',
-      author: {
+  deepEqual(
+    (await db.query('article').include('author.$role', '*').get()).toObject(),
+    [
+      {
         id: 1,
-        $role: 'boss',
+        name: 'This is a nice article',
+        author: {
+          id: 1,
+          $role: 'boss',
+        },
       },
-    },
-  ])
+    ],
+  )
 
   await db.create('article', {
     name: 'This is a nice article with mr drol as writer',
@@ -307,12 +319,13 @@ await test('single reference', async (t) => {
   })
 
   deepEqual(
-    db
-      .query('article')
-      .include('author.$role', '*')
-      .filter('author.$role', '=', 'boss')
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('article')
+        .include('author.$role', '*')
+        .filter('author.$role', '=', 'boss')
+        .get()
+    ).toObject(),
     [
       {
         id: 1,
@@ -330,22 +343,25 @@ await test('single reference', async (t) => {
     author: { id: mrDrol, $msg: sentence },
   })
 
-  deepEqual(db.query('article').include('author.$msg', '*').get().toObject(), [
-    { id: 1, name: 'This is a nice article', author: { id: 1 } },
-    {
-      id: 2,
-      name: 'This is a nice article with mr drol as writer',
-      author: { id: 1 },
-    },
-    {
-      id: 3,
-      name: 'Power article',
-      author: {
-        id: 1,
-        $msg: sentence,
+  deepEqual(
+    (await db.query('article').include('author.$msg', '*').get()).toObject(),
+    [
+      { id: 1, name: 'This is a nice article', author: { id: 1 } },
+      {
+        id: 2,
+        name: 'This is a nice article with mr drol as writer',
+        author: { id: 1 },
       },
-    },
-  ])
+      {
+        id: 3,
+        name: 'Power article',
+        author: {
+          id: 1,
+          $msg: sentence,
+        },
+      },
+    ],
+  )
 
   t.after(() => {
     return db.destroy()

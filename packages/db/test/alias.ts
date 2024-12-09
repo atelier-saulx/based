@@ -30,7 +30,7 @@ await test('alias', async (t) => {
 
   db.drain()
 
-  const res1 = db.query('user', user1).get()
+  const res1 = await db.query('user', user1).get()
 
   db.update('user', user1, {
     externalId: 'tornado',
@@ -38,9 +38,9 @@ await test('alias', async (t) => {
 
   db.drain()
 
-  const res2 = db.query('user', user1).get()
-  const res3 = db.query('user').filter('externalId', '=', 'cool').get()
-  const res4 = db.query('user').filter('externalId', '=', 'tornado').get()
+  const res2 = await db.query('user', user1).get()
+  const res3 = await db.query('user').filter('externalId', '=', 'cool').get()
+  const res4 = await db.query('user').filter('externalId', '=', 'tornado').get()
 
   db.update('user', user1, {
     externalId: null,
@@ -48,8 +48,8 @@ await test('alias', async (t) => {
 
   db.drain()
 
-  const res5 = db.query('user', user1).get()
-  const res6 = db.query('user').filter('externalId', '=', 'tornado').get()
+  const res5 = await db.query('user', user1).get()
+  const res6 = await db.query('user').filter('externalId', '=', 'tornado').get()
 
   // console.log({ res1, res2, res3, res4, res5, res6 })
   // const res2 = db.query('user', user1).get()

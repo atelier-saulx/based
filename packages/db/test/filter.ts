@@ -107,8 +107,9 @@ await test('simple', async (t) => {
 
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
   equal(
-    db.query('machine').include('*').filter('lastPing', '=', x).get().toObject()
-      .length,
+    (
+      await db.query('machine').include('*').filter('lastPing', '=', x).get()
+    ).toObject().length,
     x.length,
     'OR number',
   )
@@ -125,15 +126,16 @@ await test('simple', async (t) => {
 
   var measure = 0
   var mi = 0
-  for (let i = 0; i < amount; i++) {
-    const rand = ~~(Math.random() * lastId)
-    const derp = [make(), make(), make(), rand]
-    const envs = db
-      .query('env')
-      .include('*')
-      .filter('machines', 'has', derp)
-      .get()
 
+  const res = await Promise.all(
+    Array.from({ length: amount }).map(() => {
+      const rand = ~~(Math.random() * lastId)
+      const derp = [make(), make(), make(), rand]
+      return db.query('env').include('*').filter('machines', 'has', derp).get()
+    }),
+  )
+
+  for (const envs of res) {
     mi += envs.toObject().length
     measure += envs.execTime
   }
@@ -143,21 +145,26 @@ await test('simple', async (t) => {
     true,
     'multi ref OR filter up at 0.5 results',
   )
+
   equal(measure / amount < 0.05, true, 'multi ref OR filter lower then 0.1ms')
 
   measure = 0
   mi = 0
-  for (let i = 0; i < amount; i++) {
-    const rand = ~~(Math.random() * lastId)
-    const envs = db
-      .query('env')
-      .include('*')
-      .filter('machines', 'has', rand)
-      .get()
 
-    mi += envs.toObject().length
-    measure += envs.execTime
-  }
+  await Promise.all(
+    Array.from({ length: amount }).map(async () => {
+      const rand = ~~(Math.random() * lastId)
+      const envs = await db
+        .query('env')
+        .include('*')
+        .filter('machines', 'has', rand)
+        .get()
+
+      mi += envs.toObject().length
+      measure += envs.execTime
+    }),
+  )
+
   equal(
     mi / amount > 0.4 && mi / amount < 0.6,
     true,
@@ -166,100 +173,109 @@ await test('simple', async (t) => {
   equal(measure / amount < 0.05, true, 'multi ref filter lower then 0.1ms')
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('scheduled', '>', 'now + 694d + 10h')
-      .get()
-      .toObject().length,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('scheduled', '>', 'now + 694d + 10h')
+        .get()
+    ).toObject().length,
     1,
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
-      .get()
-      .toObject().length,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
+        .get()
+    ).toObject().length,
     1,
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('scheduled', '<', '10/24/2000') // Date,
-      .get()
-      .toObject().length,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('scheduled', '<', '10/24/2000') // Date,
+        .get()
+    ).toObject().length,
     0,
     'parse date string',
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('requestsServed', '<', 1)
-      .get()
-      .toObject().length,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('requestsServed', '<', 1)
+        .get()
+    ).toObject().length,
     1,
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('requestsServed', '<=', 1)
-      .get()
-      .toObject().length,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('requestsServed', '<=', 1)
+        .get()
+    ).toObject().length,
     2,
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('derp', '<=', 0)
-      .filter('derp', '>', -5)
-      .get()
-      .toObject().length,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('derp', '<=', 0)
+        .filter('derp', '>', -5)
+        .get()
+    ).toObject().length,
     5,
     'Negative range',
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('temperature', '<=', 0)
-      .filter('temperature', '>', -0.1)
-      .get()
-      .toObject().length < 500,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('temperature', '<=', 0)
+        .filter('temperature', '>', -0.1)
+        .get()
+    ).toObject().length < 500,
     true,
     'Negative temperature (result amount)',
   )
 
   equal(
-    db
-      .query('machine')
-      .include('*')
-      .filter('temperature', '<=', 0)
-      .filter('temperature', '>', -0.1)
-      .get()
-      .toObject()[0].temperature < 0,
+    (
+      await db
+        .query('machine')
+        .include('*')
+        .filter('temperature', '<=', 0)
+        .filter('temperature', '>', -0.1)
+        .get()
+    ).toObject()[0].temperature < 0,
     true,
     'Negative temperature (check value)',
   )
 
   equal(
-    db
-      .query('machine')
-      .include('id')
-      .filter('env', '=', env)
-      .range(0, 10)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id')
+        .filter('env', '=', env)
+        .range(0, 10)
+        .get()
+    ).toObject(),
     [
       { id: 2 },
       { id: 4 },
@@ -276,14 +292,15 @@ await test('simple', async (t) => {
   )
 
   equal(
-    db
-      .query('machine')
-      .include('id')
-      .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
-      .filter('env', '=', [emptyEnv, env])
-      .range(0, 10)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id')
+        .filter('lastPing', '>=', 1e5 - 1) // order optmization automaticly
+        .filter('env', '=', [emptyEnv, env])
+        .range(0, 10)
+        .get()
+    ).toObject(),
     [{ id: 100000 }],
     'Filter by reference (multiple)',
   )
@@ -315,7 +332,7 @@ await test('simple', async (t) => {
   ])
 
   deepEqual(
-    db.query('env').filter('machines', '<', 10).get().toObject(),
+    (await db.query('env').filter('machines', '<', 10).get()).toObject(),
     [
       {
         id: 3,
@@ -328,7 +345,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    db.query('env').filter('machines', '=', ids).get().toObject(),
+    (await db.query('env').filter('machines', '=', ids).get()).toObject(),
     [
       {
         id: 3,
@@ -341,12 +358,13 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('machine')
-      .include('env', '*')
-      .filter('env.status', '=', 5)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .include('env', '*')
+        .filter('env.status', '=', 5)
+        .get()
+    ).toObject(),
     [
       {
         id: 100001,
@@ -389,12 +407,13 @@ await test('simple', async (t) => {
   })
 
   deepEqual(
-    db
-      .query('machine')
-      .filter('status', '=', '🦄')
-      .include('status')
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .filter('status', '=', '🦄')
+        .include('status')
+        .get()
+    ).toObject(),
     [
       {
         id: unicornMachine,
@@ -403,17 +422,17 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual(db.query('env').filter('standby').get().toObject(), [])
+  deepEqual((await db.query('env').filter('standby').get()).toObject(), [])
 
   await db.update('env', derpEnv, {
     standby: true,
   })
 
-  deepEqual(db.query('env').filter('standby').get().toObject(), [
+  deepEqual((await db.query('env').filter('standby').get()).toObject(), [
     { id: 3, standby: true, status: 5, name: 'derp env' },
   ])
 
-  let rangeResult = db
+  let rangeResult = await db
     .query('machine')
     .include('temperature')
     .filter('temperature', '..', [-0.1, 0])
@@ -426,7 +445,7 @@ await test('simple', async (t) => {
     'range',
   )
 
-  rangeResult = db
+  rangeResult = await db
     .query('machine')
     .include('*')
     .range(0, 10)
@@ -499,13 +518,14 @@ await test('or', async (t) => {
   db.drain()
 
   deepEqual(
-    db
-      .query('machine')
-      .include('id', 'lastPing')
-      .filter('scheduled', '>', '01/01/2100')
-      .or('lastPing', '>', 1e6 - 2)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id', 'lastPing')
+        .filter('scheduled', '>', '01/01/2100')
+        .or('lastPing', '>', 1e6 - 2)
+        .get()
+    ).toObject(),
     [
       {
         id: 999999,
@@ -519,72 +539,78 @@ await test('or', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('machine')
-      .include('id', 'lastPing')
-      .filter('scheduled', '>', '01/01/2100')
-      .or((f) => {
-        f.filter('lastPing', '>', 1e6 - 2)
-      })
-      .get()
-      .toObject(),
-    db
-      .query('machine')
-      .include('id', 'lastPing')
-      .filter('scheduled', '>', '01/01/2100')
-      .or('lastPing', '>', 1e6 - 2)
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id', 'lastPing')
+        .filter('scheduled', '>', '01/01/2100')
+        .or((f) => {
+          f.filter('lastPing', '>', 1e6 - 2)
+        })
+        .get()
+    ).toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id', 'lastPing')
+        .filter('scheduled', '>', '01/01/2100')
+        .or('lastPing', '>', 1e6 - 2)
+        .get()
+    ).toObject(),
   )
 
   equal(
-    db
-      .query('machine')
-      .include('id', 'lastPing')
-      .filter('scheduled', '>', '01/01/2100')
-      .or((f) => {
-        f.filter('lastPing', '>', 1e6 - 2)
-        f.or('temperature', '<', -30)
-      })
-      .get()
-      .toObject().length > 10,
+    (
+      await db
+        .query('machine')
+        .include('id', 'lastPing')
+        .filter('scheduled', '>', '01/01/2100')
+        .or((f) => {
+          f.filter('lastPing', '>', 1e6 - 2)
+          f.or('temperature', '<', -30)
+        })
+        .get()
+    ).toObject().length > 10,
     true,
     'Branch or',
   )
 
   deepEqual(
-    db
-      .query('machine')
-      .include('id', 'lastPing')
-      .filter('scheduled', '>', '01/01/2100')
-      .or((f) => {
-        f.filter('lastPing', '>', 1e6 - 2)
-        f.or((f) => {
-          f.filter('temperature', '<', -30)
+    (
+      await db
+        .query('machine')
+        .include('id', 'lastPing')
+        .filter('scheduled', '>', '01/01/2100')
+        .or((f) => {
+          f.filter('lastPing', '>', 1e6 - 2)
+          f.or((f) => {
+            f.filter('temperature', '<', -30)
+          })
         })
-      })
-      .get()
-      .toObject(),
-    db
-      .query('machine')
-      .include('id', 'lastPing')
-      .filter('scheduled', '>', '01/01/2100')
-      .or((f) => {
-        f.filter('lastPing', '>', 1e6 - 2)
-        f.or('temperature', '<', -30)
-      })
-      .get()
-      .toObject(),
+        .get()
+    ).toObject(),
+    (
+      await db
+        .query('machine')
+        .include('id', 'lastPing')
+        .filter('scheduled', '>', '01/01/2100')
+        .or((f) => {
+          f.filter('lastPing', '>', 1e6 - 2)
+          f.or('temperature', '<', -30)
+        })
+        .get()
+    ).toObject(),
   )
 
-  const r = db
-    .query('machine')
-    .include('temperature')
-    .range(0, 15)
-    .filter('temperature', '>', 0)
-    .or('temperature', '<', -0.1)
-    .get()
-    .toObject()
+  const r = (
+    await db
+      .query('machine')
+      .include('temperature')
+      .range(0, 15)
+      .filter('temperature', '>', 0)
+      .or('temperature', '<', -0.1)
+      .get()
+  ).toObject()
 
   equal(
     r
@@ -627,14 +653,15 @@ await test('or numerical', async (t) => {
   }
   db.drain()
 
-  const r = db
-    .query('machine')
-    .include('temperature')
-    .range(0, 1000)
-    .filter('temperature', '>', 150)
-    .or('temperature', '<', 50)
-    .get()
-    .toObject()
+  const r = (
+    await db
+      .query('machine')
+      .include('temperature')
+      .range(0, 1000)
+      .filter('temperature', '>', 150)
+      .or('temperature', '<', 50)
+      .get()
+  ).toObject()
 
   equal(
     r
@@ -659,16 +686,17 @@ await test('or numerical', async (t) => {
   )
 
   equal(
-    db
-      .query('machine')
-      .include('id', 'temperature')
-      .filter('temperature', '>', 201)
-      .or((f) => {
-        f.filter('temperature', '>', 202)
-        f.or('temperature', '<', 10)
-      })
-      .get()
-      .toObject().length > 10,
+    (
+      await db
+        .query('machine')
+        .include('id', 'temperature')
+        .filter('temperature', '>', 201)
+        .or((f) => {
+          f.filter('temperature', '>', 202)
+          f.or('temperature', '<', 10)
+        })
+        .get()
+    ).toObject().length > 10,
     true,
     'Branch or',
   )
@@ -680,18 +708,22 @@ await test('or numerical', async (t) => {
   }
   db.drain()
 
-  deepEqual(db.query('machine').include('id').range(0, 3).get().node(-1), {
-    id: 3,
-  })
+  deepEqual(
+    (await db.query('machine').include('id').range(0, 3).get()).node(-1),
+    {
+      id: 3,
+    },
+  )
 
   deepEqual(
-    db
-      .query('machine')
-      .include('temperature')
-      .filter('id', '<=', 20000)
-      .range(10000, 10000)
-      .get()
-      .node(-1).id,
+    (
+      await db
+        .query('machine')
+        .include('temperature')
+        .filter('id', '<=', 20000)
+        .range(10000, 10000)
+        .get()
+    ).node(-1).id,
     20000,
   )
 })

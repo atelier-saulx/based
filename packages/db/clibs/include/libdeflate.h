@@ -293,6 +293,8 @@ libdeflate_block_state_growbuf(struct libdeflate_block_state *state);
 LIBDEFLATEEXPORT void
 libdeflate_block_state_deinit(struct libdeflate_block_state *state);
 
+typedef int (*libdeflate_decompress_stream_cb_t)(void * restrict ctx, const uint8_t * restrict buf, size_t dict_len, size_t data_len);
+
 /**
  * Decompress deflated string in_buf block by block.
  * @param cb is a callback that will be called for each decompressed block.
@@ -304,7 +306,7 @@ libdeflate_decompress_stream(
         struct libdeflate_decompressor *decompressor,
         struct libdeflate_block_state *state,
         const char *in_buf, size_t in_len,
-        int (*cb)(void * restrict ctx, uint8_t * restrict buf, size_t len), void *ctx,
+        libdeflate_decompress_stream_cb_t cb, void *ctx,
         int *result);
 
 /**

@@ -42,13 +42,13 @@ await test('remove', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').get().toObject(), [])
+  deepEqual((await db.query('user').get()).toObject(), [])
 
   const nurp = db.create('nurp', {})
 
   db.drain()
 
-  deepEqual(db.query('nurp').include('email').get().toObject(), [
+  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
     {
       email: '',
       id: 1,
@@ -59,7 +59,7 @@ await test('remove', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').include('email').get().toObject(), [])
+  deepEqual((await db.query('user').include('email').get()).toObject(), [])
 
   const nurp2 = db.create('nurp', { email: 'flippie' })
 
@@ -71,7 +71,7 @@ await test('remove', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('nurp').include('email').get().toObject(), [
+  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
     {
       email: '',
       id: 2,

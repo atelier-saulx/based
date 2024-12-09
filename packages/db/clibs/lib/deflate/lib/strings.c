@@ -16,16 +16,17 @@ struct memcmp_ctx {
     size_t ptr2_i;
 };
 
-static int cb_memcmp(void * restrict ctx, uint8_t * restrict buf, size_t len)
+static int cb_memcmp(void * restrict ctx, const uint8_t * restrict buf, size_t dict_len, size_t data_len)
 {
     struct memcmp_ctx *c = (struct memcmp_ctx *)ctx;
-    size_t test_len = MIN(len, c->ptr2_len - c->ptr2_i);
+    size_t test_len = MIN(data_len, c->ptr2_len - c->ptr2_i);
     int res;
 
+    buf += dict_len;
     res = memcmp(buf, (uint8_t *)c->ptr2_buf + c->ptr2_i, test_len);
     if (res) {
         return res;
-    } else if (c->ptr2_i + len > c->ptr2_len) {
+    } else if (c->ptr2_i + data_len > c->ptr2_len) {
         return buf[test_len] - '\0';
     } else {
         c->ptr2_i += test_len;

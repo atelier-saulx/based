@@ -160,20 +160,23 @@ const makeDb = async (path: string) => {
   var d = Date.now()
 
   console.log('DRAIN BOI', Date.now() - d, 'ms', await db.drain(), 'ms')
-
-  db.query('article')
-    .range(0, 1e6)
-    .filter('publishDate', '>', '01/01/2024')
-    .sort('publishDate', 'desc')
-    .get()
-    .inspect(2)
-
-  db.query('article')
-    .range(0, 100)
-    .filter('publishDate', '>', '01/01/2024')
-    .sort('publishDate', 'desc')
-    .include('author', '*')
-    .get()
+  ;(
+    await db
+      .query('article')
+      .range(0, 1e6)
+      .filter('publishDate', '>', '01/01/2024')
+      .sort('publishDate', 'desc')
+      .get()
+  ).inspect(2)
+  ;(
+    await db
+      .query('article')
+      .range(0, 100)
+      .filter('publishDate', '>', '01/01/2024')
+      .sort('publishDate', 'desc')
+      .include('author', '*')
+      .get()
+  )
     // .debug()
     .inspect(2)
 
@@ -183,41 +186,43 @@ const makeDb = async (path: string) => {
   // console.log(
   //   db.query('user').filter('firstName', '=', 'Elena Sánchez').get().node().id,
   // )
-
-  db.query('article')
-    .range(0, 1e6)
-    // .filter('author', '=', 25)
-    .sort('publishDate', 'desc')
-    .include('author', '*')
-    .get()
+  ;(
+    await db
+      .query('article')
+      .range(0, 1e6)
+      // .filter('author', '=', 25)
+      .sort('publishDate', 'desc')
+      .include('author', '*')
+      .get()
+  )
     // .debug()
     .inspect(2)
 
   const query = 'tariff'
-  console.log('---- DERP search in eu observer', query)
-  db.query('article')
-    .range(0, 1e5)
-    // .filter('headline', 'has', 'Orbán')
-    .filter('headline', 'hasLoose', query)
-    .filter('body', 'hasLoose', query)
+  console.log('---- DERP UKRAINE', query)
+  ;(
+    await db
+      .query('article')
+      .range(0, 10)
+      // .filter('headline', 'has', 'Orbán')
+      .filter('headline', 'hasLoose', query)
+      // .or((f) => {
+      //   f.filter('body', 'hasLoose', query)
+      // })
 
-    // .or((f) => {
-    //   f.filter('body', 'hasLoose', query)
-    // })
-
-    // .filter('body', 'has', query)
-    // .or((f) => {
-    //   f.filter('headline', 'has', 'Orban')
-    //   // f.filter('body', 'has', 'Orban')
-    // })
-    // .or((f) => {
-    //   f.filter('headline', 'has', 'Orbán')
-    //   // f.filter('body', 'has', 'Orban')
-    // })
-    .sort('publishDate', 'desc')
-    .include('headline', 'publishDate')
-    .get()
-    .inspect(2)
+      // .filter('body', 'has', query)
+      // .or((f) => {
+      //   f.filter('headline', 'has', 'Orban')
+      //   // f.filter('body', 'has', 'Orban')
+      // })
+      // .or((f) => {
+      //   f.filter('headline', 'has', 'Orbán')
+      //   // f.filter('body', 'has', 'Orban')
+      // })
+      .sort('publishDate', 'desc')
+      .include('headline', 'publishDate')
+      .get()
+  ).inspect(2)
 
   // .inspect(2)
 

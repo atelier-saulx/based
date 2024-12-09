@@ -5,23 +5,23 @@ var decompressor: ?*selva.libdeflate_decompressor = null;
 var libdeflate_block_state: ?selva.libdeflate_block_state = null;
 
 pub const Ctx = struct {
-    query: []u8,
+    query: []const u8,
     currentQueryIndex: usize,
 };
 
 // fn ([]u8, []u8) callconv(.Inline)
 
-pub const Compare = fn (value: []u8, query: []u8) callconv(.Inline) bool;
+pub const Compare = fn (value: []const u8, query: []const u8) callconv(.Inline) bool;
 
 fn comptimeCb(comptime compare: Compare) type {
     return struct {
-        pub fn func(noalias ctxC: ?*anyopaque, noalias buf: [*c]u8, size: usize) callconv(.C) c_int {
+        pub fn func(noalias ctxC: ?*anyopaque, noalias buf: [*c]const u8, dict_size: usize, data_size: usize) callconv(.C) c_int {
             const ctx: *Ctx = @ptrCast(@alignCast(ctxC.?));
-            var value: []u8 = undefined;
+            var value: []const u8 = undefined;
             if (ctx.currentQueryIndex > 0) {
-                value = buf[0..size];
+                value = buf[dict_size..(dict_size + data_size)];
             } else {
-                value = buf[ctx.currentQueryIndex - ctx.query.len .. ctx.currentQueryIndex + size];
+                value = buf[ctx.currentQueryIndex - ctx.query.len .. ctx.currentQueryIndex + data_size];
             }
             const found = compare(
                 value,
@@ -30,7 +30,7 @@ fn comptimeCb(comptime compare: Compare) type {
             if (found) {
                 return 1;
             }
-            ctx.currentQueryIndex = ctx.currentQueryIndex + size;
+            ctx.currentQueryIndex = ctx.currentQueryIndex + data_size;
             return 0;
         }
     };
@@ -38,8 +38,8 @@ fn comptimeCb(comptime compare: Compare) type {
 
 pub inline fn decompress(
     comptime compare: Compare,
-    query: []u8,
-    value: []u8,
+    query: []const u8,
+    value: []const u8,
 ) bool {
     var ctx: Ctx = .{
         .query = query,

@@ -899,17 +899,14 @@ build_decode_table(u32 decode_table[],
             unsigned bit;
 
             /* Fill the first entry for the current codeword. */
-            decode_table[codeword] =
-                make_decode_table_entry(decode_results,
-                            *sorted_syms++, len);
+            decode_table[codeword] = make_decode_table_entry(decode_results, *sorted_syms++, len);
 
             if (codeword == cur_table_end - 1) {
                 /* Last codeword (all 1's) */
                 for (; len < table_bits; len++) {
                     memcpy(&decode_table[cur_table_end],
                            decode_table,
-                           cur_table_end *
-                        sizeof(decode_table[0]));
+                           cur_table_end * sizeof(decode_table[0]));
                     cur_table_end <<= 1;
                 }
                 return true;
@@ -977,8 +974,7 @@ build_decode_table(u32 decode_table[],
             codespace_used = count;
             while (codespace_used < (1U << subtable_bits)) {
                 subtable_bits++;
-                codespace_used = (codespace_used << 1) +
-                    len_counts[table_bits + subtable_bits];
+                codespace_used = (codespace_used << 1) + len_counts[table_bits + subtable_bits];
             }
             cur_table_end = subtable_start + (1U << subtable_bits);
 
@@ -994,8 +990,7 @@ build_decode_table(u32 decode_table[],
         }
 
         /* Fill the subtable entries for the current codeword. */
-        entry = make_decode_table_entry(decode_results, *sorted_syms++,
-                        len - table_bits);
+        entry = make_decode_table_entry(decode_results, *sorted_syms++, len - table_bits);
         i = subtable_start + (codeword >> table_bits);
         stride = 1U << (len - table_bits);
         do {

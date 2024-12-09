@@ -30,7 +30,7 @@ await test('simple', async (t) => {
 
   db.drain()
 
-  deepEqual(db.query('user').get().toObject(), [
+  deepEqual((await db.query('user').get()).toObject(), [
     {
       id: 1,
       file: new Uint8Array(new Uint32Array([1, 2, 3, 4]).buffer),
@@ -41,7 +41,7 @@ await test('simple', async (t) => {
     file: new Uint8Array([1, 2, 3, 4]),
   })
 
-  deepEqual(db.query('user', id).get().toObject(), {
+  deepEqual((await db.query('user', id).get()).toObject(), {
     id,
     file: new Uint8Array([1, 2, 3, 4]),
   })
@@ -52,7 +52,7 @@ await test('simple', async (t) => {
   })
 
   equal(
-    db.query('user', id2).get().toObject().file.length,
+    (await db.query('user', id2).get()).toObject().file.length,
     italyBytes.byteLength,
   )
 })

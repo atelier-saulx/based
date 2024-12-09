@@ -131,13 +131,15 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     super(db, def)
   }
 
-  get() {
+  async get() {
     if (!this.def.include.stringFields.size && !this.def.references.size) {
       includeFields(this.def, ['*'])
     }
     const b = defToBuffer(this.db, this.def)
     const d = performance.now()
-    const result = this.db.server.getQueryBuf(Buffer.concat(b))
+    const result = Buffer.from(
+      await this.db.server.getQueryBuf(Buffer.concat(b)),
+    )
     return new BasedQueryResponse(this.def, result, performance.now() - d)
   }
 

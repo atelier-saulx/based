@@ -64,12 +64,9 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db
-      .query('user')
-      .sort('age', 'desc')
-      .include('email', 'age')
-      .get()
-      .toObject(),
+    (
+      await db.query('user').sort('age', 'desc').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
@@ -80,12 +77,9 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('user')
-      .sort('age', 'asc')
-      .include('email', 'age')
-      .get()
-      .toObject(),
+    (
+      await db.query('user').sort('age', 'asc').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -96,12 +90,9 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('user')
-      .sort('email', 'asc')
-      .include('email', 'age')
-      .get()
-      .toObject(),
+    (
+      await db.query('user').sort('email', 'asc').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -112,12 +103,9 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('user')
-      .sort('email', 'desc')
-      .include('email', 'age')
-      .get()
-      .toObject(),
+    (
+      await db.query('user').sort('email', 'desc').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -136,7 +124,9 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db.query('user').sort('email').include('email', 'age').get().toObject(),
+    (
+      await db.query('user').sort('email').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -148,7 +138,9 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().toObject(),
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -166,7 +158,9 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db.query('user').sort('email').include('email', 'age').get().toObject(),
+    (
+      await db.query('user').sort('email').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 6, email: 'dd@dd.dd', age: 999 },
@@ -189,7 +183,9 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().toObject(),
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -207,7 +203,9 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().toObject(),
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },
       { id: 5, email: 'z@z.z', age: 1 },
@@ -220,7 +218,9 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    db.query('user').sort('age').include('email', 'age').get().toObject(),
+    (
+      await db.query('user').sort('age').include('email', 'age').get()
+    ).toObject(),
     [
       { id: 6, email: 'dd@dd.dd', age: 0 },
       { id: 5, email: 'z@z.z', age: 1 },
@@ -243,7 +243,9 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db.query('user', ids).include('name', 'age').sort('age').get().toObject(),
+    (
+      await db.query('user', ids).include('name', 'age').sort('age').get()
+    ).toObject(),
     [
       { id: 6, name: 'mr x', age: 0 },
       { id: 5, name: 'mr z', age: 1 },
@@ -258,12 +260,13 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    db
-      .query('user', ids)
-      .include('name', 'age')
-      .sort('age', 'desc')
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('user', ids)
+        .include('name', 'age')
+        .sort('age', 'desc')
+        .get()
+    ).toObject(),
     [
       { id: 9, name: 'mr 2', age: 302 },
       { id: 8, name: 'mr 1', age: 301 },
@@ -283,12 +286,13 @@ await test('basic', async (t) => {
   }
 
   deepEqual(
-    db
-      .query('user', ids2)
-      .include('name', 'age')
-      .sort('age', 'asc')
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age')
+        .sort('age', 'asc')
+        .get()
+    ).toObject(),
     [
       { id: 6, name: 'mr x', age: 0 },
       { id: 5, name: 'mr z', age: 1 },
@@ -314,12 +318,13 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    db
-      .query('user', ids2)
-      .include('name', 'age')
-      .sort('age', 'asc')
-      .get()
-      .toObject(),
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age')
+        .sort('age', 'asc')
+        .get()
+    ).toObject(),
     [
       { id: 5, name: 'mr z', age: 1 },
       { id: 2, name: 'mr flap', age: 50 },
@@ -346,21 +351,31 @@ await test('basic', async (t) => {
   await db.drain()
 
   equal(
-    db.query('user', ids2).include('name', 'age', 'email').get().length,
+    (await db.query('user', ids2).include('name', 'age', 'email').get()).length,
     16,
     'Check default query after remove',
   )
 
   equal(
-    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
-      .length,
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('email')
+        .get()
+    ).length,
     16,
     'Check email index len after removal',
   )
 
   equal(
-    db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
-      .length,
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('name')
+        .get()
+    ).length,
     16,
     'Check name index len after removal',
   )
@@ -370,8 +385,13 @@ await test('basic', async (t) => {
   await db.drain()
 
   equal(
-    db.query('user', ids2).include('name', 'age', 'email').sort('name').get()
-      .length,
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('name')
+        .get()
+    ).length,
     15,
     'Check name index len after removal (2)',
   )
@@ -383,8 +403,13 @@ await test('basic', async (t) => {
   await db.drain()
 
   equal(
-    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
-      .length,
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('email')
+        .get()
+    ).length,
     15,
     'Check email index len after removal (2)',
   )
@@ -394,8 +419,13 @@ await test('basic', async (t) => {
   await db.drain()
 
   equal(
-    db.query('user', ids2).include('name', 'age', 'email').sort('email').get()
-      .length,
+    (
+      await db
+        .query('user', ids2)
+        .include('name', 'age', 'email')
+        .sort('email')
+        .get()
+    ).length,
     14,
     'Check email index len after removal (3)',
   )
@@ -445,7 +475,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   await db.drain()
 
   deepEqual(
-    db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
+    (
+      await db.query('user').include('name').sort('age').range(0, 2).get()
+    ).toObject(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -453,7 +485,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   )
 
   deepEqual(
-    db.query('user').include('name').sort('age').range(0, 2).get().toObject(),
+    (
+      await db.query('user').include('name').sort('age').range(0, 2).get()
+    ).toObject(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -461,7 +495,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   )
 
   deepEqual(
-    db.query('user').include('name').sort('name').range(0, 2).get().toObject(),
+    (
+      await db.query('user').include('name').sort('name').range(0, 2).get()
+    ).toObject(),
     [
       {
         id: 3,
@@ -487,13 +523,9 @@ await test('sort - from start (1.5M items)', async (t) => {
   })
 
   deepEqual(
-    newDb
-      .query('user')
-      .include('name')
-      .sort('name')
-      .range(0, 2)
-      .get()
-      .toObject(),
+    (
+      await newDb.query('user').include('name').sort('name').range(0, 2).get()
+    ).toObject(),
     [
       {
         id: 3,
