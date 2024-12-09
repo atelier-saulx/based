@@ -68,6 +68,11 @@ static int32_t levenshtein_u8(const char * restrict s, size_t m, const char * re
     return v0[n];
 }
 
+int strsearch_levenshtein_u8(const char * restrict s, size_t m, const char * restrict t, size_t n)
+{
+    return (int)levenshtein_u8(s, m, t, n);
+}
+
 static int32_t levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restrict s, size_t m, const wchar_t * restrict t, size_t n)
 {
     if (m == 0) return n;
