@@ -17,6 +17,7 @@ import {
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
+import { setTimeout } from 'node:timers/promises'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -78,6 +79,7 @@ export class DbServer {
   processingQueries = 0
   modifyQueue: Buffer[] = []
   queryQueue: Map<Function, Buffer> = new Map()
+  stopped: boolean
 
   constructor({
     path,
@@ -225,13 +227,18 @@ export class DbServer {
   }
 
   async stop(noSave?: boolean) {
+    if (this.stopped) {
+      return
+    }
+    this.stopped = true
     if (!noSave) {
       await this.save()
     }
+
     await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
     this.workers = []
-
     native.stop(this.dbCtxExternal)
+    await setTimeout()
   }
 
   async destroy() {

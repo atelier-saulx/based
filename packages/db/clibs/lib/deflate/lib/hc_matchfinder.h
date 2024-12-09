@@ -135,8 +135,7 @@ struct hc_matchfinder {
 static forceinline void
 hc_matchfinder_init(struct hc_matchfinder *mf)
 {
-    STATIC_ASSERT(HC_MATCHFINDER_TOTAL_HASH_SIZE %
-              MATCHFINDER_SIZE_ALIGNMENT == 0);
+    static_assert(HC_MATCHFINDER_TOTAL_HASH_SIZE % MATCHFINDER_SIZE_ALIGNMENT == 0);
 
     matchfinder_init((mf_pos_t *)mf, HC_MATCHFINDER_TOTAL_HASH_SIZE);
 }
@@ -144,7 +143,7 @@ hc_matchfinder_init(struct hc_matchfinder *mf)
 static forceinline void
 hc_matchfinder_slide_window(struct hc_matchfinder *mf)
 {
-    STATIC_ASSERT(sizeof(*mf) % MATCHFINDER_SIZE_ALIGNMENT == 0);
+    static_assert(sizeof(*mf) % MATCHFINDER_SIZE_ALIGNMENT == 0);
 
     matchfinder_rebase((mf_pos_t *)mf, sizeof(*mf));
 }

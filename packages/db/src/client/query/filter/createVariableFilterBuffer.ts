@@ -66,11 +66,6 @@ export const createVariableFilterBuffer = (
         buf = writeVarFilter(isOr, val, buf, op, prop, 0, 0)
       }
     } else {
-      // if (val.byteLength > prop.len) {
-      //   throw new Error('filter is larger then max value (will never be true')
-      // }
-
-      console.log('derp', val, isOr)
       // HANDLE EQUAL
       buf = writeVarFilter(isOr, val, buf, op, prop, prop.start, prop.len)
     }

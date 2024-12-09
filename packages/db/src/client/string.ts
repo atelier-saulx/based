@@ -7,6 +7,9 @@ export const crc32 = (buf: Buffer) => {
   return native.crc32(buf)
 }
 
+// var cnt = 0
+// var bytesSaved = 0
+
 // make this into a package
 // write the type Byte
 export const write = (
@@ -16,7 +19,7 @@ export const write = (
   noCompression: boolean,
 ): number => {
   // 50 maybe if lvl 1
-  if (value.length > 150 && !noCompression) {
+  if (value.length > 200 && !noCompression) {
     buf[offset] = 1
     const s = Buffer.byteLength(value, 'utf8')
 
@@ -24,6 +27,25 @@ export const write = (
     // pass this to here
     buf.write(value, offset + 5 + s, 'utf8')
     const size = native.compress(buf, offset + 5, s)
+
+    // bytesSaved += s - size
+    // if (s / size < 1.4) {
+    //   cnt++
+    // }
+    // console.log(
+    //   cnt,
+    //   'Compress ratio:',
+    //   s / size,
+    //   'origsize',
+    //   s,
+    //   'cmpressed',
+    //   size,
+    //   'kbytesSaved',
+    //   Math.round(bytesSaved / 1000),
+    //   // value,
+    // )
+    // }
+
     if (size === 0) {
       buf[offset] = 0
       return 1 + buf.write(value, offset + 5, 'utf8')
@@ -46,6 +68,7 @@ export const compress = (str: string): Buffer => {
   if (!tmpCompressBlock || tmpCompressBlock.byteLength < str.length * 3) {
     tmpCompressBlock = Buffer.allocUnsafe(str.length * 3)
   }
+
   const s = write(tmpCompressBlock, str, 0, false)
   const nBuffer = Buffer.allocUnsafe(s)
   tmpCompressBlock.copy(nBuffer, 0, 0, s)

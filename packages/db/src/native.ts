@@ -1,6 +1,9 @@
 // @ts-ignore
 import db from '../../nativebla.cjs'
 
+var compressor: any = null
+var decompressor: any = null
+
 export default {
   workerCtxInit: (): void => {
     return db.workerCtxInit()
@@ -102,11 +105,17 @@ export default {
 
   // needs to pass dbCtx: any
   compress: (buf: Buffer, offset: number, stringSize: number) => {
-    return db.compress(buf, offset, stringSize)
+    if (compressor === null) {
+      compressor = db.createCompressor()
+    }
+    return db.compress(compressor, buf, offset, stringSize)
   },
 
   decompress: (input: Buffer, output: Buffer, offset: number, len: number) => {
-    return db.decompress(input, output, offset, len)
+    if (decompressor === null) {
+      decompressor = db.createDecompressor()
+    }
+    return db.decompress(decompressor, input, output, offset, len)
   },
 
   crc32: (buf: Buffer) => {

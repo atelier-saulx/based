@@ -5,7 +5,9 @@
 #pragma once
 
 #include "selva/_export.h"
-#ifndef __zig
+#ifdef __zig
+struct selva_string;
+#else
 #include "util/selva_string.h"
 #endif
 #include "selva/types.h"
@@ -23,9 +25,7 @@
 /* RFE Not good? */
 struct XXH3_state_s;
 
-#ifdef __zig
-struct selva_string;
-#else
+#ifndef __zig
 struct SelvaTextField {
     struct selva_string *tl __pcounted_by(len);
     uint8_t len;

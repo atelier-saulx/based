@@ -3,7 +3,6 @@ import { Schema } from '@based/schema'
 import { SchemaTypeDef } from './server/schema/schema.js'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { ModifyCtx, flushBuffer } from './client/operations.js'
-import { setTimeout } from 'node:timers/promises'
 import { create, remove, update } from './client/modify/index.js'
 import { migrate } from './server/migrate/index.js'
 import { compress, decompress } from './client/string.js'
@@ -147,7 +146,6 @@ export class BasedDb {
   async stop(noSave?: boolean) {
     this.modifyCtx.len = 0
     await this.server.stop(noSave)
-    await setTimeout()
   }
 
   async destroy() {

@@ -183,6 +183,18 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
     return 1 + sizeof(fixed_len);
 }
 
+static int type2fs_text(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
+{
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+
+    *fs = (struct SelvaFieldSchema){
+        .field = field,
+        .type = SELVA_FIELD_TYPE_TEXT,
+    };
+
+    return 1;
+}
+
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
 {
     const char *buf = ctx->buf;
@@ -386,7 +398,7 @@ static struct schemabuf_parser {
     },
     [SELVA_FIELD_TYPE_TEXT] = {
         .type = SELVA_FIELD_TYPE_TEXT,
-        .type2fs = type2fs_reserved, /* TODO */
+        .type2fs = type2fs_text,
     },
     [SELVA_FIELD_TYPE_REFERENCE] = {
         .type = SELVA_FIELD_TYPE_REFERENCE,

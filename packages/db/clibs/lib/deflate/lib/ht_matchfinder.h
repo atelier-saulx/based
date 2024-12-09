@@ -56,14 +56,13 @@
 #define HT_MATCHFINDER_REQUIRED_NBYTES  5
 
 struct ht_matchfinder {
-    mf_pos_t hash_tab[1UL << HT_MATCHFINDER_HASH_ORDER]
-             [HT_MATCHFINDER_BUCKET_SIZE];
+    mf_pos_t hash_tab[1UL << HT_MATCHFINDER_HASH_ORDER][HT_MATCHFINDER_BUCKET_SIZE];
 } MATCHFINDER_ALIGNED;
 
 static forceinline void
 ht_matchfinder_init(struct ht_matchfinder *mf)
 {
-    STATIC_ASSERT(sizeof(*mf) % MATCHFINDER_SIZE_ALIGNMENT == 0);
+    static_assert(sizeof(*mf) % MATCHFINDER_SIZE_ALIGNMENT == 0);
 
     matchfinder_init((mf_pos_t *)mf, sizeof(*mf));
 }
@@ -102,7 +101,7 @@ ht_matchfinder_longest_match(struct ht_matchfinder * const mf,
 #endif
 
     /* This is assumed throughout this function. */
-    STATIC_ASSERT(HT_MATCHFINDER_MIN_MATCH_LEN == 4);
+    static_assert(HT_MATCHFINDER_MIN_MATCH_LEN == 4);
 
     if (cur_pos == MATCHFINDER_WINDOW_SIZE) {
         ht_matchfinder_slide_window(mf);
@@ -113,9 +112,8 @@ ht_matchfinder_longest_match(struct ht_matchfinder * const mf,
     cutoff = cur_pos - MATCHFINDER_WINDOW_SIZE;
 
     hash = *next_hash;
-    STATIC_ASSERT(HT_MATCHFINDER_REQUIRED_NBYTES == 5);
-    *next_hash = lz_hash(get_unaligned_le32(in_next + 1),
-                 HT_MATCHFINDER_HASH_ORDER);
+    static_assert(HT_MATCHFINDER_REQUIRED_NBYTES == 5);
+    *next_hash = lz_hash(get_unaligned_le32(in_next + 1), HT_MATCHFINDER_HASH_ORDER);
     seq = load_u32_unaligned(in_next);
     prefetchw(&mf->hash_tab[*next_hash]);
 #if HT_MATCHFINDER_BUCKET_SIZE == 1

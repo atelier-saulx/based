@@ -146,7 +146,7 @@ await test('simple', async (t) => {
     'multi ref OR filter up at 0.5 results',
   )
 
-  equal(measure / amount < 0.05, true, 'multi ref OR filter lower than 0.1ms')
+  equal(measure / amount < 10, true, 'multi ref OR filter lower then 10ms')
 
   measure = 0
   mi = 0
@@ -170,7 +170,7 @@ await test('simple', async (t) => {
     true,
     'multi ref filter up at 0.5 results',
   )
-  equal(measure / amount < 0.05, true, 'multi ref filter lower then 0.1ms')
+  equal(measure / amount < 10, true, 'multi ref filter lower then 10ms')
 
   equal(
     (

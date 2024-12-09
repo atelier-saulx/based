@@ -101,6 +101,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "crc32", string.crc32) catch return null;
     registerFunction(env, exports, "compress", string.compress) catch return null;
     registerFunction(env, exports, "decompress", string.decompress) catch return null;
+    registerFunction(env, exports, "createCompressor", string.createCompressor) catch return null;
+    registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
 
     return exports;
 }
