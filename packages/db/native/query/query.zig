@@ -50,11 +50,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterBuf = q[13 .. 13 + filterSize];
         const sortSize = readInt(u16, q, 13 + filterSize);
         const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
-
         const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
-
         const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-
         const include = q[17 + filterSize + sortSize + searchSize .. q.len];
 
         if (sortSize == 0) {
@@ -80,7 +77,10 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
         const sortSize = readInt(u16, q, 17 + filterSize + idsSize);
         const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
-        const include = q[19 + idsSize + filterSize + sortSize .. q.len];
+
+        const searchSize = readInt(u16, q, 19 + idsSize + filterSize + sortSize);
+        // const searchBuf = q[21 + idsSize + filterSize + sortSize .. 21 + idsSize + filterSize + sortSize];
+        const include = q[21 + idsSize + filterSize + sortSize + searchSize .. q.len];
         if (sortSize == 0) {
             try Query.queryIds(ids, &ctx, typeId, filterBuf, include);
         } else if (sortBuf[0] == 0) {

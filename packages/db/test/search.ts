@@ -59,15 +59,14 @@ await test('search', async (t) => {
   })
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
-      body:
-        italy +
-        ' aaaaa aaa aa dnqpwifhjwoi fwqopifqehoiqehvoiewr hweiorhweroibhwroibhibothriotbiohpveroihriobhwrtoibhrtiobhorwithbwoirhboi oeirghwrtoi bhworiehb',
+      body: italy + ' @aaaaa ',
     })
   }
 
   const r = await db
     .query('italy')
-    .search('aaaba', { body: 1 })
+    // .filter('body', 'has', '@aaa')
+    .search('@aaa', { body: 1 })
     .include('id')
     .range(0, 1e3)
     .get()

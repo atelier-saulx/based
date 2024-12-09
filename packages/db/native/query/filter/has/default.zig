@@ -4,7 +4,6 @@ const readInt = @import("../../../utils.zig").readInt;
 const selva = @import("../../../selva.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
-const capitals: @Vector(vectorLen, u8) = @splat(32);
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 

@@ -218,7 +218,7 @@ const makeDb = async (path: string) => {
     //   f.filter('headline', 'has', 'Orbán')
     //   // f.filter('body', 'has', 'Orban')
     // })
-    // .sort('publishDate', 'desc')
+    .sort('publishDate', 'desc')
     .include('headline', 'publishDate')
     .filter('published', true)
     // .or((v) => {
@@ -228,7 +228,7 @@ const makeDb = async (path: string) => {
     //   v.filter('body', 'hasLoose', query)
     // })
     // body: 1
-    .search(query, { headline: 3, abstract: 2, body: 1 })
+    .search(query, { headline: 3, body: 1 })
     .get()
     .then((v) => {
       v.inspect(10)
