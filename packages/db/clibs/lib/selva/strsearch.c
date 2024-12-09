@@ -74,8 +74,11 @@ uint8_t strsearch_levenshtein_u8(const char * restrict s, size_t m, const char *
     return (uint8_t)v0[n];
 }
 
-uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restrict s, size_t m, const wchar_t * restrict t, size_t n)
+uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, size_t m, const struct strsearch_wneedle *wneedle)
 {
+    const wchar_t *t = wneedle->buf;
+    size_t n = wneedle->len;
+
     if (m == 0) return n;
     if (n > LEV_MAX - 1 || m > LEV_MAX - 1) {
         return 255;

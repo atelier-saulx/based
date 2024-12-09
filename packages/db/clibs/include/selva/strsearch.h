@@ -26,4 +26,4 @@ SELVA_EXPORT
 uint8_t strsearch_levenshtein_u8(const char * restrict s, size_t m, const char * restrict t, size_t n);
 
 SELVA_EXPORT
-uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char * restrict s, size_t m, const wchar_t * restrict t, size_t n);
+uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, size_t m, const struct strsearch_wneedle *wneedle);
