@@ -17,6 +17,7 @@ import {
 import { save } from './save.js'
 import { Worker, MessageChannel, MessagePort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
+import { setTimeout } from 'node:timers/promises'
 
 const SCHEMA_FILE = 'schema.json'
 const DEFAULT_BLOCK_CAPACITY = 100_000
@@ -41,9 +42,8 @@ export class DbWorker {
     })
 
     port1.on('message', (buf) => {
-      this.db.processing--
       this.resolvers.shift()(buf)
-      this.db.drainQueues()
+      this.db.onQueryEnd()
     })
   }
 
@@ -57,7 +57,6 @@ export class DbWorker {
   }
 
   getQueryBuf(buf): Promise<Buffer> {
-    this.db.processing++
     transferList[0] = buf.buffer
     this.channel.postMessage(buf, transferList)
     return new Promise(this.callback)
@@ -77,9 +76,10 @@ export class DbServer {
   csmtHashFun = native.createHash()
   workers: DbWorker[] = []
   availableWorkerIndex: number = -1
-  processing = 0
+  processingQueries = 0
   modifyQueue: Buffer[] = []
   queryQueue: Map<Function, Buffer> = new Map()
+  stopped: boolean
 
   constructor({
     path,
@@ -188,7 +188,7 @@ export class DbServer {
   }
 
   modify(buf: Buffer) {
-    if (this.processing) {
+    if (this.processingQueries) {
       this.modifyQueue.push(Buffer.from(buf))
     } else {
       native.modify(buf, this.dbCtxExternal)
@@ -201,14 +201,16 @@ export class DbServer {
         this.queryQueue.set(resolve, buf)
       })
     } else {
+      this.processingQueries++
       this.availableWorkerIndex =
         (this.availableWorkerIndex + 1) % this.workers.length
       return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
     }
   }
 
-  drainQueues() {
-    if (this.processing === 0) {
+  onQueryEnd() {
+    this.processingQueries--
+    if (this.processingQueries === 0) {
       if (this.modifyQueue.length) {
         for (const buf of this.modifyQueue) {
           native.modify(buf, this.dbCtxExternal)
@@ -225,13 +227,18 @@ export class DbServer {
   }
 
   async stop(noSave?: boolean) {
+    if (this.stopped) {
+      return
+    }
+    this.stopped = true
     if (!noSave) {
       await this.save()
     }
+
     await Promise.all(this.workers.map(({ worker }) => worker.terminate()))
     this.workers = []
-
     native.stop(this.dbCtxExternal)
+    await setTimeout()
   }
 
   async destroy() {

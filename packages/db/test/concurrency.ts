@@ -47,8 +47,9 @@ await test('concurrency', async (t) => {
   let queries = 0
   let refs = []
   let timer = setTimeout(() => {
+    db.destroy()
     timer = null
-  }, 10e3)
+  }, 5e3)
 
   const query = async () => {
     queries++
