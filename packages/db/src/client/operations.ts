@@ -46,8 +46,7 @@ export const flushBuffer = (db: BasedDb) => {
     db.writeTime += Date.now() - d
 
     ctx.len = 0
-    ctx.prefix0 = null
-    ctx.prefix1 = null
+    ctx.prefix0 = -1
 
     if (ctx.queue.size) {
       for (const [resolve, payload] of ctx.queue) {

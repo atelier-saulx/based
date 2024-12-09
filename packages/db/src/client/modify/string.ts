@@ -55,12 +55,11 @@ export function writeString(
       const isNoCompression = ctx.db.noCompression || t.compression === 0
       size = write(ctx.buf, value, ctx.len, isNoCompression)
     }
-    // let sizepos = ctx.len + 1 - 5
-    // ctx.buf[sizepos++] = size
-    // ctx.buf[sizepos++] = size >>>= 8
-    // ctx.buf[sizepos++] = size >>>= 8
-    // ctx.buf[sizepos] = size >>>= 8
-    ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
+    let sizepos = ctx.len + 1 - 5
     ctx.len += size
+    ctx.buf[sizepos++] = size
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos] = size >>>= 8
   }
 }

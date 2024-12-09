@@ -3,68 +3,65 @@ import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
 
-for (const noCompression of [false, true]) {
-  await test(noCompression ? 'simple noCompression' : 'simple', async (t) => {
-    const db = new BasedDb({
-      path: t.tmp,
-      maxModifySize: 1e4,
-      noCompression,
-    })
+await test('simple', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+    maxModifySize: 1e4,
+  })
 
-    await db.start({ clean: true })
+  await db.start({ clean: true })
 
-    t.after(() => {
-      return db.destroy()
-    })
+  t.after(() => {
+    return db.destroy()
+  })
 
-    db.putSchema({
-      types: {
-        user: {
-          props: {
-            name: { type: 'string' },
-            flap: 'uint32',
-            email: { type: 'string', max: 15 },
-            age: 'uint32',
-            snurp: { type: 'string' },
-            burp: 'uint32',
-            location: {
-              props: {
-                label: { type: 'string' },
-                x: 'uint32',
-                y: 'uint32',
-              },
+  db.putSchema({
+    types: {
+      user: {
+        props: {
+          name: { type: 'string' },
+          flap: 'uint32',
+          email: { type: 'string', max: 15 },
+          age: 'uint32',
+          snurp: { type: 'string' },
+          burp: 'uint32',
+          location: {
+            props: {
+              label: { type: 'string' },
+              x: 'uint32',
+              y: 'uint32',
             },
           },
         },
       },
-    })
-
-    db.create('user', {
-      age: 99,
-      burp: 66,
-      snurp: 'derp derp',
-      email: 'merp_merp@once.net',
-      location: {
-        label: 'BLA BLA',
-      },
-    })
-
-    db.drain()
-
-    deepEqual((await db.query('user').get()).toObject(), [
-      {
-        id: 1,
-        name: '',
-        flap: 0,
-        email: 'merp_merp@once.net',
-        age: 99,
-        snurp: 'derp derp',
-        burp: 66,
-        location: { label: 'BLA BLA', x: 0, y: 0 },
-      },
-    ])
+    },
   })
-}
+
+  db.create('user', {
+    age: 99,
+    burp: 66,
+    snurp: 'derp derp',
+    email: 'merp_merp@once.net',
+    location: {
+      label: 'BLA BLA',
+    },
+  })
+
+  db.drain()
+
+  deepEqual((await db.query('user').get()).toObject(), [
+    {
+      id: 1,
+      name: '',
+      flap: 0,
+      email: 'merp_merp@once.net',
+      age: 99,
+      snurp: 'derp derp',
+      burp: 66,
+      location: { label: 'BLA BLA', x: 0, y: 0 },
+    },
+  ])
+})
 
 await test('string + refs', async (t) => {
   const db = new BasedDb({

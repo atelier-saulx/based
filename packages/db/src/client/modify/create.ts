@@ -84,7 +84,7 @@ export const create = (
   const err = appendCreate(ctx, def, obj, id, unsafe)
 
   if (err) {
-    ctx.prefix0 = null // force a new cursor
+    ctx.prefix0 = -1 // force a new cursor
     ctx.len = pos
 
     if (err === RANGE_ERR) {
