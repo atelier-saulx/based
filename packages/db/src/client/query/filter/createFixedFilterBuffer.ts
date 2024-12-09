@@ -29,9 +29,9 @@ export const writeFixed = (
   value: any,
   size: number,
   offset: number,
-  op: number,
+  op: number, // tmp disabled...
 ) => {
-  if ((prop.typeIndex === BINARY || prop.typeIndex === STRING) && op !== 17) {
+  if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
     if (typeof value === 'string') {
       const size = buf.write(value, offset + 1, 'utf8')
       buf[offset] = size

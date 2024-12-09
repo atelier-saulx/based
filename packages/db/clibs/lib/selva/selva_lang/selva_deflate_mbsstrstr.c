@@ -21,17 +21,19 @@ struct mbsstrstr_ctx {
     size_t needle_len;
 };
 
-static int cb_mbsstrstr(void * restrict ctx, uint8_t * restrict buf, size_t len)
+static int cb_mbsstrstr(void * restrict ctx, const uint8_t * restrict buf, size_t dict_len, size_t data_len)
 {
     struct mbsstrstr_ctx *c = (struct mbsstrstr_ctx *)ctx;
 
-    if (selva_sallocx(c->match_buf, 0) < c->match_size + len) {
-        c->match_buf = selva_realloc(c->match_buf, c->match_size + len);
+    buf += dict_len;
+
+    if (selva_sallocx(c->match_buf, 0) < c->match_size + data_len) {
+        c->match_buf = selva_realloc(c->match_buf, c->match_size + data_len);
     }
-    memcpy(c->match_buf + c->match_len, buf, len);
+    memcpy(c->match_buf + c->match_len, buf, data_len);
 
     const char *s = c->match_buf;
-    size_t left = c->match_size + len;
+    size_t left = c->match_size + data_len;
     size_t nbytes = 0;
     wchar_t wc;
     do {

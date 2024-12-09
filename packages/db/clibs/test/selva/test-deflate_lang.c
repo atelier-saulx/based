@@ -50,7 +50,7 @@ struct full_decompress_ctx {
     size_t out_len;
 };
 
-static int full_decompress_cb(void * restrict ctx, uint8_t * restrict buf, size_t len)
+static int full_decompress_cb(void *ctx, uint8_t *buf, size_t len, uint8_t *, size_t)
 {
     struct full_decompress_ctx *c = (struct full_decompress_ctx *)ctx;
 

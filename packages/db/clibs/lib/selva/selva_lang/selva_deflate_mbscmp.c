@@ -19,12 +19,12 @@ struct mbscmp_ctx {
     size_t left2;
 };
 
-static int cb_mbscmp(void *ctx, uint8_t *buf, size_t len)
+static int cb_mbscmp(void * restrict ctx, const uint8_t * restrict buf, size_t dict_len, size_t data_len)
 {
     struct mbscmp_ctx *c = (struct mbscmp_ctx *)ctx;
 
-    const char *s1 = (char *)buf;
-    size_t left1 = len;
+    const char *s1 = (const char *)(buf + dict_len);
+    size_t left1 = data_len;
 
     while (true) {
         wchar_t wc1 = 0;

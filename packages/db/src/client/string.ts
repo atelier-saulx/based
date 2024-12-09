@@ -19,6 +19,7 @@ export const write = (
   if (value.length > 150 && !noCompression) {
     buf[offset] = 1
     const s = Buffer.byteLength(value, 'utf8')
+
     // TODO: we need this also has to be added in modify s * 2
     // pass this to here
     buf.write(value, offset + 5 + s, 'utf8')
@@ -32,7 +33,9 @@ export const write = (
     }
   } else {
     buf[offset] = 0
+
     const size = 1 + buf.write(value, offset + 1, 'utf8')
+
     return size
   }
 }

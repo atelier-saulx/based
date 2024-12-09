@@ -75,9 +75,9 @@ export default {
     start: number,
     end: number,
     bufOut: Buffer,
-    defCtx: any,
+    dbCtx: any,
   ) => {
-    return db.getNodeRangeHash(typeId, start, end, bufOut, defCtx)
+    return db.getNodeRangeHash(typeId, start, end, bufOut, dbCtx)
   },
 
   createHash: () => {
@@ -100,6 +100,7 @@ export default {
     return hash
   },
 
+  // needs to pass dbCtx: any
   compress: (buf: Buffer, offset: number, stringSize: number) => {
     return db.compress(buf, offset, stringSize)
   },

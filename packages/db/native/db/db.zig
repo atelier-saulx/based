@@ -30,6 +30,11 @@ pub const DbCtx = struct {
     mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
     readOnly: bool,
     selva: ?*selva.SelvaDb,
+
+    decompressor: *selva.libdeflate_decompressor,
+    libdeflate_block_state: selva.libdeflate_block_state,
+    // shared block here derp
+
     // add decompressor
     // add compressor here
     // preallocated decompressor block thingy buffer
@@ -65,6 +70,8 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .initialized = false,
         .readOnly = false,
         .selva = null,
+        .decompressor = selva.libdeflate_alloc_decompressor().?,
+        .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
 
     try dbHashmap.put(id, b);

@@ -6,7 +6,6 @@
 #include "jemalloc.h"
 #include "selva/node_id_set.h"
 
-#include <stdio.h>
 ssize_t node_id_set_bsearch(const node_id_t *set, size_t n, node_id_t x)
 {
     ssize_t i = 0;

@@ -38,7 +38,7 @@ export const primitiveFilter = (
   } else if (propSize) {
     buf = createFixedFilterBuffer(prop, propSize, op, value, false)
   } else {
-    buf = createVariableFilterBuffer(value, prop, op, buf)
+    buf = createVariableFilterBuffer(value, prop, op)
   }
   // ADD OR if array for value
   let arr = bufferMap.get(fieldIndexChar)
