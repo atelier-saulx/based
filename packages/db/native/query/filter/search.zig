@@ -14,6 +14,7 @@ const indexes = std.simd.iota(u8, vectorLen);
 
 // TODO: Make this as context!
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
+const minDist = 1;
 
 pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
     var i: usize = 0;
@@ -33,7 +34,7 @@ pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
                     query.ptr,
                     query.len,
                 );
-                if (nd < 2) {
+                if (nd < minDist) {
                     return nd;
                 } else if (nd < d) {
                     d = nd;
@@ -58,7 +59,7 @@ pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
                     query.ptr,
                     query.len,
                 );
-                if (nd < 2) {
+                if (nd < minDist) {
                     return nd;
                 } else if (nd < d) {
                     d = nd;
@@ -75,7 +76,7 @@ pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
                                 query.ptr,
                                 query.len,
                             );
-                            if (nd < 2) {
+                            if (nd < minDist) {
                                 return nd;
                             } else if (nd < d) {
                                 d = nd;
@@ -97,7 +98,7 @@ pub inline fn strSearch(value: []const u8, query: []const u8) u8 {
                 query.ptr,
                 query.len,
             );
-            if (nd < 2) {
+            if (nd < minDist) {
                 return nd;
             } else if (nd < d) {
                 d = nd;

@@ -93,7 +93,7 @@ pub fn query(
     searchBuf: []u8,
 ) !void {
     var correctedForOffset: u32 = offset;
-
+    var movingLimit: u32 = limit;
     const typeEntry = try db.getType(ctx.db, typeId);
 
     var first = true;
@@ -106,7 +106,7 @@ pub fn query(
         sLen = readInt(u16, searchBuf, 0);
     }
 
-    checkItem: while (ctx.totalResults < limit) {
+    checkItem: while (ctx.totalResults < movingLimit) {
         if (first) {
             first = false;
         } else {
@@ -122,8 +122,16 @@ pub fn query(
         }
 
         if (hasSearch) {
-            if (search(ctx.db, node.?, typeEntry, searchBuf, sLen) > 2) {
+            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen);
+            if (d > 1) {
                 continue :checkItem;
+            }
+            if (d != 0) {
+                // if (movingLimit < limit * 4) {
+                movingLimit += 1;
+                // }
+            } else {
+                std.debug.print("DISTANCE: {d} \n", .{d});
             }
         }
 
