@@ -4,11 +4,28 @@ const readInt = @import("../../utils.zig").readInt;
 const selva = @import("../../selva.zig");
 const db = @import("../../db//db.zig");
 const types = @import("../include//types.zig");
-// const loose = @import("./has/loose.zig");
 const like = @import("./like.zig").default;
+const compressed = @import("./compressed.zig");
+const decompress = compressed.decompress;
+
+inline fn blockCompare(value: []const u8, query: []const u8) bool {
+    const d = selva.strsearch_has_u8(
+        @ptrCast(value.ptr),
+        value.len,
+        @ptrCast(query.ptr),
+        query.len,
+        2,
+        true,
+    );
+
+    if (d < 2) {
+        return true;
+    }
+    return false;
+}
 
 pub fn search(
-    _: *db.DbCtx,
+    dbCtx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     searchBuf: []u8,
@@ -23,7 +40,6 @@ pub fn search(
 
     while (j < sl) {
         const field = searchBuf[j];
-        // const weight = searchBuf[j + 1];
 
         const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
             return 0;
@@ -37,16 +53,25 @@ pub fn search(
 
         // * weight ?
 
-        const d = selva.strsearch_has_u8(
-            @ptrCast(value.ptr),
-            value.len,
-            @ptrCast(query.ptr),
-            query.len,
-            1,
-            true,
-        );
+        const isCompressed = value[0] == 1;
 
-        std.debug.print("FOUND {d}  {any} \n", .{ d, query });
+        var d: c_int = undefined;
+        if (isCompressed) {
+            if (decompress(blockCompare, query, value, dbCtx)) {
+                return 10;
+            }
+        } else {
+            d = selva.strsearch_has_u8(
+                @ptrCast(value.ptr),
+                value.len,
+                @ptrCast(query.ptr),
+                query.len,
+                2,
+                true,
+            );
+        }
+
+        // std.debug.print("FOUND {d}  {any} \n", .{ d, query });
 
         // minimum d
         if (d < 1) {
