@@ -189,21 +189,29 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
     return 0;
 }
 
-int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good)
+int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match)
 {
     const char *sep = " \n";
     const char *word;
     const char *brkt;
+    const char fch = strict_first_char_match = strict_first_char_match && isalpha(needle[0]) ? tolower(needle[0]) : '\0';
     int32_t d = INT_MAX;
 
     if (needle_len > LEV_MAX - 1) {
         return INT_MAX;
     }
 
+    strict_first_char_match = strict_first_char_match && isalpha(needle[0]);
+
     for (word = strtok2(text, sep, &brkt, text_len);
          word;
          word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
         size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+
+        if (fch != '\0' && tolower(word[0]) != fch) {
+            continue;
+        }
+
         int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
         d = min(d, d2);
         if (d <= (int32_t)good) {
