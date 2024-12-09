@@ -9,7 +9,7 @@ const map = await parseData()
 if (map) {
   const db = new BasedDb({
     path: tmpdir(),
-    // maxModifySize: 5000,
+    maxModifySize: 5000,
   })
 
   await db.start({ clean: true })
@@ -54,10 +54,11 @@ if (map) {
   }
 
   console.time('drain')
-  const drainTime = await db.drain()
+  const drainTime = db.drain()
   console.timeEnd('drain')
   insertPerf()
   perf('insert drain', drainTime / 1e3)
 
   // console.log(db.query('club').get().toObject())
+  await db.destroy()
 }
