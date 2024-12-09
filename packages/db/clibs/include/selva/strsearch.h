@@ -30,6 +30,9 @@ struct strsearch_wneedle {
 };
 
 SELVA_EXPORT
+int strsearch_levenshtein_u8(const char * restrict s, size_t m, const char * restrict t, size_t n);
+
+SELVA_EXPORT
 int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_str, size_t needle_len, int good, bool strict_first_char_match);
 
 /**
