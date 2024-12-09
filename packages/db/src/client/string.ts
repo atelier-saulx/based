@@ -7,6 +7,9 @@ export const crc32 = (buf: Buffer) => {
   return native.crc32(buf)
 }
 
+// var cnt = 0
+// var bytesSaved = 0
+
 // make this into a package
 // write the type Byte
 export const write = (
@@ -25,16 +28,22 @@ export const write = (
     buf.write(value, offset + 5 + s, 'utf8')
     const size = native.compress(buf, offset + 5, s)
 
+    // bytesSaved += s - size
     // if (s / size < 1.4) {
-    //   console.log(
-    //     'Compress ratio:',
-    //     s / size,
-    //     'origsize',
-    //     s,
-    //     'cmpressed',
-    //     size,
-    //     value,
-    //   )
+    //   cnt++
+    // }
+    // console.log(
+    //   cnt,
+    //   'Compress ratio:',
+    //   s / size,
+    //   'origsize',
+    //   s,
+    //   'cmpressed',
+    //   size,
+    //   'kbytesSaved',
+    //   Math.round(bytesSaved / 1000),
+    //   // value,
+    // )
     // }
 
     if (size === 0) {
