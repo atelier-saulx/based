@@ -13,14 +13,26 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
 
-const locale_t: selva.loc = selva.newlocale(selva.LC_ALL_MASK, "nl_NL", 0);
-const wctrans_t: selva.trans = selva.wctrans_l("tolower", selva.loc);
+var locale: ?selva.locale_t = null;
+var transform: ?selva.wctrans_t = null;
 
 // TODO: Make this as context!
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
 const minDist = 1;
 
-inline fn resultMatcher(
+fn levenshtein(value: []u8, i: usize, query: []u8) u8 {
+    const ql = query.len;
+    return selva.strsearch_levenshtein_mbs(
+        locale.?,
+        transform.?,
+        value[i .. i + ql].ptr,
+        ql,
+        query.ptr,
+        ql,
+    );
+}
+
+fn resultMatcher(
     dx: u8,
     matches: @Vector(vectorLen, bool),
     i: usize,
@@ -30,19 +42,13 @@ inline fn resultMatcher(
     var d: u8 = dx;
     const ql = query.len;
     const l = value.len;
-
     const result = @select(u8, matches, indexes, nulls);
-    const index = @reduce(.Min, result) + i;
-    if (index + ql - 1 > l) {
+    const index: usize = @reduce(.Min, result) + i;
+    if (index + ql > l) {
         return d;
     }
     if (index == 0 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
-        const nd = selva.strsearch_levenshtein_u8(
-            value[index .. index + query.len].ptr,
-            query.len,
-            query.ptr,
-            query.len,
-        );
+        const nd = levenshtein(value, index, query);
         if (nd < minDist) {
             return nd;
         } else if (nd < d) {
@@ -54,12 +60,7 @@ inline fn resultMatcher(
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
                 if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
-                    const nd = selva.strsearch_levenshtein_u8(
-                        value[p + i .. p + i + query.len].ptr,
-                        query.len,
-                        query.ptr,
-                        query.len,
-                    );
+                    const nd = levenshtein(value, p + i, query);
                     if (nd < minDist) {
                         return nd;
                     } else if (nd < d) {
@@ -85,12 +86,7 @@ pub inline fn strSearch(value: []u8, query: []u8) u8 {
                 if (i + ql - 1 > l) {
                     return d;
                 }
-                const nd = selva.strsearch_levenshtein_u8(
-                    value[i + 1 .. i + 1 + query.len].ptr,
-                    query.len,
-                    query.ptr,
-                    query.len,
-                );
+                const nd = levenshtein(value, i + 1, query);
                 if (nd < minDist) {
                     return nd;
                 } else if (nd < d) {
@@ -124,13 +120,7 @@ pub inline fn strSearch(value: []u8, query: []u8) u8 {
             if (i + ql - 1 > l) {
                 return d;
             }
-            //
-            const nd = selva.strsearch_levenshtein_u8(
-                value[i + 1 .. i + 1 + query.len].ptr,
-                query.len,
-                query.ptr,
-                query.len,
-            );
+            const nd = levenshtein(value, i + 1, query);
             if (nd < minDist) {
                 return nd;
             } else if (nd < d) {
@@ -150,6 +140,14 @@ pub fn search(
     // ref: ?types.RefStruct,
     // comptime isEdge: bool,
 ) u32 {
+    if (locale == null) {
+        locale = selva.selva_lang_getlocale2(selva.selva_lang_nl);
+        transform = selva.selva_lang_wctrans(
+            selva.selva_lang_nl,
+            selva.SELVA_LANGS_TRANS_TOLOWER,
+        );
+    }
+
     const sl = searchBuf.len;
     var j: usize = searchLen + 2;
     var bestScore: u8 = 255;

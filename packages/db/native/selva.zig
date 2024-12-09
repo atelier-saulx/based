@@ -30,6 +30,8 @@ pub usingnamespace @cImport({
 
     @cInclude("selva/selva_lang.h");
 
+    @cInclude("selva_lang_code.h");
+
     @cInclude("selva/strsearch.h");
 });
 
