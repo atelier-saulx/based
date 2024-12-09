@@ -43,10 +43,18 @@ export type QueryDefFilter = {
   and?: QueryDefFilter
 }
 
+export type QueryDefSearch = {
+  size: number
+  query: Buffer
+  // has to be string or text
+  fields: { weight: number; field: number }[]
+}
+
 export type QueryDefSort = { prop: PropDefEdge | PropDef; order: 0 | 1 }
 
 export type QueryDefShared = {
   filter: QueryDefFilter
+  search: null | QueryDefSearch
   sort: null | QueryDefSort
   reverseProps: any
   range: {

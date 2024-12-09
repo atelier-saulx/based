@@ -46,7 +46,7 @@ try {
 const makeDb = async (path: string) => {
   const db = new BasedDb({
     path,
-    // noCompression: true,
+    noCompression: true,
   })
 
   await db.start({ clean: true })
@@ -198,31 +198,36 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'tariff'
+  const query = 'pager'
   console.log('---- DERP UKRAINE', query)
-  ;(
-    await db
-      .query('article')
-      .range(0, 10)
-      // .filter('headline', 'has', 'Orbán')
-      .filter('headline', 'hasLoose', query)
-      // .or((f) => {
-      //   f.filter('body', 'hasLoose', query)
-      // })
+  await db
+    .query('article')
+    .range(0, 10)
+    // .filter('headline', 'has', 'Orbán')
+    // .filter('headline', 'hasLoose', query)
+    // .or((f) => {
+    //   f.filter('body', 'hasLoose', query)
+    // })
 
-      // .filter('body', 'has', query)
-      // .or((f) => {
-      //   f.filter('headline', 'has', 'Orban')
-      //   // f.filter('body', 'has', 'Orban')
-      // })
-      // .or((f) => {
-      //   f.filter('headline', 'has', 'Orbán')
-      //   // f.filter('body', 'has', 'Orban')
-      // })
-      .sort('publishDate', 'desc')
-      .include('headline', 'publishDate')
-      .get()
-  ).inspect(2)
+    // .filter('body', 'has', query)
+    // .or((f) => {
+    //   f.filter('headline', 'has', 'Orban')
+    //   // f.filter('body', 'has', 'Orban')
+    // })
+    // .or((f) => {
+    //   f.filter('headline', 'has', 'Orbán')
+    //   // f.filter('body', 'has', 'Orban')
+    // })
+    .sort('publishDate', 'desc')
+    .include('headline', 'publishDate', 'abstract')
+    // .filter('headline', 'has', 'tinky winky')
+    // body: 1
+    .search(query, { headline: 3, abstract: 2 })
+    .get()
+    .then((v) => {
+      v.inspect(10)
+      // console.dir(v.toObject(), { depth: 10 })
+    })
 
   // .inspect(2)
 

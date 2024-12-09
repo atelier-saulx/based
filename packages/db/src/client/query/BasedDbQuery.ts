@@ -18,6 +18,7 @@ import { BasedQueryResponse } from './BasedIterable.js'
 import { createOrGetRefQueryDef } from './include/utils.js'
 import { FilterAst, FilterBranchFn } from './filter/types.js'
 import { FilterBranch } from './filter/FilterBranch.js'
+import { search, Search } from './search/index.js'
 
 // fix nested type...
 export type SelectFn = (field: string) => BasedDbReferenceQuery
@@ -42,6 +43,12 @@ export class QueryBranch<T> {
   filter(field: string, operator?: Operator | boolean, value?: any): T {
     const f = convertFilter(field, operator, value)
     filter(this.db, this.def, f, this.def.filter)
+    // @ts-ignore
+    return this
+  }
+
+  search(query: string, fields?: Search): T {
+    search(this.def, query, fields)
     // @ts-ignore
     return this
   }

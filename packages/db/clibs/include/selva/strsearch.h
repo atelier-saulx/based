@@ -35,7 +35,7 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
  *          INT_MAX == error or too long needle.
  */
 SELVA_EXPORT
-int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good);
+int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match);
 
 SELVA_EXPORT
-int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good);
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match);

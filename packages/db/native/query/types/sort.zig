@@ -12,6 +12,7 @@ const utils = @import("../../utils.zig");
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
+const search = @import("../filter/search.zig").search;
 
 pub fn queryIds(
     comptime queryType: comptime_int,
@@ -91,7 +92,6 @@ pub fn queryIds(
     selva.selva_sort_destroy(sortCtx);
 }
 
-// TODO also for references later
 pub fn querySort(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
@@ -101,7 +101,9 @@ pub fn querySort(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
+    searchBuf: []u8,
 ) !void {
+    // const movingLimit = limit;
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -115,6 +117,8 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
+
+    const hasSearch = searchBuf.len > 0;
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -146,6 +150,17 @@ pub fn querySort(
             continue :checkItem;
         }
 
+        if (hasSearch) {
+            const d = search(ctx.db, node.?, typeEntry, searchBuf);
+            if (d > 0) {
+                continue :checkItem;
+            }
+            std.debug.print("DISTANCE: {d} \n", .{d});
+            // if (d != 0) {
+            //     movingLimit += 1;
+            // }
+        }
+
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
             continue :checkItem;
@@ -166,6 +181,8 @@ pub fn querySort(
             ctx.totalResults += 1;
         }
     }
+
+    std.debug.print("DONE? \n", .{});
 
     sort.resetTxn(readTxn);
 }

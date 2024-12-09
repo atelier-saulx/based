@@ -19,6 +19,7 @@
 #include "selva_error.h"
 #include "selva/strsearch.h"
 
+#define SEARCH_SEP " ,.;-\n"
 #define LEV_MAX (STRSEARCH_NEEDLE_MAX + 1)
 
 static int32_t min3(int32_t a, int32_t b, int32_t c)
@@ -189,11 +190,12 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
     return 0;
 }
 
-int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good)
+int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match)
 {
-    const char *sep = " \n";
+    const char *sep = SEARCH_SEP;
     const char *word;
     const char *brkt;
+    const char fch = strict_first_char_match && isalpha(needle[0]) ? tolower(needle[0]) : '\0';
     int32_t d = INT_MAX;
 
     if (needle_len > LEV_MAX - 1) {
@@ -204,6 +206,11 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
          word;
          word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
         size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+
+        if (fch != '\0' && tolower(word[0]) != fch) {
+            continue;
+        }
+
         int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
         d = min(d, d2);
         if (d <= (int32_t)good) {
@@ -214,17 +221,30 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
     return d;
 }
 
-int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good)
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match)
 {
-    const char *sep = " ,.;\n";
+    const char *sep = SEARCH_SEP;
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
+    const wchar_t fch = strict_first_char_match && iswalpha(wneedle->buf[0]) ? wneedle->buf[0] : L'\0';
 
     for (word = strtok2(text, sep, &brkt, text_len);
          word;
          word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
         size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+
+        if (fch != L'\0') {
+            wchar_t wc;
+            mbstate_t ps;
+
+            memset(&ps, 0, sizeof(ps));
+            (void)selva_mbstowc(&wc, word, len, &ps, trans, loc);
+            if (wc != fch) {
+                continue;
+            }
+        }
+
         int32_t d2 = levenshtein_mbs(loc, trans, word, len, wneedle->buf, wneedle->len);
         d = min(d, d2);
         if (d <= (int32_t)good) {

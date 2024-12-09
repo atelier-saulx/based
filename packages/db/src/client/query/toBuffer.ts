@@ -3,6 +3,7 @@ import { createSortBuffer } from './sort.js'
 import { QueryDef, QueryDefType } from './types.js'
 import { includeToBuffer } from './include/toBuffer.js'
 import { filterToBuffer, debug } from './query.js'
+import { searchToBuffer } from './search/index.js'
 
 const byteSize = (arr: Buffer[]) => {
   return arr.reduce((a, b) => {
@@ -31,6 +32,17 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
   if (def.type === QueryDefType.Root) {
     let filter: Buffer
     let filterSize = 0
+
+    let search: Buffer
+    let searchSize = 0
+
+    // start here
+
+    if (def.search) {
+      search = searchToBuffer(def.search)
+      searchSize = def.search.size
+    }
+
     if (def.filter.size) {
       filter = filterToBuffer(def.filter)
       filterSize = filter.byteLength
@@ -58,6 +70,7 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         sort = createSortBuffer(def.sort)
         sortSize = sort.byteLength
       }
+
       if (def.target.ids) {
         // type 1
         // 1: 4 + ids * 4 [ids len] [id,id,id]
@@ -76,7 +89,9 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
           )
         }
         const idsSize = def.target.ids.length * 4
-        const buf = Buffer.allocUnsafe(19 + idsSize + filterSize + sortSize)
+        const buf = Buffer.allocUnsafe(
+          21 + idsSize + filterSize + sortSize + searchSize,
+        )
         buf[0] = 1
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
@@ -84,14 +99,22 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         buf.set(new Uint8Array(def.target.ids.buffer), 7)
         buf.writeUint32LE(def.range.offset, idsSize + 7)
         buf.writeUint32LE(def.range.limit, idsSize + 11)
+
         buf.writeUint16LE(filterSize, idsSize + 15)
         if (filterSize) {
           buf.set(filter, idsSize + 17)
         }
+
         buf.writeUint16LE(sortSize, 17 + filterSize + idsSize)
         if (sortSize) {
           buf.set(sort, 19 + filterSize + idsSize)
         }
+
+        buf.writeUint16LE(searchSize, 19 + filterSize + idsSize + sortSize)
+        if (searchSize) {
+          buf.set(search, 21 + filterSize + idsSize + sortSize)
+        }
+        // ----------
         result.push(buf)
       } else {
         // type 2
@@ -101,20 +124,28 @@ export function defToBuffer(db: BasedDb, def: QueryDef): Buffer[] {
         // ?filter
         // 2: 2 [sort size]
         // ?sort
-        const buf = Buffer.allocUnsafe(15 + filterSize + sortSize)
+        const buf = Buffer.allocUnsafe(17 + filterSize + sortSize + searchSize)
         buf[0] = 2
         buf[1] = def.schema.idUint8[0]
         buf[2] = def.schema.idUint8[1]
         buf.writeUint32LE(def.range.offset, 3)
         buf.writeUint32LE(def.range.limit, 7)
+
         buf.writeUint16LE(filterSize, 11)
         if (filterSize) {
           buf.set(filter, 13)
         }
+
         buf.writeUint16LE(sortSize, 13 + filterSize)
         if (sortSize) {
           buf.set(sort, 15 + filterSize)
         }
+
+        buf.writeUint16LE(searchSize, 15 + filterSize + sortSize)
+        if (searchSize) {
+          buf.set(search, 17 + filterSize + sortSize)
+        }
+
         result.push(buf)
       }
     }
