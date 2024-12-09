@@ -1,8 +1,6 @@
 const selva = @import("../../selva.zig");
 const std = @import("std");
-// shared block here derp
-var decompressor: ?*selva.libdeflate_decompressor = null;
-var libdeflate_block_state: ?selva.libdeflate_block_state = null;
+const db = @import("../../db/db.zig");
 
 pub const Ctx = struct {
     query: []const u8,
@@ -39,35 +37,27 @@ pub inline fn decompress(
     comptime compare: Compare,
     query: []const u8,
     value: []const u8,
+    dbCtx: *db.DbCtx,
 ) bool {
     var ctx: Ctx = .{
         .query = query,
         .currentQueryIndex = 0,
     };
-    if (decompressor == null) {
-        decompressor = selva.libdeflate_alloc_decompressor();
-        libdeflate_block_state = selva.libdeflate_block_state_init(1000 * 1024);
-    }
     var loop: bool = true;
     var hasMatch: c_int = 0;
     while (loop) {
         const result = selva.libdeflate_decompress_stream(
-            decompressor,
-            @ptrCast(&libdeflate_block_state.?),
+            dbCtx.decompressor,
+            &dbCtx.libdeflate_block_state,
             value[5..value.len].ptr,
             value.len - 5,
             comptimeCb(compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );
-        loop = result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.libdeflate_block_state_growbuf(&libdeflate_block_state.?);
+        loop = result == selva.LIBDEFLATE_INSUFFICIENT_SPACE and selva.libdeflate_block_state_growbuf(
+            &dbCtx.libdeflate_block_state,
+        );
     }
     return hasMatch == 1;
 }
-
-// enum libdeflate_decompress_stop_by {
-//       LIBDEFLATE_STOP_BY_FINAL_BLOCK                = 0,
-//       LIBDEFLATE_STOP_BY_ANY_BLOCK                  = 1,
-//       LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_INPUT   = 2,
-//       LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT  = 3,
-//       LIBDEFLATE_STOP_BY_ANY_BLOCK_AND_FULL_OUTPUT_AND_IN_BYTE_ALIGN = 4,

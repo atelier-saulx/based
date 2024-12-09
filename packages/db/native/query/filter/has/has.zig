@@ -7,7 +7,7 @@ const compressed = @import("../compressed.zig");
 const readInt = @import("../../../utils.zig").readInt;
 const decompress = compressed.decompress;
 const Compare = compressed.Compare;
-
+const db = @import("../../../db/db.zig");
 const std = @import("std");
 
 inline fn orCompare(comptime isOr: bool, compare: Compare) type {
@@ -40,10 +40,11 @@ inline fn hasInner(
     prop: Prop,
     value: []const u8,
     query: []const u8,
+    dbCtx: *db.DbCtx,
 ) bool {
     if (prop == Prop.STRING and mainLen == 0) {
         if (value[0] == 1) {
-            if (!decompress(orCompare(isOr, compare).func, query, value)) {
+            if (!decompress(orCompare(isOr, compare).func, query, value, dbCtx)) {
                 return false;
             }
         } else if (!orCompare(isOr, compare).func(value[1..value.len], query)) {
@@ -62,11 +63,12 @@ pub inline fn has(
     value: []const u8,
     query: []const u8,
     mainLen: u16,
+    dbCtx: *db.DbCtx,
 ) bool {
     if (op == Op.has) {
-        return hasInner(isOr, default, mainLen, prop, value, query);
+        return hasInner(isOr, default, mainLen, prop, value, query, dbCtx);
     } else {
-        return hasInner(isOr, loose, mainLen, prop, value, query);
+        return hasInner(isOr, loose, mainLen, prop, value, query, dbCtx);
     }
     return false;
 }

@@ -81,9 +81,15 @@ fn stopInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value 
     // if last is magic string
     // check every second
 
+    // .decompressor = selva.libdeflate_alloc_decompressor().?,
+    selva.libdeflate_free_decompressor(ctx.decompressor);
+    selva.libdeflate_block_state_deinit(&ctx.libdeflate_block_state);
+
     if (ctx.selva != null) {
         selva.selva_db_destroy(ctx.selva);
     }
+
+    // derp
 
     ctx.selva = null;
 

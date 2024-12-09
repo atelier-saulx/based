@@ -16,7 +16,7 @@ const selva = @import("../../selva.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
 // or totally different
-pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u32, q, i + 5);
     const next = i + 11 + valueSize;
     const query = q[i + 11 .. next];
@@ -59,13 +59,13 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
             j += size + 2;
         }
         return .{ next, false };
-    } else if (has.has(true, op, prop, value, query, mainLen)) {
+    } else if (has.has(true, op, prop, value, query, mainLen, dbCtx)) {
         return .{ next, true };
     }
     return .{ next, false };
 }
 
-pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn defaultVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u32, q, i + 5);
     const start = readInt(u16, q, i + 1);
     const mainLen = readInt(u16, q, i + 3);
@@ -99,7 +99,7 @@ pub inline fn defaultVar(q: []u8, v: []u8, i: usize) ConditionsResult {
                 }
             }
         }
-    } else if (!has.has(false, op, prop, value, query, mainLen)) {
+    } else if (!has.has(false, op, prop, value, query, mainLen, dbCtx)) {
         pass = false;
     }
     return .{ next, pass };
