@@ -25,19 +25,16 @@ inline fn blockCompare(_: []const u8, _: []const u8) bool {
 }
 
 pub fn search(
-    dbCtx: *db.DbCtx,
+    _: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     searchBuf: []u8,
-    // searchCtx: *selva.strsearch+init
+    searchCtx: *selva.strsearch_needle,
     // ref: ?types.RefStruct,
     // comptime isEdge: bool,
 ) u32 {
-    const qSize = readInt(u16, searchBuf, 0);
-    const offset = qSize + 2;
-    const query = searchBuf[2..offset];
     const sl = searchBuf.len;
-    var j: usize = offset;
+    var j: usize = searchCtx.len;
 
     while (j < sl) {
         const field = searchBuf[j];
@@ -58,17 +55,14 @@ pub fn search(
 
         var d: c_int = undefined;
         if (isCompressed) {
-            if (decompress(blockCompare, query, value, dbCtx)) {
-                return 1;
-            }
+            // if (decompress(blockCompare, query, value, dbCtx)) {
+            //     return 1;
+            // }
         } else {
             d = selva.strsearch_has_u8(
                 @ptrCast(value.ptr),
                 value.len,
-                @ptrCast(query.ptr),
-                query.len,
-                0,
-                true,
+                searchCtx,
             );
         }
 

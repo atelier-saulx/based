@@ -8,7 +8,7 @@ const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 const search = @import("../filter/search.zig").search;
-
+const readInt = @import("../../utils.zig").readInt;
 const utils = @import("../../utils.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
@@ -90,7 +90,7 @@ pub fn query(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    _: []u8,
+    searchBuf: []u8,
 ) !void {
     var correctedForOffset: u32 = offset;
 
@@ -99,7 +99,22 @@ pub fn query(
     var first = true;
     var node = db.getFirstNode(typeEntry);
 
-    // const hasSearch = searchBuf.len > 0;
+    const hasSearch = searchBuf.len > 0;
+
+    var searchNeedle: selva.strsearch_needle = undefined;
+
+    if (hasSearch) {
+        const qSize = readInt(u16, searchBuf, 0);
+        const sOffset = qSize + 2;
+        const sQuery = searchBuf[2..sOffset];
+        _ = selva.strsearch_init_u8_ctx(
+            &searchNeedle,
+            sQuery.ptr,
+            sQuery.len,
+            0,
+            true,
+        );
+    }
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -116,11 +131,11 @@ pub fn query(
             continue :checkItem;
         }
 
-        // if (hasSearch) {
-        //     if (search(ctx.db, node.?, typeEntry, searchBuf) > 2) {
-        //         continue :checkItem;
-        //     }
-        // }
+        if (hasSearch) {
+            if (search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle) > 2) {
+                continue :checkItem;
+            }
+        }
 
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
