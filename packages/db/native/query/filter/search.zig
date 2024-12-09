@@ -36,8 +36,6 @@ pub fn search(
     const sl = searchBuf.len;
     var j: usize = searchCtx.len + 2;
 
-    // std.debug.print("----------S: {d} {d} \n", .{ j, sl });
-
     while (j < sl) {
         const field = searchBuf[j];
 
@@ -56,25 +54,15 @@ pub fn search(
         const isCompressed = value[0] == 1;
 
         var d: c_int = undefined;
-        if (isCompressed) {
-            // std.debug.print("D: {any} \n", .{d});
-
-            // if (decompress(blockCompare, query, value, dbCtx)) {
-            //     return 1;
-            // }
-        } else {
+        if (isCompressed) {} else {
             d = selva.strsearch_has_u8(
                 @ptrCast(value.ptr),
                 value.len,
                 searchCtx,
             );
-
-            // std.debug.print("????????D: {any} \n", .{d});
         }
 
         if (d < 3) {
-            // std.debug.print("D: {any} \n", .{d});
-
             const x: u32 = @bitCast(d);
             return x;
         }

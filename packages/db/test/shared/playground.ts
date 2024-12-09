@@ -228,7 +228,7 @@ const makeDb = async (path: string) => {
     //   v.filter('body', 'hasLoose', query)
     // })
     // body: 1
-    .search(query, { headline: 3, abstract: 2 })
+    .search(query, { headline: 3, body: 1 })
     .get()
     .then((v) => {
       v.inspect(10)

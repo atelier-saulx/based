@@ -135,7 +135,6 @@ pub fn query(
             if (search(ctx.db, node.?, typeEntry, searchBuf, &searchNeedle) > 2) {
                 continue :checkItem;
             }
-            // std.debug.print("derpB \n", .{});
         }
 
         if (correctedForOffset != 0) {
