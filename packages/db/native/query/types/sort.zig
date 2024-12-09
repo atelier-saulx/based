@@ -12,6 +12,7 @@ const utils = @import("../../utils.zig");
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
+const search = @import("../filter/search.zig").search;
 
 pub fn queryIds(
     comptime queryType: comptime_int,
@@ -100,7 +101,7 @@ pub fn querySort(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
-    _: []u8,
+    searchBuf: []u8,
 ) !void {
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
@@ -115,6 +116,8 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
+
+    const hasSearch = searchBuf.len > 0;
 
     checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -144,6 +147,12 @@ pub fn querySort(
 
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
+        }
+
+        if (hasSearch) {
+            if (search(ctx.db, node.?, typeEntry, searchBuf) < 10) {
+                continue :checkItem;
+            }
         }
 
         if (correctedForOffset != 0) {

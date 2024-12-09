@@ -64,15 +64,16 @@ pub fn search(
                 value.len,
                 @ptrCast(query.ptr),
                 query.len,
-                2,
+                3,
                 true,
             );
-
-            std.debug.print("flap {d} \n", .{d});
         }
 
-        if (d < 2) {
-            return 10;
+        if (d < 3) {
+            const x: u32 = @bitCast(d);
+            std.debug.print("DISTANCE: {d} \n", .{x});
+
+            return x;
         }
 
         j += 2;
