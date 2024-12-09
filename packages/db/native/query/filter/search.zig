@@ -27,13 +27,18 @@ fn levenshtein(
     queryNeedle: *selva.strsearch_wneedle,
 ) u8 {
     const ql = query.len;
-    return selva.strsearch_levenshtein_mbs(
+
+    std.debug.print("flap {any} \n", .{value[i .. i + ql]});
+    const d = selva.strsearch_levenshtein_mbs(
         locale.?,
         transform.?,
         value[i .. i + ql].ptr,
         ql,
         queryNeedle,
     );
+    std.debug.print("flap!!!!\n", .{});
+
+    return d;
 }
 
 fn resultMatcher(
