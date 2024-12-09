@@ -23,7 +23,6 @@ export class ModifyCtx {
   ctx: { offset?: number } = {} // maybe make this different?
 
   payload: Buffer
-  queued: boolean
 
   max: number
   buf: Buffer
