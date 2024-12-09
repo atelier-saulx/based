@@ -51,10 +51,30 @@ pub inline fn default(value: []const u8, query: []const u8) bool {
             }
             if (j == ql) {
                 return true;
+            } else if (@reduce(.Xor, matches) == false) {
+                var p: usize = index - i;
+                while (p < vectorLen) : (p += 1) {
+                    if (matches[p]) {
+                        j = 1;
+                        if (p + i + ql - 1 > l) {
+                            return false;
+                        }
+                        while (j < ql) : (j += 1) {
+                            const v = value[p + i + j];
+                            const q = query[j];
+                            if ((v != q)) {
+                                break;
+                            }
+                        }
+                        if (j == ql) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
     }
-    while (i < l and ql <= l - i) : (i += 1) {
+    while (i < l) : (i += 1) {
         const id2 = value[i];
         if (id2 == query[0]) {
             if (i + ql - 1 > l) {

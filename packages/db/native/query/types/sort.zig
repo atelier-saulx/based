@@ -103,7 +103,7 @@ pub fn querySort(
     sortBuffer: []u8,
     searchBuf: []u8,
 ) !void {
-    // const movingLimit = limit;
+    var movingLimit = limit;
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
     const typeEntry = try db.getType(ctx.db, typeId);
@@ -120,7 +120,7 @@ pub fn querySort(
 
     const hasSearch = searchBuf.len > 0;
 
-    checkItem: while (!end and ctx.totalResults < limit) {
+    checkItem: while (!end and ctx.totalResults < movingLimit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
 
@@ -152,13 +152,13 @@ pub fn querySort(
 
         if (hasSearch) {
             const d = search(ctx.db, node.?, typeEntry, searchBuf);
-            if (d > 0) {
+            if (d > 1) {
                 continue :checkItem;
             }
             std.debug.print("DISTANCE: {d} \n", .{d});
-            // if (d != 0) {
-            //     movingLimit += 1;
-            // }
+            if (d != 0) {
+                movingLimit += 1;
+            }
         }
 
         if (correctedForOffset != 0) {
