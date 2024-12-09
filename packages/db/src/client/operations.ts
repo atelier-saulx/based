@@ -2,38 +2,30 @@ import { BasedDb } from '../index.js'
 import { PropDef } from '../server/schema/types.js'
 
 export class ModifyCtx {
-  constructor(db: BasedDb, offset = 0, size = ~~(db.maxModifySize / 2)) {
-    this.offset = offset
-    this.len = offset
-    this.size = size
-    this.max = offset + size - 8
+  constructor(db: BasedDb) {
+    this.max = db.maxModifySize
     this.db = db
 
     if (db.modifyCtx) {
       this.buf = db.modifyCtx.buf
     } else {
-      this.buf = Buffer.from(new SharedArrayBuffer(db.maxModifySize))
+      this.buf = Buffer.allocUnsafe(db.maxModifySize)
       db.modifyCtx = this
     }
   }
 
   // default values
+  len: number = 0
   id = -1
   lastMain = -1
   hasStringField = -1
   queue = new Map<(payload: any) => void, any>()
   ctx: { offset?: number } = {} // maybe make this different?
 
-  detached: boolean
   payload: Buffer
   queued: boolean
 
-  offset: number
-  len: number
-
   max: number
-  size: number
-  state: Int32Array
   buf: Buffer
 
   field: number
@@ -57,7 +49,7 @@ export const flushBuffer = (db: BasedDb) => {
       console.error(e)
     }
     db.writeTime += Date.now() - d
-    db.modifyCtx = new ModifyCtx(db, 0, db.maxModifySize)
+    db.modifyCtx = new ModifyCtx(db)
     if (ctx.queue.size) {
       for (const [resolve, payload] of ctx.queue) {
         resolve(payload)

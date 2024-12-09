@@ -139,7 +139,7 @@ function updateRefs(
         appendU8(ctx, REFERENCES)
       }
 
-      return appendRefs(def, ctx, mod, refs, res, op, nrOrErr)
+      return appendRefs(def, ctx, mod, refs, op, nrOrErr)
     }
     return nrOrErr
   }
@@ -150,7 +150,6 @@ function appendRefs(
   ctx: ModifyCtx,
   modifyOp: ModifyOp,
   refs: any[],
-  res: ModifyState,
   op: 0 | 1,
   remaining: number,
 ): ModifyErr {
