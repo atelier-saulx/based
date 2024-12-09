@@ -67,7 +67,7 @@ await test('search', async (t) => {
 
   const r = await db
     .query('italy')
-    .search('aaaaa', { body: 1 })
+    .search('aaaba', { body: 1 })
     .include('id')
     .range(0, 1e3)
     .get()

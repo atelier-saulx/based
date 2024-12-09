@@ -71,11 +71,7 @@ pub fn search(
             );
         }
 
-        // std.debug.print("FOUND {d}  {any} \n", .{ d, query });
-
-        // minimum d
         if (d < 1) {
-            // std.debug.print("FOUND {d}  \n", .{d});
             return 10;
         }
 
