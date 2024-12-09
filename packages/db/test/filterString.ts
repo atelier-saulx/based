@@ -198,6 +198,7 @@ await test('has uncompressed', async (t) => {
       italy: {
         props: {
           f: 'boolean',
+          headline: { type: 'string', compression: 'none' },
           body: { type: 'string', compression: 'none' }, // big compressed string...
         },
       },
@@ -206,6 +207,14 @@ await test('has uncompressed', async (t) => {
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
+      headline:
+        i === 500
+          ? 'Hungarian woman linked to Lebanon pager blasts was EU'
+          : i === 600
+            ? 'Derpy derp derp exploding-pager merp'
+            : i === 602
+              ? 'P p p ppppp p pppp p p Italy is the greatest'
+              : '',
       body: italy,
     })
   }
@@ -220,6 +229,58 @@ await test('has uncompressed', async (t) => {
         .get()
     ).inspect().length,
     0,
+  )
+
+  equal(
+    (
+      await db
+        .query('italy')
+        .filter('body', 'has', 'derp derp derp')
+        .include('id')
+        .range(0, 1e3)
+        .get()
+    ).inspect().length,
+    0,
+  )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('headline', 'has', 'pager')
+      .include('id', 'headline')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 501,
+        headline: 'Hungarian woman linked to Lebanon pager blasts was EU',
+      },
+      {
+        id: 601,
+        headline: 'Derpy derp derp exploding-pager merp',
+      },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('headline', 'hasLoose', 'Pager')
+      .include('id', 'headline')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 501,
+        headline: 'Hungarian woman linked to Lebanon pager blasts was EU',
+      },
+      {
+        id: 601,
+        headline: 'Derpy derp derp exploding-pager merp',
+      },
+    ],
   )
 })
 

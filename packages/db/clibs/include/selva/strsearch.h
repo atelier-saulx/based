@@ -13,10 +13,24 @@
 
 #define STRSEARCH_NEEDLE_MAX 39
 
+struct strsearch_needle {
+    int good;
+    char fch;
+    const char *sep;
+    const char *buf;
+    size_t len;
+};
+
 struct strsearch_wneedle {
+    int good;
+    wchar_t fch;
+    const char *sep;
     wchar_t buf[STRSEARCH_NEEDLE_MAX + 1];
     size_t len;
 };
+
+SELVA_EXPORT
+int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_str, size_t needle_len, int good, bool strict_first_char_match);
 
 /**
  * Make needle for strsearch_has_mbs().
@@ -25,7 +39,8 @@ struct strsearch_wneedle {
  *          SELVA_ENOBUFS = too long needle;
  *          SELVA_EINVAL = needle_len was 0.
  */
-int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len);
+SELVA_EXPORT
+int strsearch_init_mbs_ctx(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len, int good, bool strict_first_char_match);
 
 /**
  * Fuzzy substring search.
@@ -35,7 +50,7 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
  *          INT_MAX == error or too long needle.
  */
 SELVA_EXPORT
-int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match);
+int strsearch_has_u8(const char *text, size_t text_len, const struct strsearch_needle *needle);
 
 SELVA_EXPORT
-int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match);
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, const struct strsearch_wneedle *wneedle);

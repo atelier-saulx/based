@@ -59,7 +59,9 @@ await test('search', async (t) => {
   })
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
-      body: ' aaaaa aaa aa dnqpwifhjwoi fwqopifqehoiqehvoiewr hweiorhweroibhwroibhibothriotbiohpveroihriobhwrtoibhrtiobhorwithbwoirhboi oeirghwrtoi bhworiehb',
+      body:
+        italy +
+        ' aaaaa aaa aa dnqpwifhjwoi fwqopifqehoiqehvoiewr hweiorhweroibhwroibhibothriotbiohpveroihriobhwrtoibhrtiobhorwithbwoirhboi oeirghwrtoi bhworiehb',
     })
   }
 

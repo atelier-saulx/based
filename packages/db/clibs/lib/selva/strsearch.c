@@ -19,8 +19,20 @@
 #include "selva_error.h"
 #include "selva/strsearch.h"
 
-#define SEARCH_SEP " ,.;-\n"
 #define LEV_MAX (STRSEARCH_NEEDLE_MAX + 1)
+
+static const char *select_separator(const char *needle, size_t len)
+{
+    const char * const separators[] = {
+        [0] = " ,.;-\n", /* default */
+        [1] = " ,.;\n", /* contains '-' */
+        [2] = ",.;-\n", /* contains ' ' */
+        [3] = ",.;\n", /* contains '-' and ' ' */
+    };
+    unsigned i = !!memchr(needle, '-', len) | (!!memchr(needle, ' ', len) << 1);
+
+    return separators[i];
+}
 
 static int32_t min3(int32_t a, int32_t b, int32_t c)
 {
@@ -168,7 +180,27 @@ out:
     return tok;
 }
 
-int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len)
+int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_str, size_t needle_len, int good, bool strict_first_char_match)
+{
+    if (needle_len == 0) {
+        return SELVA_EINVAL;
+    }
+    if (needle_len > LEV_MAX - 1) {
+        return SELVA_ENOBUFS;
+    }
+
+    *needle = (struct strsearch_needle){
+        .good = good,
+        .fch = strict_first_char_match && isalpha(needle_str[0]) ? tolower(needle_str[0]) : '\0',
+        .sep = select_separator(needle_str, needle_len),
+        .buf = needle_str,
+        .len = needle_len,
+    };
+
+    return 0;
+}
+
+int strsearch_init_mbs_ctx(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len, int good, bool strict_first_char_match)
 {
     mbstate_t ps;
     size_t i = 0, j = 0;
@@ -187,20 +219,21 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
     wneedle->buf[j] = '\0';
     wneedle->len = j;
 
+    wneedle->good = good;
+    wneedle->fch = strict_first_char_match && iswalpha(wneedle->buf[0]) ? wneedle->buf[0] : L'\0';
+    wneedle->sep = select_separator(needle, needle_len);
+
     return 0;
 }
 
-int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match)
+int strsearch_has_u8(const char *text, size_t text_len, const struct strsearch_needle *needle)
 {
-    const char *sep = SEARCH_SEP;
+    const char *sep = needle->sep;
+    const char fch = needle->fch;
+    const int32_t good = needle->good;
     const char *word;
     const char *brkt;
-    const char fch = strict_first_char_match && isalpha(needle[0]) ? tolower(needle[0]) : '\0';
     int32_t d = INT_MAX;
-
-    if (needle_len > LEV_MAX - 1) {
-        return INT_MAX;
-    }
 
     for (word = strtok2(text, sep, &brkt, text_len);
          word;
@@ -211,9 +244,9 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
             continue;
         }
 
-        int32_t d2 = levenshtein_u8(word, len, needle, needle_len);
+        int32_t d2 = levenshtein_u8(word, len, needle->buf, needle->len);
         d = min(d, d2);
-        if (d <= (int32_t)good) {
+        if (d <= good) {
             break;
         }
     }
@@ -221,13 +254,14 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
     return d;
 }
 
-int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match)
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, const struct strsearch_wneedle *wneedle)
 {
-    const char *sep = SEARCH_SEP;
+    const char *sep = wneedle->sep;
+    const char fch = wneedle->fch;
+    const int32_t good = wneedle->good;
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
-    const wchar_t fch = strict_first_char_match && iswalpha(wneedle->buf[0]) ? wneedle->buf[0] : L'\0';
 
     for (word = strtok2(text, sep, &brkt, text_len);
          word;
@@ -247,7 +281,7 @@ int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t te
 
         int32_t d2 = levenshtein_mbs(loc, trans, word, len, wneedle->buf, wneedle->len);
         d = min(d, d2);
-        if (d <= (int32_t)good) {
+        if (d <= good) {
             break;
         }
     }
@@ -290,11 +324,13 @@ __constructor static void test(void)
 
         fprintf(stderr, "pattern: %s | ", pattern);
 #if TEST_U8 == 1
-        fprintf(stderr, "%d\n", strsearch_has_u8(book, fsize, pattern, len, 1));
+        struct strsearch_needle *needle;
+        (void)strsearch_init_u8_ctx(&needle, pattern, len, 1, true);
+        fprintf(stderr, "%d\n", strsearch_has_u8(book, fsize, &needle));
 #else
         struct strsearch_wneedle wneedle;
-        make_wneedle(&wneedle, loc, trans, pattern, len);
-        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, fsize, &wneedle, 1));
+        (void)strsearch_init_mbs_ctx(&wneedle, loc, trans, pattern, len, 1, true);
+        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, fsize, &wneedle));
 #endif
     }
     ts_monotime(&ts_end);

@@ -90,7 +90,7 @@ pub fn query(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    searchBuf: []u8,
+    _: []u8,
 ) !void {
     var correctedForOffset: u32 = offset;
 
@@ -99,7 +99,7 @@ pub fn query(
     var first = true;
     var node = db.getFirstNode(typeEntry);
 
-    const hasSearch = searchBuf.len > 0;
+    // const hasSearch = searchBuf.len > 0;
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -116,11 +116,11 @@ pub fn query(
             continue :checkItem;
         }
 
-        if (hasSearch) {
-            if (search(ctx.db, node.?, typeEntry, searchBuf) > 2) {
-                continue :checkItem;
-            }
-        }
+        // if (hasSearch) {
+        //     if (search(ctx.db, node.?, typeEntry, searchBuf) > 2) {
+        //         continue :checkItem;
+        //     }
+        // }
 
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
