@@ -107,15 +107,13 @@ pub fn query(
         const qSize = readInt(u16, searchBuf, 0);
         const sOffset = qSize + 2;
         const sQuery = searchBuf[2..sOffset];
-        const err = selva.strsearch_init_u8_ctx(
+        _ = selva.strsearch_init_u8_ctx(
             &searchNeedle,
             sQuery.ptr,
             sQuery.len,
             0,
             true,
         );
-
-        std.debug.print("NEEDLE CTX {any} \n", .{err});
     }
 
     checkItem: while (ctx.totalResults < limit) {
