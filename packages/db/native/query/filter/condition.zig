@@ -13,6 +13,7 @@ const ConditionsResult = t.ConditionsResult;
 const Prop = @import("../../types.zig").Prop;
 const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
+const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
 // or totally different
 pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
@@ -38,9 +39,11 @@ pub inline fn orVar(q: []u8, v: []u8, i: usize) ConditionsResult {
         // }
         // -------------------
     } else if (op == Op.equal) {
+        // only for main this...
         if (value.len != valueSize) {
             // pass = false;
         } else {
+            // needs double while
             var j: u32 = 0;
             while (j < query.len) : (j += 1) {
                 if (value[j] != query[j]) {
@@ -182,36 +185,19 @@ pub inline fn default(
             return .{ next, false };
         }
     } else if (op == Op.equalCrc32) {
-        const origLen = readInt(u32, query, 4);
-        var valueLen: usize = undefined;
-        if (prop == Prop.STRING and v[1] == 1) {
-            valueLen = readInt(u32, v, 1);
-        } else {
-            valueLen = v.len;
-        }
-        if (origLen != valueLen) {
-            return .{ next, false };
-        }
-        var crc32: u32 = undefined;
-        // if isEdge
-        if (fieldSchema == null) {
-            crc32 = selva.crc32c(0, v.ptr, v.len);
-        } else {
-            if (isEdge) {
-                _ = selva.selva_fields_get_string_crc2(node.meta, fieldSchema, &crc32);
-            } else {
-                _ = selva.selva_fields_get_string_crc(node, fieldSchema, &crc32);
-            }
-        }
-        const qCrc32 = readInt(u32, query, 0);
-        if (crc32 != qCrc32) {
-            return .{ next, false };
-        }
+        return .{ next, crc32Equal(prop, query, v, isEdge, node, fieldSchema) };
     }
     return .{ next, true };
 }
 
-pub inline fn orFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn orFixed(
+    q: []u8,
+    v: []u8,
+    i: usize,
+    comptime isEdge: bool,
+    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
+    fieldSchema: ?db.FieldSchema,
+) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
     const start = readInt(u16, q, i + 3);
     const op: Op = @enumFromInt(q[i + 5]);
@@ -219,7 +205,21 @@ pub inline fn orFixed(q: []u8, v: []u8, i: usize) ConditionsResult {
     const repeat = readInt(u16, q, i + 7);
     const query = q[i + 9 .. i + valueSize * repeat + 9];
     const next = 9 + valueSize * repeat;
-    if (op == Op.equal) {
+    if (op == Op.equalCrc32) {
+        const amountOfConditions = @divTrunc(query.len, 8) + 1;
+        // std.debug.print("derp derp {d} {d} \n", .{ amountOfConditions, valueSize });
+        var j: usize = 0;
+        while (j < amountOfConditions) {
+            const qI = j * 8;
+            // ultra slow like htis ofc... fix better
+            if (crc32Equal(prop, query[qI .. qI + 8], v, isEdge, node, fieldSchema)) {
+                return .{ next, true };
+            }
+            j += 1;
+        }
+        return .{ next, false };
+        // ---------
+    } else if (op == Op.equal) {
         const value = v[start .. start + valueSize];
         if (!batch.equalsOr(valueSize, value, query)) {
             return .{ next, false };

@@ -8,6 +8,8 @@ const readInt = @import("../../../utils.zig").readInt;
 const decompress = compressed.decompress;
 const Compare = compressed.Compare;
 
+const std = @import("std");
+
 inline fn orCompare(comptime isOr: bool, compare: Compare) type {
     if (isOr) {
         return struct {

@@ -30,20 +30,28 @@ export const createVariableFilterBuffer = (
   value: any,
   prop: PropDef | PropDefEdge,
   op: number,
-  buf: Buffer,
 ) => {
-  var isOr = 4
-  let val: Buffer
+  let isOr = 4
+  let val: any
+  let buf: Buffer
   if (Array.isArray(value)) {
-    isOr = 2
-    const x = []
-    for (const v of value) {
-      const a = parseValue(v, prop, op)
-      const size = Buffer.allocUnsafe(2)
-      size.writeUint16LE(a.byteLength)
-      x.push(size, a)
+    if (op !== 1) {
+      isOr = 2
+      const x = []
+      for (const v of value) {
+        const a = parseValue(v, prop, op)
+        const size = Buffer.allocUnsafe(2)
+        size.writeUint16LE(a.byteLength)
+        x.push(size, a)
+      }
+      val = Buffer.concat(x)
+    } else {
+      const x = []
+      for (const v of value) {
+        x.push(parseValue(v, prop, op))
+      }
+      val = x
     }
-    val = Buffer.concat(x)
   } else {
     val = parseValue(value, prop, op)
   }
@@ -51,25 +59,17 @@ export const createVariableFilterBuffer = (
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
-      if (op === 1 && val.byteLength > 25) {
-        // if len is > 25
-        buf = createFixedFilterBuffer(prop, 4, 17, crc32(val), false)
-        buf = Buffer.allocUnsafe(16)
-        buf[0] = negateType(op)
-        buf[1] = 0
-        buf.writeUInt16LE(8, 2)
-        buf.writeUInt16LE(0, 4)
-        buf[6] = 17
-        buf[7] = prop.typeIndex
-        writeFixed(prop, buf, crc32(val), 4, 8, 17)
-        writeFixed(prop, buf, val.byteLength, 4, 12, 17)
+      if (op === 1) {
+        // 17 crc32 check
+        buf = createFixedFilterBuffer(prop, 8, 17, val, false)
       } else {
         buf = writeVarFilter(isOr, val, buf, op, prop, 0, 0)
       }
     } else {
       if (val.byteLength > prop.len) {
-        throw new Error('filter is larger then max value')
+        throw new Error('filter is larger then max value (will never be true')
       }
+      // HANDLE EQUAL
       buf = writeVarFilter(isOr, val, buf, op, prop, prop.start, prop.len)
     }
   } else {

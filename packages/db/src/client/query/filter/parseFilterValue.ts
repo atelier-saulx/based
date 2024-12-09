@@ -7,8 +7,10 @@ import {
   ENUM,
   BOOLEAN,
   STRING,
+  BINARY,
 } from '../../../server/schema/types.js'
-import { compress } from '../../string.js'
+import { crc32 } from '../../string.js'
+import { writeFixed } from './createFixedFilterBuffer.js'
 
 // -------------------------------------------
 // conditions normal
@@ -47,7 +49,13 @@ export const parseFilterValue = (
   prop: PropDef | PropDefEdge,
   value: any,
 ): any => {
-  if (prop.typeIndex === BOOLEAN) {
+  if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
+    const b = value instanceof Buffer ? value : Buffer.from(value)
+    const buf = Buffer.allocUnsafe(8)
+    buf.writeUint32LE(crc32(b), 0)
+    buf.writeUint32LE(b.byteLength, 4)
+    return buf
+  } else if (prop.typeIndex === BOOLEAN) {
     return value ? 1 : 0
   } else if (prop.typeIndex === ENUM) {
     return prop.reverseEnum[value] + 1

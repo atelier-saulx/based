@@ -9,8 +9,6 @@ pub const Ctx = struct {
     currentQueryIndex: usize,
 };
 
-// fn ([]u8, []u8) callconv(.Inline)
-
 pub const Compare = fn (value: []const u8, query: []const u8) callconv(.Inline) bool;
 
 fn comptimeCb(comptime compare: Compare) type {
@@ -19,9 +17,10 @@ fn comptimeCb(comptime compare: Compare) type {
             const ctx: *Ctx = @ptrCast(@alignCast(ctxC.?));
             var value: []const u8 = undefined;
             if (ctx.currentQueryIndex > 0) {
-                value = buf[dict_size..(dict_size + data_size)];
+                const index = dict_size + ctx.currentQueryIndex;
+                value = buf[index - ctx.query.len .. (index + data_size)];
             } else {
-                value = buf[ctx.currentQueryIndex - ctx.query.len .. ctx.currentQueryIndex + data_size];
+                value = buf[(ctx.currentQueryIndex - ctx.query.len + dict_size) .. ctx.currentQueryIndex + data_size + dict_size];
             }
             const found = compare(
                 value,
@@ -30,7 +29,7 @@ fn comptimeCb(comptime compare: Compare) type {
             if (found) {
                 return 1;
             }
-            ctx.currentQueryIndex = ctx.currentQueryIndex + data_size;
+            ctx.currentQueryIndex = ctx.currentQueryIndex + data_size + dict_size;
             return 0;
         }
     };
