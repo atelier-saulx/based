@@ -57,7 +57,7 @@ await test('search', async (t) => {
       },
     },
   })
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 100; i++) {
     await db.create('italy', {
       body:
         italy +

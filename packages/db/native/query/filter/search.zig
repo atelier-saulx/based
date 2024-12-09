@@ -24,19 +24,18 @@ fn levenshtein(
     value: []u8,
     i: usize,
     query: []u8,
-    queryNeedle: *selva.strsearch_wneedle,
+    _: *selva.strsearch_wneedle,
 ) u8 {
     const ql = query.len;
 
-    std.debug.print("flap {any} \n", .{value[i .. i + ql]});
-    const d = selva.strsearch_levenshtein_mbs(
-        locale.?,
-        transform.?,
-        value[i .. i + ql].ptr,
-        ql,
-        queryNeedle,
+    const d = selva.strsearch_levenshtein_u8(
+    // locale.?,
+    // transform.?,
+    value[i .. i + ql].ptr, ql, query.ptr, ql
+    // queryNeedle,
     );
-    std.debug.print("flap!!!!\n", .{});
+
+    // std.debug.print("derp {any} \n", .{d});
 
     return d;
 }
