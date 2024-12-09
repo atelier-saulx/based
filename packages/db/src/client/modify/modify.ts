@@ -15,7 +15,6 @@ import { writeString } from './string.js'
 import { ModifyErr, ModifyOp } from './types.js'
 import { writeBinary } from './binary.js'
 import { writeMain } from './main.js'
-import { initCursor } from './setCursor.js'
 
 function _modify(
   ctx: ModifyCtx,
@@ -43,15 +42,24 @@ function _modify(
       if (type === ALIAS) {
         err = writeString(val, ctx, schema, def, parentId, mod)
       } else if (type === REFERENCE) {
-        err = writeReference(val, ctx, def, parentId, mod)
+        err = writeReference(val, ctx, schema, def, parentId, mod)
       } else if (type === REFERENCES) {
         err = writeReferences(val, ctx, schema, def, parentId, mod)
       } else if (type === BINARY && def.separate === true) {
-        err = writeBinary(val, ctx, def, parentId, mod)
+        err = writeBinary(val, ctx, schema, def, parentId, mod)
       } else if (type === STRING && def.separate === true) {
         err = writeString(val, ctx, schema, def, parentId, mod)
       } else {
-        err = writeMain(val, ctx, schema.mainLen, def, parentId, mod, overwrite)
+        err = writeMain(
+          val,
+          ctx,
+          schema,
+          schema.mainLen,
+          def,
+          parentId,
+          mod,
+          overwrite,
+        )
       }
     } else {
       err = _modify(
@@ -83,6 +91,5 @@ export function modify(
   unsafe: boolean = false,
 ): ModifyErr {
   ctx.db.markNodeDirty(schema, parentId)
-  initCursor(ctx, schema)
   return _modify(ctx, parentId, obj, schema, mod, tree, overwrite, unsafe)
 }

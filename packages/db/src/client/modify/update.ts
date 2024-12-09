@@ -31,7 +31,7 @@ const appendUpdate = (
       return RANGE_ERR
     }
 
-    setCursor(ctx, 0, parentId, UPDATE)
+    setCursor(ctx, def, 0, parentId, UPDATE)
     ctx.buf[ctx.len++] = 5
     ctx.buf[ctx.len++] = mergeMainSize
     ctx.buf[ctx.len++] = mergeMainSize >>>= 8

@@ -27,7 +27,7 @@ const appendCreate = (
     if (ctx.len + 10 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, 0, parentId, CREATE)
+    setCursor(ctx, def, 0, parentId, CREATE)
   }
 
   // if touched lets see perf impact here

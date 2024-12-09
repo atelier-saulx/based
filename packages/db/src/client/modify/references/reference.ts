@@ -1,5 +1,5 @@
 import { BasedDb } from '../../../index.js'
-import { PropDef } from '../../../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '../../../server/schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
@@ -9,6 +9,7 @@ import { RefModifyOpts } from './references.js'
 function writeRef(
   id: number,
   ctx: BasedDb['modifyCtx'],
+  schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
@@ -18,7 +19,7 @@ function writeRef(
     return RANGE_ERR
   }
   ctx.db.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
-  setCursor(ctx, def.prop, parentId, modifyOp)
+  setCursor(ctx, schema, def.prop, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = hasEdges ? 1 : 0
   ctx.buf[ctx.len++] = id
@@ -30,6 +31,7 @@ function writeRef(
 function singleReferenceEdges(
   ref: RefModifyOpts,
   ctx: BasedDb['modifyCtx'],
+  schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
@@ -47,9 +49,9 @@ function singleReferenceEdges(
   if (id > 0) {
     const edgesLen = def.edgesTotalLen || getEdgeSize(def, ref)
     if (edgesLen === 0) {
-      return writeRef(id, ctx, def, parentId, modifyOp, false)
+      return writeRef(id, ctx, schema, def, parentId, modifyOp, false)
     }
-    let err = writeRef(id, ctx, def, parentId, modifyOp, true)
+    let err = writeRef(id, ctx, schema, def, parentId, modifyOp, true)
     if (err) {
       return err
     }
@@ -75,6 +77,7 @@ function singleReferenceEdges(
 export function writeReference(
   value: number | ModifyState,
   ctx: BasedDb['modifyCtx'],
+  schema: SchemaTypeDef,
   def: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
@@ -83,17 +86,17 @@ export function writeReference(
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def.prop, parentId, modifyOp)
+    setCursor(ctx, schema, def.prop, parentId, modifyOp)
     ctx.buf[ctx.len++] = DELETE
   } else if (typeof value === 'number') {
-    return writeRef(value, ctx, def, parentId, modifyOp, false)
+    return writeRef(value, ctx, schema, def, parentId, modifyOp, false)
   } else if (value instanceof ModifyState) {
     if (value.error) {
       return value.error
     }
-    return writeRef(value.tmpId, ctx, def, parentId, modifyOp, false)
+    return writeRef(value.tmpId, ctx, schema, def, parentId, modifyOp, false)
   } else if (def.edges && typeof value === 'object') {
-    return singleReferenceEdges(value, ctx, def, parentId, modifyOp)
+    return singleReferenceEdges(value, ctx, schema, def, parentId, modifyOp)
   } else {
     return new ModifyError(def, value)
   }

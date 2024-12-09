@@ -1,6 +1,6 @@
 import { BasedDb } from '../../index.js'
 import { flushBuffer, startDrain } from '../operations.js'
-import { initCursor, setCursor } from './setCursor.js'
+import { setCursor } from './setCursor.js'
 import { UPDATE } from './types.js'
 
 export const remove = (db: BasedDb, type: string, id: number): boolean => {
@@ -10,8 +10,6 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
 
   ctx.db.markNodeDirty(schema, id)
 
-  initCursor(ctx, schema)
-
   if (separate) {
     const size = 12 + separate.length * 12
     if (ctx.len + size > ctx.max) {
@@ -19,11 +17,11 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       return remove(db, type, id)
     }
 
-    setCursor(ctx, 0, id, UPDATE)
+    setCursor(ctx, schema, 0, id, UPDATE)
     ctx.buf[ctx.len++] = 4
 
     for (const s of separate) {
-      setCursor(ctx, s.prop, id, UPDATE)
+      setCursor(ctx, schema, s.prop, id, UPDATE)
       ctx.buf[ctx.len++] = 4
     }
     ctx.buf[ctx.len++] = 10
@@ -32,7 +30,7 @@ export const remove = (db: BasedDb, type: string, id: number): boolean => {
       flushBuffer(db)
       return remove(db, type, id)
     }
-    setCursor(ctx, 0, id, UPDATE)
+    setCursor(ctx, schema, 0, id, UPDATE)
     ctx.buf[ctx.len++] = 4
     ctx.buf[ctx.len++] = 10
   }

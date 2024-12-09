@@ -33,7 +33,7 @@ export function writeString(
       if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, t.prop, parentId, modifyOp)
+      setCursor(ctx, def, t.prop, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
@@ -46,7 +46,7 @@ export function writeString(
       def.stringPropsCurrent[t.prop] = 2
       ctx.hasStringField++
     }
-    setCursor(ctx, t.prop, parentId, modifyOp)
+    setCursor(ctx, def, t.prop, parentId, modifyOp)
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
     if (isBuffer) {

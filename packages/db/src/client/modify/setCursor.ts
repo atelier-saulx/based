@@ -4,11 +4,25 @@ import { CREATE, ModifyOp } from './types.js'
 
 export const setCursor = (
   ctx: ModifyCtx,
+  schema: SchemaTypeDef,
   field: number,
   id: number,
   modifyOp: ModifyOp,
   ignoreField?: boolean,
 ) => {
+  const prefix0 = schema.idUint8[0]
+  const prefix1 = schema.idUint8[1]
+  if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
+    ctx.buf[ctx.len++] = 2
+    ctx.buf[ctx.len++] = prefix0
+    ctx.buf[ctx.len++] = prefix1
+    ctx.prefix0 = prefix0
+    ctx.prefix1 = prefix1
+    ctx.field = -1
+    ctx.id = -1
+    ctx.lastMain = -1
+  }
+
   if (!ignoreField && ctx.field !== field) {
     ctx.buf[ctx.len++] = 0
     ctx.buf[ctx.len++] = field
@@ -23,20 +37,5 @@ export const setCursor = (
     ctx.buf[ctx.len++] = id >>>= 8
     ctx.buf[ctx.len++] = id >>>= 8
     ctx.buf[ctx.len++] = id >>>= 8
-  }
-}
-
-export const initCursor = (ctx: ModifyCtx, schema: SchemaTypeDef) => {
-  const prefix0 = schema.idUint8[0]
-  const prefix1 = schema.idUint8[1]
-  if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
-    ctx.buf[ctx.len++] = 2
-    ctx.buf[ctx.len++] = prefix0
-    ctx.buf[ctx.len++] = prefix1
-    ctx.prefix0 = prefix0
-    ctx.prefix1 = prefix1
-    ctx.field = -1
-    ctx.id = -1
-    ctx.lastMain = -1
   }
 }

@@ -1,5 +1,5 @@
 import { BasedDb } from '../../index.js'
-import { PropDef } from '../../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '../../server/schema/types.js'
 import { UPDATE, ModifyOp, ModifyErr, RANGE_ERR, DELETE } from './types.js'
 import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
@@ -16,6 +16,7 @@ export function getBuffer(value): Buffer {
 export function writeBinary(
   value: any,
   ctx: BasedDb['modifyCtx'],
+  schema: SchemaTypeDef,
   t: PropDef,
   parentId: number,
   modifyOp: ModifyOp,
@@ -36,14 +37,14 @@ export function writeBinary(
         return RANGE_ERR
       }
 
-      setCursor(ctx, t.prop, parentId, modifyOp)
+      setCursor(ctx, schema, t.prop, parentId, modifyOp)
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
     if (ctx.len + 15 + size > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, t.prop, parentId, modifyOp)
+    setCursor(ctx, schema, t.prop, parentId, modifyOp)
     ctx.buf[ctx.len++] = modifyOp
     ctx.buf[ctx.len++] = size
     ctx.buf[ctx.len++] = size >>>= 8

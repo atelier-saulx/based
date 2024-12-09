@@ -41,13 +41,13 @@ export function writeReferences(
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def.prop, parentId, mod)
+    setCursor(ctx, schema, def.prop, parentId, mod)
     ctx.buf[ctx.len++] = DELETE
     return
   }
 
   if (Array.isArray(value)) {
-    return updateRefs(def, ctx, mod, value, parentId, 0)
+    return updateRefs(def, ctx, schema, mod, value, parentId, 0)
   }
 
   for (const key in value) {
@@ -56,9 +56,9 @@ export function writeReferences(
     if (!Array.isArray(val)) {
       err = new ModifyError(def, value)
     } else if (key === 'delete') {
-      err = deleteRefs(def, ctx, mod, val, parentId)
+      err = deleteRefs(def, ctx, schema, mod, val, parentId)
     } else if (key === 'add') {
-      err = updateRefs(def, ctx, mod, val, parentId, 1)
+      err = updateRefs(def, ctx, schema, mod, val, parentId, 1)
     } else {
       err = new ModifyError(def, value)
     }
@@ -71,6 +71,7 @@ export function writeReferences(
 function deleteRefs(
   def: PropDef,
   ctx: ModifyCtx,
+  schema: SchemaTypeDef,
   modifyOp: ModifyOp,
   refs: any[],
   parentId: number,
@@ -79,7 +80,7 @@ function deleteRefs(
   if (ctx.len + 10 + size > ctx.max) {
     return RANGE_ERR
   }
-  setCursor(ctx, def.prop, parentId, modifyOp)
+  setCursor(ctx, schema, def.prop, parentId, modifyOp)
   ctx.buf[ctx.len++] = modifyOp
   ctx.buf[ctx.len++] = size
   ctx.buf[ctx.len++] = size >>>= 8
@@ -111,6 +112,7 @@ function deleteRefs(
 function updateRefs(
   def: PropDef,
   ctx: ModifyCtx,
+  schema: SchemaTypeDef,
   mod: ModifyOp,
   refs: any[],
   parentId: number,
@@ -120,7 +122,7 @@ function updateRefs(
     return RANGE_ERR
   }
 
-  setCursor(ctx, def.prop, parentId, mod)
+  setCursor(ctx, schema, def.prop, parentId, mod)
 
   const initpos = ctx.len
   const nrOrErr = putRefs(ctx, mod, refs, op)
