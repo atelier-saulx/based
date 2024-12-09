@@ -8,19 +8,19 @@ const like = @import("./like.zig").default;
 const compressed = @import("./compressed.zig");
 const decompress = compressed.decompress;
 
-inline fn blockCompare(value: []const u8, query: []const u8) bool {
-    const d = selva.strsearch_has_u8(
-        @ptrCast(value.ptr),
-        value.len,
-        @ptrCast(query.ptr),
-        query.len,
-        2,
-        true,
-    );
+inline fn blockCompare(_: []const u8, _: []const u8) bool {
+    // const d = selva.strsearch_has_u8(
+    //     @ptrCast(value.ptr),
+    //     value.len,
+    //     @ptrCast(query.ptr),
+    //     query.len,
+    //     2,
+    //     true,
+    // );
 
-    if (d < 2) {
-        return true;
-    }
+    // if (d < 2) {
+    //     return true;
+    // }
     return false;
 }
 
@@ -29,6 +29,7 @@ pub fn search(
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     searchBuf: []u8,
+    // searchCtx: *selva.strsearch+init
     // ref: ?types.RefStruct,
     // comptime isEdge: bool,
 ) u32 {
