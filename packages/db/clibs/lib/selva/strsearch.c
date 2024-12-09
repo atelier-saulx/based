@@ -19,8 +19,20 @@
 #include "selva_error.h"
 #include "selva/strsearch.h"
 
-#define SEARCH_SEP " ,.;-\n"
 #define LEV_MAX (STRSEARCH_NEEDLE_MAX + 1)
+
+static const char *select_separator(const char *needle, size_t len)
+{
+    const char * const separators[] = {
+        [0] = " ,.;-\n", /* default */
+        [1] = " ,.;\n", /* contains '-' */
+        [2] = ",.;-\n", /* contains ' ' */
+        [3] = ",.;\n", /* contains '-' and ' ' */
+    };
+    unsigned i = !!memchr(needle, '-', len) | (!!memchr(needle, ' ', len) << 1);
+
+    return separators[i];
+}
 
 static int32_t min3(int32_t a, int32_t b, int32_t c)
 {
@@ -187,12 +199,14 @@ int make_wneedle(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t tran
     wneedle->buf[j] = '\0';
     wneedle->len = j;
 
+    wneedle->sep = select_separator(needle, needle_len);
+
     return 0;
 }
 
 int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size_t needle_len, int good, bool strict_first_char_match)
 {
-    const char *sep = SEARCH_SEP;
+    const char *sep = select_separator(needle, needle_len);
     const char *word;
     const char *brkt;
     const char fch = strict_first_char_match && isalpha(needle[0]) ? tolower(needle[0]) : '\0';
@@ -223,7 +237,7 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
 
 int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match)
 {
-    const char *sep = SEARCH_SEP;
+    const char *sep = wneedle->sep;
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
@@ -290,11 +304,11 @@ __constructor static void test(void)
 
         fprintf(stderr, "pattern: %s | ", pattern);
 #if TEST_U8 == 1
-        fprintf(stderr, "%d\n", strsearch_has_u8(book, fsize, pattern, len, 1));
+        fprintf(stderr, "%d\n", strsearch_has_u8(book, fsize, pattern, len, 1, true));
 #else
         struct strsearch_wneedle wneedle;
         make_wneedle(&wneedle, loc, trans, pattern, len);
-        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, fsize, &wneedle, 1));
+        fprintf(stderr, "%d\n", strsearch_has_mbs(0, trans, book, fsize, &wneedle, 1, true));
 #endif
     }
     ts_monotime(&ts_end);
