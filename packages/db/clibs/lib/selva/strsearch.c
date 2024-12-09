@@ -220,17 +220,30 @@ int strsearch_has_u8(const char *text, size_t text_len, const char *needle, size
     return d;
 }
 
-int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good)
+int strsearch_has_mbs(locale_t loc, wctrans_t trans, const char *text, size_t text_len, struct strsearch_wneedle *wneedle, int good, bool strict_first_char_match)
 {
     const char *sep = " ,.;\n";
     const char *word;
     const char *brkt;
     int32_t d = INT_MAX;
+    const wchar_t fch = strict_first_char_match && iswalpha(wneedle->buf[0]) ? wneedle->buf[0] : L'\0';
 
     for (word = strtok2(text, sep, &brkt, text_len);
          word;
          word = strtok2(NULL, sep, &brkt, text_len - (brkt - text))) {
         size_t len = (brkt) ? brkt - word - 1 : strlen(word);
+
+        if (fch != L'\0') {
+            wchar_t wc;
+            mbstate_t ps;
+
+            memset(&ps, 0, sizeof(ps));
+            (void)selva_mbstowc(&wc, word, len, &ps, trans, loc);
+            if (wc != fch) {
+                continue;
+            }
+        }
+
         int32_t d2 = levenshtein_mbs(loc, trans, word, len, wneedle->buf, wneedle->len);
         d = min(d, d2);
         if (d <= (int32_t)good) {
