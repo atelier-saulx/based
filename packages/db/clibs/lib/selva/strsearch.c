@@ -324,7 +324,7 @@ __constructor static void test(void)
 
         fprintf(stderr, "pattern: %s | ", pattern);
 #if TEST_U8 == 1
-        struct strsearch_needle *needle;
+        struct strsearch_needle needle;
         (void)strsearch_init_u8_ctx(&needle, pattern, len, 1, true);
         fprintf(stderr, "%d\n", strsearch_has_u8(book, fsize, &needle));
 #else
