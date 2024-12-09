@@ -262,6 +262,26 @@ await test('has uncompressed', async (t) => {
       },
     ],
   )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('headline', 'hasLoose', 'Pager')
+      .include('id', 'headline')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 501,
+        headline: 'Hungarian woman linked to Lebanon pager blasts was EU',
+      },
+      {
+        id: 601,
+        headline: 'Derpy derp derp exploding-pager merp',
+      },
+    ],
+  )
 })
 
 await test('main has (string/binary)', async (t) => {

@@ -31,6 +31,26 @@ pub inline fn restVectorMatch(
     }
     if (j == ql) {
         return 2;
+    } else if (@reduce(.Xor, matches) == false) {
+        var p: usize = index - i;
+        while (p < vectorLen) : (p += 1) {
+            if (matches[p]) {
+                j = 1;
+                if (p + i + ql - 1 > l) {
+                    return 1;
+                }
+                while (j < ql) : (j += 1) {
+                    const v = value[p + i + j];
+                    const q = query[j];
+                    if ((v != q)) {
+                        break;
+                    }
+                }
+                if (j == ql) {
+                    return 2;
+                }
+            }
+        }
     }
     return 0;
 }
