@@ -14,6 +14,7 @@
 #define STRSEARCH_NEEDLE_MAX 39
 
 struct strsearch_wneedle {
+    const char *sep;
     wchar_t buf[STRSEARCH_NEEDLE_MAX + 1];
     size_t len;
 };
