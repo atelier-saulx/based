@@ -1180,12 +1180,7 @@ libdeflate_alloc_decompressor(void)
      *
      * But for simplicity, we currently just zero the whole decompressor.
      */
-    struct libdeflate_decompressor *d = selva_malloc(sizeof(*d));
-
-    if (d == NULL)
-        return NULL;
-    memset(d, 0, sizeof(*d));
-    return d;
+    return selva_calloc(1, sizeof(struct libdeflate_decompressor));
 }
 
 LIBDEFLATEEXPORT void

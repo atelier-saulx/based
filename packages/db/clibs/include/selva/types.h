@@ -67,11 +67,11 @@ struct SelvaFieldSchema {
     union {
         struct {
             size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
-        } string;
-        struct EdgeFieldConstraint edge_constraint;
+        } string; /*!< SELVA_FIELD_TYPE_STRING */
+        struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE and SELVA_FIELD_TYPE_REFERENCES. */
         struct {
             uint16_t len;
-        } smb;
+        } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
         size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
     };
 } __designated_init;
