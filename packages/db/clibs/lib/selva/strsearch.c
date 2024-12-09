@@ -80,7 +80,7 @@ uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, 
     size_t n = wneedle->len;
 
     if (m == 0) return n;
-    if (n > LEV_MAX - 1 || m > LEV_MAX - 1) {
+    if (m > LEV_MAX - 1) {
         return 255;
     }
 
