@@ -29,6 +29,7 @@ struct strsearch_wneedle {
     size_t len;
 };
 
+SELVA_EXPORT
 int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_str, size_t needle_len, int good, bool strict_first_char_match);
 
 /**
@@ -38,6 +39,7 @@ int strsearch_init_u8_ctx(struct strsearch_needle *needle, const char *needle_st
  *          SELVA_ENOBUFS = too long needle;
  *          SELVA_EINVAL = needle_len was 0.
  */
+SELVA_EXPORT
 int strsearch_init_mbs_ctx(struct strsearch_wneedle *wneedle, locale_t loc, wctrans_t trans, const char *needle, size_t needle_len, int good, bool strict_first_char_match);
 
 /**
