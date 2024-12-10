@@ -2,6 +2,7 @@ const readInt = @import("../../utils.zig").readInt;
 const selva = @import("../../selva.zig");
 const Prop = @import("../../types.zig").Prop;
 const db = @import("../../db//db.zig");
+const std = @import("std");
 
 pub inline fn crc32Equal(
     prop: Prop,
@@ -18,6 +19,7 @@ pub inline fn crc32Equal(
     } else {
         valueLen = v.len;
     }
+    std.debug.print("HERE WE GO YES {d} - {d}", .{ origLen, valueLen });
     if (origLen != valueLen) {
         return false;
     }

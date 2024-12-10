@@ -4,6 +4,7 @@ import {
   BINARY,
   STRING,
   REFERENCES,
+  ALIAS,
 } from '../../../server/schema/types.js'
 import { propIsSigned } from '../../../server/schema/utils.js'
 import { negateType, stripNegation } from './operators.js'
