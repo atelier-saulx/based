@@ -198,6 +198,9 @@ pub fn search(
                 // ADD NOW
                 // ---- do later
             } else {
+                // if (totalScore + weight > ctx.bad) {
+                //     return totalScore + weight;
+                // }
                 var score: u8 = 0;
                 score = strSearch(value, query) + weight;
                 if (score < bestScore) {
@@ -211,6 +214,9 @@ pub fn search(
             j += 2;
         }
         totalScore += bestScore;
+        if (totalScore > ctx.bad) {
+            return totalScore;
+        }
     }
     return totalScore;
 }
