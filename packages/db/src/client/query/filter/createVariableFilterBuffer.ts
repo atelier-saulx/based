@@ -1,4 +1,9 @@
-import { PropDef, PropDefEdge, STRING } from '../../../server/schema/types.js'
+import {
+  ALIAS,
+  PropDef,
+  PropDefEdge,
+  STRING,
+} from '../../../server/schema/types.js'
 import { compress, crc32 } from '../../string.js'
 import { negateType, stripNegation } from './operators.js'
 import {
@@ -17,7 +22,10 @@ const parseValue = (
   }
   if (val instanceof Uint8Array || !prop.separate || op !== 1) {
     val = Buffer.from(val)
-  } else if (prop.typeIndex === STRING && typeof value === 'string') {
+  } else if (
+    (prop.typeIndex === STRING || prop.typeIndex === ALIAS) &&
+    typeof value === 'string'
+  ) {
     val = compress(value)
   }
   if (!(val instanceof Buffer)) {

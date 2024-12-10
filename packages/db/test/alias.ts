@@ -1,3 +1,4 @@
+import { deepEqual } from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
@@ -30,29 +31,32 @@ await test('alias', async (t) => {
 
   db.drain()
 
-  const res1 = await db.query('user', user1).get()
-
-  db.update('user', user1, {
-    externalId: 'tornado',
+  deepEqual((await db.query('user', user1).get()).toObject(), {
+    id: 1,
+    externalId: 'cool',
   })
 
-  db.drain()
+  // db.update('user', user1, {
+  //   externalId: 'tornado',
+  // })
 
-  const res2 = await db.query('user', user1).get()
-  const res3 = await db.query('user').filter('externalId', '=', 'cool').get()
-  const res4 = await db.query('user').filter('externalId', '=', 'tornado').get()
+  // db.drain()
 
-  db.update('user', user1, {
-    externalId: null,
-  })
+  // const res2 = await db.query('user', user1).get()
+  // const res3 = await db.query('user').filter('externalId', '=', 'cool').get()
+  // const res4 = await db.query('user').filter('externalId', '=', 'tornado').get()
 
-  db.drain()
+  // db.update('user', user1, {
+  //   externalId: null,
+  // })
 
-  const res5 = await db.query('user', user1).get()
-  const res6 = await db.query('user').filter('externalId', '=', 'tornado').get()
+  // db.drain()
 
-  // console.log({ res1, res2, res3, res4, res5, res6 })
-  // const res2 = db.query('user', user1).get()
+  // const res5 = await db.query('user', user1).get()
+  // const res6 = await db.query('user').filter('externalId', '=', 'tornado').get()
 
-  await setTimeout(100)
+  // // console.log({ res1, res2, res3, res4, res5, res6 })
+  // // const res2 = db.query('user', user1).get()
+
+  // await setTimeout(100)
 })

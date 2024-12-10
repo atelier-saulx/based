@@ -16,6 +16,7 @@ import { MERGE_MAIN, ModifyErr, ModifyOp, RANGE_ERR } from './types.js'
 import { writeBinary } from './binary.js'
 import { setCursor } from './setCursor.js'
 import { writeFixedValue } from './utils.js'
+import { writeAlias } from './alias.js'
 
 function _modify(
   ctx: ModifyCtx,
@@ -50,7 +51,7 @@ function _modify(
         } else if (type === BINARY) {
           err = writeBinary(val, ctx, schema, def, parentId, mod)
         } else if (type === ALIAS) {
-          err = writeString(val, ctx, schema, def, parentId, mod)
+          err = writeAlias(val, ctx, schema, def, parentId, mod)
         }
       } else if (overwrite) {
         if (ctx.len + 15 + schema.mainLen > ctx.max) {

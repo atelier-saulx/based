@@ -243,7 +243,7 @@ export const readAllFields = (
         const size = result.readUint32LE(i)
         addField(prop, new Uint8Array(result.buffer, i + 4, size), item)
         i += size + 4
-      } else if (prop.typeIndex === STRING || prop.typeIndex === ALIAS) {
+      } else if (prop.typeIndex === STRING) {
         q.include.propsRead[index] = id
         const size = result.readUint32LE(i)
         if (size === 0) {
@@ -252,6 +252,16 @@ export const readAllFields = (
           addField(prop, read(result, i + 4, size), item)
         }
         i += size + 4
+      } else if (prop.typeIndex === ALIAS) {
+        q.include.propsRead[index] = id
+        const size = result.readUint32LE(i)
+        i += 4
+        if (size === 0) {
+          addField(prop, '', item)
+        } else {
+          const string = result.toString('utf8', i, (i += size))
+          addField(prop, string, item)
+        }
       }
     }
   }

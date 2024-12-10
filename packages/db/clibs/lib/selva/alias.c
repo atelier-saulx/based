@@ -248,6 +248,7 @@ const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias)
 
 const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len)
 {
+    
     if (len) {
         *len = strlen(alias->name);
     }
