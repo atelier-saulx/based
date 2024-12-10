@@ -215,16 +215,8 @@ const makeDb = async (path: string) => {
     .query('article')
     .range(0, 10)
     .sort('publishDate', 'desc')
-    .include('id', 'headline', 'publishDate', 'abstract')
-    .search(query) // body: 3
-    //  { headline: 0, abstract: 2, body: 5 }
-    // .filter('headline', 'hasLoose', s)
-    // .or((v) => {
-    //   v.filter('abstract', 'hasLoose', s)
-    // })
-    // .or((v) => {
-    //   v.filter('body', 'hasLoose', s)
-    // })
+    .include(['id', 'headline', 'publishDate', 'abstract'])
+    .search(query, 'headline')
     .get()
     .then((v) => {
       console.log(v.execTime, 'ms')
