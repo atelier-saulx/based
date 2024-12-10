@@ -117,6 +117,7 @@ pub inline fn strSearch(
         return d;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
+    const queryVectorCaptial: @Vector(vectorLen, u8) = @splat(q2);
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
@@ -125,7 +126,7 @@ pub inline fn strSearch(
             if (d < minDist) {
                 return d;
             }
-            matches = (h + capitals) == queryVector;
+            matches = h == queryVectorCaptial;
             if (@reduce(.Or, matches)) {
                 d = resultMatcher(d, matches, i, value, ctx);
                 if (d < minDist) {

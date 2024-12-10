@@ -172,7 +172,7 @@ await test('has compressed', async (t) => {
   }
 
   const n = `Therefore he called the name of that place Baalperazim.
-  And there they left their images, and David and his men burned them. `
+  And there they left their images, and David and his men burned them.`
 
   equal(
     (
@@ -183,7 +183,7 @@ await test('has compressed', async (t) => {
         .range(0, 1e3)
         .get()
     ).inspect().length,
-    0,
+    1,
   )
 })
 

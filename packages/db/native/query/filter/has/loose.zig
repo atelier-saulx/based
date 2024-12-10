@@ -81,6 +81,8 @@ pub inline fn loose(value: []const u8, query: []const u8) bool {
         return false;
     }
     const queryVector: @Vector(vectorLen, u8) = @splat(q1);
+    const queryVectorCaptial: @Vector(vectorLen, u8) = @splat(q2);
+
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
@@ -89,17 +91,16 @@ pub inline fn loose(value: []const u8, query: []const u8) bool {
             if (result != 0) {
                 return result == 2;
             }
-        } else {
-            // fits within the cache line like this in stack
-            matches = (h + capitals) == queryVector;
-            if (@reduce(.Or, matches)) {
-                const result = restVectorMatch(matches, i, ql, l, value, query);
-                if (result != 0) {
-                    return result == 2;
-                }
+        }
+        matches = h == queryVectorCaptial;
+        if (@reduce(.Or, matches)) {
+            const result = restVectorMatch(matches, i, ql, l, value, query);
+            if (result != 0) {
+                return result == 2;
             }
         }
     }
+
     while (i < l and ql <= l - i) : (i += 1) {
         const v0 = value[i];
         if (v0 == q1 or v0 == q2) {
