@@ -68,8 +68,8 @@ await test('search', async (t) => {
 
   const r = await db
     .query('italy')
-    // .filter('body', 'has', '@aaa')
-    .search('netherlunds', { body: 1 })
+    .filter('body', 'hasLoose', 'derp derp derp')
+    // .search('netherlunds', { body: 1 })
     .include('id')
     .range(0, 1e3)
     .get()
