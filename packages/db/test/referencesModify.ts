@@ -51,6 +51,7 @@ await test('references modify', async (t) => {
       add: [marie],
     },
   })
+
   db.drain()
 
   deepEqual(

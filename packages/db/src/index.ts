@@ -1,12 +1,13 @@
 import { ModifyRes } from './client/modify/ModifyRes.js'
 import { Schema } from '@based/schema'
-import { SchemaTypeDef } from './server/schema/schema.js'
+import { ALIAS, SchemaTypeDef } from './server/schema/schema.js'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { ModifyCtx, flushBuffer } from './client/operations.js'
 import { create, remove, update } from './client/modify/index.js'
 import { migrate } from './server/migrate/index.js'
 import { compress, decompress } from './client/string.js'
 import { DbServer } from './server/index.js'
+import { BasedQueryResponse } from './client/query/BasedIterable.js'
 
 export * from './server/schema/typeDef.js'
 export * from './client/modify/modify.js'
@@ -89,25 +90,51 @@ export class BasedDb {
     return create(this, type, value, unsafe)
   }
 
-  async upsert(type: string, aliases: Record<string, string>, value: any) {
-    let q = this.query(type).include('id')
-    let first = true
-    for (const key in aliases) {
-      if (first) {
-        q = q.filter(key, '=', aliases[key])
-      } else {
-        q = q.or(key, '=', aliases[key])
+  upserting: Map<
+    string,
+    { o: Record<string, any>; p: Promise<number | ModifyRes> }
+  > = new Map()
+
+  async upsert(type: string, obj: Record<string, any>) {
+    const tree = this.schemaTypesParsed[type].tree
+    let q: BasedDbQuery
+    let id = ''
+
+    for (const key in obj) {
+      if (tree[key].typeIndex === ALIAS) {
+        id += `${key}:${obj[key]};`
+        if (q) {
+          q = q.or(key, '=', obj[key])
+        } else {
+          q = this.query(type).include('id').filter(key, '=', obj[key])
+        }
       }
     }
-    const res = await q.get()
-    if (res.length === 0) {
-      return create(this, type, {
-        ...aliases,
-        ...value,
-      })
-    } else {
-      return update(this, type, res.toObject()[0].id, value)
+
+    if (!q) {
+      throw new Error('no alias found for upsert operation')
     }
+
+    if (this.upserting.has(id)) {
+      const store = this.upserting.get(id)
+      store.o = { ...store.o, ...obj }
+      return store.p
+    }
+
+    const store = {
+      o: obj,
+      p: q.get().then((res) => {
+        this.upserting.delete(id)
+        if (res.length === 0) {
+          return create(this, type, store.o)
+        } else {
+          return update(this, type, res.toObject()[0].id, store.o)
+        }
+      }),
+    }
+
+    this.upserting.set(id, store)
+    return store.p
   }
 
   update(

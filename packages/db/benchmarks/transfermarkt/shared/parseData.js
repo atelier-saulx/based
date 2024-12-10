@@ -4,7 +4,9 @@ import { schema, types } from './schema.js'
 import { dir, time, log, num, timeEnd } from './utils.js'
 
 const parseVal = (prop, value) => {
-  if (prop === 'string') {
+  if (prop === 'alias') {
+    return String(value)
+  } else if (prop === 'string') {
     return value || ''
   } else if (prop === 'boolean') {
     return Boolean(value)
@@ -85,14 +87,13 @@ export const parseData = async () => {
   const added = {}
   for (const type of types) {
     const { data, refProps } = map[type]
-    const { props } = schema.types[type]
     for (const node of data) {
       for (const key in refProps) {
         const { refType } = refProps[key]
-        const val = node.data[key]
+        const val = String(node.data[key])
         if (val && !(val in map[refType].map)) {
           const item = {
-            [map[refType].idKey]: parseVal(props[key], val),
+            [map[refType].idKey]: val,
           }
 
           map[refType].data.push({ id: val, data: item })

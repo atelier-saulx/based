@@ -9,7 +9,7 @@ import {
   ALIAS,
   BINARY,
 } from '../../server/schema/types.js'
-import { ModifyError } from './ModifyRes.js'
+import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
@@ -22,7 +22,7 @@ import { writeAlias } from './alias.js'
 
 function _modify(
   ctx: ModifyCtx,
-  parentId: number,
+  res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,
   mod: ModifyOp,
@@ -45,26 +45,26 @@ function _modify(
       const type = def.typeIndex
       if (def.separate) {
         if (type === STRING) {
-          err = writeString(val, ctx, schema, def, parentId, mod)
+          err = writeString(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === TEXT) {
-          err = writeText(val, ctx, schema, def, parentId, mod)
+          err = writeText(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === REFERENCE) {
-          err = writeReference(val, ctx, schema, def, parentId, mod)
+          err = writeReference(val, ctx, schema, def, res, mod)
         } else if (type === REFERENCES) {
-          err = writeReferences(val, ctx, schema, def, parentId, mod)
+          err = writeReferences(val, ctx, schema, def, res, mod)
         } else if (type === BINARY) {
-          err = writeBinary(val, ctx, schema, def, parentId, mod)
+          err = writeBinary(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === ALIAS) {
-          err = writeAlias(val, ctx, schema, def, parentId, mod)
+          err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
         }
       } else if (overwrite) {
         if (ctx.len + 15 + schema.mainLen > ctx.max) {
           return RANGE_ERR
         }
-        setCursor(ctx, schema, def.prop, parentId, mod, true)
+        setCursor(ctx, schema, def.prop, res.tmpId, mod, true)
         if (ctx.lastMain === -1) {
           let mainLenU32 = schema.mainLen
-          setCursor(ctx, schema, def.prop, parentId, mod)
+          setCursor(ctx, schema, def.prop, res.tmpId, mod)
           ctx.buf[ctx.len++] = overwrite ? mod : MERGE_MAIN
           ctx.buf[ctx.len++] = mainLenU32
           ctx.buf[ctx.len++] = mainLenU32 >>>= 8
@@ -82,16 +82,7 @@ function _modify(
         ctx.mergeMainSize = def.len + 4
       }
     } else {
-      err = _modify(
-        ctx,
-        parentId,
-        obj[key],
-        schema,
-        mod,
-        def,
-        overwrite,
-        unsafe,
-      )
+      err = _modify(ctx, res, obj[key], schema, mod, def, overwrite, unsafe)
     }
 
     if (err) {
@@ -102,7 +93,7 @@ function _modify(
 
 export function modify(
   ctx: ModifyCtx,
-  parentId: number,
+  res: ModifyState,
   obj: Record<string, any>,
   schema: SchemaTypeDef,
   mod: ModifyOp,
@@ -110,6 +101,6 @@ export function modify(
   overwrite: boolean,
   unsafe: boolean = false,
 ): ModifyErr {
-  ctx.db.markNodeDirty(schema, parentId)
-  return _modify(ctx, parentId, obj, schema, mod, tree, overwrite, unsafe)
+  ctx.db.markNodeDirty(schema, res.tmpId)
+  return _modify(ctx, res, obj, schema, mod, tree, overwrite, unsafe)
 }
