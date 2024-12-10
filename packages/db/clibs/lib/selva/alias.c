@@ -55,10 +55,9 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type)
 static struct SelvaAlias *insert_alias_by_name(struct SelvaAliases *aliases, struct SelvaAlias *new_alias)
 {
      struct SelvaAlias *old_alias;
-        
+
      old_alias = RB_INSERT(SelvaAliasesByName, &aliases->alias_by_name, new_alias);
-     if (!old_alias)
-     {
+     if (!old_alias) {
          aliases->nr_aliases++;
      }
 
@@ -90,7 +89,7 @@ static int del_alias(struct SelvaAliases *aliases, struct SelvaAlias *alias)
          * `alias` must be the first in alias_by_dest with this destination.
          * We must make the `next` the first.
          */
-	remove_alias_by_dest(aliases, alias);
+        remove_alias_by_dest(aliases, alias);
         if (alias->next) {
             (void)RB_INSERT(SelvaAliasesByDest, &aliases->alias_by_dest, alias->next);
         }
@@ -152,7 +151,7 @@ void selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *n
     new_alias->dest = dest;
     memcpy(new_alias->name, name_str, name_len);
     new_alias->name[name_len] = '\0';
-    printf("-- NEW AlIAS LEN: %zu\n", strlen(new_alias->name));
+
     selva_set_alias_p(aliases, new_alias);
 }
 
@@ -249,7 +248,6 @@ const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias)
 
 const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len)
 {
-    
     if (len) {
         *len = strlen(alias->name);
     }

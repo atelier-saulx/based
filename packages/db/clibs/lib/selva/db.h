@@ -63,7 +63,8 @@ struct SelvaNode {
 #define SELVA_IS_EXPIRED(_expire_, _now_) ((time_t)(_expire_) + SELVA_HIERARCHY_EXPIRE_EPOCH <= (time_t)(_now_))
 
 struct SelvaAlias {
-    RB_ENTRY(SelvaAlias) _entry;
+    RB_ENTRY(SelvaAlias) _entry1;
+    RB_ENTRY(SelvaAlias) _entry2;
     struct SelvaAlias *prev;
     struct SelvaAlias *next; /*!< Next alias for the same destination. */
     node_id_t dest;
@@ -166,8 +167,8 @@ static inline struct SelvaTypeEntry *vecptr2SelvaTypeEntry(void *p)
 }
 
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
-RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_cmp_name);
-RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_cmp_dest);
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name);
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest);
 int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
