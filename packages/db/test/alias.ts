@@ -46,6 +46,18 @@ await test('alias', async (t) => {
     ],
   )
 
+  deepEqual(
+    (
+      await db.query('user').filter('externalId', 'has', 'cool').get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        externalId: 'cool',
+      },
+    ],
+  )
+
   // db.update('user', user1, {
   //   externalId: 'tornado',
   // })
