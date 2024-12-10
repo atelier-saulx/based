@@ -120,8 +120,8 @@ RB_PROTOTYPE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_i
 RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
 RB_GENERATE_STATIC(SelvaTypeCursorById, SelvaTypeCursor, _entry_by_id, SelvaTypeCursor_cmp)
 RB_GENERATE_STATIC(SelvaTypeCursorsByNodeId, SelvaTypeCursors, _entry_by_node_id, SelvaTypeCursors_cmp)
-RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry, SelvaAlias_cmp_name)
-RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry, SelvaAlias_cmp_dest)
+RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
+RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
 
 struct SelvaDb *selva_db_create(void)
 {
