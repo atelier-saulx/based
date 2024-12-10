@@ -204,7 +204,7 @@ const makeDb = async (path: string) => {
   // maybe levensthein
 
   // const query = 'orban'
-  const query = 'europe holiday'
+  const query = 'von der leyen'
 
   // lets think
 
@@ -216,8 +216,8 @@ const makeDb = async (path: string) => {
     .range(0, 10)
     .sort('publishDate', 'desc')
     .include('id', 'headline', 'publishDate', 'abstract')
-    .search(query, { headline: 0, abstract: 2, body: 3 }) // body: 3
-    //
+    .search(query) // body: 3
+    //  { headline: 0, abstract: 2, body: 5 }
     // .filter('headline', 'hasLoose', s)
     // .or((v) => {
     //   v.filter('abstract', 'hasLoose', s)

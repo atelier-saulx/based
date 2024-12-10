@@ -36,16 +36,12 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
   }
 
   if (!s) {
-    let w = 10
     s = {}
     for (const k in def.props) {
       const prop = def.props[k]
+      // if title / name / headline
       if (prop.typeIndex === STRING) {
-        s[k] = w
-      }
-      w--
-      if (w == 0) {
-        break
+        s[k] = k === 'title' || k === 'name' || k === 'headline' ? 0 : 2
       }
     }
   }
