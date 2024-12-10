@@ -19,7 +19,7 @@ pub inline fn crc32Equal(
     } else {
         valueLen = v.len;
     }
-    std.debug.print("HERE WE GO YES {d} - {d}", .{ origLen, valueLen });
+    //std.debug.print("HERE WE GO YES {d} - {d}", .{ origLen, valueLen });
     if (origLen != valueLen) {
         return false;
     }

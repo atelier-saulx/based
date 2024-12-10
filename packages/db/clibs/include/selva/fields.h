@@ -212,31 +212,43 @@ int selva_fields_get_reference_meta_mutable_string(
         size_t len,
         struct selva_string **s);
 
+/**
+ * Set string field.
+ *
+ * str format:
+ *  0      1      2          len
+ * +------+------+--------+-----+
+ * | LANG | COMP |  DATA  | CRC |
+ * +------+------+--------+-----+
+ */
 SELVA_EXPORT
-int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, enum selva_lang_code lang, const char *str, size_t len);
+int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len);
 
-SELVA_EXPORT
-int selva_fields_set_string_crc(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, enum selva_lang_code lang, const char *str, size_t len, uint32_t crc);
-
+/**
+ * Set text field translation.
+ *
+ * str format:
+ *  0      1      2          len
+ * +------+------+--------+-----+
+ * | LANG | COMP |  DATA  | CRC |
+ * +------+------+--------+-----+
+ */
 SELVA_EXPORT
 int selva_fields_set_text(
-        struct SelvaDb *db,
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
-        enum selva_lang_code lang,
         const char *str,
         size_t len);
 
-SELVA_EXPORT
-int selva_fields_set_text_crc(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        const struct SelvaFieldSchema *fs,
-        enum selva_lang_code lang,
-        const char *str,
-        size_t len,
-        uint32_t crc);
-
+/**
+ * Get text field translation.
+ *
+ * str format:
+ *  0      1      2          len
+ * +------+------+--------+-----+
+ * | LANG | COMP |  DATA  | CRC |
+ * +------+------+--------+-----+
+ */
 SELVA_EXPORT
 int selva_fields_get_text(
         struct SelvaDb *db,

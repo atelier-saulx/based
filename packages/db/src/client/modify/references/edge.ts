@@ -8,7 +8,7 @@ import {
   STRING,
 } from '../../../server/schema/types.js'
 import { write } from '../../string.js'
-import { getBuffer } from '../binary.js'
+import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from '../types.js'
 import { appendFixedValue } from '../utils.js'
@@ -96,12 +96,7 @@ export function writeEdges(
           ctx.buf[ctx.len++] = STRING
 
           if (size) {
-            ctx.buf[ctx.len++] = size
-            ctx.buf[ctx.len++] = size >>>= 8
-            ctx.buf[ctx.len++] = size >>>= 8
-            ctx.buf[ctx.len++] = size >>>= 8
-            ctx.buf.set(value, ctx.len)
-            ctx.len += value.byteLength
+            writeBinaryRaw(value, ctx)
           } else {
             ctx.buf[ctx.len++] = 0
             ctx.buf[ctx.len++] = 0

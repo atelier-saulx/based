@@ -59,15 +59,12 @@ typedef uint32_t sdb_arr_len_t; /*!< Used for most arrays, string or object. */
 #define SDB_STRING_META_FLAGS_MASK (SELVA_STRING_CRC | SELVA_STRING_COMPRESS)
 
 struct sdb_string_meta {
-    uint32_t crc;
     sdb_arr_len_t len;
     enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
 } __packed;
 
 struct sdb_text_meta {
-    uint32_t crc;
     sdb_arr_len_t len;
-    enum selva_lang_code lang;
     enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
 };
 
@@ -95,10 +92,9 @@ static bool read_dump_magic(struct selva_io *io, uint32_t magic_exp)
 static void save_field_string(struct selva_io *io, struct selva_string *string)
 {
     size_t len;
-    const char *str = selva_string_to_str(string, &len);
+    const uint8_t *str = selva_string_to_buf(string, &len);
     struct sdb_string_meta meta = {
         .flags = selva_string_get_flags(string) & SDB_STRING_META_FLAGS_MASK,
-        .crc = selva_string_get_crc(string),
         .len = len,
     };
 
@@ -109,9 +105,11 @@ static void save_field_string(struct selva_io *io, struct selva_string *string)
      * However, this is not the right way to do this. We should probably set
      * the SELVA_STRING_COMPRESS flag somewhere long before we end up here.
      */
+#if 0
     if (str[0] == 0 && !selva_string_verify_crc(string)) {
-        db_panic("%p Invalid CRC: %u", string, (unsigned)meta.crc);
+        db_panic("%p Invalid CRC: %u", string, (unsigned)selva_string_get_crc(string));
     }
+#endif
 
     io->sdb_write(&meta, sizeof(meta), 1, io);
     io->sdb_write(str, sizeof(char), meta.len, io);
@@ -126,17 +124,18 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
     for (uint8_t i = 0; i < len; i++) {
         struct selva_string *tl = &text->tl[i];
         size_t len;
-        const char *str = selva_string_to_str(tl, &len);
+        const uint8_t *str = selva_string_to_buf(tl, &len);
         struct sdb_text_meta meta = {
             .flags = selva_string_get_flags(tl) & SDB_STRING_META_FLAGS_MASK,
-            .crc = selva_string_get_crc(tl),
             .len = len,
-            .lang = tl->lang,
         };
 
+        /* FIXME */
+#if 0
         if (!selva_string_verify_crc(tl)) {
-            db_panic("%p Invalid CRC: %u", tl, (unsigned)meta.crc);
+            db_panic("%p Invalid CRC: %u", tl, (unsigned)selva_string_get_crc(tl));
         }
+#endif
 
         io->sdb_write(&meta, sizeof(meta), 1, io);
         io->sdb_write(str, sizeof(char), len, io);
@@ -513,8 +512,6 @@ static int load_string(struct selva_io *io, struct selva_string *s, const struct
         return SELVA_EIO;
     }
 
-    selva_string_set_crc(s, meta->crc);
-
     return 0;
 }
 
@@ -525,7 +522,7 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, const 
     int err;
 
     io->sdb_read(&meta, sizeof(meta), 1, io);
-    err = selva_fields_get_mutable_string(node, fs, meta.len, &s);
+    err = selva_fields_get_mutable_string(node, fs, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
     }
@@ -545,7 +542,7 @@ static int load_reference_meta_field_string(
     int err;
 
     io->sdb_read(&meta, sizeof(meta), 1, io);
-    err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, meta.len, &s);
+    err = selva_fields_get_reference_meta_mutable_string(node, ref, efc, field, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
     }
@@ -553,7 +550,7 @@ static int load_reference_meta_field_string(
     return load_string(io, s, &meta);
 }
 
-static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int load_field_text(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     uint8_t len;
 
@@ -566,7 +563,7 @@ static int load_field_text(struct selva_io *io, struct SelvaDb *db, struct Selva
         io->sdb_read(&meta, sizeof(meta), 1, io);
         str = selva_malloc(meta.len); /* TODO Optimize */
         io->sdb_read(str, sizeof(char), meta.len, io);
-        selva_fields_set_text_crc(db, node, fs, meta.lang, str, meta.len, meta.crc);
+        selva_fields_set_text(node, fs, str, meta.len);
         selva_free(str);
     }
 
@@ -648,7 +645,7 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_TEXT:
             /* TODO Text field support in meta */
 #if 0
-            err = load_field_text(io, db, ns, node, fs);
+            err = load_field_text(io, ns, node, fs);
 #endif
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
@@ -847,7 +844,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             err = load_field_string(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            err = load_field_text(io, db, node, fs);
+            err = load_field_text(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             err = load_field_reference(io, db, node, fs, rd.field);

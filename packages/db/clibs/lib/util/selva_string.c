@@ -90,7 +90,7 @@ static char *get_comparable_buf(const struct selva_string *s, size_t *buf_len, b
     char *buf;
 
     if (s->flags & SELVA_STRING_COMPRESS) {
-        buf = selva_malloc(len + 1);
+        buf = selva_malloc(len);
         selva_string_decompress(s, buf); /* RFE Should we return a NULL on error? */
         buf[len] = '\0';
         *must_free = true;
@@ -113,7 +113,7 @@ static uint32_t get_crc(const struct selva_string *s)
 {
     uint32_t csum;
 
-    memcpy(&csum, get_buf(s) + s->len + 1, sizeof(csum));
+    memcpy(&csum, get_buf(s) + s->len, sizeof(csum));
 
     return csum;
 }
@@ -126,10 +126,10 @@ static void set_crc(struct selva_string *s, uint32_t csum)
 #if 0
     assert(s->flags & SELVA_STRING_CRC);
     if (s->flags & SELVA_STRING_MUTABLE) {
-        if (selva_sallocx(s->p, 0) < s->len + 1 + sizeof(csum)) {
-            fprintf(stderr, "ERROR: %zu < %zu\n", selva_sallocx(s->p, 0), s->len + 1 + sizeof(csum));
+        if (selva_sallocx(s->p, 0) < s->len + sizeof(csum)) {
+            fprintf(stderr, "ERROR: %zu < %zu\n", selva_sallocx(s->p, 0), s->len + sizeof(csum));
         }
-        assert(selva_sallocx(s->p, 0) >= s->len + 1 + sizeof(csum));
+        assert(selva_sallocx(s->p, 0) >= s->len + sizeof(csum));
     }
 #endif
 
@@ -137,7 +137,7 @@ static void set_crc(struct selva_string *s, uint32_t csum)
      * Space for the CRC was hopefully allocated when alloc_immutable() or
      * alloc_mutable() was called.
      */
-    memcpy(get_buf(s) + s->len + 1, &csum, sizeof(csum));
+    memcpy(get_buf(s) + s->len, &csum, sizeof(csum));
 }
 
 /**
@@ -163,7 +163,7 @@ static struct selva_string *alloc_mutable(size_t len)
     struct selva_string *s;
 
     s = selva_calloc(1, sizeof(struct selva_string));
-    s->p = selva_malloc(len + 1);
+    s->p = selva_malloc(len);
 
     return s;
 }
@@ -174,7 +174,7 @@ static struct selva_string *alloc_mutable(size_t len)
 static size_t calc_immutable_alloc_size(size_t len)
 {
     const size_t emb_size = sizeof_field(struct selva_string, emb);
-    const size_t add = len + 1 <= emb_size ? 0 : len + 1 - emb_size;
+    const size_t add = len <= emb_size ? 0 : len - emb_size;
 
     return sizeof(struct selva_string) + add;
 }
@@ -203,9 +203,8 @@ static void _set_string(struct selva_string *s, const char *str, size_t len, enu
     buf = get_buf(s);
     if (str && len > 0) {
         memcpy(buf, str, len);
-        buf[s->len] = '\0';
     } else {
-        memset(buf, '\0', s->len + 1);
+        memset(buf, '\0', s->len);
     }
 }
 
@@ -251,7 +250,7 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
     } else if (flags & SELVA_STRING_MUTABLE) {
         const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
-        s->p = selva_malloc(len + 1 + trail);
+        s->p = selva_malloc(len + trail);
         set_string(s, str, len, flags);
     } else {
         set_string(s, str, len, flags);
@@ -275,7 +274,7 @@ int selva_string_init_crc(struct selva_string *s, const char *str, size_t len, u
     } else if (flags & SELVA_STRING_MUTABLE) {
         const size_t trail = !!(flags & SELVA_STRING_CRC) * sizeof(uint32_t);
 
-        s->p = selva_malloc(len + 1 + trail);
+        s->p = selva_malloc(len + trail);
         set_string_crc(s, str, len, crc, flags);
     } else {
         set_string_crc(s, str, len, crc, flags);
@@ -332,14 +331,16 @@ struct selva_string *selva_string_createf(const char *fmt, ...)
         return nullptr;
     }
 
-    s = selva_string_create(nullptr, res, 0);
+    s = selva_string_create(nullptr, res + 1, 0);
     if (!s) {
         return nullptr;
     }
 
     va_start(args);
-    (void)vsnprintf(get_buf(s), s->len + 1, fmt, args);
+    (void)vsnprintf(get_buf(s), s->len, fmt, args);
     va_end(args);
+
+    /* TODO truncate? */
 
     return s;
 }
@@ -391,7 +392,6 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
 
         s->len = sizeof(hdr) + compressed_size;
         s->flags = flags | SELVA_STRING_COMPRESS | len_parity(s->len);
-        memset(buf + s->len, '\0', sizeof(char));
 
         hdr.uncompressed_size = in_len;
         memcpy(buf, &hdr, sizeof(hdr));
@@ -466,8 +466,7 @@ int selva_string_truncate(struct selva_string *s, size_t newlen)
 
         s->len = newlen;
         s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(newlen);
-        s->p = selva_realloc(s->p, newlen + 1 + trail);
-        s->p[newlen] = '\0';
+        s->p = selva_realloc(s->p, newlen + trail);
 
         update_crc(s);
     }
@@ -489,13 +488,12 @@ int selva_string_append(struct selva_string *s, const char *str, size_t len)
 
         s->len += len;
         s->flags = (s->flags & ~SELVA_STRING_LEN_PARITY) | len_parity(s->len);
-        s->p = selva_realloc(s->p, s->len + 1 + trail);
+        s->p = selva_realloc(s->p, s->len + trail);
         if (str) {
             memcpy(s->p + old_len, str, len);
         } else {
             memset(s->p + old_len, 0, len);
         }
-        s->p[s->len] = '\0';
 
         update_crc(s);
     }
@@ -525,9 +523,8 @@ static int replace_str(struct selva_string *s, const char *str, size_t len)
 
         s->len = len;
         s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
-        s->p = selva_realloc(s->p, len + 1 + trail);
+        s->p = selva_realloc(s->p, len + trail);
         memcpy(s->p, str, len);
-        s->p[len] = '\0';
     } else {
         return SELVA_ENOTSUP;
     }
@@ -634,20 +631,20 @@ double selva_string_getz_cratio(const struct selva_string *s)
     }
 }
 
+const uint8_t *selva_string_to_buf(const struct selva_string *s, size_t *size)
+{
+    const size_t trail = (s->flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
+
+    if (size) {
+        *size = s->len + trail;
+    }
+
+    return (const uint8_t *)get_buf(s);
+}
+
 const char *selva_string_to_str(const struct selva_string *s, size_t *len)
 {
-    /* Compat with legacy. */
-    if (!s) {
-        if (len) {
-            *len = 0;
-        }
-        return nullptr;
-    }
-
-    if (len) {
-        *len = s->len;
-    }
-
+    *len = s->len;
     return get_buf(s);
 }
 
@@ -760,7 +757,7 @@ void selva_string_freeze(struct selva_string *s)
 
 int selva_string_verify_crc(const struct selva_string *s)
 {
-    if (!verify_parity(s) || get_buf(s)[s->len] != '\0') {
+    if (!verify_parity(s)) {
         return 0;
     }
     if ((s->flags & (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) == (SELVA_STRING_COMPRESS | SELVA_STRING_CRC)) {
