@@ -324,7 +324,7 @@ export const resultToObject = (
         const as = a.$searchScore
         const bs = b.$searchScore
         if (as === 0) {
-          hasZeros = true
+          // hasZeros = true
         }
         return as < bs ? -1 : as == bs ? secondarySort(a, b) : 1
       })
@@ -333,7 +333,7 @@ export const resultToObject = (
         const as = a.$searchScore
         const bs = b.$searchScore
         if (as === 0) {
-          hasZeros = true
+          // hasZeros = true
         }
         return as < bs ? -1 : as == bs ? 0 : 1
       })

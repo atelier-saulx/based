@@ -120,6 +120,7 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
+    var score: u8 = 255;
 
     checkItem: while (!end and ctx.totalResults < movingLimit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -151,17 +152,13 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        var d: ?u8 = null;
-
-        if (searchCtx != null) {
-            d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
-            if (d.? > 3) {
+        if (searchCtx) |s| {
+            score = search.search(node.?, typeEntry, s);
+            if (score > s.bad) {
                 continue :checkItem;
             }
-            if (d.? > 1) {
-                // if (movingLimit < limit * 4) {
+            if (score > s.meh) {
                 movingLimit += 1;
-                // }
             }
         }
 
@@ -177,7 +174,7 @@ pub fn querySort(
             typeEntry,
             include,
             null,
-            d,
+            if (searchCtx != null) score else null,
             false,
         );
 
@@ -187,17 +184,5 @@ pub fn querySort(
         }
     }
 
-    if (movingLimit > limit) {
-        std.debug.print("need to cut away soem results {d} \n", .{movingLimit - limit});
-    }
-
     sort.resetTxn(readTxn);
-}
-
-fn cmpByData(_: void, a: Result, b: Result) bool {
-    if (a.score < b.score) {
-        return true;
-    } else {
-        return false;
-    }
 }

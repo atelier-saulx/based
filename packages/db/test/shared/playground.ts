@@ -198,18 +198,32 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'gaza refugee crisis'
+  // handle this in search split and make a loop
+  // const query = 'german rebuke'
+
+  // maybe levensthein
+
+  // const query = 'orban'
+  const query = 'xi orbán meloni'
+
+  // lets think
+
+  // const s = query.split(' ').slice(1)
   // const query = 'vond der leyen'
-  console.log('\nSEARCH FOR:', query, query.split(' ').slice(1))
+  console.log('\nSEARCH FOR:', query)
   await db
     .query('article')
-    .range(0, 5)
+    .range(0, 10)
     .sort('publishDate', 'desc')
     .include('id', 'headline', 'publishDate', 'abstract')
-    .search(query.split(' ')[0], { headline: 2, abstract: 1 })
-    .filter('title', 'has', query.split(' ').slice(1))
+    .search(query, { headline: 0, abstract: 2, body: 3 })
+    //
+    // .filter('headline', 'hasLoose', s)
     // .or((v) => {
-    //   v.filter('abstract', 'hasLoose', query.split(' ').slice(1))
+    //   v.filter('abstract', 'hasLoose', s)
+    // })
+    // .or((v) => {
+    //   v.filter('body', 'hasLoose', s)
     // })
     .get()
     .then((v) => {
