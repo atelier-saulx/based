@@ -46,6 +46,7 @@ pub inline fn getRefsFields(
         .val = null,
         .refSize = 0,
         .includeMain = null,
+        .score = null,
         .refType = 253, // from result types
         .totalRefs = 0,
         .isEdge = t.Prop.NULL,

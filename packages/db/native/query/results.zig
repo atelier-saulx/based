@@ -18,6 +18,7 @@ pub const Result = struct {
     includeMain: ?[]u8, // make this optional
     totalRefs: ?usize,
     isEdge: t.Prop,
+    score: ?u8,
 };
 
 pub fn createResultsBuffer(
@@ -63,6 +64,12 @@ pub fn createResultsBuffer(
                 i += 1;
                 writeInt(u32, data, i, item.id.?);
                 i += 4;
+
+                if (item.score != null) {
+                    std.debug.print("WTF? {d} \n", .{item.score.?});
+                    data[i] = item.score.?;
+                    i += 1;
+                }
             }
         }
 

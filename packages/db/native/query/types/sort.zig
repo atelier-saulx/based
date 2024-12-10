@@ -14,6 +14,7 @@ const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
 const search = @import("../filter/search.zig");
 const readInt = @import("../../utils.zig").readInt;
+const Result = @import("../results.zig").Result;
 
 pub fn queryIds(
     comptime queryType: comptime_int,
@@ -73,6 +74,7 @@ pub fn queryIds(
             db.getNodeId(node),
             typeEntry,
             include,
+            null,
             null,
             false,
         );
@@ -149,18 +151,22 @@ pub fn querySort(
             continue :checkItem;
         }
 
+        var d: ?u8 = null;
+
         if (searchCtx != null) {
-            const d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
-            if (d > 1) {
+            d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
+            if (d.? > 3) {
                 continue :checkItem;
             }
-            if (d != 0) {
+            if (d.? > 1) {
                 // if (movingLimit < limit * 4) {
                 movingLimit += 1;
                 // }
-            } else {
-                std.debug.print("DISTANCE: {d} \n", .{d});
             }
+
+            // if (d.? >= ctx.lowScore) {
+            //     continue :checkItem;
+            // }
         }
 
         if (correctedForOffset != 0) {
@@ -175,6 +181,7 @@ pub fn querySort(
             typeEntry,
             include,
             null,
+            d,
             false,
         );
 
@@ -184,7 +191,13 @@ pub fn querySort(
         }
     }
 
-    std.debug.print("DONE? \n", .{});
-
     sort.resetTxn(readTxn);
+}
+
+fn cmpByData(_: void, a: Result, b: Result) bool {
+    if (a.score < b.score) {
+        return true;
+    } else {
+        return false;
+    }
 }

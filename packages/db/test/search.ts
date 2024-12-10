@@ -51,27 +51,31 @@ await test('search', async (t) => {
     types: {
       italy: {
         props: {
+          date: { type: 'timestamp' },
           title: { type: 'string' },
           body: { type: 'string', compression: 'none' }, // big compressed string...
         },
       },
     },
   })
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 10; i++) {
+    const d = Date.now()
     await db.create('italy', {
-      // body: 'bla and Netherlands is really nice yes what do you want now? fun?',
-      body:
-        italy +
-        ' aaaaa ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
+      date: d + i,
+      // if match from start also get it
+      body: i == 0 ? 'Netherlands' : 'Italy! netherlunds',
+      // body:
+      // italy +
+      // ' aaaaa amsterdam twitter ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
     })
   }
 
   const r = await db
     .query('italy')
-    .filter('body', 'hasLoose', 'derp derp derp')
-    // .search('derp derp derp', { body: 1 })
-    // .include('id')
-    .range(0, 1e3)
+    .search('netherlands', { body: 1 })
+    .include('id', 'body', 'date')
+    .range(0, 3)
+    .sort('date')
     .get()
 
   r.inspect()

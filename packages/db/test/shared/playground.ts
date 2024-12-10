@@ -198,11 +198,11 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'pager'
+  const query = 'orban'
   console.log('---- DERP UKRAINE', query)
   await db
     .query('article')
-    .range(0, 1e5)
+    .range(0, 10)
     // .filter('headline', 'has', 'Orbán')
     // .filter('headline', 'hasLoose', query)
     // .or((f) => {
@@ -218,10 +218,10 @@ const makeDb = async (path: string) => {
     //   f.filter('headline', 'has', 'Orbán')
     //   // f.filter('body', 'has', 'Orban')
     // })
-    // .sort('publishDate', 'desc')
-    .include('id')
+    .sort('publishDate', 'desc')
+    .include('id', 'headline', 'publishDate')
     // .filter('published', true)
-    .filter('headline', 'hasLoose', 'orban')
+    // .filter('headline', 'hasLoose', 'orban')
 
     // .or((v) => {
     //   v.filter('abstract', 'hasLoose', query)
@@ -230,10 +230,10 @@ const makeDb = async (path: string) => {
     //   v.filter('body', 'hasLoose', query)
     // })
     // body: 1
-    // .search(query, { headline: 3, body: 1 })
+    .search(query, { headline: 2 })
     .get()
     .then((v) => {
-      v.inspect(10)
+      v.inspect(100)
       // console.dir(v.toObject(), { depth: 10 })
     })
 

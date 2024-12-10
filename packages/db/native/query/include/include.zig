@@ -17,6 +17,7 @@ pub fn getFields(
     typeEntry: db.Type,
     include: []u8,
     ref: ?types.RefStruct,
+    score: ?u8,
     comptime isEdge: bool,
 ) !usize {
     var includeMain: ?[]u8 = null;
@@ -42,7 +43,7 @@ pub fn getFields(
             size += try getFields(node, ctx, id, typeEntry, edges, .{
                 .reference = ref.?.reference,
                 .edgeConstaint = ref.?.edgeConstaint,
-            }, true);
+            }, null, true);
             includeIterator += edgeSize + 2;
             continue :includeField;
         }
@@ -144,6 +145,7 @@ pub fn getFields(
 
         var result: results.Result = .{
             .id = null,
+            .score = score,
             .field = field,
             .val = value,
             .refSize = null,
@@ -157,9 +159,29 @@ pub fn getFields(
             size += 5;
             result.id = id;
             idIsSet = true;
+
+            if (score != null) {
+                size += 1;
+            }
         }
 
+        //     if (score.? < ctx.highScore) {
+        //         ctx.highScore = score.?;
+        //         try ctx.results.insert(0, result);
+        //     } else if (score.? == ctx.highScore) {
+        //         // sort check
+        //         try ctx.results.append(result);
+
+        //         // try ctx.results.insert(1, result);
+        //     } else {
+        //         if (score.? < ctx.lowScore and score.? > ctx.highScore) {
+        //             ctx.lowScore = score.?;
+        //         }
+        //         try ctx.results.append(result);
+        //     }
+        // } else {
         try ctx.results.append(result);
+        // }
     }
 
     if (!idIsSet) {

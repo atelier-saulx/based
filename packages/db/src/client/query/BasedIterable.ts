@@ -84,6 +84,10 @@ export class BasedQueryResponse {
       const item: Item = {
         id,
       }
+      if (this.def.search) {
+        item.$searchScore = result[i]
+        i += 1
+      }
       const l = readAllFields(this.def, result, i, result.byteLength, item, id)
       i += l
       yield item

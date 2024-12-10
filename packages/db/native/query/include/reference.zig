@@ -35,6 +35,7 @@ pub fn getSingleRefFields(
 
     ctx.results.append(.{
         .id = null,
+        .score = null,
         .field = refField,
         .val = null,
         .refSize = 0,
@@ -78,6 +79,7 @@ pub fn getSingleRefFields(
             .reference = @ptrCast(selvaRef.?),
             .edgeConstaint = edgeConstrain,
         },
+        null,
         false,
     ) catch 0;
 

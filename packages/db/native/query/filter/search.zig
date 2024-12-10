@@ -15,7 +15,7 @@ const capitals: @Vector(vectorLen, u8) = @splat(32);
 
 // TODO: Make this as context!
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
-const minDist = 1;
+const minDist = 2; // 0,1,2 is fine
 
 pub const SearchCtx = struct {
     query: []u8,
@@ -32,7 +32,7 @@ pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
     };
 }
 
-fn levenshtein(
+fn hamming(
     value: []u8,
     i: usize,
     ctx: *const SearchCtx,
@@ -43,6 +43,14 @@ fn levenshtein(
         ctx.queryDistance.ptr,
         ql,
     ));
+    //  const d: u8 = @truncate(selva.strsearch_hamming(
+    //     value[i + 1 .. i + 1 + ql].ptr,
+    //     ctx.queryDistance.ptr,
+    //     ql,
+    // ));
+    // if (d < 5) {
+    // std.debug.print("D {any} {d} \n", .{ value[i + 1 .. i + 1 + ql], d });
+    // }
     return d;
 }
 
@@ -62,8 +70,8 @@ fn resultMatcher(
     if (index + ql > l) {
         return d;
     }
-    if (index == 0 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
-        const nd = levenshtein(value, index, ctx);
+    if (index == 1 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
+        const nd = hamming(value, index, ctx);
         if (nd < minDist) {
             return nd;
         } else if (nd < d) {
@@ -71,11 +79,11 @@ fn resultMatcher(
         }
     }
     if (@reduce(.Xor, matches) == false) {
-        var p: usize = index - i;
+        var p: usize = index - i + 1;
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
                 if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
-                    const nd = levenshtein(value, p + i, ctx);
+                    const nd = hamming(value, p + i, ctx);
                     if (nd < minDist) {
                         return nd;
                     } else if (nd < d) {
@@ -92,7 +100,7 @@ pub inline fn strSearch(
     value: []u8,
     ctx: *const SearchCtx,
 ) u8 {
-    var i: usize = 0;
+    var i: usize = 1;
     const query = ctx.query;
     const l = value.len;
     const ql = query.len;
@@ -101,11 +109,11 @@ pub inline fn strSearch(
     var d: u8 = 255;
     if (l < vectorLen) {
         while (i < l - 1) : (i += 1) {
-            if ((value[i + 1] == q1 or value[i + 1] == q2) and simd.countElementsWithValue(seperatorChars, value[i]) > 0) {
+            if ((value[i] == q1 or value[i] == q2) and (i == 1 or simd.countElementsWithValue(seperatorChars, value[i - 1]) > 0)) {
                 if (i + ql - 1 > l) {
                     return d;
                 }
-                const nd = levenshtein(value, i + 1, ctx);
+                const nd = hamming(value, i, ctx);
                 if (nd < minDist) {
                     return nd;
                 } else if (nd < d) {
@@ -139,7 +147,7 @@ pub inline fn strSearch(
             if (i + ql - 1 > l) {
                 return d;
             }
-            const nd = levenshtein(value, i + 1, ctx);
+            const nd = hamming(value, i + 1, ctx);
             if (nd < minDist) {
                 return nd;
             } else if (nd < d) {
@@ -157,17 +165,18 @@ pub fn search(
     ctx: *const SearchCtx,
     // ref: ?types.RefStruct,
     // comptime isEdge: bool,
-) u32 {
+) u8 {
     var j: usize = 0;
     var bestScore: u8 = 255;
     const fl = ctx.fields.len;
     while (j < fl) {
         const field = ctx.fields[j];
+        // const weight = ctx.fields[j + 1];
         const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
             return 0;
         };
         const value = db.getField(typeEntry, 0, node, fieldSchema);
-        if (value.len == 0) {
+        if (value.len < ctx.query.len) {
             j += 2;
             continue;
         }
