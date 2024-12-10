@@ -19,6 +19,7 @@ await test('alias', async (t) => {
       user: {
         props: {
           externalId: 'alias',
+          potato: 'string',
         },
       },
     },
@@ -34,6 +35,7 @@ await test('alias', async (t) => {
   deepEqual((await db.query('user', user1).get()).toObject(), {
     id: 1,
     externalId: 'cool',
+    potato: '',
   })
 
   deepEqual(
@@ -42,6 +44,7 @@ await test('alias', async (t) => {
       {
         id: 1,
         externalId: 'cool',
+        potato: '',
       },
     ],
   )
@@ -54,9 +57,48 @@ await test('alias', async (t) => {
       {
         id: 1,
         externalId: 'cool',
+        potato: '',
       },
     ],
   )
+
+  await db.upsert(
+    'user',
+    {
+      externalId: 'potato',
+    },
+    {
+      potato: 'success',
+    },
+  )
+
+  db.drain()
+
+  deepEqual(
+    (
+      await db.query('user').filter('externalId', '=', 'potato').get()
+    ).toObject(),
+    [
+      {
+        id: 2,
+        externalId: 'potato',
+        potato: 'success',
+      },
+    ],
+  )
+
+  deepEqual((await db.query('user').get()).toObject(), [
+    {
+      id: 1,
+      externalId: 'cool',
+      potato: '',
+    },
+    {
+      id: 2,
+      externalId: 'potato',
+      potato: 'success',
+    },
+  ])
 
   // db.update('user', user1, {
   //   externalId: 'tornado',
