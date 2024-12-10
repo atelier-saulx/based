@@ -38,12 +38,11 @@ fn levenshtein(
     ctx: *const SearchCtx,
 ) u8 {
     const ql = ctx.queryDistance.len;
-    const d = selva.strsearch_levenshtein_u8(
+    const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
-        ql,
         ctx.queryDistance.ptr,
         ql,
-    );
+    ));
     return d;
 }
 
