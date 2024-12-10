@@ -84,6 +84,7 @@ export const TYPE_INDEX_MAP = {
   updated: UPDATED,
   number: NUMBER,
   string: STRING,
+  text: TEXT,
   uint16: UINT16,
   uint32: UINT32,
   int16: INT16,
@@ -184,6 +185,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   reference: 0, // separate
   enum: 1, // enum
   string: 0, // separate
+  text: 0, // separate
   references: 0, // separate
   microbuffer: 0, // separate
   alias: 0,

@@ -136,6 +136,8 @@ export const createSchemaTypeDef = (
         } else {
           stringFields++
         }
+      } else if(isPropType('text', schemaProp)) {
+        stringFields++
       }
 
       const isseparate = len === 0
@@ -167,7 +169,8 @@ export const createSchemaTypeDef = (
         addEdges(prop, schemaProp)
       } else if (
         typeof schemaProp === 'object' &&
-        isPropType('string', schemaProp)
+        (isPropType('string', schemaProp) ||
+         isPropType('text', schemaProp))
       ) {
         prop.compression =
           'compression' in schemaProp && schemaProp.compression === 'none'
