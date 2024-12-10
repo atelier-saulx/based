@@ -103,6 +103,7 @@ pub fn query(
 
     var first = true;
     var node = db.getFirstNode(typeEntry);
+    var score: u8 = 255;
 
     checkItem: while (ctx.totalResults < movingLimit) {
         if (first) {
@@ -119,19 +120,14 @@ pub fn query(
             continue :checkItem;
         }
 
-        var d: ?u8 = null;
-
-        if (searchCtx != null) {
-            d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
-            if (d.? > 3) {
+        if (searchCtx) |s| {
+            score = search.search(node.?, typeEntry, s);
+            if (score > s.bad) {
                 continue :checkItem;
             }
-            if (d.? > 1) {
-                // if (movingLimit < limit * 4) {
+            if (score > s.meh) {
                 movingLimit += 1;
-                // }
             }
-            // have to mark this
         }
 
         if (correctedForOffset != 0) {
@@ -146,7 +142,7 @@ pub fn query(
             typeEntry,
             include,
             null,
-            d,
+            if (searchCtx != null) score else null,
             false,
         );
 

@@ -216,7 +216,9 @@ await test('has uncompressed', async (t) => {
             ? 'Derpy derp derp exploding-pager merp'
             : i === 602
               ? 'P p p ppppp p pppp p p Italy is the greatest'
-              : '',
+              : i === 800
+                ? 'UN experts slam global inaction, as famine takes hold across entire Gaza'
+                : '',
       body: italy,
     })
   }
@@ -281,6 +283,34 @@ await test('has uncompressed', async (t) => {
       {
         id: 601,
         headline: 'Derpy derp derp exploding-pager merp',
+      },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('headline', 'hasLoose', 'refugee')
+      .include('id', 'headline')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [],
+  )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('headline', 'hasLoose', 'gaza')
+      .include('id', 'headline')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 801,
+        headline:
+          'UN experts slam global inaction, as famine takes hold across entire Gaza',
       },
     ],
   )
@@ -406,7 +436,6 @@ await test('hasLoose compressed', async (t) => {
   )
 })
 
-// -------- or later...
 await test('has OR uncompressed', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -423,6 +452,7 @@ await test('has OR uncompressed', async (t) => {
       italy: {
         props: {
           f: 'boolean',
+          title: 'string',
           body: { type: 'string', compression: 'none' },
         },
       },
@@ -432,6 +462,10 @@ await test('has OR uncompressed', async (t) => {
   for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
       f: false,
+      title:
+        i === 500
+          ? 'UN experts slam global inaction, as famine takes hold across entire Gaza'
+          : 'derp',
       body: i === 999 ? italy + ' aaabbbbbbbbbaaa' : italy,
     })
   }
@@ -446,6 +480,34 @@ await test('has OR uncompressed', async (t) => {
         .get()
     ).inspect().length,
     1,
+  )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('title', 'hasLoose', ['gaza', 'tubbies'])
+      .include('id', 'title')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [
+      {
+        id: 501,
+        title:
+          'UN experts slam global inaction, as famine takes hold across entire Gaza',
+      },
+    ],
+  )
+
+  deepEqual(
+    await db
+      .query('italy')
+      .filter('title', 'hasLoose', ['crisis', 'refugee'])
+      .include('id', 'title')
+      .range(0, 1e3)
+      .get()
+      .then((v) => v.toObject()),
+    [],
   )
 })
 

@@ -145,7 +145,7 @@ pub fn getFields(
 
         var result: results.Result = .{
             .id = null,
-            .score = score,
+            .score = null,
             .field = field,
             .val = value,
             .refSize = null,
@@ -159,29 +159,13 @@ pub fn getFields(
             size += 5;
             result.id = id;
             idIsSet = true;
-
             if (score != null) {
+                result.score = score;
                 size += 1;
             }
         }
 
-        //     if (score.? < ctx.highScore) {
-        //         ctx.highScore = score.?;
-        //         try ctx.results.insert(0, result);
-        //     } else if (score.? == ctx.highScore) {
-        //         // sort check
-        //         try ctx.results.append(result);
-
-        //         // try ctx.results.insert(1, result);
-        //     } else {
-        //         if (score.? < ctx.lowScore and score.? > ctx.highScore) {
-        //             ctx.lowScore = score.?;
-        //         }
-        //         try ctx.results.append(result);
-        //     }
-        // } else {
         try ctx.results.append(result);
-        // }
     }
 
     if (!idIsSet) {

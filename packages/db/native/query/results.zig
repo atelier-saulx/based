@@ -66,7 +66,6 @@ pub fn createResultsBuffer(
                 i += 4;
 
                 if (item.score != null) {
-                    std.debug.print("WTF? {d} \n", .{item.score.?});
                     data[i] = item.score.?;
                     i += 1;
                 }
