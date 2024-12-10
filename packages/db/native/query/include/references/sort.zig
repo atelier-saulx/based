@@ -70,6 +70,7 @@ pub fn sortedReferences(
             typeEntry,
             include,
             queryTypes.RefResult(isEdge, refs, edgeConstrain, i),
+            null,
             false,
         ) catch 0;
         if (result.cnt - offset >= limit) {

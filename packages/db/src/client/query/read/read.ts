@@ -288,32 +288,17 @@ export const resultToObject = (
     const item: Item = {
       id,
     }
+    if (q.search) {
+      item.$searchScore = result[i]
+      i += 1
+      // console.log(item)
+    }
     const l = readAllFields(q, result, i, end, item, id)
     i += l
     items.push(item)
   }
   if ('id' in q.target) {
     return items[0]
-  }
-  return items
-}
-
-// add generator
-export function* toObjectRange(q: QueryDef, result: Buffer) {
-  let cnt = 0
-  const items = []
-  let i = 5
-  const len = result.readUint32LE(0)
-  while (i < len) {
-    let id = result.readUInt32LE(i)
-    i += 4
-    const item: Item = {
-      id,
-    }
-    cnt++
-    const l = readAllFields(q, result, i, result.byteLength, item, id)
-    i += l
-    items.push(item)
   }
   return items
 }

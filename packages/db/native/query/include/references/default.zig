@@ -50,6 +50,7 @@ pub fn defaultReferences(
             typeEntry,
             include,
             refStruct,
+            null,
             false,
         ) catch 0;
     }

@@ -2,6 +2,7 @@ import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import {
   BINARY,
+  NUMBER,
   PropDef,
   PropDefEdge,
   STRING,
@@ -119,7 +120,9 @@ const inspectObject = (
     let v = object[k]
     const isEdge = k[0] === '$'
 
-    if (isEdge) {
+    if (k === '$searchScore') {
+      edges.push({ k, v, def: { typeIndex: NUMBER } })
+    } else if (isEdge) {
       edges.push({ k, v, def: q.edges?.props?.[k] })
     } else {
       str += prefixBody + `${k}: `

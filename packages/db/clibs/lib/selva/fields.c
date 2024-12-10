@@ -192,7 +192,7 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     return s;
 }
 
-static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
+static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, enum selva_lang_code lang, const char *str, size_t len)
 {
     struct selva_string *s;
 
@@ -202,11 +202,19 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
 
     s = get_mutable_string(fields, fs, nfo, len);
     (void)selva_string_replace(s, str, len);
+    s->lang = lang;
 
     return 0;
 }
 
-static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len, uint32_t crc)
+int selva_fields_set_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, enum selva_lang_code lang, const char *str, size_t len)
+{
+    struct SelvaFields *fields = &node->fields;
+
+    return set_field_string(fields, fs, nfo, lang, str, len);
+}
+
+static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, enum selva_lang_code lang, const char *str, size_t len, uint32_t crc)
 {
     struct selva_string *s;
 
@@ -216,8 +224,16 @@ static int set_field_string_crc(struct SelvaFields *fields, const struct SelvaFi
 
     s = get_mutable_string(fields, fs, nfo, len);
     (void)selva_string_replace_crc(s, str, len, crc);
+    s->lang = lang;
 
     return 0;
+}
+
+int selva_fields_set_string_crc(struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, enum selva_lang_code lang, const char *str, size_t len, uint32_t crc)
+{
+    struct SelvaFields *fields = &node->fields;
+
+    return set_field_string_crc(fields, fs, nfo, lang, str, len, crc);
 }
 
 static void remove_refs_offset(struct SelvaNodeReferences *refs)
@@ -773,7 +789,7 @@ copy:
         memcpy(nfo2p(fields, nfo), value, len);
         break;
     case SELVA_FIELD_TYPE_STRING:
-        return set_field_string(fields, fs, nfo, value, len);
+        return set_field_string(fields, fs, nfo, selva_lang_none, value, len);
         break;
     case SELVA_FIELD_TYPE_TEXT:
         /* Use selva_fields_set_text() */
@@ -821,7 +837,7 @@ int selva_fields_set_wcrc(struct SelvaDb *, struct SelvaNode *node, const struct
 
     switch (type) {
     case SELVA_FIELD_TYPE_STRING:
-        return set_field_string_crc(&node->fields, fs, nfo, value, len, crc);
+        return set_field_string_crc(&node->fields, fs, nfo, selva_lang_none, value, len, crc);
     default:
         return SELVA_ENOTSUP;
     }
@@ -905,7 +921,7 @@ fail:
 
 int selva_fields_set_text(
         struct SelvaDb *,
-        struct SelvaNode * restrict node,
+        struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,
         const char *str,
@@ -948,7 +964,7 @@ int selva_fields_set_text(
 
 int selva_fields_set_text_crc(
         struct SelvaDb *,
-        struct SelvaNode * restrict node,
+        struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         enum selva_lang_code lang,
         const char *str,

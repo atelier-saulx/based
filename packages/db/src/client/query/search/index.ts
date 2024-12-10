@@ -53,6 +53,7 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   search.fields.sort((a, b) => {
     return a.weight - b.weight > 1 ? 1 : a.weight === b.weight ? 0 : -1
   })
+  // .reverse()
   for (let i = 0; i < search.fields.length * 2; i += 2) {
     const f = search.fields[i / 2]
     result[i + offset] = f.field

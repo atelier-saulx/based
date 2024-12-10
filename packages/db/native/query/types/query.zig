@@ -39,6 +39,7 @@ pub fn queryId(
         typeEntry,
         include,
         null,
+        null,
         false,
     );
 
@@ -72,6 +73,7 @@ pub fn queryIds(
             id,
             typeEntry,
             include,
+            null,
             null,
             false,
         );
@@ -117,15 +119,17 @@ pub fn query(
             continue :checkItem;
         }
 
+        var d: ?u8 = null;
+
         if (searchCtx != null) {
-            const d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
-            if (d > 1) {
+            d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
+            if (d.? > 3) {
                 continue :checkItem;
             }
-            if (d != 0) {
-                if (movingLimit < limit * 4) {
-                    movingLimit += 1;
-                }
+            if (d.? > 1) {
+                // if (movingLimit < limit * 4) {
+                movingLimit += 1;
+                // }
             }
             // have to mark this
         }
@@ -142,6 +146,7 @@ pub fn query(
             typeEntry,
             include,
             null,
+            d,
             false,
         );
 

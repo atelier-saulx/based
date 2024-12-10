@@ -36,6 +36,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
+        .highScore = 255,
+        .lowScore = 255,
     };
 
     const q = try napi.get([]u8, env, args[1]);
