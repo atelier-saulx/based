@@ -58,7 +58,6 @@ uint8_t strsearch_levenshtein_u8(const char * restrict s, size_t m, const char *
     int32_t *v1 = v[1];
 
     for (size_t i = 0; i <= n; i++) v0[i] = i;
-
     for (size_t i = 0; i < m; i++) {
         v1[0] = i + 1;
 
@@ -111,4 +110,18 @@ uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, 
     }
 
     return (uint8_t)v0[n];
+}
+
+uint32_t strsearch_hamming(const char * restrict s, const char * restrict t, size_t n)
+{
+    uint32_t dist = 0;
+
+    for (size_t i = 0; i < m; i++) {
+        uint8_t x = *s++;
+        uint8_t y = *t++;
+
+        dist += __builtin_popcount(x ^ y);
+    }
+
+    return dist;
 }
