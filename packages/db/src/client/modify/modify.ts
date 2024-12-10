@@ -5,6 +5,7 @@ import {
   REFERENCE,
   REFERENCES,
   STRING,
+  TEXT,
   ALIAS,
   BINARY,
 } from '../../server/schema/types.js'
@@ -12,6 +13,7 @@ import { ModifyError } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
 import { writeReferences } from './references/references.js'
 import { writeString } from './string.js'
+import { writeText } from './text.js'
 import { MERGE_MAIN, ModifyErr, ModifyOp, RANGE_ERR } from './types.js'
 import { writeBinary } from './binary.js'
 import { setCursor } from './setCursor.js'
@@ -44,6 +46,8 @@ function _modify(
       if (def.separate) {
         if (type === STRING) {
           err = writeString(val, ctx, schema, def, parentId, mod)
+        } else if (type === TEXT) {
+          err = writeText(val, ctx, schema, def, parentId, mod)
         } else if (type === REFERENCE) {
           err = writeReference(val, ctx, schema, def, parentId, mod)
         } else if (type === REFERENCES) {
