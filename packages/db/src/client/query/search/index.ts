@@ -71,9 +71,8 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   result.writeUint16LE(search.query.byteLength, 0)
   result.set(search.query, 2)
   const offset = search.query.byteLength + 2
-
   // fix weight later...
-  search.fields.sort((b, a) => {
+  search.fields.sort((a, b) => {
     return a.weight - b.weight > 1 ? 1 : a.weight === b.weight ? 0 : -1
   })
   for (let i = 0; i < search.fields.length * 2; i += 2) {

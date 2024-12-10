@@ -40,14 +40,13 @@ pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
         j += 2;
         totalfields += 1;
     }
-    // all weight / 2
     return .{
         .len = sLen,
         .allQueries = searchBuf[3..sLen],
         .fields = fields,
         .words = words,
         .meh = words * 2,
-        .bad = (words - 1) * 3 + @divTrunc(totalWeights, totalfields),
+        .bad = 2 + (words - 1) * 3 + @divTrunc(totalWeights, totalfields),
     };
 }
 
@@ -198,17 +197,15 @@ pub fn search(
                 // ADD NOW
                 // ---- do later
             } else {
-                // if (totalScore + weight > ctx.bad) {
-                //     return totalScore + weight;
-                // }
                 var score: u8 = 0;
                 score = strSearch(value, query) + weight;
                 if (score < bestScore) {
                     bestScore = score;
-                }
-                if (score - weight == 0) {
-                    j += 2;
-                    continue :wordLoop;
+                    if (score - weight == 0) {
+                        j += 2;
+                        totalScore += bestScore;
+                        continue :wordLoop;
+                    }
                 }
             }
             j += 2;

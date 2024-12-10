@@ -204,7 +204,7 @@ const makeDb = async (path: string) => {
   // maybe levensthein
 
   // const query = 'orban'
-  const query = 'xi orbán meloni'
+  const query = 'holiday uyghur'
 
   // lets think
 
