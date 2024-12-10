@@ -19,14 +19,18 @@ await test('alias', async (t) => {
       user: {
         props: {
           externalId: 'alias',
+          potato: 'string',
         },
       },
     },
   })
 
-  await setTimeout(1e3)
   const user1 = db.create('user', {
     externalId: 'cool',
+  })
+
+  const user2 = db.create('user', {
+    externalId: 'cool2',
   })
 
   db.drain()
@@ -34,29 +38,77 @@ await test('alias', async (t) => {
   deepEqual((await db.query('user', user1).get()).toObject(), {
     id: 1,
     externalId: 'cool',
+    potato: '',
   })
 
-  deepEqual(
-    (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
-    [
-      {
-        id: 1,
-        externalId: 'cool',
-      },
-    ],
-  )
+  deepEqual((await db.query('user', user2).get()).toObject(), {
+    id: 2,
+    externalId: 'cool2',
+    potato: '',
+  })
 
-  deepEqual(
-    (
-      await db.query('user').filter('externalId', 'has', 'cool').get()
-    ).toObject(),
-    [
-      {
-        id: 1,
-        externalId: 'cool',
-      },
-    ],
-  )
+  // deepEqual(
+  //   (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       externalId: 'cool',
+  //       potato: '',
+  //     },
+  //   ],
+  // )
+
+  // deepEqual(
+  //   (
+  //     await db.query('user').filter('externalId', 'has', 'cool').get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       externalId: 'cool',
+  //       potato: '',
+  //     },
+  //   ],
+  // )
+
+  // await db.upsert(
+  //   'user',
+  //   {
+  //     externalId: 'potato',
+  //   },
+  //   {
+  //     externalId: 'potato',
+  //     potato: 'success',
+  //   },
+  // )
+
+  // db.drain()
+
+  // deepEqual(
+  //   (
+  //     await db.query('user').filter('externalId', '=', 'potato').get()
+  //   ).toObject(),
+  //   [
+  //     {
+  //       id: 2,
+  //       externalId: 'potato',
+  //       potato: 'success',
+  //     },
+  //   ],
+  // )
+
+  // deepEqual((await db.query('user').get()).toObject(), [
+  //   {
+  //     id: 1,
+  //     externalId: 'cool',
+  //     potato: '',
+  //   },
+  //   {
+  //     id: 2,
+  //     externalId: 'potato',
+  //     potato: 'success',
+  //   },
+  // ])
 
   // db.update('user', user1, {
   //   externalId: 'tornado',

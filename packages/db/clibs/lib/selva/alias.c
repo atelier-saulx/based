@@ -55,9 +55,10 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type)
 static struct SelvaAlias *insert_alias_by_name(struct SelvaAliases *aliases, struct SelvaAlias *new_alias)
 {
      struct SelvaAlias *old_alias;
-
+        
      old_alias = RB_INSERT(SelvaAliasesByName, &aliases->alias_by_name, new_alias);
-     if (!old_alias) {
+     if (!old_alias)
+     {
          aliases->nr_aliases++;
      }
 
@@ -151,7 +152,7 @@ void selva_set_alias(struct SelvaAliases *aliases, node_id_t dest, const char *n
     new_alias->dest = dest;
     memcpy(new_alias->name, name_str, name_len);
     new_alias->name[name_len] = '\0';
-
+    printf("-- NEW AlIAS LEN: %zu\n", strlen(new_alias->name));
     selva_set_alias_p(aliases, new_alias);
 }
 

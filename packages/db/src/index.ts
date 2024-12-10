@@ -89,9 +89,24 @@ export class BasedDb {
     return create(this, type, value, unsafe)
   }
 
-  upsert(type: string, aliases: Record<string, string>, value: any) {
-    console.warn('TODO upsert nice')
+  async upsert(type: string, aliases: Record<string, string>, value: any) {
+    let q = this.query(type).include('id')
+    let first = true
     for (const key in aliases) {
+      if (first) {
+        q = q.filter(key, '=', aliases[key])
+      } else {
+        q = q.or(key, '=', aliases[key])
+      }
+    }
+    const res = await q.get()
+    if (res.length === 0) {
+      return create(this, type, {
+        ...aliases,
+        ...value,
+      })
+    } else {
+      return update(this, type, res.toObject()[0].id, value)
     }
   }
 
