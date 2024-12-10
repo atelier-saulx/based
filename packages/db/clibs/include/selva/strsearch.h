@@ -27,3 +27,6 @@ uint8_t strsearch_levenshtein_u8(const char * restrict s, size_t m, const char *
 
 SELVA_EXPORT
 uint8_t strsearch_levenshtein_mbs(locale_t loc, wctrans_t trans, const char *s, size_t m, const struct strsearch_wneedle *wneedle);
+
+SELVA_EXPORT
+uint32_t strsearch_hamming(const char * restrict s, const char * restrict t, size_t n);
