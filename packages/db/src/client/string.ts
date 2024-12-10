@@ -55,10 +55,7 @@ export const write = (
     }
   } else {
     buf[offset] = 0
-
-    const size = 1 + buf.write(value, offset + 1, 'utf8')
-
-    return size
+    return 1 + buf.write(value, offset + 1, 'utf8')
   }
 }
 

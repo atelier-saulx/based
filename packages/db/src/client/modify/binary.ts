@@ -1,9 +1,8 @@
 import { BasedDb } from '../../index.js'
-import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '../../server/schema/types.js'
 import { UPDATE, ModifyOp, ModifyErr, RANGE_ERR, DELETE } from './types.js'
-import { ModifyError, ModifyState } from './ModifyRes.js'
+import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendBuf, appendU32, appendU8, outOfRange } from './utils.js'
 
 export function getBuffer(value): Buffer {
   if (value instanceof Buffer) {
@@ -17,9 +16,9 @@ export function getBuffer(value): Buffer {
 export function writeBinary(
   value: any,
   ctx: BasedDb['modifyCtx'],
-  def: SchemaTypeDef,
+  schema: SchemaTypeDef,
   t: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   let size: number
@@ -34,19 +33,24 @@ export function writeBinary(
   }
   if (size === 0) {
     if (modifyOp === UPDATE) {
-      if (outOfRange(ctx, 11)) {
+      if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
-      appendU8(ctx, DELETE)
+
+      setCursor(ctx, schema, t.prop, parentId, modifyOp)
+      ctx.buf[ctx.len++] = DELETE
     }
   } else {
-    if (outOfRange(ctx, 15 + size)) {
+    if (ctx.len + 15 + size > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
-    appendU8(ctx, modifyOp)
-    appendU32(ctx, size)
-    appendBuf(ctx, value)
+    setCursor(ctx, schema, t.prop, parentId, modifyOp)
+    ctx.buf[ctx.len++] = modifyOp
+    ctx.buf[ctx.len++] = size
+    ctx.buf[ctx.len++] = size >>>= 8
+    ctx.buf[ctx.len++] = size >>>= 8
+    ctx.buf[ctx.len++] = size >>>= 8
+    ctx.buf.set(value, ctx.len)
+    ctx.len += value.byteLength
   }
 }

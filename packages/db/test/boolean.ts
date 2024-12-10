@@ -24,7 +24,6 @@ await test('boolean', async (t) => {
   })
 
   db.create('user', {})
-
   db.create('user', {
     isNice: true,
   })

@@ -230,7 +230,7 @@ export class DbServer {
     if (this.stopped) {
       return
     }
-    this.stopped = true
+
     if (!noSave) {
       await this.save()
     }

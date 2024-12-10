@@ -11,13 +11,7 @@ import { write } from '../../string.js'
 import { getBuffer } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from '../types.js'
-import {
-  appendBuf,
-  appendFixedValue,
-  appendU32,
-  appendU8,
-  outOfRange,
-} from '../utils.js'
+import { appendFixedValue } from '../utils.js'
 import { RefModifyOpts } from './references.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {
@@ -61,7 +55,10 @@ function appendRefs(
     }
 
     if (id > 0) {
-      appendU32(ctx, id)
+      ctx.buf[ctx.len++] = id
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = id >>>= 8
+      ctx.buf[ctx.len++] = id >>>= 8
     } else {
       return new ModifyError(t, value)
     }
@@ -90,27 +87,43 @@ export function writeEdges(
             }
             size = buf.byteLength
           }
-          if (outOfRange(ctx, 6 + size)) {
+
+          if (ctx.len + 6 + size > ctx.max) {
             return RANGE_ERR
           }
-          appendU8(ctx, edge.prop)
-          appendU8(ctx, STRING)
-          appendU32(ctx, size)
+
+          ctx.buf[ctx.len++] = edge.prop
+          ctx.buf[ctx.len++] = STRING
+
           if (size) {
-            appendBuf(ctx, value)
+            ctx.buf[ctx.len++] = size
+            ctx.buf[ctx.len++] = size >>>= 8
+            ctx.buf[ctx.len++] = size >>>= 8
+            ctx.buf[ctx.len++] = size >>>= 8
+            ctx.buf.set(value, ctx.len)
+            ctx.len += value.byteLength
+          } else {
+            ctx.buf[ctx.len++] = 0
+            ctx.buf[ctx.len++] = 0
+            ctx.buf[ctx.len++] = 0
+            ctx.buf[ctx.len++] = 0
           }
         } else if (edge.typeIndex === STRING) {
           if (typeof value !== 'string') {
             return new ModifyError(t, ref)
           }
           let size = Buffer.byteLength(value)
-          if (outOfRange(ctx, 6 + size)) {
+          if (ctx.len + 6 + size > ctx.max) {
             return RANGE_ERR
           }
-          appendU8(ctx, edge.prop)
-          appendU8(ctx, STRING)
+          ctx.buf[ctx.len++] = edge.prop
+          ctx.buf[ctx.len++] = STRING
           size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
-          appendU32(ctx, size)
+          let sizeU32 = size
+          ctx.buf[ctx.len++] = sizeU32
+          ctx.buf[ctx.len++] = sizeU32 >>>= 8
+          ctx.buf[ctx.len++] = sizeU32 >>>= 8
+          ctx.buf[ctx.len++] = sizeU32 >>>= 8
           ctx.len += size
         } else if (edge.typeIndex === REFERENCE) {
           if (typeof value !== 'number') {
@@ -121,9 +134,12 @@ export function writeEdges(
             }
           }
           if (value > 0) {
-            appendU8(ctx, edge.prop)
-            appendU8(ctx, REFERENCE)
-            appendU32(ctx, value)
+            ctx.buf[ctx.len++] = edge.prop
+            ctx.buf[ctx.len++] = REFERENCE
+            ctx.buf[ctx.len++] = value
+            ctx.buf[ctx.len++] = value >>>= 8
+            ctx.buf[ctx.len++] = value >>>= 8
+            ctx.buf[ctx.len++] = value >>>= 8
           } else {
             return new ModifyError(t, ref)
           }
@@ -131,20 +147,24 @@ export function writeEdges(
           if (!Array.isArray(value)) {
             return new ModifyError(t, ref)
           }
-          if (outOfRange(ctx, 6 + value.length * 4)) {
+          let size = value.length * 4
+          if (ctx.len + 6 + size > ctx.max) {
             return RANGE_ERR
           }
-          appendU8(ctx, edge.prop)
-          appendU8(ctx, REFERENCES)
-          appendU32(ctx, value.length * 4)
+          ctx.buf[ctx.len++] = edge.prop
+          ctx.buf[ctx.len++] = REFERENCES
+          ctx.buf[ctx.len++] = size
+          ctx.buf[ctx.len++] = size >>>= 8
+          ctx.buf[ctx.len++] = size >>>= 8
+          ctx.buf[ctx.len++] = size >>>= 8
           appendRefs(edge, ctx, value)
         }
       } else {
-        if (outOfRange(ctx, 2)) {
+        if (ctx.len + 2 > ctx.max) {
           return RANGE_ERR
         }
-        appendU8(ctx, edge.prop)
-        appendU8(ctx, edge.typeIndex)
+        ctx.buf[ctx.len++] = edge.prop
+        ctx.buf[ctx.len++] = edge.typeIndex
         const err = appendFixedValue(ctx, value, edge)
         if (err) {
           return err

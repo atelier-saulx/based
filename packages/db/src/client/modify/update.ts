@@ -5,13 +5,7 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { RANGE_ERR, UPDATE } from './types.js'
-import {
-  appendFixedValue,
-  appendU16,
-  appendU32,
-  appendU8,
-  outOfRange,
-} from './utils.js'
+import { appendFixedValue } from './utils.js'
 
 type Payload = Record<string, any>
 
@@ -19,13 +13,13 @@ const appendUpdate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
-  res: ModifyState,
+  parentId: number,
   overwrite?: boolean,
 ) => {
-  const err = modify(ctx, res, obj, def, UPDATE, def.tree, overwrite)
+  const err = modify(ctx, parentId, obj, def, UPDATE, def.tree, overwrite)
 
   if (ctx.mergeMain) {
-    const { mergeMain, mergeMainSize } = ctx
+    let { mergeMain, mergeMainSize } = ctx
     ctx.mergeMainSize = 0
     ctx.mergeMain = null
 
@@ -33,19 +27,25 @@ const appendUpdate = (
       return err
     }
 
-    if (outOfRange(ctx, 15 + mergeMain.length * 4)) {
+    if (ctx.len + 15 + mergeMain.length * 4 > ctx.max) {
       return RANGE_ERR
     }
 
-    setCursor(ctx, def, 0, res.tmpId, UPDATE)
-    appendU8(ctx, 5)
-    appendU32(ctx, mergeMainSize)
+    setCursor(ctx, def, 0, parentId, UPDATE)
+    ctx.buf[ctx.len++] = 5
+    ctx.buf[ctx.len++] = mergeMainSize
+    ctx.buf[ctx.len++] = mergeMainSize >>>= 8
+    ctx.buf[ctx.len++] = mergeMainSize >>>= 8
+    ctx.buf[ctx.len++] = mergeMainSize >>>= 8
 
     for (let i = 0; i < mergeMain.length; i += 2) {
       const t: PropDef = mergeMain[i]
       const v = mergeMain[i + 1]
-      appendU16(ctx, t.start)
-      appendU16(ctx, t.len)
+      let { start, len } = t
+      ctx.buf[ctx.len++] = start
+      ctx.buf[ctx.len++] = start >>>= 8
+      ctx.buf[ctx.len++] = len
+      ctx.buf[ctx.len++] = len >>>= 8
       const err = appendFixedValue(ctx, v, t)
       if (err) {
         return err
@@ -64,21 +64,26 @@ export const update = (
   overwrite?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
-  const res = new ModifyState(id, db)
   const ctx = db.modifyCtx
   const pos = ctx.len
-  const err = appendUpdate(ctx, def, obj, res, overwrite)
+  const err = appendUpdate(ctx, def, obj, id, overwrite)
+  const res = new ModifyState(id, db)
 
   if (err) {
-    ctx.prefix0 = null // force a new cursor
+    ctx.prefix0 = -1 // force a new cursor
     ctx.len = pos
+
     if (err === RANGE_ERR) {
       flushBuffer(db)
       return update(db, type, id, obj, overwrite)
-    } else {
-      res.error = err
     }
-  } else if (!db.isDraining) {
+
+    res.error = err
+    // @ts-ignore
+    return res
+  }
+
+  if (!db.isDraining) {
     startDrain(db)
   }
 

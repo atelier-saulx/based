@@ -1,15 +1,8 @@
 import { BasedDb } from '../../../index.js'
-import { SchemaTypeDef, PropDef } from '../../../server/schema/types.js'
+import { PropDef, SchemaTypeDef } from '../../../server/schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
-import {
-  appendU32,
-  appendU8,
-  outOfRange,
-  reserveU32,
-  writeU32,
-} from '../utils.js'
 import { getEdgeSize, writeEdges } from './edge.js'
 import { RefModifyOpts } from './references.js'
 
@@ -18,26 +11,29 @@ function writeRef(
   ctx: BasedDb['modifyCtx'],
   schema: SchemaTypeDef,
   def: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
   hasEdges: boolean,
 ): ModifyErr {
-  if (outOfRange(ctx, 16)) {
+  if (ctx.len + 16 > ctx.max) {
     return RANGE_ERR
   }
   ctx.db.markNodeDirty(ctx.db.schemaTypesParsed[def.inverseTypeName], id)
-  setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
-  appendU8(ctx, modifyOp)
-  appendU8(ctx, hasEdges ? 1 : 0)
-  appendU32(ctx, id)
+  setCursor(ctx, schema, def.prop, parentId, modifyOp)
+  ctx.buf[ctx.len++] = modifyOp
+  ctx.buf[ctx.len++] = hasEdges ? 1 : 0
+  ctx.buf[ctx.len++] = id
+  ctx.buf[ctx.len++] = id >>>= 8
+  ctx.buf[ctx.len++] = id >>>= 8
+  ctx.buf[ctx.len++] = id >>>= 8
 }
 
-function singleReferencEdges(
+function singleReferenceEdges(
   ref: RefModifyOpts,
   ctx: BasedDb['modifyCtx'],
   schema: SchemaTypeDef,
   def: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   let id = ref.id
@@ -53,21 +49,26 @@ function singleReferencEdges(
   if (id > 0) {
     const edgesLen = def.edgesTotalLen || getEdgeSize(def, ref)
     if (edgesLen === 0) {
-      return writeRef(id, ctx, schema, def, res, modifyOp, false)
+      return writeRef(id, ctx, schema, def, parentId, modifyOp, false)
     }
-    let err = writeRef(id, ctx, schema, def, res, modifyOp, true)
+    let err = writeRef(id, ctx, schema, def, parentId, modifyOp, true)
     if (err) {
       return err
     }
-    if (outOfRange(ctx, 4 + edgesLen)) {
+    if (ctx.len + 4 + edgesLen > ctx.max) {
       return RANGE_ERR
     }
-    const sizepos = reserveU32(ctx)
+    let sizepos = ctx.len
+    ctx.len += 4
     err = writeEdges(def, ref, ctx)
     if (err) {
       return err
     }
-    writeU32(ctx, ctx.len - sizepos, sizepos)
+    let size = ctx.len - sizepos
+    ctx.buf[sizepos++] = size
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos] = size >>>= 8
   } else {
     return new ModifyError(def, ref)
   }
@@ -78,25 +79,24 @@ export function writeReference(
   ctx: BasedDb['modifyCtx'],
   schema: SchemaTypeDef,
   def: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
-  ctx.types.add(def.inverseTypeId)
   if (value === null) {
-    if (outOfRange(ctx, 11)) {
+    if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
-    appendU8(ctx, DELETE)
+    setCursor(ctx, schema, def.prop, parentId, modifyOp)
+    ctx.buf[ctx.len++] = DELETE
   } else if (typeof value === 'number') {
-    return writeRef(value, ctx, schema, def, res, modifyOp, false)
+    return writeRef(value, ctx, schema, def, parentId, modifyOp, false)
   } else if (value instanceof ModifyState) {
     if (value.error) {
       return value.error
     }
-    return writeRef(value.tmpId, ctx, schema, def, res, modifyOp, false)
+    return writeRef(value.tmpId, ctx, schema, def, parentId, modifyOp, false)
   } else if (def.edges && typeof value === 'object') {
-    return singleReferencEdges(value, ctx, schema, def, res, modifyOp)
+    return singleReferenceEdges(value, ctx, schema, def, parentId, modifyOp)
   } else {
     return new ModifyError(def, value)
   }

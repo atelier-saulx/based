@@ -1,4 +1,4 @@
-import { BasedDb } from '../../index.js'
+import { ModifyCtx } from '../../index.js'
 import { SchemaTypeDef, PropDef } from '../../server/schema/types.js'
 import {
   CREATE,
@@ -8,9 +8,8 @@ import {
   RANGE_ERR,
   DELETE,
 } from './types.js'
-import { ModifyError, ModifyState } from './ModifyRes.js'
+import { ModifyError } from './ModifyRes.js'
 import { setCursor } from './setCursor.js'
-import { appendU8, outOfRange } from './utils.js'
 import { write } from '../string.js'
 
 // allow setting buffer in modify create for strings
@@ -18,10 +17,10 @@ import { write } from '../string.js'
 // add compression handling for edge fields
 export function writeString(
   value: string | null | Buffer,
-  ctx: BasedDb['modifyCtx'],
+  ctx: ModifyCtx,
   def: SchemaTypeDef,
   t: PropDef,
-  res: ModifyState,
+  parentId: number,
   modifyOp: ModifyOp,
 ): ModifyErr {
   const isBuffer = value instanceof Buffer
@@ -31,15 +30,15 @@ export function writeString(
   const len = value?.length
   if (!len) {
     if (modifyOp === UPDATE) {
-      if (outOfRange(ctx, 11)) {
+      if (ctx.len + 11 > ctx.max) {
         return RANGE_ERR
       }
-      setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
-      appendU8(ctx, DELETE)
+      setCursor(ctx, def, t.prop, parentId, modifyOp)
+      ctx.buf[ctx.len++] = DELETE
     }
   } else {
     let size = isBuffer ? value.byteLength : Buffer.byteLength(value, 'utf8')
-    if (outOfRange(ctx, 15 + size + 5)) {
+    if (ctx.len + 20 + size > ctx.max) {
       // 5 compression size
       return RANGE_ERR
     }
@@ -47,7 +46,7 @@ export function writeString(
       def.stringPropsCurrent[t.prop] = 2
       ctx.hasStringField++
     }
-    setCursor(ctx, def, t.prop, res.tmpId, modifyOp)
+    setCursor(ctx, def, t.prop, parentId, modifyOp)
     ctx.buf[ctx.len] = modifyOp
     ctx.len += 5
     if (isBuffer) {
@@ -56,7 +55,11 @@ export function writeString(
       const isNoCompression = ctx.db.noCompression || t.compression === 0
       size = write(ctx.buf, value, ctx.len, isNoCompression)
     }
-    ctx.buf.writeUint32LE(size, ctx.len + 1 - 5)
+    let sizepos = ctx.len + 1 - 5
     ctx.len += size
+    ctx.buf[sizepos++] = size
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos++] = size >>>= 8
+    ctx.buf[sizepos] = size >>>= 8
   }
 }

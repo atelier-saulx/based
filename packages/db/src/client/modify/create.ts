@@ -5,7 +5,6 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { CREATE, ModifyErr, RANGE_ERR } from './types.js'
-import { appendU8, outOfRange, reserveU16, writeU16 } from './utils.js'
 // import { BasedDbClient } from '../index.js'
 
 type Payload = Record<string, any>
@@ -14,40 +13,43 @@ const appendCreate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
-  res: ModifyState,
+  parentId: number,
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
-  const err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
+  const err = modify(ctx, parentId, obj, def, CREATE, def.tree, true, unsafe)
 
   if (err) {
     return err
   }
 
   if (ctx.len === len || def.mainLen === 0) {
-    if (outOfRange(ctx, 10)) {
+    if (ctx.len + 10 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, 0, res.tmpId, CREATE)
+    setCursor(ctx, def, 0, parentId, CREATE)
   }
 
   // if touched lets see perf impact here
   if (def.hasStringProp) {
     if (ctx.hasStringField !== def.stringPropsSize - 1) {
-      if (outOfRange(ctx, 3)) {
+      if (ctx.len + 3 > ctx.max) {
         return RANGE_ERR
       }
-      appendU8(ctx, 7)
-      const sizepos = reserveU16(ctx)
+      ctx.buf[ctx.len++] = 7
+      let sizepos = ctx.len
+      ctx.len += 2
       for (const { prop } of def.stringPropsLoop) {
         if (def.stringPropsCurrent[prop] === 1) {
-          if (outOfRange(ctx, 1)) {
+          if (ctx.len + 1 > ctx.max) {
             return RANGE_ERR
           }
-          appendU8(ctx, prop)
+          ctx.buf[ctx.len++] = prop
         }
       }
-      writeU16(ctx, ctx.len - sizepos - 2, sizepos)
+      let size = ctx.len - sizepos - 2
+      ctx.buf[sizepos++] = size
+      ctx.buf[sizepos] = size >>>= 8
     }
 
     if (ctx.hasStringField !== -1) {
@@ -64,6 +66,7 @@ export const create = (
   unsafe?: boolean,
 ): ModifyRes => {
   const def = db.schemaTypesParsed[type]
+
   let id: number
   if ('id' in obj) {
     if (unsafe) {
@@ -75,21 +78,26 @@ export const create = (
     id = def.lastId + 1
   }
 
-  const res = new ModifyState(id, db)
   const ctx = db.modifyCtx
+  const res = new ModifyState(id, db)
   const pos = ctx.len
-  const err = appendCreate(ctx, def, obj, res, unsafe)
+  const err = appendCreate(ctx, def, obj, id, unsafe)
 
   if (err) {
-    ctx.prefix0 = null // force a new cursor
+    ctx.prefix0 = -1 // force a new cursor
     ctx.len = pos
+
     if (err === RANGE_ERR) {
       flushBuffer(db)
       return create(db, type, obj, unsafe)
-    } else {
-      res.error = err
     }
-  } else if (!db.isDraining) {
+
+    res.error = err
+    // @ts-ignore
+    return res
+  }
+
+  if (!db.isDraining) {
     startDrain(db)
   }
 
