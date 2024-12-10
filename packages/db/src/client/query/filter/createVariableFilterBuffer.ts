@@ -1,4 +1,9 @@
-import { PropDef, PropDefEdge, STRING } from '../../../server/schema/types.js'
+import {
+  ALIAS,
+  PropDef,
+  PropDefEdge,
+  STRING,
+} from '../../../server/schema/types.js'
 import { compress, crc32 } from '../../string.js'
 import { negateType, stripNegation } from './operators.js'
 import {
@@ -17,8 +22,12 @@ const parseValue = (
   }
   if (val instanceof Uint8Array || !prop.separate || op !== 1) {
     val = Buffer.from(val)
-  } else if (prop.typeIndex === STRING && typeof value === 'string') {
-    val = compress(value)
+  } else if (prop.typeIndex === STRING) {
+    if (typeof value === 'string') {
+      val = compress(value)
+    }
+  } else if (prop.typeIndex === ALIAS) {
+    val = Buffer.from(val)
   }
   if (!(val instanceof Buffer)) {
     throw new Error('Incorrect value for filter ' + prop.path)
@@ -59,7 +68,7 @@ export const createVariableFilterBuffer = (
   // --------------------
   if (op === 3 || op === 1 || op === 2 || op === 16 || op === 18 || op === 19) {
     if (prop.separate) {
-      if (op === 1) {
+      if (op === 1 && prop.typeIndex !== ALIAS) {
         // 17 crc32 check
         buf = createFixedFilterBuffer(prop, 8, 17, val, false)
       } else {

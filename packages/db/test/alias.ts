@@ -1,3 +1,4 @@
+import { deepEqual } from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
@@ -30,29 +31,54 @@ await test('alias', async (t) => {
 
   db.drain()
 
-  const res1 = await db.query('user', user1).get()
-
-  db.update('user', user1, {
-    externalId: 'tornado',
+  deepEqual((await db.query('user', user1).get()).toObject(), {
+    id: 1,
+    externalId: 'cool',
   })
 
-  db.drain()
+  deepEqual(
+    (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
+    [
+      {
+        id: 1,
+        externalId: 'cool',
+      },
+    ],
+  )
 
-  const res2 = await db.query('user', user1).get()
-  const res3 = await db.query('user').filter('externalId', '=', 'cool').get()
-  const res4 = await db.query('user').filter('externalId', '=', 'tornado').get()
+  deepEqual(
+    (
+      await db.query('user').filter('externalId', 'has', 'cool').get()
+    ).toObject(),
+    [
+      {
+        id: 1,
+        externalId: 'cool',
+      },
+    ],
+  )
 
-  db.update('user', user1, {
-    externalId: null,
-  })
+  // db.update('user', user1, {
+  //   externalId: 'tornado',
+  // })
 
-  db.drain()
+  // db.drain()
 
-  const res5 = await db.query('user', user1).get()
-  const res6 = await db.query('user').filter('externalId', '=', 'tornado').get()
+  // const res2 = await db.query('user', user1).get()
+  // const res3 = await db.query('user').filter('externalId', '=', 'cool').get()
+  // const res4 = await db.query('user').filter('externalId', '=', 'tornado').get()
 
-  // console.log({ res1, res2, res3, res4, res5, res6 })
-  // const res2 = db.query('user', user1).get()
+  // db.update('user', user1, {
+  //   externalId: null,
+  // })
 
-  await setTimeout(100)
+  // db.drain()
+
+  // const res5 = await db.query('user', user1).get()
+  // const res6 = await db.query('user').filter('externalId', '=', 'tornado').get()
+
+  // // console.log({ res1, res2, res3, res4, res5, res6 })
+  // // const res2 = db.query('user', user1).get()
+
+  // await setTimeout(100)
 })
