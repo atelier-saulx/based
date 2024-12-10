@@ -198,7 +198,7 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'orban'
+  const query = 'tractor'
   console.log('---- DERP UKRAINE', query)
   await db
     .query('article')
@@ -230,7 +230,7 @@ const makeDb = async (path: string) => {
     //   v.filter('body', 'hasLoose', query)
     // })
     // body: 1
-    .search(query, { headline: 2 })
+    .search(query, { headline: 2, abstract: 1, body: 0 })
     .get()
     .then((v) => {
       v.inspect(100)
