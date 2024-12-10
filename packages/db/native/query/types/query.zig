@@ -7,7 +7,7 @@ const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
-const search = @import("../filter/search.zig").search;
+const search = @import("../filter/search.zig");
 const readInt = @import("../../utils.zig").readInt;
 const utils = @import("../../utils.zig");
 const hasId = @import("../hasId.zig").hasId;
@@ -93,7 +93,7 @@ pub fn query(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    searchBuf: []u8,
+    searchCtx: ?*const search.SearchCtx,
 ) !void {
     var correctedForOffset: u32 = offset;
     var movingLimit: u32 = limit;
@@ -101,30 +101,6 @@ pub fn query(
 
     var first = true;
     var node = db.getFirstNode(typeEntry);
-
-    const hasSearch = searchBuf.len > 0;
-
-    var sLen: u16 = undefined;
-    var sNeedle: selva.strsearch_wneedle = undefined;
-
-    if (hasSearch) {
-        if (locale == null) {
-            locale = selva.selva_lang_getlocale2(selva.selva_lang_nl);
-            transform = selva.selva_lang_wctrans(
-                selva.selva_lang_nl,
-                selva.SELVA_LANGS_TRANS_TOLOWER,
-            );
-        }
-        sLen = readInt(u16, searchBuf, 0);
-        const q = searchBuf[2 .. 2 + sLen];
-        _ = selva.strsearch_make_wneedle(
-            &sNeedle,
-            locale.?,
-            transform.?,
-            q.ptr,
-            q.len,
-        );
-    }
 
     checkItem: while (ctx.totalResults < movingLimit) {
         if (first) {
@@ -141,18 +117,17 @@ pub fn query(
             continue :checkItem;
         }
 
-        if (hasSearch) {
-            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen, &sNeedle);
+        if (searchCtx != null) {
+            const d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
             if (d > 1) {
                 continue :checkItem;
             }
             if (d != 0) {
-                // if (movingLimit < limit * 4) {
-                movingLimit += 1;
-                // }
-            } else {
-                // std.debug.print("DISTANCE: {d} \n", .{d});
+                if (movingLimit < limit * 4) {
+                    movingLimit += 1;
+                }
             }
+            // have to mark this
         }
 
         if (correctedForOffset != 0) {

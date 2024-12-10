@@ -11,6 +11,7 @@ const sort = @import("../db/sort.zig");
 const QuerySort = @import("./types/sort.zig");
 const Query = @import("./types/query.zig");
 const readInt = @import("../utils.zig").readInt;
+const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 
 pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
@@ -53,14 +54,15 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
         const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
         const include = q[17 + filterSize + sortSize + searchSize .. q.len];
+        const searchCtx = if (searchSize > 0) &createSearchCtx(search) else null;
 
         if (sortSize == 0) {
-            try Query.query(&ctx, offset, limit, typeId, filterBuf, include, search);
+            try Query.query(&ctx, offset, limit, typeId, filterBuf, include, searchCtx);
         } else if (sortBuf[0] == 0) {
             // later change fn signature
-            try QuerySort.querySort(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], search);
+            try QuerySort.querySort(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], searchCtx);
         } else {
-            try QuerySort.querySort(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], search);
+            try QuerySort.querySort(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], searchCtx);
         }
     } else if (queryType == 0) {
         const id = readInt(u32, q, 3);
@@ -80,6 +82,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
 
         const searchSize = readInt(u16, q, 19 + idsSize + filterSize + sortSize);
         // const searchBuf = q[21 + idsSize + filterSize + sortSize .. 21 + idsSize + filterSize + sortSize];
+        // const searchCtx = createSearchCtx(search);
+
         const include = q[21 + idsSize + filterSize + sortSize + searchSize .. q.len];
         if (sortSize == 0) {
             try Query.queryIds(ids, &ctx, typeId, filterBuf, include);

@@ -12,7 +12,7 @@ const utils = @import("../../utils.zig");
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const mem = std.mem;
-const search = @import("../filter/search.zig").search;
+const search = @import("../filter/search.zig");
 const readInt = @import("../../utils.zig").readInt;
 
 pub fn queryIds(
@@ -102,7 +102,7 @@ pub fn querySort(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
-    searchBuf: []u8,
+    searchCtx: ?*const search.SearchCtx,
 ) !void {
     var movingLimit = limit;
     const readTxn = try sort.initReadTxn(ctx.db);
@@ -118,17 +118,6 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
-
-    const hasSearch = searchBuf.len > 0;
-    // add prebacked needle cache thingy
-
-    var sLen: u16 = undefined;
-
-    var sNeedle: selva.strsearch_wneedle = undefined;
-
-    if (hasSearch) {
-        sLen = readInt(u16, searchBuf, 0);
-    }
 
     checkItem: while (!end and ctx.totalResults < movingLimit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -160,8 +149,8 @@ pub fn querySort(
             continue :checkItem;
         }
 
-        if (hasSearch) {
-            const d = search(ctx.db, node.?, typeEntry, searchBuf, sLen, &sNeedle);
+        if (searchCtx != null) {
+            const d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
             if (d > 1) {
                 continue :checkItem;
             }
