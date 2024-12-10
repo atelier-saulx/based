@@ -57,8 +57,9 @@ await test('search', async (t) => {
       },
     },
   })
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 1e3; i++) {
     await db.create('italy', {
+      // body: 'bla and Netherlands is really nice yes what do you want now? fun?',
       body:
         italy +
         ' aaaaa ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
@@ -68,7 +69,7 @@ await test('search', async (t) => {
   const r = await db
     .query('italy')
     // .filter('body', 'has', '@aaa')
-    .search('netherlands', { body: 1 })
+    .search('derp derp', { body: 1 })
     .include('id')
     .range(0, 1e3)
     .get()

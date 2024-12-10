@@ -18,16 +18,16 @@ const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
 const minDist = 1;
 
 pub const SearchCtx = struct {
-    queryCaptial: []u8,
     query: []u8,
     fields: []u8,
+    queryDistance: []u8,
 };
 
 pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
     const sLen = readInt(u16, searchBuf, 0);
     return .{
         .query = searchBuf[2 .. 2 + sLen],
-        .queryCaptial = searchBuf[2 .. 2 + sLen],
+        .queryDistance = searchBuf[3 .. 2 + sLen],
         .fields = searchBuf[2 + sLen .. searchBuf.len],
     };
 }
@@ -36,13 +36,12 @@ fn levenshtein(
     value: []u8,
     i: usize,
     ctx: *const SearchCtx,
-    // query: []u8,
 ) u8 {
-    const ql = ctx.query.len;
+    const ql = ctx.queryDistance.len;
     const d = selva.strsearch_levenshtein_u8(
-        value[i .. i + ql].ptr,
+        value[i + 1 .. i + 1 + ql].ptr,
         ql,
-        ctx.query.ptr,
+        ctx.queryDistance.ptr,
         ql,
     );
     return d;
@@ -126,7 +125,6 @@ pub inline fn strSearch(
             if (d < minDist) {
                 return d;
             }
-        } else {
             matches = (h + capitals) == queryVector;
             if (@reduce(.Or, matches)) {
                 d = resultMatcher(d, matches, i, value, ctx);
