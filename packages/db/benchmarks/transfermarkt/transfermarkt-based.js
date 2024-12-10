@@ -20,42 +20,58 @@ if (map) {
   schemaPerf()
 
   const insertPerf = perf('insert nodes')
-  const refMap = {}
+
+  let promises = []
+
   for (const type in map) {
     const { data } = map[type]
     for (const node of data) {
-      node._id = db.create(type, node.data).tmpId
-      if (node.id) {
-        refMap[type] ??= {}
-        refMap[type][node.id] = node._id
+      promises.push(db.upsert(type, node.data))
+      if (promises.length === 10e3) {
+        await Promise.all(promises)
+        promises = []
       }
     }
   }
 
-  let refCnt = 0
-  let updates = 0
+  await Promise.all(promises)
 
-  for (const type in map) {
-    const { data, refProps } = map[type]
-    for (const node of data) {
-      for (const key in refProps) {
-        const { refType, refProp } = refProps[key]
-        const val = node.data[key]
-        if (val in refMap[refType]) {
-          node._refs ??= {}
-          node._refs[refProp] = refMap[refType][val]
-          refCnt++
-        }
-      }
-      if (node._refs) {
-        updates++
-        db.update(type, node._id, node._refs)
-      }
-    }
-  }
+  // const refMap = {}
+  // for (const type in map) {
+  //   const { data } = map[type]
+  //   for (const node of data) {
+  //     node._id = db.create(type, node.data).tmpId
+  //     if (node.id) {
+  //       refMap[type] ??= {}
+  //       refMap[type][node.id] = node._id
+  //     }
+  //   }
+  // }
+
+  // let refCnt = 0
+  // let updates = 0
+
+  // for (const type in map) {
+  //   const { data, refProps } = map[type]
+  //   for (const node of data) {
+  //     for (const key in refProps) {
+  //       const { refType, refProp } = refProps[key]
+  //       const val = node.data[key]
+  //       if (val in refMap[refType]) {
+  //         node._refs ??= {}
+  //         node._refs[refProp] = refMap[refType][val]
+  //         refCnt++
+  //       }
+  //     }
+  //     if (node._refs) {
+  //       updates++
+  //       db.update(type, node._id, node._refs)
+  //     }
+  //   }
+  // }
 
   console.time('drain')
-  const drainTime = db.drain()
+  // const drainTime = db.drain()
   console.timeEnd('drain')
   insertPerf()
   perf('insert drain', drainTime / 1e3)

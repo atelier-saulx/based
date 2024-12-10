@@ -30,7 +30,7 @@ export function writeReferences(
   ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
-  parentId: number,
+  res: ModifyState,
   mod: ModifyOp,
 ): ModifyErr {
   if (typeof value !== 'object') {
@@ -41,13 +41,13 @@ export function writeReferences(
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, parentId, mod)
+    setCursor(ctx, schema, def.prop, res.tmpId, mod)
     ctx.buf[ctx.len++] = DELETE
     return
   }
 
   if (Array.isArray(value)) {
-    return updateRefs(def, ctx, schema, mod, value, parentId, 0)
+    return updateRefs(def, ctx, schema, mod, value, res.tmpId, 0)
   }
 
   for (const key in value) {
@@ -56,16 +56,46 @@ export function writeReferences(
     if (!Array.isArray(val)) {
       err = new ModifyError(def, value)
     } else if (key === 'delete') {
-      err = deleteRefs(def, ctx, schema, mod, val, parentId)
+      err = deleteRefs(def, ctx, schema, mod, val, res.tmpId)
     } else if (key === 'add') {
-      err = updateRefs(def, ctx, schema, mod, val, parentId, 1)
+      err = updateRefs(def, ctx, schema, mod, val, res.tmpId, 1)
+    } else if (key === 'upsert') {
+      dbUpdateFromUpsert(
+        ctx,
+        schema,
+        def,
+        res,
+        Promise.all(val.map((val) => ctx.db.upsert(def.inverseTypeName, val))),
+      )
+      // err = updateRefs(def, ctx, schema, mod, val, parentId, 1)
     } else {
       err = new ModifyError(def, value)
     }
+
     if (err) {
       return err
     }
   }
+}
+
+export const dbUpdateFromUpsert = (
+  ctx: ModifyCtx,
+  schema: SchemaTypeDef,
+  def: PropDef,
+  res: ModifyState,
+  promise: Promise<any>,
+) => {
+  res.promises ??= new Set()
+  const done = promise.then((result) => {
+    let payload = {}
+    let i = 0
+    for (; i < def.path.length - 1; i++) {
+      payload = payload[def.path[i]] = {}
+    }
+    payload[def.path[i]] = result
+    return ctx.db.update(schema.type, res.tmpId, payload)
+  })
+  res.promises.add(done)
 }
 
 function deleteRefs(
