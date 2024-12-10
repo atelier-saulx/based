@@ -116,7 +116,7 @@ uint32_t strsearch_hamming(const char * restrict s, const char * restrict t, siz
 {
     uint32_t dist = 0;
 
-    for (size_t i = 0; i < m; i++) {
+    for (size_t i = 0; i < n; i++) {
         uint8_t x = *s++;
         uint8_t y = *t++;
 
