@@ -58,7 +58,7 @@ const makeDb = async (path: string) => {
       bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
       user: {
         props: {
-          uid: 'alias',
+          uid: 'string',
           firstName: 'string',
           lastName: 'string',
           articles: {
@@ -198,46 +198,30 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'tractor'
-  console.log('---- DERP UKRAINE', query)
+  const query = 'gaza refugee crisis'
+  // const query = 'vond der leyen'
+  console.log('\nSEARCH FOR:', query, query.split(' ').slice(1))
   await db
     .query('article')
-    .range(0, 10)
-    // .filter('headline', 'has', 'Orbán')
-    // .filter('headline', 'hasLoose', query)
-    // .or((f) => {
-    //   f.filter('body', 'hasLoose', query)
-    // })
-
-    // .filter('body', 'has', query)
-    // .or((f) => {
-    //   f.filter('headline', 'has', 'Orban')
-    //   // f.filter('body', 'has', 'Orban')
-    // })
-    // .or((f) => {
-    //   f.filter('headline', 'has', 'Orbán')
-    //   // f.filter('body', 'has', 'Orban')
-    // })
+    .range(0, 5)
     .sort('publishDate', 'desc')
-    .include('id', 'headline', 'publishDate')
-    // .filter('published', true)
-    // .filter('headline', 'hasLoose', 'orban')
-
+    .include('id', 'headline', 'publishDate', 'abstract')
+    .search(query.split(' ')[0], { headline: 2, abstract: 1 })
+    .filter('title', 'has', query.split(' ').slice(1))
     // .or((v) => {
-    //   v.filter('abstract', 'hasLoose', query)
+    //   v.filter('abstract', 'hasLoose', query.split(' ').slice(1))
     // })
-    // .or((v) => {
-    //   v.filter('body', 'hasLoose', query)
-    // })
-    // body: 1
-    .search(query, { headline: 2, abstract: 1, body: 0 })
     .get()
     .then((v) => {
-      v.inspect(100)
-      // console.dir(v.toObject(), { depth: 10 })
+      console.log(v.execTime, 'ms')
+      console.dir(
+        v.toObject().map((v) => ({
+          ...v,
+          publishDate: new Date(v.publishDate),
+        })),
+        { depth: 5 },
+      )
     })
-
-  // .inspect(2)
 
   const start = performance.now()
   await db.stop(false)

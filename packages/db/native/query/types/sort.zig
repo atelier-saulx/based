@@ -163,10 +163,6 @@ pub fn querySort(
                 movingLimit += 1;
                 // }
             }
-
-            // if (d.? >= ctx.lowScore) {
-            //     continue :checkItem;
-            // }
         }
 
         if (correctedForOffset != 0) {
@@ -189,6 +185,10 @@ pub fn querySort(
             ctx.size += size;
             ctx.totalResults += 1;
         }
+    }
+
+    if (movingLimit > limit) {
+        std.debug.print("need to cut away soem results {d} \n", .{movingLimit - limit});
     }
 
     sort.resetTxn(readTxn);
