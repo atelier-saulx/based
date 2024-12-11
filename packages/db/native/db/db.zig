@@ -370,7 +370,7 @@ pub fn getNode(id: u32, typeEntry: Type) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
 
-pub fn getNodeId(node: Node) u32 {
+pub inline fn getNodeId(node: Node) u32 {
     return selva.selva_get_node_id(node);
 }
 

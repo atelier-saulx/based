@@ -71,4 +71,7 @@ SELVA_EXPORT
 void *selva_sort_foreach(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT
+void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v);
+
+SELVA_EXPORT
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);

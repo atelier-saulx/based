@@ -24,7 +24,7 @@ const parseValue = (
     val = Buffer.from(val)
   } else if (prop.typeIndex === STRING) {
     if (typeof value === 'string') {
-      val = compress(value)
+      val = compress(value) // TODO change buffer
     }
   } else if (prop.typeIndex === ALIAS) {
     val = Buffer.from(val)

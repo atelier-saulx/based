@@ -52,7 +52,7 @@ await test('search', async (t) => {
     types: {
       italy: {
         props: {
-          date: { type: 'timestamp' },
+          date: { type: 'uint32' },
           title: { type: 'string' },
           body: { type: 'string' }, // big compressed string... compression: 'none'
         },
@@ -62,11 +62,14 @@ await test('search', async (t) => {
 
   const compressItaly = compress(italy)
   for (let i = 0; i < 1e3; i++) {
-    const d = Date.now()
     await db.create('italy', {
-      date: d + i,
+      date: i,
       body:
-        i == 0 ? 'Netherlands' : i == 2 ? 'Italy! netherlunds ' : compressItaly,
+        i == 0
+          ? 'Mr giraffe first'
+          : i == 2
+            ? 'Mr giraffe second'
+            : compressItaly,
       // body:
       // italy +
       // ' aaaaa amsterdam twitter ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
@@ -75,7 +78,7 @@ await test('search', async (t) => {
 
   const r = await db
     .query('italy')
-    .search('Italy netherlands', { body: 1 })
+    .search('Mr giraffe', { body: 1 })
     .include('id', 'body', 'date')
     .range(0, 1e3)
     .sort('date')

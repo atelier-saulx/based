@@ -56,15 +56,20 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
         const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
         const include = q[17 + filterSize + sortSize + searchSize .. q.len];
-        const searchCtx = if (searchSize > 0) &createSearchCtx(search) else null;
 
         if (sortSize == 0) {
-            try Query.query(&ctx, offset, limit, typeId, filterBuf, include, searchCtx);
+            try Query.query(&ctx, offset, limit, typeId, filterBuf, include, if (searchSize > 0) &createSearchCtx(search) else null);
+        } else if (searchSize > 0) {
+            const sortCtx = &createSearchCtx(search);
+            if (sortBuf[0] == 0) {
+                try QuerySort.querySortSearch(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], sortCtx);
+            } else {
+                try QuerySort.querySortSearch(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], sortCtx);
+            }
         } else if (sortBuf[0] == 0) {
-            // later change fn signature
-            try QuerySort.querySort(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], searchCtx);
+            try QuerySort.querySort(3, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len]);
         } else {
-            try QuerySort.querySort(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len], searchCtx);
+            try QuerySort.querySort(4, &ctx, offset, limit, typeId, filterBuf, include, sortBuf[1..sortBuf.len]);
         }
     } else if (queryType == 0) {
         const id = readInt(u32, q, 3);

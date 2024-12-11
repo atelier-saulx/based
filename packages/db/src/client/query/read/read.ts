@@ -291,7 +291,6 @@ export const resultToObject = (
     if (q.search) {
       item.$searchScore = result[i]
       i += 1
-      // console.log(item)
     }
     const l = readAllFields(q, result, i, end, item, id)
     i += l
@@ -300,56 +299,5 @@ export const resultToObject = (
   if ('id' in q.target) {
     return items[0]
   }
-
-  if (q.search) {
-    var hasZeros = false
-    if (q.sort) {
-      const secondarySort = (a, b) => {
-        const f = q.sort.prop.path[0]
-        let af = a[f]
-        let bf = b[f]
-
-        if (q.sort.order === 1) {
-          if (bf === undefined) bf = 0
-          if (af === undefined) af = 0
-          return af > bf ? -1 : af === bf ? 0 : 1
-        } else {
-          if (bf === undefined) bf = Infinity
-          if (af === undefined) af = Infinity
-          return af < bf ? -1 : af === bf ? 0 : 1
-        }
-      }
-
-      items.sort((a, b) => {
-        const as = a.$searchScore
-        const bs = b.$searchScore
-        if (as === 0) {
-          // hasZeros = true
-        }
-        return as < bs ? -1 : as == bs ? secondarySort(a, b) : 1
-      })
-    } else {
-      items.sort((a, b) => {
-        const as = a.$searchScore
-        const bs = b.$searchScore
-        if (as === 0) {
-          // hasZeros = true
-        }
-        return as < bs ? -1 : as == bs ? 0 : 1
-      })
-    }
-
-    if (hasZeros) {
-      items = items.filter((v) => {
-        return v.$searchScore < 2
-      })
-    }
-
-    // if there is 0's remove all 2s
-    if (items.length > q.range.limit) {
-      return items.slice(0, q.range.limit)
-    }
-  }
-
   return items
 }

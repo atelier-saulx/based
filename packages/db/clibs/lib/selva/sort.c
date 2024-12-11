@@ -248,6 +248,14 @@ void *selva_sort_foreach(struct SelvaSortCtx *ctx)
     return (void *)item->p;
 }
 
+void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v)
+{
+    struct SelvaSortItem *item = SVector_Foreach(&ctx->it);
+    
+    *v = item->i64;
+    return (void *)item->p;
+}
+
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
 {
     return SVector_Done(&ctx->it);
