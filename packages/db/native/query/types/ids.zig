@@ -34,7 +34,7 @@ pub fn sort(
         len = 0;
     }
     const sortFlag = try db.getSortFlag(sortFieldType, queryType == 10);
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag, ids.len * 4).?;
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(sortFlag).?;
 
     sortItem: while (i < ids.len) : (i += 4) {
         const id = readInt(u32, ids, i);

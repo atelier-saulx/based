@@ -13,7 +13,7 @@
  * -----
  *
  * ```c
- * struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC, 1000);
+ * struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC);
  * selva_sort_insert_i64(sort, num, data);
  *
  * selva_sort_foreach_begin(sort);
@@ -41,7 +41,7 @@ enum SelvaSortOrder {
 struct SelvaSortCtx;
 
 SELVA_EXPORT
-struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_len);
+struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order);
 
 SELVA_EXPORT
 void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang, enum selva_langs_trans trans);
@@ -63,6 +63,9 @@ void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len
 
 SELVA_EXPORT
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
+
+SELVA_EXPORT
+void selva_sort_remove(struct SelvaSortCtx *ctx, const void *p);
 
 SELVA_EXPORT
 void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
