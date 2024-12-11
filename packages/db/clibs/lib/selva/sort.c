@@ -13,6 +13,7 @@ struct SelvaSortCtx {
     struct SVector out;
     struct SVectorIterator it;
     enum selva_lang_code lang;
+    locale_t loc;
 };
 
 struct SelvaSortItem {
@@ -127,6 +128,7 @@ struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_l
 
     SVector_Init(&ctx->out, initial_len, get_cmp_fun(order));
     ctx->lang = selva_lang_none;
+    ctx->loc = 0;
 
     return ctx;
 }
@@ -134,6 +136,7 @@ struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_l
 void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang)
 {
     ctx->lang = lang;
+    ctx->loc = selva_lang_getlocale2(lang);
 }
 
 void selva_sort_destroy(struct SelvaSortCtx *ctx)
@@ -190,16 +193,15 @@ static struct SelvaSortItem *create_item_buffer(const void *buf, size_t len, con
     return item;
 }
 
-static struct SelvaSortItem *create_item_text(enum selva_lang_code lang, const char *str, size_t len, const void *p)
+static struct SelvaSortItem *create_item_text(locale_t loc, const char *str, size_t len, const void *p)
 {
     struct SelvaSortItem *item;
 
     if (likely(len > 0)) {
-        locale_t locale = selva_lang_getlocale2(lang);
-        size_t data_len = strxfrm_l(NULL, str, 0, locale);
+        size_t data_len = strxfrm_l(NULL, str, 0, loc);
 
         item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
-        strxfrm_l(item->data, str, len, locale);
+        strxfrm_l(item->data, str, len, loc);
         item->data_len = data_len;
     } else {
         item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, 1));
@@ -233,7 +235,7 @@ void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len
 
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p)
 {
-    (void)SVector_Insert(&ctx->out, create_item_text(ctx->lang, str, len, p));
+    (void)SVector_Insert(&ctx->out, create_item_text(ctx->loc, str, len, p));
 }
 
 void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
@@ -254,6 +256,22 @@ void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p
     };
 
     selva_free(SVector_Remove(&ctx->out, &find));
+}
+
+void selva_sort_remove_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
+{
+    struct SelvaSortItem *find = create_item_buffer(buf, len, p);
+
+    selva_free(SVector_Remove(&ctx->out, find));
+    selva_free(find);
+}
+
+void selva_sort_remove_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p)
+{
+    struct SelvaSortItem *find = create_item_text(ctx->loc, str, len, p);
+
+    selva_free(SVector_Remove(&ctx->out, find));
+    selva_free(find);
 }
 
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
