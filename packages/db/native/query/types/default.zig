@@ -65,7 +65,7 @@ pub fn search(
     var node = db.getFirstNode(typeEntry);
     var score: u8 = 255;
     var totalSearchResults: usize = 0;
-    const scoreSortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC, limit).?;
+    const scoreSortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC).?;
     var i: i64 = 0;
     var correctedForOffset: u32 = offset;
     checkItem: while (totalSearchResults < limit) {

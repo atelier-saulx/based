@@ -71,8 +71,12 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .readOnly = false,
         .selva = null,
         .decompressor = selva.libdeflate_alloc_decompressor().?,
+<<<<<<< HEAD
         // .libdeflate_block_state = selva.libdeflate_block_state_init(100000),
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
+=======
+        .libdeflate_block_state = selva.libdeflate_block_state_init(10000),
+>>>>>>> d14958d65e28ad93519735dbd16ee17f7e2f2ce7
     };
 
     try dbHashmap.put(id, b);
