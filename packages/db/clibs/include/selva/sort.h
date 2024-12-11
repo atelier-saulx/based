@@ -44,7 +44,7 @@ SELVA_EXPORT
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order, size_t initial_len);
 
 SELVA_EXPORT
-void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang);
+void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang, enum selva_langs_trans trans);
 
 SELVA_EXPORT
 void selva_sort_destroy(struct SelvaSortCtx *ctx);
