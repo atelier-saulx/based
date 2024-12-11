@@ -172,7 +172,7 @@ await test('alias - references', async (t) => {
   ])
 
   await db.upsert('user', {
-    name: 'youri',
+    name: 'Youri',
     email: 'youri@saulx.com',
     bestFriend: {
       upsert: {
@@ -207,9 +207,22 @@ await test('alias - references', async (t) => {
         {
           email: 'youri@saulx.com',
           id: 1,
-          name: 'youri',
+          name: 'Youri',
         },
       ],
     },
   ])
+
+  deepEqual(
+    (
+      await db.query('user').filter('email', 'hasLoose', 'youri').get()
+    ).toObject(),
+    [
+      {
+        email: 'youri@saulx.com',
+        id: 1,
+        name: 'Youri',
+      },
+    ],
+  )
 })

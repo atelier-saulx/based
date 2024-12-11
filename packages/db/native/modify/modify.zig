@@ -18,6 +18,7 @@ const getShard = Modify.getShard;
 const getSortIndex = Modify.getSortIndex;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
+const increment = Update.increment;
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -50,13 +51,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     };
 
     var offset: u32 = 0;
-    // std.debug.print("- zig batch: {d}\n", .{batch.len});
     while (i < batch.len) {
-        // delete
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
-
-        // std.debug.print("- op: {d}, fieldType: {any}, field: {d}\n", .{ op, ctx.fieldType, ctx.field });
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
                 // SWITCH FIELD
@@ -119,6 +116,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.UPDATE_PARTIAL => {
                 i += try updatePartialField(&ctx, operation) + offset;
+            },
+            types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
+                i += try increment(&ctx, operation, op) + 1;
             },
             else => {
                 std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });

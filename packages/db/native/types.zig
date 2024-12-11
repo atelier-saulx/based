@@ -90,5 +90,7 @@ pub const ModOp = enum(u8) {
     DELETE_PROP_ONLY = 8,
     DELETE_PROP_ONLY_REAL = 11,
     DELETE_PROP = 4,
+    INCREMENT = 12,
+    DECREMENT = 13,
     _,
 };

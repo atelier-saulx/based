@@ -11,7 +11,7 @@ import { write } from '../../string.js'
 import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from '../types.js'
-import { appendFixedValue } from '../utils.js'
+import { appendFixedValue } from '../fixed.js'
 import { RefModifyOpts } from './references.js'
 
 export function getEdgeSize(t: PropDef, ref: RefModifyOpts) {

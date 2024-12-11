@@ -5,7 +5,7 @@ import { setCursor } from './setCursor.js'
 import { modify } from './modify.js'
 import { ModifyRes, ModifyState } from './ModifyRes.js'
 import { RANGE_ERR, UPDATE } from './types.js'
-import { appendFixedValue } from './utils.js'
+import { appendFixedValue } from './fixed.js'
 
 type Payload = Record<string, any>
 

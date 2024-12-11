@@ -83,4 +83,108 @@ await test('number', async (t) => {
       }
     }),
   )
+
+  const newThing = await db.create('user', {
+    number: {
+      increment: 12,
+    },
+    int8: {
+      increment: 12,
+    },
+    uint8: {
+      increment: 12,
+    },
+    int16: {
+      increment: 12,
+    },
+    uint16: {
+      increment: 12,
+    },
+    int32: {
+      increment: 12,
+    },
+    uint32: {
+      increment: 12,
+    },
+  })
+
+  deepEqual((await db.query('user', newThing).get()).toObject(), {
+    id: newThing,
+    number: 12,
+    int8: 12,
+    uint8: 12,
+    int16: 12,
+    uint16: 12,
+    int32: 12,
+    uint32: 12,
+  })
+
+  await db.update('user', newThing, {
+    number: {
+      increment: 1,
+    },
+    int8: {
+      increment: 2,
+    },
+    uint8: {
+      increment: 3,
+    },
+    int16: {
+      increment: 4,
+    },
+    uint16: {
+      increment: 5,
+    },
+    int32: {
+      increment: 6,
+    },
+    uint32: {
+      increment: 7,
+    },
+  })
+
+  deepEqual((await db.query('user', newThing).get()).toObject(), {
+    id: newThing,
+    number: 13,
+    int8: 14,
+    uint8: 15,
+    int16: 16,
+    uint16: 17,
+    int32: 18,
+    uint32: 19,
+  })
+
+  await db.update('user', newThing, {
+    uint16: {
+      increment: 700,
+    },
+  })
+
+  deepEqual((await db.query('user', newThing).get()).toObject(), {
+    id: newThing,
+    number: 13,
+    int8: 14,
+    uint8: 15,
+    int16: 16,
+    uint16: 17 + 700,
+    int32: 18,
+    uint32: 19,
+  })
+
+  await db.update('user', newThing, {
+    uint16: {
+      increment: -333,
+    },
+  })
+
+  deepEqual((await db.query('user', newThing).get()).toObject(), {
+    id: newThing,
+    number: 13,
+    int8: 14,
+    uint8: 15,
+    int16: 16,
+    uint16: 17 + 700 - 333,
+    int32: 18,
+    uint32: 19,
+  })
 })
