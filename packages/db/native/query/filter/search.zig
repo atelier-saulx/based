@@ -55,11 +55,13 @@ fn hamming(
 ) u8 {
     const queryD = query[1..query.len];
     const ql = queryD.len;
+    // add normalization
     const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
         queryD.ptr,
         ql,
     ));
+
     return d;
 }
 
@@ -186,6 +188,7 @@ pub fn search(
 ) u8 {
     const fl = ctx.fields.len;
     var p: usize = 0;
+
     var totalScore: u8 = 0;
     wordLoop: while (p < ctx.allQueries.len) {
         const qLen = readInt(u16, ctx.allQueries, p);
@@ -195,7 +198,7 @@ pub fn search(
         var bestScore: u8 = 255;
         fieldLoop: while (j < fl) {
             const field = ctx.fields[j];
-            const weight = ctx.fields[j + 1];
+            const penalty = ctx.fields[j + 1];
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
@@ -206,14 +209,15 @@ pub fn search(
             }
             const isCompressed = value[0] == 1;
             var score: u8 = 0;
+
             if (isCompressed) {
                 _ = decompress(*u8, strSearchCompressed, query, value, dbCtx, &score);
             } else {
-                score = strSearch(value, query) + weight;
+                score = strSearch(value, query) + penalty;
             }
             if (score < bestScore) {
                 bestScore = score;
-                if (score - weight == 0) {
+                if (score - penalty == 0) {
                     j += 2;
                     totalScore += bestScore;
                     continue :wordLoop;
