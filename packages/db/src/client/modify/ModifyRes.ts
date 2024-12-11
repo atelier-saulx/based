@@ -66,7 +66,7 @@ export class ModifyState {
   #ctx: ModifyCtx['ctx']
   tmpId: number
   error?: ModifyError
-  promises?: Set<Promise<any>>;
+  promises?: Promise<any>[];
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
@@ -80,10 +80,8 @@ export class ModifyState {
         this.#buf.queue.set(resolve, this.tmpId)
       }
     })
-    if (this.promises?.size) {
-      const promises = Array.from(this.promises)
-      promises.push(promise)
-      return Promise.allSettled(promises)
+    if (this.promises?.length) {
+      return Promise.allSettled(this.promises)
         .then(() => promise)
         .then(resolve, reject)
     } else {

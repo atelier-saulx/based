@@ -1,4 +1,4 @@
-import { BasedDb } from '../../../index.js'
+import { BasedDb, ModifyCtx } from '../../../index.js'
 import { PropDef, SchemaTypeDef } from '../../../server/schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
@@ -75,8 +75,13 @@ function singleReferenceEdges(
 }
 
 export function writeReference(
-  value: number | ModifyState,
-  ctx: BasedDb['modifyCtx'],
+  value:
+    | number
+    | ModifyState
+    | {
+        upsert: Record<string, any>
+      },
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
   res: ModifyState,
@@ -95,17 +100,19 @@ export function writeReference(
       return value.error
     }
     return writeRef(value.tmpId, ctx, schema, def, res.tmpId, modifyOp, false)
-  } else if (typeof value === 'object') {
+  } else if (typeof value === 'object' && value !== null) {
     if (def.edges) {
       return singleReferenceEdges(value, ctx, schema, def, res.tmpId, modifyOp)
-    } else {
+    } else if (typeof value?.upsert === 'object' && value.upsert !== null) {
       dbUpdateFromUpsert(
         ctx,
         schema,
         def,
         res,
-        ctx.db.upsert(def.inverseTypeName, value),
+        ctx.db.upsert(def.inverseTypeName, value.upsert),
       )
+    } else {
+      return new ModifyError(def, value)
     }
   } else {
     return new ModifyError(def, value)

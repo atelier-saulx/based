@@ -67,7 +67,6 @@ export function writeReferences(
         res,
         Promise.all(val.map((val) => ctx.db.upsert(def.inverseTypeName, val))),
       )
-      // err = updateRefs(def, ctx, schema, mod, val, parentId, 1)
     } else {
       err = new ModifyError(def, value)
     }
@@ -85,17 +84,18 @@ export const dbUpdateFromUpsert = (
   res: ModifyState,
   promise: Promise<any>,
 ) => {
-  res.promises ??= new Set()
-  const done = promise.then((result) => {
-    let payload = {}
-    let i = 0
-    for (; i < def.path.length - 1; i++) {
-      payload = payload[def.path[i]] = {}
-    }
-    payload[def.path[i]] = result
-    return ctx.db.update(schema.type, res.tmpId, payload)
-  })
-  res.promises.add(done)
+  res.promises ??= []
+  res.promises.push(
+    promise.then((result) => {
+      let payload = {}
+      let i = 0
+      for (; i < def.path.length - 1; i++) {
+        payload = payload[def.path[i]] = {}
+      }
+      payload[def.path[i]] = result
+      return ctx.db.update(schema.type, res.tmpId, payload)
+    }),
+  )
 }
 
 function deleteRefs(

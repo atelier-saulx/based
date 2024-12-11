@@ -58,6 +58,7 @@ await test('update', async (t) => {
     connections: [good],
   })
 
+  console.log('-------------------------------')
   db.create('user', {
     name: 'nope',
     randomField: true,
@@ -70,6 +71,8 @@ await test('update', async (t) => {
       console.log('floops!', { res })
     })
 
+  console.log('--------------- END ----------------')
+
   db.drain()
 
   deepEqual(
@@ -79,13 +82,13 @@ await test('update', async (t) => {
         id: 1,
         name: 'youzi',
         friend: {
-          id: 6,
+          id: 2,
           rating: 0,
           name: 'jame-z',
         },
       },
       {
-        id: 6,
+        id: 2,
         name: 'jame-z',
         friend: {
           id: 1,

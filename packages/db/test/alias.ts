@@ -1,6 +1,5 @@
 import { deepEqual } from 'node:assert'
 import { BasedDb } from '../src/index.js'
-import { setTimeout } from 'node:timers/promises'
 import test from './shared/test.js'
 
 await test('alias', async (t) => {
@@ -135,7 +134,9 @@ await test('alias - references', async (t) => {
     name: 'youri',
     email: 'youri@saulx.com',
     bestFriend: {
-      email: 'jim@saulx.com',
+      upsert: {
+        email: 'jim@saulx.com',
+      },
     },
     friends: {
       upsert: [
@@ -173,6 +174,12 @@ await test('alias - references', async (t) => {
   await db.upsert('user', {
     name: 'youri',
     email: 'youri@saulx.com',
+    bestFriend: {
+      upsert: {
+        email: 'jim@saulx.com',
+        name: 'jim',
+      },
+    },
     friends: {
       upsert: [
         {
