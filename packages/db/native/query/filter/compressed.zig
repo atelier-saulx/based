@@ -86,7 +86,6 @@ pub inline fn decompress(
     var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
-    std.debug.print("\n START DECOMPRESS \n", .{});
     while (loop) {
         const result = selva.libdeflate_decompress_stream(
             dbCtx.decompressor,

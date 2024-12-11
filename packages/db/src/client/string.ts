@@ -34,7 +34,6 @@ export const write = (
       buf[offset + len + 5] = crc >>>= 8
       return len + 6
     } else {
-      console.log('COMPRESS TIME!')
       buf[offset + 1] = 1 // compressed
       buf.writeUInt32LE(s, offset + 2)
       buf[offset + size + 6] = crc
