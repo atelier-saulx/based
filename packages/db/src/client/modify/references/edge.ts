@@ -107,13 +107,12 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(t, ref)
           }
-          let size = Buffer.byteLength(value)
-          if (ctx.len + 6 + size > ctx.max) {
+          if (ctx.len + 6 + Buffer.byteLength(value) > ctx.max) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
-          size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
+          let size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
           let sizeU32 = size
           ctx.buf[ctx.len++] = sizeU32
           ctx.buf[ctx.len++] = sizeU32 >>>= 8
