@@ -302,11 +302,6 @@ void *SVector_Insert(SVector *vec, void *el) {
     assert(vec->vec_mode == SVECTOR_MODE_ARRAY || vec->vec_mode == SVECTOR_MODE_RBTREE);
 
     if (vec->vec_compar) {
-        if (vec->vec_mode == SVECTOR_MODE_ARRAY &&
-            vec->vec_last - vec->vec_arr_shift_index >= SVECTOR_THRESHOLD) {
-            migrate_arr_to_rbtree(vec);
-        }
-
         return SVector_InsertFast(vec, el);
     } else {
         ssize_t i = vec->vec_last++;
