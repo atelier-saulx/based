@@ -210,7 +210,6 @@ pub inline fn orFixed(
         var j: usize = 0;
         while (j < amountOfConditions) {
             const qI = j * 8;
-            // ultra slow like htis ofc... fix better using nice simd
             if (crc32Equal(prop, query[qI .. qI + 8], v)) {
                 return .{ next, true };
             }

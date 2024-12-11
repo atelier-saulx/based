@@ -33,6 +33,7 @@ await test('variable size (string/binary)', async (t) => {
       },
     },
   })
+
   const compressedSentence = compress(sentence)
   equal(decompress(compressedSentence), sentence, 'compress / decompress api')
   const compressedItaly = compress(italy)
@@ -101,6 +102,7 @@ await test('variable size (string/binary)', async (t) => {
     q[i] = i
   }
   q[250] = 255
+
   equal(
     (
       await db
@@ -112,6 +114,7 @@ await test('variable size (string/binary)', async (t) => {
     0,
     'has filter on derp',
   )
+
   equal(
     (
       await db
@@ -123,6 +126,7 @@ await test('variable size (string/binary)', async (t) => {
     0,
     'has filter on derp (short)',
   )
+
   equal(
     (await db.query('article').filter('derp', 'has', q).include('id').get())
       .length,

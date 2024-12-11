@@ -1,15 +1,6 @@
-import {
-  ALIAS,
-  PropDef,
-  PropDefEdge,
-  STRING,
-} from '../../../server/schema/types.js'
-import { compress, crc32 } from '../../string.js'
+import { ALIAS, PropDef, PropDefEdge } from '../../../server/schema/types.js'
 import { negateType, stripNegation } from './operators.js'
-import {
-  createFixedFilterBuffer,
-  writeFixed,
-} from './createFixedFilterBuffer.js'
+import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 
 const parseValue = (
   value: any,
@@ -20,13 +11,12 @@ const parseValue = (
   if (op === 19 && typeof val === 'string') {
     val = val.toLowerCase()
   }
-  if (val instanceof Uint8Array || !prop.separate || op !== 1) {
-    val = Buffer.from(val)
-  } else if (prop.typeIndex === STRING) {
-    if (typeof value === 'string') {
-      val = compress(value) // TODO change buffer
-    }
-  } else if (prop.typeIndex === ALIAS) {
+  if (
+    val instanceof Uint8Array ||
+    typeof value === 'string' ||
+    !prop.separate ||
+    op !== 1
+  ) {
     val = Buffer.from(val)
   }
   if (!(val instanceof Buffer)) {

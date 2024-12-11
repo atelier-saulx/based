@@ -27,6 +27,7 @@ export const write = (
     // pass this to here
     buf.write(value, offset + 6 + s, 'utf8')
     let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
+
     const size = native.compress(buf, offset + 6, s)
 
     if (size === 0) {
@@ -44,7 +45,7 @@ export const write = (
       buf[offset + size + 7] = crc >>>= 8
       buf[offset + size + 8] = crc >>>= 8
       buf[offset + size + 9] = crc >>>= 8
-      return size + 10
+      return size + 10 // 0 C 4 4
     }
   } else {
     buf[offset + 1] = 0 // not compressed
@@ -64,7 +65,6 @@ export const compress = (str: string): Buffer => {
   if (!tmpCompressBlock || tmpCompressBlock.byteLength < str.length * 3) {
     tmpCompressBlock = Buffer.allocUnsafe(str.length * 3)
   }
-
   const s = write(tmpCompressBlock, str, 0, false)
   const nBuffer = Buffer.allocUnsafe(s)
   tmpCompressBlock.copy(nBuffer, 0, 0, s)
