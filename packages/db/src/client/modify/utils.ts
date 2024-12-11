@@ -20,8 +20,11 @@ import { ModifyError } from './ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from './types.js'
 
 const map = {}
-map[BINARY] = (ctx, val) => {
+map[BINARY] = (ctx, val, def) => {
   const buf = getBuffer(val)
+  if (buf === undefined) {
+    return new ModifyError(def, val)
+  }
   const size = buf.byteLength
   if (ctx.len + size + 1 > ctx.max) {
     return RANGE_ERR
@@ -71,13 +74,19 @@ map[ENUM] = (ctx, val, def) => {
     return new ModifyError(def, val)
   }
 }
-map[NUMBER] = (ctx, val) => {
+map[NUMBER] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
   if (ctx.len + 8 > ctx.max) {
     return RANGE_ERR
   }
   ctx.len = ctx.buf.writeDoubleLE(val, ctx.len)
 }
-map[UINT32] = (ctx, val) => {
+map[UINT32] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
   if (ctx.len + 4 > ctx.max) {
     return RANGE_ERR
   }
@@ -86,14 +95,20 @@ map[UINT32] = (ctx, val) => {
   ctx.buf[ctx.len++] = val >>>= 8
   ctx.buf[ctx.len++] = val >>>= 8
 }
-map[UINT16] = (ctx, val) => {
+map[UINT16] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
   if (ctx.len + 2 > ctx.max) {
     return RANGE_ERR
   }
   ctx.buf[ctx.len++] = val
   ctx.buf[ctx.len++] = val >>>= 8
 }
-map[UINT8] = (ctx, val) => {
+map[UINT8] = (ctx, val, def) => {
+  if (typeof val !== 'number') {
+    return new ModifyError(def, val)
+  }
   if (ctx.len + 1 > ctx.max) {
     return RANGE_ERR
   }
