@@ -37,7 +37,7 @@ export function writeString(
       ctx.buf[ctx.len++] = DELETE
     }
   } else {
-    let size = isBuffer ? value.byteLength : Buffer.byteLength(value, 'utf8')
+    let size = 6 + (isBuffer ? value.byteLength : Buffer.byteLength(value, 'utf8'))
     if (ctx.len + 20 + size > ctx.max) {
       // 5 compression size
       return RANGE_ERR

@@ -6,7 +6,6 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-#include "selva_lang_code.h"
 
 struct finalizer;
 struct selva_string;
@@ -63,8 +62,7 @@ struct selva_string_compressed_hdr {
 #ifndef __zig
 struct selva_string {
     struct {
-        uint64_t len: 48;
-        enum selva_lang_code lang: 8;
+        uint64_t len: 56;
         enum selva_string_flags flags: 8;
     };
     /* Don't add __counted_by(len) here because it's not the real size. */
@@ -262,6 +260,12 @@ size_t selva_string_getz_ulen(const struct selva_string *s)
  */
 double selva_string_getz_cratio(const struct selva_string *s)
     __attribute__((access(read_only, 1)));
+
+/**
+ * Get the raw buffer including CRC.
+ */
+const uint8_t *selva_string_to_buf(const struct selva_string *s, size_t *size)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Get a pointer to the contained C-string.

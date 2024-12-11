@@ -8,7 +8,7 @@ import {
   STRING,
 } from '../../../server/schema/types.js'
 import { write } from '../../string.js'
-import { getBuffer } from '../binary.js'
+import { getBuffer, writeBinaryRaw } from '../binary.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { ModifyErr, RANGE_ERR } from '../types.js'
 import { appendFixedValue } from '../utils.js'
@@ -96,12 +96,7 @@ export function writeEdges(
           ctx.buf[ctx.len++] = STRING
 
           if (size) {
-            ctx.buf[ctx.len++] = size
-            ctx.buf[ctx.len++] = size >>>= 8
-            ctx.buf[ctx.len++] = size >>>= 8
-            ctx.buf[ctx.len++] = size >>>= 8
-            ctx.buf.set(value, ctx.len)
-            ctx.len += value.byteLength
+            writeBinaryRaw(value, ctx)
           } else {
             ctx.buf[ctx.len++] = 0
             ctx.buf[ctx.len++] = 0
@@ -112,13 +107,12 @@ export function writeEdges(
           if (typeof value !== 'string') {
             return new ModifyError(t, ref)
           }
-          let size = Buffer.byteLength(value)
-          if (ctx.len + 6 + size > ctx.max) {
+          if (ctx.len + 6 + Buffer.byteLength(value) > ctx.max) {
             return RANGE_ERR
           }
           ctx.buf[ctx.len++] = edge.prop
           ctx.buf[ctx.len++] = STRING
-          size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
+          let size = write(ctx.buf, value, ctx.len + 4, ctx.db.noCompression)
           let sizeU32 = size
           ctx.buf[ctx.len++] = sizeU32
           ctx.buf[ctx.len++] = sizeU32 >>>= 8

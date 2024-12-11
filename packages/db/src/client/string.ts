@@ -20,42 +20,41 @@ export const write = (
 ): number => {
   // 50 maybe if lvl 1
   if (value.length > 200 && !noCompression) {
-    buf[offset] = 1
+    buf[offset] = 0 // lang TODO we could actually set this
     const s = Buffer.byteLength(value, 'utf8')
 
     // TODO: we need this also has to be added in modify s * 2
     // pass this to here
-    buf.write(value, offset + 5 + s, 'utf8')
-    const size = native.compress(buf, offset + 5, s)
-
-    // bytesSaved += s - size
-    // if (s / size < 1.4) {
-    //   cnt++
-    // }
-    // console.log(
-    //   cnt,
-    //   'Compress ratio:',
-    //   s / size,
-    //   'origsize',
-    //   s,
-    //   'cmpressed',
-    //   size,
-    //   'kbytesSaved',
-    //   Math.round(bytesSaved / 1000),
-    //   // value,
-    // )
-    // }
+    buf.write(value, offset + 6 + s, 'utf8')
+    let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
+    const size = native.compress(buf, offset + 6, s)
 
     if (size === 0) {
-      buf[offset] = 0
-      return 1 + buf.write(value, offset + 5, 'utf8')
+      buf[offset + 1] = 0 // not compressed
+      const len = buf.write(value, offset + 2, 'utf8')
+      buf[offset + len + 2] = crc
+      buf[offset + len + 3] = crc >>>= 8
+      buf[offset + len + 4] = crc >>>= 8
+      buf[offset + len + 5] = crc >>>= 8
+      return len + 6
     } else {
-      buf.writeUInt32LE(s, offset + 1)
-      return size + 5
+      buf[offset + 1] = 1 // compressed
+      buf.writeUInt32LE(s, offset + 2)
+      buf[offset + size + 6] = crc
+      buf[offset + size + 7] = crc >>>= 8
+      buf[offset + size + 8] = crc >>>= 8
+      buf[offset + size + 9] = crc >>>= 8
+      return size + 10
     }
   } else {
-    buf[offset] = 0
-    return 1 + buf.write(value, offset + 1, 'utf8')
+    buf[offset + 1] = 0 // not compressed
+    const len = buf.write(value, offset + 2, 'utf8')
+    let crc = native.crc32(buf.subarray(offset + 2, offset + len + 2))
+    buf[offset + len + 2] = crc
+    buf[offset + len + 3] = crc >>>= 8
+    buf[offset + len + 4] = crc >>>= 8
+    buf[offset + len + 5] = crc >>>= 8
+    return len + 6
   }
 }
 
@@ -77,14 +76,14 @@ export const decompress = (buf: Buffer): string => {
 }
 
 export const read = (buf: Buffer, offset: number, len: number): string => {
-  const type = buf[offset]
+  const type = buf[offset + 1]
   if (type == 1) {
-    const origSize = buf.readUint32LE(offset + 1)
+    const origSize = buf.readUint32LE(offset + 2)
     const newBuffer = Buffer.allocUnsafe(origSize)
-    native.decompress(buf, newBuffer, offset + 5, len - 5)
+    native.decompress(buf, newBuffer, offset + 6, len - 6)
     return newBuffer.toString('utf8')
   } else if (type == 0) {
-    return buf.toString('utf8', offset + 1, len + offset)
+    return buf.toString('utf8', offset + 2, len + offset - 4)
   }
   return ''
 }
