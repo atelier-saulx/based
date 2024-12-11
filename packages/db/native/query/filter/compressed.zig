@@ -5,7 +5,7 @@ const db = @import("../../db/db.zig");
 fn Ctx(dataType: type) type {
     return struct {
         query: []u8,
-        currentQueryIndex: usize,
+        notFirstBlock: bool,
         data: dataType,
     };
 }
@@ -32,14 +32,10 @@ fn comptimeCb(
             const buf: [*c]u8 = @constCast(b);
             const ctx: *Ctx(DataType) = @ptrCast(@alignCast(ctxC.?));
             var value: []u8 = undefined;
-            var end: usize = undefined;
-            if (ctx.currentQueryIndex > 0) {
-                end = dictSize + dataSize;
-                // TODO make sure that dictSize >= ctx.query.len
-                value = buf[dictSize - ctx.query.len .. end];
+            if (ctx.notFirstBlock) {
+                value = buf[dictSize - ctx.query.len .. dictSize + dataSize];
             } else {
-                end = dataSize;
-                value = buf[0..end];
+                value = buf[dictSize .. dictSize + dataSize];
             }
             var found: bool = undefined;
             if (DataType == void) {
@@ -57,7 +53,7 @@ fn comptimeCb(
             if (found) {
                 return 1;
             }
-            ctx.currentQueryIndex = 1;
+            ctx.notFirstBlock = true;
             return 0;
         }
     };
@@ -67,13 +63,13 @@ fn createCtx(comptime DataType: type, query: []u8, data: DataType) Ctx(DataType)
     if (DataType == void) {
         return .{
             .query = query,
-            .currentQueryIndex = 0,
+            .notFirstBlock = false,
             .data = undefined,
         };
     } else {
         return .{
             .query = query,
-            .currentQueryIndex = 0,
+            .notFirstBlock = false,
             .data = data,
         };
     }
@@ -90,6 +86,7 @@ pub inline fn decompress(
     var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
+    std.debug.print("\n START DECOMPRESS \n", .{});
     while (loop) {
         const result = selva.libdeflate_decompress_stream(
             dbCtx.decompressor,

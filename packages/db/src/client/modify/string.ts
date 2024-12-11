@@ -56,6 +56,7 @@ export function writeString(
     } else {
       const isNoCompression = ctx.db.noCompression || t.compression === 0
       size = write(ctx.buf, value, ctx.len, isNoCompression)
+      console.log('derp', size)
     }
     let sizepos = ctx.len + 1 - 5
     ctx.len += size

@@ -560,7 +560,7 @@ await test('has OR compressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+        .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
         .include('id')
         .range(0, 1e3)
         .get()

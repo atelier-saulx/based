@@ -22,14 +22,9 @@ export const write = (
   if (value.length > 200 && !noCompression) {
     buf[offset] = 0 // lang TODO we could actually set this
     const s = Buffer.byteLength(value, 'utf8')
-
-    // TODO: we need this also has to be added in modify s * 2
-    // pass this to here
     buf.write(value, offset + 6 + s, 'utf8')
     let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
-
     const size = native.compress(buf, offset + 6, s)
-
     if (size === 0) {
       buf[offset + 1] = 0 // not compressed
       const len = buf.write(value, offset + 2, 'utf8')
@@ -39,6 +34,7 @@ export const write = (
       buf[offset + len + 5] = crc >>>= 8
       return len + 6
     } else {
+      console.log('COMPRESS TIME!')
       buf[offset + 1] = 1 // compressed
       buf.writeUInt32LE(s, offset + 2)
       buf[offset + size + 6] = crc
