@@ -11,28 +11,22 @@ const selva = @import("../../selva.zig");
 inline fn condition(
     mode: Mode,
     ctx: *db.DbCtx,
-    comptime isEdge: bool,
-    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
-    fieldSchema: ?db.FieldSchema,
     q: []u8,
     v: []u8,
     i: usize,
 ) ConditionsResult {
     return switch (mode) {
-        Mode.default => c.default(q, v, i, isEdge, node, fieldSchema),
+        Mode.default => c.default(q, v, i),
         Mode.defaultVar => c.defaultVar(ctx, q, v, i),
         Mode.orVar => c.orVar(ctx, q, v, i),
         Mode.andFixed => c.andFixed(q, v, i),
-        Mode.orFixed => c.orFixed(q, v, i, isEdge, node, fieldSchema),
+        Mode.orFixed => c.orFixed(q, v, i),
         Mode.reference => c.reference(ctx, q, v, i),
     };
 }
 
 pub inline fn runConditions(
     ctx: *db.DbCtx,
-    comptime isEdge: bool,
-    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
-    fieldSchema: ?db.FieldSchema,
     q: []u8,
     v: []u8,
 ) bool {
@@ -41,7 +35,7 @@ pub inline fn runConditions(
         const topLevelType: Type = @enumFromInt(q[i]);
         i += 1;
         const mode: Mode = @enumFromInt(q[i]);
-        const result = condition(mode, ctx, isEdge, node, fieldSchema, q, v, i);
+        const result = condition(mode, ctx, q, v, i);
         if (topLevelType == Type.negate) {
             if (result[1] == true) {
                 return false;

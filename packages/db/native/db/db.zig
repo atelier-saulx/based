@@ -71,6 +71,7 @@ pub fn createDbCtx(id: u32) !*DbCtx {
         .readOnly = false,
         .selva = null,
         .decompressor = selva.libdeflate_alloc_decompressor().?,
+        // .libdeflate_block_state = selva.libdeflate_block_state_init(100000),
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
 
@@ -114,7 +115,6 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 
 pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
-
     if (fieldType == types.Prop.ALIAS) {
         const target = if (id == 0) getNodeId(node) else id;
         const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);

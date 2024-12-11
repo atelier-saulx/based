@@ -174,7 +174,7 @@ export const readAllFields = (
       if (t === BINARY) {
         i++
         const size = result.readUint32LE(i)
-        addField(edgeDef, new Uint8Array(result.buffer, i + 6, size - 6), item)
+        addField(edgeDef, new Uint8Array(result.buffer, i + 4, size), item)
         i += size + 4
       } else if (t === STRING || t === ALIAS || t === ALIASES) {
         i++
@@ -241,7 +241,7 @@ export const readAllFields = (
       if (prop.typeIndex === BINARY) {
         q.include.propsRead[index] = id
         const size = result.readUint32LE(i)
-        addField(prop, new Uint8Array(result.buffer, i + 4, size), item)
+        addField(prop, new Uint8Array(result.buffer, i + 4 + 2, size - 6), item)
         i += size + 4
       } else if (prop.typeIndex === STRING) {
         q.include.propsRead[index] = id

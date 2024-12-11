@@ -202,7 +202,7 @@ const makeDb = async (path: string) => {
   // const query = 'german rebuke'
   // maybe levensthein
   // const query = 'orban'
-  const query = 'hello'
+  const query = 'class'
 
   console.log('\nSEARCH FOR:', query)
 

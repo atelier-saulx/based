@@ -27,9 +27,7 @@ await test('basic', async (t) => {
 
   db.create('user', {
     age: 201,
-
     name: 'mr blap',
-
     email: 'blap@blap.blap.blap',
   })
 
@@ -45,7 +43,7 @@ await test('basic', async (t) => {
     email: 'snurp@snurp.snurp.snurp',
   })
 
-  await db.drain()
+  db.drain()
 
   db.create('user', {
     name: 'mr nurp',
@@ -53,7 +51,7 @@ await test('basic', async (t) => {
     email: 'nurp@nurp.nurp.nurp',
   })
 
-  await db.drain()
+  db.drain()
 
   const mrZ = db.create('user', {
     name: 'mr z',
@@ -61,7 +59,7 @@ await test('basic', async (t) => {
     email: 'z@z.z',
   })
 
-  await db.drain()
+  db.drain()
 
   deepEqual(
     (
@@ -74,6 +72,7 @@ await test('basic', async (t) => {
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
       { id: 5, email: 'z@z.z', age: 1 },
     ],
+    'sort by age desc',
   )
 
   deepEqual(
@@ -87,6 +86,7 @@ await test('basic', async (t) => {
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
     ],
+    'sort by age asc',
   )
 
   deepEqual(
@@ -100,6 +100,7 @@ await test('basic', async (t) => {
       { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
       { id: 5, email: 'z@z.z', age: 1 },
     ],
+    'sort by email asc',
   )
 
   deepEqual(
@@ -113,6 +114,7 @@ await test('basic', async (t) => {
       { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
       { id: 5, email: 'z@z.z', age: 1 },
     ].reverse(),
+    'sort by email desc',
   )
 
   const mrX = db.create('user', {
@@ -135,6 +137,7 @@ await test('basic', async (t) => {
       { id: 6, email: 'x@x.x', age: 999 },
       { id: 5, email: 'z@z.z', age: 1 },
     ],
+    'sort by email asc after adding new',
   )
 
   deepEqual(
@@ -149,13 +152,15 @@ await test('basic', async (t) => {
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 6, email: 'x@x.x', age: 999 },
     ],
+    'sort by age asc after adding new',
   )
 
+  console.log('HELLO USER ->', 'dd@dd.dd')
   db.update('user', mrX, {
     email: 'dd@dd.dd',
   })
 
-  await db.drain()
+  db.drain()
 
   deepEqual(
     (
@@ -169,6 +174,7 @@ await test('basic', async (t) => {
       { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
       { id: 5, email: 'z@z.z', age: 1 },
     ],
+    'sort by email after updating email',
   )
 
   db.update(
@@ -180,7 +186,7 @@ await test('basic', async (t) => {
     true,
   )
 
-  await db.drain()
+  db.drain()
 
   deepEqual(
     (
@@ -194,6 +200,7 @@ await test('basic', async (t) => {
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 6, email: 'dd@dd.dd', age: 1e6 },
     ],
+    'sort by age after update',
   )
 
   db.update('user', mrX, {

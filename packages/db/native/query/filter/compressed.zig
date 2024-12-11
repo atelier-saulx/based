@@ -5,7 +5,7 @@ const db = @import("../../db/db.zig");
 fn Ctx(dataType: type) type {
     return struct {
         query: []u8,
-        currentQueryIndex: usize,
+        notFirstBlock: bool,
         data: dataType,
     };
 }
@@ -32,12 +32,10 @@ fn comptimeCb(
             const buf: [*c]u8 = @constCast(b);
             const ctx: *Ctx(DataType) = @ptrCast(@alignCast(ctxC.?));
             var value: []u8 = undefined;
-            const end = ctx.currentQueryIndex + dictSize + dataSize;
-            if (ctx.currentQueryIndex > 0) {
-                const index = dictSize + ctx.currentQueryIndex;
-                value = buf[index - ctx.query.len .. (index + dataSize)];
+            if (ctx.notFirstBlock) {
+                value = buf[dictSize - ctx.query.len .. dictSize + dataSize];
             } else {
-                value = buf[(ctx.currentQueryIndex - ctx.query.len + dictSize)..end];
+                value = buf[dictSize .. dictSize + dataSize];
             }
             var found: bool = undefined;
             if (DataType == void) {
@@ -55,7 +53,7 @@ fn comptimeCb(
             if (found) {
                 return 1;
             }
-            ctx.currentQueryIndex = end;
+            ctx.notFirstBlock = true;
             return 0;
         }
     };
@@ -65,13 +63,13 @@ fn createCtx(comptime DataType: type, query: []u8, data: DataType) Ctx(DataType)
     if (DataType == void) {
         return .{
             .query = query,
-            .currentQueryIndex = 0,
+            .notFirstBlock = false,
             .data = undefined,
         };
     } else {
         return .{
             .query = query,
-            .currentQueryIndex = 0,
+            .notFirstBlock = false,
             .data = data,
         };
     }
@@ -92,8 +90,8 @@ pub inline fn decompress(
         const result = selva.libdeflate_decompress_stream(
             dbCtx.decompressor,
             &dbCtx.libdeflate_block_state,
-            value[5..value.len].ptr,
-            value.len - 5,
+            value[6..value.len].ptr,
+            value.len - 10,
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,

@@ -33,6 +33,7 @@ await test('variable size (string/binary)', async (t) => {
       },
     },
   })
+
   const compressedSentence = compress(sentence)
   equal(decompress(compressedSentence), sentence, 'compress / decompress api')
   const compressedItaly = compress(italy)
@@ -69,7 +70,9 @@ await test('variable size (string/binary)', async (t) => {
         derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
       },
     ],
+    'strict equality on binary',
   )
+
   const len = (
     await db
       .query('article')
@@ -77,8 +80,9 @@ await test('variable size (string/binary)', async (t) => {
       .range(0, 100)
       .get()
   ).length
-  // ???
+
   equal(len, 20, 'has binary (single')
+
   const largeDerp = Buffer.from(italy)
   let smurpArticle
   for (let i = 0; i < 1e3; i++) {
@@ -90,12 +94,15 @@ await test('variable size (string/binary)', async (t) => {
       derp: largeDerp,
     })
   }
-  await db.drain()
+
+  db.drain()
+
   const q = new Uint8Array(251)
   for (let i = 0; i < 250; i++) {
     q[i] = i
   }
   q[250] = 255
+
   equal(
     (
       await db
@@ -105,7 +112,9 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     0,
+    'has filter on derp',
   )
+
   equal(
     (
       await db
@@ -115,11 +124,14 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     0,
+    'has filter on derp (short)',
   )
+
   equal(
     (await db.query('article').filter('derp', 'has', q).include('id').get())
       .length,
     0,
+    'has filter on derp (long q)',
   )
 
   equal(
@@ -132,7 +144,9 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     1e3,
+    'strict equality binary (large)',
   )
+
   equal(
     (
       await db
@@ -143,6 +157,7 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     1e3,
+    'strict equality large compressed string',
   )
 })
 
@@ -171,8 +186,7 @@ await test('has compressed', async (t) => {
     })
   }
 
-  const n = `Therefore he called the name of that place Baalperazim.
-  And there they left their images, and David and his men burned them.`
+  const n = `Therefore he called the name of that place Baalperazim`
 
   equal(
     (
@@ -546,7 +560,7 @@ await test('has OR compressed', async (t) => {
     (
       await db
         .query('italy')
-        .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
+        .filter('body', 'hasLoose', ['aaaaaaaaaaa', 'bbbbbbbb']) //  ['aaa', 'bbb', 'ccc', 'eee']
         .include('id')
         .range(0, 1e3)
         .get()

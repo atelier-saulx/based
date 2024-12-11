@@ -22,13 +22,9 @@ export const write = (
   if (value.length > 200 && !noCompression) {
     buf[offset] = 0 // lang TODO we could actually set this
     const s = Buffer.byteLength(value, 'utf8')
-
-    // TODO: we need this also has to be added in modify s * 2
-    // pass this to here
     buf.write(value, offset + 6 + s, 'utf8')
     let crc = native.crc32(buf.subarray(offset + 6 + s, offset + 6 + 2 * s))
     const size = native.compress(buf, offset + 6, s)
-
     if (size === 0) {
       buf[offset + 1] = 0 // not compressed
       const len = buf.write(value, offset + 2, 'utf8')
@@ -44,7 +40,7 @@ export const write = (
       buf[offset + size + 7] = crc >>>= 8
       buf[offset + size + 8] = crc >>>= 8
       buf[offset + size + 9] = crc >>>= 8
-      return size + 10
+      return size + 10 // 0 C 4 4
     }
   } else {
     buf[offset + 1] = 0 // not compressed
@@ -64,7 +60,6 @@ export const compress = (str: string): Buffer => {
   if (!tmpCompressBlock || tmpCompressBlock.byteLength < str.length * 3) {
     tmpCompressBlock = Buffer.allocUnsafe(str.length * 3)
   }
-
   const s = write(tmpCompressBlock, str, 0, false)
   const nBuffer = Buffer.allocUnsafe(s)
   tmpCompressBlock.copy(nBuffer, 0, 0, s)
