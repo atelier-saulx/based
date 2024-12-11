@@ -21,12 +21,14 @@ const makeSize = (nr: number, u8: boolean = false) => {
 
 export const search = (def: QueryDef, q: string, s?: Search) => {
   let blocks = 0
-  const x = q.toLowerCase().split(' ')
+  const x = q.toLowerCase().trim().split(' ')
   const bufs = []
   for (const s of x) {
-    const b = Buffer.from(s)
-    bufs.push(makeSize(b.byteLength), b)
-    blocks++
+    if (s) {
+      const b = Buffer.from(s)
+      bufs.push(makeSize(b.byteLength), b)
+      blocks++
+    }
   }
 
   bufs.unshift(makeSize(blocks, true))
@@ -80,9 +82,8 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   result.writeUint16LE(search.query.byteLength, 0)
   result.set(search.query, 2)
   const offset = search.query.byteLength + 2
-  // fix weight later...
   search.fields.sort((a, b) => {
-    return a.weight - b.weight > 1 ? 1 : a.weight === b.weight ? 0 : -1
+    return a.weight - b.weight
   })
   for (let i = 0; i < search.fields.length * 2; i += 2) {
     const f = search.fields[i / 2]

@@ -1,60 +1,31 @@
-const c = @import("../../c.zig");
-const errors = @import("../../errors.zig");
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
-const sort = @import("../../db/sort.zig");
-const types = @import("../../types.zig");
-const hasId = @import("../hasId.zig").hasId;
 const searchStr = @import("../filter/search.zig");
-const readInt = @import("../../utils.zig").readInt;
-const Result = @import("../results.zig").Result;
-
-const std = @import("std");
 
 pub fn default(
-    comptime queryType: comptime_int,
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    sortBuffer: []u8,
 ) !void {
-    const readTxn = try sort.initReadTxn(ctx.db);
-    sort.renewTx(readTxn);
-    const typeEntry = try db.getType(ctx.db, typeId);
-    const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
-    var end: bool = false;
-    var flag: c_uint = c.MDB_FIRST;
-    if (queryType == 4) {
-        flag = c.MDB_LAST;
-    }
-    var first: bool = true;
     var correctedForOffset: u32 = offset;
-    checkItem: while (!end and ctx.totalResults < limit) {
-        var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
-            end = true;
-            break;
-        };
+    const typeEntry = try db.getType(ctx.db, typeId);
+    var first = true;
+    var node = db.getFirstNode(typeEntry);
+    checkItem: while (ctx.totalResults < limit) {
         if (first) {
             first = false;
-            if (queryType == 4) {
-                flag = c.MDB_PREV;
-            } else {
-                flag = c.MDB_NEXT;
-            }
+        } else {
+            node = db.getNextNode(typeEntry, node.?);
         }
-        const id = readInt(u32, sort.readData(v), 0);
-        const node = db.getNode(id, typeEntry);
         if (node == null) {
-            continue :checkItem;
+            break :checkItem;
         }
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
@@ -66,7 +37,7 @@ pub fn default(
         const size = try getFields(
             node.?,
             ctx,
-            id,
+            db.getNodeId(node.?),
             typeEntry,
             include,
             null,
@@ -78,54 +49,33 @@ pub fn default(
             ctx.totalResults += 1;
         }
     }
-    sort.resetTxn(readTxn);
 }
 
 pub fn search(
-    comptime queryType: comptime_int,
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    sortBuffer: []u8,
     searchCtx: *const searchStr.SearchCtx,
 ) !void {
-    const readTxn = try sort.initReadTxn(ctx.db);
-    sort.renewTx(readTxn);
     const typeEntry = try db.getType(ctx.db, typeId);
-    const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
-    var end: bool = false;
-    var flag: c_uint = c.MDB_FIRST;
-    if (queryType == 4) {
-        flag = c.MDB_LAST;
-    }
-    var first: bool = true;
+    var first = true;
+    var node = db.getFirstNode(typeEntry);
     var score: u8 = 255;
     var totalSearchResults: usize = 0;
     const scoreSortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC, limit).?;
     var i: i64 = 0;
     var correctedForOffset: u32 = offset;
-    checkItem: while (!end and totalSearchResults < limit) {
-        var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-        errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
-            end = true;
-            break;
-        };
+    checkItem: while (totalSearchResults < limit) {
         if (first) {
             first = false;
-            if (queryType == 4) {
-                flag = c.MDB_PREV;
-            } else {
-                flag = c.MDB_NEXT;
-            }
+        } else {
+            node = db.getNextNode(typeEntry, node.?);
         }
-        const id = readInt(u32, sort.readData(v), 0);
-        const node = db.getNode(id, typeEntry);
         if (node == null) {
-            continue :checkItem;
+            break :checkItem;
         }
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
@@ -141,22 +91,20 @@ pub fn search(
         if (score < searchCtx.meh) {
             totalSearchResults += 1;
         }
-
         i += 1;
         const specialScore: i64 = (@as(i64, score) << 31) + i;
-        selva.selva_sort_insert_i64(scoreSortCtx, specialScore, node.?);
+        selva.selva_sort_insert_i64(scoreSortCtx, @intCast(specialScore), node.?);
     }
     selva.selva_sort_foreach_begin(scoreSortCtx);
     i = 0;
-
     while (!selva.selva_sort_foreach_done(scoreSortCtx)) {
         var sortKey: i64 = undefined;
-        const node: db.Node = @ptrCast(selva.selva_sort_foreach_i64(scoreSortCtx, &sortKey));
-        const id = db.getNodeId(node);
+        const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach_i64(scoreSortCtx, &sortKey));
+        const id = db.getNodeId(sortedNode);
         i += 1;
         const realScore: u8 = @truncate(@as(u64, @bitCast((sortKey - i) >> 31)));
         const size = try getFields(
-            node,
+            sortedNode,
             ctx,
             id,
             typeEntry,
@@ -174,5 +122,4 @@ pub fn search(
         }
     }
     selva.selva_sort_destroy(scoreSortCtx);
-    sort.resetTxn(readTxn);
 }

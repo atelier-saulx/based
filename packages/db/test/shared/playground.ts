@@ -200,22 +200,26 @@ const makeDb = async (path: string) => {
 
   // handle this in search split and make a loop
   // const query = 'german rebuke'
-
   // maybe levensthein
-
   // const query = 'orban'
-  const query = 'von der leyen'
+  const query = 'hello'
 
   console.log('\nSEARCH FOR:', query)
+
   await db
     .query('article')
     .range(0, 10)
     .sort('publishDate', 'desc')
     .include(['id', 'headline', 'publishDate', 'abstract'])
-    .search(query, { headline: 0, abstract: 2, body: 5 })
+    .search(query, {
+      headline: 0,
+      abstract: 1,
+      // body: 5,
+    })
     .get()
     .then((v) => {
-      v.inspect()
+      // console.dir(v.toObject(), { depth: 10 })
+      v.inspect(4)
     })
 
   const start = performance.now()

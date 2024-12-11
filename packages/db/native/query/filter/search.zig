@@ -43,7 +43,7 @@ pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
         .allQueries = searchBuf[3..sLen],
         .fields = fields,
         .words = words,
-        .meh = words * 2,
+        .meh = words * 1,
         .bad = 2 + (words - 1) * 3 + @divTrunc(totalWeights, totalfields),
     };
 }
@@ -55,11 +55,13 @@ fn hamming(
 ) u8 {
     const queryD = query[1..query.len];
     const ql = queryD.len;
+    // add normalization
     const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
         queryD.ptr,
         ql,
     ));
+
     return d;
 }
 
@@ -171,7 +173,9 @@ pub fn strSearchCompressed(
     d: *u8,
 ) bool {
     const score = strSearch(value, query);
-    d.* = score;
+    if (score < d.*) {
+        d.* = score;
+    }
     if (score < minDist) {
         return true;
     }
@@ -187,15 +191,18 @@ pub fn search(
     const fl = ctx.fields.len;
     var p: usize = 0;
     var totalScore: u8 = 0;
+    var j: usize = 0;
+    var bestScore: u8 = 255;
+
     wordLoop: while (p < ctx.allQueries.len) {
         const qLen = readInt(u16, ctx.allQueries, p);
         const query = ctx.allQueries[p + 2 .. p + qLen + 2];
         p += qLen + 2;
-        var j: usize = 0;
-        var bestScore: u8 = 255;
+        j = 0;
+        bestScore = 255;
         fieldLoop: while (j < fl) {
             const field = ctx.fields[j];
-            const weight = ctx.fields[j + 1];
+            const penalty = ctx.fields[j + 1];
             const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
                 return 255;
             };
@@ -205,16 +212,16 @@ pub fn search(
                 continue :fieldLoop;
             }
             const isCompressed = value[0] == 1;
-            var score: u8 = 0;
+            var score: u8 = 255;
             if (isCompressed) {
                 _ = decompress(*u8, strSearchCompressed, query, value, dbCtx, &score);
+                score = score + penalty;
             } else {
-                score = strSearch(value, query) + weight;
+                score = strSearch(value, query) + penalty;
             }
             if (score < bestScore) {
                 bestScore = score;
-                if (score - weight == 0) {
-                    j += 2;
+                if (score - penalty == 0) {
                     totalScore += bestScore;
                     continue :wordLoop;
                 }
