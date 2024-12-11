@@ -15,7 +15,6 @@ const fillReferenceFilter = @import("./reference.zig").fillReferenceFilter;
 const selva = @import("../../selva.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
-// or totally different
 pub inline fn orVar(dbCtx: *db.DbCtx, q: []u8, v: []u8, i: usize) ConditionsResult {
     const valueSize = readInt(u32, q, i + 5);
     const next = i + 11 + valueSize;
@@ -161,9 +160,6 @@ pub inline fn default(
     q: []u8,
     v: []u8,
     i: usize,
-    comptime isEdge: bool,
-    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
-    fieldSchema: ?db.FieldSchema,
 ) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
     const start = readInt(u16, q, i + 3);
@@ -192,7 +188,7 @@ pub inline fn default(
             return .{ next, false };
         }
     } else if (op == Op.equalCrc32) {
-        return .{ next, crc32Equal(prop, query, v, isEdge, node, fieldSchema) };
+        return .{ next, crc32Equal(prop, query, v) };
     }
     return .{ next, true };
 }
@@ -201,9 +197,6 @@ pub inline fn orFixed(
     q: []u8,
     v: []u8,
     i: usize,
-    comptime isEdge: bool,
-    node: if (isEdge) *selva.SelvaNodeReference else *selva.SelvaNode,
-    fieldSchema: ?db.FieldSchema,
 ) ConditionsResult {
     const valueSize = readInt(u16, q, i + 1);
     const start = readInt(u16, q, i + 3);
@@ -214,12 +207,11 @@ pub inline fn orFixed(
     const next = 9 + valueSize * repeat;
     if (op == Op.equalCrc32) {
         const amountOfConditions = @divTrunc(query.len, 8) + 1;
-        // std.debug.print("derp derp {d} {d} \n", .{ amountOfConditions, valueSize });
         var j: usize = 0;
         while (j < amountOfConditions) {
             const qI = j * 8;
-            // ultra slow like htis ofc... fix better
-            if (crc32Equal(prop, query[qI .. qI + 8], v, isEdge, node, fieldSchema)) {
+            // ultra slow like htis ofc... fix better using nice simd
+            if (crc32Equal(prop, query[qI .. qI + 8], v)) {
                 return .{ next, true };
             }
             j += 1;

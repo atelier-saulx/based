@@ -69,7 +69,9 @@ await test('variable size (string/binary)', async (t) => {
         derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
       },
     ],
+    'strict equality on binary',
   )
+
   const len = (
     await db
       .query('article')
@@ -77,8 +79,9 @@ await test('variable size (string/binary)', async (t) => {
       .range(0, 100)
       .get()
   ).length
-  // ???
+
   equal(len, 20, 'has binary (single')
+
   const largeDerp = Buffer.from(italy)
   let smurpArticle
   for (let i = 0; i < 1e3; i++) {
@@ -90,7 +93,9 @@ await test('variable size (string/binary)', async (t) => {
       derp: largeDerp,
     })
   }
-  await db.drain()
+
+  db.drain()
+
   const q = new Uint8Array(251)
   for (let i = 0; i < 250; i++) {
     q[i] = i
@@ -105,6 +110,7 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     0,
+    'has filter on derp',
   )
   equal(
     (
@@ -115,11 +121,13 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     0,
+    'has filter on derp (short)',
   )
   equal(
     (await db.query('article').filter('derp', 'has', q).include('id').get())
       .length,
     0,
+    'has filter on derp (long q)',
   )
 
   equal(
@@ -132,7 +140,9 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     1e3,
+    'strict equality binary (large)',
   )
+
   equal(
     (
       await db
@@ -143,6 +153,7 @@ await test('variable size (string/binary)', async (t) => {
         .get()
     ).length,
     1e3,
+    'strict equality large compressed string',
   )
 })
 

@@ -114,7 +114,6 @@ pub fn getFieldSchema(field: u8, typeEntry: ?Type) !FieldSchema {
 
 pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSchema) []u8 {
     const fieldType: types.Prop = @enumFromInt(selvaFieldSchema.type);
-
     if (fieldType == types.Prop.ALIAS) {
         const target = if (id == 0) getNodeId(node) else id;
         const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);

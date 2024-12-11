@@ -147,7 +147,7 @@ pub fn filter(
             var value: []u8 = undefined;
             if (meta == Meta.id) {
                 value = @constCast(&db.getNodeIdArray(node));
-                if (value.len == 0 or !runCondition(ctx, false, node, null, query, value)) {
+                if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
@@ -156,14 +156,7 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
                 value = db.getEdgeProp(ref.?.reference, edgeFieldSchema.?);
-                if (value.len == 0 or !runCondition(
-                    ctx,
-                    isEdge,
-                    ref.?.reference,
-                    edgeFieldSchema,
-                    query,
-                    value,
-                )) {
+                if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -191,7 +184,7 @@ pub fn filter(
                 } else {
                     value = db.getField(typeEntry, 0, node, fieldSchema);
                 }
-                if (value.len == 0 or !runCondition(ctx, isEdge, node, fieldSchema, query, value)) {
+                if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             }
