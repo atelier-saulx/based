@@ -15,7 +15,6 @@ import {
   SchemaReferences,
   SchemaAlias,
   stringFormats,
-  stringDisplays,
   dateDisplays,
   numberDisplays,
 } from '../types.js'
@@ -292,11 +291,6 @@ const binaryOpts = {
     expectString(val)
     stringFormatsSet ??= new Set(stringFormats)
     stringFormatsSet.has(val)
-  },
-  display(val) {
-    expectString(val)
-    stringDisplaysSet ??= new Set(stringDisplays)
-    stringDisplaysSet.has(val)
   },
   mime(val) {
     if (Array.isArray(val)) {

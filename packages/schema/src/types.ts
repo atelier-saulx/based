@@ -12,12 +12,11 @@ export const numberDisplays = [
   'pound',
   'meter',
 ] as const
-export const stringDisplays = ['lowercase', 'uppercase', 'capitalize'] as const
 export const dateDisplays = [
   'date',
   'date-time',
   'date-time-text',
-  'human',
+  'date-time-human',
   'time',
   'time-precise',
 ] as const
@@ -93,11 +92,13 @@ export const stringFormats = [
   'URL',
   'UUID',
   'VAT',
+
+  // TODO: for discussion
+  'multiline',
 ] as const
 
 type DateDisplay = (typeof dateDisplays)[number]
 type NumberDisplay = (typeof numberDisplays)[number] | `round-${number}`
-type StringDisplay = (typeof stringDisplays)[number]
 type StringFormat = (typeof stringFormats)[number]
 
 type MimeString =
@@ -174,11 +175,13 @@ type QueryFn = Function
 type PropValues = { type?: string; default?: any }
 type Prop<V extends PropValues> = {
   required?: boolean
-  label?: Record<string, string>
-  description?: Record<string, string>
+  title?: string | Record<string, string>
+  description?: string | Record<string, string>
   path?: string
   query?: QueryFn
   role?: Role
+  readOnly?: boolean
+  examples?: string[]
 } & V
 
 type EnumItem = string | number | boolean
@@ -223,8 +226,8 @@ export type SchemaString = Prop<{
   max?: number
   min?: number
   mime?: Mime
-  display?: StringDisplay
   format?: StringFormat
+  // multiline?: boolean
   // add level here as well
   compression?: 'none' | 'deflate'
 }>
@@ -234,7 +237,6 @@ export type SchemaBinary = Prop<{
   default?: ArrayBuffer
   maxBytes?: number
   mime?: Mime
-  display?: StringDisplay
   format?: StringFormat
 }>
 
