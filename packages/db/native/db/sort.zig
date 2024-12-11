@@ -331,6 +331,7 @@ pub fn deleteField(id: u32, d: []u8, sortIndex: SortIndex) !void {
     var sortValue: c.MDB_val = .{ .mv_size = data.len, .mv_data = data.ptr };
     var sortKey: c.MDB_val = .{ .mv_size = 4, .mv_data = @constCast(&id) };
     if (data.len > 16) {
+        // std.de
         sortValue.mv_data = data[0..16].ptr;
     }
     try errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &sortValue, &sortKey, c.MDB_GET_BOTH));
