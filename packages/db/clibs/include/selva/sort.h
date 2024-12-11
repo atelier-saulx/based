@@ -65,6 +65,12 @@ SELVA_EXPORT
 void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
 
 SELVA_EXPORT
+void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p);
+
+SELVA_EXPORT
+void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p);
+
+SELVA_EXPORT
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT
@@ -72,6 +78,9 @@ void *selva_sort_foreach(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT
 void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v);
+
+SELVA_EXPORT
+void *selva_sort_foreach_double(struct SelvaSortCtx *ctx, double *d);
 
 SELVA_EXPORT
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
