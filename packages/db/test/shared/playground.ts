@@ -215,14 +215,7 @@ const makeDb = async (path: string) => {
     .search(query, { headline: 0, abstract: 2, body: 5 })
     .get()
     .then((v) => {
-      console.log(v.execTime, 'ms')
-      console.dir(
-        v.toObject().map((v) => ({
-          ...v,
-          publishDate: new Date(v.publishDate),
-        })),
-        { depth: 5 },
-      )
+      v.inspect()
     })
 
   const start = performance.now()

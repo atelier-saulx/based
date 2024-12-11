@@ -164,7 +164,7 @@ pub fn querySort(
 pub fn querySortSearch(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
-    _: u32,
+    offset: u32,
     limit: u32,
     typeId: db.TypeId,
     conditions: []u8,
@@ -184,10 +184,9 @@ pub fn querySortSearch(
     var first: bool = true;
     var score: u8 = 255;
     var totalSearchResults: usize = 0;
-
     const scoreSortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC, limit).?;
-
     var i: i64 = 0;
+    var correctedForOffset: u32 = offset;
     checkItem: while (!end and totalSearchResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
@@ -211,6 +210,10 @@ pub fn querySortSearch(
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue :checkItem;
+        }
         score = search.search(ctx.db, node.?, typeEntry, searchCtx);
         if (score > searchCtx.bad) {
             continue :checkItem;
@@ -220,28 +223,18 @@ pub fn querySortSearch(
             totalSearchResults += 1;
         }
         i += 1;
-
-        std.debug.print("id {d}, score {?} \n", .{ id, score });
-
         const specialScore: i64 = (@as(i64, score) << 4) + i;
-
         selva.selva_sort_insert_i64(scoreSortCtx, @intCast(specialScore), node.?);
     }
 
     selva.selva_sort_foreach_begin(scoreSortCtx);
     i = 0;
     while (!selva.selva_sort_foreach_done(scoreSortCtx)) {
-        // retrieve score
-        // insertion sort at the end vs start
-
-        var derp: i64 = undefined;
-
-        const node: db.Node = @ptrCast(selva.selva_sort_foreach_i64(scoreSortCtx, &derp));
+        var sortKey: i64 = undefined;
+        const node: db.Node = @ptrCast(selva.selva_sort_foreach_i64(scoreSortCtx, &sortKey));
         const id = db.getNodeId(node);
         i += 1;
-
-        const realScore: u8 = @truncate(@as(u64, @bitCast((derp - i) >> 4)));
-
+        const realScore: u8 = @truncate(@as(u64, @bitCast((sortKey - i) >> 4)));
         const size = try getFields(
             node,
             ctx,
@@ -260,28 +253,6 @@ pub fn querySortSearch(
             break;
         }
     }
-
-    // var correctedForOffset: u32 = offset;
-    // if (correctedForOffset != 0) {
-    //     correctedForOffset -= 1;
-    //     continue :checkItem;
-    // }
-
-    //  const size = try getFields(
-    //         node.?,
-    //         ctx,
-    //         id,
-    //         typeEntry,
-    //         include,
-    //         null,
-    //         if (searchCtx != null) score else null,
-    //         false,
-    //     );
-
-    //     if (size > 0) {
-    //         ctx.size += size;
-    //         ctx.totalResults += 1;
-    //     }
     selva.selva_sort_destroy(scoreSortCtx);
     sort.resetTxn(readTxn);
 }
