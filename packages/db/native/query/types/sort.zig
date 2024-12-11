@@ -141,6 +141,7 @@ pub fn search(
         if (score < searchCtx.meh) {
             totalSearchResults += 1;
         }
+
         i += 1;
         const specialScore: i64 = (@as(i64, score) << 31) + i;
         selva.selva_sort_insert_i64(scoreSortCtx, specialScore, node.?);
