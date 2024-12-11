@@ -1,9 +1,12 @@
 import { STRING } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
 
-export type Search = {
-  [field: string]: number
-}
+export type Search =
+  | string[]
+  | {
+      [field: string]: number
+    }
+  | string
 
 const makeSize = (nr: number, u8: boolean = false) => {
   if (u8) {
@@ -35,19 +38,25 @@ export const search = (def: QueryDef, q: string, s?: Search) => {
     fields: [],
   }
 
+  if (typeof s === 'string') {
+    s = [s]
+  }
+
   if (!s) {
-    let w = 10
     s = {}
     for (const k in def.props) {
       const prop = def.props[k]
+      // if title / name / headline add ROLE:
       if (prop.typeIndex === STRING) {
-        s[k] = w
-      }
-      w--
-      if (w == 0) {
-        break
+        s[k] = k === 'title' || k === 'name' || k === 'headline' ? 0 : 2
       }
     }
+  } else if (Array.isArray(s)) {
+    const x: Search = {}
+    for (const f of s) {
+      x[f] = 0
+    }
+    s = x
   }
 
   for (const key in s) {
