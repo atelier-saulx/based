@@ -280,7 +280,7 @@ export const resultToObject = (
   if (len === 0) {
     return []
   }
-  const items = []
+  let items = []
   let i = 5 + offset
   while (i < end) {
     let id = result.readUInt32LE(i)
@@ -291,7 +291,6 @@ export const resultToObject = (
     if (q.search) {
       item.$searchScore = result[i]
       i += 1
-      // console.log(item)
     }
     const l = readAllFields(q, result, i, end, item, id)
     i += l

@@ -13,11 +13,11 @@ const appendCreate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
-  parentId: number,
+  res: ModifyState,
   unsafe: boolean,
 ): ModifyErr => {
   const len = ctx.len
-  const err = modify(ctx, parentId, obj, def, CREATE, def.tree, true, unsafe)
+  const err = modify(ctx, res, obj, def, CREATE, def.tree, true, unsafe)
 
   if (err) {
     return err
@@ -27,7 +27,7 @@ const appendCreate = (
     if (ctx.len + 10 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, def, 0, parentId, CREATE)
+    setCursor(ctx, def, 0, res.tmpId, CREATE)
   }
 
   // if touched lets see perf impact here
@@ -81,7 +81,7 @@ export const create = (
   const ctx = db.modifyCtx
   const res = new ModifyState(id, db)
   const pos = ctx.len
-  const err = appendCreate(ctx, def, obj, id, unsafe)
+  const err = appendCreate(ctx, def, obj, res, unsafe)
 
   if (err) {
     ctx.prefix0 = -1 // force a new cursor

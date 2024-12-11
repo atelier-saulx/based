@@ -117,17 +117,14 @@ pub fn getField(typeEntry: ?Type, id: u32, node: Node, selvaFieldSchema: FieldSc
 
     if (fieldType == types.Prop.ALIAS) {
         const target = if (id == 0) getNodeId(node) else id;
-        std.debug.print("get alias id: {d} field: {d} \n", .{ target, selvaFieldSchema.field });
         const typeAliases = selva.selva_get_aliases(typeEntry, selvaFieldSchema.field);
         const alias = selva.selva_get_alias_by_dest(typeAliases, target);
         if (alias == null) {
-            std.debug.print("heyhey alias time NULL\n", .{});
             return @as([*]u8, undefined)[0..0];
         }
         // const alias = selva.selva_get_next_alias(aliasIterator);
         var len: selva.user_size_t = 0;
         const res = selva.selva_get_alias_name(alias, &len);
-        std.debug.print("heyhey alias time RES {any} - {d} - {any} - {any}\n", .{ res, len, @as([*]u8, @constCast(res))[0..len], alias });
         return @as([*]u8, @constCast(res))[0..len];
     }
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(node, selvaFieldSchema);
@@ -373,7 +370,7 @@ pub fn getNode(id: u32, typeEntry: Type) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
 
-pub fn getNodeId(node: Node) u32 {
+pub inline fn getNodeId(node: Node) u32 {
     return selva.selva_get_node_id(node);
 }
 
@@ -404,7 +401,6 @@ pub fn getNodeRangeHash(typeEntry: Type, start: u32, end: u32) selva.SelvaHash12
 
 pub fn setAlias(id: u32, field: u8, aliasName: []u8, typeEntry: Type) !void {
     const typeAliases = selva.selva_get_aliases(typeEntry, field);
-    std.debug.print("---- SET ALIAS: {any} - len: {d} - id: {d}\n", .{ aliasName, aliasName.len, id });
     selva.selva_set_alias(typeAliases, id, aliasName.ptr, aliasName.len);
 }
 

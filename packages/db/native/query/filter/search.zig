@@ -13,44 +13,53 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
 
-// TODO: Make this as context!
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
-const minDist = 2; // 0,1,2 is fine
+const minDist = 2; // 0,1 is fine
 
 pub const SearchCtx = struct {
-    query: []u8,
     fields: []u8,
-    queryDistance: []u8,
+    len: u16,
+    allQueries: []u8,
+    words: u16,
+    meh: u8,
+    bad: u8,
 };
 
 pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
     const sLen = readInt(u16, searchBuf, 0);
+    const words = readInt(u8, searchBuf, 2);
+    const fields = searchBuf[2 + sLen .. searchBuf.len];
+    var totalWeights: u8 = 0;
+    var j: usize = 0;
+    var totalfields: u8 = 0;
+    while (j < fields.len) {
+        const weight = fields[j + 1];
+        totalWeights += weight;
+        j += 2;
+        totalfields += 1;
+    }
     return .{
-        .query = searchBuf[2 .. 2 + sLen],
-        .queryDistance = searchBuf[3 .. 2 + sLen],
-        .fields = searchBuf[2 + sLen .. searchBuf.len],
+        .len = sLen,
+        .allQueries = searchBuf[3..sLen],
+        .fields = fields,
+        .words = words,
+        .meh = words * 2,
+        .bad = 2 + (words - 1) * 3 + @divTrunc(totalWeights, totalfields),
     };
 }
 
 fn hamming(
     value: []u8,
     i: usize,
-    ctx: *const SearchCtx,
+    query: []u8,
 ) u8 {
-    const ql = ctx.queryDistance.len;
+    const queryD = query[1..query.len];
+    const ql = queryD.len;
     const d: u8 = @truncate(selva.strsearch_hamming(
         value[i + 1 .. i + 1 + ql].ptr,
-        ctx.queryDistance.ptr,
+        queryD.ptr,
         ql,
     ));
-    //  const d: u8 = @truncate(selva.strsearch_hamming(
-    //     value[i + 1 .. i + 1 + ql].ptr,
-    //     ctx.queryDistance.ptr,
-    //     ql,
-    // ));
-    // if (d < 5) {
-    // std.debug.print("D {any} {d} \n", .{ value[i + 1 .. i + 1 + ql], d });
-    // }
     return d;
 }
 
@@ -59,9 +68,8 @@ fn resultMatcher(
     matches: @Vector(vectorLen, bool),
     i: usize,
     value: []u8,
-    ctx: *const SearchCtx,
+    query: []u8,
 ) u8 {
-    const query = ctx.query;
     var d: u8 = dx;
     const ql = query.len;
     const l = value.len;
@@ -71,7 +79,7 @@ fn resultMatcher(
         return d;
     }
     if (index == 1 or simd.countElementsWithValue(seperatorChars, value[index - 1]) > 0) {
-        const nd = hamming(value, index, ctx);
+        const nd = hamming(value, index, query);
         if (nd < minDist) {
             return nd;
         } else if (nd < d) {
@@ -83,7 +91,7 @@ fn resultMatcher(
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {
                 if (simd.countElementsWithValue(seperatorChars, value[p + i - 1]) > 0) {
-                    const nd = hamming(value, p + i, ctx);
+                    const nd = hamming(value, p + i, query);
                     if (nd < minDist) {
                         return nd;
                     } else if (nd < d) {
@@ -96,24 +104,23 @@ fn resultMatcher(
     return d;
 }
 
-pub inline fn strSearch(
+pub fn strSearch(
     value: []u8,
-    ctx: *const SearchCtx,
+    query: []u8,
 ) u8 {
     var i: usize = 1;
-    const query = ctx.query;
     const l = value.len;
     const ql = query.len;
     const q1 = query[0];
     const q2 = query[0] - 32;
-    var d: u8 = 255;
+    var d: u8 = 10;
     if (l < vectorLen) {
         while (i < l - 1) : (i += 1) {
             if ((value[i] == q1 or value[i] == q2) and (i == 1 or simd.countElementsWithValue(seperatorChars, value[i - 1]) > 0)) {
                 if (i + ql - 1 > l) {
                     return d;
                 }
-                const nd = hamming(value, i, ctx);
+                const nd = hamming(value, i, query);
                 if (nd < minDist) {
                     return nd;
                 } else if (nd < d) {
@@ -129,16 +136,16 @@ pub inline fn strSearch(
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
         if (@reduce(.Or, matches)) {
-            d = resultMatcher(d, matches, i, value, ctx);
+            d = resultMatcher(d, matches, i, value, query);
             if (d < minDist) {
                 return d;
             }
-            matches = h == queryVectorCaptial;
-            if (@reduce(.Or, matches)) {
-                d = resultMatcher(d, matches, i, value, ctx);
-                if (d < minDist) {
-                    return d;
-                }
+        }
+        matches = h == queryVectorCaptial;
+        if (@reduce(.Or, matches)) {
+            d = resultMatcher(d, matches, i, value, query);
+            if (d < minDist) {
+                return d;
             }
         }
     }
@@ -147,7 +154,7 @@ pub inline fn strSearch(
             if (i + ql - 1 > l) {
                 return d;
             }
-            const nd = hamming(value, i + 1, ctx);
+            const nd = hamming(value, i + 1, query);
             if (nd < minDist) {
                 return nd;
             } else if (nd < d) {
@@ -158,40 +165,66 @@ pub inline fn strSearch(
     return d;
 }
 
+pub fn strSearchCompressed(
+    value: []u8,
+    query: []u8,
+    d: *u8,
+) bool {
+    const score = strSearch(value, query);
+    d.* = score;
+    if (score < minDist) {
+        return true;
+    }
+    return false;
+}
+
 pub fn search(
-    _: *db.DbCtx,
+    dbCtx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx,
-    // ref: ?types.RefStruct,
-    // comptime isEdge: bool,
 ) u8 {
-    var j: usize = 0;
-    var bestScore: u8 = 255;
     const fl = ctx.fields.len;
-    while (j < fl) {
-        const field = ctx.fields[j];
-        // const weight = ctx.fields[j + 1];
-        const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
-            return 0;
-        };
-        const value = db.getField(typeEntry, 0, node, fieldSchema);
-        if (value.len < ctx.query.len) {
-            j += 2;
-            continue;
-        }
-        const isCompressed = value[0] == 1;
-        if (isCompressed) {
-            // ---- do later
-        } else {
-            const score = strSearch(value, ctx);
-            if (score < 2) {
-                return score;
-            } else if (score < bestScore) {
-                bestScore = score;
+    var p: usize = 0;
+    var totalScore: u8 = 0;
+    wordLoop: while (p < ctx.allQueries.len) {
+        const qLen = readInt(u16, ctx.allQueries, p);
+        const query = ctx.allQueries[p + 2 .. p + qLen + 2];
+        p += qLen + 2;
+        var j: usize = 0;
+        var bestScore: u8 = 255;
+        fieldLoop: while (j < fl) {
+            const field = ctx.fields[j];
+            const weight = ctx.fields[j + 1];
+            const fieldSchema = db.getFieldSchema(field, typeEntry) catch {
+                return 255;
+            };
+            const value = db.getField(typeEntry, 0, node, fieldSchema);
+            if (value.len < query.len) {
+                j += 2;
+                continue :fieldLoop;
             }
+            const isCompressed = value[0] == 1;
+            var score: u8 = 0;
+            if (isCompressed) {
+                _ = decompress(*u8, strSearchCompressed, query, value, dbCtx, &score);
+            } else {
+                score = strSearch(value, query) + weight;
+            }
+            if (score < bestScore) {
+                bestScore = score;
+                if (score - weight == 0) {
+                    j += 2;
+                    totalScore += bestScore;
+                    continue :wordLoop;
+                }
+            }
+            j += 2;
         }
-        j += 2;
+        totalScore += bestScore;
+        if (totalScore > ctx.bad) {
+            return totalScore;
+        }
     }
-    return bestScore;
+    return totalScore;
 }

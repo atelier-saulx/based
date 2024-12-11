@@ -1,10 +1,10 @@
-import { BasedDb } from '../../../index.js'
+import { BasedDb, ModifyCtx } from '../../../index.js'
 import { PropDef, SchemaTypeDef } from '../../../server/schema/types.js'
 import { ModifyError, ModifyState } from '../ModifyRes.js'
 import { setCursor } from '../setCursor.js'
 import { DELETE, ModifyErr, ModifyOp, RANGE_ERR } from '../types.js'
 import { getEdgeSize, writeEdges } from './edge.js'
-import { RefModifyOpts } from './references.js'
+import { dbUpdateFromUpsert, RefModifyOpts } from './references.js'
 
 function writeRef(
   id: number,
@@ -75,28 +75,45 @@ function singleReferenceEdges(
 }
 
 export function writeReference(
-  value: number | ModifyState,
-  ctx: BasedDb['modifyCtx'],
+  value:
+    | number
+    | ModifyState
+    | {
+        upsert: Record<string, any>
+      },
+  ctx: ModifyCtx,
   schema: SchemaTypeDef,
   def: PropDef,
-  parentId: number,
+  res: ModifyState,
   modifyOp: ModifyOp,
 ): ModifyErr {
   if (value === null) {
     if (ctx.len + 11 > ctx.max) {
       return RANGE_ERR
     }
-    setCursor(ctx, schema, def.prop, parentId, modifyOp)
+    setCursor(ctx, schema, def.prop, res.tmpId, modifyOp)
     ctx.buf[ctx.len++] = DELETE
   } else if (typeof value === 'number') {
-    return writeRef(value, ctx, schema, def, parentId, modifyOp, false)
+    return writeRef(value, ctx, schema, def, res.tmpId, modifyOp, false)
   } else if (value instanceof ModifyState) {
     if (value.error) {
       return value.error
     }
-    return writeRef(value.tmpId, ctx, schema, def, parentId, modifyOp, false)
-  } else if (def.edges && typeof value === 'object') {
-    return singleReferenceEdges(value, ctx, schema, def, parentId, modifyOp)
+    return writeRef(value.tmpId, ctx, schema, def, res.tmpId, modifyOp, false)
+  } else if (typeof value === 'object' && value !== null) {
+    if (def.edges) {
+      return singleReferenceEdges(value, ctx, schema, def, res.tmpId, modifyOp)
+    } else if (typeof value?.upsert === 'object' && value.upsert !== null) {
+      dbUpdateFromUpsert(
+        ctx,
+        schema,
+        def,
+        res,
+        ctx.db.upsert(def.inverseTypeName, value.upsert),
+      )
+    } else {
+      return new ModifyError(def, value)
+    }
   } else {
     return new ModifyError(def, value)
   }

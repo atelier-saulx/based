@@ -2,47 +2,90 @@ const selva = @import("../../selva.zig");
 const std = @import("std");
 const db = @import("../../db/db.zig");
 
-pub const Ctx = struct {
-    query: []const u8,
-    currentQueryIndex: usize,
-};
-
-pub const Compare = fn (value: []const u8, query: []const u8) callconv(.Inline) bool;
-
-fn comptimeCb(comptime compare: Compare) type {
+fn Ctx(dataType: type) type {
     return struct {
-        pub fn func(noalias ctxC: ?*anyopaque, noalias buf: [*c]const u8, dict_size: usize, data_size: usize) callconv(.C) c_int {
-            const ctx: *Ctx = @ptrCast(@alignCast(ctxC.?));
-            var value: []const u8 = undefined;
+        query: []u8,
+        currentQueryIndex: usize,
+        data: dataType,
+    };
+}
+
+pub fn Compare(comptime DataType: type) type {
+    if (DataType == void) {
+        return (fn (value: []u8, query: []u8) bool);
+    } else {
+        return (fn (value: []u8, query: []u8, data: DataType) bool);
+    }
+}
+
+fn comptimeCb(
+    comptime DataType: type,
+    comptime compare: Compare(DataType),
+) type {
+    return struct {
+        pub fn func(
+            ctxC: ?*anyopaque,
+            b: [*c]const u8,
+            dictSize: usize,
+            dataSize: usize,
+        ) callconv(.C) c_int {
+            const buf: [*c]u8 = @constCast(b);
+            const ctx: *Ctx(DataType) = @ptrCast(@alignCast(ctxC.?));
+            var value: []u8 = undefined;
+            const end = ctx.currentQueryIndex + dictSize + dataSize;
             if (ctx.currentQueryIndex > 0) {
-                const index = dict_size + ctx.currentQueryIndex;
-                value = buf[index - ctx.query.len .. (index + data_size)];
+                const index = dictSize + ctx.currentQueryIndex;
+                value = buf[index - ctx.query.len .. (index + dataSize)];
             } else {
-                value = buf[(ctx.currentQueryIndex - ctx.query.len + dict_size) .. ctx.currentQueryIndex + data_size + dict_size];
+                value = buf[(ctx.currentQueryIndex - ctx.query.len + dictSize)..end];
             }
-            const found = compare(
-                value,
-                ctx.query,
-            );
+            var found: bool = undefined;
+            if (DataType == void) {
+                found = compare(
+                    value,
+                    ctx.query,
+                );
+            } else {
+                found = compare(
+                    value,
+                    ctx.query,
+                    ctx.data,
+                );
+            }
             if (found) {
                 return 1;
             }
-            ctx.currentQueryIndex = ctx.currentQueryIndex + data_size + dict_size;
+            ctx.currentQueryIndex = end;
             return 0;
         }
     };
 }
 
+fn createCtx(comptime DataType: type, query: []u8, data: DataType) Ctx(DataType) {
+    if (DataType == void) {
+        return .{
+            .query = query,
+            .currentQueryIndex = 0,
+            .data = undefined,
+        };
+    } else {
+        return .{
+            .query = query,
+            .currentQueryIndex = 0,
+            .data = data,
+        };
+    }
+}
+
 pub inline fn decompress(
-    comptime compare: Compare,
-    query: []const u8,
-    value: []const u8,
+    comptime DataType: type,
+    comptime compare: Compare(DataType),
+    query: []u8,
+    value: []u8,
     dbCtx: *db.DbCtx,
+    data: DataType,
 ) bool {
-    var ctx: Ctx = .{
-        .query = query,
-        .currentQueryIndex = 0,
-    };
+    var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
     while (loop) {
@@ -51,7 +94,7 @@ pub inline fn decompress(
             &dbCtx.libdeflate_block_state,
             value[5..value.len].ptr,
             value.len - 5,
-            comptimeCb(compare).func,
+            comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );

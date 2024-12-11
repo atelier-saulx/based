@@ -236,6 +236,26 @@ void selva_sort_insert_text(struct SelvaSortCtx *ctx, const char *str, size_t le
     (void)SVector_Insert(&ctx->out, create_item_text(ctx->lang, str, len, p));
 }
 
+void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
+{
+    struct SelvaSortItem find = {
+        .p = p,
+        .i64 = v,
+    };
+
+    selva_free(SVector_Remove(&ctx->out, &find));
+}
+
+void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p)
+{
+    struct SelvaSortItem find = {
+        .p = p,
+        .d = d,
+    };
+
+    selva_free(SVector_Remove(&ctx->out, &find));
+}
+
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
 {
     SVector_ForeachBegin(&ctx->it, &ctx->out);
@@ -245,6 +265,22 @@ void *selva_sort_foreach(struct SelvaSortCtx *ctx)
 {
     struct SelvaSortItem *item = SVector_Foreach(&ctx->it);
 
+    return (void *)item->p;
+}
+
+void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v)
+{
+    struct SelvaSortItem *item = SVector_Foreach(&ctx->it);
+
+    *v = item->i64;
+    return (void *)item->p;
+}
+
+void *selva_sort_foreach_double(struct SelvaSortCtx *ctx, double *d)
+{
+    struct SelvaSortItem *item = SVector_Foreach(&ctx->it);
+
+    *d = item->d;
     return (void *)item->p;
 }
 

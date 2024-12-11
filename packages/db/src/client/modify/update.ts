@@ -13,10 +13,10 @@ const appendUpdate = (
   ctx: ModifyCtx,
   def: SchemaTypeDef,
   obj: Payload,
-  parentId: number,
+  res: ModifyState,
   overwrite?: boolean,
 ) => {
-  const err = modify(ctx, parentId, obj, def, UPDATE, def.tree, overwrite)
+  const err = modify(ctx, res, obj, def, UPDATE, def.tree, overwrite)
 
   if (ctx.mergeMain) {
     let { mergeMain, mergeMainSize } = ctx
@@ -31,7 +31,7 @@ const appendUpdate = (
       return RANGE_ERR
     }
 
-    setCursor(ctx, def, 0, parentId, UPDATE)
+    setCursor(ctx, def, 0, res.tmpId, UPDATE)
     ctx.buf[ctx.len++] = 5
     ctx.buf[ctx.len++] = mergeMainSize
     ctx.buf[ctx.len++] = mergeMainSize >>>= 8
@@ -66,8 +66,8 @@ export const update = (
   const def = db.schemaTypesParsed[type]
   const ctx = db.modifyCtx
   const pos = ctx.len
-  const err = appendUpdate(ctx, def, obj, id, overwrite)
   const res = new ModifyState(id, db)
+  const err = appendUpdate(ctx, def, obj, res, overwrite)
 
   if (err) {
     ctx.prefix0 = -1 // force a new cursor

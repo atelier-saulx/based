@@ -104,15 +104,11 @@ pub fn querySort(
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,
-    searchCtx: ?*const search.SearchCtx,
 ) !void {
-    var movingLimit = limit;
     const readTxn = try sort.initReadTxn(ctx.db);
     sort.renewTx(readTxn);
     const typeEntry = try db.getType(ctx.db, typeId);
-
     const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
-
     var end: bool = false;
     var flag: c_uint = c.MDB_FIRST;
     if (queryType == 4) {
@@ -120,16 +116,13 @@ pub fn querySort(
     }
     var first: bool = true;
     var correctedForOffset: u32 = offset;
-
-    checkItem: while (!end and ctx.totalResults < movingLimit) {
+    checkItem: while (!end and ctx.totalResults < limit) {
         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-
         errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
             end = true;
             break;
         };
-
         if (first) {
             first = false;
             if (queryType == 4) {
@@ -138,42 +131,18 @@ pub fn querySort(
                 flag = c.MDB_NEXT;
             }
         }
-
         const id = utils.readInt(u32, sort.readData(v), 0);
-
         const node = db.getNode(id, typeEntry);
-
         if (node == null) {
             continue :checkItem;
         }
-
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
-
-        var d: ?u8 = null;
-
-        if (searchCtx != null) {
-            d = search.search(ctx.db, node.?, typeEntry, searchCtx.?);
-            if (d.? > 3) {
-                continue :checkItem;
-            }
-            if (d.? > 1) {
-                // if (movingLimit < limit * 4) {
-                movingLimit += 1;
-                // }
-            }
-
-            // if (d.? >= ctx.lowScore) {
-            //     continue :checkItem;
-            // }
-        }
-
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
             continue :checkItem;
         }
-
         const size = try getFields(
             node.?,
             ctx,
@@ -181,23 +150,109 @@ pub fn querySort(
             typeEntry,
             include,
             null,
-            d,
+            null,
             false,
         );
-
         if (size > 0) {
             ctx.size += size;
             ctx.totalResults += 1;
         }
     }
-
     sort.resetTxn(readTxn);
 }
 
-fn cmpByData(_: void, a: Result, b: Result) bool {
-    if (a.score < b.score) {
-        return true;
-    } else {
-        return false;
+pub fn querySortSearch(
+    comptime queryType: comptime_int,
+    ctx: *QueryCtx,
+    offset: u32,
+    limit: u32,
+    typeId: db.TypeId,
+    conditions: []u8,
+    include: []u8,
+    sortBuffer: []u8,
+    searchCtx: *const search.SearchCtx,
+) !void {
+    const readTxn = try sort.initReadTxn(ctx.db);
+    sort.renewTx(readTxn);
+    const typeEntry = try db.getType(ctx.db, typeId);
+    const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
+    var end: bool = false;
+    var flag: c_uint = c.MDB_FIRST;
+    if (queryType == 4) {
+        flag = c.MDB_LAST;
     }
+    var first: bool = true;
+    var score: u8 = 255;
+    var totalSearchResults: usize = 0;
+    const scoreSortCtx: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC, limit).?;
+    var i: i64 = 0;
+    var correctedForOffset: u32 = offset;
+    checkItem: while (!end and totalSearchResults < limit) {
+        var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+        var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
+        errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
+            end = true;
+            break;
+        };
+        if (first) {
+            first = false;
+            if (queryType == 4) {
+                flag = c.MDB_PREV;
+            } else {
+                flag = c.MDB_NEXT;
+            }
+        }
+        const id = utils.readInt(u32, sort.readData(v), 0);
+        const node = db.getNode(id, typeEntry);
+        if (node == null) {
+            continue :checkItem;
+        }
+        if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
+            continue :checkItem;
+        }
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue :checkItem;
+        }
+        score = search.search(ctx.db, node.?, typeEntry, searchCtx);
+        if (score > searchCtx.bad) {
+            continue :checkItem;
+        }
+        // change meh to good
+        if (score <= searchCtx.meh) {
+            totalSearchResults += 1;
+        }
+        i += 1;
+        const specialScore: i64 = (@as(i64, score) << 4) + i;
+        selva.selva_sort_insert_i64(scoreSortCtx, @intCast(specialScore), node.?);
+    }
+
+    selva.selva_sort_foreach_begin(scoreSortCtx);
+    i = 0;
+    while (!selva.selva_sort_foreach_done(scoreSortCtx)) {
+        var sortKey: i64 = undefined;
+        const node: db.Node = @ptrCast(selva.selva_sort_foreach_i64(scoreSortCtx, &sortKey));
+        const id = db.getNodeId(node);
+        i += 1;
+        const realScore: u8 = @truncate(@as(u64, @bitCast((sortKey - i) >> 4)));
+        const size = try getFields(
+            node,
+            ctx,
+            id,
+            typeEntry,
+            include,
+            null,
+            realScore,
+            false,
+        );
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
+        }
+        if (ctx.totalResults >= limit) {
+            break;
+        }
+    }
+    selva.selva_sort_destroy(scoreSortCtx);
+    sort.resetTxn(readTxn);
 }

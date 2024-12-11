@@ -5,7 +5,7 @@ import {
   REVERSE_TYPE_INDEX_MAP,
   SchemaPropTree,
 } from '../../server/schema/types.js'
-import { BasedDb } from '../../index.js'
+import { BasedDb, ModifyCtx } from '../../index.js'
 import { inspect } from 'node:util'
 
 export type ModifyRes = {
@@ -62,15 +62,16 @@ export class ModifyState {
     this.#buf = db.modifyCtx
     this.#ctx = db.modifyCtx.ctx
   }
-  #buf: BasedDb['modifyCtx']
-  #ctx: BasedDb['modifyCtx']['ctx']
+  #buf: ModifyCtx
+  #ctx: ModifyCtx['ctx']
   tmpId: number
-  error?: ModifyError;
+  error?: ModifyError
+  promises?: Promise<any>[];
   [Symbol.toPrimitive]() {
     return this.tmpId
   }
   then(resolve, reject) {
-    return new Promise((resolve) => {
+    const promise = new Promise((resolve) => {
       if (this.error) {
         reject(new Error(this.error.toString()))
       } else if ('offset' in this.#ctx) {
@@ -78,7 +79,14 @@ export class ModifyState {
       } else {
         this.#buf.queue.set(resolve, this.tmpId)
       }
-    }).then(resolve, reject)
+    })
+    if (this.promises?.length) {
+      return Promise.allSettled(this.promises)
+        .then(() => promise)
+        .then(resolve, reject)
+    } else {
+      return promise.then(resolve, reject)
+    }
   }
   catch(handler) {
     if (this.error) {

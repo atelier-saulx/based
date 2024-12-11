@@ -16,7 +16,7 @@ export const schema = {
   types: {
     club: {
       props: {
-        club_id: 'uint32', // '105'
+        club_id: 'alias', // '105'
         club_code: 'string', // 'sv-darmstadt-98'
         name: 'string', // 'SV Darmstadt 98'
         domestic_competition_id: 'string', // 'L1'
@@ -110,7 +110,7 @@ export const schema = {
     // --- competition
     competition: {
       props: {
-        competition_id: 'string', // 'CIT'
+        competition_id: 'alias', // 'CIT'
         competition_code: 'string', // 'italy-cup'
         name: 'string', // 'italy-cup'
         sub_type: 'string', // 'domestic_cup'
@@ -152,7 +152,7 @@ export const schema = {
     // --- transfer
     transfer: {
       props: {
-        player_id: 'uint32', // '195778'
+        player_id: 'alias', // '195778'
         transfer_date: 'timestamp', // '2026-06-30'
         transfer_season: 'string', // '25/26'
         from_club_id: 'uint32', // '79'
@@ -206,7 +206,7 @@ export const schema = {
     // --- player
     player: {
       props: {
-        player_id: 'uint32', // '10'
+        player_id: 'alias', // '10'
         first_name: 'string', // 'Miroslav'
         last_name: 'string', // 'Klose'
         name: 'string', // 'Miroslav Klose'
@@ -283,7 +283,7 @@ export const schema = {
     // --- player_valuation
     player_valuation: {
       props: {
-        player_id: 'uint32', // '405973'
+        player_id: 'alias', // '405973'
         date: 'timestamp', // '2000-01-20'
         market_value_in_eur: 'number', // '150000'
         current_club_id: 'uint32', // '3057'
@@ -307,7 +307,7 @@ export const schema = {
     // --- game
     game: {
       props: {
-        game_id: 'uint32', // '2321044'
+        game_id: 'alias', // '2321044'
         competition_id: 'string', // 'L1'
         season: 'uint16', // '2013'
         round: 'string', // '2. Matchday'
@@ -367,7 +367,7 @@ export const schema = {
     // --- game_event
     game_event: {
       props: {
-        game_event_id: 'string', // '2f41da30c471492e7d4a984951671677'
+        game_event_id: 'alias', // '2f41da30c471492e7d4a984951671677'
         date: 'timestamp', // '2012-08-05'
         game_id: 'uint32', // '2211607'
         minute: 'uint8', // '77'
@@ -404,7 +404,7 @@ export const schema = {
     // --- appearance
     appearance: {
       props: {
-        appearance_id: 'string', // '2231978_38004'
+        appearance_id: 'alias', // '2231978_38004'
         game_id: 'uint32', // '2231978'
         player_id: 'uint32', // '38004'
         player_club_id: 'uint32', // '853'
@@ -441,7 +441,7 @@ export const schema = {
     // --- game_lineup
     game_lineup: {
       props: {
-        game_lineups_id: 'string', // 'b2dbe01c3656b06c8e23e9de714e26bb'
+        game_lineups_id: 'alias', // 'b2dbe01c3656b06c8e23e9de714e26bb'
         date: 'timestamp', // '2013-07-27'
         game_id: 'uint32', // '2317258'
         player_id: 'uint32', // '1443'

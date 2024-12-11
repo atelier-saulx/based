@@ -78,6 +78,5 @@ pub fn sortedReferences(
         }
     }
     selva.selva_sort_destroy(sortCtx);
-
     return result;
 }

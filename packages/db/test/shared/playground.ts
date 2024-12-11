@@ -58,7 +58,7 @@ const makeDb = async (path: string) => {
       bla: { props: { name: 'string', x: 'uint16', flap: 'binary' } },
       user: {
         props: {
-          uid: 'alias',
+          uid: 'string',
           firstName: 'string',
           lastName: 'string',
           articles: {
@@ -198,46 +198,25 @@ const makeDb = async (path: string) => {
     // .debug()
     .inspect(2)
 
-  const query = 'orban'
-  console.log('---- DERP UKRAINE', query)
+  // handle this in search split and make a loop
+  // const query = 'german rebuke'
+
+  // maybe levensthein
+
+  // const query = 'orban'
+  const query = 'von der leyen'
+
+  console.log('\nSEARCH FOR:', query)
   await db
     .query('article')
     .range(0, 10)
-    // .filter('headline', 'has', 'Orbán')
-    // .filter('headline', 'hasLoose', query)
-    // .or((f) => {
-    //   f.filter('body', 'hasLoose', query)
-    // })
-
-    // .filter('body', 'has', query)
-    // .or((f) => {
-    //   f.filter('headline', 'has', 'Orban')
-    //   // f.filter('body', 'has', 'Orban')
-    // })
-    // .or((f) => {
-    //   f.filter('headline', 'has', 'Orbán')
-    //   // f.filter('body', 'has', 'Orban')
-    // })
     .sort('publishDate', 'desc')
-    .include('id', 'headline', 'publishDate')
-    // .filter('published', true)
-    // .filter('headline', 'hasLoose', 'orban')
-
-    // .or((v) => {
-    //   v.filter('abstract', 'hasLoose', query)
-    // })
-    // .or((v) => {
-    //   v.filter('body', 'hasLoose', query)
-    // })
-    // body: 1
-    .search(query, { headline: 2 })
+    .include(['id', 'headline', 'publishDate', 'abstract'])
+    .search(query, { headline: 0, abstract: 2, body: 5 })
     .get()
     .then((v) => {
-      v.inspect(100)
-      // console.dir(v.toObject(), { depth: 10 })
+      v.inspect()
     })
-
-  // .inspect(2)
 
   const start = performance.now()
   await db.stop(false)

@@ -1,32 +1,62 @@
 import { STRING } from '../../../server/schema/types.js'
 import { QueryDefSearch, QueryDef } from '../types.js'
 
-export type Search = {
-  [field: string]: number
+export type Search =
+  | string[]
+  | {
+      [field: string]: number
+    }
+  | string
+
+const makeSize = (nr: number, u8: boolean = false) => {
+  if (u8) {
+    const size = Buffer.allocUnsafe(1)
+    size[0] = nr
+    return size
+  }
+  const size = Buffer.allocUnsafe(2)
+  size.writeUint16LE(nr)
+  return size
 }
 
 export const search = (def: QueryDef, q: string, s?: Search) => {
-  const query = Buffer.from(q.toLowerCase())
+  let blocks = 0
+  const x = q.toLowerCase().split(' ')
+  const bufs = []
+  for (const s of x) {
+    const b = Buffer.from(s)
+    bufs.push(makeSize(b.byteLength), b)
+    blocks++
+  }
+
+  bufs.unshift(makeSize(blocks, true))
+  const query = Buffer.concat(bufs)
+
   def.search = {
     size: query.byteLength + 2,
     query,
     fields: [],
   }
 
+  if (typeof s === 'string') {
+    s = [s]
+  }
+
   if (!s) {
-    let w = 10
     s = {}
-    // get all string fields
     for (const k in def.props) {
       const prop = def.props[k]
+      // if title / name / headline add ROLE:
       if (prop.typeIndex === STRING) {
-        s[k] = w
-      }
-      w--
-      if (w == 0) {
-        break
+        s[k] = k === 'title' || k === 'name' || k === 'headline' ? 0 : 2
       }
     }
+  } else if (Array.isArray(s)) {
+    const x: Search = {}
+    for (const f of s) {
+      x[f] = 0
+    }
+    s = x
   }
 
   for (const key in s) {
@@ -50,10 +80,10 @@ export const searchToBuffer = (search: QueryDefSearch) => {
   result.writeUint16LE(search.query.byteLength, 0)
   result.set(search.query, 2)
   const offset = search.query.byteLength + 2
+  // fix weight later...
   search.fields.sort((a, b) => {
     return a.weight - b.weight > 1 ? 1 : a.weight === b.weight ? 0 : -1
   })
-  // .reverse()
   for (let i = 0; i < search.fields.length * 2; i += 2) {
     const f = search.fields[i / 2]
     result[i + offset] = f.field

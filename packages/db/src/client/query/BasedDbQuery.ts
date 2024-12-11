@@ -47,8 +47,28 @@ export class QueryBranch<T> {
     return this
   }
 
-  search(query: string, fields?: Search): T {
-    search(this.def, query, fields)
+  search(query: string, ...fields: Search[]): T {
+    if (fields.length) {
+      if (fields.length === 1) {
+        search(this.def, query, fields[0])
+      } else {
+        const s = {}
+        for (const f of fields) {
+          if (typeof f === 'string') {
+            s[f] = 0
+          } else if (Array.isArray(f)) {
+            for (const ff of f) {
+              s[ff] = 0
+            }
+          } else if (typeof f === 'object') {
+            Object.assign(s, f)
+          }
+        }
+        search(this.def, query, s)
+      }
+    } else {
+      search(this.def, query)
+    }
     // @ts-ignore
     return this
   }
