@@ -2,6 +2,7 @@ import { BasedDb, compress, decompress } from '../src/index.js'
 import test from './shared/test.js'
 import { equal, deepEqual } from './shared/assert.js'
 import { italy, sentence, bible } from './shared/examples.js'
+import { it } from 'node:test'
 
 await test('like filter', async (t) => {
   const db = new BasedDb({
@@ -53,17 +54,19 @@ await test('search', async (t) => {
         props: {
           date: { type: 'timestamp' },
           title: { type: 'string' },
-          body: { type: 'string', compression: 'none' }, // big compressed string...
+          body: { type: 'string' }, // big compressed string... compression: 'none'
         },
       },
     },
   })
-  for (let i = 0; i < 2; i++) {
+
+  const compressItaly = compress(italy)
+  for (let i = 0; i < 1e3; i++) {
     const d = Date.now()
     await db.create('italy', {
       date: d + i,
-      // if match from start also get it
-      body: i == 0 ? 'Netherlands' : 'Italy! netherlunds',
+      body:
+        i == 0 ? 'Netherlands' : i == 2 ? 'Italy! netherlunds ' : compressItaly,
       // body:
       // italy +
       // ' aaaaa amsterdam twitter ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
@@ -74,8 +77,8 @@ await test('search', async (t) => {
     .query('italy')
     .search('Italy netherlands', { body: 1 })
     .include('id', 'body', 'date')
-    .range(0, 3)
-    // .sort('date')
+    .range(0, 1e3)
+    .sort('date')
     .get()
 
   r.inspect()

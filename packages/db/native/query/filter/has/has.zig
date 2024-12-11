@@ -10,10 +10,10 @@ const Compare = compressed.Compare;
 const db = @import("../../../db/db.zig");
 const std = @import("std");
 
-inline fn orCompare(comptime isOr: bool, compare: Compare) type {
+inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
     if (isOr) {
         return struct {
-            pub inline fn func(value: []const u8, query: []const u8) bool {
+            pub fn func(value: []u8, query: []u8) bool {
                 var j: usize = 0;
                 while (j < query.len) {
                     const size = readInt(u16, query, j);
@@ -27,7 +27,7 @@ inline fn orCompare(comptime isOr: bool, compare: Compare) type {
         };
     }
     return struct {
-        pub inline fn func(value: []const u8, query: []const u8) bool {
+        pub fn func(value: []u8, query: []u8) bool {
             return compare(value, query);
         }
     };
@@ -35,16 +35,16 @@ inline fn orCompare(comptime isOr: bool, compare: Compare) type {
 
 inline fn hasInner(
     comptime isOr: bool,
-    compare: Compare,
+    compare: Compare(void),
     mainLen: u16,
     prop: Prop,
-    value: []const u8,
-    query: []const u8,
+    value: []u8,
+    query: []u8,
     dbCtx: *db.DbCtx,
 ) bool {
     if (prop == Prop.STRING and mainLen == 0) {
         if (value[0] == 1) {
-            if (!decompress(orCompare(isOr, compare).func, query, value, dbCtx)) {
+            if (!decompress(void, orCompare(isOr, compare).func, query, value, dbCtx, undefined)) {
                 return false;
             }
         } else if (!orCompare(isOr, compare).func(value[1..value.len], query)) {
@@ -60,8 +60,8 @@ pub inline fn has(
     comptime isOr: bool,
     op: Op,
     prop: Prop,
-    value: []const u8,
-    query: []const u8,
+    value: []u8,
+    query: []u8,
     mainLen: u16,
     dbCtx: *db.DbCtx,
 ) bool {

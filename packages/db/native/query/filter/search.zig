@@ -106,7 +106,7 @@ fn resultMatcher(
     return d;
 }
 
-pub inline fn strSearch(
+pub fn strSearch(
     value: []u8,
     query: []u8,
 ) u8 {
@@ -167,7 +167,21 @@ pub inline fn strSearch(
     return d;
 }
 
+pub fn strSearchCompressed(
+    value: []u8,
+    query: []u8,
+    d: *u8,
+) bool {
+    const score = strSearch(value, query);
+    d.* = score;
+    if (score < minDist) {
+        return true;
+    }
+    return false;
+}
+
 pub fn search(
+    dbCtx: *db.DbCtx,
     node: *selva.SelvaNode,
     typeEntry: *selva.SelvaTypeEntry,
     ctx: *const SearchCtx,
@@ -193,19 +207,18 @@ pub fn search(
                 continue :fieldLoop;
             }
             const isCompressed = value[0] == 1;
+            var score: u8 = 0;
             if (isCompressed) {
-                // ADD NOW
-                // ---- do later
+                _ = decompress(*u8, strSearchCompressed, query, value, dbCtx, &score);
             } else {
-                var score: u8 = 0;
                 score = strSearch(value, query) + weight;
-                if (score < bestScore) {
-                    bestScore = score;
-                    if (score - weight == 0) {
-                        j += 2;
-                        totalScore += bestScore;
-                        continue :wordLoop;
-                    }
+            }
+            if (score < bestScore) {
+                bestScore = score;
+                if (score - weight == 0) {
+                    j += 2;
+                    totalScore += bestScore;
+                    continue :wordLoop;
                 }
             }
             j += 2;

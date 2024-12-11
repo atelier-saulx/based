@@ -206,17 +206,13 @@ const makeDb = async (path: string) => {
   // const query = 'orban'
   const query = 'von der leyen'
 
-  // lets think
-
-  // const s = query.split(' ').slice(1)
-  // const query = 'vond der leyen'
   console.log('\nSEARCH FOR:', query)
   await db
     .query('article')
     .range(0, 10)
     .sort('publishDate', 'desc')
     .include(['id', 'headline', 'publishDate', 'abstract'])
-    .search(query, 'headline')
+    .search(query, { headline: 0, abstract: 2, body: 5 })
     .get()
     .then((v) => {
       console.log(v.execTime, 'ms')

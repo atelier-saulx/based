@@ -121,7 +121,7 @@ pub fn query(
         }
 
         if (searchCtx) |s| {
-            score = search.search(node.?, typeEntry, s);
+            score = search.search(ctx.db, node.?, typeEntry, s);
             if (score > s.bad) {
                 continue :checkItem;
             }

@@ -7,7 +7,7 @@ const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 
-pub inline fn default(value: []const u8, query: []const u8) bool {
+pub fn default(value: []const u8, query: []const u8) bool {
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;
