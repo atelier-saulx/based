@@ -32,12 +32,14 @@ fn comptimeCb(
             const buf: [*c]u8 = @constCast(b);
             const ctx: *Ctx(DataType) = @ptrCast(@alignCast(ctxC.?));
             var value: []u8 = undefined;
-            const end = ctx.currentQueryIndex + dictSize + dataSize;
+            var end: usize = undefined;
             if (ctx.currentQueryIndex > 0) {
-                const index = dictSize + ctx.currentQueryIndex;
-                value = buf[index - ctx.query.len .. (index + dataSize)];
+                end = dictSize + dataSize;
+                // TODO make sure that dictSize >= ctx.query.len
+                value = buf[dictSize - ctx.query.len .. end];
             } else {
-                value = buf[(ctx.currentQueryIndex - ctx.query.len + dictSize)..end];
+                end = dataSize;
+                value = buf[0..end];
             }
             var found: bool = undefined;
             if (DataType == void) {
@@ -55,7 +57,7 @@ fn comptimeCb(
             if (found) {
                 return 1;
             }
-            ctx.currentQueryIndex = end;
+            ctx.currentQueryIndex = 1;
             return 0;
         }
     };
