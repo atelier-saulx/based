@@ -92,8 +92,8 @@ pub inline fn decompress(
         const result = selva.libdeflate_decompress_stream(
             dbCtx.decompressor,
             &dbCtx.libdeflate_block_state,
-            value[5..value.len].ptr,
-            value.len - 5,
+            value[6..value.len].ptr,
+            value.len - 10,
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,

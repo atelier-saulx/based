@@ -183,10 +183,6 @@ pub fn filter(
                     }
                 } else {
                     value = db.getField(typeEntry, 0, node, fieldSchema);
-
-                    // if (value.len > 50000) {
-                    // std.debug.print("c:{d} {any} {any} \n", .{ value[1], prop, value[value.len - 4 .. value.len] });
-                    // }
                 }
                 if (value.len == 0 or !runCondition(ctx, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

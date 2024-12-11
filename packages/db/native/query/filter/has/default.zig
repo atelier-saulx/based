@@ -8,6 +8,8 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 
 pub fn default(value: []const u8, query: []const u8) bool {
+    std.debug.print("HELLO DEFAULT {any} {d}\n", .{ value[0..50], value.len });
+
     var i: usize = 0;
     const l = value.len;
     const ql = query.len;

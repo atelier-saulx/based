@@ -43,7 +43,7 @@ inline fn hasInner(
     dbCtx: *db.DbCtx,
 ) bool {
     if (prop == Prop.STRING and mainLen == 0) {
-        if (value[0] == 1) {
+        if (value[1] == 1) {
             if (!decompress(void, orCompare(isOr, compare).func, query, value, dbCtx, undefined)) {
                 return false;
             }
