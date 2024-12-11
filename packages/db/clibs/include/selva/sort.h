@@ -71,6 +71,12 @@ SELVA_EXPORT
 void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p);
 
 SELVA_EXPORT
+void selva_sort_remove_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p);
+
+SELVA_EXPORT
+void selva_sort_remove_text(struct SelvaSortCtx *ctx, const char *str, size_t len, const void *p);
+
+SELVA_EXPORT
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT
