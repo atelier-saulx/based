@@ -11,7 +11,9 @@ static __thread bool worker_initialized;
 
 void worker_ctx_init()
 {
+#if 0
     pthread_t x = pthread_self();
+#endif
 
     selva_string_init_tls();
     worker_initialized = true;
