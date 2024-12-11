@@ -13,7 +13,6 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(32);
 
-// TODO: Make this as context!
 const seperatorChars: @Vector(8, u8) = .{ 10, 32, 34, 39, 45, 46, 59, 58 };
 const minDist = 2; // 0,1 is fine
 
@@ -30,7 +29,6 @@ pub fn createSearchCtx(searchBuf: []u8) SearchCtx {
     const sLen = readInt(u16, searchBuf, 0);
     const words = readInt(u8, searchBuf, 2);
     const fields = searchBuf[2 + sLen .. searchBuf.len];
-
     var totalWeights: u8 = 0;
     var j: usize = 0;
     var totalfields: u8 = 0;

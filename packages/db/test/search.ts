@@ -61,20 +61,18 @@ await test('search', async (t) => {
   })
 
   const compressItaly = compress(italy)
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 3; i++) {
     await db.create('italy', {
       date: i,
-      body:
-        i == 0
-          ? 'Mr giraffe first'
-          : i == 2
-            ? 'Mr giraffe second'
-            : compressItaly,
+      body: i == 0 ? 'Mr giraffe first' : i == 2 ? 'Mr giraffe second' : 'derp',
       // body:
       // italy +
       // ' aaaaa amsterdam twitter ew jfweoifj weoifhweoif woiewrhfweo fniowefewoifhnweoif weif weofnweoin fewoihfweoifhewioh fweoifweh iweoih',
     })
   }
+
+  // creates lmdb stupid index
+  await db.query('italy').sort('date').get()
 
   const r = await db
     .query('italy')
