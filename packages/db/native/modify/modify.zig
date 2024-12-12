@@ -4,18 +4,16 @@ const selva = @import("../selva.zig");
 const types = @import("../types.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const sort = @import("../db/sort.zig");
+// const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const createField = @import("./create.zig").createField;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteFieldOnly = @import("./delete.zig").deleteFieldOnly;
 const deleteFieldOnlyReal = @import("./delete.zig").deleteFieldOnlyReal;
-const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
+// const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const readInt = @import("../utils.zig").readInt;
 const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
-const getShard = Modify.getShard;
-const getSortIndex = Modify.getSortIndex;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 
@@ -30,18 +28,17 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
+    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // defer arena.deinit();
 
-    const allocator = arena.allocator();
+    // const allocator = arena.allocator();
     var i: usize = 0;
     var ctx: ModifyCtx = .{
         .field = undefined,
         .typeId = undefined,
         .id = undefined,
-        .sortWriteTxn = null,
         .currentSortIndex = null,
-        .sortIndexes = sort.Indexes.init(allocator), // only init this when you need it
+        // .sortIndexes = sort.Indexes.init(allocator), // only init this when you need it
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
@@ -50,7 +47,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     };
 
     var offset: u32 = 0;
-    // std.debug.print("- zig batch: {d}\n", .{batch.len});
     while (i < batch.len) {
         // delete
         const op: types.ModOp = @enumFromInt(batch[i]);
@@ -59,11 +55,15 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         // std.debug.print("- op: {d}, fieldType: {any}, field: {d}\n", .{ op, ctx.fieldType, ctx.field });
         switch (op) {
             types.ModOp.SWITCH_FIELD => {
+
                 // SWITCH FIELD
                 ctx.field = operation[0];
+
+                std.debug.print("- SWITCH FIELD: {d}\n", .{ctx.field});
+
                 i = i + 2;
                 if (ctx.field != 0) {
-                    ctx.currentSortIndex = try getSortIndex(&ctx, 0);
+                    // ctx.currentSortIndex = try getSortIndex(&ctx, 0);
                 } else {
                     ctx.currentSortIndex = null;
                 }
@@ -80,8 +80,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 1;
             },
             types.ModOp.CREATE_OR_GET => {
+
                 // create or get
                 ctx.id = readInt(u32, operation, 0);
+                std.debug.print("\n- CREATE NODE: {d}\n", .{ctx.id});
+
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 i = i + 5;
             },
@@ -98,7 +101,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
-                i += try addEmptyToSortIndex(&ctx, operation) + 1;
+                // i += try addEmptyToSortIndex(&ctx, operation) + 1;
             },
             types.ModOp.DELETE_PROP_ONLY => {
                 i += try deleteFieldOnly(&ctx) + 1;
@@ -113,6 +116,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             },
             types.ModOp.CREATE_PROP => {
                 i += try createField(&ctx, operation) + offset;
+
+                std.debug.print("- CREATE_PROP: {d}\n", .{i});
             },
             types.ModOp.UPDATE_PROP => {
                 i += try updateField(&ctx, operation) + offset;
@@ -125,10 +130,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 break;
             },
         }
-    }
-
-    if (ctx.sortWriteTxn != null) {
-        try sort.commitTxn(ctx.sortWriteTxn);
     }
 
     return null;

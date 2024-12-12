@@ -1,7 +1,7 @@
 const db = @import("../db/db.zig");
 const readInt = @import("../utils.zig").readInt;
 const Modify = @import("./ctx.zig");
-const sort = @import("../db/sort.zig");
+// const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const references = @import("./references.zig");
@@ -39,15 +39,15 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = readInt(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
-                if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
-                    var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
-                    while (it.next()) |start| {
-                        const sortIndex = try getSortIndex(ctx, start.*);
-                        try sort.writeField(ctx.id, slice, sortIndex.?);
-                    }
-                }
+                // if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
+                //     var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
+                //     while (it.next()) |start| {
+                //         const sortIndex = try getSortIndex(ctx, start.*);
+                //         try sort.writeField(ctx.id, slice, sortIndex.?);
+                //     }
+                // }
             } else if (ctx.currentSortIndex != null) {
-                try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
+                // try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
             }
 
             if (ctx.fieldType == types.Prop.ALIAS) {

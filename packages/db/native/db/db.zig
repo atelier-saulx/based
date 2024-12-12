@@ -1,7 +1,7 @@
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
-const sort = @import("./sort.zig");
+// const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
 const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
@@ -23,11 +23,8 @@ pub const DbCtx = struct {
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: std.heap.ArenaAllocator,
-    readTxn: *c.MDB_txn,
-    readTxnCreated: bool,
-    env: ?*c.MDB_env,
-    sortIndexes: sort.Indexes,
-    mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
+    // sortIndexes: sort.Indexes,
+    // mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
     readOnly: bool,
     selva: ?*selva.SelvaDb,
 
@@ -54,19 +51,26 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     const allocator = arena.allocator();
 
     // magic with allocators
-    const sortIndexes2 = sort.Indexes.init(allocator);
-    const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator);
+    // const sortIndexes2 = sort.Indexes.init(allocator);
+    // const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator);
+
+    //    if (len > 0) {
+    //     if (!ctx.mainSortIndexes.contains(typePrefix)) {
+    //         const startSet = try ctx.allocator.create(db.StartSet);
+    //         startSet.* = db.StartSet.init(ctx.allocator);
+    //         try ctx.mainSortIndexes.put(typePrefix, startSet);
+    //     }
+    //     const s: ?*db.StartSet = ctx.mainSortIndexes.get(typePrefix);
+    //     try s.?.*.put(start, 0);
+    // }
 
     const b = try allocator.create(DbCtx);
     b.* = .{
         .id = 0,
         .arena = arena.*,
         .allocator = allocator,
-        .readTxn = undefined,
-        .env = undefined,
-        .sortIndexes = sortIndexes2,
-        .mainSortIndexes = mainSortIndexes2,
-        .readTxnCreated = false,
+        // .sortIndexes = sortIndexes2,
+        // .mainSortIndexes = mainSortIndexes2,
         .initialized = false,
         .readOnly = false,
         .selva = null,

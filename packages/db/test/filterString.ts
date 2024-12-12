@@ -11,6 +11,7 @@ await test('variable size (string/binary)', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
+
   t.after(() => {
     return db.destroy()
   })
@@ -49,8 +50,10 @@ await test('variable size (string/binary)', async (t) => {
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
+  console.log('START')
 
   db.drain()
+  console.log('START 2?')
 
   deepEqual(
     (

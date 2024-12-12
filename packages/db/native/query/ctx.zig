@@ -9,6 +9,4 @@ pub const QueryCtx = struct {
     totalResults: usize,
     allocator: std.mem.Allocator,
     db: *db.DbCtx,
-    highScore: u8,
-    lowScore: u8,
 };

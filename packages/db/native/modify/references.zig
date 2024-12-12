@@ -1,13 +1,13 @@
 const db = @import("../db/db.zig");
 const readInt = @import("../utils.zig").readInt;
 const Modify = @import("./ctx.zig");
-const sort = @import("../db/sort.zig");
+// const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
-const getOrCreateShard = Modify.getOrCreateShard;
-const getSortIndex = Modify.getSortIndex;
+// const getOrCreateShard = Modify.getOrCreateShard;
+// const getSortIndex = Modify.getSortIndex;
 const edge = @import("./edges.zig");
 
 // 0 overwrite, 1 add, 2 delete, 3 update, 4 put

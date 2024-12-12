@@ -30,14 +30,6 @@ pub fn build(b: *std.Build) void {
     lib.root_module.addRPathSpecial("@loader_path");
     lib.linkSystemLibrary("selva");
 
-    const dep = b.dependency("lmdb", .{ .create = true });
-
-    lib.addIncludePath(dep.path("libraries/liblmdb"));
-    lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/mdb.c") });
-    lib.addCSourceFile(.{ .file = dep.path("libraries/liblmdb/midl.c") });
-
-    // lib.
-
     lib.linkLibC();
 
     const install_lib = b.addInstallArtifact(lib, .{

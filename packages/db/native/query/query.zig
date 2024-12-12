@@ -46,8 +46,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .size = 0,
         .totalResults = 0,
         .allocator = allocator,
-        .highScore = 255,
-        .lowScore = 255,
     };
 
     const q = try napi.get([]u8, env, args[1]);
@@ -60,7 +58,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const filterSize = readInt(u16, q, 11);
         const filterBuf = q[13 .. 13 + filterSize];
         const sortSize = readInt(u16, q, 13 + filterSize);
-        const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
+        // const sortBuf = q[15 + filterSize .. 15 + filterSize + sortSize];
         const searchSize = readInt(u16, q, 15 + filterSize + sortSize);
         const include = q[17 + filterSize + sortSize + searchSize .. q.len];
         if (sortSize == 0) {
@@ -72,21 +70,21 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
                 try QueryDefault.default(&ctx, offset, limit, typeId, filterBuf, include);
             }
         } else {
-            const s = sortBuf[1..sortBuf.len];
-            const isAsc = sortBuf[0] == 0;
-            if (searchSize > 0) {
-                const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
-                const searchCtx = &createSearchCtx(search);
-                if (isAsc) {
-                    try QuerySort.search(3, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                } else {
-                    try QuerySort.search(4, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
-                }
-            } else if (isAsc) {
-                try QuerySort.default(3, &ctx, offset, limit, typeId, filterBuf, include, s);
-            } else {
-                try QuerySort.default(4, &ctx, offset, limit, typeId, filterBuf, include, s);
-            }
+            // const s = sortBuf[1..sortBuf.len];
+            // const isAsc = sortBuf[0] == 0;
+            // if (searchSize > 0) {
+            //     const search = q[17 + filterSize + sortSize .. 17 + filterSize + sortSize + searchSize];
+            //     const searchCtx = &createSearchCtx(search);
+            //     if (isAsc) {
+            //         try QuerySort.search(3, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+            //     } else {
+            //         try QuerySort.search(4, &ctx, offset, limit, typeId, filterBuf, include, s, searchCtx);
+            //     }
+            // } else if (isAsc) {
+            //     try QuerySort.default(3, &ctx, offset, limit, typeId, filterBuf, include, s);
+            // } else {
+            //     try QuerySort.default(4, &ctx, offset, limit, typeId, filterBuf, include, s);
+            // }
         }
     } else if (queryType == QueryType.id) {
         const id = readInt(u32, q, 3);
