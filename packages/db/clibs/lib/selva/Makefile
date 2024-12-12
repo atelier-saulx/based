@@ -48,11 +48,6 @@ OBJ := \
 	update.o \
 	worker_ctx.o
 
-ifeq ($(NAPI),1)
-	OBJ += node_selva.o
-	LIB_SUFFIX := .node
-endif
-
 TARGET := $(LIB_PATH)/libselva$(LIB_SUFFIX)
 
 DEP := $(OBJ:%.o=%.d)
