@@ -22,8 +22,7 @@ struct selva_string;
  */
 #define SELVA_FIELDS_RESERVED 255
 
-/* RFE Not good? */
-struct XXH3_state_s;
+struct XXH3_state_s; /* RFE Not good? */
 
 #ifndef __zig
 struct SelvaTextField {
@@ -101,6 +100,11 @@ struct SelvaFieldsPointer {
 __purefn
 #endif
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
+
+#if __has_c_attribute(reproducible)
+[[reproducible]]
+#endif
+void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
 /**
  * Set field value.

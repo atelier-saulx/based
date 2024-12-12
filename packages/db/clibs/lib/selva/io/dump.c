@@ -182,11 +182,11 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
 
     for (field_t field = 0; field < nr_fields; field++) {
-        struct SelvaFieldsAny any;
+        struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+        enum SelvaFieldType type = nfo->type;
 
-        any = selva_fields_get2(fields, field);
-        if (any.type == SELVA_FIELD_TYPE_REFERENCE ||
-            any.type == SELVA_FIELD_TYPE_REFERENCES) {
+        if (type == SELVA_FIELD_TYPE_REFERENCE ||
+            type == SELVA_FIELD_TYPE_REFERENCES) {
             /*
              * Assuming these field types can only exist in a SelvaNode, we can
              * do the following:
@@ -200,10 +200,10 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
 
             if (fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
                 /* This saves it as a NULL and the loader will skip it. */
+                type = SELVA_FIELD_TYPE_NULL;
 #if 0
                 fprintf(stderr, "Skip %d (refs %d) on type %d\n", field, any.type == SELVA_FIELD_TYPE_REFERENCES, node->type);
 #endif
-                any.type = SELVA_FIELD_TYPE_NULL;
             }
         }
 
@@ -211,84 +211,88 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         write_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN);
 #endif
         io->sdb_write(&field, sizeof(field), 1, io);
-        io->sdb_write(&any.type, sizeof(enum SelvaFieldType), 1, io);
-        switch (any.type) {
+        io->sdb_write(&type, sizeof(enum SelvaFieldType), 1, io);
+        switch (type) {
         case SELVA_FIELD_TYPE_NULL:
             break;
         case SELVA_FIELD_TYPE_TIMESTAMP:
         case SELVA_FIELD_TYPE_CREATED:
         case SELVA_FIELD_TYPE_UPDATED:
-            io->sdb_write(&any.timestamp, sizeof(any.timestamp), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, timestamp), 1, io);
             break;
         case SELVA_FIELD_TYPE_NUMBER:
-            io->sdb_write(&any.number, sizeof(any.number), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, number), 1, io);
             break;
         case SELVA_FIELD_TYPE_INTEGER:
-            io->sdb_write(&any.integer, sizeof(any.integer), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, integer), 1, io);
             break;
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
-            io->sdb_write(&any.uint8, sizeof(any.uint8), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, uint8), 1, io);
             break;
         case SELVA_FIELD_TYPE_INT16:
         case SELVA_FIELD_TYPE_UINT16:
-            io->sdb_write(&any.uint16, sizeof(any.uint16), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, uint16), 1, io);
             break;
         case SELVA_FIELD_TYPE_INT32:
         case SELVA_FIELD_TYPE_UINT32:
-            io->sdb_write(&any.uint32, sizeof(any.uint32), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, uint32), 1, io);
             break;
         case SELVA_FIELD_TYPE_INT64:
         case SELVA_FIELD_TYPE_UINT64:
-            io->sdb_write(&any.uint64, sizeof(any.uint64), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, uint64), 1, io);
             break;
         case SELVA_FIELD_TYPE_BOOLEAN:
-            io->sdb_write(&(uint8_t){ any.boolean }, sizeof(uint8_t), 1, io);
+            io->sdb_write(&(uint8_t){ *(uint8_t *)selva_fields_nfo2p(fields, nfo) }, sizeof(uint8_t), 1, io);
             break;
         case SELVA_FIELD_TYPE_ENUM:
-            io->sdb_write(&any.enu, sizeof(any.enu), 1, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, enu), 1, io);
             break;
         case SELVA_FIELD_TYPE_STRING:
-            save_field_string(io, any.string);
+            /* In the old code we tested if (string->flags & SELVA_STRING_STATIC) but is it important? */
+            save_field_string(io, selva_fields_nfo2p(fields, nfo));
             break;
         case SELVA_FIELD_TYPE_TEXT:
-            save_field_text(io, any.text);
+            save_field_text(io, selva_fields_nfo2p(fields, nfo));
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            if (any.reference && any.reference->dst) {
+            if (((struct SelvaNodeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
+                struct SelvaNodeReference *ref = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, any.reference);
+                save_ref(io, ref);
             } else {
-                io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
+                io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
-            if (any.references && any.references->nr_refs) {
-                const sdb_arr_len_t nr_refs = any.references->nr_refs;
+            if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
+                struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
+                const sdb_arr_len_t nr_refs = refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, any.references);
+                save_field_references(io, refs);
             } else {
-                io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
+                io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-                io->sdb_write(&any.weak_reference, sizeof(any.weak_reference), 1, io);
+                io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, weak_reference), 1, io);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            if (any.weak_references.nr_refs) {
-                const sdb_arr_len_t nr_refs = any.weak_references.nr_refs;
+            if (((struct SelvaNodeWeakReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
+                struct SelvaNodeWeakReferences *weak_refs = selva_fields_nfo2p(fields, nfo);
+                const sdb_arr_len_t nr_refs = weak_refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                io->sdb_write(any.weak_references.refs, sizeof(struct SelvaNodeWeakReference), any.weak_references.nr_refs, io);
+                io->sdb_write(weak_refs->refs, sizeof(struct SelvaNodeWeakReference), weak_refs->nr_refs, io);
             } else {
-                io->sdb_write(&((uint32_t){ 0 }), sizeof(uint32_t), 1, io); /* nr_refs */
+                io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            io->sdb_write(any.smb, sizeof(uint8_t), sizeof(*any.smb) + any.smb->len, io);
+            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), sizeof(struct SelvaMicroBuffer) + ((struct SelvaMicroBuffer *)selva_fields_nfo2p(fields, nfo))->len, io);
             /* TODO Verify CRC */
             break;
         case SELVA_FIELD_TYPE_ALIAS:
@@ -689,17 +693,17 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
     }
 
     if (meta_present) {
-        struct SelvaFieldsAny any;
+        struct SelvaFields *fields = &node->fields;
+        struct SelvaFieldInfo *nfo = &fields->fields_map[field];
 
-        any = selva_fields_get2(&node->fields, field);
-        if (any.type == SELVA_FIELD_TYPE_NULL) {
+        if (nfo->type == SELVA_FIELD_TYPE_NULL) {
             return SELVA_ENOENT;
-        } else if (any.type == SELVA_FIELD_TYPE_REFERENCE) {
-            assert(any.reference);
-            load_reference_meta(io, node, any.reference, &fs->edge_constraint);
-        } else if (any.type == SELVA_FIELD_TYPE_REFERENCES) {
-            const size_t len = any.references->nr_refs;
-            struct SelvaNodeReference *refs = any.references->refs;
+        } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCE) {
+            load_reference_meta(io, node, selva_fields_nfo2p(fields, nfo), &fs->edge_constraint);
+        } else if (nfo->type == SELVA_FIELD_TYPE_REFERENCES) {
+            struct SelvaNodeReferences *references = selva_fields_nfo2p(fields, nfo);
+            const size_t len = references->nr_refs;
+            struct SelvaNodeReference *refs = references->refs;
 
             /* TODO We really need a better implementation for this! */
             for (size_t i = 0; i < len; i++) {
@@ -760,17 +764,18 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaDb *db, stru
 {
     int err;
 
-    /* Hack to create the field. */
+    /* FIXME A hack to create the field. */
     err = selva_fields_set(db, node, fs, (uint8_t []){ 0 }, 1);
     if (err) {
         return err;
     }
 
-    struct SelvaFieldsAny any;
-    any = selva_fields_get2(&node->fields, fs->field);
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
+    struct SelvaMicroBuffer *smb = selva_fields_nfo2p(fields, nfo);
 
-    io->sdb_read(&any.smb->len, sizeof(any.smb->len), 1, io);
-    io->sdb_read(any.smb->data, sizeof(uint8_t), any.smb->len, io);
+    io->sdb_read(&smb->len, sizeof(smb->len), 1, io);
+    io->sdb_read(smb->data, sizeof(uint8_t), smb->len, io);
 
     return 0;
 }

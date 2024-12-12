@@ -129,6 +129,11 @@ static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFi
 
 #define nfo2p(FIELDS, NFO) NFO2P_QP(void, nfo2p, (FIELDS), (NFO))
 
+void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
+{
+    return nfo2p(fields, nfo);
+}
+
 /**
  * Ensure that a field is allocated properly.
  * @param node Optional node context.
