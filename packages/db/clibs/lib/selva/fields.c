@@ -1635,16 +1635,11 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
     return any;
 }
 
-struct SelvaFieldsAny selva_fields_get(struct SelvaNode *node, field_t field)
-{
-    return selva_fields_get2(&node->fields, field);
-}
-
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field)
 {
     struct SelvaFieldsAny any;
 
-    any = selva_fields_get(node, field);
+    any = selva_fields_get2(&node->fields, field);
     return (any.type == SELVA_FIELD_TYPE_REFERENCE) ? any.reference : nullptr;
 }
 
@@ -1652,7 +1647,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, 
 {
     struct SelvaFieldsAny any;
 
-    any = selva_fields_get(node, field);
+    any = selva_fields_get2(&node->fields, field);
     return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : nullptr;
 }
 
