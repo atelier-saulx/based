@@ -1,4 +1,3 @@
-import { deepEqual } from '@saulx/utils'
 import {
   SchemaAnyProp,
   SchemaBoolean,
@@ -79,6 +78,19 @@ const shared: PropsFns<SchemaAnyProp> = {
       throw Error(TYPE_MISMATCH)
     }
   },
+  title (val) {
+
+  },
+  description (val) {
+
+  },
+  readOnly (val) {
+
+  },
+  examples (val) {
+
+  }
+
 }
 
 function propParser<PropType extends SchemaAnyProp>(
