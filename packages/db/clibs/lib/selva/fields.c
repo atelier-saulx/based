@@ -1637,32 +1637,66 @@ struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t fiel
 
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field)
 {
-    struct SelvaFieldsAny any;
+    struct SelvaFields *fields = &node->fields;
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    struct SelvaNodeReference *ref;
 
-    any = selva_fields_get2(&node->fields, field);
-    return (any.type == SELVA_FIELD_TYPE_REFERENCE) ? any.reference : nullptr;
+    if (field >= node->fields.nr_fields || nfo->type != SELVA_FIELD_TYPE_REFERENCE) {
+        return nullptr;
+    }
+
+    ref = (struct SelvaNodeReference *)nfo2p(fields, nfo);
+
+    /* Verify proper alignment. */
+    assert(((uintptr_t)ref & 7) == 0);
+
+    return ref;
 }
 
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, field_t field)
 {
-    struct SelvaFieldsAny any;
+    struct SelvaFields *fields = &node->fields;
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    struct SelvaNodeReferences *refs;
 
-    any = selva_fields_get2(&node->fields, field);
-    return (any.type == SELVA_FIELD_TYPE_REFERENCES) ? any.references : nullptr;
+    if (field >= node->fields.nr_fields || nfo->type != SELVA_FIELD_TYPE_REFERENCES) {
+        return nullptr;
+    }
+
+    refs = (struct SelvaNodeReferences *)nfo2p(fields, nfo);
+
+    /* Verify proper alignment. */
+    assert(((uintptr_t)refs & 7) == 0);
+
+    return refs;
 }
 
 struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
 {
-    struct SelvaFieldsAny any = selva_fields_get2(fields, field);
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    struct SelvaNodeWeakReference weak_ref;
 
-    return (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCE) ? any.weak_reference : (struct SelvaNodeWeakReference){};
+    if (field >= fields->nr_fields || nfo->type != SELVA_FIELD_TYPE_WEAK_REFERENCE) {
+        return (struct SelvaNodeWeakReference){};
+    }
+
+    memcpy(&weak_ref, nfo2p(fields, nfo), sizeof(struct SelvaNodeWeakReference));
+
+    return weak_ref;
 }
 
 struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
 {
-    struct SelvaFieldsAny any = selva_fields_get2(fields, field);
+    const struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+    struct SelvaNodeWeakReferences weak_refs;
 
-    return (any.type == SELVA_FIELD_TYPE_WEAK_REFERENCES) ? any.weak_references : (struct SelvaNodeWeakReferences){};
+    if (field >= fields->nr_fields || nfo->type != SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+        return (struct SelvaNodeWeakReferences){};
+    }
+
+    memcpy(&weak_refs, nfo2p(fields, nfo), sizeof(struct SelvaNodeWeakReferences));
+
+    return weak_refs;
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
@@ -1848,15 +1882,13 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, field_t fie
 {
     struct SelvaTypeEntry *type = selva_get_type_by_node(db, node);
     const struct SelvaFieldSchema *fs = selva_get_fs_by_ns_field(&type->ns, field);
-    struct SelvaFieldsAny any;
 
     if (fs->type != SELVA_FIELD_TYPE_REFERENCES) {
         return SELVA_EINTYPE;
     }
 
-    assert(fs);
-    any = selva_fields_get2(&node->fields, field);
-    if (any.type != SELVA_FIELD_TYPE_REFERENCES || !any.references) {
+    struct SelvaNodeReferences *refs = selva_fields_get_references(node, field);
+    if (!refs) {
         return SELVA_ENOENT;
     }
 
