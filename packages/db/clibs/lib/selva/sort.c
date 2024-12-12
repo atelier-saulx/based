@@ -12,12 +12,12 @@
 struct SelvaSortItem {
     RB_ENTRY(SelvaSortItem) _entry;
     const void *p;
-    size_t data_len;
     union {
+        size_t data_len;
         int64_t i64;
         double d;
     };
-    char data[]; // TODO in union?
+    char data[];
 };
 
 struct SelvaSortCtx {
