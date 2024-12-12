@@ -45,7 +45,6 @@ OBJ := \
 	strsearch.o \
 	traverse.o \
 	types.o \
-	update.o \
 	worker_ctx.o
 
 TARGET := $(LIB_PATH)/libselva$(LIB_SUFFIX)
