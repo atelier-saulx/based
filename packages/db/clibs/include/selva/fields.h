@@ -262,13 +262,6 @@ int selva_fields_get_text(
         const char **str,
         size_t *len);
 
-/**
- * Get field value.
- * Strings and references are returned as direct pointers to the data.
- */
-SELVA_EXPORT
-struct SelvaFieldsAny selva_fields_get2(struct SelvaFields *fields, field_t field);
-
 SELVA_EXPORT
 struct SelvaNodeReference *selva_fields_get_reference(struct SelvaNode *node, field_t field);
 
