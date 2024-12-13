@@ -135,13 +135,13 @@ static inline struct mempool_chunk *get_first_chunk(struct mempool_slab * restri
 /**
  * For each slab in the mempool.
  * The current slab will be available as the pointer variable `slab`.
- * Must be terminated with MEMPOOL_FOREACH_CHUNK_END().
+ * Must be terminated with MEMPOOL_FOREACH_SLAB_END().
  *
  * **Example**
  * ```c
  * MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
  *     mempool_pageout(mempool, slab);
- * } MEMPOOL_FOREACH_CHUNK_END();
+ * } MEMPOOL_FOREACH_SLAB_END();
  * ```
  */
 #define MEMPOOL_FOREACH_SLAB_BEGIN(pool) \
