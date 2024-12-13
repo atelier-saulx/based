@@ -39,6 +39,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(decompress(compressedSentence), sentence, 'compress / decompress api')
   const compressedItaly = compress(italy)
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
+
   for (let i = 0; i < 1e3; i++) {
     const str = 'en'
     db.create('article', {
@@ -50,10 +51,9 @@ await test('variable size (string/binary)', async (t) => {
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
-  console.log('START')
 
-  db.drain()
-  console.log('START 2?')
+  // 7.5gb!
+  console.log(db.drain(), 'ms')
 
   deepEqual(
     (
