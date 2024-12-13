@@ -128,7 +128,8 @@ RB_GENERATE_STATIC(SelvaSortTreeDescText, SelvaSortItem, _entry, selva_sort_cmp_
 
 static bool use_mempool(enum SelvaSortOrder order)
 {
-    return (order == SELVA_SORT_ORDER_I64_ASC ||
+    return (order == SELVA_SORT_ORDER_NONE ||
+            order == SELVA_SORT_ORDER_I64_ASC ||
             order == SELVA_SORT_ORDER_I64_DESC ||
             order == SELVA_SORT_ORDER_DOUBLE_ASC ||
             order == SELVA_SORT_ORDER_DOUBLE_DESC);
@@ -181,7 +182,7 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
 
 static struct SelvaSortItem *create_item_empty(const void *p)
 {
-    struct SelvaSortItem *item = selva_calloc(1, sizeof(*item));
+    struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
     item->p = p;
 
@@ -408,6 +409,8 @@ void selva_sort_remove(struct SelvaSortCtx *ctx, const void *p)
     if (item) {
         (void)RB_REMOVE(SelvaSortTreeNone, &ctx->out_none, item);
     }
+
+    mempool_return(&ctx->mempool, item);
 }
 
 void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
@@ -425,7 +428,7 @@ void selva_sort_remove_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
         abort();
     }
 
-    selva_free(item);
+    mempool_return(&ctx->mempool, item);
 }
 
 void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p)
@@ -443,7 +446,7 @@ void selva_sort_remove_double(struct SelvaSortCtx *ctx, int64_t d, const void *p
         abort();
     }
 
-    selva_free(item);
+    mempool_return(&ctx->mempool, item);
 }
 
 void selva_sort_remove_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
