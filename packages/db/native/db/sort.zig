@@ -47,6 +47,12 @@ pub fn createSortIndex(
     prop: types.Prop,
 ) !*selva.SelvaSortCtx {
     var typeIndexes: ?*SortIndexes = dbCtx.sortIndexes.get(typeId);
+    var sortIndexType: u8 = undefined;
+    if (prop == types.Prop.UINT32) {
+        sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
+    } else if (prop == types.Prop.STRING) {
+        sortIndexType = selva.SELVA_SORT_ORDER_BUFFER_ASC;
+    }
 
     if (typeIndexes == null) {
         typeIndexes = try dbCtx.allocator.create(SortIndexes);
@@ -60,7 +66,7 @@ pub fn createSortIndex(
     var sortIndex: ?*selva.SelvaSortCtx = tI.get(sKey);
 
     if (sortIndex == null) {
-        sortIndex.? = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC).?;
+        sortIndex.? = selva.selva_sort_init(sortIndexType).?;
         try tI.put(sKey, sortIndex.?);
     }
 
@@ -72,7 +78,7 @@ pub fn createSortIndex(
     var first = true;
     var i: u30 = 0;
 
-    const derp: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC).?;
+    // const derp: *selva.SelvaSortCtx = selva.selva_sort_init(sortIndexType).?;
 
     while (node != null) {
         if (first) {
@@ -94,27 +100,35 @@ pub fn createSortIndex(
             data = db.getField(typeEntry, id, node.?, fieldSchema);
         }
         if (prop == types.Prop.UINT32) {
-            // const specialScore: i64 = readInt(u32, data, 0);
-
             const specialScore: i64 = (@as(i64, readInt(u32, data, 0)) << 31) + i;
-            selva.selva_sort_insert_i64(derp, specialScore, node.?);
-
-            // selva.selva_sort_insert_i64(sI, specialScore, node.?);
+            // selva.selva_sort_insert_i64(derp, specialScore, node.?);
+            selva.selva_sort_insert_i64(sI, specialScore, node.?);
+        } else if (prop == types.Prop.STRING) {
+            if (data[1] == 0) {
+                selva.selva_sort_insert_buf(sI, data[2..10].ptr, 8, node.?);
+            } else {
+                // need decompress so sad...
+            }
         }
-
         i += 1;
     }
 
     // call selva.sortRebuild()
 
-    selva.selva_sort_foreach_begin(derp);
-    i = 0;
-    while (!selva.selva_sort_foreach_done(derp)) {
-        var sortKey: i64 = undefined;
-        const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach_i64(derp, &sortKey));
-        selva.selva_sort_insert_i64(sI, sortKey, sortedNode);
-    }
-    selva.selva_sort_destroy(derp);
+    // selva.selva_sort_foreach_begin(derp);
+    // i = 0;
+    // while (!selva.selva_sort_foreach_done(derp)) {
+    //     if (prop == types.Prop.STRING) {
+    //         var sortKey: [*c]u8 = undefined;
+    //         const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach(derp, &sortKey));
+    //         selva.selva_sort_insert_buf(sI, sortKey, sortedNode);
+    //     } else {
+    //         var sortKey: i64 = undefined;
+    //         const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach_i64(derp, &sortKey));
+    //         selva.selva_sort_insert_i64(sI, sortKey, sortedNode);
+    //     }
+    // }
+    // selva.selva_sort_destroy(derp);
 
     return sI;
 }

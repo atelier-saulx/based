@@ -8,8 +8,6 @@ export const createSortBuffer = (sort: QueryDefSort) => {
   buf[2] = sort.prop.typeIndex
   buf.writeUint16LE(sort.prop.start, 3)
   buf.writeUint16LE(sort.prop.len, 5)
-
-  console.log(sort.prop, new Uint8Array(buf))
   return buf
 }
 
