@@ -6,7 +6,6 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "tree.h"
-#include "util/mempool.h"
 #include "selva/selva_lang.h"
 #include "selva/sort.h"
 
@@ -34,7 +33,6 @@ struct SelvaSortCtx {
         RB_HEAD(SelvaSortTreeAscText, SelvaSortItem) out_at;
         RB_HEAD(SelvaSortTreeDescText, SelvaSortItem) out_dt;
     };
-    struct mempool mempool;
     struct {
         struct SelvaSortItem *next;
     } iterator;
@@ -126,14 +124,6 @@ RB_GENERATE_STATIC(SelvaSortTreeDescBuffer, SelvaSortItem, _entry, selva_sort_cm
 RB_GENERATE_STATIC(SelvaSortTreeAscText, SelvaSortItem, _entry, selva_sort_cmp_asc_text)
 RB_GENERATE_STATIC(SelvaSortTreeDescText, SelvaSortItem, _entry, selva_sort_cmp_desc_text)
 
-static bool use_mempool(enum SelvaSortOrder order)
-{
-    return (order == SELVA_SORT_ORDER_I64_ASC ||
-            order == SELVA_SORT_ORDER_I64_DESC ||
-            order == SELVA_SORT_ORDER_DOUBLE_ASC ||
-            order == SELVA_SORT_ORDER_DOUBLE_DESC);
-}
-
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order)
 {
     struct SelvaSortCtx *ctx = selva_malloc(sizeof(*ctx));
@@ -142,10 +132,6 @@ struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order)
     RB_INIT(&ctx->out_none);
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
-
-    if (use_mempool(order)) {
-        mempool_init(&ctx->mempool, 4'194'304, sizeof(struct SelvaSortItem), alignof(struct SelvaSortItem));
-    }
 
     return ctx;
 }
@@ -163,19 +149,11 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
     struct SelvaSortTreeNone *head = &ctx->out_none;
     struct SelvaSortItem *item;
     struct SelvaSortItem *tmp;
-    bool pool = use_mempool(ctx->order);
 
     RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
-        if (pool) {
-            mempool_return(&ctx->mempool, item);
-        } else {
-            selva_free(item);
-        }
+        selva_free(item);
     }
 
-    if (use_mempool(ctx->order)) {
-        mempool_destroy(&ctx->mempool);
-    }
     selva_free(ctx);
 }
 
@@ -188,9 +166,9 @@ static struct SelvaSortItem *create_item_empty(const void *p)
     return item;
 }
 
-static struct SelvaSortItem *create_item_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
+static struct SelvaSortItem *create_item_i64(int64_t v, const void *p)
 {
-    struct SelvaSortItem *item = mempool_get(&ctx->mempool);
+    struct SelvaSortItem *item = selva_calloc(1, sizeof(*item));
 
     item->i64 = v;
     item->p = p;
@@ -198,9 +176,9 @@ static struct SelvaSortItem *create_item_i64(struct SelvaSortCtx *ctx, int64_t v
     return item;
 }
 
-static struct SelvaSortItem *create_item_d(struct SelvaSortCtx *ctx, double d, const void *p)
+static struct SelvaSortItem *create_item_d(double d, const void *p)
 {
-    struct SelvaSortItem *item = mempool_get(&ctx->mempool);
+    struct SelvaSortItem *item = selva_calloc(1, sizeof(*item));
 
     item->d = d;
     item->p = p;
@@ -254,7 +232,7 @@ void selva_sort_insert(struct SelvaSortCtx *ctx, const void *p)
 
 void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
 {
-    struct SelvaSortItem *item = create_item_i64(ctx, v, p);
+    struct SelvaSortItem *item = create_item_i64(v, p);
 
     switch (ctx->order) {
     case SELVA_SORT_ORDER_I64_ASC:
@@ -270,7 +248,7 @@ void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
 
 void selva_sort_insert_double(struct SelvaSortCtx *ctx, double d, const void *p)
 {
-    struct SelvaSortItem *item = create_item_d(ctx, d, p);
+    struct SelvaSortItem *item = create_item_d(d, p);
 
     switch (ctx->order) {
     case SELVA_SORT_ORDER_DOUBLE_ASC:
@@ -545,6 +523,7 @@ bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
     return !ctx->iterator.next;
 }
 
+#if 0
 #include <stdio.h>
 #include <unistd.h>
 #include "util/ctime.h"
@@ -601,3 +580,4 @@ static void test(void)
 
     selva_sort_destroy(sort);
 }
+#endif
