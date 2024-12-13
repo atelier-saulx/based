@@ -180,7 +180,7 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
     selva_free(ctx);
 }
 
-static struct SelvaSortItem *create_item_empty(const void *p)
+static struct SelvaSortItem *create_item_empty(struct SelvaSortCtx *ctx, const void *p)
 {
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
@@ -250,7 +250,7 @@ static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const ch
 
 void selva_sort_insert(struct SelvaSortCtx *ctx, const void *p)
 {
-    (void)RB_INSERT(SelvaSortTreeNone, &ctx->out_none, create_item_empty(p));
+    (void)RB_INSERT(SelvaSortTreeNone, &ctx->out_none, create_item_empty(ctx, p));
 }
 
 void selva_sort_insert_i64(struct SelvaSortCtx *ctx, int64_t v, const void *p)
