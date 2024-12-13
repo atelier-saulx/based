@@ -18,26 +18,55 @@ const std = @import("std");
 pub fn default(
     comptime _: comptime_int,
     ctx: *QueryCtx,
-    _: u32,
-    _: u32,
+    offset: u32,
+    limit: u32,
     typeId: db.TypeId,
-    _: []u8,
-    _: []u8,
+    conditions: []u8,
+    include: []u8,
     sortBuffer: []u8,
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
-
-    // const order = sortBuffer[0];
     const field = sortBuffer[0];
     // const propType: type.Prop = sortBuffer[2];
     const start = readInt(u16, sortBuffer, 2);
     const len = readInt(u16, sortBuffer, 4);
-
     const sIndex = sort.getSortIndex(ctx.db, typeId, field, start, len);
-
-    std.debug.print("\nGO SORT type {d} field {d} start {d} len {d} \n", .{ typeId, field, start, len });
-
-    std.debug.print("derp {any} \n", .{sIndex});
+    if (sIndex == null) {
+        return;
+    }
+    const typeEntry = try db.getType(ctx.db, typeId);
+    const sI = sIndex.?;
+    var correctedForOffset: u32 = offset;
+    selva.selva_sort_foreach_begin(sI);
+    checkItem: while (!selva.selva_sort_foreach_done(sI)) {
+        var key: i64 = undefined;
+        const node: db.Node = @ptrCast(selva.selva_sort_foreach_i64(sI, &key));
+        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+            continue :checkItem;
+        }
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue :checkItem;
+        }
+        const id = db.getNodeId(node);
+        const size = try getFields(
+            node,
+            ctx,
+            id,
+            typeEntry,
+            include,
+            null,
+            null,
+            false,
+        );
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
+        }
+        if (ctx.totalResults >= limit) {
+            break;
+        }
+    }
 }
 
 // pub fn search(

@@ -21,6 +21,7 @@ await test('variable size (string/binary)', async (t) => {
         props: {
           type: ['opinion', 'politcis', 'gossip'],
           code: { type: 'string', maxBytes: 2 },
+          age: { type: 'uint32' },
           name: { type: 'string' },
           body: { type: 'string' }, // big compressed string...
           stuff: 'binary',
@@ -42,22 +43,34 @@ await test('variable size (string/binary)', async (t) => {
 
   var d = Date.now()
 
-  const x = []
-
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 1e6; i++) {
     const str = 'en'
     db.create('article', {
       type: 'gossip',
       code: str,
       name: 'Gossip #' + i,
-      body: compressedItaly,
+      age: ~~(Math.random() * 1000),
+      // body: compressedItaly,
       stuff: Buffer.from('#' + i),
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
 
-  // 7.5gb!
+  console.log('make', d)
+  d = Date.now()
   console.log(Date.now() - d, 'ms', db.drain(), 'ms')
+
+  const sortIndex = db.server.createSortIndex('article', 'age')
+  console.log('make sortIndex', Date.now() - d)
+
+  // 7.5gb!
+
+  await db
+    .query('article')
+    .sort('age')
+    .include('age', 'name')
+    .get()
+    .then((v) => v.inspect())
 
   deepEqual(
     (

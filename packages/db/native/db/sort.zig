@@ -4,6 +4,7 @@ const c = @import("../c.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
 const readInt = @import("../utils.zig").readInt;
+const types = @import("../types.zig");
 
 pub const SortIndexes = std.AutoHashMap([4]u8, *selva.SelvaSortCtx);
 pub const TypeSortIndexes = std.AutoHashMap(u16, *SortIndexes);
@@ -16,15 +17,13 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
-
-    // size [2 type] [1 field] [2 start] [2 len]
-    // 7 len
+    // size [2 type] [1 field] [2 start] [2 len] [1 typeIndex]
     const typeId = readInt(u16, buf, 0);
     const field = buf[2];
     const start = readInt(u16, buf, 3);
     const len = readInt(u16, buf, 5);
-
-    const index = try createSortIndex(dbCtx, typeId, field, start, len);
+    const typeIndex = buf[7];
+    const index = try createSortIndex(dbCtx, typeId, field, start, len, @enumFromInt(typeIndex));
     var externalNapi: c.napi_value = undefined;
     _ = c.napi_create_external(env, index, null, null, &externalNapi);
     return externalNapi;
@@ -45,6 +44,7 @@ pub fn createSortIndex(
     field: u8,
     start: u16,
     len: u16,
+    prop: types.Prop,
 ) !*selva.SelvaSortCtx {
     var typeIndexes: ?*SortIndexes = dbCtx.sortIndexes.get(typeId);
 
@@ -64,16 +64,39 @@ pub fn createSortIndex(
         try tI.put(sKey, sortIndex.?);
     }
 
-    std.debug.print("lets create sort index sKey: {any} type: {d}, field: {d} start: {d} len: {d} typeIndexes: {any} \n", .{
-        sKey,
-        typeId,
-        field,
-        start,
-        len,
-        typeIndexes,
-    });
+    const sI = sortIndex.?;
+    const typeEntry = try db.getType(dbCtx, typeId);
+    const fieldSchema = try db.getFieldSchema(field, typeEntry);
 
-    return sortIndex.?;
+    var node = db.getFirstNode(typeEntry);
+    var first = true;
+
+    while (node != null) {
+        if (first) {
+            first = false;
+        } else {
+            node = db.getNextNode(typeEntry, node.?);
+        }
+        if (node == null) {
+            break;
+        }
+        const id = db.getNodeId(node.?);
+        var data: []u8 = undefined;
+        if (start != 0) {
+            data = db.getField(typeEntry, id, node.?, fieldSchema)[start .. start + len];
+        } else {
+            // if string
+            // if binary
+            data = db.getField(typeEntry, id, node.?, fieldSchema);
+        }
+
+        if (prop == types.Prop.UINT32) {
+            const specialScore: i64 = readInt(u32, data, 0);
+            selva.selva_sort_insert_i64(sI, specialScore, node.?);
+        }
+    }
+
+    return sI;
 }
 
 pub fn getSortIndex(
@@ -83,12 +106,12 @@ pub fn getSortIndex(
     start: u16,
     len: u16,
 ) ?*selva.SelvaSortCtx {
-    const types = dbCtx.sortIndexes.get(typeId);
-    if (types == null) {
+    const typeSortIndexes = dbCtx.sortIndexes.get(typeId);
+    if (typeSortIndexes == null) {
         return null;
     }
     const key = getSortKey(field, start, len);
-    return types.?.get(key);
+    return typeSortIndexes.?.get(key);
 }
 
 // pub fn removeSortIndex() void {

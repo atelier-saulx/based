@@ -127,12 +127,13 @@ export class DbServer {
       return sortIndex
     }
 
-    const buf = Buffer.allocUnsafe(7)
+    const buf = Buffer.allocUnsafe(8)
     // size [2 type] [1 field] [2 start] [2 len]
     buf.writeUint16LE(t.id, 0)
     buf[2] = prop.prop
     buf.writeUint16LE(prop.start, 3)
     buf.writeUint16LE(prop.len, 5)
+    buf[7] = prop.typeIndex
     sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
     fields[prop.start] = sortIndex
     return sortIndex
