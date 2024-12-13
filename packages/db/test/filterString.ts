@@ -48,36 +48,89 @@ await test('variable size (string/binary)', async (t) => {
   //         unsigned x = (seed >> 16) & 0x7FFF;
   //         selva_sort_insert_i64(sort, x, (void *)i);
 
+  const xx = []
+
   for (let i = 0; i < 1e6; i++) {
     const str = 'en'
+
+    // xx.push({
+    //   x: ~~(1e6 / 1e4 - i / 1e4),
+    //   y: ~~(Math.random() * 100),
+    // })
     db.create('article', {
       type: 'gossip',
       code: str,
       name: 'Gossip #' + i,
-      // age: ~~(Math.random() * 4e9),
-      age: 1e6 - (i % 2 ? i : 0),
+      // age: ~~(1e6 / 1e4 - i / 1e4),
+      age: ~~(Math.random() * 100),
+      // age: 1e6 - (i % 2 ? i : 0),
       // body: compressedItaly,
       stuff: Buffer.from('#' + i),
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
     })
   }
 
+  const bla = {}
+
+  // for (let i = 0; i < 1e6; i++) {
+  //   const { x, y } = xx[i]
+  //   if (bla[x] == undefined) {
+  //     bla[x] = { x: 0, y: 0 }
+  //   }
+  //   if (bla[y] == undefined) {
+  //     bla[y] = { x: 0, y: 0 }
+  //   }
+  //   bla[x].x++
+  //   bla[y].y++
+  // }
+
+  // console.log(bla)
+
   console.log('make', d)
   console.log(Date.now() - d, 'ms', db.drain(), 'ms')
-  await new Promise((r) => setTimeout(r, 2e3))
+  await new Promise((r) => setTimeout(r, 5e3))
   d = Date.now()
+  // ------ this sort in mem first then put tree
   const sortIndex = db.server.createSortIndex('article', 'age')
   console.log('make sortIndex', Date.now() - d, 'ms')
 
-  // 7.5gb!
-
+  // allrdy from 400 - 40 (360ms) to 150ms worsed case
+  // but it can be 10MS
   await db
     .query('article')
     .sort('age')
     .include('age')
     .range(0, 1e6)
     .get()
-    .then((v) => v.inspect(10))
+    .then((v) => {
+      v.inspect(5)
+      // for (const derp of v) {
+      //   const x = derp.age
+      //   if (bla[x] == undefined) {
+      //     bla[x] = { x: 0, y: 0 }
+      //   }
+      //   bla[x].x++
+      // }
+    })
+
+  await db
+    .query('article')
+    .sort('age', 'desc')
+    .include('age')
+    .range(0, 1e6)
+    .get()
+    .then((v) => {
+      v.inspect(5)
+      // for (const derp of v) {
+      //   const x = derp.age
+      //   if (bla[x] == undefined) {
+      //     bla[x] = { x: 0, y: 0 }
+      //   }
+      //   bla[x].x++
+      // }
+    })
+
+  console.log('??', bla)
 
   deepEqual(
     (

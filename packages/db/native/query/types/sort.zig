@@ -16,7 +16,7 @@ const Result = @import("../results.zig").Result;
 const std = @import("std");
 
 pub fn default(
-    comptime _: comptime_int,
+    comptime queryType: comptime_int,
     ctx: *QueryCtx,
     offset: u32,
     limit: u32,
@@ -37,10 +37,23 @@ pub fn default(
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
     var correctedForOffset: u32 = offset;
-    selva.selva_sort_foreach_begin(sI);
+
+    if (queryType == 4) {
+        selva.selva_sort_foreach_begin_reverse(sI);
+    } else {
+        selva.selva_sort_foreach_begin(sI);
+    }
+
     checkItem: while (!selva.selva_sort_foreach_done(sI)) {
         var key: i64 = undefined;
-        const node: db.Node = @ptrCast(selva.selva_sort_foreach_i64(sI, &key));
+
+        var node: db.Node = undefined;
+        if (queryType == 4) {
+            node = @ptrCast(selva.selva_sort_foreach_i64_reverse(sI, &key));
+        } else {
+            node = @ptrCast(selva.selva_sort_foreach_i64(sI, &key));
+        }
+
         if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }

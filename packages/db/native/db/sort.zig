@@ -71,6 +71,9 @@ pub fn createSortIndex(
     var node = db.getFirstNode(typeEntry);
     var first = true;
     var i: u30 = 0;
+
+    const derp: *selva.SelvaSortCtx = selva.selva_sort_init(selva.SELVA_SORT_ORDER_I64_ASC).?;
+
     while (node != null) {
         if (first) {
             first = false;
@@ -82,6 +85,7 @@ pub fn createSortIndex(
         }
         const id = db.getNodeId(node.?);
         var data: []u8 = undefined;
+
         if (start != 0) {
             data = db.getField(typeEntry, id, node.?, fieldSchema)[start .. start + len];
         } else {
@@ -90,13 +94,27 @@ pub fn createSortIndex(
             data = db.getField(typeEntry, id, node.?, fieldSchema);
         }
         if (prop == types.Prop.UINT32) {
-            const specialScore: i64 = readInt(i64, data, 0);
+            // const specialScore: i64 = readInt(u32, data, 0);
 
-            // const specialScore: i64 = (readInt(u32, data, 0) << 31) + i;
-            selva.selva_sort_insert_i64(sI, specialScore, node.?);
+            const specialScore: i64 = (@as(i64, readInt(u32, data, 0)) << 31) + i;
+            selva.selva_sort_insert_i64(derp, specialScore, node.?);
+
+            // selva.selva_sort_insert_i64(sI, specialScore, node.?);
         }
+
         i += 1;
     }
+
+    // call selva.sortRebuild()
+
+    selva.selva_sort_foreach_begin(derp);
+    i = 0;
+    while (!selva.selva_sort_foreach_done(derp)) {
+        var sortKey: i64 = undefined;
+        const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach_i64(derp, &sortKey));
+        selva.selva_sort_insert_i64(sI, sortKey, sortedNode);
+    }
+    selva.selva_sort_destroy(derp);
 
     return sI;
 }
