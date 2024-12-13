@@ -278,7 +278,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             }
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-                io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, weak_reference), 1, io);
+                io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(struct SelvaNodeWeakReference), 1, io);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCES:
             if (((struct SelvaNodeWeakReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {

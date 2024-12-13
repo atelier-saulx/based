@@ -37,21 +37,21 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
  */
 static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
-    [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(int64_t), // time_t
-    [SELVA_FIELD_TYPE_CREATED] = sizeof(int64_t),
-    [SELVA_FIELD_TYPE_UPDATED] = sizeof(int64_t),
-    [SELVA_FIELD_TYPE_NUMBER] = sizeof(double),
-    [SELVA_FIELD_TYPE_INTEGER] = sizeof(int32_t),
-    [SELVA_FIELD_TYPE_INT8] = sizeof(int8_t),
-    [SELVA_FIELD_TYPE_UINT8] = sizeof(uint8_t),
-    [SELVA_FIELD_TYPE_INT16] = sizeof(int16_t),
-    [SELVA_FIELD_TYPE_UINT16] = sizeof(uint16_t),
-    [SELVA_FIELD_TYPE_INT32] = sizeof(int32_t),
-    [SELVA_FIELD_TYPE_UINT32] = sizeof(uint32_t),
-    [SELVA_FIELD_TYPE_INT64] = sizeof(int64_t),
-    [SELVA_FIELD_TYPE_UINT64] = sizeof(uint64_t),
-    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
-    [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
+    [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
+    [SELVA_FIELD_TYPE_CREATED] = sizeof_field(struct SelvaFieldsAny, timestamp),
+    [SELVA_FIELD_TYPE_UPDATED] = sizeof_field(struct SelvaFieldsAny, timestamp),
+    [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
+    [SELVA_FIELD_TYPE_INTEGER] = sizeof_field(struct SelvaFieldsAny, integer),
+    [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
+    [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
+    [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
+    [SELVA_FIELD_TYPE_UINT16] = sizeof_field(struct SelvaFieldsAny, uint16),
+    [SELVA_FIELD_TYPE_INT32] = sizeof_field(struct SelvaFieldsAny, int32),
+    [SELVA_FIELD_TYPE_UINT32] = sizeof_field(struct SelvaFieldsAny, uint32),
+    [SELVA_FIELD_TYPE_INT64] = sizeof_field(struct SelvaFieldsAny, int64),
+    [SELVA_FIELD_TYPE_UINT64] = sizeof_field(struct SelvaFieldsAny, uint64),
+    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof_field(struct SelvaFieldsAny, boolean),
+    [SELVA_FIELD_TYPE_ENUM] = sizeof_field(struct SelvaFieldsAny, enu),
     [SELVA_FIELD_TYPE_STRING] = sizeof(struct selva_string),
     [SELVA_FIELD_TYPE_TEXT] = sizeof(struct SelvaTextField),
     [SELVA_FIELD_TYPE_REFERENCE] = sizeof(struct SelvaNodeReference),
@@ -62,6 +62,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
+static_assert(sizeof(bool) == sizeof(int8_t));
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 {
