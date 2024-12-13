@@ -28,7 +28,9 @@ export class SchemaParser {
       if (!('props' in types[type])) {
         types[type] = { props: types[type] }
       }
-
+    }
+    for (const type in types) {
+      this.path[this.lvl] = type
       this.parseProps(types[type].props, types[type])
     }
     this.lvl--
