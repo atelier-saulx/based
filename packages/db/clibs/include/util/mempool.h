@@ -111,7 +111,7 @@ void mempool_return(struct mempool *mempool, void *p);
 /**
  * Calculate mempool_slab_info for mempool.
  */
-__purefn struct mempool_slab_info mempool_slab_info(const struct mempool * restrict mempool);
+__purefn struct mempool_slab_info mempool_slab_info(const struct mempool *mempool);
 
 char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk);
 struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj);
