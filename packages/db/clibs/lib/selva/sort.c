@@ -468,6 +468,14 @@ void selva_sort_foreach_begin(struct SelvaSortCtx *ctx)
         ctx->iterator.next = RB_MIN(SelvaSortTreeNone, head);
     }
 }
+void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx)
+{
+    struct SelvaSortTreeNone *head = &ctx->out_none;
+
+    if (!RB_EMPTY(head)) {
+        ctx->iterator.next = RB_MAX(SelvaSortTreeNone, head);
+    }
+}
 
 void *selva_sort_foreach(struct SelvaSortCtx *ctx)
 {
@@ -482,7 +490,7 @@ void *selva_sort_foreach(struct SelvaSortCtx *ctx)
     return (void *)cur->p;
 }
 
-void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v)
+void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx)
 {
     struct SelvaSortItem *cur = ctx->iterator.next;
 
@@ -490,27 +498,25 @@ void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v)
         return nullptr;
     }
 
-    /* It should be ok to use Asc also for Desc. */
-    ctx->iterator.next = RB_NEXT(SelvaSortTreeAscI64, ctx->out_ai64, cur);
+    ctx->iterator.next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
 
-    *v = cur->i64;
     return (void *)cur->p;
 }
 
-void *selva_sort_foreach_double(struct SelvaSortCtx *ctx, double *d)
-{
-    struct SelvaSortItem *cur = ctx->iterator.next;
-
-    if (!cur) {
-        return nullptr;
+#define SELVA_SORT_FOREACH(name, RB_DIR, vt) \
+    void *selva_sort_foreach_##name(struct SelvaSortCtx *ctx, typeof_field(struct SelvaSortItem, vt) *v) \
+    { \
+        struct SelvaSortItem *cur = ctx->iterator.next; \
+        if (!cur) return nullptr; \
+        ctx->iterator.next = RB_DIR(SelvaSortTreeNone, ctx->out_none, cur); \
+        memcpy(v, &cur->vt, sizeof(cur->vt)); \
+        return (void *)cur->p; \
     }
 
-    /* It should be ok to use Asc also for Desc. */
-    ctx->iterator.next = RB_NEXT(SelvaSortTreeAscDouble, ctx->out_ad, cur);
-
-    *d = cur->d;
-    return (void *)cur->p;
-}
+SELVA_SORT_FOREACH(i64, RB_NEXT, i64)
+SELVA_SORT_FOREACH(i64_reverse, RB_PREV, i64)
+SELVA_SORT_FOREACH(double, RB_NEXT, d)
+SELVA_SORT_FOREACH(double_reverse, RB_PREV, d)
 
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
 {

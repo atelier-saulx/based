@@ -83,13 +83,25 @@ SELVA_EXPORT
 void selva_sort_foreach_begin(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT
+void selva_sort_foreach_begin_reverse(struct SelvaSortCtx *ctx);
+
+SELVA_EXPORT
 void *selva_sort_foreach(struct SelvaSortCtx *ctx);
+
+SELVA_EXPORT
+void *selva_sort_foreach_reverse(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT
 void *selva_sort_foreach_i64(struct SelvaSortCtx *ctx, int64_t *v);
 
 SELVA_EXPORT
+void *selva_sort_foreach_i64_reverse(struct SelvaSortCtx *ctx, int64_t *v);
+
+SELVA_EXPORT
 void *selva_sort_foreach_double(struct SelvaSortCtx *ctx, double *d);
+
+SELVA_EXPORT
+void *selva_sort_foreach_double_reverse(struct SelvaSortCtx *ctx, double *d);
 
 SELVA_EXPORT
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
