@@ -85,18 +85,6 @@ static int type2fs_number(struct schemabuf_parser_ctx *, struct SelvaFieldsSchem
     return 1;
 }
 
-static int type2fs_integer(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_INTEGER,
-    };
-
-    return 1;
-}
-
 static int type2fs_uint8(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -368,9 +356,9 @@ static struct schemabuf_parser {
         .type = SELVA_FIELD_TYPE_NUMBER,
         .type2fs = type2fs_number,
     },
-    [SELVA_FIELD_TYPE_INTEGER] = {
-        .type = SELVA_FIELD_TYPE_INTEGER,
-        .type2fs = type2fs_integer,
+    [SELVA_FIELD_TYPE_SPARE1] = {
+        .type = SELVA_FIELD_TYPE_SPARE1,
+        .type2fs = type2fs_reserved,
     },
     [SELVA_FIELD_TYPE_UINT8] = {
         .type = SELVA_FIELD_TYPE_UINT8,

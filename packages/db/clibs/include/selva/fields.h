@@ -68,7 +68,6 @@ struct SelvaFieldsAny {
         bool boolean; /*!< SELVA_FIELD_TYPE_BOOLEAN */
         double number; /*!< SELVA_FIELD_TYPE_NUMBER */
         int64_t timestamp; /*!< SELVA_FIELD_TYPE_TIMESTAMP, should fit time_t */
-        int32_t integer; /*!< SELVA_FIELD_TYPE_INTEGER */
         struct selva_string *string; /*!< SELVA_FIELD_TYPE_STRING */
         int8_t int8; /* SELVA_FIELD_TYPE_INT8 */
         uint8_t uint8; /*!< SELVA_FIELD_TYPE_UINT8 */

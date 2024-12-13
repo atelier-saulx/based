@@ -223,9 +223,6 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
         case SELVA_FIELD_TYPE_NUMBER:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, number), 1, io);
             break;
-        case SELVA_FIELD_TYPE_INTEGER:
-            io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, integer), 1, io);
-            break;
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof_field(struct SelvaFieldsAny, uint8), 1, io);
@@ -297,6 +294,7 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaFie
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
+        case SELVA_FIELD_TYPE_SPARE1:
             /* NOP */
             break;
         }
@@ -626,7 +624,6 @@ static void load_reference_meta(
         case SELVA_FIELD_TYPE_CREATED:
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
-        case SELVA_FIELD_TYPE_INTEGER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
         case SELVA_FIELD_TYPE_INT16:
@@ -659,6 +656,7 @@ static void load_reference_meta(
             db_panic("Muffer not supported in edge meta");
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
+        case SELVA_FIELD_TYPE_SPARE1:
             /* NOP */
             break;
         }
@@ -829,7 +827,6 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
         case SELVA_FIELD_TYPE_CREATED:
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
-        case SELVA_FIELD_TYPE_INTEGER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
         case SELVA_FIELD_TYPE_INT16:
@@ -865,6 +862,7 @@ static void load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Sel
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
+        case SELVA_FIELD_TYPE_SPARE1:
             /* NOP */
             break;
         }
