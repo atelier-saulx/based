@@ -13,7 +13,6 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INTEGER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
     case SELVA_FIELD_TYPE_INT16:
@@ -34,6 +33,7 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
         return true;
+    case SELVA_FIELD_TYPE_SPARE1:
     }
     return false;
 }
@@ -52,8 +52,6 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"updated";
     case SELVA_FIELD_TYPE_NUMBER:
         return (const char *)"number";
-    case SELVA_FIELD_TYPE_INTEGER:
-        return (const char *)"integer";
     case SELVA_FIELD_TYPE_INT8:
         return (const char *)"int8";
     case SELVA_FIELD_TYPE_UINT8:
@@ -92,6 +90,7 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"alias";
     case SELVA_FIELD_TYPE_ALIASES:
         return (const char *)"aliases";
+    case SELVA_FIELD_TYPE_SPARE1:
     }
 
     return (const char *)"invalid";

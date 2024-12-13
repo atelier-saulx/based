@@ -1,7 +1,6 @@
 import fs from 'fs'
 import { join } from 'path'
 
-console.log('--------->', join(import.meta.dirname, 'pg46.txt'))
 export const bible = fs.readFileSync(
   join(import.meta.dirname, 'bible.txt').replace('/dist', ''),
   { encoding: 'utf8', flag: 'r' },

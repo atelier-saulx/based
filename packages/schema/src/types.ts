@@ -1,4 +1,5 @@
 import { getPropType } from './parse/utils.js'
+import { LangName } from './lang.js'
 
 type Role = 'title' | 'source' | 'media' | string
 
@@ -370,17 +371,17 @@ export type SchemaPropsOneWay<isStrict = false> = Record<
 type GenericSchema<isStrict = false> = {
   types?: SchemaTypes<isStrict>
   props?: SchemaPropsOneWay<isStrict>
-  locales?: SchemaLocales
+  locales?: Partial<SchemaLocales>
 }
 
 export type StrictSchema = GenericSchema<true>
 export type Schema = GenericSchema<false> | StrictSchema
 
 export type SchemaLocales = Record<
-  string,
+  LangName,
   {
     required?: boolean
-    fallback?: string[]
+    fallback?: LangName[]
   }
 >
 

@@ -37,21 +37,21 @@ static void reference_meta_destroy(struct SelvaDb *db, const struct EdgeFieldCon
  */
 static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_NULL] = 0,
-    [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof(int64_t), // time_t
-    [SELVA_FIELD_TYPE_CREATED] = sizeof(int64_t),
-    [SELVA_FIELD_TYPE_UPDATED] = sizeof(int64_t),
-    [SELVA_FIELD_TYPE_NUMBER] = sizeof(double),
-    [SELVA_FIELD_TYPE_INTEGER] = sizeof(int32_t),
-    [SELVA_FIELD_TYPE_INT8] = sizeof(int8_t),
-    [SELVA_FIELD_TYPE_UINT8] = sizeof(uint8_t),
-    [SELVA_FIELD_TYPE_INT16] = sizeof(int16_t),
-    [SELVA_FIELD_TYPE_UINT16] = sizeof(uint16_t),
-    [SELVA_FIELD_TYPE_INT32] = sizeof(int32_t),
-    [SELVA_FIELD_TYPE_UINT32] = sizeof(uint32_t),
-    [SELVA_FIELD_TYPE_INT64] = sizeof(int64_t),
-    [SELVA_FIELD_TYPE_UINT64] = sizeof(uint64_t),
-    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof(int8_t),
-    [SELVA_FIELD_TYPE_ENUM] = sizeof(uint8_t),
+    [SELVA_FIELD_TYPE_TIMESTAMP] = sizeof_field(struct SelvaFieldsAny, timestamp),
+    [SELVA_FIELD_TYPE_CREATED] = sizeof_field(struct SelvaFieldsAny, timestamp),
+    [SELVA_FIELD_TYPE_UPDATED] = sizeof_field(struct SelvaFieldsAny, timestamp),
+    [SELVA_FIELD_TYPE_NUMBER] = sizeof_field(struct SelvaFieldsAny, number),
+    [SELVA_FIELD_TYPE_SPARE1] = 0,
+    [SELVA_FIELD_TYPE_INT8] = sizeof_field(struct SelvaFieldsAny, int8),
+    [SELVA_FIELD_TYPE_UINT8] = sizeof_field(struct SelvaFieldsAny, uint8),
+    [SELVA_FIELD_TYPE_INT16] = sizeof_field(struct SelvaFieldsAny, int16),
+    [SELVA_FIELD_TYPE_UINT16] = sizeof_field(struct SelvaFieldsAny, uint16),
+    [SELVA_FIELD_TYPE_INT32] = sizeof_field(struct SelvaFieldsAny, int32),
+    [SELVA_FIELD_TYPE_UINT32] = sizeof_field(struct SelvaFieldsAny, uint32),
+    [SELVA_FIELD_TYPE_INT64] = sizeof_field(struct SelvaFieldsAny, int64),
+    [SELVA_FIELD_TYPE_UINT64] = sizeof_field(struct SelvaFieldsAny, uint64),
+    [SELVA_FIELD_TYPE_BOOLEAN] = sizeof_field(struct SelvaFieldsAny, boolean),
+    [SELVA_FIELD_TYPE_ENUM] = sizeof_field(struct SelvaFieldsAny, enu),
     [SELVA_FIELD_TYPE_STRING] = sizeof(struct selva_string),
     [SELVA_FIELD_TYPE_TEXT] = sizeof(struct SelvaTextField),
     [SELVA_FIELD_TYPE_REFERENCE] = sizeof(struct SelvaNodeReference),
@@ -62,6 +62,7 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
     [SELVA_FIELD_TYPE_ALIASES] = 0,
 };
+static_assert(sizeof(bool) == sizeof(int8_t));
 
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 {
@@ -756,7 +757,6 @@ static int fields_set(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INTEGER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
     case SELVA_FIELD_TYPE_INT16:
@@ -801,8 +801,8 @@ copy:
         return set_field_smb(fields, nfo, value, len);
         break;
     case SELVA_FIELD_TYPE_ALIAS:
-        return SELVA_ENOTSUP;
     case SELVA_FIELD_TYPE_ALIASES:
+    case SELVA_FIELD_TYPE_SPARE1:
         return SELVA_ENOTSUP;
     }
 
@@ -838,16 +838,19 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
 
 static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
 {
-    /* FIXME */
-#if 0
     const size_t len = text->len;
 
     for (size_t i = 0; i < len; i++) {
-        if (text->tl[i].lang == lang) {
-            return &text->tl[i];
+        struct selva_string *s = &text->tl[i];
+        const uint8_t *buf;
+        size_t len;
+
+        buf = selva_string_to_buf(s, &len);
+        if (len > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
+            buf[0] == lang) {
+            return s;
         }
     }
-#endif
 
     return nullptr;
 }
@@ -1621,7 +1624,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INTEGER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
     case SELVA_FIELD_TYPE_INT16:
@@ -1667,6 +1669,7 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
         };
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
+    case SELVA_FIELD_TYPE_SPARE1:
         return (struct SelvaFieldsPointer){
             .ptr = nullptr,
             .off = 0,
@@ -1711,7 +1714,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     case SELVA_FIELD_TYPE_CREATED:
     case SELVA_FIELD_TYPE_UPDATED:
     case SELVA_FIELD_TYPE_NUMBER:
-    case SELVA_FIELD_TYPE_INTEGER:
     case SELVA_FIELD_TYPE_INT8:
     case SELVA_FIELD_TYPE_UINT8:
     case SELVA_FIELD_TYPE_INT16:
@@ -1988,7 +1990,6 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
         case SELVA_FIELD_TYPE_CREATED:
         case SELVA_FIELD_TYPE_UPDATED:
         case SELVA_FIELD_TYPE_NUMBER:
-        case SELVA_FIELD_TYPE_INTEGER:
         case SELVA_FIELD_TYPE_INT8:
         case SELVA_FIELD_TYPE_UINT8:
         case SELVA_FIELD_TYPE_INT16:

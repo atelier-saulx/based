@@ -111,7 +111,7 @@ void mempool_return(struct mempool *mempool, void *p);
 /**
  * Calculate mempool_slab_info for mempool.
  */
-__purefn struct mempool_slab_info mempool_slab_info(const struct mempool * restrict mempool);
+__purefn struct mempool_slab_info mempool_slab_info(const struct mempool *mempool);
 
 char *mempool_get_obj(const struct mempool *mempool, struct mempool_chunk *chunk);
 struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj);
@@ -135,13 +135,13 @@ static inline struct mempool_chunk *get_first_chunk(struct mempool_slab * restri
 /**
  * For each slab in the mempool.
  * The current slab will be available as the pointer variable `slab`.
- * Must be terminated with MEMPOOL_FOREACH_CHUNK_END().
+ * Must be terminated with MEMPOOL_FOREACH_SLAB_END().
  *
  * **Example**
  * ```c
  * MEMPOOL_FOREACH_SLAB_BEGIN(pool) {
  *     mempool_pageout(mempool, slab);
- * } MEMPOOL_FOREACH_CHUNK_END();
+ * } MEMPOOL_FOREACH_SLAB_END();
  * ```
  */
 #define MEMPOOL_FOREACH_SLAB_BEGIN(pool) \
