@@ -90,6 +90,7 @@ export class DbServer {
   }) {
     this.maxModifySize = maxModifySize
     this.fileSystemPath = path
+    this.sortIndexes = {}
   }
 
   start = start
@@ -99,6 +100,42 @@ export class DbServer {
     // We can just reuse it as long as we only have one tree.
     this.csmtHashFun.reset()
     return this.csmtHashFun
+  }
+
+  sortIndexes: {
+    [type: number]: {
+      [field: number]: {
+        [start: number]: any
+      }
+    }
+  }
+
+  createSortIndex(type: string, field: string): any {
+    const t = this.schemaTypesParsed[type]
+    const prop = t.props[field]
+
+    let types = this.sortIndexes[t.id]
+    if (!types) {
+      types = this.sortIndexes[t.id] = {}
+    }
+    let fields = types[prop.prop]
+    if (!fields) {
+      fields = types[prop.prop] = {}
+    }
+    let sortIndex = fields[prop.start]
+    if (sortIndex) {
+      return sortIndex
+    }
+
+    const buf = Buffer.allocUnsafe(7)
+    // size [2 type] [1 field] [2 start] [2 len]
+    buf.writeUint16LE(t.id, 0)
+    buf[2] = prop.prop
+    buf.writeUint16LE(prop.start, 3)
+    buf.writeUint16LE(prop.len, 5)
+    sortIndex = native.createSortIndex(buf, this.dbCtxExternal)
+    fields[prop.start] = sortIndex
+    return sortIndex
   }
 
   updateMerkleTree(): void {

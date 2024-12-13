@@ -1,13 +1,12 @@
 const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
-// const sort = @import("./sort.zig");
+const sort = @import("./sort.zig");
 const selva = @import("../selva.zig");
 const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
 pub const TypeId = u16;
-pub const StartSet = std.AutoHashMap(u16, u8);
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
 pub const Type = *selva.SelvaTypeEntry;
@@ -15,7 +14,6 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 
 var globalAllocatorArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-// does not need to be a global one
 const globalAllocator = globalAllocatorArena.allocator();
 
 pub const DbCtx = struct {
@@ -23,18 +21,11 @@ pub const DbCtx = struct {
     initialized: bool,
     allocator: std.mem.Allocator,
     arena: std.heap.ArenaAllocator,
-    // sortIndexes: sort.Indexes,
-    // mainSortIndexes: std.AutoHashMap([2]u8, *StartSet),
+    sortIndexes: sort.TypeSortIndexes,
     readOnly: bool,
     selva: ?*selva.SelvaDb,
-
     decompressor: *selva.libdeflate_decompressor,
     libdeflate_block_state: selva.libdeflate_block_state,
-    // shared block here derp
-
-    // add decompressor
-    // add compressor here
-    // preallocated decompressor block thingy buffer
 };
 
 pub var dbHashmap = std.AutoHashMap(u32, *DbCtx).init(globalAllocator);
@@ -49,36 +40,18 @@ pub fn createDbCtx(id: u32) !*DbCtx {
     var arena = try globalAllocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(globalAllocator);
     const allocator = arena.allocator();
-
-    // magic with allocators
-    // const sortIndexes2 = sort.Indexes.init(allocator);
-    // const mainSortIndexes2 = std.AutoHashMap([2]u8, *StartSet).init(allocator);
-
-    //    if (len > 0) {
-    //     if (!ctx.mainSortIndexes.contains(typePrefix)) {
-    //         const startSet = try ctx.allocator.create(db.StartSet);
-    //         startSet.* = db.StartSet.init(ctx.allocator);
-    //         try ctx.mainSortIndexes.put(typePrefix, startSet);
-    //     }
-    //     const s: ?*db.StartSet = ctx.mainSortIndexes.get(typePrefix);
-    //     try s.?.*.put(start, 0);
-    // }
-
     const b = try allocator.create(DbCtx);
     b.* = .{
         .id = 0,
         .arena = arena.*,
         .allocator = allocator,
-        // .sortIndexes = sortIndexes2,
-        // .mainSortIndexes = mainSortIndexes2,
+        .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .readOnly = false,
         .selva = null,
         .decompressor = selva.libdeflate_alloc_decompressor().?,
-        // .libdeflate_block_state = selva.libdeflate_block_state_init(100000),
         .libdeflate_block_state = selva.libdeflate_block_state_init(305000),
     };
-
     try dbHashmap.put(id, b);
     return b;
 }

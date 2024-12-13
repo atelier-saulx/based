@@ -69,8 +69,8 @@ export default {
     return db.updateSchema(prefix, buf, dbCtx)
   },
 
-  getTypeInfo: (typeId: number, defCtx: any) => {
-    return db.getTypeInfo(typeId, defCtx)
+  getTypeInfo: (typeId: number, dbCtx: any) => {
+    return db.getTypeInfo(typeId, dbCtx)
   },
 
   getNodeRangeHash: (
@@ -120,5 +120,9 @@ export default {
 
   crc32: (buf: Buffer) => {
     return db.crc32(buf)
+  },
+
+  createSortIndex: (buf: Buffer, dbCtx: any) => {
+    return db.createSortIndex(dbCtx, buf)
   },
 }

@@ -6,7 +6,7 @@ const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../ctx.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
-// const sort = @import("../../db/sort.zig");
+const sort = @import("../../db/sort.zig");
 const types = @import("../../types.zig");
 const hasId = @import("../hasId.zig").hasId;
 const searchStr = @import("../filter/search.zig");
@@ -15,71 +15,30 @@ const Result = @import("../results.zig").Result;
 
 const std = @import("std");
 
-// pub fn default(
-//     comptime queryType: comptime_int,
-//     ctx: *QueryCtx,
-//     offset: u32,
-//     limit: u32,
-//     typeId: db.TypeId,
-//     conditions: []u8,
-//     include: []u8,
-//     sortBuffer: []u8,
-// ) !void {
-//     const readTxn = try sort.initReadTxn(ctx.db);
-//     sort.renewTx(readTxn);
-//     const typeEntry = try db.getType(ctx.db, typeId);
-//     const sortIndex = try sort.getOrCreateReadSortIndex(ctx.db, typeId, sortBuffer, ctx.id);
-//     var end: bool = false;
-//     var flag: c_uint = c.MDB_FIRST;
-//     if (queryType == 4) {
-//         flag = c.MDB_LAST;
-//     }
-//     var first: bool = true;
-//     var correctedForOffset: u32 = offset;
-//     checkItem: while (!end and ctx.totalResults < limit) {
-//         var k: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-//         var v: c.MDB_val = .{ .mv_size = 0, .mv_data = null };
-//         errors.mdb(c.mdb_cursor_get(sortIndex.cursor, &k, &v, flag)) catch {
-//             end = true;
-//             break;
-//         };
-//         if (first) {
-//             first = false;
-//             if (queryType == 4) {
-//                 flag = c.MDB_PREV;
-//             } else {
-//                 flag = c.MDB_NEXT;
-//             }
-//         }
-//         const id = readInt(u32, sort.readData(v), 0);
-//         const node = db.getNode(id, typeEntry);
-//         if (node == null) {
-//             continue :checkItem;
-//         }
-//         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
-//             continue :checkItem;
-//         }
-//         if (correctedForOffset != 0) {
-//             correctedForOffset -= 1;
-//             continue :checkItem;
-//         }
-//         const size = try getFields(
-//             node.?,
-//             ctx,
-//             id,
-//             typeEntry,
-//             include,
-//             null,
-//             null,
-//             false,
-//         );
-//         if (size > 0) {
-//             ctx.size += size;
-//             ctx.totalResults += 1;
-//         }
-//     }
-//     sort.resetTxn(readTxn);
-// }
+pub fn default(
+    comptime _: comptime_int,
+    ctx: *QueryCtx,
+    _: u32,
+    _: u32,
+    typeId: db.TypeId,
+    _: []u8,
+    _: []u8,
+    sortBuffer: []u8,
+) !void {
+    // [order] [prop] [propType] [start] [start] [len] [len]
+
+    // const order = sortBuffer[0];
+    const field = sortBuffer[0];
+    // const propType: type.Prop = sortBuffer[2];
+    const start = readInt(u16, sortBuffer, 2);
+    const len = readInt(u16, sortBuffer, 4);
+
+    const sIndex = sort.getSortIndex(ctx.db, typeId, field, start, len);
+
+    std.debug.print("\nGO SORT type {d} field {d} start {d} len {d} \n", .{ typeId, field, start, len });
+
+    std.debug.print("derp {any} \n", .{sIndex});
+}
 
 // pub fn search(
 //     comptime queryType: comptime_int,

@@ -96,13 +96,12 @@ pub fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
         return buffer[0 .. size / 4];
     }
 
-    // external
-    var flap: ?*anyopaque = undefined;
-    const x = c.napi_get_value_external(env, value, &flap);
+    var external: ?*anyopaque = undefined;
+    const x = c.napi_get_value_external(env, value, &external);
     if (x != c.napi_ok) {
         return errors.Napi.CannotGetExternal;
     }
-    return @as(T, @ptrCast(@alignCast(flap)));
+    return @as(T, @ptrCast(@alignCast(external)));
 }
 
 pub fn getType(env: c.napi_env, value: c.napi_value) !c.napi_valuetype {

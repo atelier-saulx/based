@@ -40,6 +40,10 @@ await test('variable size (string/binary)', async (t) => {
   const compressedItaly = compress(italy)
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
 
+  var d = Date.now()
+
+  const x = []
+
   for (let i = 0; i < 1e3; i++) {
     const str = 'en'
     db.create('article', {
@@ -53,7 +57,7 @@ await test('variable size (string/binary)', async (t) => {
   }
 
   // 7.5gb!
-  console.log(db.drain(), 'ms')
+  console.log(Date.now() - d, 'ms', db.drain(), 'ms')
 
   deepEqual(
     (

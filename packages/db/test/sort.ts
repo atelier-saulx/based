@@ -61,6 +61,8 @@ await test('basic', async (t) => {
 
   db.drain()
 
+  const sortIndex = db.server.createSortIndex('user', 'age')
+  console.log({ sortIndex })
   deepEqual(
     (
       await db.query('user').sort('age', 'desc').include('email', 'age').get()
