@@ -1,4 +1,4 @@
-import { Schema, SchemaType } from '../types.js'
+import { Schema, SchemaType, StrictSchema } from '../types.js'
 import { INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
@@ -15,32 +15,42 @@ export class SchemaParser {
   inQuery: boolean
   schema: Schema
   type: SchemaType
-
-  parseType(type: SchemaType) {
-    expectObject(type)
-    this.parseProps(type.props, type)
-  }
+  path: string[] = []
+  lvl = 0
 
   parseTypes() {
+    this.lvl++
     const { types } = this.schema
     expectObject(types)
     for (const type in types) {
-      this.parseType(types[type])
+      this.path[this.lvl] = type
+      expectObject(types[type])
+      if (!('props' in types[type])) {
+        types[type] = { props: types[type] }
+      }
+
+      this.parseProps(types[type].props, types[type])
     }
+    this.lvl--
   }
 
   parseProps(props, schemaType: SchemaType = null) {
+    this.lvl++
+    this.path[this.lvl] = 'props'
     expectObject(props)
+    this.lvl++
     this.type = schemaType
     for (const key in props) {
       const prop = props[key]
-      const type = getPropType(prop)
+      const type = getPropType(prop, props, key)
+      this.path[this.lvl] = key
       if (type in propParsers) {
         propParsers[type](prop, this)
       } else {
         throw Error(INVALID_VALUE)
       }
     }
+    this.lvl -= 2
   }
 
   parseLocales() {
@@ -67,6 +77,7 @@ export class SchemaParser {
   parse() {
     expectObject(this.schema)
     for (const key in this.schema) {
+      this.path[0] = key
       if (key === 'types') {
         this.parseTypes()
       } else if (key === 'props') {
@@ -100,37 +111,16 @@ export const print = (schema: Schema, path: string[]) => {
   return lines.join('\n')
 }
 
-export const debug = (schema: Schema) => {
-  let curr
-  const proxy = (obj, path = []) => {
-    const copy = {}
-    return new Proxy(obj, {
-      get(_, key) {
-        const v = obj[key]
-        curr = [...path, key]
-        if (typeof v !== 'object' || v === null) {
-          return v
-        }
-        copy[key] ??= proxy(obj[key], curr)
-        return copy[key]
-      },
-    })
-  }
-  const parser = new SchemaParser(proxy(schema))
+export const parse = (schema: Schema): { schema: StrictSchema } => {
+  const parser = new SchemaParser(schema)
   try {
     parser.parse()
-  } catch (e) {
-    e.message += '\n\n' + print(schema, curr) + '\n'
-    e.cause = curr
-    throw e
-  }
-}
-
-export const parse = (schema: Schema): { schema: Schema } => {
-  try {
-    new SchemaParser(schema).parse()
+    // @ts-ignore
     return { schema }
   } catch (e) {
-    debug(schema)
+    const cause = parser.path.slice(0, Math.min(4, parser.lvl) + 1)
+    e.message += '\n\n' + print(schema, cause) + '\n'
+    e.cause = cause
+    throw e
   }
 }

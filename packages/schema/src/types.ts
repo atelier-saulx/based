@@ -255,14 +255,14 @@ export type SchemaTimestamp = Prop<{
 export type SchemaReferenceOneWay = Prop<{
   type?: 'reference'
   default?: string
-  ref: string
+  ref: string // | SchemaType
   mime?: Mime
 }>
 
 export type SchemaReference = Prop<{
   type?: 'reference'
   default?: string
-  ref: string
+  ref: string // | SchemaType
   prop: string
   mime?: Mime
 }> &
@@ -329,7 +329,7 @@ type NonRefSchemaProps =
   | SchemaSet
   | SchemaBinary
 
-export type SchemaProp =
+export type SchemaProp<isStrict = false> =
   | SchemaReferencesWithQuery
   | SchemaReferenceWithQuery
   | NonRefSchemaProps
@@ -338,7 +338,7 @@ export type SchemaProp =
   | SchemaObject
   | SchemaBinary
 
-export type SchemaPropOneWay =
+export type SchemaPropOneWay<isStrict = false> =
   | SchemaReferencesOneWay
   | SchemaReferenceOneWay
   | SchemaObjectOneWay
@@ -346,25 +346,35 @@ export type SchemaPropOneWay =
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
-export type SchemaProps = Record<string, SchemaProp>
-export type SchemaType = {
+export type SchemaProps<isStrict = false> = Record<string, SchemaProp<isStrict>>
+export type StrictSchemaType = {
   hooks?: {
     create?: SchemaHook
     update?: SchemaHook
     delete?: SchemaHook
   }
   id?: number
-  props: SchemaProps
+  props: SchemaProps<true>
 }
 
-export type SchemaTypes = Record<string, SchemaType>
-export type SchemaPropsOneWay = Record<`${Letter}${string}`, SchemaPropOneWay>
+export type SchemaType<isStrict = false> = isStrict extends true
+  ? StrictSchemaType
+  : StrictSchemaType | SchemaProps
 
-export type Schema = {
-  types?: SchemaTypes
-  props?: SchemaPropsOneWay
+export type SchemaTypes<isStrict = false> = Record<string, SchemaType<isStrict>>
+export type SchemaPropsOneWay<isStrict = false> = Record<
+  `${Letter}${string}`,
+  SchemaPropOneWay<isStrict>
+>
+
+type GenericSchema<isStrict = false> = {
+  types?: SchemaTypes<isStrict>
+  props?: SchemaPropsOneWay<isStrict>
   locales?: SchemaLocales
 }
+
+export type StrictSchema = GenericSchema<true>
+export type Schema = GenericSchema<false> | StrictSchema
 
 export type SchemaLocales = Record<
   string,

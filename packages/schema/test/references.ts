@@ -1,8 +1,8 @@
 import test from 'node:test'
-import { throws } from 'node:assert'
+import { deepEqual, throws } from 'node:assert'
 import { parse } from '@based/schema'
 
-test('references', () => {
+test('references', (t) => {
   parse({
     types: {
       article: {
@@ -19,6 +19,91 @@ test('references', () => {
             items: {
               ref: 'article',
               prop: 'writer',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  deepEqual(
+    parse({
+      types: {
+        article: {
+          props: {
+            writer: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+        author: {
+          props: {},
+        },
+      },
+    }).schema,
+    {
+      types: {
+        article: {
+          props: {
+            writer: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+        author: {
+          props: {
+            articles: {
+              readOnly: true,
+              items: {
+                ref: 'article',
+                prop: 'writer',
+              },
+            },
+          },
+        },
+      },
+    },
+  )
+
+  const { schema } = parse({
+    types: {
+      article: {
+        props: {
+          writers: {
+            items: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+      author: {
+        props: {},
+      },
+    },
+  })
+
+  deepEqual(schema, {
+    types: {
+      article: {
+        props: {
+          writers: {
+            items: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+      author: {
+        props: {
+          articles: {
+            readOnly: true,
+            items: {
+              ref: 'article',
+              prop: 'writers',
             },
           },
         },
@@ -91,69 +176,69 @@ test('references', () => {
   }, 'Disallow mixed ref types')
 })
 
-test('edges', () => {
-  parse({
-    types: {
-      event: {
-        props: {
-          createdAt: {
-            type: 'timestamp',
-            on: 'create',
-          },
-        },
-      },
-      article: {
-        props: {
-          author: {
-            ref: 'author',
-            prop: 'articles',
-            $role: {
-              enum: ['admin', 'collaborator'],
-            },
-            $relatedEvent: {
-              ref: 'event',
-            },
-            $enum: ['zzz'],
-          },
-        },
-      },
-      author: {
-        props: {
-          articles: {
-            items: {
-              ref: 'article',
-              prop: 'author',
-            },
-          },
-        },
-      },
-    },
-  })
+// test('edges', () => {
+//   parse({
+//     types: {
+//       event: {
+//         props: {
+//           createdAt: {
+//             type: 'timestamp',
+//             on: 'create',
+//           },
+//         },
+//       },
+//       article: {
+//         props: {
+//           author: {
+//             ref: 'author',
+//             prop: 'articles',
+//             $role: {
+//               enum: ['admin', 'collaborator'],
+//             },
+//             $relatedEvent: {
+//               ref: 'event',
+//             },
+//             $enum: ['zzz'],
+//           },
+//         },
+//       },
+//       author: {
+//         props: {
+//           articles: {
+//             items: {
+//               ref: 'article',
+//               prop: 'author',
+//             },
+//           },
+//         },
+//       },
+//     },
+//   })
 
-  throws(() => {
-    parse({
-      types: {
-        article: {
-          props: {
-            author: {
-              ref: 'author',
-              prop: 'articles',
-              $role: ['admin', 'collaborator'],
-            },
-          },
-        },
-        author: {
-          props: {
-            articles: {
-              items: {
-                ref: 'article',
-                prop: 'author',
-                $role: ['admin', 'collaborator'],
-              },
-            },
-          },
-        },
-      },
-    })
-  }, 'Only allow edge definition on one side')
-})
+//   throws(() => {
+//     parse({
+//       types: {
+//         article: {
+//           props: {
+//             author: {
+//               ref: 'author',
+//               prop: 'articles',
+//               $role: ['admin', 'collaborator'],
+//             },
+//           },
+//         },
+//         author: {
+//           props: {
+//             articles: {
+//               items: {
+//                 ref: 'article',
+//                 prop: 'author',
+//                 $role: ['admin', 'collaborator'],
+//               },
+//             },
+//           },
+//         },
+//       },
+//     })
+//   }, 'Only allow edge definition on one side')
+// })

@@ -16,3 +16,6 @@ export const MISSING_TYPE = 'Missing type'
 export const INVALID_TYPE = 'Invalid type'
 export const TEXT_REQUIRES_LOCALES = 'Type text requires locales'
 export const TYPE_MISMATCH = 'Types do not match'
+
+// export const genInversePropError = (path: string[]) =>
+//   `Expected inverse property for ${path.join('.')}`

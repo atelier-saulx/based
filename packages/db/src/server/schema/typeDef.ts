@@ -1,7 +1,7 @@
 import {
   isPropType,
   SchemaObject,
-  SchemaType,
+  StrictSchemaType,
   getPropType,
   SchemaReference,
 } from '@based/schema'
@@ -67,7 +67,7 @@ const addEdges = (prop: PropDef, refProp: SchemaReference) => {
 
 export const createSchemaTypeDef = (
   typeName: string,
-  type: SchemaType | SchemaObject,
+  type: StrictSchemaType | SchemaObject,
   parsed: BasedDb['schemaTypesParsed'],
   result: Partial<SchemaTypeDef> = {
     cnt: 0,
@@ -136,7 +136,7 @@ export const createSchemaTypeDef = (
         } else {
           stringFields++
         }
-      } else if(isPropType('text', schemaProp)) {
+      } else if (isPropType('text', schemaProp)) {
         stringFields++
       }
 
@@ -169,8 +169,7 @@ export const createSchemaTypeDef = (
         addEdges(prop, schemaProp)
       } else if (
         typeof schemaProp === 'object' &&
-        (isPropType('string', schemaProp) ||
-         isPropType('text', schemaProp))
+        (isPropType('string', schemaProp) || isPropType('text', schemaProp))
       ) {
         prop.compression =
           'compression' in schemaProp && schemaProp.compression === 'none'

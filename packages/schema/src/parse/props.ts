@@ -16,6 +16,7 @@ import {
   stringFormats,
   dateDisplays,
   numberDisplays,
+  Schema,
 } from '../types.js'
 import {
   expectBoolean,
@@ -32,6 +33,7 @@ import {
   EXPECTED_VALUE_IN_ENUM,
   INVALID_VALUE,
   MIN_MAX,
+  MISSING_TYPE,
   OUT_OF_RANGE,
   TEXT_REQUIRES_LOCALES,
   TYPE_MISMATCH,
@@ -40,7 +42,6 @@ import {
 import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
 let stringFormatsSet: Set<string>
-let stringDisplaysSet: Set<string>
 let numberDisplaysSet: Set<string>
 let dateDisplaysSet: Set<string>
 
@@ -69,7 +70,7 @@ const shared: PropsFns<SchemaAnyProp> = {
         t = t.items
       }
       if ('ref' in t) {
-        t = ctx.schema.types[t.ref]
+        t = ctx.schema.types[parseRef(t.ref, ctx.schema)]
       }
       t = t.props[key]
       expectObject(t)
@@ -78,19 +79,10 @@ const shared: PropsFns<SchemaAnyProp> = {
       throw Error(TYPE_MISMATCH)
     }
   },
-  title (val) {
-
-  },
-  description (val) {
-
-  },
-  readOnly (val) {
-
-  },
-  examples (val) {
-
-  }
-
+  title(val) {},
+  description(val) {},
+  readOnly(val) {},
+  examples(val) {},
 }
 
 function propParser<PropType extends SchemaAnyProp>(
@@ -106,6 +98,7 @@ function propParser<PropType extends SchemaAnyProp>(
       }
       throw Error(EXPECTED_OBJ)
     }
+
     if (Array.isArray(prop)) {
       // allow array
       if (allowShorthand === 1) {
@@ -114,16 +107,23 @@ function propParser<PropType extends SchemaAnyProp>(
       throw Error(EXPECTED_OBJ)
     }
 
+    ctx.lvl++
     for (const key in required) {
-      required[key](prop[key], prop, ctx)
+      ctx.path[ctx.lvl] = key
+      const changed = required[key](prop[key], prop, ctx)
+      if (changed !== undefined) {
+        prop[key] = changed
+      }
     }
 
     for (const key in prop) {
+      ctx.path[ctx.lvl] = key
       const val = prop[key]
+      let changed
       if (key in optional) {
-        optional[key](val, prop, ctx)
+        changed = optional[key](val, prop, ctx)
       } else if (key in shared) {
-        shared[key](val, prop, ctx)
+        changed = shared[key](val, prop, ctx)
       } else if (!(key in required)) {
         if (key[0] === '$' && 'ref' in prop) {
           optional.edge(val, prop, ctx, key)
@@ -131,21 +131,26 @@ function propParser<PropType extends SchemaAnyProp>(
           throw Error(UNKNOWN_PROP)
         }
       }
+      if (changed !== undefined) {
+        prop[key] = changed
+      }
     }
+    ctx.lvl--
   }
 }
 
-const p: Record<string, ReturnType<typeof propParser>> = {}
+const parseRef = (ref: any, schema: Schema) => {
+  if (typeof ref === 'object' && ref !== null) {
+    for (const type in schema.types) {
+      if (ref === schema.types[type]) {
+        return type
+      }
+    }
+  }
+  return ref
+}
 
-p.alias = propParser<SchemaAlias>(
-  STUB,
-  {
-    default(val) {
-      expectString(val)
-    },
-  },
-  0,
-)
+const p: Record<string, ReturnType<typeof propParser>> = {}
 
 p.boolean = propParser<SchemaBoolean>(
   STUB,
@@ -379,30 +384,54 @@ p.timestamp = propParser<SchemaTimestamp>(
 p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
   {
     ref(ref, _prop, { schema }) {
-      schema.types[ref].props
+      if (!schema.types[parseRef(ref, schema)]?.props) {
+        throw Error(MISSING_TYPE)
+      }
     },
-    prop(propKey, prop, { schema, type, inQuery }) {
+    prop(propKey, prop, { schema, type, inQuery, path }) {
       const propAllowed = type && !inQuery
 
       if (propAllowed) {
         expectString(propKey)
 
         const propPath = propKey.split('.')
-        let targetProp: any = schema.types[prop.ref]
+        let targetProp: any = schema.types[parseRef(prop.ref, schema)]
+
+        expectObject(targetProp, 'expected type')
+
+        let create
         for (const key of propPath) {
+          if (!targetProp.props[key]) {
+            create = true
+            targetProp.props[key] = {}
+          }
           targetProp = targetProp.props[key]
         }
+
+        if (create) {
+          const ref = path[1]
+          let prop = ''
+          for (let i = 3; i < path.length - 1; i += 2) {
+            prop += prop ? `.${path[i]}` : path[i]
+          }
+          targetProp.readOnly = true
+          targetProp.items = {
+            ref,
+            prop,
+          }
+        }
+
         if ('items' in targetProp) {
           targetProp = targetProp.items
         }
 
         if ('ref' in targetProp && 'prop' in targetProp) {
           const inversePath = targetProp.prop.split('.')
-          let inverseProp: any = schema.types[targetProp.ref]
+          let inverseProp: any = schema.types[parseRef(targetProp.ref, schema)]
           for (const key of inversePath) {
             inverseProp = inverseProp.props[key]
           }
-          if ('items' in inverseProp) {
+          if (inverseProp && 'items' in inverseProp) {
             inverseProp = inverseProp.items
           }
 
@@ -411,7 +440,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
           }
         }
 
-        throw Error(INVALID_VALUE)
+        throw Error('expected inverse property')
       }
 
       if (propKey !== undefined) {
@@ -427,7 +456,8 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
     edge(val, prop, ctx, key) {
       const edgeAllowed = ctx.type && !ctx.inQuery
       if (edgeAllowed) {
-        let t: any = ctx.schema.types[prop.ref].props[prop.prop]
+        let t: any =
+          ctx.schema.types[parseRef(prop.ref, ctx.schema)].props[prop.prop]
         t = t.items || t
         if (t[key]) {
           throw Error('Edge can not be defined on both props')
@@ -444,6 +474,17 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
       throw Error('ref edge not supported on root or edge p')
     },
   },
+)
+
+p.alias = propParser<SchemaAlias>(
+  STUB,
+  {
+    default(val) {
+      expectString(val)
+    },
+    format: binaryOpts.format,
+  },
+  0,
 )
 
 export default p

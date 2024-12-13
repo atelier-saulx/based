@@ -1,5 +1,5 @@
 import { ModifyRes } from './client/modify/ModifyRes.js'
-import { Schema } from '@based/schema'
+import { Schema, StrictSchema } from '@based/schema'
 import { ALIAS, SchemaTypeDef } from './server/schema/schema.js'
 import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { ModifyCtx, flushBuffer } from './client/operations.js'
@@ -65,7 +65,7 @@ export class BasedDb {
   }
 
   migrateSchema(
-    schema: Schema,
+    schema: StrictSchema,
     transform?: (
       type: string,
       node: Record<string, any>,
@@ -74,7 +74,7 @@ export class BasedDb {
     return migrate(this, schema, transform)
   }
 
-  putSchema(schema: Schema, fromStart: boolean = false): Schema {
+  putSchema(schema: Schema, fromStart: boolean = false): StrictSchema {
     return this.server.putSchema(schema, fromStart)
   }
 

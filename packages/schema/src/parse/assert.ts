@@ -6,9 +6,9 @@ import {
   EXPECTED_STR,
 } from './errors.js'
 
-export const expectObject = (obj) => {
+export const expectObject = (obj: any, msg?: string) => {
   if (typeof obj !== 'object' || obj === null) {
-    throw Error(EXPECTED_OBJ)
+    throw Error(msg || EXPECTED_OBJ)
   }
 }
 
