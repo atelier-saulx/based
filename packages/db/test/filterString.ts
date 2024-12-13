@@ -43,13 +43,19 @@ await test('variable size (string/binary)', async (t) => {
 
   var d = Date.now()
 
+  // let seed = 100;
+  //         seed = (214013 * seed + 2531011);
+  //         unsigned x = (seed >> 16) & 0x7FFF;
+  //         selva_sort_insert_i64(sort, x, (void *)i);
+
   for (let i = 0; i < 1e6; i++) {
     const str = 'en'
     db.create('article', {
       type: 'gossip',
       code: str,
       name: 'Gossip #' + i,
-      age: ~~(Math.random() * 1000),
+      // age: ~~(Math.random() * 4e9),
+      age: 1e6 - (i % 2 ? i : 0),
       // body: compressedItaly,
       stuff: Buffer.from('#' + i),
       derp: new Uint8Array([1, 0, 0, 2, 0, 0]),
@@ -58,7 +64,7 @@ await test('variable size (string/binary)', async (t) => {
 
   console.log('make', d)
   console.log(Date.now() - d, 'ms', db.drain(), 'ms')
-  await new Promise((r) => setTimeout(r, 1e3))
+  await new Promise((r) => setTimeout(r, 2e3))
   d = Date.now()
   const sortIndex = db.server.createSortIndex('article', 'age')
   console.log('make sortIndex', Date.now() - d, 'ms')
@@ -71,7 +77,7 @@ await test('variable size (string/binary)', async (t) => {
     .include('age')
     .range(0, 1e6)
     .get()
-    .then((v) => v.inspect())
+    .then((v) => v.inspect(10))
 
   deepEqual(
     (
