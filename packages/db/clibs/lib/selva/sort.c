@@ -545,6 +545,7 @@ bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
     return !ctx->iterator.next;
 }
 
+#if 0
 #include <stdio.h>
 #include <unistd.h>
 #include "util/ctime.h"
@@ -601,3 +602,4 @@ static void test(void)
 
     selva_sort_destroy(sort);
 }
+#endif
