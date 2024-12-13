@@ -838,16 +838,19 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
 
 static struct selva_string *find_text_by_lang(const struct SelvaTextField *text, enum selva_lang_code lang)
 {
-    /* FIXME */
-#if 0
     const size_t len = text->len;
 
     for (size_t i = 0; i < len; i++) {
-        if (text->tl[i].lang == lang) {
-            return &text->tl[i];
+        struct selva_string *s = &text->tl[i];
+        const uint8_t *buf;
+        size_t len;
+
+        buf = selva_string_to_buf(s, &len);
+        if (len > (2 + sizeof(uint32_t)) && /* contains at least [lang | flag | .. | crc32 ] */
+            buf[0] == lang) {
+            return s;
         }
     }
-#endif
 
     return nullptr;
 }
