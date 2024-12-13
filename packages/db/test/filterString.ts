@@ -57,18 +57,19 @@ await test('variable size (string/binary)', async (t) => {
   }
 
   console.log('make', d)
-  d = Date.now()
   console.log(Date.now() - d, 'ms', db.drain(), 'ms')
-
+  await new Promise((r) => setTimeout(r, 1e3))
+  d = Date.now()
   const sortIndex = db.server.createSortIndex('article', 'age')
-  console.log('make sortIndex', Date.now() - d)
+  console.log('make sortIndex', Date.now() - d, 'ms')
 
   // 7.5gb!
 
   await db
     .query('article')
     .sort('age')
-    .include('age', 'name')
+    .include('age')
+    .range(0, 1e6)
     .get()
     .then((v) => v.inspect())
 
