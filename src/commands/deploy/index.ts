@@ -1,6 +1,12 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { isAbsolute, join, relative } from 'node:path'
-import { type BundleResult, type OutputFile, bundle } from '@based/bundle'
+import {
+  type BuildOptions,
+  type BundleResult,
+  type OutputFile,
+  type Plugin,
+  bundle,
+} from '@based/bundle'
 import type { BasedClient } from '@based/client'
 import type { BasedFunctionConfig } from '@based/functions'
 import { hash, hashCompact } from '@saulx/hash'
@@ -203,6 +209,7 @@ export const parseFunctions = async (
         return { dir, path, config: await readJSON(path) }
       }
       const compiled = configBundles.require(path)
+
       return { dir, path, config: compiled.default || compiled }
     }),
   )
@@ -271,6 +278,7 @@ export const parseFunctions = async (
   const paths: Record<string, string> = {}
   const nodeEntryPoints: string[] = schema ? [schema] : []
   const browserEntryPoints: string[] = []
+  const browserEsbuildPlugins: BuildOptions['plugins'] = []
   const favicons = new Set<string>()
   const files: Record<string, string> = {}
   const invalids = await Promise.all(
@@ -305,7 +313,10 @@ export const parseFunctions = async (
           return true
         }
 
-        // if (!('bundle' in config) || config.bundle) {
+        if ('plugins' in config) {
+          browserEsbuildPlugins.push(...(config.plugins as Plugin[]))
+        }
+
         configStore.app = abs(config.main, dir)
         browserEntryPoints.push(configStore.app)
 
@@ -314,7 +325,6 @@ export const parseFunctions = async (
           browserEntryPoints.push(configStore.favicon)
           favicons.add(rel(configStore.favicon))
         }
-        // }
       }
 
       if (config.files) {
@@ -405,6 +415,7 @@ export const parseFunctions = async (
           bundle: true,
           ...(staticPath && {
             plugins: [
+              ...browserEsbuildPlugins,
               replaceBasedConfigPlugin({
                 url: staticPath,
               }),
