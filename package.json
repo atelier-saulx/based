@@ -8,9 +8,9 @@
   "bin": "bin/cmd.js",
   "files": ["bin", "dist"],
   "scripts": {
-    "docs": "ts-node --esm ./scripts/readme.ts",
+    "docs": "tsx ./scripts/readme.ts",
     "dev": "node bin/cmd.js",
-    "build": "tsc -b",
+    "build": "npm run docs && tsc -b",
     "watch": "tsc -b --watch"
   },
   "prettier": "@saulx/prettier-config",
@@ -31,15 +31,15 @@
     "@types/serve-handler": "^6.1.4",
     "@types/terminal-kit": "^2.5.6",
     "@types/ws": "^8.5.12",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.2.2",
     "vitest": "^2.1.1"
   },
   "dependencies": {
-    "@based/bundle": "../bundle",
-    "@based/client": "^6.10.1",
+    "@based/bundle": "file:../bundle",
+    "@based/client": "^6.11.1",
     "@based/i18n": "^0.2.0",
-    "@based/server": "^9.1.0",
+    "@based/server": "^9.1.2",
     "@clack/prompts": "^0.7.0",
     "@inquirer/prompts": "^6.0.1",
     "@saulx/hash": "^3.0.0",

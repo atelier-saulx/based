@@ -67,6 +67,12 @@ The CLI has some global options that can be used from any command. These options
 | `--api-key <api-key>` | API Key generated on Based.io for Service Account. |
 | `--file <file>` | If you want to use a specific Based configuration file. All other project options take precedence over this option. |
 
+### Disconnect
+
+Disconnect your user locally.
+
+_Example:_ `npx @based/cli disconnect`
+
 ### Auth
 
 Authorize your user in the Based Cloud.
@@ -76,6 +82,20 @@ _Example:_ `npx @based/cli auth`
 | Option | Description |
 |--------|-------------|
 | `--email <email>` | To speed up the login process. |
+
+### Init
+
+_Example:_ `npx @based/cli init [options]`
+
+| Option | Description |
+|--------|-------------|
+| `-n, --name <name>` | Give a name to your project. |
+| `-d, --description <description>` | Give a description to your project. |
+| `--path <path>` | The path to save the Based Project File. |
+| `--format <format>` | The extension of file you prefer (available formats: ts, js, json). |
+| `-dp, --dependencies <packages...>` | Choose the dependencies you want to be added to your project (available tools:  typescript, vitest, biome, react). |
+| `--queries <queries...>` | You can pre-create your Based Query Functions. |
+| `-f, --functions <functions...>` | You can pre-create your Based Cloud Functions. |
 
 ### Backups
 
@@ -183,13 +203,34 @@ To create a very basic infra file in your repo to be used as your infra.
 
 | Option | Description |
 |--------|-------------|
-| `--path <path>` | The path to save the file. |
-| `-n, --name <name>` | The name of your machine. |
+| `-s, --standby` | Set the standby mode of your machines. |
+| `-n, --name <name>` | Give a name to your machine. |
 | `-d, --description <description>` | Give a description to your machine. |
 | `-do, --domains <domains...>` | Your domains to be assigned to the machine. |
 | `-m, --machine <machine>` | The size of your machine. |
 | `--min <min>` | The minimum number of machines that will run your app. |
 | `--max <max>` | The maximum number of machines that you want to scale your app. |
+| `--path <path>` | The path to save the file. |
+| `--format <format>` | The extension of file you prefer (available formats: ts, js, json). |
+
+#### Get
+
+To download your infra file in your repo.
+
+| Option | Description |
+|--------|-------------|
+| `-m, --machine <machine>` | If you want to filter and get only a specific machine. |
+| `--path <path>` | The path to save the file. |
+| `--format <format>` | The extension of file you prefer (available formats: ts, js, json). |
+
+#### Overview
+
+Check the status from your infra, live connections, machines and services.
+
+| Option | Description |
+|--------|-------------|
+| `--monitor` | To display the overview in an interactive UI. |
+| `--stream` | To display the overview in real time. |
 
 ### Deploy
 

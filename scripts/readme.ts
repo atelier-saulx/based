@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import { languages } from '../src/i18n/index.js'
 
 const capitalizeWords = (str?: string, fallback?: string) => {
@@ -76,17 +76,7 @@ const addCommands = (
   return `${beforeCommands}${commandsMarker}\n\n${commandsMarkdown}`
 }
 
-const saveFile = (file: string, content: string) => {
-  fs.writeFile(file, content, (err) => {
-    if (err) {
-      console.error('🧨 Error saving the file:', file, err)
-    } else {
-      console.log('🎉 File saved successfully!', file)
-    }
-  })
-}
-
-const buildReadme = (base: typeof languages) => {
+const buildReadme = async (base: typeof languages) => {
   const { languages, default: defaultLanguageKey } = base
 
   for (const languageKey in languages) {
@@ -94,13 +84,32 @@ const buildReadme = (base: typeof languages) => {
       languageKey === defaultLanguageKey
         ? './README.md'
         : `./README.${languageKey}.md`
-    const readmeContent = fs.readFileSync('./README.md', 'utf8')
-    const commands = languages[languageKey].commands
 
-    const finalReadme = addCommands(readmeContent, commands)
+    let finalReadme: string = ''
 
-    saveFile(pathReadme, finalReadme)
+    try {
+      try {
+        const readmeContent = await readFile('./README.md', 'utf8')
+        const commands = languages[languageKey].commands
+
+        finalReadme = addCommands(readmeContent, commands)
+      } catch (error) {
+        throw new Error('Was not possible to read the file.', error)
+      }
+
+      try {
+        await writeFile(pathReadme, finalReadme, 'utf-8')
+
+        console.log('🎉 File saved successfully!', pathReadme)
+      } catch (error) {
+        throw new Error('Was not possible to save the file.', error)
+      }
+    } catch (error) {
+      console.error('🧨 Error processing the file:', JSON.stringify(error))
+    }
+
+    process.exit(0)
   }
 }
 
-buildReadme(languages)
+await buildReadme(languages)
