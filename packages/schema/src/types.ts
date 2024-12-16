@@ -255,14 +255,14 @@ export type SchemaTimestamp = Prop<{
 export type SchemaReferenceOneWay = Prop<{
   type?: 'reference'
   default?: string
-  ref: string // | SchemaType
+  ref: string
   mime?: Mime
 }>
 
 export type SchemaReference = Prop<{
   type?: 'reference'
   default?: string
-  ref: string // | SchemaType
+  ref: string
   prop: string
   mime?: Mime
 }> &
@@ -348,19 +348,24 @@ export type SchemaPropOneWay<isStrict = false> =
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
 export type SchemaProps<isStrict = false> = Record<string, SchemaProp<isStrict>>
-export type StrictSchemaType = {
+
+type GenericSchemaType<isStrict = false> = {
   hooks?: {
     create?: SchemaHook
     update?: SchemaHook
     delete?: SchemaHook
   }
   id?: number
-  props: SchemaProps<true>
+  props: SchemaProps<isStrict>
 }
 
+export type StrictSchemaType = GenericSchemaType<true>
 export type SchemaType<isStrict = false> = isStrict extends true
   ? StrictSchemaType
-  : StrictSchemaType | (SchemaProps & { props?: never })
+  :
+      | StrictSchemaType
+      | GenericSchemaType<false>
+      | (SchemaProps & { props?: never })
 
 export type SchemaTypes<isStrict = false> = Record<string, SchemaType<isStrict>>
 export type SchemaPropsOneWay<isStrict = false> = Record<
