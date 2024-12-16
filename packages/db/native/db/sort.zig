@@ -6,7 +6,13 @@ const napi = @import("../napi.zig");
 const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
-pub const MainSortIndexes = std.AutoHashMap([4]u8, *selva.SelvaSortCtx);
+pub const MainSortIndex = struct {
+    index: *selva.SelvaSortCtx,
+    prop: types.Prop,
+    len: u16,
+};
+
+pub const MainSortIndexes = std.AutoHashMap(u16, *MainSortIndex);
 pub const BuffSortIndexes = std.AutoHashMap(u8, *selva.SelvaSortCtx);
 
 pub const TypeIndex = struct {
@@ -57,7 +63,7 @@ pub fn createSortIndex(
 
     const tI: *TypeIndex = typeIndexes.?;
 
-    var sortIndex = getSortIndex(typeIndexes, field, start, len);
+    var sortIndex = getSortIndex(typeIndexes, field, start);
 
     var sortIndexType: u8 = undefined;
     if (prop == types.Prop.STRING) {
@@ -66,12 +72,20 @@ pub fn createSortIndex(
         sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
     }
 
+    var main: ?*MainSortIndex = null;
+
     if (sortIndex == null) {
         sortIndex.? = selva.selva_sort_init(sortIndexType).?;
         if (prop == types.Prop.STRING) {
             try tI.string.put(field, sortIndex.?);
         } else {
-            try tI.main.put(getMainSortKey(start, len), sortIndex.?);
+            main = try dbCtx.allocator.create(MainSortIndex);
+            main.?.* = .{
+                .index = sortIndex.?,
+                .len = len,
+                .prop = prop,
+            };
+            try tI.main.put(start, main.?);
         }
     }
 
@@ -93,21 +107,10 @@ pub fn createSortIndex(
             break;
         }
         const id = db.getNodeId(node.?);
-        var data: []u8 = undefined;
-
+        const data = db.getField(typeEntry, id, node.?, fieldSchema);
         if (start != 0) {
-            data = db.getField(typeEntry, id, node.?, fieldSchema)[start .. start + len];
+            addMainSortIndex(main.?, data, start, node.?);
         } else {
-            data = db.getField(typeEntry, id, node.?, fieldSchema);
-        }
-
-        if (prop == types.Prop.TIMESTAMP) {
-            const specialScore: i64 = readInt(i64, data, 0);
-            selva.selva_sort_insert_i64(sI, specialScore, node.?);
-        } else if (prop == types.Prop.UINT32) {
-            const specialScore: i64 = (@as(i64, readInt(u32, data, 0)) << 31) + i;
-            selva.selva_sort_insert_i64(sI, specialScore, node.?);
-        } else if (prop == types.Prop.STRING) {
             addToStringSortIndex(sI, data, node.?);
         }
         i += 1;
@@ -116,25 +119,23 @@ pub fn createSortIndex(
     return sI;
 }
 
-fn getMainSortKey(start: u16, len: u16) [4]u8 {
-    const s: [2]u8 = @bitCast(start);
-    const l: [2]u8 = @bitCast(len);
-    return .{ s[0], s[1], l[0], l[1] };
-}
-
 pub fn getSortIndex(
     typeSortIndexes: ?*TypeIndex,
     field: u8,
     start: u16,
-    len: u16,
 ) ?*selva.SelvaSortCtx {
     if (typeSortIndexes == null) {
         return null;
     }
+    const tI = typeSortIndexes.?;
     if (field == 0) {
-        return typeSortIndexes.?.main.get(getMainSortKey(start, len));
+        const main = tI.main.get(start);
+        if (main == null) {
+            return null;
+        }
+        return main.?.index;
     } else {
-        return typeSortIndexes.?.string.get(field);
+        return tI.string.get(field);
     }
 }
 
@@ -158,12 +159,18 @@ pub fn addToStringSortIndex(
     }
 }
 
-// pub fn removeSortIndex() void {
-//     std.debug.print("remove sIndex \n", .{});
-// }
-
-// pub fn getTypeSortIndexes() *SortIndexes {}
-
-// pub fn getSortIndex() *selva.SelvaSortCtx {}
-
-// pub fn getSortIndexByType() *selva.SelvaSortCtx {}
+pub fn addMainSortIndex(
+    mainIndex: *MainSortIndex,
+    data: []u8,
+    start: u16,
+    node: db.Node,
+) void {
+    const prop = mainIndex.prop;
+    if (prop == types.Prop.TIMESTAMP) {
+        const specialScore: i64 = readInt(i64, data, start);
+        selva.selva_sort_insert_i64(mainIndex.index, specialScore, node);
+    } else if (prop == types.Prop.UINT32) {
+        const specialScore: i64 = readInt(u32, data, start);
+        selva.selva_sort_insert_i64(mainIndex.index, specialScore, node);
+    }
+}

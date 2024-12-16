@@ -39,15 +39,14 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = readInt(u32, data, 0);
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
-                // if ctx.typeIndexes.has
-                // add this
-                // if (sort.hasMainSortIndexes(ctx.db, ctx.typeId)) {
-                //     var it = ctx.db.mainSortIndexes.get(sort.getPrefix(ctx.typeId)).?.*.keyIterator();
-                //     while (it.next()) |start| {
-                //         const sortIndex = try getSortIndex(ctx, start.*);
-                //         try sort.writeField(ctx.id, slice, sortIndex.?);
-                //     }
-                // }
+                if (ctx.typeSortIndex != null) {
+                    // var it = ctx.typeSortIndex.?.main.iterator();
+                    // while (it.next()) |entry| {
+                    // const mainIndex = entry.value_ptr.*;
+                    // const start = entry.key_ptr.*;
+                    // sort.addMainSortIndex(mainIndex, slice, start, ctx.node.?);
+                    // }
+                }
             } else if (ctx.currentSortIndex != null) {
                 sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }

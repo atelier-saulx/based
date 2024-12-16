@@ -11,19 +11,20 @@ const ModifyCtx = Modify.ModifyCtx;
 pub fn addEmptyToSortIndex(_: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u16, data, 0);
 
-    std.debug.print("hello add empty \n", .{});
-    // var i: usize = 0;
-    // while (i < len) : (i += 1) {
-    //     const field = data[i + 2];
-    //     const sortIndexName = sort.getSortName(ctx.typeId, field, 0);
-    //     if (sort.hasReadSortIndex(ctx.db, sortIndexName)) {
-    //         var sortIndex = ctx.sortIndexes.get(sortIndexName);
-    //         if (sortIndex == null) {
-    //             sortIndex = try sort.createWriteSortIndex(ctx.db, sortIndexName, ctx.sortWriteTxn);
-    //             try ctx.sortIndexes.put(sortIndexName, sortIndex.?);
-    //         }
-    //         try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, sortIndex.?);
-    //     }
-    // }
+    var i: usize = 0;
+    while (i < len) : (i += 1) {
+        const field = data[i + 2];
+        std.debug.print("hello add empty f: {d} \n", .{field});
+
+        // const sortIndexName = sort.getSortName(ctx.typeId, field, 0);
+        // if (sort.hasReadSortIndex(ctx.db, sortIndexName)) {
+        //     var sortIndex = ctx.sortIndexes.get(sortIndexName);
+        //     if (sortIndex == null) {
+        //         sortIndex = try sort.createWriteSortIndex(ctx.db, sortIndexName, ctx.sortWriteTxn);
+        //         try ctx.sortIndexes.put(sortIndexName, sortIndex.?);
+        //     }
+        //     try sort.writeField(ctx.id, sort.EMPTY_CHAR_SLICE, sortIndex.?);
+        // }
+    }
     return len + 2;
 }
