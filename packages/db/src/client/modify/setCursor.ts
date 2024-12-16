@@ -13,6 +13,7 @@ export const setCursor = (
   const prefix0 = schema.idUint8[0]
   const prefix1 = schema.idUint8[1]
   if (ctx.prefix0 !== prefix0 || ctx.prefix1 !== prefix1) {
+    // swtch type
     ctx.buf[ctx.len++] = 2
     ctx.buf[ctx.len++] = prefix0
     ctx.buf[ctx.len++] = prefix1
@@ -24,12 +25,15 @@ export const setCursor = (
   }
 
   if (!ignoreField && ctx.field !== field) {
+    // switch field
     ctx.buf[ctx.len++] = 0
     ctx.buf[ctx.len++] = field
+    // add start and len if its main
     ctx.field = field
   }
 
   if (ctx.id !== id) {
+    // swtch id
     ctx.id = id
     ctx.lastMain = -1
     ctx.buf[ctx.len++] = modifyOp === CREATE ? 9 : 1

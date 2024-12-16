@@ -3,12 +3,15 @@ const db = @import("../db/db.zig");
 // const sort = @import("../db/sort.zig");
 const readInt = @import("../utils.zig").readInt;
 const Modify = @import("./ctx.zig");
+const std = @import("std");
 
 const ModifyCtx = Modify.ModifyCtx;
 // const getSortIndex = Modify.getSortIndex;
 
 pub fn addEmptyToSortIndex(_: *ModifyCtx, data: []u8) !usize {
     const len = readInt(u16, data, 0);
+
+    std.debug.print("hello add empty \n", .{});
     // var i: usize = 0;
     // while (i < len) : (i += 1) {
     //     const field = data[i + 2];

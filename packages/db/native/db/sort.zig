@@ -79,8 +79,6 @@ pub fn createSortIndex(
     var first = true;
     var i: u30 = 0;
 
-    // const tmpSortIndex: *selva.SelvaSortCtx = selva.selva_sort_init(sortIndexType).?;
-
     while (node != null) {
         if (first) {
             first = false;
@@ -100,18 +98,13 @@ pub fn createSortIndex(
         }
 
         if (prop == types.Prop.TIMESTAMP) {
-            const specialScore: i64 = (readInt(i64, data, 0));
+            const specialScore: i64 = readInt(i64, data, 0);
             selva.selva_sort_insert_i64(sI, specialScore, node.?);
         } else if (prop == types.Prop.UINT32) {
             const specialScore: i64 = (@as(i64, readInt(u32, data, 0)) << 31) + i;
             selva.selva_sort_insert_i64(sI, specialScore, node.?);
         } else if (prop == types.Prop.STRING) {
-            const maxStrLen = if (data.len < 10) data.len else 10;
-            if (data[1] == 0) {
-                selva.selva_sort_insert_buf(sI, data[2..maxStrLen].ptr, 8, node.?);
-            } else {
-                // need decompress so sad...
-            }
+            addToStringSortIndex(sI, data, node.?);
         }
         i += 1;
     }
@@ -132,6 +125,39 @@ pub fn getSortIndex(
     }
     const key = getSortKey(field, start, len);
     return typeSortIndexes.?.get(key);
+}
+
+pub fn getSortIndexFromType(
+    typeSortIndexes: ?*SortIndexes,
+    field: u8,
+    start: u16,
+    len: u16,
+) ?*selva.SelvaSortCtx {
+    if (typeSortIndexes == null) {
+        return null;
+    }
+    const key = getSortKey(field, start, len);
+    return typeSortIndexes.?.get(key);
+}
+
+pub fn getTypeSortIndexes(
+    dbCtx: *db.DbCtx,
+    typeId: db.TypeId,
+) ?*SortIndexes {
+    return dbCtx.sortIndexes.get(typeId);
+}
+
+pub fn addToStringSortIndex(
+    sortIndex: *selva.SelvaSortCtx,
+    data: []u8,
+    node: db.Node,
+) void {
+    const maxStrLen = if (data.len < 10) data.len else 10;
+    if (data[1] == 0) {
+        selva.selva_sort_insert_buf(sortIndex, data[2..maxStrLen].ptr, 8, node);
+    } else {
+        // need decompress so sad...
+    }
 }
 
 // pub fn removeSortIndex() void {

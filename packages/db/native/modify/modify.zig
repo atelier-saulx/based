@@ -15,6 +15,7 @@ const Update = @import("./update.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
+const dbSort = @import("../db//sort.zig");
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
@@ -34,6 +35,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeId = undefined,
         .id = undefined,
         .currentSortIndex = null,
+        .typeSortIndex = null,
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
@@ -51,11 +53,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 // SWITCH FIELD
                 ctx.field = operation[0];
                 i = i + 2;
+
                 if (ctx.field != 0) {
-                    // ctx.currentSortIndex = try getSortIndex(&ctx, 0);
+                    ctx.currentSortIndex = dbSort.getSortIndexFromType(ctx.typeSortIndex, ctx.field, 0, 0);
                 } else {
                     ctx.currentSortIndex = null;
                 }
+
                 ctx.fieldSchema = try db.getFieldSchema(ctx.field, ctx.typeEntry.?);
                 ctx.fieldType = @enumFromInt(ctx.fieldSchema.?.*.type);
                 if (ctx.fieldType == types.Prop.REFERENCE) {
@@ -84,6 +88,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 // SWITCH TYPE
                 ctx.typeId = readInt(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
+                ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
