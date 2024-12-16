@@ -38,6 +38,7 @@ import {
   TEXT_REQUIRES_LOCALES,
   TYPE_MISMATCH,
   UNKNOWN_PROP,
+  NOT_ALLOWED_IN_ITEMS,
 } from './errors.js'
 import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
@@ -55,7 +56,10 @@ const shared: PropsFns<SchemaAnyProp> = {
   role(val) {
     expectString(val)
   },
-  required(val) {
+  required(val, _prop, ctx) {
+    if (ctx.isItems) {
+      throw new Error(NOT_ALLOWED_IN_ITEMS)
+    }
     expectBoolean(val)
   },
   query(val) {
@@ -259,8 +263,10 @@ p.set = propParser<SchemaSet>(
         itemsType === 'boolean'
       ) {
         ctx.inQuery = 'query' in prop
+        ctx.isItems = true
         p[itemsType](items, ctx)
         ctx.inQuery = false
+        ctx.isItems = false
       } else {
         throw new Error(INVALID_VALUE)
       }
@@ -283,8 +289,10 @@ p.references = propParser<SchemaReferences>(
       const itemsType = getPropType(items)
       if (itemsType === 'reference') {
         ctx.inQuery = 'query' in prop
+        ctx.isItems = true
         p[itemsType](items, ctx)
         ctx.inQuery = false
+        ctx.isItems = false
       } else {
         throw new Error(INVALID_VALUE)
       }

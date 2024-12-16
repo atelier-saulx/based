@@ -186,15 +186,16 @@ type Prop<V extends PropValues> = {
 } & V
 
 type EnumItem = string | number | boolean
+type NeverInItems = { required?: never }
 
 export type SchemaReferences = Prop<{
   type?: 'references'
-  items: SchemaReference
+  items: SchemaReference & NeverInItems
 }>
 
 export type SchemaReferencesOneWay = Prop<{
   type?: 'references'
-  items: SchemaReferenceOneWay
+  items: SchemaReferenceOneWay & NeverInItems
 }>
 
 export type SchemaText = Prop<{
@@ -228,8 +229,6 @@ export type SchemaString = Prop<{
   min?: number
   mime?: Mime
   format?: StringFormat
-  // multiline?: boolean
-  // add level here as well
   compression?: 'none' | 'deflate'
 }>
 
@@ -304,22 +303,21 @@ export type SchemaPropShorthand =
   | NumberType
   | EnumItem[]
 
-type SetItems =
-  | SchemaPropShorthand
+type SetItems<isStrict = false> =
   | SchemaTimestamp
   | SchemaBoolean
   | SchemaNumber
   | SchemaString
   | SchemaEnum
+  | (isStrict extends true ? never : SchemaPropShorthand)
 
 export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
   type?: 'set'
   default?: ItemsType extends { default } ? ItemsType['default'][] : undefined
-  items: ItemsType
+  items: ItemsType & NeverInItems
 }>
 
-type NonRefSchemaProps =
-  | SchemaPropShorthand
+type NonRefSchemaProps<isStrict = false> =
   | SchemaTimestamp
   | SchemaBoolean
   | SchemaNumber
@@ -327,13 +325,15 @@ type NonRefSchemaProps =
   | SchemaAlias
   | SchemaText
   | SchemaEnum
-  | SchemaSet
   | SchemaBinary
+  | (isStrict extends true
+      ? SchemaSet<SetItems<true>>
+      : SchemaPropShorthand | SchemaSet)
 
 export type SchemaProp<isStrict = false> =
   | SchemaReferencesWithQuery
   | SchemaReferenceWithQuery
-  | NonRefSchemaProps
+  | NonRefSchemaProps<isStrict>
   | SchemaReferences
   | SchemaReference
   | SchemaObject
@@ -343,7 +343,7 @@ export type SchemaPropOneWay<isStrict = false> =
   | SchemaReferencesOneWay
   | SchemaReferenceOneWay
   | SchemaObjectOneWay
-  | NonRefSchemaProps
+  | NonRefSchemaProps<isStrict>
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaHook = string | Function
@@ -360,7 +360,7 @@ export type StrictSchemaType = {
 
 export type SchemaType<isStrict = false> = isStrict extends true
   ? StrictSchemaType
-  : StrictSchemaType | SchemaProps
+  : StrictSchemaType | (SchemaProps & { props?: never })
 
 export type SchemaTypes<isStrict = false> = Record<string, SchemaType<isStrict>>
 export type SchemaPropsOneWay<isStrict = false> = Record<

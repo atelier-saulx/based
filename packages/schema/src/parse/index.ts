@@ -1,4 +1,4 @@
-import { Schema, SchemaType, StrictSchema } from '../types.js'
+import { Schema, SchemaProps, SchemaType, StrictSchema } from '../types.js'
 import { INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
@@ -12,6 +12,7 @@ export class SchemaParser {
     this.schema = schema
   }
 
+  isItems: boolean
   inQuery: boolean
   schema: Schema
   type: SchemaType
@@ -26,7 +27,7 @@ export class SchemaParser {
       this.path[this.lvl] = type
       expectObject(types[type])
       if (!('props' in types[type])) {
-        types[type] = { props: types[type] }
+        types[type] = { props: types[type] } as SchemaProps
       }
     }
     for (const type in types) {

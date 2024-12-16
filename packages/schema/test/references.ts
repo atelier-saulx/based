@@ -174,71 +174,96 @@ test('references', (t) => {
       },
     })
   }, 'Disallow mixed ref types')
+
+  throws(() => {
+    parse({
+      types: {
+        article: {
+          props: {
+            author: {
+              ref: 'author',
+              prop: 'articles',
+            },
+          },
+        },
+        author: {
+          props: {
+            articles: {
+              items: {
+                ref: 'article',
+                prop: 'author',
+              },
+            },
+          },
+        },
+      },
+    })
+  }, 'Disallow incorrect location of required prop')
 })
 
-// test('edges', () => {
-//   parse({
-//     types: {
-//       event: {
-//         props: {
-//           createdAt: {
-//             type: 'timestamp',
-//             on: 'create',
-//           },
-//         },
-//       },
-//       article: {
-//         props: {
-//           author: {
-//             ref: 'author',
-//             prop: 'articles',
-//             $role: {
-//               enum: ['admin', 'collaborator'],
-//             },
-//             $relatedEvent: {
-//               ref: 'event',
-//             },
-//             $enum: ['zzz'],
-//           },
-//         },
-//       },
-//       author: {
-//         props: {
-//           articles: {
-//             items: {
-//               ref: 'article',
-//               prop: 'author',
-//             },
-//           },
-//         },
-//       },
-//     },
-//   })
+test('edges', () => {
+  parse({
+    types: {
+      event: {
+        props: {
+          createdAt: {
+            type: 'timestamp',
+            on: 'create',
+          },
+        },
+      },
+      article: {
+        props: {
+          author: {
+            ref: 'author',
+            prop: 'articles',
+            $role: {
+              enum: ['admin', 'collaborator'],
+            },
+            $relatedEvent: {
+              ref: 'event',
+            },
+            $enum: ['zzz'],
+          },
+        },
+      },
+      author: {
+        props: {
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'author',
+            },
+          },
+        },
+      },
+    },
+  })
 
-//   throws(() => {
-//     parse({
-//       types: {
-//         article: {
-//           props: {
-//             author: {
-//               ref: 'author',
-//               prop: 'articles',
-//               $role: ['admin', 'collaborator'],
-//             },
-//           },
-//         },
-//         author: {
-//           props: {
-//             articles: {
-//               items: {
-//                 ref: 'article',
-//                 prop: 'author',
-//                 $role: ['admin', 'collaborator'],
-//               },
-//             },
-//           },
-//         },
-//       },
-//     })
-//   }, 'Only allow edge definition on one side')
-// })
+  throws(() => {
+    parse({
+      types: {
+        article: {
+          props: {
+            author: {
+              ref: 'author',
+              prop: 'articles',
+              $role: ['admin', 'collaborator'],
+            },
+          },
+        },
+        author: {
+          props: {
+            articles: {
+              items: {
+                ref: 'article',
+                prop: 'author',
+                $role: ['admin', 'collaborator'],
+              },
+            },
+          },
+        },
+      },
+    })
+  }, 'Only allow edge definition on one side')
+})
