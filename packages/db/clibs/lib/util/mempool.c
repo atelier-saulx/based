@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include "util/align.h"
+#include "util/qsort.h"
 #include "util/mempool.h"
 
 #define HUGE_PAGES_NA   0
@@ -39,16 +40,21 @@ static struct mempool_chunk *get_chunk(const struct mempool *mempool, void *obj)
     return (struct mempool_chunk *)p;
 }
 
+static struct mempool_slab *get_slab(const struct mempool_chunk *chunk)
+{
+    return (struct mempool_slab *)(chunk->slab & ~(uintptr_t)1);
+}
+
 struct mempool_slab *mempool_get_slab(const struct mempool *mempool, void *obj) {
-    return get_chunk(mempool, obj)->slab;
+    return get_slab(get_chunk(mempool, obj));
 }
 
 struct mempool_slab_info mempool_slab_info(const struct mempool *mempool) {
-    const size_t slab_size = mempool->slab_size_kb * 1024;
+    const size_t slab_size = (size_t)mempool->slab_size_kb * 1024;
     const size_t chunk_size = ALIGNED_SIZE(
             sizeof(struct mempool_chunk) +
-            PAD(sizeof(struct mempool_chunk), mempool->obj_align) +
-            mempool->obj_size,
+            PAD(sizeof(struct mempool_chunk), (size_t)mempool->obj_align) +
+            (size_t)mempool->obj_size,
             alignof(struct mempool_chunk));
     const size_t nr_total = (slab_size - sizeof(struct mempool_slab)) / chunk_size;
 
@@ -131,6 +137,71 @@ void mempool_gc(struct mempool *mempool) {
     } MEMPOOL_FOREACH_SLAB_END();
 }
 
+static int defrag_less(struct mempool *mempool, struct mempool_chunk *chunk_a, struct mempool_chunk *chunk_b, int (*obj_compar)(const void *, const void*)) {
+    const int inuse_a = chunk_a->slab & 1;
+    const int inuse_b = chunk_b->slab & 1;
+
+    //fprintf(stderr, "%p %p %d %d\n", chunk_a, chunk_b, inuse_a, inuse_b);
+    if (inuse_a && inuse_b) {
+        int r = obj_compar(mempool_get_obj(mempool, chunk_a), mempool_get_obj(mempool, chunk_b));
+        if (r < 0) {
+            return true;
+        } else if (r > 0) {
+            return false;
+        }
+    } else if (inuse_b) { /* a or b depending if we keep empty at the beginning or end. */
+        return true;
+    }
+    return chunk_a < chunk_b;
+}
+
+static void defrag_swap(struct mempool *mempool, struct mempool_chunk *chunk_a, struct mempool_chunk *chunk_b, size_t size) {
+    const int inuse_a = chunk_a->slab & 1;
+    const int inuse_b = chunk_b->slab & 1;
+    char *a = mempool_get_obj(mempool, chunk_a);
+    char *b = mempool_get_obj(mempool, chunk_b);
+    //fprintf(stderr, "swapedino\n");
+
+    if (inuse_a && inuse_b) {
+        do {
+            char tmp = *a;
+            *a++ = *b;
+            *b++ = tmp;
+        } while (--size);
+    } else if (!inuse_a && inuse_b) {
+        memcpy(a, b, size);
+    } else if (inuse_a && !inuse_b) {
+        memcpy(b, a, size);
+    }
+
+    chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
+    chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
+}
+
+void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*)) {
+    struct mempool_slab_info slab_nfo = mempool_slab_info(mempool);
+
+    MEMPOOL_FOREACH_SLAB_BEGIN(mempool) {
+        if (slab->nr_free != slab_nfo.nr_objects) {
+            MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+                if (!(chunk->slab & (uintptr_t)1)) {
+                    /* Remove from the free list for now. */
+                    LIST_REMOVE(chunk, next_free);
+                }
+            } MEMPOOL_FOREACH_CHUNK_END();
+
+            struct mempool_chunk *first = get_first_chunk(slab);
+            size_t n = slab_nfo.nr_objects;
+#define IDX2CHUNK(idx) (struct mempool_chunk *)((char *)first + idx * slab_nfo.chunk_size)
+#define LESS(i, j) defrag_less(mempool, IDX2CHUNK(i), IDX2CHUNK(j), obj_compar)
+#define SWAP(i, j) defrag_swap(mempool, IDX2CHUNK(i), IDX2CHUNK(j), slab_nfo.obj_size)
+            QSORT(n, LESS, SWAP);
+
+            /* TODO rebuild freelist */
+        }
+    } MEMPOOL_FOREACH_SLAB_END();
+}
+
 /**
  * Allocate a new slab using mmap().
  */
@@ -189,9 +260,10 @@ retry:
 
     /*
      * Add all new objects to the list of free objects in the pool.
+     * TODO Should this be reverse?
      */
     MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
-        chunk->slab = slab;
+        chunk->slab = (uintptr_t)slab; /* also marked as free. */
         LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
     } MEMPOOL_FOREACH_CHUNK_END();
 
@@ -214,7 +286,8 @@ void *mempool_get(struct mempool *mempool) {
 
     next = LIST_FIRST(&mempool->free_chunks);
     LIST_REMOVE(next, next_free);
-    next->slab->nr_free--;
+    get_slab(next)->nr_free--;
+    next->slab |= 1;
 
     return mempool_get_obj(mempool, next);
 }
@@ -223,7 +296,8 @@ void mempool_return(struct mempool *mempool, void *p) {
     struct mempool_chunk *chunk = get_chunk(mempool, p);
 
     LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
-    chunk->slab->nr_free++;
+    get_slab(chunk)->nr_free++;
+    chunk->slab ^= 1;
 
     /*
      * Note that we never free slabs here. Slabs are only removed when the user
