@@ -20,7 +20,7 @@ export class SchemaParser {
   lvl = 0
 
   parseTypes() {
-    this.lvl++
+    this.path[this.lvl++] = 'types'
     const { types } = this.schema
     expectObject(types)
     for (const type in types) {
@@ -31,29 +31,29 @@ export class SchemaParser {
       }
     }
     for (const type in types) {
-      this.path[this.lvl] = type
+      this.path[this.lvl++] = type
       this.parseProps(types[type].props, types[type])
+      this.lvl--
     }
     this.lvl--
   }
 
   parseProps(props, schemaType: SchemaType = null) {
-    this.lvl++
-    this.path[this.lvl] = 'props'
+    this.path[this.lvl++] = 'props'
     expectObject(props)
-    this.lvl++
     this.type = schemaType
     for (const key in props) {
       const prop = props[key]
       const type = getPropType(prop, props, key)
-      this.path[this.lvl] = key
+      this.path[this.lvl++] = key
       if (type in propParsers) {
         propParsers[type](prop, this)
       } else {
         throw Error(INVALID_VALUE)
       }
+      this.lvl--
     }
-    this.lvl -= 2
+    this.lvl--
   }
 
   parseLocales() {
@@ -79,15 +79,16 @@ export class SchemaParser {
 
   parse() {
     expectObject(this.schema)
+    // always do types first because it removes props shorthand
+    if ('types' in this.schema) {
+      this.parseTypes()
+    }
     for (const key in this.schema) {
-      this.path[0] = key
-      if (key === 'types') {
-        this.parseTypes()
-      } else if (key === 'props') {
+      if (key === 'props') {
         this.parseProps(this.schema.props)
       } else if (key === 'locales') {
         this.parseLocales()
-      } else {
+      } else if (key !== 'types') {
         throw Error(UNKNOWN_PROP)
       }
     }
