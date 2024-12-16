@@ -92,12 +92,26 @@ await test('basic', async (t) => {
   )
 
   // return
+  // for (let i = 0; i < 1e6; i++) {
+  //   const mrZ = db.create('user', {
+  //     name: 'mr z',
+  //     age: 1,
+  //     email: i + '@z.z',
+  //   })
+  // }
+  db.drain()
 
+  // const d = Date.now()
   const sortIndex2 = db.server.createSortIndex('user', 'email')
-
+  // console.log(Date.now() - d, 'ms')
   deepEqual(
     (
-      await db.query('user').sort('email', 'asc').include('email', 'age').get()
+      await db
+        .query('user')
+        .sort('email', 'asc')
+        .include('email', 'age')
+        .get()
+        .then((v) => v.inspect())
     ).toObject(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
@@ -109,19 +123,19 @@ await test('basic', async (t) => {
     'sort by email asc',
   )
 
-  // deepEqual(
-  //   (
-  //     await db.query('user').sort('email', 'desc').include('email', 'age').get()
-  //   ).toObject(),
-  //   [
-  //     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
-  //     { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-  //     { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-  //     { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
-  //     { id: 5, email: 'z@z.z', age: 1 },
-  //   ].reverse(),
-  //   'sort by email desc',
-  // )
+  deepEqual(
+    (
+      await db.query('user').sort('email', 'desc').include('email', 'age').get()
+    ).toObject(),
+    [
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 5, email: 'z@z.z', age: 1 },
+    ].reverse(),
+    'sort by email desc',
+  )
 
   // const mrX = db.create('user', {
   //   name: 'mr x',

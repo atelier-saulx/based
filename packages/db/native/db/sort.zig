@@ -47,11 +47,12 @@ pub fn createSortIndex(
     prop: types.Prop,
 ) !*selva.SelvaSortCtx {
     var typeIndexes: ?*SortIndexes = dbCtx.sortIndexes.get(typeId);
+
     var sortIndexType: u8 = undefined;
-    if (prop == types.Prop.UINT32) {
-        sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
-    } else if (prop == types.Prop.STRING) {
+    if (prop == types.Prop.STRING) {
         sortIndexType = selva.SELVA_SORT_ORDER_BUFFER_ASC;
+    } else {
+        sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
     }
 
     if (typeIndexes == null) {
@@ -78,7 +79,7 @@ pub fn createSortIndex(
     var first = true;
     var i: u30 = 0;
 
-    // const derp: *selva.SelvaSortCtx = selva.selva_sort_init(sortIndexType).?;
+    // const tmpSortIndex: *selva.SelvaSortCtx = selva.selva_sort_init(sortIndexType).?;
 
     while (node != null) {
         if (first) {
@@ -95,40 +96,25 @@ pub fn createSortIndex(
         if (start != 0) {
             data = db.getField(typeEntry, id, node.?, fieldSchema)[start .. start + len];
         } else {
-            // if string
-            // if binary
             data = db.getField(typeEntry, id, node.?, fieldSchema);
         }
-        if (prop == types.Prop.UINT32) {
+
+        if (prop == types.Prop.TIMESTAMP) {
+            const specialScore: i64 = (readInt(i64, data, 0));
+            selva.selva_sort_insert_i64(sI, specialScore, node.?);
+        } else if (prop == types.Prop.UINT32) {
             const specialScore: i64 = (@as(i64, readInt(u32, data, 0)) << 31) + i;
-            // selva.selva_sort_insert_i64(derp, specialScore, node.?);
             selva.selva_sort_insert_i64(sI, specialScore, node.?);
         } else if (prop == types.Prop.STRING) {
+            const maxStrLen = if (data.len < 10) data.len else 10;
             if (data[1] == 0) {
-                selva.selva_sort_insert_buf(sI, data[2..10].ptr, 8, node.?);
+                selva.selva_sort_insert_buf(sI, data[2..maxStrLen].ptr, 8, node.?);
             } else {
                 // need decompress so sad...
             }
         }
         i += 1;
     }
-
-    // call selva.sortRebuild()
-
-    // selva.selva_sort_foreach_begin(derp);
-    // i = 0;
-    // while (!selva.selva_sort_foreach_done(derp)) {
-    //     if (prop == types.Prop.STRING) {
-    //         var sortKey: [*c]u8 = undefined;
-    //         const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach(derp, &sortKey));
-    //         selva.selva_sort_insert_buf(sI, sortKey, sortedNode);
-    //     } else {
-    //         var sortKey: i64 = undefined;
-    //         const sortedNode: db.Node = @ptrCast(selva.selva_sort_foreach_i64(derp, &sortKey));
-    //         selva.selva_sort_insert_i64(sI, sortKey, sortedNode);
-    //     }
-    // }
-    // selva.selva_sort_destroy(derp);
 
     return sI;
 }
