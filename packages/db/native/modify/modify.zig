@@ -55,7 +55,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 2;
 
                 if (ctx.field != 0) {
-                    ctx.currentSortIndex = dbSort.getSortIndexFromType(ctx.typeSortIndex, ctx.field, 0, 0);
+                    ctx.currentSortIndex = dbSort.getSortIndex(ctx.typeSortIndex, ctx.field, 0, 0);
                 } else {
                     ctx.currentSortIndex = null;
                 }

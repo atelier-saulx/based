@@ -6,8 +6,15 @@ const napi = @import("../napi.zig");
 const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
-pub const SortIndexes = std.AutoHashMap([4]u8, *selva.SelvaSortCtx);
-pub const TypeSortIndexes = std.AutoHashMap(u16, *SortIndexes);
+pub const MainSortIndexes = std.AutoHashMap([4]u8, *selva.SelvaSortCtx);
+pub const BuffSortIndexes = std.AutoHashMap(u8, *selva.SelvaSortCtx);
+
+pub const TypeIndex = struct {
+    string: BuffSortIndexes,
+    main: MainSortIndexes,
+};
+
+pub const TypeSortIndexes = std.AutoHashMap(u16, *TypeIndex);
 
 pub fn createSortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return createSortIndexNodeInternal(env, info) catch return null;
@@ -29,15 +36,6 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     return externalNapi;
 }
 
-pub fn getSortKey(field: u8, start: u16, len: u16) [4]u8 {
-    if (field != 0) {
-        return .{ 255, 255, field, 0 };
-    }
-    const s: [2]u8 = @bitCast(start);
-    const l: [2]u8 = @bitCast(len);
-    return .{ s[0], s[1], l[0], l[1] };
-}
-
 pub fn createSortIndex(
     dbCtx: *db.DbCtx,
     typeId: db.TypeId,
@@ -46,7 +44,20 @@ pub fn createSortIndex(
     len: u16,
     prop: types.Prop,
 ) !*selva.SelvaSortCtx {
-    var typeIndexes: ?*SortIndexes = dbCtx.sortIndexes.get(typeId);
+    var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
+
+    if (typeIndexes == null) {
+        typeIndexes = try dbCtx.allocator.create(TypeIndex);
+        typeIndexes.?.* = .{
+            .string = BuffSortIndexes.init(dbCtx.allocator),
+            .main = MainSortIndexes.init(dbCtx.allocator),
+        };
+        try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
+    }
+
+    const tI: *TypeIndex = typeIndexes.?;
+
+    var sortIndex = getSortIndex(typeIndexes, field, start, len);
 
     var sortIndexType: u8 = undefined;
     if (prop == types.Prop.STRING) {
@@ -55,20 +66,13 @@ pub fn createSortIndex(
         sortIndexType = selva.SELVA_SORT_ORDER_I64_ASC;
     }
 
-    if (typeIndexes == null) {
-        typeIndexes = try dbCtx.allocator.create(SortIndexes);
-        typeIndexes.?.* = SortIndexes.init(dbCtx.allocator);
-        try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
-    }
-
-    const tI: *SortIndexes = typeIndexes.?;
-
-    const sKey = getSortKey(field, start, len);
-    var sortIndex: ?*selva.SelvaSortCtx = tI.get(sKey);
-
     if (sortIndex == null) {
         sortIndex.? = selva.selva_sort_init(sortIndexType).?;
-        try tI.put(sKey, sortIndex.?);
+        if (prop == types.Prop.STRING) {
+            try tI.string.put(field, sortIndex.?);
+        } else {
+            try tI.main.put(getMainSortKey(start, len), sortIndex.?);
+        }
     }
 
     const sI = sortIndex.?;
@@ -112,23 +116,14 @@ pub fn createSortIndex(
     return sI;
 }
 
-pub fn getSortIndex(
-    dbCtx: *db.DbCtx,
-    typeId: db.TypeId,
-    field: u8,
-    start: u16,
-    len: u16,
-) ?*selva.SelvaSortCtx {
-    const typeSortIndexes = dbCtx.sortIndexes.get(typeId);
-    if (typeSortIndexes == null) {
-        return null;
-    }
-    const key = getSortKey(field, start, len);
-    return typeSortIndexes.?.get(key);
+fn getMainSortKey(start: u16, len: u16) [4]u8 {
+    const s: [2]u8 = @bitCast(start);
+    const l: [2]u8 = @bitCast(len);
+    return .{ s[0], s[1], l[0], l[1] };
 }
 
-pub fn getSortIndexFromType(
-    typeSortIndexes: ?*SortIndexes,
+pub fn getSortIndex(
+    typeSortIndexes: ?*TypeIndex,
     field: u8,
     start: u16,
     len: u16,
@@ -136,14 +131,17 @@ pub fn getSortIndexFromType(
     if (typeSortIndexes == null) {
         return null;
     }
-    const key = getSortKey(field, start, len);
-    return typeSortIndexes.?.get(key);
+    if (field == 0) {
+        return typeSortIndexes.?.main.get(getMainSortKey(start, len));
+    } else {
+        return typeSortIndexes.?.string.get(field);
+    }
 }
 
 pub fn getTypeSortIndexes(
     dbCtx: *db.DbCtx,
     typeId: db.TypeId,
-) ?*SortIndexes {
+) ?*TypeIndex {
     return dbCtx.sortIndexes.get(typeId);
 }
 

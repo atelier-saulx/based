@@ -30,7 +30,7 @@ pub fn default(
     // const propType: type.Prop = sortBuffer[2];
     const start = readInt(u16, sortBuffer, 2);
     const len = readInt(u16, sortBuffer, 4);
-    const sIndex = sort.getSortIndex(ctx.db, typeId, field, start, len);
+    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start, len);
     if (sIndex == null) {
         return;
     }

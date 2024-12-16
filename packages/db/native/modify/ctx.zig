@@ -8,7 +8,7 @@ pub const ModifyCtx = struct {
     field: u8,
     id: u32,
     currentSortIndex: ?*selva.SelvaSortCtx,
-    typeSortIndex: ?*sort.SortIndexes,
+    typeSortIndex: ?*sort.TypeIndex,
     typeId: db.TypeId,
     typeEntry: ?db.Type,
     fieldSchema: ?db.FieldSchema,

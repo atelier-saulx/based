@@ -49,9 +49,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 //     }
                 // }
             } else if (ctx.currentSortIndex != null) {
-                std.debug.print("blurf! ??? \n", .{});
                 sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
-                // try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
             }
 
             if (ctx.fieldType == types.Prop.ALIAS) {
