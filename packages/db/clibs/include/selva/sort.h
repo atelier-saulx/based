@@ -104,4 +104,10 @@ SELVA_EXPORT
 void *selva_sort_foreach_double_reverse(struct SelvaSortCtx *ctx, double *d);
 
 SELVA_EXPORT
+void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, void **buf, size_t *len);
+
+SELVA_EXPORT
+void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, void **buf, size_t *len);
+
+SELVA_EXPORT
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
