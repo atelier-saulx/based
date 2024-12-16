@@ -69,6 +69,7 @@ test('set', () => {
     parse({
       types: {
         myType: {
+          // @ts-ignore
           props: {
             // @ts-ignore
             myWrongSet: {

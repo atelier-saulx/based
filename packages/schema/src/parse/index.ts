@@ -1,4 +1,4 @@
-import { Schema, SchemaType } from '../types.js'
+import { Schema, SchemaProps, SchemaType, StrictSchema } from '../types.js'
 import { INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
@@ -12,35 +12,48 @@ export class SchemaParser {
     this.schema = schema
   }
 
+  isItems: boolean
   inQuery: boolean
   schema: Schema
   type: SchemaType
-
-  parseType(type: SchemaType) {
-    expectObject(type)
-    this.parseProps(type.props, type)
-  }
+  path: string[] = []
+  lvl = 0
 
   parseTypes() {
+    this.path[this.lvl++] = 'types'
     const { types } = this.schema
     expectObject(types)
     for (const type in types) {
-      this.parseType(types[type])
+      this.path[this.lvl] = type
+      expectObject(types[type])
+      if (!('props' in types[type])) {
+        types[type] = { props: types[type] } as SchemaProps
+      }
     }
+    for (const type in types) {
+      this.path[this.lvl++] = type
+      this.parseProps(types[type].props, types[type])
+      this.lvl--
+    }
+    this.lvl--
   }
 
   parseProps(props, schemaType: SchemaType = null) {
+    this.path[this.lvl++] = 'props'
     expectObject(props)
     this.type = schemaType
     for (const key in props) {
       const prop = props[key]
-      const type = getPropType(prop)
+      const type = getPropType(prop, props, key)
+      this.path[this.lvl++] = key
       if (type in propParsers) {
         propParsers[type](prop, this)
       } else {
         throw Error(INVALID_VALUE)
       }
+      this.lvl--
     }
+    this.lvl--
   }
 
   parseLocales() {
@@ -66,14 +79,16 @@ export class SchemaParser {
 
   parse() {
     expectObject(this.schema)
+    // always do types first because it removes props shorthand
+    if ('types' in this.schema) {
+      this.parseTypes()
+    }
     for (const key in this.schema) {
-      if (key === 'types') {
-        this.parseTypes()
-      } else if (key === 'props') {
+      if (key === 'props') {
         this.parseProps(this.schema.props)
       } else if (key === 'locales') {
         this.parseLocales()
-      } else {
+      } else if (key !== 'types') {
         throw Error(UNKNOWN_PROP)
       }
     }
@@ -100,37 +115,16 @@ export const print = (schema: Schema, path: string[]) => {
   return lines.join('\n')
 }
 
-export const debug = (schema: Schema) => {
-  let curr
-  const proxy = (obj, path = []) => {
-    const copy = {}
-    return new Proxy(obj, {
-      get(_, key) {
-        const v = obj[key]
-        curr = [...path, key]
-        if (typeof v !== 'object' || v === null) {
-          return v
-        }
-        copy[key] ??= proxy(obj[key], curr)
-        return copy[key]
-      },
-    })
-  }
-  const parser = new SchemaParser(proxy(schema))
+export const parse = (schema: Schema): { schema: StrictSchema } => {
+  const parser = new SchemaParser(schema)
   try {
     parser.parse()
-  } catch (e) {
-    e.message += '\n\n' + print(schema, curr) + '\n'
-    e.cause = curr
-    throw e
-  }
-}
-
-export const parse = (schema: Schema): { schema: Schema } => {
-  try {
-    new SchemaParser(schema).parse()
+    // @ts-ignore
     return { schema }
   } catch (e) {
-    debug(schema)
+    const cause = parser.path.slice(0, Math.min(4, parser.lvl) + 1)
+    e.message += '\n\n' + print(schema, cause) + '\n'
+    e.cause = cause
+    throw e
   }
 }

@@ -551,6 +551,32 @@ SELVA_SORT_FOREACH(i64_reverse, RB_PREV, i64)
 SELVA_SORT_FOREACH(double, RB_NEXT, d)
 SELVA_SORT_FOREACH(double_reverse, RB_PREV, d)
 
+void *selva_sort_foreach_buffer(struct SelvaSortCtx *ctx, void **buf, size_t *len)
+{
+    struct SelvaSortItem *cur = ctx->iterator.next;
+
+    if (!cur) return nullptr;
+
+    ctx->iterator.next = RB_NEXT(SelvaSortTreeNone, ctx->out_none, cur);
+
+    *buf = cur->data;
+    *len = cur->data_len;
+    return (void *)cur->p;
+}
+
+void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, void **buf, size_t *len)
+{
+    struct SelvaSortItem *cur = ctx->iterator.next;
+
+    if (!cur) return nullptr;
+
+    ctx->iterator.next = RB_PREV(SelvaSortTreeNone, ctx->out_none, cur);
+
+    *buf = cur->data;
+    *len = cur->data_len;
+    return (void *)cur->p;
+}
+
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx)
 {
     return !ctx->iterator.next;
