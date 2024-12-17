@@ -10,7 +10,6 @@
 #include <string.h>
 #include <sys/mman.h>
 #include "util/align.h"
-#include "util/qsort.h"
 #include "util/mempool.h"
 
 #define HUGE_PAGES_NA   0
@@ -142,7 +141,9 @@ static int defrag_less(struct mempool *mempool, struct mempool_chunk *chunk_a, s
     const int inuse_b = chunk_b->slab & 1;
 
     //fprintf(stderr, "%p %p %d %d\n", chunk_a, chunk_b, inuse_a, inuse_b);
-    if (inuse_a && inuse_b) {
+    if (chunk_a == chunk_b) {
+        return false;
+    } else if (inuse_a && inuse_b) {
         int r = obj_compar(mempool_get_obj(mempool, chunk_a), mempool_get_obj(mempool, chunk_b));
         if (r < 0) {
             return true;
@@ -160,26 +161,69 @@ static void defrag_swap(struct mempool *mempool, struct mempool_chunk *chunk_a, 
     const int inuse_b = chunk_b->slab & 1;
     char *a = mempool_get_obj(mempool, chunk_a);
     char *b = mempool_get_obj(mempool, chunk_b);
-    //fprintf(stderr, "swapedino\n");
 
+    if (chunk_a == chunk_b) {
+        /* NOP */
+        return;
+    }
+
+    //fprintf(stderr, "swapedino %p %p\n", chunk_a, chunk_b);
     if (inuse_a && inuse_b) {
         do {
             char tmp = *a;
             *a++ = *b;
             *b++ = tmp;
         } while (--size);
+        chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
+        chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
     } else if (!inuse_a && inuse_b) {
         memcpy(a, b, size);
+        chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
+        chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
     } else if (inuse_a && !inuse_b) {
         memcpy(b, a, size);
+        chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
+        chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
     }
+}
 
-    chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
-    chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
+struct mempool_defrag_ctx {
+    struct mempool *mempool;
+    int (*obj_compar)(const void *, const void*);
+};
+
+#ifdef __APPLE__
+static int defrag_cmp_r(void *ctx_, const void *a, const void *b)
+#else
+static int defrag_cmp_s(const void *a, const void *b, void *ctx_)
+#endif
+{
+    struct mempool_defrag_ctx *ctx = ctx_;
+    const struct mempool_chunk *chunk_a = a;
+    const struct mempool_chunk *chunk_b = b;
+
+    const int inuse_a = chunk_a->slab & 1;
+    const int inuse_b = chunk_b->slab & 1;
+
+    //fprintf(stderr, "%p %p %d %d\n", chunk_a, chunk_b, inuse_a, inuse_b);
+    if (chunk_a == chunk_b) {
+        return 0;
+    } else if (inuse_a && inuse_b) {
+        return ctx->obj_compar(mempool_get_obj(ctx->mempool, chunk_a), mempool_get_obj(ctx->mempool, chunk_b));
+    } else if (inuse_b) { /* a or b depending if we keep empty at the beginning or end. */
+        return 1;
+    } else if (inuse_a) {
+        return -1;
+    }
+    return chunk_a < chunk_b;
 }
 
 void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*)) {
     struct mempool_slab_info slab_nfo = mempool_slab_info(mempool);
+    struct mempool_defrag_ctx ctx = {
+        .mempool = mempool,
+        .obj_compar = obj_compar,
+    };
 
     MEMPOOL_FOREACH_SLAB_BEGIN(mempool) {
         if (slab->nr_free != slab_nfo.nr_objects) {
@@ -192,10 +236,11 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
 
             struct mempool_chunk *first = get_first_chunk(slab);
             size_t n = slab_nfo.nr_objects;
-#define IDX2CHUNK(idx) (struct mempool_chunk *)((char *)first + idx * slab_nfo.chunk_size)
-#define LESS(i, j) defrag_less(mempool, IDX2CHUNK(i), IDX2CHUNK(j), obj_compar)
-#define SWAP(i, j) defrag_swap(mempool, IDX2CHUNK(i), IDX2CHUNK(j), slab_nfo.obj_size)
-            QSORT(n, LESS, SWAP);
+#ifdef __APPLE__
+            qsort_r(first, n, slab_nfo.chunk_size, &ctx, defrag_cmp_r);
+#else
+            (void)qsort_s(first, n, slab_nfo.chunk_size, defrag_cmp_s, &ctx);
+#endif
 
             /* TODO rebuild freelist */
         }
