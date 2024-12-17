@@ -711,12 +711,12 @@ static void test(void)
 {
     struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC);
     struct timespec ts_start, ts_end;
-    unsigned seed = 100;
+    uint64_t seed = 100;
 
     ts_monotime(&ts_start);
-    for (int64_t i = 0; i < 100'000; i++) {
+    for (int64_t i = 0; i < 1'000'000; i++) {
         seed = (214013 * seed + 2531011);
-        unsigned x = (seed >> 16) & 0x7FFF;
+        uint64_t x = (seed >> 16) & 0x7FFF;
         selva_sort_insert_i64(sort, (uint64_t)x <<31, (void *)i);
     }
     ts_monotime(&ts_end);
