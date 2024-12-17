@@ -2,6 +2,11 @@
  * Copyright (c) 2020-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#if defined(__STDC_LIB_EXT1__)
+#define __STDC_WANT_LIB_EXT1__ 1
+#elif defined(__linux__)
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <assert.h>
 #include <stddef.h>
@@ -192,16 +197,17 @@ struct mempool_defrag_ctx {
     int (*obj_compar)(const void *, const void*);
 };
 
-#ifdef __APPLE__
-static int defrag_cmp_r(void *ctx_, const void *a, const void *b)
+#if defined(__STDC_LIB_EXT1__) || defined(__linux__)
+static int defrag_cmp(const void *a, const void *b, void *ctx_)
+#elif defined(__APPLE__)
+static int defrag_cmp(void *ctx_, const void *a, const void *b)
 #else
-static int defrag_cmp_s(const void *a, const void *b, void *ctx_)
+#error "No qsort with ctx available"
 #endif
 {
     struct mempool_defrag_ctx *ctx = ctx_;
-    const struct mempool_chunk *chunk_a = a;
-    const struct mempool_chunk *chunk_b = b;
-
+    struct mempool_chunk *chunk_a = a;
+    struct mempool_chunk *chunk_b = b;
     const int inuse_a = chunk_a->slab & 1;
     const int inuse_b = chunk_b->slab & 1;
 
@@ -236,10 +242,14 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
 
             struct mempool_chunk *first = get_first_chunk(slab);
             size_t n = slab_nfo.nr_objects;
-#ifdef __APPLE__
-            qsort_r(first, n, slab_nfo.chunk_size, &ctx, defrag_cmp_r);
+#if defined(__STDC_LIB_EXT1__)
+            (void)qsort_s(first, n, slab_nfo.chunk_size, defrag_cmp, &ctx);
+#elif defined(__linux__)
+            qsort_r(first, n, slab_nfo.chunk_size, defrag_cmp, &ctx);
+#elif defined(__APPLE__)
+            qsort_r(first, n, slab_nfo.chunk_size, &ctx, defrag_cmp);
 #else
-            (void)qsort_s(first, n, slab_nfo.chunk_size, defrag_cmp_s, &ctx);
+#error "No qsort with ctx available"
 #endif
 
             /* TODO rebuild freelist */
