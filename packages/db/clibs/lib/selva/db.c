@@ -718,9 +718,7 @@ int selva_cursor_update(struct SelvaTypeEntry *type, cursor_id_t id, struct Selv
     if (cursor->cursors) {
         selva_cursors_remove(type, cursor);
     }
-    if (node) {
-        selva_cursors_insert(type, cursor);
-    }
+    selva_cursors_insert(type, cursor);
 
     return 0;
 }

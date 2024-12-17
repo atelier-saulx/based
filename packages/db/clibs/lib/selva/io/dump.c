@@ -406,6 +406,7 @@ static sdb_nr_nodes_t get_node_range(struct SelvaTypeEntry *te, node_id_t start,
 
     node = selva_nfind_node(te, start);
     if (!node || node->node_id > end) {
+        *start_node = nullptr;
         return 0;
     }
 

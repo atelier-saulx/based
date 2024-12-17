@@ -35,6 +35,9 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <time.h>
+
 /**
  * Conver an msec value to a timespec struct.
  * @param[out]  ts      is a pointer to the destination struct.
