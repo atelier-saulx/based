@@ -8,6 +8,7 @@ import {
   TEXT,
   ALIAS,
   BINARY,
+  HLL,
 } from '../../server/schema/types.js'
 import { ModifyError, ModifyState } from './ModifyRes.js'
 import { writeReference } from './references/reference.js'
@@ -26,6 +27,7 @@ import { writeBinary } from './binary.js'
 import { setCursor } from './setCursor.js'
 import { appendFixedValue, writeFixedValue } from './fixed.js'
 import { writeAlias } from './alias.js'
+import { writeHll } from './hll.js'
 
 function _modify(
   ctx: ModifyCtx,
@@ -63,6 +65,8 @@ function _modify(
           err = writeBinary(val, ctx, schema, def, res.tmpId, mod)
         } else if (type === ALIAS) {
           err = writeAlias(val, ctx, schema, def, res.tmpId, mod)
+        } else if (type === HLL) {
+          err = writeHll(val, ctx, schema, def, res.tmpId, mod)
         }
       } else if (overwrite) {
         if (ctx.len + 15 + schema.mainLen > ctx.max) {

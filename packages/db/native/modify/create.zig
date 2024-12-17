@@ -35,6 +35,11 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
         types.Prop.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
+        types.Prop.HLL => {
+            std.debug.print("here we go: {any}", .{data});
+            const len = readInt(u32, data, 0);
+            return len + 4;
+        },
         else => {
             const len = readInt(u32, data, 0);
             const slice = data[4 .. len + 4];

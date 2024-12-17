@@ -49,6 +49,7 @@ export const TIMESTAMP = 1
 export const CREATED = 2
 export const UPDATED = 3
 export const NUMBER = 4
+export const HLL = 4
 export const INT8 = 20
 export const UINT8 = 6
 export const INT16 = 21
@@ -68,7 +69,6 @@ export const WEAK_REFERENCES = 16
 export const MICRO_BUFFER = 17
 export const ALIAS = 18
 export const ALIASES = 19
-
 export const BINARY = 25
 
 export const TYPE_INDEX_MAP = {
@@ -93,6 +93,7 @@ export const TYPE_INDEX_MAP = {
   int8: INT8,
   id: NULL,
   binary: BINARY,
+  hll: HLL,
 }
 
 export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
@@ -185,6 +186,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   enum: 1, // enum
   string: 0, // separate
   text: 0, // separate
+  hll: 0, // separate
   references: 0, // separate
   microbuffer: 0, // separate
   alias: 0,
