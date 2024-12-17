@@ -40,12 +40,12 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const slice = data[4 .. len + 4];
             if (ctx.field == 0) {
                 if (ctx.typeSortIndex != null) {
-                    // var it = ctx.typeSortIndex.?.main.iterator();
-                    // while (it.next()) |entry| {
-                    // const mainIndex = entry.value_ptr.*;
-                    // const start = entry.key_ptr.*;
-                    // sort.addMainSortIndex(mainIndex, slice, start, ctx.node.?);
-                    // }
+                    var it = ctx.typeSortIndex.?.main.iterator();
+                    while (it.next()) |entry| {
+                        const mainIndex = entry.value_ptr.*;
+                        const start = entry.key_ptr.*;
+                        sort.addMainSortIndex(mainIndex, slice, start, ctx.node.?);
+                    }
                 }
             } else if (ctx.currentSortIndex != null) {
                 sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);

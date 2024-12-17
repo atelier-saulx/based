@@ -162,15 +162,13 @@ pub fn addToStringSortIndex(
     node: db.Node,
 ) void {
     if (data.len < 2) {
-        std.debug.print("surp\n", .{});
+        // TODO HANDLE UNDEFINED
+        return;
     }
-
     const maxStrLen = if (data.len < 10) data.len else 10;
     if (data[1] == 0) {
-        std.debug.print("flap {d} \n", .{maxStrLen});
         const slice = data[2..maxStrLen];
-        const err = selva.selva_sort_insert_buf(sortIndex, slice.ptr, slice.len - 2, node);
-        std.debug.print("derp {any} \n", .{err});
+        selva.selva_sort_insert_buf(sortIndex, slice.ptr, slice.len - 2, node);
     } else {
         // need decompress so sad...
     }
