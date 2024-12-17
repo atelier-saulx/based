@@ -66,7 +66,7 @@ test.skip = async (name: string, fn: (t?: any) => Promise<void>) => {
 
 export const printSummary = () => {
   const nuno =
-    Math.random() * 10 > 8
+    Math.random() * 100 > 97
       ? `
                                   ░██░                                  
                            ▓█████████████▒                              

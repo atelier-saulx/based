@@ -174,6 +174,24 @@ pub fn addToStringSortIndex(
     }
 }
 
+pub fn removeFromStringSortIndex(
+    _: *selva.SelvaSortCtx,
+    _: []u8,
+    _: db.Node,
+) void {
+    // if (data.len < 2) {
+    //     // TODO HANDLE UNDEFINED
+    //     return;
+    // }
+    // const maxStrLen = if (data.len < 10) data.len else 10;
+    // if (data[1] == 0) {
+    //     const slice = data[2..maxStrLen];
+    //     // selva.selva_sort_insert_buf(sortIndex, slice.ptr, slice.len - 2, node);
+    // } else {
+    //     // need decompress so sad...
+    // }
+}
+
 pub fn addMainSortIndex(
     mainIndex: *MainSortIndex,
     data: []u8,

@@ -60,9 +60,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 // }
             } else if (ctx.currentSortIndex != null) {
                 const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
-                // ctx.currentSortIndex.?
-                // sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
-                // try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
+                sort.removeFromStringSortIndex(ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
