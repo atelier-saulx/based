@@ -1072,6 +1072,152 @@ build_offset_decode_table(struct libdeflate_decompressor *d,
                   NULL);
 }
 
+/**
+ * Copy the match.
+ *
+ * On most CPUs the fastest method is a word-at-a-time copy,
+ * unconditionally copying about 5 words since this is enough
+ * for most matches without being too much.
+ *
+ * The normal word-at-a-time copy works for offset >= WORDBYTES,
+ * which is most cases.  The case of offset == 1 is also common
+ * and is worth optimizing for, since it is just RLE encoding of
+ * the previous byte, which is the result of compressing long
+ * runs of the same byte.
+ *
+ * Writing past the match 'length' is allowed here, since it's
+ * been ensured there is enough output space left for a slight
+ * overrun.  FASTLOOP_MAX_BYTES_WRITTEN needs to be updated if
+ * the maximum possible overrun here is changed.
+ */
+static void fast_copy_match(u8 * restrict dst, const u8 * restrict src, size_t len, u32 offset)
+{
+    const u8 *stop = dst + len;
+
+    if (UNALIGNED_ACCESS_IS_FAST && offset >= WORDBYTES) {
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += WORDBYTES;
+        dst += WORDBYTES;
+        while (dst < stop) {
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += WORDBYTES;
+            dst += WORDBYTES;
+        }
+    } else if (UNALIGNED_ACCESS_IS_FAST && offset == 1) {
+        machine_word_t v;
+
+        /*
+         * This part tends to get auto-vectorized, so keep it
+         * copying a multiple of 16 bytes at a time.
+         */
+        v = (machine_word_t)0x0101010101010101 * src[0];
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        store_word_unaligned(v, dst);
+        dst += WORDBYTES;
+        while (dst < stop) {
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+            store_word_unaligned(v, dst);
+            dst += WORDBYTES;
+        }
+    } else if (UNALIGNED_ACCESS_IS_FAST) {
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += offset;
+        dst += offset;
+        store_word_unaligned(load_word_unaligned(src), dst);
+        src += offset;
+        dst += offset;
+        do {
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += offset;
+            dst += offset;
+            store_word_unaligned(load_word_unaligned(src), dst);
+            src += offset;
+            dst += offset;
+        } while (dst < stop);
+    } else {
+        *dst++ = *src++;
+        *dst++ = *src++;
+        do {
+            *dst++ = *src++;
+        } while (dst < stop);
+    }
+}
+
+/**
+ * Copy min 3 bytes.
+ */
+static void generic_copy(u8 *dst, const u8 *src, size_t len)
+{
+    const u8 *stop = dst + len;
+
+    static_assert(DEFLATE_MIN_MATCH_LEN == 3);
+
+    *dst++ = *src++;
+    *dst++ = *src++;
+    do {
+        *dst++ = *src++;
+    } while (dst < stop);
+}
+
+static void huffman_build_static_decode_tables(struct libdeflate_decompressor * restrict d)
+{
+    unsigned i;
+
+    static_assert(DEFLATE_NUM_LITLEN_SYMS == 288);
+    static_assert(DEFLATE_NUM_OFFSET_SYMS == 32);
+
+    d->static_codes_loaded = true;
+
+    for (i = 0; i < 144; i++)
+        d->u.l.lens[i] = 8;
+    for (; i < 256; i++)
+        d->u.l.lens[i] = 9;
+    for (; i < 280; i++)
+        d->u.l.lens[i] = 7;
+    for (; i < 288; i++)
+        d->u.l.lens[i] = 8;
+
+    for (; i < 288 + 32; i++)
+        d->u.l.lens[i] = 5;
+
+    build_offset_decode_table(d, DEFLATE_NUM_LITLEN_SYMS, DEFLATE_NUM_OFFSET_SYMS);
+    build_litlen_decode_table(d, DEFLATE_NUM_LITLEN_SYMS, DEFLATE_NUM_OFFSET_SYMS);
+}
+
 /*****************************************************************************
  *                         Main decompression routine
  *****************************************************************************/
