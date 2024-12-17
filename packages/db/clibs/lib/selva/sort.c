@@ -676,6 +676,7 @@ int selva_sort_defrag(struct SelvaSortCtx *ctx)
     return 0;
 }
 
+#if 0
 #include <stdio.h>
 #include <unistd.h>
 #include "util/ctime.h"
@@ -759,3 +760,4 @@ static void test(void)
 
     selva_sort_destroy(sort);
 }
+#endif

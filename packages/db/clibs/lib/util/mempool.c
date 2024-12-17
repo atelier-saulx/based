@@ -182,9 +182,12 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
 
     MEMPOOL_FOREACH_SLAB_BEGIN(mempool) {
         if (slab->nr_free != slab_nfo.nr_objects) {
+            /*
+             * Temporarly remove all free chunks of this slab from the free list
+             * so we can reorder them safely.
+             */
             MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
                 if (!(chunk->slab & (uintptr_t)1)) {
-                    /* Remove from the free list for now. */
                     LIST_REMOVE(chunk, next_free);
                 }
             } MEMPOOL_FOREACH_CHUNK_END();
@@ -201,7 +204,14 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
 #error "No qsort with ctx available"
 #endif
 
-            /* TODO rebuild freelist */
+            /*
+             * Add the free chunks back to the free list.
+             */
+            MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+                if (!(chunk->slab & (uintptr_t)1)) {
+                    LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
+                }
+            } MEMPOOL_FOREACH_CHUNK_END();
         }
     } MEMPOOL_FOREACH_SLAB_END();
 }

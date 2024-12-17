@@ -111,3 +111,6 @@ void *selva_sort_foreach_buffer_reverse(struct SelvaSortCtx *ctx, void **buf, si
 
 SELVA_EXPORT
 bool selva_sort_foreach_done(const struct SelvaSortCtx *ctx);
+
+SELVA_EXPORT
+int selva_sort_defrag(struct SelvaSortCtx *ctx);
