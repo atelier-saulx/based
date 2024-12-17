@@ -11,6 +11,12 @@
 #include "selva_error.h"
 #include "selva/sort.h"
 
+#if 0
+#define SORT_TEST
+#define SORT_TEST_I64
+#define SORT_TEST_BUF
+#endif
+
 struct SelvaSortItem {
     RB_ENTRY(SelvaSortItem) _entry;
     const void *p;
@@ -676,7 +682,7 @@ int selva_sort_defrag(struct SelvaSortCtx *ctx)
     return 0;
 }
 
-#if 0
+#ifdef SORT_TEST
 #include <stdio.h>
 #include <unistd.h>
 #include "util/ctime.h"
@@ -706,14 +712,17 @@ static void print_time(char *msg, struct timespec * restrict ts_start, struct ti
 
     fprintf(stderr, "%s: %.2f %s\n", msg, t, t_unit);
 }
+#endif
 
+#ifdef SORT_TEST_I64
 __constructor
-static void test(void)
+static void test_i64(void)
 {
     struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_I64_ASC);
     struct timespec ts_start, ts_end;
     uint64_t seed = 100;
 
+    fprintf(stderr, "%s:\n", __func__);
     ts_monotime(&ts_start);
     for (int64_t i = 0; i < 1'000'000; i++) {
         seed = (214013 * seed + 2531011);
@@ -757,6 +766,72 @@ static void test(void)
     }
     ts_monotime(&ts_end);
     print_time("foreach2", &ts_start, &ts_end);
+
+    selva_sort_destroy(sort);
+}
+#endif
+
+#ifdef SORT_TEST_BUF
+__constructor
+static void test_buf(void)
+{
+    struct SelvaSortCtx *sort = selva_sort_init(SELVA_SORT_ORDER_BUFFER_ASC);
+    struct timespec ts_start, ts_end;
+    uint64_t seed = 100;
+
+    fprintf(stderr, "%s:\n", __func__);
+    ts_monotime(&ts_start);
+    for (int64_t i = 0; i < 1'000'000; i++) {
+        char buf[80];
+        for (size_t i = 0; i < num_elem(buf) - 1; i++) {
+            seed = (214013 * seed + 2531011);
+            char c = (char)(((seed >> 16) & 0x7FFF) % (126 - 32 + 1) + 32);
+            buf[i] = c;
+        }
+        buf[num_elem(buf) - 1] = '\0';
+
+        selva_sort_insert_buf(sort, buf, sizeof(buf), (void *)i);
+    }
+    ts_monotime(&ts_end);
+    print_time("inserts", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+#if 0
+        __unused const void *item = selva_sort_foreach(sort);
+#endif
+        void *buf;
+        size_t len;
+        __unused const void *item = selva_sort_foreach_buffer(sort, &buf, &len);
+#if 0
+        fprintf(stderr, "%lld\n", v);
+#endif
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach", &ts_start, &ts_end);
+
+#if 0
+    ts_monotime(&ts_start);
+    selva_sort_defrag(sort);
+    ts_monotime(&ts_end);
+    print_time("defrag", &ts_start, &ts_end);
+
+    ts_monotime(&ts_start);
+    selva_sort_foreach_begin(sort);
+    while (!selva_sort_foreach_done(sort)) {
+#if 0
+        __unused const void *item = selva_sort_foreach(sort);
+#endif
+        int64_t v;
+        __unused const void *item = selva_sort_foreach_i64(sort, &v);
+#if 0
+        fprintf(stderr, "%lld\n", v);
+#endif
+    }
+    ts_monotime(&ts_end);
+    print_time("foreach2", &ts_start, &ts_end);
+#endif
 
     selva_sort_destroy(sort);
 }
