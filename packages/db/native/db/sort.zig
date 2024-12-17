@@ -7,9 +7,9 @@ const readInt = @import("../utils.zig").readInt;
 const types = @import("../types.zig");
 
 pub const MainSortIndex = struct {
-    index: *selva.SelvaSortCtx,
     prop: types.Prop,
     len: u16,
+    index: *selva.SelvaSortCtx,
 };
 
 pub const MainSortIndexes = std.AutoHashMap(u16, *MainSortIndex);
@@ -95,25 +95,37 @@ pub fn createSortIndex(
 
     var node = db.getFirstNode(typeEntry);
     var first = true;
-    var i: u30 = 0;
 
-    while (node != null) {
-        if (first) {
-            first = false;
-        } else {
-            node = db.getNextNode(typeEntry, node.?);
+    if (len > 0) {
+        if (types.Prop.isBuffer(prop)) {
+            while (node != null) {
+                if (first) {
+                    first = false;
+                } else {
+                    node = db.getNextNode(typeEntry, node.?);
+                }
+                if (node == null) {
+                    break;
+                }
+                const id = db.getNodeId(node.?);
+                const data = db.getField(typeEntry, id, node.?, fieldSchema);
+                addToStringSortIndex(sI, data, node.?);
+            }
         }
-        if (node == null) {
-            break;
-        }
-        const id = db.getNodeId(node.?);
-        const data = db.getField(typeEntry, id, node.?, fieldSchema);
-        if (start != 0) {
+    } else {
+        while (node != null) {
+            if (first) {
+                first = false;
+            } else {
+                node = db.getNextNode(typeEntry, node.?);
+            }
+            if (node == null) {
+                break;
+            }
+            const id = db.getNodeId(node.?);
+            const data = db.getField(typeEntry, id, node.?, fieldSchema);
             addMainSortIndex(main.?, data, start, node.?);
-        } else {
-            addToStringSortIndex(sI, data, node.?);
         }
-        i += 1;
     }
 
     return sI;
@@ -151,9 +163,16 @@ pub fn addToStringSortIndex(
     data: []u8,
     node: db.Node,
 ) void {
+    if (data.len < 2) {
+        std.debug.print("surp\n", .{});
+    }
+
     const maxStrLen = if (data.len < 10) data.len else 10;
     if (data[1] == 0) {
-        selva.selva_sort_insert_buf(sortIndex, data[2..maxStrLen].ptr, 8, node);
+        std.debug.print("flap {d} \n", .{maxStrLen});
+        const slice = data[2..maxStrLen];
+        const err = selva.selva_sort_insert_buf(sortIndex, slice.ptr, slice.len - 2, node);
+        std.debug.print("derp {any} \n", .{err});
     } else {
         // need decompress so sad...
     }

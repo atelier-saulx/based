@@ -28,6 +28,15 @@ pub const Prop = enum(u8) {
     ALIASES = 19,
     BINARY = 25,
     ID = 26,
+    pub fn isBuffer(self: Prop) bool {
+        return switch (self) {
+            Prop.BINARY,
+            Prop.ALIAS,
+            Prop.STRING,
+            => true,
+            else => false,
+        };
+    }
     pub fn isSigned(self: Prop) bool {
         return switch (self) {
             Prop.INT16,
