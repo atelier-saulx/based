@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <sys/types.h>
 #include "selva/_export.h"
 #ifdef __zig
 struct selva_string;
