@@ -206,8 +206,8 @@ static int defrag_cmp(void *ctx_, const void *a, const void *b)
 #endif
 {
     struct mempool_defrag_ctx *ctx = ctx_;
-    struct mempool_chunk *chunk_a = a;
-    struct mempool_chunk *chunk_b = b;
+    struct mempool_chunk *chunk_a = (typeof(chunk_a))a;
+    struct mempool_chunk *chunk_b = (typeof(chunk_b))b;
     const int inuse_a = chunk_a->slab & 1;
     const int inuse_b = chunk_b->slab & 1;
 
