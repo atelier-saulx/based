@@ -245,6 +245,11 @@ export type SchemaBoolean = Prop<{
   default?: boolean
 }>
 
+export type SchemaHll = Prop<{
+  type: 'hll'
+  default?: number
+}>
+
 export type SchemaTimestamp = Prop<{
   type: 'timestamp'
   default?: number | Date
@@ -300,6 +305,7 @@ export type SchemaPropShorthand =
   | 'string'
   | 'alias'
   | 'text'
+  | 'hll'
   | NumberType
   | EnumItem[]
 
@@ -326,6 +332,7 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaText
   | SchemaEnum
   | SchemaBinary
+  | SchemaHll
   | (isStrict extends true
       ? SchemaSet<SetItems<true>>
       : SchemaPropShorthand | SchemaSet)
@@ -402,6 +409,7 @@ export type SchemaPropTypeMap = {
   text: SchemaText
   set: SchemaSet
   binary: SchemaBinary
+  hll: SchemaHll
 } & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap

@@ -481,4 +481,14 @@ p.alias = propParser<SchemaAlias>(
   0,
 )
 
+p.hll = propParser<SchemaAlias>(
+  STUB,
+  {
+    default(val) {
+      expectNumber(val)
+    },
+  },
+  0,
+)
+
 export default p
