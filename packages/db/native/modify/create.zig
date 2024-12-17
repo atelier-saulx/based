@@ -48,9 +48,9 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
+                // add correct prop type...
                 sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }
-
             if (ctx.fieldType == types.Prop.ALIAS) {
                 try db.setAlias(ctx.id, ctx.field, slice, ctx.typeEntry.?);
             } else {

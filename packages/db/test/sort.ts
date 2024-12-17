@@ -174,26 +174,26 @@ await test('basic', async (t) => {
     'sort by age asc after adding new',
   )
 
-  // db.update('user', mrX, {
-  //   email: 'dd@dd.dd',
-  // })
+  db.update('user', mrX, {
+    email: 'dd@dd.dd',
+  })
 
-  // db.drain()
+  db.drain()
 
-  // deepEqual(
-  //   (
-  //     await db.query('user').sort('email').include('email', 'age').get()
-  //   ).toObject(),
-  //   [
-  //     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
-  //     { id: 6, email: 'dd@dd.dd', age: 999 },
-  //     { id: 2, email: 'flap@flap.flap.flap', age: 50 },
-  //     { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
-  //     { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
-  //     { id: 5, email: 'z@z.z', age: 1 },
-  //   ],
-  //   'sort by email after updating email',
-  // )
+  deepEqual(
+    (
+      await db.query('user').sort('email').include('email', 'age').get()
+    ).toObject(),
+    [
+      { id: 1, email: 'blap@blap.blap.blap', age: 201 },
+      { id: 6, email: 'dd@dd.dd', age: 999 },
+      { id: 2, email: 'flap@flap.flap.flap', age: 50 },
+      { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
+      { id: 3, email: 'snurp@snurp.snurp.snurp', age: 99 },
+      { id: 5, email: 'z@z.z', age: 1 },
+    ],
+    'sort by email after updating email',
+  )
 
   // db.update(
   //   'user',

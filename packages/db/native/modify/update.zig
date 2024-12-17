@@ -1,6 +1,6 @@
 const std = @import("std");
 const db = @import("../db/db.zig");
-// const sort = @import("../db/sort.zig");
+const sort = @import("../db/sort.zig");
 const Modify = @import("./ctx.zig");
 const readInt = @import("../utils.zig").readInt;
 const ModifyCtx = Modify.ModifyCtx;
@@ -59,9 +59,11 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 //     }
                 // }
             } else if (ctx.currentSortIndex != null) {
-                // const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?);
+                // ctx.currentSortIndex.?
+                // sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
                 // try sort.deleteField(ctx.id, currentData, ctx.currentSortIndex.?);
-                // try sort.writeField(ctx.id, slice, ctx.currentSortIndex.?);
+                sort.addToStringSortIndex(ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
             if (ctx.fieldType == types.Prop.ALIAS) {
