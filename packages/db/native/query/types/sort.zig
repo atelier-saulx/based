@@ -15,43 +15,6 @@ const Result = @import("../results.zig").Result;
 
 const std = @import("std");
 
-inline fn defaultSortIterator(
-    comptime queryType: comptime_int,
-    sI: *selva.SelvaSortCtx,
-    ctx: *QueryCtx,
-    typeEntry: db.Type,
-    conditions: []u8,
-    include: []u8,
-    limit: u32,
-    offset: u32,
-) !void {
-    var correctedForOffset: u32 = offset;
-    checkItem: while (!selva.selva_sort_foreach_done(sI)) {
-        var node: db.Node = undefined;
-        if (queryType == 4) {
-            node = @ptrCast(selva.selva_sort_foreach_reverse(sI));
-        } else {
-            node = @ptrCast(selva.selva_sort_foreach(sI));
-        }
-        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
-            continue :checkItem;
-        }
-        if (correctedForOffset != 0) {
-            correctedForOffset -= 1;
-            continue :checkItem;
-        }
-        const id = db.getNodeId(node);
-        const size = try getFields(node, ctx, id, typeEntry, include, null, null, false);
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
-        if (ctx.totalResults >= limit) {
-            break;
-        }
-    }
-}
-
 pub fn default(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
@@ -77,7 +40,31 @@ pub fn default(
     } else {
         selva.selva_sort_foreach_begin(sI);
     }
-    try defaultSortIterator(queryType, sI, ctx, typeEntry, conditions, include, limit, offset);
+    var correctedForOffset: u32 = offset;
+    checkItem: while (!selva.selva_sort_foreach_done(sI)) {
+        var node: db.Node = undefined;
+        if (queryType == 4) {
+            node = @ptrCast(selva.selva_sort_foreach_reverse(sI));
+        } else {
+            node = @ptrCast(selva.selva_sort_foreach(sI));
+        }
+        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+            continue :checkItem;
+        }
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue :checkItem;
+        }
+        const id = db.getNodeId(node);
+        const size = try getFields(node, ctx, id, typeEntry, include, null, null, false);
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
+        }
+        if (ctx.totalResults >= limit) {
+            break;
+        }
+    }
 }
 
 // pub fn search(
