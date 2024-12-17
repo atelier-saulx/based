@@ -1749,6 +1749,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
+    case SELVA_FIELD_TYPE_SPARE1:
         return SELVA_ENOTSUP;
     }
 
@@ -2042,6 +2043,7 @@ void selva_fields_hash_update(selva_hash_state_t *hash_state, const struct Selva
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
+        case SELVA_FIELD_TYPE_SPARE1:
             /*
              * NOP Aliases are hashed in the node hash in db.c.
              */
