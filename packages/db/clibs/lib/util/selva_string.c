@@ -144,7 +144,7 @@ static void set_crc(struct selva_string *s, uint32_t csum)
  * Calculate the CRC of a selva_string.
  * @param hdr is the header part of a selva_string i.e. without the actual string.
  */
-static uint32_t calc_crc(const struct selva_string *s) __attribute__((pure, access(read_only, 1), access(read_only, 2)));
+static uint32_t calc_crc(const struct selva_string *s) __attribute__((pure, access(read_only, 1)));
 static uint32_t calc_crc(const struct selva_string *s)
 {
     return crc32c(0, get_buf(s), s->len);
