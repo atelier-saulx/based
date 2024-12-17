@@ -87,7 +87,7 @@ pub fn createSortIndex(
             };
             try tI.main.put(start, main.?);
         }
-    }
+    } else if (len != 0 and field == 0) {}
 
     const sI = sortIndex.?;
     const typeEntry = try db.getType(dbCtx, typeId);
@@ -96,7 +96,7 @@ pub fn createSortIndex(
     var node = db.getFirstNode(typeEntry);
     var first = true;
 
-    if (len > 0) {
+    if (field != 0) {
         if (types.Prop.isBuffer(prop)) {
             while (node != null) {
                 if (first) {
@@ -107,8 +107,7 @@ pub fn createSortIndex(
                 if (node == null) {
                     break;
                 }
-                const id = db.getNodeId(node.?);
-                const data = db.getField(typeEntry, id, node.?, fieldSchema);
+                const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
                 addToStringSortIndex(sI, data, node.?);
             }
         }
@@ -122,8 +121,7 @@ pub fn createSortIndex(
             if (node == null) {
                 break;
             }
-            const id = db.getNodeId(node.?);
-            const data = db.getField(typeEntry, id, node.?, fieldSchema);
+            const data = db.getField(typeEntry, db.getNodeId(node.?), node.?, fieldSchema);
             addMainSortIndex(main.?, data, start, node.?);
         }
     }

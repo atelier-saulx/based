@@ -15,6 +15,43 @@ const Result = @import("../results.zig").Result;
 
 const std = @import("std");
 
+inline fn defaultSortIterator(
+    comptime queryType: comptime_int,
+    sI: *selva.SelvaSortCtx,
+    ctx: *QueryCtx,
+    typeEntry: db.Type,
+    conditions: []u8,
+    include: []u8,
+    limit: u32,
+    offset: u32,
+) !void {
+    var correctedForOffset: u32 = offset;
+    checkItem: while (!selva.selva_sort_foreach_done(sI)) {
+        var node: db.Node = undefined;
+        if (queryType == 4) {
+            node = @ptrCast(selva.selva_sort_foreach_reverse(sI));
+        } else {
+            node = @ptrCast(selva.selva_sort_foreach(sI));
+        }
+        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+            continue :checkItem;
+        }
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue :checkItem;
+        }
+        const id = db.getNodeId(node);
+        const size = try getFields(node, ctx, id, typeEntry, include, null, null, false);
+        if (size > 0) {
+            ctx.size += size;
+            ctx.totalResults += 1;
+        }
+        if (ctx.totalResults >= limit) {
+            break;
+        }
+    }
+}
+
 pub fn default(
     comptime queryType: comptime_int,
     ctx: *QueryCtx,
@@ -27,59 +64,20 @@ pub fn default(
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
-    // const propType: type.Prop = sortBuffer[2];
+    // const propType: types.Prop = @enumFromInt(sortBuffer[2]);
     const start = readInt(u16, sortBuffer, 2);
-    // const len = readInt(u16, sortBuffer, 4);
     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start);
     if (sIndex == null) {
         return;
     }
     const typeEntry = try db.getType(ctx.db, typeId);
     const sI = sIndex.?;
-    var correctedForOffset: u32 = offset;
-
     if (queryType == 4) {
         selva.selva_sort_foreach_begin_reverse(sI);
     } else {
         selva.selva_sort_foreach_begin(sI);
     }
-
-    checkItem: while (!selva.selva_sort_foreach_done(sI)) {
-        var key: i64 = undefined;
-
-        var node: db.Node = undefined;
-        if (queryType == 4) {
-            node = @ptrCast(selva.selva_sort_foreach_i64_reverse(sI, &key));
-        } else {
-            node = @ptrCast(selva.selva_sort_foreach_i64(sI, &key));
-        }
-
-        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
-            continue :checkItem;
-        }
-        if (correctedForOffset != 0) {
-            correctedForOffset -= 1;
-            continue :checkItem;
-        }
-        const id = db.getNodeId(node);
-        const size = try getFields(
-            node,
-            ctx,
-            id,
-            typeEntry,
-            include,
-            null,
-            null,
-            false,
-        );
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
-        if (ctx.totalResults >= limit) {
-            break;
-        }
-    }
+    try defaultSortIterator(queryType, sI, ctx, typeEntry, conditions, include, limit, offset);
 }
 
 // pub fn search(
