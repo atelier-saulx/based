@@ -141,57 +141,6 @@ void mempool_gc(struct mempool *mempool) {
     } MEMPOOL_FOREACH_SLAB_END();
 }
 
-static int defrag_less(struct mempool *mempool, struct mempool_chunk *chunk_a, struct mempool_chunk *chunk_b, int (*obj_compar)(const void *, const void*)) {
-    const int inuse_a = chunk_a->slab & 1;
-    const int inuse_b = chunk_b->slab & 1;
-
-    //fprintf(stderr, "%p %p %d %d\n", chunk_a, chunk_b, inuse_a, inuse_b);
-    if (chunk_a == chunk_b) {
-        return false;
-    } else if (inuse_a && inuse_b) {
-        int r = obj_compar(mempool_get_obj(mempool, chunk_a), mempool_get_obj(mempool, chunk_b));
-        if (r < 0) {
-            return true;
-        } else if (r > 0) {
-            return false;
-        }
-    } else if (inuse_b) { /* a or b depending if we keep empty at the beginning or end. */
-        return true;
-    }
-    return chunk_a < chunk_b;
-}
-
-static void defrag_swap(struct mempool *mempool, struct mempool_chunk *chunk_a, struct mempool_chunk *chunk_b, size_t size) {
-    const int inuse_a = chunk_a->slab & 1;
-    const int inuse_b = chunk_b->slab & 1;
-    char *a = mempool_get_obj(mempool, chunk_a);
-    char *b = mempool_get_obj(mempool, chunk_b);
-
-    if (chunk_a == chunk_b) {
-        /* NOP */
-        return;
-    }
-
-    //fprintf(stderr, "swapedino %p %p\n", chunk_a, chunk_b);
-    if (inuse_a && inuse_b) {
-        do {
-            char tmp = *a;
-            *a++ = *b;
-            *b++ = tmp;
-        } while (--size);
-        chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
-        chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
-    } else if (!inuse_a && inuse_b) {
-        memcpy(a, b, size);
-        chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
-        chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
-    } else if (inuse_a && !inuse_b) {
-        memcpy(b, a, size);
-        chunk_a->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_b;
-        chunk_b->slab &= (~(uintptr_t)0 ^ (uintptr_t)1) | inuse_a;
-    }
-}
-
 struct mempool_defrag_ctx {
     struct mempool *mempool;
     int (*obj_compar)(const void *, const void*);
