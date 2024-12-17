@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { isAbsolute, join, relative } from 'node:path'
 import {
-  type BuildOptions,
+  type BasedBundleOptions,
   type BundleResult,
   type OutputFile,
   type Plugin,
@@ -169,6 +169,12 @@ type Config = BasedFunctionConfig & {
     favicon?: string
   }
   files?: string[]
+  build?: Build
+}
+
+type Build = {
+  watch: BasedBundleOptions['watch']
+  plugins: BasedBundleOptions['plugins']
 }
 
 type ConfigStore = {
@@ -278,7 +284,10 @@ export const parseFunctions = async (
   const paths: Record<string, string> = {}
   const nodeEntryPoints: string[] = schema ? [schema] : []
   const browserEntryPoints: string[] = []
-  const browserEsbuildPlugins: BuildOptions['plugins'] = []
+  let browserWatch: BasedBundleOptions['watch'] = {
+    include: [],
+  }
+  const browserEsbuildPlugins: BasedBundleOptions['plugins'] = []
   const favicons = new Set<string>()
   const files: Record<string, string> = {}
   const invalids = await Promise.all(
@@ -313,12 +322,16 @@ export const parseFunctions = async (
           return true
         }
 
-        if ('plugins' in config) {
-          browserEsbuildPlugins.push(...(config.plugins as Plugin[]))
+        if (config.build?.plugins) {
+          browserEsbuildPlugins.push(...(config.build.plugins as Plugin[]))
         }
 
         configStore.app = abs(config.main, dir)
         browserEntryPoints.push(configStore.app)
+
+        if (config.build?.watch) {
+          browserWatch = config.build?.watch
+        }
 
         if (config.favicon) {
           configStore.favicon = abs(config.favicon, dir)
@@ -410,6 +423,7 @@ export const parseFunctions = async (
         {
           publicPath,
           entryPoints: browserEntryPoints,
+          watch: browserWatch,
           sourcemap: true,
           platform: 'browser',
           bundle: true,

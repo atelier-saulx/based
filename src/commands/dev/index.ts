@@ -267,7 +267,6 @@ export const devServer = async ({ functions }) => {
           // ts validation
           server.functions.add({
             [config.name]: {
-              // name 'smurk'
               type: 'function',
               async fn() {
                 return 'error (should log the ts error)'
